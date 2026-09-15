@@ -10,5 +10,6 @@ coverage/
 dist/
 examples/*/public/zyzz.js
 examples/next-react/next-env.d.ts
+examples/start-react/src/routeTree.gen.ts
 node_modules/
 test-results/

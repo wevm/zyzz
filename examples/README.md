@@ -10,6 +10,7 @@ Framework playgrounds using the public Zyzz API. Start with [React + Vite](vite-
 | [cli-react](cli-react)     | React     | `zyzz build` / `zyzz dev` CLI; Vite bundles the output |
 | [api-react](api-react)     | React     | `Host` from `zyzz/node`; Vite's JavaScript API bundles |
 | [next-react](next-react)   | React     | `zyzz(nextConfig)` from `zyzz/next`; App Router        |
+| [start-react](start-react) | React     | `zyzz()` Vite plugin beside TanStack Start             |
 
 ```sh
 pnpm install
@@ -18,7 +19,7 @@ pnpm examples
 
 Run from the repository root. `pnpm examples` builds the library, relinks the `zyzz` binary into each example, then starts each example's dev server. Playground changes reload automatically; library changes need another `pnpm build`.
 
-Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI, API, and Next.js examples load the built package from Node and require `pnpm build`.
+Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI, API, Next.js, and TanStack Start examples load the built package from Node and require `pnpm build`.
 
 ## Deployments
 
@@ -32,7 +33,7 @@ The Examples workflow discovers every `examples/*/package.json` and builds each 
 }
 ```
 
-An example whose site builds elsewhere names the directory under `config.site` in its `package.json`. A server-rendered example such as `next-react` sets `config.site` to `false`: the workflow builds it and skips the deployment.
+An example whose site builds elsewhere names the directory under `config.site` in its `package.json`. A server-rendered example such as `next-react` or `start-react` sets `config.site` to `false`: the workflow builds it and skips the deployment.
 
 | Event              | Deployment                                                         |
 | ------------------ | ------------------------------------------------------------------ |

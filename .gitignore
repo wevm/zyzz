@@ -2,12 +2,14 @@
 *.tsbuildinfo
 .attest/
 .fixture-*/
+.next/
 .venv/
 .zyzz/
 bench/results/
-build/
 coverage/
 dist/
 examples/*/public/zyzz.js
+examples/next-react/next-env.d.ts
+examples/next-react/out/
 node_modules/
 test-results/

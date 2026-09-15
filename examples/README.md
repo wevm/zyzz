@@ -9,6 +9,7 @@ Framework playgrounds using the public Zyzz API. Start with [React + Vite](vite-
 | [vite-svelte](vite-svelte) | Svelte    | `zyzz()` Vite plugin                                   |
 | [cli-react](cli-react)     | React     | `zyzz build` / `zyzz dev` CLI; Vite bundles the output |
 | [api-react](api-react)     | React     | `Host` from `zyzz/node`; Vite's JavaScript API bundles |
+| [next-react](next-react)   | React     | `zyzz(nextConfig)` from `zyzz/next`; static export     |
 
 ```sh
 pnpm install
@@ -17,7 +18,7 @@ pnpm examples
 
 Run from the repository root. `pnpm examples` builds the library, relinks the `zyzz` binary into each example, then starts each example's dev server. Playground changes reload automatically; library changes need another `pnpm build`.
 
-Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI and API examples load the built package from Node and require `pnpm build`.
+Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI, API, and Next.js examples load the built package from Node and require `pnpm build`.
 
 ## Deployments
 
@@ -31,7 +32,7 @@ The Examples workflow discovers every `examples/*/package.json` and builds each 
 }
 ```
 
-Server-rendered examples must provide a static export. An example whose site builds elsewhere names the directory under `config.site` in its `package.json`; the compiled-tree examples use `build` because `zyzz build` owns `dist`.
+Server-rendered examples must provide a static export. An example whose site builds elsewhere names the directory under `config.site` in its `package.json`; the Next.js example exports to `out`.
 
 | Event              | Deployment                                                         |
 | ------------------ | ------------------------------------------------------------------ |

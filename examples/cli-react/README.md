@@ -8,13 +8,17 @@ pnpm --dir examples/cli-react dev
 
 Run from the repository root after `pnpm install`. The library build provides the `zyzz` binary, and the rebuild step links it into this package: pnpm creates the shim only when its target exists, and a fresh install runs before the first build. `pnpm examples` runs the same steps for every example.
 
-Vite has no Zyzz plugin here. The CLI compiles `src` into `dist`, writes the saved-selection script into `public`, and Vite bundles that compiled tree into `build`:
+Vite has no Zyzz plugin or configuration here. The CLI compiles `src` into `dist`, writes the saved-selection script into `public`, and Vite bundles that compiled tree:
 
 ```sh
 zyzz build --script public/zyzz.js && vite build
 ```
 
-`scripts/dev.ts` compiles once, then runs `zyzz dev` beside `vite` so edits recompile and reload. `vite.config.ts` only moves the site to `build`, because `zyzz build` owns `dist`; `package.json` names that directory under `config.site` for the Examples workflow.
+Vite reads the compiled modules before it empties its output directory, so the site replaces the compiled tree in `dist`. Development runs the two watchers side by side with `concurrently`: `zyzz dev` recompiles after edits and Vite reloads the compiled modules.
+
+```sh
+concurrently --kill-others "zyzz dev --script public/zyzz.js" vite
+```
 
 ## Output Consumption
 

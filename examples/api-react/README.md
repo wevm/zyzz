@@ -24,10 +24,10 @@ try {
   await host.close()
 }
 
-await Vite.build({ build: { outDir: 'build' }, configFile: false, root })
+await Vite.build({ configFile: false, root })
 ```
 
-The Host compiles into `dist` by default and writes the saved-selection script into `public`, so Vite serves it in development and copies it into the site. The site builds into `build` because `dist` belongs to the Host; `package.json` names that directory under `config.site` for the Examples workflow.
+The Host compiles into `dist` by default and writes the saved-selection script into `public`, so Vite serves it in development and copies it into the site. Vite reads the compiled modules before it empties its output directory, so the site replaces the compiled tree in `dist`.
 
 `scripts/dev.ts` uses `host.watch` instead, and the Vite dev server starts after the first successful build.
 

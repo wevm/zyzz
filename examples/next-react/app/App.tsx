@@ -1,11 +1,12 @@
 /** Presents small, independent examples under a selectable theme scope. @module */
-import { useState } from 'react'
+'use client'
+import { useEffect, useState } from 'react'
 import { global } from 'zyzz/web'
-import { Dynamic } from './Dynamic.js'
-import { Motion } from './Motion.js'
-import { Relationships } from './Relationships.js'
-import { Styling } from './Styling.js'
-import { appearance, css, themes } from './zyzz.config.js'
+import { Dynamic } from './Dynamic'
+import { Motion } from './Motion'
+import { Relationships } from './Relationships'
+import { Styling } from './Styling'
+import { appearance, css, themes } from './zyzz.config'
 
 global({
   '@layer base': {
@@ -77,7 +78,12 @@ namespace styles {
 
 /** The root selection lives on <html>; nested scopes inherit without a provider or listener. */
 export function App() {
-  const [selection, setSelection] = useState(appearance.get)
+  // Prerendering has no document, so the applied selection is read after hydration.
+  const [selection, setSelection] = useState<ReturnType<typeof appearance.get>>(
+    { theme: 'indigo' },
+  )
+
+  useEffect(() => setSelection(appearance.get()), [])
 
   function select(next: Parameters<typeof appearance.set>[0]) {
     appearance.set(next)
@@ -89,11 +95,11 @@ export function App() {
       <div {...styles.content()}>
         <header>
           <h1>Zyzz examples</h1>
-          <p>React + Zyzz CLI</p>
+          <p>React + Next.js</p>
           <p {...styles.muted()}>
-            The <code>zyzz</code> command compiled this source tree into{' '}
-            <code>dist</code>; Vite bundles the compiled modules and{' '}
-            <code>zyzz.css</code> without a Zyzz plugin.
+            <code>zyzz(nextConfig)</code> from <code>zyzz/next</code> compiles
+            these modules inside the Next.js build; the root layout inlines{' '}
+            <code>script()</code> so a saved selection applies before paint.
           </p>
           <div {...styles.row()}>
             <button

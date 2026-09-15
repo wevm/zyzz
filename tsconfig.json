@@ -31,6 +31,8 @@
     ".fixture-*/**",
     "bench/results/**",
     "dist",
+    "examples/*/dist",
+    "examples/next-react",
     "node_modules",
     "test-results"
   ]

@@ -17,7 +17,7 @@ export default zyzz({
 Define the application's named config helpers as shown in [Getting Started](getting-started.md#define-config). Components keep ordinary source imports:
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { css } from './zyzz.config'
 
 namespace styles {
   export const title = css({ color: 'brand' })

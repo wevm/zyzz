@@ -17,5 +17,5 @@ try {
   await host.close()
 }
 
-// `zyzz build` owns dist, so the site builds beside it.
-await Vite.build({ build: { outDir: 'build' }, configFile: false, root })
+// Vite reads the compiled tree before emptying dist, so the site replaces it there.
+await Vite.build({ configFile: false, root })

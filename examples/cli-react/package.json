@@ -2,12 +2,9 @@
   "name": "@zyzz/example-cli-react",
   "private": true,
   "type": "module",
-  "config": {
-    "site": "build"
-  },
   "scripts": {
     "build": "zyzz build --script public/zyzz.js && vite build",
-    "dev": "node scripts/dev.ts"
+    "dev": "concurrently --kill-others --names zyzz,vite \"zyzz dev --script public/zyzz.js\" vite"
   },
   "dependencies": {
     "react": "19.2.4",
@@ -17,6 +14,7 @@
   "devDependencies": {
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "concurrently": "^10.0.5",
     "typescript": "5.9.3",
     "vite": "^8.2.2"
   }

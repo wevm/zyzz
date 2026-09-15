@@ -195,7 +195,22 @@ export function compile(options: compile.Options): compile.ReturnType {
     cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
     schemes,
-    styles: extracted.styles,
+    // Keep definition positions stable while removing proven unreachable rules.
+    // CSS-only consumers retain executable authoring, and development keeps slots.
+    styles: (() => {
+      if (portable || options.development) return extracted.styles
+
+      const dead = localApplications?.dead()
+      if (!dead?.size) return extracted.styles
+
+      return {
+        styles: extracted.styles.styles.map((style) =>
+          dead.has(style.name)
+            ? { cssOutput: style.cssOutput, declarations: [], name: style.name }
+            : style,
+        ),
+      }
+    })(),
     contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })

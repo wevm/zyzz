@@ -11,6 +11,22 @@ export function create(
   options: create.Options = {},
 ): Collector | undefined {
   const definitions = new Map(calls.map((call) => [call.start, call]))
+  const memberBindings = new Map<number, string>()
+  const referencedDefinitions = new Set<string>()
+  const namespaceCounts = new Map<string, number>()
+
+  for (const statement of program.body) {
+    const node =
+      statement.type === 'ExportNamedDeclaration'
+        ? statement.declaration
+        : statement
+
+    if (node?.type === 'TSModuleDeclaration' && node.id.type === 'Identifier')
+      namespaceCounts.set(
+        node.id.name,
+        (namespaceCounts.get(node.id.name) ?? 0) + 1,
+      )
+  }
 
   const candidates: {
     declaration: {
@@ -55,6 +71,7 @@ export function create(
           }
 
           members.set(declaration.id.name, call)
+          memberBindings.set(declaration.id.start, call.name)
         }
       }
 
@@ -161,6 +178,8 @@ export function create(
         return
       const binding = scope.getDeclaration(node.name, { mode: 'value' })
       const id = binding?.node
+      const member = id && memberBindings.get(id.start)
+      if (member) referencedDefinitions.add(member)
       if (
         id &&
         candidates.some(
@@ -182,6 +201,60 @@ export function create(
   let evaluation = false
 
   return {
+    dead() {
+      if (evaluation) return new Set<string>()
+
+      const result = new Set<string>()
+      const counts = new Map<string, number>()
+
+      for (const { declaration } of candidates)
+        counts.set(
+          declaration.id.name,
+          (counts.get(declaration.id.name) ?? 0) + 1,
+        )
+
+      for (const { declaration, direct, members } of candidates) {
+        if (
+          counts.get(declaration.id.name)! > 1 ||
+          (namespaceCounts.get(declaration.id.name) ?? 0) > 1
+        )
+          continue
+
+        const reads = references.get(declaration.id.name) ?? []
+
+        if (direct) {
+          if (!reads.length) result.add(direct.name)
+          continue
+        }
+
+        const used = new Set<string>()
+        let escapes = false
+
+        for (const reference of reads) {
+          const member = parents.get(reference)
+
+          if (
+            member?.type !== 'MemberExpression' ||
+            member.object !== reference ||
+            member.computed ||
+            member.optional ||
+            member.property.type !== 'Identifier'
+          ) {
+            escapes = true
+            break
+          }
+
+          used.add(member.property.name)
+        }
+
+        if (!escapes)
+          for (const [name, call] of members)
+            if (!used.has(name) && !referencedDefinitions.has(call.name))
+              result.add(call.name)
+      }
+
+      return result
+    },
     enter(node, parent) {
       if (
         node.type === 'MemberExpression' &&
@@ -287,6 +360,8 @@ type Application = {
 
 /** Binding references gathered during the transform's existing walk. */
 type Collector = {
+  /** Definitions with no observable value reads, retaining escaped containers. */
+  dead: () => ReadonlySet<string>
   /** Records relevant reads and their immediate parents. */
   enter: (node: Ast.Node, parent: Ast.Node | null | undefined) => void
   /** Resolves applications after traversal completes. */

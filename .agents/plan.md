@@ -1,16 +1,39 @@
 # Implementation plan
 
-## Next Work: Configurable CSS Output
+## Current Status and Next Work
 
-Accepted direction: add `Config.create({ cssOutput: 'atomic' | 'grouped' })`, defaulting to `'atomic'`. Implement this next, bringing the web emission work from 3.9 forward before native work and the remaining distribution backlog. This supersedes automatic selection of the smaller representation.
+Reconciled on 2026-09-15 against main [6532b3e](https://github.com/wevm/zyzz/commit/6532b3ee4c75b6d6ba9e8f8ac8e22a37d41ebd2a). Merged implementation and final acceptance are tracked separately. Historical measurements below describe their recorded heads, not current-main verification.
 
-The option is planned, not implemented. It is independent of renderer `output: 'react' | 'html'`. Bound `css`, `variants`, and theme helpers inherit the setting; token-free root helpers use the atomic default. No per-style mode or automatic hybrid selection is planned.
+| Work | Current status | Evidence |
+| --- | --- | --- |
+| Web variants and composition, 3.1–3.6 | Implemented, including packed and framework acceptance fixtures | [#145](https://github.com/wevm/zyzz/pull/145), [#146](https://github.com/wevm/zyzz/pull/146) merged |
+| Configurable CSS output, A1–A4 | Implemented with atomic default and grouped opt-in | [#150](https://github.com/wevm/zyzz/pull/150), [#151](https://github.com/wevm/zyzz/pull/151), [#152](https://github.com/wevm/zyzz/pull/152), [#153](https://github.com/wevm/zyzz/pull/153) merged |
+| CLI parity and framework fixtures, A5–A6 | Implemented, final acceptance reconciliation remains open | [#156](https://github.com/wevm/zyzz/pull/156), [#157](https://github.com/wevm/zyzz/pull/157) merged |
+| Readable atomic names and review corrections | Implemented | [#155](https://github.com/wevm/zyzz/pull/155), [#161](https://github.com/wevm/zyzz/pull/161) merged |
+| Framework examples and root appearance | Implemented, including CLI/API, Next.js, TanStack Start, React, Solid, and Svelte examples | [#165](https://github.com/wevm/zyzz/pull/165) merged |
+| Native output, 3.8–3.9 | Planned, no published React Native entrypoint | [Package exports](../package.json) |
+| Final Phase 3 acceptance, 3.10 | Open | Requires web evidence and both mobile renderers |
+
+Next work remains ordered:
+
+1. Close 3.7 acceptance against an identified main head. Reconcile the CSS output gate with current integration evidence, including CLI watch/recovery and grouped delivery/performance results. Earlier failures are historical until reproduced or superseded by linked passing runs.
+2. Audit deduplication and reachability pruning against the remaining 3.7 checklist. Implement only missing behavior, preserving cascade, finite alternatives, and complete live theme tokens.
+3. Implement 3.8 native style tables, then 3.9 native bindings with real iOS and Android fixtures.
+4. Complete 3.10 reconciliation, followed by remaining distribution and measurement work. Phase 2 rendering gaps remain independently open. Vue remains excluded.
+
+This reconciliation does not rerun compiler, browser, or benchmark gates. Unchecked acceptance items require named evidence before closure, even when their implementation PR has merged.
+
+## Configurable CSS Output
+
+Implemented: `Config.create({ cssOutput: 'atomic' | 'grouped' })`, defaulting to `'atomic'`. A1–A6 brought the web emission and CLI parity work forward into 3.7, ahead of native output and the remaining distribution backlog. This supersedes automatic selection of the smaller representation.
+
+The option is implemented. It is independent of renderer `output: 'react' | 'html'`. Bound `css`, `variants`, and theme helpers inherit the setting; token-free root helpers use the atomic default. No per-style mode or automatic hybrid selection is planned.
 
 The CLI and Vite compile source by default. `--css-only` and `zyzz({ compiler: false })` retain original source and require explicit IDs for identity-bearing declarations. Configured CSS output works through either path; source compilation does not select the CSS representation.
 
 ### Implementation PR Stack
 
-Stack these PRs in order. The first targets #149's branch while that documentation PR is open, otherwise main. Each subsequent PR targets the preceding implementation branch. A1–A4 are open; A5 and A6 continue above their branches.
+A1–A6 are merged. The table preserves their implementation boundaries and acceptance requirements. The original stack followed #149 in the order shown.
 
 | PR  | Proposed title                                               | Scope                                                                                                                                                                                                                                                                                  | Acceptance before merge                                                                                                                                                                                                                                                                                              |
 | --- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -21,23 +44,23 @@ Stack these PRs in order. The first targets #149's branch while that documentati
 | A5  | `feat: align css output across cli and compiler paths`       | Integrate both modes with the default compiler and CSS-only opt-out. Share extraction/runtime naming, explicit-ID requirements without the plugin, asset/maps delivery, and owned-output recovery. Reconcile #148 and any already-landed CLI redesign rather than duplicate that work. | Real standalone and plugin consumers produce matching classes and behavior in both modes. Exercise explicit IDs, missing-ID diagnostics, defaults, build/watch, configuration changes, add/edit/remove/rename, failure preservation, and cleanup. Keep source compilation enabled by default, with explicit opt-out. |
 | A6  | `test: accept configurable css output across web frameworks` | Complete React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack acceptance; run matched production rendering and full-delivery benchmarks using grouped output. Reconcile the gate below and promote only verified docs.                                                            | Development/production, packed consumers, SSR/hydration or HTML serialization, source maps, navigation, and refresh/recovery pass. Report raw/gzip/Brotli CSS/JS/class/attribute bytes, total delivery, rule counts, compile/watch and render costs with every comparison lane and existing gate retained.           |
 
-A1 → A2 → A3 → A4 → A5 → A6 is the review order. Keep dependent PRs draft while their required behavior or checks remain incomplete. Every PR includes focused integration evidence and a small usage/output example; A6 consolidates evidence rather than postponing correctness tests.
+A1 → A2 → A3 → A4 → A5 → A6 was the review order. Each PR included focused integration evidence. A6 added broader framework fixtures, while final acceptance remains tracked below.
 
-A1 and A2 own the pure emitter boundary. A3 exposes the config option only after both representations preserve supported semantics. If an intermediate default change would break source or packed consumers, keep that slice stacked and unmerged until its dependent compatibility work passes.
+A1 and A2 implemented the pure emitter boundary. A3 exposed configuration, followed by packed compatibility in A4. The merged stack retains those separate correctness obligations.
 
-A5 depends on the CSS-only CLI design. Reuse #148's work if it has landed; otherwise include the required redesign in A5 or explicitly stack it on that prerequisite before opening. Do not make untransformed runtime support an implicit dependency with no owner.
+A5 incorporated the CLI design from merged #148 and #154, including default source compilation and explicit CSS-only opt-out.
 
-This stack brings 3.9's web emission work forward and owns the related CLI parity slice. Native PRs 3.8–3.9 and unrelated distribution work follow; this stack does not close their acceptance gates.
+This stack implements 3.7's configurable emission and related CLI parity. Native PRs 3.8–3.9 and unrelated distribution work follow. Their acceptance gates remain open.
 
-CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; atomic performance acceptance remains in A6.
+CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; both output modes remain covered by correctness acceptance.
 
 ### A1–A4 Implementation Status
 
-A1 [#150](https://github.com/wevm/zyzz/pull/150), A2 [#151](https://github.com/wevm/zyzz/pull/151), and A3 [#152](https://github.com/wevm/zyzz/pull/152) are open as dependent PRs. A4 [#153](https://github.com/wevm/zyzz/pull/153) adds version 17 contracts and preserves producer modes within mixed-mode compositions. These PRs do not close A5 or A6.
+A1 [#150](https://github.com/wevm/zyzz/pull/150), A2 [#151](https://github.com/wevm/zyzz/pull/151), A3 [#152](https://github.com/wevm/zyzz/pull/152), and A4 [#153](https://github.com/wevm/zyzz/pull/153) are merged. A4 introduced version 17 contracts preserving producer modes within mixed-mode compositions. Later merged #161 corrected identities, packed contracts, maps, and watcher cleanup.
 
 Focused evidence includes 19 emitter integrations, independent Chromium reset/condition controls in both modes, 13 config/source integrations, declaration-map tracing, and four producer/consumer mode combinations from source-free npm archives. Archive browser checks cover dynamic binding removal, defaults, compounds, explicit overrides, and both stylesheet orders.
 
-The package build and focused TypeScript checks pass. The final focused run passed 35 tests, and seven variant/composition suites passed another 39 tests. The first broad compiler run passed 113 tests; its shared class-name snapshots and missing prebuilt-runtime failure were corrected with focused reruns. Full CI, broad snapshot reconciliation, lifecycle matrices, and performance acceptance remain open. Keep the stack draft until those gates pass.
+Historical pre-merge evidence: the package build and focused TypeScript checks passed. The final focused run passed 35 tests, and seven variant/composition suites passed another 39 tests. The first broad compiler run passed 113 tests; its shared class-name snapshots and missing prebuilt-runtime failure were corrected with focused reruns. These pre-merge results do not establish current-main CI acceptance. A5, A6, and #161 subsequently expanded lifecycle coverage and corrected review findings.
 
 Initial same-process measurements use 100 styles with color, padding, and display, 100 warmups and 1,000 timed compilations per lane. The baseline is the pre-stack hybrid emitter; current modes use identical inputs. These diagnostic means have no variance estimate and are not a framework or rendering comparison.
 
@@ -56,7 +79,7 @@ CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped
 
 ### A5 Implementation
 
-A5 is [#156](https://github.com/wevm/zyzz/pull/156), stacked on #153.
+A5 [#156](https://github.com/wevm/zyzz/pull/156) is merged. It was stacked on #153.
 
 A5 reconciles merged #148 and #154 above A4. The CLI compiles source and CSS by default; `--css-only` emits only CSS and CSS maps. Vite enables compilation by default and supports `compiler: false`.
 
@@ -66,19 +89,19 @@ The integration matrix covers atomic/grouped × compiled/original source, publis
 
 ### A6 Implementation
 
-A6 is [#157](https://github.com/wevm/zyzz/pull/157), stacked on #156. CI and review follow-up are a separate next pass; both PRs remain drafts.
+A6 [#157](https://github.com/wevm/zyzz/pull/157) is merged. It was stacked on #156. Review follow-up #161 is also merged.
 
 A6 covers both output modes through React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack. Framework fixtures consume an archive built with the opposite mode; the independent A4 corpus retains all four producer/consumer combinations and both stylesheet loading orders.
 
 The lifecycle matrix verifies development and production CSS, SSR/hydration or HTML serialization, dynamic updates/removal, CSS edits, diagnostics/recovery, and source maps. Next.js also verifies route navigation, streaming, fonts, config edits, and packed client call-site maps.
 
-Local evidence: eight React/Solid/Svelte/HTML lifecycle cases, four Next.js mode/bundler cases, and three framework source-map cases pass. Full and focused TypeScript checks and three affected type-benchmark fixtures pass. The CLI watch matrix still has intermittent failures; its acceptance remains open.
+Historical A6 evidence: eight React/Solid/Svelte/HTML lifecycle cases, four Next.js mode/bundler cases, and three framework source-map cases pass. Full and focused TypeScript checks and three affected type-benchmark fixtures pass. The pre-merge CLI watch matrix had intermittent failures. Acceptance remains open pending current-head evidence, including the subsequent watcher corrections in #161.
 
-Performance comparisons select grouped output. Literal/theme transfer, runtime/markup delivery, and production React timing lanes retain every competitor and existing threshold. Atomic behavior is still verified throughout correctness tests. One unique-style raw-byte comparison remains a known pre-A5 loss; no threshold is relaxed.
+Performance comparisons select grouped output. Literal/theme transfer, runtime/markup delivery, and production React timing lanes retain every competitor and existing threshold. Atomic behavior is still verified throughout correctness tests. The pre-A5 unique-style raw-byte comparison recorded a loss. Retain that historical result until superseded by matched evidence, without relaxing thresholds.
 
 ### Acceptance Gate
 
-- [ ] Omitted mode equals explicit `'atomic'`; `'grouped'` emits scoped declaration blocks. Unsupported mode values fail static/config structural checks without adding runtime CSS-value validation.
+- [x] Omitted mode equals explicit `'atomic'`; `'grouped'` emits scoped declaration blocks. Unsupported mode values fail static/config structural checks without adding runtime CSS-value validation. Implemented in #150/#152, with current contracts in `src/Config.ts` and public emitter cases in `src/web/Css.test.ts`.
 - [ ] Atomic rules own one property/value declaration, with ordered same-property fallbacks kept together when required for equivalent behavior. Deduplication includes selector, condition stack, layer, importance, theme/variable identity, and ordering context.
 - [ ] Preserve shorthand resets, longhand partial overrides, logical/physical overlap, `all`, repeated A/B/A declarations, importance, fallbacks, and overlapping conditions. Preserve order with contextual atoms or proven normalization; do not silently switch atomic styles to grouped output.
 - [ ] Keep global rules, keyframes, registrations, font descriptors, and theme scopes in their required CSS structures. Atomic mode concerns class-based style declarations, not splitting arbitrary stylesheet grammar.
@@ -87,7 +110,7 @@ Performance comparisons select grouped output. Literal/theme transfer, runtime/m
 - [ ] Verify CLI/plugin parity, explicit-ID behavior without the plugin, SSR/hydration, source maps, add/edit/remove recovery, and switching configuration mode without stale CSS or metadata.
 - [ ] Report raw/gzip/Brotli CSS, JS/class/attribute bytes and combined delivery, rule counts, compile/watch time, and browser render costs on repeated, unique, conditional, and override-heavy workloads. Keep all comparison lanes and existing gates; use grouped output for performance comparisons and both modes for correctness.
 
-See [CSS Output](../docs/guides/css-output.md) for the proposed usage and output boundary.
+See [CSS Output](../docs/guides/css-output.md) for usage and the output boundary.
 
 ## Phase 2 Status After At-rule Compiler Acceptance
 
@@ -154,7 +177,7 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 
 Feature PRs #81, #82, #83, #85, #86, and #87 are merged. Their rows preserve historical runs, including failed verification on #86 and #87; the snapshot failures and subsequent review findings are corrected in #90. The #90 row pins an integrated verification and benchmark snapshot. Later review corrections are validated at the current PR head; the row is historical evidence, not a claim about a newer commit. Merge acceptance requires successful verification and benchmark checks at the current #90 head, recorded in its PR description. Verification includes consumer types, builds, browser integration, packaging tests, and strict CSS conformance. Benchmark runs include matched compiler workloads and production React rendering.
 
-Checked implementation items below do not close broader browser, native, framework, or benchmark acceptance gates. Variants, native bindings, generic/imported dynamic types, and imported arbitrary static records retain explicit later gates.
+Checked implementation items below do not close broader browser, native, framework, or benchmark acceptance gates. Variants subsequently landed in Phase 3. Native bindings, generic/imported dynamic types, and imported arbitrary static records retain their separately tracked gates.
 
 Matched extraction evidence: 100-style configuration graph, same machine, sequential baseline/candidate, 30 minimum iterations and 500 ms warmup. Means were 9.069 ms ±5.46% and 8.555 ms ±4.49%; uncertainty overlaps. No performance advantage is established.
 
@@ -164,7 +187,7 @@ Stylesheet completion adds imported/re-exported animation identities, packed eag
 
 `selectors` selector templates replace separate refs and relationship helpers. Interpolated `css` definitions supply stable class identities through aliases and packed contracts. Selectors retain authored specificity and use ordinary data/ARIA state. Larger relational benchmark and hydration combinations remain explicitly unchecked below.
 
-Property mappings support explicit ordered aliases on config CSS and bound theme handles, including packed contracts, nested declarations, dynamic slots, source maps, and dedicated margin/padding token precedence. Consumer fixtures cover React/HTML output through aliases and extensions; packed compilation and Chromium fixtures verify ordered expansion and token precedence. Variants retain their separate deferred implementation gate.
+Property mappings support explicit ordered aliases on config CSS and bound theme handles, including packed contracts, nested declarations, dynamic slots, source maps, and dedicated margin/padding token precedence. Consumer fixtures cover React/HTML output through aliases and extensions; packed compilation and Chromium fixtures verify ordered expansion and token precedence. Variants subsequently landed in Phase 3, with broader acceptance tracked there.
 
 Callable named selections support destructured exports, aliases/re-exports, packed contracts, default token references, and React/HTML props. Seven focused linked/packed/renderer regressions, three configuration integrations, focused lint/types, and the package build pass locally. Matched 100-style config graph means: 10.138 ms ±10.81% before and 9.197 ms ±7.81% after; uncertainty overlaps. Chromium fixtures verify local and packed React/HTML selection, nested scopes, schemes, and stable component classes in CI. Initialization and hydration are implemented in PR #82.
 
@@ -548,13 +571,13 @@ Completion follow-up: namespace acceptance now includes escaped/Unicode identifi
 
 ## Phase 3 — Composition, variants, and target output
 
-### Proposed PR Stack
+### PR Sequence
 
-Phase 3 implementation has started by explicit request. The identifiers below are sequence labels, not allocated GitHub PR numbers. Branch the first implementation PR from the final accepted Phase 2 head; stack each subsequent PR on its predecessor. Remaining Phase 2 renderer acceptance stays tracked independently; starting Phase 3 does not mark those gaps complete. Vue remains excluded.
+The identifiers below are sequence labels, not GitHub PR numbers. Web implementation through 3.6 and the configurable output stack is merged. Remaining Phase 2 renderer acceptance stays tracked independently. Vue remains excluded.
 
 Every implementation PR includes its public type contracts, source-to-output integration, relevant measurements, and documentation. Later acceptance PRs broaden coverage; they do not defer basic correctness. Preserve finite runtime choices from the first variant implementation. Never execute application code during extraction or generate CSS rules at runtime.
 
-Current stack: #130 implements root variants; #131 adds theme/config bindings. A source-binding slice from 3.5 follows them to support shared `{ css, variants }` theme destructuring and renamed exports before 3.2 conditional selections. This closes the mixed-binding gap without marking the broader packed, watch, framework, or conditional acceptance complete.
+Historical implementation sequence: #130 implemented root variants and #131 added theme/config bindings. A source-binding slice from 3.5 follows them to support shared `{ css, variants }` theme destructuring and renamed exports before 3.2 conditional selections. This closes the mixed-binding gap without marking the broader packed, watch, framework, or conditional acceptance complete.
 
 #132 closes the mixed-binding slice. The next 3.2 slice implements named media/supports selections with ordered per-axis overrides, inherited undefined values, null suppression, and effective compound matching. Theme breakpoint aliases survive packed bindings; independent browser controls cover viewport/print transitions. Container/selector selection, native diagnostics, and broader framework/watch acceptance remain open. Compilation limits each variant to eight conditions to bound region expansion.
 
@@ -587,7 +610,7 @@ The 3.5 continuation publishes version 16 callable style/ownership metadata. Sou
 - [ ] Specify responsive variant selection separately from dynamic payload choices, including conditions/defaults/nulls/compounds and native diagnostics. A static choice containing media rules does not establish full conditional-selection parity.
 - [ ] Preserve every finite runtime-selectable variant alternative across source extraction, aliases, and packed libraries before pruning unused choices. Verify CSS/JS/attribute delivery and matched component/conditional workloads against the existing benchmark set, including Panda.
 
-Status: in progress; root and bound static variants implemented, remaining acceptance open.
+Status: web variants, dynamic payloads, composition, packed contracts, and framework fixtures are implemented through merged #145/#146 and the CSS output follow-up. Unchecked items retain broader acceptance obligations, particularly native behavior and final-head measurements.
 
 - [ ] Prefer native/ARIA state attributes and custom data attributes; retain `cx` for explicit last-wins composition within matching contexts.
 - [ ] Make `cx` consume and return props objects, preserving bindings and variant attributes. Prove static/dynamic composition across package boundaries, repeated variable-key precedence, equal-class/different-value calls, partial shorthand overrides, conditions, fallback groups, and external-class limitations. Verify discarded declarations cannot remove still-live variables and that metadata never leaks into DOM props; no runtime rule generation or global registration.
@@ -613,11 +636,11 @@ Gate: shared definitions render on web and both mobile platforms. Theme/scheme s
 
 ## Phase 4 — Integrations and distribution
 
-Status: planned. Renderer output and Solid, Svelte, and Next.js source/consumer verification now belong to the Phase 2 [Framework Integration Priority](#framework-integration-priority). The remaining distribution and native gates stay here.
+Status: partially implemented. CLI compilation and CSS-only opt-out landed in #148/#154/#156. Framework examples, aggregate CSS/script delivery, and appearance controls landed in #165. Renderer verification also belongs to the Phase 2 [Framework Integration Priority](#framework-integration-priority). Remaining distribution and native gates stay here.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
-- [ ] Retain default standalone source compilation and the `--css-only` opt-out from #154 while propagating the configured CSS output mode. Require explicit IDs for identity-bearing declarations when compilation is disabled.
-- [ ] Verify zero-argument `build`/`watch` defaults, initial watch compilation, explicit path overrides, missing-source errors, and CSS defaults following `--out-dir`.
+- [x] Retain default standalone source compilation and the `--css-only` opt-out from #154 while propagating the configured CSS output mode. Require explicit IDs for identity-bearing declarations when compilation is disabled. Implemented in merged #156 with four output/compiler combinations.
+- [ ] Verify zero-argument `build`/`dev` defaults, initial watch compilation, explicit path overrides, missing-source errors, and CSS defaults following `--out-dir`.
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
 - [ ] Validate the [Getting Started](../docs/introduction/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `zyzz()` entrypoint, automatic dev/production CSS delivery, and standalone CLI output consumption without generated-component imports in application examples. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.
@@ -638,7 +661,7 @@ Status: planned.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
 - [ ] Require combined emitted CSS and client JavaScript to beat StyleX in matched raw/gzip/Brotli workloads as each capability lands. Expand the existing literal size gate to themes, variants, selectors, and library consumers; preserve CSS behavior and readable names.
 - [ ] Measure the configured atomic and grouped modes on repeated and unique styles; retain the explicit selection and atomic default. Measure the agreed variant API; defer additional variant abstractions and slot systems until concrete usage justifies them.
-- [ ] Verify package metadata and the standard changeset/release workflow.
+- [ ] Verify package metadata and the release workflow.
 
 Benchmarks begin in PR 1.1 and grow with each real pipeline; this phase consolidates the evidence. Follow `AGENTS.md`: save machine-readable baselines, record measurement conditions and variability, validate equivalent behavior, and report CSS, JavaScript, markup/class bytes, compression, and runtime helpers without double-counting. Use real browser/native measurements for rendering and selection workloads.
 
@@ -895,18 +918,18 @@ All 670 property entries are reviewed as supported under the documented static a
 
 [PR #145](https://github.com/wevm/zyzz/pull/145) targets main with packed contracts, declaration consumers, duplicated runtime handling, source tracing, and host recovery. [PR #146](https://github.com/wevm/zyzz/pull/146) targets #145 with packed React/Solid/Svelte and Next.js Webpack/Turbopack lifecycle fixtures, application tracing, and production variant benchmarks.
 
-[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Both PRs are merged.
+[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Both PRs are merged. #165 subsequently added framework examples, including TanStack Start, without establishing broader framework acceptance.
 
 ### Standalone CLI Priority
 
-The standalone CLI moves ahead of output optimization and native PRs. `zyzz build` compiles once; `zyzz dev` builds immediately and watches using the existing file host. Incur owns command parsing and structured output. Native PRs 3.8–3.9 remain last; full Phase 3 acceptance still requires both mobile platforms.
+The standalone CLI implementation is merged and preceded output optimization and native PRs. `zyzz build` compiles once; `zyzz dev` builds immediately and watches using the existing file host. Incur owns command parsing and structured output. Native PRs 3.8–3.9 remain last; full Phase 3 acceptance still requires both mobile platforms.
 
 The CLI compiles source modules and CSS by default. `--css-only` disables source transformation and emits only per-module CSS and CSS maps, preserving output ownership and watch recovery. The Vite compiler is optional and enabled by default; disabling it retains executable authoring calls and requires explicit IDs for identity-bearing declarations. Lower-level Host module output remains available for library publishing. TypeScript/JSX lowering, declaration generation, application bundling, and watching installed dependencies remain outside this command boundary.
-[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Neither PR is merged.
+CLI parity #156 and framework acceptance fixtures #157 are merged. #165 adds aggregate `zyzz.css` and initialization script delivery with CLI/API and framework examples. These implementations do not close native distribution or all Phase 4 acceptance.
 
 ### Readable Atomic Class Names
 
-Atomic output uses readable property/value labels, with six-character hashes for complex values, source-module ownership, and cascade-sensitive slots. Hash collisions between distinct ordered rules fail compilation, including matching declarations that cannot share an ordering position. Graph assembly rejects atomic identities shared by distinct modules, including cached modules. Development output retains separate declaration slots for every style, and display flex/grid labels retain their property prefix to avoid shorthand collisions. Stable development naming preserves CSS-only updates through Vite; graph caches distinguish the naming modes. Grouped output and benchmark mode selection remain unchanged. This work does not complete A5 or A6.
+Atomic output uses readable property/value labels, with six-character hashes for complex values, source-module ownership, and cascade-sensitive slots. Hash collisions between distinct ordered rules fail compilation, including matching declarations that cannot share an ordering position. Graph assembly rejects atomic identities shared by distinct modules, including cached modules. Development output retains separate declaration slots for every style, and display flex/grid labels retain their property prefix to avoid shorthand collisions. Stable development naming preserves CSS-only updates through Vite; graph caches distinguish the naming modes. Grouped output and benchmark mode selection remain unchanged. A5 and A6 subsequently merged. Their final acceptance requirements remain tracked above.
 
 Static artifact comparison against A4 (`f0d844b`), using the existing literal corpus without minification or runtime/markup delivery. Class-map bytes are reported separately and are not added to CSS transfer. No atomic timing benchmark was run; benchmark mode selection remains grouped.
 

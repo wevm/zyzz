@@ -16,7 +16,7 @@ The bound function derives the theme catalog, compiled scope classes, and defaul
 
 ## Storage
 
-The script reads the localStorage entry named by the configuration's [`storageKey`](create.md#optionsstoragekey), `'zyzz'` by default. [`appearance.set()`](create.md#appearance) writes the same record, so both helpers always agree on the key. The record is a JSON object whose supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
+The script reads the localStorage entry named by the configuration's [`storageKey`](create.md#optionsstoragekey), `'zyzz'` by default. [`appearance.set()`](create.md#appearance) writes the same record, so both helpers always agree on the key. The record is a JSON object whose supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, `'light dark'`, or `null`). Either field may be omitted. A `null` scheme, written by `appearance.set({ colorScheme: undefined })`, removes the scheme class and inline `color-scheme` so a cleared selection outlives a server-rendered scheme.
 
 ```ts
 export const { appearance, script } = Config.create({

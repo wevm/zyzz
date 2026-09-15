@@ -31,7 +31,7 @@ const script = Appearance.create([['mint', 'z_theme-mint']], {
 
 ## Returns
 
-An HTML-safe JavaScript string for a synchronous script element before application rendering. On execution it restores recognized themes and color schemes on `document.documentElement`, preserving unrelated classes and styles. Invalid or inaccessible storage leaves server defaults intact. It writes no storage and installs no listeners.
+An HTML-safe JavaScript string for a synchronous script element before application rendering. On execution it restores recognized themes and color schemes on `document.documentElement`, preserving unrelated classes and styles. A saved `null` scheme removes the scheme class and inline `color-scheme`. Invalid or inaccessible storage leaves server defaults intact. It writes no storage and installs no listeners.
 
 ## Errors
 

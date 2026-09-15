@@ -4,7 +4,8 @@ import * as Scheme from '../internal/Scheme.js'
 /**
  * Binds an HTML-safe script factory to compiled named theme classes.
  * The factory is server-safe; only its returned JavaScript accesses the DOM.
- * A saved scheme swaps the stylesheet scheme class and sets the inline `color-scheme`.
+ * A saved scheme swaps the stylesheet scheme class and sets the inline `color-scheme`;
+ * a saved `null` scheme removes both so a cleared selection survives reloads.
  * @param entries - Catalog names paired with compiled scope classes.
  * @param options - Storage key shared with the configuration's root controls.
  * @returns A pure script factory that never reads or writes browser state itself.
@@ -18,7 +19,7 @@ export function create(
     const key = serialize(options.storageKey ?? 'zyzz')
     const schemes = serialize(Object.entries(Scheme.classes))
 
-    return `(()=>{try{const value=JSON.parse(localStorage.getItem(${key})||"null");if(!value||typeof value!=="object"||Array.isArray(value))return;const root=document.documentElement;const catalog=new Map(${catalog});if(Object.hasOwn(value,"theme")&&typeof value.theme==="string"&&catalog.has(value.theme)){root.classList.remove(...catalog.values());root.classList.add(catalog.get(value.theme))}const schemes=new Map(${schemes});if(Object.hasOwn(value,"colorScheme")&&schemes.has(value.colorScheme)){root.classList.remove(...schemes.values());root.classList.add(schemes.get(value.colorScheme));root.style.colorScheme=value.colorScheme}}catch{}})();`
+    return `(()=>{try{const value=JSON.parse(localStorage.getItem(${key})||"null");if(!value||typeof value!=="object"||Array.isArray(value))return;const root=document.documentElement;const catalog=new Map(${catalog});if(Object.hasOwn(value,"theme")&&typeof value.theme==="string"&&catalog.has(value.theme)){root.classList.remove(...catalog.values());root.classList.add(catalog.get(value.theme))}const schemes=new Map(${schemes});if(Object.hasOwn(value,"colorScheme")){if(value.colorScheme===null){root.classList.remove(...schemes.values());root.style.removeProperty("color-scheme")}else if(schemes.has(value.colorScheme)){root.classList.remove(...schemes.values());root.classList.add(schemes.get(value.colorScheme));root.style.colorScheme=value.colorScheme}}}catch{}})();`
   }
 }
 
@@ -101,8 +102,15 @@ export function root<const name extends string>(
       element.style.colorScheme = next.colorScheme
     } else element.style.removeProperty('color-scheme')
 
+    // The record mirrors the applied root, so a cleared scheme saves as null
+    // and the script removes a server-rendered scheme on the next load.
+    const record = {
+      ...(next.theme === undefined ? {} : { theme: next.theme }),
+      colorScheme: next.colorScheme ?? null,
+    }
+
     try {
-      localStorage.setItem(key, JSON.stringify(next))
+      localStorage.setItem(key, JSON.stringify(record))
     } catch {
       // Blocked storage keeps the selection for this document only.
     }

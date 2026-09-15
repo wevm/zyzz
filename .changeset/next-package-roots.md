@@ -2,4 +2,4 @@
 'zyzz': patch
 ---
 
-Track Next.js package roots through their files and subdirectories instead of a recursive context dependency. Turbopack no longer follows every installed dependency from the project root, and a dependency symlink that targets an ancestor no longer fails the build as a loop.
+Keep Next.js builds working when an installed dependency links back to the project or one of its ancestors, as a package linked from its own repository. Such a root is tracked through its files and subdirectories instead of a recursive context dependency that Turbopack rejects as a loop.

@@ -104,6 +104,23 @@ describe('root', () => {
       expect(
         await page.evaluate('document.documentElement.style.colorScheme'),
       ).toMatchInlineSnapshot(`""`)
+      expect(
+        await page.evaluate("localStorage.getItem('fixture')"),
+      ).toMatchInlineSnapshot(`"{"theme":"mint","colorScheme":null}"`)
+
+      // The cleared scheme restores over a server-rendered scheme on the next load.
+      await page.evaluate(
+        "document.documentElement.classList.add('z_scheme-dark'); document.documentElement.style.colorScheme = 'dark'; (0, eval)(Fixture.script())",
+      )
+
+      expect(
+        await page.evaluate(
+          'document.documentElement.className === `external ${Fixture.mint}`',
+        ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page.evaluate('document.documentElement.style.colorScheme'),
+      ).toMatchInlineSnapshot(`""`)
 
       expect(
         await page.evaluate(
@@ -124,7 +141,7 @@ describe('root', () => {
       ).toMatchInlineSnapshot('true')
       expect(
         await page.evaluate("localStorage.getItem('fixture')"),
-      ).toMatchInlineSnapshot(`"{"theme":"mint"}"`)
+      ).toMatchInlineSnapshot(`"{"theme":"mint","colorScheme":null}"`)
     } finally {
       await browser?.close()
       await new Promise<void>((resolve, reject) =>

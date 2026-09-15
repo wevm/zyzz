@@ -126,10 +126,14 @@ async function compile(context: Context, source: string) {
   async function discover(directory: string): Promise<void> {
     const items = await Fs.readdir(directory, { withFileTypes: true })
 
-    // Recursive tracking of a package root follows every installed dependency,
-    // including a symlink back to an ancestor, which Turbopack rejects as a
-    // loop. Package roots are tracked through their files and subdirectories.
-    if (!items.some((item) => item.name === 'node_modules'))
+    // Recursive tracking of a package root follows every installed dependency.
+    // A dependency symlink back to an ancestor, as a package linked from its
+    // own repository, is rejected as a loop, so such a root is tracked through
+    // its files and subdirectories instead.
+    if (
+      !items.some((item) => item.name === 'node_modules') ||
+      !(await loops(directory))
+    )
       context.addContextDependency(directory)
 
     for (const item of items) {
@@ -327,4 +331,39 @@ async function compile(context: Context, source: string) {
   }
 
   return { code: `${output.code}\n${requests.join('\n')}`, map }
+}
+
+/** Whether an installed dependency links back to the directory or one of its ancestors. */
+async function loops(directory: string): Promise<boolean> {
+  const installed = Path.join(directory, 'node_modules')
+  const entries = await Fs.readdir(installed, { withFileTypes: true }).catch(
+    () => [],
+  )
+  const candidates = (
+    await Promise.all(
+      entries.map(async (entry) => {
+        if (!entry.name.startsWith('@'))
+          return [Path.join(installed, entry.name)]
+
+        const scoped = Path.join(installed, entry.name)
+
+        return (await Fs.readdir(scoped).catch(() => [])).map((name) =>
+          Path.join(scoped, name),
+        )
+      }),
+    )
+  ).flat()
+
+  for (const candidate of candidates) {
+    const stat = await Fs.lstat(candidate).catch(() => undefined)
+    if (!stat?.isSymbolicLink()) continue
+
+    const target = await Fs.realpath(candidate).catch(() => undefined)
+    if (target === undefined) continue
+
+    const relative = Path.relative(target, directory)
+    if (!relative.startsWith('..') && !Path.isAbsolute(relative)) return true
+  }
+
+  return false
 }

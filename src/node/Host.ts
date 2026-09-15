@@ -344,7 +344,12 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       artifacts.set(`${name}.css`, stylesheet.code)
       artifacts.set(`${name}.css.map`, stylesheet.map)
-      moduleStylesheets.set(`${options.packageId}/${name}`, stylesheet)
+      // Module URLs resolve beside the module file; the complete stylesheet at
+      // the output root carries a copy with those URLs rebased.
+      moduleStylesheets.set(
+        `${options.packageId}/${name}`,
+        rebase(stylesheet, name, css === false ? false : css.minify),
+      )
     }
 
     // The complete stylesheet follows the module graph so a consumer's rules
@@ -798,6 +803,37 @@ async function read(
       return undefined
 
     throw error
+  }
+}
+
+/** Rewrites a nested module stylesheet's relative URLs against the output root. */
+function rebase(
+  stylesheet: { code: string; map: string },
+  name: string,
+  minify: boolean,
+) {
+  const directory = Path.posix.dirname(name)
+
+  if (directory === '.' || !stylesheet.code.includes('url(')) return stylesheet
+
+  const result = AtRules.transform({
+    code: Buffer.from(stylesheet.code),
+    filename: `${name}.css`,
+    inputSourceMap: stylesheet.map,
+    minify,
+    sourceMap: true,
+    visitor: {
+      Url(url) {
+        if (/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)) return url
+
+        return { ...url, url: Path.posix.join(directory, url.url) }
+      },
+    },
+  })
+
+  return {
+    code: Buffer.from(result.code).toString(),
+    map: Buffer.from(result.map!).toString(),
   }
 }
 

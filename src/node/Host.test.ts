@@ -318,6 +318,53 @@ export const widget = css({ color: '#ff0000', padding: '4px' });`,
     }
   })
 
+  test('rebases nested module URLs in the complete stylesheet', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-rebase-css-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    try {
+      await Fs.mkdir(Path.join(root, 'components'))
+      await Fs.writeFile(
+        Path.join(root, 'components/card.ts'),
+        `import { css } from 'zyzz';
+export const card = css({ backgroundImage: 'url(./icon.svg)', maskImage: 'url(/shared/mask.svg)' });`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { card } from './components/card.js'; export { card };`,
+      )
+      await host.build()
+
+      const urls = (css: string) => css.match(/url\([^)]*\)/g)
+
+      // The module stylesheet keeps URLs relative to its own directory.
+      expect(
+        urls(
+          await Fs.readFile(
+            Path.join(outDir, 'components/card.ts.css'),
+            'utf8',
+          ),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "url("./icon.svg")",
+          "url("/shared/mask.svg")",
+        ]
+      `)
+      expect(urls(await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')))
+        .toMatchInlineSnapshot(`
+        [
+          "url("components/icon.svg")",
+          "url("/shared/mask.svg")",
+        ]
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('publishes the initialization script inside the output or at an external path', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-script-'))
     const source = Path.join(root, 'src')

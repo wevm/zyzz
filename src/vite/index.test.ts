@@ -905,13 +905,19 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       'beta.ts': configuration('beta'),
       'c.html': page('c'),
       'c.ts': `void import('./gamma').then(({ css }) => { document.body.className = css({ color: 'ink' })().className; });`,
+      // Page d reaches its entry through an inline module script.
+      'd.html': `<!doctype html><html><head><title>d</title></head><body><script type="module">import './d.ts'</script></body></html>`,
+      'd.ts': `import { css } from './delta'; document.body.className = css({ color: 'ink' })().className;`,
+      'delta.ts': configuration('delta'),
       'gamma.ts': configuration('gamma'),
+      // Without a package.json the repository's sideEffects list would let the bundler drop a side-effect import.
+      'package.json': '{ "name": "pages", "private": true, "type": "module" }',
     }
     const { config, root } = await create(files)
     let server: Vite.ViteDevServer | undefined
 
     const keys = (html: string) =>
-      ['alpha', 'beta', 'gamma'].filter((key) =>
+      ['alpha', 'beta', 'gamma', 'delta'].filter((key) =>
         html.includes(`localStorage.getItem("${key}")`),
       )
 
@@ -938,6 +944,12 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
           "gamma",
         ]
       `)
+      expect(keys(await server.transformIndexHtml('/d.html', files['d.html'])))
+        .toMatchInlineSnapshot(`
+          [
+            "delta",
+          ]
+        `)
 
       await server.close()
       server = undefined
@@ -953,6 +965,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
               a: Path.join(root, 'a.html'),
               b: Path.join(root, 'b.html'),
               c: Path.join(root, 'c.html'),
+              d: Path.join(root, 'd.html'),
             },
           },
         },
@@ -976,6 +989,12 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
           "gamma",
         ]
       `)
+      expect(keys(await Fs.readFile(Path.join(outDir, 'd.html'), 'utf8')))
+        .toMatchInlineSnapshot(`
+          [
+            "delta",
+          ]
+        `)
     } finally {
       await server?.close()
       await Fs.rm(root, { recursive: true, force: true })

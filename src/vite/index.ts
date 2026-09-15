@@ -66,6 +66,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
   function eligible(id: string) {
     if (sourceEntrypoints.has(normalize(id))) return true
+    // Ids carrying foreign queries are Vite resources such as inline-module proxies, not source.
+    if (resource(id)) return false
     const relative = Path.relative(root, id)
 
     return (
@@ -886,19 +888,16 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   /** Catalogs reachable from a served document's module scripts; every catalog when none resolve. */
-  function documentCatalogs(html: string, filename: string) {
+  async function documentCatalogs(html: string, filename: string) {
     const reachable = new Set<string>()
 
-    for (const [, attributes] of html.matchAll(/<script\b([^>]*)>/gi)) {
-      if (!/\btype\s*=\s*["']?module["']?/i.test(attributes!)) continue
+    const add = (specifier: string) => {
+      if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(specifier)) return
 
-      const source = /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i.exec(
-        attributes!,
-      )
-      const src = source?.[1] ?? source?.[2] ?? source?.[3]
-      if (!src || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(src)) continue
+      const path = specifier.split(/[?#]/)[0]!
 
-      const path = src.split(/[?#]/)[0]!
+      // Vite's inline-module proxies point back at the document itself.
+      if (/\.html?$/i.test(path)) return
 
       reachable.add(
         sourceId(
@@ -909,6 +908,31 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       )
     }
 
+    // Vite rewrites inline modules into proxy URLs before this hook runs, so
+    // the document on disk supplies their imports beside the served markup.
+    const original = await Fs.readFile(filename, 'utf8').catch(() => html)
+
+    for (const document of new Set([html, original]))
+      for (const [, attributes, content] of document.matchAll(
+        /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+      )) {
+        if (!/\btype\s*=\s*["']?module["']?/i.test(attributes!)) continue
+
+        const source = /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i.exec(
+          attributes!,
+        )
+        const src = source?.[1] ?? source?.[2] ?? source?.[3]
+
+        if (src) {
+          add(src)
+          continue
+        }
+
+        // Inline modules import relative to the document, as Vite's HTML proxy resolves them.
+        for (const specifier of inlineImports(content!))
+          if (/^\.{0,2}\//.test(specifier)) add(specifier)
+      }
+
     if (![...reachable].some((id) => edges.has(id)))
       return [...catalogs.values()]
 
@@ -918,6 +942,40 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     return [...catalogs]
       .filter(([key]) => reachable.has(key.split('\0')[0]!))
       .map(([, configuration]) => configuration)
+  }
+
+  /** Static and literal dynamic import specifiers of an inline module script; none when it fails to parse. */
+  function inlineImports(content: string): readonly string[] {
+    const specifiers: string[] = []
+
+    try {
+      const { program } = Parser.parseSync('inline.ts', content, {
+        sourceType: 'module',
+      })
+
+      Walker.walk(program, {
+        enter(node) {
+          if (
+            (node.type === 'ImportDeclaration' ||
+              node.type === 'ExportNamedDeclaration' ||
+              node.type === 'ExportAllDeclaration') &&
+            node.source
+          )
+            specifiers.push(node.source.value)
+
+          if (
+            node.type === 'ImportExpression' &&
+            node.source.type === 'Literal' &&
+            typeof node.source.value === 'string'
+          )
+            specifiers.push(node.source.value)
+        },
+      })
+    } catch {
+      return []
+    }
+
+    return specifiers
   }
 
   /** Catalogs contributed by the modules an HTML entry bundles; every catalog without an entry chunk. */
@@ -1291,7 +1349,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
           await initializations(context.server)
 
-          return documentCatalogs(html, context.filename)
+          return await documentCatalogs(html, context.filename)
         })()
         // Saved preferences apply before any other script or visible content.
         return Catalogs.scripts(configurations).map((children) => ({

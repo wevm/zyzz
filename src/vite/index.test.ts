@@ -887,8 +887,38 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       'beta.ts': configuration('beta'),
     }
     const { config, root } = await create(files)
+    let server: Vite.ViteDevServer | undefined
 
     try {
+      // The dev server follows each document's module scripts through the compiled graph.
+      server = await Vite.createServer(config)
+      await server.listen()
+
+      const servedA = await server.transformIndexHtml(
+        '/a.html',
+        files['a.html'],
+      )
+      const servedB = await server.transformIndexHtml(
+        '/b.html',
+        files['b.html'],
+      )
+
+      expect(
+        servedA.includes('localStorage.getItem("alpha")'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        servedA.includes('localStorage.getItem("beta")'),
+      ).toMatchInlineSnapshot('false')
+      expect(
+        servedB.includes('localStorage.getItem("beta")'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        servedB.includes('localStorage.getItem("alpha")'),
+      ).toMatchInlineSnapshot('false')
+
+      await server.close()
+      server = undefined
+
       const outDir = Path.join(root, 'dist')
 
       await Vite.build({
@@ -920,6 +950,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         'false',
       )
     } finally {
+      await server?.close()
       await Fs.rm(root, { recursive: true, force: true })
     }
   }, 60000)

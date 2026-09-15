@@ -29,6 +29,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
   const catalogs = new Map<string, Catalog>()
+  const edges = new Map<string, ReadonlySet<string>>()
   const graphs = new Map<string, ReadonlySet<string>>()
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
@@ -585,6 +586,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       new Set([...[...connected].map(sourceId), ...entryContracts]),
     )
 
+    // Resolved edges let a served document keep only the catalogs its scripts reach.
+    for (const [id, resolutions] of Object.entries(imports))
+      edges.set(
+        id,
+        new Set(
+          Object.values(resolutions).filter(
+            (target): target is string => target !== null,
+          ),
+        ),
+      )
+
     const result = entry.compiler.compile({
       compiler: options.compiler,
       contracts,
@@ -837,6 +849,41 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           catalogs.delete(key)
 
     return [...catalogs.values()]
+  }
+
+  /** Catalogs reachable from a served document's module scripts; every catalog when none resolve. */
+  function documentCatalogs(html: string, filename: string) {
+    const reachable = new Set<string>()
+
+    for (const [, attributes] of html.matchAll(/<script\b([^>]*)>/gi)) {
+      if (!/\btype\s*=\s*["']?module["']?/i.test(attributes!)) continue
+
+      const source = /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i.exec(
+        attributes!,
+      )
+      const src = source?.[1] ?? source?.[2] ?? source?.[3]
+      if (!src || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(src)) continue
+
+      const path = src.split(/[?#]/)[0]!
+
+      reachable.add(
+        sourceId(
+          path.startsWith('/')
+            ? Path.join(root, path)
+            : Path.resolve(Path.dirname(filename), path),
+        ),
+      )
+    }
+
+    if (![...reachable].some((id) => edges.has(id)))
+      return [...catalogs.values()]
+
+    for (const id of reachable)
+      for (const target of edges.get(id) ?? []) reachable.add(target)
+
+    return [...catalogs]
+      .filter(([key]) => reachable.has(key.split('\0')[0]!))
+      .map(([, configuration]) => configuration)
   }
 
   /** Catalogs contributed by the modules an HTML entry bundles; every catalog without an entry chunk. */
@@ -1198,14 +1245,20 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     transformIndexHtml: {
       order: 'post',
-      async handler(_, context) {
+      async handler(html, context) {
         if (options.script === false) return
 
-        // Development compiles the whole project on request; a build scopes the
-        // catalogs to the source graphs its entry chunk bundles.
-        const configurations = context.server
-          ? await initializations(context.server)
-          : entryCatalogs(context.bundle, context.chunk)
+        // Development compiles the whole project on request and keeps the
+        // catalogs the document's scripts reach; a build scopes them to the
+        // source graphs its entry chunk bundles.
+        const configurations = await (async () => {
+          if (!context.server)
+            return entryCatalogs(context.bundle, context.chunk)
+
+          await initializations(context.server)
+
+          return documentCatalogs(html, context.filename)
+        })()
         const scripts = new Set(
           configurations.map(({ entries, storageKey }) =>
             Appearance.create(entries, { storageKey })(),

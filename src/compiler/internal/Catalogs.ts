@@ -25,12 +25,32 @@ export function read(contract: string): readonly Catalog[] {
         theme?: string
       }
     >
+    configurations?: readonly {
+      identity?: string
+      storageKey?: string
+      themes?: readonly string[]
+    }[]
     themes?: Record<string, { identity?: string }>
   }
   const configurations = new Map<
     string,
     { entries: Map<string, string>; storageKey: string | undefined }
   >()
+
+  // Local configuration calls publish their catalogs without an export.
+  for (const local of parsed.configurations ?? []) {
+    if (!local.identity) continue
+
+    const configuration = configurations.get(local.identity) ?? {
+      entries: new Map<string, string>(),
+      storageKey: local.storageKey,
+    }
+
+    configurations.set(local.identity, configuration)
+
+    for (const name of local.themes ?? [])
+      configuration.entries.set(name, `${local.identity}-${name}`)
+  }
 
   for (const binding of Object.values(parsed.exports ?? {})) {
     if (binding.kind !== 'config' || binding.theme === undefined) continue

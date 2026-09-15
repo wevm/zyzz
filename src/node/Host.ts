@@ -371,10 +371,24 @@ export async function create(options: create.Options): Promise<Runtime> {
       Object.values(graph.contracts).flatMap(Catalogs.read),
     ).join('\n')
 
-    if (script?.owned && initialization)
-      artifacts.set(script.owned, `${initialization}\n`)
+    const content = initialization ? `${banner}${initialization}\n` : undefined
 
-    if (script?.external) await publishExternal(script.external, initialization)
+    if (script?.owned && content) artifacts.set(script.owned, content)
+
+    // An external script has no ownership record. Its leading banner marks
+    // output this host may replace or remove; any other file there is foreign.
+    const external = await (async () => {
+      if (!script?.external) return undefined
+
+      const current = await read(script.external)
+
+      if (current !== undefined && !current.startsWith(banner))
+        throw new Error(
+          `Refusing to replace a foreign script: ${script.external}`,
+        )
+
+      return { current, next: content, path: script.external }
+    })()
 
     await regular(manifestPath, outDir)
 
@@ -442,50 +456,40 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     // Compile and verify ownership before publishing. Restore applied writes if publication fails.
     const applied: string[] = []
+    let externalApplied = false
+
+    async function place(
+      path: string,
+      content: string | Uint8Array | undefined,
+    ) {
+      if (content === undefined) await Fs.rm(path, { force: true })
+      else await write(path, content)
+    }
 
     try {
       for (const [name] of before) {
         const content =
           name === '.zyzz.json' ? nextManifest : artifacts.get(name)
-        const path = Path.join(outDir, name)
 
         applied.push(name)
+        await place(Path.join(outDir, name), content)
+      }
 
-        if (content === undefined) await Fs.rm(path, { force: true })
-        else await write(path, content)
+      // The external script joins the transaction so a rejected build leaves it untouched.
+      if (external && external.next !== external.current) {
+        externalApplied = true
+        await place(external.path, external.next)
       }
     } catch (error) {
-      for (const name of applied.reverse()) {
-        const content = before.get(name)
-        const path = Path.join(outDir, name)
+      if (externalApplied) await place(external!.path, external!.current)
 
-        if (content === undefined) await Fs.rm(path, { force: true })
-        else await write(path, content)
-      }
+      for (const name of applied.reverse())
+        await place(Path.join(outDir, name), before.get(name))
 
       throw error
     }
 
     return { changed: changed.sort(), files: [...artifacts.keys()].sort() }
-  }
-
-  // An external script has no ownership record, so unchanged content is left
-  // untouched and an emptied configuration set removes the file this host wrote.
-  let externalWritten = false
-
-  async function publishExternal(path: string, initialization: string) {
-    if (!initialization) {
-      if (externalWritten) await Fs.rm(path, { force: true })
-      externalWritten = false
-      return
-    }
-
-    const content = `${initialization}\n`
-    const current = await read(path)
-
-    if (current !== content) await write(path, content)
-
-    externalWritten = true
   }
 
   function build(): Promise<Build> {
@@ -664,6 +668,9 @@ export declare namespace watch {
   }
 }
 
+/** Leading comment marking initialization scripts this host wrote. */
+const banner = '/* zyzz initialization */\n'
+
 /** Joins processed stylesheets and shifts their composed maps by the preceding line count. */
 function concatenate(parts: readonly { code: string; map: string }[]) {
   const map = new Mapping.GenMapping({ file: 'zyzz.css' })
@@ -760,7 +767,7 @@ function manifest(source: string, packageId: string): Record<string, string> {
   return value.files as Record<string, string>
 }
 
-/** Orders module identities with dependencies before their consumers; cycles keep first-visit order. */
+/** Orders module identities with dependencies before their consumers, seeded from graph roots. */
 function order(
   dependencies: Readonly<Record<string, readonly string[]>>,
   ids: readonly string[],
@@ -780,6 +787,15 @@ function order(
     ordered.push(id)
   }
 
+  // Graph roots seed the traversal so siblings keep their authored import
+  // order; modules only reachable through cycles follow in name order.
+  const imported = new Set(
+    ids.flatMap((id) =>
+      (dependencies[id] ?? []).filter((dependency) => members.has(dependency)),
+    ),
+  )
+
+  for (const id of ids) if (!imported.has(id)) visit(id)
   for (const id of ids) visit(id)
 
   return ordered

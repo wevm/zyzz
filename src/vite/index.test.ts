@@ -909,15 +909,23 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       'd.html': `<!doctype html><html><head><title>d</title></head><body><script type="module">import './d.ts'</script></body></html>`,
       'd.ts': `import { css } from './delta'; document.body.className = css({ color: 'ink' })().className;`,
       'delta.ts': configuration('delta'),
+      // Page e reaches its entry through an aliased inline import.
+      'e.html': `<!doctype html><html><head><title>e</title></head><body><script type="module">import '@pages/e.ts'</script></body></html>`,
+      'e.ts': `import { css } from './epsilon'; document.body.className = css({ color: 'ink' })().className;`,
+      'epsilon.ts': configuration('epsilon'),
       'gamma.ts': configuration('gamma'),
       // Without a package.json the repository's sideEffects list would let the bundler drop a side-effect import.
       'package.json': '{ "name": "pages", "private": true, "type": "module" }',
     }
-    const { config, root } = await create(files)
+    const { config: base, root } = await create(files)
+    const config: Vite.InlineConfig = {
+      ...base,
+      resolve: { alias: { ...base.resolve?.alias, '@pages': root } },
+    }
     let server: Vite.ViteDevServer | undefined
 
     const keys = (html: string) =>
-      ['alpha', 'beta', 'gamma', 'delta'].filter((key) =>
+      ['alpha', 'beta', 'gamma', 'delta', 'epsilon'].filter((key) =>
         html.includes(`localStorage.getItem("${key}")`),
       )
 
@@ -950,6 +958,12 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
             "delta",
           ]
         `)
+      expect(keys(await server.transformIndexHtml('/e.html', files['e.html'])))
+        .toMatchInlineSnapshot(`
+          [
+            "epsilon",
+          ]
+        `)
 
       await server.close()
       server = undefined
@@ -966,6 +980,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
               b: Path.join(root, 'b.html'),
               c: Path.join(root, 'c.html'),
               d: Path.join(root, 'd.html'),
+              e: Path.join(root, 'e.html'),
             },
           },
         },
@@ -993,6 +1008,12 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         .toMatchInlineSnapshot(`
           [
             "delta",
+          ]
+        `)
+      expect(keys(await Fs.readFile(Path.join(outDir, 'e.html'), 'utf8')))
+        .toMatchInlineSnapshot(`
+          [
+            "epsilon",
           ]
         `)
     } finally {

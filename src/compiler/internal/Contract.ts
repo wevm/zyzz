@@ -454,6 +454,7 @@ export function write(
   themes: Readonly<Record<string, Theme.Definition>>,
   stylesheets: readonly Stylesheets.Section[] = [],
   moduleId = '',
+  configurations: readonly write.Configuration[] = [],
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     if (link.kind === 'variables')
@@ -539,6 +540,9 @@ export function write(
     ...(stylesheets.length
       ? { stylesheets: Stylesheets.write(stylesheets) }
       : {}),
+    // Local configurations publish their catalogs so documents restore
+    // selections for modules that export styles but not the configuration.
+    ...(configurations.length ? { configurations } : {}),
     exports: Object.fromEntries(
       Object.entries(links).map(([name, link]) => [name, entry(link)]),
     ),
@@ -702,6 +706,19 @@ export function write(
       return 1
     })(),
   })
+}
+
+/** Contract writer contracts. */
+export declare namespace write {
+  /** Catalog of one configuration call, published whether or not the call is exported. */
+  type Configuration = {
+    /** Configuration identity that prefixes every theme scope key. */
+    readonly identity: string
+    /** localStorage key the configuration's script and root controls share. */
+    readonly storageKey?: string | undefined
+    /** Named theme keys of the configuration's catalog. */
+    readonly themes: readonly string[]
+  }
 }
 
 function signature(

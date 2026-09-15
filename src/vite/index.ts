@@ -888,7 +888,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   /** Catalogs reachable from a served document's module scripts; every catalog when none resolve. */
-  async function documentCatalogs(html: string, filename: string) {
+  async function documentCatalogs(
+    html: string,
+    filename: string,
+    resolve: Host['resolve'],
+  ) {
     const reachable = new Set<string>()
 
     const add = (specifier: string) => {
@@ -928,9 +932,22 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           continue
         }
 
-        // Inline modules import relative to the document, as Vite's HTML proxy resolves them.
-        for (const specifier of inlineImports(content!))
-          if (/^\.{0,2}\//.test(specifier)) add(specifier)
+        // Inline modules import relative to the document, as Vite's HTML
+        // proxy resolves them; aliases and packages resolve through Vite.
+        for (const specifier of inlineImports(content!)) {
+          if (/^\.{0,2}\//.test(specifier)) {
+            add(specifier)
+            continue
+          }
+          if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
+
+          const resolved = await resolve(specifier, filename).catch(() => null)
+          if (!resolved || resource(resolved.id)) continue
+
+          reachable.add(
+            eligible(resolved.id) ? sourceId(resolved.id) : resolved.id,
+          )
+        }
       }
 
     if (![...reachable].some((id) => edges.has(id)))
@@ -1349,7 +1366,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
           await initializations(context.server)
 
-          return await documentCatalogs(html, context.filename)
+          const environment = context.server.environments.client
+
+          return await documentCatalogs(
+            html,
+            context.filename,
+            (source, importer) =>
+              environment.pluginContainer.resolveId(source, importer),
+          )
         })()
         // Saved preferences apply before any other script or visible content.
         return Catalogs.scripts(configurations).map((children) => ({

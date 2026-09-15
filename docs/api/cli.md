@@ -39,7 +39,7 @@ Use `--help` for command help and `--json` for a build result containing `change
 
 For `src/button.ts`, the host emits `dist/button.ts`, `button.ts.css`, maps, and packed metadata. Shared stylesheet contributions use `zyzz.shared.css`. `dist/zyzz.css` is the complete stylesheet: shared contributions, then every module stylesheet with dependencies before their consumers. Applications load that one file; the per-module files remain for libraries that publish stylesheets beside their modules. Downstream tooling lowers TypeScript/JSX and emits declarations; this command does not bundle the application or generate declarations.
 
-`zyzz.js` holds the initialization script of every `Config.create` in the tree. Loaded as a classic script at the start of `<head>`, it restores the saved theme and scheme before paint. Inside the output directory it is an owned artifact. `--script` moves it elsewhere, such as a bundler's public directory that is served in development and copied into the site, where it is rewritten in place without ownership.
+`zyzz.js` holds the initialization script of every `Config.create` in the tree, exported or local. Loaded as a classic script at the start of `<head>`, it restores the saved theme and scheme before paint. Inside the output directory it is an owned artifact. `--script` moves it elsewhere, such as a bundler's public directory that is served in development and copied into the site, where the host replaces only a file carrying its own leading `/* zyzz initialization */` comment.
 
 ```html
 <script src="/zyzz.js"></script>

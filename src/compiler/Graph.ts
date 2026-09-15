@@ -1082,6 +1082,31 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
+  // Every configuration call in a module publishes its catalog, exported or not,
+  // so initialization can restore selections its styles persist.
+  function configurations(id: string): readonly Contract.write.Configuration[] {
+    return extracted
+      .get(id)!
+      .themeCalls.filter((call) => call.appearance && call.options)
+      .map((call) => {
+        const themeNames = call.options?.themes
+
+        return {
+          identity:
+            sharedThemes[call.name]?.[Token.definition].contract[
+              Token.identity
+            ] ?? call.name,
+          ...(typeof call.options?.storageKey === 'string'
+            ? { storageKey: call.options.storageKey }
+            : {}),
+          themes:
+            themeNames && typeof themeNames === 'object'
+              ? Object.keys(themeNames)
+              : [],
+        }
+      })
+  }
+
   return {
     compiler: options.compiler !== false,
     composition: options.composition,
@@ -1130,6 +1155,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                   ),
                 })),
                 id,
+                configurations(id),
               ),
             ]),
         ),

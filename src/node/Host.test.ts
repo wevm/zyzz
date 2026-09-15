@@ -318,6 +318,70 @@ export const widget = css({ color: '#ff0000', padding: '4px' });`,
     }
   })
 
+  test('orders sibling stylesheets by authored import order from graph roots', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-root-order-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    try {
+      // Name order would put a before z; the entry imports z first.
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import { z } from './z.js'; import { a } from './a.js'; export { a, z };`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'z.ts'),
+        `import { css } from 'zyzz'; export const z = css({ padding: '1px' });`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'a.ts'),
+        `import { css } from 'zyzz'; export const a = css({ padding: '2px' });`,
+      )
+      await host.build()
+
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')).match(
+          /padding: \dpx/g,
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "padding: 1px",
+          "padding: 2px",
+        ]
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('publishes initialization for configurations kept local to a module', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-local-config-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'local.ts'),
+        `import { Config } from 'zyzz';
+const { css, appearance } = Config.create({ defaultTheme: 'base', storageKey: 'kept', themes: { base: { color: { ink: '#123456' } } } });
+export const card = css({ color: 'ink' });
+export const select = appearance.set;`,
+      )
+      await host.build()
+
+      const script = await Fs.readFile(Path.join(outDir, 'zyzz.js'), 'utf8')
+
+      expect(
+        script.includes('localStorage.getItem("kept")'),
+      ).toMatchInlineSnapshot(`true`)
+      expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('rebases nested module URLs in the complete stylesheet', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-rebase-css-'))
     const outDir = Path.join(root, 'output')
@@ -455,6 +519,50 @@ export const { css, themes } = Config.create({ defaultTheme: 'base', storageKey:
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: The script path must not be inside the source directory.]`,
       )
+
+      await host.close()
+
+      // A script left by an earlier host is recognized by its banner and removed
+      // by the first build without configurations; a foreign file rejects the build.
+      await Fs.writeFile(
+        external,
+        '/* zyzz initialization */\n(()=>{/* stale */})();\n',
+      )
+
+      await using fresh = await Host.create({
+        outDir,
+        packageId: 'example',
+        root: source,
+        script: external,
+      })
+
+      await fresh.build()
+
+      expect(
+        await Fs.access(external).then(
+          () => 'present',
+          () => 'absent',
+        ),
+      ).toMatchInlineSnapshot(`"absent"`)
+
+      await Fs.writeFile(external, 'console.log("theirs")\n')
+      await Fs.writeFile(
+        Path.join(source, 'config.ts'),
+        configuration('shared'),
+      )
+
+      expect(
+        await fresh.build().then(
+          () => 'built',
+          (error: unknown) => String(error).replace(root, '<root>'),
+        ),
+      ).toMatchInlineSnapshot(
+        `"Error: Refusing to replace a foreign script: <root>/public/zyzz.js"`,
+      )
+      expect(await Fs.readFile(external, 'utf8')).toMatchInlineSnapshot(`
+        "console.log("theirs")
+        "
+      `)
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }

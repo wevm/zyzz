@@ -98,7 +98,7 @@ Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
 - Type: `string | false`
 - Default: `zyzz.js` inside `outDir`
 
-Path of the initialization script that restores the theme and scheme saved by every `Config.create` in the tree. Inside the output directory it is an owned artifact listed in build results. A path elsewhere, such as a bundler's public directory, is rewritten in place when its content changes and removed when no configuration remains. The path must not be inside `root`. `false` disables the script.
+Path of the initialization script that restores the theme and scheme saved by every `Config.create` in the tree, exported or kept local to its module. Inside the output directory it is an owned artifact listed in build results. A path elsewhere, such as a bundler's public directory, is rewritten in place when its content changes and removed when no configuration remains; the host recognizes its own output by the leading `/* zyzz initialization */` comment and refuses to replace any other file at that path. The path must not be inside `root`. `false` disables the script.
 
 ```ts
 Host.create({ packageId: 'app', root: 'src', script: 'public/zyzz.js' })

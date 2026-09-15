@@ -93,8 +93,11 @@ describe('create', () => {
       },
     })
 
+    // Root controls need version 18, so a legacy contract hides them beside the missing script.
     expect(
-      app.modules['app.ts']!.code.includes("key extends 'script'"),
+      app.modules['app.ts']!.code.includes(
+        "key extends 'appearance' | 'script'",
+      ),
     ).toMatchInlineSnapshot('true')
   })
   test('versions css-only packed exports with their output metadata', () => {

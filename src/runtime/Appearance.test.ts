@@ -139,9 +139,21 @@ describe('root', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[TypeError: defaultTheme must name a catalog theme.]`,
     )
-    expect(() =>
-      Appearance.root([['mint', 'z_theme-mint']], { defaultTheme: 'mint' }),
-    ).not.toThrow()
-    expect(() => Appearance.root([])).not.toThrow()
+    expect(
+      Object.keys(
+        Appearance.root([['mint', 'z_theme-mint']], { defaultTheme: 'mint' }),
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        "get",
+        "set",
+      ]
+    `)
+    expect(Object.keys(Appearance.root([]))).toMatchInlineSnapshot(`
+      [
+        "get",
+        "set",
+      ]
+    `)
   })
 })

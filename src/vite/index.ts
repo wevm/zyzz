@@ -13,7 +13,7 @@ import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Scope from '../compiler/internal/Scope.js'
-import type { Environment, Plugin, ViteDevServer } from 'vite'
+import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
 import * as ThemeValues from '../web/internal/Themes.js'
@@ -29,6 +29,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
   const catalogs = new Map<string, Catalog>()
+  const graphs = new Map<string, ReadonlySet<string>>()
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
   let root: string
@@ -414,6 +415,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     await visit(entry.file, code)
 
     const connected = new Set(files)
+
+    // The entry's authored import closure scopes document initialization in builds.
+    graphs.set(
+      entry.file,
+      new Set([...[...connected].map(sourceId), ...Object.keys(contracts)]),
+    )
 
     for (const [file, source] of await discover(entry.environment, host)) {
       if (files.has(file) && !allSources) continue
@@ -826,6 +833,41 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     return [...catalogs.values()]
   }
 
+  /** Catalogs contributed by the modules an HTML entry bundles; every catalog without an entry chunk. */
+  function entryCatalogs(
+    bundle?: Rollup.OutputBundle,
+    chunk?: Rollup.OutputChunk,
+  ) {
+    if (!bundle || !chunk) return [...catalogs.values()]
+
+    const contracts = new Set<string>()
+    const visited = new Set<string>()
+
+    function collect(name: string) {
+      if (visited.has(name)) return
+
+      visited.add(name)
+
+      const output = bundle![name]
+      if (output?.type !== 'chunk') return
+
+      // Source graphs follow authored imports, so a configuration compiled away
+      // from the bundle still initializes the pages that authored it.
+      for (const id of Object.keys(output.modules))
+        for (const contract of graphs.get(normalize(id)) ?? [])
+          contracts.add(contract)
+
+      for (const imported of [...output.imports, ...output.dynamicImports])
+        collect(imported)
+    }
+
+    collect(chunk.fileName)
+
+    return [...catalogs]
+      .filter(([key]) => contracts.has(key.split('\0')[0]!))
+      .map(([, configuration]) => configuration)
+  }
+
   return {
     config: {
       order: 'post',
@@ -1153,10 +1195,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       async handler(_, context) {
         if (options.script === false) return
 
-        // Build catalogs were collected while bundling; development compiles on request.
+        // Development compiles the whole project on request; a build scopes the
+        // catalogs to the source graphs its entry chunk bundles.
         const configurations = context.server
           ? await initializations(context.server)
-          : [...catalogs.values()]
+          : entryCatalogs(context.bundle, context.chunk)
         const scripts = new Set(
           configurations.map(({ entries, storageKey }) =>
             Appearance.create(entries, { storageKey })(),

@@ -1183,7 +1183,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         fail('Configuration references must follow their definition.', node)
 
       // Root controls are an ordinary runtime object; any read or call is valid.
-      if (config.call.root) return true
+      if (config.call.root) {
+        appearances.add(config.call.name)
+
+        return true
+      }
 
       if (
         (config.call.selection || config.call.initialization) &&
@@ -1198,6 +1202,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           )
 
         if (config.call.selection) selections.add(config.call.name)
+        if (config.call.initialization) scripts.add(config.call.name)
 
         return true
       }

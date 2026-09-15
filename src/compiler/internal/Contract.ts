@@ -22,12 +22,14 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(
       data.version as number,
     )
   )
     throw new Error('Unsupported Zyzz contract version.')
 
+  // Root controls arrived with version 18; older readers must treat them as absent.
+  const rootControls = (data.version as number) >= 18
   const legacyModes = new Map<string, 'atomic' | 'grouped'>()
   if ((data.version as number) < 17) {
     function collect(value: unknown) {
@@ -190,7 +192,9 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17].includes(data.version as number) ||
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(
+          data.version as number,
+        ) ||
         ![
           'cssFunction',
           'customMedia',
@@ -239,10 +243,10 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17].includes(data.version as number)
+        ![16, 17, 18].includes(data.version as number)
       )
         throw new Error(
-          'Packed callable styles require contract version 16 or 17.',
+          'Packed callable styles require contract version 16 or later.',
         )
       const binding = string(entry.binding)
       if (!/^z-style-[a-z0-9_-]+$/.test(binding))
@@ -338,7 +342,7 @@ export function read(
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
     const hidden = [
-      ...(entry.appearance === true ? [] : ["'appearance'"]),
+      ...(rootControls && entry.appearance === true ? [] : ["'appearance'"]),
       ...(entry.script === true ? [] : ["'script'"]),
     ]
     const configType = hidden.length
@@ -357,8 +361,10 @@ export function read(
         ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
         ...(entry.script === true ? { script: true } : {}),
-        ...(entry.appearance === true ? { appearance: true } : {}),
-        ...(entry.root === true ? { root: true } : {}),
+        ...(rootControls && entry.appearance === true
+          ? { appearance: true }
+          : {}),
+        ...(rootControls && entry.root === true ? { root: true } : {}),
         end: -1,
         name: theme,
         start: -1,
@@ -555,6 +561,14 @@ export function write(
       function callable(link: Themes.Link): boolean {
         return !!link.style || Object.values(link.members ?? {}).some(callable)
       }
+      // Root controls call a runtime helper older releases lack, so readers must opt in.
+      if (
+        Object.values(links).some(
+          (link) =>
+            link.call.appearance && (link.kind === 'config' || link.call.root),
+        )
+      )
+        return 18
       if (
         Object.values(links).some(callable) ||
         Object.values(themes).some(

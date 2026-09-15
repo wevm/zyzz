@@ -869,4 +869,56 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       await Fs.rm(root, { recursive: true, force: true })
     }
   }, 60000)
+
+  test('scopes built initialization scripts to the configurations each page bundles', async () => {
+    const page = (entry: string) =>
+      `<!doctype html><html><head><title>${entry}</title></head><body><script type="module" src="/${entry}.ts"></script></body></html>`
+    const configuration = (name: string) =>
+      `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: '${name}', storageKey: '${name}', themes: { ${name}: { color: { ink: '#123456' } } } });`
+    // Each page imports only css, so its configuration module leaves the bundle.
+    const files = {
+      'a.html': page('a'),
+      'a.ts': `import { css } from './alpha'; document.body.className = css({ color: 'ink' })().className;`,
+      'alpha.ts': configuration('alpha'),
+      'b.html': page('b'),
+      'b.ts': `import { css } from './beta'; document.body.className = css({ color: 'ink' })().className;`,
+      'beta.ts': configuration('beta'),
+    }
+    const { config, root } = await create(files)
+
+    try {
+      const outDir = Path.join(root, 'dist')
+
+      await Vite.build({
+        ...config,
+        build: {
+          outDir,
+          rollupOptions: {
+            input: {
+              a: Path.join(root, 'a.html'),
+              b: Path.join(root, 'b.html'),
+            },
+          },
+        },
+      })
+
+      const a = await Fs.readFile(Path.join(outDir, 'a.html'), 'utf8')
+      const b = await Fs.readFile(Path.join(outDir, 'b.html'), 'utf8')
+
+      expect(a.includes('localStorage.getItem("alpha")')).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(a.includes('localStorage.getItem("beta")')).toMatchInlineSnapshot(
+        'false',
+      )
+      expect(b.includes('localStorage.getItem("beta")')).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(b.includes('localStorage.getItem("alpha")')).toMatchInlineSnapshot(
+        'false',
+      )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 60000)
 })

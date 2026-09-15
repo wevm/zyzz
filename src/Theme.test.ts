@@ -471,7 +471,7 @@ describe('queries', () => {
 
       expect(
         JSON.parse(result.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`17`)
+      ).toMatchInlineSnapshot(`18`)
       expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
         .toMatchInlineSnapshot(`
       {

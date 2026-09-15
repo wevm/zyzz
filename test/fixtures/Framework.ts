@@ -341,18 +341,26 @@ export async function verify(options: verify.Options) {
       if (!production) {
         const errorStart = errors.length
         const stylesPath = Path.join(root, 'styles.ts')
-        // The watcher drops a second change to one path within 50 ms of the
-        // first, so the fix waits for that window after the observed change.
-        const changed = new Promise<number>((resolve) => {
-          const listener = (file: string) => {
-            if (Path.resolve(file) !== stylesPath) return
 
-            server!.watcher.off('change', listener)
-            resolve(Date.now())
-          }
+        /** Resolves once the watcher reports the next change to the styles module, or false after the bound. */
+        function reported() {
+          return new Promise<boolean>((resolve) => {
+            const timer = setTimeout(() => {
+              server!.watcher.off('change', listener)
+              resolve(false)
+            }, 500)
 
-          server!.watcher.on('change', listener)
-        })
+            function listener(file: string) {
+              if (Path.resolve(file) !== stylesPath) return
+
+              clearTimeout(timer)
+              server!.watcher.off('change', listener)
+              resolve(true)
+            }
+
+            server!.watcher.on('change', listener)
+          })
+        }
 
         await Fs.writeFile(
           stylesPath,
@@ -365,15 +373,20 @@ export async function verify(options: verify.Options) {
         )
         expect(await overlay.jsonValue()).toMatchInlineSnapshot('true')
 
-        const changedAt = await changed
+        // The watcher suppresses a change landing within 50 ms of the previous
+        // one for the same path, so the fix is written until it is reported.
+        for (let attempt = 0; ; attempt++) {
+          const observed = reported()
 
-        await new Promise((resolve) =>
-          setTimeout(resolve, Math.max(0, changedAt + 60 - Date.now())),
-        )
-        await Fs.writeFile(
-          stylesPath,
-          files['styles.ts'].replace('#0066cc', '#117755'),
-        )
+          await Fs.writeFile(
+            stylesPath,
+            files['styles.ts'].replace('#0066cc', '#117755'),
+          )
+
+          if (await observed) break
+          if (attempt === 4)
+            throw new Error('The watcher never reported the recovery edit.')
+        }
         await page.locator('vite-error-overlay').waitFor({ state: 'detached' })
         await page.waitForFunction(
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',

@@ -197,7 +197,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(graph.contracts['config.js']!).version,
-    ).toMatchInlineSnapshot('17')
+    ).toMatchInlineSnapshot(`18`)
 
     const bundle = await Esbuild.build({
       stdin: {

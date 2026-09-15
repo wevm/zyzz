@@ -9,7 +9,7 @@ Framework playgrounds using the public Zyzz API. Start with [React + Vite](vite-
 | [vite-svelte](vite-svelte) | Svelte    | `zyzz()` Vite plugin                                   |
 | [cli-react](cli-react)     | React     | `zyzz build` / `zyzz dev` CLI; Vite bundles the output |
 | [api-react](api-react)     | React     | `Host` from `zyzz/node`; Vite's JavaScript API bundles |
-| [next-react](next-react)   | React     | `zyzz(nextConfig)` from `zyzz/next`; static export     |
+| [next-react](next-react)   | React     | `zyzz(nextConfig)` from `zyzz/next`; App Router        |
 
 ```sh
 pnpm install
@@ -32,7 +32,7 @@ The Examples workflow discovers every `examples/*/package.json` and builds each 
 }
 ```
 
-Server-rendered examples must provide a static export. An example whose site builds elsewhere names the directory under `config.site` in its `package.json`; the Next.js example exports to `out`.
+An example whose site builds elsewhere names the directory under `config.site` in its `package.json`. A server-rendered example such as `next-react` sets `config.site` to `false`: the workflow builds it and skips the deployment.
 
 | Event              | Deployment                                                         |
 | ------------------ | ------------------------------------------------------------------ |

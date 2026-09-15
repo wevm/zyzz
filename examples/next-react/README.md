@@ -7,22 +7,22 @@ pnpm --dir examples/next-react dev
 
 Run from the repository root after `pnpm install`. Next.js loads `zyzz/next` from the built package; `pnpm examples` runs the same steps for every example.
 
-`next.config.ts` wraps the application configuration with `zyzz(nextConfig)`. The wrapper owns source transformation, CSS delivery, and dependency watching for Turbopack and Webpack, so `next dev` and `next build` need no other setup:
+`next.config.ts` wraps the application configuration with `zyzz(nextConfig)`. The wrapper owns source transformation, CSS delivery, and dependency watching for Turbopack and Webpack, so `next dev`, `next build`, and `next start` need no other setup:
 
 ```ts
 import { zyzz } from 'zyzz/next'
 
-export default zyzz({ output: 'export' })
+export default zyzz({})
 ```
 
-`output: 'export'` writes a static site to `out`, which `package.json` names under `config.site` for the Examples workflow. The wrapper works the same for server-rendered applications.
+The application renders on the server. It has no static site to publish, so `package.json` sets `config.site` to `false` and the Examples workflow builds it without a deployment.
 
 ## Document Shell
 
 `app/layout.tsx` is a server component. It imports `zyzz/reset.css` as global CSS and inlines the configuration's `script()` in `<head>`, so the saved theme and scheme apply before paint. The script changes root classes before hydration, and `<html suppressHydrationWarning>` accepts that difference.
 
 ```tsx
-import { script } from './zyzz.config.js'
+import { script } from './zyzz.config'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "config": {
-    "site": "out"
+    "site": false
   },
   "scripts": {
     "build": "next build",

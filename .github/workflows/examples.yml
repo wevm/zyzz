@@ -83,9 +83,16 @@ jobs:
               return ''
             })()
             const name = `zyzz-examples-${example}${suffix}`
-            // An example names its static site directory in package.json config.site; dist is the default.
+            // An example names its static site directory in package.json config.site; dist is the
+            // default, and false marks a server-rendered example that is built without a deployment.
             const pkg = JSON.parse(fs.readFileSync(`examples/${example}/package.json`, 'utf8'))
             const site = pkg.config?.site ?? 'dist'
+            if (site === false) {
+              core.setOutput('configured', 'false')
+              core.setOutput('static', 'false')
+              return
+            }
+            core.setOutput('static', 'true')
             if (!/^[a-z][a-z0-9-]*$/.test(site)) throw new Error(`Invalid site directory for ${example}: ${site}`)
             if (!fs.existsSync(`examples/${example}/${site}/index.html`)) {
               throw new Error(`examples/${example}/${site}/index.html is missing`)
@@ -123,6 +130,7 @@ jobs:
           DEPLOYMENT: ${{ steps.deploy.outcome }}
           EXAMPLE: ${{ matrix.example }}
           RESULT: ${{ job.status }}
+          STATIC: ${{ steps.config.outputs.static }}
           URL: ${{ steps.deploy.outputs.deployment-url }}
         with:
           script: |
@@ -135,6 +143,7 @@ jobs:
                 core.setFailed('Worker deployment did not return a URL')
                 return '❌ Missing deployment URL'
               }
+              if (process.env.STATIC === 'false') return '✅ Built (server rendered)'
               if (process.env.CONFIGURED !== 'true') return '⏭️ Missing Cloudflare secrets'
               return '⏭️ Skipped'
             })()

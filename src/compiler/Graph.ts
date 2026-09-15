@@ -1082,12 +1082,19 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
-  // Every configuration call in a module publishes its catalog, exported or not,
-  // so initialization can restore selections its styles persist.
+  // A configuration whose module uses root controls or the script publishes its
+  // catalog, exported or not, so initialization restores selections it persists.
   function configurations(id: string): readonly Contract.write.Configuration[] {
-    return extracted
-      .get(id)!
-      .themeCalls.filter((call) => call.appearance && call.options)
+    const module = extracted.get(id)!
+
+    return module.themeCalls
+      .filter(
+        (call) =>
+          call.appearance &&
+          call.options &&
+          (module.themeAppearances?.includes(call.name) ||
+            module.themeScripts?.includes(call.name)),
+      )
       .map((call) => {
         const themeNames = call.options?.themes
 
@@ -1131,7 +1138,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
             .filter(
               (id) =>
                 Object.keys(extracted.get(id)!.themeExports ?? {}).length ||
-                reachable(id).length,
+                reachable(id).length ||
+                configurations(id).length,
             )
             .map((id) => [
               id,

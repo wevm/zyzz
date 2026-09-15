@@ -175,24 +175,37 @@ export async function create(options: create.Options): Promise<Runtime> {
       ),
     })
 
-    const generated = new Set(
-      [
-        ...(script?.owned ? [script.owned] : []),
-        'zyzz.css',
-        'zyzz.css.map',
-        'zyzz.shared.css',
-        'zyzz.shared.css.map',
-        '.zyzz.json',
-        '.zyzz-lock',
-        ...Object.keys(sources).flatMap((name) => [
-          name,
-          `${name}.map`,
-          `${name}.css`,
-          `${name}.css.map`,
-          `${name}.zyzz.json`,
-        ]),
-      ].map((name) => (insensitive ? name.toLowerCase() : name)),
+    const artifactNames = [
+      'zyzz.css',
+      'zyzz.css.map',
+      'zyzz.shared.css',
+      'zyzz.shared.css.map',
+      '.zyzz.json',
+      '.zyzz-lock',
+      ...Object.keys(sources).flatMap((name) => [
+        name,
+        `${name}.map`,
+        `${name}.css`,
+        `${name}.css.map`,
+        `${name}.zyzz.json`,
+      ]),
+    ].map((name) => (insensitive ? name.toLowerCase() : name))
+
+    // The script is one more owned artifact, so it must not replace another.
+    if (
+      script?.owned &&
+      artifactNames.includes(
+        insensitive ? script.owned.toLowerCase() : script.owned,
+      )
     )
+      throw new Error(
+        `The script path collides with the artifact ${script.owned}.`,
+      )
+
+    const generated = new Set([
+      ...(script?.owned ? [script.owned] : []),
+      ...artifactNames,
+    ])
 
     let shared: Stylesheet | undefined
 
@@ -481,7 +494,9 @@ export async function create(options: create.Options): Promise<Runtime> {
         await place(external.path, external.next)
       }
     } catch (error) {
-      if (externalApplied) await place(external!.path, external!.current)
+      // The external path may stay unwritable, which must not skip the owned rollback.
+      if (externalApplied)
+        await place(external!.path, external!.current).catch(() => {})
 
       for (const name of applied.reverse())
         await place(Path.join(outDir, name), before.get(name))

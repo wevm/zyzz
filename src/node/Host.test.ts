@@ -368,6 +368,14 @@ const { css, appearance } = Config.create({ defaultTheme: 'base', storageKey: 'k
 export const card = css({ color: 'ink' });
 export const select = appearance.set;`,
       )
+      // A scheme-only configuration emits no CSS and exports no binding, so
+      // the catalog alone justifies the module's contract.
+      await Fs.writeFile(
+        Path.join(root, 'toggle.ts'),
+        `import { Config } from 'zyzz';
+const { appearance } = Config.create({ storageKey: 'scheme-only' });
+export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
+      )
       await host.build()
 
       const script = await Fs.readFile(Path.join(outDir, 'zyzz.js'), 'utf8')
@@ -376,8 +384,60 @@ export const select = appearance.set;`,
         script.includes('localStorage.getItem("kept")'),
       ).toMatchInlineSnapshot(`true`)
       expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+      expect(
+        script.includes('localStorage.getItem("scheme-only")'),
+      ).toMatchInlineSnapshot(`true`)
+
+      // Local root controls need the runtime helper older readers lack.
+      const version = async (name: string) =>
+        (
+          JSON.parse(await Fs.readFile(Path.join(outDir, name), 'utf8')) as {
+            version: number
+          }
+        ).version
+
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
     } finally {
       await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('rejects a script path that names another artifact', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-script-clash-'))
+    const outDir = Path.join(root, 'output')
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { css } from 'zyzz'; export const card = css({ color: 'red' });`,
+      )
+
+      for (const name of ['zyzz.css', '.zyzz.json', 'app.ts.css']) {
+        const host = await Host.create({
+          outDir,
+          packageId: 'example',
+          root,
+          script: Path.join(outDir, name),
+        })
+
+        try {
+          await expect(host.build()).rejects.toThrow(
+            `The script path collides with the artifact ${name}.`,
+          )
+        } finally {
+          await host.close()
+        }
+      }
+
+      // The rejected builds published nothing beside the lock and manifest.
+      expect(
+        (await Fs.readdir(outDir)).filter(
+          (name) => !['.zyzz-lock', '.zyzz.json'].includes(name),
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+    } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }
   })

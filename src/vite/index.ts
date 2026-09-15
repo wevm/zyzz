@@ -644,8 +644,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     // Packed dependencies contribute catalogs beside the modules compiled here.
     const compiled = { ...contracts, ...result.contracts }
 
-    // A contract owns its catalog keys; recompiling it replaces every configuration it had.
-    for (const id of Object.keys(compiled))
+    // A module owns its catalog keys; recompiling it replaces every
+    // configuration it had, including a module that no longer emits a contract.
+    for (const id of new Set([
+      ...Object.keys(modules),
+      ...Object.keys(compiled),
+    ]))
       for (const key of catalogs.keys())
         if (key.startsWith(`${id}\0`)) catalogs.delete(key)
 

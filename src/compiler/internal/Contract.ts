@@ -567,7 +567,9 @@ export function write(
       }
       // Root controls call a runtime helper older releases lack, and older
       // readers reject the storageKey option, so both require readers to opt in.
+      // Local configurations emit the same helper without an exported binding.
       if (
+        configurations.length ||
         Object.values(links).some(
           (link) =>
             (link.call.appearance &&

@@ -814,6 +814,19 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
 
       expect(scripts(reduced)).toMatchInlineSnapshot('1')
 
+      // A module that stops emitting a contract altogether drops its catalogs too.
+      await Fs.writeFile(
+        Path.join(root, 'config.ts'),
+        `export const themes = { mint: { className: 'plain' } }`,
+      )
+
+      const detachedConfiguration = await server.transformIndexHtml(
+        '/index.html',
+        files['index.html'],
+      )
+
+      expect(scripts(detachedConfiguration)).toMatchInlineSnapshot('0')
+
       await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
       await server.close()
       server = undefined

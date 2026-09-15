@@ -102,6 +102,11 @@
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
+    "./react-native": {
+      "src": "./src/react-native/index.ts",
+      "types": "./dist/react-native/index.d.ts",
+      "default": "./dist/react-native/index.js"
+    },
     "./reset.css": {
       "src": "./src/reset.css",
       "default": "./dist/reset.css"

@@ -15,6 +15,7 @@
       "zyzz/next": ["./src/next/index.ts"],
       "zyzz/next/loader": ["./src/next/loader.ts"],
       "zyzz/node": ["./src/node/index.ts"],
+      "zyzz/react-native": ["./src/react-native/index.ts"],
       "zyzz/runtime": ["./src/runtime/index.ts"],
       "zyzz/themes/default": ["./src/themes/default.ts"],
       "zyzz/vite": ["./src/vite/index.ts"],

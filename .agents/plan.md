@@ -922,3 +922,11 @@ Static artifact comparison against A4 (`f0d844b`), using the existing literal co
 | components  |        13,727 → 12,071 |           1,499 → 1,714 |              16,720 → 11,802 |
 
 Readable names reduce class-map bytes in all eight cases, but hashed ownership increases gzip CSS in mostly unique workloads. This is not an atomic delivery win. Grouped compiler results, including CSS and class maps, remain byte-identical across all eight corpus cases.
+
+### Phase 3.8 Static Native Tables
+
+The first 3.8 slice implements `StyleSheet.compile` and identity-preserving `StyleSheet.select` from `zyzz/react-native`. Shared `Style.define` data resolves into frozen tables for every requested theme and both schemes. Compatible token contracts retain theme overrides, while unrelated contracts retain their own fallbacks.
+
+The initial subset covers explicit layout, physical spacing/borders, scalar colors, and typography. px converts to native logical units, rem and font families require explicit mappings, and numeric line height requires a local font size. Unsupported web semantics produce structured diagnostics. `Properties` supplies an optional native authoring constraint before shared definitions erase property literals.
+
+Pure authoring/compiler/selection integrations, source-free package loading, and QuickJS execution cover this boundary. Colocated compiler/lookup and inference benchmarks retain separate measurement scopes. This does not close 3.8: shared static variant selection, additional capabilities, and renderer parity remain open. Dynamic bindings and iOS/Android fixtures remain assigned to 3.9.

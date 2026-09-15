@@ -318,6 +318,101 @@ export const widget = css({ color: '#ff0000', padding: '4px' });`,
     }
   })
 
+  test('publishes the initialization script inside the output or at an external path', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-script-'))
+    const source = Path.join(root, 'src')
+    const outDir = Path.join(root, 'output')
+    const external = Path.join(root, 'public/zyzz.js')
+    const configuration = (storageKey: string) =>
+      `import { Config } from 'zyzz';
+export const { css, themes } = Config.create({ defaultTheme: 'base', storageKey: '${storageKey}', themes: { base: { color: { ink: '#123456' } } } });`
+
+    try {
+      await Fs.mkdir(source)
+      await Fs.writeFile(Path.join(source, 'config.ts'), configuration('owned'))
+
+      await using owned = await Host.create({
+        outDir,
+        packageId: 'example',
+        root: source,
+      })
+
+      const result = await owned.build()
+      const script = await Fs.readFile(Path.join(outDir, 'zyzz.js'), 'utf8')
+
+      expect(result.files.includes('zyzz.js')).toMatchInlineSnapshot(`true`)
+      expect(
+        script.includes('localStorage.getItem("owned")'),
+      ).toMatchInlineSnapshot(`true`)
+      expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+
+      await owned.close()
+
+      // An external path serves a bundler's public directory; unchanged content is left alone.
+      await Fs.writeFile(
+        Path.join(source, 'config.ts'),
+        configuration('shared'),
+      )
+
+      await using host = await Host.create({
+        outDir,
+        packageId: 'example',
+        root: source,
+        script: external,
+      })
+
+      expect(
+        (await host.build()).files.includes('zyzz.js'),
+      ).toMatchInlineSnapshot(`false`)
+      expect(
+        (await Fs.readFile(external, 'utf8')).includes(
+          'localStorage.getItem("shared")',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+
+      const written = (await Fs.stat(external)).mtimeMs
+
+      await host.build()
+
+      expect(
+        (await Fs.stat(external)).mtimeMs === written,
+      ).toMatchInlineSnapshot(`true`)
+
+      // Removing every configuration removes the script this host wrote.
+      await Fs.writeFile(
+        Path.join(source, 'config.ts'),
+        `import { css } from 'zyzz'; export const card = css({ padding: '4px' });`,
+      )
+      await host.build()
+
+      expect(
+        await Fs.access(external).then(
+          () => 'present',
+          () => 'absent',
+        ),
+      ).toMatchInlineSnapshot(`"absent"`)
+      expect(
+        await Fs.access(Path.join(outDir, 'zyzz.js')).then(
+          () => 'present',
+          () => 'absent',
+        ),
+      ).toMatchInlineSnapshot(`"absent"`)
+
+      await expect(
+        Host.create({
+          outDir,
+          packageId: 'example',
+          root: source,
+          script: Path.join(source, 'zyzz.js'),
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Error: The script path must not be inside the source directory.]`,
+      )
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('processes browser targets and minification with original source maps and recovery', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-host-'))
     const outDir = Path.join(root, 'output')

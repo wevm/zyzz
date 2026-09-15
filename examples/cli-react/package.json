@@ -2,8 +2,11 @@
   "name": "@zyzz/example-cli-react",
   "private": true,
   "type": "module",
+  "config": {
+    "site": "build"
+  },
   "scripts": {
-    "build": "zyzz build --out-dir .zyzz && vite build",
+    "build": "zyzz build --script public/zyzz.js && vite build",
     "dev": "node scripts/dev.ts"
   },
   "dependencies": {

@@ -63,7 +63,7 @@ css: { targets: { chrome: 100 << 16, safari: (15 << 16) | (4 << 8) } }
 ### options.outDir
 
 - Type: `string`
-- Required: Yes.
+- Default: `dist`
 
 Output directory exclusively locked until disposal. The ownership manifest persists after close; its recorded package identity is not transferred.
 
@@ -91,6 +91,17 @@ Source directory scanned by the host.
 
 ```ts
 Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
+```
+
+### options.script
+
+- Type: `string | false`
+- Default: `zyzz.js` inside `outDir`
+
+Path of the initialization script that restores the theme and scheme saved by every `Config.create` in the tree. Inside the output directory it is an owned artifact listed in build results. A path elsewhere, such as a bundler's public directory, is rewritten in place when its content changes and removed when no configuration remains. The path must not be inside `root`. `false` disables the script.
+
+```ts
+Host.create({ packageId: 'app', root: 'src', script: 'public/zyzz.js' })
 ```
 
 ## Returns

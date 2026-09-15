@@ -5,7 +5,7 @@ const options = {
   shell: process.platform === 'win32',
   stdio: 'inherit',
 } as const
-const output = ['--out-dir', '.zyzz']
+const output = ['--script', 'public/zyzz.js']
 
 // index.html references the compiled entry, so the first build completes before Vite serves.
 const initial = ChildProcess.spawnSync('zyzz', ['build', ...output], options)

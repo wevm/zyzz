@@ -90,7 +90,7 @@ describe('zyzz', () => {
         const configure = (mode: string) =>
           Watch.write({
             path: config,
-            source: `import { Config } from 'zyzz'; export const { css } = Config.create({ cssOutput: '${mode}' })`,
+            source: `import { Config } from 'zyzz'; export const { css, script } = Config.create({ cssOutput: '${mode}' })`,
           })
         await configure(cssOutput)
         await Watch.write({
@@ -112,6 +112,11 @@ describe('zyzz', () => {
         )
         expect(result.files.includes('zyzz.css')).toMatchInlineSnapshot('true')
         expect(
+          (await Fs.readFile(Path.join(root, 'dist/zyzz.js'), 'utf8')).includes(
+            'localStorage.getItem("zyzz")',
+          ),
+        ).toMatchInlineSnapshot('true')
+        expect(
           (
             await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8')
           ).includes(
@@ -122,9 +127,13 @@ describe('zyzz', () => {
           Path.join(root, 'dist/button.ts.css'),
           'utf8',
         )
+        // CSS-only output keeps stylesheets, their maps, and the initialization script.
         expect(
           result.files.some(
-            (file) => !file.endsWith('.css') && !file.endsWith('.css.map'),
+            (file) =>
+              !file.endsWith('.css') &&
+              !file.endsWith('.css.map') &&
+              file !== 'zyzz.js',
           ) === !cssOnly,
         ).toMatchInlineSnapshot('true')
         if (!cssOnly) {

@@ -3,8 +3,8 @@
  * @module
  */
 import * as Namespaces from '../compiler/internal/Namespaces.js'
-import * as Appearance from '../runtime/Appearance.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
+import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
@@ -16,7 +16,6 @@ import * as Scope from '../compiler/internal/Scope.js'
 import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
-import * as ThemeValues from '../web/internal/Themes.js'
 
 /**
  * Compiles physical project source without executing authoring code.
@@ -28,7 +27,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
-  const catalogs = new Map<string, Catalog>()
+  const catalogs = new Map<string, Catalogs.Catalog>()
   const edges = new Map<string, ReadonlySet<string>>()
   const graphs = new Map<string, ReadonlySet<string>>()
   const initializers = new WeakMap<Environment, Entry>()
@@ -649,7 +648,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         if (key.startsWith(`${id}\0`)) catalogs.delete(key)
 
     for (const [id, contract] of Object.entries(compiled))
-      for (const configuration of catalog(contract))
+      for (const configuration of Catalogs.read(contract))
         catalogs.set(`${id}\0${configuration.identity}`, configuration)
 
     const map = new Mapping.GenMapping()
@@ -1294,14 +1293,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
           return documentCatalogs(html, context.filename)
         })()
-        const scripts = new Set(
-          configurations.map(({ entries, storageKey }) =>
-            Appearance.create(entries, { storageKey })(),
-          ),
-        )
-
         // Saved preferences apply before any other script or visible content.
-        return [...scripts].map((children) => ({
+        return Catalogs.scripts(configurations).map((children) => ({
           children,
           injectTo: 'head-prepend' as const,
           tag: 'script',
@@ -1309,78 +1302,6 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       },
     },
   }
-}
-
-/** Reads each configuration's theme catalog and storage key from a contract, one per configuration identity. */
-function catalog(contract: string): readonly Catalog[] {
-  const parsed = JSON.parse(contract) as {
-    exports?: Record<
-      string,
-      {
-        kind?: string
-        members?: Record<string, { theme?: string }>
-        options?: { storageKey?: string; themes?: Record<string, unknown> }
-        selection?: boolean
-        theme?: string
-      }
-    >
-    themes?: Record<string, { identity?: string }>
-  }
-  const configurations = new Map<
-    string,
-    { entries: Map<string, string>; storageKey: string | undefined }
-  >()
-
-  for (const binding of Object.values(parsed.exports ?? {})) {
-    if (binding.kind !== 'config' || binding.theme === undefined) continue
-
-    // A binding names its selected default scope; the theme metadata carries
-    // the configuration identity that prefixes every scope key.
-    const identity = parsed.themes?.[binding.theme]?.identity ?? binding.theme
-    let configuration = configurations.get(identity)
-
-    if (!configuration) {
-      configuration = {
-        entries: new Map(),
-        storageKey: binding.options?.storageKey,
-      }
-      configurations.set(identity, configuration)
-    }
-
-    // Script and root bindings carry no members, so the catalog derives their scope keys.
-    for (const name of Object.keys(binding.options?.themes ?? {}))
-      configuration.entries.set(name, `${identity}-${name}`)
-
-    for (const [path, member] of Object.entries(binding.members ?? {})) {
-      const names = JSON.parse(path) as readonly string[]
-      const name = (() => {
-        if (binding.selection) return names.length === 1 ? names[0] : undefined
-        return names.length === 2 && names[0] === 'themes'
-          ? names[1]
-          : undefined
-      })()
-
-      if (name !== undefined && member.theme)
-        configuration.entries.set(name, member.theme)
-    }
-  }
-
-  // Scope keys become classes through the same escaping the emitted stylesheet used.
-  return [...configurations].map(([identity, { entries, storageKey }]) => ({
-    entries: [...entries].map(
-      ([name, scope]) =>
-        [name, `z_theme-${ThemeValues.encode(scope)}`] as const,
-    ),
-    identity,
-    storageKey,
-  }))
-}
-
-/** Initialization inputs read from one compiled configuration. */
-type Catalog = {
-  entries: readonly (readonly [string, string])[]
-  identity: string
-  storageKey: string | undefined
 }
 
 type Entry = {

@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Zyzz playground</title>
+    <!-- The Host writes the saved-selection script into public, so it runs before paint in development and production. -->
+    <script src="/zyzz.js"></script>
     <!-- The Host publishes every module stylesheet into zyzz.css in dependency order. -->
-    <link rel="stylesheet" href="/.zyzz/zyzz.css" />
+    <link rel="stylesheet" href="/dist/zyzz.css" />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/.zyzz/main.tsx"></script>
+    <script type="module" src="/dist/main.tsx"></script>
   </body>
 </html>

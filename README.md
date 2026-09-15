@@ -70,7 +70,7 @@ npx zyzz build
 npx zyzz dev
 ```
 
-Compiles `src` to `dist`, emitting `zyzz.css` as the complete stylesheet beside adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
+Compiles `src` to `dist`, emitting `zyzz.css` as the complete stylesheet and `zyzz.js` as the saved-selection script beside adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
 
 ### Use Compiler API
 
@@ -88,7 +88,7 @@ await using host = await Host.create({
 await host.build()
 ```
 
-The CLI compiles source modules and CSS to `dist` by default. Add `--css-only` to emit CSS and CSS maps for original source; declarations that need independent identities then require explicit IDs. See [CLI](docs/introduction/cli.md).
+The CLI compiles source modules and CSS to `dist` by default. Add `--css-only` to emit CSS, CSS maps, and the initialization script for original source; declarations that need independent identities then require explicit IDs. See [CLI](docs/introduction/cli.md).
 
 For watching, keep the scope alive until shutdown:
 

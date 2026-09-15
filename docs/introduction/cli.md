@@ -11,14 +11,17 @@ Both commands read `src` and write transformed source modules, CSS, source maps,
 
 `dist/zyzz.css` holds every style the tree emits, ordered so shared contributions come first and each module's rules follow the modules it imports. Load it once from the document or import it from the entry module.
 
+`dist/zyzz.js` restores the theme and scheme that `appearance.set()` saved for every configuration in the tree. Load it as a classic script at the start of `<head>` so the selection applies before paint. Bundlers that copy a public directory into the site serve that script from there through `--script public/zyzz.js`.
+
 ```html
+<script src="/zyzz.js"></script>
 <link rel="stylesheet" href="/dist/zyzz.css" />
 <script type="module" src="/dist/main.tsx"></script>
 ```
 
 ## CSS Only
 
-Disable source transformation and emit only CSS and CSS maps:
+Disable source transformation and emit only CSS, CSS maps, and the initialization script:
 
 ```sh
 npx zyzz build --css-only

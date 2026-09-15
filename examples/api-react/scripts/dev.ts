@@ -1,17 +1,15 @@
 /** Watches the source tree with the Host API and serves the compiled tree with Vite. @module */
 import * as Path from 'node:path'
-import * as Url from 'node:url'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
 
 const root = Path.resolve(import.meta.dirname, '..')
-const outDir = Path.join(root, '.zyzz')
+// The compiled tree lands in dist; the saved-selection script lands in public so Vite serves it.
 const host = await Host.create({
-  outDir,
   packageId: 'api-react',
   root: Path.join(root, 'src'),
+  script: Path.join(root, 'public/zyzz.js'),
 })
-let initialization = ''
 let pending = Promise.resolve()
 let server: Promise<Vite.ViteDevServer> | undefined
 
@@ -29,7 +27,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const)
     void stop().then(() => process.exit(0))
   })
 
-/** Reloads the compiled configuration after every build; Vite starts once the compiled entry exists. */
+/** Reports each build; Vite starts once the compiled entry exists. */
 async function publish(event: Host.Event) {
   if ('error' in event) {
     console.error(event.error)
@@ -38,30 +36,12 @@ async function publish(event: Host.Event) {
 
   console.log(`zyzz: ${event.result.changed.length} artifacts changed`)
 
-  // Each build republishes the configuration, so a fresh module URL picks up catalog changes.
-  const compiled = (await import(
-    `${Url.pathToFileURL(Path.join(outDir, 'zyzz.config.ts')).href}?t=${Date.now()}`
-  )) as { script: () => string }
-
-  initialization = compiled.script()
   server ??= serve()
   await server
 }
 
 async function serve() {
-  const server = await Vite.createServer({
-    configFile: false,
-    plugins: [
-      {
-        name: 'zyzz-initialization',
-        transformIndexHtml: () => [
-          // Saved preferences apply before any other script or visible content.
-          { children: initialization, injectTo: 'head-prepend', tag: 'script' },
-        ],
-      },
-    ],
-    root,
-  })
+  const server = await Vite.createServer({ configFile: false, root })
 
   await server.listen()
   server.printUrls()

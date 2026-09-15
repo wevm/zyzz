@@ -13,27 +13,39 @@ Neither the CLI nor a Vite plugin is involved. `scripts/build.ts` drives compila
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
 
-const host = await Host.create({ outDir, packageId: 'api-react', root })
+const host = await Host.create({
+  packageId: 'api-react',
+  root: Path.join(root, 'src'),
+  script: Path.join(root, 'public/zyzz.js'),
+})
 try {
   await host.build()
 } finally {
   await host.close()
 }
 
-await Vite.build({ configFile: false, root })
+await Vite.build({ build: { outDir: 'build' }, configFile: false, root })
 ```
+
+The Host compiles into `dist` by default and writes the saved-selection script into `public`, so Vite serves it in development and copies it into the site. The site builds into `build` because `dist` belongs to the Host; `package.json` names that directory under `config.site` for the Examples workflow.
 
 `scripts/dev.ts` uses `host.watch` instead, and the Vite dev server starts after the first successful build.
 
 ## Stylesheet
 
-Each build publishes `.zyzz/zyzz.css`: `zyzz.shared.css` first, then every module stylesheet with dependencies before their consumers. `index.html` links that one file, new source modules need no HTML edits, and the cascade follows import order. The per-module stylesheets and maps remain beside the compiled modules for library publishing.
+Each build publishes `dist/zyzz.css`: `zyzz.shared.css` first, then every module stylesheet with dependencies before their consumers. `index.html` links that one file, new source modules need no HTML edits, and the cascade follows import order. The per-module stylesheets and maps remain beside the compiled modules for library publishing.
 
-Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `.zyzz`, so this example keeps assets out of `src`.
+```html
+<script src="/zyzz.js"></script>
+<link rel="stylesheet" href="/dist/zyzz.css" />
+<script type="module" src="/dist/main.tsx"></script>
+```
+
+Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `dist`, so this example keeps assets out of `src`.
 
 Vite runs with its default configuration. Its default CSS target lowers `light-dark()` into Lightning CSS helpers; the compiled scheme classes that `themes()` applies carry `color-scheme` in the stylesheet, so those helpers initialize and theme switching keeps working.
 
-The root theme lives on `<html>`. Both scripts inline the compiled config's `script()` at the start of `index.html`'s head, so a saved selection applies before any module runs. Controls read `appearance.get()` from the config and persist changes with `appearance.set()`; the default scheme comes from a global `html { color-scheme: light dark }` rule.
+The root theme lives on `<html>`. The classic `<script src="/zyzz.js">` at the start of `<head>` applies a saved selection before paint in development and production. Controls read `appearance.get()` from the config and persist changes with `appearance.set()`; the default scheme comes from a global `html { color-scheme: light dark }` rule.
 
 ## Feature Map
 

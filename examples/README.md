@@ -17,7 +17,7 @@ pnpm examples
 
 Run from the repository root. `pnpm examples` builds the library, relinks the `zyzz` binary into each example, then starts each example's dev server. Playground changes reload automatically; library changes need another `pnpm build`.
 
-Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI and API examples load the compiled `dist` package from Node and require `pnpm build`.
+Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI and API examples load the built package from Node and require `pnpm build`.
 
 ## Deployments
 
@@ -31,7 +31,7 @@ The Examples workflow discovers every `examples/*/package.json` and builds each 
 }
 ```
 
-Server-rendered examples must provide a static export.
+Server-rendered examples must provide a static export. An example whose site builds elsewhere names the directory under `config.site` in its `package.json`; the compiled-tree examples use `build` because `zyzz build` owns `dist`.
 
 | Event              | Deployment                                                         |
 | ------------------ | ------------------------------------------------------------------ |

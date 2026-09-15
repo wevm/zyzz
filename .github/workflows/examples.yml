@@ -83,8 +83,12 @@ jobs:
               return ''
             })()
             const name = `zyzz-examples-${example}${suffix}`
-            if (!fs.existsSync(`examples/${example}/dist/index.html`)) {
-              throw new Error(`examples/${example}/dist/index.html is missing`)
+            // An example names its static site directory in package.json config.site; dist is the default.
+            const pkg = JSON.parse(fs.readFileSync(`examples/${example}/package.json`, 'utf8'))
+            const site = pkg.config?.site ?? 'dist'
+            if (!/^[a-z][a-z0-9-]*$/.test(site)) throw new Error(`Invalid site directory for ${example}: ${site}`)
+            if (!fs.existsSync(`examples/${example}/${site}/index.html`)) {
+              throw new Error(`examples/${example}/${site}/index.html is missing`)
             }
 
             // Install deployment tooling outside the repository's pnpm workspace.
@@ -94,7 +98,7 @@ jobs:
             fs.writeFileSync(path.join(directory, 'package.json'), JSON.stringify({ private: true }))
             fs.writeFileSync(path.join(directory, 'pnpm-workspace.yaml'), 'allowBuilds:\n  esbuild: true\n  workerd: true\n')
             fs.writeFileSync(path.join(directory, 'wrangler.json'), JSON.stringify({
-              assets: { directory: path.resolve(`examples/${example}/dist`) },
+              assets: { directory: path.resolve(`examples/${example}/${site}`) },
               compatibility_date: '2026-09-13',
               name,
               workers_dev: true,

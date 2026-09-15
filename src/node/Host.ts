@@ -4,6 +4,7 @@
  */
 import type * as LightningCss from 'lightningcss'
 import * as AtRules from '../compiler/internal/AtRules.js'
+import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
@@ -25,7 +26,9 @@ export type Build = {
  * Source modules remain TypeScript/JSX; transpilation belongs to the consumer.
  * Besides per-module stylesheets, every build publishes `zyzz.css`: shared
  * contributions followed by module stylesheets with dependencies before their
- * consumers, so an application loads one file.
+ * consumers, so an application loads one file. Configurations also publish
+ * `zyzz.js`, the initialization that restores a saved theme and scheme, at
+ * the configurable script path.
  * Lightning CSS processes stylesheets and composes maps before publication by default.
  * @param options - Source directory, separate output directory, and portable package identity.
  * @returns Explicit build, watch, and close operations. Close releases the output lock.
@@ -41,11 +44,28 @@ export async function create(options: create.Options): Promise<Runtime> {
           targets: { ...options.css?.targets },
         }
 
-  const outDir = Path.resolve(options.outDir)
+  const outDir = Path.resolve(options.outDir ?? 'dist')
   const root = await Fs.realpath(options.root)
 
   if (inside(outDir, root))
     throw new Error('Output must not contain the source directory.')
+
+  // A script inside the output is an owned artifact; elsewhere it is rewritten
+  // in place so a bundler's public directory can serve it verbatim.
+  const script = (() => {
+    if (options.script === false) return undefined
+
+    const path = Path.resolve(options.script ?? Path.join(outDir, 'zyzz.js'))
+
+    if (path !== outDir && inside(outDir, path))
+      return { owned: Path.relative(outDir, path).split(Path.sep).join('/') }
+    if (inside(root, path))
+      throw new Error(
+        'The script path must not be inside the source directory.',
+      )
+
+    return { external: path }
+  })()
 
   Transform.compile({
     moduleId: `${options.packageId}/identity.ts`,
@@ -157,6 +177,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     const generated = new Set(
       [
+        ...(script?.owned ? [script.owned] : []),
         'zyzz.css',
         'zyzz.css.map',
         'zyzz.shared.css',
@@ -340,6 +361,16 @@ export async function create(options: create.Options): Promise<Runtime> {
       artifacts.set('zyzz.css.map', complete.map)
     }
 
+    // Every configuration in the tree restores its saved selection from one script.
+    const initialization = Catalogs.scripts(
+      Object.values(graph.contracts).flatMap(Catalogs.read),
+    ).join('\n')
+
+    if (script?.owned && initialization)
+      artifacts.set(script.owned, `${initialization}\n`)
+
+    if (script?.external) await publishExternal(script.external, initialization)
+
     await regular(manifestPath, outDir)
 
     const previous = await read(manifestPath)
@@ -431,6 +462,25 @@ export async function create(options: create.Options): Promise<Runtime> {
     }
 
     return { changed: changed.sort(), files: [...artifacts.keys()].sort() }
+  }
+
+  // An external script has no ownership record, so unchanged content is left
+  // untouched and an emptied configuration set removes the file this host wrote.
+  let externalWritten = false
+
+  async function publishExternal(path: string, initialization: string) {
+    if (!initialization) {
+      if (externalWritten) await Fs.rm(path, { force: true })
+      externalWritten = false
+      return
+    }
+
+    const content = `${initialization}\n`
+    const current = await read(path)
+
+    if (current !== content) await write(path, content)
+
+    externalWritten = true
   }
 
   function build(): Promise<Build> {
@@ -569,12 +619,19 @@ export declare namespace create {
           readonly targets?: Readonly<LightningCss.Targets> | undefined
         }
       | undefined
-    /** Output directory exclusively locked until close; may be nested under root. */
-    readonly outDir: string
+    /** Output directory exclusively locked until close; may be nested under root. Defaults to `dist`. */
+    readonly outDir?: string | undefined
     /** Stable package identity prepended to relative source module IDs. */
     readonly packageId: string
     /** Directory scanned for supported JavaScript/TypeScript source files. */
     readonly root: string
+    /**
+     * Path of the initialization script restoring saved theme selections.
+     * Defaults to `zyzz.js` inside the output directory, where it is an owned
+     * artifact. A path elsewhere, such as a bundler's public directory, is
+     * rewritten in place without ownership. False disables the script.
+     */
+    readonly script?: string | false | undefined
   }
 }
 

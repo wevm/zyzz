@@ -2,6 +2,9 @@
   "name": "@zyzz/example-api-react",
   "private": true,
   "type": "module",
+  "config": {
+    "site": "build"
+  },
   "scripts": {
     "build": "node scripts/build.ts",
     "dev": "node scripts/dev.ts"

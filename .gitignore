@@ -5,7 +5,9 @@
 .venv/
 .zyzz/
 bench/results/
+build/
 coverage/
 dist/
+examples/*/public/zyzz.js
 node_modules/
 test-results/

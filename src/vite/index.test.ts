@@ -781,6 +781,23 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
 
       expect(scripts(broken)).toMatchInlineSnapshot('3')
 
+      // An edit that drops the configuration import while failing to compile
+      // keeps scoping the document through the last successful graph.
+      await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import { css } from 'zyzz'; export const broken = css({ color: unknownColor() });`,
+      )
+
+      const detached = await server.transformIndexHtml(
+        '/index.html',
+        files['index.html'],
+      )
+
+      expect(scripts(detached)).toMatchInlineSnapshot('3')
+
+      await Fs.writeFile(Path.join(root, 'main.ts'), files['main.ts'])
+
       // Removed configurations leave the document on the next request.
       await Fs.writeFile(
         Path.join(root, 'config.ts'),
@@ -878,6 +895,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     const configuration = (name: string) =>
       `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: '${name}', storageKey: '${name}', themes: { ${name}: { color: { ink: '#123456' } } } });`
     // Each page imports only css, so its configuration module leaves the bundle.
+    // Page c reaches its configuration only through a lazy import.
     const files = {
       'a.html': page('a'),
       'a.ts': `import { css } from './alpha'; document.body.className = css({ color: 'ink' })().className;`,
@@ -885,36 +903,41 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       'b.html': page('b'),
       'b.ts': `import { css } from './beta'; document.body.className = css({ color: 'ink' })().className;`,
       'beta.ts': configuration('beta'),
+      'c.html': page('c'),
+      'c.ts': `void import('./gamma').then(({ css }) => { document.body.className = css({ color: 'ink' })().className; });`,
+      'gamma.ts': configuration('gamma'),
     }
     const { config, root } = await create(files)
     let server: Vite.ViteDevServer | undefined
+
+    const keys = (html: string) =>
+      ['alpha', 'beta', 'gamma'].filter((key) =>
+        html.includes(`localStorage.getItem("${key}")`),
+      )
 
     try {
       // The dev server follows each document's module scripts through the compiled graph.
       server = await Vite.createServer(config)
       await server.listen()
 
-      const servedA = await server.transformIndexHtml(
-        '/a.html',
-        files['a.html'],
-      )
-      const servedB = await server.transformIndexHtml(
-        '/b.html',
-        files['b.html'],
-      )
-
-      expect(
-        servedA.includes('localStorage.getItem("alpha")'),
-      ).toMatchInlineSnapshot('true')
-      expect(
-        servedA.includes('localStorage.getItem("beta")'),
-      ).toMatchInlineSnapshot('false')
-      expect(
-        servedB.includes('localStorage.getItem("beta")'),
-      ).toMatchInlineSnapshot('true')
-      expect(
-        servedB.includes('localStorage.getItem("alpha")'),
-      ).toMatchInlineSnapshot('false')
+      expect(keys(await server.transformIndexHtml('/a.html', files['a.html'])))
+        .toMatchInlineSnapshot(`
+        [
+          "alpha",
+        ]
+      `)
+      expect(keys(await server.transformIndexHtml('/b.html', files['b.html'])))
+        .toMatchInlineSnapshot(`
+        [
+          "beta",
+        ]
+      `)
+      expect(keys(await server.transformIndexHtml('/c.html', files['c.html'])))
+        .toMatchInlineSnapshot(`
+        [
+          "gamma",
+        ]
+      `)
 
       await server.close()
       server = undefined
@@ -929,26 +952,30 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
             input: {
               a: Path.join(root, 'a.html'),
               b: Path.join(root, 'b.html'),
+              c: Path.join(root, 'c.html'),
             },
           },
         },
       })
 
-      const a = await Fs.readFile(Path.join(outDir, 'a.html'), 'utf8')
-      const b = await Fs.readFile(Path.join(outDir, 'b.html'), 'utf8')
-
-      expect(a.includes('localStorage.getItem("alpha")')).toMatchInlineSnapshot(
-        'true',
-      )
-      expect(a.includes('localStorage.getItem("beta")')).toMatchInlineSnapshot(
-        'false',
-      )
-      expect(b.includes('localStorage.getItem("beta")')).toMatchInlineSnapshot(
-        'true',
-      )
-      expect(b.includes('localStorage.getItem("alpha")')).toMatchInlineSnapshot(
-        'false',
-      )
+      expect(keys(await Fs.readFile(Path.join(outDir, 'a.html'), 'utf8')))
+        .toMatchInlineSnapshot(`
+        [
+          "alpha",
+        ]
+      `)
+      expect(keys(await Fs.readFile(Path.join(outDir, 'b.html'), 'utf8')))
+        .toMatchInlineSnapshot(`
+        [
+          "beta",
+        ]
+      `)
+      expect(keys(await Fs.readFile(Path.join(outDir, 'c.html'), 'utf8')))
+        .toMatchInlineSnapshot(`
+        [
+          "gamma",
+        ]
+      `)
     } finally {
       await server?.close()
       await Fs.rm(root, { recursive: true, force: true })

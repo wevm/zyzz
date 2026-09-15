@@ -300,6 +300,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       Record<string, string | null>
     > = Object.create(null)
     const contracts: Record<string, string> = Object.create(null)
+    const lazy: Record<string, ReadonlySet<string>> = Object.create(null)
     const modules: Record<string, string> = Object.create(null)
     const files = new Set<string>()
 
@@ -411,6 +412,33 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         resolutions[specifier] = sourceId(resolved.id)
         await visit(resolved.id)
       }
+
+      // Lazy imports stay outside this compile but scope the documents that load them.
+      const specifiers: string[] = []
+
+      Walker.walk(parsed.program, {
+        enter(node) {
+          if (
+            node.type === 'ImportExpression' &&
+            node.source.type === 'Literal' &&
+            typeof node.source.value === 'string'
+          )
+            specifiers.push(node.source.value)
+        },
+      })
+
+      const targets = new Set<string>()
+
+      for (const specifier of specifiers) {
+        if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
+
+        const resolved = await resolve(specifier, file)
+        if (!resolved || resource(specifier) || resource(resolved.id)) continue
+
+        targets.add(eligible(resolved.id) ? sourceId(resolved.id) : resolved.id)
+      }
+
+      lazy[id] = targets
     }
 
     await visit(entry.file, code)
@@ -581,20 +609,18 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       for (const target of Object.values(imports[id] ?? {}))
         if (target !== null) entryContracts.add(target)
 
-    graphs.set(
-      entry.file,
-      new Set([...[...connected].map(sourceId), ...entryContracts]),
-    )
+    // Static and lazy edges let a served document keep only the catalogs its scripts reach.
+    const staged = new Map<string, ReadonlySet<string>>()
 
-    // Resolved edges let a served document keep only the catalogs its scripts reach.
     for (const [id, resolutions] of Object.entries(imports))
-      edges.set(
+      staged.set(
         id,
-        new Set(
-          Object.values(resolutions).filter(
+        new Set([
+          ...Object.values(resolutions).filter(
             (target): target is string => target !== null,
           ),
-        ),
+          ...(lazy[id] ?? []),
+        ]),
       )
 
     const result = entry.compiler.compile({
@@ -604,6 +630,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       imports,
       modules,
     })
+
+    // The graph publishes after the compile succeeds, so a broken edit keeps
+    // scoping documents through the last good graph beside the kept catalogs.
+    graphs.set(
+      entry.file,
+      new Set([...[...connected].map(sourceId), ...entryContracts]),
+    )
+
+    for (const [id, targets] of staged) edges.set(id, targets)
 
     // Packed dependencies contribute catalogs beside the modules compiled here.
     const compiled = { ...contracts, ...result.contracts }

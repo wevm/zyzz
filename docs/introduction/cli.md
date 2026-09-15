@@ -9,6 +9,13 @@ npx zyzz dev
 
 Both commands read `src` and write transformed source modules, CSS, source maps, and packed metadata to `dist`. The compiler supplies automatic identities. Downstream tooling lowers the emitted TypeScript/JSX and bundles the application. `build` runs once; `dev` builds immediately and watches the source tree.
 
+`dist/zyzz.css` holds every style the tree emits, ordered so shared contributions come first and each module's rules follow the modules it imports. Load it once from the document or import it from the entry module.
+
+```html
+<link rel="stylesheet" href="/dist/zyzz.css" />
+<script type="module" src="/dist/main.tsx"></script>
+```
+
 ## CSS Only
 
 Disable source transformation and emit only CSS and CSS maps:
@@ -20,7 +27,7 @@ npx zyzz dev --css-only
 
 In this mode, build the original application source normally. Identity-bearing declarations require explicit IDs.
 
-Load `zyzz.shared.css` when present, followed by the emitted module stylesheets with dependencies before their consumers. With `--css-only`, the application continues importing its original source modules.
+`zyzz.css` still collects the shared and module stylesheets in dependency order, so the document loads one file while the application continues importing its original source modules.
 
 ```ts
 import { css, variable } from 'zyzz'

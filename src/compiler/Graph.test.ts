@@ -2194,6 +2194,7 @@ global({html:{color:'blue'}});`
         expect((await host.build()).changed).toMatchInlineSnapshot('[]')
 
         for (const name of [
+          'zyzz.css',
           'zyzz.shared.css',
           '.ZYZZ.JSON',
           'sub/effects.ts.css',

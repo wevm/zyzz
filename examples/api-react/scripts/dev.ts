@@ -1,14 +1,8 @@
 /** Watches the source tree with the Host API and serves the compiled tree with Vite. @module */
-import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
-
-// Node runs this script directly, so the sibling module loads through its runtime URL.
-const { stylesheet } = (await import(
-  new URL('./stylesheet.ts', import.meta.url).href
-)) as typeof import('./stylesheet.js')
 
 const root = Path.resolve(import.meta.dirname, '..')
 const outDir = Path.join(root, '.zyzz')
@@ -35,14 +29,13 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const)
     void stop().then(() => process.exit(0))
   })
 
-/** Regenerates the stylesheet index after every build; Vite starts once the compiled entry exists. */
+/** Reloads the compiled configuration after every build; Vite starts once the compiled entry exists. */
 async function publish(event: Host.Event) {
   if ('error' in event) {
     console.error(event.error)
     return
   }
 
-  await Fs.writeFile(Path.join(outDir, 'styles.css'), await stylesheet(outDir))
   console.log(`zyzz: ${event.result.changed.length} artifacts changed`)
 
   // Each build republishes the configuration, so a fresh module URL picks up catalog changes.

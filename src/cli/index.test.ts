@@ -110,6 +110,14 @@ describe('zyzz', () => {
         expect(result.files.includes('button.ts.css')).toMatchInlineSnapshot(
           'true',
         )
+        expect(result.files.includes('zyzz.css')).toMatchInlineSnapshot('true')
+        expect(
+          (
+            await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8')
+          ).includes(
+            await Fs.readFile(Path.join(root, 'dist/button.ts.css'), 'utf8'),
+          ),
+        ).toMatchInlineSnapshot('true')
         const original = await Fs.readFile(
           Path.join(root, 'dist/button.ts.css'),
           'utf8',

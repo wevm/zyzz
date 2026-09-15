@@ -178,6 +178,146 @@ export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' 
     }
   })
 
+  test('publishes one complete stylesheet with dependencies before consumers', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-complete-css-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
+    try {
+      // Lexical order puts the consumer first; the complete stylesheet must not.
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { css } from 'zyzz';
+import { global } from 'zyzz/web';
+import { widget } from './widget.js';
+global({ body: { margin: 0 } });
+export const app = css({ color: '#0000ff' });
+export { widget };`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'widget.ts'),
+        `import { css } from 'zyzz';
+export const widget = css({ color: '#ff0000', padding: '4px' });`,
+      )
+
+      const result = await host.build()
+
+      expect(result.files.filter((file) => file.startsWith('zyzz.')))
+        .toMatchInlineSnapshot(`
+        [
+          "zyzz.css",
+          "zyzz.css.map",
+          "zyzz.shared.css",
+          "zyzz.shared.css.map",
+        ]
+      `)
+
+      const css = await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+
+      expect(css).toMatchInlineSnapshot(`
+        "body {
+          margin: 0;
+        }
+        .z-text-dmFGKD {
+          color: red;
+        }
+
+        .z-p-4px-rua7lu {
+          padding: 4px;
+        }
+        .z-text-Pzz8UP {
+          color: #00f;
+        }
+        "
+      `)
+
+      const map = new Trace.TraceMap(
+        await Fs.readFile(Path.join(outDir, 'zyzz.css.map'), 'utf8'),
+      )
+
+      expect(map.sources).toMatchInlineSnapshot(`
+        [
+          "example/app.ts",
+          "zyzz.shared.css",
+          "example/widget.ts",
+          "example/widget.ts.css",
+          "example/app.ts.css",
+        ]
+      `)
+      expect(Trace.originalPositionFor(map, { column: 0, line: 4 }))
+        .toMatchInlineSnapshot(`
+        {
+          "column": 22,
+          "line": 2,
+          "name": "style-uhlxslorn1at-50",
+          "source": "example/widget.ts",
+        }
+      `)
+      expect(Trace.originalPositionFor(map, { column: 0, line: 11 }))
+        .toMatchInlineSnapshot(`
+        {
+          "column": 19,
+          "line": 5,
+          "name": "style-1nmg2kgs6bjew-153",
+          "source": "example/app.ts",
+        }
+      `)
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.join(project, 'src/runtime/index.ts') },
+        bundle: true,
+        entryPoints: [Path.join(outDir, 'app.ts')],
+        format: 'iife',
+        globalName: 'Fixture',
+        write: false,
+      })
+
+      browser = await chromium.launch()
+
+      const page = await browser.newPage()
+
+      await page.setContent('<div>Widget</div>')
+      await page.addStyleTag({ content: css })
+      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+      await page.evaluate(() => {
+        const fixture = (
+          window as unknown as {
+            Fixture: {
+              app: () => { className: string }
+              widget: () => { className: string }
+            }
+          }
+        ).Fixture
+
+        document.querySelector('div')!.className =
+          `${fixture.widget().className} ${fixture.app().className}`
+      })
+
+      // The consumer's color wins over the imported widget's color of equal specificity.
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot(`"4px"`)
+      expect(
+        await page
+          .locator('body')
+          .evaluate((element) => getComputedStyle(element).margin),
+      ).toMatchInlineSnapshot(`"0px"`)
+    } finally {
+      await browser?.close()
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('processes browser targets and minification with original source maps and recovery', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-host-'))
     const outDir = Path.join(root, 'output')
@@ -415,6 +555,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "theme.ts.css",
           "theme.ts.css.map",
           "theme.ts.map",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -465,6 +607,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "button.ts.css.map",
           "button.ts.map",
           "button.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -539,6 +683,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "renamed.ts.css.map",
           "renamed.ts.map",
           "renamed.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
       expect((await Fs.readdir(outDir)).sort()).toMatchInlineSnapshot(`
@@ -552,6 +698,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "renamed.ts.css.map",
           "renamed.ts.map",
           "renamed.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -683,6 +831,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "nested/button.ts.css.map",
           "nested/button.ts.map",
           "nested/button.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -811,6 +961,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "plain.ts.css",
           "plain.ts.css.map",
           "plain.ts.map",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
       expect(

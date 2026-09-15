@@ -15,8 +15,7 @@ import { Host } from 'zyzz/node'
 
 const host = await Host.create({ outDir, packageId: 'api-react', root })
 try {
-  const result = await host.build()
-  await Fs.writeFile(Path.join(outDir, 'styles.css'), await stylesheet(outDir))
+  await host.build()
 } finally {
   await host.close()
 }
@@ -24,11 +23,11 @@ try {
 await Vite.build({ configFile: false, root })
 ```
 
-`scripts/dev.ts` uses `host.watch` instead. Each successful build regenerates the stylesheet index, and the Vite dev server starts after the first one.
+`scripts/dev.ts` uses `host.watch` instead, and the Vite dev server starts after the first successful build.
 
-## Stylesheet Index
+## Stylesheet
 
-After each build, `scripts/stylesheet.ts` walks the compiled entry's static imports and derives `.zyzz/styles.css` from that graph, importing `zyzz.shared.css` first and then every non-empty module stylesheet with dependencies before their consumers, so `index.html` links one file, new source modules need no HTML edits, and the cascade follows import order. This is the reason to prefer the API over the CLI here; the [cli-react](../cli-react) example links each stylesheet by hand.
+Each build publishes `.zyzz/zyzz.css`: `zyzz.shared.css` first, then every module stylesheet with dependencies before their consumers. `index.html` links that one file, new source modules need no HTML edits, and the cascade follows import order. The per-module stylesheets and maps remain beside the compiled modules for library publishing.
 
 Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `.zyzz`, so this example keeps assets out of `src`.
 

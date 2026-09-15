@@ -70,7 +70,7 @@ npx zyzz build
 npx zyzz dev
 ```
 
-Compiles `src` to `dist`, emitting adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
+Compiles `src` to `dist`, emitting `zyzz.css` as the complete stylesheet beside adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
 
 ### Use Compiler API
 

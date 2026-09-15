@@ -35,7 +35,11 @@ Use `--help` for command help and `--json` for a build result containing `change
 
 ## Output and Watching
 
-For `src/button.ts`, the host emits `dist/button.ts`, `button.ts.css`, maps, and packed metadata. Shared stylesheet contributions use `zyzz.shared.css`. Load shared CSS before module CSS. Downstream tooling lowers TypeScript/JSX and emits declarations; this command does not bundle the application or generate declarations.
+For `src/button.ts`, the host emits `dist/button.ts`, `button.ts.css`, maps, and packed metadata. Shared stylesheet contributions use `zyzz.shared.css`. `dist/zyzz.css` is the complete stylesheet: shared contributions, then every module stylesheet with dependencies before their consumers. Applications load that one file; the per-module files remain for libraries that publish stylesheets beside their modules. Downstream tooling lowers TypeScript/JSX and emits declarations; this command does not bundle the application or generate declarations.
+
+```html
+<link rel="stylesheet" href="/dist/zyzz.css" />
+```
 
 `--css-only` retains the original source and omits transformed modules, JavaScript/TypeScript maps, and packed module metadata. Runtime authoring requires explicit IDs for identity-bearing declarations. CSS maps and output ownership metadata remain.
 

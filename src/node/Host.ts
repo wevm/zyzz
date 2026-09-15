@@ -4,6 +4,7 @@
  */
 import type * as LightningCss from 'lightningcss'
 import * as AtRules from '../compiler/internal/AtRules.js'
+import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'
@@ -21,7 +22,10 @@ export type Build = {
 
 /**
  * Opens an exclusively owned output lifecycle around the literal source transform.
- * Source modules remain TypeScript/JSX; transpilation and CSS loading belong to the consumer.
+ * Source modules remain TypeScript/JSX; transpilation belongs to the consumer.
+ * Besides per-module stylesheets, every build publishes `zyzz.css`: shared
+ * contributions followed by module stylesheets with dependencies before their
+ * consumers, so an application loads one file.
  * Lightning CSS processes stylesheets and composes maps before publication by default.
  * @param options - Source directory, separate output directory, and portable package identity.
  * @returns Explicit build, watch, and close operations. Close releases the output lock.
@@ -153,6 +157,8 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     const generated = new Set(
       [
+        'zyzz.css',
+        'zyzz.css.map',
         'zyzz.shared.css',
         'zyzz.shared.css.map',
         '.zyzz.json',
@@ -166,6 +172,8 @@ export async function create(options: create.Options): Promise<Runtime> {
         ]),
       ].map((name) => (insensitive ? name.toLowerCase() : name)),
     )
+
+    let shared: Stylesheet | undefined
 
     if (graph.sharedCss) {
       const assets = new Map<string, string>()
@@ -214,7 +222,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         }
       }
 
-      const shared =
+      const processed =
         css === false && !Object.keys(graph.sharedAssets ?? {}).length
           ? {
               code: Buffer.from(graph.sharedCss),
@@ -267,9 +275,16 @@ export async function create(options: create.Options): Promise<Runtime> {
         artifacts.set(name, content)
       }
 
-      artifacts.set('zyzz.shared.css', Buffer.from(shared.code).toString())
-      artifacts.set('zyzz.shared.css.map', Buffer.from(shared.map!).toString())
+      shared = {
+        code: Buffer.from(processed.code).toString(),
+        map: Buffer.from(processed.map!).toString(),
+      }
+
+      artifacts.set('zyzz.shared.css', shared.code)
+      artifacts.set('zyzz.shared.css.map', shared.map)
     }
+
+    const moduleStylesheets = new Map<string, Stylesheet>()
 
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
@@ -308,6 +323,21 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       artifacts.set(`${name}.css`, stylesheet.code)
       artifacts.set(`${name}.css.map`, stylesheet.map)
+      moduleStylesheets.set(`${options.packageId}/${name}`, stylesheet)
+    }
+
+    // The complete stylesheet follows the module graph so a consumer's rules
+    // cascade over the rules of the modules it imports.
+    if (shared || moduleStylesheets.size) {
+      const complete = concatenate([
+        ...(shared ? [shared] : []),
+        ...order(graph.dependencies, [...moduleStylesheets.keys()]).map(
+          (id) => moduleStylesheets.get(id)!,
+        ),
+      ])
+
+      artifacts.set('zyzz.css', complete.code)
+      artifacts.set('zyzz.css.map', complete.map)
     }
 
     await regular(manifestPath, outDir)
@@ -572,6 +602,56 @@ export declare namespace watch {
   }
 }
 
+/** Joins processed stylesheets and shifts their composed maps by the preceding line count. */
+function concatenate(parts: readonly { code: string; map: string }[]) {
+  const map = new Mapping.GenMapping({ file: 'zyzz.css' })
+  const chunks: string[] = []
+  let offset = 0
+
+  for (const part of parts) {
+    if (!part.code) continue
+
+    const code = part.code.endsWith('\n') ? part.code : `${part.code}\n`
+    const traced = Mapping.fromMap(part.map)
+
+    for (const mapping of Mapping.allMappings(traced)) {
+      const generated = {
+        column: mapping.generated.column,
+        line: mapping.generated.line + offset,
+      }
+
+      if (mapping.source !== undefined && mapping.original !== undefined) {
+        const location = {
+          generated,
+          original: mapping.original,
+          source: mapping.source,
+        }
+
+        if (mapping.name === undefined) Mapping.addMapping(map, location)
+        else Mapping.addMapping(map, { ...location, name: mapping.name })
+      } else Mapping.addMapping(map, { generated })
+    }
+
+    const encoded = Mapping.toEncodedMap(traced)
+
+    for (const [index, source] of encoded.sources.entries())
+      if (source !== null)
+        Mapping.setSourceContent(
+          map,
+          source,
+          encoded.sourcesContent?.[index] ?? null,
+        )
+
+    chunks.push(code)
+    offset += code.split('\n').length - 1
+  }
+
+  return {
+    code: chunks.join(''),
+    map: JSON.stringify(Mapping.toEncodedMap(map)),
+  }
+}
+
 function hash(content: string | Uint8Array) {
   return Crypto.createHash('sha256').update(content).digest('hex')
 }
@@ -616,6 +696,31 @@ function manifest(source: string, packageId: string): Record<string, string> {
       throw new Error('Invalid owned output path or digest.')
 
   return value.files as Record<string, string>
+}
+
+/** Orders module identities with dependencies before their consumers; cycles keep first-visit order. */
+function order(
+  dependencies: Readonly<Record<string, readonly string[]>>,
+  ids: readonly string[],
+) {
+  const members = new Set(ids)
+  const ordered: string[] = []
+  const seen = new Set<string>()
+
+  function visit(id: string) {
+    if (seen.has(id)) return
+
+    seen.add(id)
+
+    for (const dependency of dependencies[id] ?? [])
+      if (members.has(dependency)) visit(dependency)
+
+    ordered.push(id)
+  }
+
+  for (const id of ids) visit(id)
+
+  return ordered
 }
 
 async function read(path: string): Promise<string | undefined>

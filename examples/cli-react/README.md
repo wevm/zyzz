@@ -18,14 +18,12 @@ zyzz build --out-dir .zyzz && vite build
 
 ## Output Consumption
 
-For `src/App.tsx`, the CLI emits `.zyzz/App.tsx` with rewritten style calls, `.zyzz/App.tsx.css`, source maps, and packed metadata. Shared contributions such as `global`, `keyframes`, and layer order land in `.zyzz/zyzz.shared.css`.
+For `src/App.tsx`, the CLI emits `.zyzz/App.tsx` with rewritten style calls, `.zyzz/App.tsx.css`, source maps, and packed metadata. Shared contributions such as `global`, `keyframes`, and layer order land in `.zyzz/zyzz.shared.css`, and `.zyzz/zyzz.css` collects the shared stylesheet followed by every module stylesheet with dependencies before their consumers.
 
-`index.html` is the consumer of that tree: it loads the shared stylesheet, then each module stylesheet with dependencies before their consumers, then the compiled entry module. `App.tsx.css` therefore follows the stylesheets of the components `App.tsx` imports, so an App rule cascades over an imported component rule that sets the same property.
+`index.html` is the consumer of that tree: it links `zyzz.css` and loads the compiled entry module. New source modules need no HTML edits, and an App rule cascades over an imported component rule that sets the same property because `App.tsx` styles follow the components it imports.
 
 ```html
-<link rel="stylesheet" href="/.zyzz/zyzz.shared.css" />
-<link rel="stylesheet" href="/.zyzz/Styling.tsx.css" />
-<link rel="stylesheet" href="/.zyzz/App.tsx.css" />
+<link rel="stylesheet" href="/.zyzz/zyzz.css" />
 <script type="module" src="/.zyzz/main.tsx"></script>
 ```
 

@@ -1,14 +1,8 @@
 /** Compiles the source tree with the Host API, then bundles the compiled tree with Vite. @module */
-import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
-
-// Node runs this script directly, so the sibling module loads through its runtime URL.
-const { stylesheet } = (await import(
-  new URL('./stylesheet.ts', import.meta.url).href
-)) as typeof import('./stylesheet.js')
 
 const root = Path.resolve(import.meta.dirname, '..')
 const outDir = Path.join(root, '.zyzz')
@@ -20,7 +14,6 @@ const host = await Host.create({
 
 try {
   await host.build()
-  await Fs.writeFile(Path.join(outDir, 'styles.css'), await stylesheet(outDir))
 } finally {
   await host.close()
 }

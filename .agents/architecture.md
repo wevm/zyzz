@@ -1277,6 +1277,6 @@ Full at-rule authoring is assigned to [Phase 2.5](plan.md#full-at-rule-support),
 
 `zyzz build [src]` compiles once; `zyzz watch [src]` compiles immediately and rebuilds after source or dependency changes. The npm invocations are `npx zyzz build` and `npx zyzz watch`.
 
-Both commands default to `src` input, `dist` module output, and `<out-dir>/styles.css`. Paths resolve from the working directory. Optional `--out-dir`, `--css`, `--minify`, and `--targets` flags override defaults. Minification is opt-in and unspecified targets preserve modern CSS. Token-free authoring requires no config.
+Both commands default to `src` input, `dist` module output, and the complete `<out-dir>/zyzz.css` beside per-module stylesheets. Paths resolve from the working directory. Optional `--out-dir`, `--css`, `--minify`, and `--targets` flags override defaults. Minification is opt-in and unspecified targets preserve modern CSS. Token-free authoring requires no config.
 
 Missing source directories are errors. Output directories stay excluded from discovery. Watch failures preserve the previous complete output; cleanup removes only owned artifacts. The public CLI remains an unchecked Phase 4 implementation gate.

@@ -923,6 +923,14 @@ Static artifact comparison against A4 (`f0d844b`), using the existing literal co
 
 Readable names reduce class-map bytes in all eight cases, but hashed ownership increases gzip CSS in mostly unique workloads. This is not an atomic delivery win. Grouped compiler results, including CSS and class maps, remain byte-identical across all eight corpus cases.
 
+### Phase 3.7 Reachability Implementation
+
+Production source compilation now removes rules for proven unused local style definitions and unused object/namespace members. The existing lexical application analysis supplies reachability evidence. Exported or escaped values, sibling references, and every live variant alternative remain retained. Development and CSS-only output preserve all definitions.
+
+This implements a conservative pruning slice of 3.7. It does not claim whole-program tree shaking, transitive dead-reference elimination, or closure of the full output acceptance gate. Existing deduplication, cascade handling, and grouped-only benchmark comparisons remain intact.
+
+Public Transform regressions cover both modes, exports, aliases, namespace dependencies, packed consumers, theme scopes, and variant alternatives. A browser control compares rendered declarations after pruning. The colocated reachability benchmark measures grouped compilation and raw/gzip/Brotli CSS, bundled JavaScript, and combined delivery for zero and 100 unused styles.
+
 ### Phase 3.8 Static Native Tables
 
 The first 3.8 slice implements `StyleSheet.compile` and identity-preserving `StyleSheet.select` from `zyzz/react-native`. Shared `Style.define` data resolves into frozen tables for every requested theme and both schemes. Compatible token contracts retain theme overrides, while unrelated contracts retain their own fallbacks.

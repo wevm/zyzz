@@ -82,6 +82,194 @@ import { Css } from 'zyzz/web'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  describe('reachability', () => {
+    test('preserves live packed styles and complete theme token scopes', () => {
+      const library = Graph.compile({
+        modules: {
+          'library.ts': `import {Config} from 'zyzz';
+            export const {css, themes} = Config.create({defaultTheme:'mint',themes:{mint:{color:{brand:'red',extra:'blue'}}}});
+            export namespace styles { export const card = css({color:'brand'}); }`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'library.js': library.contracts['library.ts']! },
+        imports: { 'app.ts': { library: 'library.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {css} from 'zyzz'; import {styles, themes} from 'library';
+            const unused = css({width:'123px'});
+            export const props = styles.card();
+            export const scope = themes({theme:'mint'});`,
+        },
+      })
+
+      expect(
+        output.modules['app.ts']!.css.includes('width:123px;'),
+      ).toMatchInlineSnapshot('false')
+      expect(
+        output.modules['app.ts']!.css.includes('blue'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        library.modules['library.ts']!.css.includes('color:'),
+      ).toMatchInlineSnapshot('true')
+    })
+
+    test('matches independent browser styles after pruning', async () => {
+      const browser = await chromium.launch()
+
+      try {
+        for (const cssOutput of ['atomic', 'grouped'] as const) {
+          const output = Transform.compile({
+            cssOutput,
+            moduleId: 'browser.ts',
+            source: `import {css} from 'zyzz';
+              const unused = css({padding:'100px'});
+              export const card = css({padding:'8px',paddingLeft:'2px',color:'red'});`,
+          })
+          const page = await browser.newPage()
+
+          await page.setContent(
+            `<style>${output.css}</style><div id="actual" class="${Object.values(output.classes).filter(Boolean).at(-1)}"></div><div id="control" style="padding:8px;padding-left:2px;color:red"></div>`,
+          )
+
+          for (const property of [
+            'color',
+            'paddingLeft',
+            'paddingRight',
+          ] as const) {
+            const actual = await page
+              .locator('#actual')
+              .evaluate(
+                (element, property) => getComputedStyle(element)[property],
+                property,
+              )
+            const control = await page
+              .locator('#control')
+              .evaluate(
+                (element, property) => getComputedStyle(element)[property],
+                property,
+              )
+
+            expect(actual === control).toMatchInlineSnapshot('true')
+          }
+
+          await page.close()
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test.each(['atomic', 'grouped'] as const)(
+      'prunes unused locals and members in %s output',
+      (cssOutput) => {
+        const output = Transform.compile({
+          cssOutput,
+          moduleId: 'reachability.ts',
+          source: `import {css} from 'zyzz';
+          const unused = css({width:'123px'});
+          namespace styles {
+            export const dead = css({height:'456px'});
+            export const live = css({color:'red'});
+          }
+          export const props = styles.live();`,
+        })
+
+        expect(output.css.includes('width:')).toMatchInlineSnapshot('false')
+        expect(output.css.includes('height:')).toMatchInlineSnapshot('false')
+        expect(output.css.includes('color:red;')).toMatchInlineSnapshot('true')
+      },
+    )
+
+    test.each([
+      'export {card}',
+      'export const alias = card',
+      'export const props = card()',
+      'eval("card()")',
+    ])('retains observable definitions: %s', (usage) => {
+      const output = Transform.compile({
+        moduleId: 'observable.ts',
+        source: `import {css} from 'zyzz'; const card = css({color:'red'}); ${usage}`,
+      })
+
+      expect(output.css.includes('color:red;')).toMatchInlineSnapshot('true')
+    })
+
+    test('retains sibling selector references and escaped namespaces', () => {
+      const source = `import {css} from 'zyzz';
+        namespace styles {
+          export const parent = css({padding:'8px'});
+          export const child = css({selectors:{[\`\${parent} &\`]:{color:'red'}}});
+          export const unused = css({height:'456px'});
+        }
+        export const props = styles.child();`
+      const output = Transform.compile({ moduleId: 'siblings.ts', source })
+
+      expect(output.css.includes('padding:8px;')).toMatchInlineSnapshot('true')
+      expect(output.css.includes('height:')).toMatchInlineSnapshot('false')
+
+      const escaped = Transform.compile({
+        moduleId: 'siblings.ts',
+        source: `${source} export const all = styles;`,
+      })
+
+      expect(escaped.css.includes('height:456px;')).toMatchInlineSnapshot(
+        'true',
+      )
+    })
+
+    test('retains development and CSS-only definitions', () => {
+      const source = `import {css} from 'zyzz'; const unused = css({width:'123px'});`
+
+      for (const options of [
+        { development: true },
+        { compiler: false },
+      ] as const) {
+        const output = Transform.compile({
+          moduleId: 'retained.ts',
+          source,
+          ...options,
+        })
+
+        expect(output.css.includes('width:123px;')).toMatchInlineSnapshot(
+          'true',
+        )
+      }
+    })
+
+    test('retains computed access and reopened namespaces', () => {
+      for (const usage of [
+        `export const props = styles['card']()`,
+        `namespace styles { export const alias = card; } export const props = styles.alias()`,
+      ]) {
+        const output = Transform.compile({
+          moduleId: 'retained.ts',
+          source: `import {css} from 'zyzz'; namespace styles {export const card = css({color:'red'});} ${usage}`,
+        })
+
+        expect(output.css.includes('color:red;')).toMatchInlineSnapshot('true')
+      }
+    })
+
+    test('ignores shadowed reads when proving a local definition unused', () => {
+      const output = Transform.compile({
+        moduleId: 'shadowed.ts',
+        source: `import {css} from 'zyzz'; const card = css({color:'red'}); export function read(card: string) {return card;}`,
+      })
+
+      expect(output.css).toMatchInlineSnapshot('""')
+    })
+
+    test('retains all alternatives in an exported variant', () => {
+      const output = Transform.compile({
+        moduleId: 'variants.ts',
+        source: `import {variants} from 'zyzz'; export const button = variants({variants:{size:{sm:{padding:'4px'},lg:{padding:'16px'}}},defaultVariants:{size:'sm'}})`,
+      })
+
+      expect(output.css.includes('padding:4px;')).toMatchInlineSnapshot('true')
+      expect(output.css.includes('padding:16px;')).toMatchInlineSnapshot('true')
+    })
+  })
+
   test('CSS conformance covers every implemented property and pinned upstream grammar', async () => {
     const inventory = JSON.parse(
       await Fs.readFile(

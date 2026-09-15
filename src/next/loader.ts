@@ -124,8 +124,15 @@ async function compile(context: Context, source: string) {
   }
 
   async function discover(directory: string): Promise<void> {
-    context.addContextDependency(directory)
-    for (const item of await Fs.readdir(directory, { withFileTypes: true })) {
+    const items = await Fs.readdir(directory, { withFileTypes: true })
+
+    // Recursive tracking of a package root follows every installed dependency,
+    // including a symlink back to an ancestor, which Turbopack rejects as a
+    // loop. Package roots are tracked through their files and subdirectories.
+    if (!items.some((item) => item.name === 'node_modules'))
+      context.addContextDependency(directory)
+
+    for (const item of items) {
       if (
         item.name.startsWith('.') ||
         [

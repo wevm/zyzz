@@ -61,6 +61,10 @@ export async function verify(options: verify.Options) {
       { cwd: app, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 },
     )
 
+    // A dependency symlink back to an ancestor, as a package linked from its
+    // own repository, must not break root discovery in either bundler.
+    await Fs.symlink(app, Path.join(app, 'node_modules', 'ancestor'))
+
     await VariantLibrary.create(app, {
       cssOutput: cssOutput === 'atomic' ? 'grouped' : 'atomic',
       output: 'react',

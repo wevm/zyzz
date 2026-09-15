@@ -1,4 +1,4 @@
-/** Shares tokens, named themes, layers, and optional property aliases. @module */
+/** Shares tokens, named themes, layers, and HTML attribute output. @module */
 import { Config, Theme } from 'zyzz'
 
 const base = Theme.define({
@@ -24,10 +24,11 @@ const mint = Theme.extend(base, {
   color: { accent: { dark: '#6ee7b7', light: '#047857' } },
 })
 
-/** Named helpers retain the shared token contract across every example. */
-export const { css, theme, themes } = Config.create({
+/** Svelte binds native attributes, so applied styles return `class` and a serialized `style`. */
+export const { appearance, css, script, theme, themes } = Config.create({
   defaultTheme: 'indigo',
   layers: ['reset', 'base', 'components'],
+  output: 'html',
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
   themes: {
     indigo: base,

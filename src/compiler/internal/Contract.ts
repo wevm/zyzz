@@ -22,12 +22,14 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(
       data.version as number,
     )
   )
     throw new Error('Unsupported Zyzz contract version.')
 
+  // Root controls arrived with version 18; older readers must treat them as absent.
+  const rootControls = (data.version as number) >= 18
   const legacyModes = new Map<string, 'atomic' | 'grouped'>()
   if ((data.version as number) < 17) {
     function collect(value: unknown) {
@@ -190,7 +192,9 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17].includes(data.version as number) ||
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(
+          data.version as number,
+        ) ||
         ![
           'cssFunction',
           'customMedia',
@@ -239,10 +243,10 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17].includes(data.version as number)
+        ![16, 17, 18].includes(data.version as number)
       )
         throw new Error(
-          'Packed callable styles require contract version 16 or 17.',
+          'Packed callable styles require contract version 16 or later.',
         )
       const binding = string(entry.binding)
       if (!/^z-style-[a-z0-9_-]+$/.test(binding))
@@ -336,10 +340,14 @@ export function read(
     const fullConfigType = options
       ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
-    const configType =
-      entry.script === true
-        ? fullConfigType
-        : `{readonly [key in keyof ${fullConfigType} as key extends 'script' ? never : key]:${fullConfigType}[key]}`
+    // Helpers a legacy library did not compile are hidden from its consumers' types.
+    const hidden = [
+      ...(rootControls && entry.appearance === true ? [] : ["'appearance'"]),
+      ...(entry.script === true ? [] : ["'script'"]),
+    ]
+    const configType = hidden.length
+      ? `{readonly [key in keyof ${fullConfigType} as key extends ${hidden.join(' | ')} ? never : key]:${fullConfigType}[key]}`
+      : fullConfigType
     const outputType = catalogOnly
       ? `({readonly [key in keyof ${configType} as key extends 'themes' ? never : key]:${configType}[key]} & {readonly themes:{readonly [key in keyof ${configType}['themes']]:${configType}['themes'][key]}})`
       : configType
@@ -353,6 +361,10 @@ export function read(
         ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
         ...(entry.script === true ? { script: true } : {}),
+        ...(rootControls && entry.appearance === true
+          ? { appearance: true }
+          : {}),
+        ...(rootControls && entry.root === true ? { root: true } : {}),
         end: -1,
         name: theme,
         start: -1,
@@ -368,7 +380,7 @@ export function read(
         ...(options
           ? {
               options,
-              type: `${outputType}${entry.initialization === true ? "['script']" : entry.selection === true ? "['themes']" : ''}`,
+              type: `${outputType}${entry.initialization === true ? "['script']" : entry.root === true ? "['appearance']" : entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -442,6 +454,7 @@ export function write(
   themes: Readonly<Record<string, Theme.Definition>>,
   stylesheets: readonly Stylesheets.Section[] = [],
   moduleId = '',
+  configurations: readonly write.Configuration[] = [],
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     if (link.kind === 'variables')
@@ -499,12 +512,16 @@ export function write(
       (link.kind === 'config' || link.call.initialization)
         ? { script: true }
         : {}),
+      ...(link.call.appearance && (link.kind === 'config' || link.call.root)
+        ? { appearance: true }
+        : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
       ...(link.call.catalogOnly ? { catalogOnly: true } : {}),
       ...(link.call.selection ? { selection: true } : {}),
       ...(link.call.initialization ? { initialization: true } : {}),
+      ...(link.call.root ? { root: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members
         ? {
@@ -523,6 +540,9 @@ export function write(
     ...(stylesheets.length
       ? { stylesheets: Stylesheets.write(stylesheets) }
       : {}),
+    // Local configurations publish their catalogs so documents restore
+    // selections for modules that export styles but not the configuration.
+    ...(configurations.length ? { configurations } : {}),
     exports: Object.fromEntries(
       Object.entries(links).map(([name, link]) => [name, entry(link)]),
     ),
@@ -545,6 +565,19 @@ export function write(
       function callable(link: Themes.Link): boolean {
         return !!link.style || Object.values(link.members ?? {}).some(callable)
       }
+      // Root controls call a runtime helper older releases lack, and older
+      // readers reject the storageKey option, so both require readers to opt in.
+      // Local configurations emit the same helper without an exported binding.
+      if (
+        configurations.length ||
+        Object.values(links).some(
+          (link) =>
+            (link.call.appearance &&
+              (link.kind === 'config' || link.call.root)) ||
+            link.call.options?.storageKey !== undefined,
+        )
+      )
+        return 18
       if (
         Object.values(links).some(callable) ||
         Object.values(themes).some(
@@ -675,6 +708,19 @@ export function write(
       return 1
     })(),
   })
+}
+
+/** Contract writer contracts. */
+export declare namespace write {
+  /** Catalog of one configuration call, published whether or not the call is exported. */
+  type Configuration = {
+    /** Configuration identity that prefixes every theme scope key. */
+    readonly identity: string
+    /** localStorage key the configuration's script and root controls share. */
+    readonly storageKey?: string | undefined
+    /** Named theme keys of the configuration's catalog. */
+    readonly themes: readonly string[]
+  }
 }
 
 function signature(

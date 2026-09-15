@@ -197,7 +197,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(graph.contracts['config.js']!).version,
-    ).toMatchInlineSnapshot('17')
+    ).toMatchInlineSnapshot(`18`)
 
     const bundle = await Esbuild.build({
       stdin: {
@@ -351,15 +351,17 @@ describe('create', () => {
 
       const key = output === 'html' ? 'class' : 'className'
 
-      expect(result.mint === result.second[key]).toMatchInlineSnapshot('true')
+      expect(
+        result.second[key] === `${result.mint} z_scheme-dark`,
+      ).toMatchInlineSnapshot(`true`)
       expect(typeof result.first[key]).toMatchInlineSnapshot('"string"')
       expect(result.first.style).toMatchInlineSnapshot('undefined')
       expect(result.second[key] !== result.first[key]).toMatchInlineSnapshot(
         'true',
       )
       expect(
-        result.selectTheme('mint')[key] === result.second[key],
-      ).toMatchInlineSnapshot('true')
+        result.selectTheme('mint')[key] === result.mint,
+      ).toMatchInlineSnapshot(`true`)
 
       if (output === 'html')
         expect(result.second.style).toMatchInlineSnapshot('"color-scheme:dark"')

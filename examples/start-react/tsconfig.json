@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2022",
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}

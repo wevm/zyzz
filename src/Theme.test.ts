@@ -471,7 +471,7 @@ describe('queries', () => {
 
       expect(
         JSON.parse(result.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`17`)
+      ).toMatchInlineSnapshot(`18`)
       expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
         .toMatchInlineSnapshot(`
       {
@@ -617,11 +617,11 @@ describe('queries', () => {
       const output = Css.compile({ styles, themes: { base: theme, alternate } })
 
       expect(output.css).toMatchInlineSnapshot(`
-      ".t_0{--z0:1rem;--z1:500;}
-      .t_1{--z0:1.25rem;--z1:500;}
-      .z-font-size-kdtzCc{font-size:var(--z0,1rem);}
-      .z-font-weight-hMXM99{font-weight:var(--z1,500);}"
-    `)
+        ".t_0{--z0:1rem;--z1:500;}
+        .t_1{--z0:1.25rem;--z1:500;}
+        .z-font-size-kdtzCc{font-size:var(--z0,1rem);}
+        .z-font-weight-hMXM99{font-weight:var(--z1,500);}"
+      `)
       expect(Object.keys(theme.vars)).toMatchInlineSnapshot(`
       [
         "fontSize",
@@ -651,9 +651,9 @@ describe('queries', () => {
       })
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
-      .z-font-size-6_nacQ{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
-    `)
+        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
+        .z-font-size-6_nacQ{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
+      `)
     })
     test('Chromium applies bundled typography and scheme colors', async () => {
       const styles = Style.define({

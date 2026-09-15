@@ -178,6 +178,456 @@ export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' 
     }
   })
 
+  test('publishes one complete stylesheet with dependencies before consumers', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-complete-css-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
+    try {
+      // Lexical order puts the consumer first; the complete stylesheet must not.
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { css } from 'zyzz';
+import { global } from 'zyzz/web';
+import { widget } from './widget.js';
+global({ body: { margin: 0 } });
+export const app = css({ color: '#0000ff' });
+export { widget };`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'widget.ts'),
+        `import { css } from 'zyzz';
+export const widget = css({ color: '#ff0000', padding: '4px' });`,
+      )
+
+      const result = await host.build()
+
+      expect(result.files.filter((file) => file.startsWith('zyzz.')))
+        .toMatchInlineSnapshot(`
+        [
+          "zyzz.css",
+          "zyzz.css.map",
+          "zyzz.shared.css",
+          "zyzz.shared.css.map",
+        ]
+      `)
+
+      const css = await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+
+      expect(css).toMatchInlineSnapshot(`
+        "body {
+          margin: 0;
+        }
+        .z-text-dmFGKD {
+          color: red;
+        }
+
+        .z-p-4px-rua7lu {
+          padding: 4px;
+        }
+        .z-text-Pzz8UP {
+          color: #00f;
+        }
+        "
+      `)
+
+      const map = new Trace.TraceMap(
+        await Fs.readFile(Path.join(outDir, 'zyzz.css.map'), 'utf8'),
+      )
+
+      expect(map.sources).toMatchInlineSnapshot(`
+        [
+          "example/app.ts",
+          "zyzz.shared.css",
+          "example/widget.ts",
+          "example/widget.ts.css",
+          "example/app.ts.css",
+        ]
+      `)
+      expect(Trace.originalPositionFor(map, { column: 0, line: 4 }))
+        .toMatchInlineSnapshot(`
+        {
+          "column": 22,
+          "line": 2,
+          "name": "style-uhlxslorn1at-50",
+          "source": "example/widget.ts",
+        }
+      `)
+      expect(Trace.originalPositionFor(map, { column: 0, line: 11 }))
+        .toMatchInlineSnapshot(`
+        {
+          "column": 19,
+          "line": 5,
+          "name": "style-1nmg2kgs6bjew-153",
+          "source": "example/app.ts",
+        }
+      `)
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.join(project, 'src/runtime/index.ts') },
+        bundle: true,
+        entryPoints: [Path.join(outDir, 'app.ts')],
+        format: 'iife',
+        globalName: 'Fixture',
+        write: false,
+      })
+
+      browser = await chromium.launch()
+
+      const page = await browser.newPage()
+
+      await page.setContent('<div>Widget</div>')
+      await page.addStyleTag({ content: css })
+      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+      await page.evaluate(() => {
+        const fixture = (
+          window as unknown as {
+            Fixture: {
+              app: () => { className: string }
+              widget: () => { className: string }
+            }
+          }
+        ).Fixture
+
+        document.querySelector('div')!.className =
+          `${fixture.widget().className} ${fixture.app().className}`
+      })
+
+      // The consumer's color wins over the imported widget's color of equal specificity.
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot(`"4px"`)
+      expect(
+        await page
+          .locator('body')
+          .evaluate((element) => getComputedStyle(element).margin),
+      ).toMatchInlineSnapshot(`"0px"`)
+    } finally {
+      await browser?.close()
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('orders sibling stylesheets by authored import order from graph roots', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-root-order-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    try {
+      // Name order would put a before z; the entry imports z first.
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import { z } from './z.js'; import { a } from './a.js'; export { a, z };`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'z.ts'),
+        `import { css } from 'zyzz'; export const z = css({ padding: '1px' });`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'a.ts'),
+        `import { css } from 'zyzz'; export const a = css({ padding: '2px' });`,
+      )
+      await host.build()
+
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')).match(
+          /padding: \dpx/g,
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "padding: 1px",
+          "padding: 2px",
+        ]
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('publishes initialization for configurations kept local to a module', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-local-config-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'local.ts'),
+        `import { Config } from 'zyzz';
+const { css, appearance } = Config.create({ defaultTheme: 'base', storageKey: 'kept', themes: { base: { color: { ink: '#123456' } } } });
+export const card = css({ color: 'ink' });
+export const select = appearance.set;`,
+      )
+      // A scheme-only configuration emits no CSS and exports no binding, so
+      // the catalog alone justifies the module's contract.
+      await Fs.writeFile(
+        Path.join(root, 'toggle.ts'),
+        `import { Config } from 'zyzz';
+const { appearance } = Config.create({ storageKey: 'scheme-only' });
+export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
+      )
+      await host.build()
+
+      const script = await Fs.readFile(Path.join(outDir, 'zyzz.js'), 'utf8')
+
+      expect(
+        script.includes('localStorage.getItem("kept")'),
+      ).toMatchInlineSnapshot(`true`)
+      expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+      expect(
+        script.includes('localStorage.getItem("scheme-only")'),
+      ).toMatchInlineSnapshot(`true`)
+
+      // Local root controls need the runtime helper older readers lack.
+      const version = async (name: string) =>
+        (
+          JSON.parse(await Fs.readFile(Path.join(outDir, name), 'utf8')) as {
+            version: number
+          }
+        ).version
+
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('rejects a script path that names another artifact', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-script-clash-'))
+    const outDir = Path.join(root, 'output')
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { css } from 'zyzz'; export const card = css({ color: 'red' });`,
+      )
+
+      for (const name of ['zyzz.css', '.zyzz.json', 'app.ts.css']) {
+        const host = await Host.create({
+          outDir,
+          packageId: 'example',
+          root,
+          script: Path.join(outDir, name),
+        })
+
+        try {
+          await expect(host.build()).rejects.toThrow(
+            `The script path collides with the artifact ${name}.`,
+          )
+        } finally {
+          await host.close()
+        }
+      }
+
+      // The rejected builds published nothing beside the lock and manifest.
+      expect(
+        (await Fs.readdir(outDir)).filter(
+          (name) => !['.zyzz-lock', '.zyzz.json'].includes(name),
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('rebases nested module URLs in the complete stylesheet', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-rebase-css-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+
+    try {
+      await Fs.mkdir(Path.join(root, 'components'))
+      await Fs.writeFile(
+        Path.join(root, 'components/card.ts'),
+        `import { css } from 'zyzz';
+export const card = css({ backgroundImage: 'url(./icon.svg)', maskImage: 'url(/shared/mask.svg)' });`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { card } from './components/card.js'; export { card };`,
+      )
+      await host.build()
+
+      const urls = (css: string) => css.match(/url\([^)]*\)/g)
+
+      // The module stylesheet keeps URLs relative to its own directory.
+      expect(
+        urls(
+          await Fs.readFile(
+            Path.join(outDir, 'components/card.ts.css'),
+            'utf8',
+          ),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "url("./icon.svg")",
+          "url("/shared/mask.svg")",
+        ]
+      `)
+      expect(urls(await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')))
+        .toMatchInlineSnapshot(`
+        [
+          "url("components/icon.svg")",
+          "url("/shared/mask.svg")",
+        ]
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('publishes the initialization script inside the output or at an external path', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-script-'))
+    const source = Path.join(root, 'src')
+    const outDir = Path.join(root, 'output')
+    const external = Path.join(root, 'public/zyzz.js')
+    const configuration = (storageKey: string) =>
+      `import { Config } from 'zyzz';
+export const { css, themes } = Config.create({ defaultTheme: 'base', storageKey: '${storageKey}', themes: { base: { color: { ink: '#123456' } } } });`
+
+    try {
+      await Fs.mkdir(source)
+      await Fs.writeFile(Path.join(source, 'config.ts'), configuration('owned'))
+
+      await using owned = await Host.create({
+        outDir,
+        packageId: 'example',
+        root: source,
+      })
+
+      const result = await owned.build()
+      const script = await Fs.readFile(Path.join(outDir, 'zyzz.js'), 'utf8')
+
+      expect(result.files.includes('zyzz.js')).toMatchInlineSnapshot(`true`)
+      expect(
+        script.includes('localStorage.getItem("owned")'),
+      ).toMatchInlineSnapshot(`true`)
+      expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+
+      await owned.close()
+
+      // An external path serves a bundler's public directory; unchanged content is left alone.
+      await Fs.writeFile(
+        Path.join(source, 'config.ts'),
+        configuration('shared'),
+      )
+
+      await using host = await Host.create({
+        outDir,
+        packageId: 'example',
+        root: source,
+        script: external,
+      })
+
+      expect(
+        (await host.build()).files.includes('zyzz.js'),
+      ).toMatchInlineSnapshot(`false`)
+      expect(
+        (await Fs.readFile(external, 'utf8')).includes(
+          'localStorage.getItem("shared")',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+
+      const written = (await Fs.stat(external)).mtimeMs
+
+      await host.build()
+
+      expect(
+        (await Fs.stat(external)).mtimeMs === written,
+      ).toMatchInlineSnapshot(`true`)
+
+      // Removing every configuration removes the script this host wrote.
+      await Fs.writeFile(
+        Path.join(source, 'config.ts'),
+        `import { css } from 'zyzz'; export const card = css({ padding: '4px' });`,
+      )
+      await host.build()
+
+      expect(
+        await Fs.access(external).then(
+          () => 'present',
+          () => 'absent',
+        ),
+      ).toMatchInlineSnapshot(`"absent"`)
+      expect(
+        await Fs.access(Path.join(outDir, 'zyzz.js')).then(
+          () => 'present',
+          () => 'absent',
+        ),
+      ).toMatchInlineSnapshot(`"absent"`)
+
+      await expect(
+        Host.create({
+          outDir,
+          packageId: 'example',
+          root: source,
+          script: Path.join(source, 'zyzz.js'),
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Error: The script path must not be inside the source directory.]`,
+      )
+
+      await host.close()
+
+      // A script left by an earlier host is recognized by its banner and removed
+      // by the first build without configurations; a foreign file rejects the build.
+      await Fs.writeFile(
+        external,
+        '/* zyzz initialization */\n(()=>{/* stale */})();\n',
+      )
+
+      await using fresh = await Host.create({
+        outDir,
+        packageId: 'example',
+        root: source,
+        script: external,
+      })
+
+      await fresh.build()
+
+      expect(
+        await Fs.access(external).then(
+          () => 'present',
+          () => 'absent',
+        ),
+      ).toMatchInlineSnapshot(`"absent"`)
+
+      await Fs.writeFile(external, 'console.log("theirs")\n')
+      await Fs.writeFile(
+        Path.join(source, 'config.ts'),
+        configuration('shared'),
+      )
+
+      expect(
+        await fresh.build().then(
+          () => 'built',
+          (error: unknown) => String(error).replace(root, '<root>'),
+        ),
+      ).toMatchInlineSnapshot(
+        `"Error: Refusing to replace a foreign script: <root>/public/zyzz.js"`,
+      )
+      expect(await Fs.readFile(external, 'utf8')).toMatchInlineSnapshot(`
+        "console.log("theirs")
+        "
+      `)
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('processes browser targets and minification with original source maps and recovery', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-host-'))
     const outDir = Path.join(root, 'output')
@@ -415,6 +865,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "theme.ts.css",
           "theme.ts.css.map",
           "theme.ts.map",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -465,6 +917,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "button.ts.css.map",
           "button.ts.map",
           "button.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -539,6 +993,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "renamed.ts.css.map",
           "renamed.ts.map",
           "renamed.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
       expect((await Fs.readdir(outDir)).sort()).toMatchInlineSnapshot(`
@@ -552,6 +1008,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "renamed.ts.css.map",
           "renamed.ts.map",
           "renamed.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -683,6 +1141,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "nested/button.ts.css.map",
           "nested/button.ts.map",
           "nested/button.ts.zyzz.json",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
 
@@ -811,6 +1271,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "plain.ts.css",
           "plain.ts.css.map",
           "plain.ts.map",
+          "zyzz.css",
+          "zyzz.css.map",
         ]
       `)
       expect(

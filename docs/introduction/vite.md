@@ -21,6 +21,8 @@ export default defineConfig({
 
 No generated component imports or manual stylesheet import is required. Theme source is analyzed without executing application code. Vite owns alias resolution, TypeScript/JSX lowering, final CSS processing, and asset delivery.
 
+Named theme configurations also get their preference [initialization script](../api/vite/zyzz.md#initialization-script) inlined at the start of `index.html`'s `<head>`, so saved themes and schemes apply before first paint. Pass `zyzz({ script: false })` to opt out.
+
 Theme edits update generated CSS through Vite HMR. Missing source files report errors; restoring or creating the dependency recovers without restarting the server. Files outside the Vite root, dependency authoring, and virtual source modules remain separate integration gates.
 
 See [Vite's plugin setup](https://vite.dev/guide/using-plugins) for the host configuration format.
@@ -86,6 +88,6 @@ namespace styles {
 element.className = `${mint.className} ${styles.card().className}`
 ```
 
-Zyzz preserves native `light-dark()` for inherited and inline scheme changes, including application stylesheets. CSS targets default to Chrome/Edge 123, Firefox 120, and Safari 17.5 when no build target is supplied. Explicit browser targets are retained; incompatible or unverifiable targets produce an error. An ECMAScript build target requires a separate browser `build.cssTarget`.
+Zyzz preserves native `light-dark()` for inherited and inline scheme changes, including application stylesheets. CSS targets default to Chrome/Edge 123, Firefox 120, and Safari 17.5 when no build target is supplied. Bundlers without this plugin may lower `light-dark()`; compiled scheme classes carry `color-scheme` in the stylesheet, so lowered output still resolves. Explicit browser targets are retained; incompatible or unverifiable targets produce an error. An ECMAScript build target requires a separate browser `build.cssTarget`.
 
 Import the library stylesheet for its precompiled components. App-authored styles receive matching scopes through the plugin. Publish JavaScript, declarations, CSS, and metadata from the same build. Restart Vite after replacing an installed package; dependency watching follows Vite's normal exclusions.

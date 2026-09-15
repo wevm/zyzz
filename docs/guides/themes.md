@@ -128,7 +128,7 @@ const example = (
 )
 ```
 
-Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` styles. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
+Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class, a compiled scheme class, and an inline `colorScheme` style. The scheme class carries `color-scheme` in the stylesheet, so bundlers that lower `light-dark()` still resolve the pair. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
 
 ### Restore Preferences
 
@@ -160,7 +160,7 @@ export function Document({ nonce }: { nonce?: string }) {
 }
 ```
 
-The script derives the theme catalog and compiled classes from the config. An optional argument sets `storageKey`; its default is `'zyzz'`.
+The script derives the theme catalog and compiled classes from the config and reads the entry named by the config's `storageKey`, `'zyzz'` by default.
 
 The application saves preferences under `zyzz`:
 
@@ -171,7 +171,18 @@ localStorage.setItem(
 )
 ```
 
-The script reads this record once and updates only known theme classes and `document.documentElement.style.colorScheme`. Unrelated classes and styles remain intact. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
+The script reads this record once and updates only known theme and scheme classes plus `document.documentElement.style.colorScheme`. Unrelated classes and styles remain intact.
+
+The [Vite plugin](../introduction/vite.md) inlines the script into `index.html` automatically. Client code manages the same record through the config's [`appearance`](../api/core/Config/create.md#appearance) controls:
+
+```ts
+import { appearance } from './zyzz.config.js'
+
+const initial = appearance.get() // { theme: 'base', colorScheme: 'dark' } after restoration
+appearance.set({ colorScheme: 'light dark' })
+```
+
+`get()` reads the applied root state and `set()` applies fields over it and saves the result. A `storageKey` on `Config.create` changes the record both helpers use. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
 
 React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it; the script does not synchronize component state or persist later changes. See [Config Script](../api/core/Config/script.md) for the full contract.
 

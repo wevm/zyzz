@@ -1,0 +1,18 @@
+{
+  "name": "@zyzz/example-vite-solid",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build --configLoader runner",
+    "dev": "vite --configLoader runner"
+  },
+  "dependencies": {
+    "solid-js": "1.9.15",
+    "zyzz": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "^8.2.2",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}

@@ -1282,8 +1282,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? { variableCalls: Object.freeze(variables.calls) }
       : {}),
     themeAliases: Object.freeze(themes?.aliases ?? []),
+    ...(themes?.appearances.size
+      ? { themeAppearances: Object.freeze([...themes.appearances]) }
+      : {}),
     ...(themes?.scripts.size
       ? { themeScripts: Object.freeze([...themes.scripts]) }
+      : {}),
+    ...(themes?.selections.size
+      ? { themeSelections: Object.freeze([...themes.selections]) }
       : {}),
     themeCalls: Object.freeze(themes?.calls ?? []),
     ...(themes?.staticTokens.length
@@ -1337,8 +1343,12 @@ export declare namespace extract {
     readonly styles: Style.Definition
     /** Local bound-authoring initializers and their retained token types. */
     readonly themeAliases: readonly Themes.Alias[]
+    /** Configuration identities retaining their root controls. */
+    readonly themeAppearances?: readonly string[] | undefined
     /** Configuration identities retaining their initialization helper. */
     readonly themeScripts?: readonly string[] | undefined
+    /** Configuration identities whose theme selector is called, passed, or bound. */
+    readonly themeSelections?: readonly string[] | undefined
     /** Local factory spans replaced by compiled scope data. */
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */

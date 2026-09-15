@@ -10,6 +10,7 @@ import * as Expression from './internal/Expression.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
+import * as Scheme from '../internal/Scheme.js'
 import * as Syntax from './internal/Syntax.js'
 import * as Source from './Source.js'
 import type * as Style from '../Style.js'
@@ -73,17 +74,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       )
         throw new Error('CSS-only output requires an explicit variable id.')
   }
-
-  const emitted = Css.compile({
-    development: options.development,
-    scope: options.moduleId,
-    composition: options.composition,
-    cssOutput: options.cssOutput,
-    names: portable ? portableNames : undefined,
-    styles: extracted.styles,
-    contributions: extracted.contributions,
-    themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
-  })
 
   if (portable) {
     function selectors(style: Style.NamedStyle) {
@@ -187,6 +177,27 @@ export function compile(options: compile.Options): compile.ReturnType {
       else if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
+  })
+
+  // Scheme rules accompany modules whose runtime helpers can apply a scheme class.
+  const schemes =
+    options.schemes ??
+    Boolean(
+      extracted.themeAppearances?.length ||
+      extracted.themeScripts?.length ||
+      extracted.themeSelections?.length,
+    )
+
+  const emitted = Css.compile({
+    development: options.development,
+    scope: options.moduleId,
+    composition: options.composition,
+    cssOutput: options.cssOutput,
+    names: portable ? portableNames : undefined,
+    schemes,
+    styles: extracted.styles,
+    contributions: extracted.contributions,
+    themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
 
   let runtime = '__zyzzProps'
@@ -518,8 +529,23 @@ export function compile(options: compile.Options): compile.ReturnType {
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
 
       const script = extracted.themeScripts?.includes(call.name)
+      const root = extracted.themeAppearances?.includes(call.name)
 
-      if (script) usesAppearance = true
+      if (script || root) usesAppearance = true
+
+      // Helpers are emitted only when referenced; both share the configured storage key.
+      const storage = call.options?.storageKey
+      const helpers = (entries: string, defaultTheme?: string) => {
+        const scriptOptions = storage
+          ? `,${JSON.stringify({ storageKey: storage })}`
+          : ''
+        const rootOptions =
+          storage || defaultTheme
+            ? `,${JSON.stringify({ ...(defaultTheme ? { defaultTheme } : {}), ...(storage ? { storageKey: storage } : {}) })}`
+            : ''
+
+        return `${root ? `appearance:${appearance}.root(${entries}${rootOptions}),` : ''}${script ? `script:${appearance}.create(${entries}${scriptOptions}),` : ''}`
+      }
 
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
@@ -532,18 +558,22 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
 
         const entries = JSON.stringify(Object.entries(catalog))
+        const defaultTheme =
+          typeof call.options.defaultTheme === 'string'
+            ? call.options.defaultTheme
+            : undefined
         if (unusedSelections.has(call.start))
-          return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+          return `{${helpers(entries, defaultTheme)}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
 
         usesSelection = true
 
-        return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
+        return `{${helpers(entries, defaultTheme)}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
       }
 
       if (Object.hasOwn(call.members, '["theme"]'))
-        return `{${script ? `script:${appearance}.create([]),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+        return `{${helpers('[]')}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
 
-      return script ? `{script:${appearance}.create([])}` : '{}'
+      return script || root ? `{${helpers('[]').slice(0, -1)}}` : '{}'
     })()
 
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
@@ -892,6 +922,13 @@ export function compile(options: compile.Options): compile.ReturnType {
           return rule
         }
 
+        if (Object.values(Scheme.classes).includes(name)) {
+          // Scheme selection rules accompany the scopes and have no authored source.
+          Mapping.addMapping(cssMap, { generated: { column: 0, line } })
+
+          return rule
+        }
+
         const selector = `.${names.get(name)!}`
         const call = owners.get(name)!
 
@@ -1068,6 +1105,11 @@ export declare namespace compile {
     readonly cssOutput?: Css.compile.Options['cssOutput']
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
+    /**
+     * Emit the `color-scheme` selection classes beside the theme scopes.
+     * Defaults to this module's own selector, root, and script references.
+     */
+    readonly schemes?: boolean | undefined
   }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */

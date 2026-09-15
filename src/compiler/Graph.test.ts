@@ -142,7 +142,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       export const zyzz = ({script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-text-WStLob"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
+       export const zyzz = ({appearance:__zyzzAppearance.root([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],{"defaultTheme":"brand.dark"}),script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-text-WStLob"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
     `,
     )
 
@@ -182,6 +182,9 @@ export const scope = mint.className;`,
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#175,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
       .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
       .z-text-ZwwVzx{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));}
       .z-p-S0bkzn{padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
     `)
@@ -189,7 +192,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       import { base } from './base.js'; export const zyzz = ({script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:/*#__PURE__*/__zyzzSelection.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],false)} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
+       import { base } from './base.js'; export const zyzz = ({appearance:__zyzzAppearance.root([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],{"defaultTheme":"base"}),script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:/*#__PURE__*/__zyzzSelection.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],false)} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
     `,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
@@ -208,6 +211,9 @@ export const scope = mint.className;`,
     expect(updated.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#f00,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
       .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
       .z-text-ZwwVzx{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));}
       .z-p-S0bkzn{padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
     `)
@@ -249,15 +255,56 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance } from 'zyzz/runtime';
-       export const empty = ({script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-text-hsmTVp"}); export const plain = ({className:"z-p-8px-KVn49Z"});"
+       export const empty = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-text-hsmTVp"}); export const plain = ({className:"z-p-8px-KVn49Z"});"
     `,
     )
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#06c;}
       .z_theme-1g1qfxjzbnv3-mint{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#175;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
       .z-text-hsmTVp{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand,#06c);}
       .z-p-8px-KVn49Z{padding:8px;}"
     `)
+  })
+
+  test('destructured appearance controls compile with the configured storage key', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config } from 'zyzz'; export const { appearance, css } = Config.create({ defaultTheme: 'base', storageKey: 'app', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const initial = appearance.get(); export const controls = appearance;`,
+        'pkg/single.ts': `import { Config } from 'zyzz'; export const zyzz = Config.create({ theme: { color: { ink: '#123456' } } }); export const select = () => zyzz.appearance.set({ colorScheme: 'dark' });`,
+      },
+    })
+    const code = output.modules['pkg/config.ts']!.code
+
+    expect(
+      code.includes('appearance:__zyzzAppearance.root('),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      code.includes('{"defaultTheme":"base","storageKey":"app"}'),
+    ).toMatchInlineSnapshot('true')
+    expect(code.includes('script:')).toMatchInlineSnapshot('false')
+    expect(
+      output.modules['pkg/single.ts']!.code.includes(
+        'appearance:__zyzzAppearance.root([])',
+      ),
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('destructured selectors pass to runtime helpers as values', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config } from 'zyzz'; export const { themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const names = Object.keys(themes); export const catalog = [themes];`,
+      },
+    })
+    const code = output.modules['pkg/config.ts']!.code
+
+    expect(code.includes('__zyzzSelection.create(')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(code.includes('Object.keys(themes)')).toMatchInlineSnapshot('true')
+    expect(code.includes('[themes]')).toMatchInlineSnapshot('true')
   })
 
   test('configuration dynamic access and escaping fail before emission', () => {
@@ -1504,17 +1551,17 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1mlrxl41f5va70-css{}
-      .z-opacity-dMx3Di-0{opacity:0.5;}
-      .z-style-KC5vhx-0{color:red;padding:8px;}
-      .z-opacity-SP6hSE-1{opacity:0.5;}"
-    `)
+        ".z_theme-1mlrxl41f5va70-css{}
+        .z-opacity-dMx3Di-0{opacity:0.5;}
+        .z-style-KC5vhx-0{color:red;padding:8px;}
+        .z-opacity-SP6hSE-1{opacity:0.5;}"
+      `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1mlrxl41f5va70-css{}
-      .z-opacity-1-uwnrRp-0{opacity:1;}
-      .z-style-Aj6ebY-0{color:red;padding:8px;}
-      .z-opacity-1-SxroK2-1{opacity:1;}"
-    `)
+        ".z_theme-1mlrxl41f5va70-css{}
+        .z-opacity-1-uwnrRp-0{opacity:1;}
+        .z-style-Aj6ebY-0{color:red;padding:8px;}
+        .z-opacity-1-SxroK2-1{opacity:1;}"
+      `)
     })
 
     test('restores legacy grouped configuration metadata before re-export', () => {
@@ -1545,9 +1592,9 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-u8smm21l81sow-config{}
-      .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
-    `)
+        ".z_theme-u8smm21l81sow-config{}
+        .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
+      `)
     })
 
     test('retains the graph default on packed root callables', () => {
@@ -2147,6 +2194,7 @@ global({html:{color:'blue'}});`
         expect((await host.build()).changed).toMatchInlineSnapshot('[]')
 
         for (const name of [
+          'zyzz.css',
           'zyzz.shared.css',
           '.ZYZZ.JSON',
           'sub/effects.ts.css',
@@ -2542,10 +2590,10 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1e8a67z1uaws1j-theme-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:#123;}
-      .z-w-10px-Jgxd-Q{width:10px;}
-      .z-text-5nOHLL{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
-    `)
+        ".z_theme-1e8a67z1uaws1j-theme-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:#123;}
+        .z-w-10px-Jgxd-Q{width:10px;}
+        .z-text-5nOHLL{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
+      `)
     })
     test('links default variable exports through packed contracts', () => {
       const library = Graph.compile({

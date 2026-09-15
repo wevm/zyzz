@@ -103,6 +103,7 @@ type Cache = {
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
   resolutions: Readonly<Record<string, string>>
   result: compile.ReturnType
+  schemes: boolean
   sources: Readonly<Record<string, string>>
   themes: Readonly<Record<string, Theme.Definition>>
 }
@@ -993,10 +994,21 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
+  // Selection anywhere in the graph applies scheme classes beside scopes every
+  // stylesheet carries, so each stylesheet declares the matching color-scheme.
+  const schemes = [...extracted.values()].some((module) =>
+    Boolean(
+      module.themeAppearances?.length ||
+      module.themeScripts?.length ||
+      module.themeSelections?.length,
+    ),
+  )
+
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
     modules[moduleId] =
       sameThemes &&
+      previous!.schemes === schemes &&
       extracted.get(moduleId) === previous!.extracted.get(moduleId)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
@@ -1005,6 +1017,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
             composition: options.composition,
             cssOutput: options.cssOutput,
             moduleId,
+            schemes,
             source: options.modules[moduleId]!,
             [Themes.context]: {
               extracted: Object.freeze({
@@ -1069,6 +1082,38 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
+  // A configuration whose module uses root controls or the script publishes its
+  // catalog, exported or not, so initialization restores selections it persists.
+  function configurations(id: string): readonly Contract.write.Configuration[] {
+    const module = extracted.get(id)!
+
+    return module.themeCalls
+      .filter(
+        (call) =>
+          call.appearance &&
+          call.options &&
+          (module.themeAppearances?.includes(call.name) ||
+            module.themeScripts?.includes(call.name)),
+      )
+      .map((call) => {
+        const themeNames = call.options?.themes
+
+        return {
+          identity:
+            sharedThemes[call.name]?.[Token.definition].contract[
+              Token.identity
+            ] ?? call.name,
+          ...(typeof call.options?.storageKey === 'string'
+            ? { storageKey: call.options.storageKey }
+            : {}),
+          themes:
+            themeNames && typeof themeNames === 'object'
+              ? Object.keys(themeNames)
+              : [],
+        }
+      })
+  }
+
   return {
     compiler: options.compiler !== false,
     composition: options.composition,
@@ -1093,7 +1138,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
             .filter(
               (id) =>
                 Object.keys(extracted.get(id)!.themeExports ?? {}).length ||
-                reachable(id).length,
+                reachable(id).length ||
+                configurations(id).length,
             )
             .map((id) => [
               id,
@@ -1117,6 +1163,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                   ),
                 })),
                 id,
+                configurations(id),
               ),
             ]),
         ),
@@ -1126,6 +1173,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         Object.fromEntries(ids.map((id) => [id, modules[id]!])),
       ),
     }),
+    schemes,
     sources: Object.freeze({ ...options.modules }),
     themes: sharedThemes,
   }

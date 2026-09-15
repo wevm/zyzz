@@ -4684,29 +4684,29 @@ describe('columns', () => {
       })
 
       expect(declarations).toMatchInlineSnapshot(`
-      [
-        "column-count:2",
-        "column-width:auto",
-        "column-gap:12px",
-        "column-fill:auto",
-        "column-rule-color:var(--z-tpmo59r5ml4jf-zyzz-color_2e_rule,#06c)",
-        "column-rule-style:solid",
-        "column-rule-width:thin",
-        "orphans:2",
-        "widows:3",
-        "break-before:auto",
-        "break-before:column!",
-        "break-after:auto",
-        "break-inside:avoid-column",
-        "column-span:none",
-        "column-span:all",
-        "break-before:auto",
-        "column-count:auto",
-        "column-width:80px",
-        "column-gap:normal",
-        "column-fill:balance",
-      ]
-    `)
+        [
+          "column-count:2",
+          "column-width:auto",
+          "column-gap:12px",
+          "column-fill:auto",
+          "column-rule-color:var(--z-tpmo59r5ml4jf-zyzz-color_2e_rule,#06c)",
+          "column-rule-style:solid",
+          "column-rule-width:thin",
+          "orphans:2",
+          "widows:3",
+          "break-before:auto",
+          "break-before:column!",
+          "break-after:auto",
+          "break-inside:avoid-column",
+          "column-span:none",
+          "column-span:all",
+          "break-before:auto",
+          "column-count:auto",
+          "column-width:80px",
+          "column-gap:normal",
+          "column-fill:balance",
+        ]
+      `)
 
       const lines = output.css.split('\n')
       const line = lines.findIndex((line) =>
@@ -5072,15 +5072,15 @@ describe('conditions', () => {
     test('preserves authored nesting and resolves distinct threshold domains', () => {
       expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
         .toMatchInlineSnapshot(`
-        ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
-        .z-p-kYs3pA-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
-        .z-hover-p-0lCB0j-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
-        .z-w-P2Hadq-2{@media (48rem <= width < 64rem){width:100px;}}
-        .z-h-S1seq7-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
-        .z-display-e7qdU--4{@container sidebar (width >= 24rem){display:grid;}}
-        .z-gap-rEUQub-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
-        .z-opacity-OkCu9R-6{@starting-style{opacity:0;}}"
-      `)
+          ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
+          .z-p-kYs3pA-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
+          .z-hover-p-0lCB0j-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
+          .z-w-P2Hadq-2{@media (48rem <= width < 64rem){width:100px;}}
+          .z-h-S1seq7-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+          .z-display-e7qdU--4{@container sidebar (width >= 24rem){display:grid;}}
+          .z-gap-rEUQub-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
+          .z-opacity-OkCu9R-6{@starting-style{opacity:0;}}"
+        `)
     })
     test('retains dynamic and theme variables inside nested contexts', () => {
       expect(
@@ -5090,10 +5090,10 @@ describe('conditions', () => {
             'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{gap:"4px"}}); export const box=theme.css((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.vars.spacing.gap} + 2px)`}}))',
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
-      .z-hover-opacity-Sn8aLJ-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
-      .z-hover-ml-4knNd5-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
-    `)
+        ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
+        .z-hover-opacity-Sn8aLJ-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
+        .z-hover-ml-4knNd5-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
+      `)
     })
     test('resolves imported thresholds through the packed contract', () => {
       const library = Graph.compile({
@@ -5113,9 +5113,9 @@ describe('conditions', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-theme{}
-      .z-w-zU8jVu-0{@media (width >= 48rem){width:100px;}}"
-    `)
+        ".z_theme-1xn44ix111xh3v-theme{}
+        .z-w-zU8jVu-0{@media (width >= 48rem){width:100px;}}"
+      `)
     })
     test.each([
       ['@media missing', 'Unknown query threshold.'],
@@ -5539,9 +5539,9 @@ describe('contributions', () => {
             'import {Theme} from "zyzz"; import {global} from "zyzz/web"; const theme=Theme.define({color:{ink:"red"}}); global({body:{color:theme.tokens.color.ink}})',
         }).css,
       ).toMatchInlineSnapshot(`
-      "body{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,red);}
-      .z_theme-1e8a67z1uaws1j-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:red;}"
-    `)
+        "body{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,red);}
+        .z_theme-1e8a67z1uaws1j-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:red;}"
+      `)
     })
     test('rejects invalid contributions', () => {
       const failures = [
@@ -6373,10 +6373,10 @@ describe('dynamic', () => {
             'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css((v:{alpha:number})=>({color:t.vars.color.ink,opacity:v.alpha})!)',
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
-      .z-text-e9xVEU{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);}
-      .z-opacity-JKq6d6{opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
-    `)
+        ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
+        .z-text-e9xVEU{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);}
+        .z-opacity-JKq6d6{opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
+      `)
     })
     test('rejects imported names in callback template annotations', () => {
       expect(() =>
@@ -6441,10 +6441,10 @@ describe('dynamic', () => {
             'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.vars.color.ink]})) satisfies Callback)',
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
-      .z-opacity-MyXHzR{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);}
-      .z-text-U-e9Zc{color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
-    `)
+        ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
+        .z-opacity-MyXHzR{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);}
+        .z-text-U-e9Zc{color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
+      `)
     })
     test('compiles callbacks to fixed rules and preserves callable values', async () => {
       const output = Transform.compile({ moduleId: 'dynamic.ts', source })
@@ -6588,10 +6588,10 @@ describe('dynamic', () => {
             'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); export const bar = theme.css((values: {alpha:number})=>({color:theme.vars.color.brand,opacity:values.alpha}));',
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
-      .z-text-fYvcCR{color:var(--z-t1aby40l12ykqib-theme-color_2e_brand,red);}
-      .z-opacity-7kbnqQ{opacity:var(--z-d1aby40l12ykqib-100-61-6c-70-68-61);}"
-    `)
+        ".z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
+        .z-text-fYvcCR{color:var(--z-t1aby40l12ykqib-theme-color_2e_brand,red);}
+        .z-opacity-7kbnqQ{opacity:var(--z-d1aby40l12ykqib-100-61-6c-70-68-61);}"
+      `)
     })
 
     test('encodes identifier characters in private CSS names', () => {
@@ -9725,15 +9725,15 @@ export const props=card();`,
           export const props=card();"
         `)
           expect(app.css).toMatchInlineSnapshot(`
-          ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
-          .z-text-MXAq5s-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-          .z-p-8px-NXxdb9-1{padding:8px;}
-          .z-text-cVuwEC-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-          .z-p-8px-36L1vp-1{padding:8px;}
-          .z-text-Ih48UB-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-          .z-p-8px-ho7psp-1{padding:8px;}
-          .z-p-Hd4J6B-2{&:where([data-size="large"]){padding:12px;}}"
-        `)
+            ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
+            .z-text-MXAq5s-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+            .z-p-8px-NXxdb9-1{padding:8px;}
+            .z-text-cVuwEC-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+            .z-p-8px-36L1vp-1{padding:8px;}
+            .z-text-Ih48UB-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+            .z-p-8px-ho7psp-1{padding:8px;}
+            .z-p-Hd4J6B-2{&:where([data-size="large"]){padding:12px;}}"
+          `)
         } else {
           expect(app.code).toMatchInlineSnapshot(`
           "
@@ -9745,11 +9745,11 @@ export const props=card();`,
           export const props=card();"
         `)
           expect(app.css).toMatchInlineSnapshot(`
-          ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
-          .g-style-1e8a67z1uaws1j-76{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
-          .g-style-1e8a67z1uaws1j-134{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
-          .g-style-1e8a67z1uaws1j-196{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
-        `)
+            ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
+            .g-style-1e8a67z1uaws1j-76{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
+            .g-style-1e8a67z1uaws1j-134{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
+            .g-style-1e8a67z1uaws1j-196{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
+          `)
         }
       }
     })
@@ -12709,11 +12709,11 @@ describe('templates', () => {
 
       expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
         .toMatchInlineSnapshot(`
-        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
-        .z-text-R_O0f9{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
-        .z-content--HL64e{content:"A";}
-        .z-_5f_2d_5f__5f_2d_5f_empty-exQN8o{--empty:;}"
-      `)
+          ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
+          .z-text-R_O0f9{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
+          .z-content--HL64e{content:"A";}
+          .z-_5f_2d_5f__5f_2d_5f_empty-exQN8o{--empty:;}"
+        `)
     })
 
     test('reports exact diagnostics for unsupported template expressions', () => {
@@ -13239,9 +13239,9 @@ describe('variables', () => {
             'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:`${`calc(${theme.vars.spacing.md})!`}`})',
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
-      .z-w-Gqobl2{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
-    `)
+        ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
+        .z-w-Gqobl2{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
+      `)
     })
     test('preserves assertions around nested variable templates and fallbacks', () => {
       expect(
@@ -13251,9 +13251,9 @@ describe('variables', () => {
             'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
-      .z-w-POrgHe{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
-    `)
+        ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
+        .z-w-POrgHe{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
+      `)
     })
     test('rejects spacing variables in integer properties', () => {
       expect(() =>
@@ -13276,10 +13276,10 @@ describe('variables', () => {
 
       expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
         .toMatchInlineSnapshot(`
-        ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
-        .z-w-SNgKwn{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
-        .z-text-GPJwaq{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
-      `)
+          ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
+          .z-w-SNgKwn{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
+          .z-text-GPJwaq{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
+        `)
     })
 
     test('links imported variables and compatible scopes without copying declaration values', () => {
@@ -13293,11 +13293,11 @@ describe('variables', () => {
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
-      .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
-      .z-w-B6XPp2{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
-      .z-text-t4xT3g{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
-    `)
+        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+        .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+        .z-w-B6XPp2{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
+        .z-text-t4xT3g{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
+      `)
       expect(result.modules['theme.ts']!.css).toMatchInlineSnapshot(`""`)
     })
 
@@ -13321,9 +13321,9 @@ describe('variables', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
-      .z-w-PhcXnr{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
-    `)
+        ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
+        .z-w-PhcXnr{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
+      `)
       expect(
         output.modules['app.ts']!.code.includes('.vars'),
       ).toMatchInlineSnapshot(`false`)

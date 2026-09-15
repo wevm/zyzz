@@ -4,6 +4,8 @@
  */
 import type * as LightningCss from 'lightningcss'
 import * as AtRules from '../compiler/internal/AtRules.js'
+import * as Catalogs from '../compiler/internal/Catalogs.js'
+import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'
@@ -21,7 +23,12 @@ export type Build = {
 
 /**
  * Opens an exclusively owned output lifecycle around the literal source transform.
- * Source modules remain TypeScript/JSX; transpilation and CSS loading belong to the consumer.
+ * Source modules remain TypeScript/JSX; transpilation belongs to the consumer.
+ * Besides per-module stylesheets, every build publishes `zyzz.css`: shared
+ * contributions followed by module stylesheets with dependencies before their
+ * consumers, so an application loads one file. Configurations also publish
+ * `zyzz.js`, the initialization that restores a saved theme and scheme, at
+ * the configurable script path.
  * Lightning CSS processes stylesheets and composes maps before publication by default.
  * @param options - Source directory, separate output directory, and portable package identity.
  * @returns Explicit build, watch, and close operations. Close releases the output lock.
@@ -37,11 +44,28 @@ export async function create(options: create.Options): Promise<Runtime> {
           targets: { ...options.css?.targets },
         }
 
-  const outDir = Path.resolve(options.outDir)
+  const outDir = Path.resolve(options.outDir ?? 'dist')
   const root = await Fs.realpath(options.root)
 
   if (inside(outDir, root))
     throw new Error('Output must not contain the source directory.')
+
+  // A script inside the output is an owned artifact; elsewhere it is rewritten
+  // in place so a bundler's public directory can serve it verbatim.
+  const script = (() => {
+    if (options.script === false) return undefined
+
+    const path = Path.resolve(options.script ?? Path.join(outDir, 'zyzz.js'))
+
+    if (path !== outDir && inside(outDir, path))
+      return { owned: Path.relative(outDir, path).split(Path.sep).join('/') }
+    if (inside(root, path))
+      throw new Error(
+        'The script path must not be inside the source directory.',
+      )
+
+    return { external: path }
+  })()
 
   Transform.compile({
     moduleId: `${options.packageId}/identity.ts`,
@@ -151,21 +175,39 @@ export async function create(options: create.Options): Promise<Runtime> {
       ),
     })
 
-    const generated = new Set(
-      [
-        'zyzz.shared.css',
-        'zyzz.shared.css.map',
-        '.zyzz.json',
-        '.zyzz-lock',
-        ...Object.keys(sources).flatMap((name) => [
-          name,
-          `${name}.map`,
-          `${name}.css`,
-          `${name}.css.map`,
-          `${name}.zyzz.json`,
-        ]),
-      ].map((name) => (insensitive ? name.toLowerCase() : name)),
+    const artifactNames = [
+      'zyzz.css',
+      'zyzz.css.map',
+      'zyzz.shared.css',
+      'zyzz.shared.css.map',
+      '.zyzz.json',
+      '.zyzz-lock',
+      ...Object.keys(sources).flatMap((name) => [
+        name,
+        `${name}.map`,
+        `${name}.css`,
+        `${name}.css.map`,
+        `${name}.zyzz.json`,
+      ]),
+    ].map((name) => (insensitive ? name.toLowerCase() : name))
+
+    // The script is one more owned artifact, so it must not replace another.
+    if (
+      script?.owned &&
+      artifactNames.includes(
+        insensitive ? script.owned.toLowerCase() : script.owned,
+      )
     )
+      throw new Error(
+        `The script path collides with the artifact ${script.owned}.`,
+      )
+
+    const generated = new Set([
+      ...(script?.owned ? [script.owned] : []),
+      ...artifactNames,
+    ])
+
+    let shared: Stylesheet | undefined
 
     if (graph.sharedCss) {
       const assets = new Map<string, string>()
@@ -214,7 +256,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         }
       }
 
-      const shared =
+      const processed =
         css === false && !Object.keys(graph.sharedAssets ?? {}).length
           ? {
               code: Buffer.from(graph.sharedCss),
@@ -267,9 +309,16 @@ export async function create(options: create.Options): Promise<Runtime> {
         artifacts.set(name, content)
       }
 
-      artifacts.set('zyzz.shared.css', Buffer.from(shared.code).toString())
-      artifacts.set('zyzz.shared.css.map', Buffer.from(shared.map!).toString())
+      shared = {
+        code: Buffer.from(processed.code).toString(),
+        map: Buffer.from(processed.map!).toString(),
+      }
+
+      artifacts.set('zyzz.shared.css', shared.code)
+      artifacts.set('zyzz.shared.css.map', shared.map)
     }
+
+    const moduleStylesheets = new Map<string, Stylesheet>()
 
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
@@ -308,7 +357,51 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       artifacts.set(`${name}.css`, stylesheet.code)
       artifacts.set(`${name}.css.map`, stylesheet.map)
+      // Module URLs resolve beside the module file; the complete stylesheet at
+      // the output root carries a copy with those URLs rebased.
+      moduleStylesheets.set(
+        `${options.packageId}/${name}`,
+        rebase(stylesheet, name, css === false ? false : css.minify),
+      )
     }
+
+    // The complete stylesheet follows the module graph so a consumer's rules
+    // cascade over the rules of the modules it imports.
+    if (shared || moduleStylesheets.size) {
+      const complete = concatenate([
+        ...(shared ? [shared] : []),
+        ...order(graph.dependencies, [...moduleStylesheets.keys()]).map(
+          (id) => moduleStylesheets.get(id)!,
+        ),
+      ])
+
+      artifacts.set('zyzz.css', complete.code)
+      artifacts.set('zyzz.css.map', complete.map)
+    }
+
+    // Every configuration in the tree restores its saved selection from one script.
+    const initialization = Catalogs.scripts(
+      Object.values(graph.contracts).flatMap(Catalogs.read),
+    ).join('\n')
+
+    const content = initialization ? `${banner}${initialization}\n` : undefined
+
+    if (script?.owned && content) artifacts.set(script.owned, content)
+
+    // An external script has no ownership record. Its leading banner marks
+    // output this host may replace or remove; any other file there is foreign.
+    const external = await (async () => {
+      if (!script?.external) return undefined
+
+      const current = await read(script.external)
+
+      if (current !== undefined && !current.startsWith(banner))
+        throw new Error(
+          `Refusing to replace a foreign script: ${script.external}`,
+        )
+
+      return { current, next: content, path: script.external }
+    })()
 
     await regular(manifestPath, outDir)
 
@@ -376,26 +469,37 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     // Compile and verify ownership before publishing. Restore applied writes if publication fails.
     const applied: string[] = []
+    let externalApplied = false
+
+    async function place(
+      path: string,
+      content: string | Uint8Array | undefined,
+    ) {
+      if (content === undefined) await Fs.rm(path, { force: true })
+      else await write(path, content)
+    }
 
     try {
       for (const [name] of before) {
         const content =
           name === '.zyzz.json' ? nextManifest : artifacts.get(name)
-        const path = Path.join(outDir, name)
 
         applied.push(name)
+        await place(Path.join(outDir, name), content)
+      }
 
-        if (content === undefined) await Fs.rm(path, { force: true })
-        else await write(path, content)
+      // The external script joins the transaction so a rejected build leaves it untouched.
+      if (external && external.next !== external.current) {
+        externalApplied = true
+        await place(external.path, external.next)
       }
     } catch (error) {
-      for (const name of applied.reverse()) {
-        const content = before.get(name)
-        const path = Path.join(outDir, name)
+      // The external path may stay unwritable, which must not skip the owned rollback.
+      if (externalApplied)
+        await place(external!.path, external!.current).catch(() => {})
 
-        if (content === undefined) await Fs.rm(path, { force: true })
-        else await write(path, content)
-      }
+      for (const name of applied.reverse())
+        await place(Path.join(outDir, name), before.get(name))
 
       throw error
     }
@@ -539,12 +643,19 @@ export declare namespace create {
           readonly targets?: Readonly<LightningCss.Targets> | undefined
         }
       | undefined
-    /** Output directory exclusively locked until close; may be nested under root. */
-    readonly outDir: string
+    /** Output directory exclusively locked until close; may be nested under root. Defaults to `dist`. */
+    readonly outDir?: string | undefined
     /** Stable package identity prepended to relative source module IDs. */
     readonly packageId: string
     /** Directory scanned for supported JavaScript/TypeScript source files. */
     readonly root: string
+    /**
+     * Path of the initialization script restoring saved theme selections.
+     * Defaults to `zyzz.js` inside the output directory, where it is an owned
+     * artifact. A path elsewhere, such as a bundler's public directory, is
+     * rewritten in place without ownership. False disables the script.
+     */
+    readonly script?: string | false | undefined
   }
 }
 
@@ -569,6 +680,59 @@ export declare namespace watch {
   type Options = {
     /** Receives successful builds and failures; must not throw. */
     readonly onResult: (event: Event) => void
+  }
+}
+
+/** Leading comment marking initialization scripts this host wrote. */
+const banner = '/* zyzz initialization */\n'
+
+/** Joins processed stylesheets and shifts their composed maps by the preceding line count. */
+function concatenate(parts: readonly { code: string; map: string }[]) {
+  const map = new Mapping.GenMapping({ file: 'zyzz.css' })
+  const chunks: string[] = []
+  let offset = 0
+
+  for (const part of parts) {
+    if (!part.code) continue
+
+    const code = part.code.endsWith('\n') ? part.code : `${part.code}\n`
+    const traced = Mapping.fromMap(part.map)
+
+    for (const mapping of Mapping.allMappings(traced)) {
+      const generated = {
+        column: mapping.generated.column,
+        line: mapping.generated.line + offset,
+      }
+
+      if (mapping.source !== undefined && mapping.original !== undefined) {
+        const location = {
+          generated,
+          original: mapping.original,
+          source: mapping.source,
+        }
+
+        if (mapping.name === undefined) Mapping.addMapping(map, location)
+        else Mapping.addMapping(map, { ...location, name: mapping.name })
+      } else Mapping.addMapping(map, { generated })
+    }
+
+    const encoded = Mapping.toEncodedMap(traced)
+
+    for (const [index, source] of encoded.sources.entries())
+      if (source !== null)
+        Mapping.setSourceContent(
+          map,
+          source,
+          encoded.sourcesContent?.[index] ?? null,
+        )
+
+    chunks.push(code)
+    offset += code.split('\n').length - 1
+  }
+
+  return {
+    code: chunks.join(''),
+    map: JSON.stringify(Mapping.toEncodedMap(map)),
   }
 }
 
@@ -618,6 +782,40 @@ function manifest(source: string, packageId: string): Record<string, string> {
   return value.files as Record<string, string>
 }
 
+/** Orders module identities with dependencies before their consumers, seeded from graph roots. */
+function order(
+  dependencies: Readonly<Record<string, readonly string[]>>,
+  ids: readonly string[],
+) {
+  const members = new Set(ids)
+  const ordered: string[] = []
+  const seen = new Set<string>()
+
+  function visit(id: string) {
+    if (seen.has(id)) return
+
+    seen.add(id)
+
+    for (const dependency of dependencies[id] ?? [])
+      if (members.has(dependency)) visit(dependency)
+
+    ordered.push(id)
+  }
+
+  // Graph roots seed the traversal so siblings keep their authored import
+  // order; modules only reachable through cycles follow in name order.
+  const imported = new Set(
+    ids.flatMap((id) =>
+      (dependencies[id] ?? []).filter((dependency) => members.has(dependency)),
+    ),
+  )
+
+  for (const id of ids) if (!imported.has(id)) visit(id)
+  for (const id of ids) visit(id)
+
+  return ordered
+}
+
 async function read(path: string): Promise<string | undefined>
 async function read(path: string, binary: true): Promise<Uint8Array | undefined>
 async function read(
@@ -636,6 +834,37 @@ async function read(
       return undefined
 
     throw error
+  }
+}
+
+/** Rewrites a nested module stylesheet's relative URLs against the output root. */
+function rebase(
+  stylesheet: { code: string; map: string },
+  name: string,
+  minify: boolean,
+) {
+  const directory = Path.posix.dirname(name)
+
+  if (directory === '.' || !stylesheet.code.includes('url(')) return stylesheet
+
+  const result = AtRules.transform({
+    code: Buffer.from(stylesheet.code),
+    filename: `${name}.css`,
+    inputSourceMap: stylesheet.map,
+    minify,
+    sourceMap: true,
+    visitor: {
+      Url(url) {
+        if (/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)) return url
+
+        return { ...url, url: Path.posix.join(directory, url.url) }
+      },
+    },
+  })
+
+  return {
+    code: Buffer.from(result.code).toString(),
+    map: Buffer.from(result.map!).toString(),
   }
 }
 

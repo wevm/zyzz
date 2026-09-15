@@ -10,28 +10,27 @@ const initialization = script()
 
 ## Signature
 
-`script(options = {}) => string`
+`script() => string`
 
 The bound function derives the theme catalog, compiled scope classes, and default selection from its config. Named catalogs restore allowlisted theme names; single-theme and token-free configs restore only the color scheme. Server-rendered root props remain the fallback.
 
-## Parameters
+## Storage
 
-### options.storageKey
-
-- Type: `string`
-- Default: `'zyzz'`
-
-localStorage key containing a JSON object. Supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
+The script reads the localStorage entry named by the configuration's [`storageKey`](create.md#optionsstoragekey), `'zyzz'` by default. [`appearance.set()`](create.md#appearance) writes the same record, so both helpers always agree on the key. The record is a JSON object whose supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, `'light dark'`, or `null`). Either field may be omitted. A `null` scheme, written by `appearance.set({ colorScheme: undefined })`, removes the scheme class and inline `color-scheme` so a cleared selection outlives a server-rendered scheme.
 
 ```ts
-script({ storageKey: 'my-app-appearance' })
+export const { appearance, script } = Config.create({
+  defaultTheme: 'base',
+  storageKey: 'my-app-appearance',
+  themes,
+})
 ```
 
 ## Returns
 
 A JavaScript source string for an inline, synchronous `<script>` early in `<head>`. It updates `document.documentElement`; never use `async`, `defer`, or `type="module"` for this initialization.
 
-The script replaces only classes belonging to the config's catalog, preserving unrelated classes. It assigns only the `colorScheme` inline property. Server markup supplies the default theme and scheme; there is no duplicate default configuration in this helper.
+The script replaces only classes belonging to the config's catalog and the compiled scheme classes, preserving unrelated classes. It assigns only the `colorScheme` inline property. Server markup supplies the default theme and scheme; there is no duplicate default configuration in this helper.
 
 Invalid fields preserve their respective defaults. Missing, malformed, non-object, or inaccessible storage leaves server markup intact. Matching uses own catalog keys, including for names such as `constructor`. It never writes storage, accesses cookies, registers listeners, or inserts CSS.
 

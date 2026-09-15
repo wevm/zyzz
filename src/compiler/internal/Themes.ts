@@ -45,10 +45,14 @@ export type Call = {
   readonly output?: 'html' | undefined
   /** Portable explicit variable references. */
   readonly variables?: Readonly<Record<string, Binding.Reference>> | undefined
+  /** Whether the compiled configuration supplies root controls. */
+  readonly appearance?: boolean | undefined
   /** Whether the compiled configuration supplies initialization. */
   readonly script?: boolean | undefined
   /** Bound root initialization script export. */
   readonly initialization?: boolean | undefined
+  /** Bound root controls export. */
+  readonly root?: boolean | undefined
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
   /** Legacy packed catalogs have static members but are not callable. */
@@ -110,6 +114,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const aliases: Alias[] = []
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
+  const appearances = new Set<string>()
+  const selections = new Set<string>()
   const calls: Call[] = []
   const scripts = new Set<string>()
   const definitions = new Map<number, Call>()
@@ -282,18 +288,27 @@ export function collect(program: Ast.Program, options: collect.Options) {
       config &&
       !config.call.selection &&
       !config.call.initialization &&
+      !config.call.root &&
       path.length === 1 &&
-      ['themes', 'script'].includes(path[0]!)
+      ['themes', 'script', 'appearance'].includes(path[0]!)
     ) {
       const key = path[0]!
 
       if (key === 'script') scripts.add(config.call.name)
+      if (key === 'appearance') appearances.add(config.call.name)
 
       if (key === 'themes' && !config.call.options?.themes) return undefined
+      if (key === 'themes') selections.add(config.call.name)
 
       if (key === 'script' && !config.call.script)
         fail(
           'This packed configuration does not provide script(); rebuild its library with initialization support.',
+          node,
+        )
+
+      if (key === 'appearance' && !config.call.appearance)
+        fail(
+          'This packed configuration does not provide appearance; rebuild its library with root control support.',
           node,
         )
 
@@ -319,15 +334,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
               member.call.name,
             ]),
           ),
-          ...(key === 'script'
-            ? { initialization: true }
-            : { selection: true }),
+          ...helper(key),
           type: `${config.call.type}['${key}']`,
         },
       }
     }
 
     return config?.members?.[JSON.stringify(path)]
+  }
+
+  /** Marks which configuration helper a destructured or member binding represents. */
+  function helper(key: string) {
+    if (key === 'script') return { initialization: true }
+    if (key === 'appearance') return { root: true }
+    return { selection: true }
   }
 
   function data(node: Ast.Node): unknown {
@@ -577,11 +597,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
             if (
               !link.call.selection &&
               !link.call.initialization &&
+              !link.call.root &&
               (key === 'script' ||
+                key === 'appearance' ||
                 (key === 'themes' && link.call.options?.themes))
             ) {
               if (
                 (key === 'script' && !link.call.script) ||
+                (key === 'appearance' && !link.call.appearance) ||
                 link.call.selection ||
                 link.call.initialization
               )
@@ -591,6 +614,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
                 )
 
               if (key === 'script') scripts.add(link.call.name)
+              if (key === 'appearance') appearances.add(link.call.name)
+              if (key === 'themes') selections.add(link.call.name)
 
               const members = Object.fromEntries(
                 Object.entries(link.members ?? {}).flatMap(
@@ -615,9 +640,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
                       member.call.name,
                     ]),
                   ),
-                  ...(key === 'script'
-                    ? { initialization: true }
-                    : { selection: true }),
+                  ...helper(key),
                   type: `${link.call.type}['${key}']`,
                 },
               }
@@ -813,10 +836,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         if (
           !link.call.selection &&
           !link.call.initialization &&
-          (key === 'script' || (key === 'themes' && link.call.options?.themes))
+          !link.call.root &&
+          (key === 'script' ||
+            key === 'appearance' ||
+            (key === 'themes' && link.call.options?.themes))
         ) {
           if (
             (key === 'script' && !link.call.script) ||
+            (key === 'appearance' && !link.call.appearance) ||
             link.call.selection ||
             link.call.initialization
           )
@@ -826,6 +853,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
             )
 
           if (key === 'script') scripts.add(link.call.name)
+          if (key === 'appearance') appearances.add(link.call.name)
+          if (key === 'themes') selections.add(link.call.name)
 
           const members = Object.fromEntries(
             Object.entries(link.members ?? {}).flatMap(([pathKey, member]) => {
@@ -848,9 +877,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
                   member.call.name,
                 ]),
               ),
-              ...(key === 'script'
-                ? { initialization: true }
-                : { selection: true }),
+              ...helper(key),
               type: `${link.call.type}['${key}']`,
             },
           }
@@ -1155,6 +1182,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         fail('Configuration references must follow their definition.', node)
 
+      // Root controls are an ordinary runtime object; any read or call is valid.
+      if (config.call.root) {
+        appearances.add(config.call.name)
+
+        return true
+      }
+
       if (
         (config.call.selection || config.call.initialization) &&
         parent.type === 'CallExpression' &&
@@ -1166,6 +1200,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
             'This legacy catalog is not callable; rebuild its library.',
             node,
           )
+
+        if (config.call.selection) selections.add(config.call.name)
+        if (config.call.initialization) scripts.add(config.call.name)
 
         return true
       }
@@ -1213,6 +1250,23 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
         if (
           path.length === 1 &&
+          path[0] === 'appearance' &&
+          !config.call.selection &&
+          !config.call.initialization
+        ) {
+          if (!config.call.appearance)
+            fail(
+              'This packed configuration does not provide appearance; rebuild its library with root control support.',
+              target,
+            )
+
+          appearances.add(config.call.name)
+
+          return true
+        }
+
+        if (
+          path.length === 1 &&
           !config.call.selection &&
           !config.call.initialization &&
           ['script', 'themes'].includes(path[0]!) &&
@@ -1238,6 +1292,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
             scripts.add(config.call.name)
           }
+
+          if (path[0] === 'themes') selections.add(config.call.name)
 
           return true
         }
@@ -1273,6 +1329,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
             ancestors.slice(0, index + 1),
             linked.call,
           )
+      }
+
+      // A compiled selector is an ordinary runtime function, so passing or storing it is safe.
+      if (config.call.selection && !config.call.catalogOnly && !path.length) {
+        selections.add(config.call.name)
+
+        return true
       }
 
       fail(
@@ -1608,17 +1671,21 @@ export function collect(program: Ast.Program, options: collect.Options) {
       link.kind === 'config' &&
       !link.call.selection &&
       !link.call.initialization &&
-      link.call.script
-    )
-      scripts.add(link.call.name)
+      !link.call.root
+    ) {
+      if (link.call.script) scripts.add(link.call.name)
+      if (link.call.appearance) appearances.add(link.call.name)
+    }
 
   return {
     aliases,
+    appearances,
     calls,
     exports: Object.freeze(exports),
     reference,
     references,
     scripts,
+    selections,
     staticTokens,
     styles,
     themes: Object.freeze(themes),

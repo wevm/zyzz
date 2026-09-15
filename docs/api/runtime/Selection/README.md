@@ -1,6 +1,6 @@
 # Selection
 
-Select compiler-owned theme classes and optional color-scheme props. Generated modules use this runtime helper without evaluating authoring code or generating CSS.
+Select compiler-owned theme classes and optional color-scheme props. A selected scheme adds its compiled stylesheet class and an inline `color-scheme`. Generated modules use this runtime helper without evaluating authoring code or generating CSS.
 
 ## create
 
@@ -55,7 +55,7 @@ themes({ theme: 'mint', colorScheme: 'dark' })
 
 ### className
 
-Type: `string`. Present on React output and every named catalog member; contains the compiled scope class.
+Type: `string`. Present on React output and every named catalog member; contains the compiled scope class, followed by the scheme class when a scheme is selected.
 
 ```ts
 themes({ theme: 'mint' }).className
@@ -72,7 +72,7 @@ Selection.create([['base', 'z-base']], true)({ theme: 'base' }).class
 
 ### style
 
-Type: `{ readonly colorScheme: 'light' | 'dark' | 'light dark' }` for React output, or `string` for HTML output. Omitted when no scheme is selected. HTML attribute escaping belongs to the renderer.
+Type: `{ readonly colorScheme: 'light' | 'dark' | 'light dark' }` for React output, or `string` for HTML output. Omitted when no scheme is selected. The scheme class in `className` carries the same `color-scheme` in the stylesheet, which lowered `light-dark()` helpers require. HTML attribute escaping belongs to the renderer.
 
 ```ts
 themes({ theme: 'base', colorScheme: 'dark' }).style

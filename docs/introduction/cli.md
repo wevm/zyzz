@@ -9,9 +9,19 @@ npx zyzz dev
 
 Both commands read `src` and write transformed source modules, CSS, source maps, and packed metadata to `dist`. The compiler supplies automatic identities. Downstream tooling lowers the emitted TypeScript/JSX and bundles the application. `build` runs once; `dev` builds immediately and watches the source tree.
 
+`dist/zyzz.css` holds every style the tree emits, ordered so shared contributions come first and each module's rules follow the modules it imports. Load it once from the document or import it from the entry module.
+
+`dist/zyzz.js` restores the theme and scheme that `appearance.set()` saved for every configuration in the tree. Load it as a classic script at the start of `<head>` so the selection applies before paint. Bundlers that copy a public directory into the site serve that script from there through `--script public/zyzz.js`.
+
+```html
+<script src="/zyzz.js"></script>
+<link rel="stylesheet" href="/dist/zyzz.css" />
+<script type="module" src="/dist/main.tsx"></script>
+```
+
 ## CSS Only
 
-Disable source transformation and emit only CSS and CSS maps:
+Disable source transformation and emit only CSS, CSS maps, and the initialization script:
 
 ```sh
 npx zyzz build --css-only
@@ -20,7 +30,7 @@ npx zyzz dev --css-only
 
 In this mode, build the original application source normally. Identity-bearing declarations require explicit IDs.
 
-Load `zyzz.shared.css` when present, followed by the emitted module stylesheets. With `--css-only`, the application continues importing its original source modules.
+`zyzz.css` still collects the shared and module stylesheets in dependency order, so the document loads one file while the application continues importing its original source modules.
 
 ```ts
 import { css, variable } from 'zyzz'
@@ -63,6 +73,8 @@ export default { plugins: [zyzz({ compiler: false })] }
 ```
 
 This mode follows the same explicit-ID requirements as `zyzz build --css-only`. The plugin and CLI are alternative CSS delivery paths; running both for the same application is unnecessary.
+
+Bundlers consuming CLI output need no browser target configuration. Their default targets may lower `light-dark()` into Lightning CSS helpers; the compiled scheme classes applied by `themes()` carry `color-scheme` in the stylesheet, which initializes those helpers.
 
 ## Watching
 

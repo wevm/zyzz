@@ -14,11 +14,11 @@ export default defineConfig({ plugins: [zyzz()] })
 
 ## Signature
 
-`zyzz()`
+`zyzz(options?)`
 
 ## Parameters
 
-No parameters. Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
+Optional `compiler` and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
 
 ## Browser Targets
 
@@ -46,6 +46,18 @@ Raw authoring inside virtual modules, framework SFCs, dependencies, or files out
 
 See [zyzz/vite](README.md) for the entrypoint overview.
 
+## Initialization Script
+
+Each exported configuration's [`script()`](../core/Config/script.md) is inlined at the start of `index.html`'s `<head>`, before Vite's client and every application module. Saved theme and scheme preferences therefore apply before first paint. Development compiles the catalog when the page is requested; production reads it from the bundled modules.
+
+```ts
+defineConfig({
+  plugins: [zyzz({ script: false })],
+})
+```
+
+Each script reads the localStorage entry named by its configuration's `storageKey`, the same record `appearance.set()` writes. `script: false` skips injection for documents that inline the script themselves. Applications without `index.html`, such as server-rendered frameworks, keep inlining `script()` in their document.
+
 ## Options
 
-`zyzz({ compiler?: boolean })` enables source optimization by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+`zyzz({ compiler?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.

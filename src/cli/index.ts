@@ -22,6 +22,10 @@ const options = z.object({
     .string()
     .optional()
     .describe('Stable compiled package identity'),
+  script: z
+    .string()
+    .optional()
+    .describe('Initialization script path (default: <out-dir>/zyzz.js)'),
 })
 const { version } = JSON.parse(
   await Fs.readFile(new URL('../../package.json', import.meta.url), 'utf8'),
@@ -153,6 +157,9 @@ async function open(context: open.Context) {
     outDir: Path.resolve(context.options['out-dir']),
     packageId,
     root: Path.resolve(context.args.src ?? 'src'),
+    ...(context.options.script === undefined
+      ? {}
+      : { script: Path.resolve(context.options.script) }),
   })
 }
 

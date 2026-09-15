@@ -2,6 +2,7 @@
  * Collects live theme references and emits graph-local variables and scope rules.
  * @module
  */
+import * as Scheme from '../../internal/Scheme.js'
 import * as Token from '../../internal/Token.js'
 import type * as Theme from '../../Theme.js'
 
@@ -39,7 +40,10 @@ export function create() {
     return `var(${name},${literal(value)})`
   }
 
-  function emit(themes: Readonly<Record<string, Theme.Definition>>) {
+  function emit(
+    themes: Readonly<Record<string, Theme.Definition>>,
+    schemes = false,
+  ) {
     const classes: Record<string, string> = Object.create(null)
     const rules: string[] = []
 
@@ -100,13 +104,18 @@ export function create() {
       rules.push(`.${className}{${body}}`)
     }
 
+    // Scheme rules travel with the module that can apply them, so lowered
+    // light-dark() resolves wherever selection helpers load.
+    if (schemes) rules.push(Scheme.css)
+
     return { classes: Object.freeze(classes), css: rules.join('\n') }
   }
 
   return { emit, serialize }
 }
 
-function encode(value: string): string {
+/** Escapes a scope key into the identifier segment of its compiled class. */
+export function encode(value: string): string {
   return value.replace(
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,

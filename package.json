@@ -16,7 +16,7 @@
     "check:css:full": "node scripts/css-conformance.ts --require-full",
     "check:types": "tsc",
     "dev": "zile dev && node scripts/build-default-theme.ts",
-    "examples": "pnpm dev && pnpm --filter \"./examples/*\" --parallel dev",
+    "examples": "pnpm build && pnpm --filter \"./examples/*\" rebuild && pnpm --filter \"./examples/*\" --parallel dev",
     "test": "vp test",
     "update:at-rules": "node scripts/at-rule-conformance.ts --update",
     "update:css": "node scripts/css-conformance.ts --update",

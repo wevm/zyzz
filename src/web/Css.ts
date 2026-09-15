@@ -660,8 +660,11 @@ export function compile<
 
   try {
     scopes =
-      theme || options.themes
-        ? (theme ??= Themes.create()).emit(options.themes ?? {})
+      theme || options.themes || options.schemes
+        ? (theme ??= Themes.create()).emit(
+            options.themes ?? {},
+            options.schemes ?? false,
+          )
         : { classes: Object.freeze({}), css: '' }
   } catch (error) {
     throw new CompileError([
@@ -714,6 +717,11 @@ export declare namespace compile {
     readonly composition?: 'independent' | 'ordered' | undefined
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
+    /**
+     * Emit the `color-scheme` selection classes. Set by modules whose runtime
+     * helpers can apply a scheme, so lowered `light-dark()` resolves there.
+     */
+    readonly schemes?: boolean | undefined
     /** Optional module scope for independently delivered stylesheets. */
     readonly scope?: string | undefined
     /** Ordered definitions; no themes or source adapter is required. */

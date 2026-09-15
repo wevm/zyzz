@@ -82,6 +82,17 @@ Dedicated `margin` and `padding` groups take precedence over `spacing` for their
 
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
 
+### options.storageKey
+
+- Type: `string`
+- Default: `'zyzz'`
+
+localStorage key shared by [`script()`](script.md) and [`appearance`](#appearance). The record holds `theme` and `colorScheme` fields.
+
+```ts
+Config.create({ defaultTheme: 'base', storageKey: 'my-app-appearance', themes })
+```
+
 ### options.theme
 
 - Type: Inline token data or a theme definition
@@ -108,6 +119,21 @@ Config.create({
 ```
 
 ## Returns
+
+### appearance
+
+- Type: `{ get: () => Selection; set: (selection: Partial<Selection>) => void }`
+
+Root selection controls over `document.documentElement`. `get()` reads the theme and scheme classes the root carries, reporting `defaultTheme` when no catalog class is present. `set()` applies the given fields over the current selection, swaps the scope and scheme classes plus the inline `color-scheme`, and saves the result under the storage key for the next visit. Token-free and single-theme configurations select only `colorScheme`.
+
+```ts
+const { appearance } = Config.create({ defaultTheme: 'base', themes })
+
+appearance.set({ colorScheme: 'dark' })
+appearance.get() // { theme: 'base', colorScheme: 'dark' }
+```
+
+Creation reads no browser state; the initialization [`script()`](script.md) restores the saved record before first paint, and `get()` then reflects it. Unknown themes or schemes throw `TypeError`.
 
 Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` and `variants`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
 
@@ -147,17 +173,16 @@ const { themes } = Config.create({
 const props = themes({ theme: 'base', colorScheme: 'light dark' })
 ```
 
-`options.theme` is required and inferred from the configured catalog keys. Runtime selection uses the same call, such as `themes({ theme: appearance })`. Omitted `colorScheme` preserves inherited CSS behavior. The returned props contain the selected scope class and an inline scheme only when supplied.
+`options.theme` is required and inferred from the configured catalog keys. Runtime selection uses the same call, such as `themes({ theme: appearance })`. Omitted `colorScheme` preserves inherited CSS behavior. The returned props contain the selected scope class and, only when a scheme is supplied, its compiled scheme class and an inline scheme.
 
 ### script
 
-- Type: `(options?: { storageKey?: string }) => string`
+- Type: `() => string`
 
-Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint. No cookies, provider, or extra import is required.
+Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint from the entry named by [`options.storageKey`](#optionsstoragekey). No cookies, provider, or extra import is required.
 
 ```ts
 const initialization = script()
-const custom = script({ storageKey: 'my-app-appearance' })
 ```
 
 See [Config Script](script.md) for storage, CSP, and hydration behavior.

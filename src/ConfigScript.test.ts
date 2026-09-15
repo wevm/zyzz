@@ -93,8 +93,11 @@ describe('create', () => {
       },
     })
 
+    // Root controls need version 18, so a legacy contract hides them beside the missing script.
     expect(
-      app.modules['app.ts']!.code.includes("key extends 'script'"),
+      app.modules['app.ts']!.code.includes(
+        "key extends 'appearance' | 'script'",
+      ),
     ).toMatchInlineSnapshot('true')
   })
   test('versions css-only packed exports with their output metadata', () => {
@@ -110,6 +113,17 @@ describe('create', () => {
     expect(Object.hasOwn(contract.exports.css, 'script')).toMatchInlineSnapshot(
       'false',
     )
+
+    // Older readers reject the storageKey option, so its presence alone needs the newer version.
+    const keyed = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {css}=Config.create({storageKey:'app'});`,
+      },
+    })
+
+    expect(
+      JSON.parse(keyed.contracts['config.ts']!).version,
+    ).toMatchInlineSnapshot(`18`)
   })
   test('omits initialization from static configured styles', () => {
     for (const options of [
@@ -178,7 +192,7 @@ describe('create', () => {
     test(`exports a server-safe packed script for ${config}`, async () => {
       const library = Graph.compile({
         modules: {
-          'config.ts': `import {Config} from 'zyzz'; export const {script}=Config.create(${config});`,
+          'config.ts': `import {Config} from 'zyzz'; export const {script}=Config.create(${config.replace('{', "{storageKey:'</script><script>bad()</script>\\u2028',")});`,
           'index.ts': `export {script as restore} from './config.js';`,
         },
       })
@@ -187,7 +201,7 @@ describe('create', () => {
         contracts: { 'library/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { library: 'library/index.js' } },
         modules: {
-          'app.ts': `import {restore} from 'library';export const source=restore({storageKey:'</script><script>bad()</script>\\u2028'});`,
+          'app.ts': `import {restore} from 'library';export const source=restore();`,
         },
       })
 
@@ -328,9 +342,10 @@ describe('create', () => {
         )
         await page.goto(`http://127.0.0.1:${address.port}/app`)
 
+        // A restored scheme adds its stylesheet class; server defaults carry none.
         expect(
           (await page.locator('html').getAttribute('class')) ===
-            `external ${theme}`,
+            `external ${theme}${scheme === 'dark' ? ' z_scheme-dark' : ''}`,
         ).toMatchInlineSnapshot('true')
         expect(
           (await page.evaluate(

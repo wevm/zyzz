@@ -183,11 +183,13 @@ export function collect(options: collect.Options): Themes.Link {
     ...(input.shorthands ? { shorthands: input.shorthands } : {}),
     ...(input.output ? { output: input.output } : {}),
     ...(input.layers ? { layers: input.layers } : {}),
+    ...(input.storageKey ? { storageKey: input.storageKey } : {}),
   }
 
   return {
     binding: options.name,
     call: {
+      appearance: true,
       script: true,
       end: options.expression.end,
       members: Object.fromEntries(

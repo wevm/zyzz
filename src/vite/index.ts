@@ -4,6 +4,7 @@
  */
 import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
+import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
@@ -12,7 +13,7 @@ import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Scope from '../compiler/internal/Scope.js'
-import type { Environment, Plugin } from 'vite'
+import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
 
@@ -26,6 +27,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
+  const catalogs = new Map<string, Catalogs.Catalog>()
+  const edges = new Map<string, ReadonlySet<string>>()
+  const graphs = new Map<string, ReadonlySet<string>>()
+  const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
   let root: string
 
@@ -61,6 +66,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
   function eligible(id: string) {
     if (sourceEntrypoints.has(normalize(id))) return true
+    // Ids carrying foreign queries are Vite resources such as inline-module proxies, not source.
+    if (resource(id)) return false
     const relative = Path.relative(root, id)
 
     return (
@@ -272,6 +279,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     host: Host,
     code?: string,
     allSources = false,
+    everything = false,
   ) {
     async function resolve(source: string, importer: string) {
       const resolved = await host.resolve(source, importer)
@@ -293,6 +301,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       Record<string, string | null>
     > = Object.create(null)
     const contracts: Record<string, string> = Object.create(null)
+    const lazy: Record<string, ReadonlySet<string>> = Object.create(null)
     const modules: Record<string, string> = Object.create(null)
     const files = new Set<string>()
 
@@ -404,11 +413,39 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         resolutions[specifier] = sourceId(resolved.id)
         await visit(resolved.id)
       }
+
+      // Lazy imports stay outside this compile but scope the documents that load them.
+      const specifiers: string[] = []
+
+      Walker.walk(parsed.program, {
+        enter(node) {
+          if (
+            node.type === 'ImportExpression' &&
+            node.source.type === 'Literal' &&
+            typeof node.source.value === 'string'
+          )
+            specifiers.push(node.source.value)
+        },
+      })
+
+      const targets = new Set<string>()
+
+      for (const specifier of specifiers) {
+        if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
+
+        const resolved = await resolve(specifier, file)
+        if (!resolved || resource(specifier) || resource(resolved.id)) continue
+
+        targets.add(eligible(resolved.id) ? sourceId(resolved.id) : resolved.id)
+      }
+
+      lazy[id] = targets
     }
 
     await visit(entry.file, code)
 
     const connected = new Set(files)
+    const entryContracts = new Set(Object.keys(contracts))
 
     for (const [file, source] of await discover(entry.environment, host)) {
       if (files.has(file) && !allSources) continue
@@ -509,7 +546,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
       }
 
-      if (selected) await visit(file, source)
+      // A whole-project compile reads disk so the document never trails the watcher.
+      if (everything) await visit(file)
+      else if (selected) await visit(file, source)
     }
 
     const loaded = new Set<string>()
@@ -565,6 +604,26 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     for (const id of Object.keys(contracts)) await dependencies(id)
 
+    // The entry's authored import closure scopes document initialization in
+    // builds, including packed contracts reached through other contracts.
+    for (const id of entryContracts)
+      for (const target of Object.values(imports[id] ?? {}))
+        if (target !== null) entryContracts.add(target)
+
+    // Static and lazy edges let a served document keep only the catalogs its scripts reach.
+    const staged = new Map<string, ReadonlySet<string>>()
+
+    for (const [id, resolutions] of Object.entries(imports))
+      staged.set(
+        id,
+        new Set([
+          ...Object.values(resolutions).filter(
+            (target): target is string => target !== null,
+          ),
+          ...(lazy[id] ?? []),
+        ]),
+      )
+
     const result = entry.compiler.compile({
       compiler: options.compiler,
       contracts,
@@ -572,6 +631,32 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       imports,
       modules,
     })
+
+    // The graph publishes after the compile succeeds, so a broken edit keeps
+    // scoping documents through the last good graph beside the kept catalogs.
+    graphs.set(
+      entry.file,
+      new Set([...[...connected].map(sourceId), ...entryContracts]),
+    )
+
+    for (const [id, targets] of staged) edges.set(id, targets)
+
+    // Packed dependencies contribute catalogs beside the modules compiled here.
+    const compiled = { ...contracts, ...result.contracts }
+
+    // A module owns its catalog keys; recompiling it replaces every
+    // configuration it had, including a module that no longer emits a contract.
+    for (const id of new Set([
+      ...Object.keys(modules),
+      ...Object.keys(compiled),
+    ]))
+      for (const key of catalogs.keys())
+        if (key.startsWith(`${id}\0`)) catalogs.delete(key)
+
+    for (const [id, contract] of Object.entries(compiled))
+      for (const configuration of Catalogs.read(contract))
+        catalogs.set(`${id}\0${configuration.identity}`, configuration)
+
     const map = new Mapping.GenMapping()
     const styles: string[] = []
     let line = 0
@@ -751,6 +836,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     return {
       code: output.code,
+      contractIds: Object.keys(compiled),
       css: styles.join('\n'),
       sharedCss: new TextDecoder().decode(shared.code),
       sharedCssMap: sharedMap,
@@ -762,6 +848,190 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         ),
       },
     }
+  }
+
+  /** Compiles every discovered source once so index.html can inline each configuration's script before modules load. */
+  async function initializations(server: ViteDevServer) {
+    const environment = server.environments.client
+    const host: Host = {
+      asset: async (file) => file,
+      resolve: (source, importer) =>
+        environment.pluginContainer.resolveId(source, importer),
+      watch: (file) => server.watcher.add(file),
+    }
+    const sources = await discover(environment, host)
+    let entry = initializers.get(environment)
+
+    // The seed only anchors the compile, which visits every discovered source.
+    if (!entry || !sources.has(entry.file)) {
+      const file = sources.keys().next().value
+      if (file === undefined) return []
+
+      entry = {
+        compiler: Graph.create(),
+        environment,
+        file,
+        files: new Set([file]),
+      }
+      initializers.set(environment, entry)
+    }
+
+    // A source error surfaces through that module's own transform and overlay.
+    // The document keeps loading with the catalogs collected before the edit.
+    const output = await compile(entry, host, undefined, true, true).catch(
+      () => undefined,
+    )
+
+    // This compile saw the whole project, so contracts it no longer produces are gone.
+    if (output)
+      for (const key of catalogs.keys())
+        if (!output.contractIds.some((id) => key.startsWith(`${id}\0`)))
+          catalogs.delete(key)
+
+    return [...catalogs.values()]
+  }
+
+  /** Catalogs reachable from a served document's module scripts; every catalog when none resolve. */
+  async function documentCatalogs(
+    html: string,
+    filename: string,
+    resolve: Host['resolve'],
+  ) {
+    const reachable = new Set<string>()
+
+    const add = (specifier: string) => {
+      if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(specifier)) return
+
+      const path = specifier.split(/[?#]/)[0]!
+
+      // Vite's inline-module proxies point back at the document itself.
+      if (/\.html?$/i.test(path)) return
+
+      reachable.add(
+        sourceId(
+          path.startsWith('/')
+            ? Path.join(root, path)
+            : Path.resolve(Path.dirname(filename), path),
+        ),
+      )
+    }
+
+    // Vite rewrites inline modules into proxy URLs before this hook runs, so
+    // the document on disk supplies their imports beside the served markup.
+    const original = await Fs.readFile(filename, 'utf8').catch(() => html)
+
+    for (const document of new Set([html, original]))
+      for (const [, attributes, content] of document.matchAll(
+        /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+      )) {
+        if (!/\btype\s*=\s*["']?module["']?/i.test(attributes!)) continue
+
+        const source = /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i.exec(
+          attributes!,
+        )
+        const src = source?.[1] ?? source?.[2] ?? source?.[3]
+
+        if (src) {
+          add(src)
+          continue
+        }
+
+        // Inline modules import relative to the document, as Vite's HTML
+        // proxy resolves them; aliases and packages resolve through Vite.
+        for (const specifier of inlineImports(content!)) {
+          if (/^\.{0,2}\//.test(specifier)) {
+            add(specifier)
+            continue
+          }
+          if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
+
+          const resolved = await resolve(specifier, filename).catch(() => null)
+          if (!resolved || resource(resolved.id)) continue
+
+          reachable.add(
+            eligible(resolved.id) ? sourceId(resolved.id) : resolved.id,
+          )
+        }
+      }
+
+    if (![...reachable].some((id) => edges.has(id)))
+      return [...catalogs.values()]
+
+    for (const id of reachable)
+      for (const target of edges.get(id) ?? []) reachable.add(target)
+
+    return [...catalogs]
+      .filter(([key]) => reachable.has(key.split('\0')[0]!))
+      .map(([, configuration]) => configuration)
+  }
+
+  /** Static and literal dynamic import specifiers of an inline module script; none when it fails to parse. */
+  function inlineImports(content: string): readonly string[] {
+    const specifiers: string[] = []
+
+    try {
+      const { program } = Parser.parseSync('inline.ts', content, {
+        sourceType: 'module',
+      })
+
+      Walker.walk(program, {
+        enter(node) {
+          if (
+            (node.type === 'ImportDeclaration' ||
+              node.type === 'ExportNamedDeclaration' ||
+              node.type === 'ExportAllDeclaration') &&
+            node.source
+          )
+            specifiers.push(node.source.value)
+
+          if (
+            node.type === 'ImportExpression' &&
+            node.source.type === 'Literal' &&
+            typeof node.source.value === 'string'
+          )
+            specifiers.push(node.source.value)
+        },
+      })
+    } catch {
+      return []
+    }
+
+    return specifiers
+  }
+
+  /** Catalogs contributed by the modules an HTML entry bundles; every catalog without an entry chunk. */
+  function entryCatalogs(
+    bundle?: Rollup.OutputBundle,
+    chunk?: Rollup.OutputChunk,
+  ) {
+    if (!bundle || !chunk) return [...catalogs.values()]
+
+    const contracts = new Set<string>()
+    const visited = new Set<string>()
+
+    function collect(name: string) {
+      if (visited.has(name)) return
+
+      visited.add(name)
+
+      const output = bundle![name]
+      if (output?.type !== 'chunk') return
+
+      // Source graphs follow authored imports, so a configuration compiled away
+      // from the bundle still initializes the pages that authored it.
+      for (const id of Object.keys(output.modules))
+        for (const contract of graphs.get(normalize(id)) ?? [])
+          contracts.add(contract)
+
+      for (const imported of [...output.imports, ...output.dynamicImports])
+        collect(imported)
+    }
+
+    collect(chunk.fileName)
+
+    return [...catalogs]
+      .filter(([key]) => contracts.has(key.split('\0')[0]!))
+      .map(([, configuration]) => configuration)
   }
 
   return {
@@ -1086,6 +1356,37 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         map: JSON.stringify(Mapping.toEncodedMap(shifted)),
       }
     },
+    transformIndexHtml: {
+      order: 'post',
+      async handler(html, context) {
+        if (options.script === false) return
+
+        // Development compiles the whole project on request and keeps the
+        // catalogs the document's scripts reach; a build scopes them to the
+        // source graphs its entry chunk bundles.
+        const configurations = await (async () => {
+          if (!context.server)
+            return entryCatalogs(context.bundle, context.chunk)
+
+          await initializations(context.server)
+
+          const environment = context.server.environments.client
+
+          return await documentCatalogs(
+            html,
+            context.filename,
+            (source, importer) =>
+              environment.pluginContainer.resolveId(source, importer),
+          )
+        })()
+        // Saved preferences apply before any other script or visible content.
+        return Catalogs.scripts(configurations).map((children) => ({
+          children,
+          injectTo: 'head-prepend' as const,
+          tag: 'script',
+        }))
+      },
+    },
   }
 }
 
@@ -1117,9 +1418,14 @@ function cssId(file: string) {
 
 /** Vite integration configuration. */
 export declare namespace zyzz {
-  /** Source optimization remains enabled by default. */
+  /** Source optimization and initialization injection remain enabled by default. */
   type Options = {
     /** False retains authored calls and requires explicit identities where needed. */
     readonly compiler?: boolean | undefined
+    /**
+     * Inline each configuration's `script()` at the start of index.html's head.
+     * False skips injection for documents that inline the script themselves.
+     */
+    readonly script?: boolean | undefined
   }
 }

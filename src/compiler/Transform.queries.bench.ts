@@ -52,7 +52,7 @@ for (const count of [10, 100, 1000]) {
               Array.from(
                 { length: count },
                 (_, index) =>
-                  `export const body${index}=css({fontSize:"base",lineHeight:"default"})()`,
+                  `export const body${index}=css({fontSize:"base",lineHeight:"normal"})()`,
               ).join('\n'),
           },
         })

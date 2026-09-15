@@ -544,10 +544,10 @@ describe('queries', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-26ntzho2pyyt-theme{--z-t26ntzho2pyyt-theme-fontFamily_2e_sans:Geist, ui-sans-serif, system-ui, sans-serif;--z-t26ntzho2pyyt-theme-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500:oklch(62.3% 0.214 259.815);}
-        .z-font-family-p8Bi9V{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, ui-sans-serif, system-ui, sans-serif);}
+        ".z_theme-26ntzho2pyyt-theme{--z-t26ntzho2pyyt-theme-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-theme-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500:light-dark(#97ccff,#004287);}
+        .z-font-family-nHjHpk{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
         .z-font-size-1ft8_Q{font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);}
-        .z-text-aBVyXQ{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
+        .z-text-0FMvmu{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,light-dark(#97ccff,#004287));}"
       `)
 
       const built = await Esbuild.build({
@@ -682,7 +682,7 @@ describe('queries', () => {
           await page
             .locator('#body')
             .evaluate((element) => getComputedStyle(element).color),
-        ).toMatchInlineSnapshot(`"rgb(17, 17, 17)"`)
+        ).toMatchInlineSnapshot(`"rgb(23, 23, 23)"`)
 
         await page
           .locator('#body')
@@ -694,7 +694,7 @@ describe('queries', () => {
           await page
             .locator('#body')
             .evaluate((element) => getComputedStyle(element).color),
-        ).toMatchInlineSnapshot(`"rgb(255, 255, 255)"`)
+        ).toMatchInlineSnapshot(`"rgb(237, 237, 237)"`)
       } finally {
         await browser.close()
       }
@@ -712,9 +712,9 @@ describe('queries', () => {
       const output = Css.compile({ styles, themes: { default: bundled } })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".t_0{--z0:light-dark(#111,#fff);--z1:Geist, ui-sans-serif, system-ui, sans-serif;--z2:1rem;--z3:1rem;}
-        .z-text-3Tq_IH{color:var(--z0,light-dark(#111,#fff));}
-        .z-font-family--hJCD3{font-family:var(--z1,Geist, ui-sans-serif, system-ui, sans-serif);}
+        ".t_0{--z0:light-dark(#171717,#ededed);--z1:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z2:1rem;--z3:1rem;}
+        .z-text-CZyri6{color:var(--z0,light-dark(#171717,#ededed));}
+        .z-font-family-9aYERC{font-family:var(--z1,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
         .z-font-size-4nuiGJ{font-size:var(--z2,1rem);}
         .z-p-3OsuE-{padding:var(--z3,1rem);}"
       `)

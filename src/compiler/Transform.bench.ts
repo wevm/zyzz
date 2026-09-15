@@ -561,3 +561,75 @@ for (const count of [10, 100]) {
     )
   })
 }
+
+for (const count of [0, 100]) {
+  const source = `import {css} from 'zyzz';\n${Array.from(
+    { length: count },
+    (_, index) =>
+      `const unused${index} = css({padding:'${index}px',color:'red'});`,
+  ).join('\n')}\nexport const card = css({padding:'8px',color:'blue'});`
+
+  describe(`reachability / ${count} unused styles`, () => {
+    bench(
+      'extract + prune + emit + maps',
+      () => {
+        Transform.compile({
+          cssOutput: 'grouped',
+          moduleId: 'pruning.ts',
+          source,
+        })
+      },
+      {
+        iterations: 30,
+        setup: async () => {
+          const output = Transform.compile({
+            cssOutput: 'grouped',
+            moduleId: 'pruning.ts',
+            source,
+          })
+          const bundle = await Esbuild.build({
+            bundle: true,
+            format: 'esm',
+            minify: true,
+            stdin: {
+              contents: output.code,
+              loader: 'ts',
+              resolveDir: process.cwd(),
+            },
+            write: false,
+          })
+          const measure = (text: string) => ({
+            brotli: Zlib.brotliCompressSync(text).byteLength,
+            gzip: Zlib.gzipSync(text).byteLength,
+            raw: Buffer.byteLength(text),
+          })
+          const css = Compilation.minify(output.css)
+          const javascript = bundle.outputFiles[0]!.text
+          const directory = Path.resolve('bench/results/reachability')
+
+          await Fs.mkdir(directory, { recursive: true })
+          await Fs.writeFile(
+            Path.join(directory, `${count}.json`),
+            JSON.stringify(
+              {
+                count,
+                css: measure(css),
+                javascript: measure(javascript),
+                total: {
+                  brotli: measure(css).brotli + measure(javascript).brotli,
+                  gzip: measure(css).gzip + measure(javascript).gzip,
+                  raw: Buffer.byteLength(css) + Buffer.byteLength(javascript),
+                },
+              },
+              null,
+              2,
+            ),
+          )
+        },
+        time: 1000,
+        warmupIterations: 10,
+        warmupTime: 500,
+      },
+    )
+  })
+}

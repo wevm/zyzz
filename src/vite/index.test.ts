@@ -3,6 +3,7 @@
  * @module
  */
 import * as Trace from '@jridgewell/trace-mapping'
+import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Util from 'node:util'
 import * as Fs from 'node:fs/promises'
@@ -10,6 +11,7 @@ import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
+import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 import * as Library from '../../test/fixtures/Library.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
@@ -762,7 +764,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         /z_theme-[a-z0-9]+-other-brand_2e_dark/.test(development),
       ).toMatchInlineSnapshot('true')
       expect(
-        /z_theme-[a-z0-9]+-onlyScript-solo/.test(development),
+        /\["solo","z_theme-[a-z0-9]+-onlyScript-solo"\]/.test(development),
       ).toMatchInlineSnapshot('true')
 
       // A source error stays with its module; the document still initializes
@@ -917,6 +919,75 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       expect(b.includes('localStorage.getItem("alpha")')).toMatchInlineSnapshot(
         'false',
       )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 60000)
+  test('initializes packed configurations reached only through another packed contract', async () => {
+    const files = {
+      'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
+      'main.ts': `import 'wrapper'; document.documentElement.dataset.ready = 'true';`,
+    }
+    const { config, root } = await create(files)
+
+    try {
+      // The dependency owns a configuration and a shared contribution; the
+      // wrapper repacks that contribution, so its contract names the dependency.
+      const dependency = Graph.compile({
+        modules: {
+          'index.ts': `import { Config } from 'zyzz'; import { global } from 'zyzz/web'; global({ body: { margin: 0 } }); export const { css, themes } = Config.create({ defaultTheme: 'nested', storageKey: 'nested', themes: { nested: { color: { ink: '#123456' } } } });`,
+        },
+      })
+      const wrapper = Graph.compile({
+        contracts: { 'dep/index.js': dependency.contracts['index.ts']! },
+        imports: { 'wrapper/index.ts': { dep: 'dep/index.js' } },
+        modules: {
+          'wrapper/index.ts': `import 'dep'; export const loaded = true;`,
+        },
+      })
+      const wrapperRoot = Path.join(root, 'node_modules/wrapper')
+      const dependencyRoot = Path.join(wrapperRoot, 'node_modules/dep')
+
+      for (const [directory, name, module, contract] of [
+        [
+          dependencyRoot,
+          'dep',
+          dependency.modules['index.ts']!.code,
+          dependency.contracts['index.ts']!,
+        ],
+        [
+          wrapperRoot,
+          'wrapper',
+          wrapper.modules['wrapper/index.ts']!.code,
+          wrapper.contracts['wrapper/index.ts']!,
+        ],
+      ] as const) {
+        await Fs.mkdir(directory, { recursive: true })
+        await Fs.writeFile(
+          Path.join(directory, 'package.json'),
+          JSON.stringify({
+            name,
+            type: 'module',
+            exports: './index.js',
+            sideEffects: false,
+          }),
+        )
+        await Fs.writeFile(
+          Path.join(directory, 'index.js'),
+          Esbuild.transformSync(module, { loader: 'ts', format: 'esm' }).code,
+        )
+        await Fs.writeFile(Path.join(directory, 'index.js.zyzz.json'), contract)
+      }
+
+      const outDir = Path.join(root, 'dist')
+
+      await Vite.build({ ...config, build: { outDir } })
+
+      const html = await Fs.readFile(Path.join(outDir, 'index.html'), 'utf8')
+
+      expect(
+        html.includes('localStorage.getItem("nested")'),
+      ).toMatchInlineSnapshot('true')
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

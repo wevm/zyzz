@@ -561,11 +561,14 @@ export function write(
       function callable(link: Themes.Link): boolean {
         return !!link.style || Object.values(link.members ?? {}).some(callable)
       }
-      // Root controls call a runtime helper older releases lack, so readers must opt in.
+      // Root controls call a runtime helper older releases lack, and older
+      // readers reject the storageKey option, so both require readers to opt in.
       if (
         Object.values(links).some(
           (link) =>
-            link.call.appearance && (link.kind === 'config' || link.call.root),
+            (link.call.appearance &&
+              (link.kind === 'config' || link.call.root)) ||
+            link.call.options?.storageKey !== undefined,
         )
       )
         return 18

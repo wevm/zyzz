@@ -113,6 +113,17 @@ describe('create', () => {
     expect(Object.hasOwn(contract.exports.css, 'script')).toMatchInlineSnapshot(
       'false',
     )
+
+    // Older readers reject the storageKey option, so its presence alone needs the newer version.
+    const keyed = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {css}=Config.create({storageKey:'app'});`,
+      },
+    })
+
+    expect(
+      JSON.parse(keyed.contracts['config.ts']!).version,
+    ).toMatchInlineSnapshot(`18`)
   })
   test('omits initialization from static configured styles', () => {
     for (const options of [

@@ -415,12 +415,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     await visit(entry.file, code)
 
     const connected = new Set(files)
-
-    // The entry's authored import closure scopes document initialization in builds.
-    graphs.set(
-      entry.file,
-      new Set([...[...connected].map(sourceId), ...Object.keys(contracts)]),
-    )
+    const entryContracts = new Set(Object.keys(contracts))
 
     for (const [file, source] of await discover(entry.environment, host)) {
       if (files.has(file) && !allSources) continue
@@ -578,6 +573,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     }
 
     for (const id of Object.keys(contracts)) await dependencies(id)
+
+    // The entry's authored import closure scopes document initialization in
+    // builds, including packed contracts reached through other contracts.
+    for (const id of entryContracts)
+      for (const target of Object.values(imports[id] ?? {}))
+        if (target !== null) entryContracts.add(target)
+
+    graphs.set(
+      entry.file,
+      new Set([...[...connected].map(sourceId), ...entryContracts]),
+    )
 
     const result = entry.compiler.compile({
       compiler: options.compiler,
@@ -1230,6 +1236,7 @@ function catalog(contract: string): readonly Catalog[] {
         theme?: string
       }
     >
+    themes?: Record<string, { identity?: string }>
   }
   const configurations = new Map<
     string,
@@ -1239,7 +1246,9 @@ function catalog(contract: string): readonly Catalog[] {
   for (const binding of Object.values(parsed.exports ?? {})) {
     if (binding.kind !== 'config' || binding.theme === undefined) continue
 
-    const identity = binding.theme
+    // A binding names its selected default scope; the theme metadata carries
+    // the configuration identity that prefixes every scope key.
+    const identity = parsed.themes?.[binding.theme]?.identity ?? binding.theme
     let configuration = configurations.get(identity)
 
     if (!configuration) {

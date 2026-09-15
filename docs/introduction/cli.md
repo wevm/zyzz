@@ -20,7 +20,7 @@ npx zyzz dev --css-only
 
 In this mode, build the original application source normally. Identity-bearing declarations require explicit IDs.
 
-Load `zyzz.shared.css` when present, followed by the emitted module stylesheets. With `--css-only`, the application continues importing its original source modules.
+Load `zyzz.shared.css` when present, followed by the emitted module stylesheets with dependencies before their consumers. With `--css-only`, the application continues importing its original source modules.
 
 ```ts
 import { css, variable } from 'zyzz'

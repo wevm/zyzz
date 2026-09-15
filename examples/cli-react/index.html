@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Zyzz playground</title>
-    <!-- Shared contributions load before module stylesheets; modules without local styles emit empty files. -->
+    <!-- Shared contributions load first, then module stylesheets in dependency order so App rules cascade over the components it imports. -->
     <link rel="stylesheet" href="/.zyzz/zyzz.shared.css" />
-    <link rel="stylesheet" href="/.zyzz/App.tsx.css" />
-    <link rel="stylesheet" href="/.zyzz/Styling.tsx.css" />
     <link rel="stylesheet" href="/.zyzz/Dynamic.tsx.css" />
-    <link rel="stylesheet" href="/.zyzz/Relationships.tsx.css" />
     <link rel="stylesheet" href="/.zyzz/Motion.tsx.css" />
+    <link rel="stylesheet" href="/.zyzz/Relationships.tsx.css" />
+    <link rel="stylesheet" href="/.zyzz/Styling.tsx.css" />
+    <link rel="stylesheet" href="/.zyzz/App.tsx.css" />
   </head>
   <body>
     <div id="root"></div>

@@ -638,7 +638,7 @@ Status: planned.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
 - [ ] Require combined emitted CSS and client JavaScript to beat StyleX in matched raw/gzip/Brotli workloads as each capability lands. Expand the existing literal size gate to themes, variants, selectors, and library consumers; preserve CSS behavior and readable names.
 - [ ] Measure the configured atomic and grouped modes on repeated and unique styles; retain the explicit selection and atomic default. Measure the agreed variant API; defer additional variant abstractions and slot systems until concrete usage justifies them.
-- [ ] Verify package metadata and the standard changeset/release workflow.
+- [ ] Verify package metadata and the release workflow.
 
 Benchmarks begin in PR 1.1 and grow with each real pipeline; this phase consolidates the evidence. Follow `AGENTS.md`: save machine-readable baselines, record measurement conditions and variability, validate equivalent behavior, and report CSS, JavaScript, markup/class bytes, compression, and runtime helpers without double-counting. Use real browser/native measurements for rendering and selection workloads.
 

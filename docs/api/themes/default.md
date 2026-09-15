@@ -75,4 +75,4 @@ const color = tokens.color.blue[700]
 
 ## Package lifecycle
 
-`pnpm build`, `pnpm dev`, and `pnpm changeset:publish` generate the theme module and adjacent compiler contract. Development replaces the generated theme link without changing its source. Run `pnpm build` before direct integration test commands; test workers share these read-only artifacts.
+`pnpm build` and `pnpm dev` generate the theme module and adjacent compiler contract. Development replaces the generated theme link without changing its source. Run `pnpm build` before direct integration test commands; test workers share these read-only artifacts.

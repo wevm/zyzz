@@ -17,6 +17,8 @@ import * as Contract from './internal/Contract.js'
 import * as Relative from './internal/Relative.js'
 import * as Themes from './internal/Themes.js'
 import * as Source from './Source.js'
+import * as Scope from './internal/Scope.js'
+import * as Static from './internal/Static.js'
 import * as Transform from './Transform.js'
 
 /** Compiles supplied modules with shared theme contracts and dependency metadata. */
@@ -283,6 +285,160 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
+  const constants = new Map<string, Ast.Node | undefined>()
+  function constant(
+    moduleId: string,
+    name: string,
+    active = new Set<string>(),
+  ): Ast.Node | undefined {
+    const key = JSON.stringify([moduleId, name])
+    if (constants.has(key)) return constants.get(key)
+    if (active.has(key) || !Object.hasOwn(options.modules, moduleId))
+      return undefined
+    const next = new Set(active).add(key)
+    const program = Syntax.parse({
+      moduleId,
+      source: options.modules[moduleId]!,
+    }).program
+    const imports: Record<string, Ast.Node> = Object.create(null)
+    let local = name
+    let exported = false
+    let direct: Ast.Node | undefined
+    const stars: string[] = []
+    for (const statement of program.body) {
+      if (
+        statement.type === 'ImportDeclaration' &&
+        statement.importKind !== 'type'
+      ) {
+        const target = resolve(moduleId, statement.source.value, statement)
+        if (!target) continue
+        for (const specifier of statement.specifiers) {
+          if (
+            specifier.type === 'ImportNamespaceSpecifier' ||
+            (specifier.type === 'ImportSpecifier' &&
+              specifier.importKind === 'type')
+          )
+            continue
+          const imported =
+            specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : specifier.imported.type === 'Identifier'
+                ? specifier.imported.name
+                : specifier.imported.value
+          const value = constant(target, imported, next)
+          if (value) imports[specifier.local.name] = relocate(value, specifier)
+        }
+      }
+      if (statement.type === 'ExportDefaultDeclaration' && name === 'default') {
+        direct = statement.declaration
+        exported = true
+      }
+      if (
+        statement.type === 'ExportAllDeclaration' &&
+        statement.exportKind !== 'type' &&
+        !statement.exported &&
+        name !== 'default'
+      ) {
+        const target = resolve(moduleId, statement.source.value, statement)
+        if (target) stars.push(target)
+      }
+      if (
+        statement.type !== 'ExportNamedDeclaration' ||
+        statement.exportKind === 'type'
+      )
+        continue
+      if (statement.declaration?.type === 'VariableDeclaration')
+        exported ||= statement.declaration.declarations.some(
+          (value) => value.id.type === 'Identifier' && value.id.name === name,
+        )
+      for (const specifier of statement.specifiers) {
+        if (specifier.exportKind === 'type') continue
+        const alias =
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : specifier.exported.value
+        if (alias !== name) continue
+        local =
+          specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value
+        if (statement.source) {
+          const target = resolve(moduleId, statement.source.value, statement)
+          return target ? constant(target, local, next) : undefined
+        }
+        exported = true
+      }
+    }
+    if (!exported) {
+      const candidates = [
+        ...new Set(
+          stars
+            .map((target) => constant(target, name, next))
+            .filter((value) => value !== undefined),
+        ),
+      ]
+      return candidates.length === 1 ? candidates[0] : undefined
+    }
+    const scope = new Scope.Tracker({ preserveExitedScopes: true })
+    Walker.walk(program, { scopeTracker: scope })
+    scope.freeze()
+    let value: Ast.Node | undefined
+    try {
+      const data = Static.collect(program, scope, imports)
+      value = direct
+        ? data.normalize(direct, new Set(), new Set(), true)
+        : data.exported(local)
+    } catch {
+      return undefined
+    }
+    if (value && !literal(value)) value = undefined
+    constants.set(key, value)
+    return value
+  }
+
+  function literal(node: Ast.Node, depth = 0): boolean {
+    if (depth > 64) return false
+    if (node.type === 'Literal')
+      return (
+        node.value === null ||
+        ['string', 'number', 'boolean'].includes(typeof node.value)
+      )
+    if (node.type === 'UnaryExpression')
+      return (
+        ['+', '-'].includes(node.operator) &&
+        node.argument.type === 'Literal' &&
+        typeof node.argument.value === 'number'
+      )
+    if (node.type === 'TemplateLiteral') return !node.expressions.length
+    if (node.type === 'ArrayExpression')
+      return node.elements.every((value) => value && literal(value, depth + 1))
+    return (
+      node.type === 'ObjectExpression' &&
+      node.properties.every(
+        (property) =>
+          property.type === 'Property' &&
+          !property.method &&
+          property.kind === 'init' &&
+          (!property.computed || property.key.type === 'Literal') &&
+          literal(property.value, depth + 1),
+      )
+    )
+  }
+
+  function relocate(
+    node: Ast.Node,
+    span: Pick<Ast.Node, 'start' | 'end'>,
+  ): Ast.Node {
+    const copy = structuredClone(node)
+    Walker.walk(copy, {
+      enter(node) {
+        node.start = span.start
+        node.end = span.end
+      },
+    })
+    return copy
+  }
+
   const factoryPrograms = new Map<string, Ast.Program>()
   function factory(
     moduleId: string,
@@ -429,6 +585,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       },
     })
 
+    const values: Record<string, Ast.Node> = Object.create(null)
     const links: Record<string, Themes.Link> = Object.create(null)
     const forwarded: Record<string, Themes.Link> = Object.create(null)
     const explicit = new Set<string>()
@@ -543,6 +700,10 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
           if (Object.hasOwn(contracts, name))
             links[specifier.local.name] = contracts[name]!
+          else {
+            const value = constant(target, name)
+            if (value) values[specifier.local.name] = relocate(value, specifier)
+          }
         }
       } else if (node.type === 'ExportAllDeclaration') {
         if (node.exported && Object.keys(contracts).length)
@@ -598,7 +759,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       compiler: options.compiler,
       moduleId,
       source,
-      [Themes.context]: { factories, links },
+      [Themes.context]: { constants: values, factories, links },
     })
 
     function outputLink(link: Themes.Link): Themes.Link {

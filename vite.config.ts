@@ -12,6 +12,8 @@ export default defineConfig({
       'dist/**',
       'node_modules/**',
       'pnpm-lock.yaml',
+      'src/internal/NativeProperties.ts',
+      'src/react-native/internal/NativeSchema.ts',
     ],
     printWidth: 80,
     semi: false,
@@ -20,7 +22,13 @@ export default defineConfig({
   },
   lint: {
     categories: { correctness: 'error' },
-    ignorePatterns: ['.fixture-*/**', 'dist/**', 'node_modules/**'],
+    ignorePatterns: [
+      '.fixture-*/**',
+      'dist/**',
+      'node_modules/**',
+      'src/internal/NativeProperties.ts',
+      'src/react-native/internal/NativeSchema.ts',
+    ],
     // Formatting and linting stay syntax-only; check:types checks types.
     options: { typeAware: false, typeCheck: false },
     rules: { 'no-unused-vars': 'error' },

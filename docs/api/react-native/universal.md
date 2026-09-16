@@ -1,7 +1,7 @@
 # Universal Styling
 
 > [!NOTE]
-> This contract specifies the universal API work. The current native implementation exposes table compilation and selection only. Root callable styling, target branches, native variants, and renderer acceptance are not implemented by this contract.
+> This contract specifies the universal API work. The current native implementation exposes table compilation and selection only. Static target branches are implemented. Native callable application, variants, and renderer acceptance remain pending.
 
 The universal API retains `style`, `variants`, themes, tokens, and `cx` across web and native. Shared modules keep the same declarations and callable inputs. Application returns platform styling props for spreading onto ordinary components: web receives class/style bindings, native receives a style binding.
 
@@ -19,9 +19,9 @@ Lengths, flex defaults, inherited text, transforms, colors, and fonts require do
 
 ## Target Branches
 
-The planned `targets` field contains `web`, `native`, `ios`, and `android` declaration branches. Shared declarations apply first, followed by the matching broad target and then the platform branch. The compiler rejects unknown targets and nonportable unqualified declarations.
+The `targets` field contains `web`, `native`, `ios`, and `android` declaration branches. Shared declarations apply first, followed by the matching broad target and then the platform branch. The compiler rejects unknown targets and nonportable unqualified declarations.
 
-Branches preserve authoring order internally. They use the destination's value semantics and native property domains. They must survive imported constants, re-exports, variants, and packed libraries. The source/compiler/type changes must land together before this syntax is advertised as usable.
+Branches preserve authoring order internally. They use the destination's value semantics and native property domains. Immutable literal source imports, re-exports, and version-20 packed style contracts retain these branches. Native variant application remains part of the separate variants contract. Unresolved external constants require source or an already compiled style contract.
 
 ## Composition
 
@@ -35,4 +35,4 @@ The pinned React Native 0.87.0 declarations in `test/conformance/native` define 
 
 `pnpm check:native:full` deliberately fails while full acceptance is unimplemented. Replace this pending guard with executed evidence checks as the conformance runner lands. Do not turn it green by filtering the inventory or treating unsupported entries as not applicable.
 
-The inventory retains source declarations, actual runtime exports, and referenced type names. Imported animated/image domains, platform requirements, OS versions, and renderer architecture still require the detailed value and platform audit. iOS and Android must each match independent React Native controls before full parity can pass.
+The inventory retains legacy and published declarations, actual runtime exports, and referenced type names. Static image and value domains are audited. Animated/opaque domains, OS requirements, renderer architecture, and rendered behavior remain host and device acceptance work. iOS and Android must each match independent React Native controls before full parity can pass.

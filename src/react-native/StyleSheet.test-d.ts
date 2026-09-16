@@ -1,6 +1,6 @@
 /** Checks inferred native labels and explicit native authoring constraints. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Config, Style, Theme, style } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 import type { StyleProp as NativeStyleProp } from '../../test/fixtures/native/StyleProp.js'
 
@@ -55,6 +55,189 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('retains Image-compatible overflow through target selection and table lookup', () => {
+    const styles = Style.define({
+      image: {
+        targets: {
+          native: { overflow: 'hidden' },
+          ios: { overflow: 'visible' },
+          android: { overflow: 'scroll' },
+        },
+      },
+    })
+    const ios = StyleSheet.compile({ styles, platform: 'ios' })
+    const android = StyleSheet.compile({ styles, platform: 'android' })
+    expectTypeOf(ios.styles.default.light.image.overflow).toEqualTypeOf<
+      'visible' | undefined
+    >()
+    expectTypeOf(android.styles.default.light.image.overflow).toEqualTypeOf<
+      'scroll' | undefined
+    >()
+    expectTypeOf(
+      StyleSheet.select(ios.styles, { theme: 'default', colorScheme: 'dark' })
+        .image.overflow,
+    ).toEqualTypeOf<'visible' | undefined>()
+    const native = { transformOrigin: [1, 2] }
+    // @ts-expect-error Published native transform origins require three axes.
+    Style.define({ image: { targets: { native } } })
+  })
+
+  test('rejects nonstatic target types and preserves optional branches', () => {
+    const bound = Config.create({})
+    style({ targets: undefined })
+    bound.style({ targets: undefined })
+    style({ targets: { web: undefined } })
+    bound.style({ targets: { web: undefined } })
+    // @ts-expect-error Target branches cannot nest.
+    style({ targets: { web: { targets: { native: { opacity: 1 } } } } })
+    // @ts-expect-error Configured target branches cannot nest.
+    bound.style({ targets: { web: { targets: { native: { opacity: 1 } } } } })
+    // @ts-expect-error Conditions cannot hide nested target branches.
+    bound.style({
+      targets: { web: { ':hover': { targets: { native: { opacity: 1 } } } } },
+    })
+    // @ts-expect-error Native branches cannot be callable.
+    style({ targets: { native: () => ({ opacity: 0.5 }) } })
+    // @ts-expect-error Named native branches cannot be callable.
+    Style.define({ card: { targets: { native: () => ({ opacity: 0.5 }) } } })
+    // @ts-expect-error Configured native branches cannot be callable.
+    bound.style({ targets: { native: () => ({ opacity: 0.5 }) } })
+    // @ts-expect-error Target values cannot come from runtime callback inputs.
+    style((values: { opacity: number }) => ({
+      targets: { web: { opacity: values.opacity } },
+    }))
+    // @ts-expect-error Native target values cannot come from runtime callback inputs.
+    bound.style((values: { opacity: number }) => ({
+      targets: { native: { opacity: values.opacity } },
+    }))
+    // @ts-expect-error Literal input unions still represent runtime target values.
+    style((values: { opacity: 0 | 1 }) => ({
+      targets: { web: { opacity: values.opacity } },
+    }))
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: { opacity: 0.5 } }),
+    })
+    // @ts-expect-error Compiled style properties are immutable.
+    output.styles.default.light.card.opacity = 1
+  })
+
+  test('checks root and config-bound target branches', () => {
+    const card = style({
+      targets: {
+        web: { display: 'grid' },
+        native: { fontVariant: ['small-caps'], lineHeight: 24 },
+      },
+    })
+    const bound = Config.create({ theme: { color: { brand: '#06c' } } })
+    const label = bound.style({
+      targets: { web: { color: 'brand' }, ios: { fontFamily: 'System' } },
+    })
+    expectTypeOf(card()).not.toBeAny()
+    expectTypeOf(label()).not.toBeAny()
+    // @ts-expect-error Web branches retain CSS value domains.
+    style({ targets: { web: { display: 'banana' } } })
+    const invalid = { shadowOffset: { width: 1, height: 2, extra: 3 } }
+    // @ts-expect-error Native structured values reject unknown nested keys.
+    style({ targets: { native: invalid } })
+    // @ts-expect-error Native widths do not accept booleans.
+    bound.style({ targets: { native: { width: true } } })
+  })
+
+  test('checks destination property domains and exact structured branch keys', () => {
+    const styles = Style.define({
+      card: {
+        targets: {
+          native: {
+            lineHeight: 20,
+            fontWeight: '600',
+            transform: [
+              { matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] },
+            ],
+          },
+          ios: { shadowOffset: { width: 1, height: 2 } },
+          android: { elevation: 4 },
+          web: { display: 'grid' },
+        },
+      },
+    })
+    expectTypeOf(
+      StyleSheet.compile({ styles, platform: 'ios' }).styles.default.light.card,
+    ).not.toBeAny()
+    // @ts-expect-error Native dimensions do not accept booleans.
+    Style.define({ card: { targets: { native: { width: true } } } })
+    Style.define({
+      card: {
+        // @ts-expect-error A native transform entry has exactly one operation.
+        targets: { native: { transform: [{ scale: 2, rotate: '2deg' }] } },
+      },
+    })
+    // @ts-expect-error Unknown target names are rejected.
+    Style.define({ card: { targets: { browser: { opacity: 1 } } } })
+    Style.define({
+      // @ts-expect-error Native color objects belong to host interoperability.
+      card: { targets: { native: { color: { semantic: 'label' } } } },
+    })
+  })
+
+  test('returns native-compatible origin tuples from shared declarations', () => {
+    const declarations = {
+      transformOrigin: 'top right -2px',
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: declarations }),
+    })
+
+    expectTypeOf(
+      output.styles.default.light.card.transformOrigin,
+    ).toMatchTypeOf<
+      [string | number, string | number, string | number] | string | undefined
+    >()
+    expectTypeOf(output.styles.default.light.card).toMatchTypeOf<{
+      transformOrigin?:
+        | [string | number, string | number, string | number]
+        | string
+        | undefined
+    }>()
+    const invalid = {
+      // @ts-expect-error Arrays represent shared fallbacks, not native origin coordinates.
+      transformOrigin: [1, 2, 3],
+    } satisfies StyleSheet.Properties
+    expectTypeOf(invalid).not.toBeAny()
+  })
+
+  test('retains structured native transform output and shared authoring', () => {
+    const declarations = {
+      transform: 'translateX(2px) rotate(90deg)',
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: declarations }),
+    })
+
+    expectTypeOf(output.styles.default.light.card.transform).toMatchTypeOf<
+      | string
+      | readonly {
+          matrix?: readonly number[] | undefined
+          perspective?: number | undefined
+          rotate?: string | undefined
+          rotateX?: string | undefined
+          rotateY?: string | undefined
+          rotateZ?: string | undefined
+          scale?: number | undefined
+          scaleX?: number | undefined
+          scaleY?: number | undefined
+          skewX?: string | undefined
+          skewY?: string | undefined
+          translate?: [number | string, number | string] | undefined
+          translateX?: number | string | undefined
+          translateY?: number | string | undefined
+        }[]
+      | undefined
+    >()
+    // @ts-expect-error Native arrays require an explicit native target branch.
+    const native = { transform: [{ scale: 2 }] } satisfies StyleSheet.Properties
+    expectTypeOf(native).not.toBeAny()
+  })
+
   test('keeps portable native constraints inside shared authoring domains', () => {
     const label = {
       textDecorationLine: 'line-through underline',
@@ -91,7 +274,7 @@ describe('compile', () => {
     })
 
     expectTypeOf(output.styles.default.light.card.aspectRatio).toEqualTypeOf<
-      number | undefined
+      number | string | undefined
     >()
     // @ts-expect-error Native image fitting has no fill-box keyword.
     const invalid = { objectFit: 'fill-box' } satisfies StyleSheet.Properties
@@ -115,7 +298,7 @@ describe('compile', () => {
 
     expectTypeOf<keyof typeof output.styles>().toEqualTypeOf<'base'>()
     expectTypeOf<keyof typeof selected>().toEqualTypeOf<'card'>()
-    expectTypeOf(selected.card).toEqualTypeOf<StyleSheet.NativeStyle>()
+    expectTypeOf(selected.card).toMatchTypeOf<StyleSheet.NativeStyle>()
     // @ts-expect-error Theme labels come from the compiled table.
     StyleSheet.select(output.styles, { theme: 'missing', colorScheme: 'dark' })
     // @ts-expect-error Device preferences must be resolved by a host.

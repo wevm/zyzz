@@ -179,6 +179,12 @@ Delivery reports separate CSS, JavaScript, serialized attributes, class strings,
 
 Colocated `src/**/*.bench-d.ts` fixtures measure instantiations contributed by public authoring, compiler, runtime, host, and Vite calls. Each fixture declares public values from type-only entrypoint imports, warms shared contracts in an exported `baseline` function, and snapshots each body inline. Attest type-checks the baseline once, then each body appended, and reports the difference. Bodies never execute.
 
+The native fixture warms both `Style.define` and `StyleSheet.compile`, since its structured workflow calls both. These results exclude initial contract instantiation.
+
+With TypeScript 5.9.3, the target-branch validator's cold structured case measured approximately 3.55 million instantiations, versus roughly 20,000 after authoring warmup.
+
+Published declaration domains and per-style component inference increase the warmed structured case from 13,482 to 19,936 instantiations. The increased cold and warmed costs remain optimization targets; warmed results do not establish a startup improvement.
+
 `pnpm bench:types` fails when a body exceeds its baseline by more than 20%. Counts are deterministic for one compiler release, so baselines belong to the pinned version. The Verify workflow checks types on TypeScript 6.0 and 7.0 and runs instantiation benches on 6.0. The native 7.x package ships no compiler API, so its lane installs it under an alias and runs only its `tsc` binary with whole-program diagnostics.
 
 ## Next.js and Output Modes

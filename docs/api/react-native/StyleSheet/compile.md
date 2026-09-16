@@ -23,6 +23,16 @@ Immutable shared definitions, also accepted by `Css.compile`. Unsupported native
 StyleSheet.compile({ styles })
 ```
 
+### options.platform
+
+Type: `'android' | 'ios'`. Optional unless platform branches are present.
+
+Select the platform branch after common native declarations. The compiler never reads device state. Shared and native-only definitions can compile without a platform.
+
+```ts
+StyleSheet.compile({ styles, platform: 'android' })
+```
+
 ### options.themes
 
 Type: `Readonly<Record<string, Theme.Definition>>`. Optional.

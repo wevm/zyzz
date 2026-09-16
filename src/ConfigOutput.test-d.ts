@@ -4,10 +4,10 @@ import { Config } from 'zyzz'
 
 describe('create', () => {
   test('selects HTML output for static and dynamic style applications', () => {
-    const { css } = Config.create({ output: 'html' })
+    const { style } = Config.create({ output: 'html' })
 
-    const card = css({ padding: '8px' })
-    const dynamic = css((values: { width: `${number}%` }) => ({
+    const card = style({ padding: '8px' })
+    const dynamic = style((values: { width: `${number}%` }) => ({
       width: values.width,
     }))
 
@@ -26,8 +26,8 @@ describe('create', () => {
     Config.create({ output: 'native' })
   })
   test('preserves the default React props contract', () => {
-    const { css } = Config.create()
-    const card = css({ padding: '8px' })
+    const { style } = Config.create()
+    const card = style({ padding: '8px' })
 
     expectTypeOf(card().className).toEqualTypeOf<string>()
 

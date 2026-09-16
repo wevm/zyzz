@@ -53,4 +53,6 @@ const styles = Style.define(declarations)
 > [!NOTE]
 > These contracts have pure compiler, package, and embedded-engine coverage. Native variants, dynamic adapters, and real iOS/Android rendering remain separate implementation and acceptance work.
 
-Aspect ratios accept positive numbers, decimal strings, or a positive `width / height` ratio and emit a native number. Automatic intrinsic ratios are rejected. These additions retain explicit native version requirements and do not establish renderer parity.
+Aspect ratios accept positive numbers or a positive `width / height` ratio and emit a native number. Automatic intrinsic ratios are rejected. These additions retain explicit native version requirements and do not establish renderer parity.
+
+Bare numeric strings and `userSelect: contain` are outside shared portable authoring. The equivalent `line-through underline` decoration spelling normalizes to native `underline line-through`.

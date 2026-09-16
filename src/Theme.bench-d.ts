@@ -11,7 +11,7 @@ declare const Theme: typeof Zyzz.Theme
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
-  Theme.define({ color: { base: '#000' } }).css({ color: 'base' })
+  Theme.define({ color: { base: '#000' } }).style({ color: 'base' })
 }
 
 bench('define / scalar and scheme tokens', () => {
@@ -24,7 +24,7 @@ bench('define / scalar and scheme tokens', () => {
     spacing: { 4: '1rem', 8: '2rem', md: '8px' },
     textColor: { foreground: '#000' },
   })
-}).types([141500, 'instantiations'])
+}).types([142641, 'instantiations'])
 
 bench('define / query aliases', () => {
   const theme = Theme.define({
@@ -34,11 +34,11 @@ bench('define / query aliases', () => {
     spacing: { gap: '4px' },
   })
 
-  theme.css({
+  theme.style({
     '@container sidebar >=card': { display: 'grid' },
     '@media tablet..desktop': { ':hover': { padding: 'gap' } },
   })
-}).types([24159, 'instantiations'])
+}).types([24193, 'instantiations'])
 
 bench('extend / overrides', () => {
   const theme = Theme.define({
@@ -51,18 +51,18 @@ bench('extend / overrides', () => {
     backgroundColor: { surface: '#fff' },
     spacing: { md: '2rem' },
   })
-}).types([38490, 'instantiations'])
+}).types([39162, 'instantiations'])
 
-bench('css / token names and references', () => {
+bench('style / token names and references', () => {
   const theme = Theme.define({
     color: { blue: { 500: '#06c' }, brand: '#06c' },
     spacing: { 4: '1rem', md: '2rem' },
   })
 
-  theme.css({
+  theme.style({
     color: 'blue.500',
     margin: theme.tokens.spacing.md,
     padding: 4,
     width: theme.vars.spacing[4],
   })
-}).types([49864, 'instantiations'])
+}).types([49914, 'instantiations'])

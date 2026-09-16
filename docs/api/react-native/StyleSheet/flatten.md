@@ -12,6 +12,6 @@ const style = StyleSheet.flatten([selected.card, [active && { opacity: 0.5 }]])
 
 ## Returns
 
-A plain object input returns unchanged. An array returns a new object, including `{}` for an empty array. A falsy input returns `undefined`. The array overload returns a conservative partial property type because conditional entries can be absent.
+A plain object input returns unchanged. An array returns a new object, including `{}` for an empty array. A falsy input returns `undefined`. Array inputs retain literal property values in a conservative partial object type because conditional entries can be absent. Object-or-array unions produce object results without retaining array members.
 
 Structured values retain their references and are not frozen. Existing native shorthand behavior remains native behavior. Compile shared declarations before composing their output with native objects.

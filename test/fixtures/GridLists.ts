@@ -33,6 +33,6 @@ export const invalid = [
   'repeat(2, -1px)',
 ] as const
 
-export const source = `import { css } from 'zyzz';
-export const fixed=css({display:'grid',width:'300px',gridTemplateColumns:'[start] repeat(3, minmax(0, 1fr)) [end]',gridAutoRows:'20px 30px'})();
-export const fluid=css({display:'grid',width:'300px',gridTemplateColumns:['1fr 2fr','repeat(auto-fit, minmax(80px, 1fr))!']})();`
+export const source = `import { style } from 'zyzz';
+export const fixed=style({display:'grid',width:'300px',gridTemplateColumns:'[start] repeat(3, minmax(0, 1fr)) [end]',gridAutoRows:'20px 30px'})();
+export const fluid=style({display:'grid',width:'300px',gridTemplateColumns:['1fr 2fr','repeat(auto-fit, minmax(80px, 1fr))!']})();`

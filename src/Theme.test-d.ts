@@ -2,9 +2,9 @@
  * Checks consumer inference and rejected inputs through the public Theme API.
  * @module
  */
-import { css as queriesCss } from './themes/default.js'
+import { style as queriesStyle } from './themes/default.js'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, css, Style, Theme } from 'zyzz'
+import { Config, style, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('define', () => {
@@ -44,8 +44,8 @@ describe('define', () => {
     // @ts-expect-error Unknown scope labels remain unavailable.
     expectTypeOf(result.themes.missing)
 
-    // @ts-expect-error Root css remains literal-only.
-    css({ color: theme.tokens.color.blue[500] })
+    // @ts-expect-error Root style remains literal-only.
+    style({ color: theme.tokens.color.blue[500] })
     // @ts-expect-error References cannot cross property domains.
     Style.define({ card: { padding: theme.tokens.color.blue[500] } })
     Style.define({
@@ -99,9 +99,9 @@ describe('define', () => {
 
     // @ts-expect-error Theme scope properties are readonly.
     omitted.className = 'external'
-    omitted.css({ color: 'brand', padding: '1rem' })
+    omitted.style({ color: 'brand', padding: '1rem' })
     // @ts-expect-error An explicitly undefined group contributes no token names.
-    omitted.css({ padding: 'missing' })
+    omitted.style({ padding: 'missing' })
     // @ts-expect-error Undefined groups do not enable shorthand in named styles.
     Style.define({ card: { padding: 'missing' } }, { theme: omitted })
   })
@@ -182,9 +182,9 @@ describe('extend', () => {
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('extracted parameters preserve tokens without weakening inferred declarations', () => {
-    const { css: themed } = Theme.define({
+    const { style: themed } = Theme.define({
       color: { brand: '#06c' },
       spacing: { md: '8px' },
     })
@@ -233,77 +233,77 @@ describe('css', () => {
       textColor: { foreground: '#111' },
     })
 
-    const { css: themedCss } = shorthand
-    const memberCss = shorthand.css
-    const chainedCss = memberCss
-    const renamedCss = themedCss
+    const { style: themedStyle } = shorthand
+    const memberStyle = shorthand.style
+    const chainedStyle = memberStyle
+    const renamedStyle = themedStyle
 
-    expectTypeOf(memberCss).toEqualTypeOf<typeof shorthand.css>()
-    expectTypeOf(chainedCss).toEqualTypeOf<typeof shorthand.css>()
-    expectTypeOf(renamedCss).toEqualTypeOf<typeof shorthand.css>()
+    expectTypeOf(memberStyle).toEqualTypeOf<typeof shorthand.style>()
+    expectTypeOf(chainedStyle).toEqualTypeOf<typeof shorthand.style>()
+    expectTypeOf(renamedStyle).toEqualTypeOf<typeof shorthand.style>()
     expectTypeOf(
-      chainedCss({ color: 'brand', padding: 4 }),
-    ).toEqualTypeOf<css.ReturnType>()
+      chainedStyle({ color: 'brand', padding: 4 }),
+    ).toEqualTypeOf<style.ReturnType>()
     expectTypeOf(
-      renamedCss({ color: 'blue.500', padding: 'md' })(),
-    ).toEqualTypeOf<css.Props>()
+      renamedStyle({ color: 'blue.500', padding: 'md' })(),
+    ).toEqualTypeOf<style.Props>()
 
     // @ts-expect-error Member aliases reject undeclared token paths.
-    memberCss({ color: 'blue.600' })
+    memberStyle({ color: 'blue.600' })
     // @ts-expect-error Alias chains retain token domains.
-    chainedCss({ color: 'md' })
+    chainedStyle({ color: 'md' })
     // @ts-expect-error Renamed destructured aliases reject unknown properties.
-    renamedCss({ colour: 'brand' })
+    renamedStyle({ colour: 'brand' })
     // @ts-expect-error Chained aliases require declared numeric spacing keys.
-    chainedCss({ padding: 5 })
+    chainedStyle({ padding: 5 })
     // @ts-expect-error Applied alias styles accept only literal overrides.
-    renamedCss({ padding: 'md' })({ style: { padding: 'md' } })
+    renamedStyle({ padding: 'md' })({ style: { padding: 'md' } })
 
     expectTypeOf(
-      chainedCss({
+      chainedStyle({
         color: shorthand.tokens.color.blue[500],
         padding: shorthand.tokens.spacing[4],
       }),
-    ).toEqualTypeOf<css.ReturnType>()
+    ).toEqualTypeOf<style.ReturnType>()
 
     // @ts-expect-error Explicit spacing references retain their domain through aliases.
-    renamedCss({ color: shorthand.tokens.spacing.md })
+    renamedStyle({ color: shorthand.tokens.spacing.md })
     // @ts-expect-error Explicit palette paths must exist.
-    memberCss({ color: shorthand.tokens.color.blue[600] })
+    memberStyle({ color: shorthand.tokens.color.blue[600] })
     // @ts-expect-error Token groups are not scalar references.
-    chainedCss({ color: shorthand.tokens.color })
-    // @ts-expect-error Root css remains token-free.
-    css({ color: shorthand.tokens.color.brand })
+    chainedStyle({ color: shorthand.tokens.color })
+    // @ts-expect-error Root style remains token-free.
+    style({ color: shorthand.tokens.color.brand })
 
-    const themedCard = themedCss({
+    const themedCard = themedStyle({
       backgroundColor: 'surface',
       borderRadius: 'round',
       color: 'blue.500',
       padding: 4,
     })
 
-    expectTypeOf(themedCard).toEqualTypeOf<css.ReturnType>()
+    expectTypeOf(themedCard).toEqualTypeOf<style.ReturnType>()
     expectTypeOf(
       themedCard({ className: 'external', style: { padding: '2rem' } }),
-    ).toEqualTypeOf<css.Props>()
+    ).toEqualTypeOf<style.Props>()
 
-    Theme.extend(shorthand, { spacing: { 4: '2rem' } }).css({ padding: 4 })
-    themedCss({ color: 'foreground', padding: 'md' })
-    themedCss({ color: shorthand.tokens.color.brand, padding: 0 })
+    Theme.extend(shorthand, { spacing: { 4: '2rem' } }).style({ padding: 4 })
+    themedStyle({ color: 'foreground', padding: 'md' })
+    themedStyle({ color: shorthand.tokens.color.brand, padding: 0 })
     // @ts-expect-error Unknown theme paths are rejected.
-    themedCss({ color: 'blue.600' })
+    themedStyle({ color: 'blue.600' })
     // @ts-expect-error A text token cannot be used as a background.
-    themedCss({ backgroundColor: 'foreground' })
+    themedStyle({ backgroundColor: 'foreground' })
     // @ts-expect-error Spacing tokens cannot become colors.
-    themedCss({ color: 'md' })
+    themedStyle({ color: 'md' })
     // @ts-expect-error Nonzero numeric spacing requires a declared key.
-    themedCss({ padding: 5 })
+    themedStyle({ padding: 5 })
     // @ts-expect-error Styling overrides remain literal-only.
     themedCard({ style: { padding: 'md' } })
     // @ts-expect-error Unknown properties are rejected.
-    themedCss({ colour: 'brand' })
+    themedStyle({ colour: 'brand' })
     // @ts-expect-error Root authoring does not inherit the imported theme.
-    css({ color: 'brand' })
+    style({ color: 'brand' })
   })
 })
 
@@ -338,8 +338,8 @@ describe('queries', () => {
         fontWeight: { medium: 500 },
       })
 
-      theme.css({ fontSize: 'body', fontWeight: 'medium' })
-      queriesCss({
+      theme.style({ fontSize: 'body', fontWeight: 'medium' })
+      queriesStyle({
         fontFamily: 'sans',
         fontSize: 'base',
         color: 'blue.500',
@@ -348,9 +348,9 @@ describe('queries', () => {
 
       const odd = Theme.define({ spacing: { '01': '1px', '1e3': '2px' } })
 
-      odd.css({ padding: '01' })
+      odd.style({ padding: '01' })
       // @ts-expect-error Noncanonical numeric keys cannot widen shorthand numbers.
-      odd.css({ padding: 999 })
+      odd.style({ padding: 999 })
       Config.create({
         defaultTheme: 'base',
         themes: {
@@ -376,7 +376,7 @@ describe('queries', () => {
       // @ts-expect-error Query lengths cannot be percentages.
       Theme.define({ breakpoints: { tablet: '50%' } })
       // @ts-expect-error Typography references retain their scalar property domain.
-      theme.css({ color: theme.tokens.fontSize.body })
+      theme.style({ color: theme.tokens.fontSize.body })
     })
   })
 })
@@ -389,23 +389,23 @@ describe('variables', () => {
         spacing: { md: '8px' },
       })
 
-      theme.css({
+      theme.style({
         color: theme.vars.color.brand,
         // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
         width: `calc(100% - ${theme.vars.spacing.md})`,
       })
-      theme.css({ padding: [theme.vars.spacing.md, '2px'] })
-      theme.css({ color: theme.vars.color.brand })
+      theme.style({ padding: [theme.vars.spacing.md, '2px'] })
+      theme.style({ color: theme.vars.color.brand })
       // @ts-expect-error Variable domains cannot cross properties.
-      theme.css({ color: theme.vars.spacing.md })
+      theme.style({ color: theme.vars.spacing.md })
       // @ts-expect-error Spacing variables cannot represent integer counts.
-      theme.css({ maxLines: theme.vars.spacing.md })
+      theme.style({ maxLines: theme.vars.spacing.md })
       // @ts-expect-error Undeclared variables are unavailable.
-      theme.css({ width: theme.vars.spacing.missing })
-      // @ts-expect-error Root css has no theme reference contract.
-      css({ width: theme.vars.spacing.md })
+      theme.style({ width: theme.vars.spacing.missing })
+      // @ts-expect-error Root style has no theme reference contract.
+      style({ width: theme.vars.spacing.md })
       // @ts-expect-error marginTrim is a keyword grammar, not a length.
-      theme.css({ marginTrim: theme.vars.spacing.md })
+      theme.style({ marginTrim: theme.vars.spacing.md })
 
       const config = Config.create({ theme })
 

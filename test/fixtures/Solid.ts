@@ -23,9 +23,9 @@ export function render() { return { html: renderToString(() => <App />), script:
 import {controls} from '@acme/variants';
 import '@acme/variants/style.css';
 export function variant(expanded:boolean){return cx(controls.button({size:expanded?{custom:{padding:'20px'}}:undefined,active:expanded,conditions:{wide:{size:'lg'}}}),controls.override())}
-export const { css, theme } = Config.create({ output: 'html', theme: { color: { text: { light: '#000000', dark: '#ffffff' } } } });
+export const { style, theme } = Config.create({ output: 'html', theme: { color: { text: { light: '#000000', dark: '#ffffff' } } } });
 export namespace styles {
-  export const card = css((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))
+  export const card = style((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))
 }`,
   'types.tsx': `import { styles } from './styles';
 const attributes = styles.card({ width: '25%' });

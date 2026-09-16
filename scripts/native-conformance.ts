@@ -1,4 +1,5 @@
 /** Audits pinned native declarations and reports unresolved parity obligations. @module */
+import * as Babel from '@babel/core'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
@@ -20,6 +21,7 @@ export async function inventory() {
   const interfaces = new Map<string, Ts.InterfaceDeclaration>()
   const declarations: Record<string, string> = {}
   const api: Record<string, string> = {}
+  const runtimeApi: Record<string, string> = {}
 
   for (const [file, hash] of Object.entries(pin.files)) {
     const text = await Fs.readFile(
@@ -28,6 +30,39 @@ export async function inventory() {
     )
     if (Crypto.createHash('sha256').update(text).digest('hex') !== hash)
       throw new Error(`Pinned native source changed: ${file}`)
+
+    if (file === 'StyleSheetExports.js.txt') {
+      // Babel's Flow parser predates the pinned runtime's variance spelling.
+      // Erase only that type modifier, leaving every runtime member intact.
+      const source = text.replace('create<out S extends', 'create<S extends')
+      const ast = Babel.parseSync(source, {
+        babelrc: false,
+        configFile: false,
+        parserOpts: { plugins: ['flow'] },
+      })
+      const statement = ast?.program.body.find((node) =>
+        Babel.types.isExportDefaultDeclaration(node),
+      )
+      if (
+        !statement ||
+        !Babel.types.isExportDefaultDeclaration(statement) ||
+        !Babel.types.isObjectExpression(statement.declaration)
+      )
+        throw new Error('Unknown native runtime export shape')
+
+      for (const member of statement.declaration.properties) {
+        if (
+          Babel.types.isSpreadElement(member) ||
+          member.computed ||
+          !Babel.types.isIdentifier(member.key) ||
+          member.start == null ||
+          member.end == null
+        )
+          throw new Error('Unclassified native runtime export')
+        runtimeApi[member.key.name] = source.slice(member.start, member.end)
+      }
+      continue
+    }
 
     const source = Ts.createSourceFile(
       file,
@@ -95,10 +130,15 @@ export async function inventory() {
     )
   }
 
+  if (!Object.keys(runtimeApi).length)
+    throw new Error('Native runtime exports are missing from the pin')
+  for (const [name, source] of Object.entries(runtimeApi)) api[name] ??= source
+
   return {
     api,
     declarations,
     revision: pin.revision,
+    runtimeApi,
     styles: Object.fromEntries(
       ['ImageStyle', 'TextStyle', 'ViewStyle'].map((name) => [
         name,

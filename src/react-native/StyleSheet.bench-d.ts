@@ -25,4 +25,4 @@ bench('native / compose compiled styles', () => {
   StyleSheet.flatten(
     StyleSheet.compose(output.styles.default.dark.card, { opacity: 0.5 }),
   )
-}).types([210, 'instantiations'])
+}).types([273, 'instantiations'])

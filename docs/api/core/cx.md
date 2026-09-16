@@ -3,11 +3,11 @@
 Combines applied styles in argument order and returns one props object. Later declarations in matching contexts win at equal specificity and importance. Ordinary CSS semantics determine shorthand resets, fallback support, and importance.
 
 ```ts
-import { css, cx } from 'zyzz'
+import { cx, style } from 'zyzz'
 
 namespace styles {
-  export const base = css({ padding: '8px', color: 'red' })
-  export const override = css({ paddingLeft: '12px', color: 'blue' })
+  export const base = style({ padding: '8px', color: 'red' })
+  export const override = style({ paddingLeft: '12px', color: 'blue' })
 }
 
 const button = <button {...cx(styles.base(), styles.override())} />
@@ -38,12 +38,12 @@ Type: `string`. The generated composition class for React-shaped props. HTML con
 
 ## Errors
 
-Untransformed calls throw `css.MissingTransformError`. Unsupported source applications and mixed renderer outputs produce compiler source diagnostics. Conflicting variant attribute owners also produce source diagnostics.
+Untransformed calls throw `style.MissingTransformError`. Unsupported source applications and mixed renderer outputs produce compiler source diagnostics. Conflicting variant attribute owners also produce source diagnostics.
 
 ## Runtime Inputs
 
 ```ts
-const dynamic = css((values: { padding: `${number}px` }) => ({
+const dynamic = style((values: { padding: `${number}px` }) => ({
   padding: values.padding,
 }))
 cx(dynamic({ padding: '12px' }), enabled && styles.override())
@@ -69,7 +69,7 @@ A conditional composition result must remain a direct argument; storing that res
 
 ## Packed Libraries
 
-A library compiled with the current compiler publishes version 16 metadata beside its JavaScript. Imported `css` and `variants` callables retain ordered style bodies and ownership through renamed imports, re-exports, namespaces, and immutable aliases. Import the library stylesheet as documented by its package.
+A library compiled with the current compiler publishes version 16 metadata beside its JavaScript. Imported `style` and `variants` callables retain ordered style bodies and ownership through renamed imports, re-exports, namespaces, and immutable aliases. Import the library stylesheet as documented by its package.
 
 ```ts
 import { cx } from 'zyzz'

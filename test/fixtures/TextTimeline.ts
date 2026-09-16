@@ -29,6 +29,6 @@ export const controls = {
 } as const
 
 /** Source compilation exercises lists, grouped keywords, and authored overrides. */
-export const source = `import { css } from 'zyzz';
-export const flow = css({display:'flex',flexFlow:'wrap column',flexDirection:'row',textWrap:'balance wrap',textWrapStyle:'pretty'})();
-export const text = css({textUnderlinePosition:'right under',verticalAlign:'-2px',borderImageRepeat:'round stretch',viewTimelineAxis:'block, x',interestDelayStart:'250ms'})();`
+export const source = `import { style } from 'zyzz';
+export const flow = style({display:'flex',flexFlow:'wrap column',flexDirection:'row',textWrap:'balance wrap',textWrapStyle:'pretty'})();
+export const text = style({textUnderlinePosition:'right under',verticalAlign:'-2px',borderImageRepeat:'round stretch',viewTimelineAxis:'block, x',interestDelayStart:'250ms'})();`

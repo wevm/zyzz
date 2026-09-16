@@ -15,15 +15,15 @@ export const controls = {
 } as const
 
 /** Source includes shared colors, explicit spacing references, and line fallbacks. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{color:{brand:'#06c'},textColor:{brand:'#f00'},spacing:{offset:'4px',stroke:'2px'}}});
-export const automatic = css({textDecorationLine:'underline',textDecorationThickness:'from-font',textUnderlineOffset:'auto',textDecorationSkipInk:'auto'})();
-export const decorated = zyzz.css({
+export const automatic = style({textDecorationLine:'underline',textDecorationThickness:'from-font',textUnderlineOffset:'auto',textDecorationSkipInk:'auto'})();
+export const decorated = zyzz.style({
   textDecorationLine:['underline','underline overline!'],
   textDecorationColor:'brand',textDecorationStyle:'wavy',
   textDecorationThickness:zyzz.theme.tokens.spacing.stroke,textUnderlineOffset:'offset',textDecorationSkipInk:'none'
 })();
-export const percentage = css({textDecorationLine:'line-through',textDecorationThickness:'10%',textUnderlineOffset:'-10%'})();
+export const percentage = style({textDecorationLine:'line-through',textDecorationThickness:'10%',textUnderlineOffset:'-10%'})();
 `
 
 /** Public declarations exercise finite combinations and explicit defaults. */

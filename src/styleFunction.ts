@@ -29,8 +29,8 @@ type VariableOptions<input> = input extends {
  * @returns A callable style definition after source rewriting.
  * @throws {Error} When a definition needs an explicit identity and none is supplied.
  */
-export function css(): css.ReturnType
-export function css<
+export function style(): style.ReturnType
+export function style<
   const values extends Record<string, string | number>,
   const styles extends Record<string, unknown>,
   const callback extends (...args: never[]) => unknown,
@@ -44,16 +44,16 @@ export function css<
     (Parameters<callback> extends [Record<string, string | number>]
       ? unknown
       : never),
-  options?: css.DefinitionOptions,
-): css.Dynamic<values>
-export function css<const styles extends Record<string, unknown>>(
+  options?: style.DefinitionOptions,
+): style.Dynamic<values>
+export function style<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
-  options?: css.DefinitionOptions,
-): css.ReturnType
-export function css(
+  options?: style.DefinitionOptions,
+): style.ReturnType
+export function style(
   styles?: unknown,
-  options: css.DefinitionOptions = {},
-): css.ReturnType {
+  options: style.DefinitionOptions = {},
+): style.ReturnType {
   return Authoring.create(styles, options)
 }
 
@@ -62,7 +62,7 @@ declare const identity: unique symbol
 type Reference = { readonly [identity]: true }
 
 /** Contracts for the literal authoring boundary. */
-export declare namespace css {
+export declare namespace style {
   /** Stable identity for selectors and definitions that cannot be content-addressed. */
   type DefinitionOptions = { readonly id?: string | undefined }
   /** Callable compiled bindings with required scalar inputs and styling overrides. */
@@ -117,9 +117,9 @@ export class MissingTransformError extends Error {
   /** Explains the missing transform without generating runtime CSS. */
   constructor() {
     super(
-      'css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.',
+      'style requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.',
     )
   }
   /** Stable namespaced diagnostic name. */
-  override name = 'css.MissingTransformError'
+  override name = 'style.MissingTransformError'
 }

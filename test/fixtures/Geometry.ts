@@ -57,8 +57,8 @@ export const functions = [
 ] as const
 
 /** Source preserves function order and separate transform properties. */
-export const source = `import { css } from 'zyzz';
-export const aspect = css({width:'160px',aspectRatio:'16 / 9'})();
-export const individual = css({width:'40px',height:'20px',translate:'30px 40px',rotate:'90deg',scale:'2 3'})();
-export const list = css({width:'40px',height:'20px',transform:'translate(30px,40px) rotate(90deg) scale(2,3)'})();
-export const spatial = css({transform:'perspective(400px) translateZ(30px) rotateY(20deg)'})();`
+export const source = `import { style } from 'zyzz';
+export const aspect = style({width:'160px',aspectRatio:'16 / 9'})();
+export const individual = style({width:'40px',height:'20px',translate:'30px 40px',rotate:'90deg',scale:'2 3'})();
+export const list = style({width:'40px',height:'20px',transform:'translate(30px,40px) rotate(90deg) scale(2,3)'})();
+export const spatial = style({transform:'perspective(400px) translateZ(30px) rotateY(20deg)'})();`

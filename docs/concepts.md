@@ -13,10 +13,10 @@ How styles, tokens, and compilation behave. Use [Guides](guides/README.md) for c
 - **Universal:** shared authoring targets explicit web/native capabilities.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css({ padding: '1rem' })
+  export const card = style({ padding: '1rem' })
 }
 ```
 
@@ -27,22 +27,22 @@ The [compilation model](#compilation-and-platforms) explains which boundaries ar
 Definitions describe static rules. Calling a definition returns styling props; it never creates CSS rules. Authoring calls require compilation.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css({ padding: '1rem' })
+  export const card = style({ padding: '1rem' })
 }
 const example = <div {...styles.card()}>Card</div>
 ```
 
 ## Configuration
 
-`Config.create` binds authoring functions to explicit tokens and layers. Export `const { css, theme } = Config.create(...)` from `zyzz.config.ts` and import `{ css, theme }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Export `const { style, theme } = Config.create(...)` from `zyzz.config.ts` and import `{ style, theme }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
 
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, theme } = Config.create({
+export const { style, theme } = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
@@ -56,10 +56,10 @@ export const { css, theme } = Config.create({
 Named alternatives share the default's token paths and domains. Config returns compatible handles without mutating independent definitions. Imports outside that config receive no ambient tokens or layer types.
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({ padding: 'md' })
+  export const card = style({ padding: 'md' })
 }
 ```
 
@@ -115,12 +115,12 @@ const example = (
 Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade; their class-string order does not establish precedence.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { cx, style } from 'zyzz'
 
 namespace styles {
-  export const compact = css({ padding: '0.5rem' })
+  export const compact = style({ padding: '0.5rem' })
 
-  export const roomy = css({ padding: '1rem' })
+  export const roomy = style({ padding: '1rem' })
 }
 const example = <button {...cx(styles.compact(), styles.roomy())}>Save</button>
 ```
@@ -149,10 +149,10 @@ const example = <button {...styles.button({ size: 'sm' })}>Save</button>
 Pseudo styles, media queries, container queries, and feature queries keep their CSS meaning. Nested conditions combine with AND while preserving property/token inference.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({
+  export const button = style({
     ':hover': { '@media (hover: hover)': { opacity: 0.8 } },
   })
 }
@@ -164,14 +164,14 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 
 ## Relationships
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `style()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `style()` supplies identity without declarations.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css()
-  export const label = css({
+  export const card = style()
+  export const label = style({
     selectors: {
       [`${card}:hover &`]: { color: 'blue' },
       [`${card}[data-state="open"] > &`]: { opacity: 1 },
@@ -201,10 +201,10 @@ Token names infer by property. A text-color token cannot become a spacing token.
 Callbacks bind per-instance values to precompiled custom properties. Their rule structure stays static.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     width: values.width,
   }))
 }

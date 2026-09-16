@@ -93,6 +93,7 @@ const properties = {
   textDecorationColor: 'color',
   textDecorationLine: [
     'line-through',
+    'line-through underline',
     'none',
     'underline',
     'underline line-through',
@@ -100,7 +101,7 @@ const properties = {
   textDecorationStyle: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
   textTransform: ['capitalize', 'lowercase', 'none', 'uppercase'],
   top: 'offset',
-  userSelect: ['all', 'auto', 'contain', 'none', 'text'],
+  userSelect: ['all', 'auto', 'none', 'text'],
   width: 'size',
   zIndex: 'integer',
 } as const
@@ -405,13 +406,27 @@ export declare namespace compile {
  * A falsy operand returns the other operand unchanged. Two present operands
  * produce an array consumed by the native renderer or flatten.
  */
-export function compose<first extends object, second extends object>(
-  first: StyleProp<first>,
-  second: StyleProp<second>,
-): StyleProp<first | second> {
+export function compose<
+  const first extends object | Falsy,
+  const second extends object | Falsy,
+>(first: first, second: second): compose.ReturnType<first, second>
+export function compose(
+  first: object | Falsy,
+  second: object | Falsy,
+): object | Falsy {
   if (!first) return second
   if (!second) return first
   return [first, second]
+}
+
+/** Identity and mutable pair inference for native composition. */
+export declare namespace compose {
+  /** Statically absent operands preserve the other operand's exact type. */
+  type ReturnType<first, second> = first extends Falsy
+    ? second
+    : second extends Falsy
+      ? first
+      : [first, second]
 }
 
 /** A structured native capability or conversion failure. */
@@ -430,14 +445,9 @@ export type Diagnostic = {
  * and are ignored inside them. Structured values remain caller-owned.
  * This is native property merging, not CSS shorthand or cascade resolution.
  */
-export function flatten<style extends object>(
-  styles: readonly StyleProp<style>[],
-): flatten.ReturnType<style>
-export function flatten<style extends object>(styles: style): style
-export function flatten(styles: Falsy): undefined
-export function flatten<style extends object>(
-  styles: StyleProp<style>,
-): flatten.ReturnType<style> | undefined
+export function flatten<const input extends object | Falsy>(
+  styles: input,
+): flatten.ReturnType<input>
 export function flatten(styles: unknown): object | undefined {
   if (!styles || typeof styles !== 'object') return undefined
   if (!Array.isArray(styles)) return styles
@@ -461,15 +471,12 @@ export function flatten(styles: unknown): object | undefined {
 
 /** Conservative property inference for merged native arrays. */
 export declare namespace flatten {
-  /** Every property from any input, optional because conditional styles may be absent. */
-  type ReturnType<style extends object> = {
-    /** Values retain the union of declarations that can supply this property. */
-    [key in Keys<style>]?: style extends unknown
-      ? key extends keyof style
-        ? style[key]
-        : never
-      : never
-  }
+  /** Object identity, merged array properties, or absence according to the input. */
+  type ReturnType<input> = input extends Falsy
+    ? undefined
+    : input extends readonly unknown[]
+      ? Merged<Leaves<input>>
+      : input
 }
 
 /** Native scalar style output, with converted logical-unit lengths. */
@@ -479,7 +486,7 @@ export type NativeStyle = {
     | keyof typeof properties
     | 'rowGap']?: property extends keyof typeof properties
     ? (typeof properties)[property] extends readonly string[]
-      ? (typeof properties)[property][number]
+      ? Exclude<(typeof properties)[property][number], 'line-through underline'>
       : (typeof properties)[property] extends 'color' | 'font'
         ? string
         : (typeof properties)[property] extends 'size'
@@ -545,7 +552,7 @@ export class SelectionError extends Error {
 export type StyleProp<style extends object = NativeStyle> =
   | Falsy
   | style
-  | readonly StyleProp<style>[]
+  | StyleArray<style>
 
 /** Finite style tables indexed by the caller's labels and both schemes. */
 export type Tables<
@@ -560,6 +567,26 @@ export type Tables<
 
 type Falsy = '' | false | null | undefined
 type Keys<value> = value extends unknown ? keyof value : never
+// Bound recursive generic inputs while retaining useful keys at every normal nesting depth.
+type Leaves<
+  input,
+  depth extends readonly unknown[] = [],
+> = depth['length'] extends 12
+  ? object
+  : input extends readonly (infer item)[]
+    ? Leaves<item, [...depth, 0]>
+    : Exclude<input, Falsy>
+type Merged<style> = {
+  [key in Keys<style>]?: style extends unknown
+    ? key extends keyof style
+      ? style[key]
+      : never
+    : never
+}
+// Match React Native's mutable outer array and readonly nested-array contract.
+type StyleArray<style extends object> = Array<
+  style | Falsy | readonly (style | Falsy)[] | StyleArray<style>
+>
 type Length = 0 | '0' | `${number}px` | `${number}rem`
 type Box =
   | Length
@@ -591,7 +618,7 @@ type Atom<kind> = kind extends readonly string[]
           : kind extends 'integer' | 'number' | 'opacity'
             ? number
             : kind extends 'ratio'
-              ? number | `${number}` | `${number} / ${number}`
+              ? number | `${number} / ${number}`
               : kind extends 'weight'
                 ? Weight
                 : kind extends 'line'
@@ -615,12 +642,12 @@ function convert(
   if (Array.isArray(kind)) {
     if (typeof value !== 'string' || !kind.includes(value))
       fail('unsupported_value', 'Unsupported native keyword.', path)
-    return value
+    return value === 'line-through underline' ? 'underline line-through' : value
   }
   if (kind === 'ratio') {
     const match =
       typeof value === 'string'
-        ? /^\s*(\d+(?:\.\d+)?|\.\d+)(?:\s*\/\s*(\d+(?:\.\d+)?|\.\d+))?\s*$/.exec(
+        ? /^\s*(\d+(?:\.\d+)?|\.\d+)\s*\/\s*(\d+(?:\.\d+)?|\.\d+)\s*$/.exec(
             value,
           )
         : undefined

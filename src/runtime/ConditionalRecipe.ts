@@ -1,5 +1,5 @@
 /** Serializes conditional recipe instructions without evaluating queries. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 import * as Html from './Html.js'
 import * as Recipe from './Recipe.js'
 
@@ -30,10 +30,10 @@ export function create(options: create.Options) {
     })),
   }))
 
-  return (input: Record<string, unknown> & css.Options = {}) => {
+  return (input: Record<string, unknown> & style.Options = {}) => {
     // The base was explicitly bound to React-shaped props above; HTML
     // serialization occurs once, after all conditional attributes are added.
-    const result = base(input) as css.Props & Record<`data-${string}`, string>
+    const result = base(input) as style.Props & Record<`data-${string}`, string>
     const selected = input.conditions as
       | Record<
           string,

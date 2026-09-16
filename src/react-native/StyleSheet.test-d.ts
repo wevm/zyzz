@@ -2,8 +2,39 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
+import type { StyleProp as NativeStyleProp } from '../../test/fixtures/native/StyleProp.js'
 
 describe('compose', () => {
+  test('preserves native array assignability, literals, and absent-operand identity', () => {
+    const override = { opacity: 0.5 }
+    const composed = StyleSheet.compose({ position: 'absolute' }, { top: 0 })
+    const identity = StyleSheet.compose(false, override)
+
+    expectTypeOf(composed).toMatchTypeOf<
+      NativeStyleProp<{ position?: 'absolute'; top?: number }>
+    >()
+    expectTypeOf<StyleSheet.StyleProp<{ opacity: number }>>().toMatchTypeOf<
+      NativeStyleProp<{ opacity: number }>
+    >()
+    expectTypeOf(identity).toEqualTypeOf<typeof override>()
+    expectTypeOf(StyleSheet.compose(override, null)).toEqualTypeOf<
+      typeof override
+    >()
+    expectTypeOf(StyleSheet.flatten(identity)).toEqualTypeOf<typeof override>()
+    expectTypeOf(StyleSheet.flatten([{ position: 'absolute' }])).toMatchTypeOf<{
+      position?: 'absolute'
+    }>()
+
+    const mixed = null as unknown as
+      | { position: 'absolute' }
+      | readonly StyleSheet.StyleProp<{ position: 'absolute' }>[]
+    const flattened = StyleSheet.flatten(mixed)
+    expectTypeOf<
+      Extract<typeof flattened, readonly unknown[]>
+    >().toEqualTypeOf<never>()
+    expectTypeOf(flattened).toMatchTypeOf<{ position?: 'absolute' }>()
+  })
+
   test('accepts compiled styles and external native arrays without erasing types', () => {
     const output = StyleSheet.compile({
       styles: Style.define({ card: { padding: '1px' } }),
@@ -24,6 +55,30 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('keeps portable native constraints inside shared authoring domains', () => {
+    const label = {
+      textDecorationLine: 'line-through underline',
+      aspectRatio: 1.5,
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({ styles: Style.define({ label }) })
+
+    expectTypeOf(
+      output.styles.default.light.label.textDecorationLine,
+    ).toEqualTypeOf<
+      | 'line-through'
+      | 'none'
+      | 'underline'
+      | 'underline line-through'
+      | undefined
+    >()
+    // @ts-expect-error Bare numeric strings are not accepted by shared authoring.
+    const ratio = { aspectRatio: '1.5' } satisfies StyleSheet.Properties
+    // @ts-expect-error Native-only contain requires a target-specific authoring boundary.
+    const selection = { userSelect: 'contain' } satisfies StyleSheet.Properties
+    expectTypeOf(ratio).not.toBeAny()
+    expectTypeOf(selection).not.toBeAny()
+  })
+
   test('accepts portable scalar additions and retains native output types', () => {
     const declarations = {
       aspectRatio: '16 / 9',

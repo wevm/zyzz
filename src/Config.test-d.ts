@@ -7,8 +7,8 @@ import { Config, Theme } from 'zyzz'
 
 describe('create', () => {
   test('infers style helpers with either CSS output mode', () => {
-    const { css, variants } = Config.create({ cssOutput: 'grouped' })
-    expectTypeOf(css({ color: 'red' })().className).toEqualTypeOf<string>()
+    const { style, variants } = Config.create({ cssOutput: 'grouped' })
+    expectTypeOf(style({ color: 'red' })().className).toEqualTypeOf<string>()
     expectTypeOf(
       variants({ variants: { size: { large: { padding: '8px' } } } })({
         size: 'large',
@@ -20,36 +20,36 @@ describe('create', () => {
   })
 
   test('checks configured callback domains', () => {
-    const { css } = Config.create()
+    const { style } = Config.create()
 
     // @ts-expect-error Configured callbacks cannot use broad numbers for integer slots.
-    css((values: { order: number }) => ({ order: values.order }))
+    style((values: { order: number }) => ({ order: values.order }))
     // @ts-expect-error Reserved styling fields cannot be callback slots.
-    css((values: { style: string }) => ({ color: values.style }))
-    css((values: { alpha: number }) => ({ opacity: values.alpha }))
+    style((values: { style: string }) => ({ color: values.style }))
+    style((values: { alpha: number }) => ({ opacity: values.alpha }))
   })
 
   test('preserves token domains in grouped styles from destructured helpers', () => {
-    const { css, theme } = Config.create({
+    const { style, theme } = Config.create({
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
     })
-    const card = css({ padding: 'md' })
-    const label = css({ color: theme.tokens.color.brand })
+    const card = style({ padding: 'md' })
+    const label = style({ color: theme.tokens.color.brand })
 
     expectTypeOf(card).toEqualTypeOf<typeof label>()
 
     // @ts-expect-error Token names remain constrained after destructuring.
-    css({ padding: 'missing' })
+    style({ padding: 'missing' })
     // @ts-expect-error References retain their property domains.
-    css({ padding: theme.tokens.color.brand })
+    style({ padding: theme.tokens.color.brand })
   })
 
   test('keeps unthemed configuration token-free', () => {
     const empty = Config.create()
 
-    empty.css({ color: '#fff', padding: '8px' })
+    empty.style({ color: '#fff', padding: '8px' })
     // @ts-expect-error Root config has no tokens.
-    empty.css({ padding: 'md' })
+    empty.style({ padding: 'md' })
     // @ts-expect-error Token-free config has no theme handle.
     void empty.theme
   })
@@ -64,23 +64,24 @@ describe('create', () => {
       theme: base,
     })
 
-    single.css({ color: 'brand', padding: single.theme.tokens.spacing.md })
-    single.css({
+    single.style({ color: 'brand', padding: single.theme.tokens.spacing.md })
+    single.style({
       '@layer components': { color: 'brand', '@layer base': { padding: 'md' } },
     })
     // @ts-expect-error Misspelled layer.
-    single.css({ '@layer component': { color: 'brand' } })
+    single.style({ '@layer component': { color: 'brand' } })
     // @ts-expect-error Layer bodies retain token checking.
-    single.css({ '@layer components': { color: 'missing' } })
+    single.style({ '@layer components': { color: 'missing' } })
+    const reference = single.theme.tokens.color.brand
     // @ts-expect-error References retain property domains inside layers.
-    single.css({ '@layer base': { padding: single.theme.tokens.color.brand } })
+    single.style({ '@layer base': { padding: reference } })
     // @ts-expect-error Unknown style keys through variables remain invalid.
-    single.css({ colour: '#06c' } as const)
+    single.style({ colour: '#06c' } as const)
     // @ts-expect-error Single-theme config has no catalog.
     void single.themes
 
     // Scoped selectors retain the same bound token inference.
-    single.css({ ':hover': { color: 'brand' } })
+    single.style({ ':hover': { color: 'brand' } })
   })
 
   test('validates named themes and configuration modes', () => {
@@ -100,7 +101,7 @@ describe('create', () => {
       },
     })
 
-    named.css({ color: 'brand', padding: 'md' })
+    named.style({ color: 'brand', padding: 'md' })
 
     expectTypeOf(named.themes.mint.tokens.color.brand).toEqualTypeOf<
       Theme.Reference<'color'>
@@ -184,23 +185,23 @@ describe('create', () => {
 
 describe('create', () => {
   test('rejects invalid union branches and empty callbacks', () => {
-    const { css } = Config.create()
+    const { style } = Config.create()
     const styles = {} as { color: '#fff' } | { ':hover': { colour: '#fff' } }
 
     // @ts-expect-error Each disjoint branch must contain valid nested properties.
-    css(styles)
+    style(styles)
     // @ts-expect-error Callbacks require one scalar input parameter.
-    css(() => ({ color: '#fff' }))
+    style(() => ({ color: '#fff' }))
   })
 })
 
 describe('create', () => {
   test('rejects undeclared layer names with CSS separators', () => {
-    const { css } = Config.create({ layers: ['base'] })
+    const { style } = Config.create({ layers: ['base'] })
     // @ts-expect-error undeclared tab-separated layer
-    css({ '@layer\tunknown': { color: 'red' } })
+    style({ '@layer\tunknown': { color: 'red' } })
     // @ts-expect-error undeclared comment-separated layer
-    css({ '@layer/**/unknown': { color: 'red' } })
-    css({ '@layer': { color: 'red' }, '@layer base': { color: 'blue' } })
+    style({ '@layer/**/unknown': { color: 'red' } })
+    style({ '@layer': { color: 'red' }, '@layer base': { color: 'blue' } })
   })
 })

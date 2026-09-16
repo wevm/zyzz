@@ -12,4 +12,4 @@ const style = StyleSheet.compose(selected.card, active && { opacity: 0.5 })
 
 ## Returns
 
-A `StyleProp` retaining the operand property types. This helper composes already-native values. It does not convert CSS lengths or expand shorthands, compile variants, or implement the planned universal `cx` source transformation.
+A mutable two-element tuple retaining literal operand types when both operands are present. A statically falsy operand preserves the exact type of the other operand. The exported recursive `StyleProp` follows React Native’s mutable outer-array contract, including readonly nested arrays. This helper composes already-native values. It does not convert CSS lengths or expand shorthands, compile variants, or implement the planned universal `cx` source transformation.

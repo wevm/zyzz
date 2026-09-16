@@ -1,5 +1,5 @@
 /**
- * Measures type instantiations contributed by public root css authoring.
+ * Measures type instantiations contributed by public root style authoring.
  * @module
  */
 import { bench } from '@ark/attest'
@@ -7,17 +7,17 @@ import type * as Zyzz from 'zyzz'
 
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
-declare const css: typeof Zyzz.css
+declare const style: typeof Zyzz.style
 declare const Theme: typeof Zyzz.Theme
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
-  css({ color: '#000' })
+  style({ color: '#000' })
   Theme.define({ color: { base: '#000' } })
 }
 
-bench('css / literal declarations', () => {
-  css({
+bench('style / literal declarations', () => {
+  style({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -27,54 +27,54 @@ bench('css / literal declarations', () => {
     padding: '1rem 2rem',
     width: 'calc(100% - 16px)',
   })
-}).types([54678, 'instantiations'])
+}).types([54766, 'instantiations'])
 
-bench('css / fallbacks, importance, and templates', () => {
-  css({
+bench('style / fallbacks, importance, and templates', () => {
+  style({
     color: ['#111', 'oklch(0.5 0.1 200)!'],
     padding: `${8}px`,
     position: 'sticky!',
     width: `calc(100% - ${16}px)`,
   })
-}).types([24982, 'instantiations'])
+}).types([25026, 'instantiations'])
 
-bench('css / nested conditions', () => {
-  css({
+bench('style / nested conditions', () => {
+  style({
     ':hover': { color: '#222' },
     '&[data-active]': { opacity: 0.5 },
     '@container (width > 400px)': { display: 'grid' },
     '@media (width >= 800px)': { ':focus-visible': { outline: '2px solid' } },
     '@supports (display: grid)': { display: 'grid' },
   })
-}).types([34668, 'instantiations'])
+}).types([34732, 'instantiations'])
 
-bench('css / dynamic callback', () => {
-  const bar = css((values: { alpha: number; amount: `${number}%` }) => ({
+bench('style / dynamic callback', () => {
+  const bar = style((values: { alpha: number; amount: `${number}%` }) => ({
     display: 'block',
     opacity: values.alpha,
     width: values.amount,
   }))
 
   bar({ alpha: 0.5, amount: '50%', className: 'external' })
-}).types([19510, 'instantiations'])
+}).types([19599, 'instantiations'])
 
-bench('css / applied overrides', () => {
-  const card = css({ color: '#fff', padding: '1rem' })
+bench('style / applied overrides', () => {
+  const card = style({ color: '#fff', padding: '1rem' })
 
   card({ className: 'external', style: { opacity: 0.5 } })
   card()
-}).types([10582, 'instantiations'])
+}).types([10656, 'instantiations'])
 
-bench('css / bound theme tokens', () => {
+bench('style / bound theme tokens', () => {
   const theme = Theme.define({
     color: { brand: '#06c', ink: { dark: '#fff', light: '#000' } },
     spacing: { 4: '1rem', md: '8px' },
   })
 
-  theme.css({
+  theme.style({
     ':hover': { color: 'brand' },
     color: 'ink',
     padding: ['md', '2px!'],
     width: theme.tokens.spacing[4],
   })
-}).types([64158, 'instantiations'])
+}).types([64207, 'instantiations'])

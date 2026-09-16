@@ -11,6 +11,27 @@ import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
 
 describe('compose', () => {
+  test('retains native literal values through conditional composition', () => {
+    const tables = StyleSheet.compile({
+      styles: Style.define({ card: { opacity: 0.5 } }),
+    })
+    const composed = StyleSheet.compose(false, tables.styles.default.light.card)
+
+    expect(composed === tables.styles.default.light.card).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(
+      StyleSheet.flatten(
+        StyleSheet.compose({ position: 'absolute' }, { top: 0 }),
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "position": "absolute",
+        "top": 0,
+      }
+    `)
+  })
+
   test('composes compiled tables with conditional native overrides', () => {
     const tables = StyleSheet.compile({
       styles: Style.define({ card: { padding: '8px', color: 'red' } }),
@@ -110,6 +131,20 @@ describe('flatten', () => {
 })
 
 describe('compile', () => {
+  test('normalizes equivalent shared decoration order for native output', () => {
+    const styles = Style.define({
+      label: { textDecorationLine: 'line-through underline' },
+    })
+    const output = StyleSheet.compile({ styles })
+
+    expect(
+      output.styles.default.light.label.textDecorationLine,
+    ).toMatchInlineSnapshot('"underline line-through"')
+    expect(
+      Css.compile({ styles }).css.includes('line-through underline'),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test('compiles portable layout, image, and text scalars from shared declarations', () => {
     const styles = Style.define({
       card: {

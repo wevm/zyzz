@@ -77,7 +77,7 @@ export function create(options: create.Options) {
 
 /** Source-owned static resolution hooks. */
 export declare namespace create {
-  /** Compiler adapters used for the same resolution as dynamic css callbacks. */
+  /** Compiler adapters used for the same resolution as dynamic style callbacks. */
   type Options = {
     /** Expands immutable body data without executing expressions. */
     readonly normalize: (node: Ast.Node) => Ast.Node

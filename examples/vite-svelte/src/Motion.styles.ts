@@ -1,18 +1,18 @@
 /** Uses imported keyframes with reduced-motion support. @module */
 import { keyframes } from 'zyzz/web'
 import { enter } from './motion.js'
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 const pulse = keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } })
 
 /** Entry and pulse animations that pause under reduced motion. */
 export namespace styles {
-  export const button = css({
+  export const button = style({
     ':hover': { color: 'accent' },
     '&[aria-pressed="true"]': { fontWeight: 700 },
   })
 
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -21,9 +21,9 @@ export namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const tile = css({
+  export const tile = style({
     animationDuration: '600ms',
     animationName: enter,
     backgroundColor: 'backdrop',
@@ -34,7 +34,7 @@ export namespace styles {
     '@starting-style': { opacity: 0 },
   })
 
-  export const dot = css({
+  export const dot = style({
     animationDirection: 'alternate',
     animationDuration: '1s',
     animationIterationCount: 'infinite',

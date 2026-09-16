@@ -11,12 +11,12 @@
 ## Overview
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({ color: '#06c', padding: '1rem' })
+  export const button = style({ color: '#06c', padding: '1rem' })
 
-  export const card = css({ display: 'grid', gap: '1rem', padding: '1.5rem' })
+  export const card = style({ display: 'grid', gap: '1rem', padding: '1.5rem' })
 }
 
 export function Card() {
@@ -127,10 +127,10 @@ Watching performs an initial build, then reports rebuilds and errors. `await usi
 Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules; applying them returns ordinary styling props without a provider or component wrapper.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({
+  export const button = style({
     color: '#06c',
     padding: '1rem',
     ':hover': { opacity: 0.8 },
@@ -146,13 +146,13 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `css` and `variants`, plus `theme` and raw `tokens`. Scales use conventional named steps, and colors ship as light/dark pairs.
+The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `theme` and raw `tokens`. Scales use conventional named steps, and colors ship as light/dark pairs.
 
 ```ts
-import { css } from 'zyzz/themes/default'
+import { style } from 'zyzz/themes/default'
 
 namespace styles {
-  export const button = css({ color: 'blue.700', padding: 4 })
+  export const button = style({ color: 'blue.700', padding: 4 })
 }
 ```
 
@@ -163,7 +163,7 @@ Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to
 import { Config, Theme } from 'zyzz'
 import { theme as defaultTheme } from 'zyzz/themes/default'
 
-export const { css, theme, variants } = Config.create({
+export const { style, theme, variants } = Config.create({
   theme: Theme.extend(defaultTheme, {
     color: { blue: { 700: '#175' } },
   }),
@@ -171,10 +171,10 @@ export const { css, theme, variants } = Config.create({
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const button = css({ color: 'blue.700', padding: 4 })
+  export const button = style({ color: 'blue.700', padding: 4 })
 }
 ```
 
@@ -186,7 +186,7 @@ Export named config helpers with an application's own tokens. Colors accept a sh
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css, theme, variants } = Config.create({
+export const { style, theme, variants } = Config.create({
   theme: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
@@ -195,10 +195,10 @@ export const { css, theme, variants } = Config.create({
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({ color: 'text', padding: 'sm' })
+  export const card = style({ color: 'text', padding: 'sm' })
 }
 ```
 
@@ -209,10 +209,10 @@ Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions out
 Apply the theme to `<html>` and select a color scheme through its callable props:
 
 ```tsx
-import { css, theme } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({ color: 'text', padding: 'sm' })
+  export const card = style({ color: 'text', padding: 'sm' })
 }
 
 export function Document() {
@@ -264,10 +264,10 @@ const example = <button {...styles.button({ size: 'sm' })}>Continue</button>
 Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style`/`variables` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     backgroundColor: '#06c',
     borderRadius: '0.25rem',
     height: '0.5rem',
@@ -290,10 +290,10 @@ export function Bar() {
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
-import { css, theme } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
 namespace styles {
-  export const panel = css({
+  export const panel = style({
     display: ['block', 'grid'],
     color: 'brand!',
     borderColor: theme.vars.color.brand,
@@ -307,12 +307,12 @@ namespace styles {
 Prefer state attributes for conditional styling. Calls accept `className`, `style`, and `variables` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { cx, style } from 'zyzz'
 
 namespace styles {
-  export const base = css({ padding: '0.5rem' })
+  export const base = style({ padding: '0.5rem' })
 
-  export const roomy = css({ padding: '1rem' })
+  export const roomy = style({ padding: '1rem' })
 }
 
 const example = (

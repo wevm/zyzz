@@ -15,6 +15,7 @@ import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 import * as Library from '../../test/fixtures/Library.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
+import * as Watch from '../../test/fixtures/Watch.js'
 
 async function create(files: Readonly<Record<string, string>> = Fixture.files) {
   const root = await Fs.mkdtemp(Path.resolve('.fixture-vite-'))
@@ -315,78 +316,90 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     }, 30000)
   }
 
-  test('production leaves lazy styles in Vite dynamic chunks', async () => {
-    const { config, root } = await create(Fixture.lazyFiles)
-
-    try {
-      await Fs.appendFile(
-        Path.join(root, 'lazy.ts'),
-        `\nthrow new Error('lazy source was executed');`,
-      )
-
-      const result = await Vite.build({
-        ...config,
-        build: { manifest: true, minify: false, write: false },
+  test.each(['atomic', 'grouped'] as const)(
+    'production leaves lazy styles in Vite dynamic chunks (%s)',
+    async (cssOutput) => {
+      const { config, root } = await create({
+        ...Fixture.lazyFiles,
+        'theme.ts': `import { Config } from 'zyzz'; export const { theme } = Config.create({ cssOutput: '${cssOutput}', theme: { color: { brand: '#06c' } } });`,
       })
-      if (Array.isArray(result) || !('output' in result))
-        throw new Error('Expected one Vite build output')
 
-      const manifest = result.output.find(
-        (file) => file.fileName === '.vite/manifest.json',
-      )
-      if (!manifest || manifest.type !== 'asset')
-        throw new Error('Missing Vite manifest')
+      try {
+        await Fs.appendFile(
+          Path.join(root, 'lazy.ts'),
+          `\nthrow new Error('lazy source was executed');`,
+        )
 
-      const entries = JSON.parse(String(manifest.source)) as Record<
-        string,
-        { css?: string[]; dynamicImports?: string[]; isDynamicEntry?: boolean }
-      >
+        const result = await Vite.build({
+          ...config,
+          build: { manifest: true, minify: false, write: false },
+        })
+        if (Array.isArray(result) || !('output' in result))
+          throw new Error('Expected one Vite build output')
 
-      expect(entries['index.html']?.dynamicImports).toMatchInlineSnapshot(`
+        const manifest = result.output.find(
+          (file) => file.fileName === '.vite/manifest.json',
+        )
+        if (!manifest || manifest.type !== 'asset')
+          throw new Error('Missing Vite manifest')
+
+        const entries = JSON.parse(String(manifest.source)) as Record<
+          string,
+          {
+            css?: string[]
+            dynamicImports?: string[]
+            isDynamicEntry?: boolean
+          }
+        >
+
+        expect(entries['index.html']?.dynamicImports).toMatchInlineSnapshot(`
         [
           "lazy.ts",
         ]
       `)
 
-      const entryCss = result.output
-        .flatMap((file) =>
-          file.type === 'asset' &&
-          entries['index.html']?.css?.includes(file.fileName)
-            ? [String(file.source)]
-            : [],
+        const entryCss = result.output
+          .flatMap((file) =>
+            file.type === 'asset' &&
+            entries['index.html']?.css?.includes(file.fileName)
+              ? [String(file.source)]
+              : [],
+          )
+          .join('')
+
+        expect(entryCss.trim()).toMatchInlineSnapshot('""')
+        expect(entries['lazy.ts']?.isDynamicEntry).toMatchInlineSnapshot('true')
+        expect(entries['lazy.ts']?.css?.length).toMatchInlineSnapshot('1')
+
+        const sheet = result.output.find(
+          (file) => file.fileName === entries['lazy.ts']?.css?.[0],
         )
-        .join('')
+        if (!sheet || sheet.type !== 'asset')
+          throw new Error('Missing lazy stylesheet')
 
-      expect(entryCss.trim()).toMatchInlineSnapshot('""')
-      expect(entries['lazy.ts']?.isDynamicEntry).toMatchInlineSnapshot('true')
-      expect(entries['lazy.ts']?.css?.length).toMatchInlineSnapshot('1')
+        expect(String(sheet.source).includes('#175')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          String(sheet.source).includes('padding:8px'),
+        ).toMatchInlineSnapshot('true')
 
-      const sheet = result.output.find(
-        (file) => file.fileName === entries['lazy.ts']?.css?.[0],
-      )
-      if (!sheet || sheet.type !== 'asset')
-        throw new Error('Missing lazy stylesheet')
+        const javascript = result.output
+          .filter((file) => file.type === 'chunk')
+          .map((file) => file.code)
+          .join('\n')
 
-      expect(String(sheet.source).includes('#175')).toMatchInlineSnapshot(
-        'true',
-      )
-      expect(
-        String(sheet.source).includes('padding:8px'),
-      ).toMatchInlineSnapshot('true')
-
-      const javascript = result.output
-        .filter((file) => file.type === 'chunk')
-        .map((file) => file.code)
-        .join('\n')
-
-      expect(javascript.includes('Theme.define')).toMatchInlineSnapshot('false')
-      expect(
-        javascript.includes('lazy source was executed'),
-      ).toMatchInlineSnapshot('true')
-    } finally {
-      await Fs.rm(root, { recursive: true, force: true })
-    }
-  })
+        expect(javascript.includes('Theme.define')).toMatchInlineSnapshot(
+          'false',
+        )
+        expect(
+          javascript.includes('lazy source was executed'),
+        ).toMatchInlineSnapshot('true')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+  )
 
   test('development loads dynamic modules through Vite and preserves SSR imports', async () => {
     const { config, root } = await create(Fixture.lazyFiles)
@@ -438,62 +451,171 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     }
   })
 
-  test('lazy CSS loads on demand and updates without reload in Chromium', async () => {
-    const { config, root } = await create(Fixture.lazyFiles)
-    const server = await Vite.createServer(config)
-    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+  test.each(['atomic', 'grouped'] as const)(
+    'lazy CSS loads on demand and updates without reload in Chromium (%s)',
+    async (cssOutput) => {
+      const { config, root } = await create({
+        ...Fixture.lazyFiles,
+        'theme.ts': `import { Config } from 'zyzz'; export const { theme } = Config.create({ cssOutput: '${cssOutput}', theme: { color: { brand: '#06c' } } });`,
+      })
+      const server = await Vite.createServer(config)
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
 
-    try {
-      browser = await chromium.launch()
-      await server.listen()
+      try {
+        browser = await chromium.launch()
+        await server.listen()
 
-      const address = server.httpServer!.address()
-      if (!address || typeof address === 'string')
-        throw new Error('Missing server port')
+        const address = server.httpServer!.address()
+        if (!address || typeof address === 'string')
+          throw new Error('Missing server port')
 
-      const page = await browser.newPage()
+        const page = await browser.newPage()
 
-      await page.goto(`http://127.0.0.1:${address.port}`)
+        await page.goto(`http://127.0.0.1:${address.port}`)
 
-      expect(
-        await page.locator('#card').getAttribute('class'),
-      ).toMatchInlineSnapshot('null')
+        expect(
+          await page.locator('#card').getAttribute('class'),
+        ).toMatchInlineSnapshot('null')
 
-      await page.click('#load')
-      await page.waitForFunction(
-        () =>
-          getComputedStyle(document.querySelector('#card')!).color ===
-          'rgb(17, 119, 85)',
-      )
+        await page.click('#load')
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#card')!).color ===
+            'rgb(17, 119, 85)',
+        )
 
-      expect(
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((element) => getComputedStyle(element).padding),
+        ).toMatchInlineSnapshot('"8px"')
+
         await page
           .locator('#card')
-          .evaluate((element) => getComputedStyle(element).padding),
-      ).toMatchInlineSnapshot('"8px"')
+          .evaluate((element) => element.setAttribute('data-preserved', 'yes'))
+        await Watch.write({
+          path: Path.join(root, 'alternate.ts'),
+          source: Fixture.files['alternate.ts'].replace('#175', '#f00'),
+        })
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#card')!).color ===
+            'rgb(255, 0, 0)',
+        )
 
-      await page
-        .locator('#card')
-        .evaluate((element) => element.setAttribute('data-preserved', 'yes'))
-      await Fs.writeFile(
-        Path.join(root, 'alternate.ts'),
-        Fixture.files['alternate.ts'].replace('#175', '#f00'),
-      )
-      await page.waitForFunction(
-        () =>
-          getComputedStyle(document.querySelector('#card')!).color ===
-          'rgb(255, 0, 0)',
-      )
+        await Watch.write({
+          path: Path.join(root, 'card.ts'),
+          source: Fixture.files['card.ts'].replace('8px', '16px'),
+        })
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#card')!).padding ===
+            '16px',
+        )
 
-      expect(
-        await page.locator('#card').getAttribute('data-preserved'),
-      ).toMatchInlineSnapshot('"yes"')
-    } finally {
-      await browser?.close()
-      await server.close()
-      await Fs.rm(root, { recursive: true, force: true })
-    }
-  }, 30000)
+        expect(
+          await page.locator('#card').getAttribute('data-preserved'),
+        ).toMatchInlineSnapshot('"yes"')
+      } finally {
+        await browser?.close()
+        await server.close()
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+    30000,
+  )
+
+  test.each(['atomic', 'grouped'] as const)(
+    'production loads lazy HTML styles once on demand (%s)',
+    async (cssOutput) => {
+      const { config, root } = await create({
+        ...Fixture.lazyFiles,
+        'theme.ts': `import { Config } from 'zyzz'; export const { theme } = Config.create({ cssOutput: '${cssOutput}', theme: { color: { brand: '#06c' } } });`,
+      })
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+      let preview: Vite.PreviewServer | undefined
+      try {
+        await Vite.build(config)
+        preview = await Vite.preview({
+          ...config,
+          preview: { host: '127.0.0.1', port: 0 },
+        })
+        browser = await chromium.launch()
+        const page = await browser.newPage()
+        const sheets: string[] = []
+        const errors: string[] = []
+        page.on('pageerror', (error) => errors.push(error.message))
+        page.on('request', (request) => {
+          if (new URL(request.url()).pathname.endsWith('.css'))
+            sheets.push(request.url())
+        })
+        await page.goto(preview.resolvedUrls!.local[0]!)
+        const initialRequests = sheets.length
+        expect(
+          await page.evaluate(
+            () =>
+              [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules])
+                .length,
+          ),
+        ).toMatchInlineSnapshot('0')
+        expect(
+          await page.locator('#card').getAttribute('class'),
+        ).toMatchInlineSnapshot('null')
+        await page
+          .locator('#card')
+          .evaluate((element) => element.setAttribute('data-preserved', 'yes'))
+        for (const iteration of [0, 1]) {
+          if (iteration)
+            await page
+              .locator('#card')
+              .evaluate((element) => element.removeAttribute('class'))
+          await page.click('#load')
+          await page.waitForFunction(
+            () =>
+              getComputedStyle(document.querySelector('#card')!).color ===
+              'rgb(17, 119, 85)',
+          )
+          expect(
+            await page
+              .locator('#card')
+              .evaluate((element) => getComputedStyle(element).padding),
+          ).toMatchInlineSnapshot('"8px"')
+          expect(sheets.length - initialRequests).toMatchInlineSnapshot('1')
+          expect(
+            await page.locator('#card').getAttribute('data-preserved'),
+          ).toMatchInlineSnapshot('"yes"')
+        }
+        expect(
+          await page.evaluate((grouped) => {
+            const card = document.querySelector('#card')!
+            const rules = [...document.styleSheets]
+              .flatMap((sheet) => [...sheet.cssRules])
+              .filter(
+                (rule): rule is CSSStyleRule =>
+                  rule instanceof CSSStyleRule &&
+                  card.matches(rule.selectorText) &&
+                  rule.style.padding === '8px',
+              )
+            return (
+              rules.length > 0 &&
+              rules.every((rule) => Boolean(rule.style.color) === grouped)
+            )
+          }, cssOutput === 'grouped'),
+        ).toMatchInlineSnapshot('true')
+        expect(errors).toMatchInlineSnapshot('[]')
+      } finally {
+        await browser?.close()
+        if (preview)
+          await new Promise<void>((resolve, reject) =>
+            preview!.httpServer.close((error) =>
+              error ? reject(error) : resolve(),
+            ),
+          )
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+    30000,
+  )
 
   test('production uses Vite resolution and emits linked CSS without executing sources', async () => {
     const { config, root } = await create()
@@ -702,10 +824,10 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       await page.evaluate(() => {
         document.querySelector('#card')!.setAttribute('data-preserved', 'yes')
       })
-      await Fs.writeFile(
-        Path.join(root, 'alternate.ts'),
-        Fixture.files['alternate.ts'].replace('#175', '#f00'),
-      )
+      await Watch.write({
+        path: Path.join(root, 'alternate.ts'),
+        source: Fixture.files['alternate.ts'].replace('#175', '#f00'),
+      })
       await page.waitForFunction(
         () =>
           getComputedStyle(document.querySelector('#card')!).color ===

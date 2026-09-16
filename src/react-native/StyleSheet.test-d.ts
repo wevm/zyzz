@@ -70,10 +70,9 @@ describe('compile', () => {
     expectTypeOf(label()).not.toBeAny()
     // @ts-expect-error Web branches retain CSS value domains.
     style({ targets: { web: { display: 'banana' } } })
+    const invalid = { shadowOffset: { width: 1, height: 2, extra: 3 } }
     // @ts-expect-error Native structured values reject unknown nested keys.
-    style({
-      targets: { native: { shadowOffset: { width: 1, height: 2, extra: 3 } } },
-    })
+    style({ targets: { native: invalid } })
     // @ts-expect-error Native lengths use native numeric semantics.
     bound.style({ targets: { native: { width: '1rem' } } })
   })

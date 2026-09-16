@@ -46,6 +46,10 @@ For each supported integration, record versions and passing evidence for:
 - SSR, hydration identity, navigation, and supported refresh behavior. HTML uses server attribute serialization and client-update identity instead of hydration.
 - CLI/plugin parity, default build/watch paths, explicit IDs in CSS-only mode, failure preservation, and owned-output cleanup.
 
+Local follow-up to main `96192a9` (2026-09-16): [framework tests](../test/fixtures/Framework.ts) pass React, Solid, and Svelte in both modes, including live mode changes, module relocation, restoration, and CSS cleanup. [Browser tests](../src/web/Css.test.ts) cover development module isolation and value edits in either stylesheet order. Broader acceptance remains open.
+
+Follow-up to [#181](https://github.com/wevm/zyzz/pull/181): [HTML delivery tests](../src/vite/index.test.ts) cover both modes for lazy chunk ownership, deferred browser styling, repeated loading, and live theme/style edits without replacing DOM nodes. SSR serialization, navigation, and broader lifecycle acceptance remain open.
+
 The Next.js adapter and independent packed fixtures are implemented. Reconcile their evidence before removing preview status. Do not schedule the adapter again. Inline Svelte authoring and broader lifecycle combinations still require their own coverage review.
 
 ### Remaining authoring and lifecycle audit

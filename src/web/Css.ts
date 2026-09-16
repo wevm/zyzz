@@ -504,8 +504,14 @@ export function compile<
           options.composition === 'independent'
         )
           return `g_${rules.size.toString(36)}`
-        if (output === 'grouped' && mode === 'grouped')
-          return `g-${encode(options.development ? developmentName : style.name)}${slot ? `_s${slot}` : ''}`
+        if (output === 'grouped' && mode === 'grouped') {
+          const name = options.development ? developmentName : style.name
+          const scope =
+            options.development && options.scope
+              ? `_m${encode(options.scope)}`
+              : ''
+          return `g-${encode(name)}${scope}${slot ? `_s${slot}` : ''}`
+        }
         return ClassName.create({
           body,
           context:

@@ -2,7 +2,7 @@
 
 This plan tracks remaining implementation and acceptance work for Zyzz contributors. The goal is shared, typed web/native authoring with ahead-of-time output and ordinary platform components.
 
-Web acceptance was rerun from `a4585e3` with the follow-up stack on 2026-09-16; see the [evidence and limits](../docs/guides/web-acceptance.md). Local verification does not establish hosted CI or close native, at-rule rendering, and release measurement gates.
+Reconciled against `main` at [`98ce806`](https://github.com/wevm/zyzz/commit/98ce806b8b08fabe0506c3245f2758edae26eb71) on September 17, 2026. The web acceptance stack, typed target branches, and static native values are merged. The web [local evidence and limits](../docs/guides/web-acceptance.md) remain separate from hosted CI, native parity, at-rule rendering, and release measurements.
 
 ## Current status
 
@@ -12,45 +12,30 @@ Web acceptance was rerun from `a4585e3` with the follow-up stack on 2026-09-16; 
 | CSS properties               | All 670 pinned properties are marked supported under the static authoring contract. Other syntax families and rendering have separate coverage.                                                 | [Coverage ledger](../test/conformance/coverage.json), [conformance workflow](../test/conformance/README.md)                                                                                                                                 |
 | At-rules                     | Compiler obligations and target reviews are recorded for the complete inventory. Rendering acceptance remains open.                                                                             | [Acceptance review](../test/conformance/at-rule-acceptance.md), [matrix](../test/conformance/at-rule-matrix.json)                                                                                                                           |
 | Web variants and composition | Implemented, including packed and framework fixtures.                                                                                                                                           | [#145](https://github.com/wevm/zyzz/pull/145), [#146](https://github.com/wevm/zyzz/pull/146)                                                                                                                                                |
-| CSS output and pruning       | Atomic default, grouped opt-in, readable names, CLI parity, and conservative local reachability are implemented. Final output acceptance remains open.                                          | [CSS output guide](../docs/guides/css-output.md), [#172](https://github.com/wevm/zyzz/pull/172), [transform fixtures](../src/compiler/Transform.test.ts)                                                                                    |
-| Integrations                 | CLI, Vite, Next.js, React, Solid, Svelte, and HTML fixtures exist. Examples include TanStack Start. Examples alone do not establish framework acceptance.                                       | [Framework fixtures](../test/fixtures/Framework.ts), [Next.js fixtures](../src/next/index.test.ts), [examples](../examples)                                                                                                                 |
+| CSS output and pruning       | Both output modes, module isolation, composition, and conservative local pruning have passing local acceptance. Whole-program pruning remains unimplemented.                                    | [CSS output guide](../docs/guides/css-output.md), [#172](https://github.com/wevm/zyzz/pull/172), [transform fixtures](../src/compiler/Transform.test.ts)                                                                                    |
+| Integrations                 | CLI, Vite, Next.js Webpack/Turbopack, React, Solid, Svelte, and HTML have passing local fixtures, including SSR and lifecycle coverage within their documented scope.                           | [Web acceptance record](../docs/guides/web-acceptance.md), [framework fixtures](../test/fixtures/Framework.ts), [Next.js fixtures](../src/next/index.test.ts)                                                                               |
 | Native foundation            | Static tables, target branches, structured native values, theme/scheme lookup, composition, flattening, and helpers are implemented. Universal callable APIs and device acceptance remain open. | [#173](https://github.com/wevm/zyzz/pull/173), [#174](https://github.com/wevm/zyzz/pull/174), [#175](https://github.com/wevm/zyzz/pull/175), [#176](https://github.com/wevm/zyzz/pull/176), [StyleSheet](../src/react-native/StyleSheet.ts) |
 
 ## Next work
 
-1. Merge the web acceptance stack and confirm its hosted checks against the resulting main commit. Functional coverage and diagnostic measurements are recorded below; broader release gates remain separate.
-2. Continue native work with 3.8e: shared static variants and composition. Static native contracts and target branches are implemented; host interoperability and platform rendering audits remain open.
-3. Complete independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
+1. Continue with 3.8e: shared static native variants and composition. Typed target branches and static native values are implemented.
+2. Add universal callable source compilation and packed exports in 3.8f.
+3. Complete dynamic/host interoperability, independent iOS/Android evidence, and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
 4. Finish distribution, measurement, and documentation acceptance before release.
 
 Keep the existing sequence labels for native dependencies. Older phase ordering does not undo merged work or close an unresolved gate.
 
 ## Web acceptance
 
-### CSS output and reachability
+### Completed local acceptance
 
-- [x] Verify both modes preserve shorthand resets, partial longhand overrides, logical/physical overlap, `all`, A/B/A order, fallbacks, importance, conditions, and layers. Atomic output must not silently fall back to grouped rules.
-- [x] Verify deduplication retains selector, theme, variable, and ordering identities. Preserve identity-only styles and required structures for globals, keyframes, registrations, fonts, and theme scopes.
-- [x] Complete static/dynamic `cx`, defaults, compounds, conditional selections, stale-binding removal, and mixed-mode packed-library acceptance. Class-string order must not determine override behavior.
-- [x] Audit remaining reachability and unused-variable work. Local unused definitions are pruned in production. Exported/escaped definitions, references, live variant alternatives, and complete live theme tokens remain retained. Whole-program and transitive dead-reference pruning are not established.
-- [x] Record delivery and compile/watch/render measurements for repeated, unique, conditional, and override-heavy workloads. Keep grouped output for performance comparisons and both modes for correctness.
+Both output modes cover cascade ordering, deduplication, composition, stale-binding removal, and conservative local reachability. React, Solid, Svelte, HTML, CLI, Vite, and Next.js Webpack/Turbopack fixtures cover their documented consumer, delivery, SSR, and lifecycle contracts. The [acceptance record](../docs/guides/web-acceptance.md) owns fixture mappings, versions, reproduction, and limits.
 
-Diagnostic measurements and their limits are recorded in [Web acceptance measurements](../bench/Web-acceptance.md). They do not close the broader release measurement gates below.
+Merged follow-ups cover [module isolation and HTML delivery](https://github.com/wevm/zyzz/pull/181), [server serialization](https://github.com/wevm/zyzz/pull/183), [Next.js configuration lifecycle](https://github.com/wevm/zyzz/pull/184), and [Vite startup-event handling](https://github.com/wevm/zyzz/pull/185). Whole-program pruning, inline Svelte authoring, and additional application frameworks remain outside this verified scope. Examples alone do not establish framework acceptance.
 
-### Framework integration priority
+[Compile/watch/render and delivery measurements](../bench/Web-acceptance.md) are recorded for repeated, unique, conditional, and override-heavy workloads. These diagnostic results do not close the release measurement gates below.
 
-Initial acceptance covers React, Solid, Svelte, plain DOM/HTML, and Next.js with Webpack and Turbopack. Vue is excluded from this milestone. A renderer fixture does not establish support for every application framework that uses it.
-
-For each supported integration, record versions and passing evidence for:
-
-- Consumer types, computed styles, dynamic updates, themes/schemes, variants, composition, and override removal.
-- Development and production delivery, packed consumers, source maps, dependency edits, configuration-mode changes, and add/edit/remove/rename recovery.
-- SSR, hydration identity, navigation, and supported refresh behavior. HTML uses server attribute serialization and client-update identity instead of hydration.
-- CLI/plugin parity, default build/watch paths, explicit IDs in CSS-only mode, failure preservation, and owned-output cleanup.
-
-The [web acceptance record](../docs/guides/web-acceptance.md) maps these requirements to executable fixtures, pinned versions, and current limits. Follow-up work includes [module isolation](https://github.com/wevm/zyzz/pull/181), [HTML delivery](https://github.com/wevm/zyzz/pull/182), [server serialization](https://github.com/wevm/zyzz/pull/183), and [Next.js lifecycle coverage](https://github.com/wevm/zyzz/pull/184). Local verification and hosted CI remain separate claims.
-
-The CLI, Next.js adapter, and independent packed fixtures are implemented. Keep unsupported boundaries explicit: inline Svelte authoring and additional application frameworks remain outside the verified integration scope.
+- [ ] Confirm hosted checks on merged `main` at `98ce806`. [Main](https://github.com/wevm/zyzz/actions/runs/35161922329), [Benchmarks](https://github.com/wevm/zyzz/actions/runs/35161922059), and [Examples](https://github.com/wevm/zyzz/actions/runs/35161922053) were queued at reconciliation. Local checks do not establish hosted success.
 
 ### Remaining authoring and lifecycle audit
 
@@ -83,7 +68,7 @@ The [universal contract](../docs/api/react-native/universal.md) specifies target
 | 3.9b  | Independent browser/iOS/Android conformance and measurements. | Every applicable inventory entry has type, runtime, and renderer evidence against independent platform controls.                           |
 | 3.10  | Enforce full parity.                                          | No missing, partial, deferred, or untested native capability. All applicable gates pass.                                                   |
 
-3.8d is implemented: typed target branches and static native values, including transforms, matrices, colors, fonts, and shadows. The [static audit](../test/conformance/native/README.md) covers 157 properties across 421 component pairs, with [compiler](../src/react-native/StyleSheet.test.ts) and [type](../src/react-native/StyleSheet.test-d.ts) evidence. Host interoperability and device rendering remain 3.9 work.
+3.8d is implemented: [typed target branches](https://github.com/wevm/zyzz/pull/192) and [static native values](https://github.com/wevm/zyzz/pull/193), including transforms, matrices, colors, fonts, and shadows. The [static audit](../test/conformance/native/README.md) covers 157 properties across 421 component pairs, with [compiler](../src/react-native/StyleSheet.test.ts) and [type](../src/react-native/StyleSheet.test-d.ts) evidence. Host interoperability and device rendering remain 3.9 work.
 
 Completion requirements:
 

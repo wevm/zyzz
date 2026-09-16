@@ -11,6 +11,88 @@ import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('normalizes equivalent shared decoration order for native output', () => {
+    const styles = Style.define({
+      label: { textDecorationLine: 'line-through underline' },
+    })
+    const output = StyleSheet.compile({ styles })
+
+    expect(
+      output.styles.default.light.label.textDecorationLine,
+    ).toMatchInlineSnapshot('"underline line-through"')
+    expect(
+      Css.compile({ styles }).css.includes('line-through underline'),
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('compiles portable layout, image, and text scalars from shared declarations', () => {
+    const styles = Style.define({
+      card: {
+        alignContent: 'space-evenly',
+        aspectRatio: '16 / 9',
+        backfaceVisibility: 'hidden',
+        boxSizing: 'border-box',
+        direction: 'rtl',
+        display: 'contents',
+        position: 'static',
+      },
+      image: { objectFit: 'cover' },
+      label: {
+        textAlign: 'justify',
+        textDecorationColor: '#ff0000',
+        textDecorationLine: 'underline line-through',
+        textDecorationStyle: 'double',
+        textTransform: 'uppercase',
+        userSelect: 'text',
+      },
+    })
+    const output = StyleSheet.compile({ styles })
+    const selected = StyleSheet.select(output.styles, {
+      colorScheme: 'light',
+      theme: 'default',
+    })
+
+    expect(selected.card).toMatchInlineSnapshot(`
+      {
+        "alignContent": "space-evenly",
+        "aspectRatio": 1.7777777777777777,
+        "backfaceVisibility": "hidden",
+        "boxSizing": "border-box",
+        "direction": "rtl",
+        "display": "contents",
+        "position": "static",
+      }
+    `)
+    expect(selected.image).toMatchInlineSnapshot(`
+      {
+        "objectFit": "cover",
+      }
+    `)
+    expect(selected.label).toMatchInlineSnapshot(`
+      {
+        "textAlign": "justify",
+        "textDecorationColor": "#ff0000",
+        "textDecorationLine": "underline line-through",
+        "textDecorationStyle": "double",
+        "textTransform": "uppercase",
+        "userSelect": "text",
+      }
+    `)
+    expect(
+      Css.compile({ styles }).css.includes('aspect-ratio:16 / 9'),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('rejects automatic aspect ratios instead of guessing an intrinsic size', () => {
+    const styles = Style.define({ image: { aspectRatio: 'auto' } })
+
+    expect(() => StyleSheet.compile({ styles }))
+      .toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["default","light","image","aspectRatio"]: Use a positive finite aspect ratio.
+      ["default","dark","image","aspectRatio"]: Use a positive finite aspect ratio.]
+    `)
+  })
+
   test('loads native exports from a source-free package', async () => {
     const root = Path.resolve(import.meta.dirname, '../..')
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-native-'))

@@ -4,6 +4,49 @@ import { Style, Theme } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
 describe('compile', () => {
+  test('keeps portable native constraints inside shared authoring domains', () => {
+    const label = {
+      textDecorationLine: 'line-through underline',
+      aspectRatio: 1.5,
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({ styles: Style.define({ label }) })
+
+    expectTypeOf(
+      output.styles.default.light.label.textDecorationLine,
+    ).toEqualTypeOf<
+      | 'line-through'
+      | 'none'
+      | 'underline'
+      | 'underline line-through'
+      | undefined
+    >()
+    // @ts-expect-error Bare numeric strings are not accepted by shared authoring.
+    const ratio = { aspectRatio: '1.5' } satisfies StyleSheet.Properties
+    // @ts-expect-error Native-only contain requires a target-specific authoring boundary.
+    const selection = { userSelect: 'contain' } satisfies StyleSheet.Properties
+    expectTypeOf(ratio).not.toBeAny()
+    expectTypeOf(selection).not.toBeAny()
+  })
+
+  test('accepts portable scalar additions and retains native output types', () => {
+    const declarations = {
+      aspectRatio: '16 / 9',
+      objectFit: 'cover',
+      textDecorationStyle: 'wavy',
+      direction: 'rtl',
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: declarations }),
+    })
+
+    expectTypeOf(output.styles.default.light.card.aspectRatio).toEqualTypeOf<
+      number | undefined
+    >()
+    // @ts-expect-error Native image fitting has no fill-box keyword.
+    const invalid = { objectFit: 'fill-box' } satisfies StyleSheet.Properties
+    expectTypeOf(invalid).not.toBeAny()
+  })
+
   test('retains style and theme labels through native lookup', () => {
     const base = Theme.define({ spacing: { md: '1rem' } })
     const styles = Style.define({

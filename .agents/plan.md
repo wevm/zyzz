@@ -983,3 +983,5 @@ Pure authoring/compiler/selection integrations, source-free package loading, and
 PR #173 remains the static-table foundation. The continuation is ordered 3.8a → 3.8b → 3.8c → 3.8d → 3.8e → 3.8f, followed by 3.9 host/rendering work. Each PR targets the preceding branch until it merges. Completed slices do not close the full parity gate.
 
 3.8a pins React Native 0.87.0 at `4bc2473f5d0233ea5384c1ef24f6a55615de2220`. The inherited declaration inventory contains 387 component/property pairs and six runtime StyleSheet APIs. Imported value domains and platform/device evidence remain open. See [universal contracts](../docs/api/react-native/universal.md).
+
+3.8b expands portable scalar layout, text decoration, image fitting, and aspect-ratio conversion. Public shared-authoring/compiler/selection fixtures cover the added values. Native-only structured values and exact platform rendering remain in 3.8d and 3.9.

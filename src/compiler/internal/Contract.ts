@@ -22,9 +22,9 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(
-      data.version as number,
-    )
+    ![
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
 
@@ -113,7 +113,12 @@ export function read(
   }
 
   function link(value: unknown): Themes.Link {
-    const entry = record(value)
+    const raw = record(value)
+    // Contracts before version 19 record style authoring exports as `css`.
+    const entry =
+      raw.kind === 'css' && (data.version as number) < 19
+        ? { ...raw, kind: 'style' }
+        : raw
 
     if (entry.kind === 'variables') {
       if ((data.version as number) < 14)
@@ -192,7 +197,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(
           data.version as number,
         ) ||
         ![
@@ -243,7 +248,7 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17, 18].includes(data.version as number)
+        ![16, 17, 18, 19].includes(data.version as number)
       )
         throw new Error(
           'Packed callable styles require contract version 16 or later.',
@@ -292,13 +297,16 @@ export function read(
       entry.recipe !== undefined &&
       (entry.recipe !== true ||
         (data.version as number) < 15 ||
-        entry.kind !== 'css')
+        entry.kind !== 'style')
     )
       throw new Error('Invalid bound recipe contract.')
 
     const theme = string(entry.theme)
     const definition = themes[theme]
-    if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
+    if (
+      !definition ||
+      !['config', 'style', 'theme'].includes(String(entry.kind))
+    )
       throw new Error('Invalid Zyzz contract export.')
 
     const members =
@@ -565,6 +573,14 @@ export function write(
       function callable(link: Themes.Link): boolean {
         return !!link.style || Object.values(link.members ?? {}).some(callable)
       }
+      function styled(link: Themes.Link): boolean {
+        return (
+          link.kind === 'style' ||
+          Object.values(link.members ?? {}).some(styled)
+        )
+      }
+      // Style authoring exports serialize as `style`; older readers only know `css`.
+      if (Object.values(links).some(styled)) return 19
       // Root controls call a runtime helper older releases lack, and older
       // readers reject the storageKey option, so both require readers to opt in.
       // Local configurations emit the same helper without an exported binding.

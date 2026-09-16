@@ -16,9 +16,9 @@ export const styles = {
 } as const satisfies Style.LiteralProperties
 
 /** Source includes A/B/A shorthand and longhand override applications. */
-export const source = `import { css } from 'zyzz';
-export const placement = css({gridArea:'1 / 2 / 3 / 4'})();
-export const named = css({gridColumn:'start / end',gridRow:'1 / span 2'})();
-export const first = css({gridColumn:'1 / 3'})();
-export const second = css({gridColumnStart:2})();
-export const third = css({gridColumn:'1 / 3',opacity:.5})();`
+export const source = `import { style } from 'zyzz';
+export const placement = style({gridArea:'1 / 2 / 3 / 4'})();
+export const named = style({gridColumn:'start / end',gridRow:'1 / span 2'})();
+export const first = style({gridColumn:'1 / 3'})();
+export const second = style({gridColumnStart:2})();
+export const third = style({gridColumn:'1 / 3',opacity:.5})();`

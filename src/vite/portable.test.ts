@@ -16,9 +16,9 @@ describe('zyzz', () => {
         await Fs.writeFile(
           Path.join(root, 'main.ts'),
           `import { Config, variable } from 'zyzz';
-        const { css } = Config.create({ cssOutput: '${cssOutput}' });
+        const { style } = Config.create({ cssOutput: '${cssOutput}' });
         const accent = variable('color', { id: 'vite-accent' });
-        const card = css({ color: accent, padding: '8px' });
+        const card = style({ color: accent, padding: '8px' });
         const props = card({ variables: accent.set('red') }); Object.assign(globalThis, { fixture: { props } });`,
         )
         const page = await browser.newPage()

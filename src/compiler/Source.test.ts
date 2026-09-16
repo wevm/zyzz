@@ -9,22 +9,22 @@ import { Css } from 'zyzz/web'
 
 describe('extract', () => {
   test('parameter initializers preserve imports across body hoisting and nested closures', () => {
-    const source = `import { css } from 'zyzz';
+    const source = `import { style } from 'zyzz';
 const text = '🎉';
-function button(style = css({ color: '#f00' })) { var css; }
-function closure(style = () => css({ color: '#f00' })) { if (true) { var css; } }
-const arrow = (style = css({ color: '#f00' })) => { var css; };
-const named = function css(style = css({ color: unknown })) { var css; };
-function parameter(css, style = css({ color: unknown })) { var css; }
-function later(style = css({ color: unknown }), css) {}
-function destructured({ css }, style = css({ color: unknown })) {}
-function body() { css({ color: unknown }); if (true) { var css; } }
-function local() { css({ color: unknown }); const css = unknown; }
+function button(other = style({ color: '#f00' })) { var style; }
+function closure(other = () => style({ color: '#f00' })) { if (true) { var style; } }
+const arrow = (other = style({ color: '#f00' })) => { var style; };
+const named = function style(other = style({ color: unknown })) { var style; };
+function parameter(style, other = style({ color: unknown })) { var style; }
+function later(other = style({ color: unknown }), style) {}
+function destructured({ style }, other = style({ color: unknown })) {}
+function body() { style({ color: unknown }); if (true) { var style; } }
+function local() { style({ color: unknown }); const style = unknown; }
 type Signature = <T>(value: T) => T;
-export type { css };
-export { type css as StyleFunction };
-export { css as external } from 'another-package';
-function afterType(style = css({ color: '#f00' })) { var css; }
+export type { style };
+export { type style as StyleFunction };
+export { style as external } from 'another-package';
+function afterType(other = style({ color: '#f00' })) { var style; }
 `
 
     const result = Source.extract({ moduleId: 'example/parameters.ts', source })
@@ -36,10 +36,10 @@ function afterType(style = css({ color: '#f00' })) { var css; }
     }).toMatchInlineSnapshot(`
       {
         "calls": [
-          "css({ color: '#f00' })",
-          "css({ color: '#f00' })",
-          "css({ color: '#f00' })",
-          "css({ color: '#f00' })",
+          "style({ color: '#f00' })",
+          "style({ color: '#f00' })",
+          "style({ color: '#f00' })",
+          "style({ color: '#f00' })",
         ],
         "css": ".z-text-oLANea{color:#f00;}",
       }
@@ -47,14 +47,14 @@ function afterType(style = css({ color: '#f00' })) { var css; }
   })
 
   test('imported assignments and indirect references fail before CSS emission', () => {
-    const source = `import { css } from 'zyzz';
-import { css as Css } from 'zyzz';
-({ css } = values);
-[css] = values;
-css++;
-for (css of values) {}
-export { css };
-const object = { css };
+    const source = `import { style } from 'zyzz';
+import { style as Css } from 'zyzz';
+({ style } = values);
+[style] = values;
+style++;
+for (style of values) {}
+export { style };
+const object = { style };
 const element = <Css />;
 `
 
@@ -73,54 +73,54 @@ const element = <Css />;
           text: source.slice(item.start, item.end),
         })),
       ).toMatchInlineSnapshot(`
-      [
-        {
-          "code": "unsupported_syntax",
-          "message": "Imported css bindings cannot be reassigned.",
-          "text": "{ css } = values",
-        },
-        {
-          "code": "unsupported_syntax",
-          "message": "Imported css bindings cannot be reassigned.",
-          "text": "[css] = values",
-        },
-        {
-          "code": "unsupported_syntax",
-          "message": "Imported css bindings cannot be reassigned.",
-          "text": "css++",
-        },
-        {
-          "code": "unsupported_syntax",
-          "message": "Imported css bindings cannot be reassigned.",
-          "text": "for (css of values) {}",
-        },
-        {
-          "code": "unsupported_syntax",
-          "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
-          "text": "css",
-        },
-        {
-          "code": "unsupported_syntax",
-          "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
-          "text": "css",
-        },
-        {
-          "code": "unsupported_syntax",
-          "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
-          "text": "Css",
-        },
-      ]
-    `)
+        [
+          {
+            "code": "unsupported_syntax",
+            "message": "Imported style bindings cannot be reassigned.",
+            "text": "{ style } = values",
+          },
+          {
+            "code": "unsupported_syntax",
+            "message": "Imported style bindings cannot be reassigned.",
+            "text": "[style] = values",
+          },
+          {
+            "code": "unsupported_syntax",
+            "message": "Imported style bindings cannot be reassigned.",
+            "text": "style++",
+          },
+          {
+            "code": "unsupported_syntax",
+            "message": "Imported style bindings cannot be reassigned.",
+            "text": "for (style of values) {}",
+          },
+          {
+            "code": "unsupported_syntax",
+            "message": "Use a direct style call; aliases, re-exports, and indirect references are not supported yet.",
+            "text": "style",
+          },
+          {
+            "code": "unsupported_syntax",
+            "message": "Use a direct style call; aliases, re-exports, and indirect references are not supported yet.",
+            "text": "style",
+          },
+          {
+            "code": "unsupported_syntax",
+            "message": "Use a direct style call; aliases, re-exports, and indirect references are not supported yet.",
+            "text": "Css",
+          },
+        ]
+      `)
     }
   })
 
   test('source bindings extract ordered literals without executing application code', () => {
-    const source = `import { css as define } from 'zyzz';
+    const source = `import { style as define } from 'zyzz';
 throw new Error('Application source must never execute');
 export const card = define({ padding: '8px', paddingLeft: 0 });
 function nested(define) { return define({ padding: unknown }); }
-function css(value) { return value; }
-css({ color: unknown });
+function style(value) { return value; }
+style({ color: unknown });
 export const view = <div {...define({ color: '#fff', opacity: +0.5 })()} />;
 type Definition = ReturnType<typeof define>;
 `
@@ -169,15 +169,15 @@ type Definition = ReturnType<typeof define>;
         "repeated": {
           "calls": [
             {
-              "end": 158,
-              "identity": "z-style-16i62vd1bo8k8l-116",
-              "name": "style-16i62vd1bo8k8l-116",
-              "start": 116,
+              "end": 160,
+              "identity": "z-style-16i62vd1bo8k8l-118",
+              "name": "style-16i62vd1bo8k8l-118",
+              "start": 118,
             },
             {
-              "end": 357,
-              "name": "style-16i62vd1bo8k8l-317",
-              "start": 317,
+              "end": 363,
+              "name": "style-16i62vd1bo8k8l-323",
+              "start": 323,
             },
           ],
           "namespaces": [],
@@ -194,7 +194,7 @@ type Definition = ReturnType<typeof define>;
                     "value": 0,
                   },
                 ],
-                "name": "style-16i62vd1bo8k8l-116",
+                "name": "style-16i62vd1bo8k8l-118",
               },
               {
                 "declarations": [
@@ -207,7 +207,7 @@ type Definition = ReturnType<typeof define>;
                     "value": 0.5,
                   },
                 ],
-                "name": "style-16i62vd1bo8k8l-317",
+                "name": "style-16i62vd1bo8k8l-323",
               },
             ],
           },
@@ -216,8 +216,8 @@ type Definition = ReturnType<typeof define>;
           "themeReferences": [],
           "themes": {},
         },
-        "rules": ".z-p-8px-U1ik2p-0{padding:8px;}
-      .z-pl-0-U1ik2p-1{padding-left:0;}
+        "rules": ".z-p-8px-MJI7ZV-0{padding:8px;}
+      .z-pl-0-MJI7ZV-1{padding-left:0;}
       .z-text-kJGhCa{color:#fff;}
       .z-opacity-O99JRy{opacity:0.5;}",
       }
@@ -225,7 +225,7 @@ type Definition = ReturnType<typeof define>;
   })
 
   test('renamed imports retain source order and isolate portable module identities', () => {
-    const source = `import { css as second } from 'zyzz'; import { css as first } from 'zyzz';
+    const source = `import { style as second } from 'zyzz'; import { style as first } from 'zyzz';
 const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 1.5 } satisfies {});`
     const first = Source.extract({ moduleId: '@example/ui/card.ts', source })
     const second = Source.extract({ moduleId: '@example/ui/other.ts', source })
@@ -262,7 +262,7 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
     expect(
       Source.extract({
         moduleId: 'example/empty.ts',
-        source: 'const css = (x) => x; css({ anything: unknown });',
+        source: 'const css = (x) => x; style({ anything: unknown });',
       }),
     ).toMatchInlineSnapshot(`
       {
@@ -280,21 +280,21 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
   })
 
   test('unsupported source produces located diagnostics without partial artifacts', () => {
-    const source = `import { css } from 'zyzz';
-css({ padding: 4 });
-css({ ...defaults });
-css(() => ({ color: '#fff' }));
-css(external);
-css({ color: execute() });
-css({ get color() { throw new Error('never execute') } });
-css({ padding: 0, padding: '1px' });
+    const source = `import { style } from 'zyzz';
+style({ padding: 4 });
+style({ ...defaults });
+style(() => ({ color: '#fff' }));
+style(external);
+style({ color: execute() });
+style({ get color() { throw new Error('never execute') } });
+style({ padding: 0, padding: '1px' });
 const alias = css;
 css?.({ padding: 0 });
-css({ padding });
-css({ ['color']: '#fff' });
+style({ padding });
+style({ ['color']: '#fff' });
 css = unknown;
 import * as Zyzz from 'zyzz';
-Zyzz.css({ padding: 0 });
+Zyzz.style({ padding: 0 });
 `
 
     try {
@@ -317,35 +317,11 @@ Zyzz.css({ padding: 0 });
           "diagnostics": [
             {
               "code": "unsupported_syntax",
-              "end": 258,
-              "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
+              "end": 404,
+              "message": "Import style by name; namespace authoring calls are not supported yet.",
               "source": "example/errors.ts",
-              "start": 255,
-              "text": "css",
-            },
-            {
-              "code": "unsupported_syntax",
-              "end": 263,
-              "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
-              "source": "example/errors.ts",
-              "start": 260,
-              "text": "css",
-            },
-            {
-              "code": "unsupported_syntax",
-              "end": 342,
-              "message": "Imported css bindings cannot be reassigned.",
-              "source": "example/errors.ts",
-              "start": 329,
-              "text": "css = unknown",
-            },
-            {
-              "code": "unsupported_syntax",
-              "end": 382,
-              "message": "Import css by name; namespace authoring calls are not supported yet.",
-              "source": "example/errors.ts",
-              "start": 374,
-              "text": "Zyzz.css",
+              "start": 394,
+              "text": "Zyzz.style",
             },
           ],
           "frozen": true,
@@ -439,10 +415,10 @@ Zyzz.css({ padding: 0 });
   test('extracted definitions render authored shorthand and override order in Chromium', async () => {
     const extracted = Source.extract({
       moduleId: 'example/cascade.tsx',
-      source: `import { css } from 'zyzz';
-const first = css({ color: '#000', padding: '8px', paddingLeft: 0 });
-const middle = css({ color: '#fff', paddingLeft: '3px' });
-const last = css({ color: '#000', padding: '8px', paddingLeft: 0 });`,
+      source: `import { style } from 'zyzz';
+const first = style({ color: '#000', padding: '8px', paddingLeft: 0 });
+const middle = style({ color: '#fff', paddingLeft: '3px' });
+const last = style({ color: '#000', padding: '8px', paddingLeft: 0 });`,
     })
 
     const output = Css.compile({ styles: extracted.styles })

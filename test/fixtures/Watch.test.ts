@@ -16,7 +16,7 @@ describe('write', () => {
       const root = Path.join(directory, 'src')
       const outDir = Path.join(directory, 'output')
       const path = Path.join(root, 'cards.ts')
-      const source = `import { css } from 'zyzz'; ${Array.from({ length: 100 }, (_, index) => `export const card${index} = css({ padding: '${index}px' });`).join('\n')}`
+      const source = `import { style } from 'zyzz'; ${Array.from({ length: 100 }, (_, index) => `export const card${index} = style({ padding: '${index}px' });`).join('\n')}`
 
       await Fs.mkdir(root)
       await Fs.writeFile(path, source)

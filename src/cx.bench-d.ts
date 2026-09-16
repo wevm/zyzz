@@ -2,16 +2,16 @@
 import { bench } from '@ark/attest'
 import type * as Zyzz from 'zyzz'
 
-declare const css: typeof Zyzz.css
+declare const style: typeof Zyzz.style
 declare const cx: typeof Zyzz.cx
 
 /** Warms static style inference outside the measured composition. */
 export function baseline() {
-  css({ display: 'block' })
+  style({ display: 'block' })
 }
 
 bench('cx / ordered static props', () => {
-  const a = css({ padding: '8px', color: 'red' })
-  const b = css({ paddingLeft: '12px', color: 'blue' })
+  const a = style({ padding: '8px', color: 'red' })
+  const b = style({ paddingLeft: '12px', color: 'blue' })
   cx(a(), false, null, undefined, b(), a())
-}).types([30422, 'instantiations'])
+}).types([30418, 'instantiations'])

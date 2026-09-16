@@ -1,4 +1,4 @@
-/** Resolves selector objects and portable css definition identities. @module */
+/** Resolves selector objects and portable style definition identities. @module */
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
 import * as Condition from '../../internal/Condition.js'
@@ -160,7 +160,7 @@ export function scan(
 
   function link(call: Ast.CallExpression): Themes.Link {
     const id = Identifiers.explicit(call)
-    const name = `z-style-${id === undefined ? `${namespace}-${call.start}` : Identity.requireId(id, 'css')}`
+    const name = `z-style-${id === undefined ? `${namespace}-${call.start}` : Identity.requireId(id, 'style')}`
     identities.set(call.start, name)
 
     return {
@@ -259,7 +259,7 @@ export function scan(
         const value = Expression.unwrap(expression)
         if (value.type !== 'Identifier' && value.type !== 'MemberExpression')
           throw new Themes.InvalidError(
-            'Selector interpolations require css definitions without calling them.',
+            'Selector interpolations require style definitions without calling them.',
             expression,
           )
         const reference = resolve(value)
@@ -271,14 +271,14 @@ export function scan(
             !importedHas(reference))
         )
           throw new Themes.InvalidError(
-            'Selector interpolations require previously declared css definitions.',
+            'Selector interpolations require previously declared style definitions.',
             expression,
           )
         selector += `.${reference.call.name}${key.quasis[index + 1]!.value.cooked ?? ''}`
       }
     } else
       throw new Themes.InvalidError(
-        'Selectors require literal strings or templates referencing css definitions.',
+        'Selectors require literal strings or templates referencing style definitions.',
         key,
       )
     try {

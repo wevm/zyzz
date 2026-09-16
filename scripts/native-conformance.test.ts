@@ -2,8 +2,27 @@
 import * as ChildProcess from 'node:child_process'
 import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
+import { inventory } from './native-conformance.js'
 
 describe('check', () => {
+  test('audits the actual runtime exports alongside declared signatures', async () => {
+    const result = await inventory()
+
+    expect(Object.keys(result.runtimeApi).sort()).toMatchInlineSnapshot(`
+      [
+        "absoluteFill",
+        "compose",
+        "create",
+        "flatten",
+        "hairlineWidth",
+        "setStyleAttributePreprocessor",
+      ]
+    `)
+    expect(
+      Object.keys(result.runtimeApi).every((name) => name in result.api),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test('reports the inherited property inventory through the CLI', () => {
     const result = ChildProcess.spawnSync(
       process.execPath,

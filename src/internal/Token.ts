@@ -90,7 +90,7 @@ export function bind<tokens extends Theme.Tokens>(
         get className() {
           return original.className
         },
-        css: original.css,
+        style: original.style,
         tokens,
         variants: original.variants,
         vars: variables(tokens),

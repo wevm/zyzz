@@ -25,7 +25,7 @@ const mint = Theme.extend(base, {
 })
 
 /** Solid binds native attributes, so applied styles return `class` and a serialized `style`. */
-export const { appearance, css, script, theme, themes } = Config.create({
+export const { appearance, script, style, theme, themes } = Config.create({
   defaultTheme: 'indigo',
   layers: ['reset', 'base', 'components'],
   output: 'html',

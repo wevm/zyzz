@@ -7,7 +7,7 @@ import type * as Zyzz from 'zyzz'
 
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
-declare const css: typeof Zyzz.css
+declare const style: typeof Zyzz.style
 declare const variable: typeof Zyzz.variable
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
@@ -36,7 +36,7 @@ bench('define / registered descriptors', () => {
     gap: variable('length', { inherits: true, initialValue: '4px' }),
     offset: variable('signedLength', { inherits: false, initialValue: '-1px' }),
   }
-}).types([29391, 'instantiations'])
+}).types([29399, 'instantiations'])
 
 bench('define / declaration references', () => {
   const slots = {
@@ -45,13 +45,13 @@ bench('define / declaration references', () => {
     size: variable('length'),
   }
 
-  css({ marginLeft: slots.signed, opacity: slots.count, padding: slots.size })
+  style({ marginLeft: slots.signed, opacity: slots.count, padding: slots.size })
 }).types([313465, 'instantiations'])
 
 bench('define / untyped references', () => {
   const value = variable()
 
-  css({ display: value, boxShadow: value, zIndex: value })
+  style({ display: value, boxShadow: value, zIndex: value })
   value.set('inline-flex')
   value.set(42)
 }).types([439172, 'instantiations'])

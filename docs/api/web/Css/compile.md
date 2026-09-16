@@ -137,7 +137,7 @@ output.css
 
 - Type: `string | undefined` for each field.
 
-Present when contributions emit nonempty CSS. `contributionCss` contains eager stylesheet rules and `scopedCss` contains ordinary theme scopes and style rules. Load `contributionCss` before `scopedCss` and before other stylesheets that establish cascade layers. Replace both artifacts together when rebuilding. `css` already combines both in that order; consumers using `css` should not also load the split fields.
+Present when contributions emit nonempty CSS. `contributionCss` contains eager stylesheet rules and `scopedCss` contains ordinary theme scopes and style rules. Load `contributionCss` before `scopedCss` and before other stylesheets that establish cascade layers. Replace both artifacts together when rebuilding. `style` already combines both in that order; consumers using `style` should not also load the split fields.
 
 ```ts
 const shared = output.contributionCss

@@ -1,5 +1,5 @@
 /** Declares ordered props composition for ahead-of-time resolution. @module */
-import type { css } from './css.js'
+import type { style } from './styleFunction.js'
 import * as Authoring from './internal/Authoring.js'
 import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
@@ -12,7 +12,7 @@ import * as Identity from './internal/Identity.js'
  */
 export function cx<
   const entries extends readonly (
-    | css.Props<css.Output>
+    | style.Props<style.Output>
     | false
     | null
     | undefined
@@ -35,9 +35,11 @@ export function cx<
         : unknown
     }
 ): Extract<entries[number], { class: string }> extends never
-  ? css.Props
-  : css.Props<'html'> {
-  const selected = entries.filter((entry) => !!entry) as readonly (css.Props & {
+  ? style.Props
+  : style.Props<'html'> {
+  const selected = entries.filter(
+    (entry) => !!entry,
+  ) as readonly (style.Props & {
     readonly [Authoring.metadata]?: readonly Authoring.Owner[]
   })[]
   const html = selected.some((entry) => 'class' in entry)
@@ -49,7 +51,7 @@ export function cx<
   const previous = new Map<string, Authoring.Owner>()
   for (const source of selected) {
     const entry = html
-      ? (source as unknown as Record<symbol, css.Props>)[
+      ? (source as unknown as Record<symbol, style.Props>)[
           Symbol.for('zyzz.composition.input.v1')
         ]!
       : source
@@ -91,6 +93,6 @@ export function cx<
     entries[number],
     { class: string }
   > extends never
-    ? css.Props
-    : css.Props<'html'>
+    ? style.Props
+    : style.Props<'html'>
 }

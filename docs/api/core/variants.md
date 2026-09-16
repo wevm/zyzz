@@ -68,7 +68,7 @@ Precedence is base, then axes in declaration order, then compounds in array orde
 
 ## Application
 
-`styles.button()` applies defaults. A `null` selection suppresses an axis and its default. Boolean `false` emits `"false"`; it does not remove the attribute. Styling overrides use `className`, `style`, and `variables`, as with `css`.
+`styles.button()` applies defaults. A `null` selection suppresses an axis and its default. Boolean `false` emits `"false"`; it does not remove the attribute. Styling overrides use `className`, `style`, and `variables`, as with `style`.
 
 Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. There is no multipart `slots` option; dynamic choices bind fixed CSS-variable slots. Ordinary JSX spreads replace props; they are not a composition API.
 
@@ -147,7 +147,7 @@ Theme helpers can share a module-level `const` destructuring declaration, includ
 import { Theme } from 'zyzz'
 
 const theme = Theme.define({ color: { brand: '#06c' } })
-const { css: style, variants: recipe } = theme
+const { style: style, variants: recipe } = theme
 export { style, recipe }
 ```
 

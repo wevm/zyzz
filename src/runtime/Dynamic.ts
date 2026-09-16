@@ -1,14 +1,14 @@
 /** Assigns fixed private variables for compiled dynamic styles. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 
 /** Binds required runtime scalars to fixed private variables and merges styling overrides. */
 export function create(
   options: create.Options,
-): css.Dynamic<Record<string, string | number>> {
+): style.Dynamic<Record<string, string | number>> {
   const { className } = options
   const slots = Object.entries(options.slots)
 
-  return ((input: Record<string, string | number> & css.Options) => {
+  return ((input: Record<string, string | number> & style.Options) => {
     const values = slots.map(([key]) => {
       const value = input[key]!
 
@@ -27,7 +27,7 @@ export function create(
           : external || className,
       style,
     }
-  }) as css.Dynamic<Record<string, string | number>>
+  }) as style.Dynamic<Record<string, string | number>>
 }
 
 /** Contracts for compiler-generated dynamic callables. */

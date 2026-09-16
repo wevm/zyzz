@@ -36,7 +36,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 
 - [API](api/README.md): Section index.
 - [zyzz](api/core/README.md): Section index.
-- [css](api/core/css.md): Reference and examples.
+- [style](api/core/style.md): Reference and examples.
 - [Config](api/core/Config/README.md): Section index.
 - [Config.create](api/core/Config/create.md): Reference and examples.
 - [Theme](api/core/Theme/README.md): Section index.

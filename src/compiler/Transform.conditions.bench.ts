@@ -5,11 +5,11 @@ import * as Corpus from '../../bench/Corpus.js'
 
 for (const workload of Corpus.cases) {
   const source =
-    'import {css} from "zyzz";' +
+    'import {style} from "zyzz";' +
     Corpus.styles(workload)
       .map(
         (style, index) =>
-          `export const card${index}=css(${JSON.stringify({ ...style, ':hover': style, '@media (width >= 48rem)': style })})()`,
+          `export const card${index}=style(${JSON.stringify({ ...style, ':hover': style, '@media (width >= 48rem)': style })})()`,
       )
       .join('\n')
 

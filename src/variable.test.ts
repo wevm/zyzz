@@ -17,14 +17,14 @@ describe('variable', () => {
 })
 
 describe('integration', () => {
-  const library = `import {css, variable} from 'zyzz'
+  const library = `import { style, variable } from 'zyzz'
 export namespace variables {
   export const accent = variable('color')
   export const gap = variable('length', {inherits: true, initialValue: '4px'})
 }
 export namespace styles {
-  export const card = css({variables: {[variables.accent]: 'tomato', [variables.gap]: '12px'}})
-  export const label = css({
+  export const card = style({variables: {[variables.accent]: 'tomato', [variables.gap]: '12px'}})
+  export const label = style({
     color: variables.accent,
     padding: variables.gap,
     selectors: {
@@ -38,28 +38,28 @@ export namespace styles {
     test('preserves grouped variables in dynamic definitions and packed exports', () => {
       const publisher = Graph.compile({
         modules: {
-          'group.ts': `import {css,variable} from 'zyzz'; export const variables={gap:variable('length')}; export const box=css((input:{opacity:number})=>({padding:variables.gap,opacity:input.opacity}));`,
+          'group.ts': `import {style,variable} from 'zyzz'; export const variables={gap:variable('length')}; export const box=style((input:{opacity:number})=>({padding:variables.gap,opacity:input.opacity}));`,
         },
       })
       const consumer = Graph.compile({
         contracts: publisher.contracts,
         imports: { 'app.ts': { './group.js': 'group.ts', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz'; import {variables} from './group.js';export const box=css((input:{opacity:number})=>({padding:variables.gap,opacity:input.opacity}));`,
+          'app.ts': `import {style} from 'zyzz'; import {variables} from './group.js';export const box=style((input:{opacity:number})=>({padding:variables.gap,opacity:input.opacity}));`,
         },
       })
 
       expect(publisher.modules['group.ts']!.css).toMatchInlineSnapshot(
         `
-      ".z-p-XhGXxa{padding:var(--z-v1n60vkvri6abp-63);}
-      .z-opacity-2BOPGs{opacity:var(--z-d1n60vkvri6abp-101-6f-70-61-63-69-74-79);}"
-    `,
+        ".z-p-d5WZKG{padding:var(--z-v1n60vkvri6abp-65);}
+        .z-opacity-8blqpV{opacity:var(--z-d1n60vkvri6abp-103-6f-70-61-63-69-74-79);}"
+      `,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-      ".z-p-1WPa7d{padding:var(--z-v1n60vkvri6abp-63);}
-      .z-opacity-NvsKwu{opacity:var(--z-d1e8a67z1uaws1j-80-6f-70-61-63-69-74-79);}"
-    `,
+        ".z-p-uwXt4J{padding:var(--z-v1n60vkvri6abp-65);}
+        .z-opacity-UD0X-_{opacity:var(--z-d1e8a67z1uaws1j-82-6f-70-61-63-69-74-79);}"
+      `,
       )
     })
 
@@ -163,16 +163,16 @@ export namespace styles {
         contracts: publisher.contracts,
         imports: { 'app.ts': { './values.js': 'values.ts', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz'; import {value} from './values.js'; export const style=css({variables:{[value]:'inline-flex'},display:value,selectors:{'&:hover':{display:value}}}); export {value}`,
+          'app.ts': `import {style} from 'zyzz'; import {value} from './values.js'; export const card=style({variables:{[value]:'inline-flex'},display:value,selectors:{'&:hover':{display:value}}}); export {value}`,
         },
       })
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-      ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ndkzo68ghlgm_5f_2d_5f_52-inline-flex-FMCy0p-0{--z-v1ndkzo68ghlgm-52:inline-flex;}
-      .z-display-9a_Yyn-1{display:var(--z-v1ndkzo68ghlgm-52);}
-      .z-hover-display-iUdHqs-2{&:hover{display:var(--z-v1ndkzo68ghlgm-52);}}"
-    `,
+        ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ndkzo68ghlgm_5f_2d_5f_52-inline-flex-k_pR6F-0{--z-v1ndkzo68ghlgm-52:inline-flex;}
+        .z-display-n7nIDe-1{display:var(--z-v1ndkzo68ghlgm-52);}
+        .z-hover-display-d0Bsvz-2{&:hover{display:var(--z-v1ndkzo68ghlgm-52);}}"
+      `,
       )
 
       const source =
@@ -200,7 +200,7 @@ export namespace styles {
         await page.addStyleTag({ content: consumer.modules['app.ts']!.css })
         await page.addScriptTag({ content: built.outputFiles[0]!.text })
         await page.evaluate(
-          `document.querySelector('div').className=Fixture.style().className`,
+          `document.querySelector('div').className=Fixture.card().className`,
         )
 
         expect(
@@ -210,7 +210,7 @@ export namespace styles {
         ).toMatchInlineSnapshot(`"inline-flex"`)
 
         await page.evaluate(`{
-        for (const [key,value] of Object.entries(Fixture.style({variables:{[Fixture.value]:'grid'}}).style))
+        for (const [key,value] of Object.entries(Fixture.card({variables:{[Fixture.value]:'grid'}}).style))
           document.querySelector('div').style.setProperty(key,value);
       }`)
 
@@ -235,7 +235,7 @@ export namespace styles {
         contracts: publisher.contracts,
         imports: { 'app.ts': { './barrel.js': 'lib/barrel.ts', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz'; import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=css({variables:{[accent]:'blue'},color:accent,selectors:{[\`\${styles.card}:hover &\`]:{variables:{[accent]:'green'}}}}); export const inline=accent.set('red')`,
+          'app.ts': `import {style} from 'zyzz'; import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=style({variables:{[accent]:'blue'},color:accent,selectors:{[\`\${styles.card}:hover &\`]:{variables:{[accent]:'green'}}}}); export const inline=accent.set('red')`,
         },
       })
 
@@ -244,58 +244,58 @@ export namespace styles {
       ).toMatchInlineSnapshot(`17`)
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-      ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_88-blue-EIPVmp-0{--z-v1ym5zhz14a14rh-88:blue;}
-      .z-text-m3iGxJ-1{color:var(--z-v1ym5zhz14a14rh-88);}
-      .z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_88-u2nnkl-2{.z-style-1ym5zhz14a14rh-235:hover &{--z-v1ym5zhz14a14rh-88:green;}}"
-    `,
+        ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-blue-bcEsHV-0{--z-v1ym5zhz14a14rh-92:blue;}
+        .z-text-u-9kjW-1{color:var(--z-v1ym5zhz14a14rh-92);}
+        .z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-kgkfgb-2{.z-style-1ym5zhz14a14rh-239:hover &{--z-v1ym5zhz14a14rh-92:green;}}"
+      `,
       )
       expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
-      "
-      import { Props as __zyzzProps } from 'zyzz/runtime';
-       import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_88-blue-EIPVmp-0 z-text-m3iGxJ-1 z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_88-u2nnkl-2 z-style-1e8a67z1uaws1j-123"}); export const inline=accent.set('red')"
-    `)
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-blue-bcEsHV-0 z-text-u-9kjW-1 z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-kgkfgb-2 z-style-1e8a67z1uaws1j-125"}); export const inline=accent.set('red')"
+      `)
     })
 
     test('rejects invalid group structures and forward variables without executing source', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {css,variable} from 'zyzz'; css({color:accent});const accent=variable('color')`,
+          source: `import {style,variable} from 'zyzz'; style({color:accent});const accent=variable('color')`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:46: Variables must be declared before use.]`,
+        `[Source.ExtractError: invalid.ts:50: Variables must be declared before use.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {css,variable} from 'zyzz'; css({color:variables.accent});namespace variables {export const accent=variable('color')}`,
+          source: `import {style,variable} from 'zyzz'; style({color:variables.accent});namespace variables {export const accent=variable('color')}`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:46: Variables must be declared before use.]`,
+        `[Source.ExtractError: invalid.ts:50: Variables must be declared before use.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {css} from 'zyzz';css({selectors:{'body':{color:'red'}}})`,
+          source: `import {style} from 'zyzz';style({selectors:{'body':{color:'red'}}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:41: Selectors require an explicit & target.]`,
+        `[Source.ExtractError: invalid.ts:45: Selectors require an explicit & target.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {css} from 'zyzz';css({variables:{accent:'red'}})`,
+          source: `import {style} from 'zyzz';style({variables:{accent:'red'}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:41: Variable assignments require declared variable keys.]`,
+        `[Source.ExtractError: invalid.ts:45: Variable assignments require declared variable keys.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {css,variable} from 'zyzz'; const accent=variable('color'); css({variables:{[accent]:{color:'red'}}})`,
+          source: `import {style,variable} from 'zyzz'; const accent=variable('color'); style({variables:{[accent]:{color:'red'}}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:92: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: invalid.ts:96: Expected a literal string or number; expressions are not evaluated.]`,
       )
       expect(() =>
         Transform.compile({

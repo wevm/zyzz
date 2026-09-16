@@ -8,7 +8,7 @@ import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
-import type { css } from './css.js'
+import type { style } from './styleFunction.js'
 import { variants } from './variants.js'
 import * as Scheme from './internal/Scheme.js'
 import * as Shorthands from './internal/Shorthands.js'
@@ -128,8 +128,8 @@ export function create(options: create.Options = {}): unknown {
         }
       : {}),
   })
-  function boundCss(theme?: Theme.Definition) {
-    return (styles?: unknown, options: css.DefinitionOptions = {}) => {
+  function boundStyle(theme?: Theme.Definition) {
+    return (styles?: unknown, options: style.DefinitionOptions = {}) => {
       if (
         theme &&
         Object.keys(theme[Token.definition].values).length &&
@@ -139,17 +139,17 @@ export function create(options: create.Options = {}): unknown {
       return Authoring.create(styles, {
         ...options,
         theme,
-        output: input.output as css.Output | undefined,
+        output: input.output as style.Output | undefined,
       })
     }
   }
   function boundVariants(
     definition: Record<string, unknown>,
-    options: css.DefinitionOptions = {},
+    options: style.DefinitionOptions = {},
   ) {
     return Authoring.variants(definition, {
       ...options,
-      output: input.output as css.Output | undefined,
+      output: input.output as style.Output | undefined,
     })
   }
   function handle(theme: Theme.Definition, name: string) {
@@ -170,14 +170,17 @@ export function create(options: create.Options = {}): unknown {
     }
     const descriptors = Object.getOwnPropertyDescriptors(original)
     delete (descriptors as Record<string, unknown>).className
-    delete (descriptors as Record<string, unknown>).css
+    delete (descriptors as Record<string, unknown>).style
     delete (descriptors as Record<string, unknown>).variants
     Object.defineProperties(select, descriptors)
     Object.defineProperty(select, 'className', {
       get: className,
       configurable: true,
     })
-    Object.assign(select, { css: boundCss(original), variants: boundVariants })
+    Object.assign(select, {
+      style: boundStyle(original),
+      variants: boundVariants,
+    })
     return select
   }
 
@@ -258,11 +261,13 @@ export function create(options: create.Options = {}): unknown {
 
     return Object.freeze({
       appearance,
-      css: boundCss(bound[input.defaultTheme] as unknown as Theme.Definition),
-      variants: boundVariants,
       script: () => Appearance.create(entries(), { storageKey })(),
+      style: boundStyle(
+        bound[input.defaultTheme] as unknown as Theme.Definition,
+      ),
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
+      variants: boundVariants,
     })
   }
 
@@ -273,18 +278,18 @@ export function create(options: create.Options = {}): unknown {
     const theme = handle(definition(input.theme), 'theme')
     return Object.freeze({
       appearance: Appearance.root([], { storageKey }),
-      css: boundCss(theme as unknown as Theme.Definition),
-      variants: boundVariants,
       script: Appearance.create([], { storageKey }),
+      style: boundStyle(theme as unknown as Theme.Definition),
       theme,
+      variants: boundVariants,
     })
   }
 
   const theme = shorthands ? Token.bind(Theme.define({}), contract) : undefined
   return Object.freeze({
     appearance: Appearance.root([], { storageKey }),
-    css: boundCss(theme),
     script: Appearance.create([], { storageKey }),
+    style: boundStyle(theme),
     variants: boundVariants,
   })
 }
@@ -300,7 +305,7 @@ export declare namespace create {
     /** Explicit ordered property aliases; none are installed by default. */
     readonly shorthands?: Shorthands.Map | undefined
     /** Renderer props format; React is the default. */
-    readonly output?: css.Output | undefined
+    readonly output?: style.Output | undefined
     /** Ordered plain or dotted CSS layer names; emission follows source integration. */
     readonly layers?: readonly string[] | undefined
     /** localStorage key shared by `script()` and `appearance`; zyzz by default. */
@@ -327,13 +332,19 @@ export declare namespace create {
 
   /** Bound authoring and the handles corresponding to the selected theme mode. */
   type ReturnType<options extends Options = Options> = {
+    /** Reads and persists the root theme and scheme selection on the document element. */
+    readonly appearance: Appearance.Root<
+      options extends { themes: infer catalog } ? keyof catalog & string : never
+    >
+    /** Generates synchronous HTML-safe root preference restoration. */
+    readonly script: () => string
     /** Inferred callable authoring; execution requires a source transform. */
-    readonly css: Css<
+    readonly style: StyleFactory<
       Tokens<options>,
       options extends { layers: readonly (infer name extends string)[] }
         ? name
         : never,
-      options extends { output: infer output extends css.Output }
+      options extends { output: infer output extends style.Output }
         ? output
         : 'react',
       Mappings<options>
@@ -341,7 +352,7 @@ export declare namespace create {
     /** Theme-, layer-, and mapping-aware recipe authoring. */
     readonly variants: variants.Bound<
       Tokens<options>,
-      options extends { output: infer output extends css.Output }
+      options extends { output: infer output extends style.Output }
         ? output
         : 'react',
       options extends { layers: readonly (infer name extends string)[] }
@@ -349,18 +360,12 @@ export declare namespace create {
         : never,
       Mappings<options>
     >
-    /** Reads and persists the root theme and scheme selection on the document element. */
-    readonly appearance: Appearance.Root<
-      options extends { themes: infer catalog } ? keyof catalog & string : never
-    >
-    /** Generates synchronous HTML-safe root preference restoration. */
-    readonly script: () => string
   } & (options extends { theme: infer input }
     ? {
         /** Isolated single-theme contract. */ readonly theme: Handle<
           ExtractTokens<input>,
           Mappings<options>,
-          options extends { output: infer output extends css.Output }
+          options extends { output: infer output extends style.Output }
             ? output
             : 'react'
         >
@@ -370,7 +375,7 @@ export declare namespace create {
           /** Shared default token and variable contract. */ readonly theme: Handle<
             Tokens<options>,
             Mappings<options>,
-            options extends { output: infer output extends css.Output }
+            options extends { output: infer output extends style.Output }
               ? output
               : 'react'
           >
@@ -382,15 +387,15 @@ export declare namespace create {
           >(
             options: selection &
               Record<Exclude<keyof selection, 'theme' | 'colorScheme'>, never>,
-          ) => css.Props<
-            options extends { output: infer output extends css.Output }
+          ) => style.Props<
+            options extends { output: infer output extends style.Output }
               ? output
               : 'react'
           >) & {
             readonly [name in keyof catalog]: Handle<
               ExtractTokens<catalog[name]>,
               Mappings<options>,
-              options extends { output: infer output extends css.Output }
+              options extends { output: infer output extends style.Output }
                 ? output
                 : 'react'
             >
@@ -411,22 +416,22 @@ type Mappings<options> = options extends {
 export type Handle<
   tokens extends Theme.Tokens,
   mappings extends Shorthands.Map,
-  output extends css.Output,
-> = Omit<Theme.Definition<tokens>, 'css' | 'variants'> & {
+  output extends style.Output,
+> = Omit<Theme.Definition<tokens>, 'style' | 'variants'> & {
   /** Style factory bound to this handle. */
-  readonly css: Css<tokens, never, output, mappings>
+  readonly style: StyleFactory<tokens, never, output, mappings>
   /** Variant factory bound to this handle. */
   readonly variants: variants.Bound<tokens, output, never, mappings>
 }
 
 /** Configured style factory with a portable name for library declaration emission. */
-export type Css<
+export type StyleFactory<
   tokens extends Theme.Tokens,
   layers extends string,
-  output extends css.Output,
+  output extends style.Output,
   mappings extends Shorthands.Map,
 > = {
-  (): css.ReturnType<output>
+  (): style.ReturnType<output>
   <
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
@@ -443,12 +448,12 @@ export type Css<
       (Parameters<callback> extends [Record<string, string | number>]
         ? unknown
         : never),
-    options?: css.DefinitionOptions,
-  ): css.Dynamic<values, output>
+    options?: style.DefinitionOptions,
+  ): style.Dynamic<values, output>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Body<styles, tokens, layers, mappings>>,
-    options?: css.DefinitionOptions,
-  ): css.ReturnType<output>
+    options?: style.DefinitionOptions,
+  ): style.ReturnType<output>
 }
 
 type Keys<styles> = styles extends unknown ? keyof styles : never

@@ -9,13 +9,13 @@ How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, 
 
 ### Zyzz
 
-`css` accepts standard CSS objects inline or outside a component and returns a callable that produces spreadable props. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
+`style` accepts standard CSS objects inline or outside a component and returns a callable that produces spreadable props. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({ color: '#06c', padding: '1rem' })
+  export const button = style({ color: '#06c', padding: '1rem' })
 }
 
 export function Button() {
@@ -72,7 +72,7 @@ export function Button() {
 
 ### Zyzz
 
-`Theme.define` takes tokens and returns a bound `css`. Current colors accept the supported literal color grammar or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
+`Theme.define` takes tokens and returns a bound `style`. Current colors accept the supported literal color grammar or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
 
 ```ts
 import { Theme } from 'zyzz'
@@ -83,7 +83,7 @@ const theme = Theme.define({
 })
 
 namespace styles {
-  export const panel = theme.css({
+  export const panel = theme.style({
     color: 'text',
     padding: 'md',
     colorScheme: 'light dark',
@@ -91,7 +91,7 @@ namespace styles {
 }
 ```
 
-Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint is planned to export bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
+Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint is planned to export bundled `style`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
 
 ### Tailwind
 
@@ -141,7 +141,7 @@ const styles = stylex.create({ panel: { color: colors.text } })
 `createTheme` returns a class and a typed variable contract. Additional themes reuse that contract. Apply the selected theme class to an ancestor; switching between these classes is explicit. See [creating themes](https://vanilla-extract.style/documentation/api/create-theme/).
 
 ```ts
-// theme.css.ts
+// theme.style.ts
 import { createTheme, style } from '@vanilla-extract/css'
 
 export const [lightTheme, vars] = createTheme({
@@ -169,7 +169,7 @@ const theme = Theme.define({
 })
 
 namespace styles {
-  export const panel = theme.css({
+  export const panel = theme.style({
     display: ['block', 'grid'],
     padding: 'sm',
     ':hover': { opacity: 0.8 },
@@ -329,13 +329,13 @@ export type ButtonProps = RecipeVariants<typeof button>
 
 ### Zyzz
 
-`css(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls accept `className` and `style` overrides; consumed values stay out of component props. Other props stay on the component.
+`style(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls accept `className` and `style` overrides; consumed values stay out of component props. Other props stay on the component.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     width: values.width,
   }))
 }

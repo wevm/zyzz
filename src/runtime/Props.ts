@@ -2,7 +2,7 @@
  * Binds compiled classes to typed className and inline-style overrides.
  * @module
  */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 
 /**
  * Binds compiled classes to the web styling override contract.
@@ -10,8 +10,8 @@ import type { css } from '../css.js'
  * Never generates rules or changes the supplied overrides.
  * @returns A callable accepting className, style, and variables.
  */
-export function create({ className }: create.Options): css.ReturnType {
-  return ((overrides?: css.Options) => {
+export function create({ className }: create.Options): style.ReturnType {
+  return ((overrides?: style.Options) => {
     if (!overrides) return { className }
 
     const { className: external, style, variables } = overrides
@@ -20,7 +20,7 @@ export function create({ className }: create.Options): css.ReturnType {
       className && external ? `${className} ${external}` : external || className
 
     return inline ? { className: merged, style: inline } : { className: merged }
-  }) as css.ReturnType
+  }) as style.ReturnType
 }
 
 /** Contracts for generated static web callables. */

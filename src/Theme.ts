@@ -2,7 +2,7 @@
  * Defines typed token contracts and compatible immutable theme overrides.
  * @module
  */
-import { css, MissingTransformError } from './css.js'
+import { MissingTransformError, style } from './styleFunction.js'
 import * as Authoring from './internal/Authoring.js'
 import * as Identity from './internal/Identity.js'
 import { variants } from './variants.js'
@@ -19,8 +19,8 @@ export type Color =
   | { readonly dark: Literal.Color; readonly light: Literal.Color }
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
-export type Css<tokens extends Tokens> = {
-  (): css.ReturnType
+export type StyleFactory<tokens extends Tokens> = {
+  (): style.ReturnType
   <
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
@@ -30,12 +30,12 @@ export type Css<tokens extends Tokens> = {
     ) => styles &
       NoInfer<Style.Accepted<styles, tokens> & Binding.Checked<styles>>) &
       (values extends Binding.Inputs<values> ? unknown : never),
-    options?: css.DefinitionOptions,
-  ): css.Dynamic<values>
+    options?: style.DefinitionOptions,
+  ): style.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Style.Accepted<styles, tokens>>,
-    options?: css.DefinitionOptions,
-  ): css.ReturnType
+    options?: style.DefinitionOptions,
+  ): style.ReturnType
   <const styles extends Style.Properties<tokens>>(
     styles: styles &
       NoInfer<
@@ -46,8 +46,8 @@ export type Css<tokens extends Tokens> = {
             ? unknown
             : never)
       >,
-    options?: css.DefinitionOptions,
-  ): css.ReturnType
+    options?: style.DefinitionOptions,
+  ): style.ReturnType
 }
 
 /**
@@ -58,7 +58,7 @@ export type Css<tokens extends Tokens> = {
  */
 export function define<const tokens extends Tokens>(
   tokens: tokens & NoInfer<Validated<tokens>>,
-  options: css.DefinitionOptions = {},
+  options: style.DefinitionOptions = {},
 ): Definition<tokens> {
   return build(
     tokens,
@@ -81,13 +81,13 @@ export function define<const tokens extends Tokens>(
 /** A theme contract with immutable, property-aware portable token references. */
 export type Definition<
   tokens extends Tokens = Tokens,
-  boundCss extends (...args: never[]) => unknown = Css<tokens>,
+  boundStyle extends (...args: never[]) => unknown = StyleFactory<tokens>,
   boundVariants extends (...args: never[]) => unknown = variants.Bound<tokens>,
 > = {
   /** Compiled scope class; reading untransformed authoring throws. */
   readonly className: string
   /** Token-aware callable authoring boundary, replaced by the source compiler. */
-  readonly css: boundCss
+  readonly style: boundStyle
   /** Internal contract and resolved values, carried without a registry. */
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
@@ -106,15 +106,15 @@ export type Definition<
 export function extend<
   const tokens extends Tokens,
   const overrides extends Record<string, unknown>,
-  const boundCss extends (...args: never[]) => unknown = Css<tokens>,
+  const boundStyle extends (...args: never[]) => unknown = StyleFactory<tokens>,
   const boundVariants extends (...args: never[]) => unknown =
     variants.Bound<tokens>,
 >(
-  theme: Definition<tokens, boundCss, boundVariants>,
+  theme: Definition<tokens, boundStyle, boundVariants>,
   overrides: overrides &
     NoInfer<Exact<overrides, Overrides<tokens>>> &
     NoInfer<Validated<overrides>>,
-): Definition<tokens, boundCss, boundVariants> {
+): Definition<tokens, boundStyle, boundVariants> {
   if (!theme || typeof theme !== 'object')
     throw new InvalidError([], 'Expected a theme definition.')
 
@@ -127,7 +127,7 @@ export function extend<
     data.contract,
     data.values,
     data.queries,
-  ) as unknown as Definition<tokens, boundCss, boundVariants>
+  ) as unknown as Definition<tokens, boundStyle, boundVariants>
 }
 
 type Exact<input, shape> = {
@@ -499,7 +499,7 @@ function build(
           if (!id?.startsWith('id-')) throw new MissingTransformError()
           return `z_theme-${id}-${Identity.hash(JSON.stringify(values))}`
         },
-        css: (styles?: unknown, options: css.DefinitionOptions = {}) => {
+        style: (styles?: unknown, options: style.DefinitionOptions = {}) => {
           if (!contract[Token.identity])
             Identity.requireId(undefined, 'Theme.define')
           return Authoring.create(styles, {
@@ -510,7 +510,7 @@ function build(
         tokens,
         variants: (
           input: Record<string, unknown>,
-          options: css.DefinitionOptions = {},
+          options: style.DefinitionOptions = {},
         ) => Authoring.variants(input, options),
         vars: Token.variables(tokens),
       },

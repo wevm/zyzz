@@ -109,15 +109,15 @@ export const above = positionTry({
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 import { above, brandPalette, circled } from './stylesheets.js'
 
 export namespace styles {
-  export const icon = css({ fontPalette: brandPalette })
+  export const icon = style({ fontPalette: brandPalette })
 
-  export const list = css({ listStyleType: circled })
+  export const list = style({ listStyleType: circled })
 
-  export const tooltip = css({
+  export const tooltip = style({
     position: 'absolute',
     positionTryFallbacks: above,
   })
@@ -128,13 +128,13 @@ References retain their domains: a palette reference cannot become an animation 
 
 ## Nested Rules
 
-Grouping remains available in `css`, `variants`, compound variants, and global selector maps wherever CSS permits that context. Scope roots/limits retain native nesting and specificity semantics.
+Grouping remains available in `style`, `variants`, compound variants, and global selector maps wherever CSS permits that context. Scope roots/limits retain native nesting and specificity semantics.
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 export namespace styles {
-  export const card = css({
+  export const card = style({
     '@scope (&) to (.boundary)': {
       '& h2': { color: 'red' },
     },
@@ -172,7 +172,7 @@ These decisions precede implementation of the affected helper. They do not defer
 
 ## Compilation and Evidence
 
-All helpers are static authoring operations. Calls compile away; no stylesheet generation, registration, or authoring validation is added to runtime `css`/`variants` applications. Use static types for authoring constraints and source diagnostics for extraction, ordering, identity, and unsupported target semantics.
+All helpers are static authoring operations. Calls compile away; no stylesheet generation, registration, or authoring validation is added to runtime `style`/`variants` applications. Use static types for authoring constraints and source diagnostics for extraction, ordering, identity, and unsupported target semantics.
 
 Eager effects survive JavaScript tree shaking. Named definitions follow reachability with exported and externally observable names handled explicitly. Preserve declaration and rule order, URL ownership, source maps, HMR replacement/deletion, and packed-library metadata.
 

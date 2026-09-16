@@ -23,7 +23,7 @@ for (const count of [10, 100, 1000]) {
     Array.from(
       { length: count },
       (_, index) =>
-        `export const body${index}=theme.css({fontSize:"body",fontWeight:"medium"})()`,
+        `export const body${index}=theme.style({fontSize:"body",fontWeight:"medium"})()`,
     ).join('\n')
 
   describe(`compile / typography and queries / ${count} styles`, () => {
@@ -48,11 +48,11 @@ for (const count of [10, 100, 1000]) {
           modules: {
             'default.ts': bundled,
             'app.ts':
-              'import {css} from "./default.js";' +
+              'import {style} from "./default.js";' +
               Array.from(
                 { length: count },
                 (_, index) =>
-                  `export const body${index}=css({fontSize:"base",lineHeight:"normal"})()`,
+                  `export const body${index}=style({fontSize:"base",lineHeight:"normal"})()`,
               ).join('\n'),
           },
         })
@@ -73,7 +73,7 @@ describe('compile / integration corpus with query metadata', () => {
             moduleId: fixture.name,
             source:
               fixture.source +
-              '\nimport {Theme as QueryTheme} from "zyzz"; const queryTheme=QueryTheme.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}}); export const queryBody=queryTheme.css({fontSize:"body"})()',
+              '\nimport {Theme as QueryTheme} from "zyzz"; const queryTheme=QueryTheme.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}}); export const queryBody=queryTheme.style({fontSize:"body"})()',
           })
     },
     { time: 1000, warmupTime: 500 },

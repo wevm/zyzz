@@ -29,14 +29,14 @@ import { Transform } from 'zyzz/compiler'
 
 const output = Transform.compile({
   moduleId: 'example/button.ts',
-  source: `import { css } from 'zyzz';
+  source: `import { style } from 'zyzz';
 export namespace styles {
-  export const button = css({ padding: '1rem' })
+  export const button = style({ padding: '1rem' })
 }`,
 })
 ```
 
-Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `styles.button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
+Bundle the returned `code` and load its matching `style`. Keep their source maps together. Apply the exported `styles.button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
 
 For filesystem builds, `await Host.create({ outDir, packageId, root })` from `zyzz/node` resolves to build/watch/close operations. It writes module and CSS sidecars; loading CSS and lowering TypeScript/JSX remain application build responsibilities.
 
@@ -68,10 +68,10 @@ Solid and Svelte fixtures verify server-rendered identities and hydration throug
 Apply compiled styles during server rendering and deliver their stylesheet before styled content paints. Use the same compiled identities on server and client.
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({ padding: 'md' })
+  export const card = style({ padding: 'md' })
 }
 
 export function Card() {

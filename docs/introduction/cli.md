@@ -33,12 +33,12 @@ In this mode, build the original application source normally. Identity-bearing d
 `zyzz.css` still collects the shared and module stylesheets in dependency order, so the document loads one file while the application continues importing its original source modules.
 
 ```ts
-import { css, variable } from 'zyzz'
+import { style, variable } from 'zyzz'
 
 const accent = variable('color', { id: 'app-accent' })
 
 export namespace styles {
-  export const card = css({ color: accent, padding: '8px' })
+  export const card = style({ color: accent, padding: '8px' })
 }
 
 // Spread styles.card({ variables: accent.set('red') }) on the element.
@@ -47,8 +47,8 @@ export namespace styles {
 Ordinary static styles derive their class names from ordered declaration data. Without the compiler plugin, independent variables, empty or referenced style identities, dynamic styles, variants, themes, and named stylesheet declarations require explicit IDs.
 
 ```ts
-const parent = css({}, { id: 'app-parent' })
-const progress = css(
+const parent = style({}, { id: 'app-parent' })
+const progress = style(
   (values: { width: `${number}px` }) => ({ width: values.width }),
   { id: 'app-progress' },
 )

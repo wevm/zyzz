@@ -14,15 +14,15 @@ export const controls = {
 } as const
 
 /** Source exercises token padding, snap fallback order, and two-axis alignment. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{edge:'10px'}}});
-export const horizontal = zyzz.css({
+export const horizontal = zyzz.style({
   display:'flex',gap:'40px',overflow:'auto',width:'100px',height:'100px',
   scrollPadding:'edge',scrollSnapType:['x proximity','x mandatory!']
 })();
-export const vertical = css({display:'flex',flexDirection:'column',gap:'40px',overflow:'auto',width:'100px',height:'100px',scrollPadding:'10px',scrollSnapType:'y mandatory'})();
-export const item = css({width:'60px',height:'60px',flexShrink:0,scrollMargin:'5px',scrollSnapAlign:'start',scrollSnapStop:['normal','always!']})();
-export const pair = css({scrollSnapAlign:'none center',scrollSnapType:'both proximity'})();
+export const vertical = style({display:'flex',flexDirection:'column',gap:'40px',overflow:'auto',width:'100px',height:'100px',scrollPadding:'10px',scrollSnapType:'y mandatory'})();
+export const item = style({width:'60px',height:'60px',flexShrink:0,scrollMargin:'5px',scrollSnapAlign:'start',scrollSnapStop:['normal','always!']})();
+export const pair = style({scrollSnapAlign:'none center',scrollSnapType:'both proximity'})();
 `
 
 /** Valid authored declarations are checked through the public in-memory boundary. */

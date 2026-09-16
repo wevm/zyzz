@@ -17,11 +17,11 @@ export default zyzz({
 Define the application's named config helpers as shown in [Getting Started](getting-started.md#define-config). Components keep ordinary source imports:
 
 ```tsx
-import { css } from './zyzz.config'
+import { style } from './zyzz.config'
 
 namespace styles {
-  export const title = css({ color: 'brand' })
-  export const card = css({ padding: 'md' })
+  export const title = style({ color: 'brand' })
+  export const card = style({ padding: 'md' })
 }
 
 export default function Page() {

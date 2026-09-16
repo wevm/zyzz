@@ -17,7 +17,7 @@ export function baseline() {
 bench('compile / rewritten module outputs', () => {
   const result = Transform.compile({
     moduleId: 'package/button.ts',
-    source: "import { css } from 'zyzz'",
+    source: "import { style } from 'zyzz'",
   })
 
   void result.classes.button

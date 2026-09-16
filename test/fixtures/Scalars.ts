@@ -27,7 +27,7 @@ export const controls = {
 } as const
 
 /** Public compiler input preserves geometry and text spelling. */
-export const source = `import { css } from 'zyzz';
-export const circle = css({cx:'40px',cy:'30px',r:'20px'})();
-export const rectangle = css({x:'-2px',y:'5px',rx:'8px',ry:'4px'})();
-export const text = css({baselineShift:'2px',textAnchor:'middle',fontVariantEmoji:'text',whiteSpaceCollapse:'preserve',textWrapMode:'nowrap',wordWrap:'break-word',scrollbarGutter:'stable both-edges'})();`
+export const source = `import { style } from 'zyzz';
+export const circle = style({cx:'40px',cy:'30px',r:'20px'})();
+export const rectangle = style({x:'-2px',y:'5px',rx:'8px',ry:'4px'})();
+export const text = style({baselineShift:'2px',textAnchor:'middle',fontVariantEmoji:'text',whiteSpaceCollapse:'preserve',textWrapMode:'nowrap',wordWrap:'break-word',scrollbarGutter:'stable both-edges'})();`

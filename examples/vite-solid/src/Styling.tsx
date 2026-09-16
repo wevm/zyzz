@@ -1,15 +1,15 @@
 /** @jsxImportSource solid-js */
 /** Demonstrates literal reuse, states, fallbacks, and styling overrides. @module */
 import { createSignal } from 'solid-js'
-import { css, theme } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
 namespace styles {
-  export const button = css({
+  export const button = style({
     ':hover': { color: 'accent' },
     '&[aria-pressed="true"]': { fontWeight: 700 },
   })
 
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -18,9 +18,9 @@ namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const row = css({
+  export const row = style({
     alignItems: 'center',
     display: 'flex',
     flexWrap: 'wrap',
@@ -29,7 +29,7 @@ namespace styles {
 
   const shape = { borderRadius: '2px', padding: '0.25rem' } as const
 
-  export const label = css({
+  export const label = style({
     ...shape,
     border: '1px solid',
     borderColor: theme.vars.color.accent,

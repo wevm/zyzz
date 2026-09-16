@@ -9,10 +9,10 @@ Zyzz puts styling constraints into small, explicit APIs that developers and agen
 - **Typed:** properties, theme paths, and variants retain inference.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css({ padding: '1rem' })
+  export const card = style({ padding: '1rem' })
 }
 ```
 

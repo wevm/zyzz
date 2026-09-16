@@ -8,7 +8,7 @@ Choose the CSS representation on the authoring config:
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, variants } = Config.create({
+export const { style, variants } = Config.create({
   cssOutput: 'atomic',
 })
 ```
@@ -28,8 +28,8 @@ Authoring and application stay the same in either mode:
 
 ```tsx
 namespace styles {
-  export const card = css({ color: 'red', padding: '8px' })
-  export const label = css({ color: 'red' })
+  export const card = style({ color: 'red', padding: '8px' })
+  export const label = style({ color: 'red' })
 }
 
 function Card() {

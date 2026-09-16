@@ -2,7 +2,7 @@
 
 ## Is Config Required?
 
-No. Root `css` uses literal values without built-in tokens. Config binds token and layer inference when those contracts are needed.
+No. Root `style` uses literal values without built-in tokens. Config binds token and layer inference when those contracts are needed.
 
 ## Does Config Compile?
 

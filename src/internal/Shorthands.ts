@@ -31,7 +31,7 @@ export function read(value: unknown): Map {
             name.includes('&') ||
             Object.hasOwn(Literal.rules, name) ||
             [
-              'css',
+              'style',
               'theme',
               'themes',
               'script',
@@ -95,7 +95,7 @@ export type Validated<mappings extends Map> = {
         | `:${string}`
         | `@${string}`
         | `${string}&${string}`
-        | 'css'
+        | 'style'
         | 'theme'
         | 'themes'
         | 'script'

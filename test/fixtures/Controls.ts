@@ -8,6 +8,6 @@ export const controls = {
   list: 'line-break:strict;list-style-position:inside;list-style-type:upper-roman;text-spacing-trim:space-all;unicode-bidi:isolate',
 } as const
 
-export const source = `import { css } from 'zyzz';
-export const list=css({lineBreak:'strict',listStylePosition:'inside',listStyleType:'upper-roman',textSpacingTrim:'space-all',unicodeBidi:'isolate'})();
-export const input=css({appearance:'none',overflowAnchor:'none',overscrollBehaviorBlock:'contain',overscrollBehaviorInline:'none',scrollbarWidth:'thin',tabSize:[4,'8!'],textSizeAdjust:'none',touchAction:'pinch-zoom pan-left pan-up'})();`
+export const source = `import { style } from 'zyzz';
+export const list=style({lineBreak:'strict',listStylePosition:'inside',listStyleType:'upper-roman',textSpacingTrim:'space-all',unicodeBidi:'isolate'})();
+export const input=style({appearance:'none',overflowAnchor:'none',overscrollBehaviorBlock:'contain',overscrollBehaviorInline:'none',scrollbarWidth:'thin',tabSize:[4,'8!'],textSizeAdjust:'none',touchAction:'pinch-zoom pan-left pan-up'})();`

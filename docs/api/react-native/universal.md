@@ -3,7 +3,7 @@
 > [!NOTE]
 > This contract specifies the universal API work. The current native implementation exposes table compilation and selection only. Root callable styling, target branches, native variants, and renderer acceptance are not implemented by this contract.
 
-The universal API retains `css`, `variants`, themes, tokens, and `cx` across web and native. Shared modules keep the same declarations and callable inputs. Application returns platform styling props for spreading onto ordinary components: web receives class/style bindings, native receives a style binding.
+The universal API retains `style`, `variants`, themes, tokens, and `cx` across web and native. Shared modules keep the same declarations and callable inputs. Application returns platform styling props for spreading onto ordinary components: web receives class/style bindings, native receives a style binding.
 
 ## Target Resolution
 
@@ -35,4 +35,4 @@ The pinned React Native 0.87.0 declarations in `test/conformance/native` define 
 
 `pnpm check:native:full` deliberately fails while full acceptance is unimplemented. Replace this pending guard with executed evidence checks as the conformance runner lands. Do not turn it green by filtering the inventory or treating unsupported entries as not applicable.
 
-The inventory retains source declarations and referenced type names. Imported animated/image domains, platform requirements, OS versions, and renderer architecture still require the detailed value and platform audit. iOS and Android must each match independent React Native controls before full parity can pass.
+The inventory retains source declarations, actual runtime exports, and referenced type names. Imported animated/image domains, platform requirements, OS versions, and renderer architecture still require the detailed value and platform audit. iOS and Android must each match independent React Native controls before full parity can pass.

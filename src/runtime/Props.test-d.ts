@@ -3,14 +3,14 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { Props } from 'zyzz/runtime'
 
 describe('create', () => {
   test('infers applied props and rejects unrelated attributes', () => {
     const button = Props.create({ className: 'button' })
 
-    expectTypeOf(button).toEqualTypeOf<css.ReturnType>()
+    expectTypeOf(button).toEqualTypeOf<style.ReturnType>()
     expectTypeOf(button().className).toEqualTypeOf<string>()
 
     button({ className: 'external', style: { paddingLeft: '2px' } })

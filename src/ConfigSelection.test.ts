@@ -12,7 +12,7 @@ describe('create', () => {
   test('distinguishes catalog names from configuration helpers', async () => {
     const library = Graph.compile({
       modules: {
-        'index.ts': `import {Config} from 'zyzz';const config=Config.create({defaultTheme:'css',themes:{css:{color:{ink:'red'}},themes:{color:{ink:'blue'}}}});export const select=config.themes;const {css:cssTheme,themes:themesTheme}=select;export const first=cssTheme.className;export const second=themesTheme.className;`,
+        'index.ts': `import {Config} from 'zyzz';const config=Config.create({defaultTheme:'style',themes:{style:{color:{ink:'red'}},themes:{color:{ink:'blue'}}}});export const select=config.themes;const {style:styleTheme,themes:themesTheme}=select;export const first=styleTheme.className;export const second=themesTheme.className;`,
       },
     })
 
@@ -20,7 +20,7 @@ describe('create', () => {
       contracts: { 'lib.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { lib: 'lib.js' } },
       modules: {
-        'app.ts': `import {select,first,second} from 'lib';const {css:cssTheme,themes:themesTheme}=select;export const same=first===cssTheme.className && second===themesTheme.className;`,
+        'app.ts': `import {select,first,second} from 'lib';const {style:styleTheme,themes:themesTheme}=select;export const same=first===styleTheme.className && second===themesTheme.className;`,
       },
     })
 
@@ -38,7 +38,7 @@ describe('create', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'app.ts',
-        source: `import {Config} from 'zyzz';const config=Config.create();export const {css}=config;`,
+        source: `import {Config} from 'zyzz';const config=Config.create();export const {style}=config;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: app.ts:70: Exported configuration destructuring requires source linking.]`,
@@ -49,7 +49,7 @@ describe('create', () => {
     test(`renders packed ${output} selection and stable component rules in Chromium`, async () => {
       const library = Graph.compile({
         modules: {
-          'index.ts': `import {Config} from 'zyzz';export const {css,themes}=Config.create({output:'${output}',defaultTheme:'base',themes:{base:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
+          'index.ts': `import {Config} from 'zyzz';export const {style,themes}=Config.create({output:'${output}',defaultTheme:'base',themes:{base:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
         },
       })
 
@@ -57,8 +57,8 @@ describe('create', () => {
         contracts: { 'lib.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { lib: 'lib.js' } },
         modules: {
-          'app.ts': `import {css,themes} from 'lib';export namespace styles {
-  export const card = css({color:'ink'})
+          'app.ts': `import {style,themes} from 'lib';export namespace styles {
+  export const card = style({color:'ink'})
 }export const select=themes;`,
         },
       })
@@ -125,7 +125,7 @@ describe('create', () => {
       contracts: { 'lib.js': library.contracts['config.ts']! },
       imports: { 'app.ts': { lib: 'lib.js' } },
       modules: {
-        'app.ts': `import {config} from 'lib';const {themes:select,theme,css}=config;export const props=select({theme:'base'});export const style=css({color:theme.tokens.color.ink});`,
+        'app.ts': `import {config} from 'lib';const {themes:select,theme,style}=config;export const props=select({theme:'base'});export const card=style({color:theme.tokens.color.ink});`,
       },
     })
 
@@ -145,7 +145,7 @@ describe('create', () => {
 
     const graph = Graph.compile({
       modules: {
-        'app.ts': `import {Config} from 'zyzz';const {css}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}},other:{color:{ink:'blue'}}}});export const props=css({color:'ink'})();`,
+        'app.ts': `import {Config} from 'zyzz';const {style}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}},other:{color:{ink:'blue'}}}});export const props=style({color:'ink'})();`,
       },
     })
 
@@ -314,8 +314,8 @@ describe('create', () => {
     test(`selects imported and packed ${output} themes without changing component rules`, async () => {
       const library = Graph.compile({
         modules: {
-          'config.ts': `import { Config } from 'zyzz'; export const { css, theme, themes } = Config.create({output:'${output}',defaultTheme:'ocean',themes:{ocean:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
-          'index.ts': `export { css, theme, themes as select } from './config.js';`,
+          'config.ts': `import { Config } from 'zyzz'; export const { style, theme, themes } = Config.create({output:'${output}',defaultTheme:'ocean',themes:{ocean:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
+          'index.ts': `export { style, theme, themes as select } from './config.js';`,
         },
       })
 
@@ -323,8 +323,8 @@ describe('create', () => {
         contracts: { 'library/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { library: 'library/index.js' } },
         modules: {
-          'app.ts': `import { css, theme, select } from 'library'; export namespace styles {
-  export const card = css({color:select.mint.tokens.color.ink})
+          'app.ts': `import { select, style, theme } from 'library'; export namespace styles {
+  export const card = style({color:select.mint.tokens.color.ink})
 } export const mint=select.mint.className; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
         },
       })
@@ -379,8 +379,8 @@ describe('create', () => {
   test('nested selections inherit tokens and independently force color schemes in a browser', async () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {Config} from 'zyzz'; const {css,themes}=Config.create({defaultTheme:'a',themes:{a:{color:{ink:{light:'#123456',dark:'#abcdef'}}},b:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}}); export namespace styles {
-  export const card = css({color:'ink'})
+        'app.ts': `import {Config} from 'zyzz'; const {style,themes}=Config.create({defaultTheme:'a',themes:{a:{color:{ink:{light:'#123456',dark:'#abcdef'}}},b:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}}); export namespace styles {
+  export const card = style({color:'ink'})
 } export const outer=themes({theme:'a',colorScheme:'light'}); export const inner=themes({theme:'b',colorScheme:'dark'});`,
       },
     })

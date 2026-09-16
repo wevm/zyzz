@@ -1,42 +1,42 @@
 /** Checks scalar references, assignment domains, and nested authoring through public APIs. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, css, variable } from 'zyzz'
+import { Config, style, variable } from 'zyzz'
 
 describe('variable', () => {
   test('accepts untyped references and scalar inline values', () => {
     const value = variable()
 
-    css({
+    style({
       color: value,
       width: value,
       display: value,
       boxShadow: value,
       zIndex: value,
     })
-    css({
+    style({
       variables: { [value]: 'inline-flex' },
       selectors: { '&:hover': { display: value } },
     })
-    css({ width: `calc(${value} * 2)` })
+    style({ width: `calc(${value} * 2)` })
     value.set('inline-flex')
     value.set('1px 2px red')
     value.set(42)
-    const style = css({ display: value })
-    style({ variables: { [value]: 'grid' } })
-    style({ variables: { [value]: undefined } })
-    const dynamic = css((input: { opacity: number }) => ({
+    const card = style({ display: value })
+    card({ variables: { [value]: 'grid' } })
+    card({ variables: { [value]: undefined } })
+    const dynamic = style((input: { opacity: number }) => ({
       opacity: input.opacity,
     }))
     dynamic({ opacity: 0.5, variables: { [value]: 42 } })
-    const { css: htmlCss } = Config.create({ output: 'html' })
-    htmlCss({ display: value })({ variables: { [value]: 'flex' } })
+    const { style: htmlStyle } = Config.create({ output: 'html' })
+    htmlStyle({ display: value })({ variables: { [value]: 'flex' } })
 
     // @ts-expect-error Variable assignments must be scalar.
-    style({ variables: { [value]: true } })
+    card({ variables: { [value]: true } })
     // @ts-expect-error Literal variable names must be custom properties.
-    style({ variables: { color: 'red' } })
+    card({ variables: { color: 'red' } })
     // @ts-expect-error Variable assignments are a reserved styling override.
-    css((input: { variables: number }) => ({ opacity: input.variables }))
+    style((input: { variables: number }) => ({ opacity: input.variables }))
     expectTypeOf(value.set('blue')).toEqualTypeOf<
       Readonly<Record<`--${string}`, 'blue'>>
     >()
@@ -54,20 +54,20 @@ describe('variable', () => {
     const count = variable('number')
     const signed = variable('signedLength')
 
-    css({
+    style({
       color: accent,
       padding: gap,
       width: amount,
       opacity: count,
       marginLeft: signed,
     })
-    css({
+    style({
       variables: { [accent]: 'tomato', [gap]: '12px' },
       selectors: { '&:hover': { variables: { [accent]: 'purple' } } },
     })
-    css({ width: `calc(${gap} * 2)` })
-    const style = css({ color: accent })
-    style({ style: { ...accent.set('blue'), ...gap.set('12px') } })
+    style({ width: `calc(${gap} * 2)` })
+    const card = style({ color: accent })
+    card({ style: { ...accent.set('blue'), ...gap.set('12px') } })
     expectTypeOf(accent.set('blue')).toEqualTypeOf<
       Readonly<Record<`--${string}`, 'blue'>>
     >()
@@ -87,21 +87,21 @@ describe('variable', () => {
     // @ts-expect-error Unsigned percentages exclude negative values.
     amount.set('-50%')
     // @ts-expect-error Color references cannot provide a width.
-    css({ width: accent })
+    style({ width: accent })
     // @ts-expect-error Signed lengths cannot guarantee nonnegative padding.
-    css({ padding: signed })
+    style({ padding: signed })
     // @ts-expect-error Unconstrained numbers cannot guarantee integer z-index.
-    css({ zIndex: count })
+    style({ zIndex: count })
     // @ts-expect-error Grid lines require nonzero integers.
-    css({ gridColumnStart: count })
+    style({ gridColumnStart: count })
     // @ts-expect-error A font shorthand also requires a family.
-    css({ font: gap })
+    style({ font: gap })
     // @ts-expect-error Shadow grammar requires more than one length.
-    css({ boxShadow: gap })
+    style({ boxShadow: gap })
     // @ts-expect-error Declarations remain typed inside selectors.
-    css({ selectors: { '&:hover': { width: accent } } })
+    style({ selectors: { '&:hover': { width: accent } } })
     // @ts-expect-error Variables contain scalar assignments.
-    css({ variables: { [accent]: { color: 'red' } } })
+    style({ variables: { [accent]: { color: 'red' } } })
     // @ts-expect-error Only supported scalar domains are accepted.
     variable('anything')
   })

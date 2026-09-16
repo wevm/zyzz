@@ -1,10 +1,10 @@
 /** @jsxImportSource solid-js */
 /** Demonstrates independent viewport, container, support, and scope conditions. @module */
 import { createSignal } from 'solid-js'
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -13,23 +13,23 @@ namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const row = css({
+  export const row = style({
     alignItems: 'center',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 'sm',
   })
 
-  export const container = css((values: { width: `${number}%` }) => ({
+  export const container = style((values: { width: `${number}%` }) => ({
     containerName: 'preview',
     containerType: 'inline-size',
     maxWidth: '100%',
     width: values.width,
   }))
 
-  export const content = css({
+  export const content = style({
     backgroundColor: 'backdrop',
     border: '1px solid',
     borderColor: 'line',

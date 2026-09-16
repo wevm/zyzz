@@ -1,5 +1,5 @@
 /** Converts compiled styling props to DOM attributes and HTML text. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 import * as Props from './Props.js'
 
 /** DOM attributes ready for a framework spread or setAttribute. */
@@ -17,7 +17,9 @@ export type Attributes = {
  * @returns Unescaped DOM attribute values; never insert them into HTML directly.
  */
 export function from(
-  props: css.Props & { readonly [name: `data-${string}`]: string | undefined },
+  props: style.Props & {
+    readonly [name: `data-${string}`]: string | undefined
+  },
 ): Attributes {
   const result: {
     class: string
@@ -76,12 +78,14 @@ function escape(value: string): string {
 
 /** Binds compiler-generated props to native HTML attributes. */
 export function bind<input>(
-  fn: (input: input) => css.Props,
-): (input: input) => css.Props<'html'> {
+  fn: (input: input) => style.Props,
+): (input: input) => style.Props<'html'> {
   return (input) => from(fn(input))
 }
 
 /** Creates a static HTML style callable without CSS generation. */
-export function create(options: Props.create.Options): css.ReturnType<'html'> {
-  return bind(Props.create(options)) as css.ReturnType<'html'>
+export function create(
+  options: Props.create.Options,
+): style.ReturnType<'html'> {
+  return bind(Props.create(options)) as style.ReturnType<'html'>
 }

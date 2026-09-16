@@ -1,12 +1,12 @@
 # Editor and Agents
 
-Use TypeScript inference from named config helpers such as `css`, `theme`, and `themes`. Keep config values literal so token names and named theme choices remain narrow.
+Use TypeScript inference from named config helpers such as `style`, `theme`, and `themes`. Keep config values literal so token names and named theme choices remain narrow.
 
 ```ts
-import { css } from '../../zyzz.config.js'
+import { style } from '../../zyzz.config.js'
 
 namespace styles {
-  export const card = css({ padding: 'md' })
+  export const card = style({ padding: 'md' })
 }
 ```
 

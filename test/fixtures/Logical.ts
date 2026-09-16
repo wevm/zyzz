@@ -55,13 +55,13 @@ export const styles = {
 } as const satisfies Record<string, Style.LiteralProperties>
 
 /** Source preserves mixed-axis declaration order and token priority. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{space:'12px'}}});
-export const logical = zyzz.css({
+export const logical = zyzz.style({
   width:'60px',inlineSize:['70px','80px!'],blockSize:'40px',
   paddingLeft:'2px',paddingInlineStart:['4px',zyzz.theme.tokens.spacing.space],
   marginInlineEnd:'space!',position:'relative',insetInlineStart:'-3px'
 })();
-export const physical = css({inlineSize:'30px',width:'50px',paddingInlineStart:'6px',paddingLeft:'8px'})();
+export const physical = style({inlineSize:'30px',width:'50px',paddingInlineStart:'6px',paddingLeft:'8px'})();
 export const scope = zyzz.theme.className;
 `

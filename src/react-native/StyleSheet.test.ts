@@ -11,6 +11,20 @@ import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('normalizes equivalent shared decoration order for native output', () => {
+    const styles = Style.define({
+      label: { textDecorationLine: 'line-through underline' },
+    })
+    const output = StyleSheet.compile({ styles })
+
+    expect(
+      output.styles.default.light.label.textDecorationLine,
+    ).toMatchInlineSnapshot('"underline line-through"')
+    expect(
+      Css.compile({ styles }).css.includes('line-through underline'),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test('compiles portable layout, image, and text scalars from shared declarations', () => {
     const styles = Style.define({
       card: {

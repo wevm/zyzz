@@ -8,7 +8,7 @@ Bind style authoring to explicit theme and layer contracts. Export helpers direc
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, theme } = Config.create({
+export const { style, theme } = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
@@ -31,7 +31,7 @@ export const { css, theme } = Config.create({
 Selects the emitted CSS representation for bound styles, variants, and theme helpers. Atomic mode shares individual declarations; grouped mode emits scoped declaration blocks. Renderer `output` remains independent.
 
 ```ts
-export const { css, variants } = Config.create({ cssOutput: 'grouped' })
+export const { style, variants } = Config.create({ cssOutput: 'grouped' })
 ```
 
 Source compilation retains this setting. Packed contract and CLI propagation remain separate acceptance gates. See [CSS Output](../../../guides/css-output.md) for examples and acceptance boundaries.
@@ -69,12 +69,12 @@ Config.create({ layers: ['base', 'components'] })
 Map custom names to one or more properties. Values infer from all targets; tokens resolve separately for each property. Expansion preserves declaration order. Targets must be supported standard properties, and alias names cannot replace existing properties or reserved keys.
 
 ```ts
-const { css } = Config.create({
+const { style } = Config.create({
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
   theme: { padding: { md: '1rem' } },
 })
 namespace styles {
-  export const card = css({ px: 'md' })
+  export const card = style({ px: 'md' })
 }
 ```
 
@@ -135,17 +135,17 @@ appearance.get() // { theme: 'base', colorScheme: 'dark' }
 
 Creation reads no browser state; the initialization [`script()`](script.md) restores the saved record before first paint, and `get()` then reflects it. Unknown themes or schemes throw `TypeError`.
 
-Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` and `variants`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
+Returns `Config.create.ReturnType<options>`: a frozen object with typed `style` and `variants`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `style` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
 
-### css
+### style
 
-- Type: Inferred callable authoring returning `css.ReturnType`
+- Type: Inferred callable authoring returning `style.ReturnType`
 
 Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Direct literal calls compile through Vite or the source graph/file host. Untransformed calls throw the missing-transform error.
 
 ```ts
 namespace styles {
-  export const card = css({ padding: 'md' })
+  export const card = style({ padding: 'md' })
 }
 ```
 
@@ -191,7 +191,7 @@ See [Config Script](script.md) for storage, CSP, and hydration behavior.
 
 - Type: Bound variant authoring with inferred axes and styling props
 
-Infers the same theme and layer contract as bound css.
+Infers the same theme and layer contract as bound style.
 
 ```ts
 namespace styles {
@@ -211,7 +211,7 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `const { css, theme } = Config.create(...)` and import `{ css, theme }` in consuming modules. Use `css`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` supports token-aware recipes.
+Export `const { style, theme } = Config.create(...)` and import `{ style, theme }` in consuming modules. Use `style`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` supports token-aware recipes.
 
 ## In-Memory Compilation
 
@@ -231,9 +231,9 @@ const output = Css.compile({
 `output` defaults to `'react'`, returning `className` and an inline style object. Select `'html'` for native attribute binding in Solid, Vue, and Svelte:
 
 ```ts
-export const { css } = Config.create({ output: 'html' })
+export const { style } = Config.create({ output: 'html' })
 namespace styles {
-  export const card = css({ padding: '8px' })
+  export const card = style({ padding: '8px' })
 }
 ```
 

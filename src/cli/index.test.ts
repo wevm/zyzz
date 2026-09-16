@@ -90,12 +90,12 @@ describe('zyzz', () => {
         const configure = (mode: string) =>
           Watch.write({
             path: config,
-            source: `import { Config } from 'zyzz'; export const { css, script } = Config.create({ cssOutput: '${mode}' })`,
+            source: `import { Config } from 'zyzz'; export const { script, style } = Config.create({ cssOutput: '${mode}' })`,
           })
         await configure(cssOutput)
         await Watch.write({
           path: source,
-          source: `import { css } from './config.js'; export const button = css({ color: 'red', padding: '8px' })`,
+          source: `import { style } from './config.js'; export const button = style({ color: 'red', padding: '8px' })`,
         })
 
         expect(
@@ -141,7 +141,7 @@ describe('zyzz', () => {
             Path.join(root, 'dist/button.ts'),
             'utf8',
           )
-          expect(compiled.includes('css({')).toMatchInlineSnapshot('false')
+          expect(compiled.includes('style({')).toMatchInlineSnapshot('false')
         }
         expect(
           (
@@ -225,7 +225,7 @@ describe('zyzz', () => {
 
         await Watch.write({
           path: source,
-          source: `import { css } from './config.js'; export const button = css({ color: 'red', padding: unknownValue() })`,
+          source: `import { style } from './config.js'; export const button = style({ color: 'red', padding: unknownValue() })`,
         })
         expect(
           await run(['build']).then(
@@ -278,7 +278,7 @@ describe('zyzz', () => {
           await wait('error')
           await Watch.write({
             path: source,
-            source: `import { css } from './config.js'; export const button = css({ color: 'red', padding: '16px' })`,
+            source: `import { style } from './config.js'; export const button = style({ color: 'red', padding: '16px' })`,
           })
           await vi.waitFor(
             async () => {
@@ -379,7 +379,7 @@ describe('zyzz', () => {
           ).toMatchInlineSnapshot('"unowned"')
           await Watch.write({
             path: source,
-            source: `import { css } from './config.js'; export const button = css({ color: 'red', padding: unknownValue() })`,
+            source: `import { style } from './config.js'; export const button = style({ color: 'red', padding: unknownValue() })`,
           })
         }
 

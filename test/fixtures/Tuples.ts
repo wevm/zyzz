@@ -41,13 +41,13 @@ export const control =
   'border-image-slice:25% fill;border-image-width:1 2 3 4;border-image-outset:2px 4px 6px 8px'
 
 /** Source exercises scalar tuple emission and delay-shorthand reset ordering. */
-export const source = `import { css } from 'zyzz';
-export const border = css({borderImageSlice:'25% fill',borderImageWidth:'1 2 3 4',borderImageOutset:'2px 4px 6px 8px'})();
-export const text = css({scrollbarColor:'red blue',hyphenateLimitChars:'auto 3 2'})();
-export const intrinsic = css({contain:'size',containIntrinsicSize:'auto 80px auto 40px',display:'inline-block'})();
-export const sizingFirst = css({containIntrinsicSize:'80px 40px'})();
-export const sizingSecond = css({containIntrinsicWidth:'120px'})();
-export const sizingThird = css({containIntrinsicSize:'80px 40px',opacity:.5})();
-export const first = css({interestDelay:'100ms 200ms'})();
-export const second = css({interestDelayEnd:'300ms'})();
-export const third = css({interestDelay:'100ms 200ms',opacity:.5})();`
+export const source = `import { style } from 'zyzz';
+export const border = style({borderImageSlice:'25% fill',borderImageWidth:'1 2 3 4',borderImageOutset:'2px 4px 6px 8px'})();
+export const text = style({scrollbarColor:'red blue',hyphenateLimitChars:'auto 3 2'})();
+export const intrinsic = style({contain:'size',containIntrinsicSize:'auto 80px auto 40px',display:'inline-block'})();
+export const sizingFirst = style({containIntrinsicSize:'80px 40px'})();
+export const sizingSecond = style({containIntrinsicWidth:'120px'})();
+export const sizingThird = style({containIntrinsicSize:'80px 40px',opacity:.5})();
+export const first = style({interestDelay:'100ms 200ms'})();
+export const second = style({interestDelayEnd:'300ms'})();
+export const third = style({interestDelay:'100ms 200ms',opacity:.5})();`

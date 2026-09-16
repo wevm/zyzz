@@ -15,9 +15,9 @@ import { Source, Transform } from 'zyzz/compiler'
 
 describe('cx', () => {
   test('uses lexical references and expands each selected mapping', () => {
-    const source = `import { Config, css, cx } from 'zyzz';
-      const { css: bound } = Config.create({ shorthands: { px: ['paddingLeft', 'paddingRight'] } });
-      const color = css({ color: 'red' });
+    const source = `import { Config, cx, style } from 'zyzz';
+      const { style: bound } = Config.create({ shorthands: { px: ['paddingLeft', 'paddingRight'] } });
+      const color = style({ color: 'red' });
       const mapped = bound({ px: '8px' });
       function unrelated(color: string) { return color }
       type Input = Parameters<typeof color>[0];
@@ -40,7 +40,7 @@ describe('cx', () => {
   test('emits only reachable nested composition groups', () => {
     const output = Source.extract({
       moduleId: 'nested.ts',
-      source: `import {css,cx} from 'zyzz'; const a=css({color:'red'}); export const props=cx(cx(a()),a());`,
+      source: `import {cx,style} from 'zyzz'; const a=style({color:'red'}); export const props=cx(cx(a()),a());`,
     })
     expect(
       output.calls.filter((call) => call.composition).length,
@@ -50,52 +50,52 @@ describe('cx', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'invalid.ts',
-        source: `import {css,cx} from 'zyzz'; const a=css({}); cx(a()());`,
+        source: `import {cx,style} from 'zyzz'; const a=style({}); cx(a()());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:49: Composition requires statically known local style applications.]`,
+      `[Source.ExtractError: invalid.ts:53: Composition requires statically known local style applications.]`,
     )
   })
   test('rejects extra inline invocation', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'invalid.ts',
-        source: `import {css,cx} from 'zyzz'; cx(css({})()());`,
+        source: `import {cx,style} from 'zyzz'; cx(style({})()());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:32: Composition requires statically known local style applications.]`,
+      `[Source.ExtractError: invalid.ts:34: Composition requires statically known local style applications.]`,
     )
   })
   test('rejects extra nested invocation', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'invalid.ts',
-        source: `import {css,cx} from 'zyzz'; const a=css({}); cx(cx(a())());`,
+        source: `import {cx,style} from 'zyzz'; const a=style({}); cx(cx(a())());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:49: Composition requires statically known local style applications.]`,
+      `[Source.ExtractError: invalid.ts:53: Composition requires statically known local style applications.]`,
     )
   })
   test('rejects namespace composition', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'invalid.ts',
-        source: `import * as Z from 'zyzz'; import {css} from 'zyzz'; Z.cx(css({})());`,
+        source: `import * as Z from 'zyzz'; import {style} from 'zyzz'; Z.cx(style({})());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:53: Import cx by name; namespace authoring calls are not supported yet.]`,
+      `[Source.ExtractError: invalid.ts:55: Import cx by name; namespace authoring calls are not supported yet.]`,
     )
   })
 
   test('compiles repeated groups, partial shorthands, fallbacks, importance, and matching conditions', async () => {
-    const source = `import {css,cx} from 'zyzz';
+    const source = `import {cx,style} from 'zyzz';
       namespace styles {
-        export const a=css({padding:'8px',color:'red',display:['block','grid'],'@media (width >= 600px)':{color:'green'},opacity:'0.5!'});
-        export const b=css({paddingLeft:'12px',color:'blue','@media (width >= 600px)':{color:'purple'},opacity:1});
+        export const a=style({padding:'8px',color:'red',display:['block','grid'],'@media (width >= 600px)':{color:'green'},opacity:'0.5!'});
+        export const b=style({paddingLeft:'12px',color:'blue','@media (width >= 600px)':{color:'purple'},opacity:1});
       }
       export const ab=cx(styles.a(),false,null,undefined,styles.b());
       export const aba=cx(styles.a(),styles.b(),styles.a());
-      export const inline=cx(css({color:'red'})(),css({color:'blue'})());`
+      export const inline=cx(style({color:'red'})(),style({color:'blue'})());`
     const output = Transform.compile({ moduleId: 'app.ts', source })
     const bundled = await Esbuild.build({
       stdin: { contents: output.code, loader: 'ts', resolveDir: process.cwd() },
@@ -231,7 +231,7 @@ describe('cx', () => {
   })
 
   test('preserves initialization failures after bundling and original declaration maps', async () => {
-    const source = `import {css,cx as compose} from 'zyzz';export const props=compose(a());const a=css({color:'red'});`
+    const source = `import {cx as compose,style} from 'zyzz';export const props=compose(a());const a=style({color:'red'});`
     const output = Transform.compile({ moduleId: 'early.ts', source })
     const bundled = await Esbuild.build({
       stdin: { contents: output.code, loader: 'ts', resolveDir: process.cwd() },
@@ -250,7 +250,7 @@ describe('cx', () => {
 
     const mapped = Transform.compile({
       moduleId: 'mapped.ts',
-      source: `import {css,cx} from 'zyzz';const a=css({color:'red'});const b=css({padding:'8px'});export const props=cx(a(),b());`,
+      source: `import {cx,style} from 'zyzz';const a=style({color:'red'});const b=style({padding:'8px'});export const props=cx(a(),b());`,
     })
     const start = mapped.css.lastIndexOf('color:red')
     const prefix = mapped.css.slice(0, start).split('\n')
@@ -260,28 +260,28 @@ describe('cx', () => {
     )
     expect(position.source).toMatchInlineSnapshot('"mapped.ts"')
     expect(position.line).toMatchInlineSnapshot('1')
-    expect(position.column).toMatchInlineSnapshot(`41`)
+    expect(position.column).toMatchInlineSnapshot(`45`)
   })
 
   test('rejects unresolved runtime selections before emitting misleading composition', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'app.ts',
-        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const compose=(enabled:boolean)=>cx(enabled ? a() : undefined);`,
+        source: `import {cx,style} from 'zyzz';const a=style({color:'red'});export const compose=(enabled:boolean)=>cx(enabled ? a() : undefined);`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:98: Composition requires statically known local style applications.]`,
+      `[Source.ExtractError: app.ts:102: Composition requires statically known local style applications.]`,
     )
   })
   test('returns extraction spans in source order', () => {
-    const source = `import {css,cx} from 'zyzz';const a=css({color:'red'});const props=cx(a());const b=css({padding:'4px'});`
+    const source = `import {cx,style} from 'zyzz';const a=style({color:'red'});const props=cx(a());const b=style({padding:'4px'});`
     const extracted = Source.extract({ moduleId: 'order.ts', source })
     expect(extracted.calls.map((call) => source.slice(call.start, call.end)))
       .toMatchInlineSnapshot(`
       [
-        "css({color:'red'})",
+        "style({color:'red'})",
         "cx(a())",
-        "css({padding:'4px'})",
+        "style({padding:'4px'})",
       ]
     `)
   })
@@ -291,8 +291,8 @@ describe('bindings', () => {
   describe('cx', () => {
     for (const output of ['react', 'html']) {
       test(`retains ${output} props aliases, conditional bindings, and initializer order`, async () => {
-        const source = `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'${output}'});
-        namespace styles {export const value=css((values:{padding:\`\${number}px\`})=>({padding:values.padding}));export const fixed=css({paddingLeft:'3px'})}
+        const source = `import {Config,cx} from 'zyzz';const {style}=Config.create({output:'${output}'});
+        namespace styles {export const value=style((values:{padding:\`\${number}px\`})=>({padding:values.padding}));export const fixed=style({paddingLeft:'3px'})}
         export let reads=0;
         function value(){reads++;return '12px' as const}
         export function apply(enabled:boolean){const props=styles.value({padding:value()});const alias=props;const optional=enabled && styles.fixed();return cx(alias,optional)};`
@@ -346,64 +346,64 @@ describe('bindings', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'escape.ts',
-          source: `import {css,cx}from'zyzz';const a=css({color:'red'});const p=a();p.className='changed';export const props=cx(p);`,
+          source: `import {cx,style}from'zyzz';const a=style({color:'red'});const p=a();p.className='changed';export const props=cx(p);`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: escape.ts:109: Applied props bindings must not escape before composition.]`,
+        `[Source.ExtractError: escape.ts:113: Applied props bindings must not escape before composition.]`,
       )
     })
     test('rejects function escape', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'escape.ts',
-          source: `import {css,cx}from'zyzz';const a=css({color:'red'});const p=a();mutate(p);export const props=cx(p);`,
+          source: `import {cx,style}from'zyzz';const a=style({color:'red'});const p=a();mutate(p);export const props=cx(p);`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: escape.ts:97: Applied props bindings must not escape before composition.]`,
+        `[Source.ExtractError: escape.ts:101: Applied props bindings must not escape before composition.]`,
       )
     })
     test('rejects alias escape', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'escape.ts',
-          source: `import {css,cx}from'zyzz';const a=css({color:'red'});const p=a();const alias=p;mutate(alias);export const props=cx(p);`,
+          source: `import {cx,style}from'zyzz';const a=style({color:'red'});const p=a();const alias=p;mutate(alias);export const props=cx(p);`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: escape.ts:115: Applied props bindings must not escape before composition.]`,
+        `[Source.ExtractError: escape.ts:119: Applied props bindings must not escape before composition.]`,
       )
     })
     test('rejects inline export', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'escape.ts',
-          source: `import {css,cx}from'zyzz';const a=css({color:'red'});export const p=a();export const props=cx(p);`,
+          source: `import {cx,style}from'zyzz';const a=style({color:'red'});export const p=a();export const props=cx(p);`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: escape.ts:94: Applied props bindings must not escape before composition.]`,
+        `[Source.ExtractError: escape.ts:98: Applied props bindings must not escape before composition.]`,
       )
     })
     test('rejects exported alias', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'escape.ts',
-          source: `import {css,cx}from'zyzz';const a=css({color:'red'});const original=a();export const p=original;export const props=cx(p);`,
+          source: `import {cx,style}from'zyzz';const a=style({color:'red'});const original=a();export const p=original;export const props=cx(p);`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: escape.ts:118: Applied props bindings must not escape before composition.]`,
+        `[Source.ExtractError: escape.ts:122: Applied props bindings must not escape before composition.]`,
       )
     })
     test('rejects direct eval', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'escape.ts',
-          source: `import {css,cx}from'zyzz';const a=css({color:'red'});const p=css({color:'red'})();eval('delete p.className');export const props=cx(p);`,
+          source: `import {cx,style}from'zyzz';const a=style({color:'red'});const p=style({color:'red'})();eval('delete p.className');export const props=cx(p);`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: escape.ts:131: Applied props bindings must not escape before composition.]`,
+        `[Source.ExtractError: escape.ts:137: Applied props bindings must not escape before composition.]`,
       )
     })
     test('preserves earlier compositions and conditional asserted aliases', async () => {
-      const source = `import {css,cx} from 'zyzz'; const a=css({color:'red'});const b=css({padding:'4px'});
+      const source = `import {cx,style} from 'zyzz'; const a=style({color:'red'});const b=style({padding:'4px'});
       export function apply(enabled:boolean){const p=a();const alias=<ReturnType<typeof a>>p;const optional=enabled && alias;const inner=cx(b());return cx(inner,optional)}`
       const output = Transform.compile({ moduleId: 'aliases.ts', source })
       const bundled = await Esbuild.build({
@@ -423,15 +423,15 @@ describe('bindings', () => {
         module.exports,
       )
       expect(module.exports.apply(false)).toMatchInlineSnapshot(`
-      {
-        "className": "z-p-4px-huk5nJ-0",
-      }
-    `)
+        {
+          "className": "z-p-4px-uI0-ps-0",
+        }
+      `)
       expect(module.exports.apply(true)).toMatchInlineSnapshot(`
-      {
-        "className": "z-p-4px-k-DdDR-0 z-text-red-k-DdDR-1",
-      }
-    `)
+        {
+          "className": "z-p-4px-h8SFH5-0 z-text-red-h8SFH5-1",
+        }
+      `)
     })
 
     test('preserves TDZ reads for omitted bindings', async () => {
@@ -454,7 +454,7 @@ describe('bindings', () => {
               `import(${JSON.stringify(Url.pathToFileURL(file).href)}).then(()=>console.log('ok')).catch(error=>console.log(error.name))`,
             ],
           )
-          expect(stdout.trim()).toMatchInlineSnapshot('"ReferenceError"')
+          expect(stdout.trim()).toMatchInlineSnapshot(`"ReferenceError"`)
         } finally {
           await Fs.rm(directory, { recursive: true, force: true })
         }
@@ -464,14 +464,14 @@ describe('bindings', () => {
     test('allows asserted JSX spreads and limits HTML metadata to composed applications', async () => {
       const compiled = Transform.compile({
         moduleId: 'spread.tsx',
-        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});const p=a();const view=<div {...(p as css.Props)} />;export const composed=cx(p);`,
+        source: `import {cx,style} from 'zyzz';const a=style({color:'red'});const p=a();const view=<div {...(p as style.Props)} />;export const composed=cx(p);`,
       })
       expect(compiled.code.includes('__zyzzComposition')).toMatchInlineSnapshot(
         `true`,
       )
       const html = Transform.compile({
         moduleId: 'html.ts',
-        source: `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'html'});const a=css({color:'red'});const p=a();export const composed=cx(p);export const standalone=a();`,
+        source: `import {Config,cx} from 'zyzz';const {style}=Config.create({output:'html'});const a=style({color:'red'});const p=a();export const composed=cx(p);export const standalone=a();`,
       })
       const bundled = await Esbuild.build({
         stdin: { contents: html.code, loader: 'ts', resolveDir: process.cwd() },
@@ -503,7 +503,7 @@ describe('bindings', () => {
           for (const sentinel of ['false', 'null', 'undefined']) {
             const compiled = Transform.compile({
               moduleId: 'omitted.ts',
-              source: `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'${output}'});const a=css({color:'red'});export function apply(enabled:boolean){const p=${sentinel};return cx(p,enabled && a())}`,
+              source: `import {Config,cx} from 'zyzz';const {style}=Config.create({output:'${output}'});const a=style({color:'red'});export function apply(enabled:boolean){const p=${sentinel};return cx(p,enabled && a())}`,
             })
             const bundled = await Esbuild.build({
               stdin: {
@@ -679,7 +679,7 @@ describe('runtime', () => {
     test('preserves hashbangs and client directives before runtime factories', async () => {
       const source = `#!/usr/bin/env node
 'use client';
-import {css,cx} from 'zyzz'; const a=css((values:{padding:string})=>({padding:values.padding})); type Input=Parameters<typeof a>[0]; export const apply=()=>cx(a({padding:'4px'}));`
+import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({padding:values.padding})); type Input=Parameters<typeof a>[0]; export const apply=()=>cx(a({padding:'4px'}));`
       const output = Transform.compile({ moduleId: 'client.ts', source })
       expect(
         output.code.startsWith('#!/usr/bin/env node'),
@@ -696,17 +696,17 @@ import {css,cx} from 'zyzz'; const a=css((values:{padding:string})=>({padding:va
       expect(() =>
         Transform.compile({
           moduleId: 'effect.ts',
-          source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const apply=()=>cx(effect() && null,a());`,
+          source: `import {cx,style} from 'zyzz';const a=style({color:'red'});export const apply=()=>cx(effect() && null,a());`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: effect.ts:81: Conditional omissions must be evaluated outside composition.]`,
+        `[Source.ExtractError: effect.ts:85: Conditional omissions must be evaluated outside composition.]`,
       )
     })
 
     test('retains authored sibling composition cascade order', async () => {
       const output = Transform.compile({
         moduleId: 'siblings.ts',
-        source: `import {css,cx} from 'zyzz'; const a=css({color:'red'});const b=css({color:'blue'});export const first=cx(a());export const second=cx(b());`,
+        source: `import {cx,style} from 'zyzz'; const a=style({color:'red'});const b=style({color:'blue'});export const first=cx(a());export const second=cx(b());`,
       })
       const bundled = await Esbuild.build({
         stdin: {
@@ -742,10 +742,10 @@ import {css,cx} from 'zyzz'; const a=css((values:{padding:string})=>({padding:va
     })
 
     test('merges bindings in argument order and clears repeated recipe ownership', async () => {
-      const source = `import {css,cx,variants} from 'zyzz';
+      const source = `import {cx,style,variants} from 'zyzz';
       namespace styles {
-        export const dynamic=css((values:{padding:\`\${number}px\`})=>({padding:values.padding}));
-        export const override=css({paddingLeft:'3px'});
+        export const dynamic=style((values:{padding:\`\${number}px\`})=>({padding:values.padding}));
+        export const override=style({paddingLeft:'3px'});
         export const recipe=variants({base:{color:'black'},variants:{tone:{red:{color:'red'},custom:(values:{color:'red'|'blue'})=>({color:values.color})}}});
       }
       export const apply=(padding:\`\${number}px\`)=>cx(styles.dynamic({padding}),styles.override());
@@ -915,10 +915,10 @@ import {css,cx} from 'zyzz'; const a=css((values:{padding:string})=>({padding:va
     })
 
     test('composes HTML payloads without parsing serialized styles or leaking metadata', async () => {
-      const source = `import {Config,cx} from 'zyzz';const {css,variants}=Config.create({output:'html'});
+      const source = `import {Config,cx} from 'zyzz';const {style,variants}=Config.create({output:'html'});
       namespace styles {
-        export const value=css((values:{padding:\`\${number}px\`})=>({padding:values.padding}));
-        export const fixed=css({paddingLeft:'3px'});
+        export const value=style((values:{padding:\`\${number}px\`})=>({padding:values.padding}));
+        export const fixed=style({paddingLeft:'3px'});
         export const recipe=variants({base:{color:'black'},variants:{tone:{custom:(values:{color:'red'|'blue'})=>({color:values.color})}}});
       }
       export const props=(enabled:boolean)=>cx(styles.value({padding:'16px'}),enabled && styles.fixed(),styles.recipe({tone:{custom:{color:'blue'}}}));
@@ -1028,18 +1028,18 @@ import {css,cx} from 'zyzz'; const a=css((values:{padding:string})=>({padding:va
       expect(() =>
         Transform.compile({
           moduleId: 'limit.ts',
-          source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const props=(enabled:boolean)=>cx(${Array.from({ length: 9 }, () => 'enabled && a()').join(',')});`,
+          source: `import {cx,style} from 'zyzz';const a=style({color:'red'});export const props=(enabled:boolean)=>cx(${Array.from({ length: 9 }, () => 'enabled && a()').join(',')});`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: limit.ts:93: Composition supports at most eight conditional arguments.]`,
+        `[Source.ExtractError: limit.ts:97: Composition supports at most eight conditional arguments.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'mixed.ts',
-          source: `import {css,cx,Config} from 'zyzz';const {css:html}=Config.create({output:'html'});const a=css({color:'red'});const b=html({color:'blue'});export const props=cx(a(),b());`,
+          source: `import {Config,cx,style} from 'zyzz';const {style:html}=Config.create({output:'html'});const a=style({color:'red'});const b=html({color:'blue'});export const props=cx(a(),b());`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: mixed.ts:158: Composition cannot mix HTML and React props.]`,
+        `[Source.ExtractError: mixed.ts:164: Composition cannot mix HTML and React props.]`,
       )
     })
 

@@ -14,9 +14,9 @@ export default defineConfig({ plugins: [zyzz(), svelte()] })
 ```ts
 // styles.ts
 import { Config } from 'zyzz'
-export const { css } = Config.create({ output: 'html' })
+export const { style } = Config.create({ output: 'html' })
 export namespace styles {
-  export const card = css({ padding: '8px' })
+  export const card = style({ padding: '8px' })
 }
 ```
 

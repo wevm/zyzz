@@ -93,6 +93,7 @@ const properties = {
   textDecorationColor: 'color',
   textDecorationLine: [
     'line-through',
+    'line-through underline',
     'none',
     'underline',
     'underline line-through',
@@ -100,7 +101,7 @@ const properties = {
   textDecorationStyle: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
   textTransform: ['capitalize', 'lowercase', 'none', 'uppercase'],
   top: 'offset',
-  userSelect: ['all', 'auto', 'contain', 'none', 'text'],
+  userSelect: ['all', 'auto', 'none', 'text'],
   width: 'size',
   zIndex: 'integer',
 } as const
@@ -408,7 +409,7 @@ export type NativeStyle = {
     | keyof typeof properties
     | 'rowGap']?: property extends keyof typeof properties
     ? (typeof properties)[property] extends readonly string[]
-      ? (typeof properties)[property][number]
+      ? Exclude<(typeof properties)[property][number], 'line-through underline'>
       : (typeof properties)[property] extends 'color' | 'font'
         ? string
         : (typeof properties)[property] extends 'size'
@@ -512,7 +513,7 @@ type Atom<kind> = kind extends readonly string[]
           : kind extends 'integer' | 'number' | 'opacity'
             ? number
             : kind extends 'ratio'
-              ? number | `${number}` | `${number} / ${number}`
+              ? number | `${number} / ${number}`
               : kind extends 'weight'
                 ? Weight
                 : kind extends 'line'
@@ -536,12 +537,12 @@ function convert(
   if (Array.isArray(kind)) {
     if (typeof value !== 'string' || !kind.includes(value))
       fail('unsupported_value', 'Unsupported native keyword.', path)
-    return value
+    return value === 'line-through underline' ? 'underline line-through' : value
   }
   if (kind === 'ratio') {
     const match =
       typeof value === 'string'
-        ? /^\s*(\d+(?:\.\d+)?|\.\d+)(?:\s*\/\s*(\d+(?:\.\d+)?|\.\d+))?\s*$/.exec(
+        ? /^\s*(\d+(?:\.\d+)?|\.\d+)\s*\/\s*(\d+(?:\.\d+)?|\.\d+)\s*$/.exec(
             value,
           )
         : undefined

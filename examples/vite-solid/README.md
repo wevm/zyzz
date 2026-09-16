@@ -9,10 +9,10 @@ Run from the repository root after `pnpm install`. The command builds Zyzz, then
 `vite-plugin-solid` handles JSX and Zyzz handles styles with `plugins: [zyzz(), solid()]`. The config selects `output: 'html'`, so applied styles return `class` and a serialized `style` string that Solid binds as native attributes.
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const button = css({ color: 'accent', padding: 'md' })
+  export const button = style({ color: 'accent', padding: 'md' })
 }
 
 export function Button() {
@@ -32,7 +32,7 @@ The root theme lives on `<html>`. The Vite plugin inlines the config's `script()
 | `src/App.tsx`                   | Root theme and scheme on `<html>` via `appearance`, nested scopes, global CSS in a named layer   |
 | `src/Styling.tsx`               | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.tsx`               | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
-| `src/Relationships.tsx`         | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |
+| `src/Relationships.tsx`         | Empty `style()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`     |
 | `src/Queries.tsx`               | Media/container aliases, resize control, supports, scope boundaries                              |
 | `src/Motion.tsx`                | Local/imported keyframes, relative assets, starting styles, reduced motion, keyed remount        |
 | `src/App.tsx` / `src/index.tsx` | Global CSS, ordered layers, optional reset                                                       |

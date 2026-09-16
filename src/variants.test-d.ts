@@ -84,7 +84,7 @@ describe('bound', () => {
   describe('variants', () => {
     test('keeps renamed theme helpers independently typed', () => {
       const theme = Theme.define({ color: { brand: '#06c' } })
-      const { css: style, variants: recipe } = theme
+      const { style, variants: recipe } = theme
       const base = style({ color: 'brand' })
       const button = recipe({
         variants: { intent: { primary: { color: 'brand' }, quiet: {} } },

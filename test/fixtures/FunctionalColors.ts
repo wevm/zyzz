@@ -46,11 +46,11 @@ export const invalid = [
 ] as const
 
 /** Uses root, theme, fallbacks, importance, inheritance, and SVG declarations. */
-export const source = `import { css, Theme } from 'zyzz';
+export const source = `import { style, Theme } from 'zyzz';
 const theme=Theme.define({color:{brand:'oklch(.5 .1 120)'}});
 export const scope=theme.className;
-export const box=theme.css({color:'brand',backgroundColor:['rgb(255, 0, 0)','hsl(120deg 50% 50% / .5)!'],borderColor:'hwb(120 20% 30%)',borderStyle:'solid',outlineColor:'color(display-p3 .1 .2 .3)'})();
-export const svg=css({fill:'lab(50% 20 -30)',stroke:'oklab(.5 .1 -.1)'})();`
+export const box=theme.style({color:'brand',backgroundColor:['rgb(255, 0, 0)','hsl(120deg 50% 50% / .5)!'],borderColor:'hwb(120 20% 30%)',borderStyle:'solid',outlineColor:'color(display-p3 .1 .2 .3)'})();
+export const svg=style({fill:'lab(50% 20 -30)',stroke:'oklab(.5 .1 -.1)'})();`
 
 /** Native controls independently spell each compiled declaration. */
 export const control =

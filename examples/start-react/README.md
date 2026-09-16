@@ -52,7 +52,7 @@ Module stylesheets travel with the routes: TanStack Start links the styles of ea
 | `src/App.tsx`           | Root theme and scheme on `<html>` via `appearance`, nested scopes, global CSS in a named layer   |
 | `src/Styling.tsx`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.tsx`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
-| `src/Relationships.tsx` | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |
+| `src/Relationships.tsx` | Empty `style()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`     |
 | `src/Motion.tsx`        | Local/imported keyframes, starting styles, reduced motion                                        |
 
 See [Vite Setup](../../docs/introduction/vite.md) and the [`zyzz/vite` reference](../../docs/api/vite/zyzz.md).

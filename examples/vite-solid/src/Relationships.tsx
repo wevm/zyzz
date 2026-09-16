@@ -2,10 +2,10 @@
 /** Selects related elements using ordinary CSS and style identities. @module */
 /* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
 import { createSignal, For } from 'solid-js'
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -14,11 +14,11 @@ namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const group = css()
+  export const group = style()
 
-  export const item = css({
+  export const item = style({
     border: '1px solid',
     borderColor: 'line',
     borderRadius: '0.5rem',
@@ -31,11 +31,11 @@ namespace styles {
     },
   })
 
-  export const sibling = css({
+  export const sibling = style({
     selectors: { [`${group} + &`]: { fontWeight: 600 } },
   })
 
-  export const parent = css({
+  export const parent = style({
     selectors: { '&:has(input:checked)': { color: 'accent' } },
   })
 }

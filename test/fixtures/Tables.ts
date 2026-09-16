@@ -14,13 +14,13 @@ export const controls = {
 } as const
 
 /** Source preserves ordered fallbacks and scalar length spelling. */
-export const source = `import { css } from 'zyzz';
-export const collapsed = css({borderCollapse:'collapse',borderSpacing:'12px',captionSide:'top',emptyCells:'show',tableLayout:'auto'})();
-export const separated = css({
+export const source = `import { style } from 'zyzz';
+export const collapsed = style({borderCollapse:'collapse',borderSpacing:'12px',captionSide:'top',emptyCells:'show',tableLayout:'auto'})();
+export const separated = style({
   borderCollapse:'separate',borderSpacing:['2px','8px!','4px'],
   captionSide:'bottom',emptyCells:'hide',tableLayout:'fixed'
 })();
-export const zero = css({borderCollapse:'separate',borderSpacing:0,captionSide:'top',emptyCells:'show',tableLayout:'fixed'})();
+export const zero = style({borderCollapse:'separate',borderSpacing:0,captionSide:'top',emptyCells:'show',tableLayout:'fixed'})();
 `
 
 /** Public table declarations retain a bounded property and value surface. */

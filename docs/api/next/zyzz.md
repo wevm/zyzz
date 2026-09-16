@@ -36,7 +36,7 @@ zyzz({ reactStrictMode: true })
 
 - Type: `NextConfig`, `Promise<NextConfig>`, or `zyzz.Factory`, matching the input overload.
 
-Configuration with Zyzz integration attached. It is exported from `next.config.ts`; it does not provide the application's `css` or theme helpers.
+Configuration with Zyzz integration attached. It is exported from `next.config.ts`; it does not provide the application's `style` or theme helpers.
 
 ```ts
 export default zyzz({})

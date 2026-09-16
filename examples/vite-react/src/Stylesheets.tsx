@@ -1,6 +1,6 @@
 /** Demonstrates named stylesheet references and print output. @module */
 import { counterStyle, fontFace, page, viewTransition } from 'zyzz/web'
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 const steps = counterStyle({
   suffix: '" "',
@@ -23,12 +23,12 @@ page({
 viewTransition({ navigation: 'auto' })
 
 namespace styles {
-  export const button = css({
+  export const button = style({
     ':hover': { color: 'accent' },
     '&[aria-pressed="true"]': { fontWeight: 700 },
   })
 
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -37,9 +37,9 @@ namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const list = css({
+  export const list = style({
     fontFamily: '"Playground Mono", monospace',
     listStyleType: steps,
     paddingLeft: 'lg',

@@ -178,11 +178,11 @@ describe('create', () => {
       }).css,
     ).toMatchInlineSnapshot(`".z-p-YqOp03{padding:var(--z0,1rem);}"`)
     expect(() =>
-      zyzz.css({ padding: 'md' }),
+      zyzz.style({ padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Config.create requires an explicit id without the compiler plugin.]`,
     )
-    expect(Config.create().css({ padding: '8px' })()).toMatchInlineSnapshot(`
+    expect(Config.create().style({ padding: '8px' })()).toMatchInlineSnapshot(`
       {
         "className": "z-content-3f8gqjlziaxl",
       }

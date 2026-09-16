@@ -15,14 +15,14 @@ export const controls = {
 } as const
 
 /** Sources include root and configuration-bound authoring without theme tokens. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create();
-export const disabled = css({
+export const disabled = style({
   cursor:'not-allowed',pointerEvents:['auto','none!','auto'],
   resize:'none',userSelect:'none',visibility:'visible'
 })();
-export const editable = zyzz.css({cursor:'text',pointerEvents:'auto',resize:'both',userSelect:'text',visibility:'visible'})();
-export const hidden = css({cursor:'default',pointerEvents:'auto',resize:'none',userSelect:'auto',visibility:'hidden'})();
+export const editable = zyzz.style({cursor:'text',pointerEvents:'auto',resize:'both',userSelect:'text',visibility:'visible'})();
+export const hidden = style({cursor:'default',pointerEvents:'auto',resize:'none',userSelect:'auto',visibility:'hidden'})();
 `
 
 /** Declarations exercise logical resize axes and extended cursor keywords. */

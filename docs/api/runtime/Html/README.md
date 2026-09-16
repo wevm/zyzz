@@ -19,7 +19,7 @@ const attributes = Html.from({ className: 'z-card', style: { color: 'red' } })
 
 ### props
 
-Type: applied `css.Props` with optional owned `data-*` attributes. Required. CSS values retain explicit units; custom-property names remain unchanged.
+Type: applied `style.Props` with optional owned `data-*` attributes. Required. CSS values retain explicit units; custom-property names remain unchanged.
 
 ```ts
 Html.from({ className: 'z-card', 'data-state': 'open' })
@@ -59,4 +59,4 @@ const markup = `<article ${Html.serialize(attributes)}>Content</article>`
 
 ## Callable Adapters
 
-`bind(fn)` requires a compiled function returning React-style `css.Props` and returns a function with the same input and HTML props output. `create(options)` accepts the required `Props.create.Options` object and returns a static HTML style callable. Both use `from` for output conversion.
+`bind(fn)` requires a compiled function returning React-style `style.Props` and returns a function with the same input and HTML props output. `create(options)` accepts the required `Props.create.Options` object and returns a static HTML style callable. Both use `from` for output conversion.

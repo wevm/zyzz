@@ -9,6 +9,6 @@ export const controls = {
     'transition-delay:-.1s;transition-duration:250ms;transition-timing-function:ease-in-out;transition-behavior:allow-discrete',
 } as const
 
-export const source = `import { css } from 'zyzz';
-export const motion=css({animationDelay:'-500ms',animationDuration:['1s','2s!'],animationDirection:'alternate',animationFillMode:'both',animationIterationCount:2.5,animationPlayState:'paused',animationTimingFunction:'linear'})();
-export const transition=css({transitionDelay:'-.1s',transitionDuration:'250ms',transitionTimingFunction:'ease-in-out',transitionBehavior:'allow-discrete'})();`
+export const source = `import { style } from 'zyzz';
+export const motion=style({animationDelay:'-500ms',animationDuration:['1s','2s!'],animationDirection:'alternate',animationFillMode:'both',animationIterationCount:2.5,animationPlayState:'paused',animationTimingFunction:'linear'})();
+export const transition=style({transitionDelay:'-.1s',transitionDuration:'250ms',transitionTimingFunction:'ease-in-out',transitionBehavior:'allow-discrete'})();`

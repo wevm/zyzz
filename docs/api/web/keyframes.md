@@ -38,7 +38,7 @@ Reachable definitions preserve stable imported identity.
 
 ```ts
 namespace styles {
-  export const notice = css({ animationName: enter })
+  export const notice = style({ animationName: enter })
 }
 ```
 

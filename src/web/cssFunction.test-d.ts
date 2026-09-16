@@ -1,5 +1,5 @@
 /** Verifies scalar parameter domains through the public CSS function helper. @module */
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { cssFunction } from 'zyzz/web'
 import { describe, test } from 'vite-plus/test'
 describe('cssFunction', () => {
@@ -9,9 +9,9 @@ describe('cssFunction', () => {
       returns: '<transform-function>+',
       body: { result: 'translateX(1px) rotate(1deg)' },
     })
-    css({ transform: transforms() })
+    style({ transform: transforms() })
     // @ts-expect-error a scalar rotation cannot hold a transform-function list
-    css({ rotate: transforms() })
+    style({ rotate: transforms() })
   })
 
   test('accepts Unicode syntax and nested scalar function references', () => {
@@ -81,9 +81,9 @@ describe('cssFunction', () => {
       body: { result: 'url(/clip.svg)' },
     })
 
-    css({ backgroundImage: image(), clipPath: url() })
+    style({ backgroundImage: image(), clipPath: url() })
     // @ts-expect-error an image may be a gradient, which clip-path cannot accept
-    css({ clipPath: image() })
+    style({ clipPath: image() })
   })
 
   test('checks every supported scalar parameter syntax', () => {
@@ -122,14 +122,14 @@ describe('cssFunction', () => {
       body: { result: 'url(/a.svg), linear-gradient(red, blue)' },
     })
 
-    css({ backgroundImage: images() })
-    css({ '--lengths': lengths() })
+    style({ backgroundImage: images() })
+    style({ '--lengths': lengths() })
     // @ts-expect-error margin permits at most four values, whereas + is unbounded
-    css({ margin: lengths() })
+    style({ margin: lengths() })
     // @ts-expect-error a scalar dimension cannot consume a list result
-    css({ width: lengths() })
+    style({ width: lengths() })
     // @ts-expect-error clip-path accepts neither image gradients nor comma lists
-    css({ clipPath: images() })
+    style({ clipPath: images() })
   })
 })
 
@@ -140,9 +140,9 @@ describe('cssFunction', () => {
       returns: '<transform-function>+',
       body: { result: 'translateX(1px) rotate(1deg)' },
     })
-    css({ transform: transforms() })
+    style({ transform: transforms() })
     // @ts-expect-error a scalar rotation cannot hold a transform-function list
-    css({ rotate: transforms() })
+    style({ rotate: transforms() })
   })
 
   test('accepts Unicode syntax and nested scalar function references', () => {
@@ -174,9 +174,9 @@ describe('cssFunction', () => {
     size('1deg')
     // @ts-expect-error booleans are not CSS values
     size(true)
-    css({ width: size('1px') })
+    style({ width: size('1px') })
     // @ts-expect-error every returned alternative must belong to the property domain
-    css({ color: size('1px') })
+    style({ color: size('1px') })
     const invalid = {
       parameters: [],
       returns: 'type(<length> && <color>)',

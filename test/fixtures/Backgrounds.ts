@@ -3,11 +3,11 @@
  * @module
  */
 /** Source retains CSS keyword precedence and shared color-token references. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz=Config.create({theme:{color:{auto:'#06c',accent:'#090'}}});
-export const background = css({backgroundAttachment:'local',backgroundBlendMode:'multiply',backgroundClip:'padding-box',backgroundOrigin:'content-box',backgroundPositionX:['left','25%!'],backgroundPositionY:'-4px',backgroundRepeat:'no-repeat',backgroundSize:'cover',mixBlendMode:'normal'})();
-export const control = zyzz.css({accentColor:'accent',caretColor:zyzz.theme.tokens.color.auto,colorScheme:'only light',forcedColorAdjust:'none',printColorAdjust:'exact'})();
-export const automatic = zyzz.css({accentColor:'auto',caretColor:'auto',colorScheme:'light dark'})();
+export const background = style({backgroundAttachment:'local',backgroundBlendMode:'multiply',backgroundClip:'padding-box',backgroundOrigin:'content-box',backgroundPositionX:['left','25%!'],backgroundPositionY:'-4px',backgroundRepeat:'no-repeat',backgroundSize:'cover',mixBlendMode:'normal'})();
+export const control = zyzz.style({accentColor:'accent',caretColor:zyzz.theme.tokens.color.auto,colorScheme:'only light',forcedColorAdjust:'none',printColorAdjust:'exact'})();
+export const automatic = zyzz.style({accentColor:'auto',caretColor:'auto',colorScheme:'light dark'})();
 `
 
 /** Independent controls cover scalar background geometry and color keywords. */

@@ -21,10 +21,10 @@ Select HTML output once in the shared configuration, then spread applied styles 
 import { createSignal } from 'solid-js'
 import { Config } from 'zyzz'
 
-const { css } = Config.create({ output: 'html' })
+const { style } = Config.create({ output: 'html' })
 
 namespace styles {
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     height: '20px',
     width: values.width,
   }))

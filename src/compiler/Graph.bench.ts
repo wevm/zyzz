@@ -216,7 +216,7 @@ for (const count of [10, 100]) {
 for (const count of [10, 100]) {
   const modules = {
     ...ConfigFixture.modules,
-    'pkg/card.ts': `import { design as zyzz } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = zyzz.css({color:'brand',padding:'${index}px'})();`).join('\n')}`,
+    'pkg/card.ts': `import { design as zyzz } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = zyzz.style({color:'brand',padding:'${index}px'})();`).join('\n')}`,
   }
 
   describe(`configuration graph / ${count} styles`, () => {

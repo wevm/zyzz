@@ -272,6 +272,11 @@ jobs:
             cat "$BENCH_RENDER_OUTPUT/unavailable.txt" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          if ! grep -q "export { style }" src/index.ts; then
+            printf '%s\n' 'No comparable render baseline: the base revision does not export the style authoring function.' > "$BENCH_RENDER_OUTPUT/unavailable.txt"
+            cat "$BENCH_RENDER_OUTPUT/unavailable.txt" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           pnpm bench:render
       - name: Measure production React renders in Chromium
         id: render

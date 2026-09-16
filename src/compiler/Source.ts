@@ -116,7 +116,7 @@ export type Diagnostic = {
 }
 
 /**
- * Extracts direct css calls and local Theme definitions imported from zyzz.
+ * Extracts direct style calls and local Theme definitions imported from zyzz.
  * Parses TypeScript and JSX without reading files, loading config, or evaluating source.
  * @param options - Source text and a portable package-relative module identity.
  * @returns Frozen style/theme definitions and rewrite spans. Source text is unchanged.
@@ -316,8 +316,8 @@ export function extract(options: extract.Options): extract.ReturnType {
 
           if (
             name === 'Config' ||
-            name === 'css' ||
             name === 'cx' ||
+            name === 'style' ||
             name === 'Theme' ||
             name === 'variable' ||
             name === 'variants'
@@ -335,7 +335,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['css', 'variants'].includes(
+        !['style', 'variants'].includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,
@@ -377,7 +377,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (write)
         report(
           'unsupported_syntax',
-          'Imported css bindings cannot be reassigned.',
+          'Imported style bindings cannot be reassigned.',
           write,
         )
       else if (
@@ -395,7 +395,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       } else
         report(
           'unsupported_syntax',
-          'Use a direct css call; aliases, re-exports, and indirect references are not supported yet.',
+          'Use a direct style call; aliases, re-exports, and indirect references are not supported yet.',
           node,
         )
     },
@@ -494,7 +494,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     const definitionId =
       explicitId === undefined
         ? `${identity(options.moduleId)}-${call.start}`
-        : Identity.requireId(explicitId, 'css')
+        : Identity.requireId(explicitId, 'style')
     let argument = call.arguments[0]
 
     if (call.arguments.length === 0)
@@ -1221,7 +1221,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     if (!staticData.used.has(Expression.unwrap(token).start))
       report(
         'unsupported_syntax',
-        'Token references must be direct property values in bound theme css calls.',
+        'Token references must be direct property values in bound theme style calls.',
         token,
       )
 

@@ -27,7 +27,7 @@ bench('define / literal named styles', () => {
     hidden: { display: 'none' },
     label: { color: '#111', fontSize: '14px', lineHeight: 1.5 },
   })
-}).types([26783, 'instantiations'])
+}).types([26868, 'instantiations'])
 
 bench('define / nested conditions', () => {
   Style.define({
@@ -39,7 +39,7 @@ bench('define / nested conditions', () => {
       padding: '0.5rem 1rem',
     },
   })
-}).types([10972, 'instantiations'])
+}).types([11024, 'instantiations'])
 
 bench('define / compound declarations', () => {
   Style.define({
@@ -51,7 +51,7 @@ bench('define / compound declarations', () => {
       transition: 'opacity 200ms ease-in',
     },
   })
-}).types([391084, 'instantiations'])
+}).types([262988, 'instantiations'])
 
 bench('define / theme shorthand names', () => {
   const theme = Theme.define({
@@ -66,4 +66,4 @@ bench('define / theme shorthand names', () => {
     },
     { theme },
   )
-}).types([62118, 'instantiations'])
+}).types([63356, 'instantiations'])

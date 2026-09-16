@@ -17,14 +17,14 @@ export const controls = {
 } as const
 
 /** Source covers token indentation, bounded keywords, fallbacks, and importance. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{indent:'12px'}}});
-export const breaks = css({width:'65px',wordBreak:'break-all'})();
-export const letters = css({letterSpacing:['normal','2px']})();
-export const paragraph = zyzz.css({width:'200px',textIndent:zyzz.theme.tokens.spacing.indent,textAlignLast:'start',hyphens:'manual',textTransform:'uppercase'})();
-export const truncate = css({width:'65px',overflow:'hidden',whiteSpace:['pre','nowrap!'],textOverflow:'ellipsis'})();
-export const words = css({wordSpacing:'3px'})();
-export const wrap = css({width:'65px',overflowWrap:'anywhere',whiteSpace:'normal'})();
+export const breaks = style({width:'65px',wordBreak:'break-all'})();
+export const letters = style({letterSpacing:['normal','2px']})();
+export const paragraph = zyzz.style({width:'200px',textIndent:zyzz.theme.tokens.spacing.indent,textAlignLast:'start',hyphens:'manual',textTransform:'uppercase'})();
+export const truncate = style({width:'65px',overflow:'hidden',whiteSpace:['pre','nowrap!'],textOverflow:'ellipsis'})();
+export const words = style({wordSpacing:'3px'})();
+export const wrap = style({width:'65px',overflowWrap:'anywhere',whiteSpace:'normal'})();
 `
 
 /** Public authoring covers negative lengths, percentages, and remaining keywords. */

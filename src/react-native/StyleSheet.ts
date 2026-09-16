@@ -102,6 +102,7 @@ const properties = {
   textTransform: ['capitalize', 'lowercase', 'none', 'uppercase'],
   top: 'offset',
   transform: 'transform',
+  transformOrigin: 'origin',
   userSelect: ['all', 'auto', 'none', 'text'],
   width: 'size',
   zIndex: 'integer',
@@ -277,8 +278,10 @@ export function compile<
     for (const scheme of ['light', 'dark'] as const) {
       const compiled: Record<string, NativeStyle> = Object.create(null)
       for (const style of options.styles.styles) {
-        const output: Record<string, number | string | readonly Transform[]> =
-          {}
+        const output: Record<
+          string,
+          number | string | Origin | readonly Transform[]
+        > = {}
         let lineHeight: number | string | undefined
         for (const declaration of style.declarations) {
           const property = declaration.property as keyof typeof properties
@@ -291,6 +294,10 @@ export function compile<
             }
             if (property === 'transform') {
               output.transform = transform(value, options, path)
+              continue
+            }
+            if (property === 'transformOrigin') {
+              output.transformOrigin = origin(value, options, path)
               continue
             }
             const kind = properties[property]
@@ -493,17 +500,19 @@ export type NativeStyle = {
     | 'rowGap']?: property extends keyof typeof properties
     ? (typeof properties)[property] extends readonly string[]
       ? Exclude<(typeof properties)[property][number], 'line-through underline'>
-      : (typeof properties)[property] extends 'transform'
-        ? readonly Transform[]
-        : (typeof properties)[property] extends 'color' | 'font'
-          ? string
-          : (typeof properties)[property] extends 'size'
-            ? number | `${number}%` | 'auto'
-            : (typeof properties)[property] extends 'dimension' | 'offset'
-              ? number | `${number}%`
-              : (typeof properties)[property] extends 'weight'
-                ? Weight
-                : number
+      : (typeof properties)[property] extends 'origin'
+        ? Origin
+        : (typeof properties)[property] extends 'transform'
+          ? readonly Transform[]
+          : (typeof properties)[property] extends 'color' | 'font'
+            ? string
+            : (typeof properties)[property] extends 'size'
+              ? number | `${number}%` | 'auto'
+              : (typeof properties)[property] extends 'dimension' | 'offset'
+                ? number | `${number}%`
+                : (typeof properties)[property] extends 'weight'
+                  ? Weight
+                  : number
     : number
 }
 
@@ -617,28 +626,33 @@ type Atom<kind> = kind extends readonly string[]
   ? kind[number]
   : kind extends 'color'
     ? `#${string}` | (typeof colors)[number]
-    : kind extends 'transform'
+    : kind extends 'origin'
       ? Exclude<
-          Style.LiteralDeclarations['transform'],
+          Style.LiteralDeclarations['transformOrigin'],
           readonly unknown[] | undefined
         >
-      : kind extends 'font'
-        ? string
-        : kind extends 'size'
-          ? Length | `${number}%` | 'auto'
-          : kind extends 'dimension' | 'offset'
-            ? Length | `${number}%`
-            : kind extends 'integer' | 'number' | 'opacity'
-              ? number
-              : kind extends 'ratio'
-                ? number | `${number} / ${number}`
-                : kind extends 'weight'
-                  ? Weight
-                  : kind extends 'line'
-                    ? Length | number
-                    : kind extends 'box' | 'boxSigned'
-                      ? Box
-                      : Length
+      : kind extends 'transform'
+        ? Exclude<
+            Style.LiteralDeclarations['transform'],
+            readonly unknown[] | undefined
+          >
+        : kind extends 'font'
+          ? string
+          : kind extends 'size'
+            ? Length | `${number}%` | 'auto'
+            : kind extends 'dimension' | 'offset'
+              ? Length | `${number}%`
+              : kind extends 'integer' | 'number' | 'opacity'
+                ? number
+                : kind extends 'ratio'
+                  ? number | `${number} / ${number}`
+                  : kind extends 'weight'
+                    ? Weight
+                    : kind extends 'line'
+                      ? Length | number
+                      : kind extends 'box' | 'boxSigned'
+                        ? Box
+                        : Length
 
 type Reference<property extends keyof typeof properties> = {
   [group in Token.Group]: property extends Token.Properties<group>
@@ -781,6 +795,59 @@ function length(
       path,
     )
   return result
+}
+
+type Origin = [number | `${number}%`, number | `${number}%`, number]
+
+function origin(
+  value: number | string,
+  options: compile.Options,
+  path: readonly string[],
+): Origin {
+  const parts = String(value).trim().toLowerCase().split(/\s+/)
+  if (!parts[0] || parts.length > 3)
+    fail(
+      'unsupported_value',
+      'Expected one to three transform-origin values.',
+      path,
+    )
+  let [x, y = 'center', z = '0'] = parts as [string, string?, string?]
+  const horizontal = ['left', 'center', 'right']
+  const vertical = ['top', 'center', 'bottom']
+
+  if (parts.length === 1 && (x === 'top' || x === 'bottom'))
+    [x, y] = ['center', x]
+  else if (x === 'top' || x === 'bottom' || y === 'left' || y === 'right') {
+    if (!vertical.includes(x) || !horizontal.includes(y))
+      fail(
+        'unsupported_value',
+        'Transform-origin keywords must identify different axes.',
+        path,
+      )
+    ;[x, y] = [y, x]
+  }
+
+  const values = [x, y].map((part, index) => {
+    const keywords = index === 0 ? horizontal : vertical
+    const keyword = keywords.indexOf(part)
+    if (keyword !== -1) return `${keyword * 50}%` as `${number}%`
+    if (/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)%$/.test(part)) {
+      if (!Number.isFinite(Number(part.slice(0, -1))))
+        fail(
+          'unsupported_value',
+          'Transform-origin percentages must be finite.',
+          path,
+        )
+      return part as `${number}%`
+    }
+    return length(part, options, true, path)
+  })
+  // Native declares mutable origin arrays but reads them without mutation. Compiler-owned tuples remain frozen.
+  return Object.freeze([
+    values[0]!,
+    values[1]!,
+    length(z, options, true, path),
+  ]) as Origin
 }
 
 function resolve(

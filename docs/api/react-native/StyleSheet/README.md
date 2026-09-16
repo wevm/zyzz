@@ -64,3 +64,15 @@ Static `transform` lists compile into deeply frozen, ordered native transform ob
 Translation accepts signed px/rem lengths and percentages. Scale accepts finite numbers. Angles accept deg/rad and convert grad/turn to degrees. Nonnegative perspective lengths use the configured unit conversion and CSS's minimum one-pixel distance. Unsupported functions, matrices, calculations, and malformed arguments produce diagnostics.
 
 The same definition remains valid for web CSS. Native arrays, animated values, target branches, and real device rendering remain separate work. Output follows the pinned [React Native transform contract](https://reactnative.dev/docs/0.87/transforms).
+
+### Transform Origins
+
+`transformOrigin` accepts one, two, or three shared CSS values. Horizontal/vertical keywords, signed px/rem lengths, and percentages resolve to an `[x, y, z]` tuple. Missing axes use CSS defaults. The third value must be a length. Calculations and edge-offset syntax remain unsupported.
+
+Compiler-owned tuples are frozen. Their type matches React Native's mutable array declaration for direct component assignment. Tuples avoid the [pinned string parser's](https://github.com/facebook/react-native/blob/4bc2473f5d0233ea5384c1ef24f6a55615de2220/packages/react-native/Libraries/StyleSheet/processTransformOrigin.js) loss of signed decimal offsets. This conversion does not establish device rendering parity.
+
+```ts
+const styles = Style.define({ card: { transformOrigin: '-1.25rem 25% -2px' } })
+const output = StyleSheet.compile({ styles, units: { rem: 16 } })
+// output.styles.default.light.card.transformOrigin is [-20, '25%', -2].
+```

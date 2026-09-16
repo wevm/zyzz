@@ -3,6 +3,26 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
+describe('compose', () => {
+  test('accepts compiled styles and external native arrays without erasing types', () => {
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: { padding: '1px' } }),
+    })
+    const override = { opacity: 0.5 }
+    const combined = StyleSheet.compose(output.styles.default.dark.card, [
+      null,
+      override,
+    ])
+
+    expectTypeOf(combined).not.toBeAny()
+    expectTypeOf(StyleSheet.flatten(override)).toEqualTypeOf<typeof override>()
+    expectTypeOf(StyleSheet.flatten(null)).toEqualTypeOf<undefined>()
+    expectTypeOf(StyleSheet.absoluteFill.position).toEqualTypeOf<'absolute'>()
+    // @ts-expect-error Strings containing CSS declarations are not native style objects.
+    StyleSheet.compose(output.styles.default.dark.card, 'color:red')
+  })
+})
+
 describe('compile', () => {
   test('accepts portable scalar additions and retains native output types', () => {
     const declarations = {

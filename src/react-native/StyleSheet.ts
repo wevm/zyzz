@@ -125,6 +125,15 @@ const colors = [
   'yellow',
 ] as const
 
+/** Frozen native overlay style with zero physical offsets. */
+export const absoluteFill = Object.freeze({
+  bottom: 0,
+  left: 0,
+  position: 'absolute',
+  right: 0,
+  top: 0,
+} as const)
+
 /** Explicit theme alternative, never inferred from a device. */
 export type ColorScheme = 'dark' | 'light'
 
@@ -391,6 +400,20 @@ export declare namespace compile {
   }
 }
 
+/**
+ * Composes existing native styles in order without flattening or mutating them.
+ * A falsy operand returns the other operand unchanged. Two present operands
+ * produce an array consumed by the native renderer or flatten.
+ */
+export function compose<first extends object, second extends object>(
+  first: StyleProp<first>,
+  second: StyleProp<second>,
+): StyleProp<first | second> {
+  if (!first) return second
+  if (!second) return first
+  return [first, second]
+}
+
 /** A structured native capability or conversion failure. */
 export type Diagnostic = {
   /** Stable category of rejected input. */
@@ -399,6 +422,54 @@ export type Diagnostic = {
   readonly message: string
   /** Theme, scheme, style, and property where applicable. */
   readonly path: readonly string[]
+}
+
+/**
+ * Flattens nested native arrays with shallow, last-declaration-wins precedence.
+ * Plain objects retain identity. Falsy values yield undefined outside arrays
+ * and are ignored inside them. Structured values remain caller-owned.
+ * This is native property merging, not CSS shorthand or cascade resolution.
+ */
+export function flatten<style extends object>(
+  styles: readonly StyleProp<style>[],
+): flatten.ReturnType<style>
+export function flatten<style extends object>(styles: style): style
+export function flatten(styles: Falsy): undefined
+export function flatten<style extends object>(
+  styles: StyleProp<style>,
+): flatten.ReturnType<style> | undefined
+export function flatten(styles: unknown): object | undefined {
+  if (!styles || typeof styles !== 'object') return undefined
+  if (!Array.isArray(styles)) return styles
+
+  const result: Record<string, unknown> = {}
+  for (const style of styles) {
+    const flattened = flatten(style as StyleProp<Record<string, unknown>>)
+    if (!flattened) continue
+
+    // Native flattening includes enumerable inherited declarations.
+    for (const key in flattened)
+      Object.defineProperty(result, key, {
+        configurable: true,
+        enumerable: true,
+        value: flattened[key],
+        writable: true,
+      })
+  }
+  return result
+}
+
+/** Conservative property inference for merged native arrays. */
+export declare namespace flatten {
+  /** Every property from any input, optional because conditional styles may be absent. */
+  type ReturnType<style extends object> = {
+    /** Values retain the union of declarations that can supply this property. */
+    [key in Keys<style>]?: style extends unknown
+      ? key extends keyof style
+        ? style[key]
+        : never
+      : never
+  }
 }
 
 /** Native scalar style output, with converted logical-unit lengths. */
@@ -470,6 +541,12 @@ export class SelectionError extends Error {
   override name = 'StyleSheet.SelectionError'
 }
 
+/** Native styles, nested arrays, and conditional absence for composition. */
+export type StyleProp<style extends object = NativeStyle> =
+  | Falsy
+  | style
+  | readonly StyleProp<style>[]
+
 /** Finite style tables indexed by the caller's labels and both schemes. */
 export type Tables<
   name extends string = string,
@@ -481,6 +558,8 @@ export type Tables<
   >
 >
 
+type Falsy = '' | false | null | undefined
+type Keys<value> = value extends unknown ? keyof value : never
 type Length = 0 | '0' | `${number}px` | `${number}rem`
 type Box =
   | Length

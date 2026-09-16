@@ -19,3 +19,10 @@ bench('native / compile and select named tables', () => {
   })
   StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'alternate' })
 }).types([422, 'instantiations'])
+
+bench('native / compose compiled styles', () => {
+  const output = StyleSheet.compile({ styles })
+  StyleSheet.flatten(
+    StyleSheet.compose(output.styles.default.dark.card, { opacity: 0.5 }),
+  )
+}).types([210, 'instantiations'])

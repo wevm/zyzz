@@ -985,3 +985,7 @@ PR #173 remains the static-table foundation. The continuation is ordered 3.8a �
 3.8a pins React Native 0.87.0 at `4bc2473f5d0233ea5384c1ef24f6a55615de2220`. The inherited declaration inventory contains 387 component/property pairs and six runtime StyleSheet APIs. Imported value domains and platform/device evidence remain open. See [universal contracts](../docs/api/react-native/universal.md).
 
 3.8b expands portable scalar layout, text decoration, image fitting, and aspect-ratio conversion. Public shared-authoring/compiler/selection fixtures cover the added values. Native-only structured values and exact platform rendering remain in 3.8d and 3.9.
+
+3.8c adds native `compose`, `flatten`, `absoluteFill`, and recursive `StyleProp` interoperability. Integration fixtures combine shared compiled tables with nested native overrides, preserve object identity, and replace structured values shallowly. This does not implement universal `cx`, native variants, animated rendering, or device-dependent helpers.
+
+Open dependencies: [#173](https://github.com/wevm/zyzz/pull/173) → [3.8a / #174](https://github.com/wevm/zyzz/pull/174) → [3.8b / #175](https://github.com/wevm/zyzz/pull/175). The 3.8c composition branch targets 3.8b. Slices 3.8d–f remain planned.

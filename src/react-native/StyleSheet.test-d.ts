@@ -4,6 +4,25 @@ import { Style, Theme } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
 describe('compile', () => {
+  test('accepts portable scalar additions and retains native output types', () => {
+    const declarations = {
+      aspectRatio: '16 / 9',
+      objectFit: 'cover',
+      textDecorationStyle: 'wavy',
+      direction: 'rtl',
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: declarations }),
+    })
+
+    expectTypeOf(output.styles.default.light.card.aspectRatio).toEqualTypeOf<
+      number | undefined
+    >()
+    // @ts-expect-error Native image fitting has no fill-box keyword.
+    const invalid = { objectFit: 'fill-box' } satisfies StyleSheet.Properties
+    expectTypeOf(invalid).not.toBeAny()
+  })
+
   test('retains style and theme labels through native lookup', () => {
     const base = Theme.define({ spacing: { md: '1rem' } })
     const styles = Style.define({

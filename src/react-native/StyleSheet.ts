@@ -4,6 +4,15 @@ import type * as Theme from '../Theme.js'
 import * as Token from '../internal/Token.js'
 
 const properties = {
+  alignContent: [
+    'center',
+    'flex-end',
+    'flex-start',
+    'space-around',
+    'space-between',
+    'space-evenly',
+    'stretch',
+  ],
   alignItems: ['baseline', 'center', 'flex-end', 'flex-start', 'stretch'],
   alignSelf: [
     'auto',
@@ -13,6 +22,8 @@ const properties = {
     'flex-start',
     'stretch',
   ],
+  aspectRatio: 'ratio',
+  backfaceVisibility: ['hidden', 'visible'],
   backgroundColor: 'color',
   borderBottomColor: 'color',
   borderBottomLeftRadius: 'length',
@@ -31,9 +42,11 @@ const properties = {
   borderTopWidth: 'length',
   borderWidth: 'length',
   bottom: 'offset',
+  boxSizing: ['border-box', 'content-box'],
   color: 'color',
   columnGap: 'length',
-  display: ['flex', 'none'],
+  direction: ['ltr', 'rtl'],
+  display: ['contents', 'flex', 'none'],
   flexBasis: 'size',
   flexDirection: ['column', 'column-reverse', 'row', 'row-reverse'],
   flexGrow: 'number',
@@ -65,6 +78,7 @@ const properties = {
   maxWidth: 'dimension',
   minHeight: 'dimension',
   minWidth: 'dimension',
+  objectFit: ['contain', 'cover', 'fill', 'none', 'scale-down'],
   opacity: 'opacity',
   overflow: ['hidden', 'visible'],
   padding: 'box',
@@ -72,11 +86,21 @@ const properties = {
   paddingLeft: 'length',
   paddingRight: 'length',
   paddingTop: 'length',
-  position: ['absolute', 'relative'],
+  position: ['absolute', 'relative', 'static'],
   right: 'offset',
   rowGap: 'length',
-  textAlign: ['center', 'left', 'right'],
+  textAlign: ['center', 'end', 'justify', 'left', 'right', 'start'],
+  textDecorationColor: 'color',
+  textDecorationLine: [
+    'line-through',
+    'none',
+    'underline',
+    'underline line-through',
+  ],
+  textDecorationStyle: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
+  textTransform: ['capitalize', 'lowercase', 'none', 'uppercase'],
   top: 'offset',
+  userSelect: ['all', 'auto', 'contain', 'none', 'text'],
   width: 'size',
   zIndex: 'integer',
 } as const
@@ -487,13 +511,15 @@ type Atom<kind> = kind extends readonly string[]
           ? Length | `${number}%`
           : kind extends 'integer' | 'number' | 'opacity'
             ? number
-            : kind extends 'weight'
-              ? Weight
-              : kind extends 'line'
-                ? Length | number
-                : kind extends 'box' | 'boxSigned'
-                  ? Box
-                  : Length
+            : kind extends 'ratio'
+              ? number | `${number}` | `${number} / ${number}`
+              : kind extends 'weight'
+                ? Weight
+                : kind extends 'line'
+                  ? Length | number
+                  : kind extends 'box' | 'boxSigned'
+                    ? Box
+                    : Length
 
 type Reference<property extends keyof typeof properties> = {
   [group in Token.Group]: property extends Token.Properties<group>
@@ -511,6 +537,23 @@ function convert(
     if (typeof value !== 'string' || !kind.includes(value))
       fail('unsupported_value', 'Unsupported native keyword.', path)
     return value
+  }
+  if (kind === 'ratio') {
+    const match =
+      typeof value === 'string'
+        ? /^\s*(\d+(?:\.\d+)?|\.\d+)(?:\s*\/\s*(\d+(?:\.\d+)?|\.\d+))?\s*$/.exec(
+            value,
+          )
+        : undefined
+    const ratio =
+      typeof value === 'number'
+        ? value
+        : match
+          ? Number(match[1]) / Number(match[2] ?? 1)
+          : NaN
+    if (!Number.isFinite(ratio) || ratio <= 0)
+      fail('unsupported_value', 'Use a positive finite aspect ratio.', path)
+    return ratio
   }
   if (kind === 'color') {
     if (

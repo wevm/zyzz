@@ -18,14 +18,15 @@ import { StyleSheet } from 'zyzz/react-native'
 
 ## Capabilities
 
-| Area    | Supported subset                                                                                                                                                                        |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout  | Width/height and min/max sizes, physical offsets, explicit flex direction/grow/shrink/basis/wrap, alignment, flex/none display, absolute/relative positioning, hidden/visible overflow. |
-| Spacing | Physical margin/padding, one-to-four-value margin/padding shorthands, scalar gap/rowGap/columnGap.                                                                                      |
-| Borders | Physical widths/colors and corner radii, scalar borderWidth/borderColor/borderRadius expansion, solid/dotted/dashed style.                                                              |
-| Colors  | Hex RGB/RGBA forms and the classic 16 CSS color names plus transparent. Scheme pairs resolve at compilation.                                                                            |
-| Text    | Explicit font-family mappings, font size/style, numeric 100–900 weights or normal/bold, letter spacing, line height, left/right/center alignment.                                       |
-| Scalars | Opacity in 0–1 and integer zIndex.                                                                                                                                                      |
+| Area    | Supported subset                                                                                                                                                                                                                             |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout  | Aspect ratio, box sizing, direction, width/height and min/max sizes, physical offsets, explicit flex direction/grow/shrink/basis/wrap, alignment, flex/none/contents display, absolute/relative/static positioning, hidden/visible overflow. |
+| Spacing | Physical margin/padding, one-to-four-value margin/padding shorthands, scalar gap/rowGap/columnGap.                                                                                                                                           |
+| Borders | Physical widths/colors and corner radii, scalar borderWidth/borderColor/borderRadius expansion, solid/dotted/dashed style.                                                                                                                   |
+| Colors  | Hex RGB/RGBA forms and the classic 16 CSS color names plus transparent. Scheme pairs resolve at compilation.                                                                                                                                 |
+| Text    | Explicit font-family mappings, font size/style, numeric 100–900 weights or normal/bold, letter spacing, line height, left/right/center/start/end/justify alignment, decoration color/line/style, case conversion, and selection.             |
+| Images  | objectFit and backface visibility.                                                                                                                                                                                                           |
+| Scalars | Opacity in 0–1 and integer zIndex.                                                                                                                                                                                                           |
 
 Decimal px/rem lengths convert to native logical units. Only zero is accepted as a unitless length. Dimensions, flex basis, and physical offsets also accept percentages. Width, height, and flex basis accept auto. Negative lengths are limited to margins, offsets, and letter spacing.
 
@@ -49,3 +50,5 @@ const styles = Style.define(declarations)
 
 > [!NOTE]
 > These contracts have pure compiler, package, and embedded-engine coverage. Native variants, dynamic adapters, and real iOS/Android rendering remain separate implementation and acceptance work.
+
+Aspect ratios accept positive numbers, decimal strings, or a positive `width / height` ratio and emit a native number. Automatic intrinsic ratios are rejected. These additions retain explicit native version requirements and do not establish renderer parity.

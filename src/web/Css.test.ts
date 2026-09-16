@@ -13,6 +13,36 @@ import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('deduplicates independent declaration sequences without losing order or importance', () => {
+    const styles = Style.define({
+      a: { display: ['block', 'grid'], padding: '1px' },
+      b: { display: ['grid', 'block'], padding: '1px' },
+      c: { display: ['block', 'grid'], padding: '1px' },
+      d: { display: ['block', 'grid!'], padding: '1px' },
+    })
+
+    const output = Css.compile({
+      composition: 'independent',
+      cssOutput: 'grouped',
+      styles,
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "a": "g_0 g_1",
+        "b": "g_0 g_2",
+        "c": "g_0 g_1",
+        "d": "g_0 g_3",
+      }
+    `)
+    expect(output.css).toMatchInlineSnapshot(`
+      ".g_0{padding:1px;}
+      .g_1{display:block;display:grid;}
+      .g_2{display:grid;display:block;}
+      .g_3{display:block;display:grid!important;}"
+    `)
+  })
+
   test('scroll snap sharing retains A/B/A keyword and priority order', () => {
     const a = {
       scrollSnapAlign: 'start end',

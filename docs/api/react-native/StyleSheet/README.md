@@ -11,7 +11,7 @@ import { StyleSheet } from 'zyzz/react-native'
 | [compile](compile.md) | Resolve shared declarations into static theme/scheme tables.   |
 | [select](select.md)   | Return an existing style-name table without allocation.        |
 | `Properties`          | Optional `satisfies` constraint for portable native authoring. |
-| `NativeStyle`         | Readonly scalar native output properties.                      |
+| `NativeStyle`         | Readonly native scalar and transform output.                   |
 | `Tables`              | Immutable tables indexed by theme, scheme, and style name.     |
 | `CompileError`        | Capability/conversion diagnostics with structured paths.       |
 | `SelectionError`      | Unknown theme or scheme selection.                             |
@@ -34,7 +34,7 @@ Decimal px/rem lengths convert to native logical units. Only zero is accepted as
 
 Authored shorthand order is preserved by expanding to physical longhands. No browser defaults or inherited font size are synthesized. Numeric CSS line height multiplies the explicit fontSize in the same style. Native text inheritance and layout defaults still belong to the consuming renderer.
 
-Selectors, queries, logical properties, importance, fallback arrays, CSS functions, custom properties, web variable references, and dynamic bindings produce errors. The CSS `flex` shorthand is rejected because its native semantics differ. Use explicit flexGrow, flexShrink, and flexBasis.
+Selectors, queries, logical properties, importance, fallback arrays, unresolved CSS expressions, custom properties, web variable references, and dynamic bindings produce errors. The CSS `flex` shorthand is rejected because its native semantics differ. Use explicit flexGrow, flexShrink, and flexBasis.
 
 The subset follows the documented [React Native layout](https://reactnative.dev/docs/layout-props), [text](https://reactnative.dev/docs/text-style-props), and [color](https://reactnative.dev/docs/colors) contracts. Broader platform-specific capabilities require separate acceptance.
 
@@ -56,3 +56,11 @@ const styles = Style.define(declarations)
 Aspect ratios accept positive numbers or a positive `width / height` ratio and emit a native number. Automatic intrinsic ratios are rejected. These additions retain explicit native version requirements and do not establish renderer parity.
 
 Bare numeric strings and `userSelect: contain` are outside shared portable authoring. The equivalent `line-through underline` decoration spelling normalizes to native `underline line-through`.
+
+### Transforms
+
+Static `transform` lists compile into deeply frozen, ordered native transform objects. Supported functions are `translate`, `translateX/Y`, `scale`, `scaleX/Y`, `rotate`, `rotateX/Y/Z`, `skewX/Y`, and `perspective`. `none` emits an empty list. Duplicate functions retain their order.
+
+Translation accepts signed px/rem lengths and percentages. Scale accepts finite numbers. Angles accept deg/rad and convert grad/turn to degrees. Nonnegative perspective lengths use the configured unit conversion and CSS's minimum one-pixel distance. Unsupported functions, matrices, calculations, and malformed arguments produce diagnostics.
+
+The same definition remains valid for web CSS. Native arrays, animated values, target branches, and real device rendering remain separate work. Output follows the pinned [React Native transform contract](https://reactnative.dev/docs/0.87/transforms).

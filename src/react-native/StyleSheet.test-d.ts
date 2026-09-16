@@ -55,6 +55,36 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('retains structured native transform output and shared authoring', () => {
+    const declarations = {
+      transform: 'translateX(2px) rotate(90deg)',
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: declarations }),
+    })
+
+    expectTypeOf(output.styles.default.light.card.transform).toMatchTypeOf<
+      | readonly (
+          | { perspective: number }
+          | { rotate: string }
+          | { rotateX: string }
+          | { rotateY: string }
+          | { rotateZ: string }
+          | { scale: number }
+          | { scaleX: number }
+          | { scaleY: number }
+          | { skewX: string }
+          | { skewY: string }
+          | { translateX: number | `${number}%` }
+          | { translateY: number | `${number}%` }
+        )[]
+      | undefined
+    >()
+    // @ts-expect-error Native arrays need the planned target-specific authoring boundary.
+    const native = { transform: [{ scale: 2 }] } satisfies StyleSheet.Properties
+    expectTypeOf(native).not.toBeAny()
+  })
+
   test('keeps portable native constraints inside shared authoring domains', () => {
     const label = {
       textDecorationLine: 'line-through underline',

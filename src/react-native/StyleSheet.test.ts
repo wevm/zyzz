@@ -131,6 +131,178 @@ describe('flatten', () => {
 })
 
 describe('compile', () => {
+  test('compiles ordered transform lists without changing shared CSS', () => {
+    const declarations = {
+      transform:
+        'translate(2rem, -25%) rotate(0.25turn) scale(2, -1) translateX(4px)',
+    } satisfies StyleSheet.Properties
+    const styles = Style.define({ card: declarations, duplicate: declarations })
+    const output = StyleSheet.compile({ styles, units: { px: 2, rem: 16 } })
+    const selected = StyleSheet.select(output.styles, {
+      colorScheme: 'light',
+      theme: 'default',
+    })
+
+    expect(selected.card.transform).toMatchInlineSnapshot(`
+      [
+        {
+          "translateX": 32,
+        },
+        {
+          "translateY": "-25%",
+        },
+        {
+          "rotate": "90deg",
+        },
+        {
+          "scaleX": 2,
+        },
+        {
+          "scaleY": -1,
+        },
+        {
+          "translateX": 8,
+        },
+      ]
+    `)
+    expect(selected.card === selected.duplicate).toMatchInlineSnapshot('true')
+    expect(
+      selected.card === output.styles.default.dark.card,
+    ).toMatchInlineSnapshot('true')
+    expect(Object.isFrozen(selected.card.transform)).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(
+      selected.card.transform?.every(Object.isFrozen),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      Css.compile({ styles }).css.includes(declarations.transform),
+    ).toMatchInlineSnapshot('true')
+    expect(StyleSheet.flatten([selected.card, { transform: [{ scale: 3 }] }]))
+      .toMatchInlineSnapshot(`
+        {
+          "transform": [
+            {
+              "scale": 3,
+            },
+          ],
+        }
+      `)
+  })
+
+  test('converts axis transforms, angles, and perspective into native values', () => {
+    const output = StyleSheet.compile({
+      styles: Style.define({
+        axes: {
+          transform:
+            'rotateX(100grad) rotateY(1rad) rotateZ(0) skewX(-45deg) skewY(0.5turn) scaleX(2) scaleY(0) translateY(-2px) perspective(0.5px)',
+        },
+        defaults: { transform: 'translate(3px) scale(-2) perspective(0)' },
+        empty: { transform: 'none' },
+      }),
+      units: { px: 2 },
+    })
+
+    expect(output.styles.default.light).toMatchInlineSnapshot(`
+      {
+        "axes": {
+          "transform": [
+            {
+              "rotateX": "90deg",
+            },
+            {
+              "rotateY": "1rad",
+            },
+            {
+              "rotateZ": "0deg",
+            },
+            {
+              "skewX": "-45deg",
+            },
+            {
+              "skewY": "180deg",
+            },
+            {
+              "scaleX": 2,
+            },
+            {
+              "scaleY": 0,
+            },
+            {
+              "translateY": -4,
+            },
+            {
+              "perspective": 2,
+            },
+          ],
+        },
+        "defaults": {
+          "transform": [
+            {
+              "translateX": 6,
+            },
+            {
+              "translateY": 0,
+            },
+            {
+              "scale": -2,
+            },
+            {
+              "perspective": 2,
+            },
+          ],
+        },
+        "empty": {
+          "transform": [],
+        },
+      }
+    `)
+  })
+
+  test.each([
+    'translateX(1em)',
+    'translateX(1rem)',
+    'translateX(calc(1px + 2px))',
+    'translate(1px, 2px, 3px)',
+    'translateX(1px) trailing',
+    'translateX()',
+    'rotate(2)',
+    'rotate(1e999deg)',
+    'scale(1e999)',
+    'scale(1 2)',
+    'scale(1,)',
+    'perspective(-1px)',
+    'skew(10deg, 20deg)',
+    'matrix(1, 0, 0, 1, 0, 0)',
+    'translateZ(1px)',
+  ])('rejects unsupported or malformed transforms: %s', (transform) => {
+    const styles = Style.define({ card: { transform } } as never)
+
+    try {
+      StyleSheet.compile({ styles })
+      throw new Error('Expected native rejection')
+    } catch (error) {
+      if (!(error instanceof StyleSheet.CompileError)) throw error
+      expect(error.diagnostics.map(({ path }) => path.slice(0, 4)))
+        .toMatchInlineSnapshot(`
+          [
+            [
+              "default",
+              "light",
+              "card",
+              "transform",
+            ],
+            [
+              "default",
+              "dark",
+              "card",
+              "transform",
+            ],
+          ]
+        `)
+    }
+  })
+
   test('normalizes equivalent shared decoration order for native output', () => {
     const styles = Style.define({
       label: { textDecorationLine: 'line-through underline' },
@@ -233,7 +405,7 @@ describe('compile', () => {
           '-e',
           `
         import {Style} from 'zyzz'; import {StyleSheet} from 'zyzz/react-native';
-        const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px'}})});
+        const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',transform:'translateX(2px) scale(2)'}})});
         console.log(JSON.stringify(StyleSheet.select(output.styles,{theme:'default',colorScheme:'light'})));
       `,
         ],
@@ -246,6 +418,14 @@ describe('compile', () => {
             "paddingLeft": 8,
             "paddingRight": 8,
             "paddingTop": 8,
+            "transform": [
+              {
+                "translateX": 2,
+              },
+              {
+                "scale": 2,
+              },
+            ],
           },
         }
       `)
@@ -450,7 +630,7 @@ describe('compile', () => {
       platform: 'neutral',
       stdin: {
         contents: `import {Style} from './src/index.ts'; import {StyleSheet} from './src/react-native/index.ts';
-          const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',color:'#fff'}})});
+          const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',color:'#fff',transform:'rotate(90deg)'}})});
           export const result=StyleSheet.select(output.styles,{theme:'default',colorScheme:'dark'});
           export const stable=result===StyleSheet.select(output.styles,{theme:'default',colorScheme:'dark'});`,
         loader: 'ts',
@@ -475,6 +655,11 @@ describe('compile', () => {
               "paddingLeft": 8,
               "paddingRight": 8,
               "paddingTop": 8,
+              "transform": [
+                {
+                  "rotate": "90deg",
+                },
+              ],
             },
             "stable": true,
           }

@@ -101,6 +101,7 @@ const properties = {
   textDecorationStyle: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
   textTransform: ['capitalize', 'lowercase', 'none', 'uppercase'],
   top: 'offset',
+  transform: 'transform',
   userSelect: ['all', 'auto', 'none', 'text'],
   width: 'size',
   zIndex: 'integer',
@@ -276,7 +277,8 @@ export function compile<
     for (const scheme of ['light', 'dark'] as const) {
       const compiled: Record<string, NativeStyle> = Object.create(null)
       for (const style of options.styles.styles) {
-        const output: Record<string, number | string> = {}
+        const output: Record<string, number | string | readonly Transform[]> =
+          {}
         let lineHeight: number | string | undefined
         for (const declaration of style.declarations) {
           const property = declaration.property as keyof typeof properties
@@ -285,6 +287,10 @@ export function compile<
             const value = resolve(declaration.value, metadata, scheme, path)
             if (property === 'lineHeight') {
               lineHeight = value
+              continue
+            }
+            if (property === 'transform') {
+              output.transform = transform(value, options, path)
               continue
             }
             const kind = properties[property]
@@ -479,7 +485,7 @@ export declare namespace flatten {
       : input
 }
 
-/** Native scalar style output, with converted logical-unit lengths. */
+/** Native style output, with converted logical-unit lengths and ordered transforms. */
 export type NativeStyle = {
   /** Compiled native property, never a CSS expression or token reference. */
   readonly [property in
@@ -487,15 +493,17 @@ export type NativeStyle = {
     | 'rowGap']?: property extends keyof typeof properties
     ? (typeof properties)[property] extends readonly string[]
       ? Exclude<(typeof properties)[property][number], 'line-through underline'>
-      : (typeof properties)[property] extends 'color' | 'font'
-        ? string
-        : (typeof properties)[property] extends 'size'
-          ? number | `${number}%` | 'auto'
-          : (typeof properties)[property] extends 'dimension' | 'offset'
-            ? number | `${number}%`
-            : (typeof properties)[property] extends 'weight'
-              ? Weight
-              : number
+      : (typeof properties)[property] extends 'transform'
+        ? readonly Transform[]
+        : (typeof properties)[property] extends 'color' | 'font'
+          ? string
+          : (typeof properties)[property] extends 'size'
+            ? number | `${number}%` | 'auto'
+            : (typeof properties)[property] extends 'dimension' | 'offset'
+              ? number | `${number}%`
+              : (typeof properties)[property] extends 'weight'
+                ? Weight
+                : number
     : number
 }
 
@@ -609,23 +617,28 @@ type Atom<kind> = kind extends readonly string[]
   ? kind[number]
   : kind extends 'color'
     ? `#${string}` | (typeof colors)[number]
-    : kind extends 'font'
-      ? string
-      : kind extends 'size'
-        ? Length | `${number}%` | 'auto'
-        : kind extends 'dimension' | 'offset'
-          ? Length | `${number}%`
-          : kind extends 'integer' | 'number' | 'opacity'
-            ? number
-            : kind extends 'ratio'
-              ? number | `${number} / ${number}`
-              : kind extends 'weight'
-                ? Weight
-                : kind extends 'line'
-                  ? Length | number
-                  : kind extends 'box' | 'boxSigned'
-                    ? Box
-                    : Length
+    : kind extends 'transform'
+      ? Exclude<
+          Style.LiteralDeclarations['transform'],
+          readonly unknown[] | undefined
+        >
+      : kind extends 'font'
+        ? string
+        : kind extends 'size'
+          ? Length | `${number}%` | 'auto'
+          : kind extends 'dimension' | 'offset'
+            ? Length | `${number}%`
+            : kind extends 'integer' | 'number' | 'opacity'
+              ? number
+              : kind extends 'ratio'
+                ? number | `${number} / ${number}`
+                : kind extends 'weight'
+                  ? Weight
+                  : kind extends 'line'
+                    ? Length | number
+                    : kind extends 'box' | 'boxSigned'
+                      ? Box
+                      : Length
 
 type Reference<property extends keyof typeof properties> = {
   [group in Token.Group]: property extends Token.Properties<group>
@@ -806,4 +819,128 @@ function resolve(
       path,
     )
   return scalar
+}
+
+type TransformValues = {
+  perspective: number
+  rotate: string
+  rotateX: string
+  rotateY: string
+  rotateZ: string
+  scale: number
+  scaleX: number
+  scaleY: number
+  skewX: string
+  skewY: string
+  translateX: number | `${number}%`
+  translateY: number | `${number}%`
+}
+type Transform = {
+  [key in keyof TransformValues]: {
+    readonly [name in key]: TransformValues[key]
+  }
+}[keyof TransformValues]
+
+function transform(
+  value: number | string,
+  options: compile.Options,
+  path: readonly string[],
+): readonly Transform[] {
+  if (typeof value !== 'string' || !value.trim())
+    fail('unsupported_value', 'Expected a static transform list.', path)
+  let remaining = value.trim()
+  const output: Transform[] = []
+  if (remaining === 'none') return Object.freeze(output)
+
+  while (remaining) {
+    const match = /^([a-z][a-z0-9]*)\(([^()]*)\)/i.exec(remaining)
+    if (!match)
+      fail('unsupported_value', 'Expected literal transform arguments.', path)
+    const name = match[1]!.toLowerCase()
+    const args = match[2]!.split(',').map((argument) => argument.trim())
+    const pair = name === 'translate' || name === 'scale'
+    if (!args[0] || args.length > (pair ? 2 : 1) || args.some((arg) => !arg))
+      fail('unsupported_value', 'Invalid transform argument count.', path)
+    const argument = args[0]!
+
+    if (
+      name === 'translate' ||
+      name === 'translatex' ||
+      name === 'translatey'
+    ) {
+      const values = args.map((arg) => {
+        if (/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)%$/.test(arg)) {
+          if (!Number.isFinite(Number(arg.slice(0, -1))))
+            fail(
+              'unsupported_value',
+              'Transform percentages must be finite.',
+              path,
+            )
+          return arg as `${number}%`
+        }
+        return length(arg, options, true, path)
+      })
+      if (name === 'translatey') output.push({ translateY: values[0]! })
+      else {
+        output.push({ translateX: values[0]! })
+        if (name === 'translate') output.push({ translateY: values[1] ?? 0 })
+      }
+    } else if (name === 'scale' || name === 'scalex' || name === 'scaley') {
+      const values = args.map((arg) => {
+        if (
+          !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(arg) ||
+          !Number.isFinite(Number(arg))
+        )
+          fail('unsupported_value', 'Scale requires finite numbers.', path)
+        return Number(arg)
+      })
+      if (name === 'scale' && values.length === 1)
+        output.push({ scale: values[0]! })
+      else if (name === 'scaley') output.push({ scaleY: values[0]! })
+      else {
+        output.push({ scaleX: values[0]! })
+        if (name === 'scale') output.push({ scaleY: values[1]! })
+      }
+    } else if (
+      ['rotate', 'rotatex', 'rotatey', 'rotatez', 'skewx', 'skewy'].includes(
+        name,
+      )
+    ) {
+      const angle =
+        /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(deg|grad|rad|turn)$/i.exec(
+          argument,
+        )
+      if (!angle && argument !== '0')
+        fail(
+          'unsupported_value',
+          'Rotation and skew require literal angles.',
+          path,
+        )
+      const unit = angle?.[2]?.toLowerCase() ?? 'deg'
+      const number =
+        Number(angle?.[1] ?? 0) *
+        (unit === 'turn' ? 360 : unit === 'grad' ? 0.9 : 1)
+      if (!Number.isFinite(number))
+        fail('unsupported_value', 'Transform angles must be finite.', path)
+      const converted = `${number}${unit === 'rad' ? 'rad' : 'deg'}`
+      const property =
+        name === 'rotate'
+          ? name
+          : `${name.slice(0, -1)}${name.at(-1)!.toUpperCase()}`
+      // Native transform entries have one key. Normalize CSS's case-insensitive function names.
+      output.push({ [property]: converted } as Transform)
+    } else if (name === 'perspective') {
+      const distance = length(argument, options, false, path)
+      // CSS clamps perspective distances below one CSS pixel before unit conversion.
+      output.push({ perspective: Math.max(distance, options.units?.px ?? 1) })
+    } else
+      fail(
+        'unsupported_feature',
+        'Transform function is outside the native subset.',
+        [...path, match[1]!],
+      )
+
+    remaining = remaining.slice(match[0].length).trimStart()
+  }
+  return Object.freeze(output.map((entry) => Object.freeze(entry)))
 }

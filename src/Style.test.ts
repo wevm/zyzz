@@ -25,6 +25,47 @@ function diagnose(input: unknown, options: Style.define.Options = {}) {
 }
 
 describe('define', () => {
+  test('retains web target paths and source locations in diagnostics', () => {
+    const path = ['card', 'targets', 'web', '@media x']
+    try {
+      Style.define(
+        { card: { targets: { web: { '@media x': undefined } } } } as never,
+        { locations: [{ path, source: 'card.ts', start: 10, end: 20 }] },
+      )
+      expect.unreachable()
+    } catch (error) {
+      expect(error).toBeInstanceOf(Style.InvalidError)
+      expect(
+        (error as Style.InvalidError).diagnostics.map(({ path, location }) => ({
+          path,
+          location,
+        })),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "location": {
+              "end": 20,
+              "path": [
+                "card",
+                "targets",
+                "web",
+                "@media x",
+              ],
+              "source": "card.ts",
+              "start": 10,
+            },
+            "path": [
+              "card",
+              "targets",
+              "web",
+              "@media x",
+            ],
+          },
+        ]
+      `)
+    }
+  })
+
   test('rejects forged binding objects without executing their getters', () => {
     const values = [
       Object.freeze({

@@ -55,6 +55,45 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('rejects nonstatic target types and preserves optional branches', () => {
+    const bound = Config.create({})
+    style({ targets: undefined })
+    bound.style({ targets: undefined })
+    style({ targets: { web: undefined } })
+    bound.style({ targets: { web: undefined } })
+    // @ts-expect-error Target branches cannot nest.
+    style({ targets: { web: { targets: { native: { opacity: 1 } } } } })
+    // @ts-expect-error Configured target branches cannot nest.
+    bound.style({ targets: { web: { targets: { native: { opacity: 1 } } } } })
+    // @ts-expect-error Conditions cannot hide nested target branches.
+    bound.style({
+      targets: { web: { ':hover': { targets: { native: { opacity: 1 } } } } },
+    })
+    // @ts-expect-error Native branches cannot be callable.
+    style({ targets: { native: () => ({ opacity: 0.5 }) } })
+    // @ts-expect-error Named native branches cannot be callable.
+    Style.define({ card: { targets: { native: () => ({ opacity: 0.5 }) } } })
+    // @ts-expect-error Configured native branches cannot be callable.
+    bound.style({ targets: { native: () => ({ opacity: 0.5 }) } })
+    // @ts-expect-error Target values cannot come from runtime callback inputs.
+    style((values: { opacity: number }) => ({
+      targets: { web: { opacity: values.opacity } },
+    }))
+    // @ts-expect-error Native target values cannot come from runtime callback inputs.
+    bound.style((values: { opacity: number }) => ({
+      targets: { native: { opacity: values.opacity } },
+    }))
+    // @ts-expect-error Literal input unions still represent runtime target values.
+    style((values: { opacity: 0 | 1 }) => ({
+      targets: { web: { opacity: values.opacity } },
+    }))
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: { opacity: 0.5 } }),
+    })
+    // @ts-expect-error Compiled style properties are immutable.
+    output.styles.default.light.card.opacity = 1
+  })
+
   test('checks root and config-bound target branches', () => {
     const card = style({
       targets: {

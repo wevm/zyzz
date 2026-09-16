@@ -613,7 +613,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
     const name = `style-${identity(options.moduleId)}-${call.start}`
     const locations: Style.SourceLocation[] = []
-    const conditionKeys: Ast.Node[] = []
+    const conditionKeys = new Map<string, Ast.Node>()
 
     function object(
       argument: Ast.ObjectExpression,
@@ -745,6 +745,12 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
 
+        if (
+          (key === 'targets' || target !== -1) &&
+          staticData.absent(property.value)
+        )
+          continue
+
         if (key === 'targets' || prefix.at(-1) === 'targets') {
           const input = Expression.unwrap(property.value)
           if (input.type !== 'ObjectExpression') {
@@ -811,7 +817,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
         if (Condition.is(key)) {
-          conditionKeys.push(property.key)
+          conditionKeys.set(
+            JSON.stringify([name, ...prefix, key]),
+            property.key,
+          )
 
           const input = Expression.unwrap(property.value)
 
@@ -1076,12 +1085,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
-      let conditionIndex = 0
 
-      function validate(style: Style.NamedStyle) {
+      function validate(style: Style.NamedStyle, path: readonly string[]) {
+        if (style.targets?.web)
+          validate(style.targets.web, [...path, 'targets', 'web'])
         for (const rule of style.rules ?? []) {
           if (rule.condition !== undefined) {
-            const location = conditionKeys[conditionIndex++] ?? call
+            const location =
+              conditionKeys.get(JSON.stringify([...path, rule.condition])) ??
+              call
 
             try {
               AtRules.transform({
@@ -1098,11 +1110,14 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
           }
 
-          validate(rule.style)
+          validate(
+            rule.style,
+            rule.condition === undefined ? path : [...path, rule.condition],
+          )
         }
       }
 
-      for (const style of definition.styles) validate(style)
+      for (const style of definition.styles) validate(style, [style.name])
 
       if (diagnostics.length !== before) continue
 
@@ -1147,7 +1162,8 @@ export function extract(options: extract.Options): extract.ReturnType {
                   dynamic ||
                   recipe ||
                   (!definition.styles[0]!.declarations.length &&
-                    !definition.styles[0]!.rules)
+                    !definition.styles[0]!.rules &&
+                    !definition.styles[0]!.targets)
                 )
                   return undefined
                 return Identity.style(definition.styles[0]!)

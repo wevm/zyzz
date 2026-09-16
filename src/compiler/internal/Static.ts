@@ -17,6 +17,7 @@ export function collect(
   const types = new Map<number, Ast.Node>()
   const typeReferences = new Map<number, number>()
   const used = new Set<number>()
+  const absent = new Set<number>()
 
   function collectValues(statements: readonly Ast.Statement[]) {
     for (const statement of statements) {
@@ -103,6 +104,7 @@ export function collect(
         return
 
       const binding = scope.getDeclaration(node.name)
+      if (!binding && node.name === 'undefined') absent.add(node.start)
       if (!binding || !values.has(binding.node.start)) return
 
       references.set(node.start, binding.node.start)
@@ -615,17 +617,31 @@ export function collect(
     node: Ast.Node,
     allowed: ReadonlySet<number>,
     opaque: ReadonlySet<number> = new Set(),
+    omitUndefined = false,
   ): Ast.Node {
     if (opaque.has(node.start)) return node
     node = resolve(node, allowed)
 
     if (node.type === 'ObjectExpression') {
-      const expanded = properties(node, allowed)
+      const expanded = properties(node, allowed).filter((property) => {
+        if (!omitUndefined || property.type !== 'Property') return true
+        const value = Expression.unwrap(property.value)
+        return !(
+          value.type === 'Identifier' &&
+          value.name === 'undefined' &&
+          absent.has(value.start)
+        )
+      })
 
       const normalized = expanded.map((property) =>
         property.type === 'Property'
           ? (() => {
-              const value = normalize(property.value, allowed, opaque)
+              const value = normalize(
+                property.value,
+                allowed,
+                opaque,
+                omitUndefined,
+              )
 
               return value === property.value
                 ? property
@@ -645,7 +661,7 @@ export function collect(
     if (node.type === 'ArrayExpression') {
       const elements = node.elements.map((element) =>
         element && element.type !== 'SpreadElement'
-          ? normalize(element, allowed, opaque)
+          ? normalize(element, allowed, opaque, omitUndefined)
           : element,
       )
 
@@ -658,7 +674,7 @@ export function collect(
 
     if (node.type === 'TemplateLiteral') {
       const expressions = node.expressions.map((expression) =>
-        normalize(expression, allowed, opaque),
+        normalize(expression, allowed, opaque, omitUndefined),
       )
 
       return expressions.every(
@@ -672,6 +688,15 @@ export function collect(
   }
 
   return {
+    /** Recognizes the unshadowed undefined value without evaluating expressions. */
+    absent(input: Ast.Node): boolean {
+      const node = Expression.unwrap(input)
+      return (
+        node.type === 'Identifier' &&
+        node.name === 'undefined' &&
+        absent.has(node.start)
+      )
+    },
     /** Resolves an exported immutable literal without evaluating module code. */
     exported(name: string): Ast.Node | undefined {
       for (const statement of program.body) {
@@ -698,13 +723,31 @@ export function collect(
           }
           references.set(reference.start, value.start)
           try {
-            return normalize(reference, new Set())
+            return normalize(reference, new Set(), new Set(), true)
           } finally {
             references.delete(reference.start)
           }
         }
       }
-      return imports[name]
+      for (const statement of program.body) {
+        if (statement.type !== 'ImportDeclaration') continue
+        const specifier = statement.specifiers.find(
+          (specifier) => specifier.local.name === name,
+        )
+        if (!specifier || !imports[name]) continue
+        const reference = {
+          ...specifier.local,
+          start: program.end + 1,
+          end: program.end + 1,
+        }
+        references.set(reference.start, specifier.start)
+        try {
+          return normalize(reference, new Set(), new Set(), true)
+        } finally {
+          references.delete(reference.start)
+        }
+      }
+      return undefined
     },
     resolve,
     properties,

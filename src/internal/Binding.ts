@@ -109,7 +109,7 @@ type Compatible<
 /** Rejects broad numeric callback values where a property requires a narrower domain. */
 export type Checked<style> = {
   [property in keyof style]: property extends 'targets'
-    ? unknown
+    ? never
     : property extends keyof Literal.Properties
       ? number extends style[property]
         ? property extends Properties<'number'>

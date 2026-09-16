@@ -8,6 +8,45 @@ import { Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('extract', () => {
+  test('rejects malformed web target conditions at their source location', () => {
+    const source = `import {style} from 'zyzz';export const card=style({targets:{web:{'@supports display:grid':{color:'red'}}}});`
+    try {
+      Source.extract({ moduleId: 'card.ts', source })
+      expect.unreachable()
+    } catch (error) {
+      expect(error).toBeInstanceOf(Source.ExtractError)
+      const diagnostics = (error as Source.ExtractError).diagnostics
+      expect(diagnostics.map(({ start, end }) => source.slice(start, end)))
+        .toMatchInlineSnapshot(`
+        [
+          "'@supports display:grid'",
+        ]
+      `)
+    }
+  })
+
+  test('omits explicit undefined native fields in inline target data', () => {
+    const output = Source.extract({
+      moduleId: 'card.ts',
+      source: `import {style} from 'zyzz';export const card=style({targets:{native:{opacity:undefined,lineHeight:24}}});`,
+    })
+
+    expect(output.styles.styles[0]?.targets?.native).toMatchInlineSnapshot(`
+      {
+        "lineHeight": 24,
+      }
+    `)
+  })
+
+  test('does not omit shadowed undefined target data', () => {
+    expect(() =>
+      Source.extract({
+        moduleId: 'card.ts',
+        source: `import {style} from 'zyzz';const undefined=unknown;export const card=style({targets:{native:{opacity:undefined}}});`,
+      }),
+    ).toThrow()
+  })
+
   test('parameter initializers preserve imports across body hoisting and nested closures', () => {
     const source = `import { style } from 'zyzz';
 const text = '🎉';

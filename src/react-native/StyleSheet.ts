@@ -523,7 +523,7 @@ export declare namespace flatten {
 }
 
 /** Native style output, with converted logical-unit lengths and ordered transforms. */
-export type NativeStyle = Native.Output
+export type NativeStyle = Readonly<Native.Output>
 
 /** Optional native authoring constraint used with satisfies before Style.define. */
 export type Properties = {

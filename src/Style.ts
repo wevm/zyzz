@@ -16,6 +16,7 @@ export type Accepted<
   style,
   tokens extends Theme.Tokens = {},
   literal extends boolean = false,
+  targets extends boolean = true,
 > = Record<
   Exclude<
     Keys<style>,
@@ -30,7 +31,9 @@ export type Accepted<
   (style extends unknown
     ? {
         [key in keyof style]: key extends 'targets'
-          ? AcceptedTargets<style[key], tokens, literal>
+          ? targets extends true
+            ? AcceptedTargets<style[key], tokens, literal>
+            : never
           : key extends 'selectors'
             ? style[key] extends Record<string, unknown>
               ? {
@@ -38,7 +41,7 @@ export type Accepted<
                     string,
                     unknown
                   >
-                    ? Accepted<style[key][selector], tokens, literal>
+                    ? Accepted<style[key][selector], tokens, literal, targets>
                     : never
                 }
               : never
@@ -65,7 +68,12 @@ export type Accepted<
                     ? never
                     : NonNullable<style[key]> extends Record<string, unknown>
                       ?
-                          | Accepted<NonNullable<style[key]>, tokens, literal>
+                          | Accepted<
+                              NonNullable<style[key]>,
+                              tokens,
+                              literal,
+                              targets
+                            >
                           | Extract<style[key], undefined>
                       : never
                   : never
@@ -81,7 +89,7 @@ type AcceptedTargets<
   : {
       [key in keyof input]: key extends 'web'
         ?
-            | Accepted<NonNullable<input[key]>, tokens, literal>
+            | Accepted<NonNullable<input[key]>, tokens, literal, false>
             | Extract<input[key], undefined>
         : key extends 'android' | 'ios' | 'native'
           ? Targets.Declarations<input[key]>
@@ -92,7 +100,7 @@ type AcceptedTargets<
 export type TargetBranches<tokens extends Theme.Tokens = {}> =
   Targets.NativeBranches & {
     /** Web declarations retain CSS semantics and conditions. */
-    readonly web?: Properties<tokens> | undefined
+    readonly web?: Properties<tokens, false> | undefined
   }
 
 type Keys<value> = value extends unknown ? keyof value : never
@@ -280,7 +288,9 @@ export function define(
       report('invalid_structure', [name], 'Style names must not be empty.')
 
     const mappings = options.theme?.[Token.definition].contract.shorthands
-    const authored = entries(style, [name])
+    const authored = entries(style, [name]).filter(
+      ([key, value]) => key !== 'targets' || value !== undefined,
+    )
     const target = authored.find(([key]) => key === 'targets')
     if (target) {
       if (options[targetBranch]) {
@@ -303,13 +313,23 @@ export function define(
             continue
           }
           if (input === undefined) continue
-          if (key === 'web')
-            targets.web = define({ [name]: input } as never, {
-              ...options,
-              [nesting]: (options[nesting] ?? 0) + 1,
-              [targetBranch]: true,
-            }).styles[0]
-          else {
+          if (key === 'web') {
+            try {
+              targets.web = define({ [name]: input } as never, {
+                ...options,
+                [nesting]: (options[nesting] ?? 0) + 1,
+                [targetBranch]: true,
+              }).styles[0]
+            } catch (error) {
+              if (!(error instanceof InvalidError)) throw error
+              for (const diagnostic of error.diagnostics)
+                report(
+                  diagnostic.code,
+                  [name, 'targets', 'web', ...diagnostic.path.slice(1)],
+                  diagnostic.message,
+                )
+            }
+          } else {
             entries(input, [name, 'targets', key])
             targets[key] = Targets.copy(input, [name, 'targets', key])
           }
@@ -659,10 +679,16 @@ export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
 }
 
 /** Recursive theme-aware declaration and condition authoring. */
-export type Properties<tokens extends Theme.Tokens = {}> =
-  DeclarationProperties<tokens> & {
-    readonly [key in Condition.Keys<tokens>]?: Properties<tokens>
-  } & { readonly targets?: TargetBranches<tokens> | undefined }
+export type Properties<
+  tokens extends Theme.Tokens = {},
+  targets extends boolean = true,
+> = DeclarationProperties<tokens> & {
+  readonly [key in Condition.Keys<tokens>]?: Properties<tokens, targets>
+} & {
+  readonly targets?:
+    | (targets extends true ? TargetBranches<tokens> : never)
+    | undefined
+}
 
 /** Nested literal declarations retain exact keys at every depth. */
 export type LiteralProperties = LiteralDeclarations & {

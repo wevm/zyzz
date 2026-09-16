@@ -37,18 +37,12 @@ export function body(input: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(input).flatMap(([key, value]) => {
       if (key === 'targets') {
-        const branches = value as Record<string, unknown>
-        return [
-          [
-            key,
-            {
-              ...branches,
-              ...(branches.web
-                ? { web: body(branches.web as Record<string, unknown>) }
-                : {}),
-            },
-          ],
-        ]
+        if (!value || typeof value !== 'object') return [[key, value]]
+        const descriptors = Object.getOwnPropertyDescriptors(value)
+        const web = descriptors.web
+        if (web && 'value' in web && web.value && typeof web.value === 'object')
+          descriptors.web = { ...web, value: body(web.value) }
+        return [[key, Object.create(Object.getPrototypeOf(value), descriptors)]]
       }
       if (key === 'selectors' || key === 'variables')
         return Object.entries(value as Record<string, unknown>).map(

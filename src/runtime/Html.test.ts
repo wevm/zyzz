@@ -1,5 +1,7 @@
 /** Verifies compiled styles through HTML and React rendering in Chromium. @module */
 import * as Esbuild from 'esbuild'
+import * as Fs from 'node:fs/promises'
+import * as Module from 'node:module'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import * as React from 'react'
@@ -85,9 +87,35 @@ describe('create', () => {
         ),
       ).toMatchInlineSnapshot(`false`)
 
+      const directory = await Fs.mkdtemp(Path.resolve('.fixture-html-'))
       const browser = await chromium.launch({ headless: true })
 
       try {
+        const server = await Esbuild.build({
+          alias: {
+            'zyzz/runtime': Path.resolve('src/runtime/index.ts'),
+            'zyzz/web': Path.resolve('src/web/index.ts'),
+          },
+          bundle: true,
+          external: ['react', 'react-dom', 'react-dom/client'],
+          format: 'cjs',
+          platform: 'node',
+          stdin: {
+            contents: result.code,
+            loader: 'ts',
+            resolveDir: process.cwd(),
+          },
+          write: false,
+        })
+        const filename = Path.join(directory, 'server.cjs')
+        await Fs.writeFile(filename, server.outputFiles[0]!.text)
+        const rendered = Module.createRequire(filename)(filename) as {
+          html: () => string
+          props: (width: `${number}%`) => style.Props
+        }
+        const markup = Server.renderToString(
+          React.createElement('div', { id: 'card', ...rendered.props('25%') }),
+        )
         const page = await browser.newPage()
         const errors: string[] = []
 
@@ -95,20 +123,18 @@ describe('create', () => {
         await page.setContent(
           '<style>' +
             result.css +
-            '</style><main style="width:400px" id="react"></main><main style="width:400px" id="dom"></main>',
+            `</style><main style="width:400px" id="react">${markup}</main><main style="width:400px" id="dom"><div id="plain" ${rendered.html()}></div></main>`,
         )
         await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
 
-        const props = await page.evaluate<style.Props>('Fixture.props("25%")')
-        const markup = Server.renderToString(
-          React.createElement('div', { id: 'card', ...props }),
-        )
-
-        await page.evaluate((html) => {
-          document.querySelector('#react')!.innerHTML = html
-        }, markup)
         await page.evaluate(
-          `window.original = document.querySelector('#card'); Fixture.hydrate(); document.querySelector('#dom').innerHTML = '<div id="plain" ' + Fixture.html() + '></div>'; window.plain = document.querySelector('#plain');`,
+          `window.original = document.querySelector('#card'); window.plain = document.querySelector('#plain'); Fixture.hydrate();`,
+        )
+        const ruleCount = await page.evaluate(() =>
+          [...document.styleSheets].reduce(
+            (count, sheet) => count + sheet.cssRules.length,
+            0,
+          ),
         )
         await page.waitForFunction(
           'document.querySelector("#card").style.opacity === "0.5"',
@@ -182,6 +208,15 @@ describe('create', () => {
           ),
         ).toMatchInlineSnapshot(`true`)
 
+        expect(
+          (await page.evaluate(() =>
+            [...document.styleSheets].reduce(
+              (count, sheet) => count + sheet.cssRules.length,
+              0,
+            ),
+          )) - ruleCount,
+        ).toMatchInlineSnapshot('0')
+
         await page.evaluate('Fixture.unmount()')
 
         expect(await page.locator('#react').innerHTML()).toMatchInlineSnapshot(
@@ -190,6 +225,7 @@ describe('create', () => {
         expect(errors).toMatchInlineSnapshot(`[]`)
       } finally {
         await browser.close()
+        await Fs.rm(directory, { recursive: true, force: true })
       }
     },
     30000,

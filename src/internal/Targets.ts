@@ -2,6 +2,46 @@
 import type * as Native from './NativeProperties.js'
 import type * as Style from '../Style.js'
 
+/** Type-only authoring data retained for destination component compatibility. */
+export declare const authored: unique symbol
+
+/** Per-style destination domains, computed only when a compiler consumes them. */
+export type Domains<input> = [input] extends [never]
+  ? unknown
+  : {
+      [key in keyof input]: {
+        android: Overflow<input[key], 'android'>
+        ios: Overflow<input[key], 'ios'>
+        native: Overflow<input[key], undefined>
+      }
+    }
+
+/** Retains the selected overflow domain, which differs between Image and View. */
+export type Overflow<input, platform> = Merge<
+  Value<input>,
+  Merge<
+    Value<Branch<input, 'native'>>,
+    platform extends 'ios' | 'android'
+      ? Value<Branch<input, platform>>
+      : undefined
+  >
+>
+type Branch<input, key extends PropertyKey> = input extends {
+  readonly targets?: infer targets
+}
+  ? key extends keyof NonNullable<targets>
+    ? NonNullable<targets>[key]
+    : never
+  : never
+type Value<input> = [input] extends [never]
+  ? undefined
+  : 'overflow' extends keyof NonNullable<input>
+    ? NonNullable<input>['overflow']
+    : undefined
+type Merge<before, after> =
+  | Exclude<after, undefined>
+  | (undefined extends after ? before : never)
+
 /** Checks nested native literal keys without accepting host-owned values. */
 export type Checked<input, expected> = expected extends unknown
   ? input extends expected

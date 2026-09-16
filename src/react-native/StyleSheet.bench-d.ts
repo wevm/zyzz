@@ -47,4 +47,4 @@ bench('native / structured target authoring', () => {
       },
     }),
   })
-}).types([13482, 'instantiations'])
+}).types([19936, 'instantiations'])

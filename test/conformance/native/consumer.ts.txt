@@ -1,0 +1,13 @@
+/** Checks compiled tables against the published React Native component contracts. @module */
+import type { ImageStyle, StyleProp, TextStyle, ViewStyle } from 'react-native'
+import { Style } from 'zyzz'
+import { StyleSheet } from 'zyzz/react-native'
+import { values } from '../test/fixtures/native/StaticValues.js'
+
+const tables = StyleSheet.compile({
+  styles: Style.define({ card: { targets: { native: values } } }),
+})
+const image: StyleProp<ImageStyle> = tables.styles.default.light.card
+const text: StyleProp<TextStyle> = tables.styles.default.light.card
+const view: StyleProp<ViewStyle> = tables.styles.default.light.card
+void [image, text, view]

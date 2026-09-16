@@ -64,6 +64,8 @@ export async function inventory() {
       continue
     }
 
+    if (file.startsWith('Published')) continue
+
     const source = Ts.createSourceFile(
       file,
       text,
@@ -172,14 +174,60 @@ async function generateStatic() {
         .replace(/Animated\.AnimatedNode/g, 'never'),
     )
     .join('\n')
+  const published = (
+    await Promise.all(
+      [
+        'PublishedStyleSheetTypes.d.ts.txt',
+        'PublishedStyleOverrides.d.ts.txt',
+        'PublishedTransformStyle.d.ts.txt',
+        'PublishedImageResizeMode.d.ts.txt',
+      ].map(async (name) => {
+        const text = await Fs.readFile(
+          Path.join(directory, 'upstream', name),
+          'utf8',
+        )
+        const file = Ts.createSourceFile(
+          name,
+          text,
+          Ts.ScriptTarget.Latest,
+          true,
+        )
+        return file.statements
+          .filter(
+            (statement) =>
+              !Ts.isImportDeclaration(statement) &&
+              !Ts.isExportDeclaration(statement) &&
+              !(
+                Ts.isTypeAliasDeclaration(statement) &&
+                statement.name.text === 'NativeColorValue'
+              ),
+          )
+          .map((statement) =>
+            statement.getText(file).replace(/\bdeclare\s+/g, ''),
+          )
+          .join('\n')
+      }),
+    )
+  ).join('\n')
   const source = `${declarations}
     type ColorValue = string;
     type MaximumOneOf<T, K extends keyof T = keyof T> = K extends keyof T
       ? { [P in K]: T[K] } & { [P in Exclude<keyof T, K>]?: never } : never;
-    type Styles = ImageStyle | TextStyle | ViewStyle;
+    namespace Published {
+      type AnimatedNode = never;
+      type WithAnimatedValue<T> = never;
+      export type NativeColorValue = never;
+      type ColorValue = ____ColorValue_Internal;
+      ${published}
+    }
+    type LegacyStyles = ImageStyle | TextStyle | ViewStyle;
+    type PublishedStyles = Published.____ImageStyle_Internal | Published.____TextStyle_Internal | Published.____ViewStyle_Internal;
+    type Styles = LegacyStyles | PublishedStyles;
     type Keys<T> = T extends unknown ? keyof T : never;
     type Value<T, K extends PropertyKey> = T extends unknown ? K extends keyof T ? T[K] : never : never;
-    type Output = { [K in Keys<Styles>]?: Value<Styles, K> };
+    type Operations = NonNullable<Exclude<Published.____TransformStyle_Internal['transform'], string | undefined>[number]>;
+    type Transform = { [K in Keys<Operations>]: { [P in K]: Exclude<Value<Operations, P>, undefined> } & { [P in Exclude<Keys<Operations>, K>]?: never } }[Keys<Operations>];
+    type Output = { [K in Keys<Styles>]?: K extends 'transform' ? string | readonly Transform[] : K extends Keys<PublishedStyles> ? Value<PublishedStyles, K> : Value<LegacyStyles, K> };
     type Immutable<T> = T extends object ? { readonly [K in keyof T]: Immutable<T[K]> } : T;
     type Properties = Immutable<Output>;
   `
@@ -213,6 +261,11 @@ async function generateStatic() {
 
   function schema(type: Ts.Type): unknown {
     if (type.flags & Ts.TypeFlags.Never) return { kind: 'never' }
+    if (checker.isTupleType(type))
+      return {
+        kind: 'tuple',
+        values: checker.getTypeArguments(type as Ts.TypeReference).map(schema),
+      }
     if (type.isUnion()) return { kind: 'union', values: type.types.map(schema) }
     if (type.flags & Ts.TypeFlags.StringLiteral)
       return { kind: 'literal', value: (type as Ts.StringLiteralType).value }
@@ -282,7 +335,7 @@ async function generateStatic() {
               ]),
             ),
           }
-        : node.kind === 'union'
+        : node.kind === 'union' || node.kind === 'tuple'
           ? { ...node, values: node.values!.map(intern) }
           : node.kind === 'array'
             ? { ...node, value: intern(node.value) }
@@ -296,9 +349,77 @@ async function generateStatic() {
     return id
   }
   const schemaRoot = intern(validation)
+  const namespace = file.statements.find(
+    (node) => Ts.isModuleDeclaration(node) && node.name.text === 'Published',
+  ) as Ts.ModuleDeclaration
+  const body = namespace.body as Ts.ModuleBlock
+  const components = Object.fromEntries(
+    ['ImageStyle', 'TextStyle', 'ViewStyle'].map((name) => {
+      const declaration = body.statements.find(
+        (node) =>
+          Ts.isTypeAliasDeclaration(node) &&
+          node.name.text === `____${name}_Internal`,
+      )!
+      const properties = checker
+        .getPropertiesOfType(checker.getTypeAtLocation(declaration))
+        .map((property) => property.name)
+        .sort()
+      return [name, properties]
+    }),
+  )
+  const combined = Object.fromEntries(
+    Object.entries(components).map(([name, properties]) => [
+      name,
+      [
+        ...new Set([...Object.keys(pinned.styles[name]!), ...properties]),
+      ].sort(),
+    ]),
+  )
   const printer = Ts.createPrinter({ removeComments: true })
-  const types = printer.printFile(file)
+  const output = file.statements.find(
+    (node) => Ts.isTypeAliasDeclaration(node) && node.name.text === 'Output',
+  ) as Ts.TypeAliasDeclaration
+  const shape = Ts.factory.createTypeLiteralNode(
+    checker
+      .getPropertiesOfType(checker.getTypeAtLocation(output))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((property) =>
+        Ts.factory.createPropertySignature(
+          undefined,
+          property.name,
+          Ts.factory.createToken(Ts.SyntaxKind.QuestionToken),
+          checker.typeToTypeNode(
+            checker.getTypeOfSymbolAtLocation(property, output),
+            output,
+            Ts.NodeBuilderFlags.NoTruncation |
+              Ts.NodeBuilderFlags.UseFullyQualifiedType,
+          ),
+        ),
+      ),
+  )
+  const types = printer.printFile(
+    Ts.factory.updateSourceFile(
+      file,
+      file.statements.map((statement) =>
+        statement === output
+          ? Ts.factory.updateTypeAliasDeclaration(
+              output,
+              output.modifiers,
+              output.name,
+              output.typeParameters,
+              shape,
+            )
+          : statement,
+      ),
+    ),
+  )
   return {
+    inventory:
+      JSON.stringify(
+        { version: pinned.version, published: components, combined },
+        null,
+        2,
+      ) + '\n',
     schema: JSON.stringify({ root: schemaRoot, nodes }, null, 2) + '\n',
     types: `/** Static projection of pinned React Native declarations. Animated and opaque host values are excluded. @module */\n// Copyright (c) Meta Platforms, Inc. and affiliates. MIT license: test/conformance/native/upstream/LICENSE.\n// Generated by scripts/native-conformance.ts --static from React Native ${pinned.version}.\n${types}\nexport type { Output, Properties }\n`,
   }
@@ -309,6 +430,7 @@ export async function staticContracts(options: staticContracts.Options = {}) {
   const output = await generateStatic()
   for (const [file, value] of [
     ['src/internal/NativeProperties.ts', output.types],
+    ['test/conformance/native/static-inventory.json', output.inventory],
     [
       'src/react-native/internal/NativeSchema.ts',
       '/** Validates static native domains from pinned upstream declarations. @module */\n// Generated by scripts/native-conformance.ts --static --update.\nexport default ' +
@@ -349,7 +471,7 @@ export async function check(options: check.Options = {}) {
   )
   const apis = Object.keys(actual.api).length
   // The audit foundation has no device evidence. It cannot certify parity from a property allowlist.
-  const report = `React Native ${actual.version}: ${properties} component/property pairs, ${apis} StyleSheet APIs. Complete parity: pending type/value-domain audit and iOS/Android evidence.`
+  const report = `React Native ${actual.version}: ${properties} component/property pairs, ${apis} StyleSheet APIs. Complete parity: pending universal application, host interoperability, and iOS/Android evidence.`
   if (options.requireFull) throw new Error(report)
   return report
 }

@@ -593,7 +593,8 @@ export const lengthUnits = [
 ] as const
 const margin = { auto: true, kind: 'length', negative: true } as const
 const maximum = { ...length, keywords: [...intrinsic, 'none'] } as const
-const namedColors = [
+/** Absolute CSS named colors shared with target conversion. */
+export const namedColors = [
   'aliceblue',
   'antiquewhite',
   'aqua',

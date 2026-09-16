@@ -620,8 +620,8 @@ describe('define', () => {
     expectTypeOf(definition.styles[0]!.name).toEqualTypeOf<
       'card' | 'hidden' | 'label'
     >()
-    expectTypeOf(definition).toEqualTypeOf<
-      Style.Definition<'card' | 'hidden' | 'label'>
+    expectTypeOf(definition.styles).toEqualTypeOf<
+      Style.Definition<'card' | 'hidden' | 'label'>['styles']
     >()
 
     Style.define({
@@ -662,7 +662,9 @@ describe('define', () => {
   test('numeric style names', () => {
     const numeric = Style.define({ 0: { color: '#fff' }, 1.5: { padding: 0 } })
 
-    expectTypeOf(numeric).toEqualTypeOf<Style.Definition<'0' | '1.5'>>()
+    expectTypeOf(numeric.styles).toEqualTypeOf<
+      Style.Definition<'0' | '1.5'>['styles']
+    >()
   })
 
   test('union inputs', () => {
@@ -685,8 +687,8 @@ describe('define', () => {
 
     const validUnion = {} as { color: '#fff' } | { padding: 0 }
 
-    expectTypeOf(Style.define({ card: validUnion })).toEqualTypeOf<
-      Style.Definition<'card'>
+    expectTypeOf(Style.define({ card: validUnion }).styles).toEqualTypeOf<
+      Style.Definition<'card'>['styles']
     >()
   })
 
@@ -700,7 +702,9 @@ describe('define', () => {
       { theme },
     )
 
-    expectTypeOf(themed).toEqualTypeOf<Style.Definition<'card'>>()
+    expectTypeOf(themed.styles).toEqualTypeOf<
+      Style.Definition<'card'>['styles']
+    >()
 
     // @ts-expect-error Theme inference cannot widen to accept unknown tokens.
     Style.define({ card: { color: 'missing' } }, { theme })
@@ -722,8 +726,8 @@ describe('define', () => {
     const presentTheme: Style.define.Options<Tokens> = { theme }
 
     expectTypeOf(
-      Style.define({ card: { color: 'brand' } }, presentTheme),
-    ).toEqualTypeOf<Style.Definition<'card'>>()
+      Style.define({ card: { color: 'brand' } }, presentTheme).styles,
+    ).toEqualTypeOf<Style.Definition<'card'>['styles']>()
 
     const optionalTheme = {} as { theme?: typeof theme | undefined }
 

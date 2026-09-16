@@ -3,6 +3,7 @@ import type * as Ast from '@oxc-project/types'
 import type * as Query from '../../internal/Query.js'
 import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
 import type * as Recipe from '../../runtime/Recipe.js'
+import type * as StaticRecipe from '../../internal/Recipe.js'
 import * as Expression from './Expression.js'
 import * as RecipeConditions from './RecipeConditions.js'
 import * as RecipePayloads from './RecipePayloads.js'
@@ -93,6 +94,7 @@ export function expand(
   types: { readonly [axis: string]: { readonly [choice: string]: string } }
   body: Ast.ObjectExpression
   recipe: Recipe.Definition
+  staticRecipe?: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
 } {
   const bindings = RecipePayloads.create(options)
   const payloads: Recipe.Payload[] = []
@@ -488,6 +490,23 @@ export function expand(
     bindings,
     types,
     body: { ...node, properties },
+    ...(!payloads.length && !named.length
+      ? {
+          staticRecipe: {
+            axes,
+            defaults,
+            rules: [
+              ...(base
+                ? [{ matches: [], value: base.value as Ast.ObjectExpression }]
+                : []),
+              ...rules.map(({ matches, property }) => ({
+                matches,
+                value: property.value as Ast.ObjectExpression,
+              })),
+            ],
+          },
+        }
+      : {}),
     recipe: {
       axes,
       defaults,

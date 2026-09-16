@@ -6,8 +6,110 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
+import { StyleSheet } from 'zyzz/react-native'
 
 describe('extract', () => {
+  test('retains ordered static recipe alternatives for native compilation', () => {
+    const result = Source.extract({
+      moduleId: 'recipe.ts',
+      source: `import {variants} from 'zyzz';
+export const card = variants({
+  base: {opacity: 0.2},
+  variants: {tone: {quiet: {opacity: 0.4}, loud: {targets: {native: {opacity: 0.6}, ios: {opacity: 0.7}}}}},
+  defaultVariants: {tone: 'quiet'},
+  compoundVariants: [
+    {when: {tone: ['quiet', 'loud']}, style: {opacity: 0.8}},
+    {when: {tone: 'loud'}, style: {opacity: 1}},
+  ],
+});`,
+    })
+    const recipe = result.calls[0]!.staticRecipe!
+    expect(recipe.axes).toMatchInlineSnapshot(`
+      {
+        "tone": [
+          "quiet",
+          "loud",
+        ],
+      }
+    `)
+    expect(recipe.defaults).toMatchInlineSnapshot(`
+      {
+        "tone": "quiet",
+      }
+    `)
+    expect(recipe.rules.map(({ matches }) => matches)).toMatchInlineSnapshot(`
+      [
+        [],
+        [
+          [
+            "tone",
+            [
+              "quiet",
+            ],
+          ],
+        ],
+        [
+          [
+            "tone",
+            [
+              "loud",
+            ],
+          ],
+        ],
+        [
+          [
+            "tone",
+            [
+              "quiet",
+              "loud",
+            ],
+          ],
+        ],
+        [
+          [
+            "tone",
+            [
+              "loud",
+            ],
+          ],
+        ],
+      ]
+    `)
+    expect(
+      recipe.rules.map(
+        ({ value }) =>
+          Object.values(
+            StyleSheet.compile({ styles: value, platform: 'ios' }).styles
+              .default.light,
+          )[0]!.opacity,
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        0.2,
+        0.4,
+        0.7,
+        0.8,
+        1,
+      ]
+    `)
+    expect(
+      Css.compile({ styles: result.styles }).css.includes('data-tone'),
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('does not label dynamic or conditional recipes as static native data', () => {
+    for (const body of [
+      `{variants:{size:{custom:(value:{opacity:number})=>({opacity:value.opacity})}}}`,
+      `{conditions:{wide:'@media (min-width: 600px)'},variants:{tone:{quiet:{opacity:0.5}}}}`,
+    ]) {
+      const result = Source.extract({
+        moduleId: 'recipe.ts',
+        source: `import {variants} from 'zyzz';export const card=variants(${body});`,
+      })
+      expect(result.calls[0]!.staticRecipe).toMatchInlineSnapshot('undefined')
+    }
+  })
+
   test('rejects malformed web target conditions at their source location', () => {
     const source = `import {style} from 'zyzz';export const card=style({targets:{web:{'@supports display:grid':{color:'red'}}}});`
     try {

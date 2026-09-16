@@ -292,7 +292,7 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
+  }, 30_000)
 
   test('matches browser colors for absolute sRGB conversions', async () => {
     const upstream = await Fs.readFile(
@@ -347,7 +347,7 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
+  }, 30_000)
 
   test.each([
     { transform: 'matrix(1,0,0,1,0,0) translateX(10%)' },

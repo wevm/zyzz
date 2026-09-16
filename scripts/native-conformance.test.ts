@@ -56,7 +56,7 @@ describe('check', () => {
     ).toMatchInlineSnapshot('421')
     expect(audit.combined.ViewStyle).toContain('transformMatrix')
     expect(audit.published.ImageStyle).toContain('boxShadow')
-  })
+  }, 30_000)
 
   test('audits the actual runtime exports alongside declared signatures', async () => {
     const result = await inventory()

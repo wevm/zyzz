@@ -11,6 +11,7 @@ import { expect, vi } from 'vite-plus/test'
 import * as Font from './AtRuleFont.js'
 import * as Library from './Library.js'
 import * as VariantLibrary from './VariantLibrary.js'
+import * as Watch from './Watch.js'
 
 const exec = Util.promisify(ChildProcess.execFile)
 
@@ -272,14 +273,23 @@ export async function verify(options: verify.Options) {
         .evaluate((element) => getComputedStyle(element).padding),
     ).toMatchInlineSnapshot('"8px"')
     expect(
-      await page.locator('#default-theme p').evaluate((element) => ({
-        padding: getComputedStyle(element).padding,
-        font: getComputedStyle(element).fontFamily,
-      })),
-    ).toEqual({
-      padding: '16px',
-      font: 'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
-    })
+      await page
+        .locator('#default-theme p')
+        .evaluate((element) => getComputedStyle(element).padding),
+    ).toMatchInlineSnapshot('"16px"')
+    expect(
+      await page.locator('#default-theme p').evaluate((element) => {
+        const control = document.createElement('span')
+        control.style.fontFamily =
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+        document.body.append(control)
+        const matches =
+          getComputedStyle(element).fontFamily ===
+          getComputedStyle(control).fontFamily
+        control.remove()
+        return matches
+      }),
+    ).toMatchInlineSnapshot('true')
     expect(
       await page.evaluate(
         async () => (await document.fonts.load('16px NextEvidence')).length,
@@ -452,8 +462,8 @@ export async function verify(options: verify.Options) {
         .locator('button[data-ready]')
         .evaluate((element) => getComputedStyle(element).opacity),
     ).toMatchInlineSnapshot('"0.5"')
-    const changedConfig = (color: string) =>
-      `import {Config,Theme} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Theme.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {style,theme}=Config.create({cssOutput:'${cssOutput}',theme:changed});`
+    const changedConfig = (color: string, mode = cssOutput) =>
+      `import {Config,Theme} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Theme.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {style,theme}=Config.create({cssOutput:'${mode}',theme:changed});`
     await Fs.writeFile(Path.join(app, 'app/config.ts'), changedConfig('#c00'))
     await page
       .waitForFunction(
@@ -471,6 +481,77 @@ export async function verify(options: verify.Options) {
         .locator('main > h1')
         .evaluate((element) => getComputedStyle(element).color),
     ).toMatchInlineSnapshot('"rgb(204, 0, 0)"')
+    for (const mode of [
+      cssOutput === 'atomic' ? 'grouped' : 'atomic',
+      cssOutput,
+    ] as const) {
+      await Watch.write({
+        path: Path.join(app, 'app/config.ts'),
+        source: changedConfig('#c00', mode),
+      })
+      await page.waitForFunction(
+        (grouped) => {
+          const heading = document.querySelector('main > h1')
+          if (!heading) return false
+          const rules = [...document.styleSheets]
+            .flatMap((sheet) => [...sheet.cssRules])
+            .filter(
+              (rule): rule is CSSStyleRule =>
+                rule instanceof CSSStyleRule &&
+                heading.matches(rule.selectorText) &&
+                Boolean(rule.style.padding),
+            )
+          return (
+            rules.length > 0 &&
+            rules.every((rule) => Boolean(rule.style.color) === grouped)
+          )
+        },
+        mode === 'grouped',
+        { timeout: 30_000 },
+      )
+      expect(
+        await page
+          .locator('main > h1')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(204, 0, 0)"')
+      expect(
+        await page
+          .locator('button[data-ready]')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot('"0.5"')
+    }
+
+    const relocated = Path.join(app, 'app/relocated.ts')
+    await Watch.write({ path: relocated, source: changedConfig('#609') })
+    await Watch.write({
+      path: Path.join(app, 'app/config.ts'),
+      source: "export * from './relocated'",
+    })
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector('main > h1')!).color ===
+        'rgb(102, 0, 153)',
+      undefined,
+      { timeout: 30_000 },
+    )
+    expect(
+      await page
+        .locator('button[data-ready]')
+        .evaluate((element) => getComputedStyle(element).opacity),
+    ).toMatchInlineSnapshot('"0.5"')
+    await Watch.write({
+      path: Path.join(app, 'app/config.ts'),
+      source: changedConfig('#c00'),
+    })
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector('main > h1')!).color ===
+        'rgb(204, 0, 0)',
+      undefined,
+      { timeout: 30_000 },
+    )
+    await Fs.rm(relocated)
+
     await Fs.writeFile(
       Path.join(app, 'app/broken.ts'),
       `import {global} from 'zyzz/web';declare function unknownColor(): 'red';global({body:{color:unknownColor()}});`,

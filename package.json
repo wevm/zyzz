@@ -12,6 +12,8 @@
     "check:at-rules:targets": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts --require-targets",
     "check:css": "node scripts/css-conformance.ts",
     "check:css:full": "node scripts/css-conformance.ts --require-full",
+    "check:native": "node scripts/native-conformance.ts",
+    "check:native:full": "node scripts/native-conformance.ts --require-full",
     "check:types": "tsc",
     "dev": "zile dev && node scripts/build-default-theme.ts",
     "examples": "pnpm build && pnpm --filter \"./examples/*\" rebuild && pnpm --filter \"./examples/*\" --parallel dev",

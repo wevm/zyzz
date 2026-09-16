@@ -149,6 +149,189 @@ export async function inventory() {
   }
 }
 
+/** Reproduces compiler-owned static contracts without importing React Native at runtime. */
+async function generateStatic() {
+  const pinned = await inventory()
+  const declarations = Object.entries(pinned.declarations)
+    .filter(
+      ([name]) =>
+        ![
+          'ColorValue',
+          'Falsy',
+          'ImageResizeModeStatic',
+          'MaximumOneOf',
+          'OpaqueColorValue',
+          'RecursiveArray',
+          'StyleProp',
+          'StyleSheetProperties',
+        ].includes(name),
+    )
+    .map(([, declaration]) =>
+      declaration
+        .replace(/\bexport\s+/g, '')
+        .replace(/Animated\.AnimatedNode/g, 'never'),
+    )
+    .join('\n')
+  const source = `${declarations}
+    type ColorValue = string;
+    type MaximumOneOf<T, K extends keyof T = keyof T> = K extends keyof T
+      ? { [P in K]: T[K] } & { [P in Exclude<keyof T, K>]?: never } : never;
+    type Styles = ImageStyle | TextStyle | ViewStyle;
+    type Keys<T> = T extends unknown ? keyof T : never;
+    type Value<T, K extends PropertyKey> = T extends unknown ? K extends keyof T ? T[K] : never : never;
+    type Output = { [K in Keys<Styles>]?: Value<Styles, K> };
+    type Immutable<T> = T extends object ? { readonly [K in keyof T]: Immutable<T[K]> } : T;
+    type Properties = Immutable<Output>;
+  `
+  const filename = Path.join(root, '.fixture-native-static.ts')
+  const host = Ts.createCompilerHost({ strict: true })
+  const getSourceFile = host.getSourceFile.bind(host)
+  host.getSourceFile = (file, version, onError, create) =>
+    file === filename
+      ? Ts.createSourceFile(file, source, version, true)
+      : getSourceFile(file, version, onError, create)
+  const program = Ts.createProgram(
+    [filename],
+    { strict: true, noEmit: true, skipLibCheck: true },
+    host,
+  )
+  const errors = Ts.getPreEmitDiagnostics(program)
+  if (errors.length)
+    throw new Error(
+      Ts.formatDiagnosticsWithColorAndContext(errors, {
+        getCanonicalFileName: (name) => name,
+        getCurrentDirectory: () => root,
+        getNewLine: () => '\n',
+      }),
+    )
+  const checker = program.getTypeChecker()
+  const file = program.getSourceFile(filename)!
+  const declaration = file.statements.find(
+    (node) =>
+      Ts.isTypeAliasDeclaration(node) && node.name.text === 'Properties',
+  ) as Ts.TypeAliasDeclaration
+
+  function schema(type: Ts.Type): unknown {
+    if (type.flags & Ts.TypeFlags.Never) return { kind: 'never' }
+    if (type.isUnion()) return { kind: 'union', values: type.types.map(schema) }
+    if (type.flags & Ts.TypeFlags.StringLiteral)
+      return { kind: 'literal', value: (type as Ts.StringLiteralType).value }
+    if (type.flags & Ts.TypeFlags.NumberLiteral)
+      return { kind: 'literal', value: (type as Ts.NumberLiteralType).value }
+    if (type.flags & Ts.TypeFlags.BooleanLiteral)
+      return { kind: 'literal', value: checker.typeToString(type) === 'true' }
+    if (type.flags & Ts.TypeFlags.String) return { kind: 'string' }
+    if (type.flags & Ts.TypeFlags.Number) return { kind: 'number' }
+    if (type.flags & Ts.TypeFlags.Undefined) return { kind: 'undefined' }
+    if (type.flags & Ts.TypeFlags.Null) return { kind: 'literal', value: null }
+    if (type.flags & Ts.TypeFlags.TemplateLiteral) {
+      const template = type as Ts.TemplateLiteralType
+      if (
+        template.texts.join('|') !== '|%' ||
+        template.types.length !== 1 ||
+        !(template.types[0]!.flags & Ts.TypeFlags.Number)
+      )
+        throw new Error(
+          `Unclassified native template: ${checker.typeToString(type)}`,
+        )
+      return { kind: 'percentage' }
+    }
+    if (checker.isArrayType(type))
+      return {
+        kind: 'array',
+        value: schema(checker.getTypeArguments(type as Ts.TypeReference)[0]!),
+      }
+    if (type.flags & Ts.TypeFlags.Object || type.isIntersection()) {
+      const properties = Object.fromEntries(
+        checker.getPropertiesOfType(type).map((property) => [
+          property.name,
+          {
+            optional: Boolean(property.flags & Ts.SymbolFlags.Optional),
+            value: schema(
+              checker.getTypeOfSymbolAtLocation(
+                property,
+                property.valueDeclaration ?? declaration,
+              ),
+            ),
+          },
+        ]),
+      )
+      return { kind: 'object', properties }
+    }
+    throw new Error(`Unclassified native type: ${checker.typeToString(type)}`)
+  }
+  const properties = checker.getTypeAtLocation(declaration)
+  const validation = schema(properties)
+  const nodes: unknown[] = []
+  const ids = new Map<string, number>()
+  function intern(input: unknown): number {
+    const node = input as {
+      kind: string
+      properties?: Record<string, { optional: boolean; value: unknown }>
+      value?: unknown
+      values?: unknown[]
+    }
+    const value =
+      node.kind === 'object'
+        ? {
+            ...node,
+            properties: Object.fromEntries(
+              Object.entries(node.properties!).map(([key, property]) => [
+                key,
+                { ...property, value: intern(property.value) },
+              ]),
+            ),
+          }
+        : node.kind === 'union'
+          ? { ...node, values: node.values!.map(intern) }
+          : node.kind === 'array'
+            ? { ...node, value: intern(node.value) }
+            : node
+    const key = JSON.stringify(value)
+    const existing = ids.get(key)
+    if (existing !== undefined) return existing
+    const id = nodes.length
+    nodes.push(value)
+    ids.set(key, id)
+    return id
+  }
+  const schemaRoot = intern(validation)
+  const printer = Ts.createPrinter({ removeComments: true })
+  const types = printer.printFile(file)
+  return {
+    schema: JSON.stringify({ root: schemaRoot, nodes }, null, 2) + '\n',
+    types: `/** Static projection of pinned React Native declarations. Animated and opaque host values are excluded. @module */\n// Copyright (c) Meta Platforms, Inc. and affiliates. MIT license: test/conformance/native/upstream/LICENSE.\n// Generated by scripts/native-conformance.ts --static from React Native ${pinned.version}.\n${types}\nexport type { Output, Properties }\n`,
+  }
+}
+
+/** Verifies generated static contracts or explicitly updates both artifacts. */
+export async function staticContracts(options: staticContracts.Options = {}) {
+  const output = await generateStatic()
+  for (const [file, value] of [
+    ['src/internal/NativeProperties.ts', output.types],
+    [
+      'src/react-native/internal/NativeSchema.ts',
+      '/** Validates static native domains from pinned upstream declarations. @module */\n// Generated by scripts/native-conformance.ts --static --update.\nexport default ' +
+        output.schema.trim() +
+        '\n',
+    ],
+  ] as const) {
+    const path = Path.join(root, file)
+    if (options.update) await Fs.writeFile(path, value)
+    else if ((await Fs.readFile(path, 'utf8')) !== value)
+      throw new Error(`Native static contract drift: ${file}`)
+  }
+}
+
+/** Static contract generation options. */
+export declare namespace staticContracts {
+  /** Explicit artifact maintenance. */
+  type Options = {
+    /** Rewrite generated types and validation data after reviewing the pin. */
+    readonly update?: boolean | undefined
+  }
+}
+
 /** Fails on inventory drift and reports the full, unfiltered acceptance denominator. */
 export async function check(options: check.Options = {}) {
   const actual = await inventory()
@@ -188,8 +371,10 @@ if (
 ) {
   const args = process.argv.slice(2)
   for (const arg of args)
-    if (!['--require-full', '--update'].includes(arg))
+    if (!['--require-full', '--static', '--update'].includes(arg))
       throw new Error(`Unknown native audit option: ${arg}`)
+  if (args.includes('--static'))
+    await staticContracts({ update: args.includes('--update') })
   console.log(
     await check({
       requireFull: args.includes('--require-full'),

@@ -2,9 +2,23 @@
 import * as ChildProcess from 'node:child_process'
 import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
-import { inventory } from './native-conformance.js'
+import { inventory, staticContracts } from './native-conformance.js'
 
 describe('check', () => {
+  test('reproduces static contracts from every pinned component property', async () => {
+    await expect(staticContracts()).resolves.toBeUndefined()
+    const result = await inventory()
+
+    expect(result.declarations.ImageResizeMode)
+      .toMatchInlineSnapshot(`"export type ImageResizeMode =
+  | 'cover'
+  | 'contain'
+  | 'stretch'
+  | 'repeat'
+  | 'center'
+  | 'none';"`)
+  })
+
   test('audits the actual runtime exports alongside declared signatures', async () => {
     const result = await inventory()
 

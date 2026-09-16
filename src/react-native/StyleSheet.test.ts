@@ -131,6 +131,173 @@ describe('flatten', () => {
 })
 
 describe('compile', () => {
+  test('compiles transform origins with signed offsets and explicit units', () => {
+    const styles = Style.define({
+      bottom: { transformOrigin: 'bottom' },
+      center: { transformOrigin: 'center' },
+      centered: { transformOrigin: 'center left' },
+      duplicate: { transformOrigin: 'right top' },
+      length: { transformOrigin: '2px' },
+      offsets: {
+        transformOrigin: '-1.25rem 25.5% -2px',
+        transform: 'rotate(90deg)',
+      },
+      outside: { transformOrigin: '-25% 150%' },
+      right: { transformOrigin: 'right' },
+      top: { transformOrigin: 'top right' },
+      zero: { transformOrigin: 0 },
+    })
+    const output = StyleSheet.compile({ styles, units: { px: 2, rem: 16 } })
+    const selected = StyleSheet.select(output.styles, {
+      colorScheme: 'dark',
+      theme: 'default',
+    })
+
+    expect(selected).toMatchInlineSnapshot(`
+      {
+        "bottom": {
+          "transformOrigin": [
+            "50%",
+            "100%",
+            0,
+          ],
+        },
+        "center": {
+          "transformOrigin": [
+            "50%",
+            "50%",
+            0,
+          ],
+        },
+        "centered": {
+          "transformOrigin": [
+            "0%",
+            "50%",
+            0,
+          ],
+        },
+        "duplicate": {
+          "transformOrigin": [
+            "100%",
+            "0%",
+            0,
+          ],
+        },
+        "length": {
+          "transformOrigin": [
+            4,
+            "50%",
+            0,
+          ],
+        },
+        "offsets": {
+          "transform": [
+            {
+              "rotate": "90deg",
+            },
+          ],
+          "transformOrigin": [
+            -20,
+            "25.5%",
+            -4,
+          ],
+        },
+        "outside": {
+          "transformOrigin": [
+            "-25%",
+            "150%",
+            0,
+          ],
+        },
+        "right": {
+          "transformOrigin": [
+            "100%",
+            "50%",
+            0,
+          ],
+        },
+        "top": {
+          "transformOrigin": [
+            "100%",
+            "0%",
+            0,
+          ],
+        },
+        "zero": {
+          "transformOrigin": [
+            0,
+            "50%",
+            0,
+          ],
+        },
+      }
+    `)
+    expect(
+      Object.isFrozen(selected.offsets.transformOrigin),
+    ).toMatchInlineSnapshot('true')
+    expect(selected.top === selected.duplicate).toMatchInlineSnapshot('true')
+    expect(
+      Css.compile({ styles }).css.includes(
+        'transform-origin:-1.25rem 25.5% -2px',
+      ),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      StyleSheet.flatten([selected.offsets, { transformOrigin: [1, 2, 3] }]),
+    ).toMatchInlineSnapshot(`
+      {
+        "transform": [
+          {
+            "rotate": "90deg",
+          },
+        ],
+        "transformOrigin": [
+          1,
+          2,
+          3,
+        ],
+      }
+    `)
+  })
+
+  test.each([
+    '',
+    'left right',
+    'top bottom',
+    'top 10px',
+    '10px left',
+    'left top 10%',
+    'left top 1px 2px',
+    'calc(50% + 1px)',
+    '1em',
+    '1rem',
+    '1px center center',
+  ])('rejects unsupported transform-origin values: %s', (transformOrigin) => {
+    const styles = Style.define({ card: { transformOrigin } } as never)
+
+    try {
+      StyleSheet.compile({ styles })
+      throw new Error('Expected native rejection')
+    } catch (error) {
+      if (!(error instanceof StyleSheet.CompileError)) throw error
+      expect(error.diagnostics.map(({ path }) => path)).toMatchInlineSnapshot(`
+        [
+          [
+            "default",
+            "light",
+            "card",
+            "transformOrigin",
+          ],
+          [
+            "default",
+            "dark",
+            "card",
+            "transformOrigin",
+          ],
+        ]
+      `)
+    }
+  })
+
   test('compiles ordered transform lists without changing shared CSS', () => {
     const declarations = {
       transform:
@@ -405,7 +572,7 @@ describe('compile', () => {
           '-e',
           `
         import {Style} from 'zyzz'; import {StyleSheet} from 'zyzz/react-native';
-        const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',transform:'translateX(2px) scale(2)'}})});
+        const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',transform:'translateX(2px) scale(2)',transformOrigin:'-1.5px 25%'}})});
         console.log(JSON.stringify(StyleSheet.select(output.styles,{theme:'default',colorScheme:'light'})));
       `,
         ],
@@ -425,6 +592,11 @@ describe('compile', () => {
               {
                 "scale": 2,
               },
+            ],
+            "transformOrigin": [
+              -1.5,
+              "25%",
+              0,
             ],
           },
         }
@@ -630,7 +802,7 @@ describe('compile', () => {
       platform: 'neutral',
       stdin: {
         contents: `import {Style} from './src/index.ts'; import {StyleSheet} from './src/react-native/index.ts';
-          const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',color:'#fff',transform:'rotate(90deg)'}})});
+          const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',color:'#fff',transform:'rotate(90deg)',transformOrigin:'top right'}})});
           export const result=StyleSheet.select(output.styles,{theme:'default',colorScheme:'dark'});
           export const stable=result===StyleSheet.select(output.styles,{theme:'default',colorScheme:'dark'});`,
         loader: 'ts',
@@ -659,6 +831,11 @@ describe('compile', () => {
                 {
                   "rotate": "90deg",
                 },
+              ],
+              "transformOrigin": [
+                "100%",
+                "0%",
+                0,
               ],
             },
             "stable": true,

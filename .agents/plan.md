@@ -84,6 +84,8 @@ The [universal contract](../docs/api/react-native/universal.md) specifies target
 | 3.9b  | Independent browser/iOS/Android conformance and measurements. | Every applicable inventory entry has type, runtime, and renderer evidence against independent platform controls.                                           |
 | 3.10  | Enforce full parity.                                          | No missing, partial, deferred, or untested native capability. All applicable gates pass.                                                                   |
 
+3.8d is in progress. Static transform lists and origins now compile through shared definitions into native tables. [Compiler and package fixtures](../src/react-native/StyleSheet.test.ts) cover this subset. Typed target branches, matrices, remaining value families, and device rendering remain open. See the [supported contracts](../docs/api/react-native/StyleSheet/README.md#transforms).
+
 Completion requirements:
 
 - Preserve the full pinned denominator, including experimental/deprecated APIs and imported value domains. Version upgrades require an inventory diff.

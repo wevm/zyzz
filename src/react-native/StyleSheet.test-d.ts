@@ -55,6 +55,29 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('returns native-compatible origin tuples from shared declarations', () => {
+    const declarations = {
+      transformOrigin: 'top right -2px',
+    } satisfies StyleSheet.Properties
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: declarations }),
+    })
+
+    expectTypeOf(
+      output.styles.default.light.card.transformOrigin,
+    ).toEqualTypeOf<
+      [number | `${number}%`, number | `${number}%`, number] | undefined
+    >()
+    expectTypeOf(output.styles.default.light.card).toMatchTypeOf<{
+      transformOrigin?: Array<string | number> | string | undefined
+    }>()
+    const invalid = {
+      // @ts-expect-error Arrays represent shared fallbacks, not native origin coordinates.
+      transformOrigin: [1, 2, 3],
+    } satisfies StyleSheet.Properties
+    expectTypeOf(invalid).not.toBeAny()
+  })
+
   test('retains structured native transform output and shared authoring', () => {
     const declarations = {
       transform: 'translateX(2px) rotate(90deg)',

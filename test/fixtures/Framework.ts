@@ -11,6 +11,7 @@ import * as Vite from 'vite'
 import { expect } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
 import * as VariantLibrary from './VariantLibrary.js'
+import * as Watch from './Watch.js'
 
 /** Runs the shared consumer contract against an installed framework compiler. */
 export async function verify(options: verify.Options) {
@@ -390,10 +391,19 @@ export async function verify(options: verify.Options) {
           })
         }
 
-        await Fs.writeFile(
-          stylesPath,
-          files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
-        )
+        async function edit(source: string) {
+          // Chokidar throttles rapid changes to one path. Wait for a real notification before checking the resulting update.
+          for (let attempt = 0; ; attempt++) {
+            const observed = reported()
+            await Watch.write({ path: stylesPath, source })
+
+            if (await observed) return
+            if (attempt === 4)
+              throw new Error('The watcher never reported the source edit.')
+          }
+        }
+
+        await edit(files['styles.ts'].replace("'#0066cc'", 'unknownColor()'))
         const overlay = await page.waitForFunction(() =>
           document
             .querySelector('vite-error-overlay')
@@ -401,20 +411,7 @@ export async function verify(options: verify.Options) {
         )
         expect(await overlay.jsonValue()).toMatchInlineSnapshot('true')
 
-        // The watcher suppresses a change landing within 50 ms of the previous
-        // one for the same path, so the fix is written until it is reported.
-        for (let attempt = 0; ; attempt++) {
-          const observed = reported()
-
-          await Fs.writeFile(
-            stylesPath,
-            files['styles.ts'].replace('#0066cc', '#117755'),
-          )
-
-          if (await observed) break
-          if (attempt === 4)
-            throw new Error('The watcher never reported the recovery edit.')
-        }
+        await edit(files['styles.ts'].replace('#0066cc', '#117755'))
         await page.locator('vite-error-overlay').waitFor({ state: 'detached' })
         await page.waitForFunction(
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
@@ -429,6 +426,90 @@ export async function verify(options: verify.Options) {
                 "Cannot read properties of undefined (reading 'default')",
           ),
         ).toMatchInlineSnapshot('true')
+
+        for (const mode of [
+          options.cssOutput === 'atomic' ? 'grouped' : 'atomic',
+          options.cssOutput,
+        ]) {
+          const source = files['styles.ts']
+            .replace(
+              `cssOutput: '${options.cssOutput}'`,
+              `cssOutput: '${mode}'`,
+            )
+            .replace('#0066cc', '#117755')
+
+          await edit(source)
+          await page.waitForFunction((grouped) => {
+            const card = document.querySelector('#card')
+            if (!card) return false
+
+            const rules = [...document.styleSheets].flatMap((sheet) =>
+              [...sheet.cssRules].filter(
+                (rule): rule is CSSStyleRule =>
+                  rule instanceof CSSStyleRule &&
+                  rule.style.backgroundColor === 'rgb(17, 119, 85)',
+              ),
+            )
+            return (
+              rules.some((rule) => card.matches(rule.selectorText)) &&
+              rules.every((rule) => rule.style.length > 1 === grouped)
+            )
+          }, mode === 'grouped')
+
+          await page.locator('#toggle').click()
+          await page.waitForFunction(
+            'getComputedStyle(document.querySelector("#card")).width === "300px"',
+          )
+          expect(
+            await page
+              .locator('#variant')
+              .evaluate((element) => getComputedStyle(element).paddingRight),
+          ).toMatchInlineSnapshot('"20px"')
+
+          await page.locator('#toggle').click()
+          await page.waitForFunction(
+            'getComputedStyle(document.querySelector("#card")).width === "100px"',
+          )
+          expect(
+            await page
+              .locator('#variant')
+              .evaluate((element) => (element as HTMLElement).style.length),
+          ).toMatchInlineSnapshot('0')
+        }
+
+        const relocated = Path.join(root, 'relocated.ts')
+        await Watch.write({
+          path: relocated,
+          source: files['styles.ts'].replace('#0066cc', '#553377'),
+        })
+        await edit("export * from './relocated'")
+        await page.waitForFunction(
+          'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(85, 51, 119)"',
+        )
+        await page.waitForFunction(() =>
+          [...document.styleSheets].every((sheet) =>
+            [...sheet.cssRules].every(
+              (rule) =>
+                !(rule instanceof CSSStyleRule) ||
+                rule.style.backgroundColor !== 'rgb(17, 119, 85)',
+            ),
+          ),
+        )
+
+        await edit(files['styles.ts'].replace('#0066cc', '#117755'))
+        await page.waitForFunction(
+          'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
+        )
+        await Fs.rm(relocated)
+        await page.waitForFunction(() =>
+          [...document.styleSheets].every((sheet) =>
+            [...sheet.cssRules].every(
+              (rule) =>
+                !(rule instanceof CSSStyleRule) ||
+                rule.style.backgroundColor !== 'rgb(85, 51, 119)',
+            ),
+          ),
+        )
       }
 
       await page.waitForFunction(

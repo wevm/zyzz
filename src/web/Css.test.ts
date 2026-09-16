@@ -1502,6 +1502,71 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       }
     })
 
+    test('isolates development styles across source modules and value edits', async () => {
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        for (const cssOutput of ['atomic', 'grouped'] as const) {
+          const options = { cssOutput, development: true }
+          const source =
+            "import {style} from 'zyzz'; export const card=style({color:'red',padding:'8px'})"
+          const first = Transform.compile({
+            ...options,
+            moduleId: 'first.ts',
+            source,
+          })
+          const second = Transform.compile({
+            ...options,
+            moduleId: 'second.ts',
+            source: source.replace("'red'", "'blue'"),
+          })
+          const updated = Transform.compile({
+            ...options,
+            moduleId: 'first.ts',
+            source: source.replace("'red'", "'green'"),
+          })
+          for (const reverse of [false, true]) {
+            const sheets = [
+              `<style id="first">${first.css}</style>`,
+              `<style>${second.css}</style>`,
+            ]
+            await page.setContent(
+              `${(reverse ? sheets.reverse() : sheets).join('')}<div class="${Object.values(first.classes)[0]}"></div><div class="${Object.values(second.classes)[0]}"></div>`,
+            )
+            expect(
+              await page
+                .locator('div')
+                .evaluateAll((elements) =>
+                  elements.map((element) => getComputedStyle(element).color),
+                ),
+            ).toMatchInlineSnapshot(`
+              [
+                "rgb(255, 0, 0)",
+                "rgb(0, 0, 255)",
+              ]
+            `)
+            await page.locator('#first').evaluate((element, css) => {
+              element.textContent = css
+            }, updated.css)
+            expect(
+              await page
+                .locator('div')
+                .evaluateAll((elements) =>
+                  elements.map((element) => getComputedStyle(element).color),
+                ),
+            ).toMatchInlineSnapshot(`
+              [
+                "rgb(0, 128, 0)",
+                "rgb(0, 0, 255)",
+              ]
+            `)
+          }
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('keeps mounted later styles after development source offsets change', async () => {
       const browser = await chromium.launch()
       try {

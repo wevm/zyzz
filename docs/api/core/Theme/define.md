@@ -193,7 +193,7 @@ Applies to physical and logical margin properties before the shared spacing scal
 
 ```ts
 const theme = Theme.define({ spacing: { sm: '4px' }, margin: { sm: '-8px' } })
-const style = theme.css({ marginInlineStart: 'sm' })
+const style = theme.style({ marginInlineStart: 'sm' })
 ```
 
 ### tokens.padding
@@ -205,7 +205,7 @@ Applies to physical and logical padding properties before the shared spacing sca
 
 ```ts
 const theme = Theme.define({ spacing: { sm: '4px' }, padding: { sm: '8px' } })
-const style = theme.css({ paddingInline: 'sm' })
+const style = theme.style({ paddingInline: 'sm' })
 ```
 
 ## Returns
@@ -222,15 +222,15 @@ Scope class replaced by the source compiler for a local theme. Reading it withou
 const scope = theme.className
 ```
 
-### css
+### style
 
-- Type: `Theme.Css<tokens>`
+- Type: `Theme.StyleFactory<tokens>`
 
-Bound callable authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
+Bound callable authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `style.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
 namespace styles {
-  export const card = theme.css({ padding: 'md' })
+  export const card = theme.style({ padding: 'md' })
 }
 ```
 
@@ -249,7 +249,7 @@ theme.tokens.spacing.md
 `Theme.InvalidError` identifies invalid groups, paths, records, or cycles. Palettes must be nonempty and keys dot-free. CSS token values are checked statically.
 
 > [!NOTE]
-> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Graph compilation supports cross-module linking and `theme.vars` references. Bound `variants` supports the same tokens, mappings, and output as `css`. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
+> Same-module `theme.style` and `theme.className` are supported by `Transform.compile`. Graph compilation supports cross-module linking and `theme.vars` references. Bound `variants` supports the same tokens, mappings, and output as `style`. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
 
 See [Theme](README.md) for related methods and types.
 

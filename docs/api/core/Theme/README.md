@@ -18,7 +18,7 @@ import { Theme } from 'zyzz'
 `theme.vars` exposes readonly, property-aware web references with defining fallbacks. Direct declaration values and template interpolations retain inherited theme overrides, including light/dark pairs. Source imports, theme aliases, config members, and packed theme contracts preserve identity.
 
 ```ts
-const panel = theme.css({
+const panel = theme.style({
   color: theme.vars.color.brand,
   width: `calc(100% - ${theme.vars.spacing.md})`,
 })

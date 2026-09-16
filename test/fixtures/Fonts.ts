@@ -9,8 +9,8 @@ export const controls = {
     'writing-mode:vertical-rl;text-orientation:upright;text-combine-upright:none',
 } as const
 
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz=Config.create({theme:{color:{accent:'#06c'}}});
-export const font=zyzz.css({fontKerning:'normal',fontOpticalSizing:'auto',fontStretch:'semi-expanded',fontSynthesisSmallCaps:'none',fontSynthesisStyle:'none',fontSynthesisWeight:'none',fontVariantCaps:'small-caps',fontVariantEastAsian:'jis04',fontVariantLigatures:'no-common-ligatures',fontVariantNumeric:['normal','tabular-nums!'],fontVariantPosition:'normal',textEmphasisColor:'accent',textEmphasisStyle:'open circle',textEmphasisPosition:'over right',textJustify:'inter-character'})();
-export const ruby=css({rubyAlign:'center',rubyPosition:'under'})();
-export const vertical=css({writingMode:'vertical-rl',textOrientation:'upright',textCombineUpright:'none'})();`
+export const font=zyzz.style({fontKerning:'normal',fontOpticalSizing:'auto',fontStretch:'semi-expanded',fontSynthesisSmallCaps:'none',fontSynthesisStyle:'none',fontSynthesisWeight:'none',fontVariantCaps:'small-caps',fontVariantEastAsian:'jis04',fontVariantLigatures:'no-common-ligatures',fontVariantNumeric:['normal','tabular-nums!'],fontVariantPosition:'normal',textEmphasisColor:'accent',textEmphasisStyle:'open circle',textEmphasisPosition:'over right',textJustify:'inter-character'})();
+export const ruby=style({rubyAlign:'center',rubyPosition:'under'})();
+export const vertical=style({writingMode:'vertical-rl',textOrientation:'upright',textCombineUpright:'none'})();`

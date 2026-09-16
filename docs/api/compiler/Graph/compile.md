@@ -14,7 +14,7 @@ const output = Graph.compile({
     'app/card.ts': `
       import { theme } from './theme.js'
       export namespace styles {
-        export const card = theme.css({ color: 'brand' })
+        export const card = theme.style({ color: 'brand' })
       }
     `,
   },
@@ -154,10 +154,10 @@ for (const placeholder of Object.keys(output.sharedAssets ?? {}))
 Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2; version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
 
 ```ts
-import { css, theme } from '@acme/theme'
+import { style, theme } from '@acme/theme'
 
 export namespace styles {
-  export const card = css({ color: 'brand' })
+  export const card = style({ color: 'brand' })
 }
 export const scope = theme.className
 ```

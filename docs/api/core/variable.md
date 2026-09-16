@@ -3,14 +3,14 @@
 Declare one optionally typed CSS variable, reference it in styles, and assign values per element.
 
 ```tsx
-import { css, variable } from 'zyzz'
+import { style, variable } from 'zyzz'
 
 namespace variables {
   export const accent = variable('color')
 }
 
 namespace styles {
-  export const label = css({
+  export const label = style({
     variables: { [variables.accent]: 'tomato' },
     color: variables.accent,
     selectors: {
@@ -43,7 +43,7 @@ Omitting `kind` creates an unconstrained reference usable in any CSS declaration
 
 ```ts
 const value = variable()
-css({ color: value })
+style({ color: value })
 value.set('tomato')
 ```
 

@@ -1259,37 +1259,37 @@ describe('names', () => {
     })
 
     test('scopes separately delivered source modules and theme references', () => {
-      const source = `import {Config} from 'zyzz';const {css}=Config.create({theme:{color:{brand:'red'}}});export const card=css({display:'flex',color:'brand'});`
+      const source = `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{brand:'red'}}});export const card=style({display:'flex',color:'brand'});`
       const first = Transform.compile({ moduleId: 'first.ts', source })
       const second = Transform.compile({ moduleId: 'second.ts', source })
 
       expect(first.css).toMatchInlineSnapshot(`
-        ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
+        ".z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
         .z-display-flex-QPs-Od{display:flex;}
-        .z-text-tMJTE1{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
+        .z-text--mgEZB{color:var(--z-t1mlrxl41f5va70-style-color_2e_brand,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
-        ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
+        ".z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
         .z-display-flex-IjSBTf{display:flex;}
-        .z-text-KGSrFk{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
+        .z-text-GRogKQ{color:var(--z-t1d6eq581s6owy-style-color_2e_brand,red);}"
       `)
       expect(first.code).toMatchInlineSnapshot(`
-      "
-      import { Props as __zyzzProps } from 'zyzz/runtime';
-      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-tMJTE1 z-style-1mlrxl41f5va70-103"});"
-    `)
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+        const {style}=({theme:{"className":"z_theme-1mlrxl41f5va70-style-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text--mgEZB z-style-1mlrxl41f5va70-105"});"
+      `)
     })
 
     test('distinguishes display values from flex and grid shorthands in the browser', async () => {
       const flex = Transform.compile({
         moduleId: 'flex.ts',
-        source: `import { css } from 'zyzz';
-export const flex = css({ display: 'flex', flex: '1 1 auto' })();`,
+        source: `import { style } from 'zyzz';
+export const flex = style({ display: 'flex', flex: '1 1 auto' })();`,
       })
       const grid = Transform.compile({
         moduleId: 'grid.ts',
-        source: `import { css } from 'zyzz';
-export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
+        source: `import { style } from 'zyzz';
+export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(flex.css).toMatchInlineSnapshot(`
@@ -1362,7 +1362,7 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
     test('separates standalone and cached module identities for colliding scope hashes', async () => {
       const first = 'app/mn11i9-ftt50l.ts'
       const second = 'app/150xkc2-se2k3x.ts'
-      const source = `import { css } from 'zyzz'; export const card = css({ color: '#000' });`
+      const source = `import { style } from 'zyzz'; export const card = style({ color: '#000' });`
       const a = Transform.compile({ moduleId: first, source })
       const b = Transform.compile({
         moduleId: second,
@@ -1410,7 +1410,7 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
     test('invalidates graph output when development naming changes', () => {
       const compiler = Graph.create()
       const modules = {
-        'card.ts': `import {css} from 'zyzz';export const card=css({color:'red',padding:'8px'});`,
+        'card.ts': `import {style} from 'zyzz';export const card=style({color:'red',padding:'8px'});`,
       }
       const production = compiler.compile({ modules })
       const development = compiler.compile({ development: true, modules })
@@ -1432,10 +1432,10 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
       .z-p-td32HT-0{padding:8px;}"
     `)
       expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
-      {
-        "style-1slxe42dbli7u-43": "z-text-td32HT-0 z-p-td32HT-0 z-style-1slxe42dbli7u-43",
-      }
-    `)
+        {
+          "style-1slxe42dbli7u-45": "z-text-td32HT-0 z-p-td32HT-0 z-style-1slxe42dbli7u-45",
+        }
+      `)
       expect(compiler.compile({ modules }).modules['card.ts']!.css)
         .toMatchInlineSnapshot(`
         ".z-text-red-WdHWIJ{color:red;}
@@ -1479,7 +1479,7 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
         for (const cssOutput of ['atomic', 'grouped'] as const)
           for (const composition of ['ordered', 'independent'] as const)
             for (const compiler of [false, true]) {
-              const source = `import {css} from 'zyzz'; export const a=css({color:'red',padding:'8px'},{id:'first'}); export const b=css({color:'blue',padding:'4px'},{id:'second'})`
+              const source = `import {style} from 'zyzz'; export const a=style({color:'red',padding:'8px'},{id:'first'}); export const b=style({color:'blue',padding:'4px'},{id:'second'})`
               const options = {
                 compiler,
                 composition,
@@ -1537,7 +1537,7 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
             cssOutput,
             moduleId: 'references.ts',
             source:
-              "import {css} from 'zyzz';export const parent=css();export const child=css({selectors:{[`${parent} &`]:{color:'blue'}}})",
+              "import {style} from 'zyzz';export const parent=style();export const child=style({selectors:{[`${parent} &`]:{color:'blue'}}})",
           })
           const [parent, child] = Object.values(output.classes)
           await page.setContent(
@@ -1560,7 +1560,7 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
     })
     test('checks packed atomic ownership before compiling colliding source scopes', () => {
       const source =
-        "import {css} from 'zyzz';export const card=css({color:'red'})"
+        "import {style} from 'zyzz';export const card=style({color:'red'})"
       const library = Graph.compile({
         modules: { 'app/mn11i9-ftt50l.ts': source },
       })

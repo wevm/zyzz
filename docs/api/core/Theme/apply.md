@@ -18,7 +18,7 @@ Call a theme to obtain web props without generating CSS or accessing the DOM.
 
 `theme(options = {})`
 
-The callable retains `className`, `css`, `tokens`, and other theme members. Named config themes use the same contract: `themes({ theme: 'mint', colorScheme: 'dark' })`. Source compilation supplies the scope identity.
+The callable retains `className`, `style`, `tokens`, and other theme members. Named config themes use the same contract: `themes({ theme: 'mint', colorScheme: 'dark' })`. Source compilation supplies the scope identity.
 
 ## Parameters
 

@@ -17,7 +17,7 @@ import * as TextDecoration from '../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, css, Style, Theme } from 'zyzz'
+import { Config, style, Style, Theme } from 'zyzz'
 
 describe('intrinsic scalar prefixes', () => {
   test('rejects optional unknown keys on broad style annotations', () => {
@@ -27,35 +27,35 @@ describe('intrinsic scalar prefixes', () => {
     Style.define({ box })
   })
   test('preserves component domains through public authoring', () => {
-    css({
+    style({
       containIntrinsicSize: 'auto 80px auto 40px',
       containIntrinsicWidth: 'auto none',
       fontSizeAdjust: 'cap-height .7',
     })
     // @ts-expect-error Intrinsic sizes exclude percentages.
-    css({ containIntrinsicWidth: '10%' })
+    style({ containIntrinsicWidth: '10%' })
     // @ts-expect-error Metric prefixes need a following value.
-    css({ fontSizeAdjust: 'cap-height' })
+    style({ fontSizeAdjust: 'cap-height' })
   })
 })
 
 describe('timeline range endpoints', () => {
   test('retains typed names and offsets', () => {
-    css({
+    style({
       animationRangeStart: 'entry 20%',
       animationRangeEnd: 'exit -10px',
       timelineTriggerActiveRangeStart: 'auto',
     })
     // @ts-expect-error Range offsets cannot use time units.
-    css({ animationRangeStart: '1s' })
+    style({ animationRangeStart: '1s' })
     // @ts-expect-error Auto is exclusive to active trigger endpoints.
-    css({ animationRangeEnd: 'auto' })
+    style({ animationRangeEnd: 'auto' })
   })
 })
 
 describe('compound scalar declarations', () => {
   test('typed tuples preserve scalar domains', () => {
-    css({
+    style({
       borderImageSlice: 'fill 10% 20%',
       borderImageWidth: '1 auto 20% 3px',
       borderImageOutset: '1 2px',
@@ -66,21 +66,21 @@ describe('compound scalar declarations', () => {
       hyphenateLimitChars: 'auto 3 2',
     })
     // @ts-expect-error Scrollbar colors require two colors or auto.
-    css({ scrollbarColor: 'red' })
+    style({ scrollbarColor: 'red' })
     // @ts-expect-error Border image slices exclude lengths.
-    css({ borderImageSlice: '1px' })
+    style({ borderImageSlice: '1px' })
     // @ts-expect-error Outset excludes percentages.
-    css({ borderImageOutset: '10%' })
+    style({ borderImageOutset: '10%' })
     // @ts-expect-error Interest delays use time dimensions.
-    css({ interestDelay: '1px' })
+    style({ interestDelay: '1px' })
     // @ts-expect-error A fill marker needs numeric components.
-    css({ borderImageSlice: 'fill' })
+    style({ borderImageSlice: 'fill' })
   })
 })
 
 describe('corner and layout declarations', () => {
   test('typed curvature and reset values preserve property domains', () => {
-    css({
+    style({
       cornerShape: 'superellipse(2) bevel',
       cornerTopLeftShape: 'round',
       all: 'initial',
@@ -90,19 +90,19 @@ describe('corner and layout declarations', () => {
       positionTryOrder: 'most-width',
     })
     // @ts-expect-error Curvature is a keyword or function rather than a bare number.
-    css({ cornerShape: 2 })
+    style({ cornerShape: 2 })
     // @ts-expect-error All accepts only CSS-wide values or deferred substitution.
-    css({ all: 'red' })
+    style({ all: 'red' })
     // @ts-expect-error Legacy is exclusive to justify-items.
-    css({ justifySelf: 'legacy' })
+    style({ justifySelf: 'legacy' })
     // @ts-expect-error Text box edges retain separate over and under keyword domains.
-    css({ textBoxEdge: 'cap ex' })
+    style({ textBoxEdge: 'cap ex' })
   })
 })
 
 describe('prefixed declarations', () => {
   test('vendor keywords preserve prefixes and domains', () => {
-    css({
+    style({
       MozAppearance: 'button',
       MsAccelerator: 'true',
       MsScrollbar3dlightColor: 'red',
@@ -112,21 +112,21 @@ describe('prefixed declarations', () => {
       WebkitLineClamp: 2,
     })
     // @ts-expect-error Prefix spelling is part of the public property name.
-    css({ webkitUserSelect: 'none' })
+    style({ webkitUserSelect: 'none' })
     // @ts-expect-error CSS true is a keyword rather than a JavaScript boolean.
-    css({ MsAccelerator: true })
+    style({ MsAccelerator: true })
     // @ts-expect-error Vendor keyword domains remain distinct.
-    css({ WebkitUserSelect: 'element' })
+    style({ WebkitUserSelect: 'element' })
     // @ts-expect-error Scroll limits exclude percentages.
-    css({ MsScrollLimitXMin: '20%' })
+    style({ MsScrollLimitXMin: '20%' })
     // @ts-expect-error Text stroke widths exclude percentages.
-    css({ WebkitTextStrokeWidth: '20%' })
+    style({ WebkitTextStrokeWidth: '20%' })
   })
 })
 
 describe('percentage values', () => {
   test('percentages retain their property dimensions', () => {
-    css({
+    style({
       fontWidth: '125%',
       fontStretch: '120%',
       textSizeAdjust: '110%',
@@ -138,44 +138,44 @@ describe('percentage values', () => {
       stopOpacity: 'calc(50% + 25%)',
     })
     // @ts-expect-error A percentage requires its unit even for zero.
-    css({ fontWidth: 0 })
+    style({ fontWidth: 0 })
     // @ts-expect-error Font width excludes lengths.
-    css({ fontWidth: '125px' })
+    style({ fontWidth: '125px' })
     // @ts-expect-error Hexadecimal percentages are not CSS numeric tokens.
-    css({ fontWidth: '0x10%' })
+    style({ fontWidth: '0x10%' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('geometric values expose structured transform shapes', () => {
     Style.define(Geometry.styles)
 
-    for (const transform of Geometry.functions) css({ transform })
+    for (const transform of Geometry.functions) style({ transform })
 
-    css({
+    style({
       aspectRatio: 'auto 16/9',
       rotate: '0 1 0 45deg',
       scale: '-1 50% 2',
       translate: 'calc(50% - 10px) 2px -3px',
     })
-    css({
+    style({
       transform: ['rotate(90deg)', 'translateX(20px) rotate(45deg)!'],
       aspectRatio: 2,
       scale: 1.5,
     })
     // @ts-expect-error Transform names remain a finite function vocabulary.
-    css({ transform: 'unknown(1)' })
+    style({ transform: 'unknown(1)' })
     // @ts-expect-error Nonzero translations need units.
-    css({ translate: 20 })
+    style({ translate: 20 })
     // @ts-expect-error Scale factors do not use length units.
-    css({ scale: '2px' })
+    style({ scale: '2px' })
     // @ts-expect-error Ratios do not use dimensional components.
-    css({ aspectRatio: '16px/9px' })
+    style({ aspectRatio: '16px/9px' })
   })
 
   test('combined line values retain typed width style and color components', () => {
     Style.define(BorderShorthand.styles)
-    css({
+    style({
       border: 0,
       borderBlock: 'red solid thin',
       borderInlineEnd: 'rgb(0 0 255) dashed calc(1px + 2px)',
@@ -183,16 +183,16 @@ describe('css', () => {
       columnRule: 'medium double blue',
     })
     // @ts-expect-error A nonzero number requires a length unit.
-    css({ border: 5 })
+    style({ border: 5 })
     // @ts-expect-error Border widths do not accept percentages.
-    css({ border: '50%' })
+    style({ border: '50%' })
     // @ts-expect-error Arbitrary identifiers are not line components.
-    css({ border: 'unknown' })
+    style({ border: 'unknown' })
   })
 
   test('custom identifiers retain string authoring and declaration fallbacks', () => {
     Style.define(Identifiers.styles)
-    css({
+    style({
       animationName: ['Fade', 'Pulse!'],
       anchorScope: '--Anchor, --Other',
       fontPalette: '--Palette',
@@ -201,37 +201,37 @@ describe('css', () => {
       page: 'Chapter',
     })
     // @ts-expect-error Identifiers cannot be authored as numbers.
-    css({ animationName: 123 })
+    style({ animationName: 123 })
     // @ts-expect-error Identifiers cannot be authored as booleans.
-    css({ containerName: false })
+    style({ containerName: false })
   })
 
   test('text and timeline groups retain public type constraints', () => {
     Style.define(TextTimeline.styles)
-    css({
+    style({
       hangingPunctuation: 'last first allow-end',
       masonryAutoFlow: 'ordered pack',
       positionVisibility: 'anchors-visible no-overflow',
       speakAs: 'digits spell-out',
       maskBorderRepeat: 'stretch round',
     })
-    css({
+    style({
       columnHeight: 'calc(20px + 2em)',
       lineHeightStep: '2em',
       shapeImageThreshold: 0.5,
       textDecorationInset: '1px 2px',
     })
     // @ts-expect-error Timeline axes are an explicit finite vocabulary.
-    css({ viewTimelineAxis: 'horizontal' })
+    style({ viewTimelineAxis: 'horizontal' })
     // @ts-expect-error Height accepts lengths rather than percentages.
-    css({ columnHeight: '50%' })
+    style({ columnHeight: '50%' })
     // @ts-expect-error Delay requires a time unit.
-    css({ interestDelayStart: 20 })
+    style({ interestDelayStart: 20 })
   })
 
   test('SVG geometry and text scalars preserve finite authoring', () => {
     Style.define(Scalars.styles)
-    css({
+    style({
       animationComposition: 'add, replace',
       scrollTimelineAxis: 'block, x',
       fontSynthesisPosition: 'none',
@@ -239,7 +239,7 @@ describe('css', () => {
       caretShape: 'bar',
       zoom: 1.5,
     })
-    css({
+    style({
       x: 'calc(10% - 2px)',
       r: 'var(--radius)',
       stopColor: 'rgb(0 0 255)',
@@ -247,73 +247,73 @@ describe('css', () => {
       strokeColor: 'red',
     })
     // @ts-expect-error SVG radii require a dimension for nonzero numbers.
-    css({ r: 12 })
+    style({ r: 12 })
     // @ts-expect-error Caret keywords cannot be combined.
-    css({ caretShape: 'bar block' })
+    style({ caretShape: 'bar block' })
     // @ts-expect-error Zoom excludes length units.
-    css({ zoom: '150px' })
+    style({ zoom: '150px' })
   })
 
   test('interaction properties', () => {
     Style.define(Interaction.styles)
-    css({
+    style({
       cursor: ['grab', 'grabbing!'],
       pointerEvents: 'none',
       userSelect: 'all',
     })
-    css({ resize: 'vertical', visibility: 'revert-layer' })
-    Config.create().css({ cursor: 'zoom-in', pointerEvents: 'auto' })
-    Theme.define({}).css({ userSelect: 'text', resize: 'both' })
-    css({ cursor: 'url(cursor.png), pointer' })
-    css({ pointerEvents: 'visiblePainted' })
+    style({ resize: 'vertical', visibility: 'revert-layer' })
+    Config.create().style({ cursor: 'zoom-in', pointerEvents: 'auto' })
+    Theme.define({}).style({ userSelect: 'text', resize: 'both' })
+    style({ cursor: 'url(cursor.png), pointer' })
+    style({ pointerEvents: 'visiblePainted' })
     // @ts-expect-error Resize axes cannot be combined.
-    css({ resize: 'horizontal vertical' })
+    style({ resize: 'horizontal vertical' })
     // @ts-expect-error Containment is outside the pinned user-select grammar.
-    css({ userSelect: 'contain' })
+    style({ userSelect: 'contain' })
     // @ts-expect-error Visibility is not opacity.
-    css({ visibility: 0 })
+    style({ visibility: 0 })
     // @ts-expect-error Display keywords do not name visibility states.
-    css({ visibility: 'none' })
+    style({ visibility: 'none' })
 
     const interactionTheme = Theme.define({ spacing: { control: '8px' } })
 
     // @ts-expect-error Interaction keywords do not accept theme tokens.
-    interactionTheme.css({ cursor: interactionTheme.tokens.spacing.control })
+    interactionTheme.style({ cursor: interactionTheme.tokens.spacing.control })
   })
 
   test('table properties', () => {
     Style.define(Tables.styles)
-    css({ borderSpacing: [0, '1em!'], tableLayout: 'fixed' })
-    css({
+    style({ borderSpacing: [0, '1em!'], tableLayout: 'fixed' })
+    style({
       borderCollapse: 'revert-layer',
       captionSide: 'inherit',
       emptyCells: 'unset',
     })
-    Config.create().css({ borderSpacing: '2px', tableLayout: 'auto' })
-    Theme.define({}).css({ borderSpacing: '1rem', captionSide: 'bottom' })
+    Config.create().style({ borderSpacing: '2px', tableLayout: 'auto' })
+    Theme.define({}).style({ borderSpacing: '1rem', captionSide: 'bottom' })
     // @ts-expect-error Border spacing does not accept percentages.
-    css({ borderSpacing: '10%' })
-    css({ borderSpacing: '1px 2px' })
+    style({ borderSpacing: '10%' })
+    style({ borderSpacing: '1px 2px' })
     // @ts-expect-error Table layout has a finite keyword domain.
-    css({ tableLayout: 'flex' })
+    style({ tableLayout: 'flex' })
     // @ts-expect-error Empty cells use hide/show, not visibility keywords.
-    css({ emptyCells: 'hidden' })
+    style({ emptyCells: 'hidden' })
     // @ts-expect-error Caption alignment is not caption placement.
-    css({ captionSide: 'center' })
+    style({ captionSide: 'center' })
     // @ts-expect-error Border collapse is not a border style.
-    css({ borderCollapse: 'solid' })
+    style({ borderCollapse: 'solid' })
 
     const tableTheme = Theme.define({ spacing: { gutter: '8px' } })
 
     // @ts-expect-error Unconstrained spacing tokens can contain percentages.
-    tableTheme.css({ borderSpacing: tableTheme.tokens.spacing.gutter })
+    tableTheme.style({ borderSpacing: tableTheme.tokens.spacing.gutter })
     // @ts-expect-error Named spacing tokens are not supported for border spacing.
-    tableTheme.css({ borderSpacing: 'gutter' })
+    tableTheme.style({ borderSpacing: 'gutter' })
   })
 
   test('text decoration', () => {
     Style.define(TextDecoration.styles)
-    css({
+    style({
       textDecorationLine: ['overline underline', 'line-through!'],
       textDecorationThickness: '10%',
       textUnderlineOffset: '-.2em',
@@ -325,38 +325,38 @@ describe('css', () => {
       spacing: { stroke: '2px' },
     })
 
-    decorationTheme.css({
+    decorationTheme.style({
       textDecorationColor: 'ink',
       textDecorationThickness: 'stroke',
     })
-    Config.create({ theme: decorationTheme }).css({
+    Config.create({ theme: decorationTheme }).style({
       textUnderlineOffset: decorationTheme.tokens.spacing.stroke,
     })
     Style.define({
       link: { textDecorationColor: decorationTheme.tokens.color.ink },
     })
-    decorationTheme.css({
+    decorationTheme.style({
       // @ts-expect-error Text-only color groups do not map to decoration colors.
       textDecorationColor: decorationTheme.tokens.textColor.ink,
     })
     // @ts-expect-error Root decoration lengths remain token-free.
-    css({ textDecorationThickness: 'stroke' })
+    style({ textDecorationThickness: 'stroke' })
     // @ts-expect-error None cannot be combined with line flags.
-    css({ textDecorationLine: 'none underline' })
+    style({ textDecorationLine: 'none underline' })
     // @ts-expect-error Line flags cannot be repeated.
-    css({ textDecorationLine: 'underline underline' })
+    style({ textDecorationLine: 'underline underline' })
     // @ts-expect-error Decoration style is not a border style.
-    css({ textDecorationStyle: 'groove' })
+    style({ textDecorationStyle: 'groove' })
     // @ts-expect-error From-font is a thickness keyword, not an underline offset.
-    css({ textUnderlineOffset: 'from-font' })
-    css({ textDecoration: 'underline solid' })
+    style({ textUnderlineOffset: 'from-font' })
+    style({ textDecoration: 'underline solid' })
     // @ts-expect-error Invalid numeric spellings remain checked in importance strings.
-    css({ textDecorationThickness: '0x10px!' })
+    style({ textDecorationThickness: '0x10px!' })
   })
 
   test('text flow', () => {
     Style.define(TextFlow.styles)
-    css({
+    style({
       letterSpacing: ['normal', '-1px!'],
       wordSpacing: '-.2em',
       textIndent: '10%',
@@ -366,35 +366,35 @@ describe('css', () => {
       spacing: { indent: '12px', portion: '10%' },
     })
 
-    textTheme.css({ textIndent: 'indent', whiteSpace: 'pre-wrap' })
-    Config.create({ theme: textTheme }).css({
+    textTheme.style({ textIndent: 'indent', whiteSpace: 'pre-wrap' })
+    Config.create({ theme: textTheme }).style({
       textIndent: textTheme.tokens.spacing.portion,
     })
     Style.define({ paragraph: { textIndent: textTheme.tokens.spacing.indent } })
     // @ts-expect-error Letter spacing excludes percentages.
-    css({ letterSpacing: '10%' })
+    style({ letterSpacing: '10%' })
     // @ts-expect-error Word spacing excludes percentages in the supported grammar.
-    css({ wordSpacing: '10%!' })
+    style({ wordSpacing: '10%!' })
     // @ts-expect-error Indentation does not accept auto.
-    css({ textIndent: 'auto' })
+    style({ textIndent: 'auto' })
     // @ts-expect-error Length-only text spacing cannot use unconstrained spacing tokens.
-    textTheme.css({ letterSpacing: textTheme.tokens.spacing.portion })
+    textTheme.style({ letterSpacing: textTheme.tokens.spacing.portion })
     // @ts-expect-error Text keyword domains cannot use spacing tokens.
-    textTheme.css({ whiteSpace: textTheme.tokens.spacing.indent })
+    textTheme.style({ whiteSpace: textTheme.tokens.spacing.indent })
     // @ts-expect-error Root indentation remains token-free.
-    css({ textIndent: 'indent' })
-    css({ textIndent: '2em hanging' })
+    style({ textIndent: 'indent' })
+    style({ textIndent: '2em hanging' })
     // @ts-expect-error Unknown wrapping values do not widen the finite domain.
-    css({ overflowWrap: 'all' })
-    css({ textOverflow: '"..."' })
-    css({ whiteSpaceCollapse: 'preserve' })
+    style({ overflowWrap: 'all' })
+    style({ textOverflow: '"..."' })
+    style({ whiteSpaceCollapse: 'preserve' })
     // @ts-expect-error Numeric spellings remain checked through fallback importance.
-    css({ letterSpacing: ['normal', '0x10px!'] })
+    style({ letterSpacing: ['normal', '0x10px!'] })
   })
 
   test('scroll snapping', () => {
     Style.define(Snapping.styles)
-    css({
+    style({
       scrollSnapType: ['both proximity', 'both mandatory!'],
       scrollSnapAlign: 'center end',
       scrollSnapStop: 'normal',
@@ -402,61 +402,64 @@ describe('css', () => {
 
     const snapTheme = Theme.define({ spacing: { edge: '10px' } })
 
-    snapTheme.css({ scrollPadding: 'edge', scrollSnapType: 'inline mandatory' })
-    Config.create({ theme: snapTheme }).css({
+    snapTheme.style({
+      scrollPadding: 'edge',
+      scrollSnapType: 'inline mandatory',
+    })
+    Config.create({ theme: snapTheme }).style({
       scrollSnapType: 'block proximity',
       scrollSnapAlign: 'none start',
     })
     // @ts-expect-error Strictness needs an axis.
-    css({ scrollSnapType: 'mandatory' })
+    style({ scrollSnapType: 'mandatory' })
     // @ts-expect-error None cannot be combined with strictness.
-    css({ scrollSnapType: 'none mandatory' })
+    style({ scrollSnapType: 'none mandatory' })
     // @ts-expect-error Snap axes are finite.
-    css({ scrollSnapType: 'horizontal mandatory' })
+    style({ scrollSnapType: 'horizontal mandatory' })
     // @ts-expect-error Alignment accepts at most two keywords.
-    css({ scrollSnapAlign: 'start center end' })
+    style({ scrollSnapAlign: 'start center end' })
     // @ts-expect-error CSS-wide keywords apply to the whole value.
-    css({ scrollSnapAlign: 'inherit center' })
+    style({ scrollSnapAlign: 'inherit center' })
     // @ts-expect-error Stop values are not snap strictness values.
-    css({ scrollSnapStop: 'mandatory' })
+    style({ scrollSnapStop: 'mandatory' })
     // @ts-expect-error Token groups do not map to snap keyword domains.
-    snapTheme.css({ scrollSnapType: snapTheme.tokens.spacing.edge })
+    snapTheme.style({ scrollSnapType: snapTheme.tokens.spacing.edge })
     // @ts-expect-error Invalid entries remain invalid inside fallbacks.
-    css({ scrollSnapType: ['x', 'mandatory!'] })
+    style({ scrollSnapType: ['x', 'mandatory!'] })
   })
 
   test('scrolling properties', () => {
     Style.define(Scrolling.styles)
-    css({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })
+    style({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })
 
     const scrollTheme = Theme.define({
       spacing: { offset: '20px', portion: '10%' },
     })
 
-    scrollTheme.css({ scrollPaddingTop: 'offset!' })
-    Config.create({ theme: scrollTheme }).css({
+    scrollTheme.style({ scrollPaddingTop: 'offset!' })
+    Config.create({ theme: scrollTheme }).style({
       scrollPaddingBlock: ['auto', scrollTheme.tokens.spacing.portion],
     })
     Style.define({ box: { scrollPadding: scrollTheme.tokens.spacing.offset } })
     // @ts-expect-error Scroll margin excludes percentages.
-    css({ scrollMarginTop: '10%!' })
+    style({ scrollMarginTop: '10%!' })
     // @ts-expect-error Scroll margin does not accept auto.
-    css({ scrollMarginInline: 'auto' })
+    style({ scrollMarginInline: 'auto' })
     // @ts-expect-error Scroll padding is not an intrinsic size.
-    css({ scrollPadding: 'min-content' })
+    style({ scrollPadding: 'min-content' })
     // @ts-expect-error Root scroll padding remains token-free.
-    css({ scrollPadding: 'offset' })
+    style({ scrollPadding: 'offset' })
     // @ts-expect-error Unconstrained spacing tokens can contain percentages.
-    scrollTheme.css({ scrollMargin: scrollTheme.tokens.spacing.portion })
+    scrollTheme.style({ scrollMargin: scrollTheme.tokens.spacing.portion })
     // @ts-expect-error Scroll margin token mapping awaits a length-only token domain.
-    scrollTheme.css({ scrollMargin: 'offset' })
+    scrollTheme.style({ scrollMargin: 'offset' })
     // @ts-expect-error Overflow keywords are not overscroll behavior.
-    css({ overscrollBehavior: 'hidden' })
+    style({ overscrollBehavior: 'hidden' })
     // @ts-expect-error Instant is a scrolling API option, not a CSS scroll-behavior value.
-    css({ scrollBehavior: 'instant' })
-    css({ overscrollBehavior: 'none contain' })
+    style({ scrollBehavior: 'instant' })
+    style({ overscrollBehavior: 'none contain' })
     // @ts-expect-error Numeric spellings are checked inside fallback arrays.
-    css({ scrollPadding: ['auto', '0x10px!'] })
+    style({ scrollPadding: ['auto', '0x10px!'] })
   })
 
   test('borders and outlines', () => {
@@ -468,35 +471,36 @@ describe('css', () => {
       borderRadius: { round: '50%' },
     })
 
-    borderTheme.css({
+    borderTheme.style({
       borderInlineStartColor: 'brand!',
       borderTopLeftRadius: 'round',
       outlineColor: 'brand',
     })
-    Config.create({ theme: borderTheme }).css({
+    Config.create({ theme: borderTheme }).style({
       borderBlockColor: ['#000', borderTheme.tokens.borderColor.brand],
     })
     // @ts-expect-error Border widths exclude percentages on physical sides.
-    css({ borderTopWidth: '10%' })
+    style({ borderTopWidth: '10%' })
     // @ts-expect-error Border widths exclude percentages on logical shorthands.
-    css({ borderInlineWidth: '10%!' })
+    style({ borderInlineWidth: '10%!' })
     // @ts-expect-error Outline widths exclude percentages.
-    css({ outlineWidth: '10%' })
+    style({ outlineWidth: '10%' })
     // @ts-expect-error Outline offsets exclude percentages.
-    css({ outlineOffset: '10%' })
+    style({ outlineOffset: '10%' })
     // @ts-expect-error Border color tokens do not apply to outlines.
-    borderTheme.css({ outlineColor: borderTheme.tokens.borderColor.brand })
+    borderTheme.style({ outlineColor: borderTheme.tokens.borderColor.brand })
+    const round = borderTheme.tokens.borderRadius.round
     // @ts-expect-error Radius tokens cannot become stroke widths.
-    borderTheme.css({ borderLeftWidth: borderTheme.tokens.borderRadius.round })
+    borderTheme.style({ borderLeftWidth: round })
     // @ts-expect-error Hidden is a border style, not an outline style.
-    css({ outlineStyle: 'hidden' })
+    style({ outlineStyle: 'hidden' })
     // @ts-expect-error Auto is an outline style, not a border style.
-    css({ borderBlockStyle: 'auto' })
+    style({ borderBlockStyle: 'auto' })
   })
 
   test('logical properties', () => {
     Style.define(Logical.styles)
-    css({
+    style({
       direction: 'rtl',
       writingMode: 'vertical-rl',
       inset: 'auto',
@@ -508,7 +512,7 @@ describe('css', () => {
       color: { brand: '#fff' },
     })
 
-    logicalTheme.css({
+    logicalTheme.style({
       inlineSize: 'md',
       insetBlock: 'md!',
       paddingInline: ['1px', 'md'],
@@ -519,29 +523,29 @@ describe('css', () => {
         top: logicalTheme.tokens.spacing.md,
       },
     })
-    Config.create({ theme: logicalTheme }).css({
+    Config.create({ theme: logicalTheme }).style({
       blockSize: 'md',
       maxBlockSize: 'md',
       left: 'md',
       marginBlockEnd: 'md!',
     })
     // @ts-expect-error Root logical dimensions remain token-free.
-    css({ inlineSize: 'md' })
+    style({ inlineSize: 'md' })
     // @ts-expect-error Padding cannot accept auto.
-    css({ paddingInline: 'auto' })
+    style({ paddingInline: 'auto' })
     // @ts-expect-error None is exclusive to maximum dimensions.
-    css({ minBlockSize: 'none' })
+    style({ minBlockSize: 'none' })
     // @ts-expect-error Color tokens cannot become dimensions.
-    logicalTheme.css({ blockSize: logicalTheme.tokens.color.brand })
+    logicalTheme.style({ blockSize: logicalTheme.tokens.color.brand })
     // @ts-expect-error Invalid numeric spellings remain rejected on logical lengths.
-    css({ insetInlineStart: '0x10px!' })
-    css({ marginInline: '1px 2px' })
+    style({ insetInlineStart: '0x10px!' })
+    style({ marginInline: '1px 2px' })
     // @ts-expect-error Unknown writing modes cannot widen the enum.
-    css({ writingMode: 'diagonal' })
+    style({ writingMode: 'diagonal' })
   })
 
   test('intrinsic sizing', () => {
-    css({
+    style({
       width: 'min-content',
       height: 'max-content',
       inlineSize: 'fit-content!',
@@ -559,24 +563,24 @@ describe('css', () => {
 
     const sizingTheme = Theme.define({ spacing: { 'min-content': '24px' } })
 
-    Config.create({ theme: sizingTheme }).css({
+    Config.create({ theme: sizingTheme }).style({
       width: ['min-content', sizingTheme.tokens.spacing['min-content']],
     })
     // @ts-expect-error None is not a preferred dimension.
-    css({ width: 'none' })
+    style({ width: 'none' })
     // @ts-expect-error Maximum dimensions do not accept auto.
-    css({ maxWidth: 'auto' })
+    style({ maxWidth: 'auto' })
     // @ts-expect-error Content is exclusive to flex basis.
-    css({ inlineSize: 'content' })
+    style({ inlineSize: 'content' })
     // @ts-expect-error Intrinsic keywords do not become spacing values.
-    css({ padding: 'min-content' })
-    css({ width: 'fit-content(10px)' })
+    style({ padding: 'min-content' })
+    style({ width: 'fit-content(10px)' })
     // @ts-expect-error Theme spacing remains a literal length domain.
     Theme.define({ spacing: { small: 'min-content' } })
   })
 
   test('flex and overflow', () => {
-    css({
+    style({
       alignContent: 'space-between',
       alignSelf: 'auto',
       flexBasis: '25%',
@@ -591,21 +595,21 @@ describe('css', () => {
       color: { brand: '#fff' },
     })
 
-    flexTheme.css({ flexBasis: 'basis!' })
+    flexTheme.style({ flexBasis: 'basis!' })
     Style.define({ item: { flexBasis: flexTheme.tokens.spacing.basis } })
-    Config.create({ theme: flexTheme }).css({ flexBasis: ['auto', 'basis'] })
+    Config.create({ theme: flexTheme }).style({ flexBasis: ['auto', 'basis'] })
     // @ts-expect-error Root sizing has no token names.
-    css({ flexBasis: 'basis' })
+    style({ flexBasis: 'basis' })
     // @ts-expect-error Flex basis cannot use color tokens.
-    flexTheme.css({ flexBasis: flexTheme.tokens.color.brand })
+    flexTheme.style({ flexBasis: flexTheme.tokens.color.brand })
     // @ts-expect-error Item alignment does not accept line-distribution keywords.
-    css({ alignSelf: 'space-between' })
+    style({ alignSelf: 'space-between' })
     // @ts-expect-error Overflow accepts only its standard scalar keywords.
-    css({ overflow: 'none' })
+    style({ overflow: 'none' })
     // @ts-expect-error Order is numeric, including its importance-string form.
-    css({ order: '2' })
+    style({ order: '2' })
     // @ts-expect-error Sizing spellings remain checked through importance.
-    css({ flexBasis: '0x10px!' })
+    style({ flexBasis: '0x10px!' })
   })
 })
 
@@ -736,9 +740,9 @@ describe('define', () => {
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('fallbacks and importance', () => {
-    css({
+    style({
       display: ['block', 'flex!'],
       opacity: '0.5 !important',
       padding: [0, '8px!'],
@@ -748,27 +752,27 @@ describe('css', () => {
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
     })
 
-    configured.css({
+    configured.style({
       color: ['#fff', 'brand!', configured.theme.tokens.color.brand],
       padding: ['md!', 0],
     })
     Style.define({ card: { padding: ['1px', '2px !important'] } })
     // @ts-expect-error Fallbacks are nonempty.
-    css({ color: [] })
+    style({ color: [] })
     // @ts-expect-error Fallback elements cannot be undefined.
-    css({ padding: ['8px', undefined] })
+    style({ padding: ['8px', undefined] })
     // @ts-expect-error Nested fallback arrays are unsupported.
-    css({ color: [['#fff']] })
+    style({ color: [['#fff']] })
     // @ts-expect-error Importance does not widen the property domain.
-    css({ display: 'banana!' })
+    style({ display: 'banana!' })
     // @ts-expect-error Root styles remain token-free.
-    css({ color: ['brand!'] })
+    style({ color: ['brand!'] })
     // @ts-expect-error Tokens retain their domain in fallback arrays.
-    configured.css({ padding: [configured.theme.tokens.color.brand] })
+    configured.style({ padding: [configured.theme.tokens.color.brand] })
   })
 
   test('length units and numeric spellings', () => {
-    css({
+    style({
       borderWidth: '1Q',
       height: ['100vh', '100dvh!'],
       marginLeft: '-2cqi',
@@ -780,13 +784,13 @@ describe('css', () => {
 
     Style.define({ card: { padding: 'space!' } }, { theme: lengthTheme })
     // @ts-expect-error A time unit is not a CSS length.
-    css({ width: '1ms' })
+    style({ width: '1ms' })
     // @ts-expect-error An unknown viewport suffix is not a CSS unit.
-    css({ height: '1dvheight' })
+    style({ height: '1dvheight' })
     // @ts-expect-error Border widths still exclude percentages.
-    css({ borderWidth: '1%!' })
+    style({ borderWidth: '1%!' })
     // @ts-expect-error Length tokens still retain their property domains.
-    lengthTheme.css({ color: lengthTheme.tokens.spacing.space })
+    lengthTheme.style({ color: lengthTheme.tokens.spacing.space })
 
     const extendedLengths = Theme.extend(lengthTheme, {
       spacing: { space: '1dvh' },
@@ -800,14 +804,14 @@ describe('css', () => {
     Theme.extend(lengthTheme, { spacing: { space: '#fff' } })
 
     // @ts-expect-error CSS lengths exclude hexadecimal numbers.
-    css({ width: '0x10dvh' })
+    style({ width: '0x10dvh' })
     // @ts-expect-error CSS lengths exclude binary numbers.
-    css({ width: '0b10lh!' })
+    style({ width: '0b10lh!' })
     // @ts-expect-error CSS lengths exclude octal numbers.
-    css({ padding: ['1px', '0o10cqi'] })
+    style({ padding: ['1px', '0o10cqi'] })
     // @ts-expect-error Theme lengths use the same decimal grammar.
     Theme.define({ spacing: { space: '0b10lh' } })
-    css({
+    style({
       width: '01dvh',
       height: '.5cqi',
       margin: '-1e-2lh',
@@ -815,7 +819,7 @@ describe('css', () => {
     })
 
     // @ts-expect-error CSS numbers cannot contain whitespace before the unit.
-    css({ width: '10 dvh' })
+    style({ width: '10 dvh' })
     // @ts-expect-error Style.define checks the same numeric spellings.
     Style.define({ card: { padding: '0x10px' } })
 
@@ -824,26 +828,26 @@ describe('css', () => {
     })
 
     // @ts-expect-error Config-bound values use the same inferred checks.
-    configured.css({ width: '0b10cqi!' })
+    configured.style({ width: '0b10cqi!' })
 
     const numericNames = Theme.define({ spacing: { '0x10px': '8px' } })
 
-    numericNames.css({ padding: '0x10px!' })
+    numericNames.style({ padding: '0x10px!' })
 
     // @ts-expect-error Binary values also fail for units with overlapping suffixes.
-    css({ height: '0b10dvh' })
+    style({ height: '0b10dvh' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('columns and fragmentation preserve property domains', () => {
-    css({
+    style({
       columnCount: ['auto', '2!'],
       columnWidth: '12rem',
       columnGap: 'normal',
       columnFill: 'balance',
     })
-    css({
+    style({
       breakAfter: 'page',
       breakBefore: 'column',
       breakInside: 'avoid',
@@ -857,36 +861,36 @@ describe('css', () => {
       spacing: { gutter: '8px' },
     })
 
-    theme.css({
+    theme.style({
       columnRuleColor: 'rule',
       columnRuleStyle: 'solid',
       columnRuleWidth: 'thin',
     })
-    Config.create({ theme }).css({ columnRuleColor: theme.tokens.color.rule })
+    Config.create({ theme }).style({ columnRuleColor: theme.tokens.color.rule })
     // @ts-expect-error Column widths exclude percentages.
-    css({ columnWidth: '10%' })
+    style({ columnWidth: '10%' })
     // @ts-expect-error Counts cannot use arbitrary keywords.
-    css({ columnCount: 'none' })
+    style({ columnCount: 'none' })
     // @ts-expect-error Rule widths exclude percentages.
-    css({ columnRuleWidth: '5%' })
+    style({ columnRuleWidth: '5%' })
     // @ts-expect-error Inside breaks cannot force a new column.
-    css({ breakInside: 'column' })
+    style({ breakInside: 'column' })
     // @ts-expect-error Column widths do not accept percentage-capable spacing tokens.
-    theme.css({ columnWidth: theme.tokens.spacing.gutter })
-    css({ breakAfter: 'region' })
+    theme.style({ columnWidth: theme.tokens.spacing.gutter })
+    style({ breakAfter: 'region' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('layout and containment accept finite CSS domains', () => {
-    css({
+    style({
       backfaceVisibility: 'hidden',
       boxDecorationBreak: 'slice',
       clear: 'inline-end',
       contain: 'paint',
       contentVisibility: 'auto',
     })
-    css({
+    style({
       display: 'table-cell',
       float: 'inline-start',
       isolation: 'isolate',
@@ -894,30 +898,30 @@ describe('css', () => {
       transformStyle: 'preserve-3d',
       zIndex: ['auto', '-1!'],
     })
-    Config.create().css({ zIndex: 2, display: 'flow-root' })
-    Theme.define({}).css({ contain: 'strict', objectFit: 'contain' })
-    css({ contain: 'layout paint' })
+    Config.create().style({ zIndex: 2, display: 'flow-root' })
+    Theme.define({}).style({ contain: 'strict', objectFit: 'contain' })
+    style({ contain: 'layout paint' })
     // @ts-expect-error Floats are not centering controls.
-    css({ float: 'center' })
+    style({ float: 'center' })
     // @ts-expect-error Object fit has no auto keyword.
-    css({ objectFit: 'auto' })
+    style({ objectFit: 'auto' })
     // @ts-expect-error Stacking accepts unitless integers, not lengths.
-    css({ zIndex: '2px' })
+    style({ zIndex: '2px' })
     // @ts-expect-error Isolation does not accept blend modes.
-    css({ isolation: 'multiply' })
-    css({ display: 'inline flow-root' })
+    style({ isolation: 'multiply' })
+    style({ display: 'inline flow-root' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('background and color controls preserve token and keyword domains', () => {
-    css({
+    style({
       backgroundAttachment: 'fixed',
       backgroundBlendMode: 'multiply',
       backgroundClip: 'text',
       backgroundOrigin: 'content-box',
     })
-    css({
+    style({
       backgroundPositionX: '-2px',
       backgroundPositionY: '40%',
       backgroundRepeat: 'repeat-x',
@@ -930,28 +934,28 @@ describe('css', () => {
       spacing: { gap: '2px' },
     })
 
-    theme.css({ accentColor: 'auto', caretColor: theme.tokens.color.auto })
-    Config.create({ theme }).css({
+    theme.style({ accentColor: 'auto', caretColor: theme.tokens.color.auto })
+    Config.create({ theme }).style({
       colorScheme: 'only dark',
       forcedColorAdjust: 'none',
       printColorAdjust: 'exact',
     })
     // @ts-expect-error Background position axes use different side keywords.
-    css({ backgroundPositionX: 'top' })
-    css({ backgroundAttachment: 'scroll, fixed' })
-    css({ backgroundSize: '10px 20px' })
+    style({ backgroundPositionX: 'top' })
+    style({ backgroundAttachment: 'scroll, fixed' })
+    style({ backgroundSize: '10px 20px' })
     // @ts-expect-error Color controls do not accept length tokens.
-    theme.css({ accentColor: theme.tokens.spacing.gap })
+    theme.style({ accentColor: theme.tokens.spacing.gap })
     // @ts-expect-error A blend mode is not a color value.
-    css({ caretColor: 'multiply' })
+    style({ caretColor: 'multiply' })
     // @ts-expect-error Background geometry does not map spacing tokens.
-    theme.css({ backgroundPositionX: theme.tokens.spacing.gap })
+    theme.style({ backgroundPositionX: theme.tokens.spacing.gap })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports paint tokens and bounded SVG domains', () => {
-    css({
+    style({
       fill: 'none',
       stroke: '#06c',
       fillOpacity: 0.5,
@@ -975,18 +979,18 @@ describe('css', () => {
 
     const zyzz = Config.create({ theme: { color: { ink: '#06c' } } })
 
-    zyzz.css({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
-    css({ fill: 'url(#gradient)' })
-    css({ paintOrder: 'stroke fill' })
-    css({ strokeWidth: 2 })
+    zyzz.style({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
+    style({ fill: 'url(#gradient)' })
+    style({ paintOrder: 'stroke fill' })
+    style({ strokeWidth: 2 })
     // @ts-expect-error Scalar paint keywords do not apply to filter colors.
-    css({ floodColor: 'none' })
+    style({ floodColor: 'none' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports bounded typography and emphasis tokens', () => {
-    css({
+    style({
       fontKerning: 'normal',
       fontOpticalSizing: 'auto',
       fontStretch: 'semi-expanded',
@@ -1010,19 +1014,19 @@ describe('css', () => {
 
     const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
 
-    zyzz.css({ textEmphasisColor: 'accent' })
-    css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
-    css({ textEmphasisStyle: '"*"' })
+    zyzz.style({ textEmphasisColor: 'accent' })
+    style({ fontVariantNumeric: 'tabular-nums slashed-zero' })
+    style({ textEmphasisStyle: '"*"' })
     // @ts-expect-error Font stretch excludes length units.
-    css({ fontStretch: '120px' })
+    style({ fontStretch: '120px' })
     // @ts-expect-error Conflicting emphasis fill keywords are invalid.
-    css({ textEmphasisStyle: 'open filled' })
+    style({ textEmphasisStyle: 'open filled' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports dimensioned times and finite motion keywords', () => {
-    css({
+    style({
       animationDelay: '-.5s',
       animationDuration: ['auto', '250ms!'],
       animationDirection: 'alternate',
@@ -1036,20 +1040,20 @@ describe('css', () => {
       transitionBehavior: 'allow-discrete',
     })
     // @ts-expect-error Even zero times require a unit.
-    css({ animationDuration: 0 })
+    style({ animationDuration: 0 })
     // @ts-expect-error Times cannot use length units.
-    css({ transitionDelay: '2px' })
+    style({ transitionDelay: '2px' })
     // @ts-expect-error Nondecimal times are not CSS dimensions.
-    css({ animationDelay: '0x10s' })
-    css({ transitionDuration: '1s, 2s' })
+    style({ animationDelay: '0x10s' })
+    style({ transitionDuration: '1s, 2s' })
     // @ts-expect-error Transition duration has no auto keyword.
-    css({ transitionDuration: 'auto' })
+    style({ transitionDuration: 'auto' })
   })
 })
 
 describe('grid tracks and placement', () => {
   test('supports flexible tracks and bounded line placement', () => {
-    css({
+    style({
       gridAutoColumns: '1fr',
       gridAutoRows: '40px',
       gridAutoFlow: 'column dense',
@@ -1060,26 +1064,26 @@ describe('grid tracks and placement', () => {
       gridRowStart: -1,
       gridRowEnd: 'auto',
     })
-    css({ gridTemplateColumns: '1fr 2fr' })
+    style({ gridTemplateColumns: '1fr 2fr' })
     // @ts-expect-error Flexible units are limited to grid tracks.
-    css({ width: '1fr' })
+    style({ width: '1fr' })
     // @ts-expect-error Spans cannot contain fractional counts.
-    css({ gridColumnStart: 'span 1.5' })
+    style({ gridColumnStart: 'span 1.5' })
     // @ts-expect-error Nondecimal fractional units are not CSS dimensions.
-    css({ gridAutoColumns: '0x10fr' })
-    css({
+    style({ gridAutoColumns: '0x10fr' })
+    style({
       gridRowStart: 'header',
       gridColumn: 'start / end',
       gridArea: '1 / 2 / 3 / 4',
     })
     // @ts-expect-error Negative spans are invalid.
-    css({ gridColumnEnd: 'span -1' })
+    style({ gridColumnEnd: 'span -1' })
   })
 })
 
 describe('mask and image properties', () => {
   test('supports bounded masks and scalar positioning', () => {
-    css({
+    style({
       backgroundPosition: 'right',
       imageRendering: 'pixelated',
       maskClip: 'padding-box',
@@ -1097,17 +1101,17 @@ describe('mask and image properties', () => {
       transformBox: 'border-box',
       transformOrigin: '-5px',
     })
-    css({ maskMode: 'alpha, luminance' })
+    style({ maskMode: 'alpha, luminance' })
     // @ts-expect-error Perspective distances exclude percentages.
-    css({ perspective: '50%' })
-    css({ maskSize: '50% 100%' })
-    css({ transformOrigin: 'left top' })
+    style({ perspective: '50%' })
+    style({ maskSize: '50% 100%' })
+    style({ transformOrigin: 'left top' })
   })
 })
 
 describe('list and input controls', () => {
   test('supports list markers, logical overscroll, and touch combinations', () => {
-    css({
+    style({
       appearance: 'none',
       lineBreak: 'strict',
       listStylePosition: 'inside',
@@ -1123,19 +1127,19 @@ describe('list and input controls', () => {
       unicodeBidi: 'plaintext',
     })
     // @ts-expect-error Conflicting directions cannot share a touch-action group.
-    css({ touchAction: 'pan-left pan-right' })
+    style({ touchAction: 'pan-left pan-right' })
     // @ts-expect-error Auto does not combine with gestures.
-    css({ touchAction: 'auto pinch-zoom' })
-    css({ listStyleType: 'custom-counter' })
-    css({ tabSize: '20px' })
+    style({ touchAction: 'auto pinch-zoom' })
+    style({ listStyleType: 'custom-counter' })
+    style({ tabSize: '20px' })
     // @ts-expect-error Text autoscaling excludes length units.
-    css({ textSizeAdjust: '100px' })
+    style({ textSizeAdjust: '100px' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('accepts canonical named colors throughout color and token domains', () => {
-    css({
+    style({
       color: 'rebeccapurple',
       backgroundColor: 'aliceblue',
       borderColor: 'red',
@@ -1154,20 +1158,20 @@ describe('css', () => {
       },
     })
 
-    zyzz.css({
+    zyzz.style({
       color: 'red',
       backgroundColor: zyzz.theme.tokens.color.red,
       fill: 'accent',
     })
     // @ts-expect-error Unknown color names remain outside the domain.
-    css({ color: 'not-a-color' })
-    css({ color: 'rEbEcCaPuRpLe' })
+    style({ color: 'not-a-color' })
+    style({ color: 'rEbEcCaPuRpLe' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('accepts canonical system colors in literals and theme schemes', () => {
-    css({
+    style({
       color: 'CanvasText',
       backgroundColor: 'Canvas',
       borderColor: 'ButtonBorder',
@@ -1181,84 +1185,84 @@ describe('css', () => {
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('accepts container and intrinsic field sizing controls', () => {
-    css({
+    style({
       containerType: ['normal', 'inline-size scroll-state!'],
       fieldSizing: 'content',
       interpolateSize: 'allow-keywords',
     })
-    css({
+    style({
       containerType: 'scroll-state size',
       fieldSizing: 'fixed',
       interpolateSize: 'numeric-only',
     })
     // @ts-expect-error Size modes are mutually exclusive.
-    css({ containerType: 'size inline-size' })
+    style({ containerType: 'size inline-size' })
     // @ts-expect-error Normal cannot be combined with containment modes.
-    css({ containerType: 'normal scroll-state' })
+    style({ containerType: 'normal scroll-state' })
     // @ts-expect-error Field sizing has no auto keyword.
-    css({ fieldSizing: 'auto' })
+    style({ fieldSizing: 'auto' })
     // @ts-expect-error Interpolation is an explicit keyword policy.
-    css({ interpolateSize: true })
+    style({ interpolateSize: true })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('accepts reading flow modes and numeric order fallbacks', () => {
-    css({ readingFlow: ['normal', 'flex-visual!'], readingOrder: [0, '-1!'] })
-    css({ readingFlow: 'source-order', readingOrder: 2 })
+    style({ readingFlow: ['normal', 'flex-visual!'], readingOrder: [0, '-1!'] })
+    style({ readingFlow: 'source-order', readingOrder: 2 })
     // @ts-expect-error Reading flow is one mode.
-    css({ readingFlow: 'flex-flow grid-rows' })
+    style({ readingFlow: 'flex-flow grid-rows' })
     // @ts-expect-error Reading order is not a dimension.
-    css({ readingOrder: '2px' })
+    style({ readingOrder: '2px' })
     // @ts-expect-error Reading order has no auto keyword.
-    css({ readingOrder: 'auto' })
+    style({ readingOrder: 'auto' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('accepts structural grid tracks through public authoring', () => {
-    css({
+    style({
       gridTemplateColumns: '[start] repeat(3, minmax(0, 1fr)) [end]',
       gridTemplateRows: 'fit-content(40px) 1fr',
       gridAutoRows: '20px 30px',
     })
-    css({
+    style({
       gridTemplateColumns: ['1fr 2fr', 'repeat(auto-fit, minmax(80px, 1fr))!'],
     })
     // @ts-expect-error Implicit tracks cannot repeat.
-    css({ gridAutoColumns: 'repeat(2, 1fr)' })
+    style({ gridAutoColumns: 'repeat(2, 1fr)' })
     // @ts-expect-error Grid functions are not ordinary dimensions.
-    css({ width: 'minmax(0, 1fr)' })
+    style({ width: 'minmax(0, 1fr)' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('accepts physical box lists and logical pairs', () => {
-    css({
+    style({
       margin: '8px auto',
       padding: '1px 2px 3px 4px',
       inset: '0 20% auto -1px',
       borderWidth: '1px 2px',
       gap: '4px 8px',
     })
-    css({
+    style({
       marginInline: '-1px auto',
       paddingBlock: '1px 2px',
       scrollMargin: '1px 2px 3px 4px',
       scrollPaddingInline: '10% auto',
     })
     // @ts-expect-error Longhands still accept a single length.
-    css({ paddingLeft: '1px 2px' })
+    style({ paddingLeft: '1px 2px' })
     // @ts-expect-error Auto is not a padding item.
-    css({ padding: 'auto 2px' })
+    style({ padding: 'auto 2px' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports motion lists and structured easing functions', () => {
-    css({
+    style({
       animationDelay: '-1s, 0s',
       animationDirection: 'alternate, reverse',
       animationDuration: 'auto, 1s',
@@ -1271,17 +1275,17 @@ describe('css', () => {
       transitionTimingFunction: 'linear(0, .5 25% 75%, 1)',
     })
     // @ts-expect-error Unknown easing functions are outside the structural grammar.
-    css({ transitionTimingFunction: 'spring(1)' })
+    style({ transitionTimingFunction: 'spring(1)' })
     // @ts-expect-error A duration list must start with a time.
-    css({ transitionDuration: '20px, 1s' })
+    style({ transitionDuration: '20px, 1s' })
     // @ts-expect-error A CSS-wide keyword cannot start a component list.
-    css({ animationDirection: 'inherit, normal' })
+    style({ animationDirection: 'inherit, normal' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports absolute functional colors across color properties', () => {
-    css({
+    style({
       backgroundColor: 'hsl(120deg 50% 50% / .5)',
       borderColor: 'hwb(120 20% 30%)',
       color: ['rgb(255, 0, 0)', 'oklch(.5 .1 120)!'],
@@ -1291,15 +1295,15 @@ describe('css', () => {
       textDecorationColor: 'lch(50 30 120)',
     })
     // @ts-expect-error Unknown function names are rejected by the structural type.
-    css({ color: 'cmyk(0, 0, 0, 1)' })
+    style({ color: 'cmyk(0, 0, 0, 1)' })
     // @ts-expect-error Functions require a closing delimiter.
-    css({ color: 'rgb(0 0 0' })
+    style({ color: 'rgb(0 0 0' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports border shorthand lists and elliptical radii', () => {
-    css({
+    style({
       borderBlockColor: 'red rgb(0 0 255)',
       borderColor: 'red green blue gold',
       borderInlineStyle: 'solid dashed',
@@ -1310,19 +1314,19 @@ describe('css', () => {
       outlineWidth: 'thin',
     })
     // @ts-expect-error Individual border color longhands take one color.
-    css({ borderLeftColor: 'red blue' })
+    style({ borderLeftColor: 'red blue' })
     // @ts-expect-error Individual border style longhands take one style.
-    css({ borderTopStyle: 'solid dashed' })
+    style({ borderTopStyle: 'solid dashed' })
     // @ts-expect-error Radius longhands use space-separated axes without a slash.
-    css({ borderTopLeftRadius: '10px/20px' })
+    style({ borderTopLeftRadius: '10px/20px' })
     // @ts-expect-error SVG stroke widths do not accept border width keywords.
-    css({ strokeWidth: 'thin' })
+    style({ strokeWidth: 'thin' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports compatible font and containment keyword groups', () => {
-    css({
+    style({
       contain: 'layout style paint',
       fontSynthesis: 'style weight small-caps',
       fontVariantEastAsian: 'jis78 full-width ruby',
@@ -1330,15 +1334,15 @@ describe('css', () => {
       fontVariantNumeric: 'oldstyle-nums tabular-nums slashed-zero',
     })
     // @ts-expect-error Standalone keywords cannot introduce groups.
-    css({ fontVariantNumeric: 'normal tabular-nums' })
+    style({ fontVariantNumeric: 'normal tabular-nums' })
     // @ts-expect-error Unsupported leading keywords are rejected structurally.
-    css({ fontSynthesis: 'bold style' })
+    style({ fontSynthesis: 'bold style' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports dimensional math inside scalar and list values', () => {
-    css({
+    style({
       animationDuration: 'min(1s, 500ms), calc(1s + 20ms)',
       borderRadius: 'calc(10px / 2) / max(10px, 20%)',
       gridTemplateColumns: 'minmax(calc(10px + 2px), 1fr)',
@@ -1347,15 +1351,15 @@ describe('css', () => {
       width: 'clamp(10px, 50%, 100px)',
     })
     // @ts-expect-error Unknown math function names are outside the supported structural type.
-    css({ width: 'multiply(1px, 2)' })
+    style({ width: 'multiply(1px, 2)' })
     // @ts-expect-error Easing properties do not take arbitrary dimensional math.
-    css({ transitionTimingFunction: 'calc(1 + 2)' })
+    style({ transitionTimingFunction: 'calc(1 + 2)' })
   })
 })
 
-describe('css', () => {
+describe('style', () => {
   test('supports deferred custom-property substitution in every property domain', () => {
-    css({
+    style({
       animationTimingFunction: 'var(--easing, ease)',
       color: 'rgb(var(--channels) / var(--alpha, .5))',
       display: 'var(--display, block)',
@@ -1365,16 +1369,16 @@ describe('css', () => {
       width: 'calc(100% - var(--gap, 10px))',
     })
     // @ts-expect-error Custom properties still require their double-hyphen spelling.
-    css({ display: 'var(display)' })
+    style({ display: 'var(display)' })
     // @ts-expect-error Variable expressions do not add arbitrary property names.
-    css({ imaginaryProperty: 'var(--anything)' })
+    style({ imaginaryProperty: 'var(--anything)' })
   })
 })
 
 describe('compound', () => {
-  describe('css', () => {
+  describe('style', () => {
     test('accepts every compound fixture through public style definitions', () => {
-      css({
+      style({
         animation: 'fade 1s ease',
         background: 'url(image.png) center / cover no-repeat red',
         boxShadow: 'inset 0 0 2px red, 2px 3px 4px blue',
@@ -1389,7 +1393,7 @@ describe('compound', () => {
     })
 
     test('retains position prefixes inside compound shorthands', () => {
-      css({
+      style({
         background: [
           'center top / cover no-repeat url(image.png)',
           '50%50%/cover',
@@ -1408,15 +1412,15 @@ describe('compound', () => {
       })
 
       // @ts-expect-error Unknown position prefixes remain rejected.
-      css({ background: 'middle / cover' })
+      style({ background: 'middle / cover' })
       // @ts-expect-error Unknown mask prefixes remain rejected.
-      css({ mask: 'banana' })
+      style({ mask: 'banana' })
       // @ts-expect-error Unknown offset prefixes remain rejected.
-      css({ offset: 'banana' })
+      style({ offset: 'banana' })
     })
 
     test('preserves custom-property scalars, case, fallbacks, and importance', () => {
-      css({
+      style({
         '--Accent': '#arbitrary-text',
         '--accent': ['red', 'blue!'],
         '--count': 2,
@@ -1424,17 +1428,17 @@ describe('compound', () => {
       })
       Style.define({ card: { '--data': '"a;b:c"', color: 'var(--Accent)' } })
       // @ts-expect-error Custom declarations are CSS scalars.
-      css({ '--enabled': true })
+      style({ '--enabled': true })
       // @ts-expect-error Custom declarations cannot contain records.
-      css({ '--data': { value: 'red' } })
+      style({ '--data': { value: 'red' } })
       // @ts-expect-error Arbitrary non-custom properties remain rejected.
-      css({ backgroundColour: 'red' })
+      style({ backgroundColour: 'red' })
       // @ts-expect-error Ordinary property validation is retained beside custom properties.
-      css({ '--accent': 'red', padding: 'red' })
+      style({ '--accent': 'red', padding: 'red' })
     })
 
     test('accepts case-insensitive literals while keeping tokens case-sensitive', () => {
-      css({
+      style({
         color: '  ReD\t',
         display: 'FlEx',
         padding: ' 2PX\n! ImPoRtAnT  ',
@@ -1449,140 +1453,143 @@ describe('compound', () => {
         spacing: { Gap: '2px' },
       })
 
-      theme.css({ color: 'ReD', padding: '2PX' })
-      theme.css({ color: 'Brand', padding: 'Gap' })
-      Config.create({ theme, layers: ['components'] }).css({
+      theme.style({ color: 'ReD', padding: '2PX' })
+      theme.style({ color: 'Brand', padding: 'Gap' })
+      Config.create({ theme, layers: ['components'] }).style({
         '@layer components': { color: 'ReD', padding: '2PX' },
       })
       // @ts-expect-error Case folding cannot make an unknown keyword valid.
-      css({ display: 'FleEx' })
+      style({ display: 'FleEx' })
       // @ts-expect-error Hex checks still apply to mixed-case authoring.
-      css({ color: '#ABG' })
+      style({ color: '#ABG' })
       // @ts-expect-error Unit case does not bypass nonnegative dimensions.
-      css({ padding: '-1PX' })
+      style({ padding: '-1PX' })
       // @ts-expect-error Surrounding whitespace does not bypass nonnegative dimensions.
-      css({ padding: ' -1PX ! important  ' })
+      style({ padding: ' -1PX ! important  ' })
       // @ts-expect-error Keyword case does not bypass integer grid spans.
-      css({ gridColumnStart: 'SPAN 1.5' })
+      style({ gridColumnStart: 'SPAN 1.5' })
       // @ts-expect-error Named theme tokens retain their original case.
-      theme.css({ color: 'brand' })
+      theme.style({ color: 'brand' })
       // @ts-expect-error Case-insensitive literals do not change token domains.
-      theme.css({ padding: 'Brand' })
+      theme.style({ padding: 'Brand' })
     })
 
     test('accepts CSS whitespace separators and equivalent zero spellings', () => {
-      css({
+      style({
         display: 'BlOcK\tFlow',
         alignItems: 'FiRsT\nBaSeLiNe',
         overflow: 'hidden\tauto',
       })
-      css({
+      style({
         padding: ['0e3', '-.0', '+00', '00.00!', '0e3 1px'],
         borderRadius: '0e3/0',
       })
       // @ts-expect-error Whitespace cannot split a numeric token from its unit.
-      css({ padding: '1\tpx' })
+      style({ padding: '1\tpx' })
       // @ts-expect-error Whitespace normalization retains integer span constraints.
-      css({ gridColumnStart: 'SPAN\t1.5' })
+      style({ gridColumnStart: 'SPAN\t1.5' })
       // @ts-expect-error Numeric normalization cannot turn an exponent token into an integer token.
-      css({ order: '0e3!' })
+      style({ order: '0e3!' })
       // @ts-expect-error Time values still require units even for zero.
-      css({ animationDelay: '0e3!' })
+      style({ animationDelay: '0e3!' })
     })
 
     test('accepts CSS identifier escapes without changing numeric token boundaries', () => {
-      css({ color: '\\72 ed', display: 'bl\\6f ck', padding: '1\\70 x' })
-      css({ color: '#\\66 00', display: 'block/**/flow' })
-      css({ color: 'red/**/!impor\\74 ant/**/' })
+      style({ color: '\\72 ed', display: 'bl\\6f ck', padding: '1\\70 x' })
+      style({ color: '#\\66 00', display: 'block/**/flow' })
+      style({ color: 'red/**/!impor\\74 ant/**/' })
       // @ts-expect-error An escaped identifier cannot become a numeric dimension.
-      css({ padding: '\\31 px' })
+      style({ padding: '\\31 px' })
       // @ts-expect-error An escaped unit prefix cannot become a numeric exponent.
-      css({ padding: '1\\65 2px' })
+      style({ padding: '1\\65 2px' })
       // @ts-expect-error Escapes retain nonnegative dimension constraints.
-      css({ padding: '-1\\70 x' })
+      style({ padding: '-1\\70 x' })
       // @ts-expect-error Escaped punctuation does not create a hash token.
-      css({ color: '\\23 abc' })
+      style({ color: '\\23 abc' })
       // @ts-expect-error CSS keyword folding is ASCII-only.
-      css({ color: 'blacK' })
+      style({ color: 'blacK' })
     })
 
     test('preserves CSS numeric spelling and range constraints', () => {
-      css({
+      style({
         padding: ['01px', '+.5px', '1e2px', '-0px'],
         order: '+01!',
         opacity: '1e-1!',
       })
       // @ts-expect-error Leading zeroes do not bypass a nonnegative range.
-      css({ padding: '-01px' })
+      style({ padding: '-01px' })
       // @ts-expect-error CSS fractional syntax requires a digit after the dot.
-      css({ padding: '1.px' })
+      style({ padding: '1.px' })
       // @ts-expect-error JavaScript radix spellings do not become CSS dimensions with a sign.
-      css({ padding: '+0x10px' })
+      style({ padding: '+0x10px' })
       // @ts-expect-error Exponent number tokens are not integer tokens.
-      css({ order: '1e0!' })
+      style({ order: '1e0!' })
       // @ts-expect-error Positive integer properties cannot use a zero mantissa.
-      css({ columnCount: '+00!' })
+      style({ columnCount: '+00!' })
       // @ts-expect-error A trailing decimal point does not form a complete CSS number.
-      css({ opacity: '1.!' })
+      style({ opacity: '1.!' })
     })
 
     test('retains CSS integer spelling in grid indexes and named spans', () => {
-      css({
+      style({
         gridColumnEnd: 'span +01',
         gridColumn: '-01 / span 02 content',
         gridRow: 'header 2 / footer -1',
       })
-      css({ gridColumnStart: 'calc(1 + 2)', gridColumnEnd: 'span calc(1 + 2)' })
+      style({
+        gridColumnStart: 'calc(1 + 2)',
+        gridColumnEnd: 'span calc(1 + 2)',
+      })
       // @ts-expect-error Grid indexes are nonzero integers.
-      css({ gridRowStart: 0 })
+      style({ gridRowStart: 0 })
       // @ts-expect-error Named spans retain integer constraints.
-      css({ gridColumnEnd: 'span 1.5 content' })
+      style({ gridColumnEnd: 'span 1.5 content' })
       // @ts-expect-error Span counts must be positive even when a name comes first.
-      css({ gridColumnEnd: 'content span -1' })
+      style({ gridColumnEnd: 'content span -1' })
       // @ts-expect-error Every slash-separated index retains its constraints.
-      css({ gridArea: '1 / 0 / 2 / 3' })
+      style({ gridArea: '1 / 0 / 2 / 3' })
       // @ts-expect-error Placement longhands accept one line.
-      css({ gridRowStart: '1 / 2' })
+      style({ gridRowStart: '1 / 2' })
       // @ts-expect-error Row and column shorthands accept at most two lines.
-      css({ gridColumn: '1 / 2 / 3' })
+      style({ gridColumn: '1 / 2 / 3' })
       // @ts-expect-error Area shorthands accept at most four lines.
-      css({ gridArea: '1 / 2 / 3 / 4 / 5' })
+      style({ gridArea: '1 / 2 / 3 / 4 / 5' })
       // @ts-expect-error Dimension tokens cannot be grid line indexes.
-      css({ gridRowStart: '1px' })
+      style({ gridRowStart: '1px' })
       // @ts-expect-error Exponent tokens do not become CSS integer tokens.
-      css({ gridColumnEnd: 'span 1e0 content' })
+      style({ gridColumnEnd: 'span 1e0 content' })
     })
 
     test('rejects wrong compound domains through fallbacks and importance', () => {
       // @ts-expect-error Shadows require dimensions or colors.
-      css({ boxShadow: 'wobbly' })
+      style({ boxShadow: 'wobbly' })
       // @ts-expect-error Font feature settings require quoted tags.
-      css({ fontFeatureSettings: 'kern' })
+      style({ fontFeatureSettings: 'kern' })
       // @ts-expect-error Filters require a recognized function or URL.
-      css({ filter: 'red!' })
+      style({ filter: 'red!' })
       // @ts-expect-error Path data requires a path function.
-      css({ d: 'M0 0L20 20' })
+      style({ d: 'M0 0L20 20' })
       // @ts-expect-error Quotation strings are paired.
-      css({ quotes: '"one"' })
+      style({ quotes: '"one"' })
       // @ts-expect-error Shape declarations do not accept arbitrary numbers.
-      css({ clipPath: 12 })
+      style({ clipPath: 12 })
       // @ts-expect-error Importance retains filter constraints inside fallbacks.
-      css({ backdropFilter: ['blur(2px)', 'wobbly!'] })
+      style({ backdropFilter: ['blur(2px)', 'wobbly!'] })
       // @ts-expect-error Path lengths exclude percentages.
-      css({ pathLength: '50%' })
+      style({ pathLength: '50%' })
     })
   })
 })
 
 describe('conditions', () => {
-  describe('css', () => {
+  describe('style', () => {
     test('requires parenthesized support conditions', () => {
       // @ts-expect-error Support conditions require parentheses or a feature function.
-      css({ '@supports display: grid': { color: 'red' } })
-      css({ '@supports selector(:has(*))': { color: 'red' } })
+      style({ '@supports display: grid': { color: 'red' } })
+      style({ '@supports selector(:has(*))': { color: 'red' } })
     })
     test('accepts case-insensitive media types', () => {
-      css({
+      style({
         '@media SCREEN': { color: 'red' },
         '@media OnLy ScReEn': { color: 'blue' },
       })
@@ -1615,34 +1622,34 @@ describe('validation', () => {
       Style.define({
         card: { color: ['#AbC', '#abcd', '#123456', '#12345678!'] },
       })
-      css({ color: '#abc !important' })
+      style({ color: '#abc !important' })
       // @ts-expect-error Hex colors require 3, 4, 6, or 8 digits.
-      css({ color: '#12' })
+      style({ color: '#12' })
       // @ts-expect-error Hex colors cannot contain non-hex digits.
       Style.define({ card: { color: '#12g456' } })
       // @ts-expect-error Importance retains hex constraints.
-      css({ color: ['red', '#12345!'] })
+      style({ color: ['red', '#12345!'] })
       // @ts-expect-error Hex colors cannot exceed eight digits.
-      css({ color: '#123456789' })
+      style({ color: '#123456789' })
     })
 
     test('checks integer and nonnegative literals without restricting clamped alpha', () => {
-      css({ opacity: -1, order: -2, padding: 0, transitionDelay: '-1s' })
-      css({ padding: '-0px', transitionDuration: '-0s' })
+      style({ opacity: -1, order: -2, padding: 0, transitionDelay: '-1s' })
+      style({ padding: '-0px', transitionDuration: '-0s' })
       // @ts-expect-error Percentages preserve nonnegative property bounds.
-      css({ fontWidth: '-1%' })
+      style({ fontWidth: '-1%' })
       // @ts-expect-error Order is an integer.
-      css({ order: 0.5 })
+      style({ order: 0.5 })
       // @ts-expect-error Importance retains integer constraints.
-      css({ order: '1.5!' })
+      style({ order: '1.5!' })
       // @ts-expect-error Padding does not accept a negative literal.
       Style.define({ card: { padding: '-1px' } })
       // @ts-expect-error Duration does not accept a negative literal.
-      css({ animationDuration: ['1s', '-1s!'] })
+      style({ animationDuration: ['1s', '-1s!'] })
       // @ts-expect-error Flex growth is nonnegative.
-      css({ flexGrow: -1 })
+      style({ flexGrow: -1 })
       // @ts-expect-error Column count is positive.
-      css({ columnCount: 0 })
+      style({ columnCount: 0 })
     })
   })
 
@@ -1653,11 +1660,11 @@ describe('validation', () => {
         spacing: { 4: '1rem' },
       })
 
-      theme.css({ color: 'brand', padding: 4 })
+      theme.style({ color: 'brand', padding: 4 })
       // @ts-expect-error Concrete theme colors retain hex constraints.
       Theme.define({ color: { brand: '#12345' } })
       // @ts-expect-error Bound authoring retains integer constraints.
-      theme.css({ order: 0.5 })
+      theme.style({ order: 0.5 })
       // @ts-expect-error Explicit color tokens cannot be used as spacing.
       Style.define({ card: { padding: theme.tokens.color.brand } })
     })
@@ -1665,15 +1672,15 @@ describe('validation', () => {
 
   describe('image declarations', () => {
     test('types image functions, URL-only markers, and fallback importance', () => {
-      css({
+      style({
         backgroundImage: ['url("image.png")', 'linear-gradient(red, blue)!'],
         markerEnd: 'url(#arrow)',
         maskImage: 'none, url(#mask)',
       })
       // @ts-expect-error Markers require a URL or none.
-      css({ marker: 'linear-gradient(red, blue)' })
+      style({ marker: 'linear-gradient(red, blue)' })
       // @ts-expect-error Image values cannot be a bare color.
-      css({ backgroundImage: 'red' })
+      style({ backgroundImage: 'red' })
       // @ts-expect-error Image sources do not accept numeric lengths.
       Style.define({ card: { borderImageSource: 4 } })
     })

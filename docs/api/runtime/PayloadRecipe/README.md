@@ -52,7 +52,7 @@ Type: `ReturnType<typeof Recipe.create>`. Required compiled selection delegate r
 
 ### Returned callable
 
-Signature: `(input?: Record<string, unknown> & css.Options) => css.Props | Html.Attributes`. Input defaults to `{}`. Base selections use `{ size: { custom: { padding: '12px' } } }`; conditional selections nest under `conditions`. Styling overrides retain the ordinary application contract.
+Signature: `(input?: Record<string, unknown> & style.Options) => style.Props | Html.Attributes`. Input defaults to `{}`. Base selections use `{ size: { custom: { padding: '12px' } } }`; conditional selections nest under `conditions`. Styling overrides retain the ordinary application contract.
 
 #### className / class
 
@@ -64,7 +64,7 @@ Type: ``Record<`data-${string}`, string>``. The delegate emits normalized choice
 
 #### style
 
-Type: `css.Props['style'] | string | undefined`. Active payload fields bind private variables alongside existing styles. Empty strings become whitespace; private assignments win collisions. HTML output serializes the final style once.
+Type: `style.Props['style'] | string | undefined`. Active payload fields bind private variables alongside existing styles. Empty strings become whitespace; private assignments win collisions. HTML output serializes the final style once.
 
 ### Effects and errors
 

@@ -1,17 +1,17 @@
 /** Checks applied-props-only composition through the public root entrypoint. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css, cx, Config, variants } from 'zyzz'
+import { Config, cx, style, variants } from 'zyzz'
 
 describe('cx', () => {
   test('returns one props object and rejects unrelated inputs', () => {
-    const a = css({ color: 'red' })
-    const b = css({ padding: '8px' })
+    const a = style({ color: 'red' })
+    const b = style({ padding: '8px' })
     expectTypeOf(cx(a(), false, null, undefined, b())).toHaveProperty(
       'className',
     )
-    const { css: html } = Config.create({ output: 'html' })
+    const { style: html } = Config.create({ output: 'html' })
     expectTypeOf(cx(html({ color: 'red' })())).toHaveProperty('class')
-    const dynamic = css((values: { padding: `${number}px` }) => ({
+    const dynamic = style((values: { padding: `${number}px` }) => ({
       padding: values.padding,
     }))
     const recipe = variants({

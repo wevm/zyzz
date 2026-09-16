@@ -4,8 +4,6 @@
     "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
     "build": "zile && node scripts/build-default-theme.ts",
-    "changeset:publish": "zile publish:prepare && node scripts/build-default-theme.ts && changeset publish && zile publish:post",
-    "changeset:version": "changeset version",
     "check": "vp check --fix",
     "check:at-rules": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts",
     "check:at-rules:full": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts --require-full",
@@ -14,6 +12,8 @@
     "check:at-rules:targets": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts --require-targets",
     "check:css": "node scripts/css-conformance.ts",
     "check:css:full": "node scripts/css-conformance.ts --require-full",
+    "check:native": "node scripts/native-conformance.ts",
+    "check:native:full": "node scripts/native-conformance.ts --require-full",
     "check:types": "tsc",
     "dev": "zile dev && node scripts/build-default-theme.ts",
     "examples": "pnpm build && pnpm --filter \"./examples/*\" rebuild && pnpm --filter \"./examples/*\" --parallel dev",
@@ -25,7 +25,6 @@
   "devDependencies": {
     "@ark/attest": "0.56.3",
     "@babel/core": "^7.29.7",
-    "@changesets/cli": "^3.0.2",
     "@pandacss/node": "^1.12.1",
     "@stylexjs/babel-plugin": "^0.19.0",
     "@stylexjs/stylex": "^0.19.0",
@@ -104,6 +103,11 @@
       "src": "./src/node/index.ts",
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
+    },
+    "./react-native": {
+      "src": "./src/react-native/index.ts",
+      "types": "./dist/react-native/index.d.ts",
+      "default": "./dist/react-native/index.js"
     },
     "./reset.css": {
       "src": "./src/reset.css",

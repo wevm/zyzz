@@ -15,20 +15,20 @@ describe('create', () => {
     const result = Transform.compile({
       moduleId: 'usage.ts',
       source: `
-      import {Config, css, variable} from 'zyzz';
+      import { Config, style, variable } from 'zyzz';
       const accent=variable();
-      const {css: htmlCss}=Config.create({output:'html'});
-      const label=css({color:accent});
-      const dynamic=css((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
-      const html=htmlCss({color:accent});
+      const {style: htmlStyle}=Config.create({output:'html'});
+      const label=style({color:accent});
+      const dynamic=style((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
+      const html=htmlStyle({color:accent});
       const variables=Object.freeze({[accent]:'red'});
-      const style=Object.freeze({[accent]:'blue',padding:'2px'});
-      export const staticProps=label({variables,style,className:'external'});
-      export const dynamicProps=dynamic({opacity:0.5,variables,style});
+      const inline=Object.freeze({[accent]:'blue',padding:'2px'});
+      export const staticProps=label({variables,style:inline,className:'external'});
+      export const dynamicProps=dynamic({opacity:0.5,variables,style:inline});
       export const htmlProps=html({variables});
-      export const originals={variables,style};
+      export const originals={variables,style:inline};
       export const variablesOnly=dynamic({opacity:0.5,variables});
-      const htmlDynamic=htmlCss((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
+      const htmlDynamic=htmlStyle((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
       export const htmlDynamicProps=htmlDynamic({opacity:0.25,variables});
     `,
     })
@@ -45,61 +45,61 @@ describe('create', () => {
 
     expect(consumer.staticProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-lE4vES external",
+        "className": "z-text-Ppd1-S external",
         "style": {
-          "--z-v1g4rm6r9aa2cb-70": "blue",
+          "--z-v1g4rm6r9aa2cb-74": "blue",
           "padding": "2px",
         },
       }
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-lE4vES z-opacity-i77MCv-0",
+        "className": "z-text-Ppd1-S z-opacity-NQNW0k-0",
         "style": {
-          "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
-          "--z-v1g4rm6r9aa2cb-70": "blue",
+          "--z-d1g4rm6r9aa2cb-210-6f-70-61-63-69-74-79": 0.5,
+          "--z-v1g4rm6r9aa2cb-74": "blue",
           "padding": "2px",
         },
       }
     `)
     expect(consumer.htmlProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-lE4vES",
-        "style": "--z-v1g4rm6r9aa2cb-70:red",
+        "class": "z-text-Ppd1-S",
+        "style": "--z-v1g4rm6r9aa2cb-74:red",
       }
     `)
     expect(consumer.variablesOnly).toMatchInlineSnapshot(`
       {
-        "className": "z-text-lE4vES z-opacity-i77MCv-0",
+        "className": "z-text-Ppd1-S z-opacity-NQNW0k-0",
         "style": {
-          "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
-          "--z-v1g4rm6r9aa2cb-70": "red",
+          "--z-d1g4rm6r9aa2cb-210-6f-70-61-63-69-74-79": 0.5,
+          "--z-v1g4rm6r9aa2cb-74": "red",
         },
       }
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-lE4vES z-opacity-I-qyZj-0",
-        "style": "--z-v1g4rm6r9aa2cb-70:red;--z-d1g4rm6r9aa2cb-771-6f-70-61-63-69-74-79:0.25",
+        "class": "z-text-Ppd1-S z-opacity-bKRLtj-0",
+        "style": "--z-v1g4rm6r9aa2cb-74:red;--z-d1g4rm6r9aa2cb-807-6f-70-61-63-69-74-79:0.25",
       }
     `)
     expect(consumer.originals).toMatchInlineSnapshot(`
       {
         "style": {
-          "--z-v1g4rm6r9aa2cb-70": "blue",
+          "--z-v1g4rm6r9aa2cb-74": "blue",
           "padding": "2px",
         },
         "variables": {
-          "--z-v1g4rm6r9aa2cb-70": "red",
+          "--z-v1g4rm6r9aa2cb-74": "red",
         },
       }
     `)
   })
 
   test('rewritten exports execute with overrides without runtime validation', async () => {
-    const source = `import { css } from 'zyzz';
-export const button = css({ color: '#f00', padding: '8px' });
-export const inline = css({ color: '#fff' })();
+    const source = `import { style } from 'zyzz';
+export const button = style({ color: '#f00', padding: '8px' });
+export const inline = style({ color: '#fff' })();
 export const text = '🎉';`
     const result = Transform.compile({ moduleId: 'example/button.ts', source })
 
@@ -121,13 +121,13 @@ export const text = '🎉';`
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-r3ZyBm-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-50",
+        "className": "z-text-LDML8V-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-52",
       }
     `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
       {
-        "className": "z-text-jiUfea-0",
+        "className": "z-text-4RcTT1-0",
       }
     `)
 
@@ -140,7 +140,7 @@ export const text = '🎉';`
     expect(consumer.button({ className: 'external', style }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-text-r3ZyBm-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-50 external",
+          "className": "z-text-LDML8V-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-52 external",
           "style": {
             "color": "#000",
             "paddingLeft": "2px",

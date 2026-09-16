@@ -47,7 +47,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 | `app/App.tsx`           | Root theme and scheme on `<html>` via `appearance`, nested scopes, global CSS in a named layer   |
 | `app/Styling.tsx`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `app/Dynamic.tsx`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
-| `app/Relationships.tsx` | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |
+| `app/Relationships.tsx` | Empty `style()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`     |
 | `app/Motion.tsx`        | Local/imported keyframes, starting styles, reduced motion                                        |
 
 See [Next.js Setup](../../docs/introduction/next.md) and the [`zyzz/next` reference](../../docs/api/next/zyzz.md).

@@ -8,7 +8,7 @@ Choose the CSS representation on the authoring config:
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, variants } = Config.create({
+export const { style, variants } = Config.create({
   cssOutput: 'atomic',
 })
 ```
@@ -28,8 +28,8 @@ Authoring and application stay the same in either mode:
 
 ```tsx
 namespace styles {
-  export const card = css({ color: 'red', padding: '8px' })
-  export const label = css({ color: 'red' })
+  export const card = style({ color: 'red', padding: '8px' })
+  export const label = style({ color: 'red' })
 }
 
 function Card() {
@@ -97,3 +97,9 @@ Performance comparisons use grouped output across repeated and mostly unique sty
 See [Config.create](../api/core/Config/create.md#optionscssoutput) for the option.
 
 With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.
+
+## Unused Styles
+
+Production source compilation removes CSS for provably unused local `const` styles and unused members of local style objects or namespaces. Exported definitions and escaped containers remain available. References between namespace members keep their dependencies live, and every alternative of a live variant remains emitted.
+
+Pruning preserves definition positions, authored cascade order, and complete live theme token scopes. It does not change eager stylesheet contributions. Development and CSS-only compilation retain all definitions. Dynamic property access, `eval`, and ambiguous bindings prevent pruning rather than risking missing CSS.

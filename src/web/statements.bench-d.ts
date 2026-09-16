@@ -8,7 +8,7 @@ import type * as Web from 'zyzz/web'
 
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
-declare const css: typeof Zyzz.css
+declare const style: typeof Zyzz.style
 declare const cssFunction: typeof Web.cssFunction
 declare const customMedia: typeof Web.customMedia
 declare const importCss: typeof Web.importCss
@@ -16,7 +16,7 @@ declare const namespace: typeof Web.namespace
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
-  css({ [customMedia('(width < 1px)')]: { color: '#000' } })
+  style({ [customMedia('(width < 1px)')]: { color: '#000' } })
   cssFunction({ body: { result: 1 }, parameters: [] })
 }
 
@@ -24,8 +24,8 @@ bench('customMedia / computed query keys', () => {
   const compact = customMedia('(width < 40rem)')
   const wide = customMedia('(width >= 80rem)')
 
-  css({ [compact]: { display: 'block' }, [wide]: { display: 'grid' } })
-}).types([7230, 'instantiations'])
+  style({ [compact]: { display: 'block' }, [wide]: { display: 'grid' } })
+}).types([7254, 'instantiations'])
 
 bench('cssFunction / typed parameters', () => {
   const mix = cssFunction({
@@ -38,8 +38,8 @@ bench('cssFunction / typed parameters', () => {
     returns: '<length>',
   })
 
-  css({ width: mix(2, 'red', '50%') })
-}).types([12673, 'instantiations'])
+  style({ width: mix(2, 'red', '50%') })
+}).types([12684, 'instantiations'])
 
 bench('importCss and namespace / statement options', () => {
   importCss({

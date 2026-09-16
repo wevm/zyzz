@@ -202,12 +202,26 @@ export async function verify(options: verify.Options) {
         await page.evaluate('document.documentElement.dataset.identity'),
       ).toMatchInlineSnapshot(`"true"`)
 
-      await page.waitForFunction(
-        'getComputedStyle(document.querySelector("#card")).width === "100px"',
-      ).catch(async (error) => {
-        const detail = await page.locator('#card').evaluate(element => ({ html: element.outerHTML, width: getComputedStyle(element).width, rules: [...document.styleSheets].flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).filter(rule => [...element.classList].some(name => rule.includes(name))) }))
-        throw new Error(`${String(error)}\n${JSON.stringify({ production, errors, detail })}`)
-      })
+      await page
+        .waitForFunction(
+          'getComputedStyle(document.querySelector("#card")).width === "100px"',
+        )
+        .catch(async (error) => {
+          const detail = await page.locator('#card').evaluate((element) => ({
+            html: element.outerHTML,
+            width: getComputedStyle(element).width,
+            rules: [...document.styleSheets]
+              .flatMap((sheet) =>
+                [...sheet.cssRules].map((rule) => rule.cssText),
+              )
+              .filter((rule) =>
+                [...element.classList].some((name) => rule.includes(name)),
+              ),
+          }))
+          throw new Error(
+            `${String(error)}\n${JSON.stringify({ production, errors, detail })}`,
+          )
+        })
 
       expect(
         await page
@@ -292,12 +306,26 @@ export async function verify(options: verify.Options) {
       await page.setViewportSize({ width: 450, height: 700 })
 
       await page.locator('#toggle').click()
-      await page.waitForFunction(
-        'getComputedStyle(document.querySelector("#card")).width === "100px"',
-      ).catch(async (error) => {
-        const detail = await page.locator('#card').evaluate(element => ({ html: element.outerHTML, width: getComputedStyle(element).width, rules: [...document.styleSheets].flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).filter(rule => [...element.classList].some(name => rule.includes(name))) }))
-        throw new Error(`${String(error)}\n${JSON.stringify({ production, errors, detail })}`)
-      })
+      await page
+        .waitForFunction(
+          'getComputedStyle(document.querySelector("#card")).width === "100px"',
+        )
+        .catch(async (error) => {
+          const detail = await page.locator('#card').evaluate((element) => ({
+            html: element.outerHTML,
+            width: getComputedStyle(element).width,
+            rules: [...document.styleSheets]
+              .flatMap((sheet) =>
+                [...sheet.cssRules].map((rule) => rule.cssText),
+              )
+              .filter((rule) =>
+                [...element.classList].some((name) => rule.includes(name)),
+              ),
+          }))
+          throw new Error(
+            `${String(error)}\n${JSON.stringify({ production, errors, detail })}`,
+          )
+        })
 
       expect(
         await page

@@ -9,12 +9,12 @@ describe('create', () => {
   test('links HTML output across configuration imports and compiles callable bindings', async () => {
     const result = Graph.compile({
       modules: {
-        'config.ts': `import { Config } from 'zyzz'; export const { css } = Config.create({ output: 'html' });`,
-        'card.ts': `import { css } from './config.js';
+        'config.ts': `import { Config } from 'zyzz'; export const { style } = Config.create({ output: 'html' });`,
+        'card.ts': `import { style } from './config.js';
 namespace styles {
-  export const card = css({ padding: '8px' })
+  export const card = style({ padding: '8px' })
 
-  export const dynamic = css((values: { width: \`\${number}%\` }) => ({ width: values.width }))
+  export const dynamic = style((values: { width: \`\${number}%\` }) => ({ width: values.width }))
 }
 export const plain = styles.card();
 export const overridden = styles.card({ className: 'external', style: { marginTop: '12px' } });

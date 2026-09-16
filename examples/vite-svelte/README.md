@@ -30,7 +30,7 @@ The root theme lives on `<html>`. The Vite plugin inlines the config's `script()
 | `src/App.svelte` / `src/App.styles.ts`    | Root theme and scheme on `<html>` via `appearance`, nested scopes, global CSS in a named layer   |
 | `src/Styling.svelte` / `.styles.ts`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.svelte` / `.styles.ts`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
-| `src/Relationships.svelte` / `.styles.ts` | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |
+| `src/Relationships.svelte` / `.styles.ts` | Empty `style()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`     |
 | `src/Queries.svelte` / `.styles.ts`       | Media/container aliases, resize control, supports, scope boundaries                              |
 | `src/Motion.svelte` / `.styles.ts`        | Local/imported keyframes, relative assets, starting styles, reduced motion, `{#key}` remount     |
 | `src/main.ts`                             | Optional reset, client mount                                                                     |

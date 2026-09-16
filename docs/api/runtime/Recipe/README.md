@@ -39,7 +39,7 @@ Type: `boolean | undefined`. Optional; omitted or `false` returns React-shaped p
 
 ### Returned callable
 
-Signature: `(input?: Record<string, unknown> & css.Options) => css.Props | Html.Attributes`. Input defaults to `{}`. Own axis properties select compiled choices; styling overrides follow [`Props.create`](../Props/README.md).
+Signature: `(input?: Record<string, unknown> & style.Options) => style.Props | Html.Attributes`. Input defaults to `{}`. Own axis properties select compiled choices; styling overrides follow [`Props.create`](../Props/README.md).
 
 #### className / class
 
@@ -51,7 +51,7 @@ Type: ``Record<`data-${string}`, string>``. Selected axis values become strings,
 
 #### style
 
-Type: `css.Props['style'] | string | undefined`. Supplied overrides remain an object for React or a serialized attribute for HTML. Omitted styling overrides add no style property.
+Type: `style.Props['style'] | string | undefined`. Supplied overrides remain an object for React or a serialized attribute for HTML. Omitted styling overrides add no style property.
 
 ### Effects and errors
 

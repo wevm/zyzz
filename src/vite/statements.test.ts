@@ -169,7 +169,7 @@ describe('zyzz', () => {
         )
         await Fs.writeFile(
           Path.join(root, 'main.ts'),
-          `import {css} from 'zyzz';import {namespace,importCss,global} from 'zyzz/web';namespace({uri:'http://www.w3.org/2000/svg'});importCss({url:'./base.css'});global({rect:{stroke:'blue'}});const props=css({fill:'red'})();document.querySelector('#icon').setAttribute('class',props.className);`,
+          `import {style} from 'zyzz';import {namespace,importCss,global} from 'zyzz/web';namespace({uri:'http://www.w3.org/2000/svg'});importCss({url:'./base.css'});global({rect:{stroke:'blue'}});const props=style({fill:'red'})();document.querySelector('#icon').setAttribute('class',props.className);`,
         )
         await Fs.writeFile(
           Path.join(root, 'base.css'),

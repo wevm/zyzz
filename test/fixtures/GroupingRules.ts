@@ -52,5 +52,5 @@ export const rules = {
 
 /** Includes both eager global output and a retained nested style definition. */
 export function source(header: string, color = 'red'): string {
-  return `import {css} from 'zyzz';import {global} from 'zyzz/web';\nglobal({${JSON.stringify(header)}:{body:{color:${JSON.stringify(color)}}}});\nexport namespace styles {export const text=css({${JSON.stringify(header)}:{color:${JSON.stringify(color)}}});}`
+  return `import {style} from 'zyzz';import {global} from 'zyzz/web';\nglobal({${JSON.stringify(header)}:{body:{color:${JSON.stringify(color)}}}});\nexport namespace styles {export const text=style({${JSON.stringify(header)}:{color:${JSON.stringify(color)}}});}`
 }

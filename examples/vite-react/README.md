@@ -9,10 +9,10 @@ Run from the repository root after `pnpm install`. The command builds Zyzz, then
 Vite handles JSX and Zyzz handles styles with `plugins: [zyzz()]`. After building or linking, `pnpm dev` also works from this directory.
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const button = css({ color: 'accent', padding: 'md' })
+  export const button = style({ color: 'accent', padding: 'md' })
 }
 
 export function Button() {
@@ -28,7 +28,7 @@ export function Button() {
 | `src/App.tsx`                  | Root theme and scheme on `<html>` via `appearance`, nested scopes, responsive layout                                                                     |
 | `src/Styling.tsx`              | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides                                                         |
 | `src/Dynamic.tsx`              | Typed runtime inputs, `variable()`, registration, static and inline `variables`, inherited assignments                                                   |
-| `src/Relationships.tsx`        | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`                                                               |
+| `src/Relationships.tsx`        | Empty `style()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`                                                             |
 | `src/Queries.tsx`              | Media/container aliases, resize control, supports, scope boundaries                                                                                      |
 | `src/Motion.tsx`               | Local/imported keyframes, relative assets, starting styles, reduced motion                                                                               |
 | `src/Stylesheets.tsx`          | Counter styles, fonts, pages, margin boxes, cross-document view transition opt-in                                                                        |

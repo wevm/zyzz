@@ -35,7 +35,7 @@ describe('compile', () => {
       await page.setContent('<div id="card">Card</div>')
       await page.addStyleTag({ content: output.modules['card.ts']!.css })
       await page.locator('#card').evaluate((element, classes) => {
-        element.className = classes
+        element.setAttribute('class', classes)
         element.setAttribute('data-active', 'yes')
       }, Object.values(output.modules['card.ts']!.classes)[0]!)
       expect(

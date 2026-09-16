@@ -76,13 +76,17 @@ type AcceptedTargets<
   input,
   tokens extends Theme.Tokens,
   literal extends boolean,
-> = {
-  [key in keyof input]: key extends 'web'
-    ? Accepted<input[key], tokens, literal>
-    : key extends 'android' | 'ios' | 'native'
-      ? Targets.Declarations<input[key]>
-      : never
-}
+> = input extends undefined
+  ? undefined
+  : {
+      [key in keyof input]: key extends 'web'
+        ?
+            | Accepted<NonNullable<input[key]>, tokens, literal>
+            | Extract<input[key], undefined>
+        : key extends 'android' | 'ios' | 'native'
+          ? Targets.Declarations<input[key]>
+          : never
+    }
 
 /** Explicit target declarations, applied after shared declarations. */
 export type TargetBranches<tokens extends Theme.Tokens = {}> =
@@ -101,7 +105,7 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? 'targets' extends keyof styles[name]
+    ? styles[name] extends { readonly targets: unknown }
       ? Accepted<styles[name], tokens>
       : Properties<tokens> extends styles[name]
         ? styles[name] extends Properties<tokens>

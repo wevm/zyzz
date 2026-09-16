@@ -183,38 +183,60 @@ describe('compile', () => {
     })
     const output = StyleSheet.compile({ styles, units: { px: 2, rem: 20 } })
       .styles.default.light.card
-    expect(output).toEqual({
-      transform: [
-        {
-          matrix: [
-            1.5, 1.4, 0, 0.05, 4, 2.8, 0, 0.1, -0.01, 0.012, 1, -0.001, 40, 32,
-            10, 1,
-          ],
+    expect(output).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 6,
+            "color": "#ff000080",
+            "inset": true,
+            "offsetX": 20,
+            "offsetY": -4,
+            "spreadDistance": -2,
+          },
+          {
+            "blurRadius": 0,
+            "color": "blue",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 2,
+            "spreadDistance": 0,
+          },
+        ],
+        "fontVariant": [
+          "small-caps",
+          "tabular-nums",
+        ],
+        "textShadowColor": "#00ff00ff",
+        "textShadowOffset": {
+          "height": -4,
+          "width": 2,
         },
-      ],
-      boxShadow: [
-        {
-          offsetX: 20,
-          offsetY: -4,
-          blurRadius: 6,
-          spreadDistance: -2,
-          color: '#ff000080',
-          inset: true,
-        },
-        {
-          offsetX: 0,
-          offsetY: 2,
-          blurRadius: 0,
-          spreadDistance: 0,
-          color: 'blue',
-          inset: false,
-        },
-      ],
-      textShadowOffset: { width: 2, height: -4 },
-      textShadowRadius: 6,
-      textShadowColor: '#00ff00ff',
-      fontVariant: ['small-caps', 'tabular-nums'],
-    })
+        "textShadowRadius": 6,
+        "transform": [
+          {
+            "matrix": [
+              1.5,
+              1.4,
+              0,
+              0.05,
+              4,
+              2.8,
+              0,
+              0.1,
+              -0.01,
+              0.012,
+              1,
+              -0.001,
+              40,
+              32,
+              10,
+              1,
+            ],
+          },
+        ],
+      }
+    `)
     expect(Object.isFrozen(output.transform)).toMatchInlineSnapshot('true')
     if (Array.isArray(output.transform))
       expect(Object.isFrozen(output.transform[0].matrix)).toMatchInlineSnapshot(
@@ -228,13 +250,18 @@ describe('compile', () => {
         card: { boxShadow: 'none', textShadow: 'none', fontVariant: 'normal' },
       }),
     }).styles.default.light.card
-    expect(reset).toEqual({
-      boxShadow: [],
-      fontVariant: [],
-      textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 0,
-      textShadowColor: 'transparent',
-    })
+    expect(reset).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [],
+        "fontVariant": [],
+        "textShadowColor": "transparent",
+        "textShadowOffset": {
+          "height": 0,
+          "width": 0,
+        },
+        "textShadowRadius": 0,
+      }
+    `)
   })
 
   test('matches browser matrix composition for ordered mixed transforms', async () => {

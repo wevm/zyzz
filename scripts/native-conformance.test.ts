@@ -41,7 +41,13 @@ describe('check', () => {
           properties.length,
         ]),
       ),
-    ).toEqual({ ImageStyle: 130, TextStyle: 147, ViewStyle: 126 })
+    ).toMatchInlineSnapshot(`
+      {
+        "ImageStyle": 130,
+        "TextStyle": 147,
+        "ViewStyle": 126,
+      }
+    `)
     expect(
       Object.values(audit.combined).reduce(
         (count, properties) => count + properties.length,

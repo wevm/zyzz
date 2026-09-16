@@ -109,7 +109,7 @@ describe('create', () => {
 
     const contract = JSON.parse(graph.contracts['config.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot('17')
+    expect(contract.version).toMatchInlineSnapshot(`19`)
     expect(
       Object.hasOwn(contract.exports.style, 'script'),
     ).toMatchInlineSnapshot('false')
@@ -123,7 +123,32 @@ describe('create', () => {
 
     expect(
       JSON.parse(keyed.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`18`)
+    ).toMatchInlineSnapshot(`19`)
+  })
+  test('reads style exports from contracts recorded before version 19', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {style,theme}=Config.create({theme:{color:{ink:'red'}}});`,
+      },
+    })
+    const contract = JSON.parse(library.contracts['config.ts']!)
+
+    expect(contract.version).toMatchInlineSnapshot(`19`)
+    expect(contract.exports.style.kind).toMatchInlineSnapshot(`"style"`)
+
+    // Readers before this version recorded the same export as `css`.
+    contract.version = 18
+    contract.exports.style.kind = 'css'
+
+    const app = Graph.compile({
+      contracts: { 'lib.js': JSON.stringify(contract) },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: {
+        'app.ts': `import {style} from 'lib';export const props=style({color:'ink'})();`,
+      },
+    })
+
+    expect(app.modules['app.ts']!.css.includes('red')).toMatchInlineSnapshot(`true`)
   })
   test('omits initialization from static configured styles', () => {
     for (const options of [

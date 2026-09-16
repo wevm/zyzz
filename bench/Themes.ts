@@ -116,7 +116,7 @@ export const themes={alternate:stylex.props(alternate),base:stylex.props(base)};
     await Fs.writeFile(
       Path.join(directory, 'panda.ts'),
       `import {css} from './styled-system/css';
-export const classes=[${indices.map((index) => `style({backgroundColor:'background',color:'foreground',padding:'card',width:'${index}px'})`).join(',')}];
+export const classes=[${indices.map((index) => `css({backgroundColor:'background',color:'foreground',padding:'card',width:'${index}px'})`).join(',')}];
 export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-panda-theme':'base'}};`,
     )
 

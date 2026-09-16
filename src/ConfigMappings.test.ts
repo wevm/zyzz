@@ -200,7 +200,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot(`17`)
+    expect(changed.version).toMatchInlineSnapshot(`19`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>

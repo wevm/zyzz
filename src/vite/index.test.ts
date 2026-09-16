@@ -163,7 +163,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           .join('\n')
 
         expect(
-          /Theme\.define|theme\.tokens|\.css\(\{|zyzz\.json|Unsupported Zyzz contract/.test(
+          /Theme\.define|theme\.tokens|\.style\(\{|zyzz\.json|Unsupported Zyzz contract/.test(
             scripts,
           ),
         ).toMatchInlineSnapshot(`false`)

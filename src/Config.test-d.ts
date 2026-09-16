@@ -72,10 +72,9 @@ describe('create', () => {
     single.style({ '@layer component': { color: 'brand' } })
     // @ts-expect-error Layer bodies retain token checking.
     single.style({ '@layer components': { color: 'missing' } })
+    const reference = single.theme.tokens.color.brand
     // @ts-expect-error References retain property domains inside layers.
-    single.style({
-      '@layer base': { padding: single.theme.tokens.color.brand },
-    })
+    single.style({ '@layer base': { padding: reference } })
     // @ts-expect-error Unknown style keys through variables remain invalid.
     single.style({ colour: '#06c' } as const)
     // @ts-expect-error Single-theme config has no catalog.

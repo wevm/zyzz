@@ -3080,9 +3080,9 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
       `#!/usr/bin/env node\nimport { style, Style } from 'zyzz'; export const button = style({}); export { Style };`,
       `import { Style, style, style as other } from 'zyzz'; export const a = style({})(); export const b = other({})(); export { Style };`,
       `import { style, Style, style as other } from 'zyzz'; export const a = style({})(); export const b = other({})(); export { Style };`,
-      `import { style } from 'zyzz'; export type Signature = typeof css; export const button = style({});`,
+      `import { style } from 'zyzz'; export type Signature = typeof style; export const button = style({});`,
       `import { style } from 'zyzz'; const __zyzzProps = 1; export const el = <button {...style({color:'#f00'})()} />; export const button = style({});`,
-      `import { style } from 'zyzz'; export function f(value = style({})()) { var css; return value; }`,
+      `import { style } from 'zyzz'; export function f(value = style({})()) { var style; return value; }`,
       `export const untouched = '🎉';`,
     ]
 
@@ -3112,11 +3112,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
         "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-       export type Signature = typeof css; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-88"});",
+      import { style } from 'zyzz'; export type Signature = typeof style; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-90"});",
         "
       import { Props as __zyzzProps_ } from 'zyzz/runtime';
        const __zyzzProps = 1; export const el = <button {...({className:"z-text-STkmkZ"})} />; export const button = __zyzzProps_.create({className:"z-style-15sihh01ggr9so-134"});",
-        " export function f(value = ({className:""})) { var css; return value; }",
+        "import { style } from 'zyzz'; export function f(value = ({className:""})) { var style; return value; }",
         "export const untouched = '🎉';",
       ]
     `)

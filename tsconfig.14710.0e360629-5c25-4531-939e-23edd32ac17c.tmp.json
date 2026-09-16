@@ -1,0 +1,80 @@
+{
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "moduleResolution": "nodenext",
+    "noEmit": false,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "zyzz": [
+        "./src/index.ts"
+      ],
+      "zyzz/compiler": [
+        "./src/compiler/index.ts"
+      ],
+      "zyzz/next": [
+        "./src/next/index.ts"
+      ],
+      "zyzz/next/loader": [
+        "./src/next/loader.ts"
+      ],
+      "zyzz/node": [
+        "./src/node/index.ts"
+      ],
+      "zyzz/runtime": [
+        "./src/runtime/index.ts"
+      ],
+      "zyzz/themes/default": [
+        "./src/themes/default.ts"
+      ],
+      "zyzz/vite": [
+        "./src/vite/index.ts"
+      ],
+      "zyzz/web": [
+        "./src/web/index.ts"
+      ]
+    },
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "esnext",
+    "types": [
+      "node",
+      "vite-plus/test/globals"
+    ],
+    "verbatimModuleSyntax": true,
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "esModuleInterop": true,
+    "outDir": "/home/user/zyzz/dist",
+    "rootDir": "/home/user/zyzz/src"
+  },
+  "exclude": [
+    ".fixture-*/**",
+    "bench/results/**",
+    "dist",
+    "examples/*/dist",
+    "examples/next-react",
+    "examples/start-react",
+    "node_modules",
+    "test-results"
+  ],
+  "include": [
+    "/home/user/zyzz/src/cli/index.ts",
+    "/home/user/zyzz/src/index.ts",
+    "/home/user/zyzz/src/compiler/index.ts",
+    "/home/user/zyzz/src/next/index.ts",
+    "/home/user/zyzz/src/next/loader.ts",
+    "/home/user/zyzz/src/node/index.ts",
+    "/home/user/zyzz/src/runtime/index.ts",
+    "/home/user/zyzz/src/themes/default.ts",
+    "/home/user/zyzz/src/vite/index.ts",
+    "/home/user/zyzz/src/web/index.ts"
+  ]
+}

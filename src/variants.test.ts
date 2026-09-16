@@ -480,7 +480,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       ).toMatchInlineSnapshot('true')
       expect(
         JSON.parse(publisher.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`17`)
+      ).toMatchInlineSnapshot(`19`)
       const bundled = await Esbuild.build({
         stdin: {
           contents: result.modules['app.ts']!.code,

@@ -55,6 +55,33 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('retains Image-compatible overflow through target selection and table lookup', () => {
+    const styles = Style.define({
+      image: {
+        targets: {
+          native: { overflow: 'hidden' },
+          ios: { overflow: 'visible' },
+          android: { overflow: 'scroll' },
+        },
+      },
+    })
+    const ios = StyleSheet.compile({ styles, platform: 'ios' })
+    const android = StyleSheet.compile({ styles, platform: 'android' })
+    expectTypeOf(ios.styles.default.light.image.overflow).toEqualTypeOf<
+      'visible' | undefined
+    >()
+    expectTypeOf(android.styles.default.light.image.overflow).toEqualTypeOf<
+      'scroll' | undefined
+    >()
+    expectTypeOf(
+      StyleSheet.select(ios.styles, { theme: 'default', colorScheme: 'dark' })
+        .image.overflow,
+    ).toEqualTypeOf<'visible' | undefined>()
+    const native = { transformOrigin: [1, 2] }
+    // @ts-expect-error Published native transform origins require three axes.
+    Style.define({ image: { targets: { native } } })
+  })
+
   test('checks root and config-bound target branches', () => {
     const card = style({
       targets: {
@@ -73,8 +100,8 @@ describe('compile', () => {
     const invalid = { shadowOffset: { width: 1, height: 2, extra: 3 } }
     // @ts-expect-error Native structured values reject unknown nested keys.
     style({ targets: { native: invalid } })
-    // @ts-expect-error Native lengths use native numeric semantics.
-    bound.style({ targets: { native: { width: '1rem' } } })
+    // @ts-expect-error Native widths do not accept booleans.
+    bound.style({ targets: { native: { width: true } } })
   })
 
   test('checks destination property domains and exact structured branch keys', () => {
@@ -123,9 +150,14 @@ describe('compile', () => {
 
     expectTypeOf(
       output.styles.default.light.card.transformOrigin,
-    ).toEqualTypeOf<Array<string | number> | string | undefined>()
+    ).toMatchTypeOf<
+      [string | number, string | number, string | number] | string | undefined
+    >()
     expectTypeOf(output.styles.default.light.card).toMatchTypeOf<{
-      transformOrigin?: Array<string | number> | string | undefined
+      transformOrigin?:
+        | [string | number, string | number, string | number]
+        | string
+        | undefined
     }>()
     const invalid = {
       // @ts-expect-error Arrays represent shared fallbacks, not native origin coordinates.
@@ -144,21 +176,22 @@ describe('compile', () => {
 
     expectTypeOf(output.styles.default.light.card.transform).toMatchTypeOf<
       | string
-      | readonly (
-          | { matrix: number[] }
-          | { perspective: number }
-          | { rotate: string }
-          | { rotateX: string }
-          | { rotateY: string }
-          | { rotateZ: string }
-          | { scale: number }
-          | { scaleX: number }
-          | { scaleY: number }
-          | { skewX: string }
-          | { skewY: string }
-          | { translateX: number | `${number}%` }
-          | { translateY: number | `${number}%` }
-        )[]
+      | readonly {
+          matrix?: readonly number[] | undefined
+          perspective?: number | undefined
+          rotate?: string | undefined
+          rotateX?: string | undefined
+          rotateY?: string | undefined
+          rotateZ?: string | undefined
+          scale?: number | undefined
+          scaleX?: number | undefined
+          scaleY?: number | undefined
+          skewX?: string | undefined
+          skewY?: string | undefined
+          translate?: [number | string, number | string] | undefined
+          translateX?: number | string | undefined
+          translateY?: number | string | undefined
+        }[]
       | undefined
     >()
     // @ts-expect-error Native arrays require an explicit native target branch.
@@ -226,7 +259,7 @@ describe('compile', () => {
 
     expectTypeOf<keyof typeof output.styles>().toEqualTypeOf<'base'>()
     expectTypeOf<keyof typeof selected>().toEqualTypeOf<'card'>()
-    expectTypeOf(selected.card).toEqualTypeOf<StyleSheet.NativeStyle>()
+    expectTypeOf(selected.card).toMatchTypeOf<StyleSheet.NativeStyle>()
     // @ts-expect-error Theme labels come from the compiled table.
     StyleSheet.select(output.styles, { theme: 'missing', colorScheme: 'dark' })
     // @ts-expect-error Device preferences must be resolved by a host.

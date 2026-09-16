@@ -1,9 +1,12 @@
 /** Exercises shared authoring through native compilation and static selection. @module */
+import * as StaticValues from '../../test/fixtures/native/StaticValues.js'
 import * as Esbuild from 'esbuild'
+import { chromium } from 'playwright'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
+import * as Vm from 'node:vm'
 import { getQuickJS } from 'quickjs-emscripten'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
@@ -132,6 +135,213 @@ describe('flatten', () => {
 })
 
 describe('compile', () => {
+  test('retains every pinned static native property through source compilation', async () => {
+    const inventory = JSON.parse(
+      await Fs.readFile(
+        new URL(
+          '../../test/conformance/native/inventory.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    )
+    const properties = [
+      ...new Set(
+        Object.values(inventory.styles).flatMap((style) =>
+          Object.keys(style as object),
+        ),
+      ),
+    ].sort()
+    expect(Object.keys(StaticValues.values).sort()).toEqual(properties)
+    expect(properties.length).toMatchInlineSnapshot('157')
+    const source = `import {style} from 'zyzz';export const card=style({targets:{native:${JSON.stringify(StaticValues.values)}}});`
+    const extracted = Source.extract({ moduleId: 'static.ts', source })
+    for (const platform of ['ios', 'android'] as const) {
+      const compiled = StyleSheet.compile({
+        platform,
+        styles: extracted.styles,
+      })
+      const card = Object.values(compiled.styles.default.light)[0]!
+      expect(card).toEqual(StaticValues.values)
+      expect(Object.isFrozen(card)).toMatchInlineSnapshot('true')
+      expect(Object.isFrozen(card.filter)).toMatchInlineSnapshot('true')
+    }
+    expect(Css.compile({ styles: extracted.styles }).css).toMatchInlineSnapshot(
+      `""`,
+    )
+  })
+
+  test('converts matrices, font variants, and shadow lengths with explicit scales', () => {
+    const styles = Style.define({
+      card: {
+        transform:
+          'matrix(1, 2, 3, 4, 5, -6) matrix3d(1,0,0,.1,0,1,0,.2,0,0,1,-.002,3,4,5,1)',
+        boxShadow: 'inset 1rem -2px 3px -1px rgb(100% 0% 0% / 50%), 0 1px blue',
+        textShadow: '1px -2px 3px hsl(120deg 100% 50%)',
+        fontVariant: 'small-caps tabular-nums',
+      },
+    })
+    const output = StyleSheet.compile({ styles, units: { px: 2, rem: 20 } })
+      .styles.default.light.card
+    expect(output).toEqual({
+      transform: [
+        {
+          matrix: [
+            1.5, 1.4, 0, 0.05, 4, 2.8, 0, 0.1, -0.01, 0.012, 1, -0.001, 40, 32,
+            10, 1,
+          ],
+        },
+      ],
+      boxShadow: [
+        {
+          offsetX: 20,
+          offsetY: -4,
+          blurRadius: 6,
+          spreadDistance: -2,
+          color: '#ff000080',
+          inset: true,
+        },
+        {
+          offsetX: 0,
+          offsetY: 2,
+          blurRadius: 0,
+          spreadDistance: 0,
+          color: 'blue',
+          inset: false,
+        },
+      ],
+      textShadowOffset: { width: 2, height: -4 },
+      textShadowRadius: 6,
+      textShadowColor: '#00ff00ff',
+      fontVariant: ['small-caps', 'tabular-nums'],
+    })
+    expect(Object.isFrozen(output.transform)).toMatchInlineSnapshot('true')
+    if (Array.isArray(output.transform))
+      expect(Object.isFrozen(output.transform[0].matrix)).toMatchInlineSnapshot(
+        'true',
+      )
+    expect(Object.isFrozen(output.textShadowOffset)).toMatchInlineSnapshot(
+      'true',
+    )
+    const reset = StyleSheet.compile({
+      styles: Style.define({
+        card: { boxShadow: 'none', textShadow: 'none', fontVariant: 'normal' },
+      }),
+    }).styles.default.light.card
+    expect(reset).toEqual({
+      boxShadow: [],
+      fontVariant: [],
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 0,
+      textShadowColor: 'transparent',
+    })
+  })
+
+  test('matches browser matrix composition for ordered mixed transforms', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      for (const transform of [
+        'matrix(1,2,3,4,5,6) translate(8px,-4px) scale(2,3)',
+        'rotateX(30deg) matrix(1,0,0,1,5,6) rotateY(20deg) rotateZ(10deg)',
+        'skewX(15deg) matrix(1,0,0,1,5,6) skewY(-20deg) perspective(500px)',
+      ]) {
+        const native = StyleSheet.compile({
+          styles: Style.define({ card: { transform } } as never),
+        }).styles.default.light.card!.transform
+        const expected = await page.evaluate(
+          (value) => [...new DOMMatrix(value).toFloat64Array()],
+          transform,
+        )
+        if (
+          !Array.isArray(native) ||
+          native.length !== 1 ||
+          !('matrix' in native[0])
+        )
+          throw new Error('Expected one native matrix.')
+        for (const [index, value] of expected.entries())
+          expect(native[0].matrix[index]).toBeCloseTo(value, 10)
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('matches browser colors for absolute sRGB conversions', async () => {
+    const upstream = await Fs.readFile(
+      new URL(
+        '../../test/conformance/native/upstream/normalizeColor.js.txt',
+        import.meta.url,
+      ),
+      'utf8',
+    )
+    const nativeColor = Vm.runInNewContext(
+      `const module={exports:{}};${upstream};module.exports`,
+      {},
+    ) as (value: string) => number | null
+    const colors = [
+      'rebeccapurple',
+      'aliceblue',
+      'transparent',
+      '#1234',
+      'rgb(100% 0% 0% / 50%)',
+      'rgba(10, 20, 30, 0.5)',
+      'rgb(12.5 256 -1)',
+      'hsl(.5turn 100% 50% / 25%)',
+      'hsl(-120deg 100% 50%)',
+      'hwb(120 20% 30% / .5)',
+      'hwb(0 80% 80%)',
+    ]
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<canvas width="1" height="1"></canvas>')
+      for (const color of colors) {
+        const styles = Style.define({ card: { color } } as never)
+        const converted = StyleSheet.compile({ styles }).styles.default.light
+          .card!.color!
+        if (typeof converted !== 'string')
+          throw new Error('Expected a converted color string.')
+        expect(nativeColor(converted), color).not.toBeNull()
+        const pixels = await page.evaluate(
+          ([shared, native]) => {
+            const context = document.querySelector('canvas')!.getContext('2d')!
+            return [shared, native].map((color) => {
+              context.clearRect(0, 0, 1, 1)
+              context.fillStyle = color
+              context.fillRect(0, 0, 1, 1)
+              return [...context.getImageData(0, 0, 1, 1).data]
+            })
+          },
+          [color, converted] as const,
+        )
+        expect(pixels[1], color).toEqual(pixels[0])
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test.each([
+    { transform: 'matrix(1,0,0,1,0,0) translateX(10%)' },
+    { color: 'currentcolor' },
+    { color: 'oklch(.5 .2 30)' },
+    { boxShadow: '1px 2px' },
+    { boxShadow: '1px 2px -1px red' },
+    { textShadow: '1px 2px red, 1px 2px blue' },
+    { textShadow: 'inset 1px 2px red' },
+    { fontVariant: 'all-small-caps' },
+  ])(
+    'diagnoses shared values without a portable native conversion: %j',
+    (declarations) => {
+      expect(() =>
+        StyleSheet.compile({
+          styles: Style.define({ card: declarations } as never),
+        }),
+      ).toThrow(StyleSheet.CompileError)
+    },
+  )
+
   test('resolves shared, native, and platform declarations in destination semantics', () => {
     const styles = Style.define({
       card: {
@@ -265,6 +475,10 @@ describe('compile', () => {
 
   test.each([
     { bogus: 1 },
+    { transform: [{ matrix: [1, 2] }] },
+    { transform: [{ matrix: [1, 0, 0, 0, 1, 0, 0, 0, 1] }, { scale: 2 }] },
+    { transformOrigin: [1, 2] },
+    { transformOrigin: [1, 2, 3, 4] },
     { width: true },
     { fontVariant: ['unknown'] },
     { transform: [{ scale: 2, rotate: '90deg' }] },
@@ -635,7 +849,9 @@ describe('compile', () => {
     'scale(1,)',
     'perspective(-1px)',
     'skew(10deg, 20deg)',
-    'matrix(1, 0, 0, 1, 0, 0)',
+    'matrix(1, 0, 0, 1, 0)',
+    'matrix3d(1, 0, 0, 1, 0, 0)',
+    'matrix(1, 0, 0, 1, 0, 1e999)',
     'translateZ(1px)',
   ])('rejects unsupported or malformed transforms: %s', (transform) => {
     const styles = Style.define({ card: { transform } } as never)

@@ -23,12 +23,26 @@ export function parse(input: unknown): Native.Output {
     if (!matches(root.properties![key]!.value, property))
       throw new Error(`Invalid static native value for ${key}.`)
   }
+  const transforms = (value as Native.Output).transform
+  if (Array.isArray(transforms)) {
+    if (transforms.length > 1 && transforms.some((entry) => 'matrix' in entry))
+      throw new Error('A native matrix must be the only transform entry.')
+    for (const entry of transforms)
+      if ('matrix' in entry && ![9, 16].includes(entry.matrix.length))
+        throw new Error('Native matrices require nine or sixteen numbers.')
+  }
   return value as Native.Output
 }
 
 function matches(id: number, value: unknown): boolean {
   const node = data.nodes[id]!
   switch (node.kind) {
+    case 'tuple':
+      return (
+        Array.isArray(value) &&
+        value.length === node.values!.length &&
+        node.values!.every((entry, index) => matches(entry, value[index]))
+      )
     case 'array':
       return (
         Array.isArray(value) &&

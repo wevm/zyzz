@@ -4,6 +4,7 @@ import type * as Theme from '../Theme.js'
 import * as Token from '../internal/Token.js'
 import type * as Native from '../internal/NativeProperties.js'
 import * as Values from './internal/Values.js'
+import * as Color from './internal/Color.js'
 
 const properties = {
   alignContent: [
@@ -45,6 +46,7 @@ const properties = {
   borderWidth: 'length',
   bottom: 'offset',
   boxSizing: ['border-box', 'content-box'],
+  boxShadow: 'shadow',
   color: 'color',
   columnGap: 'length',
   direction: ['ltr', 'rtl'],
@@ -57,6 +59,7 @@ const properties = {
   fontFamily: 'font',
   fontSize: 'length',
   fontStyle: ['italic', 'normal'],
+  fontVariant: 'fontVariant',
   fontWeight: 'weight',
   gap: 'length',
   height: 'size',
@@ -101,6 +104,7 @@ const properties = {
     'underline line-through',
   ],
   textDecorationStyle: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
+  textShadow: 'textShadow',
   textTransform: ['capitalize', 'lowercase', 'none', 'uppercase'],
   top: 'offset',
   transform: 'transform',
@@ -109,26 +113,6 @@ const properties = {
   width: 'size',
   zIndex: 'integer',
 } as const
-
-const colors = [
-  'aqua',
-  'black',
-  'blue',
-  'fuchsia',
-  'gray',
-  'green',
-  'lime',
-  'maroon',
-  'navy',
-  'olive',
-  'purple',
-  'red',
-  'silver',
-  'teal',
-  'transparent',
-  'white',
-  'yellow',
-] as const
 
 /** Frozen native overlay style with zero physical offsets. */
 export const absoluteFill = Object.freeze({
@@ -175,9 +159,14 @@ export class CompileError extends Error {
 export function compile<
   const name extends string,
   const themeName extends string = 'default',
+  const definition extends Style.Definition<name> = Style.Definition<name>,
+  const platform extends 'ios' | 'android' | undefined = undefined,
 >(
-  options: compile.Options<name, themeName>,
-): compile.ReturnType<name, themeName> {
+  options: compile.Options<name, themeName> & {
+    styles: definition
+    platform?: platform
+  },
+): compile.ReturnType<name, themeName, definition, platform> {
   for (const key of Object.keys(options))
     if (!['fonts', 'platform', 'styles', 'themes', 'units'].includes(key))
       fail('invalid_options', 'Unknown native compiler option.', [key])
@@ -305,6 +294,48 @@ export function compile<
               lineHeight = value
               continue
             }
+            if (property === 'fontVariant') {
+              if (typeof value !== 'string')
+                fail(
+                  'unsupported_value',
+                  'Expected static font variants.',
+                  path,
+                )
+              try {
+                output.fontVariant = Values.parse({
+                  fontVariant:
+                    value === 'normal' ? [] : value.trim().split(/\s+/),
+                }).fontVariant
+              } catch {
+                fail(
+                  'unsupported_value',
+                  'Font variant keywords require an explicit native equivalent.',
+                  path,
+                )
+              }
+              continue
+            }
+            if (property === 'textShadow') {
+              const entries = shadows(value, options, path, true)
+              if (entries.length > 1)
+                fail(
+                  'unsupported_value',
+                  'Native text supports one shadow.',
+                  path,
+                )
+              const shadow = entries[0]
+              output.textShadowColor = shadow?.color ?? 'transparent'
+              output.textShadowOffset = Object.freeze({
+                width: shadow?.offsetX ?? 0,
+                height: shadow?.offsetY ?? 0,
+              })
+              output.textShadowRadius = shadow?.blurRadius ?? 0
+              continue
+            }
+            if (property === 'boxShadow') {
+              output.boxShadow = shadows(value, options, path)
+              continue
+            }
             if (property === 'transform') {
               output.transform = transform(value, options, path)
               continue
@@ -410,7 +441,12 @@ export function compile<
   }
   if (diagnostics.length) throw new CompileError(diagnostics)
   return Object.freeze({
-    styles: Object.freeze(tables) as Tables<name, themeName>,
+    styles: Object.freeze(tables) as compile.ReturnType<
+      name,
+      themeName,
+      definition,
+      platform
+    >['styles'],
   })
 }
 
@@ -438,9 +474,16 @@ export declare namespace compile {
   type ReturnType<
     name extends string = string,
     themeName extends string = string,
+    definition extends Style.Definition<name> = Style.Definition<name>,
+    platform = undefined,
   > = {
     /** Precompiled tables, suitable for identity-preserving selection. */
-    readonly styles: Tables<name, themeName>
+    readonly styles: Readonly<
+      Record<
+        themeName,
+        Readonly<Record<ColorScheme, Compiled<definition, platform, name>>>
+      >
+    >
   }
 }
 
@@ -523,7 +566,28 @@ export declare namespace flatten {
 }
 
 /** Native style output, with converted logical-unit lengths and ordered transforms. */
-export type NativeStyle = Native.Output
+export type NativeStyle = Readonly<Native.Output>
+
+type Compiled<definition, platform, name extends string> =
+  definition extends Style.Definition<string, infer input>
+    ? unknown extends input
+      ? Readonly<Record<name, NativeStyle>>
+      : Readonly<{
+          [key in keyof input as `${Extract<key, number | string>}`]: Omit<
+            NativeStyle,
+            'overflow'
+          > & {
+            readonly overflow?: Extract<
+              platform extends keyof input[key]
+                ? input[key][platform]
+                : 'native' extends keyof input[key]
+                  ? input[key]['native']
+                  : undefined,
+              NativeStyle['overflow']
+            >
+          }
+        }>
+    : Readonly<Record<name, NativeStyle>>
 
 /** Optional native authoring constraint used with satisfies before Style.define. */
 export type Properties = {
@@ -537,6 +601,10 @@ export type Properties = {
  * Looks up an existing table without allocating or resolving device state.
  * @throws {SelectionError} For unknown own theme labels or color schemes.
  */
+export function select<const tables extends Tables>(
+  styles: tables,
+  options: NoInfer<select.Options<keyof tables & string>>,
+): tables[keyof tables][ColorScheme]
 export function select<name extends string, themeName extends string>(
   styles: Tables<name, themeName>,
   options: NoInfer<select.Options<themeName>>,
@@ -634,34 +702,36 @@ type Weight =
 type Atom<kind> = kind extends readonly string[]
   ? kind[number]
   : kind extends 'color'
-    ? `#${string}` | (typeof colors)[number]
-    : kind extends 'origin'
-      ? Exclude<
-          Style.LiteralDeclarations['transformOrigin'],
-          readonly unknown[] | undefined
-        >
-      : kind extends 'transform'
+    ? Color.Value
+    : kind extends 'shadow' | 'textShadow' | 'fontVariant'
+      ? string
+      : kind extends 'origin'
         ? Exclude<
-            Style.LiteralDeclarations['transform'],
+            Style.LiteralDeclarations['transformOrigin'],
             readonly unknown[] | undefined
           >
-        : kind extends 'font'
-          ? string
-          : kind extends 'size'
-            ? Length | `${number}%` | 'auto'
-            : kind extends 'dimension' | 'offset'
-              ? Length | `${number}%`
-              : kind extends 'integer' | 'number' | 'opacity'
-                ? number
-                : kind extends 'ratio'
-                  ? number | `${number} / ${number}`
-                  : kind extends 'weight'
-                    ? Weight
-                    : kind extends 'line'
-                      ? Length | number
-                      : kind extends 'box' | 'boxSigned'
-                        ? Box
-                        : Length
+        : kind extends 'transform'
+          ? Exclude<
+              Style.LiteralDeclarations['transform'],
+              readonly unknown[] | undefined
+            >
+          : kind extends 'font'
+            ? string
+            : kind extends 'size'
+              ? Length | `${number}%` | 'auto'
+              : kind extends 'dimension' | 'offset'
+                ? Length | `${number}%`
+                : kind extends 'integer' | 'number' | 'opacity'
+                  ? number
+                  : kind extends 'ratio'
+                    ? number | `${number} / ${number}`
+                    : kind extends 'weight'
+                      ? Weight
+                      : kind extends 'line'
+                        ? Length | number
+                        : kind extends 'box' | 'boxSigned'
+                          ? Box
+                          : Length
 
 type Reference<property extends keyof typeof properties> = {
   [group in Token.Group]: property extends Token.Properties<group>
@@ -698,17 +768,14 @@ function convert(
     return ratio
   }
   if (kind === 'color') {
-    if (
-      typeof value !== 'string' ||
-      (!/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) &&
-        !(colors as readonly string[]).includes(value))
-    )
+    const converted = typeof value === 'string' ? Color.parse(value) : undefined
+    if (converted === undefined)
       fail(
         'unsupported_value',
-        'Use a hex color or supported native color keyword.',
+        'Use an absolute sRGB color supported by native conversion.',
         path,
       )
-    return value
+    return converted
   }
   if (kind === 'font') {
     if (typeof value !== 'string' || !Object.hasOwn(options.fonts ?? {}, value))
@@ -898,6 +965,7 @@ function resolve(
 }
 
 type TransformValues = {
+  matrix: number[]
   perspective: number
   rotate: string
   rotateX: string
@@ -934,12 +1002,67 @@ function transform(
       fail('unsupported_value', 'Expected literal transform arguments.', path)
     const name = match[1]!.toLowerCase()
     const args = match[2]!.split(',').map((argument) => argument.trim())
-    const pair = name === 'translate' || name === 'scale'
-    if (!args[0] || args.length > (pair ? 2 : 1) || args.some((arg) => !arg))
+    const limit =
+      name === 'matrix'
+        ? 6
+        : name === 'matrix3d'
+          ? 16
+          : name === 'translate' || name === 'scale'
+            ? 2
+            : 1
+    if (!args[0] || args.length > limit || args.some((arg) => !arg))
       fail('unsupported_value', 'Invalid transform argument count.', path)
     const argument = args[0]!
 
-    if (
+    if (name === 'matrix' || name === 'matrix3d') {
+      if (
+        args.length !== limit ||
+        args.some(
+          (arg) =>
+            !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(arg) ||
+            !Number.isFinite(Number(arg)),
+        )
+      )
+        fail(
+          'unsupported_value',
+          'Matrices require six or sixteen finite numbers.',
+          path,
+        )
+      const values = args.map(Number)
+      const matrix =
+        name === 'matrix'
+          ? [
+              values[0]!,
+              values[1]!,
+              0,
+              0,
+              values[2]!,
+              values[3]!,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              values[4]!,
+              values[5]!,
+              0,
+              1,
+            ]
+          : values
+      const px = options.units?.px ?? 1
+      // Conjugate the matrix by the length scale, including projective components.
+      for (const index of [12, 13, 14]) matrix[index] = matrix[index]! * px
+      for (const index of [3, 7, 11]) matrix[index] = matrix[index]! / px
+      if (!matrix.every(Number.isFinite))
+        fail(
+          'unsupported_value',
+          'Converted matrix values must be finite.',
+          path,
+        )
+      Object.freeze(matrix)
+      output.push({ matrix })
+    } else if (
       name === 'translate' ||
       name === 'translatex' ||
       name === 'translatey'
@@ -1018,5 +1141,104 @@ function transform(
 
     remaining = remaining.slice(match[0].length).trimStart()
   }
+  if (output.length > 1 && output.some((entry) => 'matrix' in entry)) {
+    let combined = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    for (const entry of output) {
+      const matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+      const [key, value] = Object.entries(entry)[0]!
+      if (key === 'matrix') matrix.splice(0, 16, ...(value as number[]))
+      else if (key.startsWith('translate')) {
+        if (typeof value !== 'number')
+          fail(
+            'unsupported_value',
+            'Matrix composition requires absolute translations.',
+            path,
+          )
+        matrix[key === 'translateX' ? 12 : 13] = value
+      } else if (key === 'perspective') matrix[11] = -1 / (value as number)
+      else if (key.startsWith('scale')) {
+        if (key !== 'scaleY') matrix[0] = value as number
+        if (key !== 'scaleX') matrix[5] = value as number
+      } else {
+        const angle =
+          Number.parseFloat(value as string) *
+          ((value as string).endsWith('rad') ? 1 : Math.PI / 180)
+        if (key === 'skewX') matrix[4] = Math.tan(angle)
+        else if (key === 'skewY') matrix[1] = Math.tan(angle)
+        else {
+          const [a, b] =
+            key === 'rotateX' ? [1, 2] : key === 'rotateY' ? [2, 0] : [0, 1]
+          matrix[a! * 4 + a!] = Math.cos(angle)
+          matrix[b! * 4 + b!] = Math.cos(angle)
+          matrix[a! * 4 + b!] = Math.sin(angle)
+          matrix[b! * 4 + a!] = -Math.sin(angle)
+        }
+      }
+      combined = combined.map((_, index) => {
+        const row = index % 4
+        const column = Math.floor(index / 4)
+        return [0, 1, 2, 3].reduce(
+          (sum, k) => sum + combined[k * 4 + row]! * matrix[column * 4 + k]!,
+          0,
+        )
+      })
+    }
+    if (!combined.every(Number.isFinite))
+      fail('unsupported_value', 'Converted matrix values must be finite.', path)
+    Object.freeze(combined)
+    // React Native requires a matrix to be the only transform entry.
+    return Object.freeze([Object.freeze({ matrix: combined })])
+  }
   return Object.freeze(output.map((entry) => Object.freeze(entry)))
+}
+
+function shadows(
+  value: number | string,
+  options: compile.Options,
+  path: readonly string[],
+  text = false,
+): Extract<NonNullable<Native.Output['boxShadow']>, readonly unknown[]> {
+  if (value === 'none') return Object.freeze([])
+  if (typeof value !== 'string')
+    fail('unsupported_value', 'Expected a static shadow list.', path)
+  return Object.freeze(
+    value.split(/,(?![^()]*\))/).map((shadow) => {
+      const parts = shadow.trim().match(/[a-z]+\([^()]*\)|[^\s]+/gi) ?? []
+      const lengths: number[] = []
+      let color: string | undefined
+      let inset = false
+      for (const part of parts) {
+        if (part === 'inset' && !inset) {
+          inset = true
+          continue
+        }
+        const parsed = Color.parse(part)
+        if (parsed !== undefined && color === undefined) {
+          color = parsed
+          continue
+        }
+        lengths.push(length(part, options, true, path))
+      }
+      if (
+        lengths.length < 2 ||
+        lengths.length > (text ? 3 : 4) ||
+        (text && inset) ||
+        (lengths[2] ?? 0) < 0 ||
+        color === undefined
+      )
+        fail(
+          'unsupported_value',
+          'Shadows require two to four lengths, a nonnegative blur, and an explicit absolute color.',
+          path,
+        )
+      return Object.freeze({
+        offsetX: lengths[0]!,
+        offsetY: lengths[1]!,
+        blurRadius: lengths[2] ?? 0,
+        spreadDistance: lengths[3] ?? 0,
+        color,
+        inset,
+      })
+    }),
+  )
 }

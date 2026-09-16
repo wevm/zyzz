@@ -163,14 +163,20 @@ export function define<
       [key in keyof styles]: WithoutRelationships<styles[key]>
     },
   options: define.Options<tokens>,
-): Definition<`${Extract<keyof styles, number | string>}`>
+): Definition<
+  `${Extract<keyof styles, number | string>}`,
+  Targets.Domains<styles>
+>
 export function define<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<Exact<styles, {}>> & {
       [key in keyof styles]: WithoutRelationships<styles[key]>
     },
   options?: define.Options,
-): Definition<`${Extract<keyof styles, number | string>}`>
+): Definition<
+  `${Extract<keyof styles, number | string>}`,
+  Targets.Domains<styles>
+>
 export function define(
   styles: Record<string, unknown>,
   options: define.Options = {},
@@ -576,7 +582,9 @@ export declare namespace define {
 }
 
 /** Immutable data passed from authoring to later target compilation. */
-export type Definition<name extends string = string> = {
+export type Definition<name extends string = string, input = unknown> = {
+  /** Type-only declarations used to retain native component compatibility. */
+  readonly [Targets.authored]?: input
   /** Named styles in own enumerable property order. */
   readonly styles: readonly NamedStyle<name>[]
 }

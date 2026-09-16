@@ -342,11 +342,591 @@ type MaximumOneOf<T, K extends keyof T = keyof T> = K extends keyof T ? {
 } & {
     [P in Exclude<keyof T, K>]?: never;
 } : never;
-type Styles = ImageStyle | TextStyle | ViewStyle;
+namespace Published {
+    type AnimatedNode = never;
+    type WithAnimatedValue<T> = never;
+    export type NativeColorValue = never;
+    type ColorValue = ____ColorValue_Internal;
+    export type ____ColorValue_Internal = null | string | number | NativeColorValue;
+    export type ColorArrayValue = null | ReadonlyArray<____ColorValue_Internal>;
+    export type PointValue = {
+        x: number;
+        y: number;
+    };
+    export type EdgeInsetsValue = {
+        top: number;
+        left: number;
+        right: number;
+        bottom: number;
+    };
+    export type DimensionValue = number | string | "auto" | null;
+    export type CursorValue = "auto" | "pointer";
+    type ____LayoutStyle_Internal = Readonly<{
+        display?: "none" | "flex" | "contents" | undefined;
+        width?: DimensionValue | undefined;
+        height?: DimensionValue | undefined;
+        bottom?: DimensionValue | undefined;
+        end?: DimensionValue | undefined;
+        left?: DimensionValue | undefined;
+        right?: DimensionValue | undefined;
+        start?: DimensionValue | undefined;
+        top?: DimensionValue | undefined;
+        inset?: DimensionValue | undefined;
+        insetBlock?: DimensionValue | undefined;
+        insetBlockEnd?: DimensionValue | undefined;
+        insetBlockStart?: DimensionValue | undefined;
+        insetInline?: DimensionValue | undefined;
+        insetInlineEnd?: DimensionValue | undefined;
+        insetInlineStart?: DimensionValue | undefined;
+        minWidth?: DimensionValue | undefined;
+        maxWidth?: DimensionValue | undefined;
+        minHeight?: DimensionValue | undefined;
+        maxHeight?: DimensionValue | undefined;
+        margin?: DimensionValue | undefined;
+        marginBlock?: DimensionValue | undefined;
+        marginBlockEnd?: DimensionValue | undefined;
+        marginBlockStart?: DimensionValue | undefined;
+        marginBottom?: DimensionValue | undefined;
+        marginEnd?: DimensionValue | undefined;
+        marginHorizontal?: DimensionValue | undefined;
+        marginInline?: DimensionValue | undefined;
+        marginInlineEnd?: DimensionValue | undefined;
+        marginInlineStart?: DimensionValue | undefined;
+        marginLeft?: DimensionValue | undefined;
+        marginRight?: DimensionValue | undefined;
+        marginStart?: DimensionValue | undefined;
+        marginTop?: DimensionValue | undefined;
+        marginVertical?: DimensionValue | undefined;
+        padding?: DimensionValue | undefined;
+        paddingBlock?: DimensionValue | undefined;
+        paddingBlockEnd?: DimensionValue | undefined;
+        paddingBlockStart?: DimensionValue | undefined;
+        paddingBottom?: DimensionValue | undefined;
+        paddingEnd?: DimensionValue | undefined;
+        paddingHorizontal?: DimensionValue | undefined;
+        paddingInline?: DimensionValue | undefined;
+        paddingInlineEnd?: DimensionValue | undefined;
+        paddingInlineStart?: DimensionValue | undefined;
+        paddingLeft?: DimensionValue | undefined;
+        paddingRight?: DimensionValue | undefined;
+        paddingStart?: DimensionValue | undefined;
+        paddingTop?: DimensionValue | undefined;
+        paddingVertical?: DimensionValue | undefined;
+        borderWidth?: number | undefined;
+        borderBottomWidth?: number | undefined;
+        borderEndWidth?: number | undefined;
+        borderLeftWidth?: number | undefined;
+        borderRightWidth?: number | undefined;
+        borderStartWidth?: number | undefined;
+        borderTopWidth?: number | undefined;
+        position?: "absolute" | "relative" | "static" | undefined;
+        flexDirection?: "row" | "row-reverse" | "column" | "column-reverse" | undefined;
+        flexWrap?: "wrap" | "nowrap" | "wrap-reverse" | undefined;
+        justifyContent?: "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly" | undefined;
+        alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline" | undefined;
+        alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline" | undefined;
+        alignContent?: "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-around" | "space-evenly" | undefined;
+        overflow?: "visible" | "hidden" | "scroll" | undefined;
+        flex?: number | undefined;
+        flexGrow?: number | undefined;
+        flexShrink?: number | undefined;
+        flexBasis?: number | string | undefined;
+        aspectRatio?: number | string | undefined;
+        boxSizing?: "border-box" | "content-box" | undefined;
+        zIndex?: number | undefined;
+        direction?: "inherit" | "ltr" | "rtl" | undefined;
+        rowGap?: number | string | undefined;
+        columnGap?: number | string | undefined;
+        gap?: number | string | undefined;
+    }>;
+    export type ____ShadowStyle_InternalCore = Readonly<{
+        shadowColor?: ____ColorValue_Internal | undefined;
+        shadowOffset?: Readonly<{
+            width?: number | undefined;
+            height?: number | undefined;
+        }> | undefined;
+        shadowOpacity?: number | undefined;
+        shadowRadius?: number | undefined;
+    }>;
+    export type ____ShadowStyle_Internal = Readonly<Omit<____ShadowStyle_InternalCore, keyof ____ShadowStyle_InternalOverrides | keyof {}> & Omit<____ShadowStyle_InternalOverrides, keyof {}> & {}>;
+    export type FilterFunction = {
+        brightness: number | string;
+    } | {
+        blur: number | string;
+    } | {
+        contrast: number | string;
+    } | {
+        grayscale: number | string;
+    } | {
+        hueRotate: number | string;
+    } | {
+        invert: number | string;
+    } | {
+        opacity: number | string;
+    } | {
+        saturate: number | string;
+    } | {
+        sepia: number | string;
+    } | {
+        dropShadow: DropShadowValue | string;
+    };
+    export type DropShadowValue = {
+        offsetX: number | string;
+        offsetY: number | string;
+        standardDeviation?: number | string | undefined;
+        color?: ____ColorValue_Internal | undefined;
+    };
+    type LinearGradientValue = {
+        type: "linear-gradient";
+        direction?: string | undefined;
+        colorStops: ReadonlyArray<{
+            color: ____ColorValue_Internal;
+            positions?: ReadonlyArray<string> | undefined;
+        }>;
+    };
+    type RadialExtent = "closest-corner" | "closest-side" | "farthest-corner" | "farthest-side";
+    export type RadialGradientPosition = {
+        top: number | string;
+        left: number | string;
+    } | {
+        top: number | string;
+        right: number | string;
+    } | {
+        bottom: number | string;
+        left: number | string;
+    } | {
+        bottom: number | string;
+        right: number | string;
+    };
+    export type RadialGradientShape = "circle" | "ellipse";
+    export type RadialGradientSize = RadialExtent | {
+        x: string | number;
+        y: string | number;
+    };
+    type RadialGradientValue = {
+        type: "radial-gradient";
+        shape: RadialGradientShape;
+        size: RadialGradientSize;
+        position: RadialGradientPosition;
+        colorStops: ReadonlyArray<{
+            color: ____ColorValue_Internal;
+            positions?: ReadonlyArray<string> | undefined;
+        }>;
+    };
+    export type BackgroundImageValue = LinearGradientValue | RadialGradientValue;
+    export type BackgroundSizeValue = {
+        x: string | number;
+        y: string | number;
+    };
+    export type BackgroundRepeatKeyword = "repeat" | "space" | "round" | "no-repeat";
+    export type BackgroundPositionValue = {
+        top: number | string;
+        left: number | string;
+    } | {
+        top: number | string;
+        right: number | string;
+    } | {
+        bottom: number | string;
+        left: number | string;
+    } | {
+        bottom: number | string;
+        right: number | string;
+    };
+    export type BackgroundRepeatValue = {
+        x: BackgroundRepeatKeyword;
+        y: BackgroundRepeatKeyword;
+    };
+    export type BoxShadowValue = {
+        offsetX: number | string;
+        offsetY: number | string;
+        color?: ____ColorValue_Internal | undefined;
+        blurRadius?: number | string | undefined;
+        spreadDistance?: number | string | undefined;
+        inset?: boolean | undefined;
+    };
+    type ____BlendMode_Internal = "normal" | "multiply" | "screen" | "overlay" | "darken" | "lighten" | "color-dodge" | "color-burn" | "hard-light" | "soft-light" | "difference" | "exclusion" | "hue" | "saturation" | "color" | "luminosity" | "plus-lighter";
+    export type ____ViewStyle_InternalBase = Readonly<{
+        backfaceVisibility?: "visible" | "hidden" | undefined;
+        backgroundColor?: ____ColorValue_Internal | undefined;
+        borderColor?: ____ColorValue_Internal | undefined;
+        borderCurve?: "circular" | "continuous" | undefined;
+        borderBottomColor?: ____ColorValue_Internal | undefined;
+        borderEndColor?: ____ColorValue_Internal | undefined;
+        borderLeftColor?: ____ColorValue_Internal | undefined;
+        borderRightColor?: ____ColorValue_Internal | undefined;
+        borderStartColor?: ____ColorValue_Internal | undefined;
+        borderTopColor?: ____ColorValue_Internal | undefined;
+        borderBlockColor?: ____ColorValue_Internal | undefined;
+        borderBlockEndColor?: ____ColorValue_Internal | undefined;
+        borderBlockStartColor?: ____ColorValue_Internal | undefined;
+        borderRadius?: number | string | undefined;
+        borderBottomEndRadius?: number | string | undefined;
+        borderBottomLeftRadius?: number | string | undefined;
+        borderBottomRightRadius?: number | string | undefined;
+        borderBottomStartRadius?: number | string | undefined;
+        borderEndEndRadius?: number | string | undefined;
+        borderEndStartRadius?: number | string | undefined;
+        borderStartEndRadius?: number | string | undefined;
+        borderStartStartRadius?: number | string | undefined;
+        borderTopEndRadius?: number | string | undefined;
+        borderTopLeftRadius?: number | string | undefined;
+        borderTopRightRadius?: number | string | undefined;
+        borderTopStartRadius?: number | string | undefined;
+        borderStyle?: "solid" | "dotted" | "dashed" | undefined;
+        borderWidth?: number | undefined;
+        borderBottomWidth?: number | undefined;
+        borderEndWidth?: number | undefined;
+        borderLeftWidth?: number | undefined;
+        borderRightWidth?: number | undefined;
+        borderStartWidth?: number | undefined;
+        borderTopWidth?: number | undefined;
+        opacity?: number | undefined;
+        outlineColor?: ____ColorValue_Internal | undefined;
+        outlineOffset?: number | undefined;
+        outlineStyle?: "solid" | "dotted" | "dashed" | undefined;
+        outlineWidth?: number | undefined;
+        elevation?: number | undefined;
+        pointerEvents?: "auto" | "none" | "box-none" | "box-only" | undefined;
+        cursor?: CursorValue | undefined;
+        boxShadow?: ReadonlyArray<BoxShadowValue> | string | undefined;
+        filter?: ReadonlyArray<FilterFunction> | string | undefined;
+        mixBlendMode?: ____BlendMode_Internal | undefined;
+        backgroundImage?: ReadonlyArray<BackgroundImageValue> | string | undefined;
+        experimental_backgroundImage?: ReadonlyArray<BackgroundImageValue> | string | undefined;
+        experimental_backgroundSize?: ReadonlyArray<BackgroundSizeValue> | string | undefined;
+        experimental_backgroundPosition?: ReadonlyArray<BackgroundPositionValue> | string | undefined;
+        experimental_backgroundRepeat?: ReadonlyArray<BackgroundRepeatValue> | string | undefined;
+        isolation?: "auto" | "isolate" | undefined;
+    }>;
+    export type ____ViewStyle_InternalCore = Readonly<Omit<____LayoutStyle_Internal, keyof ____ShadowStyle_Internal | keyof ____TransformStyle_Internal | keyof ____ViewStyle_InternalBase | keyof {}> & Omit<____ShadowStyle_Internal, keyof ____TransformStyle_Internal | keyof ____ViewStyle_InternalBase | keyof {}> & Omit<____TransformStyle_Internal, keyof ____ViewStyle_InternalBase | keyof {}> & Omit<____ViewStyle_InternalBase, keyof {}> & {}>;
+    export type ____ViewStyle_Internal = Readonly<Omit<____ViewStyle_InternalCore, keyof ____ViewStyle_InternalOverrides | keyof {}> & Omit<____ViewStyle_InternalOverrides, keyof {}> & {}>;
+    export type FontStyleType = {
+        fontFamily: string;
+        fontWeight: ____FontWeight_Internal;
+    };
+    export type FontStyleMap = {
+        ultraLight: FontStyleType;
+        thin: FontStyleType;
+        light: FontStyleType;
+        regular: FontStyleType;
+        medium: FontStyleType;
+        semibold: FontStyleType;
+        bold: FontStyleType;
+        heavy: FontStyleType;
+        black: FontStyleType;
+    };
+    export type ____FontWeight_Internal = "normal" | "bold" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | "ultralight" | "thin" | "light" | "medium" | "regular" | "semibold" | "condensedBold" | "condensed" | "heavy" | "black";
+    export type ____FontVariant_Internal = "small-caps" | "oldstyle-nums" | "lining-nums" | "tabular-nums" | "common-ligatures" | "no-common-ligatures" | "discretionary-ligatures" | "no-discretionary-ligatures" | "historical-ligatures" | "no-historical-ligatures" | "contextual" | "no-contextual" | "proportional-nums" | "stylistic-one" | "stylistic-two" | "stylistic-three" | "stylistic-four" | "stylistic-five" | "stylistic-six" | "stylistic-seven" | "stylistic-eight" | "stylistic-nine" | "stylistic-ten" | "stylistic-eleven" | "stylistic-twelve" | "stylistic-thirteen" | "stylistic-fourteen" | "stylistic-fifteen" | "stylistic-sixteen" | "stylistic-seventeen" | "stylistic-eighteen" | "stylistic-nineteen" | "stylistic-twenty";
+    export type ____FontVariantArray_Internal = ReadonlyArray<____FontVariant_Internal>;
+    type ____TextStyle_InternalBase = Readonly<{
+        color?: ____ColorValue_Internal | undefined;
+        fontFamily?: string | undefined;
+        fontSize?: number | undefined;
+        fontStyle?: "normal" | "italic" | undefined;
+        fontWeight?: ____FontWeight_Internal | undefined;
+        fontVariant?: ____FontVariantArray_Internal | string | undefined;
+        textShadowOffset?: Readonly<{
+            width: number;
+            height: number;
+        }> | undefined;
+        textShadowRadius?: number | undefined;
+        textShadowColor?: ____ColorValue_Internal | undefined;
+        letterSpacing?: number | undefined;
+        lineHeight?: number | undefined;
+        textAlign?: "auto" | "left" | "right" | "center" | "justify" | "start" | "end" | undefined;
+        textAlignVertical?: "auto" | "top" | "bottom" | "center" | undefined;
+        includeFontPadding?: boolean | undefined;
+        textDecorationLine?: "none" | "underline" | "line-through" | "underline line-through" | undefined;
+        textDecorationStyle?: "solid" | "double" | "dotted" | "dashed" | "wavy" | undefined;
+        textDecorationColor?: ____ColorValue_Internal | undefined;
+        textTransform?: "none" | "capitalize" | "uppercase" | "lowercase" | undefined;
+        userSelect?: "auto" | "text" | "none" | "contain" | "all" | undefined;
+        verticalAlign?: "auto" | "top" | "bottom" | "middle" | undefined;
+        writingDirection?: "auto" | "ltr" | "rtl" | undefined;
+    }>;
+    export type ____TextStyle_InternalCore = Readonly<Omit<____ViewStyle_Internal, keyof ____TextStyle_InternalBase | keyof {}> & Omit<____TextStyle_InternalBase, keyof {}> & {}>;
+    export type ____TextStyle_Internal = Readonly<Omit<____TextStyle_InternalCore, keyof ____TextStyle_InternalOverrides | keyof {}> & Omit<____TextStyle_InternalOverrides, keyof {}> & {}>;
+    export type ____ImageStyle_InternalCore = Readonly<Omit<____ViewStyle_Internal, keyof {
+        resizeMode?: ImageResizeMode | undefined;
+        objectFit?: "cover" | "contain" | "fill" | "scale-down" | "none" | undefined;
+        tintColor?: ____ColorValue_Internal | undefined;
+        overlayColor?: ColorValue | undefined;
+        overflow?: "visible" | "hidden" | undefined;
+    }> & {
+        resizeMode?: ImageResizeMode | undefined;
+        objectFit?: "cover" | "contain" | "fill" | "scale-down" | "none" | undefined;
+        tintColor?: ____ColorValue_Internal | undefined;
+        overlayColor?: ColorValue | undefined;
+        overflow?: "visible" | "hidden" | undefined;
+    }>;
+    export type ____ImageStyle_Internal = Readonly<Omit<____ImageStyle_InternalCore, keyof ____ImageStyle_InternalOverrides | keyof {}> & Omit<____ImageStyle_InternalOverrides, keyof {}> & {}>;
+    export type ____DangerouslyImpreciseStyle_InternalCore = Readonly<Omit<____TextStyle_Internal, keyof {
+        resizeMode?: ImageResizeMode | undefined;
+        objectFit?: "cover" | "contain" | "fill" | "scale-down" | "none" | undefined;
+        tintColor?: ____ColorValue_Internal | undefined;
+        overlayColor?: ColorValue | undefined;
+    }> & {
+        resizeMode?: ImageResizeMode | undefined;
+        objectFit?: "cover" | "contain" | "fill" | "scale-down" | "none" | undefined;
+        tintColor?: ____ColorValue_Internal | undefined;
+        overlayColor?: ColorValue | undefined;
+    }>;
+    export type ____DangerouslyImpreciseStyle_Internal = Readonly<Omit<____DangerouslyImpreciseStyle_InternalCore, keyof ____DangerouslyImpreciseStyle_InternalOverrides | keyof {}> & Omit<____DangerouslyImpreciseStyle_InternalOverrides, keyof {}> & {}>;
+    export type StyleProp<T> = null | void | T | false | "" | ReadonlyArray<StyleProp<T>>;
+    export type ____DangerouslyImpreciseStyleProp_Internal = StyleProp<Partial<____DangerouslyImpreciseStyle_Internal>>;
+    export type ____DangerouslyImpreciseAnimatedStyleProp_Internal = WithAnimatedValue<StyleProp<Partial<____DangerouslyImpreciseStyle_Internal>>>;
+    export type ____ViewStyleProp_Internal = StyleProp<Readonly<Partial<____ViewStyle_Internal>>>;
+    export type ____TextStyleProp_Internal = StyleProp<Readonly<Partial<____TextStyle_Internal>>>;
+    export type ____ImageStyleProp_Internal = StyleProp<Readonly<Partial<____ImageStyle_Internal>>>;
+    export type ____Styles_Internal = {
+        readonly [key: string]: Partial<____DangerouslyImpreciseStyle_Internal>;
+    };
+    type FlattenDepthLimiter = [
+        void,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+    ];
+    type ____FlattenStyleProp_Helper<TStyleProp extends StyleProp<unknown>, Depth extends FlattenDepthLimiter[keyof FlattenDepthLimiter] = 9> = Depth extends 0 ? never : TStyleProp extends null | void | false | "" ? never : TStyleProp extends ReadonlyArray<infer V> ? ____FlattenStyleProp_Helper<V, Depth extends number ? FlattenDepthLimiter[Depth] : 0> : TStyleProp;
+    export type ____FlattenStyleProp_Internal<TStyleProp extends StyleProp<unknown>> = ____FlattenStyleProp_Helper<TStyleProp> extends never ? any : ____FlattenStyleProp_Helper<TStyleProp>;
+    export type ____DangerouslyImpreciseStyle_InternalOverrides = Readonly<{}>;
+    export type ____ImageStyle_InternalOverrides = Readonly<{}>;
+    export type ____ShadowStyle_InternalOverrides = Readonly<{}>;
+    export type ____TextStyle_InternalOverrides = Readonly<{}>;
+    export type ____ViewStyle_InternalOverrides = Readonly<{}>;
+    type KeysOfUnion<T> = T extends any ? keyof T : never;
+    type ValueOfUnion<T, K> = T extends any ? K extends keyof T ? T[K] : never : never;
+    type MergeUnion<T> = {
+        [K in KeysOfUnion<T>]?: ValueOfUnion<T, K>;
+    };
+    type MaximumOneOf<T extends {}> = {
+        [K in keyof T]: {
+            [P in keyof T]?: P extends K ? T[P] : never;
+        };
+    }[keyof {
+        [K in keyof T]: {
+            [P in keyof T]?: P extends K ? T[P] : never;
+        };
+    }];
+    export type ____TransformStyle_Internal = Readonly<{
+        transform?: ReadonlyArray<Readonly<MaximumOneOf<MergeUnion<{
+            readonly perspective: number | AnimatedNode;
+        } | {
+            readonly rotate: string | AnimatedNode;
+        } | {
+            readonly rotateX: string | AnimatedNode;
+        } | {
+            readonly rotateY: string | AnimatedNode;
+        } | {
+            readonly rotateZ: string | AnimatedNode;
+        } | {
+            readonly scale: number | AnimatedNode;
+        } | {
+            readonly scaleX: number | AnimatedNode;
+        } | {
+            readonly scaleY: number | AnimatedNode;
+        } | {
+            readonly translateX: number | string | AnimatedNode;
+        } | {
+            readonly translateY: number | string | AnimatedNode;
+        } | {
+            readonly translate: [
+                number | string | AnimatedNode,
+                number | string | AnimatedNode
+            ] | AnimatedNode;
+        } | {
+            readonly skewX: string | AnimatedNode;
+        } | {
+            readonly skewY: string | AnimatedNode;
+        } | {
+            readonly matrix: ReadonlyArray<number | AnimatedNode> | AnimatedNode;
+        }>>>> | string | undefined;
+        transformOrigin?: [
+            string | number,
+            string | number,
+            string | number
+        ] | string | undefined;
+    }>;
+    export type ImageResizeMode = "center" | "contain" | "cover" | "repeat" | "stretch" | "none";
+}
+type LegacyStyles = ImageStyle | TextStyle | ViewStyle;
+type PublishedStyles = Published.____ImageStyle_Internal | Published.____TextStyle_Internal | Published.____ViewStyle_Internal;
+type Styles = LegacyStyles | PublishedStyles;
 type Keys<T> = T extends unknown ? keyof T : never;
 type Value<T, K extends PropertyKey> = T extends unknown ? K extends keyof T ? T[K] : never : never;
+type Operations = NonNullable<Exclude<Published.____TransformStyle_Internal['transform'], string | undefined>[number]>;
+type Transform = {
+    [K in Keys<Operations>]: {
+        [P in K]: Exclude<Value<Operations, P>, undefined>;
+    } & {
+        [P in Exclude<Keys<Operations>, K>]?: never;
+    };
+}[Keys<Operations>];
 type Output = {
-    [K in Keys<Styles>]?: Value<Styles, K>;
+    alignContent?: "stretch" | "center" | "flex-start" | "flex-end" | "space-between" | "space-around" | "space-evenly" | undefined;
+    alignItems?: "stretch" | "center" | "flex-start" | "flex-end" | "baseline" | undefined;
+    alignSelf?: "stretch" | "center" | "flex-start" | "flex-end" | "baseline" | "auto" | undefined;
+    aspectRatio?: string | number | undefined;
+    backfaceVisibility?: "visible" | "hidden" | undefined;
+    backgroundColor?: Published.____ColorValue_Internal | undefined;
+    backgroundImage?: string | readonly Published.BackgroundImageValue[] | undefined;
+    borderBlockColor?: Published.____ColorValue_Internal | undefined;
+    borderBlockEndColor?: Published.____ColorValue_Internal | undefined;
+    borderBlockStartColor?: Published.____ColorValue_Internal | undefined;
+    borderBottomColor?: Published.____ColorValue_Internal | undefined;
+    borderBottomEndRadius?: string | number | undefined;
+    borderBottomLeftRadius?: string | number | undefined;
+    borderBottomRightRadius?: string | number | undefined;
+    borderBottomStartRadius?: string | number | undefined;
+    borderBottomWidth?: number | undefined;
+    borderColor?: Published.____ColorValue_Internal | undefined;
+    borderCurve?: "circular" | "continuous" | undefined;
+    borderEndColor?: Published.____ColorValue_Internal | undefined;
+    borderEndEndRadius?: string | number | undefined;
+    borderEndStartRadius?: string | number | undefined;
+    borderEndWidth?: number | undefined;
+    borderLeftColor?: Published.____ColorValue_Internal | undefined;
+    borderLeftWidth?: number | undefined;
+    borderRadius?: string | number | undefined;
+    borderRightColor?: Published.____ColorValue_Internal | undefined;
+    borderRightWidth?: number | undefined;
+    borderStartColor?: Published.____ColorValue_Internal | undefined;
+    borderStartEndRadius?: string | number | undefined;
+    borderStartStartRadius?: string | number | undefined;
+    borderStartWidth?: number | undefined;
+    borderStyle?: "solid" | "dotted" | "dashed" | undefined;
+    borderTopColor?: Published.____ColorValue_Internal | undefined;
+    borderTopEndRadius?: string | number | undefined;
+    borderTopLeftRadius?: string | number | undefined;
+    borderTopRightRadius?: string | number | undefined;
+    borderTopStartRadius?: string | number | undefined;
+    borderTopWidth?: number | undefined;
+    borderWidth?: number | undefined;
+    bottom?: Published.DimensionValue | undefined;
+    boxShadow?: string | readonly Published.BoxShadowValue[] | undefined;
+    boxSizing?: "border-box" | "content-box" | undefined;
+    color?: Published.____ColorValue_Internal | undefined;
+    columnGap?: string | number | undefined;
+    cursor?: Published.CursorValue | undefined;
+    direction?: "inherit" | "ltr" | "rtl" | undefined;
+    display?: "none" | "flex" | "contents" | undefined;
+    elevation?: number | undefined;
+    end?: Published.DimensionValue | undefined;
+    experimental_backgroundImage?: string | readonly Published.BackgroundImageValue[] | undefined;
+    experimental_backgroundPosition?: string | readonly Published.BackgroundPositionValue[] | undefined;
+    experimental_backgroundRepeat?: string | readonly Published.BackgroundRepeatValue[] | undefined;
+    experimental_backgroundSize?: string | readonly Published.BackgroundSizeValue[] | undefined;
+    filter?: string | readonly Published.FilterFunction[] | undefined;
+    flex?: number | undefined;
+    flexBasis?: string | number | undefined;
+    flexDirection?: "row" | "column" | "row-reverse" | "column-reverse" | undefined;
+    flexGrow?: number | undefined;
+    flexShrink?: number | undefined;
+    flexWrap?: "wrap" | "nowrap" | "wrap-reverse" | undefined;
+    fontFamily?: string | undefined;
+    fontSize?: number | undefined;
+    fontStyle?: "normal" | "italic" | undefined;
+    fontVariant?: string | Published.____FontVariantArray_Internal | undefined;
+    fontWeight?: Published.____FontWeight_Internal | undefined;
+    gap?: string | number | undefined;
+    height?: Published.DimensionValue | undefined;
+    includeFontPadding?: boolean | undefined;
+    inset?: Published.DimensionValue | undefined;
+    insetBlock?: Published.DimensionValue | undefined;
+    insetBlockEnd?: Published.DimensionValue | undefined;
+    insetBlockStart?: Published.DimensionValue | undefined;
+    insetInline?: Published.DimensionValue | undefined;
+    insetInlineEnd?: Published.DimensionValue | undefined;
+    insetInlineStart?: Published.DimensionValue | undefined;
+    isolation?: "auto" | "isolate" | undefined;
+    justifyContent?: "center" | "flex-start" | "flex-end" | "space-between" | "space-around" | "space-evenly" | undefined;
+    left?: Published.DimensionValue | undefined;
+    letterSpacing?: number | undefined;
+    lineHeight?: number | undefined;
+    margin?: Published.DimensionValue | undefined;
+    marginBlock?: Published.DimensionValue | undefined;
+    marginBlockEnd?: Published.DimensionValue | undefined;
+    marginBlockStart?: Published.DimensionValue | undefined;
+    marginBottom?: Published.DimensionValue | undefined;
+    marginEnd?: Published.DimensionValue | undefined;
+    marginHorizontal?: Published.DimensionValue | undefined;
+    marginInline?: Published.DimensionValue | undefined;
+    marginInlineEnd?: Published.DimensionValue | undefined;
+    marginInlineStart?: Published.DimensionValue | undefined;
+    marginLeft?: Published.DimensionValue | undefined;
+    marginRight?: Published.DimensionValue | undefined;
+    marginStart?: Published.DimensionValue | undefined;
+    marginTop?: Published.DimensionValue | undefined;
+    marginVertical?: Published.DimensionValue | undefined;
+    maxHeight?: Published.DimensionValue | undefined;
+    maxWidth?: Published.DimensionValue | undefined;
+    minHeight?: Published.DimensionValue | undefined;
+    minWidth?: Published.DimensionValue | undefined;
+    mixBlendMode?: ("normal" | "multiply" | "screen" | "overlay" | "darken" | "lighten" | "color-dodge" | "color-burn" | "hard-light" | "soft-light" | "difference" | "exclusion" | "hue" | "saturation" | "color" | "luminosity" | "plus-lighter") | undefined;
+    objectFit?: "cover" | "contain" | "none" | "fill" | "scale-down" | undefined;
+    opacity?: number | undefined;
+    outlineColor?: Published.____ColorValue_Internal | undefined;
+    outlineOffset?: number | undefined;
+    outlineStyle?: "solid" | "dotted" | "dashed" | undefined;
+    outlineWidth?: number | undefined;
+    overflow?: "visible" | "hidden" | "scroll" | undefined;
+    overlayColor?: Published.____ColorValue_Internal | undefined;
+    padding?: Published.DimensionValue | undefined;
+    paddingBlock?: Published.DimensionValue | undefined;
+    paddingBlockEnd?: Published.DimensionValue | undefined;
+    paddingBlockStart?: Published.DimensionValue | undefined;
+    paddingBottom?: Published.DimensionValue | undefined;
+    paddingEnd?: Published.DimensionValue | undefined;
+    paddingHorizontal?: Published.DimensionValue | undefined;
+    paddingInline?: Published.DimensionValue | undefined;
+    paddingInlineEnd?: Published.DimensionValue | undefined;
+    paddingInlineStart?: Published.DimensionValue | undefined;
+    paddingLeft?: Published.DimensionValue | undefined;
+    paddingRight?: Published.DimensionValue | undefined;
+    paddingStart?: Published.DimensionValue | undefined;
+    paddingTop?: Published.DimensionValue | undefined;
+    paddingVertical?: Published.DimensionValue | undefined;
+    pointerEvents?: "none" | "auto" | "box-none" | "box-only" | undefined;
+    position?: "absolute" | "relative" | "static" | undefined;
+    resizeMode?: Published.ImageResizeMode | undefined;
+    right?: Published.DimensionValue | undefined;
+    rotation?: number | undefined;
+    rowGap?: string | number | undefined;
+    scaleX?: number | undefined;
+    scaleY?: number | undefined;
+    shadowColor?: Published.____ColorValue_Internal | undefined;
+    shadowOffset?: Readonly<{ width?: number | undefined; height?: number | undefined; }> | undefined;
+    shadowOpacity?: number | undefined;
+    shadowRadius?: number | undefined;
+    start?: Published.DimensionValue | undefined;
+    textAlign?: "center" | "auto" | "end" | "left" | "right" | "start" | "justify" | undefined;
+    textAlignVertical?: "center" | "auto" | "bottom" | "top" | undefined;
+    textDecorationColor?: Published.____ColorValue_Internal | undefined;
+    textDecorationLine?: "none" | "underline" | "line-through" | "underline line-through" | undefined;
+    textDecorationStyle?: "solid" | "dotted" | "dashed" | "double" | "wavy" | undefined;
+    textShadowColor?: Published.____ColorValue_Internal | undefined;
+    textShadowOffset?: Readonly<{ width: number; height: number; }> | undefined;
+    textShadowRadius?: number | undefined;
+    textTransform?: "none" | "capitalize" | "uppercase" | "lowercase" | undefined;
+    tintColor?: Published.____ColorValue_Internal | undefined;
+    top?: Published.DimensionValue | undefined;
+    transform?: string | readonly Transform[] | undefined;
+    transformMatrix?: number[] | undefined;
+    transformOrigin?: string | [string | number, string | number, string | number] | undefined;
+    translateX?: number | undefined;
+    translateY?: number | undefined;
+    userSelect?: "contain" | "none" | "auto" | "text" | "all" | undefined;
+    verticalAlign?: "auto" | "bottom" | "top" | "middle" | undefined;
+    width?: Published.DimensionValue | undefined;
+    writingDirection?: "auto" | "ltr" | "rtl" | undefined;
+    zIndex?: number | undefined;
 };
 type Immutable<T> = T extends object ? {
     readonly [K in keyof T]: Immutable<T[K]>;

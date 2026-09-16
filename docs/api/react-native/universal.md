@@ -35,4 +35,4 @@ The pinned React Native 0.87.0 declarations in `test/conformance/native` define 
 
 `pnpm check:native:full` deliberately fails while full acceptance is unimplemented. Replace this pending guard with executed evidence checks as the conformance runner lands. Do not turn it green by filtering the inventory or treating unsupported entries as not applicable.
 
-The inventory retains source declarations, actual runtime exports, and referenced type names. Imported animated/image domains, platform requirements, OS versions, and renderer architecture still require the detailed value and platform audit. iOS and Android must each match independent React Native controls before full parity can pass.
+The inventory retains legacy and published declarations, actual runtime exports, and referenced type names. Static image and value domains are audited. Animated/opaque domains, OS requirements, renderer architecture, and rendered behavior remain host and device acceptance work. iOS and Android must each match independent React Native controls before full parity can pass.

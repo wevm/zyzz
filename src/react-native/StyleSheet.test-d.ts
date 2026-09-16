@@ -2,6 +2,57 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
+import type { StyleProp as NativeStyleProp } from '../../test/fixtures/native/StyleProp.js'
+
+describe('compose', () => {
+  test('preserves native array assignability, literals, and absent-operand identity', () => {
+    const override = { opacity: 0.5 }
+    const composed = StyleSheet.compose({ position: 'absolute' }, { top: 0 })
+    const identity = StyleSheet.compose(false, override)
+
+    expectTypeOf(composed).toMatchTypeOf<
+      NativeStyleProp<{ position?: 'absolute'; top?: number }>
+    >()
+    expectTypeOf<StyleSheet.StyleProp<{ opacity: number }>>().toMatchTypeOf<
+      NativeStyleProp<{ opacity: number }>
+    >()
+    expectTypeOf(identity).toEqualTypeOf<typeof override>()
+    expectTypeOf(StyleSheet.compose(override, null)).toEqualTypeOf<
+      typeof override
+    >()
+    expectTypeOf(StyleSheet.flatten(identity)).toEqualTypeOf<typeof override>()
+    expectTypeOf(StyleSheet.flatten([{ position: 'absolute' }])).toMatchTypeOf<{
+      position?: 'absolute'
+    }>()
+
+    const mixed = null as unknown as
+      | { position: 'absolute' }
+      | readonly StyleSheet.StyleProp<{ position: 'absolute' }>[]
+    const flattened = StyleSheet.flatten(mixed)
+    expectTypeOf<
+      Extract<typeof flattened, readonly unknown[]>
+    >().toEqualTypeOf<never>()
+    expectTypeOf(flattened).toMatchTypeOf<{ position?: 'absolute' }>()
+  })
+
+  test('accepts compiled styles and external native arrays without erasing types', () => {
+    const output = StyleSheet.compile({
+      styles: Style.define({ card: { padding: '1px' } }),
+    })
+    const override = { opacity: 0.5 }
+    const combined = StyleSheet.compose(output.styles.default.dark.card, [
+      null,
+      override,
+    ])
+
+    expectTypeOf(combined).not.toBeAny()
+    expectTypeOf(StyleSheet.flatten(override)).toEqualTypeOf<typeof override>()
+    expectTypeOf(StyleSheet.flatten(null)).toEqualTypeOf<undefined>()
+    expectTypeOf(StyleSheet.absoluteFill.position).toEqualTypeOf<'absolute'>()
+    // @ts-expect-error Strings containing CSS declarations are not native style objects.
+    StyleSheet.compose(output.styles.default.dark.card, 'color:red')
+  })
+})
 
 describe('compile', () => {
   test('keeps portable native constraints inside shared authoring domains', () => {

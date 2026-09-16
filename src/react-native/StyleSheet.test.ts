@@ -10,6 +10,126 @@ import { Style, Theme } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
 
+describe('compose', () => {
+  test('retains native literal values through conditional composition', () => {
+    const tables = StyleSheet.compile({
+      styles: Style.define({ card: { opacity: 0.5 } }),
+    })
+    const composed = StyleSheet.compose(false, tables.styles.default.light.card)
+
+    expect(composed === tables.styles.default.light.card).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(
+      StyleSheet.flatten(
+        StyleSheet.compose({ position: 'absolute' }, { top: 0 }),
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "position": "absolute",
+        "top": 0,
+      }
+    `)
+  })
+
+  test('composes compiled tables with conditional native overrides', () => {
+    const tables = StyleSheet.compile({
+      styles: Style.define({ card: { padding: '8px', color: 'red' } }),
+    })
+    const styles = StyleSheet.select(tables.styles, {
+      colorScheme: 'dark',
+      theme: 'default',
+    })
+    const override = { paddingLeft: 16, color: 'blue' }
+    const composed = StyleSheet.compose(styles.card, [false, [override]])
+
+    expect(StyleSheet.flatten(composed)).toMatchInlineSnapshot(`
+      {
+        "color": "blue",
+        "paddingBottom": 8,
+        "paddingLeft": 16,
+        "paddingRight": 8,
+        "paddingTop": 8,
+      }
+    `)
+    expect(styles.card.paddingLeft).toMatchInlineSnapshot('8')
+    expect(
+      StyleSheet.compose(styles.card, null) === styles.card,
+    ).toMatchInlineSnapshot('true')
+    expect(
+      StyleSheet.compose(false, override) === override,
+    ).toMatchInlineSnapshot('true')
+    expect(StyleSheet.compose(null, undefined)).toMatchInlineSnapshot(
+      'undefined',
+    )
+  })
+})
+
+describe('flatten', () => {
+  test('preserves objects and shallowly replaces structured native values', () => {
+    const styles = StyleSheet.compile({
+      styles: Style.define({ image: { objectFit: 'cover' } }),
+    })
+    const transform = [{ scale: 2 }]
+    const override = { transform, opacity: 0.5 }
+    const result = StyleSheet.flatten([
+      styles.styles.default.light.image,
+      { transform: [{ scale: 1 }], opacity: 1 },
+      [null, false, '', undefined, override],
+    ])
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "objectFit": "cover",
+        "opacity": 0.5,
+        "transform": [
+          {
+            "scale": 2,
+          },
+        ],
+      }
+    `)
+    expect(result.transform === transform).toMatchInlineSnapshot('true')
+    expect(Object.isFrozen(transform)).toMatchInlineSnapshot('false')
+    expect(StyleSheet.flatten(override) === override).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(StyleSheet.flatten([null, false, undefined])).toMatchInlineSnapshot(
+      '{}',
+    )
+    expect(StyleSheet.flatten(null)).toMatchInlineSnapshot('undefined')
+  })
+
+  test('composes an absolute-fill overlay with explicit native offsets', () => {
+    const tables = StyleSheet.compile({
+      styles: Style.define({
+        overlay: { backgroundColor: '#000', opacity: 0.5 },
+      }),
+    })
+    const result = StyleSheet.flatten([
+      StyleSheet.absoluteFill,
+      tables.styles.default.dark.overlay,
+      { top: 12 },
+    ])
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "backgroundColor": "#000",
+        "bottom": 0,
+        "left": 0,
+        "opacity": 0.5,
+        "position": "absolute",
+        "right": 0,
+        "top": 12,
+      }
+    `)
+    expect(StyleSheet.absoluteFill.top).toMatchInlineSnapshot('0')
+    expect(Object.isFrozen(StyleSheet.absoluteFill)).toMatchInlineSnapshot(
+      'true',
+    )
+  })
+})
+
 describe('compile', () => {
   test('normalizes equivalent shared decoration order for native output', () => {
     const styles = Style.define({

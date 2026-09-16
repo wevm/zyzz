@@ -16,6 +16,8 @@ import { StyleSheet } from 'zyzz/react-native'
 | `CompileError`        | Capability/conversion diagnostics with structured paths.       |
 | `SelectionError`      | Unknown theme or scheme selection.                             |
 
+Native interoperability also exports [compose](compose.md), [flatten](flatten.md), [absoluteFill](absoluteFill.md), and the recursive `StyleProp` type. These consume already-native values and retain caller-owned objects. Universal source application and native variants remain pending.
+
 ## Capabilities
 
 | Area    | Supported subset                                                                                                                                                                                                                             |

@@ -65,3 +65,15 @@ describe('native tables / 100 styles / 2 themes / 2 schemes', () => {
     { time: 1000, warmupTime: 500 },
   )
 })
+
+describe('native composition / compiled table and local override', () => {
+  const style = output.styles.base.light.card0!
+  const override = { opacity: 0.5 }
+  bench(
+    'compose and flatten',
+    () => {
+      StyleSheet.flatten(StyleSheet.compose(style, override))
+    },
+    { time: 1000, warmupTime: 500 },
+  )
+})

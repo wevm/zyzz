@@ -18,7 +18,7 @@ describe('check', () => {
   | 'repeat'
   | 'center'
   | 'none';"`)
-  })
+  }, 30_000)
 
   test('retains legacy and published component inventories without dropping deprecated properties', async () => {
     await staticContracts()

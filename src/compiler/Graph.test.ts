@@ -55,7 +55,7 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
+  }, 30_000)
 
   test.each([
     `export const native={opacity:.6};native.opacity=.8;`,

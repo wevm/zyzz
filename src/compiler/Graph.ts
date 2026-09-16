@@ -303,6 +303,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
     const imports: Record<string, Ast.Node> = Object.create(null)
     let local = name
     let exported = false
+    let direct: Ast.Node | undefined
+    const stars: string[] = []
     for (const statement of program.body) {
       if (
         statement.type === 'ImportDeclaration' &&
@@ -312,17 +314,33 @@ function build(options: compile.Options, cache?: Cache): Cache {
         if (!target) continue
         for (const specifier of statement.specifiers) {
           if (
-            specifier.type !== 'ImportSpecifier' ||
-            specifier.importKind === 'type'
+            specifier.type === 'ImportNamespaceSpecifier' ||
+            (specifier.type === 'ImportSpecifier' &&
+              specifier.importKind === 'type')
           )
             continue
           const imported =
-            specifier.imported.type === 'Identifier'
-              ? specifier.imported.name
-              : specifier.imported.value
+            specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : specifier.imported.type === 'Identifier'
+                ? specifier.imported.name
+                : specifier.imported.value
           const value = constant(target, imported, next)
           if (value) imports[specifier.local.name] = relocate(value, specifier)
         }
+      }
+      if (statement.type === 'ExportDefaultDeclaration' && name === 'default') {
+        direct = statement.declaration
+        exported = true
+      }
+      if (
+        statement.type === 'ExportAllDeclaration' &&
+        statement.exportKind !== 'type' &&
+        !statement.exported &&
+        name !== 'default'
+      ) {
+        const target = resolve(moduleId, statement.source.value, statement)
+        if (target) stars.push(target)
       }
       if (
         statement.type !== 'ExportNamedDeclaration' ||
@@ -351,13 +369,25 @@ function build(options: compile.Options, cache?: Cache): Cache {
         exported = true
       }
     }
-    if (!exported) return undefined
+    if (!exported) {
+      const candidates = [
+        ...new Set(
+          stars
+            .map((target) => constant(target, name, next))
+            .filter((value) => value !== undefined),
+        ),
+      ]
+      return candidates.length === 1 ? candidates[0] : undefined
+    }
     const scope = new Scope.Tracker({ preserveExitedScopes: true })
     Walker.walk(program, { scopeTracker: scope })
     scope.freeze()
     let value: Ast.Node | undefined
     try {
-      value = Static.collect(program, scope, imports).exported(local)
+      const data = Static.collect(program, scope, imports)
+      value = direct
+        ? data.normalize(direct, new Set(), new Set(), true)
+        : data.exported(local)
     } catch {
       return undefined
     }

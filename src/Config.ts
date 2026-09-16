@@ -464,6 +464,7 @@ export type Body<
   tokens extends Theme.Tokens,
   layers extends string,
   mappings extends Shorthands.Map,
+  targets extends boolean = true,
 > = Record<
   Exclude<
     Keys<styles>,
@@ -481,14 +482,26 @@ export type Body<
   (styles extends unknown
     ? {
         [key in keyof styles]: key extends 'targets'
-          ? {
-              [target in keyof styles[key]]: target extends 'web'
-                ? Body<styles[key][target], tokens, layers, mappings>
-                : Style.Accepted<
-                    { targets: Pick<styles[key], target> },
-                    tokens
-                  >['targets'][target]
-            }
+          ? targets extends false
+            ? never
+            : styles[key] extends undefined
+              ? undefined
+              : {
+                  [target in keyof styles[key]]: target extends 'web'
+                    ?
+                        | Body<
+                            NonNullable<styles[key][target]>,
+                            tokens,
+                            layers,
+                            mappings,
+                            false
+                          >
+                        | Extract<styles[key][target], undefined>
+                    : Style.Accepted<
+                        { targets: Pick<styles[key], target> },
+                        tokens
+                      >['targets'][target]
+                }
           : key extends 'selectors'
             ? styles[key] extends Record<string, unknown>
               ? {
@@ -496,7 +509,13 @@ export type Body<
                     string,
                     unknown
                   >
-                    ? Body<styles[key][selector], tokens, layers, mappings>
+                    ? Body<
+                        styles[key][selector],
+                        tokens,
+                        layers,
+                        mappings,
+                        targets
+                      >
                     : never
                 }
               : never
@@ -505,7 +524,7 @@ export type Body<
                   | '@layer'
                   | `@layer ${layers}`
               ? styles[key] extends Record<string, unknown>
-                ? Body<styles[key], tokens, layers, mappings>
+                ? Body<styles[key], tokens, layers, mappings, targets>
                 : never
               : key extends keyof mappings
                 ? {

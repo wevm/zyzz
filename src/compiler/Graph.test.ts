@@ -22,6 +22,94 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test.each([
+    [
+      `export default {opacity:.6};`,
+      `export {default as native} from './values.js';`,
+    ],
+    [`export const native={opacity:.6};`, `export * from './values.js';`],
+    [
+      `export const native={opacity:.6};`,
+      `import {native} from './values.js';export {native};`,
+    ],
+    [
+      `export default {opacity:.6};`,
+      `import native from './values.js';export {native};`,
+    ],
+    [
+      `export const native={opacity:.6,lineHeight:undefined};`,
+      `export * from './values.js';`,
+    ],
+  ])(
+    'resolves immutable target constants through barrels',
+    (values, barrel) => {
+      const output = Graph.compile({
+        modules: {
+          'values.ts': values,
+          'barrel.ts': barrel,
+          'card.ts': `import {style} from 'zyzz';import {native} from './barrel.js';export const card=style({targets:{native}});`,
+        },
+      })
+
+      expect(
+        JSON.parse(output.contracts['card.ts']!).exports.card.style.style
+          .targets.native,
+      ).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.6,
+      }
+    `)
+    },
+  )
+
+  test('resolves direct default target imports', () => {
+    const output = Graph.compile({
+      modules: {
+        'values.ts': `const native={opacity:.6};export default native;`,
+        'card.ts': `import {style} from 'zyzz';import native from './values.js';export const card=style({targets:{native}});`,
+      },
+    })
+
+    expect(
+      JSON.parse(output.contracts['card.ts']!).exports.card.style.style.targets
+        .native,
+    ).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.6,
+      }
+    `)
+  })
+
+  test.each([
+    `native.opacity=.8;`,
+    `Object.assign(native,{opacity:.8});`,
+    `consume(native);`,
+  ])('rejects mutations and escapes in target re-exports', (mutation) => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'values.ts': `export const native={opacity:.6};`,
+          'barrel.ts': `import {native} from './values.js';${mutation}export {native};`,
+          'card.ts': `import {style} from 'zyzz';import {native} from './barrel.js';export const card=style({targets:{native}});`,
+        },
+      }),
+    ).toThrow()
+  })
+
+  test('rejects ambiguous target star exports and terminates cycles', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'a.ts': `export const native={opacity:.6};`,
+          'b.ts': `export const native={opacity:.8};`,
+          'barrel.ts': `export * from './a.js';export * from './b.js';export * from './cycle.js';`,
+          'cycle.ts': `export * from './barrel.js';`,
+          'card.ts': `import {style} from 'zyzz';import {native} from './barrel.js';export const card=style({targets:{native}});`,
+        },
+      }),
+    ).toThrow()
+  })
+
   test('renders web target overrides in variant alternatives', async () => {
     const output = Graph.compile({
       modules: {

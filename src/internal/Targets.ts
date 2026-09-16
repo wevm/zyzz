@@ -62,13 +62,15 @@ export type Checked<input, expected> = expected extends unknown
 /** Checks only authored native properties against their destination domains. */
 export type Declarations<input> = input extends undefined
   ? undefined
-  : input extends object
-    ? {
-        [key in keyof input]: key extends keyof Native.Properties
-          ? Checked<input[key], Native.Properties[key]>
-          : never
-      }
-    : never
+  : input extends (...args: never[]) => unknown
+    ? never
+    : input extends object
+      ? {
+          [key in keyof input]: key extends keyof Native.Properties
+            ? Checked<input[key], Native.Properties[key]>
+            : never
+        }
+      : never
 
 /** Retained compiler data for native and platform-specific declarations. */
 export type NativeBranches = {

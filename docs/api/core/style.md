@@ -28,6 +28,8 @@ const props = progress({ amount: '50%', className: 'external' })
 
 Static bodies accept `targets.web`, `targets.native`, `targets.ios`, and `targets.android`. Web output selects the web branch. Native compilation uses destination-specific property domains and explicit platform selection. See [target value semantics](../react-native/StyleSheet/README.md#target-branches). Native callable application remains pending.
 
+Target declarations belong in static style bodies. Callback bodies cannot contain target branches. Nested target containers are rejected. An `undefined` target container, branch, or native object field is treated as omitted. Target-only styles retain content identities in CSS-only builds.
+
 ## Parameters
 
 ### styles

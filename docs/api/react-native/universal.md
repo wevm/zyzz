@@ -1,7 +1,7 @@
 # Universal Styling
 
 > [!NOTE]
-> This contract specifies the universal API work. The current native implementation exposes table compilation and selection only. Static target branches are implemented. Native callable application, variants, and renderer acceptance remain pending.
+> This contract specifies the universal API work. Static native tables, target branches, variants, and local callable source compilation are implemented. Imported native graphs, packed callable contracts, host updates, and renderer acceptance remain pending.
 
 The universal API retains `style`, `variants`, themes, tokens, and `cx` across web and native. Shared modules keep the same declarations and callable inputs. Application returns platform styling props for spreading onto ordinary components: web receives class/style bindings, native receives a style binding.
 
@@ -21,7 +21,7 @@ Lengths, flex defaults, inherited text, transforms, colors, and fonts require do
 
 The `targets` field contains `web`, `native`, `ios`, and `android` declaration branches. Shared declarations apply first, followed by the matching broad target and then the platform branch. The compiler rejects unknown targets and nonportable unqualified declarations.
 
-Branches preserve authoring order internally. They use the destination's value semantics and native property domains. Immutable literal source imports, re-exports, and version-20 packed style contracts retain these branches. Native variant application remains part of the separate variants contract. Unresolved external constants require source or an already compiled style contract.
+Branches preserve authoring order internally. They use the destination's value semantics and native property domains. Immutable literal source imports, re-exports, and version-20 packed style contracts retain these branches. Static native variant application uses bounded selection tables. Unresolved external constants require source or an already compiled style contract.
 
 ## Composition
 

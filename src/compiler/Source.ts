@@ -1208,14 +1208,16 @@ export function extract(options: extract.Options): extract.ReturnType {
   }
 
   try {
-    for (const entry of Compositions.collect({
-      calls,
-      identity: identity(options.moduleId),
-      links: options[Themes.context]?.links,
-      program,
-      source: options.source,
-      styles,
-    })) {
+    for (const entry of options.target === 'native'
+      ? []
+      : Compositions.collect({
+          calls,
+          identity: identity(options.moduleId),
+          links: options[Themes.context]?.links,
+          program,
+          source: options.source,
+          styles,
+        })) {
       calls.push(...(entry.cases ?? []).map((entry) => entry.call), entry.call)
       styles.push(
         ...(entry.cases ?? []).map((entry) => entry.style),
@@ -1430,6 +1432,8 @@ export declare namespace extract {
 
   /** Source text supplied by an adapter. */
   type Options = {
+    /** Native extraction retains applications for native props composition. */
+    readonly target?: 'native' | 'web' | undefined
     /** Collect portable runtime identities when source rewriting is disabled. */
     readonly compiler?: boolean | undefined
     /** Portable identity including package and module path; no filesystem access occurs. */

@@ -4,6 +4,8 @@
  */
 /** Source graph compilation with shared theme contracts. */
 export * as Graph from './Graph.js'
+/** Static native source compilation and finite callable output. */
+export * as Native from './Native.js'
 /** Static source extraction without application evaluation or file loading. */
 export * as Source from './Source.js'
 /** Literal module rewriting and source maps for web output. */

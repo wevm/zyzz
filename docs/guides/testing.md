@@ -2,6 +2,8 @@
 
 Verify rendered behavior, diagnose failures, and migrate existing components. Begin with [Getting Started](../introduction/getting-started.md) to connect compilation.
 
+See [Web acceptance](web-acceptance.md) for current fixture coverage, reproduction commands, and known limits.
+
 ## Recipes
 
 ### Test Styles
@@ -39,7 +41,7 @@ Import the intended config and check the token's property domain. Root `style` h
 
 #### Unexpected Overrides
 
-Check layer, importance, condition, and rule order. Class-string order does not determine precedence. Use supported styling overrides or planned `cx` composition.
+Check layer, importance, condition, and rule order. Class-string order does not determine precedence. Use supported styling overrides or `cx` composition.
 
 #### Watch Failures
 

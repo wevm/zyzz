@@ -8,9 +8,10 @@ declare const StyleSheet: typeof Native.StyleSheet
 declare const styles: Zyzz.Style.Definition<'card' | 'label'>
 declare const theme: Zyzz.Theme.Definition
 
-/** Warms the common native table contract. */
+/** Warms the common native authoring and table contracts. */
 export function baseline() {
   StyleSheet.compile({ styles })
+  Style.define({ base: { targets: { native: { opacity: 1 } } } })
 }
 
 bench('native / compile and select named tables', () => {
@@ -46,4 +47,4 @@ bench('native / structured target authoring', () => {
       },
     }),
   })
-}).types([336364, 'instantiations'])
+}).types([13482, 'instantiations'])

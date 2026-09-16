@@ -105,28 +105,23 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? styles[name] extends { readonly targets: unknown }
-      ? Accepted<styles[name], tokens>
-      : Properties<tokens> extends styles[name]
-        ? styles[name] extends Properties<tokens>
+    ? Properties<tokens> extends styles[name]
+      ? styles[name] extends Properties<tokens>
+        ? styles[name] &
+            Record<Exclude<Keys<styles[name]>, keyof Properties<tokens>>, never>
+        : never
+      : DeclarationProperties<tokens> extends styles[name]
+        ? styles[name] extends DeclarationProperties<tokens>
           ? styles[name] &
               Record<
-                Exclude<Keys<styles[name]>, keyof Properties<tokens>>,
+                Exclude<
+                  Keys<styles[name]>,
+                  keyof DeclarationProperties<tokens>
+                >,
                 never
               >
           : never
-        : DeclarationProperties<tokens> extends styles[name]
-          ? styles[name] extends DeclarationProperties<tokens>
-            ? styles[name] &
-                Record<
-                  Exclude<
-                    Keys<styles[name]>,
-                    keyof DeclarationProperties<tokens>
-                  >,
-                  never
-                >
-            : never
-          : Accepted<styles[name], tokens>
+        : Accepted<styles[name], tokens>
     : never
 }
 

@@ -1,0 +1,9 @@
+{
+  "files": {
+    "StyleSheet.d.ts.txt": "8692ab54f6ee8d957b6a3b49adef709c5d6d0ffdfae71c90d796b43d0c3dfa32",
+    "StyleSheetTypes.d.ts.txt": "3396ef3dc90848e5b064c49e6078e024f5c3fdba40373c1383a68a6fa648bcbe"
+  },
+  "repository": "https://github.com/react/react-native",
+  "revision": "4bc2473f5d0233ea5384c1ef24f6a55615de2220",
+  "version": "0.87.0"
+}

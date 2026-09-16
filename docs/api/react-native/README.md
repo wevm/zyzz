@@ -8,3 +8,5 @@ Compile shared `Style.define` data into native style objects without importing R
 | API                                | Description                                            |
 | ---------------------------------- | ------------------------------------------------------ |
 | [StyleSheet](StyleSheet/README.md) | Native table compilation, capabilities, and selection. |
+
+See the planned [universal styling contract](universal.md) and the version-pinned native conformance inventory.

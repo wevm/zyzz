@@ -9,7 +9,7 @@ import type * as Web from 'zyzz/web'
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
 declare const counterStyle: typeof Web.counterStyle
-declare const css: typeof Zyzz.css
+declare const style: typeof Zyzz.style
 declare const fontFeatureValues: typeof Web.fontFeatureValues
 declare const fontPaletteValues: typeof Web.fontPaletteValues
 declare const page: typeof Web.page
@@ -18,7 +18,7 @@ declare const viewTransition: typeof Web.viewTransition
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
-  css({ listStyleType: counterStyle({ symbols: '"-"' }) })
+  style({ listStyleType: counterStyle({ symbols: '"-"' }) })
 }
 
 bench('counterStyle / descriptor inventory and identity', () => {
@@ -33,7 +33,7 @@ bench('counterStyle / descriptor inventory and identity', () => {
     system: 'additive',
   })
 
-  css({ listStyleType: dots })
+  style({ listStyleType: dots })
 }).types([746, 'instantiations'])
 
 bench('fontPaletteValues and positionTry / identities', () => {
@@ -49,7 +49,7 @@ bench('fontPaletteValues and positionTry / identities', () => {
     positionArea: 'bottom',
   })
 
-  css({ fontPalette: palette, positionTryFallbacks: below })
+  style({ fontPalette: palette, positionTryFallbacks: below })
 }).types([243657, 'instantiations'])
 
 bench('page / margin boxes', () => {

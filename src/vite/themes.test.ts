@@ -33,8 +33,8 @@ describe('zyzz', () => {
           `
 import { Config, Theme } from 'zyzz'
 const base = Theme.define({ color: { surface: { light: '#ffffff', dark: '#202029' }, text: { light: '#20202a', dark: '#f4f4f8' } } })
-const { css, themes } = Config.create({ defaultTheme: 'base', themes: { base } })
-const card = css({ backgroundColor: 'surface', color: 'text', border: '1px solid', borderColor: 'text' })
+const { style, themes } = Config.create({ defaultTheme: 'base', themes: { base } })
+const card = style({ backgroundColor: 'surface', color: 'text', border: '1px solid', borderColor: 'text' })
 const scope = themes({ theme: 'base', colorScheme: 'light' })
 const props = card()
 document.body.innerHTML = '<main class="' + scope.className + '"><div id="card" class="' + props.className + '">Theme</div></main>'
@@ -156,7 +156,7 @@ Object.assign(document.querySelector('main').style, scope.style)
         )
         await Fs.writeFile(
           Path.join(root, 'main.ts'),
-          "import './style.css'; import { css } from 'zyzz'; document.body.className = css({ padding: '1px' })().className",
+          "import './style.css'; import { style } from 'zyzz'; document.body.className = style({ padding: '1px' })().className",
         )
         await Fs.writeFile(
           Path.join(root, 'style.css'),

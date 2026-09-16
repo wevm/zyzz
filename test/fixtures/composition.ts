@@ -12,7 +12,7 @@ export function source(options: source.Options) {
   const declarations = styles
     .map(
       (style, index) =>
-        `export const item${index} = css(${JSON.stringify(style)});`,
+        `export const item${index} = style(${JSON.stringify(style)});`,
     )
     .join('\n')
   const bindings = options.binding
@@ -28,10 +28,10 @@ export function source(options: source.Options) {
     .join(',\n')
 
   return `import { Config, cx } from 'zyzz';
-const { css } = Config.create({ output: '${options.output}' });
+const { style } = Config.create({ output: '${options.output}' });
 namespace styles {
 ${declarations}
-export const override = css({paddingLeft:'3px',color:'rebeccapurple','@media (width >= 600px)':{paddingRight:'5px'}});
+export const override = style({paddingLeft:'3px',color:'rebeccapurple','@media (width >= 600px)':{paddingRight:'5px'}});
 }
 export function apply(enabled = true) {
 ${bindings}

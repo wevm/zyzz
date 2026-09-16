@@ -7,35 +7,35 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 > [!NOTE]
 > This is the historical 2026-09-08 API comparison. Implementation labels and examples below describe that snapshot. Current support, PR evidence, and remaining gates are maintained in [the implementation plan](plan.md) and [Compatibility](../docs/introduction/compatibility.md).
 
-Implementation at that audit: 298 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Implementation at that audit: 298 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `style` calls. Bound `theme.style` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
-Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles, and Panda `css`/utilities. **Partial:** literal root styles; property expansion in 2.3 and bound transforms in 2.2b.
+Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles, and Panda `style`/utilities. **Partial:** literal root styles; property expansion in 2.3 and bound transforms in 2.2b.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 export namespace styles {
-  export const card = css({ display: 'flex', gap: '1rem', padding: '1rem' })
+  export const card = style({ display: 'flex', gap: '1rem', padding: '1rem' })
 }
 
 const article = <article {...styles.card()} />
-const label = <span {...css({ color: '#06c' })()} />
+const label = <span {...style({ color: '#06c' })()} />
 ```
 
 Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
 
-Interaction keywords support `css({ cursor: 'pointer', pointerEvents: 'auto', resize: 'inline', userSelect: 'text', visibility: 'visible' })`. Cursor image lists, SVG pointer targeting, and selection containment remain deferred.
+Interaction keywords support `style({ cursor: 'pointer', pointerEvents: 'auto', resize: 'inline', userSelect: 'text', visibility: 'visible' })`. Cursor image lists, SVG pointer targeting, and selection containment remain deferred.
 
-The table subset supports `css({ borderCollapse: 'separate', borderSpacing: '8px', captionSide: 'bottom', emptyCells: 'hide', tableLayout: 'fixed' })`. Border spacing accepts a single nonnegative length or zero; paired lengths and spacing tokens remain deferred.
+The table subset supports `style({ borderCollapse: 'separate', borderSpacing: '8px', captionSide: 'bottom', emptyCells: 'hide', tableLayout: 'fixed' })`. Border spacing accepts a single nonnegative length or zero; paired lengths and spacing tokens remain deferred.
 
 Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default; opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
 
 Logical dimensions, min/max dimensions, block/inline margins and padding, and inset offsets now share the scalar token/fallback/importance pipeline. Mixed physical/logical declarations preserve order across writing modes. Shorthands accept one scalar; functional sizing values remain pending.
 
 ```ts
-css({ inlineSize: '20rem', paddingInline: '1rem', marginBlockEnd: '8px' })
+style({ inlineSize: '20rem', paddingInline: '1rem', marginBlockEnd: '8px' })
 ```
 
 Flex basis, integer order, item/line alignment, and overflow axes now use the same type/source/emission pipeline. Multi-value shorthands remain deferred.
@@ -47,7 +47,7 @@ Intrinsic dimension keywords, auto minimums, unbounded maximums, and content fle
 Scroll margins/padding and scroll/overscroll behavior now support scalar declarations, fallback importance, and conflict-safe physical/logical ordering. Scroll padding accepts spacing tokens; scroll margins require literal lengths. Multi-value shorthands remain pending.
 
 ```ts
-css({
+style({
   scrollPaddingBlockStart: '4rem',
   scrollBehavior: 'smooth',
   overscrollBehavior: 'contain',
@@ -57,7 +57,7 @@ css({
 Scroll snap type/alignment/stop support finite keyword combinations, ordered fallbacks, and importance. Axis strictness and paired block/inline alignment are validated without accepting arbitrary CSS strings.
 
 ```ts
-css({
+style({
   scrollSnapType: 'x mandatory',
   scrollSnapAlign: 'start',
   scrollSnapStop: 'always',
@@ -67,20 +67,20 @@ css({
 Text flow now includes wrapping, hyphenation, letter/word spacing, indentation, last-line alignment, transformation, and overflow through bounded scalar values. Indentation supports spacing tokens; other typography scales and composite presets remain pending.
 
 ```ts
-css({ letterSpacing: '-.02em', overflowWrap: 'anywhere', textIndent: '1em' })
+style({ letterSpacing: '-.02em', overflowWrap: 'anywhere', textIndent: '1em' })
 ```
 
 ## 02. Composition and Restricted Style Contracts
 
-Sources: StyleX `props` and style restriction types; utility composition; vanilla-extract composition; Panda `css`/`mergeCss`/`cx`. **Planned:** conflict-aware `cx` and property restrictions in Phase 3; literal callable styling overrides already exist.
+Sources: StyleX `props` and style restriction types; utility composition; vanilla-extract composition; Panda `style`/`mergeCss`/`cx`. **Planned:** conflict-aware `cx` and property restrictions in Phase 3; literal callable styling overrides already exist.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { cx, style } from 'zyzz'
 
 namespace styles {
-  export const base = css({ color: '#06c', padding: '1rem' })
+  export const base = style({ color: '#06c', padding: '1rem' })
 
-  export const compact = css({ padding: '0.5rem' })
+  export const compact = style({ padding: '0.5rem' })
 }
 
 const button = (
@@ -100,12 +100,12 @@ Later generated declarations win in the same condition context, subject to CSS i
 Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils, and Panda values/token references/importance. **Partial:** ordered fallbacks, importance, and standard length units; expressions and variables remain in 2.3.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 // Static constants and template expressions remain planned.
 const gap = '1rem'
 namespace styles {
-  export const panel = css({
+  export const panel = style({
     color: '#06c!',
     display: ['block', 'grid'],
     width: `calc(100% - ${gap})`,
@@ -128,7 +128,7 @@ const theme = Theme.define({
 })
 const alternate = Theme.extend(theme, { color: { brand: '#147d32' } })
 namespace styles {
-  export const button = theme.css({ color: 'brand', padding: 'md' })
+  export const button = theme.style({ color: 'brand', padding: 'md' })
 }
 
 const example = (
@@ -142,7 +142,7 @@ const example = (
 
 ```ts
 namespace styles {
-  export const inset = theme.css({
+  export const inset = theme.style({
     backgroundColor: `color-mix(in oklab, ${theme.vars.color.brand} 50%, transparent)`,
     borderColor: theme.tokens.color.brand,
     width: `calc(100% - ${theme.vars.spacing.md})`,
@@ -153,23 +153,23 @@ namespace styles {
 This reuses the preceding theme; `theme.vars` and expression support remain 2.3 work.
 
 ```tsx
-import { css } from 'zyzz/themes/default'
+import { style } from 'zyzz/themes/default'
 
-const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
+const button = <button {...style({ color: 'blue.700', padding: 4 })()} />
 ```
 
-Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
+Bundled themes are opt-in entrypoints. Root `style` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
 
-**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend `export const { css, variants, theme } = Config.create(...)` in `zyzz.config.ts` and named helper imports; neither the filename nor importing a config changes root-function inference globally.
+**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `style`/`variants`. Recommend `export const { style, variants, theme } = Config.create(...)` in `zyzz.config.ts` and named helper imports; neither the filename nor importing a config changes root-function inference globally.
 
 ```tsx
-export const { css, themes } = Config.create({
+export const { style, themes } = Config.create({
   defaultTheme: 'base',
   themes: { base: theme, green: alternate },
 })
 
 namespace styles {
-  export const control = css({ color: 'brand' })
+  export const control = style({ color: 'brand' })
 }
 const selected = (
   <section
@@ -188,11 +188,11 @@ The scopes assign inherited CSS variables, while color scheme selection is indep
 Sources: StyleX variables, vanilla-extract `createVar`/`assignVars`/`fallbackVar`/Dynamic, CSS custom-property usage in Tailwind. **Planned:** 2.3.
 
 ```tsx
-import { css, variable } from 'zyzz'
+import { style, variable } from 'zyzz'
 
 const progress = { amount: variable('percentage') }
 namespace styles {
-  export const bar = css({ width: progress.amount })
+  export const bar = style({ width: progress.amount })
 }
 
 const element = <div {...styles.bar({ style: progress.amount.set('42%') })} />
@@ -202,7 +202,7 @@ Explicit sets are for shared contracts; callbacks in item 07 handle local values
 
 ```ts
 namespace styles {
-  export const text = css({
+  export const text = style({
     color: 'var(--app-accent, var(--app-brand, #06c))',
   })
 }
@@ -226,7 +226,7 @@ Until that shape is decided, the interoperability target is an ordinary external
 
 ```ts
 namespace styles {
-  export const progress = css({ opacity: 'var(--app-progress)' })
+  export const progress = style({ opacity: 'var(--app-progress)' })
 }
 ```
 
@@ -238,7 +238,7 @@ Sources: StyleX dynamic styles/atoms, vanilla-extract Dynamic, Tailwind utilitie
 
 ```tsx
 namespace styles {
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     width: values.width,
   }))
 }
@@ -307,7 +307,7 @@ Sources: all four libraries' selector/state systems. **Planned:** 2.4b.
 
 ```ts
 namespace styles {
-  export const field = css({
+  export const field = style({
     ':disabled': { opacity: 0.5 },
     ':focus-visible': { outline: '2px solid currentColor' },
     '::placeholder': { color: '#666' },
@@ -315,11 +315,11 @@ namespace styles {
     '&[data-state="open"]': { display: 'block' },
   })
 
-  export const list = css({
+  export const list = style({
     '& > *:nth-child(2n)': { backgroundColor: '#eee' },
   })
 
-  export const badge = css({ '::before': { content: '"New"' } })
+  export const badge = style({ '::before': { content: '"New"' } })
 }
 ```
 
@@ -327,14 +327,14 @@ Cover interactive/form/structural states, ARIA/data/direction, open/popover/iner
 
 ## 11. Style References
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `style()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `style()` supplies identity without declarations.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css()
-  export const label = css({
+  export const card = style()
+  export const label = style({
     selectors: {
       [`${card}:hover &`]: { color: 'blue' },
       [`${card}[data-state="open"] > &`]: { opacity: 1 },
@@ -360,12 +360,12 @@ const theme = Theme.define({
   spacing: { md: '1rem', sm: '0.5rem' },
 })
 namespace styles {
-  export const region = theme.css({
+  export const region = theme.style({
     containerName: 'sidebar',
     containerType: 'inline-size',
   })
 
-  export const content = theme.css({
+  export const content = theme.style({
     padding: 'sm',
     '@container sidebar >=card': { display: 'grid' },
     '@media tablet..desktop': { padding: 'md' },
@@ -378,7 +378,7 @@ Apply `region()` to an ancestor and `content()` to its child. Aliases infer from
 
 ```ts
 namespace styles {
-  export const link = css({
+  export const link = style({
     '@media (hover: hover)': { ':hover': { textDecorationLine: 'underline' } },
     '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
     '@media print': { color: '#000' },
@@ -398,7 +398,7 @@ export const focusRing = {
 } as const
 
 namespace styles {
-  export const button = css({ ...focusRing, padding: '1rem' })
+  export const button = style({ ...focusRing, padding: '1rem' })
 }
 ```
 
@@ -413,7 +413,7 @@ const surface = {
   borderWidth: '1px',
 } as const
 namespace styles {
-  export const stack = css({
+  export const stack = style({
     ...surface,
     display: 'flex',
     flexDirection: 'column',
@@ -436,13 +436,13 @@ const enter = keyframes({
   to: { opacity: 1, transform: 'translateY(0)' },
 })
 namespace styles {
-  export const notice = css({
+  export const notice = style({
     animationDuration: '160ms',
     animationName: enter,
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
   })
 
-  export const entry = css({
+  export const entry = style({
     opacity: 1,
     transition: 'opacity 160ms',
     '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
@@ -467,7 +467,7 @@ fontFace({
   src: 'url("/fonts/app.woff2") format("woff2")',
 })
 namespace styles {
-  export const text = css({ fontFamily: '"App Sans", sans-serif' })
+  export const text = style({ fontFamily: '"App Sans", sans-serif' })
 }
 ```
 
@@ -482,7 +482,7 @@ import 'zyzz/reset.css'
 import { Config } from 'zyzz'
 import { global } from 'zyzz/web'
 
-export const { css } = Config.create({
+export const { style } = Config.create({
   layers: ['reset', 'base', 'components'],
 })
 
@@ -494,7 +494,7 @@ global({
 })
 
 namespace styles {
-  export const card = css({
+  export const card = style({
     '@layer components': { padding: '1rem' },
   })
 }
@@ -502,7 +502,7 @@ namespace styles {
 
 **API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`; the pure compiler receives explicit extracted data without global registration.
 
-Config-bound `css` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
+Config-bound `style` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
 
 The [collection contract](architecture.md#layer-and-global-collection) specifies source discovery, identity, watch replacement/removal, source maps, asset relocation, shared stylesheet ownership, and packed-library metadata. [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) provide additional colocation precedents; project-wide unimported-module collection is an explicit Zyzz decision. Browser, type, source, library, and benchmark gates remain pending in 2.4c/Phase 4.
 
@@ -512,7 +512,7 @@ Sources: [StyleX `props`/`attrs`](https://stylexjs.com/docs/api/javascript/attrs
 
 ```tsx
 namespace styles {
-  export const button = css({ color: '#06c' })
+  export const button = style({ color: '#06c' })
 }
 
 const element = <button {...styles.button()}>Continue</button>
@@ -530,7 +530,7 @@ import { Transform } from 'zyzz/compiler'
 const result = Transform.compile({
   moduleId: 'app/card.ts',
   source:
-    "import { css } from 'zyzz'; export namespace styles {\n  export const card = css({ color: '#06c' })\n}",
+    "import { style } from 'zyzz'; export namespace styles {\n  export const card = style({ color: '#06c' })\n}",
 })
 ```
 
@@ -568,7 +568,7 @@ The immediate interoperability form uses application-owned CSS plus literal refe
 
 ```ts
 namespace styles {
-  export const card = css({
+  export const card = style({
     animationDuration: '160ms',
     animationName: 'app-enter',
     color: 'var(--app-accent)',
@@ -587,7 +587,7 @@ Sources: StyleX `viewTransitionClass`, vanilla-extract `createViewTransition`, o
 
 ```ts
 namespace styles {
-  export const avatar = css({ viewTransitionName: 'profile-avatar' })
+  export const avatar = style({ viewTransitionName: 'profile-avatar' })
 }
 ```
 
@@ -613,9 +613,9 @@ Sources: StyleX `positionTry` and ordinary CSS positioning elsewhere. **Deferred
 
 ```ts
 namespace styles {
-  export const trigger = css({ anchorName: '--profile-trigger' })
+  export const trigger = style({ anchorName: '--profile-trigger' })
 
-  export const popup = css({
+  export const popup = style({
     position: 'fixed',
     positionAnchor: '--profile-trigger',
     positionArea: 'bottom',
@@ -666,7 +666,7 @@ Sources: standard CSS reachable through the libraries; extensions beyond their d
 
 ```ts
 namespace styles {
-  export const reveal = css({
+  export const reveal = style({
     animationDuration: 'auto',
     animationName: 'app-reveal',
     animationTimeline: 'view()',
@@ -701,7 +701,7 @@ Theme labels, schemes, and style names infer from inputs. Unit conversion is exp
 
 ## 24. Multipart Component Styling
 
-Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `css` or `variants` definitions for each element. Each recipe application returns one props object; the `slots` pattern is excluded from `variants` and `theme.variants`.
+Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `style` or `variants` definitions for each element. Each recipe application returns one props object; the `slots` pattern is excluded from `variants` and `theme.variants`.
 
 ```tsx
 namespace styles {
@@ -716,7 +716,7 @@ namespace styles {
     },
   })
 
-  export const label = css({ fontWeight: 600 })
+  export const label = style({ fontWeight: 600 })
 }
 const element = (
   <button {...styles.button({ size: 'sm' })}>
@@ -737,7 +737,7 @@ const theme = Theme.define({
   color: { brand: { dark: palette.paleBlue, light: palette.blue } },
 })
 namespace styles {
-  export const button = theme.css({ color: 'brand' })
+  export const button = theme.style({ color: 'brand' })
 }
 ```
 
@@ -774,6 +774,6 @@ Validate semantic equivalence before benchmarking the existing library set. Cove
 
 Every source API group above maps to an existing contract, a proposal, an external-CSS interoperability target, or an explicit non-goal. That classification does not make deferred APIs implemented or turn this union into a promise to duplicate each library's facade.
 
-Column properties support `css({ columnCount: 2, columnGap: 'normal', columnRuleStyle: 'solid', columnRuleWidth: 'thin', breakInside: 'avoid-column' })`. Shared colors map to column rule colors; widths remain literal lengths. Columns and column-rule shorthands remain deferred.
+Column properties support `style({ columnCount: 2, columnGap: 'normal', columnRuleStyle: 'solid', columnRuleWidth: 'thin', breakInside: 'avoid-column' })`. Shared colors map to column rule colors; widths remain literal lengths. Columns and column-rule shorthands remain deferred.
 
-Layout supports `css({ display: 'flow-root', contain: 'layout', isolation: 'isolate', zIndex: 2 })`. Float/clear include logical keywords. Image fitting and 3D layout flags accept their finite standard keywords; broader value combinations remain deferred.
+Layout supports `style({ display: 'flow-root', contain: 'layout', isolation: 'isolate', zIndex: 2 })`. Float/clear include logical keywords. Image fitting and 3D layout flags accept their finite standard keywords; broader value combinations remain deferred.

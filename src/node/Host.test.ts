@@ -22,7 +22,7 @@ import { Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
 const project = Path.resolve(import.meta.dirname, '../..')
-const source = `import { css } from 'zyzz'; export const button = css({ padding: '8px' });`
+const source = `import { style } from 'zyzz'; export const button = style({ padding: '8px' });`
 
 describe('create', () => {
   test('excludes fixture contributions from standalone CSS', async () => {
@@ -123,7 +123,7 @@ describe('create', () => {
 const theme = Theme.define({ color: { brand: '#ff0000' } });
 const alternate = Theme.extend(theme, { color: { brand: '#0000ff' } });
 export const scope = alternate.className;
-export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' })();`,
+export const card = theme.style({ color: 'brand', display: 'flex', padding: '8px' })();`,
       )
       await host.build()
 
@@ -189,17 +189,17 @@ export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' 
       // Lexical order puts the consumer first; the complete stylesheet must not.
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import { css } from 'zyzz';
+        `import { style } from 'zyzz';
 import { global } from 'zyzz/web';
 import { widget } from './widget.js';
 global({ body: { margin: 0 } });
-export const app = css({ color: '#0000ff' });
+export const app = style({ color: '#0000ff' });
 export { widget };`,
       )
       await Fs.writeFile(
         Path.join(root, 'widget.ts'),
-        `import { css } from 'zyzz';
-export const widget = css({ color: '#ff0000', padding: '4px' });`,
+        `import { style } from 'zyzz';
+export const widget = style({ color: '#ff0000', padding: '4px' });`,
       )
 
       const result = await host.build()
@@ -248,22 +248,22 @@ export const widget = css({ color: '#ff0000', padding: '4px' });`,
       `)
       expect(Trace.originalPositionFor(map, { column: 0, line: 4 }))
         .toMatchInlineSnapshot(`
-        {
-          "column": 22,
-          "line": 2,
-          "name": "style-uhlxslorn1at-50",
-          "source": "example/widget.ts",
-        }
-      `)
+          {
+            "column": 22,
+            "line": 2,
+            "name": "style-uhlxslorn1at-52",
+            "source": "example/widget.ts",
+          }
+        `)
       expect(Trace.originalPositionFor(map, { column: 0, line: 11 }))
         .toMatchInlineSnapshot(`
-        {
-          "column": 19,
-          "line": 5,
-          "name": "style-1nmg2kgs6bjew-153",
-          "source": "example/app.ts",
-        }
-      `)
+          {
+            "column": 19,
+            "line": 5,
+            "name": "style-1nmg2kgs6bjew-155",
+            "source": "example/app.ts",
+          }
+        `)
 
       const bundle = await Esbuild.build({
         alias: { 'zyzz/runtime': Path.join(project, 'src/runtime/index.ts') },
@@ -331,11 +331,11 @@ export const widget = css({ color: '#ff0000', padding: '4px' });`,
       )
       await Fs.writeFile(
         Path.join(root, 'z.ts'),
-        `import { css } from 'zyzz'; export const z = css({ padding: '1px' });`,
+        `import { style } from 'zyzz'; export const z = style({ padding: '1px' });`,
       )
       await Fs.writeFile(
         Path.join(root, 'a.ts'),
-        `import { css } from 'zyzz'; export const a = css({ padding: '2px' });`,
+        `import { style } from 'zyzz'; export const a = style({ padding: '2px' });`,
       )
       await host.build()
 
@@ -364,8 +364,8 @@ export const widget = css({ color: '#ff0000', padding: '4px' });`,
       await Fs.writeFile(
         Path.join(root, 'local.ts'),
         `import { Config } from 'zyzz';
-const { css, appearance } = Config.create({ defaultTheme: 'base', storageKey: 'kept', themes: { base: { color: { ink: '#123456' } } } });
-export const card = css({ color: 'ink' });
+const { style, appearance } = Config.create({ defaultTheme: 'base', storageKey: 'kept', themes: { base: { color: { ink: '#123456' } } } });
+export const card = style({ color: 'ink' });
 export const select = appearance.set;`,
       )
       // A scheme-only configuration emits no CSS and exports no binding, so
@@ -411,7 +411,7 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
     try {
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import { css } from 'zyzz'; export const card = css({ color: 'red' });`,
+        `import { style } from 'zyzz'; export const card = style({ color: 'red' });`,
       )
 
       for (const name of ['zyzz.css', '.zyzz.json', 'app.ts.css']) {
@@ -451,8 +451,8 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
       await Fs.mkdir(Path.join(root, 'components'))
       await Fs.writeFile(
         Path.join(root, 'components/card.ts'),
-        `import { css } from 'zyzz';
-export const card = css({ backgroundImage: 'url(./icon.svg)', maskImage: 'url(/shared/mask.svg)' });`,
+        `import { style } from 'zyzz';
+export const card = style({ backgroundImage: 'url(./icon.svg)', maskImage: 'url(/shared/mask.svg)' });`,
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
@@ -496,7 +496,7 @@ export const card = css({ backgroundImage: 'url(./icon.svg)', maskImage: 'url(/s
     const external = Path.join(root, 'public/zyzz.js')
     const configuration = (storageKey: string) =>
       `import { Config } from 'zyzz';
-export const { css, themes } = Config.create({ defaultTheme: 'base', storageKey: '${storageKey}', themes: { base: { color: { ink: '#123456' } } } });`
+export const { style, themes } = Config.create({ defaultTheme: 'base', storageKey: '${storageKey}', themes: { base: { color: { ink: '#123456' } } } });`
 
     try {
       await Fs.mkdir(source)
@@ -552,7 +552,7 @@ export const { css, themes } = Config.create({ defaultTheme: 'base', storageKey:
       // Removing every configuration removes the script this host wrote.
       await Fs.writeFile(
         Path.join(source, 'config.ts'),
-        `import { css } from 'zyzz'; export const card = css({ padding: '4px' });`,
+        `import { style } from 'zyzz'; export const card = style({ padding: '4px' });`,
       )
       await host.build()
 
@@ -640,8 +640,8 @@ export const { css, themes } = Config.create({ defaultTheme: 'base', storageKey:
       root,
     })
 
-    const input = `import { css } from 'zyzz';
-export const card = css({ display: 'flex', color: '#ff0000' });`
+    const input = `import { style } from 'zyzz';
+export const card = style({ display: 'flex', color: '#ff0000' });`
     const path = Path.join(root, 'card.ts')
 
     try {
@@ -663,19 +663,19 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       expect(Trace.originalPositionFor(map, { column: 0, line: 1 }))
         .toMatchInlineSnapshot(`
-        {
-          "column": 20,
-          "line": 2,
-          "name": "style-4lx6a318y1wl5-48",
-          "source": "example/card.ts",
-        }
-      `)
+          {
+            "column": 20,
+            "line": 2,
+            "name": "style-4lx6a318y1wl5-50",
+            "source": "example/card.ts",
+          }
+        `)
       expect(map.sourcesContent).toMatchInlineSnapshot(`
         [
           ".z-display-flex-49Nz2U{display:flex;}
         .z-text-69Lil3{color:#ff0000;}",
-          "import { css } from 'zyzz';
-        export const card = css({ display: 'flex', color: '#ff0000' });",
+          "import { style } from 'zyzz';
+        export const card = style({ display: 'flex', color: '#ff0000' });",
         ]
       `)
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
@@ -741,7 +741,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       await Fs.writeFile(themePath, themeSource)
       await Fs.writeFile(
         Path.join(root, 'card.ts'),
-        `import { theme } from './theme.js'; export const props = theme.css({color:'brand'})();`,
+        `import { theme } from './theme.js'; export const props = theme.style({color:'brand'})();`,
       )
       await host.build()
 
@@ -830,7 +830,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-theme-host-'))
     const outDir = Path.join(root, 'output')
     const host = await Host.create({ outDir, packageId: 'example', root })
-    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; const { css } = theme; export const props = css({ color: theme.tokens.color.brand })();`
+    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; const { style } = theme; export const props = style({ color: theme.tokens.color.brand })();`
 
     try {
       await Fs.writeFile(Path.join(root, 'theme.ts'), source)
@@ -931,7 +931,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         .toMatchInlineSnapshot(`
           "
           import { Props as __zyzzProps } from 'zyzz/runtime';
-           export const button = __zyzzProps.create({className:"z-p-8px-z6lkOr z-style-12ydhop55omeb-50"});"
+           export const button = __zyzzProps.create({className:"z-p-8px-z6lkOr z-style-12ydhop55omeb-52"});"
         `)
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
@@ -953,10 +953,10 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       await Fs.writeFile(
         Path.join(root, 'button.ts'),
-        `import { css } from 'zyzz'; css({ padding: unknown });`,
+        `import { style } from 'zyzz'; style({ padding: unknown });`,
       )
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: example/button.ts:43: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: example/button.ts:47: Expected a literal string or number; expressions are not evaluated.]`,
       )
 
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
@@ -1148,7 +1148,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       await Fs.writeFile(
         Path.join(root, 'nested/button.ts'),
-        `import { css } from 'zyzz'; css({ padding: unknown });`,
+        `import { style } from 'zyzz'; style({ padding: unknown });`,
       )
 
       const failed = await next((event) => 'error' in event)
@@ -1159,16 +1159,16 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         throw new Error('Expected source error.')
 
       expect(failed.error.diagnostics).toMatchInlineSnapshot(`
-      [
-        {
-          "code": "unsupported_syntax",
-          "end": 50,
-          "message": "Expected a literal string or number; expressions are not evaluated.",
-          "source": "example/nested/button.ts",
-          "start": 43,
-        },
-      ]
-    `)
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 54,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "example/nested/button.ts",
+            "start": 47,
+          },
+        ]
+      `)
 
       await Fs.writeFile(
         Path.join(root, 'nested/button.ts'),
@@ -1343,11 +1343,11 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         notifications.next(() =>
           Watch.write({
             path: Path.join(root, 'cards.ts'),
-            source: `import { css } from 'zyzz'; css({ padding: unknown });`,
+            source: `import { style } from 'zyzz'; style({ padding: unknown });`,
           }),
         ),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: example/cards.ts:43: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: example/cards.ts:47: Expected a literal string or number; expressions are not evaluated.]`,
       )
       // Drain failed builds before observing a fresh watch lifecycle.
       await host.close()

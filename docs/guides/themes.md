@@ -15,7 +15,7 @@ Export bound helpers directly from the config:
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css, theme, variants } = Config.create({
+export const { style, theme, variants } = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
@@ -24,10 +24,10 @@ export const { css, theme, variants } = Config.create({
 ```
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const button = css({ backgroundColor: 'brand', padding: 'md' })
+  export const button = style({ backgroundColor: 'brand', padding: 'md' })
 }
 
 const example = <button {...styles.button()}>Save</button>
@@ -42,7 +42,7 @@ Define custom property names with `shorthands` and separate token scales by prop
 ```ts
 import { Config } from 'zyzz'
 
-export const { css } = Config.create({
+export const { style } = Config.create({
   shorthands: {
     px: ['paddingLeft', 'paddingRight'],
     paddingX: ['paddingLeft', 'paddingRight'],
@@ -57,7 +57,7 @@ export const { css } = Config.create({
 })
 
 namespace styles {
-  export const card = css({ px: 'sm', margin: 'gutter', color: 'primary' })
+  export const card = style({ px: 'sm', margin: 'gutter', color: 'primary' })
 }
 ```
 
@@ -77,7 +77,7 @@ import { Config, Theme } from 'zyzz'
 
 const base = Theme.define({ color: { brand: '#06c' } })
 
-export const { css, script, themes } = Config.create({
+export const { script, style, themes } = Config.create({
   defaultTheme: 'base',
   themes: {
     base,
@@ -87,10 +87,10 @@ export const { css, script, themes } = Config.create({
 ```
 
 ```tsx
-import { css, themes } from './zyzz.config.js'
+import { style, themes } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({ color: 'brand' })
+  export const card = style({ color: 'brand' })
 }
 
 function App({ appearance }: { appearance: 'base' | 'mint' }) {
@@ -204,7 +204,7 @@ export const theme = Theme.define({ spacing: { md: '1rem' } })
 import { Config } from 'zyzz'
 import { theme } from './tokens.js'
 
-export const { css } = Config.create({ theme })
+export const { style } = Config.create({ theme })
 ```
 
 Consumers import named helpers from the config's stable exports. See [Publish Libraries](compilation.md#publish-libraries) for distributing precompiled components.
@@ -218,11 +218,11 @@ import { Theme } from 'zyzz'
 
 const theme = Theme.define({ color: { brand: '#06c' } })
 const alternate = Theme.extend(theme, { color: { brand: '#175' } })
-const { css } = theme
+const { style } = theme
 
 export const scope = alternate.className
 export namespace styles {
-  export const card = css({ color: theme.tokens.color.brand })
+  export const card = style({ color: theme.tokens.color.brand })
 }
 ```
 
@@ -230,7 +230,7 @@ Compile this module with [Transform.compile](../api/compiler/Transform/compile.m
 
 Use explicit `theme.tokens` paths to select tokens whose names collide with CSS literals. Dot access and literal string/numeric brackets are supported.
 
-Local `const` aliases such as `const css = theme.css`, destructuring/renaming, and alias chains are supported. Local themes and aliases must precede their uses. Use [Graph.compile](../api/compiler/Graph/compile.md) or the file host to link relative theme imports and re-exports; packed libraries supply [compiler metadata](../introduction/vite.md#theme-libraries). `theme.vars` supports direct scalar references and template interpolation, including imported and packed contracts. Standalone variable destructuring remains unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
+Local `const` aliases such as `const style = theme.style`, destructuring/renaming, and alias chains are supported. Local themes and aliases must precede their uses. Use [Graph.compile](../api/compiler/Graph/compile.md) or the file host to link relative theme imports and re-exports; packed libraries supply [compiler metadata](../introduction/vite.md#theme-libraries). `theme.vars` supports direct scalar references and template interpolation, including imported and packed contracts. Standalone variable destructuring remains unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
 
 ### Compile Themes
 

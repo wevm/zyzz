@@ -439,7 +439,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           : bound
       }
       if (call.slots) {
-        const type = `import('zyzz').css.Dynamic<${call.valuesType}${call.output === 'html' ? ',"html"' : ''}>`
+        const type = `import('zyzz').style.Dynamic<${call.valuesType}${call.output === 'html' ? ',"html"' : ''}>`
         const typed = /\.[cm]?tsx?$/.test(options.moduleId)
         const slots = Object.entries(call.slots)
 
@@ -478,7 +478,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (call.output === 'html') {
         if (composeHtml) {
           callable = true
-          return `(${compositionHtml}.bind(${runtime}.create({className:${JSON.stringify(classes[call.name])}}))${/\.[cm]?tsx?$/.test(options.moduleId) ? " as import('zyzz').css.ReturnType<'html'>" : ''})`
+          return `(${compositionHtml}.bind(${runtime}.create({className:${JSON.stringify(classes[call.name])}}))${/\.[cm]?tsx?$/.test(options.moduleId) ? " as import('zyzz').style.ReturnType<'html'>" : ''})`
         }
         usesHtml = true
 
@@ -610,7 +610,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       continue
     }
 
-    const member = alias.recipe ? 'variants' : 'css'
+    const member = alias.recipe ? 'variants' : 'style'
     const members = [...new Set(alias.bindings ?? [member])]
     const value = alias.destructured
       ? `{${members.map((member) => `${member}:undefined`).join(',')}}`
@@ -689,7 +689,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'css', 'cx', 'Theme', 'variable', 'variants']
+            ? ['Config', 'cx', 'style', 'Theme', 'variable', 'variants']
             : [
                 'Css',
                 'cssFunction',

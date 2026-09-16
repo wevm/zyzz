@@ -79,16 +79,16 @@ describe('zyzz', () => {
 
       return value
         .replace(
-          '{ css, theme, mint, props as libraryProps }',
+          '{ mint, props as libraryProps, style, theme }',
           '{ zyzz, props as libraryProps }',
         )
-        .replace('{ css, theme, mint, props }', '{ zyzz, props }')
-        .replace('{ css, theme }', '{ zyzz }')
+        .replace('{ mint, props, style, theme }', '{ zyzz, props }')
+        .replace('{ style, theme }', '{ zyzz }')
         .replace(/\btheme\./g, 'zyzz.themes.base.')
         .replace(/\bmint\./g, 'zyzz.themes.mint.')
-        .replace(/\bcss\(/g, 'zyzz.css(')
+        .replace(/\bstyle\(/g, 'zyzz.style(')
         .replace('Theme.extend(theme,', 'Theme.extend(zyzz.themes.base,')
-        .replaceAll('zyzz.zyzz.css', 'zyzz.css')
+        .replaceAll('zyzz.zyzz.style', 'zyzz.style')
     }
 
     test(`packed ${configuration ? 'configurations' : 'themes'} retain types and compile through Vite package exports`, async () => {
@@ -99,21 +99,21 @@ describe('zyzz', () => {
 
         await Fs.writeFile(
           Path.join(root, 'app.ts'),
-          source(`import { css, theme, mint, props as libraryProps } from '@acme/theme';
+          source(`import { mint, props as libraryProps, style, theme } from '@acme/theme';
 import '@acme/theme/style.css';
-export const props = css({color:theme.tokens.color.brand,padding:'md'})();
+export const props = style({color:theme.tokens.color.brand,padding:'md'})();
 export const scope = mint.className;
 export { libraryProps };
 document.body.innerHTML = '<main class="' + scope + '"><div id="library" class="' + libraryProps.className + '"></div><div id="app" class="' + props.className + '"></div></main>';`),
         )
         await Fs.writeFile(
           Path.join(root, 'types.ts'),
-          source(`import { css, theme } from '@acme/theme'; css({color:'brand',padding:'md'}); css({color:theme.tokens.color.brand});
+          source(`import { style, theme } from '@acme/theme'; style({color:'brand',padding:'md'}); style({color:theme.tokens.color.brand});
 // @ts-expect-error Unknown tokens remain invalid through packed declarations.
-css({color:'missing'});
+style({color:'missing'});
 // @ts-expect-error Imported references preserve property domains.
-css({padding:theme.tokens.color.brand});
-${configuration ? "zyzz.css({'@layer components':{color:'brand'}});\n// @ts-expect-error Packed layer keys remain exact.\nzyzz.css({'@layer missing':{color:'brand'}});" : ''}`),
+style({padding:theme.tokens.color.brand});
+${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-expect-error Packed layer keys remain exact.\nzyzz.style({'@layer missing':{color:'brand'}});" : ''}`),
         )
 
         const checked = await Util.promisify(ChildProcess.execFile)(
@@ -218,9 +218,9 @@ ${configuration ? "zyzz.css({'@layer components':{color:'brand'}});\n// @ts-expe
         )
         await Fs.writeFile(
           Path.join(root, 'app.ts'),
-          source(`import { css, theme, mint, props } from '@acme/theme'; import { Theme } from 'zyzz'; import '@acme/theme/style.css';
+          source(`import { mint, props, style, theme } from '@acme/theme'; import { Theme } from 'zyzz'; import '@acme/theme/style.css';
 const extended = Theme.extend(theme, {spacing:{md:'16px'}});
-const app = css({color:'brand'})();
+const app = style({color:'brand'})();
 document.body.innerHTML = '<main class="' + mint.className + '"><div id="library" class="' + props.className + '"></div><div id="app" class="' + app.className + '"></div><section class="' + theme.className + '"><div id="nested" class="' + app.className + '"></div></section><section class="' + extended.className + '"><div id="extended" class="' + props.className + '"></div></section></main>';`),
         )
 
@@ -730,7 +730,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     // An unrelated earlier module and layer-free configurations exercise whole-project discovery.
     const files = {
       'a.ts': 'export const unrelated = 1',
-      'config.ts': `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const other = Config.create({ defaultTheme: 'night', themes: { night: { color: { ink: '#000000' } }, 'brand.dark': { color: { ink: '#ffffff' } } } }); export const { script: onlyScript } = Config.create({ defaultTheme: 'solo', themes: { solo: { color: { ink: '#aabbcc' } } } });`,
+      'config.ts': `import { Config } from 'zyzz'; export const { style, themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const other = Config.create({ defaultTheme: 'night', themes: { night: { color: { ink: '#000000' } }, 'brand.dark': { color: { ink: '#ffffff' } } } }); export const { script: onlyScript } = Config.create({ defaultTheme: 'solo', themes: { solo: { color: { ink: '#aabbcc' } } } });`,
       'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
       'main.ts': `import { themes } from './config'; const root = document.documentElement; root.dataset.initial = root.className; root.dataset.mint = themes.mint.className; root.dataset.ready = 'true';`,
     }
@@ -786,7 +786,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
       await Fs.writeFile(
         Path.join(root, 'main.ts'),
-        `import { css } from 'zyzz'; export const broken = css({ color: unknownColor() });`,
+        `import { style } from 'zyzz'; export const broken = style({ color: unknownColor() });`,
       )
 
       const detached = await server.transformIndexHtml(
@@ -906,25 +906,25 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     const page = (entry: string) =>
       `<!doctype html><html><head><title>${entry}</title></head><body><script type="module" src="/${entry}.ts"></script></body></html>`
     const configuration = (name: string) =>
-      `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: '${name}', storageKey: '${name}', themes: { ${name}: { color: { ink: '#123456' } } } });`
-    // Each page imports only css, so its configuration module leaves the bundle.
+      `import { Config } from 'zyzz'; export const { style, themes } = Config.create({ defaultTheme: '${name}', storageKey: '${name}', themes: { ${name}: { color: { ink: '#123456' } } } });`
+    // Each page imports only style, so its configuration module leaves the bundle.
     // Page c reaches its configuration only through a lazy import.
     const files = {
       'a.html': page('a'),
-      'a.ts': `import { css } from './alpha'; document.body.className = css({ color: 'ink' })().className;`,
+      'a.ts': `import { style } from './alpha'; document.body.className = style({ color: 'ink' })().className;`,
       'alpha.ts': configuration('alpha'),
       'b.html': page('b'),
-      'b.ts': `import { css } from './beta'; document.body.className = css({ color: 'ink' })().className;`,
+      'b.ts': `import { style } from './beta'; document.body.className = style({ color: 'ink' })().className;`,
       'beta.ts': configuration('beta'),
       'c.html': page('c'),
-      'c.ts': `void import('./gamma').then(({ css }) => { document.body.className = css({ color: 'ink' })().className; });`,
+      'c.ts': `void import('./gamma').then(({ style }) => { document.body.className = style({ color: 'ink' })().className; });`,
       // Page d reaches its entry through an inline module script.
       'd.html': `<!doctype html><html><head><title>d</title></head><body><script type="module">import './d.ts'</script></body></html>`,
-      'd.ts': `import { css } from './delta'; document.body.className = css({ color: 'ink' })().className;`,
+      'd.ts': `import { style } from './delta'; document.body.className = style({ color: 'ink' })().className;`,
       'delta.ts': configuration('delta'),
       // Page e reaches its entry through an aliased inline import.
       'e.html': `<!doctype html><html><head><title>e</title></head><body><script type="module">import '@pages/e.ts'</script></body></html>`,
-      'e.ts': `import { css } from './epsilon'; document.body.className = css({ color: 'ink' })().className;`,
+      'e.ts': `import { style } from './epsilon'; document.body.className = style({ color: 'ink' })().className;`,
       'epsilon.ts': configuration('epsilon'),
       'gamma.ts': configuration('gamma'),
       // Without a package.json the repository's sideEffects list would let the bundler drop a side-effect import.
@@ -1046,7 +1046,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       // wrapper repacks that contribution, so its contract names the dependency.
       const dependency = Graph.compile({
         modules: {
-          'index.ts': `import { Config } from 'zyzz'; import { global } from 'zyzz/web'; global({ body: { margin: 0 } }); export const { css, themes } = Config.create({ defaultTheme: 'nested', storageKey: 'nested', themes: { nested: { color: { ink: '#123456' } } } });`,
+          'index.ts': `import { Config } from 'zyzz'; import { global } from 'zyzz/web'; global({ body: { margin: 0 } }); export const { style, themes } = Config.create({ defaultTheme: 'nested', storageKey: 'nested', themes: { nested: { color: { ink: '#123456' } } } });`,
         },
       })
       const wrapper = Graph.compile({

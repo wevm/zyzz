@@ -5,22 +5,22 @@ import { chromium } from 'playwright'
 import * as React from 'react'
 import * as Server from 'react-dom/server'
 import { describe, expect, test } from 'vite-plus/test'
-import type { css } from 'zyzz'
+import type { style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 
 const source = `
-import { css, Config } from 'zyzz';
+import { Config, style } from 'zyzz';
 import { Html } from 'zyzz/runtime';
-const { css: htmlCss } = Config.create({ output: 'html' });
+const { style: htmlStyle } = Config.create({ output: 'html' });
 import * as React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 namespace styles {
-  export const card = css((values: { width: \`\${number}%\` }) => ({
+  export const card = style((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
   }))
 
-  export const htmlCard = htmlCss((values: { width: \`\${number}%\` }) => ({
+  export const htmlCard = htmlStyle((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
   }))
 }
@@ -48,8 +48,8 @@ describe('create', () => {
         moduleId: 'fixture/card.ts',
         source: source
           .replace(
-            "import { css, Config } from 'zyzz';",
-            `import { Config } from 'zyzz'; const { css } = Config.create({ cssOutput: '${cssOutput}' });`,
+            "import { Config, style } from 'zyzz';",
+            `import { Config } from 'zyzz'; const { style } = Config.create({ cssOutput: '${cssOutput}' });`,
           )
           .replace(
             "Config.create({ output: 'html'",
@@ -99,7 +99,7 @@ describe('create', () => {
         )
         await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
 
-        const props = await page.evaluate<css.Props>('Fixture.props("25%")')
+        const props = await page.evaluate<style.Props>('Fixture.props("25%")')
         const markup = Server.renderToString(
           React.createElement('div', { id: 'card', ...props }),
         )

@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-Main `9aa72fc` includes Phase 1 and PRs 2.1/2.2a: 40-property literal validation, in-memory CSS emission, literal source extraction/rewriting, file hosts, scalar theme contracts/scopes, and token-name resolution. Bound `theme.css` has type inference but still requires theme-aware source linking. The [parity audit](parity.md) distinguishes implemented behavior from the remaining API targets.
+Main `9aa72fc` includes Phase 1 and PRs 2.1/2.2a: 40-property literal validation, in-memory CSS emission, literal source extraction/rewriting, file hosts, scalar theme contracts/scopes, and token-name resolution. Bound `theme.style` has type inference but still requires theme-aware source linking. The [parity audit](parity.md) distinguishes implemented behavior from the remaining API targets.
 
 The MVP prioritizes web correctness and includes a working native subset.
 
@@ -12,20 +12,20 @@ Use small modules and subpath exports. All compilation paths share core semantic
 
 ## Entry Points
 
-`css` and `variants` from `zyzz` author standard CSS with an empty token contract. The root entrypoint neither imports nor re-exports bundled themes or their token data. Importing a theme does not alter the root function or register global state.
+`style` and `variants` from `zyzz` author standard CSS with an empty token contract. The root entrypoint neither imports nor re-exports bundled themes or their token data. Importing a theme does not alter the root function or register global state.
 
 Bundled themes use independent `zyzz/themes/<name>` entrypoints. The MVP provides `zyzz/themes/default` with named exports:
 
 | Export     | Contract                                                             |
 | ---------- | -------------------------------------------------------------------- |
-| `css`      | The bound `theme.css` function with the theme's inferred tokens      |
+| `style`    | The bound `theme.style` function with the theme's inferred tokens    |
 | `variants` | The bound `theme.variants` function with the same inferred tokens    |
 | `theme`    | The full theme for variants, scopes, extension, and target compilers |
 | `tokens`   | Raw token definitions for explicit composition with `Theme.define`   |
 
 The default theme bundles colors, typography, spacing, radii, and related design scales. Its scales use conventional named steps where the token contract permits, and its color scales ship as light/dark pairs. Light and dark are color schemes within the theme. Additional themes follow the same entrypoint contract; consuming one theme must not include another theme's data or CSS.
 
-The exported `css` and `variants` alias `theme.css` and `theme.variants`, with identical inference, token identities, and output. `tokens` contains authored definitions; `theme.tokens` contains portable token references. Source adapters recognize these bindings through package exports and re-exports without executing theme modules.
+The exported `style` and `variants` alias `theme.style` and `theme.variants`, with identical inference, token identities, and output. `tokens` contains authored definitions; `theme.tokens` contains portable token references. Source adapters recognize these bindings through package exports and re-exports without executing theme modules.
 
 Platform APIs are named namespace exports from dedicated entrypoints:
 
@@ -44,7 +44,7 @@ Consumer concepts, usage, and API status are documented in [docs](../docs/README
 
 Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`.
 
-Export `const { css, variants, theme } = Config.create(...)` from `zyzz.config.ts`. Consumers import `{ css, variants, theme }` directly. Integrations follow these named exports without requiring a default export.
+Export `const { style, variants, theme } = Config.create(...)` from `zyzz.config.ts`. Consumers import `{ style, variants, theme }` directly. Integrations follow these named exports without requiring a default export.
 
 The config is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
 
@@ -52,7 +52,7 @@ The config is an ordinary importable, statically analyzed module, not an executa
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css, script, theme, variants } = Config.create({
+export const { script, style, theme, variants } = Config.create({
   layers: ['reset', 'base', 'components'],
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
@@ -63,7 +63,7 @@ export const { css, script, theme, variants } = Config.create({
 
 `theme` accepts inline token definitions or an existing `Theme.define`/`Theme.extend` value. Named `themes` accepts a mixture of those inputs. `theme` and `themes` are mutually exclusive; omitting both produces token-free bound functions. In named mode, require `defaultTheme`, inferred from the catalog's keys, rather than choosing by object order.
 
-Single-theme mode returns `theme`; named mode returns the default `theme` for shared token references and a callable `themes` selector. Both return `css` and `variants`; no returned layer-reference object is required.
+Single-theme mode returns `theme`; named mode returns the default `theme` for shared token references and a callable `themes` selector. Both return `style` and `variants`; no returned layer-reference object is required.
 
 ```ts
 import { Config, Theme } from 'zyzz'
@@ -72,7 +72,7 @@ const base = Theme.define({
   color: { brand: { dark: '#8cf', light: '#06c' } },
 })
 
-export const { css, script, themes, variants } = Config.create({
+export const { script, style, themes, variants } = Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -84,13 +84,13 @@ export const { css, script, themes, variants } = Config.create({
 
 The default determines token paths/domains and unscoped fallback values. Named alternatives must satisfy the complete shared contract; reject missing/extra paths or incompatible domains. Inline alternatives provide full tokens; `Theme.extend(base, overrides)` supplies partial changes through its resolved complete definition. Normalize returned theme handles onto a stable shared configuration contract without mutating standalone definitions or merging their existing identities globally. Config-bound styles and the returned handles participate in this contract; matching names on independently compiled definitions alone do not establish interchangeability. Preserve the contract across imports, aliases, re-exports, and packed libraries.
 
-`layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `css` and every supported style body of `variants`, retaining property/value/token inference at every depth:
+`layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `style` and every supported style body of `variants`, retaining property/value/token inference at every depth:
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const button = css({
+  export const button = style({
     '@layer components': {
       backgroundColor: 'brand',
       ':hover': { opacity: 0.8 },
@@ -123,7 +123,7 @@ Scope classes assign live custom properties; descendants inherit values without 
 
 Globals and additional layer contributions retain project-wide collection and may be colocated outside `zyzz.config.ts`. Config declarations contribute their layer order through that same pipeline. The filename convention never changes inference in direct root imports or requires runtime providers. Public config properties remain explicit and narrowly typed; new settings need their own semantics rather than an arbitrary metadata bag.
 
-The named config helpers retain the config's complete inferred contract. Source adapters must follow `css`, `variants`, and theme handles through aliases, re-exports, and package boundaries. CSS references use `theme.vars`.
+The named config helpers retain the config's complete inferred contract. Source adapters must follow `style`, `variants`, and theme handles through aliases, re-exports, and package boundaries. CSS references use `theme.vars`.
 
 Integrations discover the originating config through that binding without requiring a default export. No config import performs compilation at runtime.
 
@@ -173,12 +173,12 @@ Property-specific color groups augment the shared `color` group and win when a k
 
 ## Property Mappings
 
-`Config.create({ shorthands })` defines optional authoring aliases. Each key maps to a nonempty readonly tuple of supported standard properties. No aliases are installed by default; root `css` and independently defined themes retain standard property names.
+`Config.create({ shorthands })` defines optional authoring aliases. Each key maps to a nonempty readonly tuple of supported standard properties. No aliases are installed by default; root `style` and independently defined themes retain standard property names.
 
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, script, theme, variants } = Config.create({
+export const { script, style, theme, variants } = Config.create({
   shorthands: {
     px: ['paddingLeft', 'paddingRight'],
     paddingX: ['paddingLeft', 'paddingRight'],
@@ -193,7 +193,7 @@ export const { css, script, theme, variants } = Config.create({
 })
 
 namespace styles {
-  export const card = css({ px: 'sm', margin: 'gutter', color: 'primary' })
+  export const card = style({ px: 'sm', margin: 'gutter', color: 'primary' })
 }
 ```
 
@@ -205,7 +205,7 @@ Standard declarations and aliases follow the same cascade rules after expansion.
 
 Reject empty/duplicate targets, unknown properties, alias-to-alias references, and alias names colliding with standard properties, selectors, queries, or reserved authoring keys. Mappings contain static data only, with no callbacks or runtime registration. A config owns its aliases; named theme switches cannot change them.
 
-Apply the same contract to config-bound `css`, theme handles, and `variants`. Preserve exact key/value inference inside nested rules without a broad string index. Source extraction, imported configs, packed metadata, and watch invalidation must retain mappings without evaluating application code. Native validates expanded properties against its supported subset.
+Apply the same contract to config-bound `style`, theme handles, and `variants`. Preserve exact key/value inference inside nested rules without a broad string index. Source extraction, imported configs, packed metadata, and watch invalidation must retain mappings without evaluating application code. Native validates expanded properties against its supported subset.
 
 ### Property-Specific Tokens
 
@@ -217,13 +217,13 @@ Retain group identity in token references, variables, liveness, extension valida
 
 ## Consuming Styles
 
-Every `css` definition returns a callable. Calling it returns plain props to spread onto a component. Static styles use `button()`; dynamic styles use `button(values)`. There is no direct class-string or props-object overload for consuming an uncalled definition.
+Every `style` definition returns a callable. Calling it returns plain props to spread onto a component. Static styles use `button()`; dynamic styles use `button(values)`. There is no direct class-string or props-object overload for consuming an uncalled definition.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({ color: '#06c', padding: '1rem' })
+  export const button = style({ color: '#06c', padding: '1rem' })
 }
 
 export function Button() {
@@ -234,21 +234,21 @@ export function Button() {
 Theme-bound and bundled functions follow the same contract, with inferred tokens:
 
 ```tsx
-import { css } from 'zyzz/themes/default'
+import { style } from 'zyzz/themes/default'
 
 namespace styles {
-  export const button = css({ padding: 4, color: 'blue.700' })
+  export const button = style({ padding: 4, color: 'blue.700' })
 }
 const element = <button {...styles.button()} />
 ```
 
-`Theme.define` returns bound `css` and `variants`, portable `tokens`, web variable references through `vars`, and a scope `className`. Destructuring, aliases, and re-exports retain inference. Static and dynamic definitions may be inline, module-level, exported, or imported. Extraction recognizes the authoring binding independently of markup position.
+`Theme.define` returns bound `style` and `variants`, portable `tokens`, web variable references through `vars`, and a scope `className`. Destructuring, aliases, and re-exports retain inference. Static and dynamic definitions may be inline, module-level, exported, or imported. Extraction recognizes the authoring binding independently of markup position.
 
 ```tsx
-const { css, variants } = theme
+const { style, variants } = theme
 
 export namespace styles {
-  export const button = css({
+  export const button = style({
     backgroundColor: 'surface',
     color: 'primary',
     borderColor: 'subtle',
@@ -261,13 +261,13 @@ export namespace styles {
 const element = <button {...styles.button()}>Continue</button>
 ```
 
-Inline usage is also valid: `<button {...css({ padding: '1rem' })()} />`. Extraction replaces definitions with small props-binding functions and can fold fully static applications into constants. No runtime style generation occurs. Untransformed authoring calls fail with an actionable missing-transform diagnostic.
+Inline usage is also valid: `<button {...style({ padding: '1rem' })()} />`. Extraction replaces definitions with small props-binding functions and can fold fully static applications into constants. No runtime style generation occurs. Untransformed authoring calls fail with an actionable missing-transform diagnostic.
 
 Token names autocomplete in their matching properties. CSS literals and keywords remain available; explicit `theme.tokens` references select tokens whose names collide with CSS values. `Style.define` remains the pure in-memory API for named definitions; low-level `Css.compile` still returns stylesheet text and class maps independently of the component authoring interface.
 
 The in-memory equivalent is `Style.define({ card: { color: 'brand', padding: 'md' } }, { theme })`. It resolves property-compatible names into the same portable references as explicit `theme.tokens` values before CSS emission. Literal syntax and CSS zero take precedence over token names.
 
-Property-specific color groups take precedence over shared colors only at matching leaf paths. Bound authoring types and this pure resolution boundary precede source linking; `theme.css` still throws without the corresponding transform.
+Property-specific color groups take precedence over shared colors only at matching leaf paths. Bound authoring types and this pure resolution boundary precede source linking; `theme.style` still throws without the corresponding transform.
 
 ## Value Syntax
 
@@ -275,7 +275,7 @@ Importance uses a trailing `!` on a string. Fallbacks use a nonempty array of va
 
 ```ts
 namespace styles {
-  export const panel = theme.css({
+  export const panel = theme.style({
     display: ['block', 'grid'],
     color: 'brand!',
     backgroundColor: 'oklch(60% 0.2 250)',
@@ -301,7 +301,7 @@ Theme references can be imported or destructured without executing theme modules
 
 `theme.vars.spacing.md` follows inherited theme overrides. Color-pair values use `light-dark()` under the ordinary color-scheme contract. Query thresholds, container names, and composite typography presets are excluded from `theme.vars`; queries resolve to literal conditions. Native accepts portable `theme.tokens` and rejects web-only `theme.vars` references.
 
-Root `css` accepts literal lengths, valid unitless numbers, and CSS zero. Named tokens and nonzero numeric spacing tokens require a theme. CSS literal/keyword precedence resolves ambiguous names; explicit token references select the token instead.
+Root `style` accepts literal lengths, valid unitless numbers, and CSS zero. Named tokens and nonzero numeric spacing tokens require a theme. CSS literal/keyword precedence resolves ambiguous names; explicit token references select the token instead.
 
 Arbitrary CSS expressions use literal strings and receive compiler syntax validation; they do not implicitly interpolate token names.
 
@@ -315,7 +315,7 @@ Prefer platform state attributes and custom data attributes over conditional cla
 
 ```tsx
 namespace styles {
-  export const button = theme.css({
+  export const button = theme.style({
     ':disabled': { opacity: 0.5 },
     '&[aria-expanded="true"]': { backgroundColor: 'brand' },
     '&[data-loading="true"]': { cursor: 'progress' },
@@ -350,15 +350,15 @@ A props object containing a class string does not itself supply conflict metadat
 
 ## Dynamic Styles and Styling Overrides
 
-An expression-bodied callback receives only the runtime values record. An annotated parameter defines the input contract; the callback returns an object with static property/selector/condition structure. `css` always returns a callable, regardless of whether its definition is an object or callback.
+An expression-bodied callback receives only the runtime values record. An annotated parameter defines the input contract; the callback returns an object with static property/selector/condition structure. `style` always returns a callable, regardless of whether its definition is an object or callback.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const track = css({ height: '0.5rem' })
+  export const track = style({ height: '0.5rem' })
 
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     width: values.width,
   }))
 }
@@ -378,7 +378,7 @@ Static applications accept optional styling overrides. Dynamic applications comb
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
 
 namespace styles {
-  export const panel = theme.css((values: PanelValues) => ({
+  export const panel = theme.style((values: PanelValues) => ({
     width: values.width,
     opacity: values.opacity,
     color: theme.vars.color.brand,
@@ -431,11 +431,11 @@ Integration gates cover static and dynamic calls, repeated updates, nested insta
 ## Typed runtime variables
 
 ```tsx
-import { variable, css } from 'zyzz'
+import { style, variable } from 'zyzz'
 
 const progress = { amount: variable('percentage') }
 namespace styles {
-  export const bar = css({ width: progress.amount })
+  export const bar = style({ width: progress.amount })
 }
 
 const example = (
@@ -453,9 +453,9 @@ Dynamic assignment is allowed; dynamic rule generation is not. The core never re
 
 ## Variants
 
-`theme.variants(definition)` binds recipe definitions to the theme, just like `theme.css`. The direct `variants` export from `zyzz` has an empty token contract. Bundled theme entrypoints also export the bound function. No variant namespace or explicit theme argument is needed.
+`theme.variants(definition)` binds recipe definitions to the theme, just like `theme.style`. The direct `variants` export from `zyzz` has an empty token contract. Bundled theme entrypoints also export the bound function. No variant namespace or explicit theme argument is needed.
 
-Each recipe styles one element and returns one spreadable props object when applied. Multipart components use separate `css` or `variants` definitions for their elements. Shared selections use ordinary component inputs; DOM relationships use data attributes or typed markers. Recipes have no `slots` option or map of part props.
+Each recipe styles one element and returns one spreadable props object when applied. Multipart components use separate `style` or `variants` definitions for their elements. Shared selections use ordinary component inputs; DOM relationships use data attributes or typed markers. Recipes have no `slots` option or map of part props.
 
 ```tsx
 namespace styles {
@@ -504,7 +504,7 @@ namespace styles {
 }
 ```
 
-Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Recipe structure remains static; individual choices may be value callbacks as specified below. The selection input accepts only declared variant axes and styling overrides under the same merge rules as `css`. Reject reserved axis names and conflicting owned data attributes.
+Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Recipe structure remains static; individual choices may be value callbacks as specified below. The selection input accepts only declared variant axes and styling overrides under the same merge rules as `style`. Reject reserved axis names and conflicting owned data attributes.
 
 The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Static types reject invalid selections and unknown input keys, including inputs held in variables. Runtime callables perform no validation; untyped callers must validate external data before selection.
 
@@ -520,7 +520,7 @@ Browser-only selectors in a shared recipe produce target errors.
 
 ### Dynamic Variant Choices
 
-Each choice accepts a static style object or a typed value callback. The callback follows the dynamic `css` contract and compiles to the same binding slots; runtime values remain local to that axis and choice.
+Each choice accepts a static style object or a typed value callback. The callback follows the dynamic `style` contract and compiles to the same binding slots; runtime values remain local to that axis and choice.
 
 ```tsx
 namespace styles {
@@ -561,9 +561,9 @@ Defaults use the same selection shape. A dynamic default supplies a complete sta
 
 The output for the example includes the stable recipe class, `data-size="custom"`, and inline assignments for the selected choice's generated variables. Never serialize payloads into data attributes. Variables are scoped by recipe, axis, choice, and binding identity, so two choices may both name a field `padding` without sharing assignments. Switching choices emits a fresh complete assignment object containing only active bindings; real renderer tests must prove obsolete assignments are removed.
 
-Compound conditions match normalized choice names, independently of payload values. `when: { size: 'custom' }` matches every valid custom padding; array matches retain their existing semantics. MVP base and compound style bodies remain static. Choice callback declarations may use supported pseudo/query conditions with fixed structure, just like dynamic `css`.
+Compound conditions match normalized choice names, independently of payload values. `when: { size: 'custom' }` matches every valid custom padding; array matches retain their existing semantics. MVP base and compound style bodies remain static. Choice callback declarations may use supported pseudo/query conditions with fixed structure, just like dynamic `style`.
 
-The scalar `padding` example expands to four longhand bindings sharing one value, preserving partial overrides through `cx`. Reject unsupported shorthand bindings rather than guess how to split runtime CSS. Keep importance and fallback restrictions identical to dynamic `css`.
+The scalar `padding` example expands to four longhand bindings sharing one value, preserving partial overrides through `cx`. Reject unsupported shorthand bindings rather than guess how to split runtime CSS. Keep importance and fallback restrictions identical to dynamic `style`.
 
 Native binds active choice values to supported preidentified properties with explicit unit conversions and the same selection/default/compound behavior. Web-only semantics produce errors. Continuous payload values never create a Cartesian product or additional stylesheet rules.
 
@@ -577,7 +577,7 @@ Style objects accept standard CSS properties, scoped selectors, and conditional 
 
 ```ts
 namespace styles {
-  export const control = theme.css({
+  export const control = theme.style({
     display: 'inline-flex',
     color: 'primary',
     ':hover': { backgroundColor: 'brand' },
@@ -608,10 +608,10 @@ The initial conditional syntax supports `@media`, `@container`, and `@supports`.
 This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers. The accepted typed ref design below adds inferred relationships without replacing raw CSS selectors.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const indicator = css({
+  export const indicator = style({
     opacity: 0,
     ':where([data-group="profile"]:has(a)) &': { opacity: 1 },
   })
@@ -648,14 +648,14 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 ### Style References
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `style()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `style()` supplies identity without declarations.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css()
-  export const label = css({
+  export const card = style()
+  export const label = style({
     selectors: {
       [`${card}:hover &`]: { color: 'blue' },
       [`${card}[data-state="open"] > &`]: { opacity: 1 },
@@ -674,14 +674,14 @@ Specificity follows the authored selector. Use explicit `:where(...)` to lower c
 Themes can define dedicated size thresholds separately from spacing and general sizing tokens:
 
 ```tsx
-const { css } = Theme.define({
+const { style } = Theme.define({
   spacing: { sm: '0.5rem', md: '1rem' },
   breakpoints: { tablet: '48rem', desktop: '64rem' },
   containers: { card: '24rem', panel: '40rem' },
 })
 
 export namespace styles {
-  export const layout = css({
+  export const layout = style({
     padding: 'sm',
     '@media tablet': {
       padding: 'md',
@@ -690,7 +690,7 @@ export namespace styles {
     '@container card': { display: 'grid' },
   })
 
-  export const region = css({ containerType: 'inline-size' })
+  export const region = style({ containerType: 'inline-size' })
 }
 const example = (
   <section {...styles.region()}>
@@ -716,7 +716,7 @@ Named containers also support raw syntax such as `@container sidebar (width >= 2
 
 Thresholds resolve to literal conditions at compile time, never to CSS custom properties.
 
-Changing a theme scope or color scheme cannot alter existing query thresholds. `Theme.extend` may override existing thresholds for styles authored through the extended theme's `css`; it does not change queries already authored through the base function. Definition edits trigger dependent recompilation.
+Changing a theme scope or color scheme cannot alter existing query thresholds. `Theme.extend` may override existing thresholds for styles authored through the extended theme's `style`; it does not change queries already authored through the base function. Definition edits trigger dependent recompilation.
 
 Rule identity and deduplication include resolved conditions. Different threshold values must not share an atom solely because their aliases have the same name. Do not sort breakpoints numerically or flatten overlapping conditions in ways that change authored precedence.
 
@@ -754,7 +754,7 @@ fontFace({
   fontDisplay: 'swap',
 })
 namespace styles {
-  export const animated = theme.css({
+  export const animated = theme.style({
     animationName: fadeIn,
     animationDuration: '200ms',
   })
@@ -771,7 +771,7 @@ const enter = keyframes({
   to: { opacity: 1, transform: 'translateY(0)' },
 })
 namespace styles {
-  export const notice = theme.css({
+  export const notice = theme.style({
     animationDuration: '160ms',
     animationName: enter,
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
@@ -796,18 +796,18 @@ The linked contract specifies every MDN at-rule, descriptor contexts, repeated c
 
 ### Layer and Global Collection
 
-Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `css` and `variants`. `global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
+Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `style` and `variants`. `global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
 
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, script, variants } = Config.create({
+export const { script, style, variants } = Config.create({
   layers: ['reset', 'base', 'components', 'overrides'],
 })
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 import { global } from 'zyzz/web'
 
@@ -819,7 +819,7 @@ global({
 })
 
 export namespace styles {
-  export const button = css({
+  export const button = style({
     '@layer components': { padding: '1rem' },
   })
 }
@@ -833,7 +833,7 @@ Named layers intentionally share CSS identity; libraries namespace public layers
 
 The collection contract is project-wide: adapters scan configured source roots, including unimported modules, with tests, generated output, and dependencies excluded by default. Dependency contributions require explicit inclusion or published library artifacts. Declarations must be static and module-level; calls inside functions, runtime branches, or component rendering receive diagnostics. No application code executes during collection.
 
-Collected globals are eager application-wide stylesheet effects even when declared beside lazy components or unused JavaScript exports. Preserve them independently of JavaScript tree shaking and package `sideEffects: false`; scope normal component styles through `css`.
+Collected globals are eager application-wide stylesheet effects even when declared beside lazy components or unused JavaScript exports. Preserve them independently of JavaScript tree shaking and package `sideEffects: false`; scope normal component styles through `style`.
 
 Identify contributions by stable package/module/call identity, emit repeated imports once, and retain repeated authored rules where their position affects the cascade.
 
@@ -865,7 +865,7 @@ export const alternate = Theme.extend(theme, {
 
 const panel = (
   <section {...alternate()}>
-    <button {...theme.css({ backgroundColor: 'surface', color: 'brand' })()}>
+    <button {...theme.style({ backgroundColor: 'surface', color: 'brand' })()}>
       Continue
     </button>
   </section>
@@ -1120,7 +1120,7 @@ This boundary does not rewrite or execute modules, load application imports, dis
 
 The adapter uses standalone Oxc parsing and two-pass lexical binding analysis without configuration discovery or code generation. A compiler-internal ScopeTracker extension keeps function-body variables out of parameter initializer environments; parameters, function names, and enclosing lexical bindings remain visible.
 
-Both passes traverse identical scopes, including type-only subtrees, so preserved scope identities remain aligned. Its dependency is reachable only through the compiler entrypoint; root and web bundles do not import it. Direct named imports of `css`, including renamed imports, are recognized throughout TypeScript/JSX.
+Both passes traverse identical scopes, including type-only subtrees, so preserved scope identities remain aligned. Its dependency is reachable only through the compiler entrypoint; root and web bundles do not import it. Direct named imports of `style`, including renamed imports, are recognized throughout TypeScript/JSX.
 
 Shadowed bindings and unrelated local functions remain untouched. Type-only references do not create styles.
 
@@ -1128,7 +1128,7 @@ Only direct object literals with explicit keys and string/number values are acce
 
 Style names combine a deterministic module-identity digest with the call offset; identical input repeats exactly, and source edits may change call identities. Call-site names are extraction metadata, not a guarantee that independently emitted stylesheets can be combined. Hosts must aggregate graphs or supply the stable stylesheet namespaces required by later library work. No absolute machine path participates in naming.
 
-The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw an error named `css.MissingTransformError`; the constructor is not exposed as a property of the root `css` export.
+The root `style` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw an error named `style.MissingTransformError`; the constructor is not exposed as a property of the root `style` export.
 
 The source transform implements static callables and direct no-argument application folding; extraction alone is not an executable transform.
 
@@ -1140,7 +1140,7 @@ The transform uses ordered CSS compilation. Conflicting classes already carry mo
 
 Different source versions with the same ID replace one another rather than coexist. Hash-derived identities are deterministic, not a mathematical collision-free naming guarantee.
 
-Direct `css({ ... })()` calls become fresh `{ className }` expressions. Definitions that escape through exports, parameters, or other expressions become `Props.create({ className })` calls from the small `zyzz/runtime` entrypoint. This runtime has no parser, compiler, theme data, stylesheet generation, or global registry.
+Direct `style({ ... })()` calls become fresh `{ className }` expressions. Definitions that escape through exports, parameters, or other expressions become `Props.create({ className })` calls from the small `zyzz/runtime` entrypoint. This runtime has no parser, compiler, theme data, stylesheet generation, or global registry.
 
 It appends external classes and copies supplied inline styles without runtime validation. Empty overrides preserve generated classes; static types reject unrelated props and invalid override shapes. Type contracts reject extra keys through variables as well as literal objects.
 
@@ -1174,7 +1174,7 @@ Prior art: [vanilla-extract's compiler](https://github.com/vanilla-extract-css/v
 
 Local theme source compilation now extends the literal transform. Module-level local `Theme.define`/`Theme.extend` factories are analyzed as data, direct bound calls resolve names through the pure theme/style boundary, and `.className` reads become scope constants. Theme identities derive from the stable module ID and binding, independently of values and offsets.
 
-Generated JavaScript contains no theme constructor; TypeScript preserves literal contract types. Local module-level const aliases of bound css, destructuring/renaming, and alias chains compile through lexical bindings; unsupported escaping authoring references receive diagnostics. Explicit local theme.tokens paths compile as scalar bound-style values with defining identities, fallbacks, and property-domain checks.
+Generated JavaScript contains no theme constructor; TypeScript preserves literal contract types. Local module-level const aliases of bound style, destructuring/renaming, and alias chains compile through lexical bindings; unsupported escaping authoring references receive diagnostics. Explicit local theme.tokens paths compile as scalar bound-style values with defining identities, fallbacks, and property-domain checks.
 
 Graph.compile links relative source imports/exports, authoring aliases, and re-exports with shared identities and cross-file maps. The file host incrementally recompiles source edits and their importers. Graph outputs versioned JSON contracts for exported themes and bound aliases.
 
@@ -1206,7 +1206,7 @@ Output ownership keys follow the output filesystem's detected case sensitivity. 
 
 The first theme increment exposes `Theme.define(tokens)`, `Theme.extend(theme, overrides)`, and readonly `theme.tokens` references. Supported groups are `backgroundColor`, `borderColor`, `borderRadius`, `color`, `spacing`, and `textColor`. Values retain the existing literal color/length grammar; palettes must be nonempty, use unambiguous dot-free keys, and contain data properties. Extensions may omit groups or leaves and replace whole scheme pairs. Composite presets, query metadata, bound callables, `theme.vars`, and compiled `theme.className` arrive in subsequent increments.
 
-`Style.define` accepts property-compatible references; root `css` remains literal-only. `Css.compile({ styles, themes })` emits readable variable names, defining fallbacks, `light-dark()` pairs, and a named scope map. Every scope resets the complete live contract, including inherited leaves. Unused tokens produce no declarations.
+`Style.define` accepts property-compatible references; root `style` remains literal-only. `Css.compile({ styles, themes })` emits readable variable names, defining fallbacks, `light-dark()` pairs, and a named scope map. Every scope resets the complete live contract, including inherited leaves. Unused tokens produce no declarations.
 
 The browser owns scheme selection through `color-scheme`; scopes never force a scheme.
 
@@ -1214,7 +1214,7 @@ In-memory contract identity is an opaque frozen object carried by references and
 
 ## Theme Selection and Group Expansion
 
-Theme selection happens at two boundaries. Authoring selects a contract through `theme.css`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation.
+Theme selection happens at two boundaries. Authoring selects a contract through `theme.style`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation.
 
 Standalone `Theme.define` calls remain isolated; in-memory switchable themes use `Theme.extend` to share a contract.
 

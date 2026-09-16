@@ -1,5 +1,5 @@
 /** Binds authored style data to extracted stylesheets without inserting CSS. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 import * as Html from '../runtime/CompositionHtml.js'
 import * as Identity from './Identity.js'
 import * as Props from '../runtime/Props.js'
@@ -28,7 +28,7 @@ export function bind<value extends object>(
 /** Authoring identity, output convention, and optional token context. */
 export type Options = {
   readonly id?: string | undefined
-  readonly output?: css.Output | undefined
+  readonly output?: style.Output | undefined
   readonly theme?: Theme.Definition | undefined
 }
 
@@ -56,13 +56,15 @@ export function body(input: Record<string, unknown>): Record<string, unknown> {
 export function create(
   input: unknown = {},
   options: Options = {},
-): css.ReturnType {
+): style.ReturnType {
   const dynamic = typeof input === 'function'
   const id =
-    options.id === undefined ? undefined : Identity.requireId(options.id, 'css')
-  if (dynamic && !id) Identity.requireId(undefined, 'Dynamic css')
+    options.id === undefined
+      ? undefined
+      : Identity.requireId(options.id, 'style')
+  if (dynamic && !id) Identity.requireId(undefined, 'Dynamic style')
   if (!dynamic && !id && Object.keys(input as object).length === 0)
-    Identity.requireId(undefined, 'Empty css')
+    Identity.requireId(undefined, 'Empty style')
 
   const className = id
     ? `z-style-${id}`
@@ -78,8 +80,8 @@ export function create(
         ).styles[0]!,
       )
   const props = Props.create({ className })
-  const apply = (values?: css.Options & Record<string, unknown>) => {
-    let result = props(values as css.Options)
+  const apply = (values?: style.Options & Record<string, unknown>) => {
+    let result = props(values as style.Options)
     if (dynamic) {
       const style: Record<string, string | number | undefined> = {
         ...result.style,
@@ -108,7 +110,7 @@ export function create(
   Object.defineProperty(apply, Symbol.toPrimitive, {
     value: () => `.${className}`,
   })
-  return apply as css.ReturnType
+  return apply as style.ReturnType
 }
 
 /** Selects finite variants and binds dynamic payloads using explicit identities. */
@@ -125,10 +127,10 @@ export function variants(
   const defaults = (input.defaultVariants ?? {}) as Record<string, unknown>
   const props = Props.create({ className })
 
-  return (values: Record<string, unknown> & css.Options = {}) => {
-    const result = { ...props(values as css.Options) } as {
+  return (values: Record<string, unknown> & style.Options = {}) => {
+    const result = { ...props(values as style.Options) } as {
       className: string
-      style?: css.Props['style']
+      style?: style.Props['style']
       [key: `data-${string}`]: string | undefined
     }
     const bindings: Record<string, string | number> = {}

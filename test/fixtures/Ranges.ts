@@ -15,5 +15,5 @@ export const styles = {
 } as const satisfies Style.LiteralProperties
 
 /** Authored ranges operate on a native view timeline. */
-export const source = `import { css } from 'zyzz';
-export const range = css({animationRangeStart:'entry 20%',animationRangeEnd:'exit 80%'})();`
+export const source = `import { style } from 'zyzz';
+export const range = style({animationRangeStart:'entry 20%',animationRangeEnd:'exit 80%'})();`

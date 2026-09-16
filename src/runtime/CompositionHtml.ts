@@ -1,12 +1,12 @@
 /** Retains canonical inputs only for HTML applications used by compiled composition. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 import * as Composition from './Composition.js'
 import * as Html from './Html.js'
 
 // A package may have distinct runtime copies in dependency optimization or SSR.
 // This versioned protocol key preserves canonical props across those module graphs.
 const input = Symbol.for('zyzz.composition.input.v1')
-type Props = css.Props & {
+type Props = style.Props & {
   readonly [name: `data-${string}`]: string | undefined
 }
 type Prepared = Html.Attributes & { readonly [input]: Props }

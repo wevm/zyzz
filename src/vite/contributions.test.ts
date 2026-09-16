@@ -21,8 +21,8 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export namespace styles {
-  export const card = css({color:theme.tokens.color.brand})
+        `import {style} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export namespace styles {
+  export const card = style({color:theme.tokens.color.brand})
 }`,
       )
       server = await Vite.createServer({
@@ -81,7 +81,7 @@ describe('zyzz', () => {
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-xd11RZ z-style-1hl3v031oo9bot-133",
+          "className": "z-text-xd11RZ z-style-1hl3v031oo9bot-135",
         }
       `)
     } finally {
@@ -97,7 +97,7 @@ describe('zyzz', () => {
     try {
       const sidecar = Graph.compile({
         modules: {
-          'index.ts': `import {css} from 'zyzz';export const unrelated=css({});`,
+          'index.ts': `import {style} from 'zyzz';export const unrelated=style({});`,
         },
       })
 
@@ -189,7 +189,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import ${JSON.stringify(Path.join(external, 'index.js'))};import('raw-effects?raw');import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
+        `import ${JSON.stringify(Path.join(external, 'index.js'))};import('raw-effects?raw');import 'wrapper';import {style} from 'zyzz';document.body.className=style({color:'red'})().className;`,
       )
 
       const result = await Vite.build({
@@ -269,7 +269,7 @@ describe('zyzz', () => {
           'import { Css } from "zyzz/web"; import "./cycle.ts"; export const compile = Css.compile',
         'cycle.ts': 'import "./utility.ts"; // zyzz/web',
         'lazy.ts':
-          'import {css} from "zyzz"; export const lazy=css({color:"blue"})()',
+          'import {style} from "zyzz"; export const lazy=style({color:"blue"})()',
         'global.ts':
           'import {global,layers} from "zyzz/web"; layers(["reset","app"]); global({body:{margin:0}})',
       }))
@@ -358,7 +358,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import {css} from 'zyzz';document.body.className=css({color:'red'})().className;globalThis.load=()=>import('./lazy.ts')`,
+        `import {style} from 'zyzz';document.body.className=style({color:'red'})().className;globalThis.load=()=>import('./lazy.ts')`,
       )
       await Fs.writeFile(
         Path.join(root, 'lazy.ts'),
@@ -366,8 +366,8 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'types.ts'),
-        `import 'effects'; import {css} from 'zyzz'; // @ts-expect-error
-css({color:123})`,
+        `import 'effects'; import {style} from 'zyzz'; // @ts-expect-error
+style({color:123})`,
       )
 
       const directRoot = Path.join(root, 'node_modules/direct-effects')

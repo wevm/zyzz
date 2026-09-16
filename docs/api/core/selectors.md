@@ -1,13 +1,13 @@
 # selectors
 
-Group scoped CSS selectors inside a `css` definition.
+Group scoped CSS selectors inside a `style` definition.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css()
-  export const label = css({
+  export const card = style()
+  export const label = style({
     color: 'gray',
     selectors: {
       '&:hover': { color: 'black' },
@@ -21,10 +21,10 @@ namespace styles {
 
 ## Keys
 
-- Type: Literal strings or template strings referencing `css` definitions.
+- Type: Literal strings or template strings referencing `style` definitions.
 - Required: An explicit `&` target in every selector-list branch.
 
-`&` identifies the styled element. Templates interpolate previously declared definitions without calling them. Empty `css()` definitions supply identity without declarations. Apply referenced definitions through their ordinary styling props.
+`&` identifies the styled element. Templates interpolate previously declared definitions without calling them. Empty `style()` definitions supply identity without declarations. Apply referenced definitions through their ordinary styling props.
 
 ## Values
 

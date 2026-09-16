@@ -25,51 +25,51 @@ describe('compile', () => {
   test('destructured config exports compile grouped styles through re-exports and packed contracts', () => {
     const output = Graph.compile({
       modules: {
-        'pkg/config.ts': `import { Config } from 'zyzz'; export const { css, theme } = Config.create({theme:{color:{brand:'#06c'},spacing:{md:'8px'}}});`,
-        'pkg/index.ts': `export { css, theme } from './config.js';`,
-        'pkg/card.ts': `import { css, theme } from './index.js'; export namespace styles {
-  export const card = css({padding:'md'})
+        'pkg/config.ts': `import { Config } from 'zyzz'; export const { style, theme } = Config.create({theme:{color:{brand:'#06c'},spacing:{md:'8px'}}});`,
+        'pkg/index.ts': `export { style, theme } from './config.js';`,
+        'pkg/card.ts': `import { style, theme } from './index.js'; export namespace styles {
+  export const card = style({padding:'md'})
 
-  export const label = css({color:theme.tokens.color.brand})
+  export const label = style({color:theme.tokens.color.brand})
 } export const props = styles.card(); export const scope = theme.className;`,
       },
     })
 
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-spacing_2e_md:8px;--z-t1g1qfxjzbnv3-css-color_2e_brand:#06c;}
-      .z-p-dDAp2M{padding:var(--z-t1g1qfxjzbnv3-css-spacing_2e_md,8px);}
-      .z-text-7u49mv{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,#06c);}"
+      ".z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-spacing_2e_md:8px;--z-t1g1qfxjzbnv3-style-color_2e_brand:#06c;}
+      .z-p-Da8vPq{padding:var(--z-t1g1qfxjzbnv3-style-spacing_2e_md,8px);}
+      .z-text-7YXMOR{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,#06c);}"
     `)
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { css, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-p-dDAp2M z-style-5ngs574r5xr9-89"})
+      import { style, theme } from './index.js'; export namespace styles {
+        export const card = __zyzzProps.create({className:"z-p-Da8vPq z-style-5ngs574r5xr9-91"})
 
-        export const label = __zyzzProps.create({className:"z-text-7u49mv z-style-5ngs574r5xr9-133"})
-      } export const props = styles.card(); export const scope = "z_theme-1g1qfxjzbnv3-css-theme";"
+        export const label = __zyzzProps.create({className:"z-text-7YXMOR z-style-5ngs574r5xr9-137"})
+      } export const props = styles.card(); export const scope = "z_theme-1g1qfxjzbnv3-style-theme";"
     `)
 
     const packed = Graph.compile({
       contracts: { 'library/index.js': output.contracts['pkg/index.ts']! },
       modules: {
-        'app/card.ts': `import { css, theme } from 'library'; export namespace styles {
-  export const card = css({color:'brand'})
+        'app/card.ts': `import { style, theme } from 'library'; export namespace styles {
+  export const card = style({color:'brand'})
 } export const scope = theme.className;`,
       },
       imports: { 'app/card.ts': { library: 'library/index.js' } },
     })
 
     expect(packed.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:#06c;--z-t1g1qfxjzbnv3-css-spacing_2e_md:8px;}
-      .z-text--RZ4x5{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,#06c);}"
+      ".z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:#06c;--z-t1g1qfxjzbnv3-style-spacing_2e_md:8px;}
+      .z-text-kekf5L{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,#06c);}"
     `)
   })
 
   test('renamed destructured config bindings retain token inference during compilation', () => {
     const output = Graph.compile({
       modules: {
-        'app/card.ts': `import { Config } from 'zyzz'; const { css: styled, theme: palette } = Config.create({theme:{color:{brand:'#06c'}}}); export namespace styles {
+        'app/card.ts': `import { Config } from 'zyzz'; const { style: styled, theme: palette } = Config.create({theme:{color:{brand:'#06c'}}}); export namespace styles {
   export const card = styled({color:palette.tokens.color.brand})
 }`,
       },
@@ -90,8 +90,8 @@ const instance = zyzz;
 const theme = instance.theme, alias = theme;
 const mint = Theme.extend(alias,{color:{brand:'#175'}});
 const other = Config.create({theme:alias});
-export const original = zyzz.css({color:'brand'})();
-export const props = other.css({color:'brand'})();
+export const original = zyzz.style({color:'brand'})();
+export const props = other.style({color:'brand'})();
 export const scope = mint.className;`,
       },
     })
@@ -101,7 +101,7 @@ export const scope = mint.className;`,
       .z_theme-1g1qfxjzbnv3-mint{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#175;}
       .z_theme-1g1qfxjzbnv3-other-theme{--z-t1g1qfxjzbnv3-other-color_2e_brand:#06c;}
       .z-text-NoBexA-0{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand,#06c);}
-      .z-text-gTmHTP-0{color:var(--z-t1g1qfxjzbnv3-other-color_2e_brand,#06c);}"
+      .z-text-t6eO5h-0{color:var(--z-t1g1qfxjzbnv3-other-color_2e_brand,#06c);}"
     `)
     expect(
       output.modules['pkg/config.ts']!.code.includes('Config.create('),
@@ -111,7 +111,7 @@ export const scope = mint.className;`,
   test('numeric configuration keys retain tokens and reject string-equivalent duplicates', () => {
     const output = Graph.compile({
       modules: {
-        'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{color:{brand:{500:'#06c'}},spacing:{2:'8px'}}}); export const props = zyzz.css({color:'brand.500',padding:zyzz.theme.tokens.spacing[2]})();`,
+        'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{color:{brand:{500:'#06c'}},spacing:{2:'8px'}}}); export const props = zyzz.style({color:'brand.500',padding:zyzz.theme.tokens.spacing[2]})();`,
       },
     })
 
@@ -134,7 +134,7 @@ export const scope = mint.className;`,
   test('dotted catalog keys retain member boundaries in source and packed libraries', () => {
     const library = Graph.compile({
       modules: {
-        'pkg/config.js': `import { Config } from 'zyzz'; export const zyzz = Config.create({defaultTheme:'brand.dark',themes:{'brand.dark':{color:{brand:'#06c'}}}}); export const props = zyzz.css({color:'brand'})(); export const scope = zyzz.themes['brand.dark'].className;`,
+        'pkg/config.js': `import { Config } from 'zyzz'; export const zyzz = Config.create({defaultTheme:'brand.dark',themes:{'brand.dark':{color:{brand:'#06c'}}}}); export const props = zyzz.style({color:'brand'})(); export const scope = zyzz.themes['brand.dark'].className;`,
       },
     })
 
@@ -150,7 +150,7 @@ export const scope = mint.className;`,
       contracts: { 'library/index.js': library.contracts['pkg/config.js']! },
       imports: { 'app/card.js': { '@acme/theme': 'library/index.js' } },
       modules: {
-        'app/card.js': `import { zyzz } from '@acme/theme'; export const props = zyzz.css({color:zyzz.themes['brand.dark'].tokens.color.brand})(); export const scope = zyzz.themes['brand.dark'].className;`,
+        'app/card.js': `import { zyzz } from '@acme/theme'; export const props = zyzz.style({color:zyzz.themes['brand.dark'].tokens.color.brand})(); export const scope = zyzz.themes['brand.dark'].className;`,
       },
     }
 
@@ -170,8 +170,8 @@ export const scope = mint.className;`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: app/card.js:73: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.
-      app/card.js:141: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.]
+      [Source.ExtractError: app/card.js:75: Use direct configuration style calls or static theme members; configurations cannot escape or be mutated.
+      app/card.js:143: Use direct configuration style calls or static theme members; configurations cannot escape or be mutated.]
     `)
   })
 
@@ -196,7 +196,7 @@ export const scope = mint.className;`,
     `,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = (zyzz as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); export const props = ({className:"z-text-ZwwVzx z-p-S0bkzn"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
+      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { style } = (zyzz as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); export const props = ({className:"z-text-ZwwVzx z-p-S0bkzn"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
     )
 
     const updated = compiler.compile({
@@ -228,7 +228,7 @@ export const scope = mint.className;`,
       contracts: { 'library/index.js': output.contracts['pkg/index.ts']! },
       imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
       modules: {
-        'app/card.ts': `import { design as zyzz } from '@acme/theme'; export const props = zyzz.css({color:'brand',padding:'md'})(); export const scope = zyzz.themes.mint.className;`,
+        'app/card.ts': `import { design as zyzz } from '@acme/theme'; export const props = zyzz.style({color:'brand',padding:'md'})(); export const scope = zyzz.themes.mint.className;`,
       },
     })
 
@@ -247,7 +247,7 @@ export const scope = mint.className;`,
   test('single and token-free configuration calls compile without runtime factories', () => {
     const output = Graph.compile({
       modules: {
-        'pkg/config.ts': `import { Config, Theme } from 'zyzz'; export const empty = Config.create(); const base = Theme.define({color:{brand:'#06c'}}); export const zyzz = Config.create({theme:base}); const theme = zyzz.theme; export const mint = Theme.extend(zyzz.theme,{color:{brand:'#175'}}); export const props = zyzz.css({color:theme.tokens.color.brand})(); export const plain = empty.css({padding:'8px'})();`,
+        'pkg/config.ts': `import { Config, Theme } from 'zyzz'; export const empty = Config.create(); const base = Theme.define({color:{brand:'#06c'}}); export const zyzz = Config.create({theme:base}); const theme = zyzz.theme; export const mint = Theme.extend(zyzz.theme,{color:{brand:'#175'}}); export const props = zyzz.style({color:theme.tokens.color.brand})(); export const plain = empty.style({padding:'8px'})();`,
       },
     })
 
@@ -272,7 +272,7 @@ export const scope = mint.className;`,
   test('destructured appearance controls compile with the configured storage key', () => {
     const output = Graph.compile({
       modules: {
-        'pkg/config.ts': `import { Config } from 'zyzz'; export const { appearance, css } = Config.create({ defaultTheme: 'base', storageKey: 'app', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const initial = appearance.get(); export const controls = appearance;`,
+        'pkg/config.ts': `import { Config } from 'zyzz'; export const { appearance, style } = Config.create({ defaultTheme: 'base', storageKey: 'app', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const initial = appearance.get(); export const controls = appearance;`,
         'pkg/single.ts': `import { Config } from 'zyzz'; export const zyzz = Config.create({ theme: { color: { ink: '#123456' } } }); export const select = () => zyzz.appearance.set({ colorScheme: 'dark' });`,
       },
     })
@@ -315,7 +315,7 @@ export const scope = mint.className;`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: pkg/config.ts:73: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.]`,
+      `[Source.ExtractError: pkg/config.ts:73: Use direct configuration style calls or static theme members; configurations cannot escape or be mutated.]`,
     )
     expect(() =>
       Graph.compile({
@@ -324,7 +324,7 @@ export const scope = mint.className;`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: pkg/config.ts:133: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.]`,
+      `[Source.ExtractError: pkg/config.ts:133: Use direct configuration style calls or static theme members; configurations cannot escape or be mutated.]`,
     )
     expect(() =>
       Graph.compile({
@@ -340,7 +340,7 @@ export const scope = mint.className;`,
   test('serialized library contracts link aliases, extensions, and consumer scopes', () => {
     const library = Graph.compile({
       modules: {
-        'library/theme.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'},spacing:{md:'8px'}}); export const mint = Theme.extend(theme,{color:{brand:'#175'}}); export const css = theme.css;`,
+        'library/theme.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'},spacing:{md:'8px'}}); export const mint = Theme.extend(theme,{color:{brand:'#175'}}); export const style = theme.style;`,
         'library/index.ts': `export * from './theme.js';`,
       },
     })
@@ -353,7 +353,7 @@ export const scope = mint.className;`,
         'app/card.ts': { '@acme/theme': 'library/index.js', zyzz: null },
       },
       modules: {
-        'app/card.ts': `import { css, theme, mint } from '@acme/theme'; import { Theme } from 'zyzz'; export const local = Theme.extend(theme,{color:{brand:'#f00'}}); export const props = css({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;`,
+        'app/card.ts': `import { mint, style, theme } from '@acme/theme'; import { Theme } from 'zyzz'; export const local = Theme.extend(theme,{color:{brand:'#f00'}}); export const props = style({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;`,
       },
     }
 
@@ -367,7 +367,7 @@ export const scope = mint.className;`,
       .z-p-sEtteP{padding:var(--z-t18pt0w1ocy15n-theme-spacing_2e_md,8px);}"
     `)
     expect(output.modules['app/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { css, theme, mint } from '@acme/theme';  export const local = ({className:"z_theme-ujlnau19561g8-local"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-text-E4luCn z-p-sEtteP"}); export const scope = "z_theme-18pt0w1ocy15n-mint";"`,
+      `"import { mint, style, theme } from '@acme/theme';  export const local = ({className:"z_theme-ujlnau19561g8-local"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-text-E4luCn z-p-sEtteP"}); export const scope = "z_theme-18pt0w1ocy15n-mint";"`,
     )
 
     const updated = compiler.compile({
@@ -382,7 +382,7 @@ export const scope = mint.className;`,
 
     expect(updated.modules['app/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-ujlnau19561g8-164": "z-text-E4luCn z-p-sEtteP",
+        "style-ujlnau19561g8-166": "z-text-E4luCn z-p-sEtteP",
       }
     `)
     expect(updated.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
@@ -502,12 +502,12 @@ export const scope = mint.className;`,
       modules: {
         ...modules,
         'pkg/index.ts': `export * from './theme.js'; export const theme = { css: (value: string) => value };`,
-        'pkg/card.ts': `import { theme } from './index.js'; export const value = theme.css('ordinary');`,
+        'pkg/card.ts': `import { theme } from './index.js'; export const value = theme.style('ordinary');`,
       },
     })
 
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { theme } from './index.js'; export const value = theme.css('ordinary');"`,
+      `"import { theme } from './index.js'; export const value = theme.style('ordinary');"`,
     )
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
   })
@@ -541,12 +541,12 @@ export const scope = mint.className;`,
     const output = Graph.compile({
       modules: {
         ...modules,
-        'pkg/card.ts': `import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = css({color:'brand'})();`,
+        'pkg/card.ts': `import { style } from './theme.js'; export function run(style: (value: string) => string) { return style('ordinary') } export const props = style({color:'brand'})();`,
       },
     })
 
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = ({className:"z-text-M9AX2F"});"`,
+      `"import { style } from './theme.js'; export function run(style: (value: string) => string) { return style('ordinary') } export const props = ({className:"z-text-M9AX2F"});"`,
     )
   })
 
@@ -771,7 +771,7 @@ export const scope = mint.className;`,
         const id = `pkg/theme${suffix}.${extension}`
         const output = Graph.compile({
           modules: {
-            'pkg/card.ts': `import { theme } from './theme'; export const props = theme.css({color:'brand'})();`,
+            'pkg/card.ts': `import { theme } from './theme'; export const props = theme.style({color:'brand'})();`,
             [id]: modules['pkg/theme.ts'],
           },
         })
@@ -982,7 +982,7 @@ describe('create', () => {
       [
         "import { theme, style, mint } from './index.js'; export const props = style({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;",
         "
-      import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#f00'},spacing:{md:'8px',unused:'99px'}}); export const css = theme.css;",
+      import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#f00'},spacing:{md:'8px',unused:'99px'}}); export const style = theme.style;",
         "import { Theme } from 'zyzz'; import { theme } from './theme.js'; export const mint = Theme.extend(theme, {color:{brand:'#175'}});",
       ]
     `)
@@ -992,7 +992,7 @@ describe('create', () => {
     const compiler = Graph.create()
     const sources = {
       ...modules,
-      'pkg/card.ts': `import { css } from './theme.js'; export const props = css({color:'brand'})();`,
+      'pkg/card.ts': `import { style } from './theme.js'; export const props = style({color:'brand'})();`,
     }
     const before = compiler.compile({ modules: sources })
 
@@ -1028,7 +1028,7 @@ describe('create', () => {
       'pkg/a.ts': `export const value = 1;`,
       'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
       'pkg/c.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
-      'pkg/styles.ts': `import { theme } from './b.js'; export const props = theme.css({color:'brand'})();`,
+      'pkg/styles.ts': `import { theme } from './b.js'; export const props = theme.style({color:'brand'})();`,
     }
 
     const before = compiler.compile({ modules: sources })
@@ -1059,7 +1059,7 @@ describe('create', () => {
 
     const sources = {
       ...modules,
-      'pkg/card.ts': `import { mint } from './alternate.js'; export const props = mint.css({color:'brand'})();`,
+      'pkg/card.ts': `import { mint } from './alternate.js'; export const props = mint.style({color:'brand'})();`,
     }
 
     compiler.compile({ modules: sources })
@@ -1121,7 +1121,7 @@ describe('create', () => {
     const compiler = Graph.create()
     const sources = {
       ...modules,
-      'pkg/card.ts': `import { css } from './theme'; export const props = css({color:'brand'})();`,
+      'pkg/card.ts': `import { style } from './theme'; export const props = style({color:'brand'})();`,
     }
     const before = compiler.compile({ modules: sources })
 
@@ -1230,7 +1230,7 @@ describe('create', () => {
     const modules = {
       'pkg/a.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
       'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
-      'pkg/card.ts': `import { theme } from '@theme'; export const props = theme.css({color:'brand'})();`,
+      'pkg/card.ts': `import { theme } from '@theme'; export const props = theme.style({color:'brand'})();`,
     }
 
     const imports = {
@@ -1311,8 +1311,8 @@ describe('output', () => {
 
             for (const consumer of ['atomic', 'grouped'] as const) {
               const source = `import {Config,cx} from 'zyzz';import {controls,style} from '@acme/variants';
-const {css}=Config.create({cssOutput:'${consumer}'});
-const override=css({paddingLeft:'5px'});
+const {style:configured}=Config.create({cssOutput:'${consumer}'});
+const override=configured({paddingLeft:'5px'});
 export const authored=style({color:'red',padding:'6px'});
 export function sample(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),override())}`
               const input = {
@@ -1467,7 +1467,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(legacy.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
+        `".z_theme-13yvj2m4fsr2i-style-theme{--z-t13yvj2m4fsr2i-style-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
       )
 
       const conflicting = metadata.replaceAll(
@@ -1512,7 +1512,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         `"import {controls} from './barrel.js';export const props=controls.button();"`,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
+        `".z_theme-13yvj2m4fsr2i-style-theme{--z-t13yvj2m4fsr2i-style-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
       )
     })
 
@@ -1520,7 +1520,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       const first = Graph.compile({
         modules: {
           'first.ts':
-            "import {Config} from 'zyzz'; const {css}=Config.create({cssOutput:'grouped'}); export const base=css({color:'red',padding:'8px'})",
+            "import {Config} from 'zyzz'; const {style}=Config.create({cssOutput:'grouped'}); export const base=style({color:'red',padding:'8px'})",
         },
       })
       const packed = JSON.parse(first.contracts['first.ts']!)
@@ -1545,22 +1545,22 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
         modules: {
           'a.ts':
-            "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:0.5}); export const props=cx(base(),local())",
+            "import {cx,style} from 'zyzz'; import {base} from './second.js'; const local=style({opacity:0.5}); export const props=cx(base(),local())",
           'b.ts':
-            "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:1}); export const props=cx(base(),local())",
+            "import {cx,style} from 'zyzz'; import {base} from './second.js'; const local=style({opacity:1}); export const props=cx(base(),local())",
         },
       })
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-1mlrxl41f5va70-css{}
-        .z-opacity-dMx3Di-0{opacity:0.5;}
-        .z-style-KC5vhx-0{color:red;padding:8px;}
-        .z-opacity-SP6hSE-1{opacity:0.5;}"
+        ".z_theme-1mlrxl41f5va70-style{}
+        .z-opacity-JtsrxR-0{opacity:0.5;}
+        .z-style-hqKJ6I-0{color:red;padding:8px;}
+        .z-opacity-qd65pw-1{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-1mlrxl41f5va70-css{}
-        .z-opacity-1-uwnrRp-0{opacity:1;}
-        .z-style-Aj6ebY-0{color:red;padding:8px;}
-        .z-opacity-1-SxroK2-1{opacity:1;}"
+        ".z_theme-1mlrxl41f5va70-style{}
+        .z-opacity-1-jODrRV-0{opacity:1;}
+        .z-style-6E-0SO-0{color:red;padding:8px;}
+        .z-opacity-1-VDMo92-1{opacity:1;}"
       `)
     })
 
@@ -1568,7 +1568,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       const output = Graph.compile({
         modules: {
           'config.ts':
-            "import {Config} from 'zyzz'; export const config=Config.create({cssOutput:'grouped'}); export const css=config.css; export const card=css({color:'red',padding:'8px'})",
+            "import {Config} from 'zyzz'; export const config=Config.create({cssOutput:'grouped'}); export const style=config.style; export const card=style({color:'red',padding:'8px'})",
         },
       })
       const packed = JSON.parse(output.contracts['config.ts']!)
@@ -1581,19 +1581,21 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       const barrel = Graph.compile({
         contracts: { 'config.js': JSON.stringify(packed) },
         imports: { 'barrel.ts': { './config.js': 'config.js' } },
-        modules: { 'barrel.ts': "export {config,css,card} from './config.js'" },
+        modules: {
+          'barrel.ts': "export {card,config,style} from './config.js'",
+        },
       })
       const consumer = Graph.compile({
         contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
         imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
         modules: {
           'app.ts':
-            "import {css} from './barrel.js'; export const card=css({color:'blue',padding:'2px'})",
+            "import {style} from './barrel.js'; export const card=style({color:'blue',padding:'2px'})",
         },
       })
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z_theme-u8smm21l81sow-config{}
-        .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
+        .g-style-1e8a67z1uaws1j-53{color:blue;padding:2px;}"
       `)
     })
 
@@ -1601,7 +1603,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       const result = Graph.compile({
         cssOutput: 'grouped',
         modules: {
-          'lib.ts': `import {css} from 'zyzz';export const card=css({color:'red',padding:'8px'})`,
+          'lib.ts': `import {style} from 'zyzz';export const card=style({color:'red',padding:'8px'})`,
         },
       })
       const contract = JSON.parse(result.contracts['lib.ts']!)
@@ -1878,8 +1880,8 @@ describe('stylesheets', () => {
         contracts: { 'lib/index.js': library.contracts['effects.ts']! },
         imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
         modules: {
-          'app.ts': `import fade from 'lib';import {css} from 'zyzz';export namespace styles {
-  export const card = css({animationName:fade})
+          'app.ts': `import fade from 'lib';import {style} from 'zyzz';export namespace styles {
+  export const card = style({animationName:fade})
 }`,
         },
       })
@@ -1986,8 +1988,8 @@ describe('stylesheets', () => {
         contracts: { 'lib.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
         modules: {
-          'app.ts': `import {enter} from 'lib';import {css} from 'zyzz';export namespace styles {
-  export const card = css({animationName:enter})
+          'app.ts': `import {enter} from 'lib';import {style} from 'zyzz';export namespace styles {
+  export const card = style({animationName:enter})
 }`,
         },
       })
@@ -2021,8 +2023,8 @@ describe('stylesheets', () => {
           'app/main.ts': { lib: 'app/node_modules/lib/index.js', zyzz: null },
         },
         modules: {
-          'app/main.ts': `import {fade as enter} from 'lib';import {css} from 'zyzz';const alias=enter;export namespace styles {
-  export const card = css({animationName:alias})
+          'app/main.ts': `import {fade as enter} from 'lib';import {style} from 'zyzz';const alias=enter;export namespace styles {
+  export const card = style({animationName:alias})
 }`,
         },
       })
@@ -2396,34 +2398,34 @@ describe('variables', () => {
     test('resolves computed literal static keys with authored override order', () => {
       const result = Graph.compile({
         modules: {
-          'app.ts': `import {css} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export namespace styles {
-  export const a = css({width:first.width})
+          'app.ts': `import {style} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export namespace styles {
+  export const a = style({width:first.width})
 
-  export const b = css({width:second.width})
+  export const b = style({width:second.width})
 
-  export const c = css({width:third.width})
+  export const c = style({width:third.width})
 }`,
         },
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-w-10px-6UhzUp-0{width:10px;}
-      .z-w-30px-kokWF9-0{width:30px;}
-      .z-w-40px-XDXskV-0{width:40px;}"
-    `)
+        ".z-w-10px-_Z2Zm9-0{width:10px;}
+        .z-w-30px-HfgmE9-0{width:30px;}
+        .z-w-40px-2Xrlpp-0{width:40px;}"
+      `)
     })
 
     test('rejects indexed folding across array spreads', () => {
       expect(() =>
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export namespace styles {
-  export const card = css({width:sizes[2]})
+            'app.ts': `import {style} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export namespace styles {
+  export const card = style({width:sizes[2]})
 }`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:149: Static array indexes cannot cross spread elements.]`,
+        `[Source.ExtractError: app.ts:153: Static array indexes cannot cross spread elements.]`,
       )
     })
 
@@ -2447,19 +2449,19 @@ describe('variables', () => {
       expect(() =>
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';const base={width:'10px',[key]:'20px'};export namespace styles {
-  export const card = css({width:base.width})
+            'app.ts': `import {style} from 'zyzz';const base={width:'10px',[key]:'20px'};export namespace styles {
+  export const card = style({width:base.width})
 }`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:123: Static member reads cannot cross unresolved computed keys.]`,
+        `[Source.ExtractError: app.ts:127: Static member reads cannot cross unresolved computed keys.]`,
       )
     })
 
     test('normalizes wrapped compound static values and rejects loop mutation', () => {
       const source =
-        "import {css} from 'zyzz';const size=10;export namespace styles {\n  export const card = css({width:(`${size}px` as const)})\n}"
+        "import {style} from 'zyzz';const size=10;export namespace styles {\n  export const card = style({width:(`${size}px` as const)})\n}"
 
       expect(
         Graph.compile({ modules: { 'app.ts': source } }).modules['app.ts']!.css,
@@ -2472,7 +2474,7 @@ describe('variables', () => {
         try {
           Graph.compile({
             modules: {
-              'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${loop}export namespace styles {export const card=css(base);}`,
+              'app.ts': `import {style} from 'zyzz';const base={width:'10px'};${loop}export namespace styles {export const card=style(base);}`,
             },
           })
 
@@ -2484,27 +2486,27 @@ describe('variables', () => {
       })
 
       expect(errors).toMatchInlineSnapshot(`
-      [
         [
-          {
-            "code": "unsupported_syntax",
-            "end": 80,
-            "message": "Static data cannot be mutated or escape through unsupported expressions.",
-            "source": "app.ts",
-            "start": 51,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 86,
-            "message": "Static data cannot be mutated or escape through unsupported expressions.",
-            "source": "app.ts",
-            "start": 51,
-          },
-        ],
-      ]
-    `)
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 82,
+              "message": "Static data cannot be mutated or escape through unsupported expressions.",
+              "source": "app.ts",
+              "start": 53,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 88,
+              "message": "Static data cannot be mutated or escape through unsupported expressions.",
+              "source": "app.ts",
+              "start": 53,
+            },
+          ],
+        ]
+      `)
     })
 
     test('attributes invalid registration CSS to its descriptor', () => {
@@ -2535,19 +2537,19 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('compiles overlapping dynamic fields and default exported static records', () => {
       const result = Graph.compile({
         modules: {
-          'app.ts': `import {css} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export namespace styles {
-  export const card = css(base)
+          'app.ts': `import {style} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export namespace styles {
+  export const card = style(base)
 
-  export const dynamic = css((v:Values)=>({width:v.width,zIndex:v.zIndex}))
+  export const dynamic = style((v:Values)=>({width:v.width,zIndex:v.zIndex}))
 }`,
         },
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-red-Jgxd-Q{color:red;}
-      .z-w-QMMGP7{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);}
-      .z-z-index-3XQcmb{z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
-    `)
+        ".z-text-red-Jgxd-Q{color:red;}
+        .z-w-x2ilKd{width:var(--z-d1e8a67z1uaws1j-225-77-69-64-74-68);}
+        .z-z-index-ROqnX4{z-index:var(--z-d1e8a67z1uaws1j-225-7a-49-6e-64-65-78);}"
+      `)
     })
 
     test('shares defining variable identities across package entrypoint sidecars', () => {
@@ -2567,8 +2569,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
           'app.ts': { a: 'pkg/vars.js', b: 'pkg/index.js', zyzz: null },
         },
         modules: {
-          'app.ts': `import {vars as a} from 'a';import {vars as b} from 'b';import {css} from 'zyzz';export namespace styles {
-  export const card = css({width:a.gap,padding:b.gap})
+          'app.ts': `import {vars as a} from 'a';import {vars as b} from 'b';import {style} from 'zyzz';export namespace styles {
+  export const card = style({width:a.gap,padding:b.gap})
 }`,
         },
       })
@@ -2583,8 +2585,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('allows scalar copies and asserted static token bindings', () => {
       const result = Graph.compile({
         modules: {
-          'app.ts': `import {Config} from 'zyzz';const {theme,css}=Config.create({theme:{color:{ink:'#123'}}});const dimensions={width:'10px',nested:{width:'20px'}};const width=dimensions.width;consume(width);consume(dimensions.width);const color=(theme.tokens.color.ink as string);export namespace styles {
-  export const card = css({width:dimensions.width,color})
+          'app.ts': `import {Config} from 'zyzz';const {theme,style}=Config.create({theme:{color:{ink:'#123'}}});const dimensions={width:'10px',nested:{width:'20px'}};const width=dimensions.width;consume(width);consume(dimensions.width);const color=(theme.tokens.color.ink as string);export namespace styles {
+  export const card = style({width:dimensions.width,color})
 }`,
         },
       })
@@ -2606,8 +2608,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
         contracts: { 'lib.js': library.contracts['vars.ts']! },
         imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
         modules: {
-          'app.ts': `import vars from 'lib';import {css} from 'zyzz';export namespace styles {
-  export const card = css({width:vars.gap})
+          'app.ts': `import vars from 'lib';import {style} from 'zyzz';export namespace styles {
+  export const card = style({width:vars.gap})
 }`,
         },
       })
@@ -2620,11 +2622,11 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       expect(() =>
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};function get(){return base};get().width='20px';css(base);`,
+            'app.ts': `import {style} from 'zyzz';const base={width:'10px'};function get(){return base};get().width='20px';style(base);`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.]`,
+        `[Source.ExtractError: app.ts:53: Static data cannot be mutated or escape through unsupported expressions.]`,
       )
     })
 
@@ -2642,10 +2644,10 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
         contracts: { 'lib/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export namespace styles {
-  export const registered = css({...base,width:layout.amount})
+          'app.ts': `import {style} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export namespace styles {
+  export const registered = style({...base,width:layout.amount})
 
-  export const dynamic = css((values:Values)=>({...base,width:values.width}))
+  export const dynamic = style((values:Values)=>({...base,width:values.width}))
 }`,
         },
       })
@@ -2729,7 +2731,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('renders statically expanded theme records in a browser', async () => {
       const result = Graph.compile({
         modules: {
-          'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);export const scope=theme.className;`,
+          'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.style(base);export const scope=theme.className;`,
         },
       })
 
@@ -2779,7 +2781,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('expands immutable theme references and rejects hidden mutations and duplicate packed slots', async () => {
       const result = Graph.compile({
         modules: {
-          'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);`,
+          'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.style(base);`,
         },
       })
 
@@ -2808,11 +2810,11 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       expect(() =>
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const [alias]=[base];alias.width='20px';export const style=css(base);`,
+            'app.ts': `import {style} from 'zyzz';const base={width:'10px'};const [alias]=[base];alias.width='20px';export const card=style(base);`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:57: Static data cannot be mutated or escape to runtime calls.]`,
+        `[Source.ExtractError: app.ts:59: Static data cannot be mutated or escape to runtime calls.]`,
       )
 
       const library = Graph.compile({ modules: { 'vars.ts': librarySource } })
@@ -2826,7 +2828,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
           contracts: { 'lib.js': JSON.stringify(data) },
           imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
           modules: {
-            'app.ts': `import {css} from 'zyzz';import {vars} from 'lib';export const style=css({width:vars.gap});`,
+            'app.ts': `import {style} from 'zyzz';import {vars} from 'lib';export const card=style({width:vars.gap});`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
@@ -2836,7 +2838,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('merges finite interface declarations and rejects unsafe static records', () => {
       const graph = Graph.compile({
         modules: {
-          'app.ts': `import {css} from 'zyzz';interface Values {width:'10px'|'20px'} interface Values {opacity:0|1} export const style=css((values:Values)=>({width:values.width,opacity:values.opacity}));`,
+          'app.ts': `import {style} from 'zyzz';interface Values {width:'10px'|'20px'} interface Values {opacity:0|1} export const card=style((values:Values)=>({width:values.width,opacity:values.opacity}));`,
         },
       })
 
@@ -2845,16 +2847,16 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       ).toMatchInlineSnapshot('true')
 
       const errors = [
-        `const base={width:'10px'};let alias=base;alias.width='20px';css(base)`,
-        `const base={__proto__:'red'};css({color:base.__proto__})`,
-        `const vars=({__proto__:variable('length')});css({width:vars.__proto__})`,
-        `const base={width:'10px'};const alias=flag?base:{};alias.width='20px';css(base)`,
-        `const base={width:'10px'};const holder={safe:base,unsafe:flag?base:{}};holder.unsafe.width='20px';css(base)`,
+        `const base={width:'10px'};let alias=base;alias.width='20px';style(base)`,
+        `const base={__proto__:'red'};style({color:base.__proto__})`,
+        `const vars=({__proto__:variable('length')});style({width:vars.__proto__})`,
+        `const base={width:'10px'};const alias=flag?base:{};alias.width='20px';style(base)`,
+        `const base={width:'10px'};const holder={safe:base,unsafe:flag?base:{}};holder.unsafe.width='20px';style(base)`,
       ].map((source) => {
         try {
           Graph.compile({
             modules: {
-              'app.ts': `import {css,variable} from 'zyzz';${source}`,
+              'app.ts': `import {style,variable} from 'zyzz';${source}`,
             },
           })
 
@@ -2865,14 +2867,14 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(errors).toMatchInlineSnapshot(`
-      [
-        [Source.ExtractError: app.ts:64: Static data cannot be mutated or escape to runtime calls.],
-        [Source.ExtractError: app.ts:46: Static object prototypes are unsupported.],
-        "accepted",
-        [Source.ExtractError: app.ts:72: Static data cannot be mutated or escape through unsupported expressions.],
-        [Source.ExtractError: app.ts:91: Static data cannot be mutated or escape through unsupported expressions.],
-      ]
-    `)
+        [
+          [Source.ExtractError: app.ts:66: Static data cannot be mutated or escape to runtime calls.],
+          [Source.ExtractError: app.ts:48: Static object prototypes are unsupported.],
+          "accepted",
+          [Source.ExtractError: app.ts:74: Static data cannot be mutated or escape through unsupported expressions.],
+          [Source.ExtractError: app.ts:93: Static data cannot be mutated or escape through unsupported expressions.],
+        ]
+      `)
     })
 
     test('links registered variable references and assignments through packed aliases', async () => {
@@ -2912,32 +2914,32 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       ]
     `)
       expect(css).toMatchInlineSnapshot(`
-      "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
-      @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px-Jgxd-Q{height:20px;}
-      .z-p-0YuuzC{padding:var(--z-v4t4nbe1og4cic-121);}
-      .z-w-EkDXM7-2{width:var(--z-v4t4nbe1og4cic-57);}
-      .z-w-TnAcuP-0{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
-    `)
+        "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
+        @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px-Jgxd-Q{height:20px;}
+        .z-p-0YuuzC{padding:var(--z-v4t4nbe1og4cic-121);}
+        .z-w-Dt1VTw-2{width:var(--z-v4t4nbe1og4cic-57);}
+        .z-w-VPbBSM-0{width:var(--z-d1e8a67z1uaws1j-297-77-69-64-74-68);}"
+      `)
     })
     test('expands immutable members and shorthand while retaining dynamic intersections', () => {
       const graph = Graph.compile({
         modules: {
-          'static.ts': `import {css, variable} from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=({n:variable('number', {inherits:false,initialValue:-1})});export namespace styles {
-  export const card = css({...base,padding:'8px'})
+          'static.ts': `import { style, variable } from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=({n:variable('number', {inherits:false,initialValue:-1})});export namespace styles {
+  export const card = style({...base,padding:'8px'})
 
-  export const dynamic = css((values:Values)=>({width:values.width,opacity:values.opacity}))
+  export const dynamic = style((values:Values)=>({width:values.width,opacity:values.opacity}))
 }`,
         },
       })
 
       expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
-      ".z-w-12px-s0xMob-0{width:12px;}
-      .z-p-8px-BMtYBI{padding:8px;}
-      .z-w-QxgYGF-0{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}
-      .z-opacity-FWGSwK{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}"
-    `)
+        ".z-w-12px-SQoKgr-0{width:12px;}
+        .z-p-8px-BMtYBI{padding:8px;}
+        .z-w-lZdSoA-0{width:var(--z-d15wl7di1emu9we-417-77-69-64-74-68);}
+        .z-opacity-ZXgQg3{opacity:var(--z-d15wl7di1emu9we-417-6f-70-61-63-69-74-79);}"
+      `)
       expect(graph.sharedCss).toMatchInlineSnapshot(
-        `"@property --z-v15wl7di1emu9we-253{syntax:"<number>";inherits:false;initial-value:-1;}"`,
+        `"@property --z-v15wl7di1emu9we-257{syntax:"<number>";inherits:false;initial-value:-1;}"`,
       )
       expect(
         graph.modules['static.ts']!.code.includes('values:Values'),
@@ -2946,7 +2948,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('keeps module type aliases when unrelated nested declarations shadow their names', () => {
       const output = Graph.compile({
         modules: {
-          'app.ts': `import {css, variable} from 'zyzz';type Values={width:'10px'};function unrelated(){type Values={width:unknown}}export const vars=({gap:variable('length', {inherits:true,initialValue:'4px',syntax:undefined})});export const style=css((values:Values)=>({width:values.width}));`,
+          'app.ts': `import { style, variable } from 'zyzz';type Values={width:'10px'};function unrelated(){type Values={width:unknown}}export const vars=({gap:variable('length', {inherits:true,initialValue:'4px',syntax:undefined})});export const card=style((values:Values)=>({width:values.width}));`,
         },
       })
 
@@ -2961,22 +2963,22 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       expect(() =>
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const holder={nested:{base}};holder.nested.base.width='20px';export const style=css(base);`,
+            'app.ts': `import {style} from 'zyzz';const base={width:'10px'};const holder={nested:{base}};holder.nested.base.width='20px';export const card=style(base);`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:80: Static data cannot be mutated or escape through unsupported expressions.]`,
+        `[Source.ExtractError: app.ts:82: Static data cannot be mutated or escape through unsupported expressions.]`,
       )
     })
     test('does not resolve a shadowed type alias using the outer declaration', () => {
       expect(() =>
         Graph.compile({
           modules: {
-            'shadow.ts': `import {css} from 'zyzz';type Values={width:'10px'};function render(){type Values={width:unknown};return css((values:Values)=>({width:values.width}))}`,
+            'shadow.ts': `import {style} from 'zyzz';type Values={width:'10px'};function render(){type Values={width:unknown};return style((values:Values)=>({width:values.width}))}`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: shadow.ts:83: Dynamic values require explicit string or number scalar types.]`,
+        `[Source.ExtractError: shadow.ts:85: Dynamic values require explicit string or number scalar types.]`,
       )
     })
     test('rejects mutated and escaping static records through aliases', () => {
@@ -2991,7 +2993,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
           try {
             Graph.compile({
               modules: {
-                'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${mutation}export const card=css(base);`,
+                'app.ts': `import {style} from 'zyzz';const base={width:'10px'};${mutation}export const card=style(base);`,
               },
             })
 
@@ -3001,12 +3003,12 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
           }
         }),
       ).toMatchInlineSnapshot(`
-      [
-        [Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.],
-        [Source.ExtractError: app.ts:68: Static data cannot be mutated or escape through unsupported expressions.],
-        [Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.],
-      ]
-    `)
+        [
+          [Source.ExtractError: app.ts:53: Static data cannot be mutated or escape through unsupported expressions.],
+          [Source.ExtractError: app.ts:70: Static data cannot be mutated or escape through unsupported expressions.],
+          [Source.ExtractError: app.ts:53: Static data cannot be mutated or escape through unsupported expressions.],
+        ]
+      `)
     })
     test('rejects loop writes and noncanonical array member keys', () => {
       const errors = [
@@ -3016,7 +3018,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
         try {
           Graph.compile({
             modules: {
-              'app.js': `import {css} from 'zyzz';const base={width:'10px'};${write}export const card=css(base)`,
+              'app.js': `import {style} from 'zyzz';const base={width:'10px'};${write}export const card=style(base)`,
             },
           })
 
@@ -3027,19 +3029,19 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(errors).toMatchInlineSnapshot(`
-      [
-        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
-        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
-      ]
-    `)
+        [
+          [Source.ExtractError: app.js:53: Static data cannot be mutated or escape through unsupported expressions.],
+          [Source.ExtractError: app.js:53: Static data cannot be mutated or escape through unsupported expressions.],
+        ]
+      `)
       expect(() =>
         Graph.compile({
           modules: {
-            'app.js': `import {css} from 'zyzz';const sizes=['10px','20px'];export const card=css({width:sizes['01']})`,
+            'app.js': `import {style} from 'zyzz';const sizes=['10px','20px'];export const card=style({width:sizes['01']})`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.js:82: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: app.js:86: Expected a literal string or number; expressions are not evaluated.]`,
       )
     })
     test('does not publish values through type-only variable exports', () => {

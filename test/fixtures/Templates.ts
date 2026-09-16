@@ -2,8 +2,8 @@
 
 /** Source with cooked escapes, nested primitives, fallbacks, and importance. */
 export const source = [
-  "import { css } from 'zyzz'",
-  'export const box = css({',
+  "import { style } from 'zyzz'",
+  'export const box = style({',
   '  color: `r${"ed"}`,',
   '  content: `"${true}:${null}:${12n}"`,',
   '  marginLeft: `${-2n}px`,',

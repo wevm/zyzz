@@ -96,9 +96,9 @@ describe('variants', () => {
   test('preserves own selections, static defaults, and mixed namespace folding', async () => {
     const result = Transform.compile({
       moduleId: 'edge.ts',
-      source: `import { css, variants } from 'zyzz';
+      source: `import { style, variants } from 'zyzz';
       namespace styles {
-        export const card = css({ color: 'red' });
+        export const card = style({ color: 'red' });
         export const button = variants({ variants: { constructor: { small: {} } }, defaultVariants: { constructor: 'small' } });
       }
       export const props = styles.card();
@@ -366,14 +366,14 @@ describe('bound', () => {
       const modules = {
         'theme.ts': `import {Theme} from 'zyzz';
 export const theme=Theme.define({color:{brand:'#06c'}});
-const {css:style,variants:recipe}=theme;
+const {style,variants:recipe}=theme;
 const alias=recipe;
 export {style,alias};`,
-        'index.ts': `export {style as css,alias as variants,theme} from './theme.js';`,
+        'index.ts': `export {style as styled,alias as variants,theme} from './theme.js';`,
       }
-      const app = `import {css,variants,theme} from './index.js';
+      const app = `import {styled,variants,theme} from './index.js';
 export const scope=theme.className;
-export const base=css({color:'black',padding:'6px'});
+export const base=styled({color:'black',padding:'6px'});
 export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'red'}}},defaultVariants:{intent:'primary'}});`
       const publisher = Graph.compile({ modules })
       const packed = Graph.compile({
@@ -390,7 +390,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
         publisher.modules['theme.ts']!.code.includes(
           '{css:undefined,variants:undefined}',
         ),
-      ).toMatchInlineSnapshot('true')
+      ).toMatchInlineSnapshot(`false`)
 
       const bundled = await Esbuild.build({
         stdin: {
@@ -1130,7 +1130,7 @@ export const second=()=>cx(controls.override(),controls.button({size:'lg'}));`,
         Graph.compile({
           modules: {
             'app.ts':
-              "import {cx,css} from 'zyzz'; import {controls} from '@acme/variants'; const local=css({color:'red'}); export const props=cx(controls.button(),local());",
+              "import {cx,style} from 'zyzz'; import {controls} from '@acme/variants'; const local=style({color:'red'}); export const props=cx(controls.button(),local());",
           },
           contracts: publisher.contracts,
           imports: {
@@ -1141,7 +1141,7 @@ export const second=()=>cx(controls.override(),controls.button({size:'lg'}));`,
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:121: Composition cannot mix HTML and React props.]`,
+        `[Source.ExtractError: app.ts:125: Composition cannot mix HTML and React props.]`,
       )
     })
   })
@@ -1371,9 +1371,9 @@ describe('watch', () => {
     test('preserves imported ownership across edits, failed builds, renames, and removal', async () => {
       const root = await Fs.mkdtemp(Path.resolve('.fixture-variants-watch-'))
       const outDir = Path.join(root, 'output')
-      const source = `import {variants,css} from 'zyzz';
+      const source = `import {style,variants} from 'zyzz';
 export const button=variants({base:{padding:'2px'},variants:{size:{sm:{padding:'4px'},lg:{padding:'12px'}}},defaultVariants:{size:'sm'}});
-export const override=css({paddingLeft:'3px'});`
+export const override=style({paddingLeft:'3px'});`
       const app = (
         file: string,
       ) => `import {cx} from 'zyzz';import {button,override} from './${file}.js';
@@ -1464,7 +1464,7 @@ export function apply(){return cx(button({size:'lg'}),override())}`
             }),
           ),
         ).rejects.toThrowErrorMatchingInlineSnapshot(
-          `[Source.ExtractError: watch-variants/styles.ts:133: Expected a literal string or number; expressions are not evaluated.]`,
+          `[Source.ExtractError: watch-variants/styles.ts:135: Expected a literal string or number; expressions are not evaluated.]`,
         )
         expect(
           (await Fs.readFile(Path.join(outDir, 'app.ts'), 'utf8')) ===

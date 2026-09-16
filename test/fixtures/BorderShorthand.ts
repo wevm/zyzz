@@ -20,5 +20,5 @@ export const control =
   'border:2px solid red;border-inline-start:blue dashed 4px;border-top:3px dotted green;outline:1px solid black;column-rule:2px dashed blue'
 
 /** Source uses shorthand values without pre-expanding their constituent properties. */
-export const source = `import { css } from 'zyzz';
-export const box = css({border:'2px solid red',borderInlineStart:'blue dashed 4px',borderTop:'3px dotted green',outline:'1px solid black',columnRule:'2px dashed blue'})();`
+export const source = `import { style } from 'zyzz';
+export const box = style({border:'2px solid red',borderInlineStart:'blue dashed 4px',borderTop:'3px dotted green',outline:'1px solid black',columnRule:'2px dashed blue'})();`

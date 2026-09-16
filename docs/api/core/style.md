@@ -1,24 +1,24 @@
-# css
+# style
 
 Define callable styles that compile to static CSS and styling props.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css({ padding: '1rem' })
+  export const card = style({ padding: '1rem' })
 }
 const props = styles.card({ style: { padding: '2rem' } })
 ```
 
 ## Signature
 
-`css()`, `css(style)`, or `css((values: { /* required scalar fields */ }) => style)`
+`style()`, `style(styles)`, or `style((values: { /* required scalar fields */ }) => styles)`
 
-The callback overload requires an explicit finite object type and a concise static object body. It returns `css.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className`, `style`, and `variables` overrides, returning `css.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
+The callback overload requires an explicit finite object type and a concise static object body. It returns `style.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className`, `style`, and `variables` overrides, returning `style.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
 
 ```ts
-const progress = css((values: { amount: `${number}%` }) => ({
+const progress = style((values: { amount: `${number}%` }) => ({
   width: values.amount,
 }))
 const props = progress({ amount: '50%', className: 'external' })
@@ -26,7 +26,7 @@ const props = progress({ amount: '50%', className: 'external' })
 
 ## Parameters
 
-### style
+### styles
 
 - Type: `Style.LiteralProperties`
 - Default: `{}`.
@@ -34,12 +34,12 @@ const props = progress({ amount: '50%', className: 'external' })
 Literal property object at the current source boundary. Omit it for an empty definition, including identity-only references in `selectors` objects.
 
 ```ts
-css({ padding: '1rem' })
+style({ padding: '1rem' })
 ```
 
 ## Application Parameters
 
-The returned callable accepts an optional `css.Options` object, defaulting to `{}`.
+The returned callable accepts an optional `style.Options` object, defaulting to `{}`.
 
 ### options.className
 
@@ -54,7 +54,7 @@ styles.card({ className: 'external' })
 
 ### options.style
 
-- Type: `css.Options["style"]`
+- Type: `style.Options["style"]`
 - Default: `undefined`
 
 Literal inline overrides. Events, children, and accessibility props stay on the component.
@@ -76,11 +76,11 @@ styles.label({ variables: { [variables.accent]: 'blue' } })
 
 ## Returns
 
-The returned callable produces `css.Props` when applied. `className` and `style` below belong to those applied props.
+The returned callable produces `style.Props` when applied. `className` and `style` below belong to those applied props.
 
 ### Callable
 
-- Type: `css.ReturnType` for literal objects; `css.Dynamic<values>` for callbacks
+- Type: `style.ReturnType` for literal objects; `style.Dynamic<values>` for callbacks
 
 Callable producing styling props. Static no-argument applications may fold to constants.
 
@@ -100,7 +100,7 @@ props.className
 
 ### style
 
-- Type: `css.Props["style"]`
+- Type: `style.Props["style"]`
 
 Copied inline overrides when supplied. Other component props remain on the element.
 
@@ -110,14 +110,14 @@ props.style
 
 ## Errors
 
-Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`; it cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; application inputs are checked by TypeScript without runtime validation.
+Untransformed calls throw an error whose `name` is `style.MissingTransformError`. This is a diagnostic name, not a constructor exported on `style`; it cannot be referenced as `style.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; application inputs are checked by TypeScript without runtime validation.
 
 ## Dynamic Values
 
 A callback with one explicitly typed finite parameter and a concise object body compiles to static rules and a value binder. Static declarations can accompany scalar reads and template expressions. Generated callables retain required input types across compiled exports.
 
 ```ts
-const bar = css((values: { amount: `${number}%`; alpha: number }) => ({
+const bar = style((values: { amount: `${number}%`; alpha: number }) => ({
   display: 'block',
   opacity: values.alpha,
   width: values.amount,
@@ -129,7 +129,7 @@ All declared inputs are required and consumed. `className`, `style`, and `variab
 
 The source boundary accepts inline finite scalar object types, module-local type aliases, interfaces, and compatible object intersections. Optional fields, imported or generic types, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
-Types: `css.ErrorType`, `css.Options`, `css.Props`, `css.ReturnType`, and `css.Dynamic<values>`. See [Style Components](../../guides/styling.md#style-components).
+Types: `style.ErrorType`, `style.Options`, `style.Props`, `style.ReturnType`, and `style.Dynamic<values>`. See [Style Components](../../guides/styling.md#style-components).
 
 ## Selectors and conditions
 
@@ -140,7 +140,7 @@ const theme = Theme.define({
   breakpoints: { tablet: '48rem' },
   spacing: { gap: '1rem' },
 })
-const panel = theme.css({
+const panel = theme.style({
   padding: 'gap',
   ':hover': { opacity: 0.8 },
   '@media tablet': { display: 'grid' },
@@ -149,13 +149,13 @@ const panel = theme.css({
 
 Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation; changing a runtime scope cannot change them.
 
-Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. `selectors` objects interpolate other `css` definitions. Core `Style.define` and global declarations reject relationship keys.
+Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. `selectors` objects interpolate other `style` definitions. Core `Style.define` and global declarations reject relationship keys.
 
 Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected; pass the complete quoted scalar as a slot value when authoring dynamic content.
 
 ### selectors
 
-A literal map of scoped selector strings to nested declarations. Every selector requires an explicit `&`. Template keys can interpolate previously declared `css` definitions. See [selectors](selectors.md).
+A literal map of scoped selector strings to nested declarations. Every selector requires an explicit `&`. Template keys can interpolate previously declared `style` definitions. See [selectors](selectors.md).
 
 ### variables
 

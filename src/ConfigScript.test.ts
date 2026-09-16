@@ -68,7 +68,7 @@ describe('create', () => {
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.js:34: Destructure only css and the configured single theme; other helpers remain unsupported.]`,
+      `[Source.ExtractError: app.js:34: Destructure only style and the configured single theme; other helpers remain unsupported.]`,
     )
   })
   test('omits unavailable script methods from legacy alias declarations', () => {
@@ -103,21 +103,21 @@ describe('create', () => {
   test('versions css-only packed exports with their output metadata', () => {
     const graph = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {css}=Config.create({});`,
+        'config.ts': `import {Config} from 'zyzz';export const {style}=Config.create({});`,
       },
     })
 
     const contract = JSON.parse(graph.contracts['config.ts']!)
 
     expect(contract.version).toMatchInlineSnapshot('17')
-    expect(Object.hasOwn(contract.exports.css, 'script')).toMatchInlineSnapshot(
-      'false',
-    )
+    expect(
+      Object.hasOwn(contract.exports.style, 'script'),
+    ).toMatchInlineSnapshot('false')
 
     // Older readers reject the storageKey option, so its presence alone needs the newer version.
     const keyed = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {css}=Config.create({storageKey:'app'});`,
+        'config.ts': `import {Config} from 'zyzz';export const {style}=Config.create({storageKey:'app'});`,
       },
     })
 
@@ -133,7 +133,7 @@ describe('create', () => {
     ]) {
       const graph = Graph.compile({
         modules: {
-          'app.ts': `import {Config} from 'zyzz';const {css}=Config.create(${options});export namespace styles {export const card=css({width:'10px'});}`,
+          'app.ts': `import {Config} from 'zyzz';const {style}=Config.create(${options});export namespace styles {export const card=style({width:'10px'});}`,
         },
       })
 

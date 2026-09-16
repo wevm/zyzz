@@ -1,6 +1,6 @@
 /** Checks exact alias keys and every expanded target's token/value domain. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, css, Theme } from 'zyzz'
+import { Config, style, Theme } from 'zyzz'
 
 describe('create', () => {
   test('preserves HTML output on mapped theme handles', () => {
@@ -10,22 +10,24 @@ describe('create', () => {
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
     })
 
-    expectTypeOf(theme.css({ px: 'sm' })()).toHaveProperty('class')
+    expectTypeOf(theme.style({ px: 'sm' })()).toHaveProperty('class')
 
     const extended = Theme.extend(theme, { padding: { sm: '8px' } })
 
-    expectTypeOf(extended.css({ px: 'sm' })()).toHaveProperty('class')
+    expectTypeOf(extended.style({ px: 'sm' })()).toHaveProperty('class')
 
     // @ts-expect-error HTML output does not expose React className
-    void extended.css({ px: 'sm' })().className
+    void extended.style({ px: 'sm' })().className
 
     expectTypeOf(
-      theme.css((values: { width: '4px' | '8px' }) => ({ px: values.width }))({
-        width: '4px',
-      }).style,
+      theme.style((values: { width: '4px' | '8px' }) => ({ px: values.width }))(
+        {
+          width: '4px',
+        },
+      ).style,
     ).toEqualTypeOf<string | undefined>()
     // @ts-expect-error HTML handles do not expose React className
-    expectTypeOf(theme.css({ px: 'sm' })().className).toEqualTypeOf<never>()
+    expectTypeOf(theme.style({ px: 'sm' })().className).toEqualTypeOf<never>()
   })
   test('preserves configured aliases through theme extensions', () => {
     const { theme } = Config.create({
@@ -34,24 +36,24 @@ describe('create', () => {
     })
     const extended = Theme.extend(theme, { spacing: { sm: '8px' } })
 
-    extended.css({ 'padding-x': 'sm' })
+    extended.style({ 'padding-x': 'sm' })
     // @ts-expect-error extension retains finite alias names
-    extended.css({ unknownAlias: 'sm' })
+    extended.style({ unknownAlias: 'sm' })
   })
   test('does not infer aliases from a widened mapping record', () => {
-    const { css } = Config.create({
+    const { style } = Config.create({
       shorthands: { px: ['paddingLeft'] } as NonNullable<
         Config.create.Options['shorthands']
       >,
     })
 
     // @ts-expect-error widened metadata declares no finite alias names
-    css({ missing: 'inherit' })
+    style({ missing: 'inherit' })
     // @ts-expect-error numeric keys are not source alias names
     Config.create({ shorthands: { 1: ['paddingLeft'] } })
   })
   test('infers aliases through nested styles and bound handles', () => {
-    const { css: configured, theme } = Config.create({
+    const { style: configured, theme } = Config.create({
       shorthands: {
         px: ['paddingLeft', 'paddingRight'],
         mixed: ['marginLeft', 'paddingLeft'],
@@ -66,15 +68,15 @@ describe('create', () => {
       configured({ px: 'shared', ':hover': { px: 'shared!' } })(),
     ).toHaveProperty('className')
 
-    theme.css({ px: 'shared' })
+    theme.style({ px: 'shared' })
     configured({ mixed: 'shared' })
     configured((values: { width: '10px' | '20px' }) => ({ px: values.width }))
     // @ts-expect-error every target must accept the token
     configured({ mixed: 'gap' })
     // @ts-expect-error padding rejects negative lengths
     configured({ px: '-1px' })
-    // @ts-expect-error aliases do not install on root css
-    css({ px: '4px' })
+    // @ts-expect-error aliases do not install on root style
+    style({ px: '4px' })
     // @ts-expect-error unknown aliases remain errors
     configured({ paddingX: '4px' })
     // @ts-expect-error dynamic numbers do not represent lengths

@@ -3,13 +3,13 @@
  * @module
  */
 /** Source combines legacy layout, containment, and explicit stacking priorities. */
-export const source = `import { css } from 'zyzz';
-export const floatBox = css({float:'left',width:'40px',height:'40px'})();
-export const cleared = css({clear:'both',display:'flow-root'})();
-export const context = css({contain:'layout',contentVisibility:'visible',isolation:'isolate',position:'relative',width:'100px',height:'100px'})();
-export const front = css({position:'absolute',inset:0,zIndex:['auto','2!'],backfaceVisibility:'visible',transformStyle:'flat'})();
-export const back = css({position:'absolute',inset:0,zIndex:1})();
-export const image = css({objectFit:'cover',boxDecorationBreak:'clone'})();
+export const source = `import { style } from 'zyzz';
+export const floatBox = style({float:'left',width:'40px',height:'40px'})();
+export const cleared = style({clear:'both',display:'flow-root'})();
+export const context = style({contain:'layout',contentVisibility:'visible',isolation:'isolate',position:'relative',width:'100px',height:'100px'})();
+export const front = style({position:'absolute',inset:0,zIndex:['auto','2!'],backfaceVisibility:'visible',transformStyle:'flat'})();
+export const back = style({position:'absolute',inset:0,zIndex:1})();
+export const image = style({objectFit:'cover',boxDecorationBreak:'clone'})();
 `
 
 /** Independent CSS controls establish expected property domains and cascade. */

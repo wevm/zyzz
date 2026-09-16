@@ -3,16 +3,16 @@
 import { bench } from '@ark/attest'
 import type * as Zyzz from 'zyzz'
 
-declare const css: typeof Zyzz.css
+declare const style: typeof Zyzz.style
 
 /** Warms shared authoring contracts before measuring selectors. */
 export function baseline() {
-  css({ selectors: { [`&:hover`]: { color: 'black' } } })
+  style({ selectors: { [`&:hover`]: { color: 'black' } } })
 }
 
 bench('selectors / style references', () => {
-  const card = css({})
-  css({
+  const card = style({})
+  style({
     selectors: {
       [`${card}:hover &`]: { color: 'blue' },
       [`${card} > &:nth-child(even)`]: { opacity: 0.5 },

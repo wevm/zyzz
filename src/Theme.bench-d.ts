@@ -11,7 +11,7 @@ declare const Theme: typeof Zyzz.Theme
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
-  Theme.define({ color: { base: '#000' } }).css({ color: 'base' })
+  Theme.define({ color: { base: '#000' } }).style({ color: 'base' })
 }
 
 bench('define / scalar and scheme tokens', () => {
@@ -34,7 +34,7 @@ bench('define / query aliases', () => {
     spacing: { gap: '4px' },
   })
 
-  theme.css({
+  theme.style({
     '@container sidebar >=card': { display: 'grid' },
     '@media tablet..desktop': { ':hover': { padding: 'gap' } },
   })
@@ -53,13 +53,13 @@ bench('extend / overrides', () => {
   })
 }).types([38490, 'instantiations'])
 
-bench('css / token names and references', () => {
+bench('style / token names and references', () => {
   const theme = Theme.define({
     color: { blue: { 500: '#06c' }, brand: '#06c' },
     spacing: { 4: '1rem', md: '2rem' },
   })
 
-  theme.css({
+  theme.style({
     color: 'blue.500',
     margin: theme.tokens.spacing.md,
     padding: 4,

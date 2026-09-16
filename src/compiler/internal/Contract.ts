@@ -292,13 +292,16 @@ export function read(
       entry.recipe !== undefined &&
       (entry.recipe !== true ||
         (data.version as number) < 15 ||
-        entry.kind !== 'css')
+        entry.kind !== 'style')
     )
       throw new Error('Invalid bound recipe contract.')
 
     const theme = string(entry.theme)
     const definition = themes[theme]
-    if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
+    if (
+      !definition ||
+      !['config', 'style', 'theme'].includes(String(entry.kind))
+    )
       throw new Error('Invalid Zyzz contract export.')
 
     const members =

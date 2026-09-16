@@ -16,7 +16,7 @@ export default defineConfig({
 ```
 
 - **Development:** run the existing dev command; edits update transformed modules and CSS.
-- **Imports:** import source components normally. Import token-free `css` or named `{ css, theme }` helpers from config.
+- **Imports:** import source components normally. Import token-free `style` or named `{ style, theme }` helpers from config.
 - **Production:** run the existing build command; the adapter emits linked CSS assets.
 
 No generated component imports or manual stylesheet import is required. Theme source is analyzed without executing application code. Vite owns alias resolution, TypeScript/JSX lowering, final CSS processing, and asset delivery.
@@ -29,7 +29,7 @@ See [Vite's plugin setup](https://vite.dev/guide/using-plugins) for the host con
 
 ## Lazy Modules
 
-Vite loads and transforms lazy modules, including their CSS. Production builds retain Vite's CSS code splitting. Theme bindings inside each module must use static imports; dynamically loading an authoring theme for use in `css` is unsupported.
+Vite loads and transforms lazy modules, including their CSS. Production builds retain Vite's CSS code splitting. Theme bindings inside each module must use static imports; dynamically loading an authoring theme for use in `style` is unsupported.
 
 ```ts
 // main.ts
@@ -38,7 +38,7 @@ element.className = props.className
 
 // card.ts
 import { theme } from './theme'
-export const props = theme.css({ color: 'brand' })()
+export const props = theme.style({ color: 'brand' })()
 ```
 
 ## Configuration
@@ -47,17 +47,17 @@ export const props = theme.css({ color: 'brand' })()
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css, theme } = Config.create({
+export const { style, theme } = Config.create({
   theme: { color: { brand: '#06c' } },
 })
 ```
 
 ```ts
 // card.ts
-import { css, theme } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
 export namespace styles {
-  export const card = css({ color: 'brand' })
+  export const card = style({ color: 'brand' })
 }
 element.className = `${theme.className} ${styles.card().className}`
 ```
@@ -79,11 +79,11 @@ export default defineConfig({
 ```
 
 ```ts
-import { css, mint } from '@acme/theme'
+import { mint, style } from '@acme/theme'
 import '@acme/theme/styles.css'
 
 namespace styles {
-  export const card = css({ color: 'brand' })
+  export const card = style({ color: 'brand' })
 }
 element.className = `${mint.className} ${styles.card().className}`
 ```

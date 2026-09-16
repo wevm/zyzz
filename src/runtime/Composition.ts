@@ -1,5 +1,5 @@
 /** Merges bindings and attributes over a compiler-resolved ordered CSS group. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 
 /** Private ownership retained in generated initialization data, never DOM props. */
 export type Owner = {
@@ -13,7 +13,7 @@ export type Owner = {
 
 /** Binds a fixed composition class to runtime styling inputs without generating rules. */
 type Entry =
-  | (css.Props & { readonly [key: `data-${string}`]: string | undefined })
+  | (style.Props & { readonly [key: `data-${string}`]: string | undefined })
   | false
   | null
   | undefined
@@ -36,7 +36,7 @@ export function create(options: create.Options) {
       if (input.condition !== undefined && entries[index])
         mask |= 1 << input.condition
     const className = options.cases?.[mask] ?? options.className
-    const result: css.Props & Record<string, unknown> = {
+    const result: style.Props & Record<string, unknown> = {
       className,
     }
     const external: string[] = []

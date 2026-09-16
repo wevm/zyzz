@@ -6,15 +6,15 @@ Define, reuse, compose, and bind component styles. Begin with [Getting Started](
 
 ### Style Components
 
-Complete [Getting Started](../introduction/getting-started.md) to connect compilation. Group related `css` and `variants` definitions in `namespace styles {}` with exported `const` members. Earlier declarations can be reused directly within the namespace.
+Complete [Getting Started](../introduction/getting-started.md) to connect compilation. Group related `style` and `variants` definitions in `namespace styles {}` with exported `const` members. Earlier declarations can be reused directly within the namespace.
 
 #### Reuse Styles
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({ padding: '1rem' })
+  export const button = style({ padding: '1rem' })
 }
 
 const example = (
@@ -30,10 +30,10 @@ Pass `className` and `style` overrides to the styling function. Keep events, chi
 #### Add Hover and Responsive Styles
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css({
+  export const card = style({
     padding: '1rem',
     ':hover': { opacity: 0.8 },
     '@media (min-width: 48rem)': { padding: '2rem' },
@@ -50,12 +50,12 @@ Use [Dynamic Values](styling.md#dynamic-values) for typed per-instance bindings.
 Keep exported definitions in an ordinary source module and import them where needed. Config remains an explicit dependency.
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 // button.styles.ts
 
 export namespace styles {
-  export const button = css({ padding: 'md' })
+  export const button = style({ padding: 'md' })
 }
 ```
 
@@ -68,10 +68,10 @@ export function Button() {
 }
 ```
 
-The bundler integration resolves and transforms imports of compiled `css(...)` definitions. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
+The bundler integration resolves and transforms imports of compiled `style(...)` definitions. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
 
 > [!NOTE]
-> Imported arbitrary object records passed into a separate `css(record)` call remain preview.
+> Imported arbitrary object records passed into a separate `style(record)` call remain preview.
 
 ### Override Styles
 
@@ -81,12 +81,12 @@ Pass styling overrides to a definition. Compose generated declarations through `
 > `cx` currently requires compiler-resolved local applications or immutable local props bindings. Ternaries, packed definitions, and arbitrary external props remain unsupported. Conditional arguments use `enabled && styles.example()`; at most eight conditional arguments are supported.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { cx, style } from 'zyzz'
 
 namespace styles {
-  export const base = css({ padding: '0.5rem' })
+  export const base = style({ padding: '0.5rem' })
 
-  export const roomy = css({ padding: '1rem' })
+  export const roomy = style({ padding: '1rem' })
 }
 const example = <button {...cx(styles.base(), styles.roomy())}>Continue</button>
 ```
@@ -104,10 +104,10 @@ Keep events and accessibility props on the component. Multiple JSX spreads repla
 ### Dynamic Values
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     width: values.width,
   }))
 }
@@ -118,7 +118,7 @@ Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable s
 
 ```ts
 namespace styles {
-  export const label = css({
+  export const label = style({
     color: 'black!',
     display: ['block', 'flex'],
   })
@@ -130,14 +130,14 @@ Arrays preserve fallback order; a trailing `!` marks importance.
 #### Theme Expressions
 
 ```ts
-import { css, theme } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
 namespace styles {
-  export const panel = css({ width: `calc(100% - ${theme.vars.spacing.md})` })
+  export const panel = style({ width: `calc(100% - ${theme.vars.spacing.md})` })
 }
 ```
 
-Import `{ css, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `variable()` declares independent CSS variables.
+Import `{ style, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `variable()` declares independent CSS variables.
 
 #### Static Bindings
 
@@ -148,9 +148,12 @@ namespace styles {
   const base = { padding: '8px' } as const
   type Values = { width: '10px' | '30px' }
 
-  export const card = css({ ...base, color: 'black' })
+  export const card = style({ ...base, color: 'black' })
 
-  export const bar = css((values: Values) => ({ ...base, width: values.width }))
+  export const bar = style((values: Values) => ({
+    ...base,
+    width: values.width,
+  }))
 }
 ```
 
@@ -161,14 +164,14 @@ Finite local type aliases, interfaces without inheritance, and object intersecti
 Use `variable()` for reusable CSS variables. Use `variables` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
 
 ```tsx
-import { css, variable } from 'zyzz'
+import { style, variable } from 'zyzz'
 
 namespace variables {
   export const accent = variable('color')
 }
 
 namespace styles {
-  export const label = css({
+  export const label = style({
     variables: { [variables.accent]: 'tomato' },
     color: variables.accent,
   })

@@ -1,5 +1,5 @@
 /** Binds scoped recipe payloads to precompiled per-condition variable slots. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 import * as Html from './Html.js'
 import type * as Recipe from './Recipe.js'
 
@@ -17,7 +17,7 @@ export function create(options: create.Options) {
     ]),
   )
 
-  return (input: Record<string, unknown> & css.Options = {}) => {
+  return (input: Record<string, unknown> & style.Options = {}) => {
     const bindings: Record<string, string | number> = {}
     const normalized: Record<string, unknown> = { ...input }
 
@@ -74,7 +74,7 @@ export function create(options: create.Options) {
       normalized.conditions = selections
     }
 
-    const props = options.select(normalized) as css.Props
+    const props = options.select(normalized) as style.Props
     const result = Object.keys(bindings).length
       ? { ...props, style: { ...props.style, ...bindings } }
       : props

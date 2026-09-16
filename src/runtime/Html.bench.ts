@@ -1,13 +1,13 @@
 /** Measures DOM output conversion of compiled dynamic styling props. @module */
 import { bench, describe } from 'vite-plus/test'
-import type { css } from 'zyzz'
+import type { style } from 'zyzz'
 import { Dynamic } from 'zyzz/runtime'
 import { Html as Attrs } from 'zyzz/runtime'
 
 const card = Dynamic.create({
   className: 'z-card',
   slots: { width: { name: '--width', type: 'string' } },
-}) as css.Dynamic<{ width: string }>
+}) as style.Dynamic<{ width: string }>
 
 describe('DOM styling attributes', () => {
   bench('dynamic props', () => {

@@ -1,6 +1,6 @@
 /** Checks the public profile descriptor and reference contract. @module */
 import { colorProfile } from 'zyzz/web'
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 
 describe('colorProfile', () => {
@@ -14,7 +14,7 @@ describe('colorProfile', () => {
       { within: ['@media print', '@layer color'] },
     )
     expectTypeOf(profile).toEqualTypeOf<colorProfile.Reference>()
-    css({ color: `color(${profile} 0 1 1 0)` })
+    style({ color: `color(${profile} 0 1 1 0)` })
     for (const renderingIntent of [
       'absolute-colorimetric',
       'relative-colorimetric',
@@ -36,6 +36,6 @@ describe('colorProfile', () => {
     // @ts-expect-error descriptor rules cannot enclose a profile
     colorProfile({ src: 'url(/profile.icc)' }, { within: ['@page'] })
     // @ts-expect-error profiles are color-space identities, not color values
-    css({ color: profile })
+    style({ color: profile })
   })
 })

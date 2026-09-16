@@ -2,7 +2,7 @@
 import type { NextConfig } from 'next'
 import type { ComponentProps } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { zyzz } from 'zyzz/next'
 
 describe('zyzz', () => {
@@ -19,8 +19,8 @@ describe('zyzz', () => {
   })
 
   test('spreads source callables into normal React props before transformation', () => {
-    const staticStyle = css({ color: 'red' })
-    const dynamic = css((values: { opacity: number }) => ({
+    const staticStyle = style({ color: 'red' })
+    const dynamic = style((values: { opacity: number }) => ({
       opacity: values.opacity,
     }))
 

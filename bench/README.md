@@ -84,7 +84,7 @@ const fixture = await Themes.create(100, {
 
 | Case      | Measured application                                                              |
 | --------- | --------------------------------------------------------------------------------- |
-| cached    | Read precomputed props, including Zyzz's directly folded `css({...})()`           |
+| cached    | Read precomputed props, including Zyzz's directly folded `style({...})()`         |
 | direct    | Switch over statically known application sites                                    |
 | callable  | Apply a surviving style callable or the framework's class/props API               |
 | overrides | Apply styles with alternating external classes and inline color/padding overrides |

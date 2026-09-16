@@ -18,4 +18,4 @@ bench('selectors / style references', () => {
       [`${card} > &:nth-child(even)`]: { opacity: 0.5 },
     },
   })
-}).types([5985, 'instantiations'])
+}).types([5988, 'instantiations'])

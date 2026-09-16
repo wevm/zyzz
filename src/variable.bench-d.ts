@@ -36,7 +36,7 @@ bench('define / registered descriptors', () => {
     gap: variable('length', { inherits: true, initialValue: '4px' }),
     offset: variable('signedLength', { inherits: false, initialValue: '-1px' }),
   }
-}).types([29391, 'instantiations'])
+}).types([29399, 'instantiations'])
 
 bench('define / declaration references', () => {
   const slots = {

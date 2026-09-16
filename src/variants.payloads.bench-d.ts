@@ -27,4 +27,4 @@ bench('variants / dynamic payloads', () => {
     size: { custom: { padding: '16px' } },
     conditions: { wide: { size: null } },
   })
-}).types([28987, 'instantiations'])
+}).types([32158, 'instantiations'])

@@ -20,7 +20,7 @@ bench('create / token-free authoring', () => {
 
   style({ color: '#fff', padding: '8px' })
   script()
-}).types([16386, 'instantiations'])
+}).types([16414, 'instantiations'])
 
 bench('create / inline theme with layers and shorthands', () => {
   const { style, theme } = Config.create({
@@ -38,7 +38,7 @@ bench('create / inline theme with layers and shorthands', () => {
     ':hover': { color: theme.tokens.color.brand },
     margin: 'md',
   })
-}).types([47630, 'instantiations'])
+}).types([47664, 'instantiations'])
 
 bench('create / named theme catalog', () => {
   const base = Theme.define({
@@ -58,7 +58,7 @@ bench('create / named theme catalog', () => {
 
   style({ color: 'brand', padding: 'md' })
   themes({ colorScheme: 'dark', theme: 'mint' })
-}).types([107900, 'instantiations'])
+}).types([108537, 'instantiations'])
 
 bench('create / html output', () => {
   const { style } = Config.create({ output: 'html' })
@@ -68,4 +68,4 @@ bench('create / html output', () => {
 
   void style({ padding: '8px' })().class
   void dynamic({ width: '25%' }).style
-}).types([21599, 'instantiations'])
+}).types([21682, 'instantiations'])

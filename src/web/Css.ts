@@ -60,7 +60,13 @@ export function compile<
     )
       return style
 
-    const key = JSON.stringify(style.declarations)
+    const key = JSON.stringify(
+      style.declarations.map(({ important, property, value }) => [
+        property,
+        value,
+        important,
+      ]),
+    )
     const previous = repeated.get(key)
     if (previous) return previous
 
@@ -75,29 +81,23 @@ export function compile<
   const groups = new Map<string, false | string>()
   const nestedComposition = options.styles.styles.some((style) => style.rules)
 
+  const properties = new Set<Style.Declaration['property']>()
+  for (const style of analyzed)
+    for (const { property } of style.declarations) properties.add(property)
+
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.
-  const logicalSizing = analyzed.some((style) =>
-    style.declarations.some(({ property }) =>
-      /^(min|max)?(blockSize|inlineSize)$/i.test(property),
-    ),
+  const logicalSizing = [...properties].some((property) =>
+    /^(min|max)?(blockSize|inlineSize)$/i.test(property),
   )
-
-  const resets = analyzed.some((style) =>
-    style.declarations.some(({ property }) => property === 'all'),
-  )
+  const resets = properties.has('all')
   const combinedLines = new Set<string>()
 
-  for (const style of analyzed)
-    for (const { property } of style.declarations)
-      if (Literal.rule(property)?.kind === 'line') {
-        const canonical =
-          property in Literal.aliases
-            ? Literal.aliases[property as keyof typeof Literal.aliases]
-            : property
-
-        combinedLines.add(canonical.startsWith('border') ? 'border' : canonical)
-      }
+  for (const property of properties)
+    if (Literal.rule(property)?.kind === 'line') {
+      const name = canonical(property)
+      combinedLines.add(name.startsWith('border') ? 'border' : name)
+    }
 
   function canonical(property: string): string {
     return property in Literal.aliases
@@ -256,12 +256,7 @@ export function compile<
         join(child, target, visited)
   }
 
-  const properties = new Set(
-    analyzed.flatMap((style) =>
-      style.declarations.map(({ property }) => canonical(property)),
-    ),
-  )
-  for (const property of properties)
+  for (const property of new Set([...properties].map(canonical)))
     if (Object.hasOwn(Cascade.shorthands, property))
       join(property, domain(property))
 
@@ -345,7 +340,7 @@ export function compile<
   // Sharing is safe only when every use of a conflict domain has the same
   // declaration sequence. Conditions conservatively retain contextual identities.
   for (const style of analyzed) {
-    const domains = new Map<string, { body: string; properties: Set<string> }>()
+    const domains = new Map<string, { body: string; property: string }>()
 
     for (const item of style.declarations) {
       const property = item.property
@@ -354,16 +349,15 @@ export function compile<
       if (groups.get(key) === false) continue
       const entry = domains.get(key) ?? {
         body: '',
-        properties: new Set<string>(),
+        property,
       }
       entry.body += declaration
-      entry.properties.add(property)
+      if (entry.property !== property) groups.set(key, false)
       domains.set(key, entry)
     }
 
     for (const [key, entry] of domains) {
       const value = entry.body
-      if (entry.properties.size > 1) groups.set(key, false)
 
       const previous = groups.get(key)
       groups.set(

@@ -2,7 +2,7 @@
 
 This plan tracks remaining implementation and acceptance work for Zyzz contributors. The goal is shared, typed web/native authoring with ahead-of-time output and ordinary platform components.
 
-Reconciled against main [e53d654](https://github.com/wevm/zyzz/commit/e53d654), 2026-09-16. "Implemented" means code and fixtures are merged, not that every acceptance gate passes. This documentation update does not rerun those gates.
+Web acceptance was rerun from `a4585e3` with the follow-up stack on 2026-09-16; see the [evidence and limits](../docs/guides/web-acceptance.md). Local verification does not establish hosted CI or close native, at-rule rendering, and release measurement gates.
 
 ## Current status
 
@@ -18,7 +18,7 @@ Reconciled against main [e53d654](https://github.com/wevm/zyzz/commit/e53d654), 
 
 ## Next work
 
-1. Close web output and framework acceptance against a named main commit. Reuse existing fixtures, record passing evidence, and implement only the uncovered requirements below.
+1. Merge the web acceptance stack and confirm its hosted checks against the resulting main commit. Functional coverage and diagnostic measurements are recorded below; broader release gates remain separate.
 2. Continue native work from 3.8d. The static-table foundation and 3.8a through 3.8c are merged. Imported value-domain and platform audits remain incomplete.
 3. Complete independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
 4. Finish distribution, measurement, and documentation acceptance before release.
@@ -29,11 +29,13 @@ Keep the existing sequence labels for native dependencies. Older phase ordering 
 
 ### CSS output and reachability
 
-- [ ] Verify both modes preserve shorthand resets, partial longhand overrides, logical/physical overlap, `all`, A/B/A order, fallbacks, importance, conditions, and layers. Atomic output must not silently fall back to grouped rules.
-- [ ] Verify deduplication retains selector, theme, variable, and ordering identities. Preserve identity-only styles and required structures for globals, keyframes, registrations, fonts, and theme scopes.
-- [ ] Complete static/dynamic `cx`, defaults, compounds, conditional selections, stale-binding removal, and mixed-mode packed-library acceptance. Class-string order must not determine override behavior.
-- [ ] Audit remaining reachability and unused-variable work. Local unused definitions are pruned in production. Exported/escaped definitions, references, live variant alternatives, and complete live theme tokens remain retained. Whole-program and transitive dead-reference pruning are not established.
-- [ ] Record delivery and compile/watch/render measurements for repeated, unique, conditional, and override-heavy workloads. Keep grouped output for performance comparisons and both modes for correctness.
+- [x] Verify both modes preserve shorthand resets, partial longhand overrides, logical/physical overlap, `all`, A/B/A order, fallbacks, importance, conditions, and layers. Atomic output must not silently fall back to grouped rules.
+- [x] Verify deduplication retains selector, theme, variable, and ordering identities. Preserve identity-only styles and required structures for globals, keyframes, registrations, fonts, and theme scopes.
+- [x] Complete static/dynamic `cx`, defaults, compounds, conditional selections, stale-binding removal, and mixed-mode packed-library acceptance. Class-string order must not determine override behavior.
+- [x] Audit remaining reachability and unused-variable work. Local unused definitions are pruned in production. Exported/escaped definitions, references, live variant alternatives, and complete live theme tokens remain retained. Whole-program and transitive dead-reference pruning are not established.
+- [x] Record delivery and compile/watch/render measurements for repeated, unique, conditional, and override-heavy workloads. Keep grouped output for performance comparisons and both modes for correctness.
+
+Diagnostic measurements and their limits are recorded in [Web acceptance measurements](../bench/Web-acceptance.md). They do not close the broader release measurement gates below.
 
 ### Framework integration priority
 
@@ -46,11 +48,9 @@ For each supported integration, record versions and passing evidence for:
 - SSR, hydration identity, navigation, and supported refresh behavior. HTML uses server attribute serialization and client-update identity instead of hydration.
 - CLI/plugin parity, default build/watch paths, explicit IDs in CSS-only mode, failure preservation, and owned-output cleanup.
 
-Local follow-up to main `96192a9` (2026-09-16): [framework tests](../test/fixtures/Framework.ts) pass React, Solid, and Svelte in both modes, including live mode changes, module relocation, restoration, and CSS cleanup. [Browser tests](../src/web/Css.test.ts) cover development module isolation and value edits in either stylesheet order. Broader acceptance remains open.
+The [web acceptance record](../docs/guides/web-acceptance.md) maps these requirements to executable fixtures, pinned versions, and current limits. Follow-up work includes [module isolation](https://github.com/wevm/zyzz/pull/181), [HTML delivery](https://github.com/wevm/zyzz/pull/182), [server serialization](https://github.com/wevm/zyzz/pull/183), and [Next.js lifecycle coverage](https://github.com/wevm/zyzz/pull/184). Local verification and hosted CI remain separate claims.
 
-Follow-up to [#181](https://github.com/wevm/zyzz/pull/181): [HTML delivery tests](../src/vite/index.test.ts) cover both modes for lazy chunk ownership, deferred browser styling, repeated loading, and live theme/style edits without replacing DOM nodes. SSR serialization, navigation, and broader lifecycle acceptance remain open.
-
-The Next.js adapter and independent packed fixtures are implemented. Reconcile their evidence before removing preview status. Do not schedule the adapter again. Inline Svelte authoring and broader lifecycle combinations still require their own coverage review.
+The CLI, Next.js adapter, and independent packed fixtures are implemented. Keep unsupported boundaries explicit: inline Svelte authoring and additional application frameworks remain outside the verified integration scope.
 
 ### Remaining authoring and lifecycle audit
 

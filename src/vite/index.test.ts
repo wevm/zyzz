@@ -41,7 +41,11 @@ async function create(files: Readonly<Record<string, string>> = Fixture.files) {
   return { config, root }
 }
 
-function message(socket: WebSocket, action: () => Promise<unknown>) {
+function message(
+  socket: WebSocket,
+  action: () => Promise<unknown>,
+  accept?: (text: string) => boolean,
+) {
   return new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => {
       cleanup()
@@ -60,6 +64,8 @@ function message(socket: WebSocket, action: () => Promise<unknown>) {
         !text.includes('"type":"full-reload"')
       )
         return
+
+      if (accept && !accept(text)) return
 
       cleanup()
       resolve(text)
@@ -490,6 +496,8 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
             .evaluate((element) => getComputedStyle(element).padding),
         ).toMatchInlineSnapshot('"8px"')
 
+        // Wait for startup document reloads before asserting edit-time node preservation.
+        await page.waitForLoadState('networkidle')
         await page
           .locator('#card')
           .evaluate((element) => element.setAttribute('data-preserved', 'yes'))
@@ -739,11 +747,15 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
 
       const path = Path.join(root, 'alternate.ts')
 
-      const update = await message(socket, () =>
-        Fs.writeFile(
-          path,
-          Fixture.files['alternate.ts'].replace('#175', '#f00'),
-        ),
+      const update = await message(
+        socket,
+        () =>
+          Watch.write({
+            path,
+            source: Fixture.files['alternate.ts'].replace('#175', '#f00'),
+          }),
+        // Initial fixture creation can queue an unrelated document reload.
+        (text) => text.includes('zyzz:'),
       )
 
       expect(update.includes('zyzz:')).toMatchInlineSnapshot(`true`)
@@ -821,6 +833,8 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
 
+      // Wait for startup document reloads before asserting edit-time node preservation.
+      await page.waitForLoadState('networkidle')
       await page.evaluate(() => {
         document.querySelector('#card')!.setAttribute('data-preserved', 'yes')
       })

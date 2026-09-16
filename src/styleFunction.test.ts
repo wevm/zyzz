@@ -5,11 +5,54 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { style } from 'zyzz'
+import { Config, Style, style } from 'zyzz'
 import { Graph, Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('style', () => {
+  test('rejects target accessors without invoking caller code', () => {
+    let calls = 0
+    const targets = {
+      get native(): { opacity: number } {
+        calls++
+        throw new Error('getter ran')
+      },
+    }
+
+    expect(() => style({ targets })).toThrow(Style.InvalidError)
+    expect(calls).toMatchInlineSnapshot('0')
+  })
+
+  test('omits undefined target containers and branches', () => {
+    const bound = Config.create({})
+
+    expect(style({ opacity: 0.5, targets: undefined })()).toEqual(
+      style({ opacity: 0.5 })(),
+    )
+    expect(bound.style({ targets: { web: undefined } })()).toEqual(
+      style({ targets: {} })(),
+    )
+    expect(() => style({ targets: null } as never)).toThrow(Style.InvalidError)
+    expect(
+      Style.define({ card: { targets: undefined } }).styles[0]?.targets,
+    ).toMatchInlineSnapshot('undefined')
+  })
+
+  test.each([{ web: { opacity: 0.6 } }, { native: { opacity: 0.6 } }] as const)(
+    'keeps target-only CSS build identities aligned with runtime',
+    (targets) => {
+      const source = `import {style} from 'zyzz';export const card=style({targets:${JSON.stringify(targets)}});`
+      const output = Graph.compile({
+        compiler: false,
+        modules: { 'card.ts': source },
+      })
+
+      expect(Object.values(output.modules['card.ts']!.classes)).toContain(
+        style({ targets })().className,
+      )
+    },
+  )
+
   test('public root bundles for browsers without the source parser', async () => {
     const result = await Esbuild.build({
       bundle: true,

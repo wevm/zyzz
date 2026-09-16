@@ -21,7 +21,7 @@ The optional options object defaults to `{}`.
 - Type: `Readonly<Record<string, Style.Properties>>` (literal keys inferred)
 - Required: Yes.
 
-Plain or null-prototype records of supported declarations. Authored ordering is preserved.
+Plain or null-prototype records of supported declarations. Authored ordering is preserved. [Target branches](../../react-native/StyleSheet/README.md#target-branches) retain web, native, iOS, and Android declarations for destination compilation.
 
 ```ts
 Style.define({ card: { padding: '1rem' } })

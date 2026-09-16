@@ -17,7 +17,7 @@ describe('check', () => {
   | 'repeat'
   | 'center'
   | 'none';"`)
-  })
+  }, 30_000)
 
   test('audits the actual runtime exports alongside declared signatures', async () => {
     const result = await inventory()

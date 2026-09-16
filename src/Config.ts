@@ -464,11 +464,13 @@ export type Body<
   tokens extends Theme.Tokens,
   layers extends string,
   mappings extends Shorthands.Map,
+  targets extends boolean = true,
 > = Record<
   Exclude<
     Keys<styles>,
     | keyof mappings
     | 'selectors'
+    | 'targets'
     | 'variables'
     | keyof Style.DeclarationProperties
     | Exclude<Condition.Keys<tokens, Keys<styles>>, `@layer${string}`>
@@ -479,37 +481,64 @@ export type Body<
 > &
   (styles extends unknown
     ? {
-        [key in keyof styles]: key extends 'selectors'
-          ? styles[key] extends Record<string, unknown>
-            ? {
-                [selector in keyof styles[key]]: styles[key][selector] extends Record<
-                  string,
-                  unknown
-                >
-                  ? Body<styles[key][selector], tokens, layers, mappings>
-                  : never
-              }
-            : never
-          : key extends
-                | Exclude<Condition.Keys<tokens, key>, `@layer${string}`>
-                | '@layer'
-                | `@layer ${layers}`
+        [key in keyof styles]: key extends 'targets'
+          ? targets extends false
+            ? never
+            : styles[key] extends undefined
+              ? undefined
+              : {
+                  [target in keyof styles[key]]: target extends 'web'
+                    ?
+                        | Body<
+                            NonNullable<styles[key][target]>,
+                            tokens,
+                            layers,
+                            mappings,
+                            false
+                          >
+                        | Extract<styles[key][target], undefined>
+                    : Style.Accepted<
+                        { targets: Pick<styles[key], target> },
+                        tokens
+                      >['targets'][target]
+                }
+          : key extends 'selectors'
             ? styles[key] extends Record<string, unknown>
-              ? Body<styles[key], tokens, layers, mappings>
-              : never
-            : key extends keyof mappings
               ? {
-                  [target in mappings[key][number]]: styles[key] extends Style.Accepted<
-                    Record<target, styles[key]>,
-                    tokens
-                  >[target] &
-                    Binding.Checked<Record<target, styles[key]>>[target]
-                    ? never
-                    : target
-                }[mappings[key][number]] extends never
-                ? styles[key]
+                  [selector in keyof styles[key]]: styles[key][selector] extends Record<
+                    string,
+                    unknown
+                  >
+                    ? Body<
+                        styles[key][selector],
+                        tokens,
+                        layers,
+                        mappings,
+                        targets
+                      >
+                    : never
+                }
+              : never
+            : key extends
+                  | Exclude<Condition.Keys<tokens, key>, `@layer${string}`>
+                  | '@layer'
+                  | `@layer ${layers}`
+              ? styles[key] extends Record<string, unknown>
+                ? Body<styles[key], tokens, layers, mappings, targets>
                 : never
-              : Style.Accepted<Pick<styles, key>, tokens>[key]
+              : key extends keyof mappings
+                ? {
+                    [target in mappings[key][number]]: styles[key] extends Style.Accepted<
+                      Record<target, styles[key]>,
+                      tokens
+                    >[target] &
+                      Binding.Checked<Record<target, styles[key]>>[target]
+                      ? never
+                      : target
+                  }[mappings[key][number]] extends never
+                  ? styles[key]
+                  : never
+                : Style.Accepted<Pick<styles, key>, tokens>[key]
       }
     : never)
 

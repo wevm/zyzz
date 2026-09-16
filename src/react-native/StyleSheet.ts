@@ -2,6 +2,8 @@
 import type * as Style from '../Style.js'
 import type * as Theme from '../Theme.js'
 import * as Token from '../internal/Token.js'
+import type * as Native from '../internal/NativeProperties.js'
+import * as Values from './internal/Values.js'
 
 const properties = {
   alignContent: [
@@ -177,8 +179,16 @@ export function compile<
   options: compile.Options<name, themeName>,
 ): compile.ReturnType<name, themeName> {
   for (const key of Object.keys(options))
-    if (!['fonts', 'styles', 'themes', 'units'].includes(key))
+    if (!['fonts', 'platform', 'styles', 'themes', 'units'].includes(key))
       fail('invalid_options', 'Unknown native compiler option.', [key])
+
+  if (
+    options.platform !== undefined &&
+    !['android', 'ios'].includes(options.platform)
+  )
+    fail('invalid_options', 'Expected an explicit ios or android platform.', [
+      'platform',
+    ])
 
   for (const [unit, scale] of Object.entries(options.units ?? {}))
     if (
@@ -209,6 +219,12 @@ export function compile<
         style.name,
       ])
     names.add(style.name)
+    if ((style.targets?.android || style.targets?.ios) && !options.platform)
+      fail(
+        'invalid_options',
+        'Platform branches require an explicit platform.',
+        [style.name, 'targets'],
+      )
     if (style.rules?.length)
       fail(
         'unsupported_feature',
@@ -278,10 +294,7 @@ export function compile<
     for (const scheme of ['light', 'dark'] as const) {
       const compiled: Record<string, NativeStyle> = Object.create(null)
       for (const style of options.styles.styles) {
-        const output: Record<
-          string,
-          number | string | Origin | readonly Transform[]
-        > = {}
+        const output: Record<string, unknown> = {}
         let lineHeight: number | string | undefined
         for (const declaration of style.declarations) {
           const property = declaration.property as keyof typeof properties
@@ -335,6 +348,21 @@ export function compile<
           } catch (error) {
             if (!(error instanceof CompileError)) throw error
             diagnostics.push(...error.diagnostics)
+          }
+        }
+        for (const branch of ['native', options.platform] as const) {
+          if (!branch || !style.targets?.[branch]) continue
+          try {
+            const native = Values.parse(style.targets[branch])
+            Object.assign(output, native)
+            if (native.lineHeight !== undefined) lineHeight = undefined
+          } catch (error) {
+            if (error instanceof CompileError) throw error
+            diagnostics.push({
+              code: 'unsupported_value',
+              message: (error as Error).message,
+              path: [label, scheme, style.name, 'targets', branch],
+            })
           }
         }
         if (lineHeight !== undefined) {
@@ -395,6 +423,8 @@ export declare namespace compile {
   > = {
     /** Exact authored font-family text mapped to an installed native family. */
     readonly fonts?: Readonly<Record<string, string>> | undefined
+    /** Explicit destination for platform overrides. Required when platform branches exist. */
+    readonly platform?: 'android' | 'ios' | undefined
     /** Immutable shared definitions, also accepted by Css.compile. */
     readonly styles: Style.Definition<name>
     /** Explicit output labels. Omission creates the token-fallback default table. */
@@ -493,28 +523,7 @@ export declare namespace flatten {
 }
 
 /** Native style output, with converted logical-unit lengths and ordered transforms. */
-export type NativeStyle = {
-  /** Compiled native property, never a CSS expression or token reference. */
-  readonly [property in
-    | keyof typeof properties
-    | 'rowGap']?: property extends keyof typeof properties
-    ? (typeof properties)[property] extends readonly string[]
-      ? Exclude<(typeof properties)[property][number], 'line-through underline'>
-      : (typeof properties)[property] extends 'origin'
-        ? Origin
-        : (typeof properties)[property] extends 'transform'
-          ? readonly Transform[]
-          : (typeof properties)[property] extends 'color' | 'font'
-            ? string
-            : (typeof properties)[property] extends 'size'
-              ? number | `${number}%` | 'auto'
-              : (typeof properties)[property] extends 'dimension' | 'offset'
-                ? number | `${number}%`
-                : (typeof properties)[property] extends 'weight'
-                  ? Weight
-                  : number
-    : number
-}
+export type NativeStyle = Readonly<Native.Output>
 
 /** Optional native authoring constraint used with satisfies before Style.define. */
 export type Properties = {

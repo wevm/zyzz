@@ -176,7 +176,11 @@ export function extract(options: extract.Options): extract.ReturnType {
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
 
-  const staticData = Static.collect(program, scopeTracker)
+  const staticData = Static.collect(
+    program,
+    scopeTracker,
+    options[Themes.context]?.constants,
+  )
 
   const contributions = (() => {
     try {
@@ -609,13 +613,22 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
     const name = `style-${identity(options.moduleId)}-${call.start}`
     const locations: Style.SourceLocation[] = []
-    const conditionKeys: Ast.Node[] = []
+    const conditionKeys = new Map<string, Ast.Node>()
 
     function object(
       argument: Ast.ObjectExpression,
       prefix: readonly string[] = [],
     ): Record<string, unknown> {
       const values: Record<string, unknown> = Object.create(null)
+      const target = prefix.lastIndexOf('targets')
+      if (target !== -1 && prefix.length > 64) {
+        report(
+          'unsupported_syntax',
+          'Target nesting exceeds 64 levels.',
+          argument,
+        )
+        return values
+      }
       const depth = prefix.length + 2
 
       function localSlot(node: Ast.Node) {
@@ -732,8 +745,82 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
 
+        if (
+          (key === 'targets' || target !== -1) &&
+          staticData.absent(property.value)
+        )
+          continue
+
+        if (key === 'targets' || prefix.at(-1) === 'targets') {
+          const input = Expression.unwrap(property.value)
+          if (input.type !== 'ObjectExpression') {
+            report(
+              'unsupported_syntax',
+              'Target branches require static declaration objects.',
+              input,
+            )
+            continue
+          }
+          values[key] = object(input, [...prefix, key])
+          continue
+        }
+        if (target !== -1 && prefix[target + 1] !== 'web') {
+          function nativeValue(input: Ast.Node, depth = 0): unknown {
+            const node = Expression.unwrap(input)
+            if (depth > 64) {
+              report(
+                'unsupported_syntax',
+                'Native value nesting exceeds 64 levels.',
+                node,
+              )
+              return undefined
+            }
+            if (node.type === 'ObjectExpression')
+              return object(node, [...prefix, key])
+            if (node.type === 'ArrayExpression')
+              return node.elements.map((entry) => {
+                if (!entry || entry.type === 'SpreadElement') {
+                  report(
+                    'unsupported_syntax',
+                    'Native arrays require dense static entries.',
+                    node,
+                  )
+                  return undefined
+                }
+                return nativeValue(entry, depth + 1)
+              })
+            if (
+              node.type === 'Literal' &&
+              (node.value === null ||
+                ['boolean', 'number', 'string'].includes(typeof node.value))
+            )
+              return node.value
+            if (
+              node.type === 'UnaryExpression' &&
+              ['+', '-'].includes(node.operator) &&
+              node.argument.type === 'Literal' &&
+              typeof node.argument.value === 'number'
+            )
+              return (node.operator === '-' ? -1 : 1) * node.argument.value
+            if (node.type === 'TemplateLiteral') {
+              const value = Expression.template(node)
+              if (typeof value === 'string') return value
+            }
+            report(
+              'unsupported_syntax',
+              'Native branches require static literal values.',
+              node,
+            )
+            return undefined
+          }
+          values[key] = nativeValue(property.value)
+          continue
+        }
         if (Condition.is(key)) {
-          conditionKeys.push(property.key)
+          conditionKeys.set(
+            JSON.stringify([name, ...prefix, key]),
+            property.key,
+          )
 
           const input = Expression.unwrap(property.value)
 
@@ -998,12 +1085,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
-      let conditionIndex = 0
 
-      function validate(style: Style.NamedStyle) {
+      function validate(style: Style.NamedStyle, path: readonly string[]) {
+        if (style.targets?.web)
+          validate(style.targets.web, [...path, 'targets', 'web'])
         for (const rule of style.rules ?? []) {
           if (rule.condition !== undefined) {
-            const location = conditionKeys[conditionIndex++] ?? call
+            const location =
+              conditionKeys.get(JSON.stringify([...path, rule.condition])) ??
+              call
 
             try {
               AtRules.transform({
@@ -1020,11 +1110,14 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
           }
 
-          validate(rule.style)
+          validate(
+            rule.style,
+            rule.condition === undefined ? path : [...path, rule.condition],
+          )
         }
       }
 
-      for (const style of definition.styles) validate(style)
+      for (const style of definition.styles) validate(style, [style.name])
 
       if (diagnostics.length !== before) continue
 
@@ -1069,7 +1162,8 @@ export function extract(options: extract.Options): extract.ReturnType {
                   dynamic ||
                   recipe ||
                   (!definition.styles[0]!.declarations.length &&
-                    !definition.styles[0]!.rules)
+                    !definition.styles[0]!.rules &&
+                    !definition.styles[0]!.targets)
                 )
                   return undefined
                 return Identity.style(definition.styles[0]!)

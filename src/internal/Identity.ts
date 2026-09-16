@@ -52,6 +52,16 @@ export function style(input: Style.NamedStyle): string {
     return input
   }
   function shape(style: Style.NamedStyle): unknown {
+    if (style.targets) {
+      const { targets, ...shared } = style
+      return [
+        shape(shared),
+        targets.native ?? null,
+        targets.ios ?? null,
+        targets.android ?? null,
+        targets.web ? shape(targets.web) : null,
+      ]
+    }
     if (style.rules)
       return style.rules.map((rule) => [
         rule.condition ?? '',

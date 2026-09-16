@@ -1,4 +1,5 @@
 /** Preserves ordered style bodies and runtime ownership across package boundaries. @module */
+import * as Targets from '../../internal/Targets.js'
 import * as Binding from '../../internal/Binding.js'
 import * as Condition from '../../internal/Condition.js'
 import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
@@ -98,6 +99,8 @@ export function read(
   function style(value: unknown, depth = 0): Style.NamedStyle {
     if (depth > 64) throw new Error('Packed style nesting exceeds 64 levels.')
     const item = object(value)
+    if (item.targets !== undefined && version < 20)
+      throw new Error('Target branches require contract version 20 or later.')
     if (
       item.cssOutput !== undefined &&
       item.cssOutput !== 'atomic' &&
@@ -128,6 +131,45 @@ export function read(
         } as Style.Declaration
       }),
       name: string(item.name),
+      ...(item.targets === undefined
+        ? {}
+        : {
+            targets: (() => {
+              const targets = object(item.targets)
+              if (
+                Object.keys(targets).some(
+                  (key) => !['android', 'ios', 'native', 'web'].includes(key),
+                )
+              )
+                throw new Error('Unknown packed style target.')
+              return {
+                ...(targets.android === undefined
+                  ? {}
+                  : {
+                      android: Targets.copy(
+                        object(targets.android),
+                      ) as NonNullable<Style.NamedStyle['targets']>['android'],
+                    }),
+                ...(targets.ios === undefined
+                  ? {}
+                  : {
+                      ios: Targets.copy(object(targets.ios)) as NonNullable<
+                        Style.NamedStyle['targets']
+                      >['ios'],
+                    }),
+                ...(targets.native === undefined
+                  ? {}
+                  : {
+                      native: Targets.copy(
+                        object(targets.native),
+                      ) as NonNullable<Style.NamedStyle['targets']>['native'],
+                    }),
+                ...(targets.web === undefined
+                  ? {}
+                  : { web: style(targets.web, depth + 1) }),
+              }
+            })(),
+          }),
       ...(item.rules === undefined
         ? {}
         : {

@@ -22,6 +22,202 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test.each([
+    [
+      `export default {opacity:.6};`,
+      `export {default as native} from './values.js';`,
+    ],
+    [`export const native={opacity:.6};`, `export * from './values.js';`],
+    [
+      `export const native={opacity:.6};`,
+      `import {native} from './values.js';export {native};`,
+    ],
+    [
+      `export default {opacity:.6};`,
+      `import native from './values.js';export {native};`,
+    ],
+    [
+      `export const native={opacity:.6,lineHeight:undefined};`,
+      `export * from './values.js';`,
+    ],
+  ])(
+    'resolves immutable target constants through barrels',
+    (values, barrel) => {
+      const output = Graph.compile({
+        modules: {
+          'values.ts': values,
+          'barrel.ts': barrel,
+          'card.ts': `import {style} from 'zyzz';import {native} from './barrel.js';export const card=style({targets:{native}});`,
+        },
+      })
+
+      expect(
+        JSON.parse(output.contracts['card.ts']!).exports.card.style.style
+          .targets.native,
+      ).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.6,
+      }
+    `)
+    },
+  )
+
+  test('resolves direct default target imports', () => {
+    const output = Graph.compile({
+      modules: {
+        'values.ts': `const native={opacity:.6};export default native;`,
+        'card.ts': `import {style} from 'zyzz';import native from './values.js';export const card=style({targets:{native}});`,
+      },
+    })
+
+    expect(
+      JSON.parse(output.contracts['card.ts']!).exports.card.style.style.targets
+        .native,
+    ).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.6,
+      }
+    `)
+  })
+
+  test.each([
+    `native.opacity=.8;`,
+    `Object.assign(native,{opacity:.8});`,
+    `consume(native);`,
+  ])('rejects mutations and escapes in target re-exports', (mutation) => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'values.ts': `export const native={opacity:.6};`,
+          'barrel.ts': `import {native} from './values.js';${mutation}export {native};`,
+          'card.ts': `import {style} from 'zyzz';import {native} from './barrel.js';export const card=style({targets:{native}});`,
+        },
+      }),
+    ).toThrow()
+  })
+
+  test('rejects ambiguous target star exports and terminates cycles', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'a.ts': `export const native={opacity:.6};`,
+          'b.ts': `export const native={opacity:.8};`,
+          'barrel.ts': `export * from './a.js';export * from './b.js';export * from './cycle.js';`,
+          'cycle.ts': `export * from './barrel.js';`,
+          'card.ts': `import {style} from 'zyzz';import {native} from './barrel.js';export const card=style({targets:{native}});`,
+        },
+      }),
+    ).toThrow()
+  })
+
+  test('renders web target overrides in variant alternatives', async () => {
+    const output = Graph.compile({
+      modules: {
+        'card.ts': `import {variants} from 'zyzz';export const card=variants({base:{opacity:.1,targets:{web:{opacity:.2},native:{opacity:.3}}},variants:{active:{yes:{targets:{web:{opacity:.8},ios:{opacity:.9}}}}}});export const props=card({active:'yes'});`,
+      },
+    })
+    const contract = JSON.parse(output.contracts['card.ts']!)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="card">Card</div>')
+      await page.addStyleTag({ content: output.modules['card.ts']!.css })
+      await page.locator('#card').evaluate((element, classes) => {
+        element.setAttribute('class', classes)
+        element.setAttribute('data-active', 'yes')
+      }, Object.values(output.modules['card.ts']!.classes)[0]!)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot(`"0.8"`)
+      expect(contract.version).toMatchInlineSnapshot('20')
+      expect(
+        JSON.stringify(contract).includes('"ios":{"opacity":0.9}'),
+      ).toMatchInlineSnapshot('true')
+      const packed = Graph.compile({
+        contracts: { 'lib/index.js': JSON.stringify(contract) },
+        modules: {},
+      })
+      expect(packed).toBeDefined()
+    } finally {
+      await browser.close()
+    }
+  }, 30_000)
+
+  test.each([
+    `export const native={opacity:.6};native.opacity=.8;`,
+    `export const native={opacity:.6};Object.assign(native,{opacity:.8});`,
+    `export const native={get opacity(){throw new Error('must not execute')}};`,
+    `export const native=(()=>({opacity:.6}))();`,
+  ])('rejects nonliteral or mutable imported native declarations', (source) => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'values.ts': source,
+          'card.ts': `import {style} from 'zyzz';import {native} from './values.js';export const card=style({targets:{native}});`,
+        },
+      }),
+    ).toThrow()
+  })
+
+  test('preserves target branches through re-exports and packed contracts', () => {
+    const output = Graph.compile({
+      modules: {
+        'lib/values.ts': `const native={opacity:.6};export {native};`,
+        'lib/values-index.ts': `export {native as shared} from './values.js';`,
+        'lib/card.ts': `import {style} from 'zyzz';import {shared} from './values-index.js';export const card=style({opacity:.2,targets:{web:{opacity:.7},native:shared,ios:{opacity:.8}}});`,
+        'lib/index.ts': `export {card} from './card.js';`,
+      },
+    })
+    const contract = JSON.parse(output.contracts['lib/index.ts']!)
+    const packed = Graph.compile({
+      contracts: { 'lib/index.js': JSON.stringify(contract) },
+      imports: { 'app.ts': { lib: 'lib/index.js' } },
+      modules: {
+        'app.ts': `import {card} from 'lib';export const props=card();export {card};`,
+      },
+    })
+    const restored = JSON.parse(packed.contracts['app.ts']!)
+
+    expect(contract.version).toMatchInlineSnapshot('20')
+    expect(restored.exports.card.style.style.targets.native)
+      .toMatchInlineSnapshot(`
+      {
+        "opacity": 0.6,
+      }
+    `)
+    expect(restored.exports.card.style.style.targets.ios).toMatchInlineSnapshot(
+      `
+      {
+        "opacity": 0.8,
+      }
+    `,
+    )
+    expect(restored.exports.card.style.style.targets.web.declarations)
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "property": "opacity",
+          "value": 0.7,
+        },
+      ]
+    `)
+    expect(
+      output.modules['lib/card.ts']!.css.includes('opacity:0.7'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      output.modules['lib/card.ts']!.css.includes('opacity:0.8'),
+    ).toMatchInlineSnapshot('false')
+    contract.version = 19
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib/index.js': JSON.stringify(contract) },
+        modules: {},
+      }),
+    ).toThrow('Target branches require contract version 20')
+  })
+
   test('destructured config exports compile grouped styles through re-exports and packed contracts', () => {
     const output = Graph.compile({
       modules: {

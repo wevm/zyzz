@@ -7,6 +7,7 @@ import * as Util from 'node:util'
 import { getQuickJS } from 'quickjs-emscripten'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
+import { Source } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
 
@@ -131,6 +132,199 @@ describe('flatten', () => {
 })
 
 describe('compile', () => {
+  test('resolves shared, native, and platform declarations in destination semantics', () => {
+    const styles = Style.define({
+      card: {
+        fontSize: '10px',
+        lineHeight: 1.5,
+        opacity: 0.2,
+        targets: {
+          android: { elevation: 4, opacity: 0.9 },
+          ios: { opacity: 0.8, shadowOffset: { width: -1, height: 2 } },
+          native: {
+            fontSize: 20,
+            fontWeight: '600',
+            opacity: 0.6,
+            transform: [{ scale: 2 }],
+          },
+          web: { display: 'grid', opacity: 0.7 },
+        },
+      },
+    })
+    const ios = StyleSheet.compile({
+      styles,
+      platform: 'ios',
+      units: { px: 3 },
+    })
+    const android = StyleSheet.compile({ styles, platform: 'android' })
+
+    expect(ios.styles.default.light.card).toMatchInlineSnapshot(`
+      {
+        "fontSize": 20,
+        "fontWeight": "600",
+        "lineHeight": 30,
+        "opacity": 0.8,
+        "shadowOffset": {
+          "height": 2,
+          "width": -1,
+        },
+        "transform": [
+          {
+            "scale": 2,
+          },
+        ],
+      }
+    `)
+    expect(android.styles.default.light.card).toMatchInlineSnapshot(`
+      {
+        "elevation": 4,
+        "fontSize": 20,
+        "fontWeight": "600",
+        "lineHeight": 30,
+        "opacity": 0.9,
+        "transform": [
+          {
+            "scale": 2,
+          },
+        ],
+      }
+    `)
+    expect(
+      Css.compile({ styles }).css.includes('display:grid'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      Css.compile({ styles }).css.includes('opacity:0.9'),
+    ).toMatchInlineSnapshot('false')
+    expect(() =>
+      StyleSheet.compile({ styles }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["card","targets"]: Platform branches require an explicit platform.]`,
+    )
+  })
+
+  test('retains native structured values through source extraction and table compilation', () => {
+    const source = `import {style} from 'zyzz';
+      const values = {boxShadow: [{offsetX: 1, offsetY: -2, blurRadius: 3, color: 'rgba(0, 0, 0, 0.5)', inset: true}],
+        filter: [{brightness: 0.5}], fontVariant: ['small-caps', 'tabular-nums'],
+        resizeMode: 'repeat', transform: [{matrix: [1,0,0,0,0,1,0,0,0,0,1,0,4,5,0,1]}]};
+      export const card = style({targets: {native: values}});`
+    const extracted = Source.extract({ source, moduleId: 'native.ts' })
+    const output = StyleSheet.compile({ styles: extracted.styles })
+    const card = Object.values(output.styles.default.light)[0]!
+
+    expect(card).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 3,
+            "color": "rgba(0, 0, 0, 0.5)",
+            "inset": true,
+            "offsetX": 1,
+            "offsetY": -2,
+          },
+        ],
+        "filter": [
+          {
+            "brightness": 0.5,
+          },
+        ],
+        "fontVariant": [
+          "small-caps",
+          "tabular-nums",
+        ],
+        "resizeMode": "repeat",
+        "transform": [
+          {
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              4,
+              5,
+              0,
+              1,
+            ],
+          },
+        ],
+      }
+    `)
+    expect(Object.isFrozen(card.boxShadow)).toMatchInlineSnapshot('true')
+    expect(Css.compile({ styles: extracted.styles }).css).toMatchInlineSnapshot(
+      '""',
+    )
+  })
+
+  test.each([
+    { bogus: 1 },
+    { width: true },
+    { fontVariant: ['unknown'] },
+    { transform: [{ scale: 2, rotate: '90deg' }] },
+    { boxShadow: [{ offsetX: 1 }] },
+  ])('rejects native branches outside pinned static domains: %j', (native) => {
+    const styles = Style.define({ card: { targets: { native } } } as never)
+
+    expect(() => StyleSheet.compile({ styles })).toThrow(
+      StyleSheet.CompileError,
+    )
+  })
+
+  test('copies static branch data without mutating callers or invoking host accessors', () => {
+    const matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    const native = { transform: [{ matrix }] }
+    const styles = Style.define({ card: { targets: { native } } })
+    matrix[0] = 2
+    const output = StyleSheet.compile({ styles })
+
+    expect(output.styles.default.light.card.transform).toMatchInlineSnapshot(`
+      [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+          ],
+        },
+      ]
+    `)
+    expect(Object.isFrozen(matrix)).toMatchInlineSnapshot('false')
+    let read = false
+    const accessor = {
+      get width() {
+        read = true
+        return 4
+      },
+    }
+    expect(() =>
+      Style.define({ card: { targets: { native: accessor } } } as never),
+    ).toThrow(Style.InvalidError)
+    expect(read).toMatchInlineSnapshot('false')
+    expect(() =>
+      Style.define({ card: { targets: { window: {} } } } as never),
+    ).toThrow(Style.InvalidError)
+  })
+
   test('compiles transform origins with signed offsets and explicit units', () => {
     const styles = Style.define({
       bottom: { transformOrigin: 'bottom' },
@@ -340,7 +534,8 @@ describe('compile', () => {
       'true',
     )
     expect(
-      selected.card.transform?.every(Object.isFrozen),
+      Array.isArray(selected.card.transform) &&
+        selected.card.transform.every(Object.isFrozen),
     ).toMatchInlineSnapshot('true')
     expect(
       Css.compile({ styles }).css.includes(declarations.transform),

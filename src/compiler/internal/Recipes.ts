@@ -135,7 +135,19 @@ export function expand(
   const base = fields.get('base')
   if (base) {
     object(base.value)
-    if (named.length) properties.push(group(base.value, '&', base.value))
+    if (
+      named.length ||
+      base.value.properties.some(
+        (property) =>
+          property.type === 'Property' &&
+          !property.computed &&
+          (property.key.type === 'Identifier'
+            ? property.key.name === 'targets'
+            : property.key.type === 'Literal' &&
+              property.key.value === 'targets'),
+      )
+    )
+      properties.push(group(base.value, '&', base.value))
     else properties.push(...(base.value as Ast.ObjectExpression).properties)
   }
 

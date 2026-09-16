@@ -28,11 +28,11 @@ Props.create({ className: 'compiled-card' })
 
 ## Returns
 
-The returned callable accepts the [application parameters](../../core/css.md#application-parameters). The properties below Callable belong to its applied result.
+The returned callable accepts the [application parameters](../../core/style.md#application-parameters). The properties below Callable belong to its applied result.
 
 ### Callable
 
-- Type: `css.ReturnType`
+- Type: `style.ReturnType`
 
 Callable accepting className, style, and variables overrides. Variables merge into returned inline styles before explicit style overrides.
 
@@ -52,7 +52,7 @@ props.className
 
 ### style
 
-- Type: `css.Props["style"]`
+- Type: `style.Props["style"]`
 
 Forwarded inline overrides when supplied. Other component props remain on the element.
 
@@ -64,7 +64,7 @@ props.style
 
 Override shapes and values are checked by TypeScript. The runtime helper merges classes and forwards inline styles without validation.
 
-This is a generated-code support API. The example assumes the supplied class has a matching stylesheet; normal authoring uses `css`.
+This is a generated-code support API. The example assumes the supplied class has a matching stylesheet; normal authoring uses `style`.
 
 See [Props](README.md) for related methods and types.
 

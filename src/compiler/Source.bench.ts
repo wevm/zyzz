@@ -8,7 +8,7 @@ import { Css } from 'zyzz/web'
 import * as Templates from '../../test/fixtures/Templates.js'
 
 for (const count of [10, 100, 1000]) {
-  const source = `import { css } from 'zyzz';\n${Array.from({ length: count }, (_, index) => `export const card${index} = css({ color: '#fff', padding: '${index}px' });`).join('\n')}`
+  const source = `import { style } from 'zyzz';\n${Array.from({ length: count }, (_, index) => `export const card${index} = style({ color: '#fff', padding: '${index}px' });`).join('\n')}`
 
   describe(`source extraction / ${count} styles`, () => {
     bench(

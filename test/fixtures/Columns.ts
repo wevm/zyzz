@@ -3,12 +3,12 @@
  * @module
  */
 /** Source exercises shared colors, numeric keywords, and fragment priority. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{color:{rule:'#06c'}}});
-export const columns = zyzz.css({columnCount:2,columnWidth:'auto',columnGap:'12px',columnFill:'auto',columnRuleColor:'rule',columnRuleStyle:'solid',columnRuleWidth:'thin',orphans:2,widows:3})();
-export const fragment = css({breakBefore:['auto','column!'],breakAfter:'auto',breakInside:'avoid-column',columnSpan:'none'})();
-export const spanning = css({columnSpan:'all',breakBefore:'auto'})();
-export const automatic = css({columnCount:'auto',columnWidth:'80px',columnGap:'normal',columnFill:'balance'})();
+export const columns = zyzz.style({columnCount:2,columnWidth:'auto',columnGap:'12px',columnFill:'auto',columnRuleColor:'rule',columnRuleStyle:'solid',columnRuleWidth:'thin',orphans:2,widows:3})();
+export const fragment = style({breakBefore:['auto','column!'],breakAfter:'auto',breakInside:'avoid-column',columnSpan:'none'})();
+export const spanning = style({columnSpan:'all',breakBefore:'auto'})();
+export const automatic = style({columnCount:'auto',columnWidth:'80px',columnGap:'normal',columnFill:'balance'})();
 `
 
 /** Native controls are authored independently from the compiler input. */

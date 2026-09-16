@@ -12,7 +12,7 @@ Define typed thresholds in config, then reference them in media and container co
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css, theme } = Config.create({
+export const { style, theme } = Config.create({
   theme: {
     breakpoints: { tablet: '48rem' },
     containerNames: ['sidebar'],
@@ -23,15 +23,15 @@ export const { css, theme } = Config.create({
 ```
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const region = css({
+  export const region = style({
     containerName: 'sidebar',
     containerType: 'inline-size',
   })
 
-  export const content = css({
+  export const content = style({
     padding: 'sm',
     '@container sidebar >=card': { display: 'grid' },
     '@media tablet': { padding: 'md' },
@@ -51,10 +51,10 @@ Media thresholds measure the viewport; container thresholds measure the eligible
 Use pseudo styles for browser state and data attributes for application state. Keep accessibility attributes on the real control.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const button = css({
+  export const button = style({
     ':disabled': { opacity: 0.5 },
     ':focus-visible': { outline: '2px solid currentColor' },
     ':hover': { opacity: 0.8 },
@@ -72,14 +72,14 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 ### Style Relationships
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `style()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `style()` supplies identity without declarations.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const card = css()
-  export const label = css({
+  export const card = style()
+  export const label = style({
     selectors: {
       [`${card}:hover &`]: { color: 'blue' },
       [`${card}[data-state="open"] > &`]: { opacity: 1 },

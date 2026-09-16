@@ -482,7 +482,7 @@ export const theme = Theme.define({
 })
 
 /** Inferred bundled authoring boundary, replaced by compilation. */
-export const css = theme.css
+export const style = theme.style
 
 /** Bundled recipe authoring with inferred token and selection contracts. */
 export const variants = theme.variants

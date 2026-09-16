@@ -20,7 +20,7 @@ import type * as PackedStyles from './PackedStyles.js'
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
   /** Ordered authoring members replaced in a shared destructuring initializer. */
-  readonly bindings?: readonly ('css' | 'variants')[] | undefined
+  readonly bindings?: readonly ('style' | 'variants')[] | undefined
   /** Whether the initializer supplies destructured authoring bindings. */
   readonly destructured: boolean
   /** Retains an immutable theme/configuration alias value with an explicit type. */
@@ -86,7 +86,7 @@ export type Link = {
   readonly definition: Theme.Definition
   readonly kind:
     | 'config'
-    | 'css'
+    | 'style'
     | 'theme'
     | 'style-reference'
     | 'animation'
@@ -570,7 +570,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           for (const { key, id } of bindings) {
             if (
-              (key === 'css' || key === 'variants') &&
+              (key === 'style' || key === 'variants') &&
               !link.call.selection &&
               !link.call.initialization
             ) {
@@ -588,7 +588,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
                   ...link,
                   binding: `${options.namespace}-${id.name}`,
                   call: alias,
-                  kind: 'css',
+                  kind: 'style',
                 }
 
               continue
@@ -658,7 +658,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
             if (!member)
               fail(
-                'Destructure only css and the configured single theme; other helpers remain unsupported.',
+                'Destructure only style and the configured single theme; other helpers remain unsupported.',
                 id,
               )
 
@@ -809,7 +809,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
       for (const { key, id } of bindings) {
         if (
-          (key === 'css' || key === 'variants') &&
+          (key === 'style' || key === 'variants') &&
           !link.call.selection &&
           !link.call.initialization
         ) {
@@ -827,7 +827,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
               ...link,
               binding: `${options.namespace}-${id.name}`,
               call: alias,
-              kind: 'css',
+              kind: 'style',
             }
 
           continue
@@ -895,7 +895,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
         if (!member)
           fail(
-            'Destructure only css and the configured single theme; other helpers remain unsupported.',
+            'Destructure only style and the configured single theme; other helpers remain unsupported.',
             id,
           )
 
@@ -948,7 +948,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         !expression.computed &&
         !expression.optional &&
         expression.property.type === 'Identifier' &&
-        ['css', 'variants'].includes(expression.property.name)
+        ['style', 'variants'].includes(expression.property.name)
       ) {
         return expression.object
       }
@@ -988,11 +988,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
             property.type !== 'Property' ||
             property.computed ||
             property.key.type !== 'Identifier' ||
-            (property.key.name !== 'css' && property.key.name !== 'variants') ||
+            (property.key.name !== 'style' &&
+              property.key.name !== 'variants') ||
             property.value.type !== 'Identifier'
           )
             fail(
-              'Destructure only css or variants into const bindings without defaults or rest properties.',
+              'Destructure only style or variants into const bindings without defaults or rest properties.',
               property,
             )
 
@@ -1011,7 +1012,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       return [
         {
           id: variable.id,
-          member: recipe ? ('variants' as const) : ('css' as const),
+          member: recipe ? ('variants' as const) : ('style' as const),
         },
       ]
     })()
@@ -1021,12 +1022,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
       (statement.type === 'ExportNamedDeclaration' && !options.linked)
     )
       fail(
-        'Theme css aliases require a local module-level const binding.',
+        'Theme style aliases require a local module-level const binding.',
         variable,
       )
 
     if (expression.start < theme.end)
-      fail('Theme css aliases must follow their definition.', expression)
+      fail('Theme style aliases must follow their definition.', expression)
 
     for (const [index, { id, member }] of bindings.entries()) {
       const alias = Object.freeze({
@@ -1056,7 +1057,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           binding: `${options.namespace}-${id.name}`,
           call: alias,
           definition: themes[alias.name]!,
-          kind: 'css',
+          kind: 'style',
         }
     }
     aliasReferences.add(source.start)
@@ -1094,7 +1095,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             binding: `${options.namespace}-${name}`,
             call,
             definition: themes[call.name]!,
-            kind: names.has(name) ? 'theme' : 'css',
+            kind: names.has(name) ? 'theme' : 'style',
           }
         exportReferences.add(specifier.local.start)
       }
@@ -1138,7 +1139,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         return true
 
       if (node.start < alias.end)
-        fail('Theme css alias references must follow their definition.', node)
+        fail('Theme style alias references must follow their definition.', node)
 
       if (aliasReferences.has(node.start)) return true
 
@@ -1148,7 +1149,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         parent.optional
       )
         fail(
-          'Theme css aliases support direct calls only; exporting or escaping them requires source linking.',
+          'Theme style aliases support direct calls only; exporting or escaping them requires source linking.',
           node,
         )
 
@@ -1300,7 +1301,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
         if (
           path.length === 1 &&
-          (path[0] === 'css' || path[0] === 'variants')
+          (path[0] === 'style' || path[0] === 'variants')
         ) {
           const call = ancestors[index - 1]
 
@@ -1339,7 +1340,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
 
       fail(
-        'Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.',
+        'Use direct configuration style calls or static theme members; configurations cannot escape or be mutated.',
         node,
       )
     }
@@ -1577,7 +1578,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           staticTokens.push(valueTarget)
         else
           fail(
-            'Token references must be direct property values in bound theme css calls.',
+            'Token references must be direct property values in bound theme style calls.',
             target,
           )
       }
@@ -1599,12 +1600,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
       parent.property.type !== 'Identifier'
     )
       fail(
-        'Use local theme.css calls, theme.className reads, or Theme.extend; other theme references require source linking.',
+        'Use local theme.style calls, theme.className reads, or Theme.extend; other theme references require source linking.',
         node,
       )
 
     if (
-      ['css', 'variants'].includes(parent.property.name) &&
+      ['style', 'variants'].includes(parent.property.name) &&
       grandparent?.type === 'CallExpression' &&
       grandparent.callee === parent &&
       !grandparent.optional
@@ -1621,7 +1622,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
     if (parent.property.name !== 'className')
       fail(
-        'Only direct theme.css calls and theme.className reads are supported here.',
+        'Only direct theme.style calls and theme.className reads are supported here.',
         parent,
       )
 

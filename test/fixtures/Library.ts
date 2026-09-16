@@ -26,13 +26,13 @@ export const zyzz = Config.create({defaultTheme:'base',layers:['components'],the
 export const design = zyzz;
 export const theme = zyzz.themes.base;
 export const reusable = Config.create({theme});
-export const css = zyzz.css;
-export const props = zyzz.css({color:'brand',padding:'md'})();`
+export const style = zyzz.style;
+export const props = zyzz.style({color:'brand',padding:'md'})();`
         : `import { Theme } from 'zyzz';
 export const theme = Theme.define({color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}});
 export const mint = Theme.extend(theme,{color:{brand:{light:'#175',dark:'#afa'}}});
-export const css = theme.css;
-export const props = css({color:'brand',padding:'md'})();`,
+export const style = theme.style;
+export const props = style({color:'brand',padding:'md'})();`,
     },
   })
 

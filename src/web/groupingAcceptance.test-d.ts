@@ -1,5 +1,5 @@
 /** Checks grouping-rule authoring contexts through public web entrypoints. @module */
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { describe, test } from 'vite-plus/test'
 import { global } from 'zyzz/web'
 
@@ -15,7 +15,7 @@ describe('grouping rules', () => {
       '@layer base.components': { body: { color: 'red' } },
       '@starting-style': { body: { opacity: 0 } },
     })
-    css({
+    style({
       '@media (1px < width < 1000px)': { color: 'red' },
       '@supports (display: grid) or (display: flex)': { display: 'grid' },
       '@container card (width > 1px)': { color: 'red' },
@@ -26,10 +26,10 @@ describe('grouping rules', () => {
     // @ts-expect-error descriptor rules are not global grouping contexts
     global({ '@font-face': { body: { color: 'red' } } })
     // @ts-expect-error page descriptor rules are not style grouping contexts
-    css({ '@page': { color: 'red' } })
+    style({ '@page': { color: 'red' } })
     // @ts-expect-error condition values are declaration objects
-    css({ '@media (color)': 'red' })
+    style({ '@media (color)': 'red' })
     // @ts-expect-error starting-style does not have a prelude
-    css({ '@starting-style invalid': { color: 'red' } })
+    style({ '@starting-style invalid': { color: 'red' } })
   })
 })

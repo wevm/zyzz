@@ -1,6 +1,6 @@
 /** Styles and global rules for the playground shell. @module */
 import { global } from 'zyzz/web'
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 global({
   '@layer base': {
@@ -21,12 +21,12 @@ global({
 
 /** Svelte components spread these applied styles as native attributes. */
 export namespace styles {
-  export const button = css({
+  export const button = style({
     ':hover': { color: 'accent' },
     '&[aria-pressed="true"]': { fontWeight: 700 },
   })
 
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -35,7 +35,7 @@ export namespace styles {
     },
   })
 
-  export const nested = css({
+  export const nested = style({
     backgroundColor: 'surface',
     border: '1px solid',
     borderColor: 'line',
@@ -44,27 +44,27 @@ export namespace styles {
     padding: 'md',
   })
 
-  export const sample = css({ color: 'accent' })
+  export const sample = style({ color: 'accent' })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const row = css({
+  export const row = style({
     alignItems: 'center',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 'sm',
   })
 
-  export const page = css({
+  export const page = style({
     backgroundColor: 'surface',
     color: 'text',
     minHeight: '100vh',
     padding: 'md',
   })
 
-  export const content = css({ marginInline: 'auto', maxWidth: '48rem' })
+  export const content = style({ marginInline: 'auto', maxWidth: '48rem' })
 
-  export const grid = css({
+  export const grid = style({
     display: 'grid',
     gap: 'md',
     marginTop: 'section',

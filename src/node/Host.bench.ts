@@ -12,7 +12,7 @@ import { Host } from 'zyzz/node'
 import * as Watch from '../../test/fixtures/Watch.js'
 
 const run = Util.promisify(ChildProcess.execFile)
-const source = `import { css } from 'zyzz'; ${Array.from({ length: 100 }, (_, index) => `export const card${index} = css({ padding: '${index}px' });`).join('\n')}`
+const source = `import { style } from 'zyzz'; ${Array.from({ length: 100 }, (_, index) => `export const card${index} = style({ padding: '${index}px' });`).join('\n')}`
 
 for (const mode of [
   'cold process rebuild',

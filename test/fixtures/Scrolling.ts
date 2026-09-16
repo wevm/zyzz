@@ -15,17 +15,17 @@ export const controls = {
 } as const
 
 /** Source covers tokens, per-entry maps, priority, and scroll-into-view offsets. */
-export const source = `import { Config, css } from 'zyzz';
+export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{auto:'24px',offset:'20px'}}});
-export const container = zyzz.css({
+export const container = zyzz.style({
   overflow:'auto',height:'100px',width:'100px',scrollBehavior:'auto',
   scrollPaddingTop:['10px',zyzz.theme.tokens.spacing.offset],
   scrollPaddingInline:'auto',overscrollBehavior:['auto','contain!'],overscrollBehaviorX:'none'
 })();
-export const target = css({scrollMarginTop:'10px',height:'20px'})();
-export const explicit = zyzz.css({scrollPaddingTop:zyzz.theme.tokens.spacing.auto})();
-export const named = zyzz.css({scrollPaddingBlockStart:'offset!'})();
-export const smooth = css({scrollBehavior:'smooth'})();
+export const target = style({scrollMarginTop:'10px',height:'20px'})();
+export const explicit = zyzz.style({scrollPaddingTop:zyzz.theme.tokens.spacing.auto})();
+export const named = zyzz.style({scrollPaddingBlockStart:'offset!'})();
+export const smooth = style({scrollBehavior:'smooth'})();
 `
 
 /** Complete property vocabulary; declaration order deliberately exercises overlap. */

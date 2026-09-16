@@ -12,7 +12,7 @@ import {
   positionTry,
   property,
 } from 'zyzz/web'
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 const double = cssFunction({
   body: { result: 'calc(var(--size) * 2)' },
@@ -43,7 +43,7 @@ property({
 })
 
 namespace styles {
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -52,20 +52,20 @@ namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const row = css({
+  export const row = style({
     alignItems: 'center',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 'sm',
   })
 
-  export const graphic = css({ '& svg|svg': { color: '#047857' } })
+  export const graphic = style({ '& svg|svg': { color: '#047857' } })
 
-  export const profileFallback = css({ color: '#4338ca' })
+  export const profileFallback = style({ color: '#4338ca' })
 
-  export const sample = css({
+  export const sample = style({
     border: '1px solid',
     borderColor: 'line',
     borderRadius: '0.5rem',
@@ -74,21 +74,21 @@ namespace styles {
     [roomy]: { borderStyle: 'dashed' },
   })
 
-  export const functionValue = css({ marginLeft: double('8px') })
+  export const functionValue = style({ marginLeft: double('8px') })
 
-  export const profileColor = css({
+  export const profileColor = style({
     color: `color(${profile} 0.26 0.22 0.79)`,
   })
 
-  export const typography = css({
+  export const typography = style({
     fontFamily: '"Playground Color", "Playground Mono", monospace',
     fontPalette: palette,
     fontVariantAlternates: 'styleset(alternate)',
   })
 
-  export const anchor = css({ anchorName: '--playground-anchor' })
+  export const anchor = style({ anchorName: '--playground-anchor' })
 
-  export const popover = css({
+  export const popover = style({
     backgroundColor: 'surface',
     border: '1px solid',
     borderColor: 'line',
@@ -100,7 +100,7 @@ namespace styles {
     positionTryFallbacks: above,
   })
 
-  export const rotate = css((values: { angle: `${number}deg` }) => ({
+  export const rotate = style((values: { angle: `${number}deg` }) => ({
     '--playground-angle': values.angle,
     display: 'inline-block',
     transform: 'rotate(var(--playground-angle))',

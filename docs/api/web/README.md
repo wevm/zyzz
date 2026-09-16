@@ -22,7 +22,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 Additional direct imports include `cssFunction`, `customMedia`, `importCss`, and `namespace`. Conditional/grouping rules remain native keys in valid style bodies. Use `property` for native registration syntax and `variable()` for typed scalar variable bindings.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { cssFunction, customMedia, importCss } from 'zyzz/web'
 
 importCss({ url: './reset.css', layer: 'reset' })
@@ -33,7 +33,7 @@ const double = cssFunction({
   body: { result: 'calc(var(--size) * 2)' },
 })
 namespace styles {
-  export const box = css({
+  export const box = style({
     width: double('2rem'),
     [compact]: { display: 'none' },
   })

@@ -73,10 +73,10 @@ The scalar grammar accepts these units from [CSS Values and Units](https://www.w
 Units use the listed spellings. Signed decimals and finite scientific notation are accepted where the property permits their value. Emission preserves units; the browser resolves font, viewport, and container metrics. Existing theme length tokens, fallbacks, and importance suffixes use the same grammar.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const panel = css({
+  export const panel = style({
     width: ['80vw', '80cqi'],
     height: '100dvh',
     padding: '1lh!',
@@ -100,15 +100,15 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 ```ts
 import { Config } from 'zyzz'
 
-const { css } = Config.create({ theme: { spacing: { header: '4rem' } } })
+const { style } = Config.create({ theme: { spacing: { header: '4rem' } } })
 namespace styles {
-  export const scroller = css({
+  export const scroller = style({
     overflow: 'auto',
     scrollPaddingBlockStart: 'header',
     overscrollBehavior: 'contain',
   })
 
-  export const section = css({ scrollMarginBlockStart: '1rem' })
+  export const section = style({ scrollMarginBlockStart: '1rem' })
 }
 ```
 
@@ -127,16 +127,16 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 | `scrollSnapStop`  | `normal`, `always`                                                                                |
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const carousel = css({
+  export const carousel = style({
     display: 'flex',
     overflowX: 'auto',
     scrollSnapType: 'x mandatory',
   })
 
-  export const slide = css({
+  export const slide = style({
     flexShrink: 0,
     scrollSnapAlign: 'start',
     scrollSnapStop: 'always',
@@ -160,10 +160,10 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 | `textUnderlineOffset`     | Signed lengths, percentages, zero, `auto`                                                    |
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const link = css({
+  export const link = style({
     textDecorationLine: ['underline', 'underline overline!'],
     textDecorationStyle: 'wavy',
     textDecorationThickness: '2px',
@@ -191,21 +191,24 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 | `textOverflow`                 | `clip`, `ellipsis`                                                |
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
 namespace styles {
-  export const title = css({
+  export const title = style({
     letterSpacing: '-.02em',
     textTransform: 'uppercase',
   })
 
-  export const excerpt = css({
+  export const excerpt = style({
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
   })
 
-  export const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
+  export const paragraph = style({
+    overflowWrap: 'anywhere',
+    textIndent: '1em',
+  })
 }
 ```
 
@@ -216,7 +219,7 @@ Hyphenation dictionaries and language-sensitive casing remain browser-owned. Ind
 ## Intrinsic Sizing
 
 ```ts
-css({
+style({
   inlineSize: 'fit-content',
   minInlineSize: 'min-content',
   maxInlineSize: 'none',
@@ -237,7 +240,7 @@ Valid CSS keywords precede same-named theme tokens. An explicit `theme.tokens.sp
 ## Borders and Outlines
 
 ```ts
-css({
+style({
   borderStyle: 'solid',
   borderWidth: '1px',
   borderInlineStartColor: 'brand',
@@ -260,7 +263,7 @@ Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`,
 
 ```ts
 namespace styles {
-  export const row = css({
+  export const row = style({
     display: 'flex',
     flexWrap: 'wrap',
     alignContent: 'space-between',
@@ -268,7 +271,7 @@ namespace styles {
     overflowY: 'auto',
   })
 
-  export const item = css({
+  export const item = style({
     flexBasis: '12rem',
     alignSelf: 'center',
     order: -1,
@@ -284,7 +287,7 @@ namespace styles {
 
 ```ts
 namespace styles {
-  export const panel = css({
+  export const panel = style({
     inlineSize: '20rem',
     paddingInline: '1rem',
     marginBlockEnd: '0.5rem!',
@@ -387,7 +390,7 @@ See [In-Memory Themes](../../../guides/themes.md#compile-themes) for token compi
 CSS-wide keywords, ordered fallbacks, and importance are supported. Border spacing applies to separated borders; caption placement and empty-cell visibility follow native table behavior. Two-length spacing and spacing tokens remain deferred because the current token domain permits percentages.
 
 ```ts
-css({
+style({
   borderCollapse: 'separate',
   borderSpacing: '8px',
   captionSide: 'bottom',
@@ -410,7 +413,7 @@ css({
 All five accept CSS-wide keywords, ordered fallbacks, and importance. Cursor images, SVG pointer targeting, and selection containment remain deferred. These keyword domains do not accept theme tokens. Resizing requires suitable native overflow behavior; hidden elements retain layout space. Pointer targeting does not disable keyboard interaction or establish disabled-control semantics.
 
 ```ts
-css({
+style({
   cursor: 'text',
   overflow: 'auto',
   resize: 'inline',
@@ -425,7 +428,7 @@ css({
 Column rule color/style/width follow scalar color, line-style, and nonnegative length domains; widths also accept thin/medium/thick. Shared color tokens apply to rule colors. Break-before/after/inside keywords control fragmentation; orphan/widow counts are positive safe integers. Percentages in column widths, shorthands, and regions remain deferred.
 
 ```ts
-css({
+style({
   columnCount: 2,
   columnGap: '1rem',
   columnRuleStyle: 'solid',
@@ -443,7 +446,7 @@ css({
 `objectFit` accepts `fill`, `contain`, `cover`, `none`, or `scale-down`; `boxDecorationBreak` accepts `slice`/`clone`. `backfaceVisibility` accepts `hidden`/`visible` and `transformStyle` accepts `flat`/`preserve-3d`. Transform functions remain a separate capability. These keyword domains do not map theme tokens.
 
 ```ts
-css({
+style({
   display: 'flow-root',
   contain: 'layout',
   isolation: 'isolate',
@@ -521,7 +524,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 Motion lists keep function commas separate from declaration-list commas:
 
 ```ts
-css({
+style({
   transitionDuration: '250ms, 500ms',
   transitionTimingFunction: 'steps(4, end), cubic-bezier(0, -1, 1, 2)',
   animationIterationCount: '2.5, infinite',

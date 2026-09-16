@@ -34,7 +34,7 @@ export const native =
   '@keyframes Fade{from{opacity:0}to{opacity:1}}@keyframes fade{from{opacity:1}to{opacity:0}}@container Card (min-width:100px){.probe{color:rgb(0 128 0)}}'
 
 /** Source compilation preserves names rather than normalizing their case. */
-export const source = `import { css } from 'zyzz';
-export const container = css({containerName:'Card Secondary',containerType:'inline-size',width:'200px'})();
-export const motion = css({animationName:'Fade',animationDuration:'1s',animationDelay:'-250ms',animationPlayState:'paused',animationTimingFunction:'linear',animationFillMode:'both'})();
-export const names = css({anchorName:'--Anchor',scrollTimelineName:'--Scroll, none',viewTimelineName:'--View',viewTransitionName:'Hero',transitionProperty:'opacity, transform',willChange:'opacity, contents'})();`
+export const source = `import { style } from 'zyzz';
+export const container = style({containerName:'Card Secondary',containerType:'inline-size',width:'200px'})();
+export const motion = style({animationName:'Fade',animationDuration:'1s',animationDelay:'-250ms',animationPlayState:'paused',animationTimingFunction:'linear',animationFillMode:'both'})();
+export const names = style({anchorName:'--Anchor',scrollTimelineName:'--Scroll, none',viewTimelineName:'--View',viewTransitionName:'Hero',transitionProperty:'opacity, transform',willChange:'opacity, contents'})();`

@@ -1,7 +1,7 @@
 /** Binds live values to static rules and shared registered variables. @module */
 import { useState } from 'react'
 import { variable } from 'zyzz'
-import { css } from './zyzz.config'
+import { style } from './zyzz.config'
 
 namespace variables {
   export const amount = variable('number', {
@@ -11,7 +11,7 @@ namespace variables {
 }
 
 namespace styles {
-  export const section = css({
+  export const section = style({
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
@@ -20,23 +20,23 @@ namespace styles {
     },
   })
 
-  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+  export const muted = style({ color: 'subtle', fontSize: '0.875rem' })
 
-  export const row = css({
+  export const row = style({
     alignItems: 'center',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 'sm',
   })
 
-  export const bar = css((values: { width: `${number}%` }) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     backgroundColor: 'accent',
     borderRadius: '0.5rem',
     height: '0.75rem',
     width: values.width,
   }))
 
-  export const inherited = css({
+  export const inherited = style({
     backgroundColor: 'muted',
     borderRadius: '0.5rem',
     height: '0.75rem',
@@ -44,11 +44,11 @@ namespace styles {
     width: '100%',
   })
 
-  export const scope = css({
+  export const scope = style({
     variables: { [variables.amount]: 0.5 },
   })
 
-  export const track = css({
+  export const track = style({
     backgroundColor: 'backdrop',
     borderRadius: '0.5rem',
     marginTop: 'md',

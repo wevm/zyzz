@@ -1,6 +1,6 @@
 /** Declares single-element recipes for ahead-of-time compilation. @module */
 import * as Authoring from './internal/Authoring.js'
-import type { css } from './css.js'
+import type { style } from './styleFunction.js'
 import type * as Config from './Config.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
@@ -63,7 +63,7 @@ type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
 type Input<definition> = Selections<Axes<definition>> &
-  css.Options &
+  style.Options &
   (keyof Conditions<definition> extends never
     ? {}
     : {
@@ -97,7 +97,7 @@ type Checked<
     : key extends 'variants'
       ? {
           readonly [axis in keyof definition[key]]: axis extends
-            | keyof css.Options
+            | keyof style.Options
             | 'class'
             | 'conditions'
             | 'key'
@@ -167,7 +167,7 @@ type Checked<
  */
 export function variants<const definition extends Record<string, unknown>>(
   definition: definition & NoInfer<Checked<definition, {}, never, {}>>,
-  options: css.DefinitionOptions = {},
+  options: style.DefinitionOptions = {},
 ): variants.ReturnType<definition> {
   return Authoring.variants(
     definition,
@@ -180,22 +180,22 @@ export declare namespace variants {
   /** Theme-bound authoring with the same inferred selection contract. */
   type Bound<
     tokens extends Theme.Tokens,
-    output extends css.Output = 'react',
+    output extends style.Output = 'react',
     layers extends string = never,
     mappings extends Shorthands.Map = {},
   > = <const definition extends Record<string, unknown>>(
     definition: definition &
       NoInfer<Checked<definition, tokens, layers, mappings>>,
-    options?: css.DefinitionOptions,
+    options?: style.DefinitionOptions,
   ) => ReturnType<definition, output>
 
   /** Callable selection; omitted values use defaults and null suppresses them. */
-  type ReturnType<definition, output extends css.Output = 'react'> = <
+  type ReturnType<definition, output extends style.Output = 'react'> = <
     const input extends Input<definition> = Input<definition>,
   >(
     input?: input &
       Record<Exclude<Keys<input>, keyof Input<definition>>, never>,
-  ) => css.Props<output> & {
+  ) => style.Props<output> & {
     readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
       | string
       | undefined

@@ -61,16 +61,16 @@ Declare layer order once in config. Bound styles infer the exact layer names.
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css } = Config.create({
+export const { style } = Config.create({
   layers: ['reset', 'base', 'components'],
 })
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({ '@layer components': { padding: '1rem' } })
+  export const card = style({ '@layer components': { padding: '1rem' } })
 }
 ```
 
@@ -89,7 +89,7 @@ The initial bundle contains the shared layer prelude. Conflicting order constrai
 Declare fonts and keyframes near their owning code. Disable nonessential motion when reduced motion is requested.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { fontFace, keyframes } from 'zyzz/web'
 
 fontFace({
@@ -99,7 +99,7 @@ fontFace({
 })
 const enter = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
 namespace styles {
-  export const notice = css({
+  export const notice = style({
     animationDuration: '160ms',
     animationName: enter,
     fontFamily: '"App Sans", sans-serif',

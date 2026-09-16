@@ -87,16 +87,16 @@ describe('compile', () => {
       const library = Graph.compile({
         modules: {
           'library.ts': `import {Config} from 'zyzz';
-            export const {css, themes} = Config.create({defaultTheme:'mint',themes:{mint:{color:{brand:'red',extra:'blue'}}}});
-            export namespace styles { export const card = css({color:'brand'}); }`,
+            export const {style, themes} = Config.create({defaultTheme:'mint',themes:{mint:{color:{brand:'red',extra:'blue'}}}});
+            export namespace styles { export const card = style({color:'brand'}); }`,
         },
       })
       const output = Graph.compile({
         contracts: { 'library.js': library.contracts['library.ts']! },
         imports: { 'app.ts': { library: 'library.js', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz'; import {styles, themes} from 'library';
-            const unused = css({width:'123px'});
+          'app.ts': `import {style} from 'zyzz'; import {styles, themes} from 'library';
+            const unused = style({width:'123px'});
             export const props = styles.card();
             export const scope = themes({theme:'mint'});`,
         },
@@ -121,9 +121,9 @@ describe('compile', () => {
           const output = Transform.compile({
             cssOutput,
             moduleId: 'browser.ts',
-            source: `import {css} from 'zyzz';
-              const unused = css({padding:'100px'});
-              export const card = css({padding:'8px',paddingLeft:'2px',color:'red'});`,
+            source: `import {style} from 'zyzz';
+              const unused = style({padding:'100px'});
+              export const card = style({padding:'8px',paddingLeft:'2px',color:'red'});`,
           })
           const page = await browser.newPage()
 
@@ -165,11 +165,11 @@ describe('compile', () => {
         const output = Transform.compile({
           cssOutput,
           moduleId: 'reachability.ts',
-          source: `import {css} from 'zyzz';
-          const unused = css({width:'123px'});
+          source: `import {style} from 'zyzz';
+          const unused = style({width:'123px'});
           namespace styles {
-            export const dead = css({height:'456px'});
-            export const live = css({color:'red'});
+            export const dead = style({height:'456px'});
+            export const live = style({color:'red'});
           }
           export const props = styles.live();`,
         })
@@ -188,18 +188,18 @@ describe('compile', () => {
     ])('retains observable definitions: %s', (usage) => {
       const output = Transform.compile({
         moduleId: 'observable.ts',
-        source: `import {css} from 'zyzz'; const card = css({color:'red'}); ${usage}`,
+        source: `import {style} from 'zyzz'; const card = style({color:'red'}); ${usage}`,
       })
 
       expect(output.css.includes('color:red;')).toMatchInlineSnapshot('true')
     })
 
     test('retains sibling selector references and escaped namespaces', () => {
-      const source = `import {css} from 'zyzz';
+      const source = `import {style} from 'zyzz';
         namespace styles {
-          export const parent = css({padding:'8px'});
-          export const child = css({selectors:{[\`\${parent} &\`]:{color:'red'}}});
-          export const unused = css({height:'456px'});
+          export const parent = style({padding:'8px'});
+          export const child = style({selectors:{[\`\${parent} &\`]:{color:'red'}}});
+          export const unused = style({height:'456px'});
         }
         export const props = styles.child();`
       const output = Transform.compile({ moduleId: 'siblings.ts', source })
@@ -218,7 +218,7 @@ describe('compile', () => {
     })
 
     test('retains development and CSS-only definitions', () => {
-      const source = `import {css} from 'zyzz'; const unused = css({width:'123px'});`
+      const source = `import {style} from 'zyzz'; const unused = style({width:'123px'});`
 
       for (const options of [
         { development: true },
@@ -243,7 +243,7 @@ describe('compile', () => {
       ]) {
         const output = Transform.compile({
           moduleId: 'retained.ts',
-          source: `import {css} from 'zyzz'; namespace styles {export const card = css({color:'red'});} ${usage}`,
+          source: `import {style} from 'zyzz'; namespace styles {export const card = style({color:'red'});} ${usage}`,
         })
 
         expect(output.css.includes('color:red;')).toMatchInlineSnapshot('true')
@@ -253,7 +253,7 @@ describe('compile', () => {
     test('ignores shadowed reads when proving a local definition unused', () => {
       const output = Transform.compile({
         moduleId: 'shadowed.ts',
-        source: `import {css} from 'zyzz'; const card = css({color:'red'}); export function read(card: string) {return card;}`,
+        source: `import {style} from 'zyzz'; const card = style({color:'red'}); export function read(card: string) {return card;}`,
       })
 
       expect(output.css).toMatchInlineSnapshot('""')
@@ -384,10 +384,10 @@ describe('compile', () => {
     for (let start = 0; start < cases.length; start += 100) {
       const batch = cases.slice(start, start + 100)
 
-      const source = `import { css } from 'zyzz';\n${batch
+      const source = `import { style } from 'zyzz';\n${batch
         .map(
           ({ property, value }, index) =>
-            `export const case${index} = css({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
+            `export const case${index} = style({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
         )
         .join('\n')}`
 
@@ -437,7 +437,7 @@ describe('compile', () => {
           groups.set(key, group)
         }
 
-        return `${group} satisfies readonly Style.Properties['${property}'][];\ncss({${JSON.stringify(property)}: [${values
+        return `${group} satisfies readonly Style.Properties['${property}'][];\nstyle({${JSON.stringify(property)}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))
           .join(',')}]});`
@@ -445,13 +445,13 @@ describe('compile', () => {
 
       const rejections = Conformance.rejected.map(
         ({ property, value }) =>
-          `// @ts-expect-error Invalid or deliberately unsupported scalar.\ncss({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\ncss({${property}: ${JSON.stringify(`${value}!`)}});`,
+          `// @ts-expect-error Invalid or deliberately unsupported scalar.\nstyle({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\nstyle({${property}: ${JSON.stringify(`${value}!`)}});`,
       )
       const booleans = Conformance.properties().map(
         (property) =>
-          `css({${JSON.stringify(property)}: [' InHeRiT ! ImPoRtAnT ', ${JSON.stringify(String.raw`\69 nherit/**/!impor\74 ant`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${JSON.stringify(property)}: true});`,
+          `style({${JSON.stringify(property)}: [' InHeRiT ! ImPoRtAnT ', ${JSON.stringify(String.raw`\69 nherit/**/!impor\74 ant`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\nstyle({${JSON.stringify(property)}: true});`,
       )
-      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
+      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { style, type Style } from 'zyzz';\ndescribe('style', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
 
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
       await Fs.writeFile(
@@ -504,21 +504,21 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-cursor-not-allowed-g0Lxqe-0{cursor:not-allowed;}
-      .z-pointer-events-kn2JvZ-1{pointer-events:auto;pointer-events:none!important;pointer-events:auto;}
-      .z-resize-none-g0Lxqe-2{resize:none;}
-      .z-user-select-none-g0Lxqe-3{user-select:none;}
-      .z-visibility-visible-g0Lxqe-4{visibility:visible;}
-      .z-cursor-text-F8bOSL-0{cursor:text;}
-      .z-pointer-events-auto-F8bOSL-1{pointer-events:auto;}
-      .z-resize-both-F8bOSL-2{resize:both;}
-      .z-user-select-text-F8bOSL-3{user-select:text;}
-      .z-visibility-visible-F8bOSL-4{visibility:visible;}
-      .z-cursor-default-S4QByL-0{cursor:default;}
-      .z-pointer-events-auto-S4QByL-1{pointer-events:auto;}
-      .z-resize-none-S4QByL-2{resize:none;}
-      .z-user-select-auto-S4QByL-3{user-select:auto;}
-      .z-visibility-hidden-S4QByL-4{visibility:hidden;}"
+      ".z-cursor-not-allowed-azihbK-0{cursor:not-allowed;}
+      .z-pointer-events-h_D8nu-1{pointer-events:auto;pointer-events:none!important;pointer-events:auto;}
+      .z-resize-none-azihbK-2{resize:none;}
+      .z-user-select-none-azihbK-3{user-select:none;}
+      .z-visibility-visible-azihbK-4{visibility:visible;}
+      .z-cursor-text-61PFXL-0{cursor:text;}
+      .z-pointer-events-auto-61PFXL-1{pointer-events:auto;}
+      .z-resize-both-61PFXL-2{resize:both;}
+      .z-user-select-text-61PFXL-3{user-select:text;}
+      .z-visibility-visible-61PFXL-4{visibility:visible;}
+      .z-cursor-default-ZPy7g--0{cursor:default;}
+      .z-pointer-events-auto-ZPy7g--1{pointer-events:auto;}
+      .z-resize-none-ZPy7g--2{resize:none;}
+      .z-user-select-auto-ZPy7g--3{user-select:auto;}
+      .z-visibility-hidden-ZPy7g--4{visibility:hidden;}"
     `)
 
     const lines = output.css.split('\n')
@@ -672,21 +672,21 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-border-collapse-collapse-LZLfAo-0{border-collapse:collapse;}
-      .z-border-spacing-12px-LZLfAo-1{border-spacing:12px;}
-      .z-caption-side-top-LZLfAo-2{caption-side:top;}
-      .z-empty-cells-show-LZLfAo-3{empty-cells:show;}
-      .z-table-layout-auto-LZLfAo-4{table-layout:auto;}
-      .z-border-collapse-separate--g1KQN-0{border-collapse:separate;}
-      .z-border-spacing-6rEbsp-1{border-spacing:2px;border-spacing:8px!important;border-spacing:4px;}
-      .z-caption-side-bottom--g1KQN-2{caption-side:bottom;}
-      .z-empty-cells-hide--g1KQN-3{empty-cells:hide;}
-      .z-table-layout-fixed--g1KQN-4{table-layout:fixed;}
-      .z-border-collapse-separate-gIWelh-0{border-collapse:separate;}
-      .z-border-spacing-0-gIWelh-1{border-spacing:0;}
-      .z-caption-side-top-gIWelh-2{caption-side:top;}
-      .z-empty-cells-show-gIWelh-3{empty-cells:show;}
-      .z-table-layout-fixed-gIWelh-4{table-layout:fixed;}"
+      ".z-border-collapse-collapse-ijCf9U-0{border-collapse:collapse;}
+      .z-border-spacing-12px-ijCf9U-1{border-spacing:12px;}
+      .z-caption-side-top-ijCf9U-2{caption-side:top;}
+      .z-empty-cells-show-ijCf9U-3{empty-cells:show;}
+      .z-table-layout-auto-ijCf9U-4{table-layout:auto;}
+      .z-border-collapse-separate-H-PVVN-0{border-collapse:separate;}
+      .z-border-spacing-e1cahr-1{border-spacing:2px;border-spacing:8px!important;border-spacing:4px;}
+      .z-caption-side-bottom-H-PVVN-2{caption-side:bottom;}
+      .z-empty-cells-hide-H-PVVN-3{empty-cells:hide;}
+      .z-table-layout-fixed-H-PVVN-4{table-layout:fixed;}
+      .z-border-collapse-separate-KGtEF1-0{border-collapse:separate;}
+      .z-border-spacing-0-KGtEF1-1{border-spacing:0;}
+      .z-caption-side-top-KGtEF1-2{caption-side:top;}
+      .z-empty-cells-show-KGtEF1-3{empty-cells:show;}
+      .z-table-layout-fixed-KGtEF1-4{table-layout:fixed;}"
     `)
 
     const lines = output.css.split('\n')
@@ -834,19 +834,19 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-aauzfj1an5ia3-zyzz-theme{--z-taauzfj1an5ia3-zyzz-color_2e_brand:#06c;--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke:2px;--z-taauzfj1an5ia3-zyzz-spacing_2e_offset:4px;}
-      .z-text-decoration-line-underline-DgPEkl-0{text-decoration-line:underline;}
-      .z-text-decoration-thickness-from-font-DgPEkl-1{text-decoration-thickness:from-font;}
-      .z-text-underline-offset-auto-DgPEkl-2{text-underline-offset:auto;}
-      .z-text-decoration-skip-ink-auto-DgPEkl-3{text-decoration-skip-ink:auto;}
-      .z-text-decoration-line-Ae21qB-0{text-decoration-line:underline;text-decoration-line:underline overline!important;}
+      .z-text-decoration-line-underline-9CMWVR-0{text-decoration-line:underline;}
+      .z-text-decoration-thickness-from-font-9CMWVR-1{text-decoration-thickness:from-font;}
+      .z-text-underline-offset-auto-9CMWVR-2{text-underline-offset:auto;}
+      .z-text-decoration-skip-ink-auto-9CMWVR-3{text-decoration-skip-ink:auto;}
+      .z-text-decoration-line-1pmjpC-0{text-decoration-line:underline;text-decoration-line:underline overline!important;}
       .z-text-decoration-color-fv4y95{text-decoration-color:var(--z-taauzfj1an5ia3-zyzz-color_2e_brand,#06c);}
       .z-text-decoration-style-wavy-9i30TM{text-decoration-style:wavy;}
-      .z-text-decoration-thickness-RQVaWF-3{text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);}
-      .z-text-underline-offset-tAGtIx-4{text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);}
-      .z-text-decoration-skip-ink-none-5Drf5l-5{text-decoration-skip-ink:none;}
-      .z-text-decoration-line-line-through-5tg39l-0{text-decoration-line:line-through;}
-      .z-text-decoration-thickness-RSXPIS-1{text-decoration-thickness:10%;}
-      .z-text-underline-offset-C-vfg_-2{text-underline-offset:-10%;}"
+      .z-text-decoration-thickness-JsEJLG-3{text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);}
+      .z-text-underline-offset-848GxD-4{text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);}
+      .z-text-decoration-skip-ink-none-8JMewl-5{text-decoration-skip-ink:none;}
+      .z-text-decoration-line-line-through-UASx1B-0{text-decoration-line:line-through;}
+      .z-text-decoration-thickness-Yb-CBc-1{text-decoration-thickness:10%;}
+      .z-text-underline-offset-LyGeZy-2{text-underline-offset:-10%;}"
     `)
 
     const lines = output.css.split('\n')
@@ -970,22 +970,22 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-r52i20xb74bg-zyzz-theme{--z-tr52i20xb74bg-zyzz-spacing_2e_indent:12px;}
-      .z-w-65px-Ps3DYL-0{width:65px;}
+      .z-w-65px-UVwUbf-0{width:65px;}
       .z-word-break-break-all-ot4UW4{word-break:break-all;}
       .z-letter-spacing-TifHQj{letter-spacing:normal;letter-spacing:2px;}
-      .z-w-200px-iiJuxf-0{width:200px;}
+      .z-w-200px-kq0cg--0{width:200px;}
       .z-text-indent-Y-QHx5{text-indent:var(--z-tr52i20xb74bg-zyzz-spacing_2e_indent,12px);}
       .z-text-align-last-start-ot4UW4{text-align-last:start;}
       .z-hyphens-manual-ot4UW4{hyphens:manual;}
       .z-text-transform-uppercase-ot4UW4{text-transform:uppercase;}
-      .z-w-65px-nE3Xmf-0{width:65px;}
+      .z-w-65px-hAAALv-0{width:65px;}
       .z-overflow-hidden-ot4UW4{overflow:hidden;}
-      .z-white-space-fQHWWO-2{white-space:pre;white-space:nowrap!important;}
+      .z-white-space-kiFJGe-2{white-space:pre;white-space:nowrap!important;}
       .z-text-overflow-ellipsis-ot4UW4{text-overflow:ellipsis;}
       .z-word-spacing-3px-ot4UW4{word-spacing:3px;}
-      .z-w-65px-lEfn8--0{width:65px;}
+      .z-w-65px-jh96uf-0{width:65px;}
       .z-overflow-wrap-anywhere-ot4UW4{overflow-wrap:anywhere;}
-      .z-white-space-normal-lEfn8--2{white-space:normal;}"
+      .z-white-space-normal-jh96uf-2{white-space:normal;}"
     `)
 
     const lines = output.css.split('\n')
@@ -998,7 +998,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 78,
+        "column": 80,
         "line": 6,
         "name": "whiteSpace",
         "source": "example/text.ts",
@@ -1121,23 +1121,23 @@ describe('compile', () => {
       .z-display-flex-x98OZk{display:flex;}
       .z-gap-40px-x98OZk{gap:40px;}
       .z-overflow-auto-x98OZk{overflow:auto;}
-      .z-w-100px-eA5Q-c-3{width:100px;}
-      .z-h-100px-eA5Q-c-4{height:100px;}
-      .z-scroll-padding-PZKetX-5{scroll-padding:var(--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge,10px);}
-      .z-scroll-snap-type-HmfHaS-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
+      .z-w-100px-5SskBI-3{width:100px;}
+      .z-h-100px-5SskBI-4{height:100px;}
+      .z-scroll-padding-2dpRGq-5{scroll-padding:var(--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge,10px);}
+      .z-scroll-snap-type-KYY9Rn-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
       .z-flex-direction-column-x98OZk{flex-direction:column;}
-      .z-w-100px-f8l1Hc-1{width:100px;}
-      .z-h-100px-f8l1Hc-2{height:100px;}
-      .z-scroll-padding-10px-f8l1Hc-3{scroll-padding:10px;}
-      .z-scroll-snap-type-6qlKdw-4{scroll-snap-type:y mandatory;}
-      .z-w-60px-AEoHyY-0{width:60px;}
-      .z-h-60px-AEoHyY-1{height:60px;}
+      .z-w-100px-6t4MTY-1{width:100px;}
+      .z-h-100px-6t4MTY-2{height:100px;}
+      .z-scroll-padding-10px-6t4MTY-3{scroll-padding:10px;}
+      .z-scroll-snap-type-cJAmeN-4{scroll-snap-type:y mandatory;}
+      .z-w-60px-c5VhTs-0{width:60px;}
+      .z-h-60px-c5VhTs-1{height:60px;}
       .z-flex-shrink-0-x98OZk{flex-shrink:0;}
       .z-scroll-margin-5px-x98OZk{scroll-margin:5px;}
-      .z-scroll-snap-align-start-AEoHyY-4{scroll-snap-align:start;}
+      .z-scroll-snap-align-start-c5VhTs-4{scroll-snap-align:start;}
       .z-scroll-snap-stop-b0QiNb{scroll-snap-stop:normal;scroll-snap-stop:always!important;}
-      .z-scroll-snap-align-Vi-4jn-0{scroll-snap-align:none center;}
-      .z-scroll-snap-type-gUOpgj-1{scroll-snap-type:both proximity;}"
+      .z-scroll-snap-align-POxxtm-0{scroll-snap-align:none center;}
+      .z-scroll-snap-type-ghp6iq-1{scroll-snap-type:both proximity;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1254,18 +1254,18 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1567lwky4x5t8-zyzz-theme{--z-t1567lwky4x5t8-zyzz-spacing_2e_offset:20px;--z-t1567lwky4x5t8-zyzz-spacing_2e_auto:24px;}
       .z-overflow-auto-B6dQF9{overflow:auto;}
-      .z-h-100px-M0tC7S-1{height:100px;}
+      .z-h-100px-3Tf0Em-1{height:100px;}
       .z-w-100px-B6dQF9{width:100px;}
-      .z-scroll-behavior-auto-M0tC7S-3{scroll-behavior:auto;}
-      .z-scroll-padding-top-ZoHx9L-4{scroll-padding-top:10px;scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px);}
-      .z-scroll-padding-inline-auto-M0tC7S-5{scroll-padding-inline:auto;}
-      .z-overscroll-behavior-sueC1m-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
-      .z-overscroll-behavior-x-none-M0tC7S-7{overscroll-behavior-x:none;}
+      .z-scroll-behavior-auto-3Tf0Em-3{scroll-behavior:auto;}
+      .z-scroll-padding-top-g6s675-4{scroll-padding-top:10px;scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px);}
+      .z-scroll-padding-inline-auto-3Tf0Em-5{scroll-padding-inline:auto;}
+      .z-overscroll-behavior-IMs-AT-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
+      .z-overscroll-behavior-x-none-3Tf0Em-7{overscroll-behavior-x:none;}
       .z-scroll-margin-top-10px-B6dQF9{scroll-margin-top:10px;}
-      .z-h-20px-xBKpXS-1{height:20px;}
-      .z-scroll-padding-top-vp7wsV-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
-      .z-scroll-padding-block-start-JkjiV7-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
-      .z-scroll-behavior-smooth-AKnOgm-0{scroll-behavior:smooth;}"
+      .z-h-20px-AI3pmS-1{height:20px;}
+      .z-scroll-padding-top-k6p8dg-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
+      .z-scroll-padding-block-start-7rlgxR-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
+      .z-scroll-behavior-smooth-nVl4x6-0{scroll-behavior:smooth;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1372,24 +1372,24 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-flktdz142jfd9-zyzz-theme{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
-      .z-inline-size-min-content-E_9bP3-0{inline-size:min-content;}
-      .z-inline-size-max-content-qCeNAz-0{inline-size:max-content;}
-      .z-inline-size--iT0c9-0{inline-size:100%;inline-size:fit-content!important;}
-      .z-min-width-auto-v86vIz-1{min-width:auto;}
-      .z-max-width-none-v86vIz-2{max-width:none;}
-      .z-w-d6LqzB-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
-      .z-min-inline-size-SY6MQA-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
-      .z-max-inline-size-max-content-DrbqEP-1{max-inline-size:max-content;}
-      .z-block-size-fit-content-DrbqEP-2{block-size:fit-content;}
-      .z-min-block-size-auto-DrbqEP-3{min-block-size:auto;}
-      .z-max-block-size-none-DrbqEP-4{max-block-size:none;}
-      .z-flex-basis-content-3uMsKj-0{flex-basis:content;}
-      .z-w-5px-3uMsKj-1{width:5px;}
+      .z-inline-size-min-content-wgvHpz-0{inline-size:min-content;}
+      .z-inline-size-max-content-CDZc7j-0{inline-size:max-content;}
+      .z-inline-size-iZORfz-0{inline-size:100%;inline-size:fit-content!important;}
+      .z-min-width-auto-1vbD03-1{min-width:auto;}
+      .z-max-width-none-1vbD03-2{max-width:none;}
+      .z-w-7xoZdx-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
+      .z-min-inline-size-6AFzOm-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
+      .z-max-inline-size-max-content-GuhUQ3-1{max-inline-size:max-content;}
+      .z-block-size-fit-content-GuhUQ3-2{block-size:fit-content;}
+      .z-min-block-size-auto-GuhUQ3-3{min-block-size:auto;}
+      .z-max-block-size-none-GuhUQ3-4{max-block-size:none;}
+      .z-flex-basis-content-BYbMtz-0{flex-basis:content;}
+      .z-w-5px-BYbMtz-1{width:5px;}
       .z-flex-shrink-0-e3yyNT{flex-shrink:0;}
-      .z-min-width-0-3uMsKj-3{min-width:0;}
-      .z-flex-basis-auto-JBCHxj-0{flex-basis:auto;}
-      .z-w-5px-JBCHxj-1{width:5px;}
-      .z-min-width-0-JBCHxj-2{min-width:0;}"
+      .z-min-width-0-BYbMtz-3{min-width:0;}
+      .z-flex-basis-auto-60XYuP-0{flex-basis:auto;}
+      .z-w-5px-60XYuP-1{width:5px;}
+      .z-min-width-0-60XYuP-2{min-width:0;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1404,7 +1404,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 43,
+        "column": 45,
         "line": 5,
         "name": "inlineSize",
         "source": "example/sizing.ts",
@@ -1543,20 +1543,20 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1qal89srxpye2-zyzz-theme{--z-t1qal89srxpye2-zyzz-borderColor_2e_brand:#06c;--z-t1qal89srxpye2-zyzz-color_2e_brand:#fff;--z-t1qal89srxpye2-zyzz-borderRadius_2e_round:8px;}
       .z-border-style-solid-U8cv88{border-style:solid;}
-      .z-border-width-2px-TqyS-T-1{border-width:2px;}
-      .z-border-left-width-3px-TqyS-T-2{border-left-width:3px;}
-      .z-border-inline-start-width-DXwoWh-3{border-inline-start-width:4px;border-inline-start-width:5px!important;}
-      .z-border-color-eS7UJC-4{border-color:var(--z-t1qal89srxpye2-zyzz-borderColor_2e_brand,#06c);}
-      .z-border-inline-end-color-7VsGgR-5{border-inline-end-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);}
-      .z-border-radius-RqHFqv-6{border-radius:var(--z-t1qal89srxpye2-zyzz-borderRadius_2e_round,8px);}
-      .z-border-start-start-radius-10px-TqyS-T-7{border-start-start-radius:10px;}
+      .z-border-width-2px-ZKGS-D-1{border-width:2px;}
+      .z-border-left-width-3px-ZKGS-D-2{border-left-width:3px;}
+      .z-border-inline-start-width-SowM47-3{border-inline-start-width:4px;border-inline-start-width:5px!important;}
+      .z-border-color-KAvvOR-4{border-color:var(--z-t1qal89srxpye2-zyzz-borderColor_2e_brand,#06c);}
+      .z-border-inline-end-color-WbFSH0-5{border-inline-end-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);}
+      .z-border-radius-MF4-_J-6{border-radius:var(--z-t1qal89srxpye2-zyzz-borderRadius_2e_round,8px);}
+      .z-border-start-start-radius-10px-ZKGS-D-7{border-start-start-radius:10px;}
       .z-outline-color-9SuLX6{outline-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);}
       .z-outline-style-dashed-U8cv88{outline-style:dashed;}
       .z-outline-width-2px-U8cv88{outline-width:2px;}
       .z-outline-offset--1px-U8cv88{outline-offset:-1px;}
-      .z-border-width-2px-1O9ij7-0{border-width:2px;}
-      .z-border-inline-start-width-5px-1O9ij7-1{border-inline-start-width:5px;}
-      .z-border-left-width-3px-1O9ij7-2{border-left-width:3px;}"
+      .z-border-width-2px-AKzTu7-0{border-width:2px;}
+      .z-border-inline-start-width-5px-AKzTu7-1{border-inline-start-width:5px;}
+      .z-border-left-width-3px-AKzTu7-2{border-left-width:3px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1589,25 +1589,25 @@ describe('compile', () => {
       ".z_theme-bjw6jw1i067e2-zyzz-theme{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
       .z-display-flex-aqbEb1{display:flex;}
       .z-flex-wrap-wrap-aqbEb1{flex-wrap:wrap;}
-      .z-w-180px-YbTAIS-2{width:180px;}
-      .z-h-100px-YbTAIS-3{height:100px;}
+      .z-w-180px-zPfrNm-2{width:180px;}
+      .z-h-100px-zPfrNm-3{height:100px;}
       .z-align-content-space-between-aqbEb1{align-content:space-between;}
       .z-align-items-flex-start-aqbEb1{align-items:flex-start;}
       .z-flex-basis-sA-b3W{flex-basis:40px;flex-basis:var(--z-tbjw6jw1i067e2-zyzz-spacing_2e_item,60px);}
       .z-flex-grow-0-aqbEb1{flex-grow:0;}
       .z-flex-shrink-0-aqbEb1{flex-shrink:0;}
-      .z-h-20px-S-EDXS-3{height:20px;}
+      .z-h-20px-M8KMIS-3{height:20px;}
       .z-align-self-flex-end-aqbEb1{align-self:flex-end;}
       .z-order-hwVILE{order:-1!important;}
-      .z-w-40px-y-yXEm-0{width:40px;}
-      .z-h-40px-y-yXEm-1{height:40px;}
-      .z-overflow-W2YVyz-2{overflow:hidden;overflow:clip!important;}
-      .z-overflow-x-visible-y-yXEm-3{overflow-x:visible;}
-      .z-w-40px-AcFA5m-0{width:40px;}
-      .z-h-40px-AcFA5m-1{height:40px;}
-      .z-overflow-x-clip-AcFA5m-2{overflow-x:clip;}
-      .z-overflow-hidden-AcFA5m-3{overflow:hidden;}
-      .z-overflow-y-scroll-AcFA5m-4{overflow-y:scroll;}"
+      .z-w-40px-RvlWdS-0{width:40px;}
+      .z-h-40px-RvlWdS-1{height:40px;}
+      .z-overflow-7jp3G8-2{overflow:hidden;overflow:clip!important;}
+      .z-overflow-x-visible-RvlWdS-3{overflow-x:visible;}
+      .z-w-40px-KFWcsC-0{width:40px;}
+      .z-h-40px-KFWcsC-1{height:40px;}
+      .z-overflow-x-clip-KFWcsC-2{overflow-x:clip;}
+      .z-overflow-hidden-KFWcsC-3{overflow:hidden;}
+      .z-overflow-y-scroll-KFWcsC-4{overflow-y:scroll;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1620,7 +1620,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 48,
+        "column": 50,
         "line": 4,
         "name": "flexBasis",
         "source": "example/flex.ts",
@@ -1747,18 +1747,18 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-9k2sno1hln8ye-zyzz-theme{--z-t9k2sno1hln8ye-zyzz-spacing_2e_space:12px;}
-      .z-w-60px-DXME8T-0{width:60px;}
-      .z-inline-size-DxWGWW-1{inline-size:70px;inline-size:80px!important;}
-      .z-block-size-40px-DXME8T-2{block-size:40px;}
-      .z-pl-2px-DXME8T-3{padding-left:2px;}
-      .z-padding-inline-start-Bt94nX-4{padding-inline-start:4px;padding-inline-start:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px);}
+      .z-w-60px-OlHPEn-0{width:60px;}
+      .z-inline-size-l_dNGm-1{inline-size:70px;inline-size:80px!important;}
+      .z-block-size-40px-OlHPEn-2{block-size:40px;}
+      .z-pl-2px-OlHPEn-3{padding-left:2px;}
+      .z-padding-inline-start-txhE0h-4{padding-inline-start:4px;padding-inline-start:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px);}
       .z-margin-inline-end-IqqfJ7{margin-inline-end:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px)!important;}
       .z-position-relative-8D9lB8{position:relative;}
       .z-inset-inline-start--3px-8D9lB8{inset-inline-start:-3px;}
-      .z-inline-size-30px-PBS8jT-0{inline-size:30px;}
-      .z-w-50px-PBS8jT-1{width:50px;}
-      .z-padding-inline-start-6px-PBS8jT-2{padding-inline-start:6px;}
-      .z-pl-8px-PBS8jT-3{padding-left:8px;}"
+      .z-inline-size-30px-J2GOAT-0{inline-size:30px;}
+      .z-w-50px-J2GOAT-1{width:50px;}
+      .z-padding-inline-start-6px-J2GOAT-2{padding-inline-start:6px;}
+      .z-pl-8px-J2GOAT-3{padding-left:8px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1888,18 +1888,18 @@ describe('compile', () => {
   test('important zero shorthands retain token identity before literal coercion', () => {
     const output = Transform.compile({
       moduleId: 'zero.ts',
-      source: `import { Theme, css } from 'zyzz';
+      source: `import { style, Theme } from 'zyzz';
 const theme = Theme.define({spacing:{0:'8px'}});
-export const token = theme.css({padding:'0!'})();
-export const literal = css({padding:'0!'})();
-export const plain = theme.css({padding:0})();`,
+export const token = theme.style({padding:'0!'})();
+export const literal = style({padding:'0!'})();
+export const plain = theme.style({padding:0})();`,
     })
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1s1gwcevjtf8w-theme{--z-t1s1gwcevjtf8w-theme-spacing_2e_0:8px;}
-      .z-p-KD95-i-0{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
-      .z-p-4e4gRC-0{padding:0!important;}
-      .z-p-0-A-ICLu-0{padding:0;}"
+      .z-p-11ufxO-0{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
+      .z-p-aTbRCY-0{padding:0!important;}
+      .z-p-0-tyf9W_-0{padding:0;}"
     `)
   })
 
@@ -1908,7 +1908,7 @@ export const plain = theme.css({padding:0})();`,
       moduleId: 'assertions.ts',
       source: `import { Theme } from 'zyzz';
 const theme = Theme.define({color:{brand:'#06c'}});
-export const props = theme.css({
+export const props = theme.style({
   display: ['block','flex'] as const,
   color: ((['#000',theme.tokens.color.brand] as const) satisfies readonly unknown[])!,
 })();`,
@@ -1948,11 +1948,11 @@ export const props = theme.css({
       ".z_theme-1aowg2i1i6ewzi-zyzz-theme{--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space:1lh;}
       .z-w-_gPMUm{width:50vw;width:50cqi!important;}
       .z-h-10dvh-G4uFmF{height:10dvh;}
-      .z-ml--1in-sivnrC-2{margin-left:-1in;}
+      .z-ml--1in-_FGNL6-2{margin-left:-1in;}
       .z-border-width-1pc-G4uFmF{border-width:1pc;}
       .z-border-style-solid-G4uFmF{border-style:solid;}
       .z-p-7mLDlp{padding:1rem;padding:var(--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space,1lh);}
-      .z-mt-a1N5Hn-1{margin-top:2rlh!important;}"
+      .z-mt-WhP8sp-1{margin-top:2rlh!important;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1965,7 +1965,7 @@ export const props = theme.css({
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 39,
+        "column": 41,
         "line": 3,
         "name": "width",
         "source": "example/lengths.ts",
@@ -2038,7 +2038,7 @@ export const props = theme.css({
         moduleId: 'example/reserved.ts',
         source: `import { Theme } from 'zyzz';
 const theme = Theme.define({spacing:{md:'4px','md!':'8px'}});
-export const props = theme.css({padding:'md!'})();`,
+export const props = theme.style({padding:'md!'})();`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: example/reserved.ts:44: ["spacing","md!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
@@ -2048,7 +2048,7 @@ export const props = theme.css({padding:'md!'})();`,
         moduleId: 'example/reserved-config.ts',
         source: `import { Config } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{'nested!':{md:'8px'}}}});
-export const props = zyzz.css({padding:'nested!.md'})();`,
+export const props = zyzz.style({padding:'nested!.md'})();`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
@@ -2064,13 +2064,13 @@ export const props = zyzz.css({padding:'nested!.md'})();`,
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1ne2r2w17wkfe-theme{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
       .z_theme-1ne2r2w17wkfe-mint{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#175;}
-      .z-text-P0zJNA-0{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;}
+      .z-text-7Oiy69-0{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;}
       .z-display-W2zXiw{display:block;display:flex;}
       .z-opacity-K3H7Sb{opacity:0.25!important;opacity:0.75;}
-      .z-p-1YYeMr-3{padding:4px!important;padding:8px;}
-      .z-pl-12px-iy4BxH-4{padding-left:12px;}
-      .z-text-fxsFIU-0{color:#fff;}
-      .z-p-20px-pi2l4b-1{padding:20px;}"
+      .z-p-htYKYS-3{padding:4px!important;padding:8px;}
+      .z-pl-12px-qX-Arb-4{padding-left:12px;}
+      .z-text-Tu0UH--0{color:#fff;}
+      .z-p-20px-sonkvb-1{padding:20px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2143,9 +2143,9 @@ export const props = zyzz.css({padding:'nested!.md'})();`,
       source: `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { transparent: '#06c', palette: { 500: '#123' } }, spacing: { 0: '8px', 4: '16px' } });
 const alternate = Theme.extend(theme, { color: { transparent: '#175', palette: { 500: '#456' } } });
-const { css } = theme;
+const { style } = theme;
 export const scope = alternate.className;
-export const props = css({ color: theme.tokens.color.transparent, borderColor: (theme['tokens'].color.palette['500']!), padding: theme.tokens.spacing[0] })();
+export const props = style({ color: theme.tokens.color.transparent, borderColor: (theme['tokens'].color.palette['500']!), padding: theme.tokens.spacing[0] })();
 `,
     })
 
@@ -2153,7 +2153,7 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
       "
       const theme = ({className:"z_theme-1wr3l4n1jk260t-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
       const alternate = ({className:"z_theme-1wr3l4n1jk260t-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
-      const { css } = ({css:undefined} as unknown as {readonly css:import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>['css']});
+      const { style } = ({style:undefined} as unknown as {readonly style:import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>['style']});
       export const scope = "z_theme-1wr3l4n1jk260t-alternate";
       export const props = ({className:"z-text-rmYo07 z-border-color-f9o0Ri z-p-NCEDJ5"});
       "
@@ -2212,7 +2212,7 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 27,
+        "column": 29,
         "line": 6,
         "name": "color",
         "source": "example/tokens.ts",
@@ -2224,10 +2224,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color[key] });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color[key] });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:106: Token paths require static property names without optional access.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Token paths require static property names without optional access.]`,
     )
   })
 
@@ -2235,10 +2235,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color.missing });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color.missing });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:106: Unknown theme token path.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Unknown theme token path.]`,
     )
   })
 
@@ -2246,10 +2246,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:106: Expected a scalar theme token reference.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Expected a scalar theme token reference.]`,
     )
   })
 
@@ -2257,21 +2257,21 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const value = theme.tokens.color.brand;`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const value = theme.tokens.color.brand;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:108: Token references must be direct property values in bound theme css calls.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
-  test('explicit token diagnostics reject root css tokens', () => {
+  test('explicit token diagnostics reject root style tokens', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); css({ color: theme.tokens.color.brand });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); style({ color: theme.tokens.color.brand });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:100: Token references must be direct property values in bound theme css calls.]`,
+      `[Source.ExtractError: example/tokens.ts:104: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2279,10 +2279,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color.brand + '' });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color.brand + '' });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:106: Token references must be direct property values in bound theme css calls.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2290,10 +2290,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.tokens.color.brand = value;`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.tokens.color.brand = value;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:87: Token references must be direct property values in bound theme css calls.]`,
+      `[Source.ExtractError: example/tokens.ts:89: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2301,10 +2301,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color?.brand });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color?.brand });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:106: Token paths require static property names without optional access.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Token paths require static property names without optional access.]`,
     )
   })
 
@@ -2312,10 +2312,10 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color.brand.value });`,
+        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color.brand.value });`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:106: Unknown theme token path.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Unknown theme token path.]`,
     )
   })
 
@@ -2325,7 +2325,7 @@ const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, 
 const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
 export type Brand = typeof theme.tokens.color.brand;
 export const scope = alternate.className;
-export const props = theme.css({ color: 'brand', padding: 'md' })();`
+export const props = theme.style({ color: 'brand', padding: 'md' })();`
 
     const result = Transform.compile({ moduleId: 'example/theme.ts', source })
 
@@ -2371,7 +2371,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
 
       await Fs.writeFile(
         file,
-        `${result.code}\ntheme.css({ padding: 1 });\n// @ts-expect-error The numeric token 2 is undeclared.\ntheme.css({ padding: 2 });`,
+        `${result.code}\ntheme.style({ padding: 1 });\n// @ts-expect-error The numeric token 2 is undeclared.\ntheme.style({ padding: 2 });`,
       )
 
       const checked = await Util.promisify(ChildProcess.execFile)(
@@ -2410,7 +2410,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 33,
+        "column": 35,
         "line": 6,
         "name": "color",
         "source": "example/theme.ts",
@@ -2428,7 +2428,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
   }, 35_000)
 
   test('theme identity survives value edits and preceding unrelated definitions', () => {
-    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.css({ color: 'brand' })();`
+    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.style({ color: 'brand' })();`
     const original = Transform.compile({ moduleId: 'example/theme.ts', source })
     const changed = Transform.compile({
       moduleId: 'example/theme.ts',
@@ -2491,11 +2491,11 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
     async (kind) => {
       const alias = (() => {
         if (kind === 'member') {
-          return 'const css = theme.css;'
+          return 'const style = theme.style;'
         }
 
         if (kind === 'destructured') {
-          return 'const { css } = theme;'
+          return 'const { style } = theme;'
         }
 
         return ''
@@ -2507,7 +2507,7 @@ const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
 export const alternateScope = alternate.className;
 export const baseScope = theme.className;
 ${alias}
-export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : 'css'}(${kind === 'tokens' ? '{ color: theme.tokens.color.brand, padding: theme.tokens.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
+export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.style' : 'style'}(${kind === 'tokens' ? '{ color: theme.tokens.color.brand, padding: theme.tokens.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
 
       const result = Transform.compile({ moduleId: 'example/theme.ts', source })
 
@@ -2597,7 +2597,7 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
   )
 
   test('JavaScript theme modules remain JavaScript and shadowed factories remain untouched', async () => {
-    const source = `import { Theme as T } from 'zyzz'; const theme = T.define({ color: { brand: '#000' } }); export const props = theme.css({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }`
+    const source = `import { Theme as T } from 'zyzz'; const theme = T.define({ color: { brand: '#000' } }); export const props = theme.style({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }`
     const result = Transform.compile({ moduleId: 'example/theme.js', source })
     const transformed = await Esbuild.transform(result.code, { loader: 'js' })
 
@@ -2634,31 +2634,31 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
     )
   })
 
-  test('theme css aliases and destructuring compile with lexical shadowing', async () => {
+  test('theme style aliases and destructuring compile with lexical shadowing', async () => {
     const result = Transform.compile({
       moduleId: 'example/aliases.ts',
       source: `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { brand: '#06c' }, spacing: { md: '8px' } });
-const css = theme.css;
-const chained = css;
-const { css: renamed } = theme;
+const style = theme.style;
+const chained = style;
+const { style: renamed } = theme;
 export type Styles = Parameters<typeof renamed>[0];
 export const first = chained({ color: 'brand' })();
 export const second = renamed({ padding: 'md' })();
-export function shadow(css: (input: string) => string) { return css('untouched') }
+export function shadow(style: (input: string) => string) { return style('untouched') }
 `,
     })
 
     expect(result.code).toMatchInlineSnapshot(`
       "
       const theme = ({className:"z_theme-1ypjmwd1mnjqht-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>);
-      const css = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']);
-      const chained = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']);
-      const { css: renamed } = ({css:undefined} as unknown as {readonly css:import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']});
+      const style = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['style']);
+      const chained = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['style']);
+      const { style: renamed } = ({style:undefined} as unknown as {readonly style:import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['style']});
       export type Styles = Parameters<typeof renamed>[0];
       export const first = ({className:"z-text-dGicqt"});
       export const second = ({className:"z-p-vjzitQ"});
-      export function shadow(css: (input: string) => string) { return css('untouched') }
+      export function shadow(style: (input: string) => string) { return style('untouched') }
       "
     `)
     expect(result.css).toMatchInlineSnapshot(`
@@ -2708,7 +2708,7 @@ renamed({ color: 'brand' });
 // @ts-expect-error Unknown tokens remain rejected after rewriting.
 renamed({ color: 'unknown' });
 // @ts-expect-error Aliases preserve token domains.
-css({ color: 'md' });
+style({ color: 'md' });
 `,
       )
 
@@ -2741,16 +2741,16 @@ css({ color: 'md' });
       moduleId: 'example/aliases.js',
       source: `import { Theme } from 'zyzz';
 const theme = Theme.define({color:{brand:'#06c'}});
-const { css } = theme;
-export function card(value = css({color:'brand'})()) { var css = 1; return value }
+const { style } = theme;
+export function card(value = style({color:'brand'})()) { var style = 1; return value }
 `,
     })
 
     expect(result.code).toMatchInlineSnapshot(`
       "
       const theme = ({className:"z_theme-1yrnmp3116l80n-theme"});
-      const { css } = ({css:undefined});
-      export function card(value = ({className:"z-text-sxFbO7"})) { var css = 1; return value }
+      const { style } = ({style:undefined});
+      export function card(value = ({className:"z-text-sxFbO7"})) { var style = 1; return value }
       "
     `)
 
@@ -2763,10 +2763,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const css = theme.css;`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const style = theme.style;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:95: Theme css aliases require a local module-level const binding.]`,
+      `[Source.ExtractError: example/aliases.ts:95: Theme style aliases require a local module-level const binding.]`,
     )
   })
 
@@ -2774,10 +2774,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; consume(css);`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; consume(style);`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:113: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:117: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2785,10 +2785,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; (css as unknown) = value;`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; (style as unknown) = value;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:106: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:110: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2796,10 +2796,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { css = fallback } = theme;`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { style = fallback } = theme;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:90: Destructure only css or variants into const bindings without defaults or rest properties.]`,
+      `[Source.ExtractError: example/aliases.ts:90: Destructure only style or variants into const bindings without defaults or rest properties.]`,
     )
   })
 
@@ -2807,10 +2807,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { css, ...rest } = theme;`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { style, ...rest } = theme;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:95: Destructure only css or variants into const bindings without defaults or rest properties.]`,
+      `[Source.ExtractError: example/aliases.ts:97: Destructure only style or variants into const bindings without defaults or rest properties.]`,
     )
   })
 
@@ -2818,10 +2818,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); let css = theme.css;`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); let style = theme.style;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:86: Theme css aliases require a local module-level const binding.]`,
+      `[Source.ExtractError: example/aliases.ts:86: Theme style aliases require a local module-level const binding.]`,
     )
   })
 
@@ -2829,10 +2829,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); css({color:'brand'}); const css = theme.css;`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); style({color:'brand'}); const style = theme.style;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:82: Theme css alias references must follow their definition.]`,
+      `[Source.ExtractError: example/aliases.ts:82: Theme style alias references must follow their definition.]`,
     )
   })
 
@@ -2840,10 +2840,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; css?.({color:'brand'});`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; style?.({color:'brand'});`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:105: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:109: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2851,10 +2851,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; export { css };`,
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; export { style };`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:114: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:118: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2973,7 +2973,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
   })
 
   test('folded applications need no runtime and maps trace Unicode and CRLF sources', async () => {
-    const source = `import { css } from 'zyzz';\r\nconst text = '🎉';\r\nexport const props = css({ color: '#f00', padding: '8px' })();`
+    const source = `import { style } from 'zyzz';\r\nconst text = '🎉';\r\nexport const props = style({ color: '#f00', padding: '8px' })();`
     const result = Transform.compile({ moduleId: 'example/inline.ts', source })
 
     const bundle = await Esbuild.build({
@@ -3012,13 +3012,13 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     ).toMatchInlineSnapshot(`
       [
         {
-          "column": 27,
+          "column": 29,
           "line": 3,
           "name": "color",
           "source": "example/inline.ts",
         },
         {
-          "column": 27,
+          "column": 29,
           "line": 3,
           "name": "color",
           "source": "example/inline.ts",
@@ -3058,31 +3058,31 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
 
     expect(result.map.sourcesContent).toMatchInlineSnapshot(`
     [
-      "import { css } from 'zyzz';
+      "import { style } from 'zyzz';
     const text = '🎉';
-    export const props = css({ color: '#f00', padding: '8px' })();",
+    export const props = style({ color: '#f00', padding: '8px' })();",
     ]
   `)
 
     expect(result.cssMap.sourcesContent).toMatchInlineSnapshot(`
     [
-      "import { css } from 'zyzz';
+      "import { style } from 'zyzz';
     const text = '🎉';
-    export const props = css({ color: '#f00', padding: '8px' })();",
+    export const props = style({ color: '#f00', padding: '8px' })();",
     ]
   `)
   })
 
   test('imports, hashbangs, type references, shadowing, and surrounding JSX survive rewriting', async () => {
     const sources = [
-      `import other, { css } from 'zyzz'; export const props = css({})(); export { other };`,
-      `"use client"; import { css } from 'zyzz'; export const button = css({});`,
-      `#!/usr/bin/env node\nimport { css, Style } from 'zyzz'; export const button = css({}); export { Style };`,
-      `import { Style, css, css as other } from 'zyzz'; export const a = css({})(); export const b = other({})(); export { Style };`,
-      `import { css, css as other, Style } from 'zyzz'; export const a = css({})(); export const b = other({})(); export { Style };`,
-      `import { css } from 'zyzz'; export type Signature = typeof css; export const button = css({});`,
-      `import { css } from 'zyzz'; const __zyzzProps = 1; export const el = <button {...css({color:'#f00'})()} />; export const button = css({});`,
-      `import { css } from 'zyzz'; export function f(value = css({})()) { var css; return value; }`,
+      `import other, { style } from 'zyzz'; export const props = style({})(); export { other };`,
+      `"use client"; import { style } from 'zyzz'; export const button = style({});`,
+      `#!/usr/bin/env node\nimport { style, Style } from 'zyzz'; export const button = style({}); export { Style };`,
+      `import { Style, style, style as other } from 'zyzz'; export const a = style({})(); export const b = other({})(); export { Style };`,
+      `import { style, Style, style as other } from 'zyzz'; export const a = style({})(); export const b = other({})(); export { Style };`,
+      `import { style } from 'zyzz'; export type Signature = typeof style; export const button = style({});`,
+      `import { style } from 'zyzz'; const __zyzzProps = 1; export const el = <button {...style({color:'#f00'})()} />; export const button = style({});`,
+      `import { style } from 'zyzz'; export function f(value = style({})()) { var style; return value; }`,
       `export const untouched = '🎉';`,
     ]
 
@@ -3103,20 +3103,20 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         "import other from 'zyzz'; export const props = ({className:""}); export { other };",
         ""use client";
       import { Props as __zyzzProps } from 'zyzz/runtime';
-        export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-64"});",
+        export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-66"});",
         "#!/usr/bin/env node
 
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-77"}); export { Style };",
+      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-79"}); export { Style };",
         "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-86"});",
+      import { style } from 'zyzz'; export type Signature = typeof style; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-90"});",
         "
       import { Props as __zyzzProps_ } from 'zyzz/runtime';
-       const __zyzzProps = 1; export const el = <button {...({className:"z-text-STkmkZ"})} />; export const button = __zyzzProps_.create({className:"z-style-15sihh01ggr9so-130"});",
-        "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
+       const __zyzzProps = 1; export const el = <button {...({className:"z-text-STkmkZ"})} />; export const button = __zyzzProps_.create({className:"z-style-15sihh01ggr9so-134"});",
+        "import { style } from 'zyzz'; export function f(value = ({className:""})) { var style; return value; }",
         "export const untouched = '🎉';",
       ]
     `)
@@ -3129,11 +3129,11 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     try {
       const first = Transform.compile({
         moduleId: 'package/first.ts',
-        source: `import { css } from 'zyzz'; export const button = css({ color: '#f00', padding: '8px' });`,
+        source: `import { style } from 'zyzz'; export const button = style({ color: '#f00', padding: '8px' });`,
       })
       const second = Transform.compile({
         moduleId: 'package/second.ts',
-        source: `import { css } from 'zyzz'; export const props = css({ color: '#00f', padding: '4px' })();`,
+        source: `import { style } from 'zyzz'; export const props = style({ color: '#00f', padding: '4px' })();`,
       })
 
       await Fs.writeFile(Path.join(directory, 'first.ts'), first.code)
@@ -3219,7 +3219,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
 
       const output = Transform.compile({
         moduleId: 'library/button.ts',
-        source: `import { css } from 'zyzz'; export const button = css({ color: '#f00' });`,
+        source: `import { style } from 'zyzz'; export const button = style({ color: '#f00' });`,
       })
 
       await Fs.writeFile(Path.join(directory, 'button.ts'), output.code)
@@ -3275,7 +3275,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
 
       expect(JSON.parse(consumer.stdout)).toMatchInlineSnapshot(`
         {
-          "className": "z-text-sScUyo z-style-fyitz4td647s-50 external",
+          "className": "z-text-sScUyo z-style-fyitz4td647s-52 external",
         }
       `)
 
@@ -3288,7 +3288,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
   }, 30000)
 
   test('maps quoted braces in selector conditions to their authored keys', () => {
-    const source = `import {css} from 'zyzz'; export const card=css({selectors:{'&[data-state="{"]':{color:'red'}}})`
+    const source = `import {style} from 'zyzz'; export const card=style({selectors:{'&[data-state="{"]':{color:'red'}}})`
     const output = Transform.compile({ moduleId: 'quoted.ts', source })
     const offset = output.css.indexOf('&[data-state')
     const prefix = output.css.slice(0, offset).split('\n')
@@ -3321,7 +3321,7 @@ const config=Config.create({theme:{color:{brand:'red'}}});
 export const dots=counterStyle({symbols:'"x"'});
 fontFace({fontFamily:'Evidence',src:'url(/font.ttf)'});
 export namespace styles {
-  export const text = config.css({color:'brand'})
+  export const text = config.style({color:'brand'})
 }`,
       })
       const trace = new Trace.TraceMap(output.cssMap)
@@ -3516,7 +3516,7 @@ describe('atRuleBrowser', () => {
     test('Chromium loads a real font and applies counters, keyframes, namespace boundaries, and position fallbacks', async () => {
       const output = Graph.compile({
         modules: {
-          'rules.ts': `import {css} from 'zyzz';import {fontFace,counterStyle,keyframes,positionTry,global,page} from 'zyzz/web';
+          'rules.ts': `import {style} from 'zyzz';import {fontFace,counterStyle,keyframes,positionTry,global,page} from 'zyzz/web';
 fontFace({fontFamily:'Evidence',src:${JSON.stringify(`url("${Font.url}")`)},fontDisplay:'block'});
 export const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
 export const fade=keyframes({from:{opacity:0},to:{opacity:1}});
@@ -3691,7 +3691,7 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
       const output = Transform.compile({
         moduleId: 'queries.ts',
         source: `import {Theme} from 'zyzz';const theme=Theme.define({breakpoints:{tablet:'48rem'}});export namespace styles {
-  export const card = theme.css({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})
+  export const card = theme.style({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})
 }`,
       })
       expect(output.css).toMatchInlineSnapshot(
@@ -3704,15 +3704,15 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     test('keeps scope, layer, and scroll-state nesting in authored order', () => {
       const output = Transform.compile({
         moduleId: 'scope.ts',
-        source: `import {css} from 'zyzz'; export namespace styles {
-  export const box = css({'@scope (.outer) to (.stop)':{'@layer components':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}})
+        source: `import {style} from 'zyzz'; export namespace styles {
+  export const box = style({'@scope (.outer) to (.stop)':{'@layer components':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}})
 }`,
       })
       expect(output.css).toMatchInlineSnapshot(
         `
-      ".z-text-Dgnas_-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
-      .z-text-CG6n4I-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
-    `,
+        ".z-text-uy1Cfg-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
+        .z-text-8j44x4-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
+      `,
       )
     })
     test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {
@@ -3733,8 +3733,8 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     test('Chromium applies local scope and layer rules as a scroll-state query changes', async () => {
       const output = Transform.compile({
         moduleId: 'nested.ts',
-        source: `import {css} from 'zyzz';export namespace styles {
-  export const item = css({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})
+        source: `import {style} from 'zyzz';export namespace styles {
+  export const item = style({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})
 }`,
       })
       const name = Object.values(output.classes)[0]!
@@ -3817,7 +3817,7 @@ describe('atomicReview', () => {
       const compiler = Graph.create()
       const modules = {
         'styles.ts':
-          "import {css} from 'zyzz';export const a=css({color:'red',padding:'2px'});export const b=css({color:'red',padding:'4px'})",
+          "import {style} from 'zyzz';export const a=style({color:'red',padding:'2px'});export const b=style({color:'red',padding:'4px'})",
       }
       const atomic = compiler.compile({ modules })
       const grouped = compiler.compile({
@@ -3826,17 +3826,17 @@ describe('atomicReview', () => {
         modules,
       })
       expect(grouped.modules['styles.ts']!.css).toMatchInlineSnapshot(`
-      ".g_1u33cwi148qjze_0{color:red;}
-      .z-style-1u33cwi148qjze-40{padding:2px;}
-      .z-style-1u33cwi148qjze-88{padding:4px;}"
-    `)
+        ".g_1u33cwi148qjze_0{color:red;}
+        .z-style-1u33cwi148qjze-42{padding:2px;}
+        .z-style-1u33cwi148qjze-92{padding:4px;}"
+      `)
       expect(Object.values(grouped.modules['styles.ts']!.classes))
         .toMatchInlineSnapshot(`
-      [
-        "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-40",
-        "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-88",
-      ]
-    `)
+          [
+            "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-42",
+            "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-92",
+          ]
+        `)
       expect(grouped.modules['styles.ts']!.css).not.toBe(
         atomic.modules['styles.ts']!.css,
       )
@@ -3844,7 +3844,7 @@ describe('atomicReview', () => {
     })
 
     test('maps repeated declaration occurrences to their authored keys', () => {
-      const source = `import {css} from 'zyzz'; export const card=css({padding:'8px',paddingLeft:'2px',selectors:{'&:hover':{paddingLeft:'4px'},'&:focus':{paddingLeft:'6px'}}})`
+      const source = `import {style} from 'zyzz'; export const card=style({padding:'8px',paddingLeft:'2px',selectors:{'&:hover':{paddingLeft:'4px'},'&:focus':{paddingLeft:'6px'}}})`
       const output = Transform.compile({ moduleId: 'atomic.ts', source })
       const map = new Trace.TraceMap(output.cssMap)
       const locations = [...output.css.matchAll(/padding-left:/g)].map(
@@ -3858,12 +3858,12 @@ describe('atomicReview', () => {
       )
 
       expect(locations).toMatchInlineSnapshot(`
-      [
-        63,
-        103,
-        133,
-      ]
-    `)
+        [
+          67,
+          107,
+          137,
+        ]
+      `)
     })
 
     test('deduplicates whole independent applications without reversing conflicts', async () => {
@@ -3919,7 +3919,7 @@ describe('atomicReview', () => {
 
     test('development class names survive offsets and declaration insertion', () => {
       const source = (value: string, added = '') =>
-        `import {css} from 'zyzz'; const first=css({color:'${value}'}); const second=css({${added}color:'blue',padding:'8px'})`
+        `import {style} from 'zyzz'; const first=style({color:'${value}'}); const second=style({${added}color:'blue',padding:'8px'})`
       const before = Transform.compile({
         development: true,
         moduleId: 'dev.ts',
@@ -4049,9 +4049,9 @@ describe('backgrounds', () => {
 
 describe('bindings', () => {
   const source = [
-    `import {css, variable} from 'zyzz';`,
+    `import { style, variable } from 'zyzz';`,
     `const vars = ({amount:variable("percentage"),count:variable("number"),gap:variable("length")});`,
-    'export const bar = css({width:vars.amount, marginLeft:`calc(${vars.gap} + 2px)`})();',
+    'export const bar = style({width:vars.amount, marginLeft:`calc(${vars.gap} + 2px)`})();',
     `export const assignments = ({...vars["amount"].set("50%"),...vars["count"].set(2),...vars["gap"].set("8px")});`,
     `export const update = () => ({...vars["amount"].set("75%")});`,
     'export const assign = (values: any) => vars.amount.set(values.amount);',
@@ -4062,7 +4062,7 @@ describe('bindings', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'bad-template.ts',
-          source: `import {css, variable} from 'zyzz'; const vars=({size:variable("length")}); css({color:\`calc(\${vars.size})\`})`,
+          source: `import { style, variable } from 'zyzz'; const vars=({size:variable("length")}); style({color:\`calc(\${vars.size})\`})`,
         }),
       ).toThrow('Variable domain is incompatible with this property.')
     })
@@ -4108,23 +4108,23 @@ describe('bindings', () => {
       expect(
         Transform.compile({
           moduleId: 'border.ts',
-          source: `import {css, variable} from 'zyzz'; const border=({size:variable("length")}); css({borderWidth:\`calc(\${border.size})\`,width:(border.size satisfies unknown)})`,
+          source: `import { style, variable } from 'zyzz'; const border=({size:variable("length")}); style({borderWidth:\`calc(\${border.size})\`,width:(border.size satisfies unknown)})`,
         }).css,
       ).toMatchInlineSnapshot(
         `
-      ".z-border-width-iturna{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
-      .z-w-vT1mKV{width:var(--z-v1h19mkqtvuh7e-56);}"
-    `,
+        ".z-border-width-2qlwj_{border-width:calc(var(--z-v1h19mkqtvuh7e-60));}
+        .z-w-MeHlJF{width:var(--z-v1h19mkqtvuh7e-60);}"
+      `,
       )
     })
     test('rejects incompatible direct binding domains', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'bad.ts',
-          source: `import {css, variable} from 'zyzz'; const vars=({color:variable("color")}); css({width:vars.color})`,
+          source: `import { style, variable } from 'zyzz'; const vars=({color:variable("color")}); style({width:vars.color})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: bad.ts:87: Variable domain is incompatible with this property.]`,
+        `[Source.ExtractError: bad.ts:93: Variable domain is incompatible with this property.]`,
       )
     })
 
@@ -4133,9 +4133,9 @@ describe('bindings', () => {
 
       expect(output.css).toMatchInlineSnapshot(
         `
-      ".z-w-zlK4zG{width:var(--z-v161esph179x895-58);}
-      .z-ml-EEVgLL{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
-    `,
+        ".z-w-wWR0tW{width:var(--z-v161esph179x895-62);}
+        .z-ml-_MsvGH{margin-left:calc(var(--z-v161esph179x895-114) + 2px);}"
+      `,
       )
 
       const built = await Esbuild.build({
@@ -4156,17 +4156,17 @@ describe('bindings', () => {
       )
 
       expect(module.assignments).toMatchInlineSnapshot(`
-      {
-        "--z-v161esph179x895-110": "8px",
-        "--z-v161esph179x895-58": "50%",
-        "--z-v161esph179x895-87": 2,
-      }
-    `)
+        {
+          "--z-v161esph179x895-114": "8px",
+          "--z-v161esph179x895-62": "50%",
+          "--z-v161esph179x895-91": 2,
+        }
+      `)
       expect(module.update()).toMatchInlineSnapshot(`
-      {
-        "--z-v161esph179x895-58": "75%",
-      }
-    `)
+        {
+          "--z-v161esph179x895-62": "75%",
+        }
+      `)
       expect(Object.values(module.assign({ amount: '60%' }))).toEqual(['60%'])
       expect(output.code.includes('variable(')).toMatchInlineSnapshot(`false`)
     })
@@ -4228,12 +4228,12 @@ describe('bindings', () => {
       expect(
         Transform.compile({
           moduleId: 'isolated.ts',
-          source: `import {variable, css} from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); css({opacity:a.x})(); css({opacity:b.x})()`,
+          source: `import { style, variable } from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); style({opacity:a.x})(); style({opacity:b.x})()`,
         }).css,
       ).toMatchInlineSnapshot(`
-      ".z-opacity-nGeW2o-0{opacity:var(--z-vb2d2s91jn7xin-50);}
-      .z-opacity-6TwmkZ-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
-    `)
+        ".z-opacity-KfHOS7-0{opacity:var(--z-vb2d2s91jn7xin-54);}
+        .z-opacity-NkZroG-0{opacity:var(--z-vb2d2s91jn7xin-90);}"
+      `)
     })
 
     test('rejects unknown schema domains without evaluating calls', () => {
@@ -4756,13 +4756,13 @@ describe('colors', () => {
           column: lines[line]!.indexOf('color:rebeccapurple!important'),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 41,
-        "line": 5,
-        "name": "color",
-        "source": "colors.ts",
-      }
-    `)
+        {
+          "column": 43,
+          "line": 5,
+          "name": "color",
+          "source": "colors.ts",
+        }
+      `)
     })
 
     test('named colors and token scheme changes match native browser colors', async () => {
@@ -4907,13 +4907,13 @@ describe('columns', () => {
           line: line + 1,
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 49,
-        "line": 4,
-        "name": "breakBefore",
-        "source": "columns.ts",
-      }
-    `)
+        {
+          "column": 51,
+          "line": 4,
+          "name": "breakBefore",
+          "source": "columns.ts",
+        }
+      `)
     })
 
     test('columns match browser rules and forced fragmentation', async () => {
@@ -5004,11 +5004,11 @@ describe('columns', () => {
 
 describe('conditions', () => {
   const source =
-    'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
+    'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.style({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
   describe('compile', () => {
     test('preserves media case and ignores selector comments for dynamic locality', () => {
       const source =
-        'import {css} from "zyzz"; css((v:{alpha:number})=>({"&/* state, & */:hover":{opacity:v.alpha},"@media SCREEN":{color:"red"}}))'
+        'import {style} from "zyzz"; style((v:{alpha:number})=>({"&/* state, & */:hover":{opacity:v.alpha},"@media SCREEN":{color:"red"}}))'
       const output = Transform.compile({ moduleId: 'comments.ts', source })
 
       expect(output.css).toContain('@media SCREEN')
@@ -5016,7 +5016,7 @@ describe('conditions', () => {
     })
     test('reports invalid condition grammar at each authored key', () => {
       const source =
-        'import {css} from "zyzz"; css({"@supports display: grid":{color:"red"},"@supports color: red":{color:"blue"}})'
+        'import {style} from "zyzz"; style({"@supports display: grid":{color:"red"},"@supports color: red":{color:"blue"}})'
 
       try {
         Transform.compile({ moduleId: 'locations.ts', source })
@@ -5035,19 +5035,19 @@ describe('conditions', () => {
     test('scopes pseudo selectors containing ampersands in data', () => {
       const output = Transform.compile({
         moduleId: 'data.ts',
-        source: `import { css } from 'zyzz'; css({ ':hover[data-token="a&b"]': { color: 'red' } })`,
+        source: `import { style } from 'zyzz'; style({ ':hover[data-token="a&b"]': { color: 'red' } })`,
       })
 
       expect(output.css).toContain('&:hover[data-token="a&b"]')
       expect(() =>
         Transform.compile({
           moduleId: 'backdrop.ts',
-          source: `import { css } from 'zyzz'; css((v: { alpha: number }) => ({ '::backdrop': { opacity: v.alpha } }))`,
+          source: `import { style } from 'zyzz'; style((v: { alpha: number }) => ({ '::backdrop': { opacity: v.alpha } }))`,
         }),
       ).toThrow()
     })
     test('maps condition keys and supports local dynamic selector lists', () => {
-      const source = `import {css} from 'zyzz'; css((v:{alpha:number})=>({'&:hover, &:focus':{opacity:v.alpha},'@media screen':{color:'red'}}))`
+      const source = `import {style} from 'zyzz'; style((v:{alpha:number})=>({'&:hover, &:focus':{opacity:v.alpha},'@media screen':{color:'red'}}))`
       const output = Transform.compile({ moduleId: 'keys.ts', source })
       const map = new Trace.TraceMap(output.cssMap)
 
@@ -5101,19 +5101,19 @@ describe('conditions', () => {
         Transform.compile({
           moduleId: 'selectors.ts',
           source:
-            'import {css} from "zyzz"; css({":where(.dark) &":{color:"red"},"@media only screen":{display:"grid"},"@media not print":{display:"block"}})',
+            'import {style} from "zyzz"; style({":where(.dark) &":{color:"red"},"@media only screen":{display:"grid"},"@media not print":{display:"block"}})',
         }).css,
       ).toMatchInlineSnapshot(
         `
-      ".z-text-_V_FY3-0{:where(.dark) &{color:red;}}
-      .z-display-f5IN5H-1{@media only screen{display:grid;}}
-      .z-display-bFc-Zs-2{@media not print{display:block;}}"
-    `,
+        ".z-text-Ej1-qy-0{:where(.dark) &{color:red;}}
+        .z-display-9deXf3-1{@media only screen{display:grid;}}
+        .z-display-HqRCbU-2{@media not print{display:block;}}"
+      `,
       )
     })
     test('maps declarations after matching text in feature conditions', () => {
       const source =
-        'import {css} from "zyzz"; css({"@supports (display:grid)":{display:"grid"}})'
+        'import {style} from "zyzz"; style({"@supports (display:grid)":{display:"grid"}})'
       const output = Transform.compile({ moduleId: 'supports.ts', source })
       const column = output.css.lastIndexOf('display:')
 
@@ -5123,38 +5123,38 @@ describe('conditions', () => {
           column,
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 59,
-        "line": 1,
-        "name": "display",
-        "source": "supports.ts",
-      }
-    `)
+        {
+          "column": 63,
+          "line": 1,
+          "name": "display",
+          "source": "supports.ts",
+        }
+      `)
     })
     test('rejects private dynamic values on relationship subjects', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'sibling.ts',
           source:
-            'import {css} from "zyzz"; css((v:{alpha:number})=>({"& + .peer":{opacity:v.alpha}}))',
+            'import {style} from "zyzz"; style((v:{alpha:number})=>({"& + .peer":{opacity:v.alpha}}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: sibling.ts:73: Dynamic values require conditions that select the styled element.
-      sibling.ts:73: Expected a literal string or number; expressions are not evaluated.]
-    `)
+        [Source.ExtractError: sibling.ts:77: Dynamic values require conditions that select the styled element.
+        sibling.ts:77: Expected a literal string or number; expressions are not evaluated.]
+      `)
     })
     test('preserves functional pseudo lists and multiline conditions', () => {
       const output = Transform.compile({
         moduleId: 'lines.ts',
         source:
-          'import {css} from "zyzz"; css({":is(:hover,:focus)":{color:"red"},"@media (width > 1px)\\n and (hover: hover)":{padding:"2px"}})',
+          'import {style} from "zyzz"; style({":is(:hover,:focus)":{color:"red"},"@media (width > 1px)\\n and (hover: hover)":{padding:"2px"}})',
       })
 
       expect(output.css).toMatchInlineSnapshot(
         `
-      ".z-text-tN_5ME-0{&:is(:hover,:focus){color:red;}}
-      .z-p-SuCBff-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
-    `,
+        ".z-text-QYzvfa-0{&:is(:hover,:focus){color:red;}}
+        .z-p-3q6TaG-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+      `,
       )
     })
     test('rejects malformed conditions in the direct compiler pipeline', () => {
@@ -5202,14 +5202,14 @@ describe('conditions', () => {
     })
     test('maps nested declarations and passes through raw media lists', () => {
       const source =
-        'import {css} from "zyzz"; css({color:"red","@media screen, print":{padding:"2px"}})'
+        'import {style} from "zyzz"; style({color:"red","@media screen, print":{padding:"2px"}})'
       const output = Transform.compile({ moduleId: 'mapped.ts', source })
 
       expect(output.css).toMatchInlineSnapshot(
         `
-      ".z-text-red-Crrvwo-0{color:red;}
-      .z-p-WAfmDy-1{@media screen, print{padding:2px;}}"
-    `,
+        ".z-text-red-OAJevU-0{color:red;}
+        .z-p-xANo17-1{@media screen, print{padding:2px;}}"
+      `,
       )
 
       const prefix = output.css.slice(0, output.css.indexOf('padding:'))
@@ -5222,27 +5222,27 @@ describe('conditions', () => {
           column,
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 67,
-        "line": 1,
-        "name": "padding",
-        "source": "mapped.ts",
-      }
-    `)
+        {
+          "column": 71,
+          "line": 1,
+          "name": "padding",
+          "source": "mapped.ts",
+        }
+      `)
     })
     test('requires nesting in every selector list member', () => {
       for (const selector of ['&:hover, :focus', ':hover, &:focus'])
         expect(() =>
           Transform.compile({
             moduleId: 'list.ts',
-            source: `import {css} from 'zyzz'; css({${JSON.stringify(selector)}:{color:'red'}})`,
+            source: `import {style} from 'zyzz'; style({${JSON.stringify(selector)}:{color:'red'}})`,
           }),
         ).toThrow('Selector lists require explicit & selectors.')
 
       expect(
         Transform.compile({
           moduleId: 'list.ts',
-          source: `import {css} from 'zyzz'; css({'&:is(:hover, :focus), &:active':{color:'red'}})`,
+          source: `import {style} from 'zyzz'; style({'&:is(:hover, :focus), &:active':{color:'red'}})`,
         }).css,
       ).toContain('&:is(')
     })
@@ -5251,10 +5251,10 @@ describe('conditions', () => {
         Transform.compile({
           moduleId: 'list.ts',
           source:
-            'import {css} from "zyzz"; css({":hover, :focus":{color:"red"}})',
+            'import {style} from "zyzz"; style({":hover, :focus":{color:"red"}})',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: list.ts:31: Selector lists require explicit & selectors.]`,
+        `[Source.ExtractError: list.ts:35: Selector lists require explicit & selectors.]`,
       )
     })
     test('preserves authored nesting and resolves distinct threshold domains', () => {
@@ -5275,7 +5275,7 @@ describe('conditions', () => {
         Transform.compile({
           moduleId: 'dynamic.ts',
           source:
-            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{gap:"4px"}}); export const box=theme.css((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.vars.spacing.gap} + 2px)`}}))',
+            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{gap:"4px"}}); export const box=theme.style((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.vars.spacing.gap} + 2px)`}}))',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
@@ -5296,7 +5296,7 @@ describe('conditions', () => {
         imports: { 'app.ts': { library: 'library.js' } },
         modules: {
           'app.ts':
-            'import {theme} from "library"; export const box=theme.css({"@media tablet":{width:"100px"}})()',
+            'import {theme} from "library"; export const box=theme.style({"@media tablet":{width:"100px"}})()',
         },
       })
 
@@ -5313,7 +5313,7 @@ describe('conditions', () => {
       try {
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"}}); theme.css({${JSON.stringify(key)}:{width:"1px"}})`,
+          source: `import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"}}); theme.style({${JSON.stringify(key)}:{width:"1px"}})`,
         })
         throw new Error('Expected rejection')
       } catch (error) {
@@ -5326,17 +5326,17 @@ describe('conditions', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: 'import {css} from "zyzz"; css({"&[":{color:"red"}})',
+          source: 'import {style} from "zyzz"; style({"&[":{color:"red"}})',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:31: Unbalanced condition delimiters.]`,
+        `[Source.ExtractError: invalid.ts:35: Unbalanced condition delimiters.]`,
       )
     })
     test('Chromium resolves named container thresholds', async () => {
       const output = Transform.compile({
         moduleId: 'container.ts',
         source:
-          'import {Theme} from "zyzz"; const theme=Theme.define({containers:{card:"24rem"},containerNames:["sidebar"]}); export const box=theme.css({width:"40px","@container sidebar >=card":{width:"100px"}})()',
+          'import {Theme} from "zyzz"; const theme=Theme.define({containers:{card:"24rem"},containerNames:["sidebar"]}); export const box=theme.style({width:"40px","@container sidebar >=card":{width:"100px"}})()',
       })
 
       const browser = await chromium.launch()
@@ -5373,7 +5373,7 @@ describe('conditions', () => {
       const output = Transform.compile({
         moduleId: 'browser.ts',
         source:
-          'import {css} from "zyzz"; export const box=css({width:"40px",height:"20px",":hover":{width:"80px"},"@media (width >= 800px)":{height:"40px"},"&[data-active]":{opacity:0.5}})()',
+          'import {style} from "zyzz"; export const box=style({width:"40px",height:"20px",":hover":{width:"80px"},"@media (width >= 800px)":{height:"40px"},"&[data-active]":{opacity:0.5}})()',
       })
 
       const browser = await chromium.launch()
@@ -5704,7 +5704,7 @@ describe('contributions', () => {
       const result = Transform.compile({
         moduleId: 'app/styles.ts',
         source:
-          'import {css} from "zyzz"; import {global,fontFace,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); global({"@layer reset":{"body":{margin:0}},"body":{color:"red"}}); fontFace({fontFamily:"App",src:"url(/font.woff2)",fontDisplay:"swap"}); const unused=keyframes({from:{opacity:0},to:{opacity:1}}); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); export const box=css({animationName:fade})()',
+          'import {style} from "zyzz"; import {global,fontFace,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); global({"@layer reset":{"body":{margin:0}},"body":{color:"red"}}); fontFace({fontFamily:"App",src:"url(/font.woff2)",fontDisplay:"swap"}); const unused=keyframes({from:{opacity:0},to:{opacity:1}}); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); export const box=style({animationName:fade})()',
       })
 
       expect(result.css).toMatchInlineSnapshot(`
@@ -5765,7 +5765,7 @@ describe('contributions', () => {
 
       const modules = {
         'app.ts':
-          'import {css} from "zyzz"; export const box=css({color:"blue"})()',
+          'import {style} from "zyzz"; export const box=style({color:"blue"})()',
         'global.ts':
           'import {global,layers} from "zyzz/web"; layers(["reset","app"]); global({body:{margin:0}})',
       }
@@ -5822,13 +5822,13 @@ describe('controls', () => {
           column: lines[line]!.indexOf('tab-size:8!important'),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 163,
-        "line": 3,
-        "name": "tabSize",
-        "source": "controls.ts",
-      }
-    `)
+        {
+          "column": 165,
+          "line": 3,
+          "name": "tabSize",
+          "source": "controls.ts",
+        }
+      `)
     })
 
     test('list markers match native pixels and input controls match independent CSS', async () => {
@@ -5923,7 +5923,7 @@ describe('corners', () => {
         for (const [property, value] of Object.entries(declarations)) {
           const output = Transform.compile({
             moduleId: 'corners.ts',
-            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+            source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(value)}});`,
           })
           const name = Conformance.name(property)
 
@@ -6011,24 +6011,24 @@ describe('corners', () => {
 })
 
 describe('custom', () => {
-  const source = `import { css } from 'zyzz';
-export const parent = css({'--Accent':'red', '--accent':'blue', '--data':'"a;b:c"', '--count':2})();
-export const child = css({all:'initial', color:'var(--Accent)', backgroundColor:'var(--accent)', '--choice':['red','blue!']})();`
+  const source = `import { style } from 'zyzz';
+export const parent = style({'--Accent':'red', '--accent':'blue', '--data':'"a;b:c"', '--count':2})();
+export const child = style({all:'initial', color:'var(--Accent)', backgroundColor:'var(--accent)', '--choice':['red','blue!']})();`
 
   describe('compile', () => {
     test('preserves case-sensitive names and custom declaration data', () => {
       const output = Transform.compile({ moduleId: 'custom.ts', source })
 
       expect(output.css).toMatchInlineSnapshot(`
-      ".z-_5f_2d_5f__5f_2d_5f_Accent-red-laDu-r{--Accent:red;}
-      .z-_5f_2d_5f__5f_2d_5f_accent-blue-laDu-r{--accent:blue;}
-      .z-_5f_2d_5f__5f_2d_5f_data-KaMmas{--data:"a;b:c";}
-      .z-_5f_2d_5f__5f_2d_5f_count-2-laDu-r{--count:2;}
-      .z-all-initial-N2sItM-0{all:initial;}
-      .z-text-UlwebV-1{color:var(--Accent);}
-      .z-bg-x-R_B0-2{background-color:var(--accent);}
-      .z-_5f_2d_5f__5f_2d_5f_choice-8VmRzn{--choice:red;--choice:blue!important;}"
-    `)
+        ".z-_5f_2d_5f__5f_2d_5f_Accent-red-laDu-r{--Accent:red;}
+        .z-_5f_2d_5f__5f_2d_5f_accent-blue-laDu-r{--accent:blue;}
+        .z-_5f_2d_5f__5f_2d_5f_data-KaMmas{--data:"a;b:c";}
+        .z-_5f_2d_5f__5f_2d_5f_count-2-laDu-r{--count:2;}
+        .z-all-initial-k8QRoM-0{all:initial;}
+        .z-text-HWnhSR-1{color:var(--Accent);}
+        .z-bg-HerJ_2-2{background-color:var(--accent);}
+        .z-_5f_2d_5f__5f_2d_5f_choice-8VmRzn{--choice:red;--choice:blue!important;}"
+      `)
     })
 
     test('escaped punctuation retains custom-property data and importance', () => {
@@ -6315,10 +6315,10 @@ viewTransition({navigation:' AUTO '});`,
     test('keeps declarations after feature blocks mapped to their source', () => {
       const output = Transform.compile({
         moduleId: 'maps.ts',
-        source: `import {css} from 'zyzz';import {fontFeatureValues} from 'zyzz/web';
+        source: `import {style} from 'zyzz';import {fontFeatureValues} from 'zyzz/web';
 fontFeatureValues({families:'Body',features:{'@styleset':{'\\\\65 ditorial':[1,3]}}});
 export namespace styles {
-  export const text = css({color:'red'})
+  export const text = style({color:'red'})
 }`,
       })
       const line =
@@ -6330,13 +6330,13 @@ export namespace styles {
           column: 0,
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 22,
-        "line": 4,
-        "name": "style-1mqnwyd110b1y9-202",
-        "source": "maps.ts",
-      }
-    `)
+        {
+          "column": 22,
+          "line": 4,
+          "name": "style-1mqnwyd110b1y9-204",
+          "source": "maps.ts",
+        }
+      `)
     })
     test('preserves page descriptors and every margin box in authored order', () => {
       const margins = [
@@ -6406,8 +6406,8 @@ export namespace styles {
 
 describe('dynamic', () => {
   const source = [
-    'import { css } from "zyzz";',
-    'export const bar = css((values: { amount: `${number}%`; gap: `${number}px`; alpha: number }) => ({ display:"block", width:values.amount, marginLeft:`calc(${values.gap} + 2px)`,opacity:values.alpha }));',
+    'import { style } from "zyzz";',
+    'export const bar = style((values: { amount: `${number}%`; gap: `${number}px`; alpha: number }) => ({ display:"block", width:values.amount, marginLeft:`calc(${values.gap} + 2px)`,opacity:values.alpha }));',
     'export const first = bar({amount:"25%",gap:"4px",alpha:0.5});',
   ].join('\n')
 
@@ -6420,7 +6420,7 @@ describe('dynamic', () => {
         expect(
           Transform.compile({
             moduleId: 'asserted.ts',
-            source: 'import {css} from "zyzz"; css(' + callback + ')',
+            source: 'import {style} from "zyzz"; style(' + callback + ')',
           }).css,
         ).toContain('opacity:var(')
 
@@ -6433,7 +6433,7 @@ describe('dynamic', () => {
           Transform.compile({
             moduleId: 'joined.ts',
             source:
-              'import {css} from "zyzz"; css((v:{hex:"fff"|"000"})=>(' +
+              'import {style} from "zyzz"; style((v:{hex:"fff"|"000"})=>(' +
               body +
               '))',
           }),
@@ -6443,7 +6443,7 @@ describe('dynamic', () => {
       const output = Transform.compile({
         moduleId: 'zero.ts',
         source:
-          'import {css} from "zyzz"; export const style=css((v:{width:0|`${number}px`})=>({width:v.width}))',
+          'import {style} from "zyzz"; export const card=style((v:{width:0|`${number}px`})=>({width:v.width}))',
       })
 
       const built = await Esbuild.build({
@@ -6463,19 +6463,19 @@ describe('dynamic', () => {
         `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
       )
 
-      expect(Object.values(result.style({ width: 0 }).style)).toEqual([0])
-      expect(Object.values(result.style({ width: '10px' }).style)).toEqual([
+      expect(Object.values(result.card({ width: 0 }).style)).toEqual([0])
+      expect(Object.values(result.card({ width: '10px' }).style)).toEqual([
         '10px',
       ])
 
       for (const source of [
-        'css((v:{color:"initial"|"red"})=>({color:v.color}))',
-        'css((v:{text:string})=>({content:`"${v.text}"`}))',
+        'style((v:{color:"initial"|"red"})=>({color:v.color}))',
+        'style((v:{text:string})=>({content:`"${v.text}"`}))',
       ])
         expect(() =>
           Transform.compile({
             moduleId: 'bad.ts',
-            source: 'import {css} from "zyzz"; ' + source,
+            source: 'import {style} from "zyzz"; ' + source,
           }),
         ).toThrow()
     })
@@ -6483,7 +6483,7 @@ describe('dynamic', () => {
     test('supports asserted callbacks, quoted fields, negative literals, and empty values', async () => {
       const output = Transform.compile({
         moduleId: 'scalars.ts',
-        source: `import {css} from 'zyzz'; export const style = css(((v: {'item-size': string; order: -1 | 1}) => ({marginLeft: v['item-size'], order: v.order})) satisfies unknown)`,
+        source: `import {style} from 'zyzz'; export const card = style(((v: {'item-size': string; order: -1 | 1}) => ({marginLeft: v['item-size'], order: v.order})) satisfies unknown)`,
       })
 
       expect(output.css).toContain('order:var(')
@@ -6505,7 +6505,7 @@ describe('dynamic', () => {
         `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
       )
 
-      expect(Object.values(result.style({ 'item-size': '', order: -1 }).style))
+      expect(Object.values(result.card({ 'item-size': '', order: -1 }).style))
         .toMatchInlineSnapshot(`
       [
         " ",
@@ -6518,23 +6518,23 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'sign.ts',
           source:
-            'import {css} from "zyzz"; css((v:{alpha:number})=>({opacity:`+${v.alpha}`}))',
+            'import {style} from "zyzz"; style((v:{alpha:number})=>({opacity:`+${v.alpha}`}))',
         }),
       ).toThrow()
     })
 
     test('rejects constrained and reserved callback domains', () => {
       const errors = [
-        'css((v:{level:number})=>({zIndex:v.level}))',
-        'css((v:{ref:number})=>({opacity:v.ref}))',
-        'css((v:{key:number})=>({opacity:v.key}))',
-        'css((v:{class:number})=>({opacity:v.class}))',
-        'css((v:{width:`${number}%!`})=>({width:v.width}))',
+        'style((v:{level:number})=>({zIndex:v.level}))',
+        'style((v:{ref:number})=>({opacity:v.ref}))',
+        'style((v:{key:number})=>({opacity:v.key}))',
+        'style((v:{class:number})=>({opacity:v.class}))',
+        'style((v:{width:`${number}%!`})=>({width:v.width}))',
       ].map((source) => {
         try {
           Transform.compile({
             moduleId: 'invalid.ts',
-            source: 'import {css} from "zyzz"; ' + source,
+            source: 'import {style} from "zyzz"; ' + source,
           })
 
           return 'accepted'
@@ -6544,21 +6544,21 @@ describe('dynamic', () => {
       })
 
       expect(errors).toMatchInlineSnapshot(`
-      [
-        "Source.ExtractError: invalid.ts:59: Variable domain is incompatible with this property.",
-        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
-        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
-        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
-        "Source.ExtractError: invalid.ts:34: Dynamic values require explicit string or number scalar types.",
-      ]
-    `)
+        [
+          "Source.ExtractError: invalid.ts:63: Variable domain is incompatible with this property.",
+          "Source.ExtractError: invalid.ts:38: Dynamic values require unique required scalar fields without styling override keys.",
+          "Source.ExtractError: invalid.ts:38: Dynamic values require unique required scalar fields without styling override keys.",
+          "Source.ExtractError: invalid.ts:38: Dynamic values require unique required scalar fields without styling override keys.",
+          "Source.ExtractError: invalid.ts:38: Dynamic values require explicit string or number scalar types.",
+        ]
+      `)
     })
     test('unwraps non-null callback bodies before binding theme variables', () => {
       expect(
         Transform.compile({
           moduleId: 'body.ts',
           source:
-            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css((v:{alpha:number})=>({color:t.vars.color.ink,opacity:v.alpha})!)',
+            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.style((v:{alpha:number})=>({color:t.vars.color.ink,opacity:v.alpha})!)',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
@@ -6571,17 +6571,17 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'annotation.ts',
           source:
-            'import {css,Theme} from "zyzz"; css((v:{width:`${Theme.Length}px`})=>({width:v.width}))',
+            'import {style,Theme} from "zyzz"; style((v:{width:`${Theme.Length}px`})=>({width:v.width}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: annotation.ts:40: Dynamic values require explicit string or number scalar types.]`,
+        `[Source.ExtractError: annotation.ts:44: Dynamic values require explicit string or number scalar types.]`,
       )
     })
     test('static callable bundles omit the dynamic helper', async () => {
       const output = Transform.compile({
         moduleId: 'static.ts',
         source:
-          'import {css} from "zyzz"; export const card=css({display:"block"})',
+          'import {style} from "zyzz"; export const card=style({display:"block"})',
       })
 
       const built = await Esbuild.build({
@@ -6615,10 +6615,10 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'units.ts',
           source:
-            'import {css} from "zyzz"; css((v:{size:number})=>({width:`${v.size}px`}))',
+            'import {style} from "zyzz"; style((v:{size:number})=>({width:`${v.size}px`}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: units.ts:57: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: units.ts:61: Expected a literal string or number; expressions are not evaluated.]`,
       )
     })
     test('retains static fallbacks in asserted theme callbacks', () => {
@@ -6626,7 +6626,7 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'fallback.ts',
           source:
-            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.vars.color.ink]})) satisfies Callback)',
+            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.style(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.vars.color.ink]})) satisfies Callback)',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
@@ -6639,16 +6639,18 @@ describe('dynamic', () => {
 
       expect(output.css).toMatchInlineSnapshot(
         `
-      ".z-block-LUShLn{display:block;}
-      .z-w-2mxRRU{width:var(--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74);}
-      .z-ml-8cc16X{margin-left:calc(var(--z-d1h5dayl7tfv4v-47-67-61-70) + 2px);}
-      .z-opacity-2nqM-F{opacity:var(--z-d1h5dayl7tfv4v-47-61-6c-70-68-61);}"
-    `,
+        ".z-block-LUShLn{display:block;}
+        .z-w-y6Li4p{width:var(--z-d1h5dayl7tfv4v-49-61-6d-6f-75-6e-74);}
+        .z-ml-QyoMxp{margin-left:calc(var(--z-d1h5dayl7tfv4v-49-67-61-70) + 2px);}
+        .z-opacity-Zagbr9{opacity:var(--z-d1h5dayl7tfv4v-49-61-6c-70-68-61);}"
+      `,
       )
       expect(output.code.includes('values.amount')).toMatchInlineSnapshot(
         `false`,
       )
-      expect(output.code.includes('css.Dynamic')).toMatchInlineSnapshot(`true`)
+      expect(output.code.includes('style.Dynamic')).toMatchInlineSnapshot(
+        `true`,
+      )
 
       const built = await Esbuild.build({
         stdin: {
@@ -6668,15 +6670,15 @@ describe('dynamic', () => {
       )
 
       expect(module.first).toMatchInlineSnapshot(`
-      {
-        "className": "z-block-LUShLn z-w-2mxRRU z-ml-8cc16X z-opacity-2nqM-F z-style-1h5dayl7tfv4v-47",
-        "style": {
-          "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 0.5,
-          "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "25%",
-          "--z-d1h5dayl7tfv4v-47-67-61-70": "4px",
-        },
-      }
-    `)
+        {
+          "className": "z-block-LUShLn z-w-y6Li4p z-ml-QyoMxp z-opacity-Zagbr9 z-style-1h5dayl7tfv4v-49",
+          "style": {
+            "--z-d1h5dayl7tfv4v-49-61-6c-70-68-61": 0.5,
+            "--z-d1h5dayl7tfv4v-49-61-6d-6f-75-6e-74": "25%",
+            "--z-d1h5dayl7tfv4v-49-67-61-70": "4px",
+          },
+        }
+      `)
       expect(
         module.bar({
           amount: '75%',
@@ -6686,16 +6688,16 @@ describe('dynamic', () => {
           style: { color: 'red' },
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "className": "z-block-LUShLn z-w-2mxRRU z-ml-8cc16X z-opacity-2nqM-F z-style-1h5dayl7tfv4v-47 external",
-        "style": {
-          "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 1,
-          "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "75%",
-          "--z-d1h5dayl7tfv4v-47-67-61-70": "8px",
-          "color": "red",
-        },
-      }
-    `)
+        {
+          "className": "z-block-LUShLn z-w-y6Li4p z-ml-QyoMxp z-opacity-Zagbr9 z-style-1h5dayl7tfv4v-49 external",
+          "style": {
+            "--z-d1h5dayl7tfv4v-49-61-6c-70-68-61": 1,
+            "--z-d1h5dayl7tfv4v-49-61-6d-6f-75-6e-74": "75%",
+            "--z-d1h5dayl7tfv4v-49-67-61-70": "8px",
+            "color": "red",
+          },
+        }
+      `)
 
       const key = Object.keys(module.first.style)[0]!
 
@@ -6773,7 +6775,7 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'theme-dynamic.ts',
           source:
-            'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); export const bar = theme.css((values: {alpha:number})=>({color:theme.vars.color.brand,opacity:values.alpha}));',
+            'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); export const bar = theme.style((values: {alpha:number})=>({color:theme.vars.color.brand,opacity:values.alpha}));',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
@@ -6787,10 +6789,10 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'dollar.ts',
           source:
-            'import { css } from "zyzz"; css((values:{$alpha:number})=>({opacity:values.$alpha}))',
+            'import { style } from "zyzz"; style((values:{$alpha:number})=>({opacity:values.$alpha}))',
         }).css,
       ).toMatchInlineSnapshot(
-        `".z-opacity-V4KWMC{opacity:var(--z-dijyhsi11fth46-28-24-61-6c-70-68-61);}"`,
+        `".z-opacity-LIUX-X{opacity:var(--z-dijyhsi11fth46-30-24-61-6c-70-68-61);}"`,
       )
     })
 
@@ -6799,13 +6801,13 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'fallback.ts',
           source:
-            'import { css } from "zyzz"; css((values:{width:number})=>({width:["1px",`${values.width}px`]}))',
+            'import { style } from "zyzz"; style((values:{width:number})=>({width:["1px",`${values.width}px`]}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: fallback.ts:72: Expected a literal string or number; expressions are not evaluated.
-      fallback.ts:75: Dynamic fallback entries are not supported.
-      fallback.ts:75: Dynamic fallback entries are not supported.]
-    `)
+        [Source.ExtractError: fallback.ts:76: Expected a literal string or number; expressions are not evaluated.
+        fallback.ts:79: Dynamic fallback entries are not supported.
+        fallback.ts:79: Dynamic fallback entries are not supported.]
+      `)
     })
 
     test('rejects dynamic rule structure and optional values', () => {
@@ -6813,19 +6815,19 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            'import { css } from "zyzz"; css((values:{width?:string})=>({width:values.width}))',
+            'import { style } from "zyzz"; style((values:{width?:string})=>({width:values.width}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:41: Dynamic values require unique required scalar fields without styling override keys.]`,
+        `[Source.ExtractError: invalid.ts:45: Dynamic values require unique required scalar fields without styling override keys.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            'import { css } from "zyzz"; css((values:{width:string})=>({...values}))',
+            'import { style } from "zyzz"; style((values:{width:string})=>({...values}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:59: Static spreads require an immutable object literal.]`,
+        `[Source.ExtractError: invalid.ts:63: Static spreads require an immutable object literal.]`,
       )
     })
   })
@@ -7217,13 +7219,13 @@ describe('fonts', () => {
           ),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 315,
-        "line": 3,
-        "name": "fontVariantNumeric",
-        "source": "fonts.ts",
-      }
-    `)
+        {
+          "column": 317,
+          "line": 3,
+          "name": "fontVariantNumeric",
+          "source": "fonts.ts",
+        }
+      `)
     })
 
     test('font controls match independent CSS and native ruby placement', async () => {
@@ -7531,7 +7533,7 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
         contracts: { 'lib/functions.js': library.contracts['functions.ts']! },
         imports: { 'app.ts': { lib: 'lib/functions.js', zyzz: null } },
         modules: {
-          'app.ts': `import {size as scale} from 'lib';import {css} from 'zyzz';export const styles={default:css({width:scale()}),fixed:css({width:scale('20px')})};`,
+          'app.ts': `import {size as scale} from 'lib';import {style} from 'zyzz';export const styles={default:style({width:scale()}),fixed:style({width:scale('20px')})};`,
         },
       })
 
@@ -7539,9 +7541,9 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
         `"@function --z-cssfunction270wt1ix0x4z-73-69-7a-65(--size type(<length> | <percentage>): 25%) returns type(<length> | <percentage>){result:var(--size);}"`,
       )
       expect(output.modules['app.ts']?.css).toMatchInlineSnapshot(`
-      ".z-w-8s7SVT-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65();}
-      .z-w-gMLJkD-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65(20px);}"
-    `)
+        ".z-w-6P63KK-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65();}
+        .z-w-7rtdxE-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65(20px);}"
+      `)
     })
 
     test.each(['1px', '1%', '1.5', '1e2', '-1turn', ' 1px '])(
@@ -7675,7 +7677,7 @@ describe('functionalColors', () => {
       for (const color of FunctionalColors.valid) {
         const output = Transform.compile({
           moduleId: 'color.ts',
-          source: `import { css } from 'zyzz'; css({color:${JSON.stringify(color)}})`,
+          source: `import { style } from 'zyzz'; style({color:${JSON.stringify(color)}})`,
         })
 
         expect(output.css.includes(`color:${color}`)).toMatchInlineSnapshot(
@@ -7775,7 +7777,7 @@ describe('geometry', () => {
       for (const transform of Geometry.functions) {
         const output = Transform.compile({
           moduleId: 'geometry.ts',
-          source: `import { css } from 'zyzz'; css({transform:${JSON.stringify(transform)}});`,
+          source: `import { style } from 'zyzz'; style({transform:${JSON.stringify(transform)}});`,
         })
 
         expect(
@@ -7870,7 +7872,7 @@ describe('grid-lines', () => {
         const name = Conformance.name(property)
         const output = Transform.compile({
           moduleId: 'grid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+          source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(value)}});`,
         })
 
         expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
@@ -7969,13 +7971,13 @@ describe('grid', () => {
           column: lines[line]!.indexOf('grid-column-start:2!important'),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 42,
-        "line": 3,
-        "name": "gridColumnStart",
-        "source": "grid.ts",
-      }
-    `)
+        {
+          "column": 44,
+          "line": 3,
+          "name": "gridColumnStart",
+          "source": "grid.ts",
+        }
+      `)
     })
 
     test('grid tracks and spans match independent browser geometry', async () => {
@@ -8061,7 +8063,7 @@ describe('gridLists', () => {
       for (const value of GridLists.valid) {
         const output = Transform.compile({
           moduleId: 'grid-list.ts',
-          source: `import { css } from 'zyzz'; css({gridTemplateColumns:${JSON.stringify(value)}});`,
+          source: `import { style } from 'zyzz'; style({gridTemplateColumns:${JSON.stringify(value)}});`,
         })
 
         expect(
@@ -8168,7 +8170,7 @@ describe('groupingAcceptance', () => {
       ]
         .flatMap((header) => [
           `import {global} from 'zyzz/web';global({${JSON.stringify(header)}:{body:{color:'red'}}});`,
-          `import {css} from 'zyzz';export const text=css({${JSON.stringify(header)}:{color:'red'}});`,
+          `import {style} from 'zyzz';export const text=style({${JSON.stringify(header)}:{color:'red'}});`,
         ])
         .map((source) => {
           try {
@@ -8374,7 +8376,7 @@ describe('images', () => {
 
       const output = Transform.compile({
         moduleId: 'unchecked.ts',
-        source: `import { css } from 'zyzz'; export const card = css({ color: '#12', order: 0.5 })();`,
+        source: `import { style } from 'zyzz'; export const card = style({ color: '#12', order: 0.5 })();`,
       })
 
       expect(output.css.includes('color:#12;order:0.5;')).toMatchInlineSnapshot(
@@ -8385,7 +8387,7 @@ describe('images', () => {
     test('image fallbacks and SVG markers match native browser declarations', async () => {
       const output = Transform.compile({
         moduleId: 'images.ts',
-        source: `import { css } from 'zyzz'; export const image = css({ backgroundImage: ['url("missing.png")', 'linear-gradient(red, blue)!'], maskImage: 'linear-gradient(black, transparent)' })(); export const marker = css({marker:'url(#arrow)', markerStart:'none'})();`,
+        source: `import { style } from 'zyzz'; export const image = style({ backgroundImage: ['url("missing.png")', 'linear-gradient(red, blue)!'], maskImage: 'linear-gradient(black, transparent)' })(); export const marker = style({marker:'url(#arrow)', markerStart:'none'})();`,
       })
       const js = await Esbuild.transform(output.code, {
         format: 'esm',
@@ -8516,7 +8518,7 @@ describe('keywordGroups', () => {
         for (const words of [value, value.split(' ').reverse().join(' ')]) {
           const output = Transform.compile({
             moduleId: 'groups.ts',
-            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(words)}})`,
+            source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(words)}})`,
           })
 
           expect(
@@ -8723,13 +8725,13 @@ describe('masks', () => {
           column: lines[line]!.indexOf('mask-size:50%!important'),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 249,
-        "line": 2,
-        "name": "maskSize",
-        "source": "masks.ts",
-      }
-    `)
+        {
+          "column": 251,
+          "line": 2,
+          "name": "maskSize",
+          "source": "masks.ts",
+        }
+      `)
     })
 
     test('masks match independent browser pixels and background precedence', async () => {
@@ -8820,7 +8822,7 @@ describe('mathExpressions', () => {
       ] as const) {
         const output = Transform.compile({
           moduleId: 'math.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}})`,
+          source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(value)}})`,
         })
 
         expect(
@@ -8926,13 +8928,13 @@ describe('motion', () => {
           column: lines[line]!.indexOf('animation-duration:2s!important'),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 73,
-        "line": 2,
-        "name": "animationDuration",
-        "source": "motion.ts",
-      }
-    `)
+        {
+          "column": 75,
+          "line": 2,
+          "name": "animationDuration",
+          "source": "motion.ts",
+        }
+      `)
     })
 
     test('motion controls drive native paused animation timing', async () => {
@@ -9028,7 +9030,7 @@ describe('motionLists', () => {
       for (const value of MotionLists.easing) {
         const output = Transform.compile({
           moduleId: 'motion-lists.ts',
-          source: `import { css } from 'zyzz'; css({animationTimingFunction:${JSON.stringify(value)}});`,
+          source: `import { style } from 'zyzz'; style({animationTimingFunction:${JSON.stringify(value)}});`,
         })
 
         expect(
@@ -9220,23 +9222,23 @@ describe('namedRules', () => {
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=css({listStyleType:`${palette}`});",
+            "import {style} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=style({listStyleType:`${palette}`});",
         }),
       ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:173: Expected a literal string or number; expressions are not evaluated.
-      invalid.ts:176: Named stylesheet reference is incompatible with this property.
-      invalid.ts:176: Named stylesheet reference is incompatible with this property.]
-    `)
+        [Source.ExtractError: invalid.ts:177: Expected a literal string or number; expressions are not evaluated.
+        invalid.ts:180: Named stylesheet reference is incompatible with this property.
+        invalid.ts:180: Named stylesheet reference is incompatible with this property.]
+      `)
     })
     test('rejects descriptor templates with palette identities', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=counterStyle({symbols:'\"x\"',fallback:`${palette}`});",
+            "import {style} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=counterStyle({symbols:'\"x\"',fallback:`${palette}`});",
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:154: Named stylesheet reference is incompatible with this descriptor.]`,
+        `[Source.ExtractError: invalid.ts:156: Named stylesheet reference is incompatible with this descriptor.]`,
       )
     })
     test('rejects negative base palette indexes', () => {
@@ -9244,10 +9246,10 @@ describe('namedRules', () => {
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:-1});",
+            "import {style} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:-1});",
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:154: Expected supported scalar descriptors and required fields.]`,
+        `[Source.ExtractError: invalid.ts:156: Expected supported scalar descriptors and required fields.]`,
       )
     })
     test('rejects fractional base palette indexes', () => {
@@ -9255,10 +9257,10 @@ describe('namedRules', () => {
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:1.5});",
+            "import {style} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:1.5});",
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:154: Expected supported scalar descriptors and required fields.]`,
+        `[Source.ExtractError: invalid.ts:156: Expected supported scalar descriptors and required fields.]`,
       )
     })
     test.each([
@@ -9300,12 +9302,12 @@ describe('namedRules', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'profile.js',
-          source: `import {css} from 'zyzz';import {colorProfile} from 'zyzz/web';const profile=colorProfile({src:'url(/profile.icc)'});export namespace styles {
-  export const text = css({color:profile})
+          source: `import {style} from 'zyzz';import {colorProfile} from 'zyzz/web';const profile=colorProfile({src:'url(/profile.icc)'});export namespace styles {
+  export const text = style({color:profile})
 }`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: profile.js:176: Named stylesheet reference is incompatible with this property.]`,
+        `[Source.ExtractError: profile.js:180: Named stylesheet reference is incompatible with this property.]`,
       )
     })
     test('emits valid JavaScript, prunes dead names, and resolves wrapped references', async () => {
@@ -9336,7 +9338,7 @@ describe('namedRules', () => {
         `export const x=counterStyle({});`,
         `export const x=counterStyle({system:'fixedfoo',symbols:'"x"'});`,
         `export const x=counterStyle({symbols:'"x"',fallback:1});`,
-        `const p=fontPaletteValues({fontFamily:'Body'});export const x=css({listStyleType:p});`,
+        `const p=fontPaletteValues({fontFamily:'Body'});export const x=style({listStyleType:p});`,
         `const p=fontPaletteValues({fontFamily:'Body'});export const x=counterStyle({symbols:'"x"',fallback:(p)});`,
       ]
       expect(
@@ -9345,7 +9347,7 @@ describe('namedRules', () => {
             Transform.compile({
               moduleId: 'bad.js',
               source:
-                `import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';` +
+                `import {style} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';` +
                 source,
             })
             return 'accepted'
@@ -9354,25 +9356,25 @@ describe('namedRules', () => {
           }
         }),
       ).toMatchInlineSnapshot(`
-      [
-        [Source.ExtractError: bad.js:96: The counter system requires symbols or additiveSymbols.],
-        [Source.ExtractError: bad.js:96: Expected a supported counter system, with an integer after fixed.],
-        [Source.ExtractError: bad.js:96: Expected supported scalar descriptors and required fields.],
-        [Source.ExtractError: bad.js:162: Named stylesheet reference is incompatible with this property.],
-        [Source.ExtractError: bad.js:143: Named stylesheet reference is incompatible with this descriptor.],
-      ]
-    `)
+        [
+          [Source.ExtractError: bad.js:98: The counter system requires symbols or additiveSymbols.],
+          [Source.ExtractError: bad.js:98: Expected a supported counter system, with an integer after fixed.],
+          [Source.ExtractError: bad.js:98: Expected supported scalar descriptors and required fields.],
+          [Source.ExtractError: bad.js:166: Named stylesheet reference is incompatible with this property.],
+          [Source.ExtractError: bad.js:145: Named stylesheet reference is incompatible with this descriptor.],
+        ]
+      `)
     })
     test('emits each named descriptor family and direct references', () => {
       const output = Transform.compile({
         moduleId: 'names.ts',
-        source: `import {css} from 'zyzz'; import {colorProfile,counterStyle,fontPaletteValues,positionTry} from 'zyzz/web';
+        source: `import {style} from 'zyzz'; import {colorProfile,counterStyle,fontPaletteValues,positionTry} from 'zyzz/web';
 export const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
 export const palette=fontPaletteValues({fontFamily:'Body',basePalette:0,overrideColors:'0 red'});
 export const below=positionTry({positionArea:'bottom',marginTop:'4px'});
 export const profile=colorProfile({src:'url(/profile.icc)',renderingIntent:'relative-colorimetric'});
 export namespace styles {
-  export const list = css({listStyleType:dots,fontPalette:palette,positionTryFallbacks:below})
+  export const list = style({listStyleType:dots,fontPalette:palette,positionTryFallbacks:below})
 }`,
       })
       expect(output.css).toMatchInlineSnapshot(`
@@ -9390,17 +9392,17 @@ export namespace styles {
           .map((line) => line.trimEnd())
           .join('\n'),
       ).toMatchInlineSnapshot(`
-      "
-      import { Props as __zyzzProps } from 'zyzz/runtime';
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
 
-      export const dots="z-counterstyle141558i1cjhj8q-64-6f-74-73" as import('zyzz/web').counterStyle.Reference;
-      export const palette="--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65" as import('zyzz/web').fontPaletteValues.Reference;
-      export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
-      export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
-      export namespace styles {
-        export const list = __zyzzProps.create({className:"z-list-style-type-DP322k z-font-palette-uB2n_m z-position-try-fallbacks-S4CjH0 z-style-141558i1cjhj8q-507"})
-      }"
-    `)
+        export const dots="z-counterstyle141558i1cjhj8q-64-6f-74-73" as import('zyzz/web').counterStyle.Reference;
+        export const palette="--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65" as import('zyzz/web').fontPaletteValues.Reference;
+        export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
+        export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
+        export namespace styles {
+          export const list = __zyzzProps.create({className:"z-list-style-type-DP322k z-font-palette-uB2n_m z-position-try-fallbacks-S4CjH0 z-style-141558i1cjhj8q-509"})
+        }"
+      `)
     })
     test('preserves aliases and re-exports through packed metadata and rebuilds', () => {
       const compiler = Graph.create()
@@ -9413,8 +9415,8 @@ export namespace styles {
         contracts: { 'lib/names.js': library.contracts['names.ts']! },
         imports: { 'app.ts': { lib: 'lib/names.js', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz';import {alias} from 'lib';export namespace styles {
-  export const list = css({listStyleType:alias})
+          'app.ts': `import {style} from 'zyzz';import {alias} from 'lib';export namespace styles {
+  export const list = style({listStyleType:alias})
 }`,
         },
       }
@@ -9793,13 +9795,13 @@ namespace({prefix:'图',uri:'http://www.w3.org/2000/svg'});`
 })
 
 describe('namespaces', () => {
-  const source = `import { css } from 'zyzz';
+  const source = `import { style } from 'zyzz';
 export namespace styles {
   const spacing = { padding: '8px' } as const;
   const base = { ...spacing, color: 'red' } as const;
-  export const card = css(base);
-  export const button = css({ ...base, color: 'blue' });
-  export const dynamic = css((values: { width: '10px' | '20px' }) => ({ ...base, width: values.width }));
+  export const card = style(base);
+  export const button = style({ ...base, color: 'blue' });
+  export const dynamic = style((values: { width: '10px' | '20px' }) => ({ ...base, width: values.width }));
   export const alias = card;
 }
 export const card = styles.alias();
@@ -9811,12 +9813,12 @@ export const dynamic = styles.dynamic({ width: '20px' });`
       const output = Transform.compile({ moduleId: 'namespace.ts', source })
 
       expect(output.css).toMatchInlineSnapshot(`
-      ".z-p-8px-ku9s2V{padding:8px;}
-      .z-text-red-s93gMW-1{color:red;}
-      .z-text-blue-sOX2qW-0{color:blue;}
-      .z-text-red-QQ5N_W-0{color:red;}
-      .z-w-d3Wsl_{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
-    `)
+        ".z-p-8px-ku9s2V{padding:8px;}
+        .z-text-red-ZpVUfq-1{color:red;}
+        .z-text-blue-pStjLW-0{color:blue;}
+        .z-text-red-srtF3q-0{color:red;}
+        .z-w-wx2LHt{width:var(--z-dmpx2ize76wo1-276-77-69-64-74-68);}"
+      `)
 
       const built = await Esbuild.build({
         bundle: true,
@@ -9835,23 +9837,23 @@ export const dynamic = styles.dynamic({ width: '20px' });`
       )
 
       expect(result.card).toMatchInlineSnapshot(`
-      {
-        "className": "z-p-8px-ku9s2V z-text-red-s93gMW-1 z-style-mpx2ize76wo1-177",
-      }
-    `)
+        {
+          "className": "z-p-8px-ku9s2V z-text-red-ZpVUfq-1 z-style-mpx2ize76wo1-179",
+        }
+      `)
       expect(result.button).toMatchInlineSnapshot(`
-      {
-        "className": "z-p-8px-ku9s2V z-text-blue-sOX2qW-0 z-style-mpx2ize76wo1-212",
-      }
-    `)
+        {
+          "className": "z-p-8px-ku9s2V z-text-blue-pStjLW-0 z-style-mpx2ize76wo1-216",
+        }
+      `)
       expect(result.dynamic).toMatchInlineSnapshot(`
-      {
-        "className": "z-p-8px-ku9s2V z-text-red-QQ5N_W-0 z-w-d3Wsl_ z-style-mpx2ize76wo1-270",
-        "style": {
-          "--z-dmpx2ize76wo1-270-77-69-64-74-68": "20px",
-        },
-      }
-    `)
+        {
+          "className": "z-p-8px-ku9s2V z-text-red-srtF3q-0 z-w-wx2LHt z-style-mpx2ize76wo1-276",
+          "style": {
+            "--z-dmpx2ize76wo1-276-77-69-64-74-68": "20px",
+          },
+        }
+      `)
       expect(result.styles.alias === result.styles.card).toMatchInlineSnapshot(
         'true',
       )
@@ -9860,25 +9862,25 @@ export const dynamic = styles.dynamic({ width: '20px' });`
     test('keeps identically named declarations in separate namespace scopes', () => {
       const output = Transform.compile({
         moduleId: 'scopes.ts',
-        source: `import {css} from 'zyzz';
-      namespace first { const base = {color:'red'} as const; export const card = css(base); }
-      namespace second { const base = {color:'blue'} as const; export const card = css(base); }`,
+        source: `import {style} from 'zyzz';
+      namespace first { const base = {color:'red'} as const; export const card = style(base); }
+      namespace second { const base = {color:'blue'} as const; export const card = style(base); }`,
       })
 
       expect(output.css).toMatchInlineSnapshot(`
-      ".z-text-red-Lr2CaY-0{color:red;}
-      .z-text-blue-QEGgLI-0{color:blue;}"
-    `)
+        ".z-text-red-tf4s5s-0{color:red;}
+        .z-text-blue-nL2pGI-0{color:blue;}"
+      `)
     })
 
     test('rejects mutation of reused namespace declarations', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'mutation.ts',
-          source: `import {css} from 'zyzz'; namespace styles { const base = {color:'red'}; base.color='blue'; export const card = css(base); }`,
+          source: `import {style} from 'zyzz'; namespace styles { const base = {color:'red'}; base.color='blue'; export const card = style(base); }`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: mutation.ts:73: Static data cannot be mutated or escape through unsupported expressions.]`,
+        `[Source.ExtractError: mutation.ts:75: Static data cannot be mutated or escape through unsupported expressions.]`,
       )
     })
   })
@@ -9891,11 +9893,11 @@ describe('output', () => {
         const output = Graph.compile({
           modules: {
             'pkg/config.ts': `import { Config } from 'zyzz'
-import { Css } from 'zyzz/web';export const { css, variants, theme } = Config.create({cssOutput:'${cssOutput}',output:'html',theme:{color:{brand:'red'}}});`,
-            'pkg/index.ts': `export { css as styled, variants, theme } from './config.js';`,
+import { Css } from 'zyzz/web';export const { style, variants, theme } = Config.create({cssOutput:'${cssOutput}',output:'html',theme:{color:{brand:'red'}}});`,
+            'pkg/index.ts': `export { style as styled, theme, variants } from './config.js';`,
             'app.ts': `import { styled, variants, theme } from './pkg/index.js';
 export const card=styled({color:'brand',padding:'8px'});
-export const other=theme.css({color:'brand',padding:'8px'});
+export const other=theme.style({color:'brand',padding:'8px'});
 export const button=variants({base:{color:'brand',padding:'8px'},variants:{size:{large:{padding:'12px'}}}});
 export const props=card();`,
           },
@@ -9904,39 +9906,39 @@ export const props=card();`,
 
         if (cssOutput === 'atomic') {
           expect(app.code).toMatchInlineSnapshot(`
-          "
-          import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
-          import { styled, variants, theme } from './pkg/index.js';
-          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-MXAq5s-0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
-          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-cVuwEC-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
-          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-Ih48UB-0 z-p-8px-ho7psp-1 z-p-Hd4J6B-2 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
-          export const props=card();"
-        `)
+            "
+            import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
+            import { styled, variants, theme } from './pkg/index.js';
+            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-mxDSO--0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').style.ReturnType<'html'>);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-joO2e9-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-pJ25Bx-0 z-p-8px-dxnzHV-1 z-p-1v1f9b-2 z-style-1e8a67z1uaws1j-198"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const props=card();"
+          `)
           expect(app.css).toMatchInlineSnapshot(`
-            ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
-            .z-text-MXAq5s-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+            ".z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
+            .z-text-mxDSO--0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
             .z-p-8px-NXxdb9-1{padding:8px;}
-            .z-text-cVuwEC-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+            .z-text-joO2e9-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
             .z-p-8px-36L1vp-1{padding:8px;}
-            .z-text-Ih48UB-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-            .z-p-8px-ho7psp-1{padding:8px;}
-            .z-p-Hd4J6B-2{&:where([data-size="large"]){padding:12px;}}"
+            .z-text-pJ25Bx-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
+            .z-p-8px-dxnzHV-1{padding:8px;}
+            .z-p-1v1f9b-2{&:where([data-size="large"]){padding:12px;}}"
           `)
         } else {
           expect(app.code).toMatchInlineSnapshot(`
-          "
-          import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
-          import { styled, variants, theme } from './pkg/index.js';
-          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-76 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
-          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-134 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
-          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"g-style-1e8a67z1uaws1j-196 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
-          export const props=card();"
-        `)
+            "
+            import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
+            import { styled, variants, theme } from './pkg/index.js';
+            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-76 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').style.ReturnType<'html'>);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-134 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"g-style-1e8a67z1uaws1j-198 z-style-1e8a67z1uaws1j-198"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const props=card();"
+          `)
           expect(app.css).toMatchInlineSnapshot(`
-            ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
-            .g-style-1e8a67z1uaws1j-76{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
-            .g-style-1e8a67z1uaws1j-134{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
-            .g-style-1e8a67z1uaws1j-196{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
+            ".z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
+            .g-style-1e8a67z1uaws1j-76{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;}
+            .g-style-1e8a67z1uaws1j-134{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;}
+            .g-style-1e8a67z1uaws1j-198{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
           `)
         }
       }
@@ -9944,7 +9946,7 @@ export const props=card();`,
 
     test('mode changes invalidate class output and preserve declaration tracing', () => {
       const source = (mode: string) =>
-        `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'${mode}'});export const card=css({color:'red',padding:'8px'});`
+        `import {Config} from 'zyzz';const {style}=Config.create({cssOutput:'${mode}'});export const card=style({color:'red',padding:'8px'});`
       const atomic = Transform.compile({
         moduleId: 'app.ts',
         source: source('atomic'),
@@ -9955,15 +9957,15 @@ export const props=card();`,
       })
 
       expect(atomic.classes).toMatchInlineSnapshot(`
-      {
-        "style-1e8a67z1uaws1j-94": "z-text-red-Jgxd-Q z-p-8px-Jgxd-Q z-style-1e8a67z1uaws1j-94",
-      }
-    `)
+        {
+          "style-1e8a67z1uaws1j-96": "z-text-red-Jgxd-Q z-p-8px-Jgxd-Q z-style-1e8a67z1uaws1j-96",
+        }
+      `)
       expect(grouped.classes).toMatchInlineSnapshot(`
-      {
-        "style-1e8a67z1uaws1j-95": "g-style-1e8a67z1uaws1j-95 z-style-1e8a67z1uaws1j-95",
-      }
-    `)
+        {
+          "style-1e8a67z1uaws1j-97": "g-style-1e8a67z1uaws1j-97 z-style-1e8a67z1uaws1j-97",
+        }
+      `)
       for (const [mode, output] of [
         ['atomic', atomic],
         ['grouped', grouped],
@@ -9979,8 +9981,8 @@ export const props=card();`,
         )
         expect(mapped.source).toMatchInlineSnapshot(`"app.ts"`)
         if (mode === 'atomic')
-          expect(mapped.column).toMatchInlineSnapshot(`111`)
-        else expect(mapped.column).toMatchInlineSnapshot(`112`)
+          expect(mapped.column).toMatchInlineSnapshot(`115`)
+        else expect(mapped.column).toMatchInlineSnapshot(`116`)
       }
     })
 
@@ -9994,15 +9996,15 @@ export const props=card();`,
         Transform.compile({
           moduleId: 'app.ts',
           source:
-            "import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'automatic'});const card=css({color:'red'});",
+            "import {Config} from 'zyzz';const {style}=Config.create({cssOutput:'automatic'});const card=style({color:'red'});",
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: app.ts:40: cssOutput must be atomic or grouped.]`,
+        `[Source.ExtractError: app.ts:42: cssOutput must be atomic or grouped.]`,
       )
     })
     test('preserves immutable configured output across extraction and composition', () => {
       for (const cssOutput of ['atomic', 'grouped'] as const) {
-        const source = `import {Config,cx} from 'zyzz';const {css}=Config.create({cssOutput:'${cssOutput}'});const a=css({color:'red',padding:'8px'});const b=css({paddingLeft:'2px'});export const props=cx(a(),b());`
+        const source = `import {Config,cx} from 'zyzz';const {style}=Config.create({cssOutput:'${cssOutput}'});const a=style({color:'red',padding:'8px'});const b=style({paddingLeft:'2px'});export const props=cx(a(),b());`
         const extracted = Source.extract({ moduleId: 'config.ts', source })
         function frozen(
           style: (typeof extracted.styles.styles)[number],
@@ -10045,34 +10047,34 @@ export const props=card();`,
         })
         if (cssOutput === 'atomic') {
           expect(output.css).toMatchInlineSnapshot(`
-          ".z-text-red-pHVTxb-0{color:red;}
-          .z-p-8px-pHVTxb-1{padding:8px;}
-          .z-pl-2px-Q94x48-0{padding-left:2px;}
-          .z-text-red-vb56La-0{color:red;}
-          .z-p-8px-vb56La-1{padding:8px;}
-          .z-pl-2px-vb56La-2{padding-left:2px;}"
-        `)
+            ".z-text-red-GXqvxH-0{color:red;}
+            .z-p-8px-GXqvxH-1{padding:8px;}
+            .z-pl-2px-ViGYFU-0{padding-left:2px;}
+            .z-text-red-vWhRmG-0{color:red;}
+            .z-p-8px-vWhRmG-1{padding:8px;}
+            .z-pl-2px-vWhRmG-2{padding-left:2px;}"
+          `)
           expect(emitted.css).toMatchInlineSnapshot(`
-          ".z-text-red-Xy5JQE-0{color:red;}
-          .z-p-8px-Xy5JQE-1{padding:8px;}
-          .z-pl-2px-B2WTsH-0{padding-left:2px;}
-          .z-text-red-kbyxdF-0{color:red;}
-          .z-p-8px-kbyxdF-1{padding:8px;}
-          .z-pl-2px-kbyxdF-2{padding-left:2px;}"
-        `)
+            ".z-text-red-3Y0IK8-0{color:red;}
+            .z-p-8px-3Y0IK8-1{padding:8px;}
+            .z-pl-2px-n-JTjr-0{padding-left:2px;}
+            .z-text-red-vHOvy9-0{color:red;}
+            .z-p-8px-vHOvy9-1{padding:8px;}
+            .z-pl-2px-vHOvy9-2{padding-left:2px;}"
+          `)
         } else {
           expect(output.css).toMatchInlineSnapshot(`
-          ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
-          .g-style-u8smm21l81sow-129{padding-left:2px;}
-          .z-style-CtjGb7-0{color:red;padding:8px;}
-          .z-style-Cq_Lgr-1{padding-left:2px;}"
-        `)
+            ".g-style-u8smm21l81sow-90{color:red;padding:8px;}
+            .g-style-u8smm21l81sow-133{padding-left:2px;}
+            .z-style-EgGCgw-0{color:red;padding:8px;}
+            .z-style-n9kLD_-1{padding-left:2px;}"
+          `)
           expect(emitted.css).toMatchInlineSnapshot(`
-          ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
-          .g-style-u8smm21l81sow-129{padding-left:2px;}
-          .z-style-SN9A7E-0{color:red;padding:8px;}
-          .z-style-rmoRsZ-1{padding-left:2px;}"
-        `)
+            ".g-style-u8smm21l81sow-90{color:red;padding:8px;}
+            .g-style-u8smm21l81sow-133{padding-left:2px;}
+            .z-style-YVbI_9-0{color:red;padding:8px;}
+            .z-style-phNb9r-1{padding-left:2px;}"
+          `)
         }
       }
     })
@@ -10080,7 +10082,7 @@ export const props=card();`,
     test('rejects invalid style output metadata through the public emitter', () => {
       const extracted = Source.extract({
         moduleId: 'invalid.ts',
-        source: "import {css} from 'zyzz'; css({color:'red'})",
+        source: "import {style} from 'zyzz'; style({color:'red'})",
       })
       const styles = {
         ...extracted.styles,
@@ -10090,14 +10092,14 @@ export const props=card();`,
         })),
       }
       expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
-        `[Css.CompileError: ["style-1snulh75pd83z-26","cssOutput"]: cssOutput must be atomic or grouped.]`,
+        `[Css.CompileError: ["style-1snulh75pd83z-28","cssOutput"]: cssOutput must be atomic or grouped.]`,
       )
     })
 
     test('preserves descendant output modes when deduplicating independent compositions', () => {
       const extracted = Source.extract({
         moduleId: 'modes.ts',
-        source: `import {Config,css,cx} from 'zyzz';const atomic=Config.create({cssOutput:'atomic'});const grouped=Config.create({cssOutput:'grouped'});const a=atomic.css({color:'red',padding:'8px'});const b=grouped.css({color:'red',padding:'8px'});const empty=css();export const x=cx(a(),empty());export const y=cx(b(),empty())`,
+        source: `import {Config,cx,style} from 'zyzz';const atomic=Config.create({cssOutput:'atomic'});const grouped=Config.create({cssOutput:'grouped'});const a=atomic.style({color:'red',padding:'8px'});const b=grouped.style({color:'red',padding:'8px'});const empty=style();export const x=cx(a(),empty());export const y=cx(b(),empty())`,
       })
       const output = Css.compile({
         composition: 'independent',
@@ -10435,7 +10437,7 @@ describe('percentage', () => {
           )
           const output = Transform.compile({
             moduleId: 'percentage.ts',
-            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+            source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(value)}});`,
           })
 
           expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
@@ -10548,11 +10550,11 @@ describe('performance', () => {
 
   describe('compile', () => {
     test('folds local namespace applications and retains escaping namespaces', async () => {
-      const { consumer, output } = await execute(`import {css} from 'zyzz';
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
       export function apply(){return styles.card()}
       export let failed=false;
       try {apply()} catch(error){failed=error instanceof Error}
-      namespace styles {export const card=css({color:'red'});}`)
+      namespace styles {export const card=style({color:'red'});}`)
 
       expect(
         output.code.includes('(styles.card?{className:'),
@@ -10563,12 +10565,12 @@ describe('performance', () => {
       )
 
       for (const body of [
-        `export namespace styles {export const card=css({color:'red'});} export function apply(){return styles.card()}`,
-        `namespace styles {export const card=css({color:'red'});} export {styles}; export function apply(){return styles.card()}`,
-        `namespace styles {export const card=css({color:'red'});} styles.card=()=>({className:'replaced'}); export function apply(){return styles.card()}`,
-        `namespace styles {export const card=css({color:'red'});} export function apply(styles){return styles.card()}`,
+        `export namespace styles {export const card=style({color:'red'});} export function apply(){return styles.card()}`,
+        `namespace styles {export const card=style({color:'red'});} export {styles}; export function apply(){return styles.card()}`,
+        `namespace styles {export const card=style({color:'red'});} styles.card=()=>({className:'replaced'}); export function apply(){return styles.card()}`,
+        `namespace styles {export const card=style({color:'red'});} export function apply(styles){return styles.card()}`,
       ]) {
-        const { output } = await execute(`import {css} from 'zyzz';${body}`)
+        const { output } = await execute(`import {style} from 'zyzz';${body}`)
 
         expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
           'false',
@@ -10577,12 +10579,12 @@ describe('performance', () => {
     })
 
     test('folds local calls into fresh props while preserving initialization errors', async () => {
-      const { consumer, output } = await execute(`import {css} from 'zyzz';
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
       export function early(){return card()}
       export let failed=false;
       try { early() } catch(error) { failed=error instanceof ReferenceError }
-      const card=css({color:'red'});
-      const styles={button:css({color:'blue'})};
+      const card=style({color:'red'});
+      const styles={button:style({color:'blue'})};
       export function apply(){return [card(),styles.button()]}`)
 
       const first = consumer.apply()
@@ -10606,11 +10608,11 @@ describe('performance', () => {
     test('bundled calls still fail when invoked before initialization', async () => {
       const output = Transform.compile({
         moduleId: 'early.ts',
-        source: `import {css} from 'zyzz';
+        source: `import {style} from 'zyzz';
       export function early(){return card()}
       export let failed=false;
       try {early()} catch(error){failed=error instanceof Error}
-      const card=css({color:'red'});`,
+      const card=style({color:'red'});`,
       })
 
       const bundle = await Esbuild.build({
@@ -10635,10 +10637,12 @@ describe('performance', () => {
 
     test('does not mistake immediately applied props for a callable definition', async () => {
       for (const source of [
-        `const props=css({color:'red'})();export function apply(){return props()}`,
-        `const styles={card:css({color:'red'})()};export function apply(){return styles.card()}`,
+        `const props=style({color:'red'})();export function apply(){return props()}`,
+        `const styles={card:style({color:'red'})()};export function apply(){return styles.card()}`,
       ]) {
-        const { consumer } = await execute(`import {css} from 'zyzz';${source}`)
+        const { consumer } = await execute(
+          `import {style} from 'zyzz';${source}`,
+        )
         let failed = false
 
         try {
@@ -10653,20 +10657,20 @@ describe('performance', () => {
 
     test('retains escaping objects, shadowed bindings, overrides, and optional calls', async () => {
       for (const body of [
-        `const styles={button:css({color:'red'})}; export {styles}; export function apply(){return styles.button()}`,
-        `const card=css({color:'red'}); export function apply(card){return card()}`,
-        `const card=css({color:'red'}); export function apply(){return card({className:'extra'})}`,
-        `const card=css({color:'red'}); export function apply(){return card?.()}`,
+        `const styles={button:style({color:'red'})}; export {styles}; export function apply(){return styles.button()}`,
+        `const card=style({color:'red'}); export function apply(card){return card()}`,
+        `const card=style({color:'red'}); export function apply(){return card({className:'extra'})}`,
+        `const card=style({color:'red'}); export function apply(){return card?.()}`,
       ]) {
-        const { output } = await execute(`import {css} from 'zyzz'; ${body}`)
+        const { output } = await execute(`import {style} from 'zyzz'; ${body}`)
 
         expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
           `false`,
         )
       }
 
-      const { consumer } = await execute(`import {css} from 'zyzz';
-      const styles={button:css({color:'red'})};
+      const { consumer } = await execute(`import {style} from 'zyzz';
+      const styles={button:style({color:'red'})};
       styles.button=()=>({className:'replaced'});
       export function apply(){return styles.button()}`)
 
@@ -10678,7 +10682,7 @@ describe('performance', () => {
     })
 
     test('specialized slots preserve getter order, empty values, precedence, and fresh styles', async () => {
-      const source = `import {css} from 'zyzz'; export const apply=css((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha}))`
+      const source = `import {style} from 'zyzz'; export const apply=style((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha}))`
       const { consumer, output } = await execute(source)
       const slots = Source.extract({ moduleId: 'performance.ts', source })
         .calls[0]!.slots!
@@ -10822,9 +10826,9 @@ describe('prefixed', () => {
         source:
           Prefixed.source +
           `
-export const first = css({WebkitUserSelect:'none'})();
-export const second = css({userSelect:'text'})();
-export const third = css({WebkitUserSelect:'none',opacity:.5})();`,
+export const first = style({WebkitUserSelect:'none'})();
+export const second = style({userSelect:'text'})();
+export const third = style({WebkitUserSelect:'none',opacity:.5})();`,
       })
 
       const js = await Esbuild.transform(output.code, {
@@ -11187,7 +11191,7 @@ global({body:{color:\`color(\${profile} 0 1 1 0)\`}});`
         contracts: { 'lib/profiles.js': library.contracts['profiles.ts']! },
         imports: { 'app.ts': { lib: 'lib/profiles.js', zyzz: null } },
         modules: {
-          'app.ts': `import {profile as print} from 'lib';import {css} from 'zyzz';export const styles={text:css({color:\`color(\${print} 0 0 0 1)\`})};`,
+          'app.ts': `import {profile as print} from 'lib';import {style} from 'zyzz';export const styles={text:style({color:\`color(\${print} 0 0 0 1)\`})};`,
         },
       })
 
@@ -11383,7 +11387,7 @@ describe('properties', () => {
 
         for (let start = 0; start < cases.length; start += 100) {
           const batch = cases.slice(start, start + 100)
-          const source = `import { css } from 'zyzz';\n${batch.map(({ property, value }, index) => `export const p${index} = css({${JSON.stringify(property)}: ${JSON.stringify(value)}})();`).join('\n')}`
+          const source = `import { style } from 'zyzz';\n${batch.map(({ property, value }, index) => `export const p${index} = style({${JSON.stringify(property)}: ${JSON.stringify(value)}})();`).join('\n')}`
           const output = Transform.compile({
             moduleId: 'properties.ts',
             source,
@@ -11572,7 +11576,7 @@ describe('properties', () => {
             )
           const output = Transform.compile({
             moduleId: 'cascade.ts',
-            source: `import { css } from 'zyzz'; export const a = css({${camel(longhand)}: ${JSON.stringify(value)}})(); export const b = css({${camel(shorthand)}: 'initial'})(); export const c = css({${camel(longhand)}: ${JSON.stringify(value)}})();`,
+            source: `import { style } from 'zyzz'; export const a = style({${camel(longhand)}: ${JSON.stringify(value)}})(); export const b = style({${camel(shorthand)}: 'initial'})(); export const c = style({${camel(longhand)}: ${JSON.stringify(value)}})();`,
           })
           const javascript = await Esbuild.transform(output.code, {
             format: 'esm',
@@ -11635,7 +11639,7 @@ describe('ranges', () => {
         const name = Conformance.name(property)
         const output = Transform.compile({
           moduleId: 'ranges.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+          source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(value)}});`,
         })
 
         expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
@@ -12075,20 +12079,20 @@ describe('statements', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'integer.ts',
-          source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],body:{result:1}});export const style=css({zIndex:fn(1.5)});`,
+          source: `import {style} from 'zyzz';import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],body:{result:1}});export const card=style({zIndex:fn(1.5)});`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: integer.ts:178: CSS integer parameters require integer tokens.]`,
+        `[Source.ExtractError: integer.ts:181: CSS integer parameters require integer tokens.]`,
       )
     })
     test('rejects custom media as a declaration value', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'query.ts',
-          source: `import {css} from 'zyzz';import {customMedia} from 'zyzz/web';const query=customMedia('(width>1px)');export const style=css({color:query});`,
+          source: `import {style} from 'zyzz';import {customMedia} from 'zyzz/web';const query=customMedia('(width>1px)');export const card=style({color:query});`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: query.ts:131: Named stylesheet reference is incompatible with this property.]`,
+        `[Source.ExtractError: query.ts:134: Named stylesheet reference is incompatible with this property.]`,
       )
     })
     test('rejects a context on a custom media statement', () => {
@@ -12158,8 +12162,8 @@ describe('statements', () => {
     test('prunes unused named statements and emits JavaScript function formatters', async () => {
       const output = Transform.compile({
         moduleId: 'functions.js',
-        source: `import {css} from 'zyzz';import {cssFunction,customMedia} from 'zyzz/web';const unused=customMedia(false);const dead=cssFunction({parameters:[],body:{result:1}});const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],returns:'<number>',body:{result:'calc(var(--x)*2)'}});export namespace styles {
-  export const box = css({opacity:twice(+1)})
+        source: `import {style} from 'zyzz';import {cssFunction,customMedia} from 'zyzz/web';const unused=customMedia(false);const dead=cssFunction({parameters:[],body:{result:1}});const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],returns:'<number>',body:{result:'calc(var(--x)*2)'}});export namespace styles {
+  export const box = style({opacity:twice(+1)})
 }`,
       })
       expect(
@@ -12174,12 +12178,12 @@ describe('statements', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'bad.ts',
-          source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export namespace styles {
-  export const box = css({opacity:twice(amount)})
+          source: `import {style} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export namespace styles {
+  export const box = style({opacity:twice(amount)})
 }`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: bad.ts:224: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: bad.ts:228: Expected a literal string or number; expressions are not evaluated.]`,
       )
     })
     test('hoists conditioned imports before namespace and ordinary rules', () => {
@@ -12222,8 +12226,8 @@ describe('statements', () => {
         contracts: { 'lib/query.js': library.contracts['query.ts']! },
         imports: { 'app.ts': { lib: 'lib/query.js', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz';import {compact} from 'lib';export namespace styles {
-  export const box = css({[compact]:{color:'red'}})
+          'app.ts': `import {style} from 'zyzz';import {compact} from 'lib';export namespace styles {
+  export const box = style({[compact]:{color:'red'}})
 }`,
         },
       })
@@ -12231,7 +12235,7 @@ describe('statements', () => {
         `"@custom-media --z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74 (width < 40rem);"`,
       )
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-text-9iSyS_-0{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
+        `".z-text-8K9YMq-0{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
       )
     })
     test('emits native functions and callable fixed expressions', async () => {
@@ -12289,8 +12293,8 @@ describe('statements', () => {
         contracts: { 'lib/function.js': library.contracts['function.ts']! },
         imports: { 'app.ts': { lib: 'lib/function.js', zyzz: null } },
         modules: {
-          'app.ts': `import {css} from 'zyzz';import {twice} from 'lib';export namespace styles {
-  export const box = css({width:twice('2px')})
+          'app.ts': `import {style} from 'zyzz';import {twice} from 'lib';export namespace styles {
+  export const box = style({width:twice('2px')})
 }`,
         },
       })
@@ -12317,7 +12321,7 @@ describe('substitution', () => {
       for (const property of Conformance.properties()) {
         const output = Transform.compile({
           moduleId: 'variable.ts',
-          source: `import { css } from 'zyzz'; css({${JSON.stringify(property)}:'var(--probe)'});`,
+          source: `import { style } from 'zyzz'; style({${JSON.stringify(property)}:'var(--probe)'});`,
         })
 
         expect(
@@ -12348,7 +12352,7 @@ describe('substitution', () => {
       ]) {
         const output = Transform.compile({
           moduleId: 'variable.ts',
-          source: `import { css } from 'zyzz'; css({width:${JSON.stringify(value)}});`,
+          source: `import { style } from 'zyzz'; style({width:${JSON.stringify(value)}});`,
         })
 
         // Property grammar is intentionally deferred until the browser substitutes references.
@@ -12478,13 +12482,13 @@ describe('svg', () => {
           column: lines[line]!.indexOf('fill-rule:evenodd!important'),
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "column": 78,
-        "line": 3,
-        "name": "fillRule",
-        "source": "svg.ts",
-      }
-    `)
+        {
+          "column": 80,
+          "line": 3,
+          "name": "fillRule",
+          "source": "svg.ts",
+        }
+      `)
     })
 
     test('SVG paint matches browser declarations and evenodd geometry', async () => {
@@ -12803,7 +12807,7 @@ describe('templates', () => {
       const output = Transform.compile({
         moduleId: 'bigint.ts',
         source:
-          'import { css } from "zyzz"; css({ marginLeft: `${-12n}px`, "--large": `${-9007199254740993n}`, "--zero": `${-0n}` })',
+          'import { style } from "zyzz"; style({ marginLeft: `${-12n}px`, "--large": `${-9007199254740993n}`, "--zero": `${-0n}` })',
       })
 
       expect(output.css).toMatchInlineSnapshot(
@@ -12823,7 +12827,7 @@ describe('templates', () => {
         Transform.compile({
           moduleId: 'depth.ts',
           source:
-            'import { css } from "zyzz"; css({ "--value": ' +
+            'import { style } from "zyzz"; style({ "--value": ' +
             nested(127) +
             ' })',
         }).css,
@@ -12834,12 +12838,12 @@ describe('templates', () => {
         Transform.compile({
           moduleId: 'depth.ts',
           source:
-            'import { css } from "zyzz"; css({ "--value": ' +
+            'import { style } from "zyzz"; style({ "--value": ' +
             nested(128) +
             ' })',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: depth.ts:45: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: depth.ts:49: Expected a literal string or number; expressions are not evaluated.]`,
       )
     })
 
@@ -12861,7 +12865,7 @@ describe('templates', () => {
 
       const literal = Transform.compile({
         moduleId: 'templates.ts',
-        source: `import { css } from 'zyzz'; export const box = css({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px!'], width: 'calc(100% - 16px)' })()`,
+        source: `import { style } from 'zyzz'; export const box = style({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px!'], width: 'calc(100% - 16px)' })()`,
       })
 
       expect(output.css === literal.css).toMatchInlineSnapshot(`true`)
@@ -12892,7 +12896,7 @@ describe('templates', () => {
       const source = [
         "import { Theme } from 'zyzz'",
         "const theme = Theme.define({ color: { brand: '#06c' } })",
-        'export const box = theme.css({ color: `br${"and"}`, content: `"\\u0041"`, "--empty": `` })()',
+        'export const box = theme.style({ color: `br${"and"}`, content: `"\\u0041"`, "--empty": `` })()',
       ].join('\n')
 
       expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
@@ -12917,7 +12921,7 @@ describe('templates', () => {
         '1 + 2',
       ].map((expression) => {
         const source =
-          'import { css } from "zyzz"; css({ width: `${' +
+          'import { style } from "zyzz"; style({ width: `${' +
           expression +
           '}px` })'
 
@@ -12932,90 +12936,90 @@ describe('templates', () => {
       })
 
       expect(diagnostics).toMatchInlineSnapshot(`
-      [
         [
-          {
-            "code": "unsupported_syntax",
-            "end": 55,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 81,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 81,
-            "message": "Static data requires literal property keys without methods.",
-            "source": "invalid.ts",
-            "start": 46,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 50,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 51,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 53,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 52,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 61,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 53,
-            "message": "Expected a literal string or number; expressions are not evaluated.",
-            "source": "invalid.ts",
-            "start": 41,
-          },
-        ],
-      ]
-    `)
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 59,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 85,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 85,
+              "message": "Static data requires literal property keys without methods.",
+              "source": "invalid.ts",
+              "start": 50,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 54,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 55,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 57,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 56,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 65,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 57,
+              "message": "Expected a literal string or number; expressions are not evaluated.",
+              "source": "invalid.ts",
+              "start": 45,
+            },
+          ],
+        ]
+      `)
     })
 
     test('matches native CSS for template fallbacks, math, and importance', async () => {
@@ -13220,7 +13224,7 @@ describe('tuples', () => {
           const name = Conformance.name(property)
           const output = Transform.compile({
             moduleId: 'tuples.ts',
-            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+            source: `import { style } from 'zyzz'; style({${property}:${JSON.stringify(value)}});`,
           })
 
           expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
@@ -13378,7 +13382,7 @@ describe('variables', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'signed.ts',
-          source: `import {variable, css} from 'zyzz'; const vars = ({size:variable("signedLength")}); css({ lineHeight: vars.size })`,
+          source: `import { style, variable } from 'zyzz'; const vars = ({size:variable("signedLength")}); style({ lineHeight: vars.size })`,
         }),
       ).toThrow('Variable domain is incompatible')
     })
@@ -13408,15 +13412,15 @@ describe('variables', () => {
       )
     })
 
-    test('rejects theme variables in root css', () => {
+    test('rejects theme variables in root style', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'root.ts',
           source:
-            'import {Theme,css} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({width:theme.vars.spacing.md})',
+            'import {style,Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); style({width:theme.vars.spacing.md})',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: root.ts:91: Token references must be direct property values in bound theme css calls.]`,
+        `[Source.ExtractError: root.ts:95: Token references must be direct property values in bound theme style calls.]`,
       )
     })
     test('strips importance across nested template segments', () => {
@@ -13424,7 +13428,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'nested.ts',
           source:
-            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:`${`calc(${theme.vars.spacing.md})!`}`})',
+            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({width:`${`calc(${theme.vars.spacing.md})!`}`})',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
@@ -13436,7 +13440,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'assertions.ts',
           source:
-            'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
+            'import { style, Theme } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
@@ -13448,18 +13452,18 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'domains.ts',
           source:
-            'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({maxLines:theme.vars.spacing.md})',
+            'import { style, Theme } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({maxLines:theme.vars.spacing.md})',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: domains.ts:103: Theme variable domain is incompatible with this property.]`,
+        `[Source.ExtractError: domains.ts:107: Theme variable domain is incompatible with this property.]`,
       )
     })
 
     test('retains live references in bound declarations and important templates', () => {
       const source = [
-        'import { Theme, css } from "zyzz";',
+        'import { style, Theme } from "zyzz";',
         'const theme = Theme.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});',
-        'export const box = theme.css({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
+        'export const box = theme.style({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
       ].join('\n')
 
       expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
@@ -13476,7 +13480,7 @@ describe('variables', () => {
           'theme.ts':
             'import { Theme } from "zyzz"; export const theme = Theme.define({ spacing: { md: "8px" }, color: { brand: { light: "red", dark: "blue" } } }); export const alt = Theme.extend(theme, { spacing: { md: "16px" } });',
           'app.ts':
-            'import { css } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = palette.css({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
+            'import { style } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = palette.style({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
         },
       })
 
@@ -13504,7 +13508,7 @@ describe('variables', () => {
         },
         modules: {
           'app.ts':
-            'import { css } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.css({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
+            'import { style } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.style({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
         },
       })
 
@@ -13525,12 +13529,12 @@ describe('variables', () => {
       ],
       [
         'wrong domains',
-        'theme.css({ color: `${theme.vars.spacing.md}` })',
+        'theme.style({ color: `${theme.vars.spacing.md}` })',
         'incompatible',
       ],
       [
         'unknown paths',
-        'theme.css({ width: `${theme.vars.spacing.missing}` })',
+        'theme.style({ width: `${theme.vars.spacing.missing}` })',
         'Unknown theme token path',
       ],
     ])('rejects %s', (_name, source, message) => {
@@ -13538,7 +13542,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            'import { Theme, css } from "zyzz"; const theme = Theme.define({spacing:{md:"8px"}});' +
+            'import { style, Theme } from "zyzz"; const theme = Theme.define({spacing:{md:"8px"}});' +
             source,
         })
         throw new Error('Expected source failure')
@@ -13553,10 +13557,10 @@ describe('variables', () => {
       const output = Transform.compile({
         moduleId: 'browser.ts',
         source: [
-          'import { Theme, css } from "zyzz";',
+          'import { style, Theme } from "zyzz";',
           'const theme = Theme.define({spacing:{md:"8px"}});',
           'const alt = Theme.extend(theme,{spacing:{md:"16px"}});',
-          'theme.css({width:`calc(100% - ${theme.vars.spacing.md})`})()',
+          'theme.style({width:`calc(100% - ${theme.vars.spacing.md})`})()',
           'export const scope = alt.className;',
         ].join('\n'),
       })

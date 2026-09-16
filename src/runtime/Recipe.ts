@@ -1,5 +1,5 @@
 /** Selects finite precompiled recipe alternatives without generating rules. @module */
-import type { css } from '../css.js'
+import type { style } from '../styleFunction.js'
 import * as Html from './Html.js'
 import * as Props from './Props.js'
 
@@ -39,9 +39,9 @@ export function create(options: create.Options) {
   const props = Props.create({ className: options.className })
   const axes = Object.keys(options.axes)
 
-  return (input: Record<string, unknown> & css.Options = {}) => {
-    const overrides: css.Options = input
-    const result: css.Props & Record<`data-${string}`, string> = {
+  return (input: Record<string, unknown> & style.Options = {}) => {
+    const overrides: style.Options = input
+    const result: style.Props & Record<`data-${string}`, string> = {
       ...props(overrides),
     }
 

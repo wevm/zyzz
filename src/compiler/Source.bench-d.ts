@@ -17,7 +17,7 @@ export function baseline() {
 bench('extract / styles, calls, and themes', () => {
   const result = Source.extract({
     moduleId: 'example/card.ts',
-    source: "import { css } from 'zyzz'",
+    source: "import { style } from 'zyzz'",
   })
 
   void result.calls[0]?.name

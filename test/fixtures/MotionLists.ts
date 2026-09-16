@@ -38,8 +38,8 @@ export const invalid = [
 ] as const
 
 /** Compiled motion lists retain importance and fallback order. */
-export const source = `import { css } from 'zyzz';
-export const motion=css({animationDelay:'-250ms, 0s',animationDirection:'normal, reverse',animationDuration:'1s, 2s',animationFillMode:'both, forwards',animationIterationCount:'2.5, infinite',animationPlayState:'paused, paused',animationTimingFunction:'steps(4, end), linear(0, 1)',transitionBehavior:'normal, allow-discrete',transitionDelay:'0s, -.5s',transitionDuration:['1s, 2s','250ms, 500ms!'],transitionTimingFunction:'cubic-bezier(0, -1, 1, 2), steps(2, jump-none)'})();`
+export const source = `import { style } from 'zyzz';
+export const motion=style({animationDelay:'-250ms, 0s',animationDirection:'normal, reverse',animationDuration:'1s, 2s',animationFillMode:'both, forwards',animationIterationCount:'2.5, infinite',animationPlayState:'paused, paused',animationTimingFunction:'steps(4, end), linear(0, 1)',transitionBehavior:'normal, allow-discrete',transitionDelay:'0s, -.5s',transitionDuration:['1s, 2s','250ms, 500ms!'],transitionTimingFunction:'cubic-bezier(0, -1, 1, 2), steps(2, jump-none)'})();`
 
 /** Native declarations independently spell the expected cascade. */
 export const control =

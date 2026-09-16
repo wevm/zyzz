@@ -22,13 +22,13 @@ describe('define', () => {
     const theme = Theme.define(tokens)
 
     expect(() => theme.className).toThrowErrorMatchingInlineSnapshot(
-      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
+      `[style.MissingTransformError: style requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
     )
 
-    const { css } = theme
+    const { style } = theme
 
     expect(() =>
-      css({ color: 'brand', padding: 'md' }),
+      style({ color: 'brand', padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Theme.define requires an explicit id without the compiler plugin.]`,
     )
@@ -185,7 +185,7 @@ describe('define', () => {
     expect(Object.keys(theme)).toMatchInlineSnapshot(`
       [
         "className",
-        "css",
+        "style",
         "tokens",
         "variants",
         "vars",
@@ -529,7 +529,7 @@ describe('queries', () => {
 
       expect(raw.trim() === generated.trim()).toMatchInlineSnapshot(`true`)
     })
-    test('links bundled source through its exported css boundary', async () => {
+    test('links bundled source through its exported style boundary', async () => {
       const source = await Fs.readFile(
         new URL('./themes/default.ts', import.meta.url),
         'utf8',
@@ -539,7 +539,7 @@ describe('queries', () => {
         modules: {
           'default.ts': source,
           'app.ts':
-            'import {css} from "./default.js"; export const body=css({fontFamily:"sans",fontSize:"base",color:"blue.500"})()',
+            'import {style} from "./default.js"; export const body=style({fontFamily:"sans",fontSize:"base",color:"blue.500"})()',
         },
       })
 
@@ -646,7 +646,7 @@ describe('queries', () => {
         imports: { 'app.ts': { library: 'library.js' } },
         modules: {
           'app.ts':
-            'import {theme} from "library"; export const body=theme.css({fontSize:"body"})()',
+            'import {theme} from "library"; export const body=theme.style({fontSize:"body"})()',
         },
       })
 

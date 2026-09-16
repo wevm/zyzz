@@ -24,6 +24,10 @@ const progress = style((values: { amount: `${number}%` }) => ({
 const props = progress({ amount: '50%', className: 'external' })
 ```
 
+## Target Branches
+
+Static bodies accept `targets.web`, `targets.native`, `targets.ios`, and `targets.android`. Web output selects the web branch. Native compilation uses destination-specific property domains and explicit platform selection. See [target value semantics](../react-native/StyleSheet/README.md#target-branches). Native callable application remains pending.
+
 ## Parameters
 
 ### styles

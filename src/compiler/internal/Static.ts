@@ -6,7 +6,11 @@ import * as Themes from './Themes.js'
 import * as Walker from 'oxc-walker'
 
 /** Collects lexical immutable values and local scalar/object type declarations. */
-export function collect(program: Ast.Program, scope: Scope.Tracker) {
+export function collect(
+  program: Ast.Program,
+  scope: Scope.Tracker,
+  imports: Readonly<Record<string, Ast.Node>> = {},
+) {
   const values = new Map<number, Ast.Node>()
   const references = new Map<number, number>()
   const usages = new Map<number, readonly Ast.Node[][]>()
@@ -36,6 +40,18 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
   }
 
   collectValues(program.body)
+  const imported = new Set<number>()
+  for (const statement of program.body)
+    if (
+      statement.type === 'ImportDeclaration' &&
+      statement.importKind !== 'type'
+    )
+      for (const specifier of statement.specifiers) {
+        const value = imports[specifier.local.name]
+        if (!value) continue
+        values.set(specifier.start, value)
+        imported.add(specifier.start)
+      }
 
   const ancestors: Ast.Node[] = []
 
@@ -87,8 +103,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         return
 
       const binding = scope.getDeclaration(node.name)
-      if (binding?.type !== 'Variable' || !values.has(binding.node.start))
-        return
+      if (!binding || !values.has(binding.node.start)) return
 
       references.set(node.start, binding.node.start)
       usages.set(binding.node.start, [
@@ -249,7 +264,10 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
       const value = binding === undefined ? undefined : values.get(binding)
       if (binding === undefined || !value) return node
 
-      if (active.has(binding) || node.start < value.end)
+      if (
+        active.has(binding) ||
+        (!imported.has(binding) && node.start < value.end)
+      )
         throw new Themes.InvalidError(
           'Static bindings must be acyclic and follow their declaration.',
           node,
@@ -654,6 +672,40 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
   }
 
   return {
+    /** Resolves an exported immutable literal without evaluating module code. */
+    exported(name: string): Ast.Node | undefined {
+      for (const statement of program.body) {
+        const declaration =
+          statement.type === 'ExportNamedDeclaration'
+            ? statement.declaration
+            : statement
+        if (
+          declaration?.type !== 'VariableDeclaration' ||
+          declaration.kind !== 'const'
+        )
+          continue
+        for (const value of declaration.declarations) {
+          if (
+            value.id.type !== 'Identifier' ||
+            value.id.name !== name ||
+            !value.init
+          )
+            continue
+          const reference = {
+            ...value.id,
+            start: program.end + 1,
+            end: program.end + 1,
+          }
+          references.set(reference.start, value.start)
+          try {
+            return normalize(reference, new Set())
+          } finally {
+            references.delete(reference.start)
+          }
+        }
+      }
+      return imports[name]
+    },
     resolve,
     properties,
     type,

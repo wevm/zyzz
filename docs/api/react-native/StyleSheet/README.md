@@ -11,7 +11,7 @@ import { StyleSheet } from 'zyzz/react-native'
 | [compile](compile.md) | Resolve shared declarations into static theme/scheme tables.   |
 | [select](select.md)   | Return an existing style-name table without allocation.        |
 | `Properties`          | Optional `satisfies` constraint for portable native authoring. |
-| `NativeStyle`         | Readonly native scalar and transform output.                   |
+| `NativeStyle`         | Readonly static native property output.                        |
 | `Tables`              | Immutable tables indexed by theme, scheme, and style name.     |
 | `CompileError`        | Capability/conversion diagnostics with structured paths.       |
 | `SelectionError`      | Unknown theme or scheme selection.                             |
@@ -63,7 +63,7 @@ Static `transform` lists compile into deeply frozen, ordered native transform ob
 
 Translation accepts signed px/rem lengths and percentages. Scale accepts finite numbers. Angles accept deg/rad and convert grad/turn to degrees. Nonnegative perspective lengths use the configured unit conversion and CSS's minimum one-pixel distance. Unsupported functions, matrices, calculations, and malformed arguments produce diagnostics.
 
-The same definition remains valid for web CSS. Native arrays, animated values, target branches, and real device rendering remain separate work. Output follows the pinned [React Native transform contract](https://reactnative.dev/docs/0.87/transforms).
+The same definition remains valid for web CSS. Native arrays belong in explicit target branches. Animated values and real device rendering remain separate work. Output follows the pinned [React Native transform contract](https://reactnative.dev/docs/0.87/transforms).
 
 ### Transform Origins
 
@@ -76,3 +76,32 @@ const styles = Style.define({ card: { transformOrigin: '-1.25rem 25% -2px' } })
 const output = StyleSheet.compile({ styles, units: { rem: 16 } })
 // output.styles.default.light.card.transformOrigin is [-20, '25%', -2].
 ```
+
+## Target Branches
+
+`Style.define`, root `style`, and config-bound `style` accept `targets.web`, `targets.native`, `targets.ios`, and `targets.android`. Shared declarations retain CSS semantics. Native branches use the pinned React Native static property domains, including structured transforms, filters, shadows, font variants, and experimental properties.
+
+```ts
+const styles = Style.define({
+  label: {
+    fontSize: '16px',
+    targets: {
+      web: { display: 'grid' },
+      native: { lineHeight: 24, fontVariant: ['tabular-nums'] },
+      ios: { fontFamily: 'System' },
+      android: { includeFontPadding: false },
+    },
+  },
+})
+const output = StyleSheet.compile({ styles, platform: 'ios' })
+```
+
+Native compilation applies shared declarations, then `native`, then the selected platform. Platform branches require an explicit `platform`. Native properties replace previous properties shallowly, including complete transform/filter/shadow arrays. Native shorthand properties retain React Native precedence against existing longhands. Prefer matching longhands when overriding shared shorthand expansions.
+
+Native numbers are logical units, including absolute `lineHeight`. Native strings and arrays are destination values without CSS unit conversion or font mapping. A shared numeric line height multiplies the final font size unless a native branch overrides line height.
+
+The static projection covers all 157 distinct pinned native properties. It excludes animated and opaque host objects without removing them from the full inventory. Compilation validates native branches against generated domains, copies and freezes compiler-owned data, and rejects accessors, sparse arrays, functions, and non-plain objects.
+
+Web compilation applies `web` after shared declarations and excludes native/platform branches. Web branches retain selectors, queries, tokens, and CSS value validation. Target branches cannot contain another target container. Native compilation still diagnoses unsupported shared declarations even when a target branch replaces the corresponding property.
+
+Source imports must resolve to immutable literal data. Re-exports and packed style contracts preserve target data. Contract version 20 prevents older readers from silently dropping branches. This metadata support does not implement native callable application or establish platform availability and rendered behavior.

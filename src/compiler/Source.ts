@@ -176,7 +176,11 @@ export function extract(options: extract.Options): extract.ReturnType {
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
 
-  const staticData = Static.collect(program, scopeTracker)
+  const staticData = Static.collect(
+    program,
+    scopeTracker,
+    options[Themes.context]?.constants,
+  )
 
   const contributions = (() => {
     try {
@@ -616,6 +620,15 @@ export function extract(options: extract.Options): extract.ReturnType {
       prefix: readonly string[] = [],
     ): Record<string, unknown> {
       const values: Record<string, unknown> = Object.create(null)
+      const target = prefix.lastIndexOf('targets')
+      if (target !== -1 && prefix.length > 64) {
+        report(
+          'unsupported_syntax',
+          'Target nesting exceeds 64 levels.',
+          argument,
+        )
+        return values
+      }
       const depth = prefix.length + 2
 
       function localSlot(node: Ast.Node) {
@@ -732,6 +745,71 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
 
+        if (key === 'targets' || prefix.at(-1) === 'targets') {
+          const input = Expression.unwrap(property.value)
+          if (input.type !== 'ObjectExpression') {
+            report(
+              'unsupported_syntax',
+              'Target branches require static declaration objects.',
+              input,
+            )
+            continue
+          }
+          values[key] = object(input, [...prefix, key])
+          continue
+        }
+        if (target !== -1 && prefix[target + 1] !== 'web') {
+          function nativeValue(input: Ast.Node, depth = 0): unknown {
+            const node = Expression.unwrap(input)
+            if (depth > 64) {
+              report(
+                'unsupported_syntax',
+                'Native value nesting exceeds 64 levels.',
+                node,
+              )
+              return undefined
+            }
+            if (node.type === 'ObjectExpression')
+              return object(node, [...prefix, key])
+            if (node.type === 'ArrayExpression')
+              return node.elements.map((entry) => {
+                if (!entry || entry.type === 'SpreadElement') {
+                  report(
+                    'unsupported_syntax',
+                    'Native arrays require dense static entries.',
+                    node,
+                  )
+                  return undefined
+                }
+                return nativeValue(entry, depth + 1)
+              })
+            if (
+              node.type === 'Literal' &&
+              (node.value === null ||
+                ['boolean', 'number', 'string'].includes(typeof node.value))
+            )
+              return node.value
+            if (
+              node.type === 'UnaryExpression' &&
+              ['+', '-'].includes(node.operator) &&
+              node.argument.type === 'Literal' &&
+              typeof node.argument.value === 'number'
+            )
+              return (node.operator === '-' ? -1 : 1) * node.argument.value
+            if (node.type === 'TemplateLiteral') {
+              const value = Expression.template(node)
+              if (typeof value === 'string') return value
+            }
+            report(
+              'unsupported_syntax',
+              'Native branches require static literal values.',
+              node,
+            )
+            return undefined
+          }
+          values[key] = nativeValue(property.value)
+          continue
+        }
         if (Condition.is(key)) {
           conditionKeys.push(property.key)
 

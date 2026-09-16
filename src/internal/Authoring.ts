@@ -36,6 +36,20 @@ export type Options = {
 export function body(input: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(input).flatMap(([key, value]) => {
+      if (key === 'targets') {
+        const branches = value as Record<string, unknown>
+        return [
+          [
+            key,
+            {
+              ...branches,
+              ...(branches.web
+                ? { web: body(branches.web as Record<string, unknown>) }
+                : {}),
+            },
+          ],
+        ]
+      }
       if (key === 'selectors' || key === 'variables')
         return Object.entries(value as Record<string, unknown>).map(
           ([name, entry]) => [

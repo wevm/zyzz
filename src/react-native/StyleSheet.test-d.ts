@@ -1,6 +1,6 @@
 /** Checks inferred native labels and explicit native authoring constraints. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Config, Style, Theme, style } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 import type { StyleProp as NativeStyleProp } from '../../test/fixtures/native/StyleProp.js'
 
@@ -55,6 +55,65 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('checks root and config-bound target branches', () => {
+    const card = style({
+      targets: {
+        web: { display: 'grid' },
+        native: { fontVariant: ['small-caps'], lineHeight: 24 },
+      },
+    })
+    const bound = Config.create({ theme: { color: { brand: '#06c' } } })
+    const label = bound.style({
+      targets: { web: { color: 'brand' }, ios: { fontFamily: 'System' } },
+    })
+    expectTypeOf(card()).not.toBeAny()
+    expectTypeOf(label()).not.toBeAny()
+    // @ts-expect-error Web branches retain CSS value domains.
+    style({ targets: { web: { display: 'banana' } } })
+    // @ts-expect-error Native structured values reject unknown nested keys.
+    style({
+      targets: { native: { shadowOffset: { width: 1, height: 2, extra: 3 } } },
+    })
+    // @ts-expect-error Native lengths use native numeric semantics.
+    bound.style({ targets: { native: { width: '1rem' } } })
+  })
+
+  test('checks destination property domains and exact structured branch keys', () => {
+    const styles = Style.define({
+      card: {
+        targets: {
+          native: {
+            lineHeight: 20,
+            fontWeight: '600',
+            transform: [
+              { matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] },
+            ],
+          },
+          ios: { shadowOffset: { width: 1, height: 2 } },
+          android: { elevation: 4 },
+          web: { display: 'grid' },
+        },
+      },
+    })
+    expectTypeOf(
+      StyleSheet.compile({ styles, platform: 'ios' }).styles.default.light.card,
+    ).not.toBeAny()
+    // @ts-expect-error Native dimensions do not accept booleans.
+    Style.define({ card: { targets: { native: { width: true } } } })
+    Style.define({
+      card: {
+        // @ts-expect-error A native transform entry has exactly one operation.
+        targets: { native: { transform: [{ scale: 2, rotate: '2deg' }] } },
+      },
+    })
+    // @ts-expect-error Unknown target names are rejected.
+    Style.define({ card: { targets: { browser: { opacity: 1 } } } })
+    Style.define({
+      // @ts-expect-error Native color objects belong to host interoperability.
+      card: { targets: { native: { color: { semantic: 'label' } } } },
+    })
+  })
+
   test('returns native-compatible origin tuples from shared declarations', () => {
     const declarations = {
       transformOrigin: 'top right -2px',
@@ -65,9 +124,7 @@ describe('compile', () => {
 
     expectTypeOf(
       output.styles.default.light.card.transformOrigin,
-    ).toEqualTypeOf<
-      [number | `${number}%`, number | `${number}%`, number] | undefined
-    >()
+    ).toEqualTypeOf<Array<string | number> | string | undefined>()
     expectTypeOf(output.styles.default.light.card).toMatchTypeOf<{
       transformOrigin?: Array<string | number> | string | undefined
     }>()
@@ -87,7 +144,9 @@ describe('compile', () => {
     })
 
     expectTypeOf(output.styles.default.light.card.transform).toMatchTypeOf<
+      | string
       | readonly (
+          | { matrix: number[] }
           | { perspective: number }
           | { rotate: string }
           | { rotateX: string }
@@ -103,7 +162,7 @@ describe('compile', () => {
         )[]
       | undefined
     >()
-    // @ts-expect-error Native arrays need the planned target-specific authoring boundary.
+    // @ts-expect-error Native arrays require an explicit native target branch.
     const native = { transform: [{ scale: 2 }] } satisfies StyleSheet.Properties
     expectTypeOf(native).not.toBeAny()
   })
@@ -144,7 +203,7 @@ describe('compile', () => {
     })
 
     expectTypeOf(output.styles.default.light.card.aspectRatio).toEqualTypeOf<
-      number | undefined
+      number | string | undefined
     >()
     // @ts-expect-error Native image fitting has no fill-box keyword.
     const invalid = { objectFit: 'fill-box' } satisfies StyleSheet.Properties

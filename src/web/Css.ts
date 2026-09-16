@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Targets from '../internal/Targets.js'
 import * as ClassName from './internal/ClassName.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
@@ -31,6 +32,10 @@ export function compile<
 >(
   options: compile.Options<name, themeName>,
 ): compile.ReturnType<name, themeName> {
+  options = {
+    ...options,
+    styles: { styles: options.styles.styles.map(Targets.web) },
+  }
   let theme: ReturnType<typeof Themes.create> | undefined
 
   const references = new Map<object, boolean>()

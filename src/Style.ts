@@ -9,6 +9,7 @@ import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
 import type * as Theme from './Theme.js'
+import * as Targets from './internal/Targets.js'
 
 /** Validates only authored keys, recursively retaining nested token inference. */
 export type Accepted<
@@ -21,52 +22,74 @@ export type Accepted<
     | keyof Literal.Properties
     | Condition.Keys<tokens, Keys<style>>
     | 'selectors'
+    | 'targets'
     | 'variables'
   >,
   never
 > &
   (style extends unknown
     ? {
-        [key in keyof style]: key extends 'selectors'
-          ? style[key] extends Record<string, unknown>
-            ? {
-                [selector in keyof style[key]]: style[key][selector] extends Record<
-                  string,
-                  unknown
-                >
-                  ? Accepted<style[key][selector], tokens, literal>
-                  : never
-              }
-            : never
-          : key extends 'variables'
+        [key in keyof style]: key extends 'targets'
+          ? AcceptedTargets<style[key], tokens, literal>
+          : key extends 'selectors'
             ? style[key] extends Record<string, unknown>
               ? {
-                  [name in keyof style[key]]: style[key][name] extends
-                    | number
-                    | string
-                    ? Literal.Checked<style[key][name]>
+                  [selector in keyof style[key]]: style[key][selector] extends Record<
+                    string,
+                    unknown
+                  >
+                    ? Accepted<style[key][selector], tokens, literal>
                     : never
                 }
               : never
-            : key extends keyof Literal.Properties
-              ? Value.Accepted<
-                  Pick<style, key>,
-                  literal extends true
-                    ? LiteralDeclarations
-                    : DeclarationProperties<tokens>
-                >[key] &
-                  Value.Checked<Pick<style, key>, tokens>[key]
-              : key extends Condition.Keys<tokens, key>
-                ? [style[key]] extends [undefined]
-                  ? never
-                  : NonNullable<style[key]> extends Record<string, unknown>
-                    ?
-                        | Accepted<NonNullable<style[key]>, tokens, literal>
-                        | Extract<style[key], undefined>
-                    : never
+            : key extends 'variables'
+              ? style[key] extends Record<string, unknown>
+                ? {
+                    [name in keyof style[key]]: style[key][name] extends
+                      | number
+                      | string
+                      ? Literal.Checked<style[key][name]>
+                      : never
+                  }
                 : never
+              : key extends keyof Literal.Properties
+                ? Value.Accepted<
+                    Pick<style, key>,
+                    literal extends true
+                      ? LiteralDeclarations
+                      : DeclarationProperties<tokens>
+                  >[key] &
+                    Value.Checked<Pick<style, key>, tokens>[key]
+                : key extends Condition.Keys<tokens, key>
+                  ? [style[key]] extends [undefined]
+                    ? never
+                    : NonNullable<style[key]> extends Record<string, unknown>
+                      ?
+                          | Accepted<NonNullable<style[key]>, tokens, literal>
+                          | Extract<style[key], undefined>
+                      : never
+                  : never
       }
     : never)
+
+type AcceptedTargets<
+  input,
+  tokens extends Theme.Tokens,
+  literal extends boolean,
+> = {
+  [key in keyof input]: key extends 'web'
+    ? Accepted<input[key], tokens, literal>
+    : key extends 'android' | 'ios' | 'native'
+      ? Targets.Declarations<input[key]>
+      : never
+}
+
+/** Explicit target declarations, applied after shared declarations. */
+export type TargetBranches<tokens extends Theme.Tokens = {}> =
+  Targets.NativeBranches & {
+    /** Web declarations retain CSS semantics and conditions. */
+    readonly web?: Properties<tokens> | undefined
+  }
 
 type Keys<value> = value extends unknown ? keyof value : never
 
@@ -78,26 +101,32 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? Properties<tokens> extends styles[name]
-      ? styles[name] extends Properties<tokens>
-        ? styles[name] &
-            Record<Exclude<Keys<styles[name]>, keyof Properties<tokens>>, never>
-        : never
-      : DeclarationProperties<tokens> extends styles[name]
-        ? styles[name] extends DeclarationProperties<tokens>
+    ? 'targets' extends keyof styles[name]
+      ? Accepted<styles[name], tokens>
+      : Properties<tokens> extends styles[name]
+        ? styles[name] extends Properties<tokens>
           ? styles[name] &
               Record<
-                Exclude<
-                  Keys<styles[name]>,
-                  keyof DeclarationProperties<tokens>
-                >,
+                Exclude<Keys<styles[name]>, keyof Properties<tokens>>,
                 never
               >
           : never
-        : Accepted<styles[name], tokens>
+        : DeclarationProperties<tokens> extends styles[name]
+          ? styles[name] extends DeclarationProperties<tokens>
+            ? styles[name] &
+                Record<
+                  Exclude<
+                    Keys<styles[name]>,
+                    keyof DeclarationProperties<tokens>
+                  >,
+                  never
+                >
+            : never
+          : Accepted<styles[name], tokens>
     : never
 }
 
+const targetBranch = Symbol('zyzz.target.branch')
 const nesting = Symbol('zyzz.style.nesting')
 
 /** A typed declaration; order is significant for future cascade processing. */
@@ -253,6 +282,62 @@ export function define(
 
     const mappings = options.theme?.[Token.definition].contract.shorthands
     const authored = entries(style, [name])
+    const target = authored.find(([key]) => key === 'targets')
+    if (target) {
+      if (options[targetBranch]) {
+        report(
+          'invalid_structure',
+          [name, 'targets'],
+          'Target branches cannot contain nested target branches.',
+        )
+        continue
+      }
+      const targets: Record<string, unknown> = {}
+      try {
+        for (const [key, input] of entries(target[1], [name, 'targets'])) {
+          if (!['android', 'ios', 'native', 'web'].includes(key)) {
+            report(
+              'invalid_structure',
+              [name, 'targets', key],
+              'Unknown style target.',
+            )
+            continue
+          }
+          if (input === undefined) continue
+          if (key === 'web')
+            targets.web = define({ [name]: input } as never, {
+              ...options,
+              [nesting]: (options[nesting] ?? 0) + 1,
+              [targetBranch]: true,
+            }).styles[0]
+          else {
+            entries(input, [name, 'targets', key])
+            targets[key] = Targets.copy(input, [name, 'targets', key])
+          }
+        }
+        const shared = define(
+          {
+            [name]: Object.fromEntries(
+              authored.filter(([key]) => key !== 'targets'),
+            ),
+          } as never,
+          { ...options, [nesting]: (options[nesting] ?? 0) + 1 },
+        ).styles[0]!
+        output.push(
+          Object.freeze({ ...shared, targets: Object.freeze(targets) }),
+        )
+      } catch (error) {
+        if (error instanceof InvalidError)
+          diagnostics.push(...error.diagnostics)
+        else
+          report(
+            'invalid_structure',
+            [name, 'targets'],
+            (error as Error).message,
+          )
+      }
+      continue
+    }
 
     const properties = authored.flatMap(([property, input]) =>
       (mappings?.[property] ?? [property]).map(
@@ -476,6 +561,7 @@ export declare namespace define {
   /** Source locations are optional; pure in-memory callers need no source text. */
   type Options<tokens extends Theme.Tokens = never> = {
     /** Internal recursion budget, propagated only by structured authoring. */
+    readonly [targetBranch]?: boolean | undefined
     readonly [nesting]?: number | undefined
     /** Caller-provided spans matched by complete diagnostic path. */
     readonly locations?: readonly SourceLocation[] | undefined
@@ -554,6 +640,10 @@ export type NamedStyle<name extends string = string> = {
   readonly declarations: readonly Declaration[]
   /** Authored style name, without generated target identifiers. */
   readonly name: name
+  /** Target-neutral branches retained through source and packed compilation. */
+  readonly targets?:
+    | (Targets.NativeBranches & { readonly web?: NamedStyle | undefined })
+    | undefined
 }
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
@@ -573,7 +663,7 @@ export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
 export type Properties<tokens extends Theme.Tokens = {}> =
   DeclarationProperties<tokens> & {
     readonly [key in Condition.Keys<tokens>]?: Properties<tokens>
-  }
+  } & { readonly targets?: TargetBranches<tokens> | undefined }
 
 /** Nested literal declarations retain exact keys at every depth. */
 export type LiteralProperties = LiteralDeclarations & {

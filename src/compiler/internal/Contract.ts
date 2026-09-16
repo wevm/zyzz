@@ -23,7 +23,7 @@ export function read(
   const data = record(JSON.parse(source))
   if (
     ![
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -197,7 +197,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(
           data.version as number,
         ) ||
         ![
@@ -248,7 +248,7 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17, 18, 19].includes(data.version as number)
+        ![16, 17, 18, 19, 20].includes(data.version as number)
       )
         throw new Error(
           'Packed callable styles require contract version 16 or later.',
@@ -579,6 +579,18 @@ export function write(
           Object.values(link.members ?? {}).some(styled)
         )
       }
+      function branches(style: import('../../Style.js').NamedStyle): boolean {
+        return (
+          !!style.targets || !!style.rules?.some((rule) => branches(rule.style))
+        )
+      }
+      function targeted(link: Themes.Link): boolean {
+        return (
+          (link.style && branches(link.style.style)) ||
+          Object.values(link.members ?? {}).some(targeted)
+        )
+      }
+      if (Object.values(links).some(targeted)) return 20
       // Style authoring exports serialize as `style`; older readers only know `css`.
       if (Object.values(links).some(styled)) return 19
       // Root controls call a runtime helper older releases lack, and older

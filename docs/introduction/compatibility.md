@@ -1,6 +1,6 @@
 # Compatibility
 
-This documentation describes the implemented web compiler and marks remaining API boundaries with scoped preview notes. The [historical capability inventory](../../.agents/parity.md) records the earlier API comparison; the [Phase 2 plan](../../.agents/plan.md) records acceptance evidence and deferred gates.
+This documentation describes the implemented web compiler and marks remaining API boundaries with scoped preview notes. The [implementation plan](../../.agents/plan.md) records remaining work and acceptance gates.
 
 | Boundary                                   | Implemented scope                                                                                              |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |

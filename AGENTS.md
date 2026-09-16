@@ -200,7 +200,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
 - Expose platform APIs as named namespace exports: `Css` from `zyzz/web` and `StyleSheet` from `zyzz/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
 - Add examples for web, native, and standalone distribution as their capabilities land.
-- `.agents/plan.md` tracks phases and acceptance gates; `.agents/architecture.md` defines the target API.
+- `.agents/plan.md` tracks remaining work and acceptance gates. `docs/api/` defines public API contracts.
 
 ## Tooling
 

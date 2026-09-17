@@ -127,9 +127,19 @@ function build(options: compile.Options, cache?: Cache): Cache {
     !!cache?.native !== !!options.native ||
     Object.keys(cache?.native ?? {}).length !==
       Object.keys(options.native ?? {}).length ||
-    Object.entries(cache?.native ?? {}).some(
-      ([key, value]) => Reflect.get(options.native ?? {}, key) !== value,
-    )
+    Object.entries(cache?.native ?? {}).some(([key, value]) => {
+      const next = Reflect.get(options.native ?? {}, key)
+      if (key !== 'fonts' && key !== 'themes' && key !== 'units')
+        return value !== next
+
+      return (
+        !!value !== !!next ||
+        Object.keys(value ?? {}).length !== Object.keys(next ?? {}).length ||
+        Object.entries(value ?? {}).some(
+          ([name, entry]) => Reflect.get(next ?? {}, name) !== entry,
+        )
+      )
+    })
   )
     cache = undefined
   if (options.native && options.compiler === false)
@@ -760,6 +770,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
       if (
         node.type !== 'ImportDeclaration' ||
         node.importKind === 'type' ||
+        node.specifiers.every(
+          (specifier) =>
+            specifier.type === 'ImportSpecifier' &&
+            specifier.importKind === 'type',
+        ) ||
         ['zyzz', 'zyzz/web'].includes(node.source.value)
       )
         continue
@@ -952,6 +967,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
               statement.exportKind === 'type')
           )
             continue
+          if (
+            'specifiers' in statement &&
+            statement.specifiers.length &&
+            statement.specifiers.every((specifier) =>
+              specifier.type === 'ImportSpecifier'
+                ? specifier.importKind === 'type'
+                : specifier.type === 'ExportSpecifier' &&
+                  specifier.exportKind === 'type',
+            )
+          )
+            continue
           const target = resolve(moduleId, statement.source.value, statement)
           if (target && libraries[target])
             imported[statement.source.value] = libraries[target].links
@@ -992,7 +1018,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
       development: !!options.development,
       extracted,
       libraries: Object.freeze(libraries),
-      native: { ...options.native },
+      native: {
+        ...options.native,
+        ...(options.native.fonts && { fonts: { ...options.native.fonts } }),
+        ...(options.native.themes && { themes: { ...options.native.themes } }),
+        ...(options.native.units && { units: { ...options.native.units } }),
+      },
       resolutions: Object.freeze(resolutions),
       result: Object.freeze({
         contracts: Object.freeze(

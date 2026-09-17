@@ -197,7 +197,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(
           data.version as number,
         ) ||
         ![

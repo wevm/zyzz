@@ -30,7 +30,7 @@ await host.build()
 
 Installed packages resolve through Node's `import`, `node`, and `default` export conditions, including subpaths and `#imports`. Adjacent `<entry>.zyzz.json` contracts compile without executing package code. Relative source imports remain within the source tree. TypeScript path aliases and browser/native resolver conditions are not inferred.
 
-Package contracts are reread by each build. Watch mode currently observes the source tree only. Packed external asset copying remains unsupported.
+Package contracts are reread by each build. Watch mode tracks installed dependencies, export maps, and adjacent metadata, retaining successful artifacts when dependencies are temporarily invalid or missing. Packed external asset copying remains unsupported.
 
 Imported changes rebuild dependent callables. Failed builds retain the last successful artifacts, and watch mode resumes after corrected source. Platform and scheme are fixed for the lifecycle. Create a separate host and output directory for another context.
 

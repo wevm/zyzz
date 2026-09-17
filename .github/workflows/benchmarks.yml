@@ -368,9 +368,15 @@ jobs:
     timeout-minutes: 30
   native-compiler:
     if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all' || inputs.suite == 'native-compiler')
-    name: Native compiler benchmarks
+    name: Native compiler ${{ matrix.platform }} / ${{ matrix.count }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        count: [10, 100, 1000]
+        platform: [ios, android]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-dependencies
@@ -382,6 +388,7 @@ jobs:
       - name: Validate native compiler fixtures
         run: pnpm exec vp test run --config bench/native/Check.config.ts
       - name: Measure native compiler pipelines
+        timeout-minutes: 35
         run: |
           mkdir -p bench/results/native
           git rev-parse HEAD > bench/results/native/commit.txt
@@ -391,13 +398,14 @@ jobs:
           uname -a > bench/results/native/platform.txt
           free -b > bench/results/native/memory.txt
           cp bench/native/app/package.json bench/results/native/dependencies.json
-          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --outputJson bench/results/native/compile-timings.json
+          set -o pipefail
+          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --testNamePattern 'native (cold process )?${{ matrix.platform }} / [^/]+ / ${{ matrix.count }}\b' --outputJson bench/results/native/compile-timings.json 2>&1 | tee bench/results/native/compiler.log
       - name: Publish native compiler summary
-        run: node bench/results/native/tools/CompileReport.mjs >> "$GITHUB_STEP_SUMMARY"
+        run: node bench/results/native/tools/CompileReport.mjs ${{ matrix.platform }} ${{ matrix.count }} >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: benchmarks-native-compiler
+          name: benchmarks-native-compiler-${{ matrix.platform }}-${{ matrix.count }}
           path: bench/results/native/
           if-no-files-found: error
           retention-days: 30
@@ -436,7 +444,10 @@ jobs:
           node bench/results/native/tools/Run.mjs ios "$DEVICE"
       - name: Publish native summary
         if: ${{ !cancelled() }}
-        run: cat bench/results/native/ios/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if test -f bench/results/native/ios/report.md; then
+            cat bench/results/native/ios/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -461,6 +472,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            bench/native/app/package.json
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
@@ -492,7 +507,10 @@ jobs:
             node bench/results/native/tools/Run.mjs android emulator-5554
       - name: Publish native summary
         if: ${{ !cancelled() }}
-        run: cat bench/results/native/android/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if test -f bench/results/native/android/report.md; then
+            cat bench/results/native/android/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

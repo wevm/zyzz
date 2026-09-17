@@ -20,7 +20,7 @@ Release builds use Hermes and the New Architecture. Each lane discards three war
 
 ## Workflow
 
-The existing Benchmarks workflow has dedicated native compiler, iOS simulator, and Android emulator jobs. Select `native-compiler`, `native-ios`, or `native-android` when dispatching it to run one job independently. Native artifacts contain raw samples, validated reports, the source commit, lockfile digest, dependency versions, host CPU/OS/memory, and native OS/density/font-scale details. Missing lanes, development builds, invalid dimensions, non-finite timings, and collector timeouts fail the job. Artifacts publish on failures as well as success.
+The existing Benchmarks workflow has dedicated native compiler, iOS simulator, and Android emulator jobs. Select `native-compiler`, `native-ios`, or `native-android` when dispatching it to run one job independently. Compilation runs in six jobs split by platform and definition count, with at most two jobs running concurrently. Each job validates its 45 expected lanes and saves a separate report. Android caches Gradle dependencies between runs. Native artifacts contain raw samples, validated reports, the source commit, lockfile digest, dependency versions, host CPU/OS/memory, and native OS/density/font-scale details. Missing lanes, development builds, invalid dimensions, non-finite timings, and collector timeouts fail the job. Artifacts publish on failures as well as success.
 
 Native dependencies are pinned in `app/package.json`. Unistyles requires custom native code and cannot run in Expo Go. See [Unistyles installation](https://unistyl.es/v3/start/getting-started/) and its [Nitro compatibility table](https://github.com/jpudysz/react-native-unistyles#installation).
 

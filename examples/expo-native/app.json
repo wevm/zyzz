@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Zyzz native tests",
+    "name": "Zyzz native example",
     "slug": "zyzz-native-tests",
     "version": "1.0.0",
     "orientation": "default",
@@ -8,9 +8,6 @@
     "ios": {
       "supportsTablet": true
     },
-    "platforms": [
-      "ios",
-      "android"
-    ]
+    "platforms": ["ios", "android"]
   }
 }

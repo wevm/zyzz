@@ -324,6 +324,14 @@ export function compile(options: compile.Options): compile.ReturnType {
 
 /** Native source compilation contracts. */
 export declare namespace compile {
+  /** Failures during extraction, table compilation, or explicit context selection. */
+  type ErrorType =
+    | Source.ExtractError
+    | CompileError
+    | StyleSheet.CompileError
+    | StyleSheet.SelectionError
+    | Variants.CompileError
+
   /** Explicit source and native context, independent of device state. */
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
     /** Compiler-owned graph context. */

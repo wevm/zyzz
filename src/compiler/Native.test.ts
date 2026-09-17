@@ -48,6 +48,28 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('invalidates a reused native context after scheme changes', () => {
+    const compiler = Graph.create()
+    const modules = {
+      'card.ts': `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});export const card=style({color:'ink'});`,
+    }
+    const native: NonNullable<Graph.compile.Options['native']> & {
+      colorScheme: 'dark' | 'light'
+    } = { colorScheme: 'light' }
+    const light = compiler.compile({ modules, native })
+    native.colorScheme = 'dark'
+    const dark = compiler.compile({ modules, native })
+    expect(
+      light.modules['card.ts']!.code.includes('#000000'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      dark.modules['card.ts']!.code.includes('#ffffff'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      compiler.compile({ modules, native }) === dark,
+    ).toMatchInlineSnapshot('true')
+  })
+
   test('preserves explicit exports over packed star exports', () => {
     const library = Graph.compile({
       modules: {

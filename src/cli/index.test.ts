@@ -7,14 +7,204 @@ import { chromium } from 'playwright'
 import * as ChildProcess from 'node:child_process'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
+import * as Os from 'node:os'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
+import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 import { describe, expect, test, vi } from 'vite-plus/test'
 
 const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
+  test('builds and watches a source-free package through the published CLI', async () => {
+    const root = await Fs.realpath(
+      await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-cli-package-')),
+    )
+    let child: ChildProcess.ChildProcess | undefined
+    let exited: Promise<number | null> | undefined
+    try {
+      const library = await Universal.create(root)
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(root, 'src/app.ts'),
+        `import * as library from '@acme/universal';export const props=library.button({size:'large',active:true});`,
+      )
+      const bin = Path.join(root, 'node_modules/.bin/zyzz')
+      const native = [
+        '--target',
+        'native',
+        '--color-scheme',
+        'dark',
+        '--platform',
+        'android',
+      ]
+      await exec(bin, ['build', 'src', '--out-dir', 'native', ...native], {
+        cwd: root,
+      })
+      await exec(bin, ['build', 'src', '--out-dir', 'web'], { cwd: root })
+
+      async function execute(directory: string) {
+        const bundle = await Esbuild.build({
+          entryPoints: [Path.join(root, directory, 'app.ts')],
+          bundle: true,
+          platform: 'node',
+          format: 'esm',
+          write: false,
+          logLevel: 'silent',
+        })
+        const file = Path.join(root, directory + '.mjs')
+        await Fs.writeFile(file, bundle.outputFiles[0]!.text)
+        return JSON.parse(
+          (
+            await exec(process.execPath, [
+              '--input-type=module',
+              '-e',
+              `import {props} from ${JSON.stringify(file)};console.log(JSON.stringify(props));`,
+            ])
+          ).stdout,
+        )
+      }
+      expect(await execute('native')).toMatchInlineSnapshot(`
+        {
+          "style": {
+            "color": "#abcdef",
+            "fontSize": 20,
+            "opacity": 0.8,
+          },
+        }
+      `)
+      expect(
+        (await Fs.readdir(Path.join(root, 'native'))).some(
+          (file) => file.endsWith('.css') || file === 'zyzz.js',
+        ),
+      ).toMatchInlineSnapshot('false')
+
+      const web = await Esbuild.build({
+        entryPoints: [Path.join(root, 'web/app.ts')],
+        bundle: true,
+        format: 'iife',
+        globalName: 'Consumer',
+        write: false,
+        logLevel: 'silent',
+      })
+      const css =
+        (await Fs.readFile(Path.join(root, 'web/zyzz.css'), 'utf8')) +
+        (await Fs.readFile(
+          Path.join(library.installed, 'web/style.css'),
+          'utf8',
+        ))
+      const browser = await chromium.launch({ headless: true })
+      try {
+        const page = await browser.newPage({ colorScheme: 'dark' })
+        await page.setContent(
+          `<style>:root{color-scheme:dark}${css}</style><div id="actual"></div><div id="control" style="color:#abcdef;font-size:20px;opacity:0.8"></div>`,
+        )
+        await page.addScriptTag({
+          content:
+            web.outputFiles[0]!.text +
+            `;const element=document.querySelector('#actual');for(const [key,value] of Object.entries(Consumer.props)){if(key==='style')Object.assign(element.style,value);else element.setAttribute(key==='className'?'class':key,String(value))}`,
+        })
+        const results = await page
+          .locator('#actual, #control')
+          .evaluateAll((elements) =>
+            elements.map((element) => {
+              const style = getComputedStyle(element)
+              return {
+                color: style.color,
+                fontSize: style.fontSize,
+                opacity: style.opacity,
+              }
+            }),
+          )
+        expect(results[0]).toMatchInlineSnapshot(`
+          {
+            "color": "rgb(171, 205, 239)",
+            "fontSize": "20px",
+            "opacity": "0.8",
+          }
+        `)
+        expect(results[0]).toEqual(results[1])
+      } finally {
+        await browser.close()
+      }
+
+      let events = ''
+      child = ChildProcess.spawn(
+        bin,
+        ['dev', 'src', '--out-dir', 'watched', '--format', 'jsonl', ...native],
+        { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] },
+      )
+      exited = new Promise((resolve, reject) => {
+        child!.once('error', reject)
+        child!.once('exit', resolve)
+      })
+      child.stdout!.on('data', (data: Buffer) => {
+        events += data.toString()
+      })
+      child.stderr!.on('data', (data: Buffer) => {
+        events += data.toString()
+      })
+      const output = Path.join(root, 'watched/app.ts')
+      await vi.waitFor(
+        async () => {
+          if (!(await Fs.readFile(output, 'utf8')).includes('#abcdef'))
+            throw new Error('Awaiting initial package build: ' + events)
+        },
+        { timeout: 20000 },
+      )
+      const original = await Fs.readFile(output, 'utf8')
+      const sidecar = Path.join(library.installed, 'web/index.js.zyzz.json')
+      const saved = await Fs.readFile(sidecar, 'utf8')
+      expect(saved.includes('#abcdef')).toMatchInlineSnapshot('true')
+      events = ''
+      await Watch.write({ path: sidecar, source: '{' })
+      await vi.waitFor(
+        () => {
+          if (!events.includes('"status":"error"'))
+            throw new Error('Awaiting package diagnostic: ' + events)
+        },
+        { timeout: 20000 },
+      )
+      expect(await Fs.readFile(output, 'utf8')).toBe(original)
+      await Watch.write({
+        path: sidecar,
+        source: saved.replaceAll('#abcdef', '#fedcba'),
+      })
+      await vi.waitFor(
+        async () => {
+          if (!(await Fs.readFile(output, 'utf8')).includes('#fedcba'))
+            throw new Error('Awaiting repaired package: ' + events)
+        },
+        { timeout: 20000 },
+      )
+      expect(await execute('watched')).toMatchInlineSnapshot(`
+        {
+          "style": {
+            "color": "#fedcba",
+            "fontSize": 20,
+            "opacity": 0.8,
+          },
+        }
+      `)
+      child.kill('SIGTERM')
+      expect(await exited).toMatchInlineSnapshot('0')
+      child = undefined
+      expect(
+        await Fs.stat(Path.join(root, 'watched/.zyzz-lock')).then(
+          () => true,
+          () => false,
+        ),
+      ).toMatchInlineSnapshot('false')
+    } finally {
+      if (child) {
+        child.kill('SIGTERM')
+        await exited
+      }
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 120000)
+
   test('routes published native builds and rejects incompatible flags', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-native-'))
     try {

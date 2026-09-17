@@ -24,3 +24,5 @@ Compilation applies the base, selected axes in declaration order, and matching c
 Every axis includes a null choice that suppresses its default. Tables use mixed-radix indices with the first axis varying fastest and null following its declared choices. Compilation rejects more than 256 selections per theme and scheme before allocating tables. Identical outputs share immutable objects.
 
 `themes`, `units`, `fonts`, and `platform` follow `StyleSheet.compile`. Dynamic payloads and named conditions do not produce `staticRecipe` data. Selectors, queries, unsupported values, and missing platform inputs remain errors. Device rendering and host interoperability remain separate acceptance work.
+
+Literal recipe axes, choices, defaults, and named theme keys are preserved in the compiled type. Omitting `themes` infers a single `default` table. Source-extracted recipes retain their broader metadata types.

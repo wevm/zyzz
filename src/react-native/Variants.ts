@@ -4,9 +4,18 @@ import type * as Style from '../Style.js'
 import * as StyleSheet from './StyleSheet.js'
 
 /** Native recipe tables with the same finite choice metadata as web recipes. */
-export type Definition = Pick<Recipe.Definition, 'axes' | 'defaults'> & {
+export type Definition<
+  recipe extends Recipe.Definition = Recipe.Definition,
+  themeName extends string = string,
+> = {
+  /** Ordered axes and their immutable finite choice names. */
+  readonly axes: {
+    readonly [axis in keyof recipe['axes']]: Readonly<recipe['axes'][axis]>
+  }
+  /** Default choices, with null suppressing an axis. */
+  readonly defaults: Readonly<recipe['defaults']>
   /** Theme and scheme tables indexed by the mixed-radix selection index. */
-  readonly styles: StyleSheet.compile.ReturnType['styles']
+  readonly styles: StyleSheet.compile.ReturnType<string, themeName>['styles']
 }
 
 /**
@@ -16,7 +25,12 @@ export type Definition = Pick<Recipe.Definition, 'axes' | 'defaults'> & {
  * @throws {CompileError} When recipe data is invalid or exceeds the selection budget.
  * @throws {StyleSheet.CompileError} When selected declarations cannot compile for native.
  */
-export function compile(options: compile.Options): Definition {
+export function compile<
+  const recipe extends Recipe.Definition,
+  const themeName extends string = 'default',
+>(
+  options: compile.Options<recipe, themeName>,
+): compile.ReturnType<recipe, themeName> {
   const { recipe, ...native } = options
   const axes = Object.entries(recipe.axes)
   let count = 1
@@ -78,7 +92,7 @@ export function compile(options: compile.Options): Definition {
       Object.fromEntries(
         axes.map(([axis, choices]) => [axis, Object.freeze([...choices])]),
       ),
-    ),
+    ) as Definition<recipe, themeName>['axes'],
     defaults: Object.freeze({ ...recipe.defaults }),
     styles: tables.styles,
   })
@@ -87,10 +101,18 @@ export function compile(options: compile.Options): Definition {
 /** Native recipe compilation inputs. */
 export declare namespace compile {
   /** Destination mappings and target-neutral recipe declarations. */
-  type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
+  type Options<
+    recipe extends Recipe.Definition = Recipe.Definition,
+    themeName extends string = string,
+  > = Omit<StyleSheet.compile.Options<string, themeName>, 'styles'> & {
     /** Validated static recipe retained by Source.extract. */
-    readonly recipe: Recipe.Definition
+    readonly recipe: recipe
   }
+  /** Immutable tables retaining recipe metadata and theme labels. */
+  type ReturnType<
+    recipe extends Recipe.Definition = Recipe.Definition,
+    themeName extends string = string,
+  > = Definition<recipe, themeName>
 }
 
 /** Invalid or unbounded static recipe data. */

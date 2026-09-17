@@ -15,6 +15,7 @@ import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import { Theme } from 'zyzz'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
@@ -1409,6 +1410,72 @@ export const scope = mint.className;`,
 })
 
 describe('create', () => {
+  test.each([false, true])(
+    'snapshots mutable nested native options with fresh outer options: %s',
+    (fresh) => {
+      const compiler = Graph.create()
+      const fonts = { Inter: 'Inter-Regular' }
+      const themes: Record<string, Theme.Definition> = {
+        base: Theme.define({ color: { ink: '#123456' } }),
+      }
+      const units = { rem: 16 }
+      const modules = {
+        'app.ts': `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{ink:'#000000'}}});export const card=style({color:'ink',fontFamily:'Inter',paddingTop:'1rem'});`,
+      }
+      const native = {
+        colorScheme: 'light',
+        fonts,
+        theme: 'base',
+        themes,
+        units,
+      } as const
+      const initial = compiler.compile({
+        modules,
+        native: fresh ? { ...native } : native,
+      })
+
+      fonts.Inter = 'Inter-Bold'
+      const font = compiler.compile({
+        modules,
+        native: fresh ? { ...native } : native,
+      })
+      expect(
+        font.modules['app.ts']!.code.includes('Inter-Bold'),
+      ).toMatchInlineSnapshot('true')
+      expect(font === initial).toMatchInlineSnapshot('false')
+
+      units.rem = 20
+      const unit = compiler.compile({
+        modules,
+        native: fresh ? { ...native } : native,
+      })
+      expect(
+        unit.modules['app.ts']!.code.includes('"paddingTop":20'),
+      ).toMatchInlineSnapshot('true')
+      expect(unit === font).toMatchInlineSnapshot('false')
+
+      themes.base = Theme.define({ color: { ink: '#654321' } })
+      const theme = compiler.compile({
+        modules,
+        native: fresh ? { ...native } : native,
+      })
+      expect(theme === unit).toMatchInlineSnapshot('false')
+      expect(
+        compiler.compile({
+          modules,
+          native: fresh ? { ...native } : native,
+        }) === theme,
+      ).toMatchInlineSnapshot('true')
+
+      delete themes.base
+      expect(() =>
+        compiler.compile({ modules, native: fresh ? { ...native } : native }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[StyleSheet.CompileError: ["themes"]: Supply at least one theme, or omit themes for a default table.]`,
+      )
+    },
+  )
+
   test('unchanged snapshots reuse results within an isolated compiler', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules })

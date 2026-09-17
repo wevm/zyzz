@@ -6,4 +6,4 @@ A frozen native overlay style with absolute positioning and zero top, right, bot
 const style = StyleSheet.compose(StyleSheet.absoluteFill, { top: 12 })
 ```
 
-The constant is independent of device state. Later styles can override offsets through composition. Device-dependent `hairlineWidth` remains part of the native host-adapter work.
+The constant is independent of device state. Later styles can override offsets through composition. Density-dependent `hairlineWidth` is available from an explicit [Host snapshot](../Host.md).

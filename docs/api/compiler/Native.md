@@ -22,7 +22,7 @@ The emitted module exports `button`. `button({ tone: 'loud' })` returns `{ style
 
 `cx` composes applied native props in argument order. Nested style arrays, falsy entries, and caller-owned override objects remain intact. Later native properties replace earlier properties, including complete structured values. Application never freezes caller overrides. Web class props are rejected.
 
-`colorScheme` is required. `platform` is required when platform branches exist. `themes`, `units`, and `fonts` follow `StyleSheet.compile`; `theme` selects a supplied theme label and otherwise defaults to `default`. Local configured tokens retain their fallback values. Recompile for a different scheme or platform; automatic host updates remain separate work.
+`colorScheme` is required. `platform` is required when platform branches exist. `themes`, `units`, and `fonts` follow `StyleSheet.compile`; `theme` selects a supplied theme label and otherwise defaults to `default`. Local configured tokens retain their fallback values. Compile the required contexts ahead of time and select prepared callables with [Host.bind](../react-native/Host.md). Platform changes require compatible compiled output and another host.
 
 The result includes rewritten `code`, a version-three `map` with original source content, and theme/scheme `recipes` tables for static definitions. The generated module imports `Native` or `NativeDynamic` from `zyzz/runtime`. The runtime helper can also bind a table selected with `StyleSheet.select`, without loading the compiler.
 

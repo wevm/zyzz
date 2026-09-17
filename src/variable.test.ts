@@ -241,7 +241,7 @@ export namespace styles {
 
       expect(
         JSON.parse(publisher.contracts['lib/library.ts']!).version,
-      ).toMatchInlineSnapshot(`17`)
+      ).toMatchInlineSnapshot(`21`)
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
         ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-blue-bcEsHV-0{--z-v1ym5zhz14a14rh-92:blue;}

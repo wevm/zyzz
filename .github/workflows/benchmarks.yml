@@ -399,12 +399,12 @@ jobs:
   native-ios:
     if: github.event.action != 'closed'
     name: Native iOS renders
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
       - uses: ./.github/actions/install-dependencies
       - run: pnpm build
       - run: |

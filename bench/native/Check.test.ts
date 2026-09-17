@@ -32,8 +32,8 @@ describe('native compiler pipelines', () => {
               output.code!.includes('__zyzzNativeContext.create'),
             ).toMatchInlineSnapshot(`true`)
             expect(
-              /\b(?:style|variants|themedStyle)\(/.test(output.code!),
-            ).toMatchInlineSnapshot(`false`)
+              output.code!.match(/__zyzzNativeContext\.create\(/g)?.length,
+            ).toMatchInlineSnapshot(`10`)
           }
           expect(output.code!.includes(' as import(')).toMatchInlineSnapshot(
             `false`,

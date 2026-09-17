@@ -452,6 +452,10 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Reserve space for native build and emulator
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h /
       - uses: ./.github/actions/install-dependencies
       - uses: actions/setup-java@v4
         with:

@@ -206,3 +206,7 @@ The corpus adapts ideas from these suites without copying implementation code:
 - [css-in-js-bench](https://github.com/jantimon/css-in-js-bench): shared inputs, production payloads, and independent browser parity checks.
 
 Tamagui is excluded from the PR matrix because its extraction cost dominates CI time. Short CI samples are regression signals, not speed rankings; run longer quiet-machine measurements before making latency claims.
+
+## Native compiler and renders
+
+[Native benchmarks](native/README.md) compare Zyzz, React Native `StyleSheet`, and Unistyles in matched compiler pipelines and release-mode iOS/Android layout workloads. Results are separate from browser measurements.

@@ -1,0 +1,22 @@
+{
+  "name": "@zyzz/bench-native",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "check:types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "expo": "57.0.23",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-nitro-modules": "0.37.1",
+    "react-native-unistyles": "3.3.0",
+    "zyzz": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.18",
+    "typescript": "6.0.3"
+  }
+}

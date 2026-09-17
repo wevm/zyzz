@@ -360,5 +360,131 @@ jobs:
           pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
           cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
     timeout-minutes: 30
+  native-compiler:
+    if: github.event.action != 'closed'
+    name: Native compiler benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-dependencies
+      - run: pnpm build
+      - run: |
+          node bench/native/Build.ts
+          node bench/results/native/tools/Prepare.mjs
+      - run: pnpm --dir bench/native/app check:types
+      - name: Validate native compiler fixtures
+        run: pnpm exec vp test run --config bench/native/Check.config.ts
+      - name: Measure native compiler pipelines
+        run: |
+          mkdir -p bench/results/native
+          git rev-parse HEAD > bench/results/native/commit.txt
+          sha256sum pnpm-lock.yaml > bench/results/native/lockfile.txt
+          lscpu > bench/results/native/cpu.txt
+          node --version > bench/results/native/node.txt
+          uname -a > bench/results/native/platform.txt
+          free -b > bench/results/native/memory.txt
+          cp bench/native/app/package.json bench/results/native/dependencies.json
+          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --outputJson bench/results/native/compile-timings.json
+      - name: Publish native compiler summary
+        run: node bench/results/native/tools/CompileReport.mjs >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: benchmarks-native-compiler
+          path: bench/results/native/
+          if-no-files-found: error
+          retention-days: 30
+
+  native-ios:
+    if: github.event.action != 'closed'
+    name: Native iOS renders
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-dependencies
+      - run: pnpm build
+      - run: |
+          node bench/native/Build.ts
+          node bench/results/native/tools/Prepare.mjs
+      - name: Generate native project
+        working-directory: bench/native/app
+        run: pnpm exec expo prebuild --platform ios --no-install
+      - name: Install pods
+        working-directory: bench/native/app/ios
+        run: pod install
+      - run: mkdir -p bench/results
+      - name: Build release simulator app
+        working-directory: bench/native/app
+        run: xcodebuild -workspace ios/ZyzzNativeBench.xcworkspace -scheme ZyzzNativeBench -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO > ../../results/native-ios-build.log 2>&1
+      - name: Boot simulator and measure
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          test "$DEVICE" != null
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" bench/native/app/build/Build/Products/Release-iphonesimulator/ZyzzNativeBench.app
+          node bench/results/native/tools/Run.mjs ios "$DEVICE"
+      - name: Publish native summary
+        if: ${{ !cancelled() }}
+        run: cat bench/results/native/ios/report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: benchmarks-native-ios
+          path: bench/results/
+          if-no-files-found: error
+          retention-days: 30
+
+  native-android:
+    if: github.event.action != 'closed'
+    name: Native Android renders
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-dependencies
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: pnpm build
+      - run: |
+          node bench/native/Build.ts
+          node bench/results/native/tools/Prepare.mjs
+      - name: Generate native project
+        working-directory: bench/native/app
+        run: pnpm exec expo prebuild --platform android --no-install
+      - name: Build release app
+        working-directory: bench/native/app/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Measure on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install bench/native/app/android/app/build/outputs/apk/release/app-release.apk
+            node bench/results/native/tools/Run.mjs android emulator-5554
+      - name: Publish native summary
+        if: ${{ !cancelled() }}
+        run: cat bench/results/native/android/report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: benchmarks-native-android
+          path: bench/results/native/
+          if-no-files-found: error
+          retention-days: 30
+
 permissions:
   contents: read

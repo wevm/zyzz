@@ -157,15 +157,41 @@ export function compile(options: compile.Options): compile.ReturnType {
     const exports = options[Themes.context]?.libraries?.[specifier]
     if (!exports) continue
 
-    function value(name: string, link = exports![name]): string | undefined {
+    let imported: string | undefined
+    function original(): string {
+      if (imported) return imported
+      imported = `${helper}Namespace${packed.length}`
+      while (names.has(imported)) imported += '_'
+      names.add(imported)
+      packed.push(`import * as ${imported} from ${JSON.stringify(specifier)};`)
+      return imported
+    }
+
+    function overlay(original: string, expression: string): string {
+      let overrides = `${helper}Members${packed.length}`
+      while (names.has(overrides)) overrides += '_'
+      names.add(overrides)
+      packed.push(`const ${overrides}=${expression};`)
+      // Getter descriptors retain live bindings outside the recipe contract.
+      return `Object.freeze(Object.defineProperties({...${original},...${overrides}},Object.fromEntries(Object.keys(${original}).filter(key=>!Object.hasOwn(${overrides},key)).map(key=>[key,{get:()=>Reflect.get(${original},key)}]))))`
+    }
+
+    function value(
+      name: string,
+      link = exports![name],
+      input?: string,
+    ): string | undefined {
       if (!link || link.kind !== 'style-reference') return undefined
-      if (link.members)
-        return `{${Object.entries(link.members)
+      if (link.members) {
+        const source = input ?? `${original()}[${JSON.stringify(name)}]`
+        const expression = `{${Object.entries(link.members)
           .map(
             ([member, link]) =>
-              `${JSON.stringify(member)}:${value(`${name}.${member}`, link)}`,
+              `[${JSON.stringify(member)}]:${value(`${name}.${member}`, link, `${source}[${JSON.stringify(member)}]`)}`,
           )
           .join(',')}}`
+        return overlay(source, expression)
+      }
       if (
         !link.style?.staticRecipe ||
         link.style.output ||
@@ -177,11 +203,42 @@ export function compile(options: compile.Options): compile.ReturnType {
       return callable(link.style.staticRecipe, `${specifier}:${name}`)
     }
 
-    if (statement.type === 'ExportAllDeclaration') {
-      if (statement.exported)
-        throw new CompileError(
-          'Packed native namespace exports require named exports.',
+    function namespace(): string | undefined {
+      if (
+        !Object.values(exports!).some((link) => link.kind === 'style-reference')
+      )
+        return undefined
+      const imported = original()
+      const members = Object.keys(exports!).flatMap((name) => {
+        const expression = value(
+          name,
+          exports![name],
+          `${imported}[${JSON.stringify(name)}]`,
         )
+        return expression === undefined
+          ? []
+          : [`[${JSON.stringify(name)}]:${expression}`]
+      })
+      return overlay(imported, `{${members.join(',')}}`)
+    }
+
+    if (statement.type === 'ExportAllDeclaration') {
+      if (statement.exported) {
+        const expression = namespace()
+        if (expression === undefined) continue
+        let local = `${helper}Export${packed.length}`
+        while (names.has(local)) local += '_'
+        names.add(local)
+        const name =
+          statement.exported.type === 'Identifier'
+            ? statement.exported.name
+            : statement.exported.value
+        packed.push(
+          `const ${local}=${expression};export {${local} as ${JSON.stringify(name)}};`,
+        )
+        module.overwrite(statement.start, statement.end, '')
+        continue
+      }
       for (const name of Object.keys(exports)) {
         if (name === 'default' || explicit.has(name)) continue
         const expression = value(name)
@@ -198,10 +255,15 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
     const kept: string[] = []
     for (const specifier of statement.specifiers) {
-      if (specifier.type === 'ImportNamespaceSpecifier')
-        throw new CompileError(
-          'Packed native namespace imports require named imports.',
-        )
+      if (specifier.type === 'ImportNamespaceSpecifier') {
+        const expression = namespace()
+        if (expression === undefined) {
+          packed.push(
+            `import * as ${specifier.local.name} from ${JSON.stringify(statement.source.value)};`,
+          )
+        } else packed.push(`const ${specifier.local.name}=${expression};`)
+        continue
+      }
       if (
         (specifier.type === 'ImportSpecifier' &&
           specifier.importKind === 'type') ||

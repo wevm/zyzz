@@ -25,6 +25,124 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test.each([
+    `import * as ns from './library.js';export {ns};`,
+    `import label,* as ns from './library.js';export {ns,label};`,
+    `export * as ns from './library.js';`,
+  ])('executes packed native namespaces: %s', async (source) => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-native-namespace-'))
+    try {
+      const library = Graph.compile({
+        modules: {
+          'library.ts': `import {variants} from 'zyzz';export let count=0;export function increment(){count++};export default 'ordinary';export const card=variants({base:{opacity:0.2},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'}});export namespace styles {export const label='nested';export const button=variants({base:{opacity:0.7}});}`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'library.js': library.contracts['library.ts']! },
+        imports: { 'app.ts': { './library.js': 'library.js' } },
+        modules: { 'app.ts': source },
+        native: { colorScheme: 'light' },
+      })
+      const js = await Esbuild.transform(library.modules['library.ts']!.code, {
+        loader: 'ts',
+        format: 'esm',
+      })
+      await Fs.writeFile(Path.join(root, 'library.js'), js.code)
+      await Fs.writeFile(
+        Path.join(root, 'library.ts'),
+        library.modules['library.ts']!.code,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        output.modules['app.ts']!.code,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'consumer.ts'),
+        `import {ns} from './app.js';ns.card({size:'large'}).style;ns.styles.button().style;
+// @ts-expect-error Packed choices remain finite.
+ns.card({size:'huge'});
+// @ts-expect-error Native props exclude web class names.
+ns.card({className:'web'});`,
+      )
+      await Util.promisify(ChildProcess.execFile)(process.execPath, [
+        Path.resolve('node_modules/typescript/bin/tsc'),
+        '--noEmit',
+        '--module',
+        'nodenext',
+        '--target',
+        'esnext',
+        '--strict',
+        '--skipLibCheck',
+        Path.join(root, 'consumer.ts'),
+      ]).catch((error) => {
+        throw new Error(error.stdout || error.message)
+      })
+      const contract = JSON.parse(output.contracts['app.ts']!)
+      expect(contract.version).toMatchInlineSnapshot('22')
+      expect(() =>
+        Graph.compile({
+          modules: {},
+          contracts: {
+            'barrel.js': JSON.stringify({ ...contract, version: 21 }),
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: barrel.js:0: Invalid library contract: Invalid style reference member.]`,
+      )
+      const downstream = Graph.compile({
+        contracts: { 'barrel.js': output.contracts['app.ts']! },
+        imports: { 'consumer.ts': { './barrel.js': 'barrel.js' } },
+        modules: {
+          'consumer.ts': `import {ns} from './barrel.js';export const props=ns.card({size:'large'});`,
+        },
+        native: { colorScheme: 'light' },
+      })
+      expect(
+        downstream.modules['consumer.ts']!.code.includes('fontSize'),
+      ).toMatchInlineSnapshot('true')
+      const bundle = await Esbuild.build({
+        entryPoints: [Path.join(root, 'app.ts')],
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        write: false,
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      })
+      await Fs.writeFile(
+        Path.join(root, 'app.mjs'),
+        bundle.outputFiles[0]!.text,
+      )
+      const exec = Util.promisify(ChildProcess.execFile)
+      const result = await exec(process.execPath, [
+        '--input-type=module',
+        '-e',
+        `import {ns} from ${JSON.stringify(Path.join(root, 'app.mjs'))};const before=ns.count;ns.increment();console.log(JSON.stringify({before,after:ns.count,default:ns.default,props:ns.card({size:'large'}),nested:ns.styles.button(),label:ns.styles.label,frozen:Object.isFrozen(ns)}));`,
+      ])
+      expect(JSON.parse(result.stdout)).toMatchInlineSnapshot(`
+        {
+          "after": 1,
+          "before": 0,
+          "default": "ordinary",
+          "frozen": true,
+          "label": "nested",
+          "nested": {
+            "style": {
+              "opacity": 0.7,
+            },
+          },
+          "props": {
+            "style": {
+              "fontSize": 20,
+              "opacity": 0.2,
+            },
+          },
+        }
+      `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('executes one source-free package in browser and native consumers', async () => {
     const directory = await Fs.mkdtemp(
       Path.join(Os.tmpdir(), 'zyzz-universal-consumer-'),

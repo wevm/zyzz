@@ -24,6 +24,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+      22,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -197,7 +198,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(
           data.version as number,
         ) ||
         ![
@@ -248,7 +249,7 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17, 18, 19, 20, 21].includes(data.version as number)
+        ![16, 17, 18, 19, 20, 21, 22].includes(data.version as number)
       )
         throw new Error(
           'Packed callable styles require contract version 16 or later.',
@@ -262,7 +263,10 @@ export function read(
           : Object.fromEntries(
               Object.entries(record(entry.members)).map(([key, value]) => {
                 const member = link(value)
-                if (member.kind !== 'style-reference' || member.members)
+                if (
+                  member.kind !== 'style-reference' ||
+                  (member.members && (data.version as number) < 22)
+                )
                   throw new Error('Invalid style reference member.')
                 return [key, member]
               }),
@@ -596,6 +600,14 @@ export function write(
           Object.values(link.members ?? {}).some(staticRecipe)
         )
       }
+      function nested(link: Themes.Link): boolean {
+        return Object.values(link.members ?? {}).some(
+          (member) =>
+            (link.kind === 'style-reference' && !!member.members) ||
+            nested(member),
+        )
+      }
+      if (Object.values(links).some(nested)) return 22
       if (Object.values(links).some(staticRecipe)) return 21
       if (Object.values(links).some(targeted)) return 20
       // Style authoring exports serialize as `style`; older readers only know `css`.

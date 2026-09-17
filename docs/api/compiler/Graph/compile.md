@@ -81,6 +81,13 @@ Complete source graph keyed by stable package-relative module IDs. Without `impo
 Graph.compile({ modules: { 'app/card.ts': source } })
 ```
 
+### options.native
+
+- Type: Native compilation context with required `colorScheme`.
+- Default: Web output.
+
+Compile source and packed static callables into native style props. `platform`, `themes`, `theme`, `fonts`, and `units` follow [native source compilation](../Native.md). Native output contains module code, maps, contracts, and dependencies, with empty CSS and class metadata. Source rewriting is required.
+
 ## Returns
 
 ### contracts

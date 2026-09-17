@@ -1,4 +1,5 @@
 /** Preserves ordered style bodies and runtime ownership across package boundaries. @module */
+import type * as Recipe from '../../internal/Recipe.js'
 import * as Targets from '../../internal/Targets.js'
 import * as Binding from '../../internal/Binding.js'
 import * as Condition from '../../internal/Condition.js'
@@ -19,6 +20,8 @@ export type Definition = {
   readonly output?: 'html' | undefined
   /** Private dynamic custom properties owned by the callable. */
   readonly slots: readonly string[]
+  /** Target-neutral finite recipe retained for native consumers. */
+  readonly staticRecipe?: Recipe.Definition | undefined
   /** Complete finite alternatives in authored cascade order. */
   readonly style: Style.NamedStyle
 }
@@ -39,6 +42,15 @@ export function create(call: Source.Call, style: Style.NamedStyle): Definition {
         payload.slots.flatMap((slots) => Object.values(slots)),
       ),
     ],
+    staticRecipe:
+      call.staticRecipe ??
+      (!call.slots && !call.recipe && call.output !== 'html'
+        ? {
+            axes: {},
+            defaults: {},
+            rules: [{ matches: [], value: { styles: [style] } }],
+          }
+        : undefined),
     style,
   }
 }
@@ -54,6 +66,15 @@ export function read(
     if (Token.is(value)) {
       tokens.set(
         JSON.stringify([value.contract[Token.identity], value.path]),
+        value,
+      )
+      // Catalog themes share identities and paths but retain distinct fallback values.
+      tokens.set(
+        JSON.stringify([
+          value.contract[Token.identity],
+          value.path,
+          value.value,
+        ]),
         value,
       )
       return
@@ -74,7 +95,13 @@ export function read(
       return value
     const item = object(value)
     if (item.kind === 'token') {
-      const token = tokens.get(JSON.stringify([item.identity, item.path]))
+      const token = tokens.get(
+        JSON.stringify([
+          item.identity,
+          item.path,
+          ...(Object.hasOwn(item, 'value') ? [item.value] : []),
+        ]),
+      )
       if (!token) throw new Error('Unknown packed style token.')
       return token
     }
@@ -205,11 +232,62 @@ export function read(
     (item.output !== undefined && item.output !== 'html')
   )
     throw new Error('Invalid packed style ownership.')
+  const staticRecipe = (() => {
+    if (item.staticRecipe === undefined) return undefined
+    if (version < 21)
+      throw new Error('Static recipes require contract version 21 or later.')
+    const recipe = object(item.staticRecipe)
+    const axes = Object.fromEntries(
+      Object.entries(object(recipe.axes)).map(([name, value]) => {
+        const choices = array(value).map(string)
+        if (
+          !name ||
+          new Set(choices).size !== choices.length ||
+          !choices.length
+        )
+          throw new Error('Invalid packed recipe axis.')
+        return [name, choices]
+      }),
+    )
+    const defaults = Object.fromEntries(
+      Object.entries(object(recipe.defaults)).map(([axis, choice]) => {
+        if (
+          !Object.hasOwn(axes, axis) ||
+          (choice !== null && !axes[axis]!.includes(string(choice)))
+        )
+          throw new Error('Invalid packed recipe default.')
+        return [axis, choice === null ? null : string(choice)]
+      }),
+    )
+    const rules = array(recipe.rules).map((value) => {
+      const rule = object(value)
+      return {
+        matches: array(rule.matches).map((value) => {
+          const match = array(value)
+          const axis = string(match[0])
+          const choices = array(match[1]).map(string)
+          if (
+            match.length !== 2 ||
+            !Object.hasOwn(axes, axis) ||
+            !choices.length ||
+            choices.some((choice) => !axes[axis]!.includes(choice))
+          )
+            throw new Error('Invalid packed recipe match.')
+          return [axis, choices] as const
+        }),
+        value: {
+          styles: array(object(rule.value).styles).map((value) => style(value)),
+        },
+      }
+    })
+    return { axes, defaults, rules }
+  })()
   return {
     attributes,
     className: string(item.className),
     ...(item.output ? { output: 'html' } : {}),
     slots,
+    staticRecipe,
     style: style(item.style),
   }
 }
@@ -231,6 +309,7 @@ export function write(definition: Definition): unknown {
             identity: value.contract[Token.identity],
             kind: 'token',
             path: value.path,
+            value: value.value,
           }
         if (Token.isExpression(value))
           return { kind: 'expression', parts: value.parts }

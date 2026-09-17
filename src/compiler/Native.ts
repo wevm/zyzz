@@ -1,5 +1,7 @@
 /** Rewrites shared static authoring to finite native table selection. @module */
+import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'
+import type * as Recipe from '../internal/Recipe.js'
 import * as Source from './Source.js'
 import * as Themes from './internal/Themes.js'
 import * as StyleSheet from '../react-native/StyleSheet.js'
@@ -69,6 +71,10 @@ export function compile(options: compile.Options): compile.ReturnType {
         },
       ],
     }
+    module.overwrite(call.start, call.end, callable(recipe, call.name))
+  }
+
+  function callable(recipe: Recipe.Definition, name: string): string {
     const compiled = Variants.compile({
       recipe,
       fonts: options.fonts,
@@ -76,7 +82,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       themes: options.themes,
       units: options.units,
     })
-    recipes[call.name] = compiled
+    recipes[name] = compiled
     const styles = StyleSheet.select(compiled.styles, {
       theme: options.theme ?? 'default',
       colorScheme: options.colorScheme,
@@ -88,12 +94,162 @@ export function compile(options: compile.Options): compile.ReturnType {
           `${JSON.stringify(axis)}:readonly ${JSON.stringify(choices)}`,
       )
       .join(';')
+    return /\.[cm]?tsx?$/.test(options.moduleId)
+      ? `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
+      : value
+  }
+
+  const packed: string[] = []
+  const explicit = new Set<string>()
+  function binding(node: Ast.Node) {
+    if (node.type === 'Identifier') explicit.add(node.name)
+    else if (node.type === 'ObjectPattern')
+      for (const property of node.properties)
+        binding(
+          property.type === 'RestElement' ? property.argument : property.value,
+        )
+    else if (node.type === 'ArrayPattern')
+      for (const element of node.elements) {
+        if (element) binding(element)
+      }
+    else if (node.type === 'AssignmentPattern') binding(node.left)
+    else if (node.type === 'RestElement') binding(node.argument)
+  }
+  for (const statement of parsed.program.body) {
+    if (
+      statement.type !== 'ExportNamedDeclaration' ||
+      statement.exportKind === 'type'
+    )
+      continue
+    for (const specifier of statement.specifiers)
+      if (specifier.exportKind !== 'type')
+        explicit.add(
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : specifier.exported.value,
+        )
+    const declaration = statement.declaration
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const item of declaration.declarations) binding(item.id)
+    } else if (
+      declaration &&
+      'id' in declaration &&
+      declaration.id?.type === 'Identifier'
+    )
+      explicit.add(declaration.id.name)
+  }
+  for (const statement of parsed.program.body) {
+    if (
+      (statement.type !== 'ImportDeclaration' &&
+        statement.type !== 'ExportNamedDeclaration' &&
+        statement.type !== 'ExportAllDeclaration') ||
+      !statement.source
+    )
+      continue
+    if (
+      (statement.type === 'ImportDeclaration' &&
+        statement.importKind === 'type') ||
+      (statement.type !== 'ImportDeclaration' &&
+        statement.exportKind === 'type')
+    )
+      continue
+    const specifier = statement.source.value
+    const exports = options[Themes.context]?.libraries?.[specifier]
+    if (!exports) continue
+
+    function value(name: string, link = exports![name]): string | undefined {
+      if (!link || link.kind !== 'style-reference') return undefined
+      if (link.members)
+        return `{${Object.entries(link.members)
+          .map(
+            ([member, link]) =>
+              `${JSON.stringify(member)}:${value(`${name}.${member}`, link)}`,
+          )
+          .join(',')}}`
+      if (
+        !link.style?.staticRecipe ||
+        link.style.output ||
+        link.style.slots.length
+      )
+        throw new CompileError(
+          `Packed native callable ${name} requires a static recipe contract.`,
+        )
+      return callable(link.style.staticRecipe, `${specifier}:${name}`)
+    }
+
+    if (statement.type === 'ExportAllDeclaration') {
+      if (statement.exported)
+        throw new CompileError(
+          'Packed native namespace exports require named exports.',
+        )
+      for (const name of Object.keys(exports)) {
+        if (name === 'default' || explicit.has(name)) continue
+        const expression = value(name)
+        if (expression === undefined) continue
+        explicit.add(name)
+        let local = `${helper}Export${packed.length}`
+        while (names.has(local)) local += '_'
+        names.add(local)
+        packed.push(
+          `const ${local}=${expression};export {${local} as ${JSON.stringify(name)}};`,
+        )
+      }
+      continue
+    }
+    const kept: string[] = []
+    for (const specifier of statement.specifiers) {
+      if (specifier.type === 'ImportNamespaceSpecifier')
+        throw new CompileError(
+          'Packed native namespace imports require named imports.',
+        )
+      if (
+        (specifier.type === 'ImportSpecifier' &&
+          specifier.importKind === 'type') ||
+        (specifier.type === 'ExportSpecifier' &&
+          specifier.exportKind === 'type')
+      ) {
+        kept.push(options.source.slice(specifier.start, specifier.end))
+        continue
+      }
+      const imported =
+        specifier.type === 'ImportDefaultSpecifier'
+          ? 'default'
+          : specifier.type === 'ImportSpecifier'
+            ? specifier.imported
+            : specifier.local
+      const name =
+        typeof imported === 'string'
+          ? imported
+          : imported.type === 'Identifier'
+            ? imported.name
+            : imported.value
+      const expression = value(name)
+      if (expression === undefined) {
+        if (specifier.type === 'ImportDefaultSpecifier')
+          kept.push(`default as ${specifier.local.name}`)
+        else kept.push(options.source.slice(specifier.start, specifier.end))
+        continue
+      }
+      if (specifier.type === 'ExportSpecifier') {
+        let local = `${helper}Export${packed.length}`
+        while (names.has(local)) local += '_'
+        names.add(local)
+        const exported =
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : specifier.exported.value
+        packed.push(
+          `const ${local}=${expression};export {${local} as ${JSON.stringify(exported)}};`,
+        )
+      } else packed.push(`const ${specifier.local.name}=${expression};`)
+    }
+    const keyword = statement.type === 'ImportDeclaration' ? 'import' : 'export'
     module.overwrite(
-      call.start,
-      call.end,
-      /\.[cm]?tsx?$/.test(options.moduleId)
-        ? `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
-        : value,
+      statement.start,
+      statement.end,
+      kept.length
+        ? `${keyword} {${kept.join(',')}} from ${JSON.stringify(statement.source.value)};`
+        : `import ${JSON.stringify(statement.source.value)};`,
     )
   }
   const compositions: string[] = []
@@ -178,7 +334,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       imports.length ? `import ${imports.join(',')} from 'zyzz';` : '',
     )
   }
-  if (extracted.calls.length || compositions.length) {
+  if (extracted.calls.length || compositions.length || packed.length) {
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
       : 0
@@ -191,7 +347,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport {Native as ${helper}} from 'zyzz/runtime';\n${compositions.join('\n')}\n`,
+      `\nimport {Native as ${helper}} from 'zyzz/runtime';\n${[...compositions, ...packed].join('\n')}\n`,
     )
   }
   return {

@@ -97,6 +97,10 @@ export type Link = {
 
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
+  /** Packed exports indexed by the importing module's source specifier. */
+  readonly libraries?:
+    | Readonly<Record<string, Readonly<Record<string, Link>>>>
+    | undefined
   /** Immutable literal imports resolved from supplied source modules. */
   readonly constants?: Readonly<Record<string, Ast.Node>> | undefined
   /** Published class lists of imported callable definitions. */

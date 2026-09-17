@@ -82,6 +82,30 @@ describe('compile', () => {
     })
   })
 
+  test('shares identical scheme tables while retaining contextual selection', async () => {
+    const output = Native.compile({
+      moduleId: 'shared.ts',
+      colorScheme: 'light',
+      contextual: true,
+      source: `import {style} from 'zyzz';
+        import {NativeContext} from 'zyzz/runtime';
+        const card=style({opacity:0.5});
+        const props=card();
+        const light=NativeContext.resolve(props.style,{colorScheme:'light'});
+        const dark=NativeContext.resolve(props.style,{colorScheme:'dark'});
+        let missing='';try{NativeContext.resolve(props.style,undefined)}catch(error){missing=error.message}
+        export const results={light,dark,same:light===dark,frozen:Object.isFrozen(light),missing};`,
+    })
+
+    expect((await execute(output.code)).results).toEqual({
+      light: { opacity: 0.5 },
+      dark: { opacity: 0.5 },
+      same: true,
+      frozen: true,
+      missing: 'Compiled native styles require a Zyzz Provider.',
+    })
+  })
+
   test('reuses static defaults without bypassing input validation', async () => {
     const output = Native.compile({
       moduleId: 'static.ts',

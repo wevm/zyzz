@@ -113,16 +113,38 @@ export function compile(options: compile.Options): compile.ReturnType {
         })
       const defaultTheme =
         call?.nativeContext?.defaultTheme ?? contextOptions.theme ?? 'default'
+      const tables = new Map<string, string>()
       const alternatives = (themes ? Object.keys(themes) : ['default']).map(
-        (theme) => {
-          const schemes = (['light', 'dark'] as const).map(
-            (colorScheme) =>
-              `${JSON.stringify(colorScheme)}:${callable(recipe, name, call, { ...contextOptions, contextual: false, themes, theme, colorScheme }, compiled)}`,
-          )
-          return `${JSON.stringify(theme)}:{${schemes.join(',')}}`
-        },
+        (theme) => ({
+          theme,
+          schemes: (['light', 'dark'] as const).map((colorScheme) => {
+            const value = callable(
+              recipe,
+              name,
+              call,
+              {
+                ...contextOptions,
+                contextual: false,
+                themes,
+                theme,
+                colorScheme,
+              },
+              compiled,
+            )
+            if (!tables.has(value))
+              tables.set(value, `${helper}Table${tables.size}`)
+            return { colorScheme, value }
+          }),
+        }),
       )
-      return `${helper}Context.create({${alternatives.join(',')}},${JSON.stringify(defaultTheme)})`
+      const shared = tables.size < alternatives.length * 2
+      const entries = alternatives.map(
+        ({ theme, schemes }) =>
+          `${JSON.stringify(theme)}:{${schemes.map(({ colorScheme, value }) => `${JSON.stringify(colorScheme)}:${shared ? tables.get(value) : value}`).join(',')}}`,
+      )
+      const expression = `${helper}Context.create({${entries.join(',')}},${JSON.stringify(defaultTheme)})`
+      if (!shared) return expression
+      return `(()=>{${[...tables].map(([value, reference]) => `const ${reference}=${value};`).join('')}return ${expression}})()`
     }
     if (call?.slots || call?.recipe?.payloads?.length) {
       dynamic = true

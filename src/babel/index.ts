@@ -197,21 +197,19 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
       if (!parsed) throw new Error('Babel did not parse the compiled module.')
 
       const map = new Trace.TraceMap(output.map)
-      api.traverse(parsed, {
-        enter(path) {
-          const loc = path.node.loc
-          if (!loc) return
-          const start = Trace.originalPositionFor(map, loc.start)
-          const end = Trace.originalPositionFor(map, loc.end)
-          // Metro's function map requires locations for generated helpers as well as authored nodes.
-          if (start.line === null || end.line === null) {
-            loc.start = { ...loc.start, line: 1, column: 0 }
-            loc.end = { ...loc.end, line: 1, column: 0 }
-            return
-          }
-          loc.start = { ...loc.start, line: start.line, column: start.column }
-          loc.end = { ...loc.end, line: end.line, column: end.column }
-        },
+      api.types.traverseFast(parsed, (node) => {
+        const loc = node.loc
+        if (!loc) return
+        const start = Trace.originalPositionFor(map, loc.start)
+        const end = Trace.originalPositionFor(map, loc.end)
+        // Metro's function map requires locations for generated helpers as well as authored nodes.
+        if (start.line === null || end.line === null) {
+          loc.start = { ...loc.start, line: 1, column: 0 }
+          loc.end = { ...loc.end, line: 1, column: 0 }
+          return
+        }
+        loc.start = { ...loc.start, line: start.line, column: start.column }
+        loc.end = { ...loc.end, line: end.line, column: end.column }
       })
       file.path.replaceWith(parsed.program)
       file.scope.crawl()

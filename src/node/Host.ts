@@ -2,15 +2,19 @@
  * Processes standalone CSS and publishes incremental file builds with watch recovery.
  * @module
  */
-import type * as LightningCss from 'lightningcss'
-import * as AtRules from '../compiler/internal/AtRules.js'
-import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Mapping from '@jridgewell/gen-mapping'
+import type * as LightningCss from 'lightningcss'
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import { ResolverFactory } from 'oxc-resolver'
 import * as Graph from '../compiler/Graph.js'
+import * as AtRules from '../compiler/internal/AtRules.js'
+import * as Catalogs from '../compiler/internal/Catalogs.js'
+import * as Relative from '../compiler/internal/Relative.js'
+import * as Syntax from '../compiler/internal/Syntax.js'
+import * as Source from '../compiler/Source.js'
 import * as Transform from '../compiler/Transform.js'
 
 /** A successful publication; paths are relative to the output directory. */
@@ -181,15 +185,166 @@ export async function create(options: create.Options): Promise<Runtime> {
       sources[name] = await Fs.readFile(input, 'utf8')
     }
 
+    const modules = Object.fromEntries(
+      Object.entries(sources).map(([name, source]) => [
+        `${options.packageId}/${name}`,
+        source,
+      ]),
+    )
+    const contracts: Record<string, string> = Object.create(null)
+    const imports: Record<
+      string,
+      Record<string, string | null>
+    > = Object.create(null)
+    // A build gets fresh package metadata, including changed export maps.
+    const resolver = new ResolverFactory({
+      builtinModules: true,
+      conditionNames: ['node', 'import'],
+      nodePath: false,
+    })
+
+    function resolve(specifier: string, importer: string): string | undefined {
+      const resolved = resolver.sync(Path.dirname(importer), specifier)
+
+      if (resolved.builtin) return undefined
+      if (!resolved.path)
+        throw new Error(
+          `Unable to resolve ${JSON.stringify(specifier)} from ${importer}: ${resolved.error}`,
+        )
+
+      return resolved.path
+    }
+
+    async function contract(file: string, required = false): Promise<boolean> {
+      if (Object.hasOwn(contracts, file)) return true
+
+      try {
+        contracts[file] = await Fs.readFile(`${file}.zyzz.json`, 'utf8')
+      } catch (error) {
+        if (!required && (error as NodeJS.ErrnoException).code === 'ENOENT')
+          return false
+        throw error
+      }
+
+      const metadata = (() => {
+        try {
+          return JSON.parse(contracts[file]!) as {
+            stylesheets?: { dependency?: string[] }[]
+          }
+        } catch (error) {
+          Graph.compile({
+            modules: {},
+            contracts: { [file]: contracts[file]! },
+          })
+          throw error
+        }
+      })()
+
+      if (!Array.isArray(metadata?.stylesheets)) return true
+
+      for (const section of metadata.stylesheets) {
+        if (!Array.isArray(section?.dependency)) continue
+
+        let owner = file
+        for (const specifier of section.dependency) {
+          if (
+            typeof specifier !== 'string' ||
+            !specifier ||
+            specifier.includes('\0')
+          )
+            throw new Error('Invalid packed stylesheet dependency.')
+
+          const target = resolve(specifier, owner)
+          if (!target)
+            throw new Error('Unable to resolve packed stylesheet dependency.')
+
+          ;(imports[owner] ??= Object.create(null))[specifier] = target
+          await contract(target, true)
+          owner = target
+        }
+      }
+
+      return true
+    }
+
+    for (const [name, source] of Object.entries(sources)) {
+      const moduleId = `${options.packageId}/${name}`
+      const file = Path.join(root, name)
+      const resolutions = (imports[moduleId] = Object.create(null))
+
+      for (const node of Syntax.parse({ moduleId, source }).program.body) {
+        if (
+          (node.type !== 'ImportDeclaration' &&
+            node.type !== 'ExportNamedDeclaration' &&
+            node.type !== 'ExportAllDeclaration') ||
+          !node.source
+        )
+          continue
+
+        const specifier = node.source.value
+        resolutions[specifier] = null
+        if (
+          node.type === 'ImportDeclaration'
+            ? node.importKind === 'type'
+            : node.exportKind === 'type'
+        )
+          continue
+        if (
+          'specifiers' in node &&
+          node.specifiers.length &&
+          node.specifiers.every((specifier) =>
+            specifier.type === 'ImportSpecifier'
+              ? specifier.importKind === 'type'
+              : specifier.type === 'ExportSpecifier' &&
+                specifier.exportKind === 'type',
+          )
+        )
+          continue
+        if (
+          specifier === 'zyzz' ||
+          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/themes/default')
+        )
+          continue
+        if (
+          /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(specifier) ||
+          specifier.includes('?') ||
+          (!specifier.startsWith('#') && specifier.includes('#'))
+        )
+          continue
+        try {
+          if (specifier.startsWith('.')) {
+            const target = Relative.resolve({ moduleId, modules, specifier })
+            if (target) resolutions[specifier] = target
+            continue
+          }
+
+          const target = resolve(specifier, file)
+          if (!target) continue
+          const relative = Path.relative(root, target).split(Path.sep).join('/')
+          if (Object.hasOwn(sources, relative))
+            resolutions[specifier] = `${options.packageId}/${relative}`
+          else if (/\.[cm]?[jt]sx?$/.test(target) && (await contract(target)))
+            resolutions[specifier] = target
+        } catch (error) {
+          throw new Source.ExtractError([
+            {
+              code: 'unsupported_syntax',
+              source: moduleId,
+              start: node.start,
+              end: node.end,
+              message: (error as Error).message,
+            },
+          ])
+        }
+      }
+    }
+
     const graph = compiler.compile({
       compiler: options.compiler,
       native,
-      modules: Object.fromEntries(
-        Object.entries(sources).map(([name, source]) => [
-          `${options.packageId}/${name}`,
-          source,
-        ]),
-      ),
+      modules,
+      contracts,
+      imports,
     })
 
     const artifactNames = [
@@ -400,7 +555,9 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     // Every configuration in the tree restores its saved selection from one script.
     const initialization = Catalogs.scripts(
-      Object.values(graph.contracts).flatMap(Catalogs.read),
+      Object.values({ ...contracts, ...graph.contracts }).flatMap(
+        Catalogs.read,
+      ),
     ).join('\n')
 
     const content = initialization ? `${banner}${initialization}\n` : undefined

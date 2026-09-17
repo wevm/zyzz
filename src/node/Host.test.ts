@@ -11,23 +11,173 @@ import * as Margins from '../../test/fixtures/PageMargins.js'
 import * as Pages from '../../test/fixtures/Pages.js'
 import * as Registrations from '../../test/fixtures/Registrations.js'
 import * as Statements from '../../test/fixtures/Statements.js'
+import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as ChildProcess from 'node:child_process'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
+import * as Os from 'node:os'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Theme } from 'zyzz'
-import { Source, Transform } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
 const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { style } from 'zyzz'; export const button = style({ padding: '8px' });`
 
 describe('create', () => {
+  test.each(['@acme/universal', '@acme/universal/button', '#button'])(
+    'compiles installed import-condition contracts from %s',
+    async (specifier) => {
+      const root = await Fs.realpath(
+        await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-host-package-')),
+      )
+      try {
+        const library = await Universal.create(root)
+        const manifest = Path.join(library.installed, 'package.json')
+        const metadata = JSON.parse(await Fs.readFile(manifest, 'utf8'))
+        metadata.exports['./button'] = {
+          require: './missing.cjs',
+          import: './web/button.js',
+        }
+        await Fs.writeFile(manifest, JSON.stringify(metadata))
+        await Fs.writeFile(
+          Path.join(root, 'package.json'),
+          JSON.stringify({
+            private: true,
+            type: 'module',
+            imports: { '#button': '@acme/universal/button' },
+          }),
+        )
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.writeFile(
+          Path.join(root, 'src/app.ts'),
+          `import * as library from '${specifier}';import type {Uninstalled} from 'type-only-package';export const props=library.button({size:'large',active:true});`,
+        )
+        const outDir = Path.join(root, 'dist')
+        await using host = await Host.create({
+          root: Path.join(root, 'src'),
+          outDir,
+          packageId: 'app',
+          native: { colorScheme: 'dark', platform: 'android' },
+        })
+        await host.build()
+        expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+        const bundle = await Esbuild.build({
+          entryPoints: [Path.join(outDir, 'app.ts')],
+          bundle: true,
+          platform: 'node',
+          format: 'esm',
+          write: false,
+        })
+        await Fs.writeFile(
+          Path.join(root, 'consumer.mjs'),
+          bundle.outputFiles[0]!.text,
+        )
+        const result = await Util.promisify(ChildProcess.execFile)(
+          process.execPath,
+          [
+            '--input-type=module',
+            '-e',
+            `import {props} from ${JSON.stringify(Path.join(root, 'consumer.mjs'))};console.log(JSON.stringify(props));`,
+          ],
+        )
+        expect(JSON.parse(result.stdout)).toMatchInlineSnapshot(`
+          {
+            "style": {
+              "color": "#abcdef",
+              "fontSize": 20,
+              "opacity": 0.8,
+            },
+          }
+        `)
+        expect(
+          (await Fs.readdir(outDir)).some((name) => name.endsWith('.css')),
+        ).toMatchInlineSnapshot('false')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+    120000,
+  )
+
+  test('loads transitive packed contributions without executing packages', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(project, '.fixture-host-contracts-'),
+    )
+    try {
+      const library = Path.join(root, 'node_modules/library')
+      await Fs.mkdir(library, { recursive: true })
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(library, 'package.json'),
+        JSON.stringify({ name: 'library', exports: './index.js' }),
+      )
+      const dependency = Graph.compile({
+        modules: {
+          'library/global.ts': `import {global} from 'zyzz/web';global({body:{color:'red'}});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: {
+          'library/global.js': dependency.contracts['library/global.ts']!,
+        },
+        imports: { 'library/index.ts': { './global.js': 'library/global.js' } },
+        modules: {
+          'library/index.ts': `import './global.js';export const version=1;`,
+        },
+      })
+      for (const [name, content] of Object.entries({
+        ...dependency.contracts,
+        ...packed.contracts,
+      })) {
+        const entry = Path.join(
+          library,
+          Path.basename(name).replace('.ts', '.js'),
+        )
+        await Fs.writeFile(
+          entry,
+          `throw new Error('Package must not execute during compilation');`,
+        )
+        await Fs.writeFile(entry + '.zyzz.json', content)
+      }
+      await Fs.writeFile(
+        Path.join(root, 'src/app.ts'),
+        `import {version} from 'library';export {version};`,
+      )
+      await using host = await Host.create({
+        root: Path.join(root, 'src'),
+        outDir: Path.join(root, 'dist'),
+        packageId: 'app',
+        css: false,
+      })
+      await host.build()
+      expect(
+        await Fs.readFile(Path.join(root, 'dist/zyzz.shared.css'), 'utf8'),
+      ).toMatchInlineSnapshot(`"body{color:red;}"`)
+      expect(
+        (await Fs.readFile(Path.join(root, 'dist/app.ts'), 'utf8')).includes(
+          'version',
+        ),
+      ).toMatchInlineSnapshot('true')
+      const sidecar = Path.join(library, 'global.js.zyzz.json')
+      const saved = await Fs.readFile(sidecar, 'utf8')
+      await Fs.writeFile(sidecar, '{')
+      await expect(host.build()).rejects.toThrow('Invalid library contract')
+      expect(
+        await Fs.readFile(Path.join(root, 'dist/zyzz.shared.css'), 'utf8'),
+      ).toMatchInlineSnapshot(`"body{color:red;}"`)
+      await Fs.writeFile(sidecar, saved)
+      expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('captures native context before creation yields and preserves it across rebuilds', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-context-'))
     const outDir = Path.join(root, 'output')

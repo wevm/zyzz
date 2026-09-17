@@ -94,6 +94,7 @@ export function expand(
   types: { readonly [axis: string]: { readonly [choice: string]: string } }
   body: Ast.ObjectExpression
   recipe: Recipe.Definition
+  dynamicRecipe?: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
   staticRecipe?: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
 } {
   const bindings = RecipePayloads.create(options)
@@ -490,18 +491,18 @@ export function expand(
     bindings,
     types,
     body: { ...node, properties },
-    ...(!payloads.length && !named.length
+    ...(!named.length
       ? {
-          staticRecipe: {
+          [payloads.length ? 'dynamicRecipe' : 'staticRecipe']: {
             axes,
             defaults,
             rules: [
               ...(base
                 ? [{ matches: [], value: base.value as Ast.ObjectExpression }]
                 : []),
-              ...rules.map(({ matches, property }) => ({
+              ...rules.map(({ matches, property, bodies }) => ({
                 matches,
-                value: property.value as Ast.ObjectExpression,
+                value: bodies?.[0] ?? (property.value as Ast.ObjectExpression),
               })),
             ],
           },

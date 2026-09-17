@@ -38,6 +38,7 @@ async function execute(code: string) {
   return (await import(
     `data:text/javascript;base64,${Buffer.from(result.outputFiles[0]!.text).toString('base64')}`
   )) as {
+    results: unknown
     card: Runtime.Callable<{
       size: readonly ['small', 'large']
       active: readonly ['true', 'false']
@@ -48,6 +49,201 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('executes dynamic scalars and selected variant payloads in authored order', async () => {
+    const source = `import {style,variants} from 'zyzz';
+      const bar=style((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha,fontSize:'10px',lineHeight:1.5}));
+      const card=variants({base:{padding:'2px',opacity:0.1},variants:{size:{custom:(values:{gap:string;alpha:number})=>({padding:values.gap,opacity:values.alpha}),small:{padding:'4px'}}},defaultVariants:{size:{custom:{gap:'3px',alpha:0.5}}},compoundVariants:[{when:{size:'custom'},style:{paddingLeft:'9px'}}]});
+      export const results=[bar({width:'12px',alpha:0.8}),bar({width:'20px',alpha:0.2}),card(),card({size:{custom:{gap:'6px',alpha:0.7}}}),card({size:null})];`
+    const output = Native.compile({
+      moduleId: 'dynamic.ts',
+      source,
+      colorScheme: 'light',
+      units: { px: 2 },
+    })
+    expect((await execute(output.code)).results).toMatchInlineSnapshot(`
+      [
+        {
+          "style": {
+            "fontSize": 20,
+            "lineHeight": 30,
+            "opacity": 0.8,
+            "width": 24,
+          },
+        },
+        {
+          "style": {
+            "fontSize": 20,
+            "lineHeight": 30,
+            "opacity": 0.2,
+            "width": 40,
+          },
+        },
+        {
+          "style": {
+            "opacity": 0.5,
+            "paddingBottom": 6,
+            "paddingLeft": 18,
+            "paddingRight": 6,
+            "paddingTop": 6,
+          },
+        },
+        {
+          "style": {
+            "opacity": 0.7,
+            "paddingBottom": 12,
+            "paddingLeft": 18,
+            "paddingRight": 12,
+            "paddingTop": 12,
+          },
+        },
+        {
+          "style": {
+            "opacity": 0.1,
+            "paddingBottom": 4,
+            "paddingLeft": 4,
+            "paddingRight": 4,
+            "paddingTop": 4,
+          },
+        },
+      ]
+    `)
+  })
+
+  test('executes imported and packed dynamic contracts without publisher source', async () => {
+    const directory = await Fs.mkdtemp(Path.resolve('.fixture-native-payload-'))
+    try {
+      const source = `import {style,variants} from 'zyzz';export const bar=style((values:{alpha:number})=>({opacity:values.alpha}));export const card=variants({variants:{size:{custom:(values:{gap:string})=>({padding:values.gap})}},defaultVariants:{size:{custom:{gap:'3px'}}}});`
+      const publisher = Graph.compile({ modules: { 'library.ts': source } })
+      const invalid = JSON.parse(publisher.contracts['library.ts']!)
+      invalid.version = 22
+      expect(() =>
+        Graph.compile({
+          contracts: { 'invalid.js': JSON.stringify(invalid) },
+          modules: {},
+        }),
+      ).toThrow('Dynamic native contracts require version 23')
+      invalid.version = 23
+      invalid.exports.bar.style.dynamic.slots.alpha.name = '--z-unknown'
+      expect(() =>
+        Graph.compile({
+          contracts: { 'invalid.js': JSON.stringify(invalid) },
+          modules: {},
+        }),
+      ).toThrow('Invalid packed dynamic slot')
+      const file = Path.join(directory, 'library.js')
+      const imported = Graph.compile({
+        imports: {
+          'app.ts': { [file]: 'library.ts' },
+          'library.ts': { zyzz: null },
+        },
+        modules: {
+          'library.ts': source,
+          'app.ts': `import {bar,card} from ${JSON.stringify(file)};export const results=[bar({alpha:0.6}),card({size:{custom:{gap:'5px'}}})];`,
+        },
+        native: { colorScheme: 'light' },
+      })
+      await Fs.writeFile(
+        file,
+        (
+          await Esbuild.transform(imported.modules['library.ts']!.code, {
+            loader: 'ts',
+            format: 'esm',
+          })
+        ).code,
+      )
+      expect((await execute(imported.modules['app.ts']!.code)).results).toEqual(
+        [
+          { style: { opacity: 0.6 } },
+          {
+            style: {
+              paddingTop: 5,
+              paddingRight: 5,
+              paddingBottom: 5,
+              paddingLeft: 5,
+            },
+          },
+        ],
+      )
+      await Fs.writeFile(
+        file,
+        (
+          await Esbuild.transform(publisher.modules['library.ts']!.code, {
+            loader: 'ts',
+            format: 'esm',
+          })
+        ).code,
+      )
+      const consumer = `import {bar,card} from ${JSON.stringify(file)};export const results=[bar({alpha:0.4}),card({size:{custom:{gap:'8px'}}}),card()];`
+      const compiled = Graph.compile({
+        contracts: { [file]: publisher.contracts['library.ts']! },
+        imports: { 'app.ts': { [file]: file } },
+        modules: { 'app.ts': consumer },
+        native: { colorScheme: 'light' },
+      })
+      expect(
+        JSON.parse(publisher.contracts['library.ts']!).version,
+      ).toMatchInlineSnapshot('23')
+      expect((await execute(compiled.modules['app.ts']!.code)).results)
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "style": {
+              "opacity": 0.4,
+            },
+          },
+          {
+            "style": {
+              "paddingBottom": 8,
+              "paddingLeft": 8,
+              "paddingRight": 8,
+              "paddingTop": 8,
+            },
+          },
+          {
+            "style": {
+              "paddingBottom": 3,
+              "paddingLeft": 3,
+              "paddingRight": 3,
+              "paddingTop": 3,
+            },
+          },
+        ]
+      `)
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects invalid dynamic inputs and preserves caller overrides', async () => {
+    const source = `import {style,variants} from 'zyzz';
+      const bar=style((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha,targets:{native:{transform:[{scale:2}]}}}));
+      const card=variants({variants:{size:{custom:(values:{gap:string})=>({padding:values.gap})}}});
+      const errors=[];
+      for(const input of [{width:'4px'},{width:'4px',alpha:2},{width:'4px',alpha:0.5,unknown:1},{width:'calc(1px + 2px)',alpha:0.5}]){try{bar(input)}catch(error){errors.push(error.message)}}
+      try{card({size:'custom'})}catch(error){errors.push(error.message)}
+      const override={opacity:0.9};const output=bar({width:'8px',alpha:0.5,style:override});
+      export const results={errors,identity:output.style[1]===override,callerFrozen:Object.isFrozen(override),staticFrozen:Object.isFrozen(output.style[0].transform)};`
+    const output = Native.compile({
+      source,
+      moduleId: 'errors.ts',
+      colorScheme: 'light',
+    })
+    expect((await execute(output.code)).results).toMatchInlineSnapshot(`
+      {
+        "callerFrozen": false,
+        "errors": [
+          "Missing or invalid native payload: alpha.",
+          "Unsupported native numeric value.",
+          "Unknown native recipe input: unknown.",
+          "Use zero, px, or rem with an explicit rem conversion.",
+          "Native payloads require scalar fields.",
+        ],
+        "identity": true,
+        "staticFrozen": true,
+      }
+    `)
+  })
+
   test('invalidates a reused native context after scheme changes', () => {
     const compiler = Graph.create()
     const modules = {
@@ -268,7 +464,9 @@ export const card=config.variants({base:{color:'ink'},variants:{tone:{quiet:{opa
       await Fs.writeFile(
         Path.join(directory, 'compiled.ts'),
         Native.compile({
-          source,
+          source:
+            source +
+            `export const bar=style((value:{alpha:number})=>({opacity:value.alpha}));export const custom=variants({variants:{size:{custom:(value:{gap:string})=>({padding:value.gap})}},defaultVariants:{size:{custom:{gap:'2px'}}}});`,
           moduleId: 'compiled.ts',
           platform: 'ios',
           colorScheme: 'light',
@@ -277,7 +475,18 @@ export const card=config.variants({base:{color:'ink'},variants:{tone:{quiet:{opa
       const consumer = Path.join(directory, 'consumer.ts')
       await Fs.writeFile(
         consumer,
-        `import {card,compose} from './compiled.js';
+        `import {bar,card,compose,custom} from './compiled.js';
+bar({alpha:0.5});
+custom();
+custom({size:{custom:{gap:'8px'}}});
+// @ts-expect-error Dynamic styles require their values.
+bar();
+// @ts-expect-error Dynamic field types survive compilation.
+bar({alpha:'bad'});
+// @ts-expect-error Dynamic choices require scoped payloads.
+custom({size:'custom'});
+// @ts-expect-error Payload field types survive compilation.
+custom({size:{custom:{gap:8}}});
 card({size:'small',active:true});
 card({size:null,style:[false,{opacity:0.5}]});
 compose(false);
@@ -333,7 +542,7 @@ card().className;
     expect(original.line).toMatchInlineSnapshot('11')
   })
 
-  test('rejects dynamic recipes and native conditions instead of emitting web bindings', () => {
+  test('rejects native conditions and HTML output', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'native.ts',
@@ -345,7 +554,6 @@ card().className;
       '[Error: Use Native.compile for native source output.]',
     )
     for (const definition of [
-      `variants({variants:{size:{custom:(value:{opacity:number})=>({opacity:value.opacity})}}})`,
       `variants({conditions:{wide:'@media (width > 0px)'},variants:{tone:{quiet:{opacity:0.5}}}})`,
     ])
       expect(() =>
@@ -355,7 +563,7 @@ card().className;
           source: `import {variants} from 'zyzz';export const card=${definition};`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        '[Native.CompileError: Native source compilation requires static recipes without dynamic payloads, named conditions, or HTML output.]',
+        '[Native.CompileError: Native source compilation does not support named conditions or HTML output.]',
       )
     expect(() =>
       Native.compile({

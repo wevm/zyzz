@@ -4,12 +4,14 @@
  */
 import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
 import * as Fixture from '../../test/fixtures/ThemeGraph.js'
+import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Library from '../../test/fixtures/VariantLibrary.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Http from 'node:http'
+import * as Os from 'node:os'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Vm from 'node:vm'
@@ -23,6 +25,155 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('executes one source-free package in browser and native consumers', async () => {
+    const directory = await Fs.mkdtemp(
+      Path.join(Os.tmpdir(), 'zyzz-universal-consumer-'),
+    )
+    try {
+      const library = await Universal.create(directory)
+      expect(
+        (await Fs.readdir(Path.join(library.installed, 'native'))).some(
+          (file) => file.endsWith('.ts') && !file.endsWith('.d.ts'),
+        ),
+      ).toMatchInlineSnapshot('false')
+      const contract = await Fs.readFile(
+        Path.join(library.installed, 'web/index.js.zyzz.json'),
+        'utf8',
+      )
+      const source = `import {button} from '@acme/universal';export const props=button({size:'large',active:true});`
+      const inputs = {
+        contracts: { '@acme/universal/index.js': contract },
+        imports: {
+          'app.ts': { '@acme/universal': '@acme/universal/index.js' },
+        },
+        modules: { 'app.ts': source },
+      }
+      const native = Graph.compile({
+        ...inputs,
+        native: { colorScheme: 'dark', platform: 'android' },
+      })
+      const web = Graph.compile(inputs)
+      await Fs.writeFile(
+        Path.join(directory, 'native.ts'),
+        native.modules['app.ts']!.code,
+      )
+      const built = await Esbuild.build({
+        entryPoints: [Path.join(directory, 'native.ts')],
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        write: false,
+      })
+      await Fs.writeFile(
+        Path.join(directory, 'native.mjs'),
+        built.outputFiles[0]!.text,
+      )
+      const exec = Util.promisify(ChildProcess.execFile)
+      const executed = await exec(process.execPath, [
+        '--input-type=module',
+        '-e',
+        `import {props} from ${JSON.stringify(Path.join(directory, 'native.mjs'))};console.log(JSON.stringify(props));`,
+      ])
+      expect(executed.stdout).toMatchInlineSnapshot(`
+        "{"style":{"color":"#abcdef","fontSize":20,"opacity":0.8}}
+        "
+      `)
+      const published = await exec(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          `import {button} from '@acme/universal/native';console.log(JSON.stringify(button({size:'large',active:true})));`,
+        ],
+        { cwd: directory },
+      )
+      expect(published.stdout).toMatchInlineSnapshot(`
+        "{"style":{"color":"#123456","fontSize":20,"opacity":0.8}}
+        "
+      `)
+      await Fs.writeFile(
+        Path.join(directory, 'consumer.ts'),
+        `import {button} from '@acme/universal/native';import {props} from './native.js';button({size:'large',active:true});button({size:null});props.style;
+// @ts-expect-error Choices stay finite across the package boundary.
+button({size:'huge'});
+// @ts-expect-error Native props exclude web class names.
+button({className:'web'});`,
+      )
+      await exec(process.execPath, [
+        Path.join(root, 'node_modules/typescript/bin/tsc'),
+        '--noEmit',
+        '--module',
+        'nodenext',
+        '--target',
+        'esnext',
+        '--strict',
+        '--skipLibCheck',
+        Path.join(directory, 'consumer.ts'),
+      ]).catch((error) => {
+        throw new Error(error.stdout || error.message)
+      })
+      const browser = await chromium.launch({ headless: true })
+      try {
+        const page = await browser.newPage({ colorScheme: 'dark' })
+        const bundle = await Esbuild.build({
+          stdin: {
+            contents: `import '@acme/universal/style.css';
+${web.modules['app.ts']!.code}`,
+            loader: 'ts',
+            resolveDir: directory,
+          },
+          bundle: true,
+          platform: 'browser',
+          format: 'iife',
+          globalName: 'Fixture',
+          outdir: Path.join(directory, 'browser'),
+          write: false,
+        })
+        const css = bundle.outputFiles.find((file) =>
+          file.path.endsWith('.css'),
+        )!.text
+        await page.setContent(
+          `<style>:root{color-scheme:dark}${css}${web.modules['app.ts']!.css}</style><div id="button"></div><div id="control" style="color:#abcdef;font-size:20px;opacity:0.8"></div>`,
+        )
+        await page.addScriptTag({
+          content:
+            bundle.outputFiles.find((file) => file.path.endsWith('.js'))!.text +
+            `;const element=document.querySelector('#button');for(const [key,value] of Object.entries(Fixture.props)){if(key==='style')Object.assign(element.style,value);else element.setAttribute(key==='className'?'class':key,String(value))}`,
+        })
+        const computed = await page.locator('#button').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            color: style.color,
+            fontSize: style.fontSize,
+            opacity: style.opacity,
+          }
+        })
+        expect(computed).toMatchInlineSnapshot(`
+          {
+            "color": "rgb(171, 205, 239)",
+            "fontSize": "20px",
+            "opacity": "0.8",
+          }
+        `)
+        const control = await page.locator('#control').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            color: style.color,
+            fontSize: style.fontSize,
+            opacity: style.opacity,
+          }
+        })
+        expect(
+          JSON.stringify(computed) === JSON.stringify(control),
+        ).toMatchInlineSnapshot('true')
+      } finally {
+        await browser.close()
+      }
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  }, 120000)
+
   test.each([
     ['web', 'single'],
     ['native', 'single'],

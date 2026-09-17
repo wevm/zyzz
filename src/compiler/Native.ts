@@ -1,8 +1,9 @@
-/** Rewrites shared static authoring to finite native table selection. @module */
+/** Rewrites shared authoring to native tables and ordered runtime bindings. @module */
 import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'
 import type * as Recipe from '../internal/Recipe.js'
 import * as Source from './Source.js'
+import * as NativeBindings from './internal/NativeBindings.js'
 import * as Themes from './internal/Themes.js'
 import * as StyleSheet from '../react-native/StyleSheet.js'
 import * as Syntax from './internal/Syntax.js'
@@ -10,9 +11,9 @@ import * as Variants from '../react-native/Variants.js'
 import * as Walker from 'oxc-walker'
 
 /**
- * Compiles local static style and variants calls for an explicit native context.
+ * Compiles local style and variants calls for an explicit native context.
  * @param options - Shared source, destination mappings, and selected theme/scheme.
- * @returns Native callables, source map, and complete finite recipe tables.
+ * @returns Native callables, source map, and static recipe tables.
  * @throws {Source.ExtractError} For invalid source authoring.
  * @throws {CompileError} For native features outside the static source boundary.
  * @throws {StyleSheet.CompileError} For unsupported native declaration values.
@@ -46,35 +47,72 @@ export function compile(options: compile.Options): compile.ReturnType {
   })
   let helper = '__zyzzNative'
   while (names.has(helper)) helper += '_'
+  let dynamicHelper = `${helper}Dynamic`
+  while (names.has(dynamicHelper)) dynamicHelper += '_'
   const module = new MagicString(options.source)
   const recipes: Record<string, Variants.Definition> = Object.create(null)
+  let dynamic = false
   for (const call of extracted.calls) {
     if (
-      call.slots ||
-      (call.recipe && !call.staticRecipe) ||
+      (call.recipe && !call.staticRecipe && !call.dynamicRecipe) ||
       call.output === 'html'
     )
       throw new CompileError(
-        'Native source compilation requires static recipes without dynamic payloads, named conditions, or HTML output.',
+        'Native source compilation does not support named conditions or HTML output.',
       )
-    const recipe = call.staticRecipe ?? {
-      axes: {},
-      defaults: {},
-      rules: [
-        {
-          matches: [],
-          value: {
-            styles: extracted.styles.styles.filter(
-              (style) => style.name === call.name,
-            ),
+    const recipe = call.staticRecipe ??
+      call.dynamicRecipe ?? {
+        axes: {},
+        defaults: {},
+        rules: [
+          {
+            matches: [],
+            value: {
+              styles: extracted.styles.styles.filter(
+                (style) => style.name === call.name,
+              ),
+            },
           },
-        },
-      ],
-    }
-    module.overwrite(call.start, call.end, callable(recipe, call.name))
+        ],
+      }
+    module.overwrite(call.start, call.end, callable(recipe, call.name, call))
   }
 
-  function callable(recipe: Recipe.Definition, name: string): string {
+  function callable(
+    recipe: Recipe.Definition,
+    name: string,
+    call?: Pick<Source.Call, 'slots' | 'recipe' | 'valuesType' | 'recipeTypes'>,
+  ): string {
+    if (call?.slots || call?.recipe?.payloads?.length) {
+      dynamic = true
+      const compiled = (() => {
+        try {
+          return NativeBindings.compile(recipe, call, options)
+        } catch (error) {
+          if (error instanceof StyleSheet.CompileError) throw error
+          throw new CompileError((error as Error).message)
+        }
+      })()
+      const value = `${dynamicHelper}.create(${JSON.stringify(compiled)})`
+      let input = call.valuesType ?? '{}'
+      if (call.recipe) {
+        input = `{${Object.entries(recipe.axes)
+          .map(([axis, choices]) => {
+            const types = choices.map((choice) =>
+              call.recipeTypes?.[axis]?.[choice]
+                ? `{${JSON.stringify(choice)}:${call.recipeTypes[axis]![choice]}}`
+                : choice === 'true' || choice === 'false'
+                  ? choice
+                  : JSON.stringify(choice),
+            )
+            return `${JSON.stringify(axis)}?:${types.join('|')}|null|undefined`
+          })
+          .join(';')}}`
+      }
+      return /\.[cm]?tsx?$/.test(options.moduleId)
+        ? `(${value} as import('zyzz/runtime').NativeDynamic.${call.recipe ? 'RecipeCallable' : 'Callable'}<${input}>)`
+        : value
+    }
     const compiled = Variants.compile({
       recipe,
       fonts: options.fonts,
@@ -180,6 +218,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       name: string,
       link = exports![name],
       input?: string,
+      path: readonly string[] = [name],
     ): string | undefined {
       if (!link || link.kind !== 'style-reference') return undefined
       if (link.members) {
@@ -187,20 +226,41 @@ export function compile(options: compile.Options): compile.ReturnType {
         const expression = `{${Object.entries(link.members)
           .map(
             ([member, link]) =>
-              `[${JSON.stringify(member)}]:${value(`${name}.${member}`, link, `${source}[${JSON.stringify(member)}]`)}`,
+              `[${JSON.stringify(member)}]:${value(`${name}.${member}`, link, `${source}[${JSON.stringify(member)}]`, [...path, member])}`,
           )
           .join(',')}}`
         return overlay(source, expression)
       }
+      const recipe = link.style?.staticRecipe ?? link.style?.dynamic?.recipe
       if (
-        !link.style?.staticRecipe ||
-        link.style.output ||
-        link.style.slots.length
+        !recipe ||
+        link.style?.output ||
+        (link.style?.slots.length && !link.style.dynamic)
       )
         throw new CompileError(
           `Packed native callable ${name} requires a static recipe contract.`,
         )
-      return callable(link.style.staticRecipe, `${specifier}:${name}`)
+      const expression = callable(
+        recipe,
+        `${specifier}:${name}`,
+        link.style?.dynamic
+          ? {
+              slots: link.style.dynamic.slots,
+              recipe: {
+                axes: recipe.axes,
+                defaults: recipe.defaults,
+                payloads: link.style.dynamic.payloads,
+                defaultPayloads: link.style.dynamic.defaultPayloads,
+              },
+            }
+          : undefined,
+      )
+      if (!link.style?.dynamic || !/\.[cm]?tsx?$/.test(options.moduleId))
+        return expression
+      const type = `typeof import(${JSON.stringify(specifier)})${path
+        .map((part) => `[${JSON.stringify(part)}]`)
+        .join('')}`
+      return `(${expression} as import('zyzz/runtime').NativeDynamic.From<${type}>)`
     }
 
     function namespace(): string | undefined {
@@ -409,7 +469,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport {Native as ${helper}} from 'zyzz/runtime';\n${[...compositions, ...packed].join('\n')}\n`,
+      `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}} from 'zyzz/runtime';\n${[...compositions, ...packed].join('\n')}\n`,
     )
   }
   return {

@@ -23,6 +23,9 @@ export * as Html from './Html.js'
 /** Static native selection and ordinary style-prop composition. */
 export * as Native from './Native.js'
 
+/** Ordered native scalar bindings for generated dynamic callables. */
+export * as NativeDynamic from './NativeDynamic.js'
+
 /** Scoped recipe inputs bound to fixed variable slots. */
 export * as PayloadRecipe from './PayloadRecipe.js'
 

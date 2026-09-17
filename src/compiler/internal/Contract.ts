@@ -24,7 +24,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22,
+      22, 23,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -198,7 +198,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(
           data.version as number,
         ) ||
         ![
@@ -249,7 +249,7 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17, 18, 19, 20, 21, 22].includes(data.version as number)
+        ![16, 17, 18, 19, 20, 21, 22, 23].includes(data.version as number)
       )
         throw new Error(
           'Packed callable styles require contract version 16 or later.',
@@ -607,6 +607,13 @@ export function write(
             nested(member),
         )
       }
+      function dynamic(link: Themes.Link): boolean {
+        return (
+          !!link.style?.dynamic ||
+          Object.values(link.members ?? {}).some(dynamic)
+        )
+      }
+      if (Object.values(links).some(dynamic)) return 23
       if (Object.values(links).some(nested)) return 22
       if (Object.values(links).some(staticRecipe)) return 21
       if (Object.values(links).some(targeted)) return 20

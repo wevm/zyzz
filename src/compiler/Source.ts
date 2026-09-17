@@ -74,6 +74,8 @@ export type Call = {
   readonly composition?: readonly string[] | undefined
   /** Finite recipe selection metadata, with all alternatives retained in CSS. */
   readonly recipe?: Recipe.Definition | undefined
+  /** Ordered dynamic alternatives retained with scalar binding references. */
+  readonly dynamicRecipe?: StaticRecipe.Definition | undefined
   /** Ordered static alternatives retained without CSS selector lowering. */
   readonly staticRecipe?: StaticRecipe.Definition | undefined
   /** Typed payload signatures retained across transformed declarations. */
@@ -590,6 +592,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     let recipe: Recipe.Definition | undefined
     let recipeTypes: Call['recipeTypes']
     let staticRecipe: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
+    let dynamicRecipe: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
     if (recipes.has(call.start)) {
       try {
         if (dynamic)
@@ -608,6 +611,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         argument = expanded.body
         recipe = expanded.recipe
         staticRecipe = expanded.staticRecipe
+        dynamicRecipe = expanded.dynamicRecipe
         recipeTypes = expanded.types
         dynamicValues = expanded.bindings
       } catch (error) {
@@ -1137,22 +1141,24 @@ export function extract(options: extract.Options): extract.ReturnType {
       const shorthands = themes?.styles.get(call.start)?.theme[Token.definition]
         .contract.shorthands
 
+      const retained = staticRecipe ?? dynamicRecipe
+      const targetRecipe = retained && {
+        ...retained,
+        rules: retained.rules.map(({ matches, value }, index) => ({
+          matches,
+          value: define(
+            { [`${name}-${index}`]: object(value) },
+            { locations, theme: themes?.styles.get(call.start)?.theme },
+          ),
+        })),
+      }
       calls.push({
         ...(recipe ? { recipe, recipeTypes } : {}),
         ...(staticRecipe
-          ? {
-              staticRecipe: {
-                ...staticRecipe,
-                rules: staticRecipe.rules.map(({ matches, value }, index) => ({
-                  matches,
-                  value: define(
-                    { [`${name}-${index}`]: object(value) },
-                    { locations, theme: themes?.styles.get(call.start)?.theme },
-                  ),
-                })),
-              },
-            }
-          : {}),
+          ? { staticRecipe: targetRecipe }
+          : dynamicRecipe
+            ? { dynamicRecipe: targetRecipe }
+            : {}),
         ...(selectors.identities.has(call.start)
           ? { identity: selectors.identities.get(call.start)! }
           : {}),

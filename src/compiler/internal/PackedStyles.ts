@@ -1,5 +1,6 @@
 /** Preserves ordered style bodies and runtime ownership across package boundaries. @module */
 import type * as Recipe from '../../internal/Recipe.js'
+import type * as RuntimeRecipe from '../../runtime/Recipe.js'
 import * as Targets from '../../internal/Targets.js'
 import * as Binding from '../../internal/Binding.js'
 import * as Condition from '../../internal/Condition.js'
@@ -12,6 +13,15 @@ import * as Token from '../../internal/Token.js'
 
 /** Portable composition inputs; selection behavior remains in the compiled callable. */
 export type Definition = {
+  /** Runtime scalar slots retained without executable callback bodies. */
+  readonly dynamic?:
+    | {
+        readonly recipe: Recipe.Definition
+        readonly slots: NonNullable<Source.Call['slots']>
+        readonly payloads?: RuntimeRecipe.Definition['payloads']
+        readonly defaultPayloads?: RuntimeRecipe.Definition['defaultPayloads']
+      }
+    | undefined
   /** Exact published classes replaced by a composition. Filled by graph emission. */
   readonly className?: string | undefined
   /** Attributes owned by the callable, including conditional selections. */
@@ -29,6 +39,20 @@ export type Definition = {
 /** Captures ownership without retaining source ASTs or executable expressions. */
 export function create(call: Source.Call, style: Style.NamedStyle): Definition {
   return {
+    ...(call.slots || call.dynamicRecipe
+      ? {
+          dynamic: {
+            recipe: call.dynamicRecipe ?? {
+              axes: {},
+              defaults: {},
+              rules: [{ matches: [], value: { styles: [style] } }],
+            },
+            slots: call.slots ?? {},
+            payloads: call.recipe?.payloads,
+            defaultPayloads: call.recipe?.defaultPayloads,
+          },
+        }
+      : {}),
     attributes: Object.keys(call.recipe?.axes ?? {}).flatMap((axis) => [
       `data-${axis}`,
       ...(call.recipe?.conditions ?? []).map((_, condition) =>
@@ -232,11 +256,11 @@ export function read(
     (item.output !== undefined && item.output !== 'html')
   )
     throw new Error('Invalid packed style ownership.')
-  const staticRecipe = (() => {
-    if (item.staticRecipe === undefined) return undefined
+  function readRecipe(input: unknown) {
+    if (input === undefined) return undefined
     if (version < 21)
       throw new Error('Static recipes require contract version 21 or later.')
-    const recipe = object(item.staticRecipe)
+    const recipe = object(input)
     const axes = Object.fromEntries(
       Object.entries(object(recipe.axes)).map(([name, value]) => {
         const choices = array(value).map(string)
@@ -281,8 +305,111 @@ export function read(
       }
     })
     return { axes, defaults, rules }
+  }
+  const staticRecipe = readRecipe(item.staticRecipe)
+  const dynamic = (() => {
+    if (item.dynamic === undefined) return undefined
+    if (version < 23)
+      throw new Error('Dynamic native contracts require version 23 or later.')
+    const entry = object(item.dynamic)
+    const recipe = readRecipe(entry.recipe)
+    if (!recipe) throw new Error('Missing packed dynamic recipe.')
+    function fields(value: unknown): Record<string, string> {
+      return Object.fromEntries(
+        Object.entries(object(value)).map(([field, value]) => {
+          const name = string(value)
+          if (
+            !field ||
+            [
+              '__proto__',
+              'style',
+              'className',
+              'variables',
+              'key',
+              'ref',
+            ].includes(field) ||
+            !slots.includes(name)
+          )
+            throw new Error('Invalid packed dynamic slot.')
+          return [field, name]
+        }),
+      )
+    }
+    const inputs = Object.fromEntries(
+      Object.entries(object(entry.slots)).map(([field, value]) => {
+        const reference = scalar(value)
+        if (
+          !Binding.is(reference) ||
+          !['number', 'length'].includes(reference.type)
+        )
+          throw new Error('Invalid packed dynamic scalar.')
+        fields({ [field]: reference.name })
+        return [field, reference]
+      }),
+    )
+    const seen = new Set<string>()
+    const payloads =
+      entry.payloads === undefined
+        ? undefined
+        : array(entry.payloads).map((value) => {
+            const payload = object(value)
+            const axis = string(payload.axis)
+            const choice = string(payload.choice)
+            const identity = JSON.stringify([axis, choice])
+            if (!recipe.axes[axis]?.includes(choice) || seen.has(identity))
+              throw new Error('Invalid packed dynamic choice.')
+            seen.add(identity)
+            return {
+              axis,
+              choice,
+              slots: array(payload.slots).map(
+                (value) => fields(value) as Record<string, `--${string}`>,
+              ),
+            }
+          })
+    if (payloads?.some((payload) => payload.slots.length !== 1))
+      throw new Error('Native payloads require one unconditional slot map.')
+    const defaultPayloads =
+      entry.defaultPayloads === undefined
+        ? undefined
+        : Object.fromEntries(
+            Object.entries(object(entry.defaultPayloads)).map(
+              ([axis, value]) => {
+                const payload = payloads?.find(
+                  (payload) =>
+                    payload.axis === axis &&
+                    payload.choice === recipe.defaults[axis],
+                )
+                if (!payload) throw new Error('Invalid packed dynamic default.')
+                const defaults = object(value)
+                const expected = Object.keys(payload.slots[0]!)
+                if (
+                  Object.keys(defaults).length !== expected.length ||
+                  expected.some((field) => !Object.hasOwn(defaults, field))
+                )
+                  throw new Error('Incomplete packed dynamic default.')
+                return [
+                  axis,
+                  Object.fromEntries(
+                    Object.entries(defaults).map(([field, value]) => {
+                      if (
+                        typeof value !== 'string' &&
+                        (typeof value !== 'number' || !Number.isFinite(value))
+                      )
+                        throw new Error(
+                          'Invalid packed dynamic default scalar.',
+                        )
+                      return [field, value]
+                    }),
+                  ),
+                ]
+              },
+            ),
+          )
+    return { recipe, slots: inputs, payloads, defaultPayloads }
   })()
   return {
+    ...(dynamic ? { dynamic } : {}),
     attributes,
     className: string(item.className),
     ...(item.output ? { output: 'html' } : {}),

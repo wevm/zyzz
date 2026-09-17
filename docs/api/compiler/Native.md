@@ -1,6 +1,6 @@
 # Native source compilation
 
-`Native.compile` from `zyzz/compiler` rewrites local shared `style`, `variants`, and `cx` authoring into native callables. Runtime calls select precompiled objects and compose ordinary native style props. They do not compile declarations, generate CSS, or inspect the device.
+`Native.compile` from `zyzz/compiler` rewrites local shared `style`, `variants`, and `cx` authoring into native callables. Runtime calls select precompiled objects, bind dynamic scalar values, and compose ordinary native style props. They do not parse authoring source, generate CSS, or inspect the device.
 
 ```ts
 import { Native } from 'zyzz/compiler'
@@ -24,9 +24,33 @@ The emitted module exports `button`. `button({ tone: 'loud' })` returns `{ style
 
 `colorScheme` is required. `platform` is required when platform branches exist. `themes`, `units`, and `fonts` follow `StyleSheet.compile`; `theme` selects a supplied theme label and otherwise defaults to `default`. Local configured tokens retain their fallback values. Recompile for a different scheme or platform; automatic host updates remain separate work.
 
-The result includes rewritten `code`, a version-three `map` with original source content, and complete theme/scheme `recipes` tables. The generated module imports `Native` from `zyzz/runtime`. The runtime helper can also bind a table selected with `StyleSheet.select`, without loading the compiler.
+The result includes rewritten `code`, a version-three `map` with original source content, and theme/scheme `recipes` tables for static definitions. The generated module imports `Native` or `NativeDynamic` from `zyzz/runtime`. The runtime helper can also bind a table selected with `StyleSheet.select`, without loading the compiler.
 
-Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects dynamic callbacks, payloads, named conditions, CSS selectors, variables, contributions, and web theme controls. CLI/bundler routing and device acceptance remain outside this source path.
+Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects named conditions, CSS selectors, standalone variables, contributions, and web theme controls. CLI/bundler routing and device acceptance remain outside this source path.
+
+## Dynamic values
+
+Typed scalar callbacks and scoped variant payloads compile to ordered binding instructions. Dynamic values use the same portable unit, keyword, numeric, font, and color conversion rules as static declarations. Defaults, null suppression, compounds, and native overrides retain authored precedence. Missing fields and unsupported runtime values throw before returning props.
+
+```ts
+import { style, variants } from 'zyzz'
+
+export const bar = style((values: { alpha: number }) => ({
+  opacity: values.alpha,
+}))
+export const card = variants({
+  variants: {
+    spacing: {
+      custom: (values: { gap: `${number}px` }) => ({ padding: values.gap }),
+    },
+  },
+})
+
+bar({ alpha: 0.5 })
+card({ spacing: { custom: { gap: '8px' } } })
+```
+
+Callbacks are extracted without execution. Bindings consume declared inputs and return only native style props. Runtime payloads never multiply the finite selection space. Dynamic transforms, shadows, font variants, token expressions, and CSS calculations remain unsupported. Native target branches still require static literal data.
 
 ## Imported Definitions
 
@@ -61,6 +85,6 @@ const native = Graph.compile({
 })
 ```
 
-Named, default, and namespace imports retain finite choices and defaults, including nested style namespaces. Named, star, and namespace re-exports preserve those contracts. Namespace imports preserve ordinary exports and their live bindings. Nested namespace re-exports use version 22 contracts; older contracts remain readable. Theme and configuration factories still require named imports. Dynamic and legacy callables without static recipes fail explicitly. Ordinary package side effects remain imported.
+Named, default, and namespace imports retain finite choices and defaults, including nested style namespaces. Named, star, and namespace re-exports preserve those contracts. Namespace imports preserve ordinary exports and their live bindings. Nested namespace re-exports use version 22 contracts; older contracts remain readable. Theme and configuration factories still require named imports. Version 23 retains scalar callback slots and variant payloads for dynamic native consumers. Older dynamic contracts without this metadata fail explicitly. Ordinary package side effects remain imported.
 
 Generate declarations from the transformed native TypeScript output. Contracts contain compiler data, not runtime implementations. Package resolution and declaration emission remain host responsibilities. Native tables do not establish iOS or Android rendering acceptance.

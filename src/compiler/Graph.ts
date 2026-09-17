@@ -30,7 +30,10 @@ export function compile(options: compile.Options): compile.ReturnType {
 /** Input and output of graph compilation. */
 export declare namespace compile {
   /** Errors raised while extracting or compiling a source graph. */
-  type ErrorType = Source.ExtractError | Transform.compile.ErrorType
+  type ErrorType =
+    | Native.compile.ErrorType
+    | Source.ExtractError
+    | Transform.compile.ErrorType
 
   /** Source modules available for relative import resolution. */
   type Options = {
@@ -120,7 +123,25 @@ type Cache = {
 }
 
 function build(options: compile.Options, cache?: Cache): Cache {
-  if (cache?.native !== options.native) cache = undefined
+  if (
+    !!cache?.native !== !!options.native ||
+    Object.keys(cache?.native ?? {}).length !==
+      Object.keys(options.native ?? {}).length ||
+    Object.entries(cache?.native ?? {}).some(([key, value]) => {
+      const next = Reflect.get(options.native ?? {}, key)
+      if (key !== 'fonts' && key !== 'themes' && key !== 'units')
+        return value !== next
+
+      return (
+        !!value !== !!next ||
+        Object.keys(value ?? {}).length !== Object.keys(next ?? {}).length ||
+        Object.entries(value ?? {}).some(
+          ([name, entry]) => Reflect.get(next ?? {}, name) !== entry,
+        )
+      )
+    })
+  )
+    cache = undefined
   if (options.native && options.compiler === false)
     throw new Native.CompileError(
       'Native graph compilation requires source rewriting.',
@@ -931,7 +952,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
       development: !!options.development,
       extracted,
       libraries: Object.freeze(libraries),
-      native: options.native,
+      native: {
+        ...options.native,
+        ...(options.native.fonts && { fonts: { ...options.native.fonts } }),
+        ...(options.native.themes && { themes: { ...options.native.themes } }),
+        ...(options.native.units && { units: { ...options.native.units } }),
+      },
       resolutions: Object.freeze(resolutions),
       result: Object.freeze({
         contracts: Object.freeze({}),

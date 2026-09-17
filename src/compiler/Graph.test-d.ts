@@ -4,9 +4,16 @@
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
-import type { Transform } from 'zyzz/compiler'
+import type { Native, Transform } from 'zyzz/compiler'
+import type { StyleSheet } from 'zyzz/react-native'
 
 describe('compile', () => {
+  test('includes native compilation and selection failures', () => {
+    expectTypeOf<Native.compile.ErrorType>().toExtend<Graph.compile.ErrorType>()
+    expectTypeOf<StyleSheet.CompileError>().toExtend<Graph.compile.ErrorType>()
+    expectTypeOf<StyleSheet.SelectionError>().toExtend<Graph.compile.ErrorType>()
+  })
+
   test('preserves graph outputs and validates inputs and contracts', () => {
     const result = Graph.compile({ modules: { 'pkg/theme.ts': '' } })
 

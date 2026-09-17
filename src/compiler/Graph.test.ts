@@ -15,6 +15,7 @@ import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import { Theme } from 'zyzz'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
@@ -22,6 +23,136 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test.each([`export * from 'zyzz';`, `export * as styling from 'zyzz';`])(
+    'rejects unbounded native re-exports: %s',
+    (source) => {
+      expect(() =>
+        Graph.compile({
+          modules: { 'barrel.ts': source },
+          native: { colorScheme: 'light' },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Native.CompileError: Native modules require named re-exports from zyzz.]`,
+      )
+    },
+  )
+
+  test('rejects web-only authoring and disabled rewriting in native graphs', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'card.ts': `import {style} from 'zyzz';export const card=style({selectors:{'&:hover':{opacity:0.5}}});`,
+        },
+        native: { colorScheme: 'light' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["style-1slxe42dbli7u-45"]: Selectors, queries, and nested rules are not supported on native.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {},
+        compiler: false,
+        native: { colorScheme: 'light' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Native graph compilation requires source rewriting.]`,
+    )
+  })
+
+  test.each([
+    `export {cx as merge, style as unused} from 'zyzz';`,
+    `import {cx} from 'zyzz';export {cx as merge};`,
+  ])('executes native barrel composition: %s', async (composition) => {
+    const modules = {
+      'theme.ts': `import {Config} from 'zyzz';export const {style,variants}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});`,
+      'barrel.ts': `export {style,variants} from './theme.js';${composition}`,
+      'card.ts': `import {variants} from './barrel.js';export const card=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'}});`,
+      'overlay.ts': `import {style} from './barrel.js';export const overlay=style({targets:{native:{opacity:0.5},ios:{opacity:0.7}}});`,
+      'index.ts': `import {merge as cx} from './barrel.js';import {card} from './card.js';import {overlay} from './overlay.js';export {card} from './card.js';export const result=cx(card({size:'large'}),overlay());`,
+    }
+    const compiler = Graph.create()
+    const native = { colorScheme: 'dark', platform: 'ios' } as const
+    const result = compiler.compile({ modules, native })
+    expect(result.dependencies['index.ts']).toMatchInlineSnapshot(`
+      [
+        "barrel.ts",
+        "card.ts",
+        "overlay.ts",
+      ]
+    `)
+    expect(
+      Object.values(result.modules).every((module) => module.css === ''),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      compiler.compile({ modules, native }) === result,
+    ).toMatchInlineSnapshot('true')
+    const directory = await Fs.mkdtemp(
+      Path.join(root, '.fixture-native-graph-'),
+    )
+    try {
+      await Promise.all(
+        Object.entries(result.modules).map(([name, module]) =>
+          Fs.writeFile(Path.join(directory, name), module.code),
+        ),
+      )
+      const output = await Esbuild.build({
+        entryPoints: [Path.join(directory, 'index.ts')],
+        alias: {
+          'zyzz/runtime': Path.join(root, 'src/runtime/index.ts'),
+          zyzz: Path.join(root, 'src/index.ts'),
+        },
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        write: false,
+      })
+      const file = Path.join(directory, 'bundle.mjs')
+      await Fs.writeFile(
+        file,
+        output.outputFiles[0]!.text + `\nconsole.log(JSON.stringify(result));`,
+      )
+      const executed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [file],
+      )
+      expect(JSON.parse(executed.stdout)).toMatchInlineSnapshot(`
+        {
+          "style": [
+            {
+              "color": "#ffffff",
+              "fontSize": 20,
+            },
+            {
+              "opacity": 0.7,
+            },
+          ],
+        }
+      `)
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+    const light = compiler.compile({
+      modules,
+      native: { ...native, colorScheme: 'light' },
+    })
+    expect(
+      light.modules['card.ts']!.code.includes('#000000'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      light.modules['card.ts']!.code === result.modules['card.ts']!.code,
+    ).toMatchInlineSnapshot('false')
+    const edited = compiler.compile({
+      modules: {
+        ...modules,
+        'theme.ts': modules['theme.ts'].replace('#000000', '#123456'),
+      },
+      native: { ...native, colorScheme: 'light' },
+    })
+    expect(
+      edited.modules['card.ts']!.code.includes('#123456'),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test.each([
     [
       `export default {opacity:.6};`,
@@ -1101,6 +1232,62 @@ export const scope = mint.className;`,
 })
 
 describe('create', () => {
+  test('invalidates reused native context values and nested mappings', () => {
+    const compiler = Graph.create()
+    const fonts = { Example: 'FirstFont' }
+    const themes = { selected: Theme.define({ color: { ink: '#111111' } }) }
+    const units = { rem: 10 }
+    const native = {
+      colorScheme: 'light' as 'light' | 'dark',
+      fonts,
+      platform: 'ios' as 'ios' | 'android',
+      theme: 'selected',
+      themes,
+      units,
+    }
+    const modules = {
+      'card.ts': `import {style} from 'zyzz';export const card=style({fontFamily:'Example',fontSize:'2rem',targets:{ios:{opacity:.7},android:{opacity:.4}}});`,
+    }
+    const first = compiler.compile({ modules, native })
+    expect(
+      compiler.compile({ modules, native }) === first,
+    ).toMatchInlineSnapshot('true')
+
+    fonts.Example = 'SecondFont'
+    const nested = compiler.compile({ modules, native })
+    expect(nested === first).toMatchInlineSnapshot('false')
+    expect(
+      nested.modules['card.ts']!.code.includes('SecondFont'),
+    ).toMatchInlineSnapshot('true')
+    units.rem = 12
+    const scaled = compiler.compile({ modules, native })
+    expect(
+      scaled.modules['card.ts']!.code.includes('"fontSize":24'),
+    ).toMatchInlineSnapshot('true')
+
+    themes.selected = Theme.define({ color: { ink: '#222222' } })
+    const themed = compiler.compile({ modules, native })
+    expect(themed === scaled).toMatchInlineSnapshot('false')
+
+    native.colorScheme = 'dark'
+    native.platform = 'android'
+    const changed = compiler.compile({ modules, native })
+    expect(changed === themed).toMatchInlineSnapshot('false')
+    expect(
+      changed.modules['card.ts']!.code.includes('"opacity":0.4'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      compiler.compile({ modules, native }) === changed,
+    ).toMatchInlineSnapshot('true')
+
+    delete (fonts as Partial<typeof fonts>).Example
+    expect(() => compiler.compile({ modules, native }))
+      .toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["selected","light","0","fontFamily"]: Provide an explicit fonts mapping for this family.
+      ["selected","dark","0","fontFamily"]: Provide an explicit fonts mapping for this family.]
+    `)
+  })
+
   test('unchanged snapshots reuse results within an isolated compiler', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules })

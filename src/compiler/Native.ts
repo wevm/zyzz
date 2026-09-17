@@ -1,6 +1,7 @@
 /** Rewrites shared static authoring to finite native table selection. @module */
 import MagicString from 'magic-string'
 import * as Source from './Source.js'
+import * as Themes from './internal/Themes.js'
 import * as StyleSheet from '../react-native/StyleSheet.js'
 import * as Syntax from './internal/Syntax.js'
 import * as Variants from '../react-native/Variants.js'
@@ -15,11 +16,14 @@ import * as Walker from 'oxc-walker'
  * @throws {StyleSheet.CompileError} For unsupported native declaration values.
  */
 export function compile(options: compile.Options): compile.ReturnType {
-  const extracted = Source.extract({
-    moduleId: options.moduleId,
-    source: options.source,
-    target: 'native',
-  })
+  const extracted =
+    options[Themes.context]?.extracted ??
+    Source.extract({
+      moduleId: options.moduleId,
+      source: options.source,
+      target: 'native',
+      [Themes.context]: options[Themes.context],
+    })
   if (
     extracted.contributions?.length ||
     extracted.variableCalls?.length ||
@@ -95,6 +99,47 @@ export function compile(options: compile.Options): compile.ReturnType {
   const compositions: string[] = []
   for (const statement of parsed.program.body) {
     if (
+      statement.type === 'ExportAllDeclaration' &&
+      statement.source.value === 'zyzz' &&
+      statement.exportKind !== 'type'
+    )
+      throw new CompileError(
+        'Native modules require named re-exports from zyzz.',
+      )
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.source?.value === 'zyzz' &&
+      statement.exportKind !== 'type'
+    ) {
+      const cx = statement.specifiers.filter(
+        (specifier) =>
+          specifier.exportKind !== 'type' &&
+          (specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value) === 'cx',
+      )
+      if (!cx.length) continue
+      let binding = `${helper}Compose`
+      while (names.has(binding)) binding += '_'
+      names.add(binding)
+      compositions.push(`const ${binding}=${helper}.compose;`)
+      const kept = statement.specifiers
+        .filter((specifier) => !cx.includes(specifier))
+        .map((specifier) =>
+          options.source.slice(specifier.start, specifier.end),
+        )
+      const exports = cx.map(
+        (specifier) =>
+          `${binding} as ${options.source.slice(specifier.exported.start, specifier.exported.end)}`,
+      )
+      module.overwrite(
+        statement.start,
+        statement.end,
+        `${kept.length ? `export {${kept.join(',')}} from 'zyzz';` : ''}export {${exports.join(',')}};`,
+      )
+      continue
+    }
+    if (
       statement.type !== 'ImportDeclaration' ||
       statement.source.value !== 'zyzz' ||
       statement.importKind === 'type'
@@ -164,8 +209,18 @@ export function compile(options: compile.Options): compile.ReturnType {
 
 /** Native source compilation contracts. */
 export declare namespace compile {
+  /** Failures during extraction, table compilation, or explicit context selection. */
+  type ErrorType =
+    | Source.ExtractError
+    | CompileError
+    | StyleSheet.CompileError
+    | StyleSheet.SelectionError
+    | Variants.CompileError
+
   /** Explicit source and native context, independent of device state. */
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
+    /** Compiler-owned graph context. */
+    readonly [Themes.context]?: Themes.Context | undefined
     /** Scheme compiled into this module's callables. Recompile to select another scheme. */
     readonly colorScheme: StyleSheet.ColorScheme
     /** Stable source identity, including the TypeScript or JavaScript extension. */

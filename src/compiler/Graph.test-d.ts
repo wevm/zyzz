@@ -4,9 +4,16 @@
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
-import type { Transform } from 'zyzz/compiler'
+import type { Native, Transform } from 'zyzz/compiler'
+import type { StyleSheet } from 'zyzz/react-native'
 
 describe('compile', () => {
+  test('includes native compilation and selection failures', () => {
+    expectTypeOf<Native.compile.ErrorType>().toExtend<Graph.compile.ErrorType>()
+    expectTypeOf<StyleSheet.CompileError>().toExtend<Graph.compile.ErrorType>()
+    expectTypeOf<StyleSheet.SelectionError>().toExtend<Graph.compile.ErrorType>()
+  })
+
   test('preserves graph outputs and validates inputs and contracts', () => {
     const result = Graph.compile({ modules: { 'pkg/theme.ts': '' } })
 
@@ -16,6 +23,19 @@ describe('compile', () => {
     expectTypeOf(result.dependencies).toEqualTypeOf<
       Readonly<Record<string, readonly string[]>>
     >()
+
+    Graph.compile({
+      modules: {},
+      native: { colorScheme: 'light', platform: 'ios' },
+    })
+    // @ts-expect-error Native compilation requires an explicit scheme.
+    Graph.compile({ modules: {}, native: {} })
+    const invalidPlatform = {
+      modules: {},
+      native: { colorScheme: 'dark', platform: 'browser' },
+    } as const
+    // @ts-expect-error Native platform names are bounded.
+    Graph.compile(invalidPlatform)
 
     // @ts-expect-error Module source must be text.
     Graph.compile({ modules: { 'pkg/theme.ts': 1 } })

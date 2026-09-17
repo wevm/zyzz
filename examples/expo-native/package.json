@@ -1,0 +1,28 @@
+{
+  "name": "@zyzz/example-expo-native",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "android": "pnpm generate && expo start --android",
+    "build": "pnpm generate && pnpm check:types && expo export --platform ios --platform android",
+    "check:types": "tsc --noEmit",
+    "dev": "pnpm generate && expo start",
+    "generate": "node generate.ts",
+    "ios": "pnpm generate && expo start --ios"
+  },
+  "config": {
+    "site": false
+  },
+  "dependencies": {
+    "expo": "57.0.23",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "zyzz": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.18",
+    "typescript": "6.0.3"
+  }
+}

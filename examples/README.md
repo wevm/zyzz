@@ -4,6 +4,7 @@ Framework playgrounds using the public Zyzz API. Start with [React + Vite](vite-
 
 | Example                    | Framework | Compilation                                            |
 | -------------------------- | --------- | ------------------------------------------------------ |
+| [expo-native](expo-native/README.md) | React Native / Expo | Ahead-of-time native compilation before Metro |
 | [vite-react](vite-react)   | React     | `zyzz()` Vite plugin                                   |
 | [vite-solid](vite-solid)   | Solid     | `zyzz()` Vite plugin                                   |
 | [vite-svelte](vite-svelte) | Svelte    | `zyzz()` Vite plugin                                   |

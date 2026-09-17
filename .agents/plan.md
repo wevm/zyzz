@@ -20,8 +20,8 @@ The web acceptance stack, typed target branches, and static native values are me
 
 ## Next work
 
-1. Review the dynamic native stack. The merged file-host package stack passes Main, Examples, and Benchmarks at `d74e142`. Local acceptance covers source-free CLI/native execution, browser styles, and dependency-watch recovery.
-2. Review the [three-PR native dynamic stack](#planned-native-pr-stack) and its hosted checks in dependency order. Explicit host binding selects prepared contexts. File-host output remains fixed per build. Metro integration remains outside the current adapters.
+1. The dynamic native stack is merged in #211, #212, and #214. The merged file-host package stack passes Main, Examples, and Benchmarks at `d74e142`. Local acceptance covers source-free CLI/native execution, browser styles, and dependency-watch recovery.
+2. Build independent native renderer evidence with the [Expo comparison app](../examples/expo-native/README.md). Expo SDK 57 uses React Native 0.86.3, separately from the pinned 0.87.0 inventory. Compilation runs before Metro. Automatic Metro compilation remains open.
 3. Execute independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
 4. Finish distribution, measurement, and documentation acceptance before release, including packed external assets and resolver dependency review.
 
@@ -72,7 +72,7 @@ Inventory coverage does not establish value-domain or renderer parity.
 
 The static scope of 3.8e and 3.8f is implemented and merged: variants, composition, source graphs, packed callables/namespaces, CLI/Vite consumers, installed package resolution, and dependency-watch recovery. The [native acceptance record](../docs/guides/native-acceptance.md) owns fixture mappings and local evidence. Hosted acceptance for this merged scope passes at `d74e142`, as recorded above.
 
-Dynamic host inputs are implemented in the draft stack below. Packed external assets and device rendering remain open.
+Dynamic host inputs are implemented in the merged stack below. Packed external assets and device rendering remain open.
 
 3.8d is implemented: [typed target branches](https://github.com/wevm/zyzz/pull/192) and [static native values](https://github.com/wevm/zyzz/pull/193), including transforms, matrices, colors, fonts, and shadows. The [static audit](../test/conformance/native/README.md) covers 157 properties across 421 component pairs, with [compiler](../src/react-native/StyleSheet.test.ts) and [type](../src/react-native/StyleSheet.test-d.ts) evidence. Host interoperability and device rendering remain 3.9 work.
 
@@ -87,7 +87,7 @@ Completion requirements:
 
 ### Planned native PR stack
 
-This stack addresses 3.9a in order: [#211](https://github.com/wevm/zyzz/pull/211) targets `main`, [#212](https://github.com/wevm/zyzz/pull/212) targets #211, and [#214](https://github.com/wevm/zyzz/pull/214) targets #212. All three are drafts. Hosted stack checks, device execution, and full parity remain separate acceptance gates.
+This stack addresses 3.9a in order: [#211](https://github.com/wevm/zyzz/pull/211) targets `main`, [#212](https://github.com/wevm/zyzz/pull/212) targets #211, and [#214](https://github.com/wevm/zyzz/pull/214) targets #212. All three are merged. Hosted stack checks, device execution, and full parity remain separate acceptance gates.
 
 The implemented boundary keeps portable callback payloads scalar. Host-owned animated/color objects enter through native `style` overrides and retain identity and types. Device APIs, subscriptions, and registration remain outside the pure compiler. The explicit adapter uses `Host.create()` from `zyzz/react-native`.
 

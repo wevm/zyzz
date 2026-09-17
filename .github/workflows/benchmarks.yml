@@ -5,12 +5,18 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Benchmark suite
+        type: choice
+        default: all
+        options: [all, native-compiler, native-ios, native-android]
 concurrency:
   cancel-in-progress: true
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.suite || 'all' }}
 jobs:
   checks:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all')
     name: Benchmark checks and Next.js comparisons
     runs-on: ubuntu-latest
     steps:
@@ -36,7 +42,7 @@ jobs:
           retention-days: 30
     timeout-minutes: 30
   compiler:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all')
     name: Compiler benchmarks
     env:
       BENCH_SIZE_THRESHOLD: '105'
@@ -204,7 +210,7 @@ jobs:
     timeout-minutes: 50
   benchmarks:
     name: Benchmarks
-    if: ${{ !cancelled() && github.event.action != 'closed' }}
+    if: ${{ !cancelled() && github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all') }}
     needs: [checks, compiler, renders, type-benches]
     runs-on: ubuntu-latest
     steps:
@@ -220,7 +226,7 @@ jobs:
           test "$COMPILER_RESULT" = success
           test "$RENDER_RESULT" = success
   renders:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all')
     name: React renders
     permissions:
       contents: read
@@ -298,7 +304,7 @@ jobs:
     timeout-minutes: 30
   report:
     name: Benchmark Report
-    if: ${{ !cancelled() && github.event.action != 'closed' }}
+    if: ${{ !cancelled() && github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all') }}
     needs: [compiler, renders]
     permissions:
       actions: read
@@ -337,7 +343,7 @@ jobs:
           path: reports/comment.md
     timeout-minutes: 5
   type-benches:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all')
     name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -361,7 +367,7 @@ jobs:
           cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
     timeout-minutes: 30
   native-compiler:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all' || inputs.suite == 'native-compiler')
     name: Native compiler benchmarks
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -397,7 +403,7 @@ jobs:
           retention-days: 30
 
   native-ios:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all' || inputs.suite == 'native-ios')
     name: Native iOS renders
     runs-on: macos-26
     timeout-minutes: 60
@@ -440,7 +446,7 @@ jobs:
           retention-days: 30
 
   native-android:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all' || inputs.suite == 'native-android')
     name: Native Android renders
     runs-on: ubuntu-latest
     timeout-minutes: 60

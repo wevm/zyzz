@@ -23,7 +23,6 @@ export function source(library: Library, workload: Case, edited = false) {
     library === 'zyzz'
       ? themed
         ? `import { Config } from 'zyzz';
-       import { Provider } from 'zyzz/react-native/react';
        const { style: themedStyle } = Config.create({defaultTheme:'base',themes:{base:{spacing:{cell:'2px'}},alternate:{spacing:{cell:'6px'}}}});`
         : `import { ${variants ? 'variants' : 'style'} } from 'zyzz';`
       : `import { StyleSheet } from '${library === 'unistyles' ? 'react-native-unistyles' : 'react-native'}';`
@@ -71,6 +70,7 @@ export function source(library: Library, workload: Case, edited = false) {
     return `styles.s${index}${dynamic ? '(active ? 24 : 12)' : ''}`
   })
   return `${header}
+    ${library === 'zyzz' ? "import { Provider } from 'zyzz/react-native/react';" : ''}
     import React from 'react';
     import { View } from 'react-native';
     ${declaration}
@@ -82,7 +82,7 @@ export function source(library: Library, workload: Case, edited = false) {
       throw new Error('Invalid native fixture index');
     }
     export function Scope({active,children}: {active:boolean;children:React.ReactNode}) {
-      return ${library === 'zyzz' && themed ? '<Provider theme={active ? "alternate" : "base"} colorScheme="light">{children}</Provider>' : '<>{children}</>'};
+      return ${library === 'zyzz' ? `<Provider ${themed ? 'theme={active ? "alternate" : "base"}' : ''} colorScheme="light">{children}</Provider>` : '<>{children}</>'};
     }
   `
 }

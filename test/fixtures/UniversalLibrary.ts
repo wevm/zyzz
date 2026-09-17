@@ -18,10 +18,8 @@ export async function create(root: string) {
   const exec = Util.promisify(ChildProcess.execFile)
   const installed = Path.join(root, 'node_modules/@acme/universal')
   const publisher = Path.join(root, 'publisher')
-  const runtime = Path.join(root, 'node_modules/zyzz')
 
   await Fs.mkdir(publisher, { recursive: true })
-  await Fs.mkdir(runtime, { recursive: true })
 
   const packedRuntime = await exec(
     'npm',
@@ -38,13 +36,6 @@ export async function create(root: string) {
   const runtimeArchive = (
     JSON.parse(packedRuntime.stdout) as { filename: string }[]
   )[0]!
-  await exec('tar', [
-    '-xf',
-    Path.join(root, runtimeArchive.filename),
-    '-C',
-    runtime,
-    '--strip-components=1',
-  ])
 
   await Fs.writeFile(
     Path.join(publisher, 'package.json'),
@@ -54,15 +45,27 @@ export async function create(root: string) {
       type: 'module',
       sideEffects: ['*.css'],
       files: ['web', 'native'],
+      dependencies: {
+        zyzz: `file:${Path.join(root, runtimeArchive.filename)}`,
+      },
       exports: {
         '.': { types: './web/index.d.ts', default: './web/index.js' },
         './native': {
           types: './native/index.d.ts',
           default: './native/index.js',
         },
+        './style.css': './web/style.css',
       },
     }),
   )
+
+  const installOptions = [
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund',
+    '--no-package-lock',
+  ]
+  await exec('npm', ['install', ...installOptions], { cwd: publisher })
 
   for (const target of ['web', 'native'] as const) {
     const output = Graph.compile({
@@ -125,14 +128,15 @@ export async function create(root: string) {
     { cwd: publisher },
   )
   const archive = (JSON.parse(pack.stdout) as { filename: string }[])[0]!
-  await Fs.mkdir(installed, { recursive: true })
-  await exec('tar', [
-    '-xf',
-    Path.join(publisher, archive.filename),
-    '-C',
-    installed,
-    '--strip-components=1',
-  ])
+  await Fs.writeFile(
+    Path.join(root, 'package.json'),
+    JSON.stringify({ private: true, type: 'module' }),
+  )
+  await exec(
+    'npm',
+    ['install', Path.join(publisher, archive.filename), ...installOptions],
+    { cwd: root },
+  )
 
   return { installed }
 }

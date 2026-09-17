@@ -11,6 +11,7 @@ import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Http from 'node:http'
+import * as Os from 'node:os'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Vm from 'node:vm'
@@ -25,7 +26,7 @@ const modules = Fixture.modules
 describe('compile', () => {
   test('executes one source-free package in browser and native consumers', async () => {
     const directory = await Fs.mkdtemp(
-      Path.join(root, '.fixture-universal-consumer-'),
+      Path.join(Os.tmpdir(), 'zyzz-universal-consumer-'),
     )
     try {
       const library = await Universal.create(directory)
@@ -52,10 +53,6 @@ describe('compile', () => {
       })
       const web = Graph.compile(inputs)
       await Fs.writeFile(
-        Path.join(directory, 'package.json'),
-        JSON.stringify({ type: 'module' }),
-      )
-      await Fs.writeFile(
         Path.join(directory, 'native.ts'),
         native.modules['app.ts']!.code,
       )
@@ -78,6 +75,19 @@ describe('compile', () => {
       ])
       expect(executed.stdout).toMatchInlineSnapshot(`
         "{"style":{"color":"#abcdef","fontSize":20,"opacity":0.8}}
+        "
+      `)
+      const published = await exec(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          `import {button} from '@acme/universal/native';console.log(JSON.stringify(button({size:'large',active:true})));`,
+        ],
+        { cwd: directory },
+      )
+      expect(published.stdout).toMatchInlineSnapshot(`
+        "{"style":{"color":"#123456","fontSize":20,"opacity":0.8}}
         "
       `)
       await Fs.writeFile(
@@ -106,7 +116,8 @@ button({className:'web'});`,
         const page = await browser.newPage({ colorScheme: 'dark' })
         const bundle = await Esbuild.build({
           stdin: {
-            contents: web.modules['app.ts']!.code,
+            contents: `import '@acme/universal/style.css';
+${web.modules['app.ts']!.code}`,
             loader: 'ts',
             resolveDir: directory,
           },
@@ -114,18 +125,18 @@ button({className:'web'});`,
           platform: 'browser',
           format: 'iife',
           globalName: 'Fixture',
+          outdir: Path.join(directory, 'browser'),
           write: false,
         })
-        const css = await Fs.readFile(
-          Path.join(library.installed, 'web/style.css'),
-          'utf8',
-        )
+        const css = bundle.outputFiles.find((file) =>
+          file.path.endsWith('.css'),
+        )!.text
         await page.setContent(
           `<style>:root{color-scheme:dark}${css}${web.modules['app.ts']!.css}</style><div id="button"></div><div id="control" style="color:#abcdef;font-size:20px;opacity:0.8"></div>`,
         )
         await page.addScriptTag({
           content:
-            bundle.outputFiles[0]!.text +
+            bundle.outputFiles.find((file) => file.path.endsWith('.js'))!.text +
             `;const element=document.querySelector('#button');for(const [key,value] of Object.entries(Fixture.props)){if(key==='style')Object.assign(element.style,value);else element.setAttribute(key==='className'?'class':key,String(value))}`,
         })
         const computed = await page.locator('#button').evaluate((element) => {

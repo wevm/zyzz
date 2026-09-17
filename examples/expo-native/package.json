@@ -4,12 +4,11 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "android": "pnpm generate && expo start --android",
-    "build": "pnpm generate && pnpm check:types && expo export --platform ios --platform android",
+    "android": "expo start --android",
+    "build": "pnpm check:types && expo export --platform ios --platform android",
     "check:types": "tsc --noEmit",
-    "dev": "pnpm generate && expo start",
-    "generate": "node generate.ts",
-    "ios": "pnpm generate && expo start --ios"
+    "dev": "expo start",
+    "ios": "expo start --ios"
   },
   "config": {
     "site": false

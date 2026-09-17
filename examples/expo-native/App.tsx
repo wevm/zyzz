@@ -9,11 +9,9 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import { styles as android } from './generated/android.js'
-import { styles as ios } from './generated/ios.js'
+import { styles } from './Styles.js'
 
-// These fixtures emit only View properties. Generated callables currently expose the broader native inventory type.
-const compiled = Platform.OS === 'ios' ? ios : android
+// Shared authoring types describe web props. Metro replaces these known View fixtures with native props.
 
 /** Renders paired samples with shared application inputs. */
 export default function App() {
@@ -49,10 +47,7 @@ export default function App() {
       </Text>
       <View style={ui.row}>
         <View style={ui.column}>
-          <View
-            testID="zyzz-static"
-            style={compiled.box().style as ViewStyle}
-          />
+          <View testID="zyzz-static" style={styles.box().style as ViewStyle} />
         </View>
         <View style={ui.column}>
           <View testID="native-static" style={control.box} />
@@ -65,7 +60,7 @@ export default function App() {
         <View style={ui.column}>
           <View
             testID="zyzz-variant"
-            style={compiled.card({ spacious: expanded }).style as ViewStyle}
+            style={styles.card({ spacious: expanded }).style as ViewStyle}
           >
             <Text style={ui.sample}>Sample</Text>
           </View>
@@ -86,7 +81,7 @@ export default function App() {
         <View style={ui.column}>
           <View
             testID="zyzz-payload"
-            style={compiled.meter({ width: `${width}px` }).style as ViewStyle}
+            style={styles.meter({ width: `${width}px` }).style as ViewStyle}
           />
         </View>
         <View style={ui.column}>

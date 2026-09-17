@@ -1,0 +1,177 @@
+/** Compiles local Zyzz authoring before Babel lowers TypeScript and JSX. @module */
+import type * as Babel from '@babel/core'
+import * as Path from 'node:path'
+import * as Trace from '@jridgewell/trace-mapping'
+import * as Native from '../compiler/Native.js'
+import * as Transform from '../compiler/Transform.js'
+
+/** Native compilation settings for one Babel transformation. */
+export type NativeOptions = {
+  /** Fixed scheme selected at build time. */
+  readonly colorScheme: 'dark' | 'light'
+  /** Portable source identity. Defaults to a native module-local identity. */
+  readonly moduleId?: string | undefined
+  /** Native destination selected by the bundler. */
+  readonly platform: 'android' | 'ios'
+  /** Native compiler selection. Omission preserves existing native configurations. */
+  readonly target?: 'native' | undefined
+  /** Conversion factors for authored lengths. */
+  readonly units?: Native.compile.Options['units']
+}
+
+/** Web compilation settings for one Babel transformation. */
+export type WebOptions = {
+  /** CSS representation. Defaults to the web compiler's atomic output. */
+  readonly cssOutput?: Transform.compile.Options['cssOutput']
+  /** Portable identity. Defaults to the filename relative to Babel's root. */
+  readonly moduleId?: string | undefined
+  /** Selects rewritten JavaScript and extracted CSS. */
+  readonly target: 'web'
+}
+
+/** Explicit web or native compiler selection. */
+export type Options = NativeOptions | WebOptions
+
+/** Stylesheet artifacts stored on Babel's result.metadata.zyzz for web transforms. */
+export type WebMetadata = {
+  /** Extracted CSS. The consuming build must deliver this stylesheet. */
+  readonly css: string
+  /** CSS source map with original authoring content. */
+  readonly cssMap: Transform.compile.ReturnType['cssMap']
+  /** Portable identity used for class names and stylesheet ownership. */
+  readonly moduleId: string
+}
+
+declare module '@babel/core' {
+  interface BabelFileMetadata {
+    /** Web stylesheet output owned by the consuming build. Absent on native and ordinary modules. */
+    zyzz?: WebMetadata | undefined
+  }
+}
+
+/** Rewrites direct Zyzz imports while preserving authored source locations. */
+export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
+  return {
+    name: 'zyzz',
+    pre(file) {
+      for (const node of file.ast.program.body) {
+        if (
+          node.type === 'ExportNamedDeclaration' &&
+          node.specifiers.every(
+            (specifier) =>
+              specifier.type === 'ExportSpecifier' &&
+              specifier.exportKind === 'type',
+          )
+        )
+          continue
+        if (
+          (node.type === 'ExportNamedDeclaration' ||
+            node.type === 'ExportAllDeclaration') &&
+          node.exportKind !== 'type' &&
+          node.source?.value === 'zyzz'
+        )
+          throw new Error(
+            'Zyzz Babel does not support re-exporting authoring helpers. Export compiled style definitions instead.',
+          )
+        if (node.type !== 'ImportDeclaration' || node.importKind === 'type')
+          continue
+        if (
+          node.source.value === 'zyzz/themes/default' ||
+          (node.source.value === 'zyzz' &&
+            node.specifiers.some(
+              (specifier) =>
+                specifier.type === 'ImportNamespaceSpecifier' ||
+                (specifier.type === 'ImportSpecifier' &&
+                  specifier.importKind !== 'type' &&
+                  (specifier.imported.type === 'Identifier'
+                    ? specifier.imported.name
+                    : specifier.imported.value) === 'Config'),
+            ))
+        )
+          throw new Error(
+            'Zyzz Babel currently supports literal style and variants definitions. Theme/config compilation requires the graph adapter.',
+          )
+      }
+      const authorsStyles = file.ast.program.body.some(
+        (node) =>
+          node.type === 'ImportDeclaration' &&
+          (node.source.value === 'zyzz' ||
+            node.source.value === 'zyzz/themes/default' ||
+            (options.target === 'web' && node.source.value === 'zyzz/web')),
+      )
+      if (!authorsStyles) return
+      const filename = file.opts.filename
+      if (!filename)
+        throw new Error('Zyzz Babel compilation requires a filename.')
+      const output = (() => {
+        if (options.target === 'web') {
+          const moduleId =
+            options.moduleId ??
+            Path.relative(
+              file.opts.root ?? file.opts.cwd ?? process.cwd(),
+              filename,
+            )
+              .split(Path.sep)
+              .join('/')
+          const output = Transform.compile({
+            cssOutput: options.cssOutput,
+            moduleId,
+            source: file.code,
+          })
+          const metadata: WebMetadata = {
+            css: output.css,
+            cssMap: output.cssMap,
+            moduleId,
+          }
+          Object.assign(file.metadata, { zyzz: metadata })
+          return output
+        }
+        if (options.target !== undefined && options.target !== 'native')
+          throw new Error('Zyzz Babel target must be web or native.')
+        if (options.platform !== 'ios' && options.platform !== 'android')
+          throw new Error(
+            'Zyzz Babel compilation requires an ios or android platform.',
+          )
+        if (options.colorScheme !== 'light' && options.colorScheme !== 'dark')
+          throw new Error(
+            'Zyzz Babel compilation requires an explicit light or dark scheme.',
+          )
+        return Native.compile({
+          ...options,
+          moduleId: options.moduleId ?? `babel/${Path.basename(filename)}`,
+          source: file.code,
+        })
+      })()
+      if (output.code === file.code) return
+
+      const parsed = api.parseSync(output.code, {
+        babelrc: false,
+        configFile: false,
+        filename,
+        parserOpts: file.opts.parserOpts,
+      })
+      if (!parsed) throw new Error('Babel did not parse the compiled module.')
+
+      const map = new Trace.TraceMap(output.map)
+      api.traverse(parsed, {
+        enter(path) {
+          const loc = path.node.loc
+          if (!loc) return
+          const start = Trace.originalPositionFor(map, loc.start)
+          const end = Trace.originalPositionFor(map, loc.end)
+          // Metro's function map requires locations for generated helpers as well as authored nodes.
+          if (start.line === null || end.line === null) {
+            loc.start = { ...loc.start, line: 1, column: 0 }
+            loc.end = { ...loc.end, line: 1, column: 0 }
+            return
+          }
+          loc.start = { ...loc.start, line: start.line, column: start.column }
+          loc.end = { ...loc.end, line: end.line, column: end.column }
+        },
+      })
+      file.path.replaceWith(parsed.program)
+      file.scope.crawl()
+    },
+    visitor: {},
+  }
+}

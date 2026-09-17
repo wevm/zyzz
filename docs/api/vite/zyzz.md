@@ -18,7 +18,7 @@ export default defineConfig({ plugins: [zyzz()] })
 
 ## Parameters
 
-Optional `compiler` and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
+Optional `compiler`, `native`, and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
 
 ## Browser Targets
 
@@ -61,3 +61,13 @@ Each script reads the localStorage entry named by its configuration's `storageKe
 ## Options
 
 `zyzz({ compiler?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+
+## Native Output
+
+```ts
+zyzz({ native: { colorScheme: 'dark', platform: 'ios' } })
+```
+
+`native` accepts the [graph compiler context](../compiler/Graph/compile.md) and captures it when the plugin is created. Native mode emits modules and maps without virtual CSS imports or initialization scripts. It skips browser CSS target configuration and requires source compilation. Restart the build to change native context.
+
+Vite still owns module resolution and bundling. This option does not provide a Metro adapter or device rendering. Web output remains the default.

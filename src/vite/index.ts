@@ -23,6 +23,20 @@ import * as Source from '../compiler/Source.js'
  * @returns A Vite 8 plugin with isolated state for each environment.
  */
 export function zyzz(options: zyzz.Options = {}): Plugin {
+  const native = options.native
+    ? Object.freeze({
+        ...options.native,
+        fonts:
+          options.native.fonts && Object.freeze({ ...options.native.fonts }),
+        themes:
+          options.native.themes && Object.freeze({ ...options.native.themes }),
+        units:
+          options.native.units && Object.freeze({ ...options.native.units }),
+      })
+    : undefined
+  if (native && options.compiler === false)
+    throw new Error('Native builds require source compilation.')
+
   const states = new WeakMap<Environment, Map<string, Entry>>()
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
@@ -626,11 +640,32 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     const result = entry.compiler.compile({
       compiler: options.compiler,
+      native,
       contracts,
       development: entry.environment.mode !== 'build',
       imports,
       modules,
     })
+
+    if (native) {
+      const output = result.modules[sourceId(entry.file)]!
+      entry.files = files
+      const map = Mapping.toEncodedMap(new Mapping.GenMapping())
+      return {
+        code: output.code,
+        contractIds: Object.keys(result.contracts),
+        css: '',
+        sharedCss: '',
+        cssMap: map,
+        sharedCssMap: map,
+        map: {
+          ...output.map,
+          sources: output.map.sources.map((source) =>
+            source === null ? null : Path.join(root, source.slice(4)),
+          ),
+        },
+      }
+    }
 
     // The graph publishes after the compile succeeds, so a broken edit keeps
     // scoping documents through the last good graph beside the kept catalogs.
@@ -1038,6 +1073,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     config: {
       order: 'post',
       handler(config) {
+        if (native) return
         // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
         return {
           build: {
@@ -1085,6 +1121,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     configResolved(config) {
       root = config.root
+      if (native) return
       const lightning = (config.css.lightningcss ??= {})
       lightning.include =
         (lightning.include ?? 0) & ~Lightning.Features.LightDark
@@ -1129,6 +1166,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     generateBundle: {
       order: 'post',
       handler(_, bundle) {
+        if (native) return
         for (const output of Object.values(bundle)) {
           if (output.type !== 'asset' || !output.fileName.endsWith('.css'))
             continue
@@ -1294,6 +1332,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         code,
       )
 
+      if (native) return { code: output.code, map: JSON.stringify(output.map) }
+
       // Keep the CSS dependency even when the current graph has no live rules.
       // Later edits can introduce styles without changing this import boundary.
       const parsed = Parser.parseSync('source.tsx', output.code, {
@@ -1359,7 +1399,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     transformIndexHtml: {
       order: 'post',
       async handler(html, context) {
-        if (options.script === false) return
+        if (native || options.script === false) return
 
         // Development compiles the whole project on request and keeps the
         // catalogs the document's scripts reach; a build scopes them to the
@@ -1422,6 +1462,8 @@ export declare namespace zyzz {
   type Options = {
     /** False retains authored calls and requires explicit identities where needed. */
     readonly compiler?: boolean | undefined
+    /** Native context captured at creation. Disables CSS delivery and initialization scripts. */
+    readonly native?: Graph.compile.Options['native']
     /**
      * Inline each configuration's `script()` at the start of index.html's head.
      * False skips injection for documents that inline the script themselves.

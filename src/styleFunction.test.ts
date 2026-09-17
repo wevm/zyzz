@@ -207,7 +207,7 @@ export const child = config.style({selectors:{[\`\${themed} > &, \${configured} 
       )
       expect(
         JSON.parse(publisher.contracts['barrel.ts']!).version,
-      ).toMatchInlineSnapshot(`17`)
+      ).toMatchInlineSnapshot(`21`)
     })
 
     test('rejects unresolved, called, forward, and unscoped references', () => {

@@ -12,6 +12,15 @@ const args = z.object({
   src: z.string().optional().describe('Source directory (default: src)'),
 })
 const options = z.object({
+  target: z
+    .enum(['web', 'native'])
+    .default('web')
+    .describe('Compilation target'),
+  platform: z.enum(['ios', 'android']).optional().describe('Native platform'),
+  'color-scheme': z
+    .enum(['light', 'dark'])
+    .optional()
+    .describe('Native color scheme'),
   'css-only': z
     .boolean()
     .default(false)
@@ -150,7 +159,23 @@ async function identity(): Promise<string> {
 async function open(context: open.Context) {
   const packageId = context.options['package-id'] ?? (await identity())
 
+  if (context.options.target === 'native') {
+    if (!context.options['color-scheme'])
+      throw new Error('Native builds require --color-scheme light or dark.')
+    if (context.options.script !== undefined)
+      throw new Error('Native builds do not emit an initialization script.')
+  } else if (context.options.platform || context.options['color-scheme'])
+    throw new Error('--platform and --color-scheme require --target native.')
+
   return Host.create({
+    ...(context.options.target === 'native'
+      ? {
+          native: {
+            colorScheme: context.options['color-scheme']!,
+            platform: context.options.platform,
+          },
+        }
+      : {}),
     compiler: !context.options['css-only'],
     css: { minify: context.options.minify },
     modules: !context.options['css-only'],

@@ -19,6 +19,9 @@ npx zyzz dev
 | Argument / Flag | Default                                           | Contract                                                                         |
 | --------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `[src]`         | `src`                                             | Authored JavaScript/TypeScript module tree                                       |
+| `--target` | `web` | Compile for `web` or `native` |
+| `--platform` | Unset | Native `ios` or `android`; required when authoring platform branches |
+| `--color-scheme` | Unset | Explicit `light` or `dark`; required for native output |
 | `--css-only`    | Off                                               | Disable source transformation; emit CSS, CSS maps, and the initialization script |
 | `--minify`      | Off                                               | Minify emitted CSS with Lightning CSS                                            |
 | `--out-dir`     | `dist`                                            | Owned output directory                                                           |
@@ -53,3 +56,12 @@ Missing source directories and compilation failures produce a nonzero build exit
 Output is excluded from source discovery. Cleanup only removes unchanged owned files; unrelated files remain. Each output directory has one active writer. Watching observes the source tree, not changes inside installed dependencies or outside that tree.
 
 See [CLI Setup](../introduction/cli.md) for the application/build boundary.
+
+## Native Output
+
+```sh
+npx zyzz build --target native --color-scheme dark --platform ios
+npx zyzz dev --target native --color-scheme light --platform android
+```
+
+Native builds emit modules, maps, and packed metadata without CSS or initialization scripts. `--css-only` and `--script` are incompatible with native output. Native context stays fixed for a watch session; restart to change platform or scheme. Use the file host API for theme catalogs, fonts, and unit configuration.

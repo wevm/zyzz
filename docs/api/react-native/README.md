@@ -16,3 +16,5 @@ Static recipes from `Source.extract` retain ordered alternatives for [`Variants.
 See the planned [universal styling contract](universal.md) and the version-pinned native conformance inventory.
 
 [Native.compile](../compiler/Native.md) emits callable native modules from local shared authoring.
+
+See [React integration](react.md) for automatic runtime theme and scheme selection with Metro.

@@ -11,7 +11,10 @@
     "noUncheckedSideEffectImports": true,
     "paths": {
       "zyzz": ["./src/index.ts"],
+      "zyzz/babel": ["./src/babel/index.ts"],
       "zyzz/compiler": ["./src/compiler/index.ts"],
+      "zyzz/metro": ["./src/metro/index.ts"],
+      "zyzz/metro/transformer": ["./src/metro/transformer.ts"],
       "zyzz/next": ["./src/next/index.ts"],
       "zyzz/next/loader": ["./src/next/loader.ts"],
       "zyzz/node": ["./src/node/index.ts"],
@@ -33,6 +36,7 @@
     "bench/results/**",
     "dist",
     "examples/*/dist",
+    "examples/expo-native",
     "examples/next-react",
     "examples/start-react",
     "node_modules",

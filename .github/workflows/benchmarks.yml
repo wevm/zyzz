@@ -15,6 +15,11 @@ on:
         type: choice
         default: all
         options: [all, '1000']
+      native-kind:
+        description: Native compiler workloads
+        type: choice
+        default: all
+        options: [all, unique]
       suite:
         description: Benchmark suite
         type: choice
@@ -423,7 +428,7 @@ jobs:
           pnpm build
           mkdir -p bench/results/native/baseline
           printf '%s\n' "$BASELINE_SHA" > bench/results/native/baseline/commit.txt
-          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --testNamePattern 'native (cold process )?${{ matrix.platform }} / [^/]+ / ${{ matrix.count }}\b' --outputJson bench/results/native/baseline/compile-timings.json 2>&1 | tee bench/results/native/baseline/compiler.log
+          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --testNamePattern 'native (cold process )?${{ matrix.platform }} / ${{ inputs.native-kind == 'unique' && 'unique' || '[^/]+' }} / ${{ matrix.count }}\b' --outputJson bench/results/native/baseline/compile-timings.json 2>&1 | tee bench/results/native/baseline/compiler.log
       - name: Restore candidate package
         if: inputs.baseline != ''
         run: pnpm build
@@ -439,9 +444,9 @@ jobs:
           free -b > bench/results/native/memory.txt
           cp bench/native/app/package.json bench/results/native/dependencies.json
           set -o pipefail
-          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --testNamePattern 'native (cold process )?${{ matrix.platform }} / [^/]+ / ${{ matrix.count }}\b' --outputJson bench/results/native/compile-timings.json 2>&1 | tee bench/results/native/compiler.log
+          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --testNamePattern 'native (cold process )?${{ matrix.platform }} / ${{ inputs.native-kind == 'unique' && 'unique' || '[^/]+' }} / ${{ matrix.count }}\b' --outputJson bench/results/native/compile-timings.json 2>&1 | tee bench/results/native/compiler.log
       - name: Publish native compiler summary
-        run: node bench/results/native/tools/CompileReport.mjs ${{ matrix.platform }} ${{ matrix.count }} >> "$GITHUB_STEP_SUMMARY"
+        run: node bench/results/native/tools/CompileReport.mjs ${{ matrix.platform }} ${{ matrix.count }} '${{ inputs.native-kind || 'all' }}' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

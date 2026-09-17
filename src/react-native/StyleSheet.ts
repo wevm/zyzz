@@ -208,35 +208,31 @@ export function compile<
         style.name,
       ])
     names.add(style.name)
-    if ((style.targets?.android || style.targets?.ios) && !options.platform)
-      fail(
-        'invalid_options',
-        'Platform branches require an explicit platform.',
-        [style.name, 'targets'],
-      )
-    if (style.rules?.length)
-      fail(
-        'unsupported_feature',
-        'Selectors, queries, and nested rules are not supported on native.',
-        [style.name],
-      )
+    for (const part of sequence(style)) {
+      if ((part.targets?.android || part.targets?.ios) && !options.platform)
+        fail(
+          'invalid_options',
+          'Platform branches require an explicit platform.',
+          [style.name, 'targets'],
+        )
 
-    const declared = new Set<string>()
-    for (const declaration of style.declarations) {
-      const path = [style.name, declaration.property]
-      if (!Object.hasOwn(properties, declaration.property))
-        fail(
-          'unsupported_feature',
-          'Property is outside the native subset.',
-          path,
-        )
-      if (declaration.important || declared.has(declaration.property))
-        fail(
-          'unsupported_feature',
-          'Importance and fallback declarations are not supported on native.',
-          path,
-        )
-      declared.add(declaration.property)
+      const declared = new Set<string>()
+      for (const declaration of part.declarations) {
+        const path = [style.name, declaration.property]
+        if (!Object.hasOwn(properties, declaration.property))
+          fail(
+            'unsupported_feature',
+            'Property is outside the native subset.',
+            path,
+          )
+        if (declaration.important || declared.has(declaration.property))
+          fail(
+            'unsupported_feature',
+            'Importance and fallback declarations are not supported on native.',
+            path,
+          )
+        declared.add(declaration.property)
+      }
     }
   }
 
@@ -285,115 +281,120 @@ export function compile<
       for (const style of options.styles.styles) {
         const output: Record<string, unknown> = {}
         let lineHeight: number | string | undefined
-        for (const declaration of style.declarations) {
-          const property = declaration.property as keyof typeof properties
-          const path = [label, scheme, style.name, property]
-          try {
-            const value = resolve(declaration.value, metadata, scheme, path)
-            if (property === 'lineHeight') {
-              lineHeight = value
-              continue
-            }
-            if (property === 'fontVariant') {
-              if (typeof value !== 'string')
-                fail(
-                  'unsupported_value',
-                  'Expected static font variants.',
-                  path,
-                )
-              try {
-                output.fontVariant = Values.parse({
-                  fontVariant:
-                    value === 'normal' ? [] : value.trim().split(/\s+/),
-                }).fontVariant
-              } catch {
-                fail(
-                  'unsupported_value',
-                  'Font variant keywords require an explicit native equivalent.',
-                  path,
-                )
+        for (const part of sequence(style)) {
+          for (const declaration of part.declarations) {
+            const property = declaration.property as keyof typeof properties
+            const path = [label, scheme, style.name, property]
+            try {
+              const value = resolve(declaration.value, metadata, scheme, path)
+              if (property === 'lineHeight') {
+                lineHeight = value
+                continue
               }
-              continue
+              if (property === 'fontVariant') {
+                if (typeof value !== 'string')
+                  fail(
+                    'unsupported_value',
+                    'Expected static font variants.',
+                    path,
+                  )
+                try {
+                  output.fontVariant = Values.parse({
+                    fontVariant:
+                      value === 'normal' ? [] : value.trim().split(/\s+/),
+                  }).fontVariant
+                } catch {
+                  fail(
+                    'unsupported_value',
+                    'Font variant keywords require an explicit native equivalent.',
+                    path,
+                  )
+                }
+                continue
+              }
+              if (property === 'textShadow') {
+                const entries = shadows(value, options, path, true)
+                if (entries.length > 1)
+                  fail(
+                    'unsupported_value',
+                    'Native text supports one shadow.',
+                    path,
+                  )
+                const shadow = entries[0]
+                output.textShadowColor = shadow?.color ?? 'transparent'
+                output.textShadowOffset = Object.freeze({
+                  width: shadow?.offsetX ?? 0,
+                  height: shadow?.offsetY ?? 0,
+                })
+                output.textShadowRadius = shadow?.blurRadius ?? 0
+                continue
+              }
+              if (property === 'boxShadow') {
+                output.boxShadow = shadows(value, options, path)
+                continue
+              }
+              if (property === 'transform') {
+                output.transform = transform(value, options, path)
+                continue
+              }
+              if (property === 'transformOrigin') {
+                output.transformOrigin = origin(value, options, path)
+                continue
+              }
+              const kind = properties[property]
+              const converted = convert(kind, value, options, path)
+              if (property === 'padding' || property === 'margin') {
+                const values =
+                  typeof value === 'string'
+                    ? value.trim().split(/\s+/)
+                    : [value]
+                const [top, right = top, bottom = top, left = right] =
+                  values.map((value) =>
+                    length(value, options, property === 'margin', path),
+                  )
+                output[`${property}Top`] = top!
+                output[`${property}Right`] = right!
+                output[`${property}Bottom`] = bottom!
+                output[`${property}Left`] = left!
+              } else if (
+                property === 'borderColor' ||
+                property === 'borderWidth'
+              ) {
+                for (const side of ['Top', 'Right', 'Bottom', 'Left'])
+                  output[
+                    `border${side}${property === 'borderColor' ? 'Color' : 'Width'}`
+                  ] = converted
+              } else if (property === 'borderRadius') {
+                for (const corner of [
+                  'TopLeft',
+                  'TopRight',
+                  'BottomRight',
+                  'BottomLeft',
+                ])
+                  output[`border${corner}Radius`] = converted
+              } else if (property === 'gap') {
+                output.columnGap = converted
+                output.rowGap = converted
+              } else output[property] = converted
+            } catch (error) {
+              if (!(error instanceof CompileError)) throw error
+              diagnostics.push(...error.diagnostics)
             }
-            if (property === 'textShadow') {
-              const entries = shadows(value, options, path, true)
-              if (entries.length > 1)
-                fail(
-                  'unsupported_value',
-                  'Native text supports one shadow.',
-                  path,
-                )
-              const shadow = entries[0]
-              output.textShadowColor = shadow?.color ?? 'transparent'
-              output.textShadowOffset = Object.freeze({
-                width: shadow?.offsetX ?? 0,
-                height: shadow?.offsetY ?? 0,
-              })
-              output.textShadowRadius = shadow?.blurRadius ?? 0
-              continue
-            }
-            if (property === 'boxShadow') {
-              output.boxShadow = shadows(value, options, path)
-              continue
-            }
-            if (property === 'transform') {
-              output.transform = transform(value, options, path)
-              continue
-            }
-            if (property === 'transformOrigin') {
-              output.transformOrigin = origin(value, options, path)
-              continue
-            }
-            const kind = properties[property]
-            const converted = convert(kind, value, options, path)
-            if (property === 'padding' || property === 'margin') {
-              const values =
-                typeof value === 'string' ? value.trim().split(/\s+/) : [value]
-              const [top, right = top, bottom = top, left = right] = values.map(
-                (value) => length(value, options, property === 'margin', path),
-              )
-              output[`${property}Top`] = top!
-              output[`${property}Right`] = right!
-              output[`${property}Bottom`] = bottom!
-              output[`${property}Left`] = left!
-            } else if (
-              property === 'borderColor' ||
-              property === 'borderWidth'
-            ) {
-              for (const side of ['Top', 'Right', 'Bottom', 'Left'])
-                output[
-                  `border${side}${property === 'borderColor' ? 'Color' : 'Width'}`
-                ] = converted
-            } else if (property === 'borderRadius') {
-              for (const corner of [
-                'TopLeft',
-                'TopRight',
-                'BottomRight',
-                'BottomLeft',
-              ])
-                output[`border${corner}Radius`] = converted
-            } else if (property === 'gap') {
-              output.columnGap = converted
-              output.rowGap = converted
-            } else output[property] = converted
-          } catch (error) {
-            if (!(error instanceof CompileError)) throw error
-            diagnostics.push(...error.diagnostics)
           }
-        }
-        for (const branch of ['native', options.platform] as const) {
-          if (!branch || !style.targets?.[branch]) continue
-          try {
-            const native = Values.parse(style.targets[branch])
-            Object.assign(output, native)
-            if (native.lineHeight !== undefined) lineHeight = undefined
-          } catch (error) {
-            if (error instanceof CompileError) throw error
-            diagnostics.push({
-              code: 'unsupported_value',
-              message: (error as Error).message,
-              path: [label, scheme, style.name, 'targets', branch],
-            })
+          for (const branch of ['native', options.platform] as const) {
+            if (!branch || !part.targets?.[branch]) continue
+            try {
+              const native = Values.parse(part.targets[branch])
+              Object.assign(output, native)
+              if (native.lineHeight !== undefined) lineHeight = undefined
+            } catch (error) {
+              if (error instanceof CompileError) throw error
+              diagnostics.push({
+                code: 'unsupported_value',
+                message: (error as Error).message,
+                path: [label, scheme, style.name, 'targets', branch],
+              })
+            }
           }
         }
         if (lineHeight !== undefined) {
@@ -1241,4 +1242,18 @@ function shadows(
       })
     }),
   )
+}
+
+function sequence(style: Style.NamedStyle): readonly Style.NamedStyle[] {
+  const parts = [style]
+  for (const rule of style.rules ?? []) {
+    if (rule.condition !== undefined)
+      fail(
+        'unsupported_feature',
+        'Selectors, queries, and nested rules are not supported on native.',
+        [style.name],
+      )
+    parts.push(...sequence(rule.style))
+  }
+  return parts
 }

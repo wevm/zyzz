@@ -175,6 +175,10 @@ pnpm exec vp test bench src/cx.bench.ts src/cx.bindings.bench.ts --run --no-file
 
 Delivery reports separate CSS, JavaScript, serialized attributes, class strings, and server-rendered markup. Client transfer sums CSS and JavaScript; hydrated transfer adds markup. Attribute, class, and helper-only diagnostics are never added to transfer totals.
 
+## Native Variants
+
+The colocated `src/react-native/Variants.bench.ts` measures 9 and 256 selections across two themes and both schemes, plus rejection at 512 selections. [Matched measurements](Native-variants.md) record timing, variance, output size, and the review-fix delta.
+
 ## Type Instantiations
 
 Colocated `src/**/*.bench-d.ts` fixtures measure instantiations contributed by public authoring, compiler, runtime, host, and Vite calls. Each fixture declares public values from type-only entrypoint imports, warms shared contracts in an exported `baseline` function, and snapshots each body inline. Attest type-checks the baseline once, then each body appended, and reports the difference. Bodies never execute.

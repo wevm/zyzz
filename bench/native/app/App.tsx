@@ -231,9 +231,22 @@ export default function App() {
                         : 12 + (kind === 'unique' ? index % 13 : 0)
                   const height = kind === 'theme' ? (active ? 12 : 4) : 4
                   const layout = event.nativeEvent.layout
+                  // Native layout rounds both edges to physical pixels relative to the root.
+                  const density = PixelRatio.get()
                   if (
-                    Math.abs(layout.width - width) > 0.1 ||
-                    Math.abs(layout.height - height) > 0.1
+                    (
+                      [
+                        [layout.width, width],
+                        [layout.height, height],
+                      ] as const
+                    ).some(([actual, expected]) => {
+                      const pixels = actual * density
+                      return (
+                        !Number.isFinite(pixels) ||
+                        pixels < Math.floor(expected * density) - 0.001 ||
+                        pixels > Math.ceil(expected * density) + 0.001
+                      )
+                    })
                   ) {
                     current.reject(
                       new Error(

@@ -30,7 +30,10 @@ export function compile(options: compile.Options): compile.ReturnType {
 /** Input and output of graph compilation. */
 export declare namespace compile {
   /** Errors raised while extracting or compiling a source graph. */
-  type ErrorType = Source.ExtractError | Transform.compile.ErrorType
+  type ErrorType =
+    | Native.compile.ErrorType
+    | Source.ExtractError
+    | Transform.compile.ErrorType
 
   /** Source modules available for relative import resolution. */
   type Options = {

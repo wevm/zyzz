@@ -22,6 +22,20 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test.each([`export * from 'zyzz';`, `export * as styling from 'zyzz';`])(
+    'rejects unbounded native re-exports: %s',
+    (source) => {
+      expect(() =>
+        Graph.compile({
+          modules: { 'barrel.ts': source },
+          native: { colorScheme: 'light' },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Native.CompileError: Native modules require named re-exports from zyzz.]`,
+      )
+    },
+  )
+
   test('rejects web-only authoring and disabled rewriting in native graphs', () => {
     expect(() =>
       Graph.compile({
@@ -44,19 +58,23 @@ describe('compile', () => {
     )
   })
 
-  test('executes native imports, re-exports and composition with configured tokens', async () => {
+  test.each([
+    `export {cx as merge, style as unused} from 'zyzz';`,
+    `import {cx} from 'zyzz';export {cx as merge};`,
+  ])('executes native barrel composition: %s', async (composition) => {
     const modules = {
       'theme.ts': `import {Config} from 'zyzz';export const {style,variants}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});`,
-      'barrel.ts': `export {style,variants} from './theme.js';`,
+      'barrel.ts': `export {style,variants} from './theme.js';${composition}`,
       'card.ts': `import {variants} from './barrel.js';export const card=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'}});`,
       'overlay.ts': `import {style} from './barrel.js';export const overlay=style({targets:{native:{opacity:0.5},ios:{opacity:0.7}}});`,
-      'index.ts': `import {cx} from 'zyzz';import {card} from './card.js';import {overlay} from './overlay.js';export {card} from './card.js';export const result=cx(card({size:'large'}),overlay());`,
+      'index.ts': `import {merge as cx} from './barrel.js';import {card} from './card.js';import {overlay} from './overlay.js';export {card} from './card.js';export const result=cx(card({size:'large'}),overlay());`,
     }
     const compiler = Graph.create()
     const native = { colorScheme: 'dark', platform: 'ios' } as const
     const result = compiler.compile({ modules, native })
     expect(result.dependencies['index.ts']).toMatchInlineSnapshot(`
       [
+        "barrel.ts",
         "card.ts",
         "overlay.ts",
       ]

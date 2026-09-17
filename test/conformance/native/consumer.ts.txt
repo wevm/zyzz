@@ -1,9 +1,10 @@
 /** Checks compiled tables against the published React Native component contracts. @module */
-import { Animated, DynamicColorIOS, PlatformColor } from 'react-native'
+import { Animated, Appearance, DynamicColorIOS, PlatformColor } from 'react-native'
 import type { ImageStyle, StyleProp, TextStyle, ViewStyle } from 'react-native'
+import { useSyncExternalStore } from 'react'
 import { Style } from 'zyzz'
 import { Native, type NativeDynamic } from 'zyzz/runtime'
-import { StyleSheet } from 'zyzz/react-native'
+import { Host, StyleSheet } from 'zyzz/react-native'
 import { values } from '../test/fixtures/native/StaticValues.js'
 
 const tables = StyleSheet.compile({
@@ -39,3 +40,27 @@ function dynamic(
   return result
 }
 void [animated, animatedImage, animatedView, colored, dynamic]
+
+const host = Host.create({
+  colorScheme: Appearance.getColorScheme() ?? 'light',
+  density: 2,
+  fontScale: 1,
+  highContrast: false,
+  platform: 'ios',
+  reducedMotion: false,
+  rtl: false,
+  theme: 'default',
+  watch(update) {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      update({ colorScheme: colorScheme ?? 'light' })
+    })
+    return () => subscription.remove()
+  },
+})
+const bound = host.bind(() => card)
+const boundProps: Animated.AnimatedProps<{ style: StyleProp<ViewStyle> }> = bound({ style: override })
+function useNativeContext() {
+  return useSyncExternalStore(host.subscribe, host.getSnapshot, host.getSnapshot)
+}
+void [boundProps, useNativeContext]
+host.dispose()

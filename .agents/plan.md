@@ -21,7 +21,7 @@ The web acceptance stack, typed target branches, and static native values are me
 ## Next work
 
 1. Review the dynamic native stack. The merged file-host package stack passes Main, Examples, and Benchmarks at `d74e142`. Local acceptance covers source-free CLI/native execution, browser styles, and dependency-watch recovery.
-2. Implement the [three-PR native dynamic stack](#planned-native-pr-stack) in dependency order. Scheme/platform selection currently remains fixed per file-host lifecycle. Metro integration remains outside the current adapters.
+2. Review the [three-PR native dynamic stack](#planned-native-pr-stack) and its hosted checks in dependency order. Explicit host binding selects prepared contexts. File-host output remains fixed per build. Metro integration remains outside the current adapters.
 3. Execute independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
 4. Finish distribution, measurement, and documentation acceptance before release, including packed external assets and resolver dependency review.
 
@@ -72,7 +72,7 @@ Inventory coverage does not establish value-domain or renderer parity.
 
 The static scope of 3.8e and 3.8f is implemented and merged: variants, composition, source graphs, packed callables/namespaces, CLI/Vite consumers, installed package resolution, and dependency-watch recovery. The [native acceptance record](../docs/guides/native-acceptance.md) owns fixture mappings and local evidence. Hosted acceptance for this merged scope passes at `d74e142`, as recorded above.
 
-Dynamic host inputs, packed external assets, and device rendering remain unimplemented or unverified.
+Dynamic host inputs are implemented in the draft stack below. Packed external assets and device rendering remain open.
 
 3.8d is implemented: [typed target branches](https://github.com/wevm/zyzz/pull/192) and [static native values](https://github.com/wevm/zyzz/pull/193), including transforms, matrices, colors, fonts, and shadows. The [static audit](../test/conformance/native/README.md) covers 157 properties across 421 component pairs, with [compiler](../src/react-native/StyleSheet.test.ts) and [type](../src/react-native/StyleSheet.test-d.ts) evidence. Host interoperability and device rendering remain 3.9 work.
 
@@ -87,9 +87,9 @@ Completion requirements:
 
 ### Planned native PR stack
 
-This stack addresses 3.9a in order: [#211](https://github.com/wevm/zyzz/pull/211) targets `main`, and [#212](https://github.com/wevm/zyzz/pull/212) targets #211. Both are drafts. PR 3 will target #212 after the host interface decision. Device execution and full parity remain open.
+This stack addresses 3.9a in order: [#211](https://github.com/wevm/zyzz/pull/211) targets `main`, [#212](https://github.com/wevm/zyzz/pull/212) targets #211, and [#214](https://github.com/wevm/zyzz/pull/214) targets #212. All three are drafts. Hosted stack checks, device execution, and full parity remain separate acceptance gates.
 
-The implemented boundary keeps portable callback payloads scalar. Host-owned animated/color objects enter through native `style` overrides and retain identity and types. Device APIs, subscriptions, and registration remain outside the pure compiler. The explicit host interface remains a design decision.
+The implemented boundary keeps portable callback payloads scalar. Host-owned animated/color objects enter through native `style` overrides and retain identity and types. Device APIs, subscriptions, and registration remain outside the pure compiler. The explicit adapter uses `Host.create()` from `zyzz/react-native`.
 
 #### PR 1: Dynamic native callbacks and variant payloads
 
@@ -109,11 +109,10 @@ Implemented through native `style` overrides in [#212](https://github.com/wevm/z
 
 #### PR 3: Explicit native host inputs and lifecycle
 
-> [!NOTE]
-> Not implemented. The proposed `NativeHost.create(...)` adapter would bind compiled definitions, update explicit host inputs, subscribe, and dispose, with platform fixed per host. Its public interface needs agreement before implementation.
+Implemented as [`Host.create()`](../docs/api/react-native/Host.md) in [#214](https://github.com/wevm/zyzz/pull/214) at `d133908`. Local lifecycle, prepared-callable switching, published-package execution/declarations, and pinned React Native adapter types pass. Actual device preference delivery and rendering remain unverified.
 
 - Supply theme, color scheme, platform/capabilities, density, font scaling, and accessibility inputs through an explicit native adapter. Define supported runtime updates separately from compile-time platform selection.
-- Cover updates, subscription cleanup, and isolation between host instances. Include device-dependent hairline widths and preprocessing interoperability, with explicit ownership and registration lifetime.
+- Cover atomic updates, subscription cleanup, queued events after disposal, and isolation between host instances. Derive hairlines from explicit density. Keep preprocessing instance-local and opt-in, with application-owned native registration lifetime.
 - Acceptance: verify theme/scheme changes, density/accessibility updates, disposal, and unchanged static behavior. Keep React Native imports and host side effects out of the root entrypoint. Update types, errors, examples, and compatibility limits with the implementation.
 
 Independent browser/iOS/Android renderer controls remain 3.9b. Packed external assets, Metro integration, and release measurements are outside this stack. The full native parity gate remains open until all applicable host and device evidence passes.

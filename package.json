@@ -124,6 +124,11 @@
       "types": "./dist/react-native/index.d.ts",
       "default": "./dist/react-native/index.js"
     },
+    "./react-native/react": {
+      "src": "./src/react-native/react.ts",
+      "types": "./dist/react-native/react.d.ts",
+      "default": "./dist/react-native/react.js"
+    },
     "./reset.css": {
       "src": "./src/reset.css",
       "default": "./dist/reset.css"
@@ -164,6 +169,7 @@
   "peerDependencies": {
     "@babel/core": "^7.29.7",
     "next": "^16.3.5",
+    "react": "^19.0.0",
     "vite": "^8.0.0"
   },
   "peerDependenciesMeta": {
@@ -171,6 +177,9 @@
       "optional": true
     },
     "next": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     },
     "vite": {

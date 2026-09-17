@@ -2,21 +2,79 @@
 import { useState } from 'react'
 import {
   Platform,
+  Button,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   View,
+  useColorScheme,
   type ViewStyle,
 } from 'react-native'
+import { Provider } from 'zyzz/react-native/react'
 import { styles } from './Styles.js'
 
 // Shared authoring types describe web props. Metro replaces these known View fixtures with native props.
 
 /** Renders paired samples with shared application inputs. */
 export default function App() {
+  const appearance = useColorScheme()
+  const system = appearance === 'dark' ? 'dark' : 'light'
+  const [scheme, setScheme] = useState<'system' | 'light' | 'dark'>('system')
+  const [theme, setTheme] = useState<'blue' | 'green'>('blue')
+  const resolved = scheme === 'system' ? system : scheme
+  return (
+    <Provider colorScheme={resolved} theme={theme}>
+      <Samples
+        scheme={scheme}
+        colorScheme={resolved}
+        theme={theme}
+        onScheme={() =>
+          setScheme(
+            scheme === 'system'
+              ? 'light'
+              : scheme === 'light'
+                ? 'dark'
+                : 'system',
+          )
+        }
+        onTheme={() => setTheme(theme === 'blue' ? 'green' : 'blue')}
+      />
+    </Provider>
+  )
+}
+
+function Samples({
+  scheme,
+  colorScheme,
+  theme,
+  onScheme,
+  onTheme,
+}: {
+  scheme: string
+  colorScheme: 'light' | 'dark'
+  theme: 'blue' | 'green'
+  onScheme: () => void
+  onTheme: () => void
+}) {
   const [expanded, setExpanded] = useState(false)
   const width = expanded ? 120 : 60
+  const accent =
+    theme === 'blue'
+      ? colorScheme === 'light'
+        ? '#2563eb'
+        : '#93c5fd'
+      : colorScheme === 'light'
+        ? '#15803d'
+        : '#86efac'
+  const surface =
+    theme === 'blue'
+      ? colorScheme === 'light'
+        ? '#dbeafe'
+        : '#1e3a8a'
+      : colorScheme === 'light'
+        ? '#dcfce7'
+        : '#14532d'
 
   return (
     <ScrollView contentContainerStyle={ui.page}>
@@ -30,6 +88,8 @@ export default function App() {
         Each row pairs compiled Zyzz output with an independent native control.
         Matching samples are visual checks, not recorded conformance results.
       </Text>
+      <Button title={`Scheme: ${scheme} (${colorScheme})`} onPress={onScheme} />
+      <Button title={`Theme: ${theme}`} onPress={onTheme} />
       <View style={ui.toggle}>
         <Text style={ui.label}>Larger variant and payload</Text>
         <Switch
@@ -50,7 +110,10 @@ export default function App() {
           <View testID="zyzz-static" style={styles.box().style as ViewStyle} />
         </View>
         <View style={ui.column}>
-          <View testID="native-static" style={control.box} />
+          <View
+            testID="native-static"
+            style={[control.box, { backgroundColor: accent }]}
+          />
         </View>
       </View>
       <Text accessibilityRole="header" style={ui.label}>
@@ -68,7 +131,10 @@ export default function App() {
         <View style={ui.column}>
           <View
             testID="native-variant"
-            style={[control.card, { padding: expanded ? 20 : 8 }]}
+            style={[
+              control.card,
+              { backgroundColor: surface, padding: expanded ? 20 : 8 },
+            ]}
           >
             <Text style={ui.sample}>Sample</Text>
           </View>
@@ -85,7 +151,10 @@ export default function App() {
           />
         </View>
         <View style={ui.column}>
-          <View testID="native-payload" style={[control.meter, { width }]} />
+          <View
+            testID="native-payload"
+            style={[control.meter, { width, backgroundColor: accent }]}
+          />
         </View>
       </View>
     </ScrollView>

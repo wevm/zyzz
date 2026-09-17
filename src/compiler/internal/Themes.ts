@@ -1685,6 +1685,51 @@ export function collect(program: Ast.Program, options: collect.Options) {
     }
 
   return {
+    nativeContext(start: number, end: number) {
+      const theme = styles.get(start)?.theme
+      const contract =
+        theme?.[Token.definition].contract ??
+        [...tokens].find(([offset]) => offset >= start && offset < end)?.[1]
+          .reference.contract
+      if (!contract) return undefined
+      const config = [...configs.values()].find(
+        (value) => value.definition[Token.definition].contract === contract,
+      )
+      if (!config?.call.options?.themes) {
+        const alias = [...aliasNames.values()].find(
+          (value) =>
+            themes[value.name]?.[Token.definition].contract === contract &&
+            value.options?.themes,
+        )
+        if (!alias?.options?.themes) return undefined
+        return {
+          defaultTheme: String(alias.options.defaultTheme),
+          themes: Object.fromEntries(
+            Object.entries(
+              alias.options.themes as Record<
+                string,
+                Parameters<typeof Theme.define>[0]
+              >,
+            ).map(([name, values]) => [
+              name,
+              Token.bind(Theme.define(values), contract),
+            ]),
+          ),
+        }
+      }
+      const entries = Object.entries(config.members ?? {}).flatMap(
+        ([key, value]) => {
+          const path = JSON.parse(key) as string[]
+          return path[0] === 'themes' && path.length === 2
+            ? [[path[1]!, value.definition] as const]
+            : []
+        },
+      )
+      return {
+        defaultTheme: String(config.call.options.defaultTheme),
+        themes: Object.fromEntries(entries),
+      }
+    },
     aliases,
     appearances,
     calls,

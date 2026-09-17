@@ -43,6 +43,15 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Resolved native alternatives for this authoring contract. */
+  readonly nativeContext?:
+    | {
+        /** Default label selected when the provider omits its theme. */
+        readonly defaultTheme: string
+        /** Compatible alternatives from the owning configuration. */
+        readonly themes: Readonly<Record<string, Theme.Definition>>
+      }
+    | undefined
   /** Class identity available without source rewriting. */
   readonly portable?: string | undefined
   /** Flattened definition identities for nested compositions. */
@@ -1396,7 +1405,15 @@ export function extract(options: extract.Options): extract.ReturnType {
     calls: Object.freeze(
       calls
         .sort((a, b) => a.start - b.start)
-        .map((call) => Object.freeze(call)),
+        .map((call) => {
+          const nativeContext =
+            options.target === 'native'
+              ? themes?.nativeContext(call.start, call.end)
+              : undefined
+          return Object.freeze(
+            nativeContext ? { ...call, nativeContext } : call,
+          )
+        }),
     ),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
     ...(variables.calls.length

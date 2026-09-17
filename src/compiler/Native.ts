@@ -32,8 +32,8 @@ export function compile(options: compile.Options): compile.ReturnType {
     extracted.variableCalls?.length ||
     extracted.themeReferences.length ||
     extracted.themeSelections?.length ||
-    extracted.themeAppearances?.length ||
-    extracted.themeScripts?.length
+    (!options.contextual &&
+      (extracted.themeAppearances?.length || extracted.themeScripts?.length))
   )
     throw new CompileError(
       'Native static modules do not support CSS contributions, variables, or web theme controls.',
@@ -46,7 +46,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     },
   })
   let helper = '__zyzzNative'
-  while (names.has(helper)) helper += '_'
+  while (
+    [helper, `${helper}Context`, `${helper}Dynamic`].some((name) =>
+      names.has(name),
+    )
+  )
+    helper += '_'
   let dynamicHelper = `${helper}Dynamic`
   while (names.has(dynamicHelper)) dynamicHelper += '_'
   const module = new MagicString(options.source)
@@ -81,13 +86,32 @@ export function compile(options: compile.Options): compile.ReturnType {
   function callable(
     recipe: Recipe.Definition,
     name: string,
-    call?: Pick<Source.Call, 'slots' | 'recipe' | 'valuesType' | 'recipeTypes'>,
+    call?: Pick<
+      Source.Call,
+      'slots' | 'recipe' | 'valuesType' | 'recipeTypes' | 'nativeContext'
+    >,
+    contextOptions = options,
   ): string {
+    if (contextOptions.contextual) {
+      const themes = call?.nativeContext?.themes ?? contextOptions.themes
+      const defaultTheme =
+        call?.nativeContext?.defaultTheme ?? contextOptions.theme ?? 'default'
+      const alternatives = (themes ? Object.keys(themes) : ['default']).map(
+        (theme) => {
+          const schemes = (['light', 'dark'] as const).map(
+            (colorScheme) =>
+              `${JSON.stringify(colorScheme)}:${callable(recipe, name, call, { ...contextOptions, contextual: false, themes, theme, colorScheme })}`,
+          )
+          return `${JSON.stringify(theme)}:{${schemes.join(',')}}`
+        },
+      )
+      return `${helper}Context.create({${alternatives.join(',')}},${JSON.stringify(defaultTheme)})`
+    }
     if (call?.slots || call?.recipe?.payloads?.length) {
       dynamic = true
       const compiled = (() => {
         try {
-          return NativeBindings.compile(recipe, call, options)
+          return NativeBindings.compile(recipe, call, contextOptions)
         } catch (error) {
           if (error instanceof StyleSheet.CompileError) throw error
           throw new CompileError((error as Error).message)
@@ -115,15 +139,15 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
     const compiled = Variants.compile({
       recipe,
-      fonts: options.fonts,
-      platform: options.platform,
-      themes: options.themes,
-      units: options.units,
+      fonts: contextOptions.fonts,
+      platform: contextOptions.platform,
+      themes: contextOptions.themes,
+      units: contextOptions.units,
     })
     recipes[name] = compiled
     const styles = StyleSheet.select(compiled.styles, {
-      theme: options.theme ?? 'default',
-      colorScheme: options.colorScheme,
+      theme: contextOptions.theme ?? 'default',
+      colorScheme: contextOptions.colorScheme,
     })
     const value = `${helper}.create(${JSON.stringify({ axes: compiled.axes, defaults: compiled.defaults, styles })})`
     const axes = Object.entries(compiled.axes)
@@ -469,7 +493,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}} from 'zyzz/runtime';\n${[...compositions, ...packed].join('\n')}\n`,
+      `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}} from 'zyzz/runtime';\n${[...compositions, ...packed].join('\n')}\n`,
     )
   }
   return {
@@ -499,6 +523,8 @@ export declare namespace compile {
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
     /** Compiler-owned graph context. */
     readonly [Themes.context]?: Themes.Context | undefined
+    /** Retain every theme and scheme for render-local selection. */
+    readonly contextual?: boolean | undefined
     /** Scheme compiled into this module's callables. Recompile to select another scheme. */
     readonly colorScheme: StyleSheet.ColorScheme
     /** Stable source identity, including the TypeScript or JavaScript extension. */

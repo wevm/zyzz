@@ -2,13 +2,19 @@
 import type * as Babel from '@babel/core'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
+import * as Graph from '../compiler/Graph.js'
 import * as Native from '../compiler/Native.js'
+import * as NativeJsx from './NativeJsx.js'
 import * as Transform from '../compiler/Transform.js'
 
 /** Native compilation settings for one Babel transformation. */
 export type NativeOptions = {
-  /** Fixed scheme selected at build time. */
-  readonly colorScheme: 'dark' | 'light'
+  /** Fixed build-time scheme. Omit for runtime selection through React. */
+  readonly colorScheme?: 'dark' | 'light' | undefined
+  /** Closed source graph supplied by the bundler for imported authoring. */
+  readonly modules?: Readonly<Record<string, string>> | undefined
+  /** Host-resolved graph imports. */
+  readonly imports?: Graph.compile.Options['imports']
   /** Portable source identity. Defaults to a native module-local identity. */
   readonly moduleId?: string | undefined
   /** Native destination selected by the bundler. */
@@ -54,7 +60,18 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
   return {
     name: 'zyzz',
     pre(file) {
+      const contextual =
+        options.target !== 'web' && options.colorScheme === undefined
       for (const node of file.ast.program.body) {
+        if (
+          node.type === 'ImportDeclaration' &&
+          node.importKind !== 'type' &&
+          node.source.value === 'zyzz/themes/default'
+        )
+          throw new Error(
+            'Zyzz Babel requires local theme authoring; bundled themes require package graph support.',
+          )
+        if (contextual) continue
         if (
           node.type === 'ExportNamedDeclaration' &&
           node.specifiers.every(
@@ -99,7 +116,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
             node.source.value === 'zyzz/themes/default' ||
             (options.target === 'web' && node.source.value === 'zyzz/web')),
       )
-      if (!authorsStyles) return
+      if (!authorsStyles && !contextual) return
       const filename = file.opts.filename
       if (!filename)
         throw new Error('Zyzz Babel compilation requires a filename.')
@@ -132,17 +149,44 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
           throw new Error(
             'Zyzz Babel compilation requires an ios or android platform.',
           )
-        if (options.colorScheme !== 'light' && options.colorScheme !== 'dark')
+        if (
+          !contextual &&
+          options.colorScheme !== 'light' &&
+          options.colorScheme !== 'dark'
+        )
           throw new Error(
             'Zyzz Babel compilation requires an explicit light or dark scheme.',
           )
+        if (options.modules) {
+          const moduleId = options.moduleId
+          if (!moduleId || !Object.hasOwn(options.modules, moduleId))
+            throw new Error(
+              'Native Babel graph compilation requires a moduleId present in modules.',
+            )
+          return Graph.compile({
+            modules: { ...options.modules, [moduleId]: file.code },
+            imports: options.imports,
+            native: {
+              platform: options.platform,
+              units: options.units,
+              colorScheme: options.colorScheme ?? 'light',
+              contextual,
+            },
+          }).modules[moduleId]!
+        }
         return Native.compile({
-          ...options,
+          platform: options.platform,
+          units: options.units,
+          colorScheme: options.colorScheme ?? 'light',
+          contextual,
           moduleId: options.moduleId ?? `babel/${Path.basename(filename)}`,
           source: file.code,
         })
       })()
-      if (output.code === file.code) return
+      if (output.code === file.code) {
+        if (contextual) NativeJsx.transform(api, file)
+        return
+      }
 
       const parsed = api.parseSync(output.code, {
         babelrc: false,
@@ -171,6 +215,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
       })
       file.path.replaceWith(parsed.program)
       file.scope.crawl()
+      if (contextual) NativeJsx.transform(api, file)
     },
     visitor: {},
   }

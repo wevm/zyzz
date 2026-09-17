@@ -4,6 +4,7 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
+import * as Graph from './Graph.js'
 import { type NativeOptions, zyzz } from '../babel/index.js'
 
 /** Babel transformer inputs passed through without removing upstream fields. */
@@ -22,7 +23,10 @@ type Upstream = {
 /** Creates a transformer with isolated options and the existing upstream implementation. */
 export function create(
   upstreamPath: string,
-  options: Omit<NativeOptions, 'platform' | 'target' | 'moduleId'>,
+  options: Omit<
+    NativeOptions,
+    'platform' | 'target' | 'moduleId' | 'modules' | 'imports' | 'colorScheme'
+  > & { readonly root: string },
 ) {
   const upstream: Upstream = Module.createRequire(import.meta.url)(upstreamPath)
   return {
@@ -30,6 +34,24 @@ export function create(
       const hash = Crypto.createHash('sha256')
       hash.update(upstream.getCacheKey?.(...args) ?? '')
       hash.update(JSON.stringify(options))
+      function sources(directory: string) {
+        for (const entry of Fs.readdirSync(directory, {
+          withFileTypes: true,
+        }).sort((a, b) => a.name.localeCompare(b.name))) {
+          if (
+            entry.name.startsWith('.') ||
+            ['node_modules', 'dist'].includes(entry.name)
+          )
+            continue
+          const path = Path.join(directory, entry.name)
+          if (entry.isDirectory()) sources(path)
+          else if (entry.isFile() && /\.[cm]?[jt]sx?$/.test(entry.name)) {
+            hash.update(path)
+            hash.update(Fs.readFileSync(path))
+          }
+        }
+      }
+      sources(options.root)
       // Metro only hashes the generated entrypoint. Include the library implementation it delegates to.
       const root = Path.resolve(import.meta.dirname, '..')
       for (const name of Fs.readdirSync(root, { recursive: true })
@@ -44,15 +66,26 @@ export function create(
     },
     transform(input: Input) {
       const platform = input.options.platform
+      const filename = Path.resolve(options.root, input.filename)
       if (
         (platform !== 'ios' && platform !== 'android') ||
-        input.filename.split(/[\\/]/).includes('node_modules')
+        !/\.[cm]?[jt]sx?$/.test(input.filename) ||
+        input.filename.split(/[\\/]/).includes('node_modules') ||
+        Path.relative(options.root, filename).startsWith(`..${Path.sep}`)
       )
         return upstream.transform(input)
       return upstream.transform({
         ...input,
         plugins: [
-          [zyzz, { ...options, platform, target: 'native' }],
+          [
+            zyzz,
+            {
+              ...options,
+              platform,
+              target: 'native',
+              ...Graph.read(filename, input.src, platform, options.root),
+            },
+          ],
           ...(input.plugins ?? []),
         ],
       })

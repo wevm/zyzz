@@ -13,7 +13,7 @@ describe('zyzz', () => {
           minifierPath: '/minifier',
         },
       },
-      { colorScheme: 'light', units: { px: 1 } },
+      { units: { px: 1 } },
     )
 
     expectTypeOf(config.serializer.custom).toEqualTypeOf<true>()
@@ -22,7 +22,7 @@ describe('zyzz', () => {
       config.transformer.babelTransformerPath,
     ).toEqualTypeOf<string>()
 
-    // @ts-expect-error Native compilation requires a resolved scheme.
+    // @ts-expect-error Appearance is selected by the React provider.
     zyzz({}, { colorScheme: 'system' })
   })
 })

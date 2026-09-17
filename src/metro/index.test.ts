@@ -39,14 +39,17 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'metro.config.ts'),
-        `import { getDefaultConfig } from 'expo/metro-config.js'; import { zyzz } from 'zyzz/metro'; export default zyzz(getDefaultConfig(import.meta.dirname), { colorScheme: 'light', units: { px: 1 } });`,
+        `import { getDefaultConfig } from 'expo/metro-config.js'; import { zyzz } from 'zyzz/metro'; export default zyzz(getDefaultConfig(import.meta.dirname), { units: { px: 1 } });`,
       )
       await Fs.writeFile(
         Path.join(root, 'index.ts'),
         `import { box } from './Style'; console.log(box());`,
       )
       const source = (width: number) =>
-        `import { style } from 'zyzz'; export const box = style({ width: '${width}px', targets: { ios: { opacity: 0.123 }, android: { opacity: 0.456 } } });`
+        `import { style } from './Theme'; export const box = style({ color: 'ink', width: '${width}px', targets: { ios: { opacity: 0.123 }, android: { opacity: 0.456 } } });`
+      const theme = (color: string) =>
+        `import {Config} from 'zyzz'; export const {style} = Config.create({themes:{base:{color:{ink:{light:'${color}',dark:'#abcdef'}}},alternate:{color:{ink:{light:'#123abc',dark:'#456def'}}}},defaultTheme:'base'});`
+      await Fs.writeFile(Path.join(root, 'Theme.ts'), theme('#112233'))
       await Fs.writeFile(Path.join(root, 'Style.ts'), source(123))
 
       const socket = Net.createServer()
@@ -136,6 +139,15 @@ describe('zyzz', () => {
         `true`,
       )
 
+      expect(ios.text.includes('#112233')).toBe(true)
+      expect(ios.text.includes('#456def')).toBe(true)
+      await Fs.writeFile(Path.join(root, 'Theme.ts'), theme('#332211'))
+      const themed = await bundle('ios', (result) =>
+        result.text.includes('"color": "#332211"'),
+      )
+      expect(themed.ok).toBe(true)
+      expect(themed.text.includes('"color": "#332211"')).toBe(true)
+      expect(themed.text.includes('"color": "#112233"')).toBe(false)
       await Fs.writeFile(Path.join(root, 'Style.ts'), source(321))
       const changed = await bundle('ios', (result) =>
         result.text.includes('"width": 321'),
@@ -173,7 +185,7 @@ describe('zyzz', () => {
       await new Promise<void>((resolve) => child!.once('exit', () => resolve()))
       await Fs.writeFile(
         Path.join(root, 'metro.config.ts'),
-        `import { getDefaultConfig } from 'expo/metro-config.js'; import { zyzz } from 'zyzz/metro'; export default zyzz(getDefaultConfig(import.meta.dirname), { colorScheme: 'light', units: { px: 2 } });`,
+        `import { getDefaultConfig } from 'expo/metro-config.js'; import { zyzz } from 'zyzz/metro'; export default zyzz(getDefaultConfig(import.meta.dirname), { units: { px: 2 } });`,
       )
       child = await start()
       const reconfigured = await bundle('ios')

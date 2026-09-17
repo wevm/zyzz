@@ -35,7 +35,6 @@ const result = transformSync(source, {
       zyzz,
       {
         target: 'native',
-        colorScheme: 'light',
         platform: 'ios',
         units: { px: 1 },
       },
@@ -45,12 +44,12 @@ const result = transformSync(source, {
 })
 ```
 
-Native output contains executable style tables and bindings, without CSS metadata. `platform` requires `ios` or `android`. `colorScheme` requires `light` or `dark`. `units` supplies optional length conversion factors. Omitting `target` preserves existing native configurations.
+Native output contains executable style tables and bindings, without CSS metadata. `platform` requires `ios` or `android`. `colorScheme` is omitted for runtime selection through the [React provider](../react-native/react.md). An explicit `light` or `dark` retains the standalone fixed-context compilation mode. `units` supplies optional length conversion factors. Omitting `target` preserves existing native configurations.
 
 Use [`zyzz/metro`](../metro/README.md) with Expo for automatic platform selection, transformer chaining, and cache keys. Metro explicitly selects native compilation for iOS/Android. Web compilation through Babel does not add CSS delivery to the Metro adapter.
 
 ## Limits
 
-A filename is required for authoring modules. Ordinary modules pass through. Unsupported target semantics fail during compilation. Theme/config imports and authoring-helper re-exports remain unsupported because they require graph evaluation. Web support retains this literal, per-module boundary.
+A filename is required for authoring modules. Ordinary modules pass through. Unsupported target semantics fail during compilation. Web and fixed-context native compilation retain the literal, per-module boundary. Runtime native compilation accepts a closed `modules` graph and optional host-resolved `imports`; Metro supplies these automatically for local imported themes and helpers.
 
 Public types include `Options`, its `WebOptions` and `NativeOptions` branches, and `WebMetadata`. Babel's metadata declaration is extended with optional `zyzz` stylesheet output.

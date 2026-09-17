@@ -23,6 +23,9 @@ export * as Html from './Html.js'
 /** Static native selection and ordinary style-prop composition. */
 export * as Native from './Native.js'
 
+/** Render-local selection of compiled native alternatives. */
+export * as NativeContext from './NativeContext.js'
+
 /** Ordered native scalar bindings for generated dynamic callables. */
 export * as NativeDynamic from './NativeDynamic.js'
 

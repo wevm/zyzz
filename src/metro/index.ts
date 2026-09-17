@@ -4,9 +4,12 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
+import * as Watch from './Watch.js'
 
 /** Minimum Metro configuration consumed by the adapter. */
 export type Config = {
+  /** Existing development middleware settings. */
+  readonly server?: object | undefined
   /** Application root used for the adapter cache. */
   readonly projectRoot?: string | undefined
   /** Existing transformer configuration, including Expo's Babel transformer. */
@@ -24,20 +27,25 @@ export type Config = {
  */
 export function zyzz<const config extends Config>(
   config: config,
-  options: Omit<NativeOptions, 'platform' | 'target' | 'moduleId'>,
+  options: Omit<
+    NativeOptions,
+    'platform' | 'target' | 'moduleId' | 'modules' | 'imports' | 'colorScheme'
+  > = {},
 ): zyzz.ReturnType<config> {
+  if (Object.hasOwn(options, 'colorScheme'))
+    throw new Error(
+      'Select colorScheme through the React provider, not Metro configuration.',
+    )
   const root = Path.resolve(config.projectRoot ?? process.cwd())
   const require = Module.createRequire(Path.join(root, 'package.json'))
   const upstream = config.transformer?.babelTransformerPath
   if (!upstream)
     throw new Error('Zyzz requires a configured Metro Babel transformer.')
-  if (options.colorScheme !== 'dark' && options.colorScheme !== 'light')
-    throw new Error('Zyzz requires an explicit light or dark color scheme.')
 
   const adapter = Module.createRequire(import.meta.url).resolve(
     'zyzz/metro/transformer',
   )
-  const code = `module.exports = require(${JSON.stringify(adapter)}).create(${JSON.stringify(require.resolve(upstream))}, ${JSON.stringify(options)});\n`
+  const code = `module.exports = require(${JSON.stringify(adapter)}).create(${JSON.stringify(require.resolve(upstream))}, ${JSON.stringify({ ...options, root })});\n`
   const directory = Path.join(root, '.zyzz', 'metro')
   const filename = Path.join(directory, `${Crypto.hash('sha256', code)}.cjs`)
   Fs.mkdirSync(directory, { recursive: true })
@@ -48,8 +56,32 @@ export function zyzz<const config extends Config>(
       throw error
   }
 
+  const enhance =
+    config.server &&
+    (Reflect.get(config.server, 'enhanceMiddleware') as
+      | ((middleware: Middleware, server: Watch.Server) => Middleware)
+      | undefined)
+  type Middleware = (...args: unknown[]) => unknown
   return {
     ...config,
+    server: {
+      ...config.server,
+      enhanceMiddleware(middleware: Middleware, server: Watch.Server) {
+        const ready = Watch.attach(server, root)
+        const next = enhance
+          ? enhance.call(config.server, middleware, server)
+          : middleware
+        return (...args: unknown[]) =>
+          ready.then(
+            () => next(...args),
+            (error: unknown) => {
+              const report = args[2]
+              if (typeof report === 'function') return report(error)
+              throw error
+            },
+          )
+      },
+    },
     transformer: { ...config.transformer, babelTransformerPath: filename },
   } as zyzz.ReturnType<config>
 }

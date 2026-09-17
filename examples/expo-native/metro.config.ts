@@ -30,4 +30,4 @@ const metro: typeof config = {
   },
 }
 
-export default zyzz(metro, { colorScheme: 'light', units: { px: 1 } })
+export default zyzz(metro, { units: { px: 1 } })

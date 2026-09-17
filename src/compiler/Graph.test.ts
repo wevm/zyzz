@@ -15,6 +15,7 @@ import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import { Theme } from 'zyzz'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
@@ -1231,6 +1232,62 @@ export const scope = mint.className;`,
 })
 
 describe('create', () => {
+  test('invalidates reused native context values and nested mappings', () => {
+    const compiler = Graph.create()
+    const fonts = { Example: 'FirstFont' }
+    const themes = { selected: Theme.define({ color: { ink: '#111111' } }) }
+    const units = { rem: 10 }
+    const native = {
+      colorScheme: 'light' as 'light' | 'dark',
+      fonts,
+      platform: 'ios' as 'ios' | 'android',
+      theme: 'selected',
+      themes,
+      units,
+    }
+    const modules = {
+      'card.ts': `import {style} from 'zyzz';export const card=style({fontFamily:'Example',fontSize:'2rem',targets:{ios:{opacity:.7},android:{opacity:.4}}});`,
+    }
+    const first = compiler.compile({ modules, native })
+    expect(
+      compiler.compile({ modules, native }) === first,
+    ).toMatchInlineSnapshot('true')
+
+    fonts.Example = 'SecondFont'
+    const nested = compiler.compile({ modules, native })
+    expect(nested === first).toMatchInlineSnapshot('false')
+    expect(
+      nested.modules['card.ts']!.code.includes('SecondFont'),
+    ).toMatchInlineSnapshot('true')
+    units.rem = 12
+    const scaled = compiler.compile({ modules, native })
+    expect(
+      scaled.modules['card.ts']!.code.includes('"fontSize":24'),
+    ).toMatchInlineSnapshot('true')
+
+    themes.selected = Theme.define({ color: { ink: '#222222' } })
+    const themed = compiler.compile({ modules, native })
+    expect(themed === scaled).toMatchInlineSnapshot('false')
+
+    native.colorScheme = 'dark'
+    native.platform = 'android'
+    const changed = compiler.compile({ modules, native })
+    expect(changed === themed).toMatchInlineSnapshot('false')
+    expect(
+      changed.modules['card.ts']!.code.includes('"opacity":0.4'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      compiler.compile({ modules, native }) === changed,
+    ).toMatchInlineSnapshot('true')
+
+    delete (fonts as Partial<typeof fonts>).Example
+    expect(() => compiler.compile({ modules, native }))
+      .toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["selected","light","0","fontFamily"]: Provide an explicit fonts mapping for this family.
+      ["selected","dark","0","fontFamily"]: Provide an explicit fonts mapping for this family.]
+    `)
+  })
+
   test('unchanged snapshots reuse results within an isolated compiler', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules })

@@ -1,6 +1,6 @@
-# Expo native comparisons
+# Expo native example
 
-This app compares ahead-of-time Zyzz output with independently authored React Native controls on iOS and Android. Theme and appearance controls switch between two themes and system/light/dark schemes. A switch changes variant padding and scalar callback width. A static sample exercises platform overrides. Stable test IDs identify both sides for later device automation.
+This example demonstrates Zyzz in an Expo app on iOS and Android. Switch between two themes and system/light/dark modes, adjust variants and dynamic values, and explore platform-specific styles. Native equivalents appear alongside the Zyzz samples.
 
 ## Run
 

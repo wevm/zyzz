@@ -1,22 +1,24 @@
-/** Compares compiled styles with independent React Native controls. @module */
+/** Demonstrates Zyzz themes and styles in React Native. @module */
 import { useState } from 'react'
 import {
   Platform,
   Button,
   ScrollView,
   StyleSheet,
+  StatusBar,
   Switch,
   Text,
   View,
   useColorScheme,
   type ViewStyle,
+  type TextStyle,
 } from 'react-native'
 import { Provider } from 'zyzz/react-native/react'
 import { styles } from './Styles.js'
 
-// Shared authoring types describe web props. Metro replaces these known View fixtures with native props.
+// Shared authoring types describe web props. Metro replaces these known fixtures with native styles.
 
-/** Renders paired samples with shared application inputs. */
+/** Renders the native example with theme and appearance controls. */
 export default function App() {
   const appearance = useColorScheme()
   const system = appearance === 'dark' ? 'dark' : 'light'
@@ -77,21 +79,36 @@ function Samples({
         : '#14532d'
 
   return (
-    <ScrollView contentContainerStyle={ui.page}>
-      <Text accessibilityRole="header" style={ui.title}>
-        Native comparisons
+    <ScrollView
+      style={styles.page().style as ViewStyle}
+      contentContainerStyle={ui.page}
+      indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}
+    >
+      <StatusBar
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+      />
+      <Text
+        accessibilityRole="header"
+        style={[ui.title, styles.foreground().style as TextStyle]}
+      >
+        Zyzz native example
       </Text>
-      <Text style={ui.description}>
+      <Text style={[ui.description, styles.description().style as TextStyle]}>
         Expo SDK 57 · React Native 0.86.3 · {Platform.OS} {Platform.Version}
       </Text>
-      <Text style={ui.description}>
-        Each row pairs compiled Zyzz output with an independent native control.
-        Matching samples are visual checks, not recorded conformance results.
+      <Text style={[ui.description, styles.description().style as TextStyle]}>
+        Explore themes, light and dark mode, variants, and dynamic styles.
       </Text>
-      <Button title={`Scheme: ${scheme} (${colorScheme})`} onPress={onScheme} />
-      <Button title={`Theme: ${theme}`} onPress={onTheme} />
+      <Button
+        color={accent}
+        title={`Scheme: ${scheme} (${colorScheme})`}
+        onPress={onScheme}
+      />
+      <Button color={accent} title={`Theme: ${theme}`} onPress={onTheme} />
       <View style={ui.toggle}>
-        <Text style={ui.label}>Larger variant and payload</Text>
+        <Text style={[ui.label, styles.foreground().style as TextStyle]}>
+          Larger variant and payload
+        </Text>
         <Switch
           accessibilityLabel="Larger variant and payload"
           value={expanded}
@@ -99,10 +116,21 @@ function Samples({
         />
       </View>
       <View style={ui.row}>
-        <Text style={[ui.column, ui.label]}>Zyzz</Text>
-        <Text style={[ui.column, ui.label]}>React Native</Text>
+        <Text
+          style={[ui.column, ui.label, styles.foreground().style as TextStyle]}
+        >
+          Zyzz
+        </Text>
+        <Text
+          style={[ui.column, ui.label, styles.foreground().style as TextStyle]}
+        >
+          React Native
+        </Text>
       </View>
-      <Text accessibilityRole="header" style={ui.label}>
+      <Text
+        accessibilityRole="header"
+        style={[ui.label, styles.foreground().style as TextStyle]}
+      >
         Static style and platform override
       </Text>
       <View style={ui.row}>
@@ -116,7 +144,10 @@ function Samples({
           />
         </View>
       </View>
-      <Text accessibilityRole="header" style={ui.label}>
+      <Text
+        accessibilityRole="header"
+        style={[ui.label, styles.foreground().style as TextStyle]}
+      >
         Variant padding
       </Text>
       <View style={ui.row}>
@@ -125,7 +156,7 @@ function Samples({
             testID="zyzz-variant"
             style={styles.card({ spacious: expanded }).style as ViewStyle}
           >
-            <Text style={ui.sample}>Sample</Text>
+            <Text style={styles.foreground().style as TextStyle}>Sample</Text>
           </View>
         </View>
         <View style={ui.column}>
@@ -136,11 +167,14 @@ function Samples({
               { backgroundColor: surface, padding: expanded ? 20 : 8 },
             ]}
           >
-            <Text style={ui.sample}>Sample</Text>
+            <Text style={styles.foreground().style as TextStyle}>Sample</Text>
           </View>
         </View>
       </View>
-      <Text accessibilityRole="header" style={ui.label}>
+      <Text
+        accessibilityRole="header"
+        style={[ui.label, styles.foreground().style as TextStyle]}
+      >
         Scalar callback width
       </Text>
       <View style={ui.row}>
@@ -174,18 +208,16 @@ const control = StyleSheet.create({
 
 const ui = StyleSheet.create({
   column: { flex: 1, minWidth: 0 },
-  description: { color: '#475569', fontSize: 14, lineHeight: 21 },
-  label: { color: '#0f172a', fontSize: 16, fontWeight: '600' },
+  description: { fontSize: 14, lineHeight: 21 },
+  label: { fontSize: 16, fontWeight: '600' },
   page: {
-    backgroundColor: '#ffffff',
     flexGrow: 1,
     gap: 20,
     padding: 24,
     paddingTop: 72,
   },
   row: { flexDirection: 'row', gap: 16 },
-  sample: { color: '#0f172a' },
-  title: { color: '#0f172a', fontSize: 28, fontWeight: '700' },
+  title: { fontSize: 28, fontWeight: '700' },
   toggle: {
     alignItems: 'center',
     flexDirection: 'row',

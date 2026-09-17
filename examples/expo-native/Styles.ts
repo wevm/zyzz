@@ -1,4 +1,4 @@
-/** Defines shared authoring inputs for native comparisons. @module */
+/** Defines themed styles for the native example. @module */
 import { style, variants } from './Theme.js'
 
 /** Styles compiled independently for each native platform. */
@@ -18,9 +18,15 @@ export namespace styles {
     defaultVariants: { spacious: false },
   })
 
+  export const description = style({ color: 'muted' })
+
+  export const foreground = style({ color: 'ink' })
+
   export const meter = style((values: { width: `${number}px` }) => ({
     backgroundColor: 'accent',
     height: '16px',
     width: values.width,
   }))
+
+  export const page = style({ backgroundColor: 'page' })
 }

@@ -134,8 +134,22 @@ export function compile(options: compile.Options): compile.ReturnType {
       ].join('\n'),
     )
   }
-  if (extracted.calls.length || composition)
-    module.prepend(`import {Native as ${helper}} from 'zyzz/runtime';\n`)
+  if (extracted.calls.length || composition) {
+    let offset = options.source.startsWith('#!')
+      ? options.source.indexOf('\n') + 1
+      : 0
+
+    for (const node of parsed.program.body) {
+      if (node.type !== 'ExpressionStatement' || !node.directive) break
+
+      offset = node.end
+    }
+
+    module.appendLeft(
+      offset,
+      `\nimport {Native as ${helper}} from 'zyzz/runtime';\n`,
+    )
+  }
   return {
     code: module.toString(),
     map: module

@@ -4,6 +4,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Esbuild from 'esbuild'
+import * as Parser from 'oxc-parser'
 import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
 import { Native, Transform } from 'zyzz/compiler'
@@ -113,6 +114,58 @@ describe('compile', () => {
         source: source.slice(0, source.indexOf('const overlay')),
       }).css.includes('data-size'),
     ).toMatchInlineSnapshot('true')
+  })
+
+  test.each([
+    ['#!/usr/bin/env node\n', []],
+    ['"use client"\n', ['use client']],
+    [
+      '#!/usr/bin/env node\n"use client";\n"use strict"\n',
+      ['use client', 'use strict'],
+    ],
+  ] as const)(
+    'preserves module prologues: %s',
+    async (prologue, directives) => {
+      const output = Native.compile({
+        source: `${prologue}${source}`,
+        moduleId: 'prologue.ts',
+        platform: 'ios',
+        colorScheme: 'light',
+      })
+      const parsed = Parser.parseSync('prologue.ts', output.code)
+
+      expect(parsed.errors).toMatchInlineSnapshot('[]')
+      expect(output.code.startsWith(prologue.trimEnd())).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(
+        JSON.stringify(
+          parsed.program.body
+            .filter(
+              (node) => node.type === 'ExpressionStatement' && node.directive,
+            )
+            .map(
+              (node) => node.type === 'ExpressionStatement' && node.directive,
+            ),
+        ) === JSON.stringify(directives),
+      ).toMatchInlineSnapshot('true')
+      const module = await execute(output.code)
+      expect(
+        StyleSheet.flatten(module.compose(true).style)?.opacity,
+      ).toMatchInlineSnapshot('0.9')
+    },
+  )
+
+  test.each(['Z.cx', "Z['cx']"])('rejects namespace composition: %s', (cx) => {
+    expect(() =>
+      Native.compile({
+        source: `import {style} from 'zyzz';import * as Z from 'zyzz';const card=style({opacity:0.5});export const composed=${cx}(card());`,
+        moduleId: 'namespace.ts',
+        colorScheme: 'light',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: namespace.ts:107: Import cx by name; namespace authoring calls are not supported yet.]`,
+    )
   })
 
   test('compiles local configured tokens for explicit schemes', async () => {

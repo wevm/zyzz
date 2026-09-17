@@ -35,6 +35,8 @@ const complete = new Promise<void>((resolve, reject) => {
 })
 // Attach rejection handling before waiting for readiness or launching the app.
 void complete.catch(() => {})
+const log = await Fs.open(Path.join(directory, 'app.log'), 'w')
+let appConsole: ChildProcess.ChildProcess | undefined
 try {
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(
@@ -54,12 +56,26 @@ try {
     })
   })
   if (platform === 'ios') {
-    ChildProcess.execFileSync(
+    appConsole = ChildProcess.spawn(
       'xcrun',
-      ['simctl', 'launch', device, 'dev.zyzz.nativebench'],
-      { stdio: 'inherit' },
+      ['simctl', 'launch', '--console', device, 'dev.zyzz.nativebench'],
+      { stdio: ['ignore', log.fd, log.fd] },
     )
   } else {
+    appConsole = ChildProcess.spawn(
+      'adb',
+      [
+        '-s',
+        device,
+        'logcat',
+        '-v',
+        'threadtime',
+        'ReactNativeJS:V',
+        'AndroidRuntime:E',
+        '*:S',
+      ],
+      { stdio: ['ignore', log.fd, log.fd] },
+    )
     ChildProcess.execFileSync(
       'adb',
       [
@@ -75,12 +91,25 @@ try {
       { stdio: 'inherit' },
     )
   }
-  await complete
+  await Promise.race([
+    complete,
+    new Promise<never>((_, reject) => {
+      appConsole!.once('error', reject)
+      appConsole!.once('exit', (code) =>
+        reject(new Error(`App console exited ${code}; see app.log`)),
+      )
+    }),
+  ])
   ChildProcess.execFileSync(
     process.execPath,
     ['bench/results/native/tools/Report.mjs', platform],
     { stdio: 'inherit' },
   )
+} catch (error) {
+  console.error(await Fs.readFile(Path.join(directory, 'app.log'), 'utf8'))
+  throw error
 } finally {
+  appConsole?.kill('SIGTERM')
+  await log.close()
   if (collector.exitCode === null) collector.kill('SIGTERM')
 }

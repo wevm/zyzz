@@ -52,6 +52,15 @@ export default function App() {
     const endpoint = `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:8765`
     async function run() {
       if (__DEV__) throw new Error('Native benchmarks require a release build')
+      async function progress(message: string) {
+        const response = await fetch(`${endpoint}/progress`, {
+          method: 'POST',
+          body: message,
+        })
+        if (!response.ok)
+          throw new Error(`Progress collector returned ${response.status}`)
+      }
+      await progress('App started')
       const samples: Sample[] = []
       let key = 0
       async function clear() {
@@ -102,7 +111,9 @@ export default function App() {
             'theme',
           ] as const)
             for (const library of libraries) {
-              setStatus(`${library} / ${kind} / ${count} / pass ${pass}`)
+              const message = `${library} / ${kind} / ${count} / pass ${pass}`
+              setStatus(message)
+              await progress(message)
               for (let iteration = -3; iteration < 20; iteration++) {
                 if (key) await clear()
                 const base: Scene = {

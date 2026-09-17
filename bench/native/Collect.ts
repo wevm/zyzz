@@ -37,7 +37,7 @@ const server = Http.createServer(async (request, response) => {
   try {
     if (
       request.method !== 'POST' ||
-      !['/results', '/error'].includes(request.url ?? '')
+      !['/results', '/error', '/progress'].includes(request.url ?? '')
     ) {
       response.writeHead(404).end()
       return
@@ -47,6 +47,13 @@ const server = Http.createServer(async (request, response) => {
       body += chunk
       if (body.length > 10_000_000)
         throw new Error('Result payload exceeds 10 MB')
+    }
+    if (request.url === '/progress') {
+      console.log(body)
+      await Fs.appendFile(Path.join(directory, 'progress.txt'), body + '\n')
+      idle.refresh()
+      response.writeHead(200).end('saved')
+      return
     }
     if (request.url === '/error') {
       failed = true
@@ -66,6 +73,7 @@ const server = Http.createServer(async (request, response) => {
       )
     }
     response.writeHead(200).end('saved')
+    clearTimeout(idle)
     clearTimeout(timeout)
     server.close(() => {
       process.exitCode = failed ? 1 : 0
@@ -74,13 +82,21 @@ const server = Http.createServer(async (request, response) => {
     failed = true
     await Fs.writeFile(Path.join(directory, 'error.txt'), String(error))
     response.writeHead(400).end(String(error))
+    clearTimeout(idle)
     clearTimeout(timeout)
     server.close(() => {
       process.exitCode = 1
     })
   }
 })
+const idle = setTimeout(() => {
+  console.error('Native app sent no progress for two minutes')
+  clearTimeout(timeout)
+  server.close()
+  process.exitCode = 1
+}, 120_000)
 const timeout = setTimeout(() => {
+  clearTimeout(idle)
   console.error('Native benchmark collector timed out')
   server.close()
   process.exitCode = 1

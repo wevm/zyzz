@@ -3,15 +3,50 @@ import type * as Babel from '@babel/core'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Native from '../compiler/Native.js'
+import * as Transform from '../compiler/Transform.js'
 
 /** Native compilation settings for one Babel transformation. */
-export type Options = {
+export type NativeOptions = {
   /** Fixed scheme selected at build time. */
   readonly colorScheme: 'dark' | 'light'
+  /** Portable source identity. Defaults to a native module-local identity. */
+  readonly moduleId?: string | undefined
   /** Native destination selected by the bundler. */
   readonly platform: 'android' | 'ios'
+  /** Native compiler selection. Omission preserves existing native configurations. */
+  readonly target?: 'native' | undefined
   /** Conversion factors for authored lengths. */
   readonly units?: Native.compile.Options['units']
+}
+
+/** Web compilation settings for one Babel transformation. */
+export type WebOptions = {
+  /** CSS representation. Defaults to the web compiler's atomic output. */
+  readonly cssOutput?: Transform.compile.Options['cssOutput']
+  /** Portable identity. Defaults to the filename relative to Babel's root. */
+  readonly moduleId?: string | undefined
+  /** Selects rewritten JavaScript and extracted CSS. */
+  readonly target: 'web'
+}
+
+/** Explicit web or native compiler selection. */
+export type Options = NativeOptions | WebOptions
+
+/** Stylesheet artifacts stored on Babel's result.metadata.zyzz for web transforms. */
+export type WebMetadata = {
+  /** Extracted CSS. The consuming build must deliver this stylesheet. */
+  readonly css: string
+  /** CSS source map with original authoring content. */
+  readonly cssMap: Transform.compile.ReturnType['cssMap']
+  /** Portable identity used for class names and stylesheet ownership. */
+  readonly moduleId: string
+}
+
+declare module '@babel/core' {
+  interface BabelFileMetadata {
+    /** Web stylesheet output owned by the consuming build. Absent on native and ordinary modules. */
+    zyzz?: WebMetadata | undefined
+  }
 }
 
 /** Rewrites direct Zyzz imports while preserving authored source locations. */
@@ -20,7 +55,7 @@ export default function plugin(
   options: Options,
 ): Babel.PluginObj {
   return {
-    name: 'zyzz-native',
+    name: 'zyzz',
     pre(file) {
       for (const node of file.ast.program.body) {
         if (
@@ -64,26 +99,52 @@ export default function plugin(
         (node) =>
           node.type === 'ImportDeclaration' &&
           (node.source.value === 'zyzz' ||
-            node.source.value === 'zyzz/themes/default'),
+            node.source.value === 'zyzz/themes/default' ||
+            (options.target === 'web' && node.source.value === 'zyzz/web')),
       )
       if (!authorsStyles) return
-      if (options.platform !== 'ios' && options.platform !== 'android')
-        throw new Error(
-          'Zyzz Babel compilation requires an ios or android platform.',
-        )
-      if (options.colorScheme !== 'light' && options.colorScheme !== 'dark')
-        throw new Error(
-          'Zyzz Babel compilation requires an explicit light or dark scheme.',
-        )
-
       const filename = file.opts.filename
       if (!filename)
         throw new Error('Zyzz Babel compilation requires a filename.')
-      const output = Native.compile({
-        ...options,
-        moduleId: `babel/${Path.basename(filename)}`,
-        source: file.code,
-      })
+      const output = (() => {
+        if (options.target === 'web') {
+          const moduleId =
+            options.moduleId ??
+            Path.relative(
+              file.opts.root ?? file.opts.cwd ?? process.cwd(),
+              filename,
+            )
+              .split(Path.sep)
+              .join('/')
+          const output = Transform.compile({
+            cssOutput: options.cssOutput,
+            moduleId,
+            source: file.code,
+          })
+          const metadata: WebMetadata = {
+            css: output.css,
+            cssMap: output.cssMap,
+            moduleId,
+          }
+          Object.assign(file.metadata, { zyzz: metadata })
+          return output
+        }
+        if (options.target !== undefined && options.target !== 'native')
+          throw new Error('Zyzz Babel target must be web or native.')
+        if (options.platform !== 'ios' && options.platform !== 'android')
+          throw new Error(
+            'Zyzz Babel compilation requires an ios or android platform.',
+          )
+        if (options.colorScheme !== 'light' && options.colorScheme !== 'dark')
+          throw new Error(
+            'Zyzz Babel compilation requires an explicit light or dark scheme.',
+          )
+        return Native.compile({
+          ...options,
+          moduleId: options.moduleId ?? `babel/${Path.basename(filename)}`,
+          source: file.code,
+        })
+      })()
       if (output.code === file.code) return
 
       const parsed = api.parseSync(output.code, {
@@ -92,8 +153,7 @@ export default function plugin(
         filename,
         parserOpts: file.opts.parserOpts,
       })
-      if (!parsed)
-        throw new Error('Babel did not parse the compiled native module.')
+      if (!parsed) throw new Error('Babel did not parse the compiled module.')
 
       const map = new Trace.TraceMap(output.map)
       api.traverse(parsed, {

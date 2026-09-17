@@ -4,7 +4,7 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
-import plugin, { type Options } from '../babel/index.js'
+import plugin, { type NativeOptions } from '../babel/index.js'
 
 /** Babel transformer inputs passed through without removing upstream fields. */
 type Input = {
@@ -22,7 +22,7 @@ type Upstream = {
 /** Creates a transformer with isolated options and the existing upstream implementation. */
 export function create(
   upstreamPath: string,
-  options: Omit<Options, 'platform'>,
+  options: Omit<NativeOptions, 'platform' | 'target' | 'moduleId'>,
 ) {
   const upstream: Upstream = Module.createRequire(import.meta.url)(upstreamPath)
   return {
@@ -51,7 +51,10 @@ export function create(
         return upstream.transform(input)
       return upstream.transform({
         ...input,
-        plugins: [[plugin, { ...options, platform }], ...(input.plugins ?? [])],
+        plugins: [
+          [plugin, { ...options, platform, target: 'native' }],
+          ...(input.plugins ?? []),
+        ],
       })
     },
   }

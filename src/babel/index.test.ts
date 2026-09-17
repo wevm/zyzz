@@ -1,9 +1,10 @@
-/** Exercises native Babel compilation through Expo's real preset and emitted module execution. @module */
+/** Exercises web and native Babel compilation through real presets, modules, and browser rendering. @module */
 import * as Babel from '@babel/core'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
+import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import plugin from 'zyzz/babel'
 
@@ -142,4 +143,92 @@ export const marker = 'original-location'
       `[Source.ExtractError: /Fixture.ts: babel/Fixture.ts:70: Selectors require an explicit & target.]`,
     )
   })
+})
+
+describe('web', () => {
+  for (const cssOutput of ['atomic', 'grouped'] as const)
+    test(`renders extracted ${cssOutput} CSS with dynamic bindings and selectors`, async () => {
+      const source = `import { style, variants } from 'zyzz'
+        const box = style({ width: '40px', height: '12px', backgroundColor: 'red', selectors: { '&:hover': { opacity: 0.5 } } })
+        const meter = style((value: { width: \`\${number}px\` }) => ({ width: value.width, height: '8px' }))
+        const card = variants({ base: { opacity: 0.2 }, variants: { active: { true: { opacity: 0.7 } } } })
+        export const results = [box(), meter({ width: '72px' }), card({ active: true })]`
+      const output = Babel.transformSync(source, {
+        babelrc: false,
+        configFile: false,
+        filename: '/project/left/Styles.ts',
+        plugins: [[plugin, { target: 'web', cssOutput }]],
+        presets: [preset],
+        root: '/project',
+        sourceMaps: true,
+      })!
+      const metadata = output.metadata!.zyzz!
+      expect(metadata.moduleId).toMatchInlineSnapshot(`"left/Styles.ts"`)
+      expect(
+        metadata.cssMap.sourcesContent?.includes(source),
+      ).toMatchInlineSnapshot(`true`)
+      const runtime = await execute(output.code!)
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          '<div id="box"></div><div id="meter"></div><div id="card"></div>',
+        )
+        await page.addStyleTag({ content: metadata.css })
+        await page.evaluate((results) => {
+          for (const [index, id] of ['box', 'meter', 'card'].entries()) {
+            const element = document.getElementById(id)!
+            element.className = results[index].className
+            for (const [name, value] of Object.entries(results[index]))
+              if (name !== 'className' && name !== 'style')
+                element.setAttribute(name, String(value))
+            for (const [name, value] of Object.entries(
+              results[index].style ?? {},
+            ))
+              element.style.setProperty(name, String(value))
+          }
+        }, runtime.results)
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"40px"`)
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        expect(
+          await page
+            .locator('#meter')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"72px"`)
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.7"`)
+        await page.locator('#box').hover()
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.5"`)
+      } finally {
+        await browser.close()
+      }
+
+      const other = Babel.transformSync(source, {
+        babelrc: false,
+        configFile: false,
+        filename: '/project/right/Styles.ts',
+        plugins: [[plugin, { target: 'web', cssOutput }]],
+        presets: [preset],
+        root: '/project',
+      })!
+      const otherRuntime = await execute(other.code!)
+      expect(
+        runtime.results[0].className === otherRuntime.results[0].className,
+      ).toMatchInlineSnapshot(`false`)
+    })
 })

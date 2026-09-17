@@ -1,5 +1,5 @@
 /** Configures native Zyzz compilation in Metro without a separate generation command. @module */
-import type { Options } from '../babel/index.js'
+import type { NativeOptions } from '../babel/index.js'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
@@ -24,7 +24,7 @@ export type Config = {
  */
 export function zyzz<const config extends Config>(
   config: config,
-  options: Omit<Options, 'platform'>,
+  options: Omit<NativeOptions, 'platform' | 'target' | 'moduleId'>,
 ): zyzz.ReturnType<config> {
   const root = Path.resolve(config.projectRoot ?? process.cwd())
   const require = Module.createRequire(Path.join(root, 'package.json'))

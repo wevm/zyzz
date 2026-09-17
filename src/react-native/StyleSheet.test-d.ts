@@ -92,10 +92,11 @@ describe('compile', () => {
     style({ targets: { web: { targets: { native: { opacity: 1 } } } } })
     // @ts-expect-error Configured target branches cannot nest.
     bound.style({ targets: { web: { targets: { native: { opacity: 1 } } } } })
-    // @ts-expect-error Conditions cannot hide nested target branches.
-    bound.style({
+    const nestedTargets = {
       targets: { web: { ':hover': { targets: { native: { opacity: 1 } } } } },
-    })
+    }
+    // @ts-expect-error Conditions cannot hide nested target branches.
+    bound.style(nestedTargets)
     // @ts-expect-error Native branches cannot be callable.
     style({ targets: { native: () => ({ opacity: 0.5 }) } })
     // @ts-expect-error Named native branches cannot be callable.

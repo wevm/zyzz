@@ -19,6 +19,7 @@ import type * as Namespace from '../web/internal/Namespace.js'
 import * as Syntax from './internal/Syntax.js'
 import * as RuleReference from '../internal/RuleReference.js'
 import type * as Recipe from '../runtime/Recipe.js'
+import type * as StaticRecipe from '../internal/Recipe.js'
 import type * as RecipePayloads from './internal/RecipePayloads.js'
 import * as Recipes from './internal/Recipes.js'
 import * as PackedStyles from './internal/PackedStyles.js'
@@ -73,6 +74,8 @@ export type Call = {
   readonly composition?: readonly string[] | undefined
   /** Finite recipe selection metadata, with all alternatives retained in CSS. */
   readonly recipe?: Recipe.Definition | undefined
+  /** Ordered static alternatives retained without CSS selector lowering. */
+  readonly staticRecipe?: StaticRecipe.Definition | undefined
   /** Typed payload signatures retained across transformed declarations. */
   readonly recipeTypes?:
     | { readonly [axis: string]: { readonly [choice: string]: string } }
@@ -586,6 +589,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     const before = diagnostics.length
     let recipe: Recipe.Definition | undefined
     let recipeTypes: Call['recipeTypes']
+    let staticRecipe: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
     if (recipes.has(call.start)) {
       try {
         if (dynamic)
@@ -603,6 +607,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         })
         argument = expanded.body
         recipe = expanded.recipe
+        staticRecipe = expanded.staticRecipe
         recipeTypes = expanded.types
         dynamicValues = expanded.bindings
       } catch (error) {
@@ -1134,6 +1139,20 @@ export function extract(options: extract.Options): extract.ReturnType {
 
       calls.push({
         ...(recipe ? { recipe, recipeTypes } : {}),
+        ...(staticRecipe
+          ? {
+              staticRecipe: {
+                ...staticRecipe,
+                rules: staticRecipe.rules.map(({ matches, value }, index) => ({
+                  matches,
+                  value: define(
+                    { [`${name}-${index}`]: object(value) },
+                    { locations, theme: themes?.styles.get(call.start)?.theme },
+                  ),
+                })),
+              },
+            }
+          : {}),
         ...(selectors.identities.has(call.start)
           ? { identity: selectors.identities.get(call.start)! }
           : {}),

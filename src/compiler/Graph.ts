@@ -760,6 +760,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
       if (
         node.type !== 'ImportDeclaration' ||
         node.importKind === 'type' ||
+        node.specifiers.every(
+          (specifier) =>
+            specifier.type === 'ImportSpecifier' &&
+            specifier.importKind === 'type',
+        ) ||
         ['zyzz', 'zyzz/web'].includes(node.source.value)
       )
         continue
@@ -950,6 +955,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
               statement.importKind === 'type') ||
             (statement.type !== 'ImportDeclaration' &&
               statement.exportKind === 'type')
+          )
+            continue
+          if (
+            'specifiers' in statement &&
+            statement.specifiers.length &&
+            statement.specifiers.every((specifier) =>
+              specifier.type === 'ImportSpecifier'
+                ? specifier.importKind === 'type'
+                : specifier.type === 'ExportSpecifier' &&
+                  specifier.exportKind === 'type',
+            )
           )
             continue
           const target = resolve(moduleId, statement.source.value, statement)

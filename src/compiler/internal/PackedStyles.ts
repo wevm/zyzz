@@ -68,6 +68,15 @@ export function read(
         JSON.stringify([value.contract[Token.identity], value.path]),
         value,
       )
+      // Catalog themes share identities and paths but retain distinct fallback values.
+      tokens.set(
+        JSON.stringify([
+          value.contract[Token.identity],
+          value.path,
+          value.value,
+        ]),
+        value,
+      )
       return
     }
     if (value && typeof value === 'object')
@@ -86,7 +95,13 @@ export function read(
       return value
     const item = object(value)
     if (item.kind === 'token') {
-      const token = tokens.get(JSON.stringify([item.identity, item.path]))
+      const token = tokens.get(
+        JSON.stringify([
+          item.identity,
+          item.path,
+          ...(Object.hasOwn(item, 'value') ? [item.value] : []),
+        ]),
+      )
       if (!token) throw new Error('Unknown packed style token.')
       return token
     }
@@ -294,6 +309,7 @@ export function write(definition: Definition): unknown {
             identity: value.contract[Token.identity],
             kind: 'token',
             path: value.path,
+            value: value.value,
           }
         if (Token.isExpression(value))
           return { kind: 'expression', parts: value.parts }

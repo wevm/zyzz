@@ -22,10 +22,30 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
-  test.each(['web', 'native'] as const)(
-    'compiles packed %s recipes into native consumer callables',
-    async (target) => {
-      const source = `import {Config} from 'zyzz';const {variants}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});export const card=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'},compoundVariants:[{when:{size:'large'},style:{targets:{ios:{opacity:0.7},android:{opacity:0.8}}}}]});`
+  test.each([
+    ['web', 'single'],
+    ['native', 'single'],
+    ['web', 'base,mint'],
+    ['web', 'mint,base'],
+    ['native', 'base,mint'],
+    ['native', 'mint,base'],
+  ] as const)(
+    'compiles packed %s recipes with catalog order %s into native consumer callables',
+    async (target, order) => {
+      const themes = Object.fromEntries(
+        order.split(',').map((name) => [
+          name,
+          {
+            color: {
+              ink: {
+                light: name === 'base' ? '#000000' : '#008844',
+                dark: name === 'base' ? '#ffffff' : '#00ff88',
+              },
+            },
+          },
+        ]),
+      )
+      const source = `import {Config} from 'zyzz';const {variants}=Config.create(${JSON.stringify(order === 'single' ? { theme: { color: { ink: { light: '#000000', dark: '#ffffff' } } } } : { defaultTheme: 'base', themes })});export const card=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'},compoundVariants:[{when:{size:'large'},style:{targets:{ios:{opacity:0.7},android:{opacity:0.8}}}}]});`
       const library = Graph.compile({
         modules: { 'library/card.ts': source },
         ...(target === 'native'
@@ -103,6 +123,44 @@ describe('compile', () => {
       }
     },
   )
+
+  test('reads rule references alongside version 21 callable recipes', () => {
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {style} from 'zyzz';import {customMedia} from 'zyzz/web';export const card=style({opacity:0.5});export const compact=customMedia('(width < 40rem)');`,
+      },
+    })
+    const output = Graph.compile({
+      contracts: { 'library.js': library.contracts['library.ts']! },
+      imports: { 'app.ts': { library: 'library.js' } },
+      modules: { 'app.ts': `export {card,compact} from 'library';` },
+    })
+
+    expect(
+      JSON.parse(output.contracts['app.ts']!).version,
+    ).toMatchInlineSnapshot('21')
+    expect(
+      JSON.parse(output.contracts['app.ts']!).exports.compact.kind,
+    ).toMatchInlineSnapshot('"rule-reference"')
+  })
+
+  test.each([
+    `import {type Props} from 'types';`,
+    `export {type Props} from 'types';`,
+  ])('skips native specifier-only type dependencies: %s', (source) => {
+    const output = Graph.compile({
+      imports: { 'app.ts': { zyzz: null } },
+      modules: {
+        'app.ts': `${source}import {style} from 'zyzz';export const card=style({opacity:0.5});`,
+      },
+      native: { colorScheme: 'light' },
+    })
+
+    expect(output.dependencies['app.ts']).toMatchInlineSnapshot('[]')
+    expect(
+      output.modules['app.ts']!.code.includes('"opacity":0.5'),
+    ).toMatchInlineSnapshot('true')
+  })
 
   test.each([
     `import card from 'library';export const props=card();`,

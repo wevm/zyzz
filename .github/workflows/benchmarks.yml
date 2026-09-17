@@ -485,6 +485,7 @@ jobs:
           api-level: 36
           arch: x86_64
           profile: pixel_6
+          disk-size: 2048M
           disable-animations: true
           script: |
             adb install bench/native/app/android/app/build/outputs/apk/release/app-release.apk

@@ -1,9 +1,11 @@
 /** Exercises Metro bundling and imported style edits through the published Expo adapter. @module */
+import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Module from 'node:module'
 import * as Net from 'node:net'
 import * as Path from 'node:path'
+import * as Url from 'node:url'
 import { describe, expect, test } from 'vite-plus/test'
 
 const require = Module.createRequire(
@@ -12,6 +14,50 @@ const require = Module.createRequire(
 const expo = require.resolve('expo/bin/cli')
 
 describe('zyzz', () => {
+  test('invalidates source-mode caches when compiler implementation changes', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-metro-cache-'))
+    try {
+      const library = Path.join(root, 'library')
+      const app = Path.join(root, 'app')
+      await Fs.mkdir(app)
+      await Fs.cp(Path.resolve('src'), library, { recursive: true })
+      const entry = Path.join(library, 'metro/transformer.mjs')
+      await Esbuild.build({
+        bundle: true,
+        entryPoints: ['src/metro/transformer.ts'],
+        format: 'esm',
+        outfile: entry,
+        packages: 'external',
+        platform: 'node',
+      })
+      const { create } = await import(Url.pathToFileURL(entry).href)
+      const transformer = create(
+        require.resolve('@expo/metro-config/babel-transformer'),
+        {
+          root: app,
+        },
+      )
+      const before = transformer.getCacheKey()
+      expect(transformer.getCacheKey() === before).toMatchInlineSnapshot(`true`)
+
+      await Fs.appendFile(
+        Path.join(library, 'compiler/Native.test.ts'),
+        '\n// Test-only edit.\n',
+      )
+      expect(transformer.getCacheKey() === before).toMatchInlineSnapshot(`true`)
+
+      await Fs.appendFile(
+        Path.join(library, 'compiler/Native.ts'),
+        '\n// Compiler implementation edit.\n',
+      )
+      expect(transformer.getCacheKey() === before).toMatchInlineSnapshot(
+        `false`,
+      )
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('bundles each platform and recompiles imported styles after edits and errors', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-metro-'))
     let child: ChildProcess.ChildProcess | undefined

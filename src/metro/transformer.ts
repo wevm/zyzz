@@ -57,7 +57,10 @@ export function create(
       for (const name of Fs.readdirSync(root, { recursive: true })
         .map(String)
         .sort()) {
-        if (name.endsWith('.js')) {
+        if (
+          /\.[cm]?[jt]sx?$/.test(name) &&
+          !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(name)
+        ) {
           hash.update(name)
           hash.update(Fs.readFileSync(Path.join(root, name)))
         }

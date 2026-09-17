@@ -114,7 +114,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
           node.type === 'ImportDeclaration' &&
           (node.source.value === 'zyzz' ||
             node.source.value === 'zyzz/themes/default' ||
-            (options.target === 'web' && node.source.value === 'zyzz/web')),
+            node.source.value === 'zyzz/web'),
       )
       if (!authorsStyles && !contextual) return
       const filename = file.opts.filename

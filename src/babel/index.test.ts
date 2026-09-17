@@ -128,6 +128,19 @@ export const marker = 'original-location'
     )
   })
 
+  test('rejects web stylesheet authoring for both native platforms', () => {
+    for (const platform of ['ios', 'android'] as const)
+      for (const source of [
+        "import { global } from 'zyzz/web'; global({ body: { color: 'red' } })",
+        "import { fontFace } from 'zyzz/web'; fontFace({ fontFamily: 'Fixture', src: 'url(/font.woff2)' })",
+      ])
+        expect(() =>
+          compile(source, platform),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Native.CompileError: /Fixture.ts: Native static modules do not support CSS contributions, variables, or web theme controls.]`,
+        )
+  })
+
   test('passes ordinary modules through and rejects unsupported native declarations', async () => {
     const result = await execute(
       compile(

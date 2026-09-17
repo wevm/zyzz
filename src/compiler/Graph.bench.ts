@@ -8,6 +8,7 @@ import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
+import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Compilation from '../../bench/Compilation.js'
 import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
 import * as Fixture from '../../test/fixtures/ThemeGraph.js'
@@ -233,3 +234,29 @@ for (const count of [10, 100]) {
     )
   })
 }
+
+// Native workloads use the same shared source graph as packed consumer acceptance.
+describe('native graph', () => {
+  const native = { colorScheme: 'dark', platform: 'android' } as const
+  const compiler = Graph.create()
+  const library = Graph.compile({ modules: Universal.modules })
+  const packed = {
+    contracts: { 'library.js': library.contracts['index.ts']! },
+    imports: { 'app.ts': { library: 'library.js' } },
+    modules: {
+      'app.ts': `import {button} from 'library';export const props=button({size:'large',active:true});`,
+    },
+    native,
+  }
+  compiler.compile({ modules: Universal.modules, native })
+
+  bench('cold source graph', () => {
+    Graph.compile({ modules: Universal.modules, native })
+  })
+  bench('unchanged source graph', () => {
+    compiler.compile({ modules: Universal.modules, native })
+  })
+  bench('packed consumer', () => {
+    Graph.compile(packed)
+  })
+})

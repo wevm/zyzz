@@ -4,7 +4,6 @@ import {
   Platform,
   Button,
   ScrollView,
-  StyleSheet,
   StatusBar,
   Switch,
   Text,
@@ -14,7 +13,7 @@ import {
   type TextStyle,
 } from 'react-native'
 import { Provider } from 'zyzz/react-native/react'
-import { styles } from './Styles.js'
+import { style, variants } from './Theme.js'
 
 // Shared authoring types describe web props. Metro replaces these known fixtures with native styles.
 
@@ -69,160 +68,133 @@ function Samples({
       : colorScheme === 'light'
         ? '#15803d'
         : '#86efac'
-  const surface =
-    theme === 'blue'
-      ? colorScheme === 'light'
-        ? '#dbeafe'
-        : '#1e3a8a'
-      : colorScheme === 'light'
-        ? '#dcfce7'
-        : '#14532d'
 
   return (
     <ScrollView
       style={styles.page().style as ViewStyle}
-      contentContainerStyle={ui.page}
       indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}
     >
       <StatusBar
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
       />
-      <Text
-        accessibilityRole="header"
-        style={[ui.title, styles.foreground().style as TextStyle]}
-      >
-        Zyzz native example
-      </Text>
-      <Text style={[ui.description, styles.description().style as TextStyle]}>
-        Expo SDK 57 · React Native 0.86.3 · {Platform.OS} {Platform.Version}
-      </Text>
-      <Text style={[ui.description, styles.description().style as TextStyle]}>
-        Explore themes, light and dark mode, variants, and dynamic styles.
-      </Text>
-      <Button
-        color={accent}
-        title={`Scheme: ${scheme} (${colorScheme})`}
-        onPress={onScheme}
-      />
-      <Button color={accent} title={`Theme: ${theme}`} onPress={onTheme} />
-      <View style={ui.toggle}>
-        <Text style={[ui.label, styles.foreground().style as TextStyle]}>
-          Larger variant and payload
+      <View style={styles.content().style as ViewStyle}>
+        <Text
+          accessibilityRole="header"
+          style={styles.title().style as TextStyle}
+        >
+          Zyzz native example
         </Text>
-        <Switch
-          accessibilityLabel="Larger variant and payload"
-          value={expanded}
-          onValueChange={setExpanded}
+        <Text style={styles.description().style as TextStyle}>
+          Expo SDK 57 · React Native 0.86.3 · {Platform.OS} {Platform.Version}
+        </Text>
+        <Text style={styles.description().style as TextStyle}>
+          Explore themes, light and dark mode, variants, and dynamic styles.
+        </Text>
+        <Button
+          color={accent}
+          title={`Scheme: ${scheme} (${colorScheme})`}
+          onPress={onScheme}
         />
-      </View>
-      <View style={ui.row}>
+        <Button color={accent} title={`Theme: ${theme}`} onPress={onTheme} />
+        <View style={styles.toggle().style as ViewStyle}>
+          <Text style={styles.label().style as TextStyle}>
+            Larger variant and payload
+          </Text>
+          <Switch
+            accessibilityLabel="Larger variant and payload"
+            value={expanded}
+            onValueChange={setExpanded}
+          />
+        </View>
         <Text
-          style={[ui.column, ui.label, styles.foreground().style as TextStyle]}
+          accessibilityRole="header"
+          style={styles.label().style as TextStyle}
         >
-          Zyzz
+          Static style and platform override
         </Text>
+        <View testID="zyzz-static" style={styles.box().style as ViewStyle} />
         <Text
-          style={[ui.column, ui.label, styles.foreground().style as TextStyle]}
+          accessibilityRole="header"
+          style={styles.label().style as TextStyle}
         >
-          React Native
+          Variant padding
         </Text>
-      </View>
-      <Text
-        accessibilityRole="header"
-        style={[ui.label, styles.foreground().style as TextStyle]}
-      >
-        Static style and platform override
-      </Text>
-      <View style={ui.row}>
-        <View style={ui.column}>
-          <View testID="zyzz-static" style={styles.box().style as ViewStyle} />
+        <View
+          testID="zyzz-variant"
+          style={styles.card({ spacious: expanded }).style as ViewStyle}
+        >
+          <Text style={styles.foreground().style as TextStyle}>Sample</Text>
         </View>
-        <View style={ui.column}>
-          <View
-            testID="native-static"
-            style={[control.box, { backgroundColor: accent }]}
-          />
-        </View>
-      </View>
-      <Text
-        accessibilityRole="header"
-        style={[ui.label, styles.foreground().style as TextStyle]}
-      >
-        Variant padding
-      </Text>
-      <View style={ui.row}>
-        <View style={ui.column}>
-          <View
-            testID="zyzz-variant"
-            style={styles.card({ spacious: expanded }).style as ViewStyle}
-          >
-            <Text style={styles.foreground().style as TextStyle}>Sample</Text>
-          </View>
-        </View>
-        <View style={ui.column}>
-          <View
-            testID="native-variant"
-            style={[
-              control.card,
-              { backgroundColor: surface, padding: expanded ? 20 : 8 },
-            ]}
-          >
-            <Text style={styles.foreground().style as TextStyle}>Sample</Text>
-          </View>
-        </View>
-      </View>
-      <Text
-        accessibilityRole="header"
-        style={[ui.label, styles.foreground().style as TextStyle]}
-      >
-        Scalar callback width
-      </Text>
-      <View style={ui.row}>
-        <View style={ui.column}>
-          <View
-            testID="zyzz-payload"
-            style={styles.meter({ width: `${width}px` }).style as ViewStyle}
-          />
-        </View>
-        <View style={ui.column}>
-          <View
-            testID="native-payload"
-            style={[control.meter, { width, backgroundColor: accent }]}
-          />
-        </View>
+        <Text
+          accessibilityRole="header"
+          style={styles.label().style as TextStyle}
+        >
+          Scalar callback width
+        </Text>
+        <View
+          testID="zyzz-payload"
+          style={styles.meter({ width: `${width}px` }).style as ViewStyle}
+        />
       </View>
     </ScrollView>
   )
 }
 
-const control = StyleSheet.create({
-  box: {
-    backgroundColor: '#2563eb',
-    borderRadius: Platform.OS === 'ios' ? 16 : 4,
-    height: 64,
-    width: 96,
-  },
-  card: { backgroundColor: '#dbeafe', borderRadius: 8 },
-  meter: { backgroundColor: '#2563eb', height: 16 },
-})
+namespace styles {
+  export const box = style({
+    backgroundColor: 'accent',
+    height: '64px',
+    width: '96px',
+    targets: { android: { borderRadius: 4 }, ios: { borderRadius: 16 } },
+  })
 
-const ui = StyleSheet.create({
-  column: { flex: 1, minWidth: 0 },
-  description: { fontSize: 14, lineHeight: 21 },
-  label: { fontSize: 16, fontWeight: '600' },
-  page: {
-    flexGrow: 1,
-    gap: 20,
-    padding: 24,
-    paddingTop: 72,
-  },
-  row: { flexDirection: 'row', gap: 16 },
-  title: { fontSize: 28, fontWeight: '700' },
-  toggle: {
+  export const card = variants({
+    base: { backgroundColor: 'surface', borderRadius: '8px', padding: '8px' },
+    variants: {
+      spacious: { false: { padding: '8px' }, true: { padding: '20px' } },
+    },
+    defaultVariants: { spacious: false },
+  })
+
+  export const content = style({
+    gap: '20px',
+    padding: '24px',
+    paddingTop: '72px',
+  })
+
+  export const description = style({
+    color: 'muted',
+    fontSize: '14px',
+    lineHeight: '21px',
+  })
+
+  export const foreground = style({ color: 'ink' })
+
+  export const label = style({
+    color: 'ink',
+    fontSize: '16px',
+    fontWeight: 600,
+  })
+
+  export const meter = style((values: { width: `${number}px` }) => ({
+    backgroundColor: 'accent',
+    height: '16px',
+    width: values.width,
+  }))
+
+  export const page = style({ backgroundColor: 'page' })
+
+  export const title = style({
+    color: 'ink',
+    fontSize: '28px',
+    fontWeight: 700,
+  })
+
+  export const toggle = style({
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: '12px',
     justifyContent: 'space-between',
-  },
-})
+  })
+}

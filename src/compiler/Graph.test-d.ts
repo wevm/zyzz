@@ -23,11 +23,12 @@ describe('compile', () => {
     })
     // @ts-expect-error Native compilation requires an explicit scheme.
     Graph.compile({ modules: {}, native: {} })
-    // @ts-expect-error Native platform names are bounded.
-    Graph.compile({
+    const invalidPlatform = {
       modules: {},
       native: { colorScheme: 'dark', platform: 'browser' },
-    })
+    } as const
+    // @ts-expect-error Native platform names are bounded.
+    Graph.compile(invalidPlatform)
 
     // @ts-expect-error Module source must be text.
     Graph.compile({ modules: { 'pkg/theme.ts': 1 } })

@@ -7,7 +7,7 @@ import * as Esbuild from 'esbuild'
 import * as Parser from 'oxc-parser'
 import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
-import { Native, Transform } from 'zyzz/compiler'
+import { Graph, Native, Transform } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
 import { Native as Runtime } from 'zyzz/runtime'
 
@@ -48,6 +48,37 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('preserves explicit exports over packed star exports', () => {
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {style} from 'zyzz';export const card=style({opacity:0.5});`,
+      },
+    })
+    for (const source of [
+      `export const card=()=>({style:{opacity:0.2}});export * from 'library';`,
+      `export const {card}={card:()=>({style:{opacity:0.2}})};export * from 'library';`,
+      `export * from 'library';export * from 'library';`,
+    ]) {
+      const output = Graph.compile({
+        contracts: { 'library.js': library.contracts['library.ts']! },
+        imports: { 'app.ts': { library: 'library.js' } },
+        modules: { 'app.ts': source },
+        native: { colorScheme: 'light' },
+      })
+      expect(
+        Parser.parseSync('app.ts', output.modules['app.ts']!.code).errors,
+      ).toMatchInlineSnapshot('[]')
+      if (source.startsWith('export const'))
+        expect(
+          output.modules['app.ts']!.code.includes('as "card"'),
+        ).toMatchInlineSnapshot('false')
+      else
+        expect(
+          output.modules['app.ts']!.code.match(/as "card"/g)?.length,
+        ).toMatchInlineSnapshot('1')
+    }
+  })
+
   test('executes native callables with defaults, nulls and ordered composition', async () => {
     const result = Native.compile({
       moduleId: 'card.ts',

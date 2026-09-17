@@ -1,4 +1,5 @@
 /** Rewrites shared static authoring to finite native table selection. @module */
+import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'
 import type * as Recipe from '../internal/Recipe.js'
 import * as Source from './Source.js'
@@ -99,6 +100,44 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const packed: string[] = []
+  const explicit = new Set<string>()
+  function binding(node: Ast.Node) {
+    if (node.type === 'Identifier') explicit.add(node.name)
+    else if (node.type === 'ObjectPattern')
+      for (const property of node.properties)
+        binding(
+          property.type === 'RestElement' ? property.argument : property.value,
+        )
+    else if (node.type === 'ArrayPattern')
+      for (const element of node.elements) {
+        if (element) binding(element)
+      }
+    else if (node.type === 'AssignmentPattern') binding(node.left)
+    else if (node.type === 'RestElement') binding(node.argument)
+  }
+  for (const statement of parsed.program.body) {
+    if (
+      statement.type !== 'ExportNamedDeclaration' ||
+      statement.exportKind === 'type'
+    )
+      continue
+    for (const specifier of statement.specifiers)
+      if (specifier.exportKind !== 'type')
+        explicit.add(
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : specifier.exported.value,
+        )
+    const declaration = statement.declaration
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const item of declaration.declarations) binding(item.id)
+    } else if (
+      declaration &&
+      'id' in declaration &&
+      declaration.id?.type === 'Identifier'
+    )
+      explicit.add(declaration.id.name)
+  }
   for (const statement of parsed.program.body) {
     if (
       (statement.type !== 'ImportDeclaration' &&
@@ -144,9 +183,10 @@ export function compile(options: compile.Options): compile.ReturnType {
           'Packed native namespace exports require named exports.',
         )
       for (const name of Object.keys(exports)) {
-        if (name === 'default') continue
+        if (name === 'default' || explicit.has(name)) continue
         const expression = value(name)
         if (expression === undefined) continue
+        explicit.add(name)
         let local = `${helper}Export${packed.length}`
         while (names.has(local)) local += '_'
         names.add(local)

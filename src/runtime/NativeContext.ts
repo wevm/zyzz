@@ -21,20 +21,28 @@ export function create<const tables extends Tables>(
   tables: tables,
   defaultTheme: keyof tables & string,
 ): tables[keyof tables]['light'] {
-  const callable = (input?: never): Native.Props<object> => ({
-    style: {
-      [binding]: (context: Context) => {
-        const theme = context.theme ?? defaultTheme
-        const table =
-          tables[theme] ??
-          (Object.keys(tables).length === 1 && defaultTheme === 'default'
-            ? tables.default
-            : undefined)
-        if (!table) throw new Error(`Unknown native theme: ${theme}.`)
-        return table[context.colorScheme](input).style
+  const fallback =
+    Object.keys(tables).length === 1 && defaultTheme === 'default'
+      ? tables.default
+      : undefined
+
+  function props(input?: never): Native.Props<object> {
+    return {
+      style: {
+        [binding]: (context: Context) => {
+          const theme = context.theme ?? defaultTheme
+          const table = tables[theme] ?? fallback
+          if (!table) throw new Error(`Unknown native theme: ${theme}.`)
+          return table[context.colorScheme](input).style
+        },
       },
-    },
-  })
+    }
+  }
+  const defaults = props()
+  Object.freeze(defaults.style)
+  Object.freeze(defaults)
+  const callable = (input?: never) =>
+    input === undefined ? defaults : props(input)
   return callable as tables[keyof tables]['light']
 }
 

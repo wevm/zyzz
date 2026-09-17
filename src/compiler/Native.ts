@@ -57,6 +57,16 @@ export function compile(options: compile.Options): compile.ReturnType {
   const module = new MagicString(options.source)
   const recipes: Record<string, Variants.Definition> = Object.create(null)
   let dynamic = false
+  const stylesByName = new Map<
+    string,
+    (typeof extracted.styles.styles)[number][]
+  >()
+  for (const style of extracted.styles.styles) {
+    const styles = stylesByName.get(style.name)
+    if (styles) styles.push(style)
+    else stylesByName.set(style.name, [style])
+  }
+
   for (const call of extracted.calls) {
     if (
       (call.recipe && !call.staticRecipe && !call.dynamicRecipe) ||
@@ -73,9 +83,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           {
             matches: [],
             value: {
-              styles: extracted.styles.styles.filter(
-                (style) => style.name === call.name,
-              ),
+              styles: stylesByName.get(call.name) ?? [],
             },
           },
         ],
@@ -91,16 +99,25 @@ export function compile(options: compile.Options): compile.ReturnType {
       'slots' | 'recipe' | 'valuesType' | 'recipeTypes' | 'nativeContext'
     >,
     contextOptions = options,
+    compiled?: Variants.Definition,
   ): string {
     if (contextOptions.contextual) {
       const themes = call?.nativeContext?.themes ?? contextOptions.themes
+      if (!call?.slots && !call?.recipe?.payloads?.length)
+        compiled = Variants.compile({
+          recipe,
+          fonts: contextOptions.fonts,
+          platform: contextOptions.platform,
+          themes,
+          units: contextOptions.units,
+        })
       const defaultTheme =
         call?.nativeContext?.defaultTheme ?? contextOptions.theme ?? 'default'
       const alternatives = (themes ? Object.keys(themes) : ['default']).map(
         (theme) => {
           const schemes = (['light', 'dark'] as const).map(
             (colorScheme) =>
-              `${JSON.stringify(colorScheme)}:${callable(recipe, name, call, { ...contextOptions, contextual: false, themes, theme, colorScheme })}`,
+              `${JSON.stringify(colorScheme)}:${callable(recipe, name, call, { ...contextOptions, contextual: false, themes, theme, colorScheme }, compiled)}`,
           )
           return `${JSON.stringify(theme)}:{${schemes.join(',')}}`
         },
@@ -137,7 +154,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         ? `(${value} as import('zyzz/runtime').NativeDynamic.${call.recipe ? 'RecipeCallable' : 'Callable'}<${input}>)`
         : value
     }
-    const compiled = Variants.compile({
+    compiled ??= Variants.compile({
       recipe,
       fonts: contextOptions.fonts,
       platform: contextOptions.platform,

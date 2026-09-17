@@ -49,6 +49,60 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('reuses default native props while resolving independent themes and overrides', async () => {
+    const source = `import {Config} from 'zyzz';
+      import {NativeContext} from 'zyzz/runtime';
+      const {style}=Config.create({themes:{base:{color:{ink:{light:'#112233',dark:'#ddeeff'}}},alternate:{color:{ink:{light:'#ff0000',dark:'#0000ff'}}}},defaultTheme:'base'});
+      const ink=style({color:'ink'});
+      const defaults=ink();
+      const override={opacity:0.4};
+      const applied=ink({style:override});
+      const light={colorScheme:'light',theme:'base'} as const;
+      const dark={colorScheme:'dark',theme:'alternate'} as const;
+      const resolve=(value,context)=>NativeContext.resolve(value.style,context);
+      const first=resolve(defaults,light);
+      const second=resolve(defaults,dark);
+      const overridden=resolve(applied,dark);
+      override.opacity=0.8;
+      export const results={same:defaults===ink(),frozen:Object.isFrozen(defaults)&&Object.isFrozen(defaults.style),first,second,again:resolve(defaults,light),override:overridden[1]===override,opacity:overridden[1].opacity,callerFrozen:Object.isFrozen(override)};`
+    const output = Graph.compile({
+      modules: { 'styles.ts': source },
+      native: { colorScheme: 'light', contextual: true },
+    })
+
+    expect((await execute(output.modules['styles.ts']!.code)).results).toEqual({
+      same: true,
+      frozen: true,
+      first: { color: '#112233' },
+      second: { color: '#0000ff' },
+      again: { color: '#112233' },
+      override: true,
+      opacity: 0.8,
+      callerFrozen: false,
+    })
+  })
+
+  test('reuses static defaults without bypassing input validation', async () => {
+    const output = Native.compile({
+      moduleId: 'static.ts',
+      colorScheme: 'light',
+      source: `import {style} from 'zyzz';
+        const card=style({opacity:0.5});
+        const first=card();
+        const override={opacity:0.8};
+        let error='';try{card({unknown:true})}catch(value){error=value.message}
+        export const results={same:first===card(),frozen:Object.isFrozen(first),empty:card({}),override:card({style:override}).style[1]===override,error};`,
+    })
+
+    expect((await execute(output.code)).results).toEqual({
+      same: true,
+      frozen: true,
+      empty: { style: { opacity: 0.5 } },
+      override: true,
+      error: 'Unknown native recipe input: unknown.',
+    })
+  })
+
   test('executes dynamic scalars and selected variant payloads in authored order', async () => {
     const source = `import {style,variants} from 'zyzz';
       const bar=style((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha,fontSize:'10px',lineHeight:1.5}));

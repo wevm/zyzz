@@ -1051,14 +1051,14 @@ variant({base:{color:'missing'}});`,
             '"@acme/variants/styles.ts"',
           )
           expect(original.line !== null).toMatchInlineSnapshot('true')
-          expect(
-            JSON.parse(
-              await Fs.readFile(
-                Path.join(library.installed, 'styles.js.zyzz.json'),
-                'utf8',
-              ),
-            ).version,
-          ).toMatchInlineSnapshot(`17`)
+          const version = JSON.parse(
+            await Fs.readFile(
+              Path.join(library.installed, 'styles.js.zyzz.json'),
+              'utf8',
+            ),
+          ).version
+          if (output === 'react') expect(version).toMatchInlineSnapshot(`21`)
+          else expect(version).toMatchInlineSnapshot(`17`)
         } finally {
           await browser.close()
           if (server)

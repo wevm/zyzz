@@ -37,7 +37,11 @@ for (const platform of ['ios', 'android'] as const)
                     edited,
                     source,
                   )
-                  if (!result.code || result.code.includes('Config.create'))
+                  if (
+                    !result.code ||
+                    (library === 'zyzz' &&
+                      !result.code.includes('__zyzzNativeContext.create'))
+                  )
                     throw new Error(`Uncompiled ${library} fixture`)
                   const directory = Path.resolve(
                     'bench/results/native/compile',

@@ -27,9 +27,14 @@ describe('native compiler pipelines', () => {
             Corpus.source(library, { count: 10, kind }, true) ===
               Corpus.source(library, { count: 10, kind }),
           ).toMatchInlineSnapshot(`false`)
-          expect(output.code!.includes('Config.create')).toMatchInlineSnapshot(
-            `false`,
-          )
+          if (library === 'zyzz') {
+            expect(
+              output.code!.includes('__zyzzNativeContext.create'),
+            ).toMatchInlineSnapshot(`true`)
+            expect(
+              /\b(?:style|variants|themedStyle)\(/.test(output.code!),
+            ).toMatchInlineSnapshot(`false`)
+          }
           expect(output.code!.includes(' as import(')).toMatchInlineSnapshot(
             `false`,
           )

@@ -403,6 +403,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
       - uses: ./.github/actions/install-dependencies
       - run: pnpm build
       - run: |
@@ -450,6 +452,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - run: pnpm build
       - run: |
           node bench/native/Build.ts

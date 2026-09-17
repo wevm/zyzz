@@ -40,7 +40,7 @@ export function compile<
       !Array.isArray(choices) ||
       !choices.length ||
       new Set(choices).size !== choices.length ||
-      choices.some((choice) => typeof choice !== 'string')
+      Array.from(choices).some((choice) => typeof choice !== 'string')
     )
       throw new CompileError('Recipe axes require unique string choices.')
     count *= choices.length + 1

@@ -105,6 +105,58 @@ describe('compile', () => {
     ).toMatchInlineSnapshot('true')
   })
 
+  test.each([
+    // oxlint-disable-next-line unicorn/no-new-array -- Sparse arrays exercise missing-index validation.
+    { choices: new Array<string>(1) },
+    // oxlint-disable-next-line unicorn/no-new-array -- Preserve a hole beside a valid choice.
+    { choices: Object.assign(new Array<string>(2), { 1: 'quiet' }) },
+  ])(
+    'rejects sparse choice lists before compiling native tables',
+    ({ choices }) => {
+      expect(() =>
+        Variants.compile({
+          recipe: {
+            axes: { tone: choices },
+            defaults: {},
+            rules: [
+              { matches: [], value: Style.define({ card: { opacity: 1 } }) },
+            ],
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        '[Variants.CompileError: Recipe axes require unique string choices.]',
+      )
+    },
+  )
+
+  test('accepts exactly 256 selections including omitted choices', () => {
+    const variants = Object.fromEntries(
+      Array.from({ length: 8 }, (_, index) => [
+        `axis${index}`,
+        { on: { opacity: 0.5 } },
+      ]),
+    )
+    const recipe = Source.extract({
+      moduleId: 'boundary.ts',
+      source: `import { variants } from 'zyzz'; export const card = variants(${JSON.stringify({ base: { opacity: 1 }, variants })});`,
+    }).calls[0]!.staticRecipe!
+    const output = Variants.compile({ recipe })
+
+    expect(
+      Object.keys(output.styles.default.light).length,
+    ).toMatchInlineSnapshot('256')
+    expect(output.styles.default.light['0']).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.5,
+      }
+    `)
+    expect(output.styles.default.light['255']).toMatchInlineSnapshot(`
+      {
+        "opacity": 1,
+      }
+    `)
+  })
+
   test('rejects selection growth before allocating tables', () => {
     const axes = Object.fromEntries(
       Array.from({ length: 9 }, (_, index) => [

@@ -1,7 +1,7 @@
 <h1 align="center">zyzz</h1>
 
 <p align="center">
-  Next-gen styling library for the modern era
+  A modern, universal styling library.
 </p>
 
 <p align="center">

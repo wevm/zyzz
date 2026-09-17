@@ -92,7 +92,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         : value,
     )
   }
-  let composition = false
+  const compositions: string[] = []
   for (const statement of parsed.program.body) {
     if (
       statement.type !== 'ImportDeclaration' ||
@@ -109,7 +109,11 @@ export function compile(options: compile.Options): compile.ReturnType {
           : specifier.imported.value) === 'cx',
     )
     if (!cx.length) continue
-    composition = true
+    compositions.push(
+      ...cx.map(
+        (specifier) => `const ${specifier.local.name}=${helper}.compose;`,
+      ),
+    )
     const kept = statement.specifiers.filter(
       (specifier) => !cx.includes(specifier),
     )
@@ -126,15 +130,10 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(
       statement.start,
       statement.end,
-      [
-        ...(imports.length ? [`import ${imports.join(',')} from 'zyzz';`] : []),
-        ...cx.map(
-          (specifier) => `const ${specifier.local.name}=${helper}.compose;`,
-        ),
-      ].join('\n'),
+      imports.length ? `import ${imports.join(',')} from 'zyzz';` : '',
     )
   }
-  if (extracted.calls.length || composition) {
+  if (extracted.calls.length || compositions.length) {
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
       : 0
@@ -147,7 +146,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport {Native as ${helper}} from 'zyzz/runtime';\n`,
+      `\nimport {Native as ${helper}} from 'zyzz/runtime';\n${compositions.join('\n')}\n`,
     )
   }
   return {

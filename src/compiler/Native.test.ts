@@ -117,6 +117,25 @@ describe('compile', () => {
   })
 
   test.each([
+    `export const compose=()=>props;const props=cx({style:{opacity:0.5}});import {cx} from 'zyzz';`,
+    `"use client";const card=style({opacity:0.5});const props=mix(card());export const compose=()=>props;import {cx as mix,style} from 'zyzz';`,
+  ])('preserves composition before its import: %s', async (source) => {
+    const output = Native.compile({
+      source,
+      moduleId: 'hoisted.ts',
+      colorScheme: 'light',
+    })
+    const module = await execute(output.code)
+
+    expect(StyleSheet.flatten(module.compose(false).style))
+      .toMatchInlineSnapshot(`
+      {
+        "opacity": 0.5,
+      }
+    `)
+  })
+
+  test.each([
     ['#!/usr/bin/env node\n', []],
     ['"use client"\n', ['use client']],
     [

@@ -2,6 +2,7 @@
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 import { getDefaultConfig } from 'expo/metro-config.js'
+import { zyzz } from 'zyzz/metro'
 
 const config = getDefaultConfig(import.meta.dirname)
 
@@ -29,4 +30,4 @@ const metro: typeof config = {
   },
 }
 
-export default metro
+export default zyzz(metro, { colorScheme: 'light', units: { px: 1 } })

@@ -56,6 +56,8 @@ npx zyzz build
 
 The defaults compile `src` into `dist`, with adjacent module CSS, `zyzz.shared.css` for shared contributions, `zyzz.css` combining both in dependency order for applications that load one stylesheet, and `zyzz.js` restoring saved theme selections before paint. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
 
+The file host and CLI resolve installed package exports and adjacent `<entry>.zyzz.json` contracts without executing dependency code. Keep sidecars next to published entry modules. `zyzz dev` rebuilds on package or contract changes and retains successful output until invalid dependencies recover. Resolution uses Node import conditions. Packed external asset copying remains unsupported.
+
 Libraries expose compiled modules through package exports and document stylesheet loading. Keep generated output separate from owned source files. A CSS-only scan cannot replace source rewriting for Zyzz's callable definitions.
 
 ### Server Rendering

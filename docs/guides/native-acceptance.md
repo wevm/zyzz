@@ -12,6 +12,8 @@ Static shared authoring compiles through source graphs, file builds, and source-
 | Vite target routing | `src/vite/index.test.ts` | Captured native context, imported-theme updates, native bundle execution, and no generated CSS/script delivery |
 | Packed namespaces | `src/compiler/Graph.test.ts` | Namespace imports and re-exports, nested style members, live ordinary exports, consumer type checks, and version 22 contract round trips |
 | Vite consumer package | `src/vite/index.test.ts` | Source-free package namespace imports through the real resolver, native bundle execution, and browser computed styles against plain CSS |
+| File-host packages | `src/node/Host.test.ts` | Import conditions, subpaths, `#imports`, transitive contributions, late installation, atomic metadata changes, export-map edits, linked packages, and failure recovery |
+| CLI consumer package | `src/cli/index.test.ts` | Published executable, source-free web/native consumption, browser computed styles against plain CSS, native execution, dependency-watch repair, and shutdown cleanup |
 | Export precedence | `src/compiler/Native.test.ts`                                     | Explicit local exports take precedence over packed star re-exports                                                                                               |
 
 ## Reproduction
@@ -29,8 +31,8 @@ Tests use the repository-pinned toolchain and Chromium from Playwright. Package 
 
 ## Remaining Gates
 
-- Confirm hosted tests and TypeScript matrix results on the routing/namespace stack heads. Merged main at `4f8277d` failed stale contract-version assertions, corrected in the routing stack; its Examples and Benchmarks workflows passed.
-- The CLI/file host compiles a closed source tree without resolving installed package contracts. Use Vite or supply resolved contracts directly to `Graph.compile` for source-free dependencies. A Metro adapter remains outside the current integration scope.
+- Confirm hosted tests, TypeScript matrices, and benchmarks on the file-host package stack heads. Local macOS type checks retain the existing `Motion.ts`/`motion.ts` example casing failures.
+- File-host resolution uses Node import conditions. TypeScript path aliases, browser/native resolver conditions, and packed external asset copying remain unsupported. Metro remains outside the current integration scope.
 - Theme/configuration factory namespace imports remain unsupported; import these factories by name. Packed style namespaces retain finite native callables, but dynamic recipes still require separate implementation.
 - Add dynamic/animated values, device-owned objects, and changing host inputs.
 - Execute independent iOS/Android renderer controls with pinned device, OS, fonts, density, and tolerances.

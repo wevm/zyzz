@@ -2,7 +2,7 @@
 
 This plan tracks remaining implementation and acceptance work for Zyzz contributors. The goal is shared, typed web/native authoring with ahead-of-time output and ordinary platform components.
 
-Native follow-up based on `main` at [`4f8277d`](https://github.com/wevm/zyzz/commit/4f8277d) on September 17, 2026. The graph, file-host, packed callable, and consumer acceptance stack is merged. [CLI/Vite routing](https://github.com/wevm/zyzz/pull/203) and [packed namespaces](https://github.com/wevm/zyzz/pull/204) have local acceptance and remain in review.
+Native follow-up based on `main` at [`be144b9`](https://github.com/wevm/zyzz/commit/be144b9) on September 17, 2026. CLI/Vite routing, packed namespaces, and Vite package acceptance are merged. The [file-host resolver](https://github.com/wevm/zyzz/pull/207) and [dependency-watch stack](https://github.com/wevm/zyzz/pull/208) add local source-free CLI acceptance and remain in review.
 
 The web acceptance stack, typed target branches, and static native values are merged. The web [local evidence and limits](../docs/guides/web-acceptance.md) remain separate from hosted CI, native parity, at-rule rendering, and release measurements.
 
@@ -20,10 +20,10 @@ The web acceptance stack, typed target branches, and static native values are me
 
 ## Next work
 
-1. Validate the routing and namespace stack against hosted CI, including corrected contract-version assertions inherited from merged main. Local acceptance covers CLI native execution and source-free namespace consumption through Vite for browser and native output.
-2. Resolve remaining 3.8f host boundaries: the CLI/file host compiles closed source graphs and does not resolve installed package contracts. Vite resolves those contracts; Metro integration remains outside the current adapters.
-3. Complete dynamic/host interoperability, independent iOS/Android evidence, and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
-4. Finish distribution, measurement, and documentation acceptance before release.
+1. Validate the file-host package stack against hosted CI. Local acceptance covers import-condition resolution, dependency watch recovery, published CLI native execution, and browser computed styles from source-free packages.
+2. Implement 3.9a dynamic/animated interoperability and changing host inputs. Scheme/platform selection remains fixed per file-host lifecycle. Metro integration remains outside the current adapters.
+3. Execute independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
+4. Finish distribution, measurement, and documentation acceptance before release, including packed external assets and resolver dependency review.
 
 Keep the existing sequence labels for native dependencies. Older phase ordering does not undo merged work or close an unresolved gate.
 
@@ -70,7 +70,7 @@ The [universal contract](../docs/api/react-native/universal.md) specifies target
 | 3.9b  | Independent browser/iOS/Android conformance and measurements. | Every applicable inventory entry has type, runtime, and renderer evidence against independent platform controls.                           |
 | 3.10  | Enforce full parity.                                          | No missing, partial, deferred, or untested native capability. All applicable gates pass.                                                   |
 
-Static variants now retain target-neutral rules and compile bounded theme/scheme tables. [Local callable compilation](../docs/api/compiler/Native.md) preserves finite selection inputs and native composition, with [integration evidence](../src/compiler/Native.test.ts). Imported graphs, file-host rebuilds, and packed static callables have [local consumer evidence](../docs/guides/native-acceptance.md). CLI native source builds, Vite native builds and theme updates, packed namespace imports/re-exports, and source-free Vite consumers have local acceptance. CLI package resolution, dynamic host updates, and device rendering remain open.
+Static variants now retain target-neutral rules and compile bounded theme/scheme tables. [Local callable compilation](../docs/api/compiler/Native.md) preserves finite selection inputs and native composition, with [integration evidence](../src/compiler/Native.test.ts). Imported graphs, file-host rebuilds, and packed static callables have [local consumer evidence](../docs/guides/native-acceptance.md). CLI/Vite native builds, packed namespace imports/re-exports, and source-free consumers have local acceptance. File-host package resolution, dependency edits, and watch recovery are covered by the current stack. Dynamic host inputs, packed external assets, and device rendering remain open.
 
 3.8d is implemented: [typed target branches](https://github.com/wevm/zyzz/pull/192) and [static native values](https://github.com/wevm/zyzz/pull/193), including transforms, matrices, colors, fonts, and shadows. The [static audit](../test/conformance/native/README.md) covers 157 properties across 421 component pairs, with [compiler](../src/react-native/StyleSheet.test.ts) and [type](../src/react-native/StyleSheet.test-d.ts) evidence. Host interoperability and device rendering remain 3.9 work.
 

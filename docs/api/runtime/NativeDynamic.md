@@ -6,6 +6,6 @@
 
 Compiler-owned static fragments are frozen once. Dynamic results are fresh objects. Override objects retain identity and are never frozen. Missing fields, unknown selections, invalid numeric/length/color values, and incomplete metadata throw before props are returned.
 
-`Callable<Input>` describes required callback inputs. `RecipeCallable<Input>` permits omitted variant inputs. `From<Function>` retains published payload types while replacing web styling overrides with native overrides. Output uses `Native.Props`.
+`Callable<Input>` describes required callback inputs. `RecipeCallable<Input>` permits omitted variant inputs. `From<Function>` retains published payload types while replacing web styling overrides with native overrides. Output uses `Native.Props<Style>` and retains the types of caller-owned `style` overrides, including animated values and opaque device colors.
 
 Dynamic native bindings share the static compiler's scalar conversion rules. Complex CSS expressions, dynamic transforms and shadows, host-owned objects as payloads, and automatic device subscriptions remain outside this helper.

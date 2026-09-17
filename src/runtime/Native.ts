@@ -11,24 +11,28 @@ type Choices<values extends readonly string[]> =
     : never
 
 /** Inferred finite inputs for a generated native recipe callable. */
-export type Callable<axes extends Readonly<Record<string, readonly string[]>>> =
-  (
-    input?: {
-      readonly [axis in keyof axes]?: Choices<axes[axis]> | null | undefined
-    } & {
-      /** Caller-owned native overrides, applied after the selected table entry. */
-      readonly style?: StyleSheet.StyleProp<StyleSheet.NativeStyle> | undefined
-    },
-  ) => Props
+export type Callable<
+  axes extends Readonly<Record<string, readonly string[]>>,
+  style extends object = StyleSheet.NativeStyle,
+> = <const overrides extends object = never>(
+  input?: {
+    readonly [axis in keyof axes]?: Choices<axes[axis]> | null | undefined
+  } & {
+    /** Caller-owned native overrides, applied after the selected table entry. */
+    readonly style?: StyleSheet.StyleProp<overrides> | undefined
+  },
+) => Props<style | overrides>
+
+type EntryStyle<entry> = entry extends Props<infer style> ? style : never
 
 /**
  * Combines applied native props in order without flattening caller-owned values.
  * @param entries - Applied props or falsy conditional entries.
  * @returns Native style props preserving nested arrays and object identity.
  */
-export function compose(
-  ...entries: readonly (Props | false | null | undefined)[]
-): Props {
+export function compose<
+  const entries extends readonly (Props<object> | false | null | undefined)[],
+>(...entries: entries): Props<EntryStyle<entries[number]>> {
   for (const entry of entries)
     if (
       entry &&
@@ -39,9 +43,13 @@ export function compose(
         'Native composition requires native style props.',
       )
   const styles = entries
-    .filter((entry): entry is Props => !!entry)
+    .filter(
+      (entry): entry is Extract<entries[number], Props<object>> => !!entry,
+    )
     .map((entry) => entry.style)
-  return { style: styles.length === 1 ? styles[0] : styles }
+  return { style: styles.length === 1 ? styles[0] : styles } as Props<
+    EntryStyle<entries[number]>
+  >
 }
 
 /**
@@ -52,7 +60,8 @@ export function compose(
  */
 export function create<
   const axes extends Readonly<Record<string, readonly string[]>>,
->(options: create.Options<axes>): Callable<axes> {
+  const styles extends Readonly<Record<string, StyleSheet.NativeStyle>>,
+>(options: create.Options<axes, styles>): Callable<axes, styles[keyof styles]> {
   const axes = Object.entries(options.axes)
   for (const style of Object.values(options.styles)) freeze(style)
   return (input = {}) => {
@@ -81,7 +90,7 @@ export function create<
       index += choice * stride
       stride *= choices.length + 1
     }
-    const style = options.styles[String(index)]
+    const style = options.styles[String(index) as keyof styles]
     if (!style)
       throw new SelectionError('Native recipe table is missing a selection.')
     return { style: input.style ? [style, input.style] : style }
@@ -95,20 +104,23 @@ export declare namespace create {
     axes extends Readonly<Record<string, readonly string[]>> = Readonly<
       Record<string, readonly string[]>
     >,
+    styles extends Readonly<Record<string, StyleSheet.NativeStyle>> = Readonly<
+      Record<string, StyleSheet.NativeStyle>
+    >,
   > = {
     /** Ordered finite choice names. */
     readonly axes: axes
     /** Default selections. Null suppresses an axis. */
     readonly defaults: Readonly<Record<string, string | null>>
     /** One theme/scheme table indexed by finite selections. */
-    readonly styles: Readonly<Record<string, StyleSheet.NativeStyle>>
+    readonly styles: styles
   }
 }
 
 /** Props returned by compiled native definitions and native composition. */
-export type Props = {
+export type Props<style extends object = StyleSheet.NativeStyle> = {
   /** Native style values ready for an ordinary component's style prop. */
-  readonly style: StyleSheet.StyleProp<StyleSheet.NativeStyle>
+  readonly style: StyleSheet.StyleProp<style>
 }
 
 /** An application selected an unknown finite native variant. */

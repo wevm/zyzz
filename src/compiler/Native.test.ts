@@ -244,6 +244,37 @@ describe('compile', () => {
     `)
   })
 
+  test('retains opaque values through dynamic calls, replacement and composition', async () => {
+    const source = `import {style,variants,cx} from 'zyzz';
+      const base=style({opacity:0.2});
+      const bar=style((input:{alpha:number})=>({opacity:input.alpha}));
+      const card=variants({variants:{size:{custom:(input:{gap:string})=>({padding:input.gap})}}});
+      const first={}; const second={};
+      Object.defineProperty(first,'inspect',{get(){throw new Error('Opaque values must not be traversed')}});
+      const override={opacity:first,color:second,transform:[{translateX:first}]};
+      const nested=[false,[override,null]];
+      const applied=bar({alpha:0.3,style:nested});
+      const replaced=bar({alpha:0.7,style:{opacity:second}});
+      const selected=card({size:{custom:{gap:'8px'}},style:nested});
+      const combined=cx(base(),applied,false,selected,replaced);
+      first.current=0.9;
+      export const results={nested:applied.style[1]===nested,selected:selected.style[1]===nested,first:applied.style[1][1][0].opacity===first,second:replaced.style[1].opacity===second,composed:combined.style[1]===applied.style&&combined.style[2]===selected.style&&combined.style[3]===replaced.style,updated:combined.style[1][1][1][0].opacity.current,frozen:[Object.isFrozen(first),Object.isFrozen(second),Object.isFrozen(override),Object.isFrozen(nested)]};`
+    const compiled = Native.compile({
+      source,
+      moduleId: 'opaque.ts',
+      colorScheme: 'light',
+    })
+    expect((await execute(compiled.code)).results).toEqual({
+      nested: true,
+      selected: true,
+      first: true,
+      second: true,
+      composed: true,
+      updated: 0.9,
+      frozen: [false, false, false, false],
+    })
+  })
+
   test('invalidates a reused native context after scheme changes', () => {
     const compiler = Graph.create()
     const modules = {
@@ -476,6 +507,11 @@ export const card=config.variants({base:{color:'ink'},variants:{tone:{quiet:{opa
       await Fs.writeFile(
         consumer,
         `import {bar,card,compose,custom} from './compiled.js';
+const opaque={tag:Symbol('host')};
+const native={opacity:opaque,color:opaque};
+bar({alpha:0.5,style:native});
+card({style:[false,[native]]});
+custom({size:{custom:{gap:'8px'}},style:native});
 bar({alpha:0.5});
 custom();
 custom({size:{custom:{gap:'8px'}}});

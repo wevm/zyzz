@@ -702,16 +702,34 @@ function build(options: compile.Options, cache?: Cache): Cache {
       const contracts =
         libraries[target]?.links ?? visit(target).themeExports ?? {}
 
+      function namespace(name: string): Themes.Link | undefined {
+        const first = Object.values(contracts)[0]
+        if (!first) return undefined
+        return {
+          binding: `z-style-${Identity.hash(JSON.stringify([moduleId, name]))}-namespace`,
+          call: { start: -1, end: -1, name: '', tokenType: '{}' },
+          definition: first.definition,
+          kind: 'style-reference',
+          members: contracts,
+        }
+      }
+
       if (node.type === 'ImportDeclaration') {
         for (const specifier of node.specifiers) {
           if (specifier.type === 'ImportNamespaceSpecifier') {
-            if (Object.keys(contracts).length)
+            if (
+              Object.values(contracts).some(
+                (link) => link.kind !== 'style-reference',
+              )
+            )
               fail(
                 moduleId,
                 'Import theme contracts by name; namespace imports are not supported.',
                 specifier,
               )
 
+            const link = namespace(specifier.local.name)
+            if (link) links[specifier.local.name] = link
             continue
           }
 
@@ -741,10 +759,25 @@ function build(options: compile.Options, cache?: Cache): Cache {
           }
         }
       } else if (node.type === 'ExportAllDeclaration') {
-        if (node.exported && Object.keys(contracts).length)
-          fail(moduleId, 'Namespace theme re-exports are not supported.', node)
-
-        stars.push(contracts)
+        if (node.exported) {
+          if (
+            Object.values(contracts).some(
+              (link) => link.kind !== 'style-reference',
+            )
+          )
+            fail(
+              moduleId,
+              'Namespace theme re-exports are not supported.',
+              node,
+            )
+          const name =
+            node.exported.type === 'Identifier'
+              ? node.exported.name
+              : node.exported.value
+          explicit.add(name)
+          const link = namespace(name)
+          if (link) forwarded[name] = link
+        } else stars.push(contracts)
       } else {
         for (const specifier of node.specifiers) {
           if (specifier.exportKind === 'type') continue

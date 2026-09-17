@@ -1,6 +1,8 @@
 /** Checks compiled tables against the published React Native component contracts. @module */
+import { Animated, DynamicColorIOS, PlatformColor } from 'react-native'
 import type { ImageStyle, StyleProp, TextStyle, ViewStyle } from 'react-native'
 import { Style } from 'zyzz'
+import { Native, type NativeDynamic } from 'zyzz/runtime'
 import { StyleSheet } from 'zyzz/react-native'
 import { values } from '../test/fixtures/native/StaticValues.js'
 
@@ -11,3 +13,29 @@ const image: StyleProp<ImageStyle> = tables.styles.default.light.card
 const text: StyleProp<TextStyle> = tables.styles.default.light.card
 const view: StyleProp<ViewStyle> = tables.styles.default.light.card
 void [image, text, view]
+
+const opacity = new Animated.Value(0.5)
+const override = {
+  opacity,
+  backgroundColor: PlatformColor('labelColor'),
+  color: DynamicColorIOS({ light: 'black', dark: 'white' }),
+  transform: [{ translateX: opacity.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) }],
+}
+const card = Native.create({ axes: {}, defaults: {}, styles: { 0: { opacity: 0.2 } } })
+const props = card({ style: [false, [override]] })
+const animated: Animated.AnimatedProps<{ style: StyleProp<TextStyle> }> = Native.compose(card(), props)
+const animatedImage: Animated.AnimatedProps<{ style: StyleProp<ImageStyle> }> = card({ style: { opacity, tintColor: PlatformColor('labelColor') } })
+const animatedView: Animated.AnimatedProps<{ style: StyleProp<ViewStyle> }> = card({ style: override })
+const colored: StyleProp<TextStyle> = card({ style: { color: PlatformColor('labelColor') } }).style
+
+function dynamic(
+  bar: NativeDynamic.Callable<{ alpha: number }>,
+  recipe: NativeDynamic.RecipeCallable<{ size?: { custom: { gap: string } } | null }>,
+) {
+  const result: Animated.AnimatedProps<{ style: StyleProp<TextStyle> }> = Native.compose(
+    bar({ alpha: 0.4, style: override }),
+    recipe({ size: { custom: { gap: '8px' } }, style: override }),
+  )
+  return result
+}
+void [animated, animatedImage, animatedView, colored, dynamic]

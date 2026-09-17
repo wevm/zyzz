@@ -5,20 +5,24 @@ import * as Native from './Native.js'
 import type * as Recipe from './Recipe.js'
 
 /** A generated callable with required application payloads and native overrides. */
-export type Callable<input> = (
+export type Callable<input> = <
+  const overrides extends object = StyleSheet.NativeStyle,
+>(
   input: input & {
     /** Caller-owned overrides applied after generated values. */
-    readonly style?: StyleSheet.StyleProp<StyleSheet.NativeStyle> | undefined
+    readonly style?: StyleSheet.StyleProp<overrides> | undefined
   },
-) => Native.Props
+) => Native.Props<StyleSheet.NativeStyle | overrides>
 
 /** A native variant callable whose omitted input applies declared defaults. */
-export type RecipeCallable<input> = (
+export type RecipeCallable<input> = <
+  const overrides extends object = StyleSheet.NativeStyle,
+>(
   input?: input & {
     /** Caller-owned overrides applied after selected variant values. */
-    readonly style?: StyleSheet.StyleProp<StyleSheet.NativeStyle> | undefined
+    readonly style?: StyleSheet.StyleProp<overrides> | undefined
   },
-) => Native.Props
+) => Native.Props<StyleSheet.NativeStyle | overrides>
 
 /** Adapts a published web callable's payload to native styling overrides. */
 export type From<fn> = fn extends (...args: infer args) => unknown

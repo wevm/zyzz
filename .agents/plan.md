@@ -2,7 +2,7 @@
 
 This plan tracks remaining implementation and acceptance work for Zyzz contributors. The goal is shared, typed web/native authoring with ahead-of-time output and ordinary platform components.
 
-Native follow-up based on `main` at [`be144b9`](https://github.com/wevm/zyzz/commit/be144b9) on September 17, 2026. CLI/Vite routing, packed namespaces, and Vite package acceptance are merged. The [file-host resolver](https://github.com/wevm/zyzz/pull/207) and [dependency-watch stack](https://github.com/wevm/zyzz/pull/208) add local source-free CLI acceptance and remain in review.
+Reconciled against `main` at [`d74e142`](https://github.com/wevm/zyzz/commit/d74e142) on September 17, 2026. CLI/Vite routing, packed namespaces, and Vite package acceptance are merged. Installed package resolution, dependency-watch recovery, and published CLI acceptance are merged in [#207](https://github.com/wevm/zyzz/pull/207), [#208](https://github.com/wevm/zyzz/pull/208), and [#209](https://github.com/wevm/zyzz/pull/209).
 
 The web acceptance stack, typed target branches, and static native values are merged. The web [local evidence and limits](../docs/guides/web-acceptance.md) remain separate from hosted CI, native parity, at-rule rendering, and release measurements.
 
@@ -20,8 +20,8 @@ The web acceptance stack, typed target branches, and static native values are me
 
 ## Next work
 
-1. Validate the file-host package stack against hosted CI. Local acceptance covers import-condition resolution, dependency watch recovery, published CLI native execution, and browser computed styles from source-free packages.
-2. Implement 3.9a dynamic/animated interoperability and changing host inputs. Scheme/platform selection remains fixed per file-host lifecycle. Metro integration remains outside the current adapters.
+1. Review the dynamic native stack. The merged file-host package stack passes Main, Examples, and Benchmarks at `d74e142`. Local acceptance covers source-free CLI/native execution, browser styles, and dependency-watch recovery.
+2. Implement the [three-PR native dynamic stack](#planned-native-pr-stack) in dependency order. Scheme/platform selection currently remains fixed per file-host lifecycle. Metro integration remains outside the current adapters.
 3. Execute independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
 4. Finish distribution, measurement, and documentation acceptance before release, including packed external assets and resolver dependency review.
 
@@ -37,7 +37,7 @@ Merged follow-ups cover [module isolation and HTML delivery](https://github.com/
 
 [Compile/watch/render and delivery measurements](../bench/Web-acceptance.md) are recorded for repeated, unique, conditional, and override-heavy workloads. These diagnostic results do not close the release measurement gates below.
 
-- [ ] Confirm hosted checks on merged `main` at `4f8277d`. [Main](https://github.com/wevm/zyzz/actions/runs/35173664615) failed on stale contract-version assertions; the routing stack corrects them. [Benchmarks](https://github.com/wevm/zyzz/actions/runs/35173664340) and [Examples](https://github.com/wevm/zyzz/actions/runs/35173664318) passed. Recheck all gates after this stack merges.
+- [x] Confirm hosted checks on merged `main` at `d74e142`: [Main](https://github.com/wevm/zyzz/actions/runs/35178085921), [Examples](https://github.com/wevm/zyzz/actions/runs/35178085730), and [Benchmarks](https://github.com/wevm/zyzz/actions/runs/35178085678) passed. New stack checks remain separate from this merged acceptance.
 
 ### Remaining authoring and lifecycle audit
 
@@ -60,17 +60,19 @@ The pinned inventory contains 22 rules and 62 descriptor/nested entries. Compile
 
 The accepted scope is the union of web and native capabilities, with one authoring/application model. It is not limited to portable scalar styles. Shared declarations retain documented meanings. Typed target branches handle platform-specific values. Nonportable unqualified declarations must produce diagnostics.
 
-The [universal contract](../docs/api/react-native/universal.md) specifies target resolution and value semantics. The [pinned inventory](../test/conformance/native/inventory.json) records React Native 0.87.0, 387 component/property pairs, and six runtime StyleSheet APIs. Inventory coverage does not establish value-domain or renderer parity.
+The [universal contract](../docs/api/react-native/universal.md) specifies target resolution and value semantics. The [pinned inventory](../test/conformance/native/inventory.json) retains React Native 0.87.0 legacy declarations and six runtime StyleSheet APIs. The [static audit](../test/conformance/native/README.md) covers the union of legacy and published declarations: 421 component/property pairs across 157 distinct properties.
+
+Inventory coverage does not establish value-domain or renderer parity.
 
 | Order | Remaining work                                                | Completion                                                                                                                                 |
 | ----- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 3.8e  | Hosted acceptance for static native variants and composition. | Shared inference, defaults, nulls, compounds, ordering, and bounded tables.                                                                |
-| 3.8f  | Universal callable source compilation and packed exports.     | The same authoring modules and application inputs compile for web/native without duplicate definitions.                                    |
 | 3.9a  | Dynamic/animated interoperability and host capabilities.      | Correct updates, cleanup, opaque device values, preprocessing, hairline widths, and explicit scheme/platform/density/accessibility inputs. |
 | 3.9b  | Independent browser/iOS/Android conformance and measurements. | Every applicable inventory entry has type, runtime, and renderer evidence against independent platform controls.                           |
 | 3.10  | Enforce full parity.                                          | No missing, partial, deferred, or untested native capability. All applicable gates pass.                                                   |
 
-Static variants now retain target-neutral rules and compile bounded theme/scheme tables. [Local callable compilation](../docs/api/compiler/Native.md) preserves finite selection inputs and native composition, with [integration evidence](../src/compiler/Native.test.ts). Imported graphs, file-host rebuilds, and packed static callables have [local consumer evidence](../docs/guides/native-acceptance.md). CLI/Vite native builds, packed namespace imports/re-exports, and source-free consumers have local acceptance. File-host package resolution, dependency edits, and watch recovery are covered by the current stack. Dynamic host inputs, packed external assets, and device rendering remain open.
+The static scope of 3.8e and 3.8f is implemented and merged: variants, composition, source graphs, packed callables/namespaces, CLI/Vite consumers, installed package resolution, and dependency-watch recovery. The [native acceptance record](../docs/guides/native-acceptance.md) owns fixture mappings and local evidence. Hosted acceptance for this merged scope passes at `d74e142`, as recorded above.
+
+Dynamic host inputs, packed external assets, and device rendering remain unimplemented or unverified.
 
 3.8d is implemented: [typed target branches](https://github.com/wevm/zyzz/pull/192) and [static native values](https://github.com/wevm/zyzz/pull/193), including transforms, matrices, colors, fonts, and shadows. The [static audit](../test/conformance/native/README.md) covers 157 properties across 421 component pairs, with [compiler](../src/react-native/StyleSheet.test.ts) and [type](../src/react-native/StyleSheet.test-d.ts) evidence. Host interoperability and device rendering remain 3.9 work.
 
@@ -82,6 +84,39 @@ Completion requirements:
 - Compile shared and packed definitions for browser, iOS, and Android. Verify themes, schemes, variants, dynamic payloads, composition, and target overrides without runtime CSS generation or unbounded table multiplication.
 - Pin platform/OS versions, renderer architecture, fonts, density, and visual tolerances. Compare real native layout/rendering with independent React Native controls. QuickJS and compiler snapshots do not replace device execution.
 - Keep existing web coverage. Only evidenced upstream platform unavailability may be marked not applicable. `check:native:full` remains incomplete until executed evidence replaces its pending guard.
+
+### Planned native PR stack
+
+This stack addresses 3.9a in order: [#211](https://github.com/wevm/zyzz/pull/211) targets `main`, and [#212](https://github.com/wevm/zyzz/pull/212) targets #211. Both are drafts. PR 3 will target #212 after the host interface decision. Device execution and full parity remain open.
+
+The implemented boundary keeps portable callback payloads scalar. Host-owned animated/color objects enter through native `style` overrides and retain identity and types. Device APIs, subscriptions, and registration remain outside the pure compiler. The explicit host interface remains a design decision.
+
+#### PR 1: Dynamic native callbacks and variant payloads
+
+Implemented in [#211](https://github.com/wevm/zyzz/pull/211) at `c1ce223`. Local compiler/native integration and emitted declaration checks pass. Version 23 contracts retain dynamic payload metadata. Complex dynamic transforms, shadows, token expressions, and CSS calculations remain unsupported.
+
+- Compile dynamic `style` callbacks and variant payloads into native callables while retaining static tables and shared web/native authoring semantics.
+- Preserve payload inference, defaults, compound/override order, and removal of consumed inputs. Retain diagnostics for unsupported values and syntax.
+- Acceptance: execute changed payloads across local modules, imported graphs, and packed packages. Check native output against explicit expected styles and preserve web behavior and consumer types. Do not execute application callbacks during compilation or expand unbounded payloads into static tables.
+
+#### PR 2: Animated values and device-owned colors
+
+Implemented through native `style` overrides in [#212](https://github.com/wevm/zyzz/pull/212) at `29d8b89`. Identity/replacement integration, emitted declarations, and the pinned React Native component-type consumer pass. Runtime iOS/Android animation and opaque color resolution remain unverified.
+
+- Preserve native animated values and opaque colors through the existing `style` override path without serializing, coercing, cloning, or freezing those objects. Keep compiler-owned static output immutable. Portable callback payloads remain scalar.
+- Preserve reference identity through callable application and composition, including nested arrays, falsy entries, and shallow override precedence. Keep device values out of portable packed metadata.
+- Acceptance: verify object identity, payload replacement, and composition against the pinned native contracts. Exercise host interoperability with real React Native APIs where supported. Record device-dependent evidence under 3.9b rather than treating compiler fixtures as renderer proof.
+
+#### PR 3: Explicit native host inputs and lifecycle
+
+> [!NOTE]
+> Not implemented. The proposed `NativeHost.create(...)` adapter would bind compiled definitions, update explicit host inputs, subscribe, and dispose, with platform fixed per host. Its public interface needs agreement before implementation.
+
+- Supply theme, color scheme, platform/capabilities, density, font scaling, and accessibility inputs through an explicit native adapter. Define supported runtime updates separately from compile-time platform selection.
+- Cover updates, subscription cleanup, and isolation between host instances. Include device-dependent hairline widths and preprocessing interoperability, with explicit ownership and registration lifetime.
+- Acceptance: verify theme/scheme changes, density/accessibility updates, disposal, and unchanged static behavior. Keep React Native imports and host side effects out of the root entrypoint. Update types, errors, examples, and compatibility limits with the implementation.
+
+Independent browser/iOS/Android renderer controls remain 3.9b. Packed external assets, Metro integration, and release measurements are outside this stack. The full native parity gate remains open until all applicable host and device evidence passes.
 
 ## Distribution and measurements
 

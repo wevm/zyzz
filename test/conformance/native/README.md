@@ -29,7 +29,7 @@ From the repository root, unpack the archive identified by `pin.json` into `.fix
 }
 ```
 
-Run `pnpm exec tsc --noEmit --project .fixture-native-upstream/tsconfig.json`. The consumer assigns the compiled property vectors to the package's actual View, Text, and Image style props. No React Native runtime or host registration is needed.
+Run `pnpm exec tsc --noEmit --project .fixture-native-upstream/tsconfig.json`. The consumer assigns the compiled property vectors to the package's actual View, Text, and Image style props. It also checks animated values, interpolation nodes, and opaque platform/dynamic colors through runtime callables and composition against the published component types. These are compile-time checks. No React Native runtime or host registration is executed.
 
 ## Platform Limits
 

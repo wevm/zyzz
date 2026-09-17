@@ -15,6 +15,69 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
+  test('routes published native builds and rejects incompatible flags', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-native-'))
+    try {
+      const packed = await exec('npm', [
+        'pack',
+        '--json',
+        '--pack-destination',
+        root,
+      ])
+      const filename = (JSON.parse(packed.stdout) as { filename: string }[])[0]!
+        .filename
+      await exec('npm', [
+        'install',
+        '--prefix',
+        root,
+        Path.join(root, filename),
+        '--ignore-scripts',
+        '--legacy-peer-deps',
+        '--no-audit',
+        '--no-fund',
+        '--package-lock=false',
+      ])
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(root, 'src/index.ts'),
+        `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});export const card=style({color:'ink',targets:{ios:{opacity:0.5},android:{opacity:0.8}}});`,
+      )
+      const bin = Path.join(root, 'node_modules/.bin/zyzz')
+      const run = (args: string[]) =>
+        exec(bin, ['build', ...args], { cwd: root })
+      await run([
+        '--target',
+        'native',
+        '--color-scheme',
+        'dark',
+        '--platform',
+        'android',
+      ])
+      const files = await Fs.readdir(Path.join(root, 'dist'))
+      expect(
+        files.some((file) => file.endsWith('.css') || file === 'zyzz.js'),
+      ).toMatchInlineSnapshot('false')
+      const source = await Fs.readFile(Path.join(root, 'dist/index.ts'), 'utf8')
+      expect(source.includes('#abcdef')).toMatchInlineSnapshot('true')
+      expect(source.includes('0.8')).toMatchInlineSnapshot('true')
+      for (const args of [
+        ['--target', 'native'],
+        ['--target', 'native', '--color-scheme', 'dark', '--css-only'],
+        ['--target', 'native', '--color-scheme', 'dark', '--script', 'init.js'],
+        ['--platform', 'ios'],
+        ['--color-scheme', 'light'],
+      ])
+        await expect(
+          run(args).then(
+            () => 'success',
+            () => 'error',
+          ),
+        ).resolves.toMatchInlineSnapshot('"error"')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 120000)
+
   test.each([
     { cssOnly: false, cssOutput: 'atomic' },
     { cssOnly: true, cssOutput: 'atomic' },

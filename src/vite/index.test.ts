@@ -10,7 +10,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import * as Vite from 'vite'
-import { describe, expect, test } from 'vite-plus/test'
+import { describe, expect, test, vi } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 import * as Library from '../../test/fixtures/Library.js'
@@ -80,6 +80,82 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('builds and updates native modules without web delivery', async () => {
+    const { root, config } = await create({
+      'config.ts': `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});`,
+      'index.ts': `import {style} from './config.js';export const card=style({color:'ink',targets:{ios:{opacity:0.5},android:{opacity:0.8}}});export const props=card();`,
+    })
+    const context: { colorScheme: 'dark' | 'light'; platform: 'android' } = {
+      colorScheme: 'dark',
+      platform: 'android',
+    }
+    config.plugins = [zyzz({ native: context })]
+    context.colorScheme = 'light'
+    const server = await Vite.createServer(config)
+    try {
+      await server.listen()
+      const output = await server.transformRequest('/index.ts')
+      expect(output!.code.includes('zyzz:')).toMatchInlineSnapshot('false')
+      expect(output!.code.includes('#abcdef')).toMatchInlineSnapshot('true')
+      const html = await server.transformIndexHtml(
+        '/index.html',
+        '<html><head></head><body></body></html>',
+      )
+      expect(html.includes('localStorage')).toMatchInlineSnapshot('false')
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#fedcba'}}}});`,
+      })
+      await vi.waitFor(async () => {
+        const updated = await server.transformRequest('/index.ts')
+        if (!updated!.code.includes('#fedcba'))
+          throw new Error('Waiting for updated theme')
+      })
+      await server.close()
+      await Vite.build({
+        ...config,
+        build: {
+          lib: {
+            entry: Path.join(root, 'index.ts'),
+            formats: ['es'],
+            fileName: () => 'native.mjs',
+          },
+        },
+      })
+      const files = await Fs.readdir(Path.join(root, 'dist'))
+      expect(files).toMatchInlineSnapshot(`
+[
+  "native.mjs",
+]
+`)
+      const exec = Util.promisify(ChildProcess.execFile)
+      const result = await exec(process.execPath, [
+        '--input-type=module',
+        '-e',
+        `import {props} from ${JSON.stringify(Path.join(root, 'dist/native.mjs'))};console.log(JSON.stringify(props));`,
+      ])
+      expect(JSON.parse(result.stdout)).toMatchInlineSnapshot(`
+{
+  "style": {
+    "color": "#fedcba",
+    "opacity": 0.8,
+  },
+}
+`)
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects native output without source compilation', () => {
+    expect(() =>
+      zyzz({ compiler: false, native: { colorScheme: 'light' } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native builds require source compilation.]`,
+    )
+  })
+
   for (const configuration of [false, true]) {
     function source(value: string) {
       if (!configuration) return value

@@ -1,6 +1,10 @@
 # Host.watch
 
-Watch source changes and report rebuilds or failures.
+Watch source and installed dependency changes and report rebuilds or failures.
+
+Package directories, export maps, resolved entries, and adjacent contracts trigger rebuilds. Path polling supplements filesystem events to recover after package removal, atomic replacement, and symlink changes. Successful builds drop unused subscriptions, while failed builds retain subscriptions for recovery.
+
+A missing previously loaded contract is an error. Failed builds retain the last successful artifacts. Closing the host stops source and dependency subscriptions.
 
 ```ts
 import { Host } from 'zyzz/node'

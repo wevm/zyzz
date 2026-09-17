@@ -21,7 +21,7 @@ import * as Os from 'node:os'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
-import { describe, expect, test } from 'vite-plus/test'
+import { describe, expect, test, vi } from 'vite-plus/test'
 import { Theme } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
@@ -177,6 +177,175 @@ describe('create', () => {
       await Fs.rm(root, { recursive: true, force: true })
     }
   })
+
+  test.each([false, true])(
+    'watches package replacement and recovery (linked: %s)',
+    async (linked) => {
+      const root = await Fs.mkdtemp(
+        Path.join(project, '.fixture-host-package-watch-'),
+      )
+      try {
+        const installed = Path.join(root, 'node_modules/library')
+        const library = linked ? Path.join(root, 'linked') : installed
+        const outDir = Path.join(root, 'dist')
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.mkdir(Path.dirname(installed))
+        await Fs.writeFile(Path.join(root, 'src/app.ts'), `import 'library';`)
+        await using host = await Host.create({
+          root: Path.join(root, 'src'),
+          outDir,
+          packageId: 'app',
+          css: false,
+        })
+        const errors: unknown[] = []
+        host.watch({
+          onResult(event) {
+            if ('error' in event) errors.push(event.error)
+          },
+        })
+        await vi.waitFor(() => {
+          if (!errors.length)
+            throw new Error('Awaiting missing package diagnostic')
+        })
+        expect(
+          String(errors[0]).includes('Unable to resolve "library"'),
+        ).toMatchInlineSnapshot('true')
+
+        await Fs.mkdir(library, { recursive: true })
+        if (linked) await Fs.symlink(library, installed, 'dir')
+        const manifest = Path.join(library, 'package.json')
+        await Fs.writeFile(
+          manifest,
+          JSON.stringify({ name: 'library', exports: './index.js' }),
+        )
+        await Fs.writeFile(Path.join(library, 'index.js'), '')
+        const sidecar = Path.join(library, 'index.js.zyzz.json')
+        const red = Graph.compile({
+          modules: {
+            'library/index.ts': `import {global} from 'zyzz/web';global({body:{color:'red'}});`,
+          },
+        }).contracts['library/index.ts']!
+        const blue = Graph.compile({
+          modules: {
+            'library/index.ts': `import {global} from 'zyzz/web';global({body:{color:'blue'}});`,
+          },
+        }).contracts['library/index.ts']!
+        const output = Path.join(outDir, 'zyzz.shared.css')
+        await Watch.write({ path: sidecar, source: red })
+        await vi.waitFor(
+          async () => {
+            if ((await Fs.readFile(output, 'utf8')) !== 'body{color:red;}')
+              throw new Error('Awaiting red stylesheet')
+          },
+          { timeout: 10000 },
+        )
+        const count = errors.length
+        await Watch.write({ path: sidecar, source: '{' })
+        await vi.waitFor(() => {
+          if (errors.length === count)
+            throw new Error('Awaiting metadata diagnostic')
+        })
+        expect(await Fs.readFile(output, 'utf8')).toMatchInlineSnapshot(
+          `"body{color:red;}"`,
+        )
+        await Watch.write({ path: sidecar, source: blue })
+        await vi.waitFor(
+          async () => {
+            if ((await Fs.readFile(output, 'utf8')) !== 'body{color:blue;}')
+              throw new Error('Awaiting blue stylesheet')
+          },
+          { timeout: 10000 },
+        )
+
+        const removed = errors.length
+        await Fs.rm(sidecar)
+        await vi.waitFor(() => {
+          if (errors.length === removed)
+            throw new Error('Awaiting missing sidecar diagnostic')
+        })
+        expect(await Fs.readFile(output, 'utf8')).toMatchInlineSnapshot(
+          `"body{color:blue;}"`,
+        )
+        await Watch.write({ path: sidecar, source: red })
+        await vi.waitFor(
+          async () => {
+            if ((await Fs.readFile(output, 'utf8')) !== 'body{color:red;}')
+              throw new Error('Awaiting restored stylesheet')
+          },
+          { timeout: 10000 },
+        )
+
+        await Fs.writeFile(Path.join(library, 'alternate.js'), '')
+        const switched = errors.length
+        await Watch.write({
+          path: manifest,
+          source: JSON.stringify({
+            name: 'library',
+            exports: './alternate.js',
+          }),
+        })
+        await vi.waitFor(() => {
+          if (errors.length === switched)
+            throw new Error('Awaiting missing export contract diagnostic')
+        })
+        expect(await Fs.readFile(output, 'utf8')).toMatchInlineSnapshot(
+          `"body{color:red;}"`,
+        )
+        await Fs.writeFile(Path.join(library, 'alternate.js.zyzz.json'), blue)
+        await vi.waitFor(
+          async () => {
+            if ((await Fs.readFile(output, 'utf8')) !== 'body{color:blue;}')
+              throw new Error('Awaiting new export')
+          },
+          { timeout: 10000 },
+        )
+        const missing = errors.length
+        await Fs.rename(library, library + '-saved')
+        await vi.waitFor(() => {
+          if (errors.length === missing)
+            throw new Error('Awaiting removed package diagnostic')
+        })
+        expect(await Fs.readFile(output, 'utf8')).toMatchInlineSnapshot(
+          `"body{color:blue;}"`,
+        )
+        await Fs.writeFile(
+          Path.join(library + '-saved', 'alternate.js.zyzz.json'),
+          red,
+        )
+        await Fs.rename(library + '-saved', library)
+        await vi.waitFor(
+          async () => {
+            if ((await Fs.readFile(output, 'utf8')) !== 'body{color:red;}')
+              throw new Error('Awaiting restored package')
+          },
+          { timeout: 10000 },
+        )
+        if (linked) {
+          await Fs.cp(library, library + '-other', { recursive: true })
+          await Fs.writeFile(
+            Path.join(library + '-other', 'alternate.js.zyzz.json'),
+            blue,
+          )
+          await Fs.unlink(installed)
+          await Fs.symlink(library + '-other', installed, 'dir')
+          await vi.waitFor(
+            async () => {
+              if ((await Fs.readFile(output, 'utf8')) !== 'body{color:blue;}')
+                throw new Error('Awaiting retargeted package')
+            },
+            { timeout: 10000 },
+          )
+        }
+        const final = await Fs.readFile(output, 'utf8')
+        await host.close()
+        await Watch.write({ path: sidecar, source: blue })
+        expect(await Fs.readFile(output, 'utf8')).toBe(final)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+    30000,
+  )
 
   test('captures native context before creation yields and preserves it across rebuilds', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-context-'))

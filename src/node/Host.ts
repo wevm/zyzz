@@ -135,7 +135,76 @@ export async function create(options: create.Options): Promise<Runtime> {
   >()
   let watching = false
 
+  type Dependency = {
+    inode?: number | undefined
+    listener: (current: NativeFs.Stats, previous: NativeFs.Stats) => void
+    watcher?: NativeFs.FSWatcher | undefined
+  }
+  const dependencies = new Map<string, Dependency>()
+  let invalidate: (() => void) | undefined
+  let previousContracts = new Set<string>()
+  let previousImports: Record<string, Record<string, string | null>> = {}
+  let report: ((error: unknown) => void) | undefined
+
   async function perform(): Promise<Build> {
+    const observed = new Set<string>()
+
+    function observe(path: string, directory = false) {
+      observed.add(path)
+      if (!watching || closed) return
+
+      let dependency = dependencies.get(path)
+      if (!dependency) {
+        const listener = (
+          current: NativeFs.Stats,
+          previous: NativeFs.Stats,
+        ) => {
+          if (
+            current.ino !== previous.ino ||
+            current.dev !== previous.dev ||
+            current.mtimeMs !== previous.mtimeMs ||
+            current.ctimeMs !== previous.ctimeMs
+          )
+            invalidate?.()
+        }
+        dependency = { listener }
+        dependencies.set(path, dependency)
+        // Path polling survives removal, atomic replacement, and symlink retargeting.
+        NativeFs.watchFile(path, { interval: 250, persistent: false }, listener)
+      }
+      if (!directory) return
+
+      const status = NativeFs.statSync(path, { throwIfNoEntry: false })
+      if (status?.ino === dependency.inode) return
+
+      dependency.watcher?.close()
+      dependency.watcher = undefined
+      dependency.inode = status?.ino
+      if (!status?.isDirectory()) return
+
+      const real = NativeFs.realpathSync(path)
+      dependency.watcher = NativeFs.watch(
+        path,
+        { recursive: true },
+        (_event, filename) => {
+          if (filename && inside(outDir, Path.join(real, filename.toString())))
+            return
+          if (
+            filename &&
+            /(?:^|[/\\])(?:node_modules|\.git)(?:[/\\]|$)/.test(
+              filename.toString(),
+            )
+          )
+            return
+          invalidate?.()
+        },
+      )
+      dependency.watcher.on('error', (error) => {
+        dependency.inode = undefined
+        report?.(error)
+      })
+    }
+
     const inputs: string[] = []
 
     async function scan(directory: string) {
@@ -204,6 +273,22 @@ export async function create(options: create.Options): Promise<Runtime> {
     })
 
     function resolve(specifier: string, importer: string): string | undefined {
+      const packageName = specifier.startsWith('@')
+        ? specifier.split('/').slice(0, 2).join('/')
+        : specifier.split('/')[0]!
+      for (let directory = Path.dirname(importer); ; ) {
+        observe(Path.join(directory, 'package.json'))
+        observe(Path.join(directory, 'node_modules'))
+        if (
+          !specifier.startsWith('.') &&
+          !specifier.startsWith('#') &&
+          !Path.isAbsolute(specifier)
+        )
+          observe(Path.join(directory, 'node_modules', packageName), true)
+        const parent = Path.dirname(directory)
+        if (parent === directory) break
+        directory = parent
+      }
       const resolved = resolver.sync(Path.dirname(importer), specifier)
 
       if (resolved.builtin) return undefined
@@ -212,16 +297,23 @@ export async function create(options: create.Options): Promise<Runtime> {
           `Unable to resolve ${JSON.stringify(specifier)} from ${importer}: ${resolved.error}`,
         )
 
+      observe(resolved.path)
+      if (resolved.packageJsonPath) observe(resolved.packageJsonPath)
       return resolved.path
     }
 
     async function contract(file: string, required = false): Promise<boolean> {
       if (Object.hasOwn(contracts, file)) return true
 
+      observe(`${file}.zyzz.json`)
       try {
         contracts[file] = await Fs.readFile(`${file}.zyzz.json`, 'utf8')
       } catch (error) {
-        if (!required && (error as NodeJS.ErrnoException).code === 'ENOENT')
+        if (
+          !required &&
+          !previousContracts.has(file) &&
+          (error as NodeJS.ErrnoException).code === 'ENOENT'
+        )
           return false
         throw error
       }
@@ -323,8 +415,16 @@ export async function create(options: create.Options): Promise<Runtime> {
           const relative = Path.relative(root, target).split(Path.sep).join('/')
           if (Object.hasOwn(sources, relative))
             resolutions[specifier] = `${options.packageId}/${relative}`
-          else if (/\.[cm]?[jt]sx?$/.test(target) && (await contract(target)))
-            resolutions[specifier] = target
+          else if (/\.[cm]?[jt]sx?$/.test(target)) {
+            const previous = previousImports[moduleId]?.[specifier]
+            if (
+              await contract(
+                target,
+                !!previous && previousContracts.has(previous),
+              )
+            )
+              resolutions[specifier] = target
+          }
         } catch (error) {
           throw new Source.ExtractError([
             {
@@ -680,6 +780,15 @@ export async function create(options: create.Options): Promise<Runtime> {
       throw error
     }
 
+    previousContracts = new Set(Object.keys(contracts))
+    previousImports = imports
+    for (const [path, dependency] of dependencies) {
+      if (observed.has(path)) continue
+      NativeFs.unwatchFile(path, dependency.listener)
+      dependency.watcher?.close()
+      dependencies.delete(path)
+    }
+
     return { changed: changed.sort(), files: [...artifacts.keys()].sort() }
   }
 
@@ -702,6 +811,11 @@ export async function create(options: create.Options): Promise<Runtime> {
     closed = true
     for (const { watcher } of watchers.values()) watcher.close()
     watchers.clear()
+    for (const [path, dependency] of dependencies) {
+      NativeFs.unwatchFile(path, dependency.listener)
+      dependency.watcher?.close()
+    }
+    dependencies.clear()
 
     closing = (async () => {
       await tail
@@ -716,9 +830,16 @@ export async function create(options: create.Options): Promise<Runtime> {
     if (closed) throw new Error('Host is closed.')
     if (watching) throw new Error('Host is already watching.')
     watching = true
+    report = (error) => {
+      if (!closed) watchOptions.onResult({ error })
+    }
 
     let dirty = false
     let running = false
+    invalidate = () => {
+      dirty = true
+      void flush()
+    }
 
     async function flush() {
       if (running) return

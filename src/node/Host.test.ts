@@ -13,11 +13,14 @@ import * as Registrations from '../../test/fixtures/Registrations.js'
 import * as Statements from '../../test/fixtures/Statements.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 import * as Trace from '@jridgewell/trace-mapping'
+import * as ChildProcess from 'node:child_process'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import { Theme } from 'zyzz'
 import { Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
@@ -25,6 +28,147 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { style } from 'zyzz'; export const button = style({ padding: '8px' });`
 
 describe('create', () => {
+  test('captures native context before creation yields and preserves it across rebuilds', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-context-'))
+    const outDir = Path.join(root, 'output')
+    const native = {
+      colorScheme: 'light' as 'dark' | 'light',
+      fonts: { Inter: 'Inter-Regular' },
+      platform: 'ios' as 'android' | 'ios',
+      theme: 'initial',
+      themes: { changed: Theme.define({}), initial: Theme.define({}) },
+      units: { px: 2, rem: 16 },
+    }
+    const options = { native, outDir, packageId: 'native-app', root }
+    const source = `import {Config} from 'zyzz';
+      const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#654321'}}}});
+      export const card=style({color:'ink',fontFamily:'Inter',fontSize:'1rem',width:'10px',targets:{ios:{opacity:0.7},android:{opacity:0.3}}});`
+
+    try {
+      await Fs.writeFile(Path.join(root, 'card.ts'), source)
+
+      const pending = Host.create(options)
+      native.colorScheme = 'dark'
+      await using host = await pending
+      native.fonts.Inter = 'Inter-Bold'
+      native.platform = 'android'
+      native.theme = 'changed'
+      delete (native.themes as Partial<typeof native.themes>).initial
+      delete (native.themes as Partial<typeof native.themes>).changed
+      native.units.px = 3
+      native.units.rem = 20
+
+      for (const edited of [false, true]) {
+        if (edited)
+          await Fs.writeFile(
+            Path.join(root, 'card.ts'),
+            source + '\nexport const edited = true;',
+          )
+
+        await host.build()
+        expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+
+        const output = await Esbuild.build({
+          entryPoints: [Path.join(outDir, 'card.ts')],
+          alias: { 'zyzz/runtime': Path.join(project, 'src/runtime/index.ts') },
+          bundle: true,
+          format: 'esm',
+          platform: 'node',
+          write: false,
+        })
+        const file = Path.join(root, 'bundle.mjs')
+        await Fs.writeFile(
+          file,
+          output.outputFiles[0]!.text +
+            '\nconsole.log(JSON.stringify(card()));',
+        )
+        const executed = await Util.promisify(ChildProcess.execFile)(
+          process.execPath,
+          [file],
+        )
+
+        expect(JSON.parse(executed.stdout)).toMatchInlineSnapshot(`
+          {
+            "style": {
+              "color": "#123456",
+              "fontFamily": "Inter-Regular",
+              "fontSize": 16,
+              "opacity": 0.7,
+              "width": 20,
+            },
+          }
+        `)
+        options.native = { ...native, colorScheme: 'dark' }
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('publishes native modules and recovers watched imported token edits', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-native-'))
+    const outDir = Path.join(root, 'output')
+    const config = `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:'#123456'}}});`
+    try {
+      await Fs.writeFile(Path.join(root, 'theme.ts'), config)
+      await Fs.writeFile(
+        Path.join(root, 'card.ts'),
+        `import {style} from './theme.js';export const card=style({color:'ink'});`,
+      )
+      await using host = await Host.create({
+        root,
+        outDir,
+        packageId: 'native-app',
+        native: { colorScheme: 'light', platform: 'ios' },
+      })
+      const watch = Watch.create({ path: 'card.ts' })
+      const initial = watch.next()
+      let recovering = false
+      host.watch({
+        onResult(event) {
+          if (recovering && 'error' in event) return
+          watch.onResult(event)
+        },
+      })
+      await initial
+      const original = await Fs.readFile(Path.join(outDir, 'card.ts'), 'utf8')
+      expect(original.includes('#123456')).toMatchInlineSnapshot('true')
+      expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+      expect(
+        (await host.build()).files.some(
+          (path) => /\.css(?:\.map)?$/.test(path) || path === 'zyzz.js',
+        ),
+      ).toMatchInlineSnapshot('false')
+      await expect(
+        watch.next(() =>
+          Watch.write({
+            path: Path.join(root, 'theme.ts'),
+            source: 'export const =',
+          }),
+        ),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: native-app/theme.ts:13: Unexpected token]`,
+      )
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'card.ts'), 'utf8')) === original,
+      ).toMatchInlineSnapshot('true')
+      recovering = true
+      await watch.next(() =>
+        Watch.write({
+          path: Path.join(root, 'theme.ts'),
+          source: config.replace('#123456', '#654321'),
+        }),
+      )
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'card.ts'), 'utf8')).includes(
+          '#654321',
+        ),
+      ).toMatchInlineSnapshot('true')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('excludes fixture contributions from standalone CSS', async () => {
     const root = await Fs.mkdtemp(
       Path.join(project, '.fixture-host-contributions-'),

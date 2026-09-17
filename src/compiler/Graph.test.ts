@@ -22,6 +22,118 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('rejects web-only authoring and disabled rewriting in native graphs', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'card.ts': `import {style} from 'zyzz';export const card=style({selectors:{'&:hover':{opacity:0.5}}});`,
+        },
+        native: { colorScheme: 'light' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["style-1slxe42dbli7u-45"]: Selectors, queries, and nested rules are not supported on native.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {},
+        compiler: false,
+        native: { colorScheme: 'light' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Native graph compilation requires source rewriting.]`,
+    )
+  })
+
+  test('executes native imports, re-exports and composition with configured tokens', async () => {
+    const modules = {
+      'theme.ts': `import {Config} from 'zyzz';export const {style,variants}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});`,
+      'barrel.ts': `export {style,variants} from './theme.js';`,
+      'card.ts': `import {variants} from './barrel.js';export const card=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'}});`,
+      'overlay.ts': `import {style} from './barrel.js';export const overlay=style({targets:{native:{opacity:0.5},ios:{opacity:0.7}}});`,
+      'index.ts': `import {cx} from 'zyzz';import {card} from './card.js';import {overlay} from './overlay.js';export {card} from './card.js';export const result=cx(card({size:'large'}),overlay());`,
+    }
+    const compiler = Graph.create()
+    const native = { colorScheme: 'dark', platform: 'ios' } as const
+    const result = compiler.compile({ modules, native })
+    expect(result.dependencies['index.ts']).toMatchInlineSnapshot(`
+      [
+        "card.ts",
+        "overlay.ts",
+      ]
+    `)
+    expect(
+      Object.values(result.modules).every((module) => module.css === ''),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      compiler.compile({ modules, native }) === result,
+    ).toMatchInlineSnapshot('true')
+    const directory = await Fs.mkdtemp(
+      Path.join(root, '.fixture-native-graph-'),
+    )
+    try {
+      await Promise.all(
+        Object.entries(result.modules).map(([name, module]) =>
+          Fs.writeFile(Path.join(directory, name), module.code),
+        ),
+      )
+      const output = await Esbuild.build({
+        entryPoints: [Path.join(directory, 'index.ts')],
+        alias: {
+          'zyzz/runtime': Path.join(root, 'src/runtime/index.ts'),
+          zyzz: Path.join(root, 'src/index.ts'),
+        },
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        write: false,
+      })
+      const file = Path.join(directory, 'bundle.mjs')
+      await Fs.writeFile(
+        file,
+        output.outputFiles[0]!.text + `\nconsole.log(JSON.stringify(result));`,
+      )
+      const executed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [file],
+      )
+      expect(JSON.parse(executed.stdout)).toMatchInlineSnapshot(`
+        {
+          "style": [
+            {
+              "color": "#ffffff",
+              "fontSize": 20,
+            },
+            {
+              "opacity": 0.7,
+            },
+          ],
+        }
+      `)
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+    const light = compiler.compile({
+      modules,
+      native: { ...native, colorScheme: 'light' },
+    })
+    expect(
+      light.modules['card.ts']!.code.includes('#000000'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      light.modules['card.ts']!.code === result.modules['card.ts']!.code,
+    ).toMatchInlineSnapshot('false')
+    const edited = compiler.compile({
+      modules: {
+        ...modules,
+        'theme.ts': modules['theme.ts'].replace('#000000', '#123456'),
+      },
+      native: { ...native, colorScheme: 'light' },
+    })
+    expect(
+      edited.modules['card.ts']!.code.includes('#123456'),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test.each([
     [
       `export default {opacity:.6};`,

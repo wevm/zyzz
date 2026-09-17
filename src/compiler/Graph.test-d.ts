@@ -17,6 +17,18 @@ describe('compile', () => {
       Readonly<Record<string, readonly string[]>>
     >()
 
+    Graph.compile({
+      modules: {},
+      native: { colorScheme: 'light', platform: 'ios' },
+    })
+    // @ts-expect-error Native compilation requires an explicit scheme.
+    Graph.compile({ modules: {}, native: {} })
+    // @ts-expect-error Native platform names are bounded.
+    Graph.compile({
+      modules: {},
+      native: { colorScheme: 'dark', platform: 'browser' },
+    })
+
     // @ts-expect-error Module source must be text.
     Graph.compile({ modules: { 'pkg/theme.ts': 1 } })
     // @ts-expect-error A complete source graph is required.

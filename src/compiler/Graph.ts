@@ -6,6 +6,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Stylesheets from './internal/Stylesheets.js'
 import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
+import * as Native from './Native.js'
 import * as Identity from '../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
@@ -46,6 +47,13 @@ export declare namespace compile {
     /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
     readonly imports?:
       | Readonly<Record<string, Readonly<Record<string, string | null>>>>
+      | undefined
+    /** Native output context. Omit to compile web modules and CSS. */
+    readonly native?:
+      | Omit<
+          Native.compile.Options,
+          'moduleId' | 'source' | typeof Themes.context
+        >
       | undefined
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>
@@ -104,6 +112,7 @@ type Cache = {
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
   resolutions: Readonly<Record<string, string>>
+  native: compile.Options['native']
   result: compile.ReturnType
   schemes: boolean
   sources: Readonly<Record<string, string>>
@@ -111,6 +120,15 @@ type Cache = {
 }
 
 function build(options: compile.Options, cache?: Cache): Cache {
+  if (cache?.native !== options.native) cache = undefined
+  if (options.native && options.compiler === false)
+    throw new Native.CompileError(
+      'Native graph compilation requires source rewriting.',
+    )
+  if (options.native && Object.keys(options.contracts ?? {}).length)
+    throw new Native.CompileError(
+      'Packed native callables are not supported yet.',
+    )
   if (cache?.compiler !== (options.compiler !== false)) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
@@ -756,6 +774,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
 
     const result = Source.extract({
+      target: options.native ? 'native' : 'web',
       compiler: options.compiler,
       moduleId,
       source,
@@ -875,6 +894,55 @@ function build(options: compile.Options, cache?: Cache): Cache {
   }
 
   for (const moduleId of ids) visit(moduleId)
+
+  if (options.native) {
+    const native = options.native
+    const modules = Object.fromEntries(
+      ids.map((moduleId) => {
+        const output = Native.compile({
+          ...native,
+          moduleId,
+          source: options.modules[moduleId]!,
+          [Themes.context]: { extracted: extracted.get(moduleId)!, links: {} },
+        })
+        return [
+          moduleId,
+          Object.freeze({
+            classes: Object.freeze({}),
+            code: output.code,
+            css: '',
+            cssMap: {
+              version: 3 as const,
+              names: [],
+              sources: [],
+              mappings: '',
+            },
+            map: JSON.parse(output.map) as Mapping.EncodedSourceMap,
+            themes: Object.freeze({}),
+          }),
+        ]
+      }),
+    )
+    return {
+      compiler: true,
+      composition: options.composition,
+      contracts,
+      cssOutput: options.cssOutput,
+      development: !!options.development,
+      extracted,
+      libraries: Object.freeze(libraries),
+      native: options.native,
+      resolutions: Object.freeze(resolutions),
+      result: Object.freeze({
+        contracts: Object.freeze({}),
+        dependencies: Object.freeze(dependencies),
+        modules: Object.freeze(modules),
+      }),
+      schemes: false,
+      sources: Object.freeze({ ...options.modules }),
+      themes: Object.freeze(themes),
+    }
+  }
 
   const modules: Record<string, Transform.compile.ReturnType> =
     Object.create(null)
@@ -1283,6 +1351,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     development: !!options.development,
     extracted,
     libraries: Object.freeze(libraries),
+    native: undefined,
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
       ...(sharedCss

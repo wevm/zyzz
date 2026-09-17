@@ -1,6 +1,7 @@
 /** Rewrites shared static authoring to finite native table selection. @module */
 import MagicString from 'magic-string'
 import * as Source from './Source.js'
+import * as Themes from './internal/Themes.js'
 import * as StyleSheet from '../react-native/StyleSheet.js'
 import * as Syntax from './internal/Syntax.js'
 import * as Variants from '../react-native/Variants.js'
@@ -15,11 +16,14 @@ import * as Walker from 'oxc-walker'
  * @throws {StyleSheet.CompileError} For unsupported native declaration values.
  */
 export function compile(options: compile.Options): compile.ReturnType {
-  const extracted = Source.extract({
-    moduleId: options.moduleId,
-    source: options.source,
-    target: 'native',
-  })
+  const extracted =
+    options[Themes.context]?.extracted ??
+    Source.extract({
+      moduleId: options.moduleId,
+      source: options.source,
+      target: 'native',
+      [Themes.context]: options[Themes.context],
+    })
   if (
     extracted.contributions?.length ||
     extracted.variableCalls?.length ||
@@ -166,6 +170,8 @@ export function compile(options: compile.Options): compile.ReturnType {
 export declare namespace compile {
   /** Explicit source and native context, independent of device state. */
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
+    /** Compiler-owned graph context. */
+    readonly [Themes.context]?: Themes.Context | undefined
     /** Scheme compiled into this module's callables. Recompile to select another scheme. */
     readonly colorScheme: StyleSheet.ColorScheme
     /** Stable source identity, including the TypeScript or JavaScript extension. */

@@ -26,4 +26,22 @@ The emitted module exports `button`. `button({ tone: 'loud' })` returns `{ style
 
 The result includes rewritten `code`, a version-three `map` with original source content, and complete theme/scheme `recipes` tables. The generated module imports `Native` from `zyzz/runtime`. The runtime helper can also bind a table selected with `StyleSheet.select`, without loading the compiler.
 
-Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects dynamic callbacks, payloads, named conditions, CSS selectors, variables, contributions, and web theme controls. Imported authoring graphs, packed native contracts, CLI/bundler routing, and device acceptance remain outside this local source path.
+Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects dynamic callbacks, payloads, named conditions, CSS selectors, variables, contributions, and web theme controls. Packed native contracts, CLI/bundler routing, and device acceptance remain outside this source path.
+
+## Imported Definitions
+
+`Graph.compile` and `Graph.create().compile` accept a `native` context for a complete source graph. Imports, re-exports, configured authoring helpers, and composition retain the graph compiler's resolution and dependency rules. Ordinary application imports remain in the output.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+const output = Graph.compile({
+  modules: {
+    'card.ts': `import { style } from 'zyzz'; export const card = style({ opacity: 0.5 });`,
+    'index.ts': `export { card } from './card.js';`,
+  },
+  native: { colorScheme: 'light', platform: 'ios' },
+})
+```
+
+Native graph output uses the existing `modules` and `dependencies` shape. Module `code` and `map` contain native callables, while CSS, class, and scope outputs are empty. Source rewriting is required. Packed contracts remain unsupported at this boundary.

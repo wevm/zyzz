@@ -8,6 +8,8 @@ import * as ChildProcess from 'node:child_process'
 import * as Util from 'node:util'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Os from 'node:os'
+import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import { chromium } from 'playwright'
 import * as Vite from 'vite'
 import { describe, expect, test, vi } from 'vite-plus/test'
@@ -80,6 +82,120 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('builds a source-free namespace package for web and native consumers', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(Os.tmpdir(), 'zyzz-routing-consumer-'),
+    )
+    try {
+      await Universal.create(root)
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import * as library from '@acme/universal';export const props=library.button({size:'large',active:true});`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'web.ts'),
+        `import '@acme/universal/style.css';export {props} from './app.js';`,
+      )
+      for (const target of ['native', 'web'] as const) {
+        await Vite.build({
+          root,
+          configFile: false,
+          logLevel: 'silent',
+          plugins: [
+            zyzz(
+              target === 'native'
+                ? { native: { colorScheme: 'dark', platform: 'android' } }
+                : {},
+            ),
+          ],
+          build: {
+            outDir: `dist/${target}`,
+            lib: {
+              entry: Path.join(root, target === 'native' ? 'app.ts' : 'web.ts'),
+              formats: [target === 'native' ? 'es' : 'iife'],
+              name: 'Consumer',
+              cssFileName: 'styles',
+              fileName: () => (target === 'native' ? 'native.mjs' : 'web.js'),
+            },
+          },
+        })
+      }
+      const exec = Util.promisify(ChildProcess.execFile)
+      const native = await exec(process.execPath, [
+        '--input-type=module',
+        '-e',
+        `import {props} from ${JSON.stringify(Path.join(root, 'dist/native/native.mjs'))};console.log(JSON.stringify(props));`,
+      ])
+      expect(JSON.parse(native.stdout)).toMatchInlineSnapshot(`
+        {
+          "style": {
+            "color": "#abcdef",
+            "fontSize": 20,
+            "opacity": 0.8,
+          },
+        }
+      `)
+      expect(await Fs.readdir(Path.join(root, 'dist/native')))
+        .toMatchInlineSnapshot(`
+        [
+          "native.mjs",
+        ]
+      `)
+      const files = await Fs.readdir(Path.join(root, 'dist/web'))
+      const css = await Fs.readFile(
+        Path.join(
+          root,
+          'dist/web',
+          files.find((file) => file.endsWith('.css'))!,
+        ),
+        'utf8',
+      )
+      const js = await Fs.readFile(Path.join(root, 'dist/web/web.js'), 'utf8')
+      const browser = await chromium.launch({ headless: true })
+      try {
+        const page = await browser.newPage({ colorScheme: 'dark' })
+        await page.setContent(
+          `<style>:root{color-scheme:dark}${css}</style><div id="actual"></div><div id="control" style="color:#abcdef;font-size:20px;opacity:0.8"></div>`,
+        )
+        await page.addScriptTag({
+          content:
+            js +
+            `;const element=document.querySelector('#actual');for(const [key,value] of Object.entries(Consumer.props)){if(key==='style')Object.assign(element.style,value);else element.setAttribute(key==='className'?'class':key,String(value))}`,
+        })
+        const actual = await page.locator('#actual').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            color: style.color,
+            fontSize: style.fontSize,
+            opacity: style.opacity,
+          }
+        })
+        expect(actual).toMatchInlineSnapshot(`
+          {
+            "color": "rgb(171, 205, 239)",
+            "fontSize": "20px",
+            "opacity": "0.8",
+          }
+        `)
+        const control = await page.locator('#control').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            color: style.color,
+            fontSize: style.fontSize,
+            opacity: style.opacity,
+          }
+        })
+        expect(
+          JSON.stringify(actual) === JSON.stringify(control),
+        ).toMatchInlineSnapshot('true')
+      } finally {
+        await browser.close()
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 120000)
+
   test('builds and updates native modules without web delivery', async () => {
     const { root, config } = await create({
       'config.ts': `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});`,

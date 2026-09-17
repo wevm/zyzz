@@ -44,10 +44,20 @@ export async function create(options: create.Options): Promise<Runtime> {
           targets: { ...options.css?.targets },
         }
 
-  if (
-    options.native &&
-    (options.compiler === false || options.modules === false)
-  )
+  const native = options.native
+    ? Object.freeze({
+        ...options.native,
+        fonts:
+          options.native.fonts && Object.freeze({ ...options.native.fonts }),
+        // Theme definitions are immutable. Only the caller-owned catalog needs copying.
+        themes:
+          options.native.themes && Object.freeze({ ...options.native.themes }),
+        units:
+          options.native.units && Object.freeze({ ...options.native.units }),
+      })
+    : undefined
+
+  if (native && (options.compiler === false || options.modules === false))
     throw new Error('Native builds require rewritten module output.')
 
   const outDir = Path.resolve(options.outDir ?? 'dist')
@@ -59,7 +69,7 @@ export async function create(options: create.Options): Promise<Runtime> {
   // A script inside the output is an owned artifact; elsewhere it is rewritten
   // in place so a bundler's public directory can serve it verbatim.
   const script = (() => {
-    if (options.native || options.script === false) return undefined
+    if (native || options.script === false) return undefined
 
     const path = Path.resolve(options.script ?? Path.join(outDir, 'zyzz.js'))
 
@@ -173,7 +183,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     const graph = compiler.compile({
       compiler: options.compiler,
-      native: options.native,
+      native,
       modules: Object.fromEntries(
         Object.entries(sources).map(([name, source]) => [
           `${options.packageId}/${name}`,
@@ -338,7 +348,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         artifacts.set(`${name}.map`, JSON.stringify(output.map))
       }
 
-      if (options.native) continue
+      if (native) continue
 
       let stylesheet = stylesheets.get(output)
 
@@ -652,7 +662,7 @@ export declare namespace create {
           readonly targets?: Readonly<LightningCss.Targets> | undefined
         }
       | undefined
-    /** Static native context. Emits modules and maps without CSS or web initialization. */
+    /** Native context captured at creation. Emits modules and maps without CSS or web initialization. */
     readonly native?: Graph.compile.Options['native']
     /** Output directory exclusively locked until close; may be nested under root. Defaults to `dist`. */
     readonly outDir?: string | undefined

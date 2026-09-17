@@ -76,6 +76,106 @@ Explicit browser versions control compatibility transforms and prefixing. Versio
 css: { targets: { chrome: 100 << 16, safari: (15 << 16) | (4 << 8) } }
 ```
 
+### options.native
+
+- Type: `Host.create.Options['native']`
+- Default: `undefined`, which emits web output.
+
+Compile native modules and source maps without CSS or web initialization. Requires `compiler` and `modules` to remain enabled. The host snapshots the context and its mapping objects at creation. Caller mutations do not change subsequent builds. Theme definitions are immutable values created by `Theme.define` or `Theme.extend`.
+
+```ts
+await using host = await Host.create({
+  native: {
+    colorScheme: 'dark',
+    fonts: { 'Inter, sans-serif': 'Inter-Regular' },
+    platform: 'ios',
+    units: { rem: 16 },
+  },
+  outDir: 'dist-native',
+  packageId: 'my-library',
+  root: 'src',
+})
+await host.build()
+```
+
+### options.native.colorScheme
+
+- Type: `'dark' | 'light'`
+- Required: Yes.
+
+Select the scheme compiled into native callables. No device scheme is read.
+
+```ts
+native: {
+  colorScheme: 'dark'
+}
+```
+
+### options.native.fonts
+
+- Type: `Readonly<Record<string, string>>`
+- Default: No font mappings.
+
+Map exact authored `fontFamily` text to an installed native font family. Font installation remains the application's responsibility.
+
+```ts
+native: { colorScheme: 'light', fonts: { 'Inter, sans-serif': 'Inter-Regular' } }
+```
+
+### options.native.platform
+
+- Type: `'android' | 'ios'`
+- Default: `undefined`
+
+Select platform overrides. Required when authored styles contain platform branches.
+
+```ts
+native: { colorScheme: 'light', platform: 'android' }
+```
+
+### options.native.theme
+
+- Type: `string`
+- Default: `'default'`
+
+Select a label from `themes`. The label must exist in the compiled tables. Without `themes`, the default table uses authored token fallbacks.
+
+```ts
+native: { colorScheme: 'light', theme: 'brand', themes: { brand } }
+```
+
+### options.native.themes
+
+- Type: `Readonly<Record<string, Theme.Definition>>`
+- Default: A default table using authored token fallbacks.
+
+Supply immutable theme definitions keyed by output label. Select a label with `theme`.
+
+```ts
+import { Theme } from 'zyzz'
+import { Host } from 'zyzz/node'
+
+const brand = Theme.define({ color: { ink: '#123456' } })
+
+await using host = await Host.create({
+  native: { colorScheme: 'light', theme: 'brand', themes: { brand } },
+  outDir: 'dist-native',
+  packageId: 'my-library',
+  root: 'src',
+})
+```
+
+### options.native.units
+
+- Type: `{ readonly px?: number; readonly rem?: number }`
+- Default: `px` is `1`. `rem` has no default.
+
+Set positive logical-unit conversion scales. Authored `rem` lengths require an explicit `rem` scale.
+
+```ts
+native: { colorScheme: 'light', units: { px: 1, rem: 16 } }
+```
+
 ### options.outDir
 
 - Type: `string`

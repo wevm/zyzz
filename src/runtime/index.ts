@@ -20,6 +20,9 @@ export * as Dynamic from './Dynamic.js'
 /** Compiler-owned HTML attribute binding. */
 export * as Html from './Html.js'
 
+/** Static native selection and ordinary style-prop composition. */
+export * as Native from './Native.js'
+
 /** Scoped recipe inputs bound to fixed variable slots. */
 export * as PayloadRecipe from './PayloadRecipe.js'
 

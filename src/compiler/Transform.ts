@@ -27,6 +27,8 @@ import * as Walker from 'oxc-walker'
  * @throws {Css.CompileError} If literal CSS compilation fails.
  */
 export function compile(options: compile.Options): compile.ReturnType {
+  if (options.target === 'native')
+    throw new Error('Use Native.compile for native source output.')
   const extracted =
     options[Themes.context]?.extracted ?? Source.extract(options)
 

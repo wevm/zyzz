@@ -22,6 +22,143 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test.each(['web', 'native'] as const)(
+    'compiles packed %s recipes into native consumer callables',
+    async (target) => {
+      const source = `import {Config} from 'zyzz';const {variants}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});export const card=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}}},defaultVariants:{size:'small'},compoundVariants:[{when:{size:'large'},style:{targets:{ios:{opacity:0.7},android:{opacity:0.8}}}}]});`
+      const library = Graph.compile({
+        modules: { 'library/card.ts': source },
+        ...(target === 'native'
+          ? {
+              native: {
+                colorScheme: 'light' as const,
+                platform: 'ios' as const,
+              },
+            }
+          : {}),
+      })
+      const output = Graph.compile({
+        contracts: { 'library/card.ts': library.contracts['library/card.ts']! },
+        imports: { 'app/index.ts': { library: 'library/card.ts' } },
+        modules: {
+          'app/index.ts': `import {card as button} from 'library';export {card} from 'library';export const result=button({size:'large'});`,
+        },
+        native: { colorScheme: 'dark', platform: 'android' },
+      })
+      const directory = await Fs.mkdtemp(
+        Path.join(root, '.fixture-native-packed-'),
+      )
+      try {
+        await Fs.writeFile(
+          Path.join(directory, 'package.json'),
+          JSON.stringify({ type: 'module', sideEffects: true }),
+        )
+        await Fs.writeFile(
+          Path.join(directory, 'library.ts'),
+          library.modules['library/card.ts']!.code,
+        )
+        const built = await Esbuild.build({
+          stdin: {
+            contents: output.modules['app/index.ts']!.code,
+            loader: 'ts',
+            resolveDir: root,
+          },
+          alias: {
+            library: Path.join(directory, 'library.ts'),
+            'zyzz/runtime': Path.join(root, 'src/runtime/index.ts'),
+            zyzz: Path.join(root, 'src/index.ts'),
+          },
+          bundle: true,
+          platform: 'node',
+          format: 'esm',
+          write: false,
+        })
+        await Fs.writeFile(
+          Path.join(directory, 'bundle.mjs'),
+          built.outputFiles[0]!.text,
+        )
+        const executed = await Util.promisify(ChildProcess.execFile)(
+          process.execPath,
+          [
+            '--input-type=module',
+            '-e',
+            `import {result,card} from ${JSON.stringify(Path.join(directory, 'bundle.mjs'))};console.log(JSON.stringify(result));console.log(JSON.stringify(card()));`,
+          ],
+        )
+        expect(executed.stdout).toMatchInlineSnapshot(`
+          "{"style":{"color":"#ffffff","fontSize":20,"opacity":0.8}}
+          {"style":{"color":"#ffffff","fontSize":12}}
+          "
+        `)
+        expect(output.dependencies['app/index.ts']).toMatchInlineSnapshot(`
+          [
+            "library/card.ts",
+          ]
+        `)
+        expect(
+          JSON.parse(output.contracts['app/index.ts']!).version,
+        ).toMatchInlineSnapshot('21')
+      } finally {
+        await Fs.rm(directory, { recursive: true, force: true })
+      }
+    },
+  )
+
+  test.each([
+    `import card from 'library';export const props=card();`,
+    `export * from 'library';`,
+    `export {default as card} from 'library';`,
+  ])('retains native types through packed import forms: %s', (source) => {
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {style} from 'zyzz';export const card=style({opacity:0.5});export {card as default};`,
+      },
+    })
+    const result = Graph.compile({
+      contracts: { 'library.js': library.contracts['library.ts']! },
+      imports: { 'app.ts': { library: 'library.js' } },
+      modules: { 'app.ts': source },
+      native: { colorScheme: 'light' },
+    })
+    expect(
+      result.modules['app.ts']!.code.includes('Native.Callable'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      result.modules['app.ts']!.code.includes('"opacity":0.5'),
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('rejects missing and malformed packed native recipes', () => {
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {variants} from 'zyzz';export const card=variants({variants:{size:{small:{opacity:0.5}}}});`,
+      },
+    })
+    const raw = JSON.parse(library.contracts['library.ts']!)
+    const compile = (contract: string) =>
+      Graph.compile({
+        contracts: { 'library.ts': contract },
+        imports: { 'app.ts': { './library.js': 'library.ts' } },
+        modules: {
+          'app.ts': `import {card} from './library.js';export const result=card();`,
+        },
+        native: { colorScheme: 'light' },
+      })
+    delete raw.exports.card.style.staticRecipe
+    expect(() =>
+      compile(JSON.stringify(raw)),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Packed native callable card requires a static recipe contract.]`,
+    )
+    const malformed = JSON.parse(library.contracts['library.ts']!)
+    malformed.exports.card.style.staticRecipe.defaults.size = 'unknown'
+    expect(() =>
+      compile(JSON.stringify(malformed)),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.ts:0: Invalid library contract: Invalid packed recipe default.]`,
+    )
+  })
+
   test('rejects web-only authoring and disabled rewriting in native graphs', () => {
     expect(() =>
       Graph.compile({
@@ -243,7 +380,7 @@ describe('compile', () => {
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).opacity),
       ).toMatchInlineSnapshot(`"0.8"`)
-      expect(contract.version).toMatchInlineSnapshot('20')
+      expect(contract.version).toMatchInlineSnapshot(`21`)
       expect(
         JSON.stringify(contract).includes('"ios":{"opacity":0.9}'),
       ).toMatchInlineSnapshot('true')
@@ -292,7 +429,7 @@ describe('compile', () => {
     })
     const restored = JSON.parse(packed.contracts['app.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot('20')
+    expect(contract.version).toMatchInlineSnapshot(`21`)
     expect(restored.exports.card.style.style.targets.native)
       .toMatchInlineSnapshot(`
       {
@@ -321,6 +458,7 @@ describe('compile', () => {
     expect(
       output.modules['lib/card.ts']!.css.includes('opacity:0.8'),
     ).toMatchInlineSnapshot('false')
+    delete contract.exports.card.style.staticRecipe
     contract.version = 19
     expect(() =>
       Graph.compile({
@@ -1602,7 +1740,7 @@ describe('output', () => {
               Path.join(library.installed, 'style.css'),
               'utf8',
             )
-            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`19`)
+            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`21`)
             if (producer === 'atomic')
               expect(
                 JSON.parse(contract).exports.controls.members.button.style.style
@@ -1765,7 +1903,9 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         `[Source.ExtractError: library/index.js:0: Invalid library contract: Invalid packed CSS output mode.]`,
       )
 
-      const old = JSON.parse(metadata)
+      const old = JSON.parse(metadata, (key, value) =>
+        key === 'staticRecipe' ? undefined : value,
+      )
       old.version = 16
       const legacy = Graph.compile({
         contracts: { 'library/index.js': JSON.stringify(old) },
@@ -1797,7 +1937,8 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       })
       const data = JSON.parse(
         compiled.contracts['@acme/variants/index.ts']!,
-        (key, value) => (key === 'cssOutput' ? undefined : value),
+        (key, value) =>
+          key === 'cssOutput' || key === 'staticRecipe' ? undefined : value,
       )
       data.version = 16
       const contract = JSON.stringify(data)
@@ -1879,7 +2020,9 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
             "import {Config} from 'zyzz'; export const config=Config.create({cssOutput:'grouped'}); export const style=config.style; export const card=style({color:'red',padding:'8px'})",
         },
       })
-      const packed = JSON.parse(output.contracts['config.ts']!)
+      const packed = JSON.parse(output.contracts['config.ts']!, (key, value) =>
+        key === 'staticRecipe' ? undefined : value,
+      )
       packed.version = 16
       for (const theme of Object.values(packed.themes) as Record<
         string,

@@ -125,10 +125,6 @@ function build(options: compile.Options, cache?: Cache): Cache {
     throw new Native.CompileError(
       'Native graph compilation requires source rewriting.',
     )
-  if (options.native && Object.keys(options.contracts ?? {}).length)
-    throw new Native.CompileError(
-      'Packed native callables are not supported yet.',
-    )
   if (cache?.compiler !== (options.compiler !== false)) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
@@ -897,13 +893,67 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
   if (options.native) {
     const native = options.native
+    function packedLink(link: Themes.Link): Themes.Link {
+      return {
+        ...link,
+        ...(link.style
+          ? { style: { ...link.style, className: link.style.className ?? '' } }
+          : {}),
+        ...(link.members
+          ? {
+              members: Object.fromEntries(
+                Object.entries(link.members).map(([name, link]) => [
+                  name,
+                  packedLink(link),
+                ]),
+              ),
+            }
+          : {}),
+      }
+    }
     const modules = Object.fromEntries(
       ids.map((moduleId) => {
+        if (
+          previous &&
+          extracted.get(moduleId) === previous.extracted.get(moduleId)
+        )
+          return [moduleId, previous.result.modules[moduleId]!]
+
+        const imported: Record<
+          string,
+          Readonly<Record<string, Themes.Link>>
+        > = Object.create(null)
+        for (const statement of Syntax.parse({
+          moduleId,
+          source: options.modules[moduleId]!,
+        }).program.body) {
+          if (
+            (statement.type !== 'ImportDeclaration' &&
+              statement.type !== 'ExportNamedDeclaration' &&
+              statement.type !== 'ExportAllDeclaration') ||
+            !statement.source
+          )
+            continue
+          if (
+            (statement.type === 'ImportDeclaration' &&
+              statement.importKind === 'type') ||
+            (statement.type !== 'ImportDeclaration' &&
+              statement.exportKind === 'type')
+          )
+            continue
+          const target = resolve(moduleId, statement.source.value, statement)
+          if (target && libraries[target])
+            imported[statement.source.value] = libraries[target].links
+        }
         const output = Native.compile({
           ...native,
           moduleId,
           source: options.modules[moduleId]!,
-          [Themes.context]: { extracted: extracted.get(moduleId)!, links: {} },
+          [Themes.context]: {
+            extracted: extracted.get(moduleId)!,
+            libraries: imported,
+            links: {},
+          },
         })
         return [
           moduleId,
@@ -934,7 +984,28 @@ function build(options: compile.Options, cache?: Cache): Cache {
       native: options.native,
       resolutions: Object.freeze(resolutions),
       result: Object.freeze({
-        contracts: Object.freeze({}),
+        contracts: Object.freeze(
+          Object.fromEntries(
+            ids
+              .filter(
+                (id) =>
+                  Object.keys(extracted.get(id)!.themeExports ?? {}).length,
+              )
+              .map((id) => [
+                id,
+                Contract.write(
+                  Object.fromEntries(
+                    Object.entries(extracted.get(id)!.themeExports ?? {}).map(
+                      ([name, link]) => [name, packedLink(link)],
+                    ),
+                  ),
+                  themes,
+                  [],
+                  id,
+                ),
+              ]),
+          ),
+        ),
         dependencies: Object.freeze(dependencies),
         modules: Object.freeze(modules),
       }),

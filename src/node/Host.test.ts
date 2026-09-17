@@ -460,7 +460,7 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
           }
         ).version
 
-      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`21`)
       expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
     } finally {
       await host.close()

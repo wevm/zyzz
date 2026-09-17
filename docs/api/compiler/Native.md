@@ -26,7 +26,7 @@ The emitted module exports `button`. `button({ tone: 'loud' })` returns `{ style
 
 The result includes rewritten `code`, a version-three `map` with original source content, and complete theme/scheme `recipes` tables. The generated module imports `Native` from `zyzz/runtime`. The runtime helper can also bind a table selected with `StyleSheet.select`, without loading the compiler.
 
-Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects dynamic callbacks, payloads, named conditions, CSS selectors, variables, contributions, and web theme controls. Packed native contracts, CLI/bundler routing, and device acceptance remain outside this source path.
+Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects dynamic callbacks, payloads, named conditions, CSS selectors, variables, contributions, and web theme controls. CLI/bundler routing and device acceptance remain outside this source path.
 
 ## Imported Definitions
 
@@ -44,4 +44,23 @@ const output = Graph.compile({
 })
 ```
 
-Native graph output uses the existing `modules` and `dependencies` shape. Module `code` and `map` contain native callables, while CSS, class, and scope outputs are empty. Source rewriting is required. Packed contracts remain unsupported at this boundary.
+Native graph output uses the existing `modules` and `dependencies` shape. Module `code` and `map` contain native callables, while CSS, class, and scope outputs are empty. Source rewriting is required. Exported static callables include target-neutral recipes in version 21 contracts.
+
+## Packed Callables
+
+Both web and native graph builds publish static recipes in `<entry>.zyzz.json` contracts. Native consumers supply those contracts and host-resolved `imports` edges. Compilation restores token references, applies the consumer's platform and scheme, and replaces imported callables with typed native table selectors.
+
+```ts
+const native = Graph.compile({
+  contracts: { 'library/index.js': library.contracts['library/index.ts']! },
+  imports: { 'app.ts': { library: 'library/index.js' } },
+  modules: {
+    'app.ts': `import { button } from 'library'; export const props = button();`,
+  },
+  native: { colorScheme: 'dark', platform: 'android' },
+})
+```
+
+Named and default imports, named re-exports, and star re-exports retain finite choices and defaults. Exported style namespaces use named imports. Namespace imports and namespace re-exports from packed modules require named bindings. Dynamic and legacy callables without static recipes fail explicitly. Ordinary package side effects remain imported.
+
+Generate declarations from the transformed native TypeScript output. Contracts contain compiler data, not runtime implementations. Package resolution and declaration emission remain host responsibilities. Native tables do not establish iOS or Android rendering acceptance.

@@ -14,6 +14,22 @@ await using host = await Host.create({
 await host.build()
 ```
 
+## Native Output
+
+Set `native` to an explicit compilation context to publish native TypeScript/JavaScript modules and source maps. The host emits no CSS or web initialization script. Native builds require module output and source rewriting.
+
+```ts
+await using host = await Host.create({
+  native: { colorScheme: 'dark', platform: 'ios' },
+  outDir: 'dist-native',
+  packageId: 'my-library',
+  root: 'src',
+})
+await host.build()
+```
+
+Imported changes rebuild dependent callables. Failed builds retain the last successful artifacts, and watch mode resumes after corrected source. Platform and scheme are fixed for the lifecycle. Create a separate host and output directory for another context.
+
 ## Signature
 
 `await Host.create(options)`

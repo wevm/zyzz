@@ -18,6 +18,19 @@ describe('create', () => {
     expectTypeOf(host[Symbol.asyncDispose]()).toEqualTypeOf<Promise<void>>()
     expectTypeOf(host.close()).toEqualTypeOf<Promise<void>>()
 
+    Host.create({
+      root: 'src',
+      packageId: 'native-app',
+      native: { colorScheme: 'light', platform: 'ios' },
+    })
+    const missingScheme = {
+      root: 'src',
+      packageId: 'native-app',
+      native: { platform: 'ios' },
+    } as const
+    // @ts-expect-error Native host contexts require a scheme.
+    Host.create(missingScheme)
+
     // @ts-expect-error Package identity must be explicit.
     void Host.create({ outDir: 'dist', root: 'src' })
 

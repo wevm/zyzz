@@ -25,6 +25,70 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { style } from 'zyzz'; export const button = style({ padding: '8px' });`
 
 describe('create', () => {
+  test('publishes native modules and recovers watched imported token edits', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-native-'))
+    const outDir = Path.join(root, 'output')
+    const config = `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:'#123456'}}});`
+    try {
+      await Fs.writeFile(Path.join(root, 'theme.ts'), config)
+      await Fs.writeFile(
+        Path.join(root, 'card.ts'),
+        `import {style} from './theme.js';export const card=style({color:'ink'});`,
+      )
+      await using host = await Host.create({
+        root,
+        outDir,
+        packageId: 'native-app',
+        native: { colorScheme: 'light', platform: 'ios' },
+      })
+      const watch = Watch.create({ path: 'card.ts' })
+      const initial = watch.next()
+      let recovering = false
+      host.watch({
+        onResult(event) {
+          if (recovering && 'error' in event) return
+          watch.onResult(event)
+        },
+      })
+      await initial
+      const original = await Fs.readFile(Path.join(outDir, 'card.ts'), 'utf8')
+      expect(original.includes('#123456')).toMatchInlineSnapshot('true')
+      expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+      expect(
+        (await host.build()).files.some(
+          (path) => /\.css(?:\.map)?$/.test(path) || path === 'zyzz.js',
+        ),
+      ).toMatchInlineSnapshot('false')
+      await expect(
+        watch.next(() =>
+          Watch.write({
+            path: Path.join(root, 'theme.ts'),
+            source: 'export const =',
+          }),
+        ),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: native-app/theme.ts:13: Unexpected token]`,
+      )
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'card.ts'), 'utf8')) === original,
+      ).toMatchInlineSnapshot('true')
+      recovering = true
+      await watch.next(() =>
+        Watch.write({
+          path: Path.join(root, 'theme.ts'),
+          source: config.replace('#123456', '#654321'),
+        }),
+      )
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'card.ts'), 'utf8')).includes(
+          '#654321',
+        ),
+      ).toMatchInlineSnapshot('true')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('excludes fixture contributions from standalone CSS', async () => {
     const root = await Fs.mkdtemp(
       Path.join(project, '.fixture-host-contributions-'),

@@ -255,6 +255,47 @@ export function compile(options: compile.Options): compile.ReturnType {
   const compositions: string[] = []
   for (const statement of parsed.program.body) {
     if (
+      statement.type === 'ExportAllDeclaration' &&
+      statement.source.value === 'zyzz' &&
+      statement.exportKind !== 'type'
+    )
+      throw new CompileError(
+        'Native modules require named re-exports from zyzz.',
+      )
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.source?.value === 'zyzz' &&
+      statement.exportKind !== 'type'
+    ) {
+      const cx = statement.specifiers.filter(
+        (specifier) =>
+          specifier.exportKind !== 'type' &&
+          (specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value) === 'cx',
+      )
+      if (!cx.length) continue
+      let binding = `${helper}Compose`
+      while (names.has(binding)) binding += '_'
+      names.add(binding)
+      compositions.push(`const ${binding}=${helper}.compose;`)
+      const kept = statement.specifiers
+        .filter((specifier) => !cx.includes(specifier))
+        .map((specifier) =>
+          options.source.slice(specifier.start, specifier.end),
+        )
+      const exports = cx.map(
+        (specifier) =>
+          `${binding} as ${options.source.slice(specifier.exported.start, specifier.exported.end)}`,
+      )
+      module.overwrite(
+        statement.start,
+        statement.end,
+        `${kept.length ? `export {${kept.join(',')}} from 'zyzz';` : ''}export {${exports.join(',')}};`,
+      )
+      continue
+    }
+    if (
       statement.type !== 'ImportDeclaration' ||
       statement.source.value !== 'zyzz' ||
       statement.importKind === 'type'

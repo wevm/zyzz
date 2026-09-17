@@ -50,10 +50,7 @@ declare module '@babel/core' {
 }
 
 /** Rewrites direct Zyzz imports while preserving authored source locations. */
-export default function plugin(
-  api: typeof Babel,
-  options: Options,
-): Babel.PluginObj {
+export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
   return {
     name: 'zyzz',
     pre(file) {

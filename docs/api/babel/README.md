@@ -1,12 +1,12 @@
 # Babel
 
-The default export from `zyzz/babel` compiles literal authoring for web or native before Babel lowers TypeScript and JSX. It requires Babel 7 and preserves authored JavaScript locations. The application's presets remain responsible for language lowering.
+The named `zyzz` export from `zyzz/babel` compiles literal authoring for web or native before Babel lowers TypeScript and JSX. It requires Babel 7 and preserves authored JavaScript locations. The application's presets remain responsible for language lowering.
 
 ## Web
 
 ```ts
 import { transformSync } from '@babel/core'
-import zyzz from 'zyzz/babel'
+import { zyzz } from 'zyzz/babel'
 
 const result = transformSync(source, {
   filename: 'src/styles.ts',

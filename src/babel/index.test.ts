@@ -6,7 +6,7 @@ import * as Module from 'node:module'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import plugin from 'zyzz/babel'
+import { zyzz } from 'zyzz/babel'
 
 const require = Module.createRequire(
   Path.resolve('examples/expo-native/package.json'),
@@ -22,7 +22,7 @@ function compile(source: string, platform: 'android' | 'ios' = 'ios') {
     caller,
     configFile: false,
     filename: '/Fixture.ts',
-    plugins: [[plugin, { colorScheme: 'light', platform, units: { px: 1 } }]],
+    plugins: [[zyzz, { colorScheme: 'light', platform, units: { px: 1 } }]],
     presets: [preset],
     sourceMaps: true,
   })!
@@ -41,7 +41,7 @@ async function execute(code: string) {
   )
 }
 
-describe('plugin', () => {
+describe('zyzz', () => {
   test('executes platform styles, variants, and changing payloads without authoring callbacks', async () => {
     const source = `import { style, variants } from 'zyzz'
       const box = style({ width: '10px', targets: { ios: { opacity: 0.5 }, android: { opacity: 0.8 } } })
@@ -157,7 +157,7 @@ describe('web', () => {
         babelrc: false,
         configFile: false,
         filename: '/project/left/Styles.ts',
-        plugins: [[plugin, { target: 'web', cssOutput }]],
+        plugins: [[zyzz, { target: 'web', cssOutput }]],
         presets: [preset],
         root: '/project',
         sourceMaps: true,
@@ -222,7 +222,7 @@ describe('web', () => {
         babelrc: false,
         configFile: false,
         filename: '/project/right/Styles.ts',
-        plugins: [[plugin, { target: 'web', cssOutput }]],
+        plugins: [[zyzz, { target: 'web', cssOutput }]],
         presets: [preset],
         root: '/project',
       })!

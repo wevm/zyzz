@@ -3,7 +3,7 @@ import type * as Babel from '@babel/core'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import type { Options, WebMetadata } from 'zyzz/babel'
 
-describe('plugin', () => {
+describe('zyzz', () => {
   test('separates web output options from native context', () => {
     const web = { target: 'web', cssOutput: 'grouped' } satisfies Options
     const native = {

@@ -4,7 +4,7 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
-import plugin, { type NativeOptions } from '../babel/index.js'
+import { type NativeOptions, zyzz } from '../babel/index.js'
 
 /** Babel transformer inputs passed through without removing upstream fields. */
 type Input = {
@@ -52,7 +52,7 @@ export function create(
       return upstream.transform({
         ...input,
         plugins: [
-          [plugin, { ...options, platform, target: 'native' }],
+          [zyzz, { ...options, platform, target: 'native' }],
           ...(input.plugins ?? []),
         ],
       })

@@ -60,6 +60,31 @@ describe('zyzz', () => {
       const source = await Fs.readFile(Path.join(root, 'dist/index.ts'), 'utf8')
       expect(source.includes('#abcdef')).toMatchInlineSnapshot('true')
       expect(source.includes('0.8')).toMatchInlineSnapshot('true')
+      const bundle = await Esbuild.build({
+        entryPoints: [Path.join(root, 'dist/index.ts')],
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        write: false,
+      })
+      await Fs.writeFile(
+        Path.join(root, 'native.mjs'),
+        bundle.outputFiles[0]!.text,
+      )
+      const executed = await exec(process.execPath, [
+        '--input-type=module',
+        '-e',
+        `import {card} from ${JSON.stringify(Path.join(root, 'native.mjs'))};console.log(JSON.stringify(card()));`,
+      ])
+      expect(JSON.parse(executed.stdout)).toMatchInlineSnapshot(`
+        {
+          "style": {
+            "color": "#abcdef",
+            "opacity": 0.8,
+          },
+        }
+      `)
+
       for (const args of [
         ['--target', 'native'],
         ['--target', 'native', '--color-scheme', 'dark', '--css-only'],

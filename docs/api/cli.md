@@ -65,3 +65,5 @@ npx zyzz dev --target native --color-scheme light --platform android
 ```
 
 Native builds emit modules, maps, and packed metadata without CSS or initialization scripts. `--css-only` and `--script` are incompatible with native output. Native context stays fixed for a watch session; restart to change platform or scheme. Use the file host API for theme catalogs, fonts, and unit configuration.
+
+The CLI/file host compiles a closed source tree and does not resolve installed package contracts. For source-free dependencies, use Vite or pass resolved contracts to `Graph.compile`.

@@ -6,6 +6,15 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      baseline:
+        description: Optional source revision for same-runner native compiler comparison
+        type: string
+        default: ''
+      native-count:
+        description: Native compiler definition counts
+        type: choice
+        default: all
+        options: [all, '1000']
       suite:
         description: Benchmark suite
         type: choice
@@ -370,12 +379,12 @@ jobs:
     if: github.event.action != 'closed' && (!inputs.suite || inputs.suite == 'all' || inputs.suite == 'native-compiler')
     name: Native compiler ${{ matrix.platform }} / ${{ matrix.count }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        count: [10, 100, 1000]
+        count: ${{ fromJSON(inputs.native-count == '1000' && '[1000]' || '[10,100,1000]') }}
         platform: [ios, android]
     steps:
       - uses: actions/checkout@v4
@@ -387,6 +396,37 @@ jobs:
       - run: pnpm --dir bench/native/app check:types
       - name: Validate native compiler fixtures
         run: pnpm exec vp test run --config bench/native/Check.config.ts
+      - name: Profile unique native compilation
+        if: matrix.count == 1000
+        env:
+          NODE_ENV: production
+        run: node bench/results/native/tools/Profile.mjs ${{ matrix.platform }}
+      - name: Upload native compiler CPU profile
+        if: matrix.count == 1000
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-cpu-${{ matrix.platform }}
+          path: bench/results/native/*.cpuprofile
+          if-no-files-found: error
+          retention-days: 30
+      - name: Measure native compiler baseline
+        if: inputs.baseline != ''
+        timeout-minutes: 35
+        env:
+          BASELINE_REF: ${{ inputs.baseline }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$BASELINE_REF"
+          BASELINE_SHA=$(git rev-parse FETCH_HEAD)
+          trap 'git restore --source=HEAD --worktree -- src' EXIT
+          git restore --source="$BASELINE_SHA" --worktree -- src
+          pnpm build
+          mkdir -p bench/results/native/baseline
+          printf '%s\n' "$BASELINE_SHA" > bench/results/native/baseline/commit.txt
+          pnpm exec vp test bench --config bench/native/Compile.config.ts --run --no-file-parallelism --testNamePattern 'native (cold process )?${{ matrix.platform }} / [^/]+ / ${{ matrix.count }}\b' --outputJson bench/results/native/baseline/compile-timings.json 2>&1 | tee bench/results/native/baseline/compiler.log
+      - name: Restore candidate package
+        if: inputs.baseline != ''
+        run: pnpm build
       - name: Measure native compiler pipelines
         timeout-minutes: 35
         run: |

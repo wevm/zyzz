@@ -1,0 +1,8 @@
+.tanstack/
+.wrangler/
+dist/
+node_modules/
+src/routeTree.gen.ts
+worker-configuration.d.ts
+.dev.vars*
+.env*

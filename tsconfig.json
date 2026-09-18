@@ -41,6 +41,7 @@
     "examples/next-react",
     "examples/start-react",
     "node_modules",
+    "site",
     "test-results"
   ]
 }

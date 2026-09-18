@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Edits from './internal/Edits.js'
 import * as Token from '../internal/Token.js'
 import * as Applications from './internal/Applications.js'
 import type * as Ast from '@oxc-project/types'
@@ -1131,6 +1132,8 @@ export declare namespace compile {
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */
   type ReturnType = {
+    /** Internal native node replacements, when supplied by the graph adapter. */
+    readonly [Edits.key]?: readonly Edits.Edit[] | undefined
     /** Module-scoped class lists keyed by extracted definition identity. */
     readonly classes: Readonly<Record<string, string>>
     /** Rewritten source with imports for surviving props callables. */

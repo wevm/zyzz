@@ -100,7 +100,7 @@ const timeout = setTimeout(() => {
   console.error('Native benchmark collector timed out')
   server.close()
   process.exitCode = 1
-}, 20 * 60_000)
+}, 30 * 60_000)
 server.listen(8765, '127.0.0.1', () =>
   console.log('Native collector ready on 8765'),
 )

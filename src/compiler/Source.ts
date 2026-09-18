@@ -172,7 +172,8 @@ export function extract(options: extract.Options): extract.ReturnType {
     throw new ExtractError(diagnostics)
   }
 
-  const parsed = Syntax.parse(options)
+  const namespace = identity(options.moduleId)
+  const parsed = options[Themes.context]?.parsed ?? Syntax.parse(options)
 
   if (parsed.errors.length) {
     for (const error of parsed.errors) {
@@ -190,7 +191,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
 
-  const staticData = Static.collect(
+  const staticData = Static.create(
     program,
     scopeTracker,
     options[Themes.context]?.constants,
@@ -201,7 +202,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       return Contributions.scan(
         program,
         scopeTracker,
-        identity(options.moduleId),
+        namespace,
         options[Themes.context]?.links,
         options[Themes.context]?.factories,
       )
@@ -217,7 +218,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     try {
       return Variables.collect(
         program,
-        identity(options.moduleId),
+        namespace,
         scopeTracker,
         options[Themes.context]?.links,
         options.moduleId,
@@ -234,7 +235,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     try {
       return Themes.collect(program, {
         staticBindings: staticData.bindings,
-        namespace: identity(options.moduleId),
+        namespace,
         contributionCalls: new Set(
           contributions.calls.map((call) => call.start),
         ),
@@ -250,41 +251,47 @@ export function extract(options: extract.Options): extract.ReturnType {
   })()
 
   const ancestors: Ast.Node[] = []
+  const typeAncestors = new Set<Ast.Node>()
+  const typeNodes = new Set([
+    'TSInterfaceDeclaration',
+    'TSTypeAliasDeclaration',
+    'TSTypeAnnotation',
+    'TSTypeParameterDeclaration',
+    'TSTypeParameterInstantiation',
+    'TSTypeQuery',
+  ])
 
   Walker.walk(program, {
     enter(node, parent) {
+      const declaration = staticData.visitor.enter(node, parent)
       ancestors.push(node)
+      if (
+        (parent &&
+          'typeAnnotation' in parent &&
+          parent.typeAnnotation === node) ||
+        typeNodes.has(node.type) ||
+        (node.type === 'ExportNamedDeclaration' &&
+          (node.source !== null || node.exportKind === 'type')) ||
+        (node.type === 'ExportSpecifier' && node.exportKind === 'type')
+      )
+        typeAncestors.add(node)
 
       if (
         (node.type !== 'Identifier' && node.type !== 'JSXIdentifier') ||
         !parent ||
-        !Walker.isReferenceIdentifier(node, parent)
+        (node.type === 'Identifier'
+          ? declaration === undefined
+          : !Walker.isReferenceIdentifier(node, parent))
       )
         return
 
       // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
-      if (
-        ancestors.some(
-          (ancestor) =>
-            ('typeAnnotation' in ancestor &&
-              typeof ancestor.typeAnnotation === 'object' &&
-              ancestor.typeAnnotation !== null &&
-              ancestors.includes(ancestor.typeAnnotation as Ast.Node)) ||
-            ancestor.type === 'TSTypeParameterInstantiation' ||
-            ancestor.type === 'TSTypeParameterDeclaration' ||
-            ancestor.type === 'TSTypeAnnotation' ||
-            ancestor.type === 'TSTypeAliasDeclaration' ||
-            ancestor.type === 'TSInterfaceDeclaration' ||
-            ancestor.type === 'TSTypeQuery' ||
-            (ancestor.type === 'ExportNamedDeclaration' &&
-              (ancestor.source !== null || ancestor.exportKind === 'type')) ||
-            (ancestor.type === 'ExportSpecifier' &&
-              ancestor.exportKind === 'type'),
-        )
-      )
-        return
+      if (typeAncestors.size) return
 
-      const binding = scopeTracker.getDeclaration(node.name)
+      const binding =
+        node.type === 'Identifier'
+          ? declaration ?? null
+          : scopeTracker.getDeclaration(node.name)
 
       contributions.read(node, parent, binding)
 
@@ -417,8 +424,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           node,
         )
     },
-    leave() {
+    leave(node) {
       ancestors.pop()
+      typeAncestors.delete(node)
+      staticData.visitor.leave()
     },
     scopeTracker,
   })
@@ -487,7 +496,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       return Selectors.scan(
         program,
         scopeTracker,
-        identity(options.moduleId),
+        namespace,
         pending,
         options[Themes.context]?.links,
         selectorKeys,
@@ -511,7 +520,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     })()
     const definitionId =
       explicitId === undefined
-        ? `${identity(options.moduleId)}-${call.start}`
+        ? `${namespace}-${call.start}`
         : Identity.requireId(explicitId, 'style')
     let argument = call.arguments[0]
 
@@ -629,7 +638,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         continue
       }
     }
-    const name = `style-${identity(options.moduleId)}-${call.start}`
+    const name = `style-${namespace}-${call.start}`
     const locations: Style.SourceLocation[] = []
     const conditionKeys = new Map<string, Ast.Node>()
 
@@ -1227,7 +1236,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? []
       : Compositions.collect({
           calls,
-          identity: identity(options.moduleId),
+          identity: namespace,
           links: options[Themes.context]?.links,
           program,
           source: options.source,

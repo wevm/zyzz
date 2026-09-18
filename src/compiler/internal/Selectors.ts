@@ -134,6 +134,9 @@ export function scan(
     for (const [member, value] of values)
       exposed.set(value, [...(exposed.get(value) ?? []), [name, member]])
 
+  if (!selectorKeys.size && !exposed.size)
+    return { conditions, exports, identities, localConditions }
+
   type Entry = { node: Ast.Node; parent: Ast.Node | null | undefined }
   const nodes: Entry[] = []
   Walker.walk(program, {

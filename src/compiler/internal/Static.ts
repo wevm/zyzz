@@ -11,9 +11,20 @@ export function collect(
   scope: Scope.Tracker,
   imports: Readonly<Record<string, Ast.Node>> = {},
 ) {
+  const collector = create(program, scope, imports)
+  Walker.walk(program, { ...collector.visitor, scopeTracker: scope })
+  return collector
+}
+
+/** Collects immutable references during a host-owned traversal of frozen scopes. */
+export function create(
+  program: Ast.Program,
+  scope: Scope.Tracker,
+  imports: Readonly<Record<string, Ast.Node>> = {},
+) {
   const values = new Map<number, Ast.Node>()
   const references = new Map<number, number>()
-  const usages = new Map<number, readonly Ast.Node[][]>()
+  const usages = new Map<number, Ast.Node[][]>()
   const types = new Map<number, Ast.Node>()
   const typeReferences = new Map<number, number>()
   const used = new Set<number>()
@@ -56,9 +67,8 @@ export function collect(
 
   const ancestors: Ast.Node[] = []
 
-  Walker.walk(program, {
-    scopeTracker: scope,
-    enter(node, parent) {
+  const visitor = {
+    enter(node: Ast.Node, parent: Ast.Node | null) {
       ancestors.push(node)
 
       if (node.type === 'TSTypeAliasDeclaration' && !node.typeParameters)
@@ -101,24 +111,35 @@ export function collect(
         !parent ||
         !Walker.isReferenceIdentifier(node, parent)
       )
-        return
+        return undefined
 
-      const binding = scope.getDeclaration(node.name)
+      // Distinguish unbound references from nodes that are not references.
+      const binding = scope.getDeclaration(node.name) ?? null
       if (!binding && node.name === 'undefined') absent.add(node.start)
-      if (!binding || !values.has(binding.node.start)) return
+      if (!binding || !values.has(binding.node.start)) return binding
 
       references.set(node.start, binding.node.start)
-      usages.set(binding.node.start, [
-        ...(usages.get(binding.node.start) ?? []),
-        [...ancestors],
-      ])
+      const value = Expression.unwrap(values.get(binding.node.start)!)
+      // Escape paths are only consulted for object and array resolutions.
+      if (
+        value.type === 'ArrowFunctionExpression' ||
+        value.type === 'CallExpression' ||
+        value.type === 'FunctionExpression' ||
+        value.type === 'Literal' ||
+        value.type === 'NewExpression'
+      )
+        return binding
+      const previous = usages.get(binding.node.start)
+      if (previous) previous.push([...ancestors])
+      else usages.set(binding.node.start, [[...ancestors]])
+      return binding
     },
     leave() {
       ancestors.pop()
     },
-  })
+  }
 
-  const aliases = new Map<number, number[]>()
+  let aliases: Map<number, number[]> | undefined
 
   function root(node: Ast.Node): number | undefined {
     node = Expression.unwrap(node)
@@ -236,14 +257,16 @@ export function collect(
     return []
   }
 
-  for (const [id, input] of values)
-    for (const owner of owners(input))
-      aliases.set(owner, [...(aliases.get(owner) ?? []), id])
-
   function paths(
     binding: number,
     seen = new Set<number>(),
   ): readonly (readonly Ast.Node[])[] {
+    if (!aliases) {
+      aliases = new Map()
+      for (const [id, input] of values)
+        for (const owner of owners(input))
+          aliases.set(owner, [...(aliases.get(owner) ?? []), id])
+    }
     if (seen.has(binding)) return []
 
     seen.add(binding)
@@ -688,6 +711,7 @@ export function collect(
   }
 
   return {
+    visitor,
     /** Recognizes the unshadowed undefined value without evaluating expressions. */
     absent(input: Ast.Node): boolean {
       const node = Expression.unwrap(input)

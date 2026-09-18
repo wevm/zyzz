@@ -25,6 +25,42 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('releases native parser trees while retaining lazy source maps', async () => {
+    const directory = await Fs.mkdtemp(
+      Path.resolve('.fixture-native-retention-'),
+    )
+    try {
+      const outfile = Path.join(directory, 'retention.mjs')
+      await Esbuild.build({
+        bundle: true,
+        entryPoints: [Path.join(root, 'test/fixtures/NativeRetention.ts')],
+        format: 'esm',
+        outfile,
+        packages: 'external',
+        platform: 'node',
+      })
+      const { stdout } = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        ['--expose-gc', outfile],
+      )
+      const result = JSON.parse(stdout)
+
+      expect(result.released).toMatchInlineSnapshot('true')
+      expect(result.sources).toMatchInlineSnapshot(`
+        [
+          "app.ts",
+        ]
+      `)
+      expect(result.sourcesContent).toMatchInlineSnapshot(`
+        [
+          "import {style} from 'zyzz';export const card=style({width:'12px'});",
+        ]
+      `)
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  })
+
   test.each([
     `import * as ns from './library.js';export {ns};`,
     `import label,* as ns from './library.js';export {ns,label};`,

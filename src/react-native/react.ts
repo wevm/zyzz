@@ -2,9 +2,7 @@
 import * as React from 'react'
 import * as NativeContext from '../runtime/NativeContext.js'
 
-const context = React.createContext<NativeContext.Context | undefined>(
-  undefined,
-)
+const context = React.createContext(styles(undefined))
 
 /** Supplies theme and resolved device appearance to compiled native components. */
 export function Provider(props: Provider.Props) {
@@ -17,7 +15,7 @@ export function Provider(props: Provider.Props) {
       'Native appearance requires a resolved light/dark scheme and a nonempty theme name.',
     )
   const value = React.useMemo(
-    () => ({ colorScheme: props.colorScheme, theme: props.theme }),
+    () => styles({ colorScheme: props.colorScheme, theme: props.theme }),
     [props.colorScheme, props.theme],
   )
   return React.createElement(context.Provider, { value }, props.children)
@@ -34,9 +32,13 @@ export declare namespace Provider {
 
 /** Compiler-inserted unconditional subscription, including memoized components. */
 export function useStyles() {
-  const value = React.useContext(context)
+  return React.useContext(context)
+}
+
+function styles(value: NativeContext.Context | undefined) {
   return {
-    style: (style: unknown) => NativeContext.resolve(style, value),
+    style: (style: unknown, input?: unknown) =>
+      NativeContext.resolve(style, value, input),
     props: (props: Record<string, unknown> | null | undefined) =>
       props && Object.hasOwn(props, 'style')
         ? { ...props, style: NativeContext.resolve(props.style, value) }

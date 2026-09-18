@@ -7,6 +7,7 @@ import * as Stylesheets from './internal/Stylesheets.js'
 import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
 import * as Native from './Native.js'
+import * as Edits from './internal/Edits.js'
 import * as Identity from '../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
@@ -37,6 +38,10 @@ export declare namespace compile {
 
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** Host syntax from the same immutable source snapshot. */
+    readonly [Syntax.cache]?:
+      | ReadonlyMap<string, Parser.ParseResult>
+      | undefined
     /** Rewrite authoring calls. False emits CSS for unchanged source. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
@@ -125,6 +130,7 @@ type Cache = {
 function build(options: compile.Options, cache?: Cache): Cache {
   if (
     !!cache?.native !== !!options.native ||
+    cache?.native?.[Edits.runtime] !== options.native?.[Edits.runtime] ||
     Object.keys(cache?.native ?? {}).length !==
       Object.keys(options.native ?? {}).length ||
     Object.entries(cache?.native ?? {}).some(([key, value]) => {
@@ -150,6 +156,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
   const ids = Object.keys(options.modules).sort()
+  const programs = new Map<string, ReturnType<typeof Syntax.parse>>()
+  function parse(input: Syntax.parse.Options) {
+    const cached =
+      programs.get(input.moduleId) ?? options[Syntax.cache]?.get(input.moduleId)
+    if (cached) return cached
+    const parsed = Syntax.parse(input)
+    programs.set(input.moduleId, parsed)
+    return parsed
+  }
 
   const contracts = JSON.stringify(
     Object.entries(options.contracts ?? {}).sort(([a], [b]) =>
@@ -203,6 +218,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
   const dependencies: Record<string, readonly string[]> = Object.create(null)
   const extracted = new Map<string, Source.extract.ReturnType>()
+  const identifiers = new Map<string, Set<string>>()
   const owners: Record<string, NonNullable<Themes.Context['owners']>[string]> =
     Object.create(null)
   const themes: Record<string, Theme.Definition> = Object.create(null)
@@ -331,7 +347,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     if (active.has(key) || !Object.hasOwn(options.modules, moduleId))
       return undefined
     const next = new Set(active).add(key)
-    const program = Syntax.parse({
+    const program = parse({
       moduleId,
       source: options.modules[moduleId]!,
     }).program
@@ -598,13 +614,16 @@ function build(options: compile.Options, cache?: Cache): Cache {
     // Validate identity and syntax through the public source boundary before linking.
     Source.extract({ moduleId, source: '' })
 
-    const parsed = Syntax.parse({ moduleId, source })
+    const parsed = parse({ moduleId, source })
 
     if (parsed.errors.length) Source.extract({ moduleId, source })
     factoryPrograms.set(moduleId, parsed.program)
 
+    const names = new Set<string>()
+    identifiers.set(moduleId, names)
     Walker.walk(parsed.program, {
       enter(node) {
+        if (node.type === 'Identifier') names.add(node.name)
         if (
           options.imports === undefined &&
           node.type === 'ImportExpression' &&
@@ -833,7 +852,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       compiler: options.compiler,
       moduleId,
       source,
-      [Themes.context]: { constants: values, factories, links },
+      [Themes.context]: { constants: values, factories, links, parsed },
     })
 
     function outputLink(link: Themes.Link): Themes.Link {
@@ -982,7 +1001,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
           string,
           Readonly<Record<string, Themes.Link>>
         > = Object.create(null)
-        for (const statement of Syntax.parse({
+        for (const statement of parse({
           moduleId,
           source: options.modules[moduleId]!,
         }).program.body) {
@@ -1020,27 +1039,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
           moduleId,
           source: options.modules[moduleId]!,
           [Themes.context]: {
+            parsed: parse({ moduleId, source: options.modules[moduleId]! }),
+            identifiers: identifiers.get(moduleId),
             extracted: extracted.get(moduleId)!,
             libraries: imported,
             links: {},
           },
         })
-        return [
-          moduleId,
-          Object.freeze({
-            classes: Object.freeze({}),
-            code: output.code,
-            css: '',
-            cssMap: {
-              version: 3 as const,
-              names: [],
-              sources: [],
-              mappings: '',
-            },
-            map: JSON.parse(output.map) as Mapping.EncodedSourceMap,
-            themes: Object.freeze({}),
-          }),
-        ]
+        return [moduleId, nativeOutput(output)]
       }),
     )
     return {
@@ -1154,7 +1160,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const resetOwners = ids.filter(
     (id) =>
       options.modules[id]!.includes('zyzz/reset.css') &&
-      Syntax.parse({
+      parse({
         moduleId: id,
         source: options.modules[id]!,
       }).program.body.some(
@@ -1553,4 +1559,28 @@ function build(options: compile.Options, cache?: Cache): Cache {
     sources: Object.freeze({ ...options.modules }),
     themes: sharedThemes,
   }
+}
+
+// A returned lazy map must not retain the graph compilation context.
+function nativeOutput(
+  output: Native.compile.ReturnType,
+): Transform.compile.ReturnType {
+  let sourceMap: Mapping.EncodedSourceMap | undefined
+
+  return Object.freeze({
+    classes: Object.freeze({}),
+    [Edits.key]: output[Edits.key],
+    code: output.code,
+    css: '',
+    cssMap: {
+      version: 3 as const,
+      names: [],
+      sources: [],
+      mappings: '',
+    },
+    get map() {
+      return (sourceMap ??= JSON.parse(output.map) as Mapping.EncodedSourceMap)
+    },
+    themes: Object.freeze({}),
+  })
 }

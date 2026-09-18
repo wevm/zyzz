@@ -3,18 +3,24 @@ import * as Fs from 'node:fs/promises'
 
 const platform = process.argv[2]
 const count = Number(process.argv[3])
+const kind = process.argv[4] ?? 'all'
 if (
   !['ios', 'android'].includes(platform ?? '') ||
-  ![10, 100, 1000].includes(count)
+  ![10, 100, 1000].includes(count) ||
+  !['all', 'unique'].includes(kind)
 )
-  throw new Error('Usage: CompileReport.mjs ios|android 10|100|1000')
+  throw new Error(
+    'Usage: CompileReport.mjs ios|android 10|100|1000 [all|unique]',
+  )
 
 const expected = new Set<string>()
-for (const kind of ['repeated', 'unique', 'dynamic', 'variants', 'theme'])
+for (const workload of kind === 'all'
+  ? ['repeated', 'unique', 'dynamic', 'variants', 'theme']
+  : [kind])
   for (const mode of ['cold process', 'warm module', 'edited module'])
     for (const library of ['stylesheet', 'unistyles', 'zyzz'])
       expected.add(
-        `${mode === 'cold process' ? 'native cold process' : 'native'} ${platform} / ${kind} / ${count}${mode === 'cold process' ? '' : ` / ${mode}`}/${library}`,
+        `${mode === 'cold process' ? 'native cold process' : 'native'} ${platform} / ${workload} / ${count}${mode === 'cold process' ? '' : ` / ${mode}`}/${library}`,
       )
 
 const root = 'bench/results/native'

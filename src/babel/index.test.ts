@@ -21,6 +21,7 @@ function compile(source: string, platform: 'android' | 'ios' = 'ios') {
     babelrc: false,
     caller,
     configFile: false,
+    comments: true,
     filename: '/Fixture.ts',
     plugins: [[zyzz, { colorScheme: 'light', platform, units: { px: 1 } }]],
     presets: [preset],
@@ -96,6 +97,41 @@ describe('zyzz', () => {
     `)
   })
 
+  test('keeps independent native values and identities when definitions share a structure', async () => {
+    const output = compile(`import { style } from 'zyzz'
+      const __zyzzNativeFactory0 = 17
+      const first = style({width:'1px',opacity:0.2,transform:'translateX(3px)'})
+      const second = style({width:'2px',opacity:0.4,transform:'translateX(6px)'})
+      export const results = [first().style, second().style, __zyzzNativeFactory0,
+        Object.isFrozen(first().style), first().style === second().style]`)
+    const module = await execute(output.code!)
+
+    expect(module.results).toEqual([
+      { width: 1, opacity: 0.2, transform: [{ translateX: 3 }] },
+      { width: 2, opacity: 0.4, transform: [{ translateX: 6 }] },
+      17,
+      true,
+      false,
+    ])
+  })
+
+  test('preserves escaped strings and exponent numbers in shared native factories', async () => {
+    const output = compile(`import { style } from 'zyzz'
+      const first = style({targets:{native:{fontFamily:${JSON.stringify('Font "null":\\ 12 true')},width:1e-7,height:1e21}}})
+      const second = style({targets:{native:{fontFamily:'Other',width:2e-7,height:2e21}}})
+      export const results = [first().style, second().style]`)
+    const module = await execute(output.code!)
+
+    expect(
+      module.results[0].fontFamily === 'Font "null":\\ 12 true',
+    ).toMatchInlineSnapshot('true')
+    expect(module.results[0].width).toMatchInlineSnapshot('1e-7')
+    expect(module.results[0].height).toMatchInlineSnapshot('1e+21')
+    expect(module.results[1].fontFamily).toMatchInlineSnapshot('"Other"')
+    expect(module.results[1].width).toMatchInlineSnapshot('2e-7')
+    expect(module.results[1].height).toMatchInlineSnapshot('2e+21')
+  })
+
   test('preserves source locations after generated imports and shortened expressions', () => {
     const output = compile(`import { style } from 'zyzz'
 export const box = style({ width: '10px' })
@@ -111,6 +147,98 @@ export const marker = 'original-location'
       },
     )
     expect(position.line).toMatchInlineSnapshot(`3`)
+  })
+
+  test.each([
+    { name: 'LF', newline: '\n' },
+    { name: 'CRLF', newline: '\r\n' },
+    { name: 'CR', newline: '\r' },
+    { name: 'line separator', newline: '\u2028' },
+    { name: 'paragraph separator', newline: '\u2029' },
+  ])(
+    'retains comments, directives, and source locations with $name',
+    async ({ newline }) => {
+      const source = [
+        '#!/usr/bin/env node',
+        "'use client';",
+        '/* 😀 */',
+        "import { style } from 'zyzz'",
+        'export const box = style({',
+        "  width: '10px',",
+        '})',
+        "export const marker = 'original-location'",
+      ].join(newline)
+      const output = compile(source)
+      const lines = output.code!.split('\n')
+      const index = lines.findIndex((line) =>
+        line.includes('original-location'),
+      )
+      const original = Trace.originalPositionFor(
+        new Trace.TraceMap(JSON.stringify(output.map)),
+        {
+          line: index + 1,
+          column: lines[index]!.indexOf('original-location'),
+        },
+      )
+
+      expect(original.line).toMatchInlineSnapshot('8')
+      expect(original.column).toMatchInlineSnapshot('22')
+      expect(output.code!.includes('/* 😀 */')).toMatchInlineSnapshot('true')
+      expect(output.code!.includes('use client')).toMatchInlineSnapshot('true')
+      expect((await execute(output.code!)).box()).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "width": 10,
+        },
+      }
+    `)
+    },
+  )
+
+  test('supports an existing parser override and transforms supplied syntax trees', async () => {
+    const source = `import {style} from 'zyzz'; const box=style({width:'7px'}); export const results=box();`
+    const caller = { name: 'metro', platform: 'ios', isDev: false }
+    const options: Babel.TransformOptions = {
+      babelrc: false,
+      configFile: false,
+      filename: '/Fixture.ts',
+      caller,
+      plugins: [
+        [zyzz, { platform: 'ios', colorScheme: 'light', units: { px: 1 } }],
+      ],
+      presets: [preset],
+    }
+    let parses = 0
+    const custom = Babel.transformSync(source, {
+      ...options,
+      plugins: [
+        ...options.plugins!,
+        () => ({
+          visitor: {},
+          parserOverride(
+            code: string,
+            options: Babel.ParserOptions,
+            parse: (
+              code: string,
+              options: Babel.ParserOptions,
+            ) => Babel.types.File,
+          ) {
+            parses++
+            return parse(code, options)
+          },
+        }),
+      ],
+    })!
+    const ast = Babel.parseSync(source, { babelrc: false, configFile: false })!
+    const supplied = Babel.transformFromAstSync(ast, source, options)!
+
+    expect(parses).toBe(1)
+    expect((await execute(custom.code!)).results).toEqual({
+      style: { width: 7 },
+    })
+    expect((await execute(supplied.code!)).results).toEqual({
+      style: { width: 7 },
+    })
   })
 
   test('rejects graph-dependent authoring instead of emitting web helpers', () => {

@@ -371,7 +371,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         // Zyzz authoring and runtime entrypoints are handled by the static transform.
         if (
           specifier === 'zyzz' ||
-          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/themes/default')
+          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
         ) {
           resolutions[specifier] = null
           continue
@@ -395,8 +395,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
 
         if (
-          specifier === 'zyzz/themes/default' &&
-          /[/\\]src[/\\]themes[/\\]default\.[cm]?ts$/.test(resolved.id)
+          specifier === 'zyzz/default' &&
+          /[/\\]src[/\\]default\.[cm]?ts$/.test(resolved.id)
         ) {
           sourceEntrypoints.add(normalize(resolved.id))
           resolutions[specifier] = sourceId(resolved.id)
@@ -524,7 +524,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           if (
             specifier === 'zyzz' ||
             (specifier.startsWith('zyzz/') &&
-              specifier !== 'zyzz/themes/default')
+              specifier !== 'zyzz/default')
           )
             continue
 

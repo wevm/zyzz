@@ -2,7 +2,7 @@
 import * as Fs from 'node:fs/promises'
 import * as Parser from 'oxc-parser'
 
-const file = new URL('../src/themes/default.ts', import.meta.url)
+const file = new URL('../src/default.ts', import.meta.url)
 const source = await Fs.readFile(file, 'utf8')
 const program = Parser.parseSync('default.ts', source, {
   sourceType: 'module',
@@ -16,12 +16,23 @@ const declarations = program.body.flatMap((node) =>
 const tokens = declarations.find(
   (node) => node.id.type === 'Identifier' && node.id.name === 'tokens',
 )!.init!
-const theme = declarations.find(
-  (node) => node.id.type === 'Identifier' && node.id.name === 'theme',
+const config = declarations.find(
+  (node) => node.id.type === 'ObjectPattern',
 )!.init!
-if (tokens.type !== 'TSAsExpression' || theme.type !== 'CallExpression')
-  throw new Error('Unexpected bundled theme source layout.')
-const argument = theme.arguments[0]!
+if (tokens.type !== 'TSAsExpression' || config.type !== 'CallExpression')
+  throw new Error('Unexpected bundled configuration source layout.')
+const options = config.arguments[0]!
+if (options.type !== 'ObjectExpression')
+  throw new Error('Unexpected bundled configuration options.')
+const property = options.properties.find(
+  (node) =>
+    node.type === 'Property' &&
+    node.key.type === 'Identifier' &&
+    node.key.name === 'theme',
+)
+if (!property || property.type !== 'Property')
+  throw new Error('Missing bundled theme.')
+const argument = property.value
 await Fs.writeFile(
   file,
   source.slice(0, argument.start) +

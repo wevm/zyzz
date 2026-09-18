@@ -14,7 +14,7 @@ describe('create', () => {
     const root = Path.resolve(import.meta.dirname, '..')
     const file = Path.join(root, '.fixture-config-editor.ts')
     let source = `import { Config } from 'zyzz'
-import { theme } from 'zyzz/themes/default'
+import { theme } from 'zyzz/default'
 const { style } = Config.create({ theme })
 const pane = style({ alignItems: 'center', fontFamily: 'sans' })
 const dynamic = style((values: { width: \`\${number}px\` }) => ({

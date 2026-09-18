@@ -12,7 +12,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
 - Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering. Convenience syntax must expand predictably.
 - Emit CSS ahead of time. Runtime authoring may derive stable class identities, select static alternatives, and bind variables, but must not emit or insert CSS rules. Source optimization is optional and enabled by default in the bundler plugin.
-- Keep root `style` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `zyzz/themes/default` entrypoint, exporting bound `style` and `variants`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
+- Keep root `style` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `zyzz/default` entrypoint, exporting the default config's `appearance`, `script`, `style`, `theme`, and `variants`, plus raw `tokens`. Core imports must not include bundled theme data.
 
 ## TypeScript Conventions
 

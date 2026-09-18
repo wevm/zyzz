@@ -1,4 +1,4 @@
-/** Verifies the opt-in theme through an actual package archive and independent Vite consumer. @module */
+/** Verifies the default configuration through an actual package archive and independent Vite consumer. @module */
 import * as ChildProcess from 'node:child_process'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
@@ -11,11 +11,11 @@ import { zyzz } from 'zyzz/vite'
 
 const exec = Util.promisify(ChildProcess.execFile)
 
-describe('variants', () => {
+describe('default', () => {
   beforeAll(async () => {
     // The integration command builds once before workers consume package artifacts.
-    await Fs.access(Path.resolve('dist/themes/default.js.zyzz.json'))
-    await Fs.access(Path.resolve('dist/themes/default.d.ts'))
+    await Fs.access(Path.resolve('dist/default.js.zyzz.json'))
+    await Fs.access(Path.resolve('dist/default.d.ts'))
   })
 
   test.each([{ conditions: [] }, { conditions: ['src'] }])(
@@ -43,18 +43,27 @@ describe('variants', () => {
           installed,
           '--strip-components=1',
         ])
-        await Fs.access(Path.join(installed, 'dist/themes/default.d.ts'))
+        await Fs.access(Path.join(installed, 'dist/default.d.ts'))
         await Fs.writeFile(
           Path.join(root, 'package.json'),
           '{"private":true,"type":"module"}',
         )
+        const initialization = await exec(
+          process.execPath,
+          [
+            '--input-type=module',
+            '-e',
+            "import { script } from 'zyzz/default'; process.stdout.write(script())",
+          ],
+          { cwd: root },
+        )
         await Fs.writeFile(
           Path.join(root, 'index.html'),
-          '<main><button>Button</button></main><script type="module" src="/app.ts"></script>',
+          `<head><script>${initialization.stdout}</script><script>document.documentElement.dataset.restoredScheme=document.documentElement.style.colorScheme</script></head><body><main><button>Button</button></main><script type="module" src="/app.ts"></script></body>`,
         )
         await Fs.writeFile(
           Path.join(root, 'app.ts'),
-          `import {variants,theme} from 'zyzz/themes/default';
+          `import {appearance,variants,theme} from 'zyzz/default';
         namespace styles {
           export const button=variants({conditions:{wide:'@media >=md'},base:{fontFamily:'sans',color:'blue.700'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
         }
@@ -62,6 +71,10 @@ describe('variants', () => {
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
         const element=document.querySelector('button')!;
         element.className=props.className;
+        element.onclick=()=>{
+          appearance.set({colorScheme:'dark'});
+          element.dataset.scheme=appearance.get().colorScheme;
+        };
         for(const [key,value] of Object.entries(props)) {
           if(key.startsWith('data-')) element.setAttribute(key,String(value));
           if(key==='style') for(const [name,bound] of Object.entries(value!)) element.style.setProperty(name,String(bound));
@@ -70,7 +83,11 @@ describe('variants', () => {
         const types = Path.join(root, 'types.ts')
         await Fs.writeFile(
           types,
-          `import {variants} from 'zyzz/themes/default';
+          `import {appearance,script,variants} from 'zyzz/default';
+const initialization: string = script();
+appearance.set({colorScheme:'dark'});
+// @ts-expect-error The default config has no named theme catalog.
+appearance.set({theme:'other'});
 const button=variants({variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}}});
 button({size:{custom:{padding:'12px'}}});
 // @ts-expect-error Dynamic choices require complete scoped payloads.
@@ -129,7 +146,12 @@ variants({base:{color:'missing'}});`,
           expect(
             await page
               .locator('button')
-              .evaluate((element) => getComputedStyle(element).fontFamily),
+              .evaluate((element) =>
+                getComputedStyle(element).fontFamily.replace(
+                  '"system-ui"',
+                  'BlinkMacSystemFont',
+                ),
+              ),
           ).toMatchInlineSnapshot(
             `"Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji""`,
           )
@@ -138,6 +160,22 @@ variants({base:{color:'missing'}});`,
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
           ).toMatchInlineSnapshot(`"rgb(0, 112, 247)"`)
+          await page.locator('button').click()
+          expect(
+            await page.locator('button').getAttribute('data-scheme'),
+          ).toMatchInlineSnapshot(`"dark"`)
+          expect(
+            await page
+              .locator('button')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot(`"rgb(0, 113, 246)"`)
+          await page.reload()
+          await page.waitForFunction(
+            "getComputedStyle(document.querySelector('button')).color === 'rgb(0, 113, 246)'",
+          )
+          expect(
+            await page.locator('html').getAttribute('data-restored-scheme'),
+          ).toMatchInlineSnapshot(`"dark"`)
           await page.setViewportSize({ width: 900, height: 800 })
           await page.waitForFunction(
             "getComputedStyle(document.querySelector('button')).padding === '24px'",
@@ -162,13 +200,13 @@ variants({base:{color:'missing'}});`,
         })
         expect(
           Object.keys(bundled.metafile!.inputs).some((name) =>
-            name.includes('/themes/'),
+            /(?:^|[/\\])(?:src|dist)[/\\]default\.[cm]?[jt]s$/.test(name),
           ),
         ).toMatchInlineSnapshot('false')
         expect(
           JSON.parse(
             await Fs.readFile(
-              Path.join(installed, 'dist/themes/default.js.zyzz.json'),
+              Path.join(installed, 'dist/default.js.zyzz.json'),
               'utf8',
             ),
           ).version,

@@ -47,7 +47,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Style](api/core/Style/README.md): Section index.
 - [Style.define](api/core/Style/define.md): Reference and examples.
 - [Literal Values](api/core/Style/literals.md): Reference and examples.
-- [zyzz/themes/default](api/themes/default.md): Reference and examples.
+- [zyzz/default](api/default.md): Reference and examples.
 - [zyzz/web](api/web/README.md): Section index.
 - [Css](api/web/Css/README.md): Section index.
 - [Css.compile](api/web/Css/compile.md): Reference and examples.

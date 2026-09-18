@@ -394,7 +394,7 @@ export async function create(options: create.Options): Promise<Runtime> {
           continue
         if (
           specifier === 'zyzz' ||
-          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/themes/default')
+          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
         )
           continue
         if (

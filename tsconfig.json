@@ -13,6 +13,7 @@
       "zyzz": ["./src/index.ts"],
       "zyzz/babel": ["./src/babel/index.ts"],
       "zyzz/compiler": ["./src/compiler/index.ts"],
+      "zyzz/default": ["./src/default.ts"],
       "zyzz/metro": ["./src/metro/index.ts"],
       "zyzz/metro/transformer": ["./src/metro/transformer.ts"],
       "zyzz/next": ["./src/next/index.ts"],
@@ -20,7 +21,6 @@
       "zyzz/node": ["./src/node/index.ts"],
       "zyzz/react-native": ["./src/react-native/index.ts"],
       "zyzz/runtime": ["./src/runtime/index.ts"],
-      "zyzz/themes/default": ["./src/themes/default.ts"],
       "zyzz/vite": ["./src/vite/index.ts"],
       "zyzz/web": ["./src/web/index.ts"]
     },

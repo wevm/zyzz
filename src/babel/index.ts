@@ -80,7 +80,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
       if (
         node.type === 'ImportDeclaration' &&
         node.importKind !== 'type' &&
-        node.source.value === 'zyzz/themes/default'
+        node.source.value === 'zyzz/default'
       )
         throw new Error(
           'Zyzz Babel requires local theme authoring; bundled themes require package graph support.',
@@ -107,7 +107,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
       if (node.type !== 'ImportDeclaration' || node.importKind === 'type')
         continue
       if (
-        node.source.value === 'zyzz/themes/default' ||
+        node.source.value === 'zyzz/default' ||
         (node.source.value === 'zyzz' &&
           node.specifiers.some(
             (specifier) =>
@@ -127,7 +127,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
       (node) =>
         node.type === 'ImportDeclaration' &&
         (node.source.value === 'zyzz' ||
-          node.source.value === 'zyzz/themes/default' ||
+          node.source.value === 'zyzz/default' ||
           node.source.value === 'zyzz/web'),
     )
     if (!authorsStyles && !contextual) return

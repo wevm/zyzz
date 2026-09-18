@@ -10,7 +10,7 @@ No. The source transform replaces style definitions. Importing config does not m
 
 ## Are Tokens Bundled?
 
-Core imports are token-free. The optional `zyzz/themes/default` entrypoint is planned separately.
+Core imports are token-free. The optional `zyzz/default` entrypoint is planned separately.
 
 ## Why a Callback?
 

@@ -297,8 +297,9 @@ namespace styles {
   })
 }
 
-type ButtonProps = Props.Variants<typeof styles.button>
-const example = <button {...styles.button({ size: 'sm' })}>Continue</button>
+export function Button(props: Props.Variants<typeof styles.button>) {
+  return <button {...styles.button(props)}>Continue</button>
+}
 ```
 
 ### Dynamic Styles

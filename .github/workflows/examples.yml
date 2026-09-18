@@ -84,7 +84,7 @@ jobs:
             })()
             const name = `zyzz-examples-${example}${suffix}`
             // An example names its static site directory in package.json config.site; dist is the
-            // default, and false marks a server-rendered example that is built without a deployment.
+            // default, and false disables deployment while keeping the build check.
             const pkg = JSON.parse(fs.readFileSync(`examples/${example}/package.json`, 'utf8'))
             const site = pkg.config?.site ?? 'dist'
             if (site === false) {
@@ -143,13 +143,14 @@ jobs:
                 core.setFailed('Worker deployment did not return a URL')
                 return '❌ Missing deployment URL'
               }
-              if (process.env.STATIC === 'false') return '✅ Built (server rendered)'
+              if (process.env.STATIC === 'false') return '✅ Built'
               if (process.env.CONFIGURED !== 'true') return '⏭️ Missing Cloudflare secrets'
               return '⏭️ Skipped'
             })()
 
             fs.mkdirSync('example-results', { recursive: true })
             fs.writeFileSync(`example-results/${process.env.EXAMPLE}.json`, JSON.stringify({
+              deployable: process.env.STATIC !== 'false',
               name: process.env.EXAMPLE,
               status,
               url: process.env.DEPLOYMENT === 'success' ? process.env.URL : '',
@@ -218,7 +219,7 @@ jobs:
               const result = fs.existsSync(path)
                 ? JSON.parse(fs.readFileSync(path, 'utf8'))
                 : { status: '❌ No result', url: '' }
-              if (result.status === '✅ Built (server rendered)') return []
+              if (result.deployable === false) return []
 
               const url = result.url ? `[Open](${result.url})` : '—'
               return `| ${name} | ${url} | ${result.status} |`

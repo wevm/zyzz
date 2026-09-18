@@ -37,7 +37,8 @@ export function useStyles() {
 
 function styles(value: NativeContext.Context | undefined) {
   return {
-    style: (style: unknown) => NativeContext.resolve(style, value),
+    style: (style: unknown, input?: unknown) =>
+      NativeContext.resolve(style, value, input),
     props: (props: Record<string, unknown> | null | undefined) =>
       props && Object.hasOwn(props, 'style')
         ? { ...props, style: NativeContext.resolve(props.style, value) }

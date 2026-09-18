@@ -472,6 +472,41 @@ Zyzz.style({ padding: 0 });
     }
   })
 
+  test.each([0, 65_536])(
+    'retains syntax diagnostics after %i Unicode comment characters',
+    (length) => {
+      const prefix = `/*${'😀'.repeat(length / 2)}*/`
+
+      try {
+        Source.extract({
+          moduleId: 'broken.ts',
+          source: `${prefix}export const =`,
+        })
+        throw new Error('Expected parse failure')
+      } catch (error) {
+        if (!(error instanceof Source.ExtractError)) throw error
+
+        expect(
+          error.diagnostics.map((diagnostic) => ({
+            ...diagnostic,
+            start: diagnostic.start - prefix.length,
+            end: diagnostic.end - prefix.length,
+          })),
+        ).toMatchInlineSnapshot(`
+        [
+          {
+            "code": "syntax_error",
+            "end": 14,
+            "message": "Unexpected token",
+            "source": "broken.ts",
+            "start": 13,
+          },
+        ]
+      `)
+      }
+    },
+  )
+
   test('syntax and module identity failures remain source owned', () => {
     const errors = [
       '/absolute.ts',

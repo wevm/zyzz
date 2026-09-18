@@ -49,6 +49,95 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('executes static batches across independent theme contracts', async () => {
+    const output = Graph.compile({
+      modules: {
+        'styles.ts': `import {Config,style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+          const {style:a}=Config.create({themes:{base:{spacing:{cell:'2px'}},alternate:{spacing:{cell:'6px'}}},defaultTheme:'base'});
+          const {style:b}=Config.create({themes:{base:{spacing:{cell:'4px'}},alternate:{spacing:{cell:'8px'}}},defaultTheme:'base'});
+          const a1=a({width:'cell'});const a2=a({height:'cell'});
+          const b1=b({width:'cell'});const b2=b({height:'cell'});
+          const plain1=style({fontSize:'10px',lineHeight:1.5});
+          const plain2=style({opacity:0.2,targets:{ios:{opacity:0.7}}});
+          export const results=[a1,a2,b1,b2,plain1,plain2].map(value=>NativeContext.resolve(value().style,{theme:'alternate',colorScheme:'dark'}));`,
+      },
+      native: {
+        colorScheme: 'light',
+        contextual: true,
+        platform: 'ios',
+        units: { px: 1 },
+      },
+    })
+    const module = await execute(output.modules['styles.ts']!.code)
+
+    expect(module.results).toMatchInlineSnapshot(`
+      [
+        {
+          "width": 6,
+        },
+        {
+          "height": 6,
+        },
+        {
+          "width": 8,
+        },
+        {
+          "height": 8,
+        },
+        {
+          "fontSize": 10,
+          "lineHeight": 15,
+        },
+        {
+          "opacity": 0.7,
+        },
+      ]
+    `)
+  })
+
+  test('retains individual error paths when a static batch fails', () => {
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'styles.ts',
+        source: `import {style} from 'zyzz';const first=style({opacity:0.2});const second=style({position:'fixed'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["default","light","0","position"]: Unsupported native keyword.
+      ["default","dark","0","position"]: Unsupported native keyword.]
+    `)
+  })
+
+  test('resolves compiled inputs while retaining context errors and ordinary callbacks', async () => {
+    const output = Graph.compile({
+      modules: {
+        'styles.ts': `import {Config} from 'zyzz'; import {NativeContext} from 'zyzz/runtime';
+          const {style}=Config.create({themes:{base:{color:{ink:'#112233'}},alternate:{color:{ink:'#0000ff'}}},defaultTheme:'base'});
+          const meter=style((value:{width:string})=>({color:'ink',width:value.width}));
+          const context={colorScheme:'dark',theme:'alternate'};
+          function message(context) { try { NativeContext.resolve(meter,context,{width:'12px'}); return 'no error' } catch(error) { return error.message } }
+          const callback=NativeContext.resolve((value)=>({opacity:value.opacity}),context);
+          export const results={direct:NativeContext.resolve(meter,context,{width:'12px'}),callback:callback({opacity:0.4}),missing:message(undefined),unknown:message({colorScheme:'dark',theme:'missing'})};`,
+      },
+      native: { colorScheme: 'light', contextual: true },
+    })
+    const module = await execute(output.modules['styles.ts']!.code)
+    expect(module.results).toMatchInlineSnapshot(`
+      {
+        "callback": {
+          "opacity": 0.4,
+        },
+        "direct": {
+          "color": "#0000ff",
+          "width": 12,
+        },
+        "missing": "Compiled native styles require a Zyzz Provider.",
+        "unknown": "Unknown native theme: missing.",
+      }
+    `)
+  })
+
   test('reuses default native props while resolving independent themes and overrides', async () => {
     const source = `import {Config} from 'zyzz';
       import {NativeContext} from 'zyzz/runtime';
@@ -565,26 +654,29 @@ export const card=config.variants({base:{color:'ink'},variants:{tone:{quiet:{opa
     )
   })
 
-  test('type-checks emitted callables through published runtime declarations', async () => {
-    const directory = await Fs.mkdtemp(
-      Path.resolve('.fixture-native-callable-'),
-    )
-    try {
-      await Fs.writeFile(
-        Path.join(directory, 'compiled.ts'),
-        Native.compile({
-          source:
-            source +
-            `export const bar=style((value:{alpha:number})=>({opacity:value.alpha}));export const custom=variants({variants:{size:{custom:(value:{gap:string})=>({padding:value.gap})}},defaultVariants:{size:{custom:{gap:'2px'}}}});`,
-          moduleId: 'compiled.ts',
-          platform: 'ios',
-          colorScheme: 'light',
-        }).code,
+  test.each([false, true])(
+    'type-checks emitted callables with contextual=%s through published runtime declarations',
+    async (contextual) => {
+      const directory = await Fs.mkdtemp(
+        Path.resolve('.fixture-native-callable-'),
       )
-      const consumer = Path.join(directory, 'consumer.ts')
-      await Fs.writeFile(
-        consumer,
-        `import {bar,card,compose,custom} from './compiled.js';
+      try {
+        await Fs.writeFile(
+          Path.join(directory, 'compiled.ts'),
+          Native.compile({
+            source:
+              source +
+              `export const bar=style((value:{alpha:number})=>({opacity:value.alpha}));export const custom=variants({variants:{size:{custom:(value:{gap:string})=>({padding:value.gap})}},defaultVariants:{size:{custom:{gap:'2px'}}}});`,
+            moduleId: 'compiled.ts',
+            platform: 'ios',
+            colorScheme: 'light',
+            contextual,
+          }).code,
+        )
+        const consumer = Path.join(directory, 'consumer.ts')
+        await Fs.writeFile(
+          consumer,
+          `import {bar,card,compose,custom} from './compiled.js';
 const opaque={tag:Symbol('host')};
 const native={opacity:opaque,color:opaque};
 bar({alpha:0.5,style:native});
@@ -613,48 +705,86 @@ card({active:'true'});
 // @ts-expect-error Native output has no className.
 card().className;
 `,
-      )
-      await Util.promisify(ChildProcess.execFile)(
-        process.execPath,
-        [
-          Path.resolve('node_modules/typescript/bin/tsc'),
-          '--noEmit',
-          '--module',
-          'nodenext',
-          '--target',
-          'esnext',
-          '--strict',
-          '--skipLibCheck',
-          consumer,
-        ],
-        { timeout: 30000 },
-      )
-    } finally {
-      await Fs.rm(directory, { recursive: true, force: true })
-    }
-  }, 35000)
+        )
+        await Util.promisify(ChildProcess.execFile)(
+          process.execPath,
+          [
+            Path.resolve('node_modules/typescript/bin/tsc'),
+            '--noEmit',
+            '--module',
+            'nodenext',
+            '--target',
+            'esnext',
+            '--strict',
+            '--skipLibCheck',
+            consumer,
+          ],
+          { timeout: 30000 },
+        )
+      } finally {
+        await Fs.rm(directory, { recursive: true, force: true })
+      }
+    },
+    35000,
+  )
 
-  test('retains source mappings and avoids helper name collisions', async () => {
-    const input = `const __zyzzNative=1;\n${source}`
-    const output = Native.compile({
-      source: input,
-      moduleId: 'collision.ts',
-      colorScheme: 'dark',
-      platform: 'android',
-    })
-    const module = await execute(output.code)
-    expect(
-      StyleSheet.flatten(module.compose(false).style)?.opacity,
-    ).toMatchInlineSnapshot('0.5')
-    const position = output.code.indexOf('export function shadow')
-    const prefix = output.code.slice(0, position).split('\n')
-    const original = Trace.originalPositionFor(new Trace.TraceMap(output.map), {
-      line: prefix.length,
-      column: prefix.at(-1)!.length,
-    })
-    expect(original.source).toMatchInlineSnapshot('"collision.ts"')
-    expect(original.line).toMatchInlineSnapshot('11')
-  })
+  test.each([0, 65_536])(
+    'retains source mappings and helper names with %i characters of Unicode comments',
+    async (length) => {
+      const input = `/*${'😀'.repeat(length / 2)}*/const __zyzzNative=1;\n${source}`
+      const output = Native.compile({
+        source: input,
+        moduleId: 'collision.ts',
+        colorScheme: 'dark',
+        platform: 'android',
+      })
+      const module = await execute(output.code)
+      expect(
+        StyleSheet.flatten(module.compose(false).style)?.opacity,
+      ).toMatchInlineSnapshot('0.5')
+      const position = output.code.indexOf('export function shadow')
+      const prefix = output.code.slice(0, position).split('\n')
+      const original = Trace.originalPositionFor(
+        new Trace.TraceMap(output.map),
+        {
+          line: prefix.length,
+          column: prefix.at(-1)!.length,
+        },
+      )
+      expect(original.source).toMatchInlineSnapshot('"collision.ts"')
+      expect(original.line).toMatchInlineSnapshot('11')
+    },
+  )
+
+  test.each([0, 65_536])(
+    'compiles asserted imported literals with %i characters of Unicode comments',
+    async (length) => {
+      const output = Graph.compile({
+        modules: {
+          'values.ts': `/*${'😀'.repeat(length / 2)}*/export const values = <{opacity: 0.25}>{opacity: 0.25};`,
+          'styles.ts': `/*${'😀'.repeat(length / 2)}*/import {style} from 'zyzz';
+          import {values} from './values';
+          const card=style(values);
+          export const results={style:card().style,number:123n.toString(),matched:/😀/u.test('😀')};`,
+        },
+        native: { colorScheme: 'light' },
+      })
+      const code = output.modules['styles.ts']!.code.replace(
+        "import {values} from './values';",
+        '',
+      )
+
+      expect((await execute(code)).results).toMatchInlineSnapshot(`
+      {
+        "matched": true,
+        "number": "123",
+        "style": {
+          "opacity": 0.25,
+        },
+      }
+    `)
+    },
+  )
 
   test('rejects native conditions and HTML output', () => {
     expect(() =>

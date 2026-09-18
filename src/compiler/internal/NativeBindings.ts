@@ -14,7 +14,23 @@ export function compile(
   recipe: Recipe.Definition,
   call: Pick<Source.Call, 'slots' | 'recipe'>,
   options: Native.compile.Options,
+  prepared = prepare(recipe, call, options),
 ): Runtime.create.Options {
+  return {
+    ...prepared,
+    styles: StyleSheet.select(prepared.styles, {
+      theme: options.theme ?? 'default',
+      colorScheme: options.colorScheme,
+    }),
+  }
+}
+
+/** Prepares immutable programs and all theme/scheme tables before selection. */
+export function prepare(
+  recipe: Recipe.Definition,
+  call: Pick<Source.Call, 'slots' | 'recipe'>,
+  options: Native.compile.Options,
+) {
   const slots = Object.fromEntries(
     Object.entries(call.slots ?? {}).map(([name, slot]) => [name, slot.name]),
   )
@@ -41,6 +57,12 @@ export function compile(
     }
     function visit(style: Style.NamedStyle) {
       const declared = new Set<string>()
+      let declarations: Style.Declaration[] = []
+      function flush() {
+        if (!declarations.length) return
+        fragment({ name: style.name, declarations })
+        declarations = []
+      }
       for (const declaration of style.declarations) {
         if (declaration.important || declared.has(declaration.property))
           throw new Error(
@@ -52,9 +74,10 @@ export function compile(
           : [declaration.value]
         const dynamic = parts.some((part) => Binding.is(part))
         if (!dynamic && declaration.property !== 'lineHeight') {
-          fragment({ name: style.name, declarations: [declaration] })
+          declarations.push(declaration)
           continue
         }
+        flush()
         const property = declaration.property as keyof typeof Scalar.properties
         if (
           !Object.hasOwn(Scalar.properties, property) ||
@@ -90,6 +113,7 @@ export function compile(
           )
         steps.push({ property, parts: values })
       }
+      flush()
       if (style.targets)
         fragment({ name: style.name, declarations: [], targets: style.targets })
       for (const rule of style.rules ?? []) {
@@ -122,9 +146,6 @@ export function compile(
     fonts: options.fonts,
     units: options.units,
     program: { slots, rules },
-    styles: StyleSheet.select(compiled.styles, {
-      theme: options.theme ?? 'default',
-      colorScheme: options.colorScheme,
-    }),
+    styles: compiled.styles,
   }
 }

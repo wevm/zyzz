@@ -2,6 +2,7 @@
  * Extracts local theme data and validates its lexical source references.
  * @module
  */
+import type * as Syntax from './Syntax.js'
 import * as Identity from '../../internal/Identity.js'
 import * as Identifiers from './Identifiers.js'
 import type { cssFunction } from '../../web/cssFunction.js'
@@ -97,6 +98,10 @@ export type Link = {
 
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
+  /** Canonical identifier names collected during graph validation. */
+  readonly identifiers?: ReadonlySet<string> | undefined
+  /** Syntax owned by the current graph compilation. */
+  readonly parsed?: ReturnType<typeof Syntax.parse> | undefined
   /** Packed exports indexed by the importing module's source specifier. */
   readonly libraries?:
     | Readonly<Record<string, Readonly<Record<string, Link>>>>
@@ -1684,6 +1689,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (link.call.appearance) appearances.add(link.call.name)
     }
 
+  const nativeContexts = new Map<
+    Token.Contract,
+    NonNullable<Source.Call['nativeContext']>
+  >()
   return {
     nativeContext(start: number, end: number) {
       const theme = styles.get(start)?.theme
@@ -1692,6 +1701,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         [...tokens].find(([offset]) => offset >= start && offset < end)?.[1]
           .reference.contract
       if (!contract) return undefined
+      const cached = nativeContexts.get(contract)
+      if (cached) return cached
       const config = [...configs.values()].find(
         (value) => value.definition[Token.definition].contract === contract,
       )
@@ -1702,7 +1713,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             value.options?.themes,
         )
         if (!alias?.options?.themes) return undefined
-        return {
+        const context = {
           defaultTheme: String(alias.options.defaultTheme),
           themes: Object.fromEntries(
             Object.entries(
@@ -1716,6 +1727,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
             ]),
           ),
         }
+        Object.freeze(context.themes)
+        nativeContexts.set(contract, Object.freeze(context))
+        return context
       }
       const entries = Object.entries(config.members ?? {}).flatMap(
         ([key, value]) => {
@@ -1725,10 +1739,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
             : []
         },
       )
-      return {
+      const context = Object.freeze({
         defaultTheme: String(config.call.options.defaultTheme),
-        themes: Object.fromEntries(entries),
-      }
+        themes: Object.freeze(Object.fromEntries(entries)),
+      })
+      nativeContexts.set(contract, context)
+      return context
     },
     aliases,
     appearances,

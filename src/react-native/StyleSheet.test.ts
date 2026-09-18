@@ -1044,6 +1044,47 @@ describe('compile', () => {
     }
   })
 
+  test('shares scheme-independent token tables within each theme', () => {
+    const base = Theme.define({
+      color: { ink: { dark: '#000', light: '#000' } },
+      spacing: { md: '1rem' },
+    })
+    const alternate = Theme.extend(base, {
+      color: { ink: { dark: '#fff', light: '#f00' } },
+      spacing: { md: '2rem' },
+    })
+    const styles = Style.define({
+      card: { color: base.tokens.color.ink, width: base.tokens.spacing.md },
+    })
+    const output = StyleSheet.compile({
+      styles,
+      themes: { base, alternate },
+      units: { rem: 16 },
+    })
+
+    expect(
+      output.styles.base.light === output.styles.base.dark,
+    ).toMatchInlineSnapshot('true')
+    expect(output.styles.base.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#000",
+        "width": 16,
+      }
+    `)
+    expect(output.styles.alternate.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#f00",
+        "width": 32,
+      }
+    `)
+    expect(output.styles.alternate.dark.card).toMatchInlineSnapshot(`
+      {
+        "color": "#fff",
+        "width": 32,
+      }
+    `)
+  })
+
   test('compiles shared tokens into explicit theme and scheme tables', () => {
     const base = Theme.define({
       color: { ink: { dark: '#fff', light: '#000' } },

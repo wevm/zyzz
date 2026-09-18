@@ -11,7 +11,7 @@ export type Context = {
   readonly theme?: string | undefined
 }
 
-type Callable = (input?: never) => Native.Props<object>
+type Callable = (input: never) => Native.Props<object>
 type Tables = Readonly<
   Record<string, Readonly<Record<'dark' | 'light', Callable>>>
 >
@@ -26,15 +26,16 @@ export function create<const tables extends Tables>(
       ? tables.default
       : undefined
 
-  function props(input?: never): Native.Props<object> {
+  function select(context: Context, input?: never) {
+    const theme = context.theme ?? defaultTheme
+    const table = tables[theme] ?? fallback
+    if (!table) throw new Error(`Unknown native theme: ${theme}.`)
+    return table[context.colorScheme](input!).style
+  }
+  function props(input?: never) {
     return {
       style: {
-        [binding]: (context: Context) => {
-          const theme = context.theme ?? defaultTheme
-          const table = tables[theme] ?? fallback
-          if (!table) throw new Error(`Unknown native theme: ${theme}.`)
-          return table[context.colorScheme](input).style
-        },
+        [binding]: (context: Context) => select(context, input),
       },
     }
   }
@@ -43,17 +44,29 @@ export function create<const tables extends Tables>(
   Object.freeze(defaults)
   const callable = (input?: never) =>
     input === undefined ? defaults : props(input)
+  Object.defineProperty(callable, binding, {
+    value: select,
+  })
   return callable as tables[keyof tables]['light']
 }
 
 /** Resolves generated bindings and arrays while preserving caller-owned native objects. */
-export function resolve(value: unknown, context: Context | undefined): unknown {
+export function resolve(
+  value: unknown,
+  context: Context | undefined,
+  input?: unknown,
+): unknown {
   if (Array.isArray(value)) return value.map((entry) => resolve(entry, context))
-  if (value && typeof value === 'object' && binding in value) {
+  if (
+    value &&
+    (typeof value === 'object' || typeof value === 'function') &&
+    binding in value
+  ) {
     if (!context)
       throw new Error('Compiled native styles require a Zyzz Provider.')
     const select = value[binding]
-    if (typeof select === 'function') return resolve(select(context), context)
+    if (typeof select === 'function')
+      return resolve(select(context, input), context)
   }
   if (typeof value === 'function')
     return (...args: unknown[]) => resolve(value(...args), context)

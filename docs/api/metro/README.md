@@ -33,4 +33,4 @@ Native declarations retain the existing compiler diagnostics for unsupported CSS
 
 Only local iOS/Android source receives native compilation. Web and dependency files pass through to the upstream transformer. Web CSS delivery remains a separate integration. TypeScript still checks shared authoring types before Babel rewrites them to native props.
 
-The [Expo app](../../../examples/expo-native/README.md) exercises system appearance, explicit overrides, named themes, variants, and dynamic inputs. Bundle success does not establish device renderer conformance.
+The [Expo app](../../../examples/react-native/README.md) exercises system appearance, explicit overrides, named themes, variants, and dynamic inputs. Bundle success does not establish device renderer conformance.

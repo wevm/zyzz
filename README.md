@@ -117,7 +117,7 @@ export default zyzz(getDefaultConfig(import.meta.dirname), {
 })
 ```
 
-Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/expo-native).
+Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/react-native).
 
 ### CLI
 

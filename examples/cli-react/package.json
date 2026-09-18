@@ -7,15 +7,15 @@
     "dev": "concurrently --kill-others --names zyzz,vite \"zyzz dev --script public/zyzz.js\" vite"
   },
   "dependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "zyzz": "workspace:*"
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zyzz": "latest"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "concurrently": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:"
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "concurrently": "^10.0.5",
+    "typescript": "7.0.2",
+    "vite": "^8.2.2"
   }
 }

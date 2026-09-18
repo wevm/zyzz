@@ -1,12 +1,17 @@
 {
-  "name": "@zyzz/example-api-react",
+  "name": "@zyzz/example-tanstack-start",
   "private": true,
   "type": "module",
+  "config": {
+    "site": false
+  },
   "scripts": {
-    "build": "node scripts/build.ts",
-    "dev": "node scripts/dev.ts"
+    "build": "vite build --configLoader runner",
+    "dev": "vite dev --configLoader runner"
   },
   "dependencies": {
+    "@tanstack/react-router": "1.170.35",
+    "@tanstack/react-start": "1.168.52",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zyzz": "latest"
@@ -14,6 +19,7 @@
   "devDependencies": {
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
     "typescript": "7.0.2",
     "vite": "^8.2.2"
   }

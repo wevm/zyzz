@@ -1,6 +1,6 @@
 # Theme.define
 
-Define immutable scalar tokens and portable references.
+Define immutable scalar tokens, typography sets, and portable references.
 
 ```ts
 import { Theme } from 'zyzz'
@@ -128,6 +128,41 @@ Unique container identifiers eligible for named queries. Reserved names such as 
 ```ts
 Theme.define({ containerNames: ['sidebar'] })
 ```
+
+### tokens.typography
+
+- Type: `Theme.Tokens["typography"]`
+- Default: `undefined`
+
+Nested sets of `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight`. Each set supplies one or more literal properties. Other keys name nested sets, including variants alongside a base set's fields. Dots separate path segments and cannot appear in keys. Font property names are reserved for scalar fields.
+
+```ts
+const theme = Theme.define({
+  typography: {
+    heading: {
+      32: {
+        fontFamily: 'Geist, sans-serif',
+        fontSize: '32px',
+        fontWeight: 600,
+        letterSpacing: '-1.28px',
+        lineHeight: '40px',
+      },
+    },
+  },
+})
+
+namespace styles {
+  export const title = theme.style({ typography: 'heading.32' })
+}
+
+const alternate = Theme.extend(theme, {
+  typography: { heading: { 32: { fontSize: '36px' } } },
+})
+```
+
+Explicit typography fields override preset fields within the same style block regardless of property order. Nested sets do not inherit their parent's fields. Extensions may override existing scalar fields, but cannot add sets or properties.
+
+Expanded fields retain theme scope identity on web and use normal font mappings and length conversion on native.
 
 ### tokens.fontFamily
 

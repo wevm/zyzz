@@ -8,6 +8,75 @@ import { Config, style, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('define', () => {
+  test('infers nested typography names and property domains', () => {
+    const theme = Theme.define({
+      typography: {
+        heading: {
+          32: {
+            fontFamily: 'Geist',
+            fontSize: '32px',
+            fontWeight: 600,
+            letterSpacing: '-1.28px',
+            lineHeight: '40px',
+          },
+        },
+        label: {
+          14: {
+            fontSize: '14px',
+            mono: { fontFamily: 'Geist Mono', fontSize: '14px' },
+          },
+        },
+      },
+    })
+
+    theme.style({ typography: 'heading.32' })
+    theme.style({ typography: 'label.14.mono', fontWeight: 500 })
+    theme.style({
+      typography: 'heading.32 !important',
+      ':hover': { typography: 'label.14' },
+    })
+    Style.define({ title: { typography: 'heading.32' } }, { theme })
+    expectTypeOf(theme.tokens.typography.heading[32].fontSize).toEqualTypeOf<
+      Theme.Reference<'fontSize'>
+    >()
+    expectTypeOf(
+      theme.tokens.typography.label[14].mono.fontFamily,
+    ).toEqualTypeOf<Theme.Reference<'fontFamily'>>()
+
+    Theme.extend(theme, {
+      typography: { heading: { 32: { fontSize: '36px', fontWeight: 500 } } },
+    })
+
+    // @ts-expect-error A group is not a typography set.
+    theme.style({ typography: 'heading' })
+    // @ts-expect-error Scalar fields are not typography set names.
+    theme.style({ typography: 'heading.32.fontSize' })
+    // @ts-expect-error Typography names belong to the bound theme.
+    theme.style({ typography: 'heading.48' })
+    // @ts-expect-error Core authoring has no bundled typography.
+    style({ typography: 'heading.32' })
+    // @ts-expect-error Font-size references cannot be used as font weights.
+    theme.style({ fontWeight: theme.tokens.typography.heading[32].fontSize })
+    const added = {
+      typography: { heading: { 48: { fontSize: '48px' } } },
+    } as const
+    const invalid = {
+      typography: { heading: { 32: { fontSize: 'red' } } },
+    } as const
+    // @ts-expect-error Extensions retain the original typography paths.
+    Theme.extend(theme, added)
+    // @ts-expect-error Typography properties retain scalar validation.
+    Theme.extend(theme, invalid)
+    // @ts-expect-error Typography fields exclude unrelated properties.
+    Theme.define({ typography: { body: { color: 'red' } } })
+    // @ts-expect-error Typography weights retain the numeric range.
+    Theme.define({ typography: { body: { fontWeight: 1001 } } })
+    // @ts-expect-error Typography fields cannot contain nested palettes.
+    Theme.define({ typography: { body: { fontSize: { small: '14px' } } } })
+    // @ts-expect-error Font property names are reserved for scalar fields.
+    Theme.define({ typography: { fontSize: { fontSize: '14px' } } })
+  })
+
   test('infers immutable token references and validates token values', () => {
     const theme = Theme.define({
       backgroundColor: { surface: { dark: '#000', light: '#fff' } },

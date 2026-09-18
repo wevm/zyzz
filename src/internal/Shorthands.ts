@@ -34,6 +34,7 @@ export function read(value: unknown): Map {
               'style',
               'theme',
               'themes',
+              'typography',
               'script',
               'variants',
               '__proto__',
@@ -98,6 +99,7 @@ export type Validated<mappings extends Map> = {
         | 'style'
         | 'theme'
         | 'themes'
+        | 'typography'
         | 'script'
         | 'variants'
         | '__proto__'

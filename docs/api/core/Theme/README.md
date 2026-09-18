@@ -38,4 +38,6 @@ See the [public declarations](../../../../src/Theme.ts) for complete generic sig
 
 ## Typography and queries
 
-Scalar `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` groups retain property-specific inference and inherited variables. `breakpoints`, `containers`, and `containerNames` are separate compile-time metadata; they never become declaration variables. See the opt-in [default theme](../../default.md).
+Scalar `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` groups retain property-specific inference and inherited variables. The [`typography` group](define.md#tokenstypography) bundles those properties into nested sets, applied with `typography: 'heading.32'`. Explicit properties in the same block override preset fields. See the opt-in [Geist sets](../../default.md#typography-sets).
+
+`breakpoints`, `containers`, and `containerNames` are separate compile-time metadata. They never become declaration variables.

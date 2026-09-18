@@ -10,6 +10,25 @@ import {
 } from 'zyzz/default'
 
 describe('default', () => {
+  test('accepts Geist typography sets in styles and variants', () => {
+    style({
+      typography: 'heading.32',
+      '@media >=md': { typography: 'heading.48' },
+    })
+    style({ typography: 'label.14.mono' })
+    style({ typography: 'copy.14.strong' })
+    style({ typography: 'heading.24.subtle' })
+    variants({
+      base: { typography: 'copy.14' },
+      variants: { size: { large: { typography: 'copy.16' } } },
+    })
+    expectTypeOf(tokens.typography.heading[32].fontSize).toEqualTypeOf<'32px'>()
+    // @ts-expect-error The bundled heading scale has no 30px set.
+    style({ typography: 'heading.30' })
+    // @ts-expect-error Typography is a single named set, not a fallback array.
+    style({ typography: ['heading.32', 'copy.14'] })
+  })
+
   test('exposes single-theme appearance controls and a server-safe script', () => {
     expectTypeOf(script()).toEqualTypeOf<string>()
     appearance.set({ colorScheme: 'dark' })

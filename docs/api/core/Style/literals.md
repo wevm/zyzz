@@ -214,7 +214,7 @@ namespace styles {
 
 [Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
 
-Hyphenation dictionaries and language-sensitive casing remain browser-owned. Indentation modifiers, custom overflow strings, extended transformation keywords, whitespace longhands, font families, composite typography tokens, and native text conversion remain deferred.
+Hyphenation dictionaries and language-sensitive casing remain browser-owned. Indentation modifiers, custom overflow strings, extended transformation keywords, whitespace longhands, font families, and native text conversion remain deferred. Composite typography sets are documented under [Theme.define](../Theme/define.md#tokenstypography).
 
 ## Intrinsic Sizing
 

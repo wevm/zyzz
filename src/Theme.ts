@@ -10,6 +10,7 @@ import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Query from './internal/Query.js'
 import * as Token from './internal/Token.js'
+import * as Typography from './internal/Typography.js'
 import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
 
@@ -51,7 +52,7 @@ export type StyleFactory<tokens extends Tokens> = {
 }
 
 /**
- * Defines scalar tokens without metadata, defaults, or environment access.
+ * Defines scalar tokens and typography sets without defaults or environment access.
  * Colors currently use the supported literal color grammar; spacing and radius
  * values use nonnegative literal lengths or zero. Nested palettes are supported.
  * @throws {InvalidError} If groups, paths, values, or data records are invalid.
@@ -166,7 +167,16 @@ type OverrideTree<tree, group> = tree extends string | number
   ? Scalar<group>
   : tree extends { readonly dark: string; readonly light: string }
     ? Color
-    : { readonly [key in keyof tree]?: OverrideTree<tree[key], group> }
+    : {
+        readonly [key in keyof tree]?: OverrideTree<
+          tree[key],
+          group extends 'typography'
+            ? key extends Typography.Property
+              ? key
+              : group
+            : group
+        >
+      }
 
 /** Nested palette or scale data. */
 export type Palette<leaf> = { readonly [key: string]: leaf | Palette<leaf> }
@@ -177,17 +187,32 @@ export type Reference<group extends Token.Group = Token.Group> =
 
 /** The inferred tree replaces scalar values and scheme pairs with references. */
 export type References<tokens> = {
-  readonly [group in keyof tokens as group extends Token.Group
+  readonly [group in keyof tokens as group extends Token.Group | 'typography'
     ? group
-    : never]: ReferenceTree<tokens[group], Extract<group, Token.Group>>
+    : never]: ReferenceTree<
+    tokens[group],
+    Extract<group, Token.Group | 'typography'>
+  >
 }
 
-type ReferenceTree<tree, group extends Token.Group> = tree extends
+type ReferenceTree<
+  tree,
+  group extends Token.Group | 'typography',
+> = tree extends
   | string
   | number
   | { readonly dark: string; readonly light: string }
-  ? Reference<group>
-  : { readonly [key in keyof tree]: ReferenceTree<tree[key], group> }
+  ? Reference<Extract<group, Token.Group>>
+  : {
+      readonly [key in keyof tree]: ReferenceTree<
+        tree[key],
+        group extends 'typography'
+          ? key extends Typography.Property
+            ? key
+            : group
+          : group
+      >
+    }
 
 /** Supported scalar groups; composite presets and query metadata follow separately. */
 type Scalar<group> = group extends
@@ -253,6 +278,8 @@ export type Tokens = {
   readonly spacing?: Palette<Literal.Length> | undefined
   /** Colors available to text declarations. */
   readonly textColor?: Palette<Color> | undefined
+  /** Named sets of font family, size, weight, letter spacing, and line height. */
+  readonly typography?: Typography.Sets | undefined
 }
 
 function build(
@@ -282,9 +309,18 @@ function build(
   let hasQueries = !!baseQueries
   const active = new Set<object>()
 
-  function visit(value: unknown, group: Token.Group, path: readonly string[]) {
+  function visit(
+    value: unknown,
+    group: Token.Group | 'typography',
+    path: readonly string[],
+  ) {
     const key = path.join('.')
     const scalar = typeof value === 'string' || typeof value === 'number'
+    if (group === 'typography' && scalar)
+      throw new InvalidError(
+        path,
+        'Expected a typography set or a nested set group.',
+      )
     const entries = scalar ? undefined : record(value, path)
     const pair =
       ['color', 'backgroundColor', 'borderColor', 'textColor'].includes(
@@ -347,7 +383,18 @@ function build(
       )
         throw new InvalidError(next, 'Extensions cannot add token paths.')
 
-      visit(child, group, next)
+      const property =
+        group === 'typography' &&
+        Typography.properties.includes(name as Typography.Property)
+          ? (name as Typography.Property)
+          : undefined
+      if (property && typeof child !== 'string' && typeof child !== 'number')
+        throw new InvalidError(
+          next,
+          'Typography properties require scalar values.',
+        )
+
+      visit(child, property ?? group, next)
     }
 
     active.delete(value as object)
@@ -445,6 +492,7 @@ function build(
         'letterSpacing',
         'lineHeight',
         'textColor',
+        'typography',
       ].includes(group)
     )
       throw new InvalidError([group], 'Unsupported token group.')
@@ -459,8 +507,17 @@ function build(
     if (!entries.length && !base)
       throw new InvalidError([group], 'Token palettes cannot be empty.')
 
-    for (const [name, value] of entries)
-      visit(value, group as Token.Group, [group, name])
+    for (const [name, value] of entries) {
+      if (
+        group === 'typography' &&
+        Typography.properties.includes(name as Typography.Property)
+      )
+        throw new InvalidError(
+          [group, name],
+          'Typography properties require a named set.',
+        )
+      visit(value, group as Token.Group | 'typography', [group, name])
+    }
   }
 
   type Tree = { [key: string]: Tree | Token.Reference }
@@ -476,7 +533,9 @@ function build(
 
     tree[parts.at(-1)!] = Token.create({
       contract,
-      group: parts[0] as Token.Group,
+      group: (parts[0] === 'typography'
+        ? parts.at(-1)
+        : parts[0]) as Token.Group,
       path,
       value,
     })
@@ -634,7 +693,11 @@ type ValidPalette<palette, group> = palette extends undefined
   : {
       [key in keyof palette]: key extends `${string}!${string}`
         ? never
-        : ValidTree<palette[key], group>
+        : group extends 'typography'
+          ? key extends Typography.Property
+            ? never
+            : ValidTree<palette[key], group>
+          : ValidTree<palette[key], group>
     }
 
 type WeightDigits<
@@ -671,27 +734,29 @@ type Weight<value> = value extends number
   : value
 
 type ValidTree<tree, group> = tree extends string | number
-  ? tree extends Scalar<group>
-    ? group extends 'breakpoints' | 'containers'
-      ? tree extends `-${string}`
-        ? never
-        : Literal.Checked<tree>
-      : group extends keyof Literal.Properties
-        ? Literal.Checked<tree> &
-            Value.Checked<Record<group, tree>>[group] &
-            (group extends 'fontWeight' ? Weight<tree> : unknown) &
-            (tree extends string
-              ? Lowercase<tree> extends
-                  | 'inherit'
-                  | 'initial'
-                  | 'unset'
-                  | 'revert'
-                  | 'revert-layer'
-                ? never
-                : unknown
-              : unknown)
-        : Literal.Checked<tree>
-    : never
+  ? group extends 'typography'
+    ? never
+    : tree extends Scalar<group>
+      ? group extends 'breakpoints' | 'containers'
+        ? tree extends `-${string}`
+          ? never
+          : Literal.Checked<tree>
+        : group extends keyof Literal.Properties
+          ? Literal.Checked<tree> &
+              Value.Checked<Record<group, tree>>[group] &
+              (group extends 'fontWeight' ? Weight<tree> : unknown) &
+              (tree extends string
+                ? Lowercase<tree> extends
+                    | 'inherit'
+                    | 'initial'
+                    | 'unset'
+                    | 'revert'
+                    | 'revert-layer'
+                  ? never
+                  : unknown
+                : unknown)
+          : Literal.Checked<tree>
+      : never
   : Extract<
         keyof tree,
         group extends 'color' | 'backgroundColor' | 'borderColor' | 'textColor'
@@ -701,7 +766,13 @@ type ValidTree<tree, group> = tree extends string | number
     ? {
         [key in keyof tree]: key extends `${string}!${string}`
           ? never
-          : ValidTree<tree[key], group>
+          : group extends 'typography'
+            ? key extends Typography.Property
+              ? tree[key] extends string | number
+                ? ValidTree<tree[key], key>
+                : never
+              : ValidTree<tree[key], group>
+            : ValidTree<tree[key], group>
       }
     : group extends 'color' | 'backgroundColor' | 'borderColor' | 'textColor'
       ? {

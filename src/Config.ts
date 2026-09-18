@@ -487,6 +487,7 @@ export type Body<
     | keyof mappings
     | 'selectors'
     | 'targets'
+    | 'typography'
     | 'variables'
     | keyof Style.DeclarationProperties
     | Exclude<Condition.Keys<tokens, Keys<styles>>, `@layer${string}`>

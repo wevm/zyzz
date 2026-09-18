@@ -65,7 +65,7 @@ describe('default', () => {
           Path.join(root, 'app.ts'),
           `import {appearance,variants,theme} from 'zyzz/default';
         namespace styles {
-          export const button=variants({conditions:{wide:'@media >=md'},base:{fontFamily:'sans',color:'blue.700'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
+          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.700'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
         }
         document.querySelector('main')!.className=theme.className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
@@ -88,7 +88,7 @@ const initialization: string = script();
 appearance.set({colorScheme:'dark'});
 // @ts-expect-error The default config has no named theme catalog.
 appearance.set({theme:'other'});
-const button=variants({variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}}});
+const button=variants({base:{typography:'button.14'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}}});
 button({size:{custom:{padding:'12px'}}});
 // @ts-expect-error Dynamic choices require complete scoped payloads.
 button({size:'custom'});
@@ -158,6 +158,21 @@ variants({base:{color:'missing'}});`,
           expect(
             await page
               .locator('button')
+              .evaluate((element) => getComputedStyle(element).fontSize),
+          ).toMatchInlineSnapshot(`"14px"`)
+          expect(
+            await page
+              .locator('button')
+              .evaluate((element) => getComputedStyle(element).lineHeight),
+          ).toMatchInlineSnapshot(`"20px"`)
+          expect(
+            await page
+              .locator('button')
+              .evaluate((element) => getComputedStyle(element).fontWeight),
+          ).toMatchInlineSnapshot(`"500"`)
+          expect(
+            await page
+              .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
           ).toMatchInlineSnapshot(`"rgb(0, 112, 247)"`)
           await page.locator('button').click()
@@ -210,7 +225,7 @@ variants({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot('19')
+        ).toMatchInlineSnapshot('24')
         expect(
           (
             await Fs.readFile(

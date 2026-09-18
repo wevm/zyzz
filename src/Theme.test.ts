@@ -3,12 +3,14 @@
  * @module
  */
 import { theme as bundled, tokens as contextTokens } from './default.js'
+import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
 import { Graph, Transform } from 'zyzz/compiler'
+import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
 
 const tokens = {
@@ -18,6 +20,310 @@ const tokens = {
 } as const
 
 describe('define', () => {
+  test.each(['body', 'body !important', 'body  !important'])(
+    'maps expanded typography fields to their authored declaration: %s',
+    (typography) => {
+      const source = `import {Config} from 'zyzz';
+const {style}=Config.create({theme:{typography:{body:{fontSize:'14px',fontWeight:400,lineHeight:'20px'}}}});
+export const body=style({
+  fontWeight: 500,
+  typography: '${typography}',
+  ':hover': { typography: 'body', lineHeight: '24px' },
+});`
+      const output = Transform.compile({ moduleId: 'typography.ts', source })
+      const map = new Trace.TraceMap(output.cssMap)
+      const mappings: Record<
+        string,
+        { line: number | null; column: number | null }[]
+      > = {}
+      Trace.eachMapping(map, ({ name, originalLine, originalColumn }) => {
+        if (name && ['fontSize', 'fontWeight', 'lineHeight'].includes(name))
+          (mappings[name] ??= []).push({
+            line: originalLine,
+            column: originalColumn,
+          })
+      })
+
+      expect(mappings).toMatchInlineSnapshot(`
+      {
+        "fontSize": [
+          {
+            "column": 2,
+            "line": 5,
+          },
+          {
+            "column": 14,
+            "line": 6,
+          },
+        ],
+        "fontWeight": [
+          {
+            "column": 2,
+            "line": 4,
+          },
+          {
+            "column": 14,
+            "line": 6,
+          },
+        ],
+        "lineHeight": [
+          {
+            "column": 2,
+            "line": 5,
+          },
+          {
+            "column": 34,
+            "line": 6,
+          },
+        ],
+      }
+    `)
+    },
+  )
+
+  test('rejects malformed typography data', () => {
+    expect(() =>
+      Theme.define({ typography: { heading: { 32: '32px' } } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","heading","32"]: Expected a typography set or a nested set group.]`,
+    )
+    expect(() =>
+      Theme.define({
+        typography: { body: { fontSize: { small: '14px' } } },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","body","fontSize"]: Typography properties require scalar values.]`,
+    )
+    expect(() =>
+      Theme.define({ typography: { body: { color: 'red' } } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","body","color"]: Expected a typography set or a nested set group.]`,
+    )
+    expect(() =>
+      Theme.define({ typography: { body: {} } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","body"]: Token palettes cannot be empty.]`,
+    )
+  })
+
+  test('renders typography sets, explicit fields, conditions, and theme overrides', async () => {
+    const base = Theme.define({
+      typography: {
+        heading: {
+          32: {
+            fontFamily: 'Geist',
+            fontSize: '32px',
+            fontWeight: 600,
+            letterSpacing: '-1.28px',
+            lineHeight: '40px',
+          },
+        },
+        label: {
+          14: {
+            fontSize: '14px',
+            mono: {
+              fontFamily: 'Geist Mono',
+              fontSize: '14px',
+              lineHeight: '20px',
+            },
+          },
+        },
+      },
+    })
+    const alternate = Theme.extend(base, {
+      typography: { heading: { 32: { fontSize: '36px', lineHeight: '44px' } } },
+    })
+    const styles = Style.define(
+      {
+        title: {
+          fontWeight: 500,
+          typography: 'heading.32',
+          ':hover': { fontWeight: 700 },
+        },
+        mono: { typography: 'label.14.mono' },
+        responsive: {
+          typography: 'heading.32',
+          '@media (min-width: 800px)': { typography: 'label.14' },
+        },
+        important: { typography: 'heading.32 !important' },
+      },
+      { theme: base },
+    )
+    const output = Css.compile({ styles, themes: { alternate, base } })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 600, height: 400 },
+      })
+      await page.setContent(
+        `<style>${output.css}</style><main class="${output.themes.base}"><p id="title" class="${output.classes.title}">Title</p><p id="mono" class="${output.classes.mono}">Mono</p><p id="responsive" class="${output.classes.responsive}">Responsive</p><p id="important" style="font-size:10px" class="${output.classes.important}">Important</p></main>`,
+      )
+
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"32px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontWeight),
+      ).toMatchInlineSnapshot(`"500"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).lineHeight),
+      ).toMatchInlineSnapshot(`"40px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).letterSpacing),
+      ).toMatchInlineSnapshot(`"-1.28px"`)
+      expect(
+        await page
+          .locator('#mono')
+          .evaluate((element) => getComputedStyle(element).fontFamily),
+      ).toMatchInlineSnapshot(`""Geist Mono""`)
+      expect(
+        await page
+          .locator('#important')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"32px"`)
+
+      await page.locator('#title').hover()
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontWeight),
+      ).toMatchInlineSnapshot(`"700"`)
+      await page
+        .locator('main')
+        .evaluate(
+          (element, className) => element.setAttribute('class', className),
+          output.themes.alternate,
+        )
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"36px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).lineHeight),
+      ).toMatchInlineSnapshot(`"44px"`)
+      await page.setViewportSize({ width: 900, height: 400 })
+      expect(
+        await page
+          .locator('#responsive')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"14px"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('compiles typography fields into native tables with font mappings', () => {
+    const theme = Theme.define({
+      typography: {
+        heading: {
+          32: {
+            fontFamily: 'Geist',
+            fontSize: '32px',
+            fontWeight: 600,
+            letterSpacing: '-1.28px',
+            lineHeight: '40px',
+          },
+        },
+      },
+    })
+    const alternate = Theme.extend(theme, {
+      typography: { heading: { 32: { fontSize: '36px' } } },
+    })
+    const output = StyleSheet.compile({
+      fonts: { Geist: 'Geist-Native' },
+      styles: Style.define(
+        { title: { typography: 'heading.32', fontWeight: 500 } },
+        { theme },
+      ),
+      themes: { alternate, base: theme },
+    })
+
+    expect(output.styles.base.light.title).toMatchInlineSnapshot(`
+      {
+        "fontFamily": "Geist-Native",
+        "fontSize": 32,
+        "fontWeight": 500,
+        "letterSpacing": -1.28,
+        "lineHeight": 40,
+      }
+    `)
+    expect(output.styles.alternate.light.title.fontSize).toMatchInlineSnapshot(
+      `36`,
+    )
+  })
+
+  test('retains typography sets through packed configurations and recipe compilation', () => {
+    const library = Graph.compile({
+      modules: {
+        'theme.ts': `import {Config} from 'zyzz';export const {style,theme,variants}=Config.create({theme:{typography:{copy:{14:{fontSize:'14px',fontWeight:400,lineHeight:'20px'}}}}});`,
+      },
+    })
+    const contract = library.contracts['theme.ts']!
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`24`)
+
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'library.js': JSON.stringify({
+            ...JSON.parse(contract),
+            version: 23,
+          }),
+        },
+        imports: { 'app.ts': { library: 'library.js' } },
+        modules: {
+          'app.ts': `import {style} from 'library';export const body=style({typography:'copy.14'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.js:0: Invalid library contract: Packed typography sets require contract version 24 or later.]`,
+    )
+
+    const consumer = Graph.compile({
+      contracts: { 'library.js': contract },
+      imports: { 'app.ts': { library: 'library.js' } },
+      modules: {
+        'app.ts': `import {style,theme,variants} from 'library';export const body=style({typography:'copy.14'});export const strong=style({fontWeight:theme.tokens.typography.copy[14].fontWeight});export const text=variants({base:{typography:'copy.14'},variants:{strong:{true:{fontWeight:550}}}});`,
+      },
+    })
+
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1xn44ix111xh3v-style-theme{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize:14px;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight:400;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight:20px;}
+      .z-font-size-Oi_QYm-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
+      .z-font-weight-xWS6L8-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
+      .z-line-height-NiWjJz-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
+      .z-font-weight-qIDn1A-0{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
+      .z-font-size-4r4jms-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
+      .z-font-weight-frA_17-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
+      .z-line-height-qvDm7K-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
+      .z-font-weight-dSbxAJ-3{&:where([data-strong="true"]){font-weight:550;}}"
+    `)
+  })
+
+  test.each(['heading', 'heading.32.fontSize', 'heading.48', ['heading.32']])(
+    'rejects unknown typography set %j',
+    (typography) => {
+      const theme = Theme.define({
+        typography: { heading: { 32: { fontSize: '32px' } } },
+      })
+      expect(() =>
+        Style.define({ title: { typography } } as never, { theme }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Style.InvalidError: ["title","typography"]: Expected a named typography set from the bound theme.]`,
+      )
+    },
+  )
+
   test('bound authoring requires an explicit identity without compilation', () => {
     const theme = Theme.define(tokens)
 

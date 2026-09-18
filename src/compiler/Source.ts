@@ -31,6 +31,8 @@ import type * as Theme from '../Theme.js'
 import * as Themes from './internal/Themes.js'
 import * as ThemeValues from '../web/internal/Themes.js'
 import * as Token from '../internal/Token.js'
+import * as Typography from '../internal/Typography.js'
+import * as Value from '../internal/Value.js'
 import * as Variables from './internal/Variables.js'
 import * as Walker from 'oxc-walker'
 
@@ -97,6 +99,8 @@ export type Call = {
   readonly body?: Ast.ObjectExpression | undefined
   /** Alias targets retained for declaration source locations. */
   readonly shorthands?: Shorthands.Map | undefined
+  /** Emitted typography field counts keyed by authored property offsets. */
+  readonly typography?: ReadonlyMap<number, number> | undefined
   /** Native HTML attribute output selected by the bound configuration. */
   readonly output?: 'html' | undefined
   /** Typed runtime slots for callback definitions. */
@@ -640,6 +644,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
     const name = `style-${namespace}-${call.start}`
     const locations: Style.SourceLocation[] = []
+    const typography = new Map<number, number>()
     const conditionKeys = new Map<string, Ast.Node>()
 
     function object(
@@ -1101,6 +1106,29 @@ export function extract(options: extract.Options): extract.ReturnType {
         values[key] = value(property.value, [name, ...prefix, key])
       }
 
+      if (typeof values.typography === 'string') {
+        const theme = themes?.styles.get(call.start)?.theme
+        const mappings = theme?.[Token.definition].contract.shorthands
+        const explicit = new Set(
+          Object.keys(values).flatMap((key) => mappings?.[key] ?? [key]),
+        )
+        const parsed = Value.parse(values.typography, 'fontFamily')
+        const count = Typography.fields(
+          theme,
+          parsed && !('invalid' in parsed) ? parsed.value : values.typography,
+        ).filter((field) => !explicit.has(field)).length
+        for (const property of properties) {
+          if (property.type !== 'Property') continue
+          const key =
+            property.key.type === 'Identifier'
+              ? property.key.name
+              : property.key.type === 'Literal'
+                ? property.key.value
+                : undefined
+          if (key === 'typography') typography.set(property.start, count)
+        }
+      }
+
       return values
     }
 
@@ -1185,6 +1213,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           ? { body: argument }
           : {}),
         ...(shorthands ? { shorthands } : {}),
+        ...(typography.size ? { typography } : {}),
         ...(themes?.styles.get(call.start)?.output
           ? { output: 'html' as const }
           : {}),

@@ -175,7 +175,7 @@ The graph normalizes configured themes without executing library code. Source ed
 
 When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles; contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.
 
-Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Readers accept implemented schema versions and reject unknown future versions explicitly.
+Packed contracts containing typography sets use schema version 24. Query metadata and scalar typography groups require at least version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Readers accept implemented schema versions and reject unknown future versions explicitly.
 
 Composite CSS function signatures, added scalar primitives, and newly written namespace metadata use version 11. Namespace metadata supports escaped/Unicode prefixes, repeated bindings, and control-character URI transport. Legacy scalar functions retain version 10; existing version-10 namespace libraries remain readable.
 
@@ -185,14 +185,15 @@ The writer selects the lowest version required by the exported capabilities:
 | ------- | ---------------------------------------------------- |
 | 1       | Theme bindings                                       |
 | 2       | Configuration and bound aliases                      |
-| 3       | Queries and typography                               |
+| 3       | Queries and scalar typography                        |
 | 4       | Callable theme selection and initialization script   |
 | 5       | Property mappings                                    |
 | 6       | Marker relationships                                 |
 | 7       | Packed stylesheets and animation identities          |
 | 8       | Variable references and registered custom properties |
+| 24      | Composite typography sets                            |
 
-This reader accepts versions 1–8. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+Typography sets require version 24 so older compilers reject their contracts explicitly. This reader accepts versions 1 through 24. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
 
 `sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
 

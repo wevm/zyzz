@@ -61,6 +61,10 @@
   "version": "0.0.2",
   "license": "MIT",
   "description": "Modern, universal, simple styling library for the Web and React Native",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wevm/zyzz.git"
+  },
   "type": "module",
   "bin": {
     "zyzz": "./dist/cli/index.js",

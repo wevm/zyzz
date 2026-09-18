@@ -24,7 +24,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23,
+      22, 23, 24,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -108,6 +108,13 @@ export function read(
     }
 
     const definition = Theme.define(record(entry.tokens) as Theme.Tokens)
+    if (
+      (data.version as number) < 24 &&
+      Object.hasOwn(definition.tokens, 'typography')
+    )
+      throw new Error(
+        'Packed typography sets require contract version 24 or later.',
+      )
 
     themes[name] = Token.bind(definition, contract)
     types[name] = type(input(definition))
@@ -198,9 +205,9 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(
-          data.version as number,
-        ) ||
+        ![
+          9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        ].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -249,7 +256,7 @@ export function read(
     if (entry.kind === 'style-reference') {
       if (
         entry.style !== undefined &&
-        ![16, 17, 18, 19, 20, 21, 22, 23].includes(data.version as number)
+        ![16, 17, 18, 19, 20, 21, 22, 23, 24].includes(data.version as number)
       )
         throw new Error(
           'Packed callable styles require contract version 16 or later.',
@@ -574,6 +581,13 @@ export function write(
       ]),
     ),
     version: (() => {
+      if (
+        Object.values(themes).some((theme) =>
+          Object.hasOwn(theme.tokens, 'typography'),
+        )
+      )
+        return 24
+
       function callable(link: Themes.Link): boolean {
         return !!link.style || Object.values(link.members ?? {}).some(callable)
       }

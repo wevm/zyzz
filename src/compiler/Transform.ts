@@ -995,6 +995,12 @@ export function compile(options: compile.Options): compile.ReturnType {
                   ? String(property.key.value)
                   : ''
 
+            if (key === 'typography' && call.typography?.has(property.start))
+              return Array.from(
+                { length: call.typography.get(property.start)! },
+                () => property,
+              )
+
             const authoredLocations: readonly Ast.Node[] =
               value.type === 'ArrayExpression'
                 ? value.elements.filter(

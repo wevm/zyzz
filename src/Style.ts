@@ -7,6 +7,7 @@ import * as Query from './internal/Query.js'
 import * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
+import * as Typography from './internal/Typography.js'
 import * as Value from './internal/Value.js'
 import type * as Theme from './Theme.js'
 import * as Targets from './internal/Targets.js'
@@ -24,6 +25,7 @@ export type Accepted<
     | Condition.Keys<tokens, Keys<style>>
     | 'selectors'
     | 'targets'
+    | 'typography'
     | 'variables'
   >,
   never
@@ -55,28 +57,32 @@ export type Accepted<
                       : never
                   }
                 : never
-              : key extends keyof Literal.Properties
-                ? Value.Accepted<
-                    Pick<style, key>,
-                    literal extends true
-                      ? LiteralDeclarations
-                      : DeclarationProperties<tokens>
-                  >[key] &
-                    Value.Checked<Pick<style, key>, tokens>[key]
-                : key extends Condition.Keys<tokens, key>
-                  ? [style[key]] extends [undefined]
-                    ? never
-                    : NonNullable<style[key]> extends Record<string, unknown>
-                      ?
-                          | Accepted<
-                              NonNullable<style[key]>,
-                              tokens,
-                              literal,
-                              targets
-                            >
-                          | Extract<style[key], undefined>
-                      : never
-                  : never
+              : key extends 'typography'
+                ? literal extends true
+                  ? never
+                  : Value.Atom<Typography.Names<tokens>>
+                : key extends keyof Literal.Properties
+                  ? Value.Accepted<
+                      Pick<style, key>,
+                      literal extends true
+                        ? LiteralDeclarations
+                        : DeclarationProperties<tokens>
+                    >[key] &
+                      Value.Checked<Pick<style, key>, tokens>[key]
+                  : key extends Condition.Keys<tokens, key>
+                    ? [style[key]] extends [undefined]
+                      ? never
+                      : NonNullable<style[key]> extends Record<string, unknown>
+                        ?
+                            | Accepted<
+                                NonNullable<style[key]>,
+                                tokens,
+                                literal,
+                                targets
+                              >
+                            | Extract<style[key], undefined>
+                        : never
+                    : never
       }
     : never)
 
@@ -364,16 +370,72 @@ export function define(
       continue
     }
 
-    const properties = authored.flatMap(([property, input]) =>
-      (mappings?.[property] ?? [property]).map(
-        (target) => [target, input, property] as const,
-      ),
+    const properties = authored.flatMap(
+      ([property, input]): readonly (readonly [string, unknown, string])[] => {
+        if (property !== 'typography')
+          return (mappings?.[property] ?? [property]).map(
+            (target) => [target, input, property] as const,
+          )
+
+        const parsed = Value.parse(input, 'fontFamily')
+        if (parsed && 'invalid' in parsed) {
+          report(
+            'invalid_value',
+            [name, property],
+            'Importance requires the suffix " !important".',
+          )
+          return []
+        }
+
+        const path = parsed?.value ?? input
+        const data = options.theme?.[Token.definition]
+        const fields = Typography.fields(options.theme, path)
+        if (!fields.length) {
+          report(
+            'invalid_value',
+            [name, property],
+            'Expected a named typography set from the bound theme.',
+          )
+          return []
+        }
+
+        // Explicit declarations in this block override the corresponding preset fields.
+        const explicit = new Set(
+          authored.flatMap(([property]) => mappings?.[property] ?? [property]),
+        )
+        return fields
+          .filter((field) => !explicit.has(field))
+          .map((field) => {
+            const key = `typography.${path}.${field}`
+            const reference = Token.create({
+              contract: data!.contract,
+              group: field,
+              path: key,
+              value: data!.values[key]!,
+            })
+            return [
+              field,
+              parsed?.important
+                ? Token.compose([reference, ' !important'])
+                : reference,
+              property,
+            ] as const
+          })
+      },
     )
 
     if (properties.some(([key]) => Condition.is(key))) {
       const rules: Rule[] = []
 
-      for (const [key, input] of authored) {
+      const blocks = authored.flatMap(([key, input]) =>
+        key === 'typography'
+          ? properties
+              .filter(([, , original]) => original === key)
+              .map(([property, value]) => [property, value] as const)
+          : [[key, input] as const],
+      )
+
+      for (const [key, input] of blocks) {
         try {
           const condition = Condition.is(key)
             ? Query.resolve(
@@ -707,6 +769,8 @@ export type Properties<
   readonly targets?:
     | (targets extends true ? TargetBranches<tokens> : never)
     | undefined
+  /** Applies a named typography set. Explicit fields in the same block take precedence. */
+  readonly typography?: Value.Atom<Typography.Names<tokens>>
 }
 
 /** Nested literal declarations retain exact keys at every depth. */

@@ -24,6 +24,7 @@ The bundle covers every scale the theme contract supports. Colors ship as light/
 | `fontWeight`    | `thin` to `black`                                                                                                                                                          |
 | `letterSpacing` | `tighter` to `widest`                                                                                                                                                      |
 | `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                                                                                                                              |
+| `typography`    | `heading`, `button`, `label`, and `copy` sets with dotted size and variant paths                                                                                           |
 | `spacing`       | `px`, `0` to `96` whole steps of `0.25rem`                                                                                                                                 |
 | `borderRadius`  | `xs` to `4xl`                                                                                                                                                              |
 | `breakpoints`   | `sm` to `2xl`                                                                                                                                                              |
@@ -31,7 +32,7 @@ The bundle covers every scale the theme contract supports. Colors ship as light/
 
 Color steps switch with the ordinary color-scheme contract. Steps whose values match in both schemes are single colors. `foreground` aliases `gray.1000` and `surface` aliases `background.100`. `grayAlpha` steps are translucent eight-digit hex values for overlays and borders.
 
-Fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Shadows, blur, easing, animation, perspective, and paired font-size line heights are outside the theme contract and are not bundled. `sans` and `mono` lead with the bundled faces before system stacks, and `serif` is a system stack.
+Fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Shadows, blur, easing, animation, and perspective are outside the theme contract and are not bundled. `sans` and `mono` lead with the bundled faces before system stacks, and `serif` is a system stack.
 
 Third-party scale data retains its MIT notice under `src/themes/`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
 
@@ -54,6 +55,35 @@ const initialization = script()
 ```
 
 ## style
+
+### Typography sets
+
+Named sets follow [Geist typography](https://vercel.com/geist/typography). Each applies `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight`. Sizes, line heights, and heading tracking match Geist's pixel values. Other sets reset letter spacing to `0px`.
+
+```ts
+import { style } from 'zyzz/default'
+
+namespace styles {
+  export const title = style({ typography: 'heading.32' })
+  export const body = style({ typography: 'copy.14', fontWeight: 500 })
+  export const code = style({ typography: 'label.14.mono' })
+}
+```
+
+Explicit typography fields in the same block override preset fields regardless of their position. Presets also work in selectors, conditions, and variant choices. `typography: 'heading.32 !important'` marks its expanded fields important.
+
+| Set       | Sizes                                  | Variants                                           |
+| --------- | -------------------------------------- | -------------------------------------------------- |
+| `button`  | 12, 14, 16                             | None                                               |
+| `copy`    | 13, 14, 16, 18, 20, 24                 | `.mono` on 13; `.strong` on 14, 16, 18, 20, 24     |
+| `heading` | 14, 16, 20, 24, 32, 40, 48, 56, 64, 72 | `.subtle` on 16, 20, 24, 32                        |
+| `label`   | 12, 13, 14, 16, 18, 20                 | `.mono` on 12, 13, 14; `.strong` on 12, 13, 14, 16 |
+
+Variants are complete sets, such as `copy.14.strong`. They change typography only. Geist's descendant colors, capitalization, and tabular-number treatments remain explicit style declarations. No descendant selectors or font loading are installed.
+
+Individual fields remain available through `theme.tokens.typography.heading[32].fontSize` and `theme.vars.typography.heading[32].fontSize`. [Theme.extend](./core/Theme/extend.md) overrides existing fields while preserving inherited theme references.
+
+### Signature
 
 Signature: `theme.style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](./core/style.md) apply; untransformed execution throws `style.MissingTransformError`.
 

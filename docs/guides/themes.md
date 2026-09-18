@@ -32,6 +32,21 @@ const example = <button {...styles.button()}>Save</button>
 
 Token names are inferred from the config. Nested palettes use dotted paths; CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
 
+### Typography Sets
+
+Apply a named set of font properties with a dotted path. The [default theme](../api/default.md#typography-sets) includes Geist's headings, buttons, labels, and copy styles:
+
+```ts
+import { style } from 'zyzz/default'
+
+namespace styles {
+  export const title = style({ typography: 'heading.32' })
+  export const body = style({ typography: 'copy.14', fontWeight: 500 })
+}
+```
+
+Each set bundles font family, size, weight, letter spacing, and line height. Explicit typography fields override preset fields within the same block. [Custom sets](../api/core/Theme/define.md#tokenstypography) use the same nested structure and support field overrides with `Theme.extend`.
+
 ### Property Mappings
 
 Define custom property names with `shorthands` and separate token scales by property:

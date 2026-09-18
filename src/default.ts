@@ -13,7 +13,8 @@ import { Config } from 'zyzz'
  * ten-step light/dark scales plus `background`, `grayAlpha`, `black`, and
  * `white`. `foreground` aliases `gray.1000` and `surface` aliases
  * `background.100`. Font stacks lead with the named faces and fall back to
- * system fonts. No fonts are loaded.
+ * system fonts. Typography sets use https://vercel.com/geist/typography,
+ * with explicit zero tracking outside headings. No fonts are loaded.
  */
 export const tokens = {
   borderRadius: {
@@ -244,6 +245,352 @@ export const tokens = {
     80: '20rem',
     96: '24rem',
     px: '1px',
+  },
+  typography: {
+    button: {
+      '12': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '12px',
+        fontWeight: 500,
+        letterSpacing: '0px',
+        lineHeight: '16px',
+      },
+      '14': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '14px',
+        fontWeight: 500,
+        letterSpacing: '0px',
+        lineHeight: '20px',
+      },
+      '16': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '16px',
+        fontWeight: 500,
+        letterSpacing: '0px',
+        lineHeight: '20px',
+      },
+    },
+    copy: {
+      '13': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '13px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '18px',
+        mono: {
+          fontFamily:
+            '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: '13px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '18px',
+        },
+      },
+      '14': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '14px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '20px',
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '14px',
+          fontWeight: 550,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+      },
+      '16': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '16px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '24px',
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 550,
+          letterSpacing: '0px',
+          lineHeight: '24px',
+        },
+      },
+      '18': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '18px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '28px',
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '18px',
+          fontWeight: 550,
+          letterSpacing: '0px',
+          lineHeight: '28px',
+        },
+      },
+      '20': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '20px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '36px',
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '20px',
+          fontWeight: 550,
+          letterSpacing: '0px',
+          lineHeight: '36px',
+        },
+      },
+      '24': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '24px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '36px',
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '24px',
+          fontWeight: 550,
+          letterSpacing: '0px',
+          lineHeight: '36px',
+        },
+      },
+    },
+    heading: {
+      '14': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '14px',
+        fontWeight: 600,
+        letterSpacing: '-.28px',
+        lineHeight: '20px',
+      },
+      '16': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '16px',
+        fontWeight: 600,
+        letterSpacing: '-.32px',
+        lineHeight: '24px',
+        subtle: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 500,
+          letterSpacing: '-.32px',
+          lineHeight: '24px',
+        },
+      },
+      '20': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '20px',
+        fontWeight: 600,
+        letterSpacing: '-.4px',
+        lineHeight: '26px',
+        subtle: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '20px',
+          fontWeight: 500,
+          letterSpacing: '-.4px',
+          lineHeight: '26px',
+        },
+      },
+      '24': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '24px',
+        fontWeight: 600,
+        letterSpacing: '-.96px',
+        lineHeight: '32px',
+        subtle: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '24px',
+          fontWeight: 500,
+          letterSpacing: '-.96px',
+          lineHeight: '32px',
+        },
+      },
+      '32': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '32px',
+        fontWeight: 600,
+        letterSpacing: '-1.28px',
+        lineHeight: '40px',
+        subtle: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '32px',
+          fontWeight: 500,
+          letterSpacing: '-1.28px',
+          lineHeight: '40px',
+        },
+      },
+      '40': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '40px',
+        fontWeight: 600,
+        letterSpacing: '-2.4px',
+        lineHeight: '48px',
+      },
+      '48': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '48px',
+        fontWeight: 600,
+        letterSpacing: '-2.88px',
+        lineHeight: '56px',
+      },
+      '56': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '56px',
+        fontWeight: 600,
+        letterSpacing: '-3.36px',
+        lineHeight: '56px',
+      },
+      '64': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '64px',
+        fontWeight: 600,
+        letterSpacing: '-3.84px',
+        lineHeight: '64px',
+      },
+      '72': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '72px',
+        fontWeight: 600,
+        letterSpacing: '-4.32px',
+        lineHeight: '72px',
+      },
+    },
+    label: {
+      '12': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '12px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '16px',
+        mono: {
+          fontFamily:
+            '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: '12px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '16px',
+        },
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '12px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '16px',
+        },
+      },
+      '13': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '13px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '16px',
+        mono: {
+          fontFamily:
+            '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: '13px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '13px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '16px',
+        },
+      },
+      '14': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '14px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '20px',
+        mono: {
+          fontFamily:
+            '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: '14px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '14px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+      },
+      '16': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '16px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '20px',
+        strong: {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+      },
+      '18': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '18px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '20px',
+      },
+      '20': {
+        fontFamily:
+          'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        fontSize: '20px',
+        fontWeight: 400,
+        letterSpacing: '0px',
+        lineHeight: '32px',
+      },
+    },
   },
 } as const
 
@@ -479,6 +826,352 @@ export const { appearance, script, style, theme, variants } = Config.create({
       80: '20rem',
       96: '24rem',
       px: '1px',
+    },
+    typography: {
+      button: {
+        '12': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '12px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '16px',
+        },
+        '14': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '14px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+        '16': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 500,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+      },
+      copy: {
+        '13': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '13px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '18px',
+          mono: {
+            fontFamily:
+              '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '13px',
+            fontWeight: 400,
+            letterSpacing: '0px',
+            lineHeight: '18px',
+          },
+        },
+        '14': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '14px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '14px',
+            fontWeight: 550,
+            letterSpacing: '0px',
+            lineHeight: '20px',
+          },
+        },
+        '16': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '24px',
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '16px',
+            fontWeight: 550,
+            letterSpacing: '0px',
+            lineHeight: '24px',
+          },
+        },
+        '18': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '18px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '28px',
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '18px',
+            fontWeight: 550,
+            letterSpacing: '0px',
+            lineHeight: '28px',
+          },
+        },
+        '20': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '20px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '36px',
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '20px',
+            fontWeight: 550,
+            letterSpacing: '0px',
+            lineHeight: '36px',
+          },
+        },
+        '24': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '24px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '36px',
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '24px',
+            fontWeight: 550,
+            letterSpacing: '0px',
+            lineHeight: '36px',
+          },
+        },
+      },
+      heading: {
+        '14': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '14px',
+          fontWeight: 600,
+          letterSpacing: '-.28px',
+          lineHeight: '20px',
+        },
+        '16': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 600,
+          letterSpacing: '-.32px',
+          lineHeight: '24px',
+          subtle: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '16px',
+            fontWeight: 500,
+            letterSpacing: '-.32px',
+            lineHeight: '24px',
+          },
+        },
+        '20': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '20px',
+          fontWeight: 600,
+          letterSpacing: '-.4px',
+          lineHeight: '26px',
+          subtle: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '20px',
+            fontWeight: 500,
+            letterSpacing: '-.4px',
+            lineHeight: '26px',
+          },
+        },
+        '24': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '24px',
+          fontWeight: 600,
+          letterSpacing: '-.96px',
+          lineHeight: '32px',
+          subtle: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '24px',
+            fontWeight: 500,
+            letterSpacing: '-.96px',
+            lineHeight: '32px',
+          },
+        },
+        '32': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '32px',
+          fontWeight: 600,
+          letterSpacing: '-1.28px',
+          lineHeight: '40px',
+          subtle: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '32px',
+            fontWeight: 500,
+            letterSpacing: '-1.28px',
+            lineHeight: '40px',
+          },
+        },
+        '40': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '40px',
+          fontWeight: 600,
+          letterSpacing: '-2.4px',
+          lineHeight: '48px',
+        },
+        '48': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '48px',
+          fontWeight: 600,
+          letterSpacing: '-2.88px',
+          lineHeight: '56px',
+        },
+        '56': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '56px',
+          fontWeight: 600,
+          letterSpacing: '-3.36px',
+          lineHeight: '56px',
+        },
+        '64': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '64px',
+          fontWeight: 600,
+          letterSpacing: '-3.84px',
+          lineHeight: '64px',
+        },
+        '72': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '72px',
+          fontWeight: 600,
+          letterSpacing: '-4.32px',
+          lineHeight: '72px',
+        },
+      },
+      label: {
+        '12': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '12px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '16px',
+          mono: {
+            fontFamily:
+              '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '12px',
+            fontWeight: 400,
+            letterSpacing: '0px',
+            lineHeight: '16px',
+          },
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '12px',
+            fontWeight: 500,
+            letterSpacing: '0px',
+            lineHeight: '16px',
+          },
+        },
+        '13': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '13px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '16px',
+          mono: {
+            fontFamily:
+              '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '13px',
+            fontWeight: 400,
+            letterSpacing: '0px',
+            lineHeight: '20px',
+          },
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '13px',
+            fontWeight: 500,
+            letterSpacing: '0px',
+            lineHeight: '16px',
+          },
+        },
+        '14': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '14px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+          mono: {
+            fontFamily:
+              '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: '14px',
+            fontWeight: 400,
+            letterSpacing: '0px',
+            lineHeight: '20px',
+          },
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '14px',
+            fontWeight: 500,
+            letterSpacing: '0px',
+            lineHeight: '20px',
+          },
+        },
+        '16': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '16px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+          strong: {
+            fontFamily:
+              'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+            fontSize: '16px',
+            fontWeight: 500,
+            letterSpacing: '0px',
+            lineHeight: '20px',
+          },
+        },
+        '18': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '18px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '20px',
+        },
+        '20': {
+          fontFamily:
+            'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+          fontSize: '20px',
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: '32px',
+        },
+      },
     },
   },
 })

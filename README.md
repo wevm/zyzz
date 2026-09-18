@@ -1,4 +1,9 @@
-<h1 align="center">zyzz</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+    <img alt="zyzz" src=".github/assets/logo-light.svg" width="255" height="114">
+  </picture>
+</h1>
 
 <p align="center">
   A modern, universal styling library.

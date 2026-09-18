@@ -1,8 +1,8 @@
 /** Renders the shared HTML document. @module */
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { style, theme } from 'zyzz/default'
 import { global } from 'zyzz/web'
-import { style, theme } from '../zyzz.config.js'
 
 global({
   '*': { boxSizing: 'border-box' },

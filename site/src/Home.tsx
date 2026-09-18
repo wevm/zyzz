@@ -1,6 +1,6 @@
 /** Presents Zyzz and its installation shortcuts. @module */
 import { useEffect, useRef, useState } from 'react'
-import { style } from './zyzz.config.js'
+import { style } from 'zyzz/default'
 
 /** Renders the landing page and clipboard actions. */
 export function Home() {

@@ -58,7 +58,7 @@
   "packageManager": "pnpm@11.19.0",
   "[!start-pkg]": "",
   "name": "zyzz",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "UNLICENSED",
   "description": "Type-safe style props compiled to static CSS.",
   "type": "module",

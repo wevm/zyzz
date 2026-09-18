@@ -31,7 +31,7 @@ jobs:
       - name: Check at-rule inventory
         run: pnpm check:at-rules >> "$GITHUB_STEP_SUMMARY"
   conformance:
-    name: CSS Property Conformance (100%)
+    name: CSS Conformance
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -188,7 +188,7 @@ jobs:
           path: test-results/at-rule-browser-capabilities.json
           retention-days: 30
   typescript:
-    name: TypeScript 7
+    name: Types (typescript@7)
     env:
       NODE_OPTIONS: --max-old-space-size=4096
     runs-on: ubuntu-latest

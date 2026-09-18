@@ -2,9 +2,6 @@ name: Examples
 on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, closed]
-  push:
-    branches: [main]
-  workflow_dispatch:
 
 concurrency:
   cancel-in-progress: true
@@ -12,7 +9,6 @@ concurrency:
 
 jobs:
   discover:
-    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
     name: Discover examples
     outputs:
       examples: ${{ steps.discover.outputs.examples }}

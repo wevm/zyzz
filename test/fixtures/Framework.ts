@@ -49,6 +49,11 @@ export async function verify(options: verify.Options) {
 
     const files = {
       ...options.files,
+      'client.tsx': `${options.files['client.tsx']}
+        if (import.meta.hot) {
+          for (const event of ['vite:afterUpdate', 'vite:error'])
+            import.meta.hot.on(event, () => document.documentElement.removeAttribute('data-zyzz-hmr-pending'))
+        }`,
       'styles.ts': options.files['styles.ts'].replace(
         'Config.create({',
         `Config.create({ cssOutput: '${options.cssOutput}',`,
@@ -392,15 +397,26 @@ export async function verify(options: verify.Options) {
         }
 
         async function edit(source: string) {
+          await page.waitForFunction(() => {
+            document.documentElement.setAttribute('data-zyzz-hmr-pending', '')
+            return true
+          })
+
           // Chokidar throttles rapid changes to one path. Wait for a real notification before checking the resulting update.
           for (let attempt = 0; ; attempt++) {
             const observed = reported()
             await Watch.write({ path: stylesPath, source })
 
-            if (await observed) return
+            if (await observed) break
             if (attempt === 4)
               throw new Error('The watcher never reported the source edit.')
           }
+
+          // CSS can change before Vite finishes applying the corresponding JavaScript update.
+          await page.waitForFunction(
+            () =>
+              !document.documentElement.hasAttribute('data-zyzz-hmr-pending'),
+          )
         }
 
         await edit(files['styles.ts'].replace("'#0066cc'", 'unknownColor()'))

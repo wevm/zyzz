@@ -9,6 +9,7 @@ Define finite choices, defaults, and compound matches for one element. Begin wit
 Add typed choices to a component. This example imports `{ variants }` from the [theme config](themes.md#use-themes); import from `zyzz` for token-free recipes.
 
 ```tsx
+import type { Props } from 'zyzz'
 import { variants } from './zyzz.config.js'
 
 namespace styles {
@@ -25,7 +26,7 @@ namespace styles {
   })
 }
 
-type ButtonOptions = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonOptions = Props.Variants<typeof styles.button>
 const example = <button {...styles.button({ size: 'md' })}>Save</button>
 ```
 

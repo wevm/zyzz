@@ -281,6 +281,7 @@ For saved preferences, `script()` generates an optional [initialization script](
 Describe component choices with inferred props, defaults, and compound rules. Use `variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
+import type { Props } from 'zyzz'
 import { variants } from './zyzz.config.js'
 
 namespace styles {
@@ -296,7 +297,7 @@ namespace styles {
   })
 }
 
-type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonProps = Props.Variants<typeof styles.button>
 const example = <button {...styles.button({ size: 'sm' })}>Continue</button>
 ```
 

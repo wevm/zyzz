@@ -3,7 +3,7 @@
 Defines one element's finite style choices. Import `variants` from `zyzz`; apply the returned callable through ordinary styling props.
 
 ```tsx
-import { variants } from 'zyzz'
+import { type Props, variants } from 'zyzz'
 
 namespace styles {
   export const button = variants({
@@ -20,7 +20,7 @@ namespace styles {
 }
 
 const button = <button {...styles.button({ size: 'lg', loading: true })} />
-type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonProps = Props.Variants<typeof styles.button>
 ```
 
 The compiler emits every finite choice and compound. Applications select attributes under a stable class, merge styling overrides, and never generate CSS. Runtime selection relies on the typed contract; structural authoring errors produce source diagnostics during compilation.
@@ -107,7 +107,7 @@ Media-list complements follow [Media Queries Level 4](https://www.w3.org/TR/medi
 
 ## Returns
 
-A callable accepting optional declared selections and styling overrides. Infer its input with `NonNullable<Parameters<typeof styles.button>[0]>`.
+A callable accepting optional declared selections and styling overrides. Infer its input with `Props.Variants<typeof styles.button>`.
 
 ### className
 
@@ -181,3 +181,9 @@ styles.button({ size: { custom: { padding: '16px' } } })
 Payload fields must be required scalars with explicit types. Defaults contain complete static payloads. Compounds match choice names. Conditional selections accept the same scoped payload objects, with separate variable names for each condition. Only supplied selections and defaults bind values; switching choices returns fresh props without stale bindings.
 
 Compilation validates callbacks and defaults without executing callbacks. Selection only serializes attributes and binds values to fixed slots. Payload values never create CSS rules, and callback validation never runs in application renders. Equal field names in different axes, choices, recipes, and conditions have distinct slots.
+
+## Inferred Props
+
+`Props.Variants<typeof styles.button>` extracts the callable's first parameter, excluding `null` and `undefined`. It is equivalent to `NonNullable<Parameters<typeof styles.button>[0]>`.
+
+The type includes styling overrides, conditional selections, and dynamic choice payloads. Optional selections remain optional. Import the type-only namespace with `import type { Props } from 'zyzz'`.

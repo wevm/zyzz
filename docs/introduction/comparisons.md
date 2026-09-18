@@ -239,10 +239,10 @@ export const panel = style({
 
 ### Zyzz
 
-`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. Standard `Parameters` extracts the consumer contract. Choices may also be typed callbacks, with values scoped to that choice.
+`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. `Props.Variants` extracts the consumer contract. Choices may also be typed callbacks, with values scoped to that choice.
 
 ```tsx
-import { Theme } from 'zyzz'
+import { type Props, Theme } from 'zyzz'
 
 const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
 namespace styles {
@@ -261,7 +261,7 @@ namespace styles {
   })
 }
 
-type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonProps = Props.Variants<typeof styles.button>
 
 export function Button(props: ButtonProps) {
   return <button {...styles.button(props)}>Continue</button>

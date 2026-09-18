@@ -1,5 +1,7 @@
 name: Prerelease
 on:
+  push:
+  pull_request:
   workflow_dispatch:
 concurrency:
   cancel-in-progress: true

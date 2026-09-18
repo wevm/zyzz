@@ -73,7 +73,7 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
-import { describe, expect, test } from 'vite-plus/test'
+import { beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Config, Style, Theme } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Dynamic, Props } from 'zyzz/runtime'
@@ -375,42 +375,60 @@ describe('compile', () => {
     }
   })
 
-  test('CSS conformance validates emitted values against independent MDN grammar', () => {
-    const cases = Conformance.cases()
-    const lexer = Conformance.lexer()
-    const failures: string[] = []
+  describe('CSS conformance validates emitted values against independent MDN grammar', () => {
+    let cases: readonly Conformance.Case[]
+    let lexer: ReturnType<typeof Conformance.lexer>
 
-    // Batches bound compiler input size while still exercising fallback and importance rewriting.
-    for (let start = 0; start < cases.length; start += 100) {
-      const batch = cases.slice(start, start + 100)
+    beforeAll(() => {
+      cases = Conformance.cases()
+      lexer = Conformance.lexer()
+    })
 
-      const source = `import { style } from 'zyzz';\n${batch
-        .map(
-          ({ property, value }, index) =>
-            `export const case${index} = style({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
-        )
-        .join('\n')}`
+    test.each(Array.from({ length: 10 }, (_, index) => index))(
+      'partition %i',
+      (partition) => {
+        const size = Math.ceil(cases.length / 10)
+        const probes = cases.slice(partition * size, (partition + 1) * size)
+        const failures: string[] = []
 
-      const output = Transform.compile({ moduleId: 'conformance.ts', source })
-      let count = 0
+        // Batches bound compiler input size while still exercising fallback and importance rewriting.
+        for (let start = 0; start < probes.length; start += 100) {
+          const batch = probes.slice(start, start + 100)
 
-      CssTree.walk(CssTree.parse(output.css), (node) => {
-        if (node.type !== 'Declaration') return
+          const source = `import { style } from 'zyzz';\n${batch
+            .map(
+              ({ property, value }, index) =>
+                `export const case${index} = style({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
+            )
+            .join('\n')}`
 
-        count++
+          const output = Transform.compile({
+            moduleId: 'conformance.ts',
+            source,
+          })
+          let count = 0
 
-        const value = CssTree.generate(node.value)
-        const error = lexer.matchProperty(node.property, value).error
+          CssTree.walk(CssTree.parse(output.css), (node) => {
+            if (node.type !== 'Declaration') return
 
-        if (error) failures.push(`${node.property}: ${value}: ${error.message}`)
-      })
+            count++
 
-      if (count !== batch.length * 2)
-        failures.push(`Declaration count: ${count} != ${batch.length * 2}`)
-    }
+            const value = CssTree.generate(node.value)
+            const error = lexer.matchProperty(node.property, value).error
 
-    expect(failures).toMatchInlineSnapshot(`[]`)
-  }, 30_000)
+            if (error)
+              failures.push(`${node.property}: ${value}: ${error.message}`)
+          })
+
+          if (count !== batch.length * 2)
+            failures.push(`Declaration count: ${count} != ${batch.length * 2}`)
+        }
+
+        expect(failures).toMatchInlineSnapshot(`[]`)
+      },
+      30_000,
+    )
+  })
 
   test('CSS conformance preserves consumer types for every accepted probe', async () => {
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))

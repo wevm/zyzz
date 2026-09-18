@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Replaced `zyzz/themes/default` with `zyzz/default`, exporting the bundled configuration's appearance controls, initialization script, theme, authoring helpers, and raw tokens.

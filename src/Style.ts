@@ -643,7 +643,10 @@ type LiteralAtoms = {
     | Exclude<Literal.Properties[property], undefined>
     | Binding.Reference<'*'>
     | {
-        [kind in Binding.Kind]: property extends Binding.Properties<kind>
+        [kind in Binding.Kind]: property extends Binding.Property<
+          kind,
+          property
+        >
           ? Binding.Reference<kind>
           : never
       }[Binding.Kind]

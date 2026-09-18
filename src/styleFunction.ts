@@ -7,6 +7,15 @@ import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Style from './Style.js'
 
+/** Restricts callback hints to inferred declarations instead of expanding every property grammar. */
+type CompletionProperties<styles = Record<string, unknown>> = {
+  readonly [property in keyof typeof Literal.rules & keyof styles]?:
+    | Literal.Properties[property]
+    | (string & {})
+    | number
+    | object
+}
+
 type Keys<value> = value extends unknown ? keyof value : never
 
 type VariableOptions<input> = input extends {
@@ -40,14 +49,18 @@ export function style<
       values: values,
     ) => styles &
       NoInfer<Style.Accepted<styles, {}, true> & Binding.Checked<styles>>) &
-    (values extends Binding.Inputs<values> ? unknown : never) &
-    (Parameters<callback> extends [Record<string, string | number>]
-      ? unknown
-      : never),
-  options?: style.DefinitionOptions,
+    CompletionProperties<NoInfer<styles>>,
+  // Exclude invalid callbacks by arity so they cannot mask object-property diagnostics.
+  ...options: Parameters<callback> extends [Record<string, string | number>]
+    ? values extends Binding.Inputs<values>
+      ? [options?: style.DefinitionOptions]
+      : [invalid: never, unavailable: never]
+    : [invalid: never, unavailable: never]
 ): style.Dynamic<values>
 export function style<const styles extends Record<string, unknown>>(
-  styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
+  styles: styles &
+    NoInfer<Style.Accepted<styles, {}, true>> &
+    CompletionProperties,
   options?: style.DefinitionOptions,
 ): style.ReturnType
 export function style(

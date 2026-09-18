@@ -14,14 +14,14 @@
     "site": false
   },
   "dependencies": {
-    "expo": "57.0.23",
-    "react": "19.2.3",
-    "react-native": "0.86.3",
+    "expo": "catalog:",
+    "react": "catalog:native",
+    "react-native": "catalog:",
     "zyzz": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.18",
-    "typescript": "6.0.3"
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
   }
 }

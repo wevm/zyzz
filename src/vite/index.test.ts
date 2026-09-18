@@ -319,6 +319,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           process.execPath,
           [
             Path.resolve('node_modules/typescript/bin/tsc'),
+            '--ignoreConfig',
             '--customConditions',
             'src',
             '--module',

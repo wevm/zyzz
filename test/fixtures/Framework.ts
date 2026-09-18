@@ -100,13 +100,14 @@ export async function verify(options: verify.Options) {
           module: 'esnext',
           moduleResolution: 'bundler',
           noEmit: true,
-          skipLibCheck: true,
-          strict: true,
-          target: 'esnext',
           paths: {
             zyzz: [Path.resolve('src/index.ts')],
             'zyzz/web': [Path.resolve('src/web/index.ts')],
           },
+          skipLibCheck: true,
+          strict: true,
+          target: 'esnext',
+          types: ['vite/client'],
         },
         include: ['types.tsx', 'styles.ts'],
       }),
@@ -120,7 +121,9 @@ export async function verify(options: verify.Options) {
         Path.join(root, 'tsconfig.json'),
       ],
       { timeout: 120000 },
-    )
+    ).catch((error) => {
+      throw new Error(error.stdout || error.message)
+    })
 
     expect(checked.stdout).toMatchInlineSnapshot(`""`)
 

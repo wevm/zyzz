@@ -17,6 +17,7 @@ describe('zyzz', () => {
           'react-dom': '19.2.4',
         },
         files: Fixture.files,
+        jsxImportSource: 'react',
         name: 'react',
         output: 'react',
         plugin: '@vitejs/plugin-react',

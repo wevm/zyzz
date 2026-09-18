@@ -189,7 +189,7 @@ With TypeScript 5.9.3, the target-branch validator's cold structured case measur
 
 Published declaration domains and per-style component inference increase the warmed structured case from 13,482 to 19,936 instantiations. The increased cold and warmed costs remain optimization targets; warmed results do not establish a startup improvement.
 
-`pnpm bench:types` fails when a body exceeds its baseline by more than 20%. Counts are deterministic for one compiler release, so baselines belong to the pinned version. The Verify workflow checks types on TypeScript 6.0 and 7.0 and runs instantiation benches on 6.0. The native 7.x package ships no compiler API, so its lane installs it under an alias and runs only its `tsc` binary with whole-program diagnostics.
+`pnpm bench:types` fails when a body exceeds its baseline by more than 20%. Counts are deterministic for one compiler release, so baselines belong to the pinned version. The Verify workflow checks types on TypeScript 7. The Benchmarks workflow runs instantiation benches through the separate TypeScript 6 compiler API dependency. TypeScript 7 provides whole-program diagnostics through its native `tsc` binary.
 
 ## Next.js and Output Modes
 

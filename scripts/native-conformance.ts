@@ -4,7 +4,7 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
-import * as Ts from 'typescript'
+import * as Ts from 'typescript-api'
 
 const root = Path.resolve(import.meta.dirname, '..')
 const directory = Path.join(root, 'test/conformance/native')

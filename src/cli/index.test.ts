@@ -208,19 +208,18 @@ describe('zyzz', () => {
   test('routes published native builds and rejects incompatible flags', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-native-'))
     try {
-      const packed = await exec('npm', [
+      const packed = await exec('pnpm', [
         'pack',
         '--json',
         '--pack-destination',
         root,
       ])
-      const filename = (JSON.parse(packed.stdout) as { filename: string }[])[0]!
-        .filename
+      const { filename } = JSON.parse(packed.stdout) as { filename: string }
       await exec('npm', [
         'install',
         '--prefix',
         root,
-        Path.join(root, filename),
+        filename,
         '--ignore-scripts',
         '--legacy-peer-deps',
         '--no-audit',
@@ -305,21 +304,20 @@ describe('zyzz', () => {
       let child: ChildProcess.ChildProcess | undefined
 
       try {
-        const { stdout } = await exec('npm', [
+        const { stdout } = await exec('pnpm', [
           'pack',
           '--json',
           '--pack-destination',
           root,
         ])
-        const packed = JSON.parse(stdout) as { filename: string }[]
-        const filename = packed[0]!.filename
+        const { filename } = JSON.parse(stdout) as { filename: string }
         await exec(
           'npm',
           [
             'install',
             '--prefix',
             root,
-            Path.join(root, filename!),
+            filename,
             '--ignore-scripts',
             '--legacy-peer-deps',
             '--no-audit',

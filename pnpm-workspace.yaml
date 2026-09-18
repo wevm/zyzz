@@ -1,8 +1,8 @@
 packages:
-  - site
   - '.'
-  - examples/*
   - bench/native/app
+  - examples/*
+  - site
 
 allowBuilds:
   esbuild: true

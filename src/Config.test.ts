@@ -2,12 +2,179 @@
  * Exercises configuration normalization through style validation and CSS emission.
  * @module
  */
+import * as Path from 'node:path'
+import * as Ts from 'typescript-api'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Config, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('create', () => {
+  test('suggests configured CSS values and theme tokens with property diagnostics', () => {
+    const root = Path.resolve(import.meta.dirname, '..')
+    const file = Path.join(root, '.fixture-config-editor.ts')
+    let source = `import { Config } from 'zyzz'
+import { theme } from 'zyzz/themes/default'
+const { style } = Config.create({ theme })
+const pane = style({ alignItems: 'center', fontFamily: 'sans' })
+const dynamic = style((values: { width: \`\${number}px\` }) => ({
+  width: values.width,
+  alignItems: 'center',
+}))
+dynamic({ width: '12px' })
+`
+    let version = 0
+    const snapshots = new Map<string, Ts.IScriptSnapshot>()
+    const options: Ts.CompilerOptions = {
+      module: Ts.ModuleKind.ESNext,
+      moduleResolution: Ts.ModuleResolutionKind.Bundler,
+      noEmit: true,
+      paths: { zyzz: [Path.join(root, 'src/index.ts')] },
+      skipLibCheck: true,
+      strict: true,
+      target: Ts.ScriptTarget.ESNext,
+      types: [],
+    }
+    const service = Ts.createLanguageService({
+      fileExists: (path) => path === file || Ts.sys.fileExists(path),
+      getCompilationSettings: () => options,
+      getCurrentDirectory: () => root,
+      getDefaultLibFileName: Ts.getDefaultLibFilePath,
+      getProjectVersion: () => String(version),
+      getScriptFileNames: () => [file],
+      getScriptSnapshot: (path) => {
+        if (path === file) return Ts.ScriptSnapshot.fromString(source)
+
+        const cached = snapshots.get(path)
+        if (cached) return cached
+
+        const text = Ts.sys.readFile(path)
+        if (text === undefined) return undefined
+
+        const snapshot = Ts.ScriptSnapshot.fromString(text)
+        snapshots.set(path, snapshot)
+        return snapshot
+      },
+      getScriptVersion: (path) => (path === file ? String(version) : '0'),
+      readDirectory: Ts.sys.readDirectory,
+      readFile: (path) => (path === file ? source : Ts.sys.readFile(path)),
+    })
+
+    function complete(property: string, original: string, value: string) {
+      const previous = source
+      source = source.replace(
+        `${property}: '${original}'`,
+        `${property}: '${value}'`,
+      )
+      version++
+      try {
+        const position =
+          source.indexOf(`${property}: '${value}'`) +
+          `${property}: '`.length +
+          value.length
+        return service
+          .getCompletionsAtPosition(file, position, {})
+          ?.entries.map((entry) => entry.name)
+      } finally {
+        source = previous
+        version++
+      }
+    }
+
+    function diagnose(before: string, after: string) {
+      const previous = source
+      source = source.replace(before, after)
+      version++
+      try {
+        return service.getSemanticDiagnostics(file).map((diagnostic) => ({
+          code: diagnostic.code,
+          message: Ts.flattenDiagnosticMessageText(
+            diagnostic.messageText,
+            '\n',
+          ),
+          span: source.slice(
+            diagnostic.start!,
+            diagnostic.start! + diagnostic.length!,
+          ),
+        }))
+      } finally {
+        source = previous
+        version++
+      }
+    }
+
+    try {
+      expect(service.getSemanticDiagnostics(file)).toMatchInlineSnapshot(`[]`)
+      expect(complete('alignItems', 'center', '')).toMatchInlineSnapshot(`
+        [
+          "baseline",
+          "center",
+          "end",
+          "first baseline",
+          "flex-end",
+          "flex-start",
+          "last baseline",
+          "normal",
+          "safe center",
+          "safe end",
+          "safe flex-end",
+          "safe flex-start",
+          "safe start",
+          "start",
+          "stretch",
+          "unsafe center",
+          "unsafe end",
+          "unsafe flex-end",
+          "unsafe flex-start",
+          "unsafe start",
+          "anchor-center",
+          "safe self-end",
+          "safe self-start",
+          "self-end",
+          "self-start",
+          "unsafe self-end",
+          "unsafe self-start",
+          "inherit",
+          "initial",
+          "revert",
+          "revert-layer",
+          "unset",
+        ]
+      `)
+      expect(complete('fontFamily', 'sans', '')).toMatchInlineSnapshot(`
+        [
+          "",
+          "mono",
+          "sans",
+          "serif",
+        ]
+      `)
+      expect(
+        diagnose("alignItems: 'center'", "alignItems: 'invalid-alignment'"),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "code": 2322,
+            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", "first baseline", ... 21 more ..., "unsafe start"]; }> | Reference<...>>, ...Atom<...>[]])'.",
+            "span": "alignItems",
+          },
+        ]
+      `)
+      expect(diagnose("fontFamily: 'sans'", "unknownProperty: 'sans'"))
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "code": 2322,
+            "message": "Type 'string' is not assignable to type 'never'.",
+            "span": "unknownProperty",
+          },
+        ]
+      `)
+    } finally {
+      service.dispose()
+    }
+  }, 30_000)
+
   test('uses the validated descriptor snapshot for configuration', () => {
     const options = new Proxy(
       { cssOutput: 'grouped' as const },

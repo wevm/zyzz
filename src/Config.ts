@@ -8,6 +8,7 @@ import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
+import type * as Literal from './internal/Literal.js'
 import type { style } from './styleFunction.js'
 import { variants } from './variants.js'
 import * as Scheme from './internal/Scheme.js'
@@ -444,19 +445,34 @@ export type StyleFactory<
         NoInfer<
           Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
         >) &
-      (values extends Binding.Inputs<values> ? unknown : never) &
-      (Parameters<callback> extends [Record<string, string | number>]
-        ? unknown
-        : never),
-    options?: style.DefinitionOptions,
+      CompletionProperties<tokens, NoInfer<styles>>,
+    ...options: Parameters<callback> extends [Record<string, string | number>]
+      ? values extends Binding.Inputs<values>
+        ? [options?: style.DefinitionOptions]
+        : [invalid: never, unavailable: never]
+      : [invalid: never, unavailable: never]
   ): style.Dynamic<values, output>
   <const styles extends Record<string, unknown>>(
-    styles: styles & NoInfer<Body<styles, tokens, layers, mappings>>,
+    styles: styles &
+      NoInfer<Body<styles, tokens, layers, mappings>> &
+      CompletionProperties<tokens>,
     options?: style.DefinitionOptions,
   ): style.ReturnType<output>
 }
 
 type Keys<styles> = styles extends unknown ? keyof styles : never
+
+/** Keeps completion hints separate from inferred declaration validation. */
+type CompletionProperties<tokens, styles = Record<string, unknown>> = {
+  readonly [property in keyof Literal.Properties & keyof styles]?:
+    | (string extends Literal.Properties[property]
+        ? never
+        : Literal.Properties[property])
+    | Token.Names<tokens, property>
+    | (string & {})
+    | number
+    | object
+}
 
 /** Checked declaration body shared by configured styles and recipe choices. */
 export type Body<

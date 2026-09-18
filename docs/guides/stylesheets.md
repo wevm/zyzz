@@ -4,9 +4,6 @@ Declare global rules, cascade order, fonts, and animations. Begin with [Getting 
 
 ## At-Rule Functions
 
-> [!NOTE]
-> The following helpers are planned. See the [complete API proposal](../api/web/at-rules.md) for signatures, reference behavior, and remaining design gates.
-
 Declare stylesheet rules through direct functions:
 
 ```ts
@@ -30,7 +27,7 @@ viewTransition({ navigation: 'auto' })
 
 Named helpers return typed references, following `keyframes`. For example, `above` becomes a `positionTryFallbacks` value. Repeated calls preserve distinct stylesheet rules; helper calls compile away.
 
-Use `global` for global selectors and nested grouping. Keep `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys in valid style bodies. Expanded grammar remains part of the proposal.
+Use `global` for global selectors and nested grouping. Keep `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys in valid style bodies. See the [at-rule reference](../api/web/at-rules.md) for supported grammar and target limits.
 
 ## Recipes
 

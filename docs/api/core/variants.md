@@ -72,9 +72,6 @@ Precedence is base, then axes in declaration order, then compounds in array orde
 
 Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. There is no multipart `slots` option; dynamic choices bind fixed CSS-variable slots. Ordinary JSX spreads replace props; they are not a composition API.
 
-> [!NOTE]
-> Explicit props composition follows in the Phase 3 stack.
-
 ## Conditional Selections
 
 Declare named conditions on the recipe and select overrides separately from base choices:

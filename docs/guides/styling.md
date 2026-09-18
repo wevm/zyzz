@@ -78,7 +78,7 @@ The bundler integration resolves and transforms imports of compiled `style(...)`
 Pass styling overrides to a definition. Compose generated declarations through `cx` when one generated style must override another.
 
 > [!NOTE]
-> `cx` currently requires compiler-resolved local applications or immutable local props bindings. Ternaries, packed definitions, and arbitrary external props remain unsupported. Conditional arguments use `enabled && styles.example()`; at most eight conditional arguments are supported.
+> `cx` requires compiler-resolved local or packed applications, or immutable local props bindings. Ternaries and arbitrary external props remain unsupported. Conditional arguments use `enabled && styles.example()`; at most eight conditional arguments are supported.
 
 ```tsx
 import { cx, style } from 'zyzz'

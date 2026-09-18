@@ -1,7 +1,6 @@
 # zyzz/next
 
-> [!NOTE]
-> Preview integration. See [verified versions and limitations](../../introduction/next.md).
+See [verified versions and limitations](../../introduction/next.md).
 
 Connect source transformation, CSS delivery, and watching to Next.js.
 

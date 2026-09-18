@@ -2,9 +2,6 @@
 
 How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, composition, and delivery. Examples use the same small components where practical. DX means developer experience; AX means agent experience.
 
-> [!NOTE]
-> Zyzz examples include unimplemented APIs. See [Compatibility](compatibility.md) for the current boundary and [Benchmarks](benchmarks.md) for a recorded run.
-
 ## Authoring, Types, and DX/AX
 
 ### Zyzz

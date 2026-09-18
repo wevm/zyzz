@@ -3,7 +3,7 @@
 Typed style definitions, themes, configuration, and callable authoring.
 
 > [!NOTE]
-> `Config`, `Props`, `style`, `cx`, `Style`, `Theme`, `variable`, and `variants` are exported. `selectors` is a style property. Config source extraction and theme variable references are supported. `cx` composes known local applications, including payloads and conditional arguments. Generic props and packed composition remain preview. Root and bound recipes support finite choices, media/supports selections, and scoped dynamic payloads.
+> `Config`, `Props`, `style`, `cx`, `Style`, `Theme`, `variable`, and `variants` are exported. `selectors` is a style property. Config source extraction and theme variable references are supported. `cx` composes known local applications, including payloads and conditional arguments. Packed composition is supported; arbitrary external props remain unsupported. Root and bound recipes support finite choices, media/supports selections, and scoped dynamic payloads.
 
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |

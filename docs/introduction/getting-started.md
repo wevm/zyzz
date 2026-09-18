@@ -2,9 +2,6 @@
 
 Import bound styling helpers and spread their applied props onto a component. Imports always refer to authored source files.
 
-> [!NOTE]
-> The Config/Vite source workflow below is implemented. Next.js and native integrations retain separate implementation gates. Custom hosts can use the [compiler APIs](../guides/compilation.md#publish-libraries).
-
 ## Install
 
 ```sh

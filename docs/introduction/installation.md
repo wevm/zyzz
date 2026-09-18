@@ -10,4 +10,4 @@ Choose the path that owns compilation in the application or library.
 | [Compiler APIs](../guides/compilation.md#publish-libraries) | Integrate the current literal pipeline with custom tooling             |
 
 > [!NOTE]
-> Vite and standalone CLI integration are implemented. The Next.js adapter remains preview. Other bundler adapters require their own verified setup; no universal plugin compatibility is promised.
+> Vite, standalone CLI, and Next.js integrations are implemented. Other bundler adapters require their own verified setup; no universal plugin compatibility is promised.

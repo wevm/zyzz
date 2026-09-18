@@ -74,6 +74,9 @@ packageExtensions:
   '@ark/attest':
     dependencies:
       typescript: *typescriptApi
+  ts-evaluator:
+    dependencies:
+      typescript: *typescriptApi
   zile:
     dependencies:
       typescript: *typescriptApi

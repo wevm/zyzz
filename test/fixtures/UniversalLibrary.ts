@@ -22,20 +22,13 @@ export async function create(root: string) {
   await Fs.mkdir(publisher, { recursive: true })
 
   const packedRuntime = await exec(
-    'npm',
-    [
-      'pack',
-      '--ignore-scripts',
-      '--offline',
-      '--json',
-      '--pack-destination',
-      root,
-    ],
+    'pnpm',
+    ['pack', '--json', '--pack-destination', root],
     { cwd: process.cwd() },
   )
-  const runtimeArchive = (
-    JSON.parse(packedRuntime.stdout) as { filename: string }[]
-  )[0]!
+  const runtimeArchive = JSON.parse(packedRuntime.stdout) as {
+    filename: string
+  }
 
   await Fs.writeFile(
     Path.join(publisher, 'package.json'),
@@ -46,7 +39,7 @@ export async function create(root: string) {
       sideEffects: ['*.css'],
       files: ['web', 'native'],
       dependencies: {
-        zyzz: `file:${Path.join(root, runtimeArchive.filename)}`,
+        zyzz: `file:${runtimeArchive.filename}`,
       },
       exports: {
         '.': { types: './web/index.d.ts', default: './web/index.js' },
@@ -98,6 +91,7 @@ export async function create(root: string) {
 
     await exec(process.execPath, [
       Path.resolve('node_modules/typescript/bin/tsc'),
+      '--ignoreConfig',
       '--module',
       'nodenext',
       '--target',

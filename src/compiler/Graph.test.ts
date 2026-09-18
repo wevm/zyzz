@@ -104,6 +104,7 @@ ns.card({className:'web'});`,
       )
       await Util.promisify(ChildProcess.execFile)(process.execPath, [
         Path.resolve('node_modules/typescript/bin/tsc'),
+        '--ignoreConfig',
         '--noEmit',
         '--module',
         'nodenext',
@@ -257,6 +258,7 @@ button({className:'web'});`,
       )
       await exec(process.execPath, [
         Path.join(root, 'node_modules/typescript/bin/tsc'),
+        '--ignoreConfig',
         '--noEmit',
         '--module',
         'nodenext',
@@ -1463,6 +1465,7 @@ export const scope = mint.className;`,
         process.execPath,
         [
           Path.join(root, 'node_modules/typescript/bin/tsc'),
+          '--ignoreConfig',
           '--customConditions',
           'src',
           '--module',

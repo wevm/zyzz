@@ -447,15 +447,22 @@ describe('compile', () => {
           'calc(1px + var(--probe))',
         ].flatMap((value) => [value, `${value}!`])
 
-        const key = JSON.stringify(values)
-        let group = groups.get(key)
+        const checks: string[] = []
 
-        if (!group) {
-          group = `values${groups.size}`
-          groups.set(key, group)
+        // Check scalars individually to avoid native compiler tuple-comparison limits.
+        for (const value of values) {
+          const key = JSON.stringify(value)
+          let group = groups.get(key)
+
+          if (!group) {
+            group = `values${groups.size}`
+            groups.set(key, group)
+          }
+
+          checks.push(`${group} satisfies Style.Properties['${property}'];`)
         }
 
-        return `${group} satisfies readonly Style.Properties['${property}'][];\nstyle({${JSON.stringify(property)}: [${values
+        return `${checks.join('\n')}\nstyle({${JSON.stringify(property)}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))
           .join(',')}]});`
@@ -487,7 +494,10 @@ describe('compile', () => {
         process.execPath,
         [
           '--max-old-space-size=6144',
-          require.resolve('typescript/bin/tsc'),
+          Path.join(
+            Path.dirname(require.resolve('typescript/package.json')),
+            'bin/tsc',
+          ),
           '--project',
           Path.join(directory, 'tsconfig.json'),
         ],
@@ -2396,6 +2406,7 @@ export const props = theme.style({ color: 'brand', padding: 'md' })();`
         process.execPath,
         [
           Path.join(root, 'node_modules/typescript/bin/tsc'),
+          '--ignoreConfig',
           '--customConditions',
           'src',
           '--module',
@@ -2734,6 +2745,7 @@ style({ color: 'md' });
         process.execPath,
         [
           Path.join(root, 'node_modules/typescript/bin/tsc'),
+          '--ignoreConfig',
           '--customConditions',
           'src',
           '--module',

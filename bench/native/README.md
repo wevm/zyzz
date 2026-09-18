@@ -20,7 +20,7 @@ Release builds use Hermes and the New Architecture. Each lane discards three war
 
 ## Local runs
 
-Native dependencies are pinned in `app/package.json`. Unistyles requires custom native code and cannot run in Expo Go. See [Unistyles installation](https://unistyl.es/v3/start/getting-started/) and its [Nitro compatibility table](https://github.com/jpudysz/react-native-unistyles#installation).
+Native dependency versions are pinned in `pnpm-workspace.yaml`. Unistyles requires custom native code and cannot run in Expo Go. See [Unistyles installation](https://unistyl.es/v3/start/getting-started/) and its [Nitro compatibility table](https://github.com/jpudysz/react-native-unistyles#installation).
 
 From the repository root, install dependencies and prepare the package, host tools, and fixtures:
 

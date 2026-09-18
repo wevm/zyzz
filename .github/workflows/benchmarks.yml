@@ -338,7 +338,7 @@ jobs:
     timeout-minutes: 5
   type-benches:
     if: github.event.action != 'closed'
-    name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
+    name: Type instantiations (${{ matrix.shard }}/2)
     env:
       NODE_OPTIONS: --max-old-space-size=4096
     runs-on: ubuntu-latest
@@ -346,14 +346,11 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2]
-        typescript: ['6.0']
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
-      - name: Install TypeScript ${{ matrix.typescript }}
-        run: pnpm add --workspace-root --save-dev "typescript@${{ matrix.typescript }}"
       - name: Check type instantiations
         run: |
           set -o pipefail

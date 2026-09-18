@@ -7,7 +7,7 @@ import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
-import * as Ts from 'typescript'
+import * as Ts from 'typescript-api'
 import { Graph } from 'zyzz/compiler'
 
 /** Packs compiled JavaScript, generated declarations, CSS, and authoring metadata. */

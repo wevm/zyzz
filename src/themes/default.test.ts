@@ -80,6 +80,7 @@ variants({base:{color:'missing'}});`,
         )
         await exec(process.execPath, [
           Path.resolve('node_modules/typescript/bin/tsc'),
+          '--ignoreConfig',
           '--module',
           'nodenext',
           '--target',

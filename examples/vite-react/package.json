@@ -7,14 +7,14 @@
     "dev": "vite --configLoader runner"
   },
   "dependencies": {
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "zyzz": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "typescript": "5.9.3",
-    "vite": "^8.2.2"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

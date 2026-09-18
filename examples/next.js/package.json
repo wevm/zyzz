@@ -10,14 +10,14 @@
     "dev": "next dev"
   },
   "dependencies": {
-    "next": "16.3.5",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
     "zyzz": "latest"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "typescript": "7.0.2"
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
   }
 }

@@ -7,14 +7,14 @@
     "dev": "vite --configLoader runner"
   },
   "dependencies": {
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "latest",
+    "react-dom": "latest",
     "zyzz": "latest"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "typescript": "7.0.2",
-    "vite": "^8.2.2"
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
   }
 }

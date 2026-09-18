@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  A modern, universal styling library.
+  Modern, universal, simple styling library for the Web and React Native
 </p>
 
 <p align="center">

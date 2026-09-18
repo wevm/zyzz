@@ -51,7 +51,7 @@ const styles = Style.define(declarations)
 `Style.define` retains style names but erases property literals in its result. Apply `satisfies StyleSheet.Properties` before that boundary for native property/unit checks. `compile` checks capabilities at runtime for all inputs, including token values, conversion scales, and font mappings.
 
 > [!NOTE]
-> These contracts have pure compiler, package, and embedded-engine coverage. Native variants, dynamic adapters, and real iOS/Android rendering remain separate implementation and acceptance work.
+> These contracts have pure compiler, package, and embedded-engine coverage. Native variants and explicit host adapters are implemented. Real iOS/Android rendering remains a separate acceptance gate.
 
 Aspect ratios accept positive numbers or a positive `width / height` ratio and emit a native number. Automatic intrinsic ratios are rejected. These additions retain explicit native version requirements and do not establish renderer parity.
 

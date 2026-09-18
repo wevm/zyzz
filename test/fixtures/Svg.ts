@@ -11,6 +11,6 @@ export const controls = {
 
 export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{color:{ink:'#06c'}}});
-export const paint = zyzz.style({fill:'ink',fillOpacity:0.5,fillRule:['nonzero','evenodd!'],stroke:'black',strokeWidth:'4px',strokeOpacity:0.75,strokeLinecap:'round',strokeLinejoin:'bevel',strokeMiterlimit:2,strokeDashoffset:'-5%',clipRule:'evenodd',paintOrder:'stroke',shapeRendering:'geometricPrecision',textRendering:'optimizeLegibility',vectorEffect:'non-scaling-stroke'})();
+export const paint = zyzz.style({fill:'ink',fillOpacity:0.5,fillRule:['nonzero','evenodd !important'],stroke:'black',strokeWidth:'4px',strokeOpacity:0.75,strokeLinecap:'round',strokeLinejoin:'bevel',strokeMiterlimit:2,strokeDashoffset:'-5%',clipRule:'evenodd',paintOrder:'stroke',shapeRendering:'geometricPrecision',textRendering:'optimizeLegibility',vectorEffect:'non-scaling-stroke'})();
 export const filter = zyzz.style({floodColor:'ink',floodOpacity:0.25,lightingColor:'white',colorInterpolationFilters:'linearRGB'})();
 export const empty = style({fill:'none',stroke:'none'})();`

@@ -10,7 +10,7 @@ No. The source transform replaces style definitions. Importing config does not m
 
 ## Are Tokens Bundled?
 
-Core imports are token-free. The optional `zyzz/themes/default` entrypoint is planned separately.
+Core imports are token-free. The optional `zyzz/default` entrypoint is planned separately.
 
 ## Why a Callback?
 
@@ -18,7 +18,7 @@ Callbacks describe typed value bindings to precompiled rules. They do not genera
 
 ## Can Libraries Precompile?
 
-Yes: distribute matching transformed code and CSS. The current compiler APIs support their documented literal boundary; public CLI packaging remains a preview.
+Yes: distribute matching transformed code and CSS. The compiler APIs and standalone CLI support source-free packages with adjacent compiler metadata.
 
 ## Does Native Support Everything?
 

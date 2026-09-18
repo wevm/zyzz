@@ -1204,7 +1204,7 @@ describe('compile', () => {
     { padding: '1em' },
     { padding: '1rem' },
     { padding: ['1px', '2px'] },
-    { color: 'red!' },
+    { color: 'red !important' },
     { color: 'currentColor' },
     { ':hover': { color: 'red' } },
     { '@media (width > 10px)': { padding: '1px' } },

@@ -6,9 +6,6 @@ Compile shared definitions and select native theme tables. Begin with [Getting S
 
 ### Native Styles
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Compile shared definitions into native tables, then select a theme and color scheme before rendering.
 
 ```ts

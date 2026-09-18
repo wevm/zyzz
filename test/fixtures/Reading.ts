@@ -3,6 +3,6 @@
  * @module
  */
 export const source = `import { style } from 'zyzz';
-export const visual=style({display:'flex',flexDirection:'row-reverse',readingFlow:['normal','flex-visual!']})();
+export const visual=style({display:'flex',flexDirection:'row-reverse',readingFlow:['normal','flex-visual !important']})();
 export const ordered=style({display:'flex',readingFlow:'source-order'})();
-export const first=style({readingOrder:[0,'-1!']})();`
+export const first=style({readingOrder:[0,'-1 !important']})();`

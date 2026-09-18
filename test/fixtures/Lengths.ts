@@ -60,6 +60,6 @@ export const units = [
 /** Literal source with token fallbacks and inherited relative lengths. */
 export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{space:'1lh'}}});
-export const root = style({width:['50vw','50cqi!'],height:'10dvh',marginLeft:'-1in',borderWidth:'1pc',borderStyle:'solid'})();
-export const themed = zyzz.style({padding:['1rem',zyzz.theme.tokens.spacing.space],marginTop:'2rlh!'})();
+export const root = style({width:['50vw','50cqi !important'],height:'10dvh',marginLeft:'-1in',borderWidth:'1pc',borderStyle:'solid'})();
+export const themed = zyzz.style({padding:['1rem',zyzz.theme.tokens.spacing.space],marginTop:'2rlh !important'})();
 `

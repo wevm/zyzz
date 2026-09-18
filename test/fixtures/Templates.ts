@@ -7,7 +7,7 @@ export const source = [
   '  color: `r${"ed"}`,',
   '  content: `"${true}:${null}:${12n}"`,',
   '  marginLeft: `${-2n}px`,',
-  '  padding: [`${4}px`, `${8 as const}px!`],',
+  '  padding: [`${4}px`, `${8 as const}px !important`],',
   '  width: `calc(100% - ${`${+16}`}px)`,',
   '})()',
 ].join('\n')

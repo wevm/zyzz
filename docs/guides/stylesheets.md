@@ -4,9 +4,6 @@ Declare global rules, cascade order, fonts, and animations. Begin with [Getting 
 
 ## At-Rule Functions
 
-> [!NOTE]
-> The following helpers are planned. See the [complete API proposal](../api/web/at-rules.md) for signatures, reference behavior, and remaining design gates.
-
 Declare stylesheet rules through direct functions:
 
 ```ts
@@ -30,7 +27,7 @@ viewTransition({ navigation: 'auto' })
 
 Named helpers return typed references, following `keyframes`. For example, `above` becomes a `positionTryFallbacks` value. Repeated calls preserve distinct stylesheet rules; helper calls compile away.
 
-Use `global` for global selectors and nested grouping. Keep `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys in valid style bodies. Expanded grammar remains part of the proposal.
+Use `global` for global selectors and nested grouping. Keep `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys in valid style bodies. See the [at-rule reference](../api/web/at-rules.md) for supported grammar and target limits.
 
 ## Recipes
 
@@ -116,7 +113,7 @@ Font URLs retain source ownership. Reachable keyframes emit stable references. F
 import 'zyzz/reset.css'
 ```
 
-The reset lives in the `reset` layer: border-box sizing, zeroed margins and padding, unstyled headings, links, and lists, inherited form-control typography, and block-level replaced elements. Its document and code font stacks are system fallbacks, so the [default theme](../api/themes/default.md) `fontFamily` tokens still select the bundled faces explicitly. Core imports do not install it. Ordinary unlayered declarations take precedence regardless of whether the reset loads before or after them.
+The reset lives in the `reset` layer: border-box sizing, zeroed margins and padding, unstyled headings, links, and lists, inherited form-control typography, and block-level replaced elements. Its document and code font stacks are system fallbacks, so the [default theme](../api/default.md) `fontFamily` tokens still select the bundled faces explicitly. Core imports do not install it. Ordinary unlayered declarations take precedence regardless of whether the reset loads before or after them.
 
 ### Packed Libraries
 

@@ -1,7 +1,7 @@
 # At-Rules
 
 > [!NOTE]
-> Grouping, font, named descriptor, page, and view-transition helpers are implemented. Statement helpers remain planned in the dependent PR; full conformance is tracked separately.
+> Grouping, font, named descriptor, page, view-transition, and statement helpers are implemented. Full conformance is tracked separately.
 
 Stylesheet declarations use direct named imports from `zyzz/web`. Conditional and grouping rules remain native `@…` keys in valid style contexts. `global` owns global selectors and their grouping rules; descriptor and statement rules have dedicated functions.
 
@@ -195,7 +195,7 @@ Statement helpers emit at stylesheet scope. Imports precede namespaces and ordin
 
 `namespace` prefixes accept CSS identifier spellings, including Unicode and escapes. Equivalent spellings share a binding, and the last declaration applies throughout its module. Omitting `prefix` creates a default namespace; an empty `uri` selects elements with no namespace. URI strings are identities and are never fetched as assets.
 
-CSS functions use ordered parameter records with `name`, optional `syntax`, and optional `default` fields, an optional `returns` syntax, and a `body` containing `result`, local custom properties, and conditional groups. Custom media owns a query identity; profile identities belong inside CSS color expressions. These contracts remain planned until their corresponding implementation gates pass.
+CSS functions use ordered parameter records with `name`, optional `syntax`, and optional `default` fields, an optional `returns` syntax, and a `body` containing `result`, local custom properties, and conditional groups. Custom media owns a query identity; profile identities belong inside CSS color expressions. Compiler support does not establish browser or print-engine support; see the target-specific limits below.
 
 ## Conformance Evidence
 

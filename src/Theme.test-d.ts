@@ -2,7 +2,7 @@
  * Checks consumer inference and rejected inputs through the public Theme API.
  * @module
  */
-import { style as queriesStyle } from './themes/default.js'
+import { style as queriesStyle } from './default.js'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, style, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
@@ -193,7 +193,7 @@ describe('style', () => {
 
     const extracted: ParametersStyle = {
       color: 'brand',
-      padding: ['md', '2px!'],
+      padding: ['md', '2px !important'],
     }
 
     themed(extracted)

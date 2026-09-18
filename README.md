@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  A modern, universal styling library.
+  Modern, universal, simple styling library for the Web and React Native
 </p>
 
 <p align="center">
@@ -117,7 +117,7 @@ export default zyzz(getDefaultConfig(import.meta.dirname), {
 })
 ```
 
-Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/expo-native).
+Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/react-native).
 
 ### CLI
 
@@ -187,10 +187,10 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `theme` and raw `tokens`. Scales use conventional named steps, and colors ship as light/dark pairs.
+The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `theme`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Scales use conventional named steps, and colors ship as light/dark pairs.
 
 ```ts
-import { style } from 'zyzz/themes/default'
+import { style } from 'zyzz/default'
 
 namespace styles {
   export const button = style({ color: 'blue.700', padding: 4 })
@@ -202,7 +202,7 @@ Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to
 ```ts
 // zyzz.config.ts
 import { Config, Theme } from 'zyzz'
-import { theme as defaultTheme } from 'zyzz/themes/default'
+import { theme as defaultTheme } from 'zyzz/default'
 
 export const { style, theme, variants } = Config.create({
   theme: Theme.extend(defaultTheme, {
@@ -281,6 +281,7 @@ For saved preferences, `script()` generates an optional [initialization script](
 Describe component choices with inferred props, defaults, and compound rules. Use `variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
+import type { Props } from 'zyzz'
 import { variants } from './zyzz.config.js'
 
 namespace styles {
@@ -296,8 +297,11 @@ namespace styles {
   })
 }
 
-type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
-const example = <button {...styles.button({ size: 'sm' })}>Continue</button>
+export function Button(props: Props.Variants<typeof styles.button>) {
+  return <button {...styles.button(props)}>Continue</button>
+}
+
+const example = <Button size="sm" />
 ```
 
 ### Dynamic Styles
@@ -328,7 +332,7 @@ export function Bar() {
 
 ### Value Syntax
 
-Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
+Use the suffix ` !important` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
 import { style, theme } from './zyzz.config.js'
@@ -336,7 +340,7 @@ import { style, theme } from './zyzz.config.js'
 namespace styles {
   export const panel = style({
     display: ['block', 'grid'],
-    color: 'brand!',
+    color: 'brand !important',
     borderColor: theme.vars.color.brand,
     width: `calc(100% - ${theme.vars.spacing.md})`,
   })

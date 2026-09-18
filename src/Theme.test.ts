@@ -2,7 +2,7 @@
  * Exercises the public Theme workflow through real collaborating modules.
  * @module
  */
-import { theme as bundled, tokens as contextTokens } from './themes/default.js'
+import { theme as bundled, tokens as contextTokens } from './default.js'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import { chromium } from 'playwright'
@@ -511,7 +511,7 @@ describe('queries', () => {
     })
     test('keeps generated bundled values synchronized', async () => {
       const source = await Fs.readFile(
-        new URL('./themes/default.ts', import.meta.url),
+        new URL('./default.ts', import.meta.url),
         'utf8',
       )
       const raw = source.slice(
@@ -519,19 +519,18 @@ describe('queries', () => {
         source.indexOf(' as const'),
       )
 
-      const generated = source.slice(
-        source.indexOf('export const theme = Theme.define(') + 34,
-        source.indexOf(
-          ')\n',
-          source.indexOf('export const theme = Theme.define('),
-        ),
-      )
+      const generated = source
+        .slice(source.indexOf('  theme: {') + 9, source.lastIndexOf('})'))
+        .trim()
+        .replace(/,$/, '')
 
-      expect(raw.trim() === generated.trim()).toMatchInlineSnapshot(`true`)
+      expect(
+        raw.trim().replace(/^ +/gm, '') === generated.replace(/^ +/gm, ''),
+      ).toMatchInlineSnapshot(`true`)
     })
     test('links bundled source through its exported style boundary', async () => {
       const source = await Fs.readFile(
-        new URL('./themes/default.ts', import.meta.url),
+        new URL('./default.ts', import.meta.url),
         'utf8',
       )
 
@@ -544,10 +543,13 @@ describe('queries', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-26ntzho2pyyt-theme{--z-t26ntzho2pyyt-theme-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-theme-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500:light-dark(#97ccff,#004287);}
-        .z-font-family-nHjHpk{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z-font-size-1ft8_Q{font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);}
-        .z-text-0FMvmu{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,light-dark(#97ccff,#004287));}"
+        ".z_theme-26ntzho2pyyt-appearance-theme{--z-t26ntzho2pyyt-appearance-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-appearance-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-appearance-color_2e_blue_2e_500:light-dark(#97ccff,#004287);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-font-family-FdwTzB{font-family:var(--z-t26ntzho2pyyt-appearance-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z-font-size-UJWhNF{font-size:var(--z-t26ntzho2pyyt-appearance-fontSize_2e_base,1rem);}
+        .z-text-EdmXRC{color:var(--z-t26ntzho2pyyt-appearance-color_2e_blue_2e_500,light-dark(#97ccff,#004287));}"
       `)
 
       const built = await Esbuild.build({
@@ -565,7 +567,7 @@ describe('queries', () => {
 
       expect(
         Object.keys(built.metafile!.inputs).some((path) =>
-          path.includes('themes/default'),
+          /(?:^|[/\\])(?:src|dist)[/\\]default\.[cm]?[jt]s$/.test(path),
         ),
       ).toMatchInlineSnapshot(`false`)
     })

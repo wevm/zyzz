@@ -9,4 +9,4 @@ export const controls = {
 
 export const source = `import { style } from 'zyzz';
 export const grid=style({display:'grid',width:'300px',gridAutoColumns:'1fr',gridAutoRows:'40px',gridAutoFlow:'column',gridTemplateColumns:'none',gridTemplateRows:'40px',columnGap:0})();
-export const cell=style({gridColumnStart:[1,'2!'],gridColumnEnd:'span 2',gridRowStart:1,gridRowEnd:2})();`
+export const cell=style({gridColumnStart:[1,'2 !important'],gridColumnEnd:'span 2',gridRowStart:1,gridRowEnd:2})();`

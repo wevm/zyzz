@@ -21,7 +21,7 @@ The web acceptance stack, typed target branches, and static native values are me
 ## Next work
 
 1. The dynamic native stack is merged in #211, #212, and #214. The merged file-host package stack passes Main, Examples, and Benchmarks at `d74e142`. Local acceptance covers source-free CLI/native execution, browser styles, and dependency-watch recovery.
-2. Build independent native renderer evidence with the [Expo comparison app](../examples/expo-native/README.md). Expo SDK 57 uses React Native 0.86.3, separately from the pinned 0.87.0 inventory. The [Metro adapter](../docs/api/metro/README.md) compiles literal source definitions during bundling. Theme/config graphs and packed Metro dependencies remain open.
+2. Build independent native renderer evidence with the [Expo comparison app](../examples/react-native/README.md). Expo SDK 57 uses React Native 0.86.3, separately from the pinned 0.87.0 inventory. The [Metro adapter](../docs/api/metro/README.md) compiles literal source definitions during bundling. Theme/config graphs and packed Metro dependencies remain open.
 3. Execute independent iOS/Android evidence and the universal parity gate. Keep remaining web rendering gaps visible throughout this work.
 4. Finish distribution, measurement, and documentation acceptance before release, including packed external assets and resolver dependency review.
 

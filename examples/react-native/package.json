@@ -1,0 +1,27 @@
+{
+  "name": "@zyzz/example-react-native",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "android": "expo start --android",
+    "build": "npm run check:types && expo export --platform ios --platform android",
+    "check:types": "tsc --noEmit",
+    "dev": "expo start",
+    "ios": "expo start --ios"
+  },
+  "config": {
+    "site": false
+  },
+  "dependencies": {
+    "expo": "latest",
+    "react": "latest",
+    "react-native": "latest",
+    "zyzz": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "typescript": "latest"
+  }
+}

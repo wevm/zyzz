@@ -7,12 +7,12 @@
     "dev": "vite --configLoader runner"
   },
   "dependencies": {
-    "solid-js": "catalog:",
-    "zyzz": "workspace:*"
+    "solid-js": "latest",
+    "zyzz": "latest"
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "vite": "catalog:",
-    "vite-plugin-solid": "catalog:"
+    "typescript": "latest",
+    "vite": "latest",
+    "vite-plugin-solid": "latest"
   }
 }

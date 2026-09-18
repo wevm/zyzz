@@ -14,7 +14,7 @@ const corpus = await Promise.all(
     }),
 )
 const bundled = await Fs.readFile(
-  new URL('../themes/default.ts', import.meta.url),
+  new URL('../default.ts', import.meta.url),
   'utf8',
 )
 for (const count of [10, 100, 1000]) {

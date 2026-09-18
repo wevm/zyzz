@@ -22,7 +22,7 @@ const zyzz = Config.create({theme:{spacing:{indent:'12px'}}});
 export const breaks = style({width:'65px',wordBreak:'break-all'})();
 export const letters = style({letterSpacing:['normal','2px']})();
 export const paragraph = zyzz.style({width:'200px',textIndent:zyzz.theme.tokens.spacing.indent,textAlignLast:'start',hyphens:'manual',textTransform:'uppercase'})();
-export const truncate = style({width:'65px',overflow:'hidden',whiteSpace:['pre','nowrap!'],textOverflow:'ellipsis'})();
+export const truncate = style({width:'65px',overflow:'hidden',whiteSpace:['pre','nowrap !important'],textOverflow:'ellipsis'})();
 export const words = style({wordSpacing:'3px'})();
 export const wrap = style({width:'65px',overflowWrap:'anywhere',whiteSpace:'normal'})();
 `

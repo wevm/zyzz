@@ -1,9 +1,9 @@
-# Default theme
+# Default config
 
-The opt-in entrypoint exports bound `style` and `variants`, the full `theme` handle, and raw `tokens`. Vite and Next.js consume its packed compiler contract. Core imports do not load the bundled data.
+The opt-in `zyzz/default` entrypoint exports `appearance`, `script`, `style`, `theme`, and `variants` from a default `Config.create` configuration, plus raw `tokens`. Vite and Next.js consume its packed compiler contract. Core imports do not load the bundled data.
 
 ```ts
-import { style, variants } from 'zyzz/themes/default'
+import { style, variants } from 'zyzz/default'
 
 namespace styles {
   export const card = style({ color: 'blue.700', padding: 4 })
@@ -39,9 +39,23 @@ Themes can also define `breakpoints`, `containers`, and `containerNames`. These 
 
 The package includes its versioned `.zyzz.json` contract and generated declarations. Applications compile every finite recipe choice, including conditional selections and dynamic payload slots, through the ordinary theme pipeline. Fonts still require application-owned loading.
 
+## appearance
+
+`appearance.get()` reads the root color scheme. `appearance.set({ colorScheme: 'dark' })` updates and persists it under the default `zyzz` storage key. The [appearance contract](./core/Config/create.md#appearance) applies.
+
+## script
+
+`script()` returns HTML-safe JavaScript for restoring the saved color scheme before first paint. Include it in an inline script in the document head. It shares the `zyzz` storage key with `appearance`.
+
+```ts
+import { script } from 'zyzz/default'
+
+const initialization = script()
+```
+
 ## style
 
-Signature: `theme.style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](../core/style.md) apply; untransformed execution throws `style.MissingTransformError`.
+Signature: `theme.style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](./core/style.md) apply; untransformed execution throws `style.MissingTransformError`.
 
 ```ts
 const card = style({ padding: 4 })
@@ -50,7 +64,7 @@ card({ className: 'external' })
 
 ## variants
 
-Signature: `theme.variants(definition)`. Accepts base styles, ordered axes, defaults, compounds, named conditions, and typed dynamic choices. Returns a recipe callable with inferred selections and styling overrides. See [variants parameters, returns, and errors](../core/variants.md). Authoring requires compilation; runtime selection performs no validation.
+Signature: `theme.variants(definition)`. Accepts base styles, ordered axes, defaults, compounds, named conditions, and typed dynamic choices. Returns a recipe callable with inferred selections and styling overrides. See [variants parameters, returns, and errors](./core/variants.md). Authoring requires compilation; runtime selection performs no validation.
 
 ```ts
 const button = variants({ variants: { size: { sm: { padding: 2 } } } })
@@ -59,7 +73,7 @@ button({ size: 'sm' })
 
 ## theme
 
-Type: `Theme.Definition<typeof tokens>`. Exposes the compiled `className`, bound `style` and `variants`, token references, and variable references. It takes no parameters. The [Theme return properties](../core/Theme/define.md#returns) describe each member. Apply its class to an ancestor of token-consuming styles.
+Type: the inferred single-theme `Config.Handle` for the bundled tokens. Exposes the compiled `className`, bound `style` and `variants`, token references, and variable references. It takes no parameters. The [Theme return properties](./core/Theme/define.md#returns) describe each member. Apply its class to an ancestor of token-consuming styles.
 
 ```tsx
 <section className={theme.className}>Content</section>

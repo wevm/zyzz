@@ -159,7 +159,7 @@ describe('style', () => {
       translate: 'calc(50% - 10px) 2px -3px',
     })
     style({
-      transform: ['rotate(90deg)', 'translateX(20px) rotate(45deg)!'],
+      transform: ['rotate(90deg)', 'translateX(20px) rotate(45deg) !important'],
       aspectRatio: 2,
       scale: 1.5,
     })
@@ -193,7 +193,7 @@ describe('style', () => {
   test('custom identifiers retain string authoring and declaration fallbacks', () => {
     Style.define(Identifiers.styles)
     style({
-      animationName: ['Fade', 'Pulse!'],
+      animationName: ['Fade', 'Pulse !important'],
       anchorScope: '--Anchor, --Other',
       fontPalette: '--Palette',
       timelineScope: '--Scroll',
@@ -257,7 +257,7 @@ describe('style', () => {
   test('interaction properties', () => {
     Style.define(Interaction.styles)
     style({
-      cursor: ['grab', 'grabbing!'],
+      cursor: ['grab', 'grabbing !important'],
       pointerEvents: 'none',
       userSelect: 'all',
     })
@@ -283,7 +283,7 @@ describe('style', () => {
 
   test('table properties', () => {
     Style.define(Tables.styles)
-    style({ borderSpacing: [0, '1em!'], tableLayout: 'fixed' })
+    style({ borderSpacing: [0, '1em !important'], tableLayout: 'fixed' })
     style({
       borderCollapse: 'revert-layer',
       captionSide: 'inherit',
@@ -314,7 +314,7 @@ describe('style', () => {
   test('text decoration', () => {
     Style.define(TextDecoration.styles)
     style({
-      textDecorationLine: ['overline underline', 'line-through!'],
+      textDecorationLine: ['overline underline', 'line-through !important'],
       textDecorationThickness: '10%',
       textUnderlineOffset: '-.2em',
     })
@@ -351,13 +351,13 @@ describe('style', () => {
     style({ textUnderlineOffset: 'from-font' })
     style({ textDecoration: 'underline solid' })
     // @ts-expect-error Invalid numeric spellings remain checked in importance strings.
-    style({ textDecorationThickness: '0x10px!' })
+    style({ textDecorationThickness: '0x10px !important' })
   })
 
   test('text flow', () => {
     Style.define(TextFlow.styles)
     style({
-      letterSpacing: ['normal', '-1px!'],
+      letterSpacing: ['normal', '-1px !important'],
       wordSpacing: '-.2em',
       textIndent: '10%',
     })
@@ -374,7 +374,7 @@ describe('style', () => {
     // @ts-expect-error Letter spacing excludes percentages.
     style({ letterSpacing: '10%' })
     // @ts-expect-error Word spacing excludes percentages in the supported grammar.
-    style({ wordSpacing: '10%!' })
+    style({ wordSpacing: '10% !important' })
     // @ts-expect-error Indentation does not accept auto.
     style({ textIndent: 'auto' })
     // @ts-expect-error Length-only text spacing cannot use unconstrained spacing tokens.
@@ -389,13 +389,13 @@ describe('style', () => {
     style({ textOverflow: '"..."' })
     style({ whiteSpaceCollapse: 'preserve' })
     // @ts-expect-error Numeric spellings remain checked through fallback importance.
-    style({ letterSpacing: ['normal', '0x10px!'] })
+    style({ letterSpacing: ['normal', '0x10px !important'] })
   })
 
   test('scroll snapping', () => {
     Style.define(Snapping.styles)
     style({
-      scrollSnapType: ['both proximity', 'both mandatory!'],
+      scrollSnapType: ['both proximity', 'both mandatory !important'],
       scrollSnapAlign: 'center end',
       scrollSnapStop: 'normal',
     })
@@ -425,24 +425,27 @@ describe('style', () => {
     // @ts-expect-error Token groups do not map to snap keyword domains.
     snapTheme.style({ scrollSnapType: snapTheme.tokens.spacing.edge })
     // @ts-expect-error Invalid entries remain invalid inside fallbacks.
-    style({ scrollSnapType: ['x', 'mandatory!'] })
+    style({ scrollSnapType: ['x', 'mandatory !important'] })
   })
 
   test('scrolling properties', () => {
     Style.define(Scrolling.styles)
-    style({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })
+    style({
+      scrollMargin: '-2px !important',
+      scrollPaddingInline: ['auto', '10%'],
+    })
 
     const scrollTheme = Theme.define({
       spacing: { offset: '20px', portion: '10%' },
     })
 
-    scrollTheme.style({ scrollPaddingTop: 'offset!' })
+    scrollTheme.style({ scrollPaddingTop: 'offset !important' })
     Config.create({ theme: scrollTheme }).style({
       scrollPaddingBlock: ['auto', scrollTheme.tokens.spacing.portion],
     })
     Style.define({ box: { scrollPadding: scrollTheme.tokens.spacing.offset } })
     // @ts-expect-error Scroll margin excludes percentages.
-    style({ scrollMarginTop: '10%!' })
+    style({ scrollMarginTop: '10% !important' })
     // @ts-expect-error Scroll margin does not accept auto.
     style({ scrollMarginInline: 'auto' })
     // @ts-expect-error Scroll padding is not an intrinsic size.
@@ -459,7 +462,7 @@ describe('style', () => {
     style({ scrollBehavior: 'instant' })
     style({ overscrollBehavior: 'none contain' })
     // @ts-expect-error Numeric spellings are checked inside fallback arrays.
-    style({ scrollPadding: ['auto', '0x10px!'] })
+    style({ scrollPadding: ['auto', '0x10px !important'] })
   })
 
   test('borders and outlines', () => {
@@ -472,7 +475,7 @@ describe('style', () => {
     })
 
     borderTheme.style({
-      borderInlineStartColor: 'brand!',
+      borderInlineStartColor: 'brand !important',
       borderTopLeftRadius: 'round',
       outlineColor: 'brand',
     })
@@ -482,7 +485,7 @@ describe('style', () => {
     // @ts-expect-error Border widths exclude percentages on physical sides.
     style({ borderTopWidth: '10%' })
     // @ts-expect-error Border widths exclude percentages on logical shorthands.
-    style({ borderInlineWidth: '10%!' })
+    style({ borderInlineWidth: '10% !important' })
     // @ts-expect-error Outline widths exclude percentages.
     style({ outlineWidth: '10%' })
     // @ts-expect-error Outline offsets exclude percentages.
@@ -514,7 +517,7 @@ describe('style', () => {
 
     logicalTheme.style({
       inlineSize: 'md',
-      insetBlock: 'md!',
+      insetBlock: 'md !important',
       paddingInline: ['1px', 'md'],
     })
     Style.define({
@@ -527,7 +530,7 @@ describe('style', () => {
       blockSize: 'md',
       maxBlockSize: 'md',
       left: 'md',
-      marginBlockEnd: 'md!',
+      marginBlockEnd: 'md !important',
     })
     // @ts-expect-error Root logical dimensions remain token-free.
     style({ inlineSize: 'md' })
@@ -538,7 +541,7 @@ describe('style', () => {
     // @ts-expect-error Color tokens cannot become dimensions.
     logicalTheme.style({ blockSize: logicalTheme.tokens.color.brand })
     // @ts-expect-error Invalid numeric spellings remain rejected on logical lengths.
-    style({ insetInlineStart: '0x10px!' })
+    style({ insetInlineStart: '0x10px !important' })
     style({ marginInline: '1px 2px' })
     // @ts-expect-error Unknown writing modes cannot widen the enum.
     style({ writingMode: 'diagonal' })
@@ -548,7 +551,7 @@ describe('style', () => {
     style({
       width: 'min-content',
       height: 'max-content',
-      inlineSize: 'fit-content!',
+      inlineSize: 'fit-content !important',
       blockSize: 'max-content',
       minWidth: 'auto',
       minHeight: 'fit-content',
@@ -585,7 +588,7 @@ describe('style', () => {
       alignSelf: 'auto',
       flexBasis: '25%',
       order: -2,
-      overflow: ['hidden', 'clip!'],
+      overflow: ['hidden', 'clip !important'],
       overflowX: 'auto',
       overflowY: 'scroll',
     })
@@ -595,7 +598,7 @@ describe('style', () => {
       color: { brand: '#fff' },
     })
 
-    flexTheme.style({ flexBasis: 'basis!' })
+    flexTheme.style({ flexBasis: 'basis !important' })
     Style.define({ item: { flexBasis: flexTheme.tokens.spacing.basis } })
     Config.create({ theme: flexTheme }).style({ flexBasis: ['auto', 'basis'] })
     // @ts-expect-error Root sizing has no token names.
@@ -609,7 +612,7 @@ describe('style', () => {
     // @ts-expect-error Order is numeric, including its importance-string form.
     style({ order: '2' })
     // @ts-expect-error Sizing spellings remain checked through importance.
-    style({ flexBasis: '0x10px!' })
+    style({ flexBasis: '0x10px !important' })
   })
 })
 
@@ -747,9 +750,9 @@ describe('define', () => {
 describe('style', () => {
   test('fallbacks and importance', () => {
     style({
-      display: ['block', 'flex!'],
+      display: ['block', 'flex !important'],
       opacity: '0.5 !important',
-      padding: [0, '8px!'],
+      padding: [0, '8px !important'],
     })
 
     const configured = Config.create({
@@ -757,8 +760,8 @@ describe('style', () => {
     })
 
     configured.style({
-      color: ['#fff', 'brand!', configured.theme.tokens.color.brand],
-      padding: ['md!', 0],
+      color: ['#fff', 'brand !important', configured.theme.tokens.color.brand],
+      padding: ['md !important', 0],
     })
     Style.define({ card: { padding: ['1px', '2px !important'] } })
     // @ts-expect-error Fallbacks are nonempty.
@@ -768,17 +771,55 @@ describe('style', () => {
     // @ts-expect-error Nested fallback arrays are unsupported.
     style({ color: [['#fff']] })
     // @ts-expect-error Importance does not widen the property domain.
-    style({ display: 'banana!' })
+    style({ display: 'banana !important' })
     // @ts-expect-error Root styles remain token-free.
-    style({ color: ['brand!'] })
+    style({ color: ['brand !important'] })
     // @ts-expect-error Tokens retain their domain in fallback arrays.
     configured.style({ padding: [configured.theme.tokens.color.brand] })
+  })
+
+  test('only spaced important suffixes are accepted', () => {
+    const configured = Config.create({ theme: { color: { brand: '#06c' } } })
+
+    expectTypeOf<
+      Extract<
+        Style.DeclarationProperties<{ color: { brand: '#06c' } }>['color'],
+        `brand${string}`
+      >
+    >().toEqualTypeOf<'brand' | 'brand !important'>()
+
+    configured.style({ color: 'brand !important' })
+    style({ color: 'red !important', opacity: '0.5 !important' })
+    // @ts-expect-error Bare importance markers are unsupported.
+    style({ color: 'red!' })
+    // @ts-expect-error Spaced bare importance markers are unsupported.
+    style({ color: 'red !' })
+    // @ts-expect-error Importance requires a preceding space.
+    style({ color: 'red!important' })
+    // @ts-expect-error Importance has one canonical spelling.
+    style({ color: 'red !IMPORTANT' })
+    // @ts-expect-error Whitespace cannot split the importance marker.
+    style({ color: 'red ! important' })
+    // @ts-expect-error Importance must end the value.
+    style({ color: 'red !important ' })
+    // @ts-expect-error Escaped importance keywords are unsupported.
+    style({ color: 'red !impor\\74 ant' })
+    // @ts-expect-error Comments cannot alter the importance suffix.
+    style({ color: 'red !important/**/' })
+    // @ts-expect-error Token names use the same importance suffix.
+    configured.style({ color: 'brand!' })
+    // @ts-expect-error Token importance requires a preceding space.
+    configured.style({ color: 'brand!important' })
+    // @ts-expect-error Every fallback uses the same importance suffix.
+    style({ color: ['red', 'blue!'] })
+    // @ts-expect-error Broad CSS value domains still check importance.
+    style({ animationName: 'pulse!' })
   })
 
   test('length units and numeric spellings', () => {
     style({
       borderWidth: '1Q',
-      height: ['100vh', '100dvh!'],
+      height: ['100vh', '100dvh !important'],
       marginLeft: '-2cqi',
       padding: '1lh',
       width: '80ch',
@@ -786,13 +827,16 @@ describe('style', () => {
 
     const lengthTheme = Theme.define({ spacing: { space: '2cqi' } })
 
-    Style.define({ card: { padding: 'space!' } }, { theme: lengthTheme })
+    Style.define(
+      { card: { padding: 'space !important' } },
+      { theme: lengthTheme },
+    )
     // @ts-expect-error A time unit is not a CSS length.
     style({ width: '1ms' })
     // @ts-expect-error An unknown viewport suffix is not a CSS unit.
     style({ height: '1dvheight' })
     // @ts-expect-error Border widths still exclude percentages.
-    style({ borderWidth: '1%!' })
+    style({ borderWidth: '1% !important' })
     // @ts-expect-error Length tokens still retain their property domains.
     lengthTheme.style({ color: lengthTheme.tokens.spacing.space })
 
@@ -810,7 +854,7 @@ describe('style', () => {
     // @ts-expect-error CSS lengths exclude hexadecimal numbers.
     style({ width: '0x10dvh' })
     // @ts-expect-error CSS lengths exclude binary numbers.
-    style({ width: '0b10lh!' })
+    style({ width: '0b10lh !important' })
     // @ts-expect-error CSS lengths exclude octal numbers.
     style({ padding: ['1px', '0o10cqi'] })
     // @ts-expect-error Theme lengths use the same decimal grammar.
@@ -832,11 +876,11 @@ describe('style', () => {
     })
 
     // @ts-expect-error Config-bound values use the same inferred checks.
-    configured.style({ width: '0b10cqi!' })
+    configured.style({ width: '0b10cqi !important' })
 
     const numericNames = Theme.define({ spacing: { '0x10px': '8px' } })
 
-    numericNames.style({ padding: '0x10px!' })
+    numericNames.style({ padding: '0x10px !important' })
 
     // @ts-expect-error Binary values also fail for units with overlapping suffixes.
     style({ height: '0b10dvh' })
@@ -846,7 +890,7 @@ describe('style', () => {
 describe('style', () => {
   test('columns and fragmentation preserve property domains', () => {
     style({
-      columnCount: ['auto', '2!'],
+      columnCount: ['auto', '2 !important'],
       columnWidth: '12rem',
       columnGap: 'normal',
       columnFill: 'balance',
@@ -900,7 +944,7 @@ describe('style', () => {
       isolation: 'isolate',
       objectFit: 'scale-down',
       transformStyle: 'preserve-3d',
-      zIndex: ['auto', '-1!'],
+      zIndex: ['auto', '-1 !important'],
     })
     Config.create().style({ zIndex: 2, display: 'flow-root' })
     Theme.define({}).style({ contain: 'strict', objectFit: 'contain' })
@@ -929,7 +973,7 @@ describe('style', () => {
       backgroundPositionX: '-2px',
       backgroundPositionY: '40%',
       backgroundRepeat: 'repeat-x',
-      backgroundSize: ['auto', 'cover!'],
+      backgroundSize: ['auto', 'cover !important'],
       mixBlendMode: 'plus-lighter',
     })
 
@@ -1032,7 +1076,7 @@ describe('style', () => {
   test('supports dimensioned times and finite motion keywords', () => {
     style({
       animationDelay: '-.5s',
-      animationDuration: ['auto', '250ms!'],
+      animationDuration: ['auto', '250ms !important'],
       animationDirection: 'alternate',
       animationFillMode: 'both',
       animationIterationCount: [2.5, 'infinite'],
@@ -1063,7 +1107,7 @@ describe('grid tracks and placement', () => {
       gridAutoFlow: 'column dense',
       gridTemplateColumns: 'min-content',
       gridTemplateRows: 'subgrid',
-      gridColumnStart: [1, '2!'],
+      gridColumnStart: [1, '2 !important'],
       gridColumnEnd: 'span 2',
       gridRowStart: -1,
       gridRowEnd: 'auto',
@@ -1192,7 +1236,7 @@ describe('style', () => {
 describe('style', () => {
   test('accepts container and intrinsic field sizing controls', () => {
     style({
-      containerType: ['normal', 'inline-size scroll-state!'],
+      containerType: ['normal', 'inline-size scroll-state !important'],
       fieldSizing: 'content',
       interpolateSize: 'allow-keywords',
     })
@@ -1214,7 +1258,10 @@ describe('style', () => {
 
 describe('style', () => {
   test('accepts reading flow modes and numeric order fallbacks', () => {
-    style({ readingFlow: ['normal', 'flex-visual!'], readingOrder: [0, '-1!'] })
+    style({
+      readingFlow: ['normal', 'flex-visual !important'],
+      readingOrder: [0, '-1 !important'],
+    })
     style({ readingFlow: 'source-order', readingOrder: 2 })
     // @ts-expect-error Reading flow is one mode.
     style({ readingFlow: 'flex-flow grid-rows' })
@@ -1233,7 +1280,10 @@ describe('style', () => {
       gridAutoRows: '20px 30px',
     })
     style({
-      gridTemplateColumns: ['1fr 2fr', 'repeat(auto-fit, minmax(80px, 1fr))!'],
+      gridTemplateColumns: [
+        '1fr 2fr',
+        'repeat(auto-fit, minmax(80px, 1fr)) !important',
+      ],
     })
     // @ts-expect-error Implicit tracks cannot repeat.
     style({ gridAutoColumns: 'repeat(2, 1fr)' })
@@ -1275,7 +1325,7 @@ describe('style', () => {
       animationPlayState: 'running, paused',
       animationTimingFunction: 'cubic-bezier(0, -1, 1, 2), steps(2, jump-none)',
       transitionBehavior: 'normal, allow-discrete',
-      transitionDuration: ['1s, 2s', '250ms, 500ms!'],
+      transitionDuration: ['1s, 2s', '250ms, 500ms !important'],
       transitionTimingFunction: 'linear(0, .5 25% 75%, 1)',
     })
     // @ts-expect-error Unknown easing functions are outside the structural grammar.
@@ -1292,7 +1342,7 @@ describe('style', () => {
     style({
       backgroundColor: 'hsl(120deg 50% 50% / .5)',
       borderColor: 'hwb(120 20% 30%)',
-      color: ['rgb(255, 0, 0)', 'oklch(.5 .1 120)!'],
+      color: ['rgb(255, 0, 0)', 'oklch(.5 .1 120) !important'],
       fill: 'lab(50% 20 -30)',
       outlineColor: 'color(display-p3 .1 .2 .3)',
       stroke: 'oklab(.5 .1 -.1)',
@@ -1311,7 +1361,7 @@ describe('style', () => {
       borderBlockColor: 'red rgb(0 0 255)',
       borderColor: 'red green blue gold',
       borderInlineStyle: 'solid dashed',
-      borderRadius: ['10px/20%', '1px 2px / 3px 4px 5px 6px!'],
+      borderRadius: ['10px/20%', '1px 2px / 3px 4px 5px 6px !important'],
       borderStyle: 'solid dashed dotted double',
       borderTopLeftRadius: '10px 20%',
       borderWidth: 'thin medium thick 2px',
@@ -1401,7 +1451,7 @@ describe('compound', () => {
         background: [
           'center top / cover no-repeat url(image.png)',
           '50%50%/cover',
-          'calc(50% - 1px) top / cover!',
+          'calc(50% - 1px) top / cover !important',
         ],
         mask: ['left top / contain no-repeat url(mask.svg)', 'center/cover'],
         offset: ['left top path("M0 0L1 1")', '0 path("M0 0L1 1")'],
@@ -1426,7 +1476,7 @@ describe('compound', () => {
     test('preserves custom-property scalars, case, fallbacks, and importance', () => {
       style({
         '--Accent': '#arbitrary-text',
-        '--accent': ['red', 'blue!'],
+        '--accent': ['red', 'blue !important'],
         '--count': 2,
         '--empty': '',
       })
@@ -1445,11 +1495,14 @@ describe('compound', () => {
       style({
         color: '  ReD\t',
         display: 'FlEx',
-        padding: ' 2PX\n! ImPoRtAnT  ',
+        padding: ' 2PX !important',
         transform: 'RoTaTe(45DEG)',
       })
       Style.define({
-        card: { color: ['BLUE', 'ReD!', '#ABC!ImPoRtAnT'], margin: '1EM' },
+        card: {
+          color: ['BLUE', 'ReD !important', '#ABC !important'],
+          margin: '1EM',
+        },
       })
 
       const theme = Theme.define({
@@ -1485,7 +1538,7 @@ describe('compound', () => {
         overflow: 'hidden\tauto',
       })
       style({
-        padding: ['0e3', '-.0', '+00', '00.00!', '0e3 1px'],
+        padding: ['0e3', '-.0', '+00', '00.00 !important', '0e3 1px'],
         borderRadius: '0e3/0',
       })
       // @ts-expect-error Whitespace cannot split a numeric token from its unit.
@@ -1493,15 +1546,15 @@ describe('compound', () => {
       // @ts-expect-error Whitespace normalization retains integer span constraints.
       style({ gridColumnStart: 'SPAN\t1.5' })
       // @ts-expect-error Numeric normalization cannot turn an exponent token into an integer token.
-      style({ order: '0e3!' })
+      style({ order: '0e3 !important' })
       // @ts-expect-error Time values still require units even for zero.
-      style({ animationDelay: '0e3!' })
+      style({ animationDelay: '0e3 !important' })
     })
 
     test('accepts CSS identifier escapes without changing numeric token boundaries', () => {
       style({ color: '\\72 ed', display: 'bl\\6f ck', padding: '1\\70 x' })
       style({ color: '#\\66 00', display: 'block/**/flow' })
-      style({ color: 'red/**/!impor\\74 ant/**/' })
+      style({ color: 'red/**/ !important' })
       // @ts-expect-error An escaped identifier cannot become a numeric dimension.
       style({ padding: '\\31 px' })
       // @ts-expect-error An escaped unit prefix cannot become a numeric exponent.
@@ -1517,8 +1570,8 @@ describe('compound', () => {
     test('preserves CSS numeric spelling and range constraints', () => {
       style({
         padding: ['01px', '+.5px', '1e2px', '-0px'],
-        order: '+01!',
-        opacity: '1e-1!',
+        order: '+01 !important',
+        opacity: '1e-1 !important',
       })
       // @ts-expect-error Leading zeroes do not bypass a nonnegative range.
       style({ padding: '-01px' })
@@ -1527,11 +1580,11 @@ describe('compound', () => {
       // @ts-expect-error JavaScript radix spellings do not become CSS dimensions with a sign.
       style({ padding: '+0x10px' })
       // @ts-expect-error Exponent number tokens are not integer tokens.
-      style({ order: '1e0!' })
+      style({ order: '1e0 !important' })
       // @ts-expect-error Positive integer properties cannot use a zero mantissa.
-      style({ columnCount: '+00!' })
+      style({ columnCount: '+00 !important' })
       // @ts-expect-error A trailing decimal point does not form a complete CSS number.
-      style({ opacity: '1.!' })
+      style({ opacity: '1. !important' })
     })
 
     test('retains CSS integer spelling in grid indexes and named spans', () => {
@@ -1570,7 +1623,7 @@ describe('compound', () => {
       // @ts-expect-error Font feature settings require quoted tags.
       style({ fontFeatureSettings: 'kern' })
       // @ts-expect-error Filters require a recognized function or URL.
-      style({ filter: 'red!' })
+      style({ filter: 'red !important' })
       // @ts-expect-error Path data requires a path function.
       style({ d: 'M0 0L20 20' })
       // @ts-expect-error Quotation strings are paired.
@@ -1578,7 +1631,7 @@ describe('compound', () => {
       // @ts-expect-error Shape declarations do not accept arbitrary numbers.
       style({ clipPath: 12 })
       // @ts-expect-error Importance retains filter constraints inside fallbacks.
-      style({ backdropFilter: ['blur(2px)', 'wobbly!'] })
+      style({ backdropFilter: ['blur(2px)', 'wobbly !important'] })
       // @ts-expect-error Path lengths exclude percentages.
       style({ pathLength: '50%' })
     })
@@ -1624,7 +1677,7 @@ describe('validation', () => {
   describe('define', () => {
     test('checks hex digits and lengths through fallbacks and importance', () => {
       Style.define({
-        card: { color: ['#AbC', '#abcd', '#123456', '#12345678!'] },
+        card: { color: ['#AbC', '#abcd', '#123456', '#12345678 !important'] },
       })
       style({ color: '#abc !important' })
       // @ts-expect-error Hex colors require 3, 4, 6, or 8 digits.
@@ -1632,7 +1685,7 @@ describe('validation', () => {
       // @ts-expect-error Hex colors cannot contain non-hex digits.
       Style.define({ card: { color: '#12g456' } })
       // @ts-expect-error Importance retains hex constraints.
-      style({ color: ['red', '#12345!'] })
+      style({ color: ['red', '#12345 !important'] })
       // @ts-expect-error Hex colors cannot exceed eight digits.
       style({ color: '#123456789' })
     })
@@ -1645,11 +1698,11 @@ describe('validation', () => {
       // @ts-expect-error Order is an integer.
       style({ order: 0.5 })
       // @ts-expect-error Importance retains integer constraints.
-      style({ order: '1.5!' })
+      style({ order: '1.5 !important' })
       // @ts-expect-error Padding does not accept a negative literal.
       Style.define({ card: { padding: '-1px' } })
       // @ts-expect-error Duration does not accept a negative literal.
-      style({ animationDuration: ['1s', '-1s!'] })
+      style({ animationDuration: ['1s', '-1s !important'] })
       // @ts-expect-error Flex growth is nonnegative.
       style({ flexGrow: -1 })
       // @ts-expect-error Column count is positive.
@@ -1677,7 +1730,10 @@ describe('validation', () => {
   describe('image declarations', () => {
     test('types image functions, URL-only markers, and fallback importance', () => {
       style({
-        backgroundImage: ['url("image.png")', 'linear-gradient(red, blue)!'],
+        backgroundImage: [
+          'url("image.png")',
+          'linear-gradient(red, blue) !important',
+        ],
         markerEnd: 'url(#arrow)',
         maskImage: 'none, url(#mask)',
       })

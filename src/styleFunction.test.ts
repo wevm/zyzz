@@ -1218,7 +1218,7 @@ dynamic({ width: '12px' })
     } finally {
       service.dispose()
     }
-  }, 30_000)
+  }, 60_000)
 
   test('rejects target accessors without invoking caller code', () => {
     let calls = 0

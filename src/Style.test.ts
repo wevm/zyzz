@@ -25,6 +25,33 @@ function diagnose(input: unknown, options: Style.define.Options = {}) {
 }
 
 describe('define', () => {
+  test.each([
+    'red!',
+    'red !',
+    'red!important',
+    'red !IMPORTANT',
+    'red ! important',
+    'red !important ',
+    'red\t!important',
+    'red !impor\\74 ant',
+  ])('rejects noncanonical importance in %s', (color) => {
+    expect(diagnose({ card: { color } })).toMatchInlineSnapshot(`
+      {
+        "diagnostics": [
+          {
+            "code": "invalid_value",
+            "message": "Importance requires the suffix " !important".",
+            "path": [
+              "card",
+              "color",
+            ],
+          },
+        ],
+        "name": "Style.InvalidError",
+      }
+    `)
+  })
+
   test('retains web target paths and source locations in diagnostics', () => {
     const path = ['card', 'targets', 'web', '@media x']
     try {

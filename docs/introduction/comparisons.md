@@ -2,9 +2,6 @@
 
 How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, composition, and delivery. Examples use the same small components where practical. DX means developer experience; AX means agent experience.
 
-> [!NOTE]
-> Zyzz examples include unimplemented APIs. See [Compatibility](compatibility.md) for the current boundary and [Benchmarks](benchmarks.md) for a recorded run.
-
 ## Authoring, Types, and DX/AX
 
 ### Zyzz
@@ -91,7 +88,7 @@ namespace styles {
 }
 ```
 
-Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint is planned to export bundled `style`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
+Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/default` entrypoint is planned to export bundled `style`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
 
 ### Tailwind
 
@@ -181,7 +178,7 @@ namespace styles {
 }
 ```
 
-Arrays preserve fallback declaration order: later supported values win, subject to importance. A trailing `!` marks importance, as in `color: 'brand!'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.
+Arrays preserve fallback declaration order: later supported values win, subject to importance. The suffix ` !important` marks importance, as in `color: 'brand !important'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.
 
 ### Tailwind
 
@@ -239,10 +236,10 @@ export const panel = style({
 
 ### Zyzz
 
-`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. Standard `Parameters` extracts the consumer contract. Choices may also be typed callbacks, with values scoped to that choice.
+`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. `Props.Variants` extracts the consumer contract. Choices may also be typed callbacks, with values scoped to that choice.
 
 ```tsx
-import { Theme } from 'zyzz'
+import { type Props, Theme } from 'zyzz'
 
 const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
 namespace styles {
@@ -261,7 +258,7 @@ namespace styles {
   })
 }
 
-type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonProps = Props.Variants<typeof styles.button>
 
 export function Button(props: ButtonProps) {
   return <button {...styles.button(props)}>Continue</button>

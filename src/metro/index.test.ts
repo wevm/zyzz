@@ -9,7 +9,7 @@ import * as Url from 'node:url'
 import { describe, expect, test } from 'vite-plus/test'
 
 const require = Module.createRequire(
-  Path.resolve('examples/expo-native/package.json'),
+  Path.resolve('examples/react-native/package.json'),
 )
 const expo = require.resolve('expo/bin/cli')
 
@@ -64,7 +64,7 @@ describe('zyzz', () => {
     let logs = ''
     try {
       await Fs.symlink(
-        Path.resolve('examples/expo-native/node_modules'),
+        Path.resolve('examples/react-native/node_modules'),
         Path.join(root, 'node_modules'),
         'dir',
       )

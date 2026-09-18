@@ -8,6 +8,8 @@ export * as Config from './Config.js'
 export { style } from './styleFunction.js'
 /** Ordered composition of applied styling props. */
 export { cx } from './cx.js'
+/** Inferred component inputs from callable style definitions. */
+export type * as Props from './Props.js'
 /** Typed literal style definitions and validation diagnostics. */
 export * as Style from './Style.js'
 /** Typed theme contracts and compatible token overrides. */

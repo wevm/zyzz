@@ -1,0 +1,23 @@
+{
+  "name": "@zyzz/example-next.js",
+  "private": true,
+  "type": "module",
+  "config": {
+    "site": false
+  },
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zyzz": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  }
+}

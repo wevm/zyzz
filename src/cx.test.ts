@@ -90,7 +90,7 @@ describe('cx', () => {
   test('compiles repeated groups, partial shorthands, fallbacks, importance, and matching conditions', async () => {
     const source = `import {cx,style} from 'zyzz';
       namespace styles {
-        export const a=style({padding:'8px',color:'red',display:['block','grid'],'@media (width >= 600px)':{color:'green'},opacity:'0.5!'});
+        export const a=style({padding:'8px',color:'red',display:['block','grid'],'@media (width >= 600px)':{color:'green'},opacity:'0.5 !important'});
         export const b=style({paddingLeft:'12px',color:'blue','@media (width >= 600px)':{color:'purple'},opacity:1});
       }
       export const ab=cx(styles.a(),false,null,undefined,styles.b());

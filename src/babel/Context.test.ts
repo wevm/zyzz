@@ -9,7 +9,7 @@ import { expect, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/babel'
 
 const require = Module.createRequire(
-  Path.resolve('examples/expo-native/package.json'),
+  Path.resolve('examples/react-native/package.json'),
 )
 const preset = Module.createRequire(
   require.resolve('expo/package.json'),

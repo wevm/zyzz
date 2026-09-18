@@ -7,14 +7,14 @@
     "dev": "node scripts/dev.ts"
   },
   "dependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "zyzz": "workspace:*"
+    "react": "latest",
+    "react-dom": "latest",
+    "zyzz": "latest"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:"
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
   }
 }

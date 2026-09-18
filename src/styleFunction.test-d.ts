@@ -160,6 +160,22 @@ describe('conditions', () => {
 
 describe('dynamic', () => {
   describe('style', () => {
+    test('checks numeric bindings only against their authored properties', () => {
+      const indicator = style(
+        (values: { alpha: number; width: `${number}%` }) => ({
+          opacity: values.alpha,
+          width: values.width,
+          ':hover': { fillOpacity: values.alpha },
+        }),
+      )
+
+      indicator({ alpha: 0.5, width: '50%' })
+      // @ts-expect-error Arbitrary numbers cannot satisfy nonnegative flex factors.
+      style((values: { grow: number }) => ({ flexGrow: values.grow }))
+      // @ts-expect-error Numeric values cannot satisfy length properties.
+      style((values: { width: number }) => ({ width: values.width }))
+    })
+
     test('rejects constrained numbers and reserved runtime domains', () => {
       const bound = Theme.define({ color: { ink: 'red' } })
 

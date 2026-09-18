@@ -17,8 +17,7 @@
     "check:native": "node scripts/native-conformance.ts --static",
     "check:native:full": "node scripts/native-conformance.ts --require-full",
     "check:types": "tsc",
-    "dev": "zile dev && node scripts/build-default-theme.ts",
-    "examples": "pnpm build && pnpm --filter \"./examples/*\" rebuild && pnpm --filter \"./examples/*\" --parallel dev",
+    "dev": "pnpm build && pnpm --filter \"./examples/*\" rebuild",
     "test": "vp test",
     "update:at-rules": "node scripts/at-rule-conformance.ts --update",
     "update:css": "node scripts/css-conformance.ts --update",
@@ -60,8 +59,8 @@
   "[!start-pkg]": "",
   "name": "zyzz",
   "version": "0.0.1",
-  "license": "UNLICENSED",
-  "description": "Type-safe style props compiled to static CSS.",
+  "license": "MIT",
+  "description": "Modern, universal, simple styling library for the Web and React Native",
   "type": "module",
   "bin": {
     "zyzz": "./dist/cli/index.js",
@@ -97,6 +96,11 @@
       "src": "./src/compiler/index.ts",
       "types": "./dist/compiler/index.d.ts",
       "default": "./dist/compiler/index.js"
+    },
+    "./default": {
+      "src": "./src/default.ts",
+      "types": "./dist/default.d.ts",
+      "default": "./dist/default.js"
     },
     "./metro": {
       "src": "./src/metro/index.ts",
@@ -141,11 +145,6 @@
       "src": "./src/runtime/index.ts",
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
-    },
-    "./themes/default": {
-      "src": "./src/themes/default.ts",
-      "types": "./dist/themes/default.d.ts",
-      "default": "./dist/themes/default.js"
     },
     "./vite": {
       "src": "./src/vite/index.ts",

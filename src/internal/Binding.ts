@@ -118,7 +118,7 @@ export type Checked<style> = {
     ? never
     : property extends keyof Literal.Properties
       ? number extends style[property]
-        ? property extends Properties<'number'>
+        ? property extends Property<'number', property>
           ? unknown
           : never
         : unknown

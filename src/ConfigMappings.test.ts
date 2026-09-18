@@ -133,7 +133,7 @@ describe('create', () => {
 
   const config = `import {Config} from 'zyzz';export const {style,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
   const source = `import {style,theme} from 'library';export namespace styles {
-  export const card = style({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm!'}})
+  export const card = style({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm !important'}})
 
   export const mixed = style({space:'sm'})
 
@@ -279,12 +279,12 @@ describe('create', () => {
       .z-pl-2px-CGhyBp-2{padding-left:2px;}
       .z-hover-pl-eR_rpb-3{&:hover{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px)!important;}}
       .z-hover-pr-TDwfLY-4{&:hover{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px)!important;}}
-      .z-ml-3m0U8T-0{margin-left:var(--z-tu8smm21l81sow-style-margin_2e_sm,-8px);}
-      .z-pl-_QgQjn-1{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pl-vwHld9-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pr-kE9aGi-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pl-B0PUf3-0{padding-left:var(--z-d1e8a67z1uaws1j-263-77-69-64-74-68);}
-      .z-pr-tL3c5O-1{padding-right:var(--z-d1e8a67z1uaws1j-263-77-69-64-74-68);}"
+      .z-ml-jpnoVx-0{margin-left:var(--z-tu8smm21l81sow-style-margin_2e_sm,-8px);}
+      .z-pl-Ag8zx9-1{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      .z-pl-7A80dQ-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      .z-pr-dVv5bd-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      .z-pl-wcqRq1-0{padding-left:var(--z-d1e8a67z1uaws1j-273-77-69-64-74-68);}
+      .z-pr-a5vlok-1{padding-right:var(--z-d1e8a67z1uaws1j-273-77-69-64-74-68);}"
     `)
     expect(app.modules['app.ts']!.code.includes('px:')).toMatchInlineSnapshot(
       'false',

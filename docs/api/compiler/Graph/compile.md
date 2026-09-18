@@ -169,7 +169,7 @@ export namespace styles {
 export const scope = theme.className
 ```
 
-The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Variants remain planned.
+The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Root and config-bound variants compile through source graphs and packed contracts.
 
 ## Shared stylesheet delivery
 

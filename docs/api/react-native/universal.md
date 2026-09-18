@@ -1,7 +1,7 @@
 # Universal Styling
 
 > [!NOTE]
-> This contract specifies the universal API work. Static native tables, target branches, variants, and local callable source compilation are implemented. Imported native graphs, packed callable contracts, host updates, and renderer acceptance remain pending.
+> Static native tables, target branches, variants, scalar payloads, imported graphs, packed callables, and explicit host updates are implemented. Full native parity and independent iOS/Android renderer acceptance remain pending.
 
 The universal API retains `style`, `variants`, themes, tokens, and `cx` across web and native. Shared modules keep the same declarations and callable inputs. Application returns platform styling props for spreading onto ordinary components: web receives class/style bindings, native receives a style binding.
 

@@ -35,7 +35,7 @@ namespace styles {
     borderColor: theme.vars.color.accent,
     color: theme.tokens.color.accent,
     display: ['block', 'inline-flex'],
-    fontWeight: '600!',
+    fontWeight: '600 !important',
   })
 }
 

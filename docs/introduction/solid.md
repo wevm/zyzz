@@ -1,7 +1,6 @@
 # Solid Setup
 
-> [!NOTE]
-> Integration verification is in progress. The consumer fixture covers shared TypeScript styles, SSR, hydration, signal updates, themes, development CSS edits, and production assets.
+The consumer fixture covers shared TypeScript styles, SSR, hydration, signal updates, themes, development CSS edits, and production assets.
 
 Keep the Solid plugin and add Zyzz before it:
 

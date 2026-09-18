@@ -109,9 +109,6 @@ const example = (
 
 ## Composition and Overrides
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade; their class-string order does not establish precedence.
 
 ```tsx
@@ -129,7 +126,7 @@ Later generated conflicts win within matching conditions, subject to importance.
 
 ## Variants
 
-Root recipes support static choices, defaults, and ordered compounds. Bound recipes, conditional selections, and dynamic payloads follow separately.
+Root and config-bound recipes support static choices, defaults, ordered compounds, conditional selections, and dynamic payloads.
 
 A recipe styles one element and returns one props object. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
 
@@ -188,7 +185,7 @@ Specificity follows the authored selector. Use explicit `:where(...)` to lower c
 ## Dynamic Values
 
 > [!NOTE]
-> Finite local scalar callback types are supported. Imported arbitrary type definitions, dynamic fallback groups, and native bindings remain deferred.
+> Finite local scalar callback types are supported. Native callbacks also support scalar payloads. Imported arbitrary type definitions and dynamic fallback groups remain unsupported.
 
 Token names infer by property. A text-color token cannot become a spacing token.
 
@@ -240,6 +237,3 @@ See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion
 | Hosts           | Files, discovery, watching, and delivery   |
 
 CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Standard downstream tooling handles minification.
-
-> [!NOTE]
-> The Vite plugin is implemented. The CLI entrypoint, Next.js adapter, and native output remain previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.

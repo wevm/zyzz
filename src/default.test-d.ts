@@ -1,8 +1,25 @@
 /** Checks the published opt-in theme's token and recipe inference. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { style, theme, tokens, variants } from 'zyzz/themes/default'
+import {
+  appearance,
+  script,
+  style,
+  theme,
+  tokens,
+  variants,
+} from 'zyzz/default'
 
-describe('variants', () => {
+describe('default', () => {
+  test('exposes single-theme appearance controls and a server-safe script', () => {
+    expectTypeOf(script()).toEqualTypeOf<string>()
+    appearance.set({ colorScheme: 'dark' })
+    expectTypeOf(appearance.get()).toEqualTypeOf<{
+      readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+    }>()
+    // @ts-expect-error The default config has no named theme catalog.
+    appearance.set({ theme: 'other' })
+  })
+
   test('preserves bundled tokens, aliases, and payload selections', () => {
     const button = variants({
       conditions: { wide: '@media >=md' },

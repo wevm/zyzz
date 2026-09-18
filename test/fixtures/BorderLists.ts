@@ -9,4 +9,4 @@ export const control =
 
 /** Compiled shorthand declarations exercise logical overrides and importance. */
 export const source = `import { style } from 'zyzz';
-export const box=style({borderColor:'red rgb(0 128 0) blue gold',borderStyle:'solid dashed dotted double',borderWidth:'thin medium thick 2px',borderInlineColor:'purple orange',borderBlockStyle:'double solid',borderRadius:['1px/2px','10px 20px 30px 40px / 20px 30px 40px 50px!'],borderTopLeftRadius:'99px',outlineWidth:'thin'})();`
+export const box=style({borderColor:'red rgb(0 128 0) blue gold',borderStyle:'solid dashed dotted double',borderWidth:'thin medium thick 2px',borderInlineColor:'purple orange',borderBlockStyle:'double solid',borderRadius:['1px/2px','10px 20px 30px 40px / 20px 30px 40px 50px !important'],borderTopLeftRadius:'99px',outlineWidth:'thin'})();`

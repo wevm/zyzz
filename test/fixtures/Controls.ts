@@ -10,4 +10,4 @@ export const controls = {
 
 export const source = `import { style } from 'zyzz';
 export const list=style({lineBreak:'strict',listStylePosition:'inside',listStyleType:'upper-roman',textSpacingTrim:'space-all',unicodeBidi:'isolate'})();
-export const input=style({appearance:'none',overflowAnchor:'none',overscrollBehaviorBlock:'contain',overscrollBehaviorInline:'none',scrollbarWidth:'thin',tabSize:[4,'8!'],textSizeAdjust:'none',touchAction:'pinch-zoom pan-left pan-up'})();`
+export const input=style({appearance:'none',overflowAnchor:'none',overscrollBehaviorBlock:'contain',overscrollBehaviorInline:'none',scrollbarWidth:'thin',tabSize:[4,'8 !important'],textSizeAdjust:'none',touchAction:'pinch-zoom pan-left pan-up'})();`

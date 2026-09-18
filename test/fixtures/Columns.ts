@@ -6,7 +6,7 @@
 export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{color:{rule:'#06c'}}});
 export const columns = zyzz.style({columnCount:2,columnWidth:'auto',columnGap:'12px',columnFill:'auto',columnRuleColor:'rule',columnRuleStyle:'solid',columnRuleWidth:'thin',orphans:2,widows:3})();
-export const fragment = style({breakBefore:['auto','column!'],breakAfter:'auto',breakInside:'avoid-column',columnSpan:'none'})();
+export const fragment = style({breakBefore:['auto','column !important'],breakAfter:'auto',breakInside:'avoid-column',columnSpan:'none'})();
 export const spanning = style({columnSpan:'all',breakBefore:'auto'})();
 export const automatic = style({columnCount:'auto',columnWidth:'80px',columnGap:'normal',columnFill:'balance'})();
 `

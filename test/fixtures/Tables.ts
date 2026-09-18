@@ -17,7 +17,7 @@ export const controls = {
 export const source = `import { style } from 'zyzz';
 export const collapsed = style({borderCollapse:'collapse',borderSpacing:'12px',captionSide:'top',emptyCells:'show',tableLayout:'auto'})();
 export const separated = style({
-  borderCollapse:'separate',borderSpacing:['2px','8px!','4px'],
+  borderCollapse:'separate',borderSpacing:['2px','8px !important','4px'],
   captionSide:'bottom',emptyCells:'hide',tableLayout:'fixed'
 })();
 export const zero = style({borderCollapse:'separate',borderSpacing:0,captionSide:'top',emptyCells:'show',tableLayout:'fixed'})();

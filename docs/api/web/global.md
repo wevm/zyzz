@@ -5,7 +5,7 @@
 
 Contribute eager global selectors and nested grouping rules.
 
-The [accepted at-rule API](at-rules.md) places stylesheet declarations in dedicated top-level functions such as `page` and `counterStyle`. Those additions remain planned; `global` is not a descriptor or statement declaration API.
+Declare stylesheet descriptors through dedicated functions such as [`page` and `counterStyle`](at-rules.md). `global` accepts selectors and grouping rules, not descriptor or statement declarations.
 
 ```ts
 import { global } from 'zyzz/web'

@@ -524,6 +524,14 @@ export function define(
         }
 
         const parsed = Value.parse(entry, key)
+        if (parsed && 'invalid' in parsed) {
+          report(
+            'invalid_value',
+            [name, authoredProperty],
+            'Importance requires the suffix " !important".',
+          )
+          continue
+        }
         const scalar = parsed ? parsed.value : entry
 
         const resolved = (() => {

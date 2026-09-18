@@ -19,7 +19,7 @@ export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{color:{brand:'#06c'},textColor:{brand:'#f00'},spacing:{offset:'4px',stroke:'2px'}}});
 export const automatic = style({textDecorationLine:'underline',textDecorationThickness:'from-font',textUnderlineOffset:'auto',textDecorationSkipInk:'auto'})();
 export const decorated = zyzz.style({
-  textDecorationLine:['underline','underline overline!'],
+  textDecorationLine:['underline','underline overline !important'],
   textDecorationColor:'brand',textDecorationStyle:'wavy',
   textDecorationThickness:zyzz.theme.tokens.spacing.stroke,textUnderlineOffset:'offset',textDecorationSkipInk:'none'
 })();

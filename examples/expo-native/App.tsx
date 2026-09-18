@@ -9,13 +9,9 @@ import {
   Text,
   View,
   useColorScheme,
-  type ViewStyle,
-  type TextStyle,
 } from 'react-native'
 import { Provider } from 'zyzz/react-native/react'
 import { style, variants } from './Theme.js'
-
-// Shared authoring types describe web props. Metro replaces these known fixtures with native styles.
 
 /** Renders the native example with theme and appearance controls. */
 export default function App() {
@@ -71,23 +67,20 @@ function Samples({
 
   return (
     <ScrollView
-      style={styles.page().style as ViewStyle}
+      {...styles.page()}
       indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}
     >
       <StatusBar
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
       />
-      <View style={styles.content().style as ViewStyle}>
-        <Text
-          accessibilityRole="header"
-          style={styles.title().style as TextStyle}
-        >
+      <View {...styles.content()}>
+        <Text accessibilityRole="header" {...styles.title()}>
           Zyzz native example
         </Text>
-        <Text style={styles.description().style as TextStyle}>
+        <Text {...styles.description()}>
           Expo SDK 57 · React Native 0.86.3 · {Platform.OS} {Platform.Version}
         </Text>
-        <Text style={styles.description().style as TextStyle}>
+        <Text {...styles.description()}>
           Explore themes, light and dark mode, variants, and dynamic styles.
         </Text>
         <Button
@@ -96,44 +89,30 @@ function Samples({
           onPress={onScheme}
         />
         <Button color={accent} title={`Theme: ${theme}`} onPress={onTheme} />
-        <View style={styles.toggle().style as ViewStyle}>
-          <Text style={styles.label().style as TextStyle}>
-            Larger variant and payload
-          </Text>
+        <View {...styles.toggle()}>
+          <Text {...styles.label()}>Larger variant and payload</Text>
           <Switch
             accessibilityLabel="Larger variant and payload"
             value={expanded}
             onValueChange={setExpanded}
           />
         </View>
-        <Text
-          accessibilityRole="header"
-          style={styles.label().style as TextStyle}
-        >
+        <Text accessibilityRole="header" {...styles.label()}>
           Static style and platform override
         </Text>
-        <View testID="zyzz-static" style={styles.box().style as ViewStyle} />
-        <Text
-          accessibilityRole="header"
-          style={styles.label().style as TextStyle}
-        >
+        <View testID="zyzz-static" {...styles.box()} />
+        <Text accessibilityRole="header" {...styles.label()}>
           Variant padding
         </Text>
-        <View
-          testID="zyzz-variant"
-          style={styles.card({ spacious: expanded }).style as ViewStyle}
-        >
-          <Text style={styles.foreground().style as TextStyle}>Sample</Text>
+        <View testID="zyzz-variant" {...styles.card({ spacious: expanded })}>
+          <Text {...styles.foreground()}>Sample</Text>
         </View>
-        <Text
-          accessibilityRole="header"
-          style={styles.label().style as TextStyle}
-        >
+        <Text accessibilityRole="header" {...styles.label()}>
           Scalar callback width
         </Text>
         <View
           testID="zyzz-payload"
-          style={styles.meter({ width: `${width}px` }).style as ViewStyle}
+          {...styles.meter({ width: `${width}px` })}
         />
       </View>
     </ScrollView>

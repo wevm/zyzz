@@ -300,6 +300,8 @@ namespace styles {
 export function Button(props: Props.Variants<typeof styles.button>) {
   return <button {...styles.button(props)}>Continue</button>
 }
+
+const example = <Button size="sm" />
 ```
 
 ### Dynamic Styles

@@ -7,9 +7,9 @@ import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Style from './Style.js'
 
-/** Suggests canonical values without restricting spellings, fallbacks, or typed references. */
-type CompletionProperties = {
-  readonly [property in keyof typeof Literal.rules]?:
+/** Restricts callback hints to inferred declarations instead of expanding every property grammar. */
+type CompletionProperties<styles = Record<string, unknown>> = {
+  readonly [property in keyof typeof Literal.rules & keyof styles]?:
     | Literal.Properties[property]
     | (string & {})
     | number
@@ -49,7 +49,7 @@ export function style<
       values: values,
     ) => styles &
       NoInfer<Style.Accepted<styles, {}, true> & Binding.Checked<styles>>) &
-    CompletionProperties,
+    CompletionProperties<NoInfer<styles>>,
   // Exclude invalid callbacks by arity so they cannot mask object-property diagnostics.
   ...options: Parameters<callback> extends [Record<string, string | number>]
     ? values extends Binding.Inputs<values>

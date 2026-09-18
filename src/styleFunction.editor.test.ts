@@ -73,19 +73,33 @@ dynamic({ width: '12px' })
       expect.arrayContaining(['color', 'fontSize', 'padding']),
     )
 
-    for (const value of ['', 'ce']) {
+    for (const [property, original, value, expected] of [
+      ['alignItems', 'center', '', ['center', 'stretch', 'flex-start']],
+      ['alignItems', 'center', 'ce', ['center', 'stretch', 'flex-start']],
+      [
+        'backgroundColor',
+        'light-dark(#fff, #171717)',
+        '',
+        ['transparent', 'currentColor'],
+      ],
+      ['display', 'flex', '', ['flex', 'grid', 'block']],
+    ] as const) {
       const previous = source
-      source = source.replace("alignItems: 'center'", `alignItems: '${value}'`)
+      source = source.replace(
+        `${property}: '${original}'`,
+        `${property}: '${value}'`,
+      )
       version++
 
       const position =
-        source.indexOf(`alignItems: '${value}'`) +
-        "alignItems: '".length +
+        source.indexOf(`${property}: '${value}'`) +
+        `${property}: '`.length +
         value.length
       const suggestions = service.getCompletionsAtPosition(file, position, {})
-      expect(suggestions?.entries.map((entry) => entry.name)).toEqual(
-        expect.arrayContaining(['center', 'stretch', 'flex-start']),
-      )
+      expect(
+        suggestions?.entries.map((entry) => entry.name),
+        property,
+      ).toEqual(expect.arrayContaining([...expected]))
 
       source = previous
       version++
@@ -115,4 +129,4 @@ dynamic({ width: '12px' })
   } finally {
     service.dispose()
   }
-})
+}, 30_000)

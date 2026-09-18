@@ -213,11 +213,13 @@ jobs:
           script: |
             const fs = require('node:fs')
             const marker = '<!-- zyzz-example-deployments -->'
-            const rows = JSON.parse(process.env.EXAMPLES).map((name) => {
+            const rows = JSON.parse(process.env.EXAMPLES).flatMap((name) => {
               const path = `results/${name}.json`
               const result = fs.existsSync(path)
                 ? JSON.parse(fs.readFileSync(path, 'utf8'))
                 : { status: '❌ No result', url: '' }
+              if (result.status === '✅ Built (server rendered)') return []
+
               const url = result.url ? `[Open](${result.url})` : '—'
               return `| ${name} | ${url} | ${result.status} |`
             })

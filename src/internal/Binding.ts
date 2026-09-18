@@ -45,20 +45,26 @@ type NonNegative =
 
 /** Property domains that accept each scalar reference. */
 export type Properties<kind extends Kind> = {
-  [property in keyof Literal.Properties]: property extends `--${string}`
-    ? property
-    : property extends keyof typeof Literal.rules
-      ? (typeof Literal.rules)[property] extends { kind: 'compound' }
-        ? never
-        : kind extends 'percentage' | 'signedPercentage'
-          ? (typeof Literal.rules)[property] extends { kind: 'number' }
-            ? (typeof Literal.rules)[property] extends { percentage: true }
-              ? Compatible<kind, property>
-              : never
-            : Compatible<kind, property>
-          : Compatible<kind, property>
-      : never
+  [property in keyof Literal.Properties]: Property<kind, property>
 }[keyof Literal.Properties]
+
+/** Checks one property's binding domain without enumerating every CSS grammar. */
+export type Property<
+  kind extends Kind,
+  property extends keyof Literal.Properties,
+> = property extends `--${string}`
+  ? property
+  : property extends keyof typeof Literal.rules
+    ? (typeof Literal.rules)[property] extends { kind: 'compound' }
+      ? never
+      : kind extends 'percentage' | 'signedPercentage'
+        ? (typeof Literal.rules)[property] extends { kind: 'number' }
+          ? (typeof Literal.rules)[property] extends { percentage: true }
+            ? Compatible<kind, property>
+            : never
+          : Compatible<kind, property>
+        : Compatible<kind, property>
+    : never
 
 type Compatible<
   kind extends Kind,

@@ -7,12 +7,12 @@
     "dev": "vite --configLoader runner"
   },
   "dependencies": {
-    "svelte": "5.57.0",
+    "svelte": "catalog:",
     "zyzz": "workspace:*"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^7.3.0",
-    "typescript": "5.9.3",
-    "vite": "^8.2.2"
+    "@sveltejs/vite-plugin-svelte": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

@@ -188,7 +188,7 @@ jobs:
           path: test-results/at-rule-browser-capabilities.json
           retention-days: 30
   typescript:
-    name: TypeScript ${{ matrix.typescript }}
+    name: TypeScript 7
     env:
       NODE_OPTIONS: --max-old-space-size=4096
     runs-on: ubuntu-latest
@@ -197,33 +197,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
-      - name: Install TypeScript ${{ matrix.typescript }}
-        run: |
-          pnpm add --workspace-root --save-dev "${{ matrix.package }}@${{ matrix.typescript }}"
-          ${{ matrix.tsc }} --version
       - name: Check types
         run: |
           set -o pipefail
-          ${{ matrix.tsc }} --extendedDiagnostics | tee typescript-diagnostics.txt
+          pnpm exec tsc --extendedDiagnostics | tee typescript-diagnostics.txt
           {
-            printf '## TypeScript %s type check\n\n```\n' "$(${{ matrix.tsc }} --version | sed 's/^Version //')"
+            printf '## TypeScript %s type check\n\n```\n' "$(pnpm exec tsc --version | sed 's/^Version //')"
             cat typescript-diagnostics.txt
             printf '```\n'
           } >> "$GITHUB_STEP_SUMMARY"
-    strategy:
-      fail-fast: false
-      # JavaScript releases replace the pinned typescript package so attest and
-      # the repository scripts import the version under test. The native
-      # compiler ships no compiler API, so it installs beside the pinned
-      # package under an alias and only its tsc binary runs.
-      matrix:
-        include:
-          - compiler: javascript
-            package: typescript
-            tsc: pnpm exec tsc
-            typescript: '6.0'
-          - compiler: native
-            package: typescript-native@npm:typescript
-            tsc: node node_modules/typescript-native/bin/tsc
-            typescript: '7.0'
     timeout-minutes: 45

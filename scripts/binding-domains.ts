@@ -1,7 +1,7 @@
 /** Regenerates fixed variable property domains from the public TypeScript contract. @module */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
-import * as Ts from 'typescript'
+import * as Ts from 'typescript-api'
 
 const directory = await Fs.mkdtemp(Path.resolve('.fixture-binding-domains-'))
 try {

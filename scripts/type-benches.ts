@@ -6,7 +6,7 @@
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
-import * as Ts from 'typescript'
+import * as Ts from 'typescript-api'
 
 const root = Path.resolve(import.meta.dirname, '..')
 const suffix = '.bench-d.ts'
@@ -25,6 +25,7 @@ if (!('createProgram' in compiler)) {
 
 // Snapshot updates are formatted by the repository formatter, not Prettier.
 process.env.ATTEST_shouldFormat ??= 'false'
+process.env.ATTEST_tsVersions ??= JSON.stringify(['api'])
 
 // Attest reads its own flags from argv, such as --update and --filter; the
 // repeatable --fixture flag selects fixture paths by substring.

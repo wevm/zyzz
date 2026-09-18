@@ -31,18 +31,11 @@ export async function verify(options: verify.Options) {
   try {
     const app = await Library.create(root)
     const pack = await exec(
-      'npm',
-      [
-        'pack',
-        '--ignore-scripts',
-        '--offline',
-        '--json',
-        '--pack-destination',
-        root,
-      ],
+      'pnpm',
+      ['pack', '--json', '--pack-destination', root],
       { timeout: 30_000 },
     )
-    const [tarball] = JSON.parse(pack.stdout) as { filename: string }[]
+    const tarball = JSON.parse(pack.stdout) as { filename: string }
     await exec(
       'npm',
       [
@@ -51,11 +44,11 @@ export async function verify(options: verify.Options) {
         '--no-audit',
         '--no-fund',
         '--package-lock=false',
-        Path.join(root, tarball!.filename),
+        tarball.filename,
         'next@16.3.5',
         'react@19.2.4',
         'react-dom@19.2.4',
-        'typescript@5.9.3',
+        'typescript@7.0.2',
         '@types/react@19.2.18',
         '@types/react-dom@19.2.7',
       ],

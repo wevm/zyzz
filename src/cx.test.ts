@@ -931,6 +931,7 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
         await Fs.writeFile(path, output.code)
         await Util.promisify(ChildProcess.execFile)(process.execPath, [
           Path.resolve('node_modules/typescript/bin/tsc'),
+          '--ignoreConfig',
           '--customConditions',
           'src',
           '--strict',

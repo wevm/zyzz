@@ -54,24 +54,17 @@ export async function create(root: string, options: sources.Options = {}) {
     ))
   ) {
     const runtimePack = await exec(
-      'npm',
-      [
-        'pack',
-        '--ignore-scripts',
-        '--offline',
-        '--json',
-        '--pack-destination',
-        root,
-      ],
+      'pnpm',
+      ['pack', '--json', '--pack-destination', root],
       { cwd: process.cwd() },
     )
-    const runtimeArchive = (
-      JSON.parse(runtimePack.stdout) as { filename: string }[]
-    )[0]!
+    const runtimeArchive = JSON.parse(runtimePack.stdout) as {
+      filename: string
+    }
     await Fs.mkdir(Path.join(root, 'node_modules/zyzz'))
     await exec('tar', [
       '-xf',
-      Path.join(root, runtimeArchive.filename),
+      runtimeArchive.filename,
       '-C',
       Path.join(root, 'node_modules/zyzz'),
       '--strip-components=1',
@@ -129,6 +122,7 @@ export async function create(root: string, options: sources.Options = {}) {
   )
   await exec(process.execPath, [
     Path.resolve('node_modules/typescript/bin/tsc'),
+    '--ignoreConfig',
     '--module',
     'nodenext',
     '--target',

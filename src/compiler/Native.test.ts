@@ -710,6 +710,7 @@ card().className;
           process.execPath,
           [
             Path.resolve('node_modules/typescript/bin/tsc'),
+            '--ignoreConfig',
             '--noEmit',
             '--module',
             'nodenext',

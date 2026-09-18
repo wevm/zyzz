@@ -1,9 +1,9 @@
-<h1 align="center">
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
-    <img alt="zyzz" src=".github/assets/logo-light.svg" width="255" height="114">
+    <img alt="zyzz" src=".github/assets/logo-light.svg" width="170" height="76">
   </picture>
-</h1>
+</p>
 
 <p align="center">
   A modern, universal styling library.

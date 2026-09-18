@@ -1,7 +1,7 @@
 /** Exercises native compiler result retention in an isolated garbage-collected process. @module */
 import * as Timers from 'node:timers/promises'
-import * as Graph from '../../src/compiler/Graph.js'
-import * as Syntax from '../../src/compiler/internal/Syntax.js'
+import * as Graph from '../../../src/compiler/Graph.js'
+import * as Syntax from '../../../src/compiler/internal/Syntax.js'
 
 function compile() {
   const moduleId = 'app.ts'

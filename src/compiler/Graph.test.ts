@@ -33,7 +33,9 @@ describe('compile', () => {
       const outfile = Path.join(directory, 'retention.mjs')
       await Esbuild.build({
         bundle: true,
-        entryPoints: [Path.join(root, 'test/fixtures/NativeRetention.ts')],
+        entryPoints: [
+          Path.join(root, 'test/fixtures/process/NativeRetention.ts'),
+        ],
         format: 'esm',
         outfile,
         packages: 'external',

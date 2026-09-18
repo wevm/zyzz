@@ -9,7 +9,7 @@ export type Checked<
   ? { [key in keyof value]: Checked<value[key], items> }
   : value extends number
     ? Count<value, false>
-    : value extends `${infer body}!important` | `${infer body}!`
+    : value extends `${infer body} !important`
       ? Checked<Trim<body>, items> extends never
         ? never
         : value

@@ -119,13 +119,13 @@ Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable s
 ```ts
 namespace styles {
   export const label = style({
-    color: 'black!',
+    color: 'black !important',
     display: ['block', 'flex'],
   })
 }
 ```
 
-Arrays preserve fallback order; a trailing `!` marks importance.
+Arrays preserve fallback order; the suffix ` !important` marks importance.
 
 #### Theme Expressions
 

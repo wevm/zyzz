@@ -188,7 +188,7 @@ for (const count of [10, 100]) {
     Array.from(
       { length: count },
       (_, index) =>
-        `export const fallback${index} = style({color:['#000','brand!'],padding:['0px','${index}px']})();`,
+        `export const fallback${index} = style({color:['#000','brand !important'],padding:['0px','${index}px']})();`,
     ).join('\n')
 
   describe(`fallback transform / ${count} additional styles`, () => {
@@ -252,7 +252,7 @@ const workloads = {
   },
   decoration: {
     declaration: (index: number) =>
-      `export const link${index} = style({textDecorationLine:['underline','underline overline!'],textDecorationStyle:'dotted',textDecorationThickness:'2px',textUnderlineOffset:'${index}px'})();`,
+      `export const link${index} = style({textDecorationLine:['underline','underline overline !important'],textDecorationStyle:'dotted',textDecorationThickness:'2px',textUnderlineOffset:'${index}px'})();`,
     source: TextDecoration.source,
     title: 'text decoration',
   },
@@ -270,7 +270,7 @@ const workloads = {
   },
   flex: {
     declaration: (index: number) =>
-      `export const box${index} = style({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
+      `export const box${index} = style({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip !important'],overflowX:'auto'})();`,
     source: Flex.source,
     title: 'flex layout',
   },
@@ -348,7 +348,7 @@ const workloads = {
   },
   interaction: {
     declaration: (index: number) =>
-      `export const control${index} = style({width:'${index}px',cursor:'pointer',pointerEvents:['auto','none!'],resize:'inline',userSelect:'all',visibility:'visible'})();`,
+      `export const control${index} = style({width:'${index}px',cursor:'pointer',pointerEvents:['auto','none !important'],resize:'inline',userSelect:'all',visibility:'visible'})();`,
     source: Interaction.source,
     title: 'interaction',
   },
@@ -366,7 +366,7 @@ const workloads = {
   },
   logical: {
     declaration: (index: number) =>
-      `export const box${index} = style({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
+      `export const box${index} = style({inlineSize:'${index}px',paddingInline:['1px','2px !important'],marginBlock:'-1px',insetBlockStart:0})();`,
     source: Logical.source,
     title: 'logical box',
   },
@@ -408,19 +408,19 @@ const workloads = {
   },
   scrolling: {
     declaration: (index: number) =>
-      `export const box${index} = style({scrollMarginBlockStart:'${index}px',scrollPadding:['10%','20px!'],overscrollBehavior:'contain',scrollBehavior:'smooth'})();`,
+      `export const box${index} = style({scrollMarginBlockStart:'${index}px',scrollPadding:['10%','20px !important'],overscrollBehavior:'contain',scrollBehavior:'smooth'})();`,
     source: Scrolling.source,
     title: 'scroll spacing',
   },
   sizing: {
     declaration: (index: number) =>
-      `export const box${index} = style({width:['${index}px','fit-content!'],minInlineSize:'min-content',maxInlineSize:'none',flexBasis:'content'})();`,
+      `export const box${index} = style({width:['${index}px','fit-content !important'],minInlineSize:'min-content',maxInlineSize:'none',flexBasis:'content'})();`,
     source: Sizing.source,
     title: 'intrinsic sizing',
   },
   snapping: {
     declaration: (index: number) =>
-      `export const slide${index} = style({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
+      `export const slide${index} = style({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory !important']})();`,
     source: Snapping.source,
     title: 'scroll snap',
   },
@@ -444,13 +444,13 @@ const workloads = {
   },
   tables: {
     declaration: (index: number) =>
-      `export const table${index} = style({borderCollapse:'separate',borderSpacing:['1px','${index}px!'],captionSide:'bottom',emptyCells:'hide',tableLayout:'fixed'})();`,
+      `export const table${index} = style({borderCollapse:'separate',borderSpacing:['1px','${index}px !important'],captionSide:'bottom',emptyCells:'hide',tableLayout:'fixed'})();`,
     source: Tables.source,
     title: 'table',
   },
   text: {
     declaration: (index: number) =>
-      `export const text${index} = style({textIndent:'${index}px',letterSpacing:['normal','1px!'],overflowWrap:'anywhere',whiteSpace:'pre-wrap',textOverflow:'ellipsis'})();`,
+      `export const text${index} = style({textIndent:'${index}px',letterSpacing:['normal','1px !important'],overflowWrap:'anywhere',whiteSpace:'pre-wrap',textOverflow:'ellipsis'})();`,
     source: TextFlow.source,
     title: 'text flow',
   },
@@ -543,7 +543,7 @@ for (const count of [10, 100]) {
     Array.from(
       { length: count },
       (_, index) =>
-        `export const length${index} = style({width:['50vw','${index}cqi!'],padding:'1lh',height:'10dvh'})();`,
+        `export const length${index} = style({width:['50vw','${index}cqi !important'],padding:'1lh',height:'10dvh'})();`,
     ).join('\n')
 
   describe(`standard length transform / ${count} additional styles`, () => {

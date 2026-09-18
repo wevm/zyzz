@@ -79,7 +79,7 @@ namespace styles {
   export const panel = style({
     width: ['80vw', '80cqi'],
     height: '100dvh',
-    padding: '1lh!',
+    padding: '1lh !important',
   })
 }
 ```
@@ -164,7 +164,7 @@ import { style } from 'zyzz'
 
 namespace styles {
   export const link = style({
-    textDecorationLine: ['underline', 'underline overline!'],
+    textDecorationLine: ['underline', 'underline overline !important'],
     textDecorationStyle: 'wavy',
     textDecorationThickness: '2px',
     textUnderlineOffset: '.2em',
@@ -290,7 +290,7 @@ namespace styles {
   export const panel = style({
     inlineSize: '20rem',
     paddingInline: '1rem',
-    marginBlockEnd: '0.5rem!',
+    marginBlockEnd: '0.5rem !important',
     position: 'relative',
     insetInlineStart: '-2px',
   })
@@ -307,17 +307,19 @@ Shorthands currently accept a single scalar, applied to both logical edges. Arra
 Style.define({
   card: {
     display: ['block', 'flex'],
-    color: ['#000!', '#fff'],
+    color: ['#000 !important', '#fff'],
     opacity: '0.5 !important',
   },
 })
 ```
 
-Nonempty arrays emit repeated declarations in authored order. Each entry is independently validated and may use a trailing `!` or `!important`. Normal entries cannot override important entries; later important entries win. Token names resolve after suffix parsing, and explicit token references remain valid fallback entries.
+Nonempty arrays emit repeated declarations in authored order. Each entry is independently validated and may use the suffix ` !important`. Normal entries cannot override important entries; later important entries win. Token names resolve after suffix parsing, and explicit token references remain valid fallback entries.
 
-Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md!` from naming both a token and an important `md` declaration. `Theme.define` and inline Config themes reject these keys in types and runtime validation.
+The space and lowercase suffix are required. Bare `!`, unspaced `!important`, and alternate keyword spellings are rejected.
 
-Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, and accessor-backed fallbacks fail structurally. Value validity is checked statically. Quoted image URLs retain their contents when a trailing importance marker is separated.
+Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md !important` from naming both a token and an important `md` declaration. `Theme.define` and inline Config themes reject these keys in types and runtime validation.
+
+Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5 !important'` or `'0 !important'`. Empty, sparse, and accessor-backed fallbacks fail structurally. Value validity is checked statically. Quoted image URLs retain their contents when a trailing importance marker is separated.
 
 ## Ordering and Ownership
 

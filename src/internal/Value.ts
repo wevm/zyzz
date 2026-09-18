@@ -14,7 +14,7 @@ import * as Token from './Token.js'
 /** Scalar declarations optionally carrying a trailing importance marker. */
 export type Atom<value> =
   | value
-  | `${Extract<value, string | number>}${'!' | ' !' | '!important' | ' !important'}`
+  | `${Extract<value, string | number>} !important`
 
 /**
  * Accepts canonical and case-insensitive CSS literals without folding token names or emitted data.
@@ -70,7 +70,8 @@ export type Checked<style, tokens = {}> = {
         >[property]
     : Literal.Properties extends style
       ? unknown
-      : RuleReference.Check<style[property], property> &
+      : Importance<style[property]> &
+          RuleReference.Check<style[property], property> &
           (property extends keyof typeof Literal.rules
             ? style[property] extends (property extends
                 | 'gridArea'
@@ -100,6 +101,20 @@ export type Checked<style, tokens = {}> = {
               : never
             : unknown)
 }
+
+type Importance<value> = value extends readonly unknown[]
+  ? { [key in keyof value]: Importance<value[key]> }
+  : value extends `${infer body}!${infer suffix}`
+    ? body extends `${string}\\`
+      ? unknown
+      : Lowercase<TrimStart<Trim<Lexical.Normalized<suffix>>>> extends
+            | ''
+            | 'important'
+        ? value extends `${string} !important`
+          ? unknown
+          : never
+        : unknown
+    : unknown
 
 type Check<input, names, rule> =
   FunctionValue.Is<input> extends true
@@ -196,7 +211,7 @@ type Normalized<value extends string> =
   TrimStart<Trim<value>> extends infer text extends string
     ? text extends `${infer body}!${infer suffix}`
       ? Lowercase<TrimStart<Trim<suffix>>> extends '' | 'important'
-        ? `${Trim<body>}!important`
+        ? `${Trim<body>} !important`
         : `${body}!${Normalized<suffix>}`
       : text
     : never
@@ -228,6 +243,7 @@ export function parse(
   input: unknown,
   property: keyof Literal.Properties,
 ):
+  | { invalid: true }
   | { important: boolean; value: number | string | Token.Expression }
   | undefined {
   if (Token.isExpression(input)) {
@@ -235,7 +251,8 @@ export function parse(
       .map((part) => (typeof part === 'string' ? part : 'var(--z)'))
       .join('')
     const parsed = parse(text, property)
-    if (!parsed || typeof parsed.value === 'object') return undefined
+    if (!parsed || 'invalid' in parsed) return parsed
+    if (typeof parsed.value === 'object') return undefined
 
     const parts = [...input.parts]
     let remaining = text.length - String(parsed.value).length
@@ -282,6 +299,8 @@ export function parse(
   }
 
   if (marker < 0) return undefined
+  if (input.slice(marker - 1) !== ' !important' || escaped(marker - 1))
+    return { invalid: true }
 
   let end = marker
 

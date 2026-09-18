@@ -18,7 +18,7 @@ export const controls = {
 export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create();
 export const disabled = style({
-  cursor:'not-allowed',pointerEvents:['auto','none!','auto'],
+  cursor:'not-allowed',pointerEvents:['auto','none !important','auto'],
   resize:'none',userSelect:'none',visibility:'visible'
 })();
 export const editable = zyzz.style({cursor:'text',pointerEvents:'auto',resize:'both',userSelect:'text',visibility:'visible'})();

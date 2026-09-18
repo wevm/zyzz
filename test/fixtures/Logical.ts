@@ -58,9 +58,9 @@ export const styles = {
 export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{spacing:{space:'12px'}}});
 export const logical = zyzz.style({
-  width:'60px',inlineSize:['70px','80px!'],blockSize:'40px',
+  width:'60px',inlineSize:['70px','80px !important'],blockSize:'40px',
   paddingLeft:'2px',paddingInlineStart:['4px',zyzz.theme.tokens.spacing.space],
-  marginInlineEnd:'space!',position:'relative',insetInlineStart:'-3px'
+  marginInlineEnd:'space !important',position:'relative',insetInlineStart:'-3px'
 })();
 export const physical = style({inlineSize:'30px',width:'50px',paddingInlineStart:'6px',paddingLeft:'8px'})();
 export const scope = zyzz.theme.className;

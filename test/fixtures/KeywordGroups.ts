@@ -5,7 +5,7 @@
 
 /** Public declarations combine independent font and containment choices. */
 export const source = `import { style } from 'zyzz';
-export const text=style({contain:'layout style paint',fontSynthesis:'style weight small-caps',fontVariantEastAsian:'jis78 full-width ruby',fontVariantLigatures:'no-common-ligatures contextual',fontVariantNumeric:['tabular-nums','oldstyle-nums tabular-nums slashed-zero!']})();`
+export const text=style({contain:'layout style paint',fontSynthesis:'style weight small-caps',fontVariantEastAsian:'jis78 full-width ruby',fontVariantLigatures:'no-common-ligatures contextual',fontVariantNumeric:['tabular-nums','oldstyle-nums tabular-nums slashed-zero !important']})();`
 
 /** Native declarations verify browser serialization of unordered groups. */
 export const control =

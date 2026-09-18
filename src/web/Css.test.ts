@@ -18,7 +18,7 @@ describe('compile', () => {
       a: { display: ['block', 'grid'], padding: '1px' },
       b: { display: ['grid', 'block'], padding: '1px' },
       c: { display: ['block', 'grid'], padding: '1px' },
-      d: { display: ['block', 'grid!'], padding: '1px' },
+      d: { display: ['block', 'grid !important'], padding: '1px' },
     })
 
     const output = Css.compile({
@@ -54,7 +54,7 @@ describe('compile', () => {
       styles: Style.define({
         a,
         b: {
-          scrollSnapAlign: ['center', 'none start!'],
+          scrollSnapAlign: ['center', 'none start !important'],
           scrollSnapStop: 'always',
           scrollSnapType: 'both mandatory',
         },
@@ -655,10 +655,10 @@ describe('compile', () => {
 
   test('importance is distinct in cached and factored declarations', () => {
     const styles = Style.define({
-      first: { color: ['#fff!', '#000!'] },
+      first: { color: ['#fff !important', '#000 !important'] },
       normal: { color: '#fff' },
       last: { color: '#fff !important' },
-      numeric: { opacity: '0.5!', padding: '0!' },
+      numeric: { opacity: '0.5 !important', padding: '0 !important' },
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
@@ -1105,7 +1105,7 @@ describe('cascade', () => {
             '.card{color:red!important;color:blue;display:grid;display:block}',
           styles: Style.define({
             card: {
-              color: ['red!', 'blue'],
+              color: ['red !important', 'blue'],
               display: ['grid', 'block'],
             },
           } as never),
@@ -1247,7 +1247,7 @@ describe('names', () => {
         styles: Style.define({
           card: {
             width: 'calc(100% - 8px)',
-            display: ['block', 'grid!'],
+            display: ['block', 'grid !important'],
             '&:hover': { color: 'blue' },
             '&:focus': { color: 'blue' },
           },
@@ -1843,7 +1843,7 @@ describe('output', () => {
 
     test('retains fallback sequences, importance, and stylesheet contributions', () => {
       const styles = Style.define({
-        card: { display: ['block', 'grid!'], color: 'red' },
+        card: { display: ['block', 'grid !important'], color: 'red' },
       })
       const contributions: readonly Css.Contribution[] = [
         {

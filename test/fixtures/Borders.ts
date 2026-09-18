@@ -180,7 +180,7 @@ export const styles = {
 export const source = `import { Config, style } from 'zyzz';
 const zyzz = Config.create({theme:{color:{brand:'#fff'},borderColor:{brand:'#06c'},borderRadius:{round:'8px'}}});
 export const box = zyzz.style({
-  borderStyle:'solid',borderWidth:'2px',borderLeftWidth:'3px',borderInlineStartWidth:['4px','5px!'],
+  borderStyle:'solid',borderWidth:'2px',borderLeftWidth:'3px',borderInlineStartWidth:['4px','5px !important'],
   borderColor:'brand',borderInlineEndColor:zyzz.theme.tokens.color.brand,
   borderRadius:'round',borderStartStartRadius:'10px',
   outlineColor:'brand',outlineStyle:'dashed',outlineWidth:'2px',outlineOffset:'-1px'

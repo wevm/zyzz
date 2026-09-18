@@ -31,9 +31,9 @@ bench('style / literal declarations', () => {
 
 bench('style / fallbacks, importance, and templates', () => {
   style({
-    color: ['#111', 'oklch(0.5 0.1 200)!'],
+    color: ['#111', 'oklch(0.5 0.1 200) !important'],
     padding: `${8}px`,
-    position: 'sticky!',
+    position: 'sticky !important',
     width: `calc(100% - ${16}px)`,
   })
 }).types([25026, 'instantiations'])
@@ -74,7 +74,7 @@ bench('style / bound theme tokens', () => {
   theme.style({
     ':hover': { color: 'brand' },
     color: 'ink',
-    padding: ['md', '2px!'],
+    padding: ['md', '2px !important'],
     width: theme.tokens.spacing[4],
   })
 }).types([64207, 'instantiations'])

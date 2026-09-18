@@ -398,7 +398,7 @@ describe('compile', () => {
           const source = `import { style } from 'zyzz';\n${batch
             .map(
               ({ property, value }, index) =>
-                `export const case${index} = style({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
+                `export const case${index} = style({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value} !important`)}]})();`,
             )
             .join('\n')}`
 
@@ -445,7 +445,7 @@ describe('compile', () => {
           'var(--probe)',
           'var(--probe,)',
           'calc(1px + var(--probe))',
-        ].flatMap((value) => [value, `${value}!`])
+        ].flatMap((value) => [value, `${value} !important`])
 
         const checks: string[] = []
 
@@ -470,11 +470,11 @@ describe('compile', () => {
 
       const rejections = Conformance.rejected.map(
         ({ property, value }) =>
-          `// @ts-expect-error Invalid or deliberately unsupported scalar.\nstyle({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\nstyle({${property}: ${JSON.stringify(`${value}!`)}});`,
+          `// @ts-expect-error Invalid or deliberately unsupported scalar.\nstyle({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\nstyle({${property}: ${JSON.stringify(`${value} !important`)}});`,
       )
       const booleans = Conformance.properties().map(
         (property) =>
-          `style({${JSON.stringify(property)}: [' InHeRiT ! ImPoRtAnT ', ${JSON.stringify(String.raw`\69 nherit/**/!impor\74 ant`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\nstyle({${JSON.stringify(property)}: true});`,
+          `style({${JSON.stringify(property)}: [' InHeRiT !important', ${JSON.stringify(String.raw`\69 nherit/**/ !important`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\nstyle({${JSON.stringify(property)}: true});`,
       )
       const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { style, type Style } from 'zyzz';\ndescribe('style', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
 
@@ -537,16 +537,16 @@ describe('compile', () => {
       .z-resize-none-azihbK-2{resize:none;}
       .z-user-select-none-azihbK-3{user-select:none;}
       .z-visibility-visible-azihbK-4{visibility:visible;}
-      .z-cursor-text-61PFXL-0{cursor:text;}
-      .z-pointer-events-auto-61PFXL-1{pointer-events:auto;}
-      .z-resize-both-61PFXL-2{resize:both;}
-      .z-user-select-text-61PFXL-3{user-select:text;}
-      .z-visibility-visible-61PFXL-4{visibility:visible;}
-      .z-cursor-default-ZPy7g--0{cursor:default;}
-      .z-pointer-events-auto-ZPy7g--1{pointer-events:auto;}
-      .z-resize-none-ZPy7g--2{resize:none;}
-      .z-user-select-auto-ZPy7g--3{user-select:auto;}
-      .z-visibility-hidden-ZPy7g--4{visibility:hidden;}"
+      .z-cursor-text-lIooc--0{cursor:text;}
+      .z-pointer-events-auto-lIooc--1{pointer-events:auto;}
+      .z-resize-both-lIooc--2{resize:both;}
+      .z-user-select-text-lIooc--3{user-select:text;}
+      .z-visibility-visible-lIooc--4{visibility:visible;}
+      .z-cursor-default-3AHJhf-0{cursor:default;}
+      .z-pointer-events-auto-3AHJhf-1{pointer-events:auto;}
+      .z-resize-none-3AHJhf-2{resize:none;}
+      .z-user-select-auto-3AHJhf-3{user-select:auto;}
+      .z-visibility-hidden-3AHJhf-4{visibility:hidden;}"
     `)
 
     const lines = output.css.split('\n')
@@ -710,11 +710,11 @@ describe('compile', () => {
       .z-caption-side-bottom-H-PVVN-2{caption-side:bottom;}
       .z-empty-cells-hide-H-PVVN-3{empty-cells:hide;}
       .z-table-layout-fixed-H-PVVN-4{table-layout:fixed;}
-      .z-border-collapse-separate-KGtEF1-0{border-collapse:separate;}
-      .z-border-spacing-0-KGtEF1-1{border-spacing:0;}
-      .z-caption-side-top-KGtEF1-2{caption-side:top;}
-      .z-empty-cells-show-KGtEF1-3{empty-cells:show;}
-      .z-table-layout-fixed-KGtEF1-4{table-layout:fixed;}"
+      .z-border-collapse-separate-XcDfON-0{border-collapse:separate;}
+      .z-border-spacing-0-XcDfON-1{border-spacing:0;}
+      .z-caption-side-top-XcDfON-2{caption-side:top;}
+      .z-empty-cells-show-XcDfON-3{empty-cells:show;}
+      .z-table-layout-fixed-XcDfON-4{table-layout:fixed;}"
     `)
 
     const lines = output.css.split('\n')
@@ -872,9 +872,9 @@ describe('compile', () => {
       .z-text-decoration-thickness-JsEJLG-3{text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);}
       .z-text-underline-offset-848GxD-4{text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);}
       .z-text-decoration-skip-ink-none-8JMewl-5{text-decoration-skip-ink:none;}
-      .z-text-decoration-line-line-through-UASx1B-0{text-decoration-line:line-through;}
-      .z-text-decoration-thickness-Yb-CBc-1{text-decoration-thickness:10%;}
-      .z-text-underline-offset-LyGeZy-2{text-underline-offset:-10%;}"
+      .z-text-decoration-line-line-through-0jA2LR-0{text-decoration-line:line-through;}
+      .z-text-decoration-thickness-F-PWpk-1{text-decoration-thickness:10%;}
+      .z-text-underline-offset-xmZFFp-2{text-underline-offset:-10%;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1011,9 +1011,9 @@ describe('compile', () => {
       .z-white-space-kiFJGe-2{white-space:pre;white-space:nowrap!important;}
       .z-text-overflow-ellipsis-ot4UW4{text-overflow:ellipsis;}
       .z-word-spacing-3px-ot4UW4{word-spacing:3px;}
-      .z-w-65px-jh96uf-0{width:65px;}
+      .z-w-65px-hiyCVf-0{width:65px;}
       .z-overflow-wrap-anywhere-ot4UW4{overflow-wrap:anywhere;}
-      .z-white-space-normal-jh96uf-2{white-space:normal;}"
+      .z-white-space-normal-hiyCVf-2{white-space:normal;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1154,18 +1154,18 @@ describe('compile', () => {
       .z-scroll-padding-2dpRGq-5{scroll-padding:var(--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge,10px);}
       .z-scroll-snap-type-KYY9Rn-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
       .z-flex-direction-column-x98OZk{flex-direction:column;}
-      .z-w-100px-6t4MTY-1{width:100px;}
-      .z-h-100px-6t4MTY-2{height:100px;}
-      .z-scroll-padding-10px-6t4MTY-3{scroll-padding:10px;}
-      .z-scroll-snap-type-cJAmeN-4{scroll-snap-type:y mandatory;}
-      .z-w-60px-c5VhTs-0{width:60px;}
-      .z-h-60px-c5VhTs-1{height:60px;}
+      .z-w-100px-t2z-lc-1{width:100px;}
+      .z-h-100px-t2z-lc-2{height:100px;}
+      .z-scroll-padding-10px-t2z-lc-3{scroll-padding:10px;}
+      .z-scroll-snap-type-h2CUsA-4{scroll-snap-type:y mandatory;}
+      .z-w-60px-CZ7IMc-0{width:60px;}
+      .z-h-60px-CZ7IMc-1{height:60px;}
       .z-flex-shrink-0-x98OZk{flex-shrink:0;}
       .z-scroll-margin-5px-x98OZk{scroll-margin:5px;}
-      .z-scroll-snap-align-start-c5VhTs-4{scroll-snap-align:start;}
+      .z-scroll-snap-align-start-CZ7IMc-4{scroll-snap-align:start;}
       .z-scroll-snap-stop-b0QiNb{scroll-snap-stop:normal;scroll-snap-stop:always!important;}
-      .z-scroll-snap-align-POxxtm-0{scroll-snap-align:none center;}
-      .z-scroll-snap-type-ghp6iq-1{scroll-snap-type:both proximity;}"
+      .z-scroll-snap-align-ZiVh6M-0{scroll-snap-align:none center;}
+      .z-scroll-snap-type--ilOjM-1{scroll-snap-type:both proximity;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1290,10 +1290,10 @@ describe('compile', () => {
       .z-overscroll-behavior-IMs-AT-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
       .z-overscroll-behavior-x-none-3Tf0Em-7{overscroll-behavior-x:none;}
       .z-scroll-margin-top-10px-B6dQF9{scroll-margin-top:10px;}
-      .z-h-20px-AI3pmS-1{height:20px;}
-      .z-scroll-padding-top-k6p8dg-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
-      .z-scroll-padding-block-start-7rlgxR-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
-      .z-scroll-behavior-smooth-nVl4x6-0{scroll-behavior:smooth;}"
+      .z-h-20px-07Li8C-1{height:20px;}
+      .z-scroll-padding-top-dLi-j7-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
+      .z-scroll-padding-block-start-YVvvze-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
+      .z-scroll-behavior-smooth-Gx3RrC-0{scroll-behavior:smooth;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1405,19 +1405,19 @@ describe('compile', () => {
       .z-inline-size-iZORfz-0{inline-size:100%;inline-size:fit-content!important;}
       .z-min-width-auto-1vbD03-1{min-width:auto;}
       .z-max-width-none-1vbD03-2{max-width:none;}
-      .z-w-7xoZdx-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
-      .z-min-inline-size-6AFzOm-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
-      .z-max-inline-size-max-content-GuhUQ3-1{max-inline-size:max-content;}
-      .z-block-size-fit-content-GuhUQ3-2{block-size:fit-content;}
-      .z-min-block-size-auto-GuhUQ3-3{min-block-size:auto;}
-      .z-max-block-size-none-GuhUQ3-4{max-block-size:none;}
-      .z-flex-basis-content-BYbMtz-0{flex-basis:content;}
-      .z-w-5px-BYbMtz-1{width:5px;}
+      .z-w-dc70wo-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
+      .z-min-inline-size-Ibw0E3-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
+      .z-max-inline-size-max-content-k8Xc3j-1{max-inline-size:max-content;}
+      .z-block-size-fit-content-k8Xc3j-2{block-size:fit-content;}
+      .z-min-block-size-auto-k8Xc3j-3{min-block-size:auto;}
+      .z-max-block-size-none-k8Xc3j-4{max-block-size:none;}
+      .z-flex-basis-content-G_jsJj-0{flex-basis:content;}
+      .z-w-5px-G_jsJj-1{width:5px;}
       .z-flex-shrink-0-e3yyNT{flex-shrink:0;}
-      .z-min-width-0-BYbMtz-3{min-width:0;}
-      .z-flex-basis-auto-60XYuP-0{flex-basis:auto;}
-      .z-w-5px-60XYuP-1{width:5px;}
-      .z-min-width-0-60XYuP-2{min-width:0;}"
+      .z-min-width-0-G_jsJj-3{min-width:0;}
+      .z-flex-basis-auto-_mfIlz-0{flex-basis:auto;}
+      .z-w-5px-_mfIlz-1{width:5px;}
+      .z-min-width-0-_mfIlz-2{min-width:0;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1582,9 +1582,9 @@ describe('compile', () => {
       .z-outline-style-dashed-U8cv88{outline-style:dashed;}
       .z-outline-width-2px-U8cv88{outline-width:2px;}
       .z-outline-offset--1px-U8cv88{outline-offset:-1px;}
-      .z-border-width-2px-AKzTu7-0{border-width:2px;}
-      .z-border-inline-start-width-5px-AKzTu7-1{border-inline-start-width:5px;}
-      .z-border-left-width-3px-AKzTu7-2{border-left-width:3px;}"
+      .z-border-width-2px-epdaJn-0{border-width:2px;}
+      .z-border-inline-start-width-5px-epdaJn-1{border-inline-start-width:5px;}
+      .z-border-left-width-3px-epdaJn-2{border-left-width:3px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1627,15 +1627,15 @@ describe('compile', () => {
       .z-h-20px-M8KMIS-3{height:20px;}
       .z-align-self-flex-end-aqbEb1{align-self:flex-end;}
       .z-order-hwVILE{order:-1!important;}
-      .z-w-40px-RvlWdS-0{width:40px;}
-      .z-h-40px-RvlWdS-1{height:40px;}
-      .z-overflow-7jp3G8-2{overflow:hidden;overflow:clip!important;}
-      .z-overflow-x-visible-RvlWdS-3{overflow-x:visible;}
-      .z-w-40px-KFWcsC-0{width:40px;}
-      .z-h-40px-KFWcsC-1{height:40px;}
-      .z-overflow-x-clip-KFWcsC-2{overflow-x:clip;}
-      .z-overflow-hidden-KFWcsC-3{overflow:hidden;}
-      .z-overflow-y-scroll-KFWcsC-4{overflow-y:scroll;}"
+      .z-w-40px-V7HzgC-0{width:40px;}
+      .z-h-40px-V7HzgC-1{height:40px;}
+      .z-overflow-rGkkVn-2{overflow:hidden;overflow:clip!important;}
+      .z-overflow-x-visible-V7HzgC-3{overflow-x:visible;}
+      .z-w-40px-p18qo6-0{width:40px;}
+      .z-h-40px-p18qo6-1{height:40px;}
+      .z-overflow-x-clip-p18qo6-2{overflow-x:clip;}
+      .z-overflow-hidden-p18qo6-3{overflow:hidden;}
+      .z-overflow-y-scroll-p18qo6-4{overflow-y:scroll;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1783,10 +1783,10 @@ describe('compile', () => {
       .z-margin-inline-end-IqqfJ7{margin-inline-end:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px)!important;}
       .z-position-relative-8D9lB8{position:relative;}
       .z-inset-inline-start--3px-8D9lB8{inset-inline-start:-3px;}
-      .z-inline-size-30px-J2GOAT-0{inline-size:30px;}
-      .z-w-50px-J2GOAT-1{width:50px;}
-      .z-padding-inline-start-6px-J2GOAT-2{padding-inline-start:6px;}
-      .z-pl-8px-J2GOAT-3{padding-left:8px;}"
+      .z-inline-size-30px-m3kDun-0{inline-size:30px;}
+      .z-w-50px-m3kDun-1{width:50px;}
+      .z-padding-inline-start-6px-m3kDun-2{padding-inline-start:6px;}
+      .z-pl-8px-m3kDun-3{padding-left:8px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1918,16 +1918,16 @@ describe('compile', () => {
       moduleId: 'zero.ts',
       source: `import { style, Theme } from 'zyzz';
 const theme = Theme.define({spacing:{0:'8px'}});
-export const token = theme.style({padding:'0!'})();
-export const literal = style({padding:'0!'})();
+export const token = theme.style({padding:'0 !important'})();
+export const literal = style({padding:'0 !important'})();
 export const plain = theme.style({padding:0})();`,
     })
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1s1gwcevjtf8w-theme{--z-t1s1gwcevjtf8w-theme-spacing_2e_0:8px;}
       .z-p-11ufxO-0{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
-      .z-p-aTbRCY-0{padding:0!important;}
-      .z-p-0-tyf9W_-0{padding:0;}"
+      .z-p-I2yndx-0{padding:0!important;}
+      .z-p-0-O_qzUu-0{padding:0;}"
     `)
   })
 
@@ -1980,7 +1980,7 @@ export const props = theme.style({
       .z-border-width-1pc-G4uFmF{border-width:1pc;}
       .z-border-style-solid-G4uFmF{border-style:solid;}
       .z-p-7mLDlp{padding:1rem;padding:var(--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space,1lh);}
-      .z-mt-WhP8sp-1{margin-top:2rlh!important;}"
+      .z-mt-EtOdQ1-1{margin-top:2rlh!important;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2097,8 +2097,8 @@ export const props = zyzz.style({padding:'nested!.md'})();`,
       .z-opacity-K3H7Sb{opacity:0.25!important;opacity:0.75;}
       .z-p-htYKYS-3{padding:4px!important;padding:8px;}
       .z-pl-12px-qX-Arb-4{padding-left:12px;}
-      .z-text-Tu0UH--0{color:#fff;}
-      .z-p-20px-sonkvb-1{padding:20px;}"
+      .z-text-TuQ21f-0{color:#fff;}
+      .z-p-20px-ZTM9jr-1{padding:20px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -4640,7 +4640,7 @@ describe('case', () => {
 
     test('whitespace and importance preserve authored literal data', () => {
       const styles = Style.define({
-        card: { color: ' ReD\t! ImPoRtAnT  ', display: 'BlOcK\tFlow' },
+        card: { color: ' ReD !important', display: 'BlOcK\tFlow' },
       })
 
       expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
@@ -4651,13 +4651,13 @@ describe('case', () => {
       )
     })
 
-    test('escaped literals and commented importance retain native token semantics', async () => {
+    test('escaped literals retain native token semantics with importance', async () => {
       const theme = Theme.define({ color: { '\\72 ed': 'blue' } })
 
       const styles = Style.define(
         {
           card: {
-            color: '\\72 ed/**/!impor\\74 ant/**/',
+            color: '\\72 ed/**/ !important',
             display: 'bl\\6f ck/**/flow',
             padding: '1\\70 x',
           },
@@ -4706,13 +4706,13 @@ describe('case', () => {
     test('mixed keyword, function, unit, numeric, and importance spellings match native CSS', async () => {
       const styles = Style.define({
         card: {
-          color: ' #AbC\t! ImPoRtAnT  ',
+          color: ' #AbC !important',
           display: 'BlOcK\tFlow',
           gridColumnEnd: 'span +01',
           height: '+.5PX',
           margin: '-0px',
-          order: '+01!',
-          padding: ['2PX', '0e3!'],
+          order: '+01 !important',
+          padding: ['2PX', '0e3 !important'],
           transform: 'RoTaTe(45DEG)',
           width: '1e2px',
         },
@@ -6043,7 +6043,7 @@ describe('corners', () => {
 describe('custom', () => {
   const source = `import { style } from 'zyzz';
 export const parent = style({'--Accent':'red', '--accent':'blue', '--data':'"a;b:c"', '--count':2})();
-export const child = style({all:'initial', color:'var(--Accent)', backgroundColor:'var(--accent)', '--choice':['red','blue!']})();`
+export const child = style({all:'initial', color:'var(--Accent)', backgroundColor:'var(--accent)', '--choice':['red','blue !important']})();`
 
   describe('compile', () => {
     test('preserves case-sensitive names and custom declaration data', () => {
@@ -6066,8 +6066,8 @@ export const child = style({all:'initial', color:'var(--Accent)', backgroundColo
         punctuation: {
           '--escaped': 'hello\\!',
           '--escapedWord': 'hello\\!important',
-          '--even': 'hello\\\\!',
-          '--space': 'hello\\ !',
+          '--even': 'hello\\\\ !important',
+          '--space': 'hello\\  !important',
         },
       })
 
@@ -8365,7 +8365,10 @@ describe('images', () => {
     test('preserves quoted image fallbacks and marker shorthand order', () => {
       const styles = Style.define({
         image: {
-          backgroundImage: ['url("image.png")', 'linear-gradient(red, blue)!'],
+          backgroundImage: [
+            'url("image.png")',
+            'linear-gradient(red, blue) !important',
+          ],
         },
         first: { marker: 'url(#first)' },
         second: { markerStart: 'url(#second)' },
@@ -8417,7 +8420,7 @@ describe('images', () => {
     test('image fallbacks and SVG markers match native browser declarations', async () => {
       const output = Transform.compile({
         moduleId: 'images.ts',
-        source: `import { style } from 'zyzz'; export const image = style({ backgroundImage: ['url("missing.png")', 'linear-gradient(red, blue)!'], maskImage: 'linear-gradient(black, transparent)' })(); export const marker = style({marker:'url(#arrow)', markerStart:'none'})();`,
+        source: `import { style } from 'zyzz'; export const image = style({ backgroundImage: ['url("missing.png")', 'linear-gradient(red, blue) !important'], maskImage: 'linear-gradient(black, transparent)' })(); export const marker = style({marker:'url(#arrow)', markerStart:'none'})();`,
       })
       const js = await Esbuild.transform(output.code, {
         format: 'esm',
@@ -12895,7 +12898,7 @@ describe('templates', () => {
 
       const literal = Transform.compile({
         moduleId: 'templates.ts',
-        source: `import { style } from 'zyzz'; export const box = style({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px!'], width: 'calc(100% - 16px)' })()`,
+        source: `import { style } from 'zyzz'; export const box = style({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px !important'], width: 'calc(100% - 16px)' })()`,
       })
 
       expect(output.css === literal.css).toMatchInlineSnapshot(`true`)
@@ -13458,7 +13461,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'nested.ts',
           source:
-            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({width:`${`calc(${theme.vars.spacing.md})!`}`})',
+            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({width:`${`calc(${theme.vars.spacing.md}) !important`}`})',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
@@ -13493,7 +13496,7 @@ describe('variables', () => {
       const source = [
         'import { style, Theme } from "zyzz";',
         'const theme = Theme.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});',
-        'export const box = theme.style({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
+        'export const box = theme.style({width:`calc(100% - ${theme.vars.spacing.md}) !important`, color:theme.vars.color.brand})()',
       ].join('\n')
 
       expect(Transform.compile({ moduleId: 'vars.ts', source }).css)

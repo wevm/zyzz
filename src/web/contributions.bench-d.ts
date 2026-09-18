@@ -27,7 +27,7 @@ bench('global / selectors and grouping rules', () => {
   global({
     '@layer reset': { '*': { boxSizing: 'border-box', margin: 0 } },
     '@media (prefers-reduced-motion: reduce)': {
-      '*': { animationDuration: '0.01ms!' },
+      '*': { animationDuration: '0.01ms !important' },
     },
     body: { color: theme.vars.color.ink, padding: '2px' },
     'h1, h2': { fontWeight: 700, lineHeight: 1.2 },

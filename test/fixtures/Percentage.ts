@@ -18,6 +18,6 @@ export const styles = {
 
 /** Source values exercise fallbacks and importance before browser clamping. */
 export const source = `import { style } from 'zyzz';
-export const high = style({opacity:['50%', '150%!'],fillOpacity:2,strokeOpacity:'125%'})();
+export const high = style({opacity:['50%', '150% !important'],fillOpacity:2,strokeOpacity:'125%'})();
 export const low = style({opacity:-1,floodOpacity:'-25%',stopOpacity:2})();
 export const text = style({fontStretch:'120%',fontWidth:'125%',textSizeAdjust:'110%',zoom:'125%'})();`

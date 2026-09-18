@@ -181,7 +181,7 @@ namespace styles {
 }
 ```
 
-Arrays preserve fallback declaration order: later supported values win, subject to importance. A trailing `!` marks importance, as in `color: 'brand!'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.
+Arrays preserve fallback declaration order: later supported values win, subject to importance. The suffix ` !important` marks importance, as in `color: 'brand !important'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.
 
 ### Tailwind
 

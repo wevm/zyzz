@@ -65,7 +65,7 @@ describe('create', () => {
     })
 
     expectTypeOf(
-      configured({ px: 'shared', ':hover': { px: 'shared!' } })(),
+      configured({ px: 'shared', ':hover': { px: 'shared !important' } })(),
     ).toHaveProperty('className')
 
     theme.style({ px: 'shared' })

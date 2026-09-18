@@ -10,5 +10,5 @@ export const controls = {
 } as const
 
 export const source = `import { style } from 'zyzz';
-export const motion=style({animationDelay:'-500ms',animationDuration:['1s','2s!'],animationDirection:'alternate',animationFillMode:'both',animationIterationCount:2.5,animationPlayState:'paused',animationTimingFunction:'linear'})();
+export const motion=style({animationDelay:'-500ms',animationDuration:['1s','2s !important'],animationDirection:'alternate',animationFillMode:'both',animationIterationCount:2.5,animationPlayState:'paused',animationTimingFunction:'linear'})();
 export const transition=style({transitionDelay:'-.1s',transitionDuration:'250ms',transitionTimingFunction:'ease-in-out',transitionBehavior:'allow-discrete'})();`

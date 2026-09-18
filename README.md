@@ -328,7 +328,7 @@ export function Bar() {
 
 ### Value Syntax
 
-Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
+Use the suffix ` !important` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
 import { style, theme } from './zyzz.config.js'
@@ -336,7 +336,7 @@ import { style, theme } from './zyzz.config.js'
 namespace styles {
   export const panel = style({
     display: ['block', 'grid'],
-    color: 'brand!',
+    color: 'brand !important',
     borderColor: theme.vars.color.brand,
     width: `calc(100% - ${theme.vars.spacing.md})`,
   })

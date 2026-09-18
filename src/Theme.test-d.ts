@@ -193,7 +193,7 @@ describe('style', () => {
 
     const extracted: ParametersStyle = {
       color: 'brand',
-      padding: ['md', '2px!'],
+      padding: ['md', '2px !important'],
     }
 
     themed(extracted)

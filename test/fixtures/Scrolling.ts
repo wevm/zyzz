@@ -20,11 +20,11 @@ const zyzz = Config.create({theme:{spacing:{auto:'24px',offset:'20px'}}});
 export const container = zyzz.style({
   overflow:'auto',height:'100px',width:'100px',scrollBehavior:'auto',
   scrollPaddingTop:['10px',zyzz.theme.tokens.spacing.offset],
-  scrollPaddingInline:'auto',overscrollBehavior:['auto','contain!'],overscrollBehaviorX:'none'
+  scrollPaddingInline:'auto',overscrollBehavior:['auto','contain !important'],overscrollBehaviorX:'none'
 })();
 export const target = style({scrollMarginTop:'10px',height:'20px'})();
 export const explicit = zyzz.style({scrollPaddingTop:zyzz.theme.tokens.spacing.auto})();
-export const named = zyzz.style({scrollPaddingBlockStart:'offset!'})();
+export const named = zyzz.style({scrollPaddingBlockStart:'offset !important'})();
 export const smooth = style({scrollBehavior:'smooth'})();
 `
 

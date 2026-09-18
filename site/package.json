@@ -4,26 +4,27 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "vite build && tsc --noEmit",
+    "build": "pnpm --dir .. build && vite build && tsc --noEmit",
     "deploy": "pnpm build && wrangler deploy",
-    "dev": "vite dev",
+    "dev": "pnpm --dir .. build && vite dev",
     "preview": "vite preview",
     "types": "wrangler types"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.170.38",
-    "@tanstack/react-start": "^1.168.56",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "@tanstack/react-router": "catalog:site",
+    "@tanstack/react-start": "catalog:site",
+    "react": "catalog:site",
+    "react-dom": "catalog:site",
+    "zyzz": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.29.0",
-    "@types/node": "^22.5.4",
-    "@types/react": "^19.0.8",
-    "@types/react-dom": "^19.0.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vite": "^8.0.14",
-    "wrangler": "^4.74.0"
+    "@cloudflare/vite-plugin": "catalog:",
+    "@types/node": "catalog:site",
+    "@types/react": "catalog:site",
+    "@types/react-dom": "catalog:site",
+    "@vitejs/plugin-react": "catalog:site",
+    "typescript": "catalog:",
+    "vite": "catalog:site",
+    "wrangler": "catalog:"
   }
 }

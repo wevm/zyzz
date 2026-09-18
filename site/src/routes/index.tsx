@@ -1,13 +1,6 @@
-/** Renders the initial site homepage. @module */
+/** Defines the landing page route. @module */
 import { createFileRoute } from '@tanstack/react-router'
+import { Home } from '../Home.js'
 
+/** Renders the homepage. */
 export const Route = createFileRoute('/')({ component: Home })
-
-function Home() {
-  return (
-    <main>
-      <h1>Zyzz</h1>
-      <p>Type-safe styles for web and React Native.</p>
-    </main>
-  )
-}

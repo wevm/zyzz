@@ -12,6 +12,7 @@ catalog:
   '@ark/attest': '0.56.3'
   '@babel/core': '^7.29.7'
   '@changesets/cli': '^3.0.3'
+  '@cloudflare/vite-plugin': '^1.29.0'
   '@jridgewell/gen-mapping': '^0.3.13'
   '@jridgewell/trace-mapping': '^0.3.31'
   '@oxc-project/types': '0.148.0'
@@ -60,6 +61,7 @@ catalog:
   'vite': '^8.2.2'
   'vite-plugin-solid': '^2.11.14'
   'vite-plus': '0.2.2'
+  'wrangler': '^4.74.0'
   'zile': '0.0.30'
 
 catalogs:
@@ -70,6 +72,16 @@ catalogs:
     'next': '^16.3.5'
     'react': '^19.0.0'
     'vite': '^8.0.0'
+  site:
+    '@tanstack/react-router': '^1.170.38'
+    '@tanstack/react-start': '^1.168.56'
+    '@types/node': '^22.5.4'
+    '@types/react': '^19.0.8'
+    '@types/react-dom': '^19.0.3'
+    '@vitejs/plugin-react': '^6.0.1'
+    'react': '^19.0.0'
+    'react-dom': '^19.0.0'
+    'vite': '^8.0.14'
 
 # These tools still require the JavaScript compiler API.
 packageExtensions:

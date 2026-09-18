@@ -15,6 +15,9 @@ catalogs:
     '@changesets/cli':
       specifier: ^3.0.3
       version: 3.0.3
+    '@cloudflare/vite-plugin':
+      specifier: ^1.29.0
+      version: 1.54.11
     '@jridgewell/gen-mapping':
       specifier: ^0.3.13
       version: 0.3.13
@@ -159,6 +162,9 @@ catalogs:
     vite-plus:
       specifier: 0.2.2
       version: 0.2.2
+    wrangler:
+      specifier: ^4.74.0
+      version: 4.133.0
     zile:
       specifier: 0.0.30
       version: 0.0.30
@@ -166,6 +172,34 @@ catalogs:
     react:
       specifier: 19.2.3
       version: 19.2.3
+  site:
+    '@tanstack/react-router':
+      specifier: ^1.170.38
+      version: 1.170.38
+    '@tanstack/react-start':
+      specifier: ^1.168.56
+      version: 1.168.56
+    '@types/node':
+      specifier: ^22.5.4
+      version: 22.20.3
+    '@types/react':
+      specifier: ^19.0.8
+      version: 19.2.18
+    '@types/react-dom':
+      specifier: ^19.0.3
+      version: 19.2.7
+    '@vitejs/plugin-react':
+      specifier: ^6.0.1
+      version: 6.1.1
+    react:
+      specifier: ^19.0.0
+      version: 19.2.4
+    react-dom:
+      specifier: ^19.0.0
+      version: 19.2.4
+    vite:
+      specifier: ^8.0.14
+      version: 8.2.2
 
 packageExtensionsChecksum: sha256-zGM4RL7MWqZFcU7VhGAzSTIlCx5bSLdQNzpGiyMHPlc=
 
@@ -534,41 +568,44 @@ importers:
   site:
     dependencies:
       '@tanstack/react-router':
-        specifier: ^1.170.38
+        specifier: catalog:site
         version: 1.170.38(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-start':
-        specifier: ^1.168.56
+        specifier: catalog:site
         version: 1.168.56(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.7)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(solid-js@1.9.15)(supports-color@10.2.2)(vite@8.2.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)))(vite@8.2.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
       react:
-        specifier: ^19.0.0
+        specifier: catalog:site
         version: 19.2.4
       react-dom:
-        specifier: ^19.0.0
+        specifier: catalog:site
         version: 19.2.4(react@19.2.4)
+      zyzz:
+        specifier: workspace:*
+        version: link:..
     devDependencies:
       '@cloudflare/vite-plugin':
-        specifier: ^1.29.0
+        specifier: 'catalog:'
         version: 1.54.11(@types/node@22.20.3)(vite@8.2.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))(wrangler@4.133.0(@types/node@22.20.3))
       '@types/node':
-        specifier: ^22.5.4
+        specifier: catalog:site
         version: 22.20.3
       '@types/react':
-        specifier: ^19.0.8
+        specifier: catalog:site
         version: 19.2.18
       '@types/react-dom':
-        specifier: ^19.0.3
+        specifier: catalog:site
         version: 19.2.7(@types/react@19.2.18)
       '@vitejs/plugin-react':
-        specifier: ^6.0.1
+        specifier: catalog:site
         version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.2.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
       typescript:
-        specifier: npm:@typescript/typescript6@^6.0.2
-        version: '@typescript/typescript6@6.0.2'
+        specifier: 'catalog:'
+        version: 7.0.2
       vite:
-        specifier: ^8.0.14
+        specifier: catalog:site
         version: 8.2.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
       wrangler:
-        specifier: ^4.74.0
+        specifier: 'catalog:'
         version: 4.133.0(@types/node@22.20.3)
 
 packages:
@@ -3423,10 +3460,6 @@ packages:
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
-
-  '@typescript/typescript6@6.0.2':
-    resolution: {integrity: sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w==}
-    hasBin: true
 
   '@typescript/vfs@1.6.1':
     resolution: {integrity: sha512-JwoxboBh7Oz1v38tPbkrZ62ZXNHAk9bJ7c9x0eI5zBfBnBYGhURdbnh7Z4smN/MV48Y5OCcZb58n972UtbazsA==}
@@ -7753,7 +7786,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 22.20.3
+      '@types/node': 24.13.3
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
@@ -9137,10 +9170,6 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@typescript/typescript6@6.0.2':
-    dependencies:
-      '@typescript/old': typescript@6.0.3
-
   '@typescript/vfs@1.6.1(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
@@ -9684,7 +9713,7 @@ snapshots:
 
   chrome-launcher@0.15.2(supports-color@10.2.2):
     dependencies:
-      '@types/node': 22.20.3
+      '@types/node': 24.13.3
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2(supports-color@10.2.2)
@@ -9693,7 +9722,7 @@ snapshots:
 
   chromium-edge-launcher@0.3.0(supports-color@10.2.2):
     dependencies:
-      '@types/node': 22.20.3
+      '@types/node': 24.13.3
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2(supports-color@10.2.2)
@@ -10010,7 +10039,7 @@ snapshots:
 
   eval@0.1.8:
     dependencies:
-      '@types/node': 22.20.3
+      '@types/node': 24.13.3
       require-like: 0.1.2
 
   event-target-shim@5.0.1: {}
@@ -10357,7 +10386,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.20.3
+      '@types/node': 24.13.3
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -10374,7 +10403,7 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 22.20.3
+      '@types/node': 24.13.3
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1

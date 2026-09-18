@@ -34,6 +34,7 @@
   "exclude": [
     ".fixture-*/**",
     "bench/results/**",
+    "bench/native/app",
     "dist",
     "examples/*/dist",
     "examples/expo-native",

@@ -141,202 +141,208 @@ export function scan(
     return undefined
   }
 
-  Walker.walk(program, {
-    scopeTracker: scope,
-    enter(node, parent) {
-      ancestors.push(node)
+  if (imports.size || imported.size)
+    Walker.walk(program, {
+      scopeTracker: scope,
+      enter(node, parent) {
+        ancestors.push(node)
 
-      if (
-        node.type === 'Identifier' &&
-        node.name === 'undefined' &&
-        !scope.getDeclaration(node.name)
-      )
-        undefinedValues.add(node.start)
-
-      if (
-        node.type === 'VariableDeclarator' &&
-        node.id.type === 'Identifier' &&
-        node.init &&
-        Expression.unwrap(node.init).type === 'Identifier'
-      ) {
-        const init = Expression.unwrap(node.init) as Extract<
-          Ast.Node,
-          { type: 'Identifier' }
-        >
-        const declaration = scope.getDeclaration(init.name)
-        const identity = declaration
-          ? imported.get(declaration.node.start)
-          : undefined
-
-        const link = identity
-          ? [...linkedNames.values()].find(
-              (link) => link.call.name === identity,
-            )
-          : undefined
-
-        if (link) {
-          if (parent?.type !== 'VariableDeclaration' || parent.kind !== 'const')
-            throw new Themes.InvalidError(
-              'Animation aliases require const bindings.',
-              node,
-            )
-
-          imported.set(node.start, link.call.name)
-
-          if (
-            ancestors.at(-3)?.type === 'Program' ||
-            ancestors.at(-3)?.type === 'ExportNamedDeclaration'
-          )
-            linkedNames.set(node.id.name, link)
-
-          if (ancestors.some((node) => node.type === 'ExportNamedDeclaration'))
-            exported[node.id.name] = link
-        }
-      }
-
-      if (node.type !== 'CallExpression') return
-
-      const type = kind(node.callee)
-      if (!type) return
-
-      const variable =
-        parent?.type === 'VariableDeclarator' && parent.init === node
-          ? parent
-          : undefined
-      const statement = variable ? ancestors.at(-3) : parent
-      if (
-        node.optional ||
-        (node.arguments.length !== 1 &&
-          (![
-            'fontFace',
-            'fontFeatureValues',
-            'page',
-            'property',
-            'viewTransition',
-            ...named,
-          ].includes(type) ||
-            node.arguments.length !== 2)) ||
-        (!variable && parent?.type !== 'ExpressionStatement') ||
-        ancestors
-          .slice(0, -1)
-          .some(
-            (ancestor) =>
-              ![
-                'Program',
-                'ExportNamedDeclaration',
-                'VariableDeclaration',
-                'VariableDeclarator',
-                'ExpressionStatement',
-              ].includes(ancestor.type),
-          ) ||
-        (variable &&
-          (statement?.type !== 'VariableDeclaration' ||
-            statement.kind !== 'const' ||
-            variable.id.type !== 'Identifier'))
-      )
-        throw new Themes.InvalidError(
-          'Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.',
-          node,
+        if (
+          node.type === 'Identifier' &&
+          node.name === 'undefined' &&
+          !scope.getDeclaration(node.name)
         )
-      if (named.includes(type) && !variable)
-        throw new Themes.InvalidError(
-          'Named stylesheet definitions require a module-level named constant.',
-          node,
-        )
+          undefinedValues.add(node.start)
 
-      const context = node.arguments[1]
-      const idProperty =
-        context?.type === 'ObjectExpression'
-          ? context.properties.find(
-              (property) =>
-                property.type === 'Property' &&
-                !property.computed &&
-                (property.key.type === 'Identifier'
-                  ? property.key.name
-                  : property.key.type === 'Literal'
-                    ? property.key.value
-                    : undefined) === 'id',
-            )
-          : undefined
-      if (
-        idProperty &&
-        (idProperty.type !== 'Property' ||
-          idProperty.value.type !== 'Literal' ||
-          typeof idProperty.value.value !== 'string' ||
-          !idProperty.value.value)
-      )
-        throw new Themes.InvalidError(
-          'Stylesheet ids must be nonempty string literals.',
-          node,
-        )
-
-      const explicit =
-        idProperty?.type === 'Property' &&
-        idProperty.value.type === 'Literal' &&
-        typeof idProperty.value.value === 'string'
-          ? idProperty.value.value
-          : undefined
-      const name =
-        explicit !== undefined
-          ? Identity.contribution(type, explicit)
-          : variable?.id.type === 'Identifier'
-            ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
-                variable.id.name,
-              )
-                .map((value) => value.codePointAt(0)!.toString(16))
-                .join('-')}`
+        if (
+          node.type === 'VariableDeclarator' &&
+          node.id.type === 'Identifier' &&
+          node.init &&
+          Expression.unwrap(node.init).type === 'Identifier'
+        ) {
+          const init = Expression.unwrap(node.init) as Extract<
+            Ast.Node,
+            { type: 'Identifier' }
+          >
+          const declaration = scope.getDeclaration(init.name)
+          const identity = declaration
+            ? imported.get(declaration.node.start)
             : undefined
 
-      const call: Call = {
-        kind: type,
-        start: node.start,
-        end: node.end,
-        argument: node.arguments[0]!,
-        context: node.arguments[1],
-        ...(type === 'cssFunction'
-          ? { function: { parameters: [], returns: '*' as const } }
-          : {}),
-        ...(named.includes(type)
-          ? {
-              name,
-              binding: variable!.start,
-              exported: ancestors.some(
-                (node) => node.type === 'ExportNamedDeclaration',
-              ),
-            }
-          : {}),
-      }
+          const link = identity
+            ? [...linkedNames.values()].find(
+                (link) => link.call.name === identity,
+              )
+            : undefined
 
-      calls.push(call)
-      if (named.includes(call.kind) && variable?.id.type === 'Identifier') {
-        const link: Themes.Link = {
-          binding: call.name!,
-          kind: call.kind === 'keyframes' ? 'animation' : 'rule-reference',
-          definition: Theme.define({}),
-          call: {
-            start: call.start,
-            end: call.end,
-            name: call.name!,
-            tokenType: '{}',
-            ...(call.function ? { function: call.function } : {}),
-            ...(call.kind !== 'keyframes'
-              ? { reference: call.kind as RuleReference.Kind }
-              : {}),
-          },
+          if (link) {
+            if (
+              parent?.type !== 'VariableDeclaration' ||
+              parent.kind !== 'const'
+            )
+              throw new Themes.InvalidError(
+                'Animation aliases require const bindings.',
+                node,
+              )
+
+            imported.set(node.start, link.call.name)
+
+            if (
+              ancestors.at(-3)?.type === 'Program' ||
+              ancestors.at(-3)?.type === 'ExportNamedDeclaration'
+            )
+              linkedNames.set(node.id.name, link)
+
+            if (
+              ancestors.some((node) => node.type === 'ExportNamedDeclaration')
+            )
+              exported[node.id.name] = link
+          }
         }
 
-        imported.set(variable.start, call.name!)
-        linkedNames.set(variable.id.name, link)
+        if (node.type !== 'CallExpression') return
 
-        if (call.exported) exported[variable.id.name] = link
-      }
+        const type = kind(node.callee)
+        if (!type) return
 
-      if (call.binding !== undefined) bindings.set(call.binding, call)
-    },
-    leave() {
-      ancestors.pop()
-    },
-  })
+        const variable =
+          parent?.type === 'VariableDeclarator' && parent.init === node
+            ? parent
+            : undefined
+        const statement = variable ? ancestors.at(-3) : parent
+        if (
+          node.optional ||
+          (node.arguments.length !== 1 &&
+            (![
+              'fontFace',
+              'fontFeatureValues',
+              'page',
+              'property',
+              'viewTransition',
+              ...named,
+            ].includes(type) ||
+              node.arguments.length !== 2)) ||
+          (!variable && parent?.type !== 'ExpressionStatement') ||
+          ancestors
+            .slice(0, -1)
+            .some(
+              (ancestor) =>
+                ![
+                  'Program',
+                  'ExportNamedDeclaration',
+                  'VariableDeclaration',
+                  'VariableDeclarator',
+                  'ExpressionStatement',
+                ].includes(ancestor.type),
+            ) ||
+          (variable &&
+            (statement?.type !== 'VariableDeclaration' ||
+              statement.kind !== 'const' ||
+              variable.id.type !== 'Identifier'))
+        )
+          throw new Themes.InvalidError(
+            'Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.',
+            node,
+          )
+        if (named.includes(type) && !variable)
+          throw new Themes.InvalidError(
+            'Named stylesheet definitions require a module-level named constant.',
+            node,
+          )
+
+        const context = node.arguments[1]
+        const idProperty =
+          context?.type === 'ObjectExpression'
+            ? context.properties.find(
+                (property) =>
+                  property.type === 'Property' &&
+                  !property.computed &&
+                  (property.key.type === 'Identifier'
+                    ? property.key.name
+                    : property.key.type === 'Literal'
+                      ? property.key.value
+                      : undefined) === 'id',
+              )
+            : undefined
+        if (
+          idProperty &&
+          (idProperty.type !== 'Property' ||
+            idProperty.value.type !== 'Literal' ||
+            typeof idProperty.value.value !== 'string' ||
+            !idProperty.value.value)
+        )
+          throw new Themes.InvalidError(
+            'Stylesheet ids must be nonempty string literals.',
+            node,
+          )
+
+        const explicit =
+          idProperty?.type === 'Property' &&
+          idProperty.value.type === 'Literal' &&
+          typeof idProperty.value.value === 'string'
+            ? idProperty.value.value
+            : undefined
+        const name =
+          explicit !== undefined
+            ? Identity.contribution(type, explicit)
+            : variable?.id.type === 'Identifier'
+              ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
+                  variable.id.name,
+                )
+                  .map((value) => value.codePointAt(0)!.toString(16))
+                  .join('-')}`
+              : undefined
+
+        const call: Call = {
+          kind: type,
+          start: node.start,
+          end: node.end,
+          argument: node.arguments[0]!,
+          context: node.arguments[1],
+          ...(type === 'cssFunction'
+            ? { function: { parameters: [], returns: '*' as const } }
+            : {}),
+          ...(named.includes(type)
+            ? {
+                name,
+                binding: variable!.start,
+                exported: ancestors.some(
+                  (node) => node.type === 'ExportNamedDeclaration',
+                ),
+              }
+            : {}),
+        }
+
+        calls.push(call)
+        if (named.includes(call.kind) && variable?.id.type === 'Identifier') {
+          const link: Themes.Link = {
+            binding: call.name!,
+            kind: call.kind === 'keyframes' ? 'animation' : 'rule-reference',
+            definition: Theme.define({}),
+            call: {
+              start: call.start,
+              end: call.end,
+              name: call.name!,
+              tokenType: '{}',
+              ...(call.function ? { function: call.function } : {}),
+              ...(call.kind !== 'keyframes'
+                ? { reference: call.kind as RuleReference.Kind }
+                : {}),
+            },
+          }
+
+          imported.set(variable.start, call.name!)
+          linkedNames.set(variable.id.name, link)
+
+          if (call.exported) exported[variable.id.name] = link
+        }
+
+        if (call.binding !== undefined) bindings.set(call.binding, call)
+      },
+      leave() {
+        ancestors.pop()
+      },
+    })
 
   function read(
     node: Extract<Ast.Node, { type: 'Identifier' | 'JSXIdentifier' }>,

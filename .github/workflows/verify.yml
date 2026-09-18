@@ -199,7 +199,7 @@ jobs:
         uses: ./.github/actions/install-dependencies
       - name: Install TypeScript ${{ matrix.typescript }}
         run: |
-          pnpm add --save-dev "${{ matrix.package }}@${{ matrix.typescript }}"
+          pnpm add --workspace-root --save-dev "${{ matrix.package }}@${{ matrix.typescript }}"
           ${{ matrix.tsc }} --version
       - name: Check types
         run: |

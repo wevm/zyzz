@@ -34,6 +34,7 @@ export default defineConfig({
     rules: { 'no-unused-vars': 'error' },
   },
   test: {
+    benchmark: { exclude: ['bench/native/**', '**/node_modules/**'] },
     alias: {
       zyzz: Path.resolve(import.meta.dirname, 'src'),
     },

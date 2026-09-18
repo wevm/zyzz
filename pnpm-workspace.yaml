@@ -1,5 +1,6 @@
 packages:
   - examples/*
+  - bench/native/app
 
 allowBuilds:
   esbuild: true

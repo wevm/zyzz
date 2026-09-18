@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "ZyzzNativeBench",
+    "slug": "zyzz-native-bench",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "dev.zyzz.nativebench",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "dev.zyzz.nativebench"
+    },
+    "plugins": ["./Network.ts"]
+  }
+}

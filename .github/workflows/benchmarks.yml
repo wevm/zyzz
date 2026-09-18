@@ -353,12 +353,13 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
       - name: Install TypeScript ${{ matrix.typescript }}
-        run: pnpm add --save-dev "typescript@${{ matrix.typescript }}"
+        run: pnpm add --workspace-root --save-dev "typescript@${{ matrix.typescript }}"
       - name: Check type instantiations
         run: |
           set -o pipefail
           pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
           cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
     timeout-minutes: 30
+
 permissions:
   contents: read

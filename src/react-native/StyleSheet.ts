@@ -97,6 +97,7 @@ export function compile<
     fail('invalid_options', 'Expected a Style.define result.', ['styles'])
 
   const names = new Set<string>()
+  let scalar = true
   for (const style of options.styles.styles) {
     if (!style.name || names.has(style.name))
       fail('invalid_options', 'Style names must be nonempty and unique.', [
@@ -113,6 +114,11 @@ export function compile<
 
       const declared = new Set<string>()
       for (const declaration of part.declarations) {
+        if (
+          typeof declaration.value !== 'number' &&
+          typeof declaration.value !== 'string'
+        )
+          scalar = false
         const path = [style.name, declaration.property]
         if (!Object.hasOwn(properties, declaration.property))
           fail(
@@ -148,6 +154,7 @@ export function compile<
   > = Object.create(null)
   const interned = new Map<string, NativeStyle>()
   const diagnostics: Diagnostic[] = []
+  let independent: Readonly<Record<string, NativeStyle>> | undefined
 
   for (const [label, theme] of themes) {
     if (!label)
@@ -171,7 +178,20 @@ export function compile<
       ColorScheme,
       Readonly<Record<string, NativeStyle>>
     >
+    const resolution = { schemeIndependent: true }
     for (const scheme of ['light', 'dark'] as const) {
+      if (independent) {
+        schemes[scheme] = independent
+        continue
+      }
+      if (
+        scheme === 'dark' &&
+        resolution.schemeIndependent &&
+        !diagnostics.length
+      ) {
+        schemes.dark = schemes.light
+        continue
+      }
       const compiled: Record<string, NativeStyle> = Object.create(null)
       for (const style of options.styles.styles) {
         const output: Record<string, unknown> = {}
@@ -181,7 +201,13 @@ export function compile<
             const property = declaration.property as keyof typeof properties
             const path = [label, scheme, style.name, property]
             try {
-              const value = resolve(declaration.value, metadata, scheme, path)
+              const value = resolve(
+                declaration.value,
+                metadata,
+                scheme,
+                path,
+                resolution,
+              )
               if (property === 'lineHeight') {
                 lineHeight = value
                 continue
@@ -332,6 +358,7 @@ export function compile<
         compiled[style.name] = shared
       }
       schemes[scheme] = Object.freeze(compiled)
+      if (scalar && !diagnostics.length) independent = schemes[scheme]
     }
     tables[label] = Object.freeze(schemes)
   }
@@ -727,6 +754,7 @@ function resolve(
   metadata: Token.Metadata | undefined,
   scheme: ColorScheme,
   path: readonly string[],
+  resolution: { schemeIndependent: boolean },
 ): number | string {
   if (typeof value === 'number' || typeof value === 'string') return value
   if (
@@ -750,6 +778,8 @@ function resolve(
     : value.value
   if (resolved === undefined)
     fail('unsupported_value', 'Theme is missing a live token.', path)
+  if (typeof resolved === 'object' && resolved.light !== resolved.dark)
+    resolution.schemeIndependent = false
   const scalar = typeof resolved === 'object' ? resolved[scheme] : resolved
   if (typeof scalar !== 'string' && typeof scalar !== 'number')
     fail(

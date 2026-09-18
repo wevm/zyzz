@@ -64,7 +64,14 @@ export function create<
 >(options: create.Options<axes, styles>): Callable<axes, styles[keyof styles]> {
   const axes = Object.entries(options.axes)
   for (const style of Object.values(options.styles)) freeze(style)
-  return (input = {}) => {
+  const staticStyle =
+    axes.length === 0 ? options.styles['0' as keyof styles] : undefined
+  const staticProps = staticStyle
+    ? Object.freeze({ style: staticStyle })
+    : undefined
+  return (input) => {
+    if (input === undefined && staticProps) return staticProps
+    if (input === undefined) input = {}
     for (const key of Object.keys(input))
       if (key !== 'style' && !Object.hasOwn(options.axes, key))
         throw new SelectionError(`Unknown native recipe input: ${key}.`)

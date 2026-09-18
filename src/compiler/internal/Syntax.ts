@@ -1,9 +1,14 @@
 /** Parses authoring modules while retaining TypeScript assertion syntax. @module */
 import * as Parser from 'oxc-parser'
 
+/** Parsed modules supplied by the host for a single compilation. */
+export const cache = Symbol('parsed modules')
+
 /** Preserves JSX authoring and retries TypeScript files with assertion-aware grammar. */
 export function parse(options: parse.Options) {
   const settings = {
+    // Unsupported hosts retain the JSON path.
+    experimentalRawTransfer: Parser.rawTransferSupported(),
     preserveParens: false,
     showSemanticErrors: true,
     sourceType: 'module' as const,

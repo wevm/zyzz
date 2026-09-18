@@ -93,7 +93,7 @@ async function compile(context: Context, source: string) {
       if (
         specifier === 'zyzz' ||
         (specifier.startsWith('zyzz/') &&
-          specifier !== 'zyzz/themes/default') ||
+          specifier !== 'zyzz/default') ||
         specifier.startsWith('node:')
       )
         continue

@@ -6,11 +6,8 @@ import * as Url from 'node:url'
 import type * as Graph from '../src/compiler/Graph.js'
 
 const root = Path.resolve(import.meta.dirname, '..')
-const moduleId = 'zyzz/themes/default.js'
-const source = await Fs.readFile(
-  Path.join(root, 'src/themes/default.ts'),
-  'utf8',
-)
+const moduleId = 'zyzz/default.js'
+const source = await Fs.readFile(Path.join(root, 'src/default.ts'), 'utf8')
 const result = await (async () => {
   const temporary = await Fs.mkdtemp(
     Path.join(root, '.fixture-theme-compiler-'),
@@ -41,7 +38,7 @@ const transformed = await Esbuild.transform(mapped, {
   sourcemap: 'external',
   target: 'esnext',
 })
-const directory = Path.join(root, 'dist/themes')
+const directory = Path.join(root, 'dist')
 await Fs.mkdir(directory, { recursive: true })
 // Development linking creates a source symlink; replace it without writing through it.
 await Fs.rm(Path.join(directory, 'default.js'), { force: true })
@@ -54,7 +51,8 @@ await Fs.writeFile(
   Path.join(directory, 'default.js.zyzz.json'),
   result.contracts[moduleId]!,
 )
+await Fs.mkdir(Path.join(directory, 'themes'), { recursive: true })
 await Fs.copyFile(
   Path.join(root, 'src/themes/LICENSE.tailwind'),
-  Path.join(directory, 'LICENSE.tailwind'),
+  Path.join(directory, 'themes/LICENSE.tailwind'),
 )

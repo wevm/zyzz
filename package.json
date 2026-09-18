@@ -97,6 +97,11 @@
       "types": "./dist/compiler/index.d.ts",
       "default": "./dist/compiler/index.js"
     },
+    "./default": {
+      "src": "./src/default.ts",
+      "types": "./dist/default.d.ts",
+      "default": "./dist/default.js"
+    },
     "./metro": {
       "src": "./src/metro/index.ts",
       "types": "./dist/metro/index.d.ts",
@@ -140,11 +145,6 @@
       "src": "./src/runtime/index.ts",
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
-    },
-    "./themes/default": {
-      "src": "./src/themes/default.ts",
-      "types": "./dist/themes/default.d.ts",
-      "default": "./dist/themes/default.js"
     },
     "./vite": {
       "src": "./src/vite/index.ts",

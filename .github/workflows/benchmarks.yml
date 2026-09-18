@@ -258,9 +258,9 @@ jobs:
           BENCH_RENDER_OUTPUT: bench/results/render-base
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          # Keep installed dependencies and the harness fixed; entrypoints follow source.
-          trap 'git restore --source=HEAD --worktree -- package.json src' EXIT
-          git restore --source="$BASE_SHA" --worktree -- src
+          # Keep dependencies and the benchmark harness fixed; build scripts follow source.
+          trap 'git restore --source=HEAD --worktree -- package.json scripts/build-default-theme.ts src' EXIT
+          git restore --source="$BASE_SHA" --worktree -- scripts/build-default-theme.ts src
           node scripts/benchmark-manifest.ts
           mkdir -p "$BENCH_RENDER_OUTPUT"
           printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"

@@ -187,10 +187,10 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `theme` and raw `tokens`. Scales use conventional named steps, and colors ship as light/dark pairs.
+The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `theme`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Scales use conventional named steps, and colors ship as light/dark pairs.
 
 ```ts
-import { style } from 'zyzz/themes/default'
+import { style } from 'zyzz/default'
 
 namespace styles {
   export const button = style({ color: 'blue.700', padding: 4 })
@@ -202,7 +202,7 @@ Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to
 ```ts
 // zyzz.config.ts
 import { Config, Theme } from 'zyzz'
-import { theme as defaultTheme } from 'zyzz/themes/default'
+import { theme as defaultTheme } from 'zyzz/default'
 
 export const { style, theme, variants } = Config.create({
   theme: Theme.extend(defaultTheme, {

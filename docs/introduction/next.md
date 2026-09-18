@@ -1,7 +1,6 @@
 # Next.js Setup
 
-> [!NOTE]
-> Preview integration. Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, rendering in Chromium 153 with default build targets. Client JavaScript source maps trace packed variant applications to their authored call sites.
+Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, rendering in Chromium 153 with default build targets. Client JavaScript source maps trace packed variant applications to their authored call sites.
 
 Wrap the existing Next.js configuration with the `zyzz` integration. The wrapper owns source transformation, CSS delivery, and dependency watching.
 

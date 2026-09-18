@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#benchmarks">Benchmarks</a> · <a href="#comparison">Comparison</a> · <a href="docs/guides/README.md">Guides</a> · <a href="docs/concepts.md">Concepts</a> · <a href="docs/api/README.md">API Reference</a>
+  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="docs/guides/README.md">Guides</a> · <a href="docs/api/README.md">API Reference</a>
 </p>
 
 ## Overview
@@ -29,6 +29,26 @@ export function Card() {
 }
 ```
 
+## Philosophy
+
+- **Typed.** Properties, tokens, and variants carry their constraints into every call.
+- **Standard.** Styles use familiar CSS properties, selectors, queries, and cascade behavior.
+- **Agnostic.** The core is independent of frameworks, build tools, and environments.
+- **Universal.** Shared definitions target web and native with explicit platform capabilities.
+- **Minimal.** Small, composable APIs keep configuration and dependencies optional.
+- **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
+
+## Features
+
+- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
+- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
+- [**Variants**](#variants): typed component choices, defaults, and compound rules.
+- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
+- [**Value Syntax**](#value-syntax): importance, ordered fallbacks, and typed token and variable references.
+- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
+- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
+
 ## Getting Started
 
 Try the [React + Vite playground](examples/vite-react) or the other [examples](examples) with `pnpm examples` from a repository checkout.
@@ -39,13 +59,17 @@ Try the [React + Vite playground](examples/vite-react) or the other [examples](e
 npm install zyzz
 ```
 
-Then:
+### Usage
 
-- [Setup with Vite](#setup-with-vite)
-- [Setup with CLI](#setup-with-cli)
-- [Use Compiler API](#use-compiler-api)
+Choose an integration or compile styles with the CLI or compiler API:
 
-### Setup with Vite
+- [Vite](#vite)
+- [Next.js](#nextjs)
+- [React Native](#react-native)
+- [CLI](#cli)
+- [Compiler API](#compiler-api)
+
+### Vite
 
 Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
 
@@ -61,7 +85,38 @@ export default defineConfig({
 
 Import components normally. The plugin transforms source modules and delivers CSS automatically during development and production builds. See [Vite Setup](docs/introduction/vite.md).
 
-### Setup with CLI
+### Next.js
+
+Wrap the existing Next.js configuration with `zyzz()`:
+
+```ts
+// next.config.ts
+import { zyzz } from 'zyzz/next'
+
+export default zyzz({
+  reactStrictMode: true,
+})
+```
+
+The integration handles source transformation and CSS delivery for Webpack and Turbopack. See [Next.js Setup](docs/introduction/next.md).
+
+### React Native
+
+Wrap the Expo Metro configuration with `zyzz()`:
+
+```ts
+// metro.config.ts
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+export default zyzz(getDefaultConfig(import.meta.dirname), {
+  units: { px: 1 },
+})
+```
+
+Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/expo-native).
+
+### CLI
 
 Build or watch source files:
 
@@ -72,7 +127,7 @@ npx zyzz dev
 
 Compiles `src` to `dist`, emitting `zyzz.css` as the complete stylesheet and `zyzz.js` as the saved-selection script beside adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
 
-### Use Compiler API
+### Compiler API
 
 Build source files programmatically with `Host` from `zyzz/node`:
 
@@ -103,24 +158,7 @@ await once(process, 'SIGINT')
 
 Watching performs an initial build, then reports rebuilds and errors. `await using` stops watchers, drains pending builds, and releases the output lock when the scope exits. See [Host.create](docs/api/node/Host/create.md).
 
-## Philosophy
-
-- **Typed.** Properties, tokens, and variants carry their constraints into every call.
-- **Standard.** Styles use familiar CSS properties, selectors, queries, and cascade behavior.
-- **Agnostic.** The core is independent of frameworks, build tools, and environments.
-- **Universal.** Shared definitions target web and native with explicit platform capabilities.
-- **Minimal.** Small, composable APIs keep configuration and dependencies optional.
-- **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
-
-## Features
-
-- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
-- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
-- [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
-- [**Variants**](#variants): typed component choices, defaults, and compound rules.
-- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
-- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
-- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
+## Walkthrough
 
 ### Typed Styles
 

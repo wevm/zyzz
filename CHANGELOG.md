@@ -1,5 +1,20 @@
 # zyzz
 
+## 0.0.3
+
+### Patch Changes
+
+- 0c6c948: Added nested typography theme sets to `zyzz/default`.
+  
+  ```ts
+  import { style } from 'zyzz/default'
+  
+  namespace styles {
+    export const title = style({ typography: 'heading.32' })
+    export const code = style({ typography: 'label.14.mono' })
+  }
+  ```
+
 ## 0.0.2
 
 ### Patch Changes

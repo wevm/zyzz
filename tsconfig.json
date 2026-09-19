@@ -41,6 +41,7 @@
     "examples/react-native",
     "examples/tanstack-start",
     "node_modules",
+    "site",
     "test-results"
   ]
 }

@@ -1,0 +1,30 @@
+{
+  "name": "@zyzz/site",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --dir .. build && vite build && tsc --noEmit",
+    "deploy": "pnpm build && wrangler deploy",
+    "dev": "pnpm --dir .. build && vite dev",
+    "preview": "vite preview",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "catalog:site",
+    "@tanstack/react-start": "catalog:site",
+    "react": "catalog:site",
+    "react-dom": "catalog:site",
+    "zyzz": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "catalog:",
+    "@types/node": "catalog:site",
+    "@types/react": "catalog:site",
+    "@types/react-dom": "catalog:site",
+    "@vitejs/plugin-react": "catalog:site",
+    "typescript": "catalog:",
+    "vite": "catalog:site",
+    "wrangler": "catalog:"
+  }
+}

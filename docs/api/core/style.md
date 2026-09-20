@@ -162,6 +162,8 @@ Use explicit selectors for application-owned data/ARIA states and ancestor/sibli
 
 Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected; pass the complete quoted scalar as a slot value when authoring dynamic content.
 
+Root and configured `style` helpers suggest common pseudo selectors and at-rule prefixes, plus CSS properties and values inside those conditions. At-rule prefixes require a complete query. Configured styles also suggest theme tokens inside those blocks.
+
 ### selectors
 
 A literal map of scoped selector strings to nested declarations. Every selector requires an explicit `&`. Template keys can interpolate previously declared `style` definitions. See [selectors](selectors.md).

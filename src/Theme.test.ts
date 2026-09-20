@@ -4,6 +4,7 @@
  */
 import { tokens as contextTokens } from './default.js'
 const bundled = Theme.define(contextTokens)
+import * as Packed from '../test/fixtures/Packed.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
@@ -22,6 +23,329 @@ const tokens = {
 } as const
 
 describe('define', () => {
+  test.each([
+    'cx(heading(), border())',
+    'cx(enabled && heading(), border())',
+    'cx(cx(heading(), border()), border())',
+  ])('preserves typography source maps through %s', (composition) => {
+    const output = Transform.compile({
+      moduleId: 'composition.ts',
+      source: `import {Config,cx} from 'zyzz';
+const {style}=Config.create({vars:{breakpoints:{tablet:'800px'},typography:{heading:{fontFamily:'serif',fontSize:'24px','@media >=tablet':{fontSize:'40px'}}}}});
+const heading=style({
+  typography:'heading',
+  '@media (min-width: 1000px)': { fontWeight: 500 },
+});
+const border=style({borderWidth:'2px'});
+declare const enabled:boolean;
+export const combined=${composition};`,
+    })
+    const mappings: Record<string, Set<number | null>> = {}
+    Trace.eachMapping(
+      new Trace.TraceMap(output.cssMap),
+      ({ name, originalLine }) => {
+        if (
+          name &&
+          [
+            'fontSize',
+            'fontFamily',
+            'fontWeight',
+            'borderWidth',
+            'typography',
+            "'@media (min-width: 1000px)'",
+          ].includes(name)
+        )
+          (mappings[name] ??= new Set()).add(originalLine)
+      },
+    )
+    expect(mappings).toMatchInlineSnapshot(`
+      {
+        "'@media (min-width: 1000px)'": Set {
+          5,
+        },
+        "borderWidth": Set {
+          7,
+        },
+        "fontFamily": Set {
+          4,
+        },
+        "fontSize": Set {
+          4,
+        },
+        "fontWeight": Set {
+          5,
+        },
+        "typography": Set {
+          4,
+        },
+      }
+    `)
+  })
+
+  test('maps responsive typography declarations to the authored preset', () => {
+    const output = Transform.compile({
+      moduleId: 'responsive.ts',
+      source: `import {Config} from 'zyzz';
+const {style}=Config.create({vars:{breakpoints:{tablet:'800px'},typography:{heading:{fontSize:'24px','@media >=tablet':{fontSize:'40px',lineHeight:'48px'}}}}});
+export const heading=style({
+  typography: 'heading',
+  fontWeight: 500,
+});`,
+    })
+    const mappings: Record<string, number | null> = {}
+    Trace.eachMapping(
+      new Trace.TraceMap(output.cssMap),
+      ({ name, originalLine }) => {
+        if (name) mappings[name] = originalLine
+      },
+    )
+    expect(mappings).toMatchInlineSnapshot(`
+      {
+        "1up51euxshgne-style-theme": 2,
+        "fontSize": 4,
+        "fontWeight": 5,
+        "lineHeight": 4,
+        "style-1up51euxshgne-211": 3,
+        "typography": 4,
+      }
+    `)
+  })
+
+  test('compiles native border tokens and rejects unsupported responsive queries', () => {
+    const theme = Theme.define({
+      borderWidth: { regular: '2px' },
+      breakpoints: { tablet: '800px' },
+      typography: {
+        heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
+      },
+    })
+    const output = StyleSheet.compile({
+      styles: Style.define(
+        { border: { borderWidth: 'regular' } },
+        { vars: theme },
+      ),
+      vars: { base: theme },
+    })
+    expect(output.styles.base.light.border).toMatchInlineSnapshot(`
+      {
+        "borderBottomWidth": 2,
+        "borderLeftWidth": 2,
+        "borderRightWidth": 2,
+        "borderTopWidth": 2,
+      }
+    `)
+    expect(() =>
+      StyleSheet.compile({
+        styles: Style.define(
+          { heading: { typography: 'heading' } },
+          { vars: theme },
+        ),
+        vars: { base: theme },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["heading"]: Selectors, queries, and nested rules are not supported on native.]`,
+    )
+  })
+
+  test('renders responsive theme typography and border widths through packed configuration', async () => {
+    const library = Graph.compile({
+      modules: {
+        'theme.ts': `import {Config,Vars} from 'zyzz';
+const base=Vars.define({
+  borderWidth:{regular:'2px',hairline:'0.5px'},
+  breakpoints:{tablet:'800px'},
+  containers:{card:'300px'},
+  typography:{heading:{fontSize:'24px',lineHeight:'30px',
+    '@media >=tablet':{fontSize:'40px',lineHeight:'48px'},
+    '@media (min-width: 1000.5px)':{fontSize:'48px',
+      '@container >=card':{lineHeight:'60px'}}}}
+});
+const alternate=Vars.extend(base,{
+  borderWidth:{regular:'4px'},
+  typography:{heading:{'@media >=tablet':{fontSize:'44px'}}}
+});
+export const {style,vars}=Config.create({vars:{base,alternate},defaultVars:'base'});`,
+      },
+    })
+    const contract = library.contracts['theme.ts']!
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
+    const source = `import {style,vars} from 'library';
+export const title=style({typography:'heading',borderStyle:'solid',borderWidth:'regular'});
+export const fixed=style({typography:'heading',fontSize:'18px'});
+export const important=style({typography:'heading !important'});
+export const logical=style({borderInlineStartStyle:'solid',borderInlineStartWidth:'regular'});
+export const root=vars().className;
+export const other=vars({set:'alternate'}).className;`
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'library.js': JSON.stringify({
+            ...JSON.parse(contract),
+            version: 24,
+          }),
+        },
+        imports: { 'app.ts': { library: 'library.js' } },
+        modules: { 'app.ts': source },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
+    )
+    const consumer = Graph.compile({
+      contracts: { 'library.js': contract },
+      imports: { 'app.ts': { library: 'library.js' } },
+      modules: { 'app.ts': source },
+    })
+    const output = consumer.modules['app.ts']!
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 600, height: 400 },
+      })
+      await page.setContent(
+        `<style>${output.css}</style><main style="container-type:inline-size"><p id="title">Title</p><p id="fixed">Fixed</p><p id="important" style="font-size:10px">Important</p><p id="logical">Logical</p></main>`,
+      )
+      const script = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          'app.ts':
+            output.code +
+            `
+          document.querySelector('main').className=root;
+          for(const [id,style] of Object.entries({title,fixed,important,logical})) document.getElementById(id).className=style().className;
+          window.alternate=other;`,
+        },
+        packages: {
+          library: { 'index.ts': library.modules['theme.ts']!.code },
+        },
+      })
+      await page.addScriptTag({ content: script })
+      await page.waitForFunction(
+        () => document.querySelector('#title')!.className !== '',
+      )
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"24px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).borderTopWidth),
+      ).toMatchInlineSnapshot(`"2px"`)
+      expect(
+        await page
+          .locator('#logical')
+          .evaluate(
+            (element) => getComputedStyle(element).borderInlineStartWidth,
+          ),
+      ).toMatchInlineSnapshot(`"2px"`)
+      await page.setViewportSize({ width: 900, height: 400 })
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"40px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).lineHeight),
+      ).toMatchInlineSnapshot(`"48px"`)
+      expect(
+        await page
+          .locator('#fixed')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"18px"`)
+      expect(
+        await page
+          .locator('#important')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"40px"`)
+      await page.evaluate(
+        'document.querySelector("main").className=window.alternate',
+      )
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"44px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).borderTopWidth),
+      ).toMatchInlineSnapshot(`"4px"`)
+      await page.setViewportSize({ width: 1100, height: 400 })
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"48px"`)
+      expect(
+        await page
+          .locator('#title')
+          .evaluate((element) => getComputedStyle(element).lineHeight),
+      ).toMatchInlineSnapshot(`"60px"`)
+      expect(
+        await page
+          .locator('#fixed')
+          .evaluate((element) => getComputedStyle(element).fontSize),
+      ).toMatchInlineSnapshot(`"18px"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('rejects malformed typography queries', () => {
+    const theme = Theme.define({
+      typography: {
+        heading: { '@media (min-width: 800px)': { fontSize: '24px' } },
+      },
+    })
+    expect(() =>
+      Style.define(
+        {
+          heading: { typography: 'heading.@media (min-width: 800px)' },
+        } as never,
+        { vars: theme },
+      ),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["heading","typography"]: Expected a named typography set from the bound theme.]`,
+    )
+    expect(() =>
+      Theme.define({
+        typography: {
+          heading: { '@supports (display: grid)': { fontSize: '24px' } },
+        },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","heading","@supports (display: grid)"]: Typography conditions must be media or container queries.]`,
+    )
+    expect(() =>
+      Theme.define({
+        typography: { heading: { '@media >=missing': { fontSize: '24px' } } },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","heading","@media >=missing"]: Unknown query threshold.]`,
+    )
+    expect(() =>
+      Theme.define({
+        typography: {
+          heading: {
+            '@media (min-width: 800px)': { other: { fontSize: '24px' } },
+          },
+        },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","heading","@media (min-width: 800px)","other"]: Typography query blocks accept only typography fields and queries.]`,
+    )
+    expect(() =>
+      Theme.define({
+        typography: { '@media (min-width: 800px)': { fontSize: '24px' } },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["typography","@media (min-width: 800px)"]: Typography properties require a named set.]`,
+    )
+  })
+
   test.each(['body', 'body !important', 'body  !important'])(
     'maps expanded typography fields to their authored declaration: %s',
     (typography) => {

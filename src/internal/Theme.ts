@@ -13,6 +13,7 @@ import * as Token from './Token.js'
 import * as Typography from './Typography.js'
 import type * as Value from './Value.js'
 import type * as Style from '../Style.js'
+import * as Condition from './Condition.js'
 
 /** Complete color-scheme pair or a shared color. */
 export type Color =
@@ -128,6 +129,8 @@ export function extend<
     data.contract,
     data.values,
     data.queries,
+    undefined,
+    data.paths,
   ) as unknown as Definition<tokens, boundStyle, boundVariants>
 }
 
@@ -218,6 +221,7 @@ type ReferenceTree<
 type Scalar<group> = group extends
   | 'spacing'
   | 'borderRadius'
+  | 'borderWidth'
   | 'margin'
   | 'padding'
   ? Literal.Length
@@ -242,6 +246,10 @@ export type Tokens = {
   readonly borderColor?: Palette<Color> | undefined
   /** Nonnegative corner radii. */
   readonly borderRadius?: Palette<Literal.Length> | undefined
+  /** Nonnegative widths for physical and logical border declarations. */
+  readonly borderWidth?:
+    | Palette<Exclude<Literal.Length, `${number}%`>>
+    | undefined
   /** Compile-time viewport width thresholds. */
   readonly breakpoints?: Readonly<Record<string, Query.Length>> | undefined
   /** Shared colors available to every supported color property. */
@@ -288,6 +296,7 @@ function build(
   base?: Readonly<Record<string, Token.Value>>,
   baseQueries?: Query.Metadata,
   scope?: string,
+  basePaths?: Readonly<Record<string, readonly string[]>>,
 ) {
   const values: Record<string, Token.Value> = Object.assign(
     Object.create(null),
@@ -306,6 +315,9 @@ function build(
     ) as Record<string, string>,
   }
 
+  const paths: Record<string, readonly string[]> = { ...basePaths }
+  const conditions: (readonly string[])[] = []
+
   let hasQueries = !!baseQueries
   const active = new Set<object>()
 
@@ -315,6 +327,8 @@ function build(
     path: readonly string[],
   ) {
     const key = path.join('.')
+    if (path.some((part) => part.startsWith('@')))
+      paths[key] = Object.freeze([...path])
     const scalar = typeof value === 'string' || typeof value === 'number'
     if (group === 'typography' && scalar)
       throw new InvalidError(
@@ -374,6 +388,24 @@ function build(
 
     for (const [name, child] of entries!) {
       const next = [...path, name]
+      if (group === 'typography' && name.startsWith('@')) {
+        if (!Typography.condition(name))
+          throw new InvalidError(
+            next,
+            'Typography conditions must be media or container queries.',
+          )
+        conditions.push(next)
+      }
+      if (
+        group === 'typography' &&
+        path.some((part) => part.startsWith('@')) &&
+        !Typography.condition(name) &&
+        !Typography.properties.includes(name as Typography.Property)
+      )
+        throw new InvalidError(
+          next,
+          'Typography query blocks accept only typography fields and queries.',
+        )
       if (
         base &&
         !Object.keys(base).some(
@@ -482,6 +514,7 @@ function build(
         'backgroundColor',
         'borderColor',
         'borderRadius',
+        'borderWidth',
         'color',
         'margin',
         'padding',
@@ -510,7 +543,8 @@ function build(
     for (const [name, value] of entries) {
       if (
         group === 'typography' &&
-        Typography.properties.includes(name as Typography.Property)
+        (Typography.properties.includes(name as Typography.Property) ||
+          name.startsWith('@'))
       )
         throw new InvalidError(
           [group, name],
@@ -520,12 +554,20 @@ function build(
     }
   }
 
+  for (const path of conditions) {
+    try {
+      Condition.normalize(Query.resolve(path.at(-1)!, queries))
+    } catch (error) {
+      throw new InvalidError(path, (error as Error).message)
+    }
+  }
+
   type Tree = { [key: string]: Tree | Token.Reference }
 
   const tokens: Tree = Object.create(null)
 
   for (const [path, value] of Object.entries(values)) {
-    const parts = path.split('.')
+    const parts = paths[path] ?? path.split('.')
     let tree = tokens
 
     for (const part of parts.slice(0, -1))
@@ -577,6 +619,7 @@ function build(
       {
         value: Object.freeze({
           contract,
+          ...(Object.keys(paths).length ? { paths: Object.freeze(paths) } : {}),
           values: Object.freeze(values),
           ...(hasQueries
             ? {
@@ -627,7 +670,8 @@ function record(
     if (
       typeof key !== 'string' ||
       !key ||
-      key.includes('.') ||
+      (key.includes('.') &&
+        !(path[0] === 'typography' && Typography.condition(key))) ||
       !descriptor.enumerable ||
       !('value' in descriptor)
     )
@@ -694,7 +738,7 @@ type ValidPalette<palette, group> = palette extends undefined
       [key in keyof palette]: key extends `${string}!${string}`
         ? never
         : group extends 'typography'
-          ? key extends Typography.Property
+          ? key extends Typography.Property | `@${string}`
             ? never
             : ValidTree<palette[key], group>
           : ValidTree<palette[key], group>
@@ -767,11 +811,22 @@ type ValidTree<tree, group> = tree extends string | number
         [key in keyof tree]: key extends `${string}!${string}`
           ? never
           : group extends 'typography'
-            ? key extends Typography.Property
-              ? tree[key] extends string | number
-                ? ValidTree<tree[key], key>
+            ? key extends `@${string}`
+              ? key extends Typography.Condition
+                ? ValidTree<tree[key], group> &
+                    Record<
+                      Exclude<
+                        keyof tree[key],
+                        Typography.Property | Typography.Condition
+                      >,
+                      never
+                    >
                 : never
-              : ValidTree<tree[key], group>
+              : key extends Typography.Property
+                ? tree[key] extends string | number
+                  ? ValidTree<tree[key], key>
+                  : never
+                : ValidTree<tree[key], group>
             : ValidTree<tree[key], group>
       }
     : group extends 'color' | 'backgroundColor' | 'borderColor' | 'textColor'

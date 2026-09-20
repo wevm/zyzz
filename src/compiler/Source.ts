@@ -101,6 +101,8 @@ export type Call = {
   readonly shorthands?: Shorthands.Map | undefined
   /** Emitted typography field counts keyed by authored property offsets. */
   readonly typography?: ReadonlyMap<number, number> | undefined
+  /** Emitted typography query counts keyed by authored property offsets. */
+  readonly typographyQueries?: ReadonlyMap<number, number> | undefined
   /** Native HTML attribute output selected by the bound configuration. */
   readonly output?: 'html' | undefined
   /** Typed runtime slots for callback definitions. */
@@ -667,6 +669,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     const name = `style-${namespace}-${call.start}`
     const locations: Style.SourceLocation[] = []
     const typography = new Map<number, number>()
+    const typographyQueries = new Map<number, number>()
     const conditionKeys = new Map<string, Ast.Node>()
 
     function object(
@@ -1141,10 +1144,12 @@ export function extract(options: extract.Options): extract.ReturnType {
           Object.keys(values).flatMap((key) => mappings?.[key] ?? [key]),
         )
         const parsed = Value.parse(values.typography, 'fontFamily')
-        const count = Typography.fields(
+        const keys = Typography.keys(
           theme,
           parsed && !('invalid' in parsed) ? parsed.value : values.typography,
-        ).filter((field) => !explicit.has(field)).length
+          explicit,
+        )
+        const queries = keys.filter(Typography.condition).length
         for (const property of properties) {
           if (property.type !== 'Property') continue
           const key =
@@ -1153,7 +1158,10 @@ export function extract(options: extract.Options): extract.ReturnType {
               : property.key.type === 'Literal'
                 ? property.key.value
                 : undefined
-          if (key === 'typography') typography.set(property.start, count)
+          if (key === 'typography') {
+            typography.set(property.start, keys.length - queries)
+            if (queries) typographyQueries.set(property.start, queries)
+          }
         }
       }
 
@@ -1242,6 +1250,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           : {}),
         ...(shorthands ? { shorthands } : {}),
         ...(typography.size ? { typography } : {}),
+        ...(typographyQueries.size ? { typographyQueries } : {}),
         ...(themes?.styles.get(call.start)?.output
           ? { output: 'html' as const }
           : {}),

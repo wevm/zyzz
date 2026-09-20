@@ -157,6 +157,30 @@ describe('conditions', () => {
       // @ts-expect-error Disjoint outer keys do not hide invalid nested declarations.
       style(invalid)
     })
+
+    test('validates declarations independently of completion hints', () => {
+      style({
+        '@media (min-width: 768px)': {
+          fontSize: '72px',
+          width: 'auto',
+          '::before': { content: '""', display: 'block' },
+        },
+      })
+      const { style: configured } = Config.create({
+        theme: { fontSize: { hero: '72px' } },
+      })
+      configured({ '@media (min-width: 768px)': { fontSize: 'hero' } })
+
+      // @ts-expect-error Suggested at-rule prefixes still require a query.
+      style({ '@media': { width: 'auto' } })
+      // @ts-expect-error Nested hints do not accept unknown declarations.
+      style({ '@media (min-width: 768px)': { fontSzie: '72px' } })
+      // @ts-expect-error Nested widths still require a CSS value.
+      style({ '@media (min-width: 768px)': { width: '' } })
+      // @ts-expect-error Configured nested declarations keep their value domains.
+      configured({ '::before': { display: 'invalid-display' } })
+    })
+
     test('retains recursive literal and bound contracts', () => {
       style({
         '--escaped\\&name': 'red',

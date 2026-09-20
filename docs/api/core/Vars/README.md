@@ -85,3 +85,21 @@ Nested scopes select their own values. The nearest enclosing scope supplies vari
 Source linking and packed-library contracts retain variable definitions, references, mappings, and selection helpers. Variable-set libraries require compiler contract version 26 or later.
 
 `config.vars` is both the reference tree and the scope selector. `Vars` replaces the removed `Theme` module; configuration uses `vars` and `defaultVars`. Appearance controls read and save `{ set, colorScheme }`.
+
+## Typography and border widths
+
+The `borderWidth` category maps to physical and logical border-width properties, excluding `borderImageWidth`. Named typography sets support ordered `@media` and `@container` blocks:
+
+```ts
+const base = Vars.define({
+  borderWidth: { regular: '2px' },
+  breakpoints: { tablet: '48rem' },
+  typography: {
+    heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
+  },
+})
+const { style } = Config.create({ vars: base })
+const heading = style({ typography: 'heading', borderWidth: 'regular' })
+```
+
+Explicit typography fields override matching base and conditional preset fields in the same style block. `Vars.extend` can override existing responsive fields. Native compilation rejects responsive typography queries.

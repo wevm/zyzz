@@ -415,9 +415,8 @@ export function define(
         }
 
         const path = parsed?.value ?? input
-        const data = theme?.[Token.definition]
-        const fields = Typography.fields(theme, path)
-        if (!fields.length) {
+        const entries = Typography.entries(theme, path)
+        if (!entries.length) {
           report(
             'invalid_value',
             [name, property],
@@ -430,24 +429,9 @@ export function define(
         const explicit = new Set(
           authored.flatMap(([property]) => mappings?.[property] ?? [property]),
         )
-        return fields
-          .filter((field) => !explicit.has(field))
-          .map((field) => {
-            const key = `typography.${path}.${field}`
-            const reference = Token.create({
-              contract: data!.contract,
-              group: field,
-              path: key,
-              value: data!.values[key]!,
-            })
-            return [
-              field,
-              parsed?.important
-                ? Token.compose([reference, ' !important'])
-                : reference,
-              property,
-            ] as const
-          })
+        return Typography.entries(theme, path, explicit, parsed?.important).map(
+          ([field, value]) => [field, value, property] as const,
+        )
       },
     )
 

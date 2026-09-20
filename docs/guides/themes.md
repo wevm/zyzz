@@ -25,6 +25,21 @@ const rail = style({ width: vars.spacing.page })
 
 References keep their source identity. Changing a primitive through its own scope updates values that reference it. Explicit references retain their scalar domain regardless of category mappings.
 
+### Typography Sets
+
+Apply a named set of font properties with a dotted path. The [default theme](../api/default.md#typography-sets) includes Geist's headings, buttons, labels, and copy styles:
+
+```ts
+import { style } from 'zyzz/default'
+
+namespace styles {
+  export const title = style({ typography: 'heading.32' })
+  export const body = style({ typography: 'copy.14', fontWeight: 500 })
+}
+```
+
+Each set bundles font family, size, weight, letter spacing, and line height. Sets can include `@media` and `@container` blocks. Explicit typography fields override base and conditional preset fields within the same block. [Custom sets](../api/core/Vars/README.md) use the same nested structure and support field overrides with `Vars.extend`.
+
 ### Property Mappings
 
 Default mappings connect familiar categories to CSS properties. Dedicated categories such as `padding` take precedence over shared `spacing` for the same name. Custom mappings replace one category at a time; `[]` disables shorthand lookup for that category.

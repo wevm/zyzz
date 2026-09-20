@@ -18,6 +18,10 @@ export function accepts(
   if (group === 'number' || group === 'string') return false
   if (group === 'color') return Literal.rule(property)?.kind === 'color'
   if (group === 'borderColor') return /^border.*Color$/.test(property)
+  if (group === 'borderWidth')
+    return /^border(?:Block|Inline)?(?:Start|End|Top|Right|Bottom|Left)?Width$/.test(
+      property,
+    )
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
 
@@ -243,6 +247,7 @@ export type Group =
   | 'backgroundColor'
   | 'borderColor'
   | 'borderRadius'
+  | 'borderWidth'
   | 'color'
   | 'margin'
   | 'padding'
@@ -277,6 +282,8 @@ export function is(value: unknown): value is Reference {
 
 /** Immutable theme data carried directly by each definition. */
 export type Metadata = {
+  /** Original segments for typography paths containing query punctuation. */
+  readonly paths?: Readonly<Record<string, readonly string[]>> | undefined
   readonly queries?: Query.Metadata | undefined
   readonly contract: Contract
   readonly values: Readonly<Record<string, Value>>
@@ -389,9 +396,14 @@ type Property<group extends Group> = group extends 'number' | 'string'
             }[keyof typeof Literal.rules]
           : group extends 'borderColor'
             ? Extract<keyof Literal.Properties, `border${string}Color`>
-            : group extends 'borderRadius'
-              ? Extract<keyof Literal.Properties, `border${string}Radius`>
-              : group
+            : group extends 'borderWidth'
+              ? Exclude<
+                  Extract<keyof Literal.Properties, `border${string}Width`>,
+                  'borderImageWidth'
+                >
+              : group extends 'borderRadius'
+                ? Extract<keyof Literal.Properties, `border${string}Radius`>
+                : group
 
 /** Immutable portable reference retaining its defining fallback. */
 export type Reference<group extends Group = Group> = {
@@ -420,6 +432,7 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     'backgroundColor',
     'borderColor',
     'borderRadius',
+    'borderWidth',
     'margin',
     'padding',
     'spacing',

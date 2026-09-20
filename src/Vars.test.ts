@@ -310,3 +310,11 @@ test('keeps reference paths that collide with function properties', () => {
   expect(typeof config.vars).toBe('function')
   expect(config.vars().className).toContain('z_theme-')
 })
+
+test('rejects missing responsive typography thresholds', () => {
+  expect(() =>
+    Vars.define({
+      typography: { heading: { '@media >=missing': { fontSize: '24px' } } },
+    }),
+  ).toThrow('Unknown query threshold.')
+})

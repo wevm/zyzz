@@ -165,6 +165,15 @@ export function read(
         'Packed typography sets require contract version 24 or later.',
       )
 
+    if (
+      (data.version as number) < 25 &&
+      (definition[Token.definition].paths ||
+        Object.hasOwn(definition.tokens, 'borderWidth'))
+    )
+      throw new Error(
+        'Packed responsive typography and border widths require contract version 25 or later.',
+      )
+
     themes[name] = Token.bind(definition, contract)
     types[name] = type(input(definition))
   }
@@ -674,6 +683,15 @@ export function write(
         )
       )
         return 26
+      if (
+        Object.values(themes).some(
+          (theme) =>
+            theme[Token.definition].paths ||
+            Object.hasOwn(theme.tokens, 'borderWidth'),
+        )
+      )
+        return 25
+
       if (
         Object.values(themes).some((theme) =>
           Object.hasOwn(theme.tokens, 'typography'),

@@ -1,5 +1,6 @@
 /** Normalizes shared variable data into compiler-owned token contracts. @module */
-import type * as Query from './Query.js'
+import * as Query from './Query.js'
+import * as Typography from './Typography.js'
 import * as Condition from './Condition.js'
 import * as Identity from './Identity.js'
 import * as Literal from './Literal.js'
@@ -45,6 +46,7 @@ export function from(metadata: Token.Metadata): Vars.Definition {
     metadata.values,
     metadata.contract,
     metadata.queries,
+    metadata.paths,
   ) as Vars.Definition
 }
 
@@ -54,11 +56,14 @@ export function build(
   contract: Token.Contract,
   base?: Token.Metadata['values'],
   baseQueries?: Query.Metadata,
+  basePaths?: Token.Metadata['paths'],
 ): Vars.Definition {
   const values: Record<string, Token.Value> = Object.assign(
     Object.create(null),
     base,
   )
+  const paths = { ...basePaths }
+  const conditions: string[][] = []
   const active = new Set<object>()
   function visit(input: unknown, path: string[]) {
     if (
@@ -86,6 +91,8 @@ export function build(
           path,
           'Variable overrides must preserve their domain.',
         )
+      if (path.some((part) => Typography.condition(part)))
+        paths[name] = Object.freeze([...path])
       values[name] = value
       return
     }
@@ -96,7 +103,9 @@ export function build(
     if (!entries.length && !base)
       throw new Vars.InvalidError(path, 'Variable records cannot be empty.')
     for (const [key, value] of entries) {
-      if (!key || /[.!]/.test(key) || key.startsWith('@'))
+      const query = path[0] === 'typography' && Typography.condition(key)
+      if (query) conditions.push([...path, key])
+      if (!query && (!key || /[.!]/.test(key) || key.startsWith('@')))
         throw new Vars.InvalidError(
           [...path, key],
           'Expected a nonempty variable key without dots or conditions.',
@@ -122,10 +131,23 @@ export function build(
   const queryData = Theme.define(queries as Theme.Tokens)[Token.definition]
     .queries
   if (Object.keys(fields).length) visit(fields, [])
+  for (const path of conditions) {
+    try {
+      Condition.normalize(
+        Query.resolve(
+          path.at(-1)!,
+          queryData ?? { breakpoints: {}, containers: {}, containerNames: [] },
+        ),
+      )
+    } catch (error) {
+      throw new Vars.InvalidError(path, (error as Error).message)
+    }
+  }
   return buildTree(
     Object.freeze(values),
     contract,
     queryData,
+    Object.keys(paths).length ? Object.freeze(paths) : undefined,
   ) as Vars.Definition
 }
 
@@ -133,11 +155,12 @@ function buildTree(
   values: Token.Metadata['values'],
   contract: Token.Contract,
   queries?: Query.Metadata,
+  paths?: Token.Metadata['paths'],
 ) {
   type Tree = { [key: string]: Tree | Token.Reference }
   const tree: Tree = Object.create(null)
   for (const [path, value] of Object.entries(values)) {
-    const parts = path.split('.')
+    const parts = paths?.[path] ?? path.split('.')
     let target = tree
     for (const key of parts.slice(0, -1))
       target = (target[key] ??= Object.create(null)) as Tree
@@ -153,7 +176,12 @@ function buildTree(
     Object.freeze(tree)
   }
   Object.defineProperty(tree, Token.definition, {
-    value: Object.freeze({ contract, values, queries }),
+    value: Object.freeze({
+      contract,
+      values,
+      queries,
+      ...(paths ? { paths } : {}),
+    }),
   })
   freeze(tree)
   return tree

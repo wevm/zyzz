@@ -255,7 +255,7 @@ style({
 
 Radius supports all four physical and logical corners. Scalar shorthands apply one value to their sides; arrays remain fallbacks.
 
-`borderColor` tokens apply to every border color property before shared `color` tokens. `borderRadius` tokens apply to every corner radius. Outlines use shared `color` tokens. Widths accept nonnegative lengths, zero, thin, medium, or thick; radii additionally accept percentages. Outline offsets accept negative lengths. Color/style lists accept up to four physical components or two logical components. Corners accept elliptical pairs; borderRadius accepts slash-separated axis lists. Combined border/outline strings remain deferred.
+`borderColor` tokens apply to every border color property before shared `color` tokens. `borderRadius` tokens apply to every corner radius. `borderWidth` tokens apply to physical and logical border widths. Outlines use shared `color` tokens. Widths accept nonnegative lengths, zero, thin, medium, or thick; radii additionally accept percentages. Outline offsets accept negative lengths. Color/style lists accept up to four physical components or two logical components. Corners accept elliptical pairs; borderRadius accepts slash-separated axis lists. Combined border/outline strings remain deferred.
 
 Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`, `none`, `outset`, `ridge`, and `solid`. [Outline styles](https://www.w3.org/TR/css-ui-4/#outline-props) accept `auto` instead of `hidden`. Rendering details remain browser-owned; native border/outline conversion is not implemented.
 

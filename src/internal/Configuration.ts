@@ -19,7 +19,7 @@ import * as VariableSets from './VariableSets.js'
 import * as Vars from '../Vars.js'
 import * as Selection from '../runtime/Selection.js'
 import * as Token from './Token.js'
-import type * as Typography from './Typography.js'
+import type * as Completion from './Completion.js'
 
 /** Creates token-free authoring without a configuration file or global state. */
 export function create(): create.ReturnType<{}>
@@ -564,7 +564,7 @@ export type StyleFactory<
         NoInfer<
           Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
         >) &
-      CompletionProperties<tokens, NoInfer<styles>>,
+      Completion.Properties<tokens, NoInfer<styles>>,
     ...options: Parameters<callback> extends [Record<string, string | number>]
       ? values extends Binding.Inputs<values>
         ? [options?: style.DefinitionOptions]
@@ -574,28 +574,12 @@ export type StyleFactory<
   <const styles extends Record<string, unknown>>(
     styles: styles &
       NoInfer<Body<styles, tokens, layers, mappings>> &
-      CompletionProperties<tokens>,
+      Completion.Properties<tokens>,
     options?: style.DefinitionOptions,
   ): style.ReturnType<output>
 }
 
 type Keys<styles> = styles extends unknown ? keyof styles : never
-
-/** Keeps completion hints separate from inferred declaration validation. */
-type CompletionProperties<tokens, styles = Record<string, unknown>> = {
-  readonly [property in keyof Literal.Properties & keyof styles]?:
-    | (string extends Literal.Properties[property]
-        ? never
-        : Literal.Properties[property])
-    | Token.Names<tokens, property>
-    | (string & {})
-    | number
-    | object
-} & {
-  readonly [property in 'typography' & keyof styles]?:
-    | Typography.Names<tokens>
-    | (string & {})
-}
 
 /** Checked declaration body shared by configured styles and recipe choices. */
 export type Body<

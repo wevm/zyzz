@@ -10,6 +10,73 @@ import * as Config from './Configuration.js'
 import { Css, global } from 'zyzz/web'
 
 describe('define', () => {
+  test('infers responsive typography and border width domains', () => {
+    const { style, theme } = Config.create({
+      theme: {
+        borderWidth: { regular: '1px', hairline: '0.5px' },
+        breakpoints: { tablet: '800px' },
+        typography: {
+          heading: {
+            fontSize: '24px',
+            '@media >=tablet': { fontSize: '40px' },
+          },
+          conditional: {
+            '@container (min-width: 300.5px)': { lineHeight: '32px' },
+          },
+        },
+      },
+    })
+    style({
+      typography: 'heading',
+      borderWidth: 'regular',
+      borderInlineStartWidth: 'hairline',
+    })
+    style({
+      typography: 'conditional !important',
+      borderTopWidth: theme.tokens.borderWidth.regular,
+    })
+    expectTypeOf(theme.tokens.borderWidth.regular).toEqualTypeOf<
+      Theme.Reference<'borderWidth'>
+    >()
+    expectTypeOf(
+      theme.tokens.typography.heading['@media >=tablet'].fontSize,
+    ).toEqualTypeOf<Theme.Reference<'fontSize'>>()
+    Theme.extend(theme, {
+      typography: { heading: { '@media >=tablet': { fontSize: '44px' } } },
+    })
+    // @ts-expect-error Query blocks are not named typography sets.
+    style({ typography: 'heading.@media >=tablet' })
+    // @ts-expect-error Width tokens cannot supply colors.
+    style({ color: theme.tokens.borderWidth.regular })
+    // @ts-expect-error Border widths do not supply image slice widths.
+    style({ borderImageWidth: theme.tokens.borderWidth.regular })
+    // @ts-expect-error Border widths do not supply outline widths.
+    style({ outlineWidth: 'regular' })
+    // @ts-expect-error Border widths exclude percentages.
+    Theme.define({ borderWidth: { regular: '10%' } })
+    // @ts-expect-error Border widths are nonnegative.
+    Theme.define({ borderWidth: { regular: '-1px' } })
+    const invalidField = {
+      typography: { heading: { '@media >=tablet': { fontSize: 'red' } } },
+    } as const
+    const invalidCondition = {
+      typography: {
+        heading: { '@supports (display: grid)': { fontSize: '24px' } },
+      },
+    } as const
+    const nestedSet = {
+      typography: {
+        heading: { '@media >=tablet': { other: { fontSize: '24px' } } },
+      },
+    } as const
+    // @ts-expect-error Typography query fields retain their property domains.
+    Theme.define(invalidField)
+    // @ts-expect-error Typography supports media and container queries only.
+    Theme.define(invalidCondition)
+    // @ts-expect-error Queries accept fields and queries, not named sets.
+    Theme.define(nestedSet)
+  })
+
   test('infers nested typography names and property domains', () => {
     const theme = Theme.define({
       typography: {

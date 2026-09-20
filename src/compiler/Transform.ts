@@ -1037,11 +1037,18 @@ export function compile(options: compile.Options): compile.ReturnType {
                   ? String(property.key.value)
                   : ''
 
-            if (key === 'typography' && call.typography?.has(property.start))
+            if (key === 'typography' && call.typography?.has(property.start)) {
+              conditionNodes.push(
+                ...Array.from(
+                  { length: call.typographyQueries?.get(property.start) ?? 0 },
+                  () => property,
+                ),
+              )
               return Array.from(
                 { length: call.typography.get(property.start)! },
                 () => property,
               )
+            }
 
             const authoredLocations: readonly Ast.Node[] =
               value.type === 'ArrayExpression'

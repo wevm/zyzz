@@ -1,4 +1,5 @@
 /** Defines immutable variable sets and compatible scoped overrides. @module */
+import type * as Typography from './internal/Typography.js'
 import type * as Theme from './internal/Theme.js'
 import * as Identity from './internal/Identity.js'
 import type * as Literal from './internal/Literal.js'
@@ -113,6 +114,7 @@ export function extend<const values extends Values>(
     metadata.contract,
     metadata.values,
     metadata.queries,
+    metadata.paths,
   ) as Definition<values>
 }
 
@@ -181,7 +183,7 @@ export class InvalidError extends Error {
   override name = 'Vars.InvalidError'
 }
 
-type Validated<value> = Values extends value
+type Validated<value, typography extends boolean = false> = Values extends value
   ? value
   : value extends readonly string[]
     ? value
@@ -205,8 +207,15 @@ type Validated<value> = Values extends value
                     | `${string}!${string}`
                     | `@${string}`
                     | ''
-                    ? never
-                    : Validated<value[key]>
+                    ? typography extends true
+                      ? key extends Typography.Condition
+                        ? Validated<value[key], true>
+                        : never
+                      : never
+                    : Validated<
+                        value[key],
+                        key extends 'typography' ? true : typography
+                      >
                 }
 
 /** Applies a compatible variable set and optional color scheme to a scope. */

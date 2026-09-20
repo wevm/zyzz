@@ -120,3 +120,23 @@ test('exposes one variable API', () => {
   })
   expectTypeOf(html.vars().class).toEqualTypeOf<string>()
 })
+
+test('infers responsive typography and border widths', () => {
+  const base = Vars.define({
+    borderWidth: { regular: '2px' },
+    breakpoints: { tablet: '48rem' },
+    typography: {
+      heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
+    },
+  })
+  const other = Vars.extend(base, {
+    typography: { heading: { '@media >=tablet': { fontSize: '44px' } } },
+  })
+  const { style } = Config.create({
+    vars: { base, other },
+    defaultVars: 'base',
+  })
+  style({ typography: 'heading', borderInlineStartWidth: 'regular' })
+  // @ts-expect-error Border-width tokens do not apply to border-image widths.
+  style({ borderImageWidth: 'regular' })
+})

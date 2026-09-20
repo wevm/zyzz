@@ -1211,7 +1211,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(before).toMatchInlineSnapshot(`
-        ":root, .z_theme-4lx6a318y1wl5-config-theme {
+        ".z_theme-4lx6a318y1wl5-config-theme {
           --z-t4lx6a318y1wl5-config-color_2e_brand: #06c;
         }
 
@@ -1236,7 +1236,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ":root, .z_theme-4lx6a318y1wl5-config-theme {
+        ".z_theme-4lx6a318y1wl5-config-theme {
           --z-t4lx6a318y1wl5-config-color_2e_brand: #175;
         }
 
@@ -1254,7 +1254,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ":root, .z_theme-4lx6a318y1wl5-config-theme {
+          ".z_theme-4lx6a318y1wl5-config-theme {
             --z-t4lx6a318y1wl5-config-color_2e_brand: #175;
           }
 
@@ -1268,7 +1268,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ":root, .z_theme-4lx6a318y1wl5-config-theme {
+          ".z_theme-4lx6a318y1wl5-config-theme {
             --z-t4lx6a318y1wl5-config-color_2e_brand: #06c;
           }
 
@@ -1300,7 +1300,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       )
 
       expect(before).toMatchInlineSnapshot(`
-        ":root, .z_theme-1dre7461ulsxz8-theme {
+        ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
         }
 
@@ -1343,7 +1343,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const after = await Fs.readFile(Path.join(outDir, 'theme.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ":root, .z_theme-1dre7461ulsxz8-theme {
+        ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
         }
 

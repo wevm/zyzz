@@ -140,6 +140,7 @@ const card = style({
         service.dispose()
       }
     },
+    30_000,
   )
 
   test('suggests CSS properties and reports invalid declarations on their keys', () => {

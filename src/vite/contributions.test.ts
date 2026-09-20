@@ -92,7 +92,9 @@ describe('zyzz', () => {
 
   test('retains asset ownership through a repacked nested dependency', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-repacked-vite-'))
-    const external = await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-sidecar-'))
+    const external = await Fs.realpath(
+      await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-sidecar-')),
+    )
 
     try {
       const sidecar = Graph.compile({
@@ -248,7 +250,7 @@ describe('zyzz', () => {
           "Build failed with 1 error:
 
           [plugin zyzz] <root>/app.ts
-          Source.ExtractError: /private<external>/index.js:0: Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+          Source.ExtractError: <external>/index.js:0: Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
         `)
       }
     } finally {

@@ -22,7 +22,7 @@ await build({
   bundle: true,
   entryPoints: ['src/main.ts'],
   outdir: 'dist',
-  plugins: [zyzz({ root: 'src' })],
+  plugins: [zyzz()],
 })
 ```
 
@@ -36,7 +36,7 @@ import { zyzz } from 'zyzz/rollup'
 export default {
   input: 'src/main.js',
   output: { dir: 'dist', format: 'es' },
-  plugins: [zyzz({ root: 'src' })],
+  plugins: [zyzz()],
 }
 ```
 
@@ -49,7 +49,7 @@ import { zyzz } from 'zyzz/webpack'
 
 export default {
   entry: './src/main.js',
-  plugins: [zyzz({ root: 'src' })],
+  plugins: [zyzz()],
 }
 ```
 

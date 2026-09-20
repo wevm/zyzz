@@ -96,7 +96,7 @@ Use the unplugin adapters with Rollup, Webpack, or esbuild:
 ```ts
 import { zyzz } from 'zyzz/esbuild'
 
-const plugins = [zyzz({ root: 'src' })]
+const plugins = [zyzz()]
 ```
 
 The adapters emit `zyzz.css` and `zyzz.js` beside the JavaScript bundle. Load these files in the application document. See [Bundler Setup](docs/api/unplugin/README.md) for configuration and output requirements.

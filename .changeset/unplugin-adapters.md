@@ -7,5 +7,5 @@ Added unplugin adapters for Rollup, Webpack, and esbuild with shared CSS output 
 ```ts
 import { zyzz } from 'zyzz/esbuild'
 
-const plugins = [zyzz({ root: 'src' })]
+const plugins = [zyzz()]
 ```

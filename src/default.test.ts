@@ -65,7 +65,7 @@ describe('default', () => {
           Path.join(root, 'app.ts'),
           `import {appearance,variants,theme} from 'zyzz/default';
         namespace styles {
-          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.700'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
+          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
         }
         document.querySelector('main')!.className=theme.className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
@@ -125,7 +125,8 @@ variants({base:{color:'missing'}});`,
           .map((entry) => entry.code)
           .join('\n')
         expect(scripts.includes('Theme.define')).toMatchInlineSnapshot('false')
-        expect(scripts.includes('#0070f7')).toMatchInlineSnapshot('false')
+        expect(scripts.includes('#99ceff')).toMatchInlineSnapshot('false')
+        expect(scripts.includes('#0a4380')).toMatchInlineSnapshot('false')
         const server = await Vite.preview({
           ...config,
           preview: { host: '127.0.0.1', port: 0 },
@@ -174,7 +175,7 @@ variants({base:{color:'missing'}});`,
             await page
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
-          ).toMatchInlineSnapshot(`"rgb(0, 112, 247)"`)
+          ).toMatchInlineSnapshot(`"rgb(153, 206, 255)"`)
           await page.locator('button').click()
           expect(
             await page.locator('button').getAttribute('data-scheme'),
@@ -183,10 +184,10 @@ variants({base:{color:'missing'}});`,
             await page
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
-          ).toMatchInlineSnapshot(`"rgb(0, 113, 246)"`)
+          ).toMatchInlineSnapshot(`"rgb(10, 67, 128)"`)
           await page.reload()
           await page.waitForFunction(
-            "getComputedStyle(document.querySelector('button')).color === 'rgb(0, 113, 246)'",
+            "getComputedStyle(document.querySelector('button')).color === 'rgb(10, 67, 128)'",
           )
           expect(
             await page.locator('html').getAttribute('data-restored-scheme'),

@@ -22,15 +22,15 @@ describe('create', () => {
       const label=style({color:accent});
       const dynamic=style((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
       const html=htmlStyle({color:accent});
-      const variables=Object.freeze({[accent]:'red'});
+      const vars=Object.freeze({[accent]:'red'});
       const inline=Object.freeze({[accent]:'blue',padding:'2px'});
-      export const staticProps=label({variables,style:inline,className:'external'});
-      export const dynamicProps=dynamic({opacity:0.5,variables,style:inline});
-      export const htmlProps=html({variables});
-      export const originals={variables,style:inline};
-      export const variablesOnly=dynamic({opacity:0.5,variables});
+      export const staticProps=label({vars,style:inline,className:'external'});
+      export const dynamicProps=dynamic({opacity:0.5,vars,style:inline});
+      export const htmlProps=html({vars});
+      export const originals={vars,style:inline};
+      export const variablesOnly=dynamic({opacity:0.5,vars});
       const htmlDynamic=htmlStyle((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
-      export const htmlDynamicProps=htmlDynamic({opacity:0.25,variables});
+      export const htmlDynamicProps=htmlDynamic({opacity:0.25,vars});
     `,
     })
     const bundle = await Esbuild.build({
@@ -80,8 +80,8 @@ describe('create', () => {
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-Ppd1-S z-opacity-bKRLtj-0",
-        "style": "--z-v1g4rm6r9aa2cb-74:red;--z-d1g4rm6r9aa2cb-807-6f-70-61-63-69-74-79:0.25",
+        "class": "z-text-Ppd1-S z-opacity-km9Zdo-0",
+        "style": "--z-v1g4rm6r9aa2cb-74:red;--z-d1g4rm6r9aa2cb-777-6f-70-61-63-69-74-79:0.25",
       }
     `)
     expect(consumer.originals).toMatchInlineSnapshot(`
@@ -90,7 +90,7 @@ describe('create', () => {
           "--z-v1g4rm6r9aa2cb-74": "blue",
           "padding": "2px",
         },
-        "variables": {
+        "vars": {
           "--z-v1g4rm6r9aa2cb-74": "red",
         },
       }

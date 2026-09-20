@@ -720,7 +720,7 @@ export function extract(options: extract.Options): extract.ReturnType {
                 ? entry.key.value
                 : undefined
             : undefined
-        if (key !== 'selectors' && key !== 'variables') {
+        if (key !== 'selectors' && key !== 'vars') {
           properties.push(entry)
           continue
         }

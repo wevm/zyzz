@@ -516,7 +516,7 @@ namespace variables {
 
 namespace styles {
   export const scope = style({
-    variables: { [variables.accent]: '#2563eb' },
+    vars: { [variables.accent]: '#2563eb' },
   })
 
   export const label = style({ color: variables.accent })
@@ -531,7 +531,7 @@ export function Label() {
 }
 ```
 
-Unlike `defineVars` with defaults, `variable('color')` alone does not assign a value. The example applies its default on an ancestor. Inline assignments use the same `variables` option on a callable. Registration through `variable(kind, options)` is optional and changes inheritance or initial-value behavior.
+Unlike `defineVars` with defaults, `variable('color')` alone does not assign a value. The example applies its default on an ancestor. Inline assignments use the same `vars` option on a callable. Registration through `variable(kind, options)` is optional and changes inheritance or initial-value behavior.
 
 Keep existing application-owned custom-property names when external CSS or scripts depend on them. Generated StyleX and Zyzz names are not interchangeable. Preserve the definition scope of derived variables, since moving an expression to a different ancestor can change inherited-variable resolution.
 

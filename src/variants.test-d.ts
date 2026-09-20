@@ -54,7 +54,7 @@ describe('variants', () => {
       loading: undefined,
       className: 'external',
       style: { opacity: 1 },
-      variables: { '--progress': 0.5 },
+      vars: { '--progress': 0.5 },
     })
 
     // @ts-expect-error Unknown choice.

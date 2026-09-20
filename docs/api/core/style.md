@@ -15,7 +15,7 @@ const props = styles.card({ style: { padding: '2rem' } })
 
 `style()`, `style(styles)`, or `style((values: { /* required scalar fields */ }) => styles)`
 
-The callback overload requires an explicit finite object type and a concise static object body. It returns `style.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className`, `style`, and `variables` overrides, returning `style.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
+The callback overload requires an explicit finite object type and a concise static object body. It returns `style.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className`, `style`, and `vars` overrides, returning `style.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
 
 ```ts
 const progress = style((values: { amount: `${number}%` }) => ({
@@ -69,7 +69,7 @@ React inline CSS values, including `CSSProperties`. Values may be strings, numbe
 styles.card({ style: { padding: '2rem' } })
 ```
 
-### options.variables
+### options.vars
 
 - Type: `Readonly<Record<\`--${string}\`, string | number | undefined>>`
 - Default: `undefined`
@@ -77,7 +77,7 @@ styles.card({ style: { padding: '2rem' } })
 Inline custom-property assignments keyed by variable references. These merge into returned styles before explicit `style` overrides; private callback bindings remain authoritative. Input objects are not mutated. Computed keys cannot enforce individual variable domains in TypeScript.
 
 ```ts
-styles.label({ variables: { [variables.accent]: 'blue' } })
+styles.label({ vars: { [variables.accent]: 'blue' } })
 ```
 
 ## Returns
@@ -131,7 +131,7 @@ const bar = style((values: { amount: `${number}%`; alpha: number }) => ({
 bar({ amount: '50%', alpha: 0.8 })
 ```
 
-All declared inputs are required and consumed. `className`, `style`, and `variables` remain styling overrides; unrelated keys are rejected by types, and generated private assignments take precedence over overrides. Callbacks never execute in generated application code.
+All declared inputs are required and consumed. `className`, `style`, and `vars` remain styling overrides; unrelated keys are rejected by types, and generated private assignments take precedence over overrides. Callbacks never execute in generated application code.
 
 The source boundary accepts inline finite scalar object types, module-local type aliases, interfaces, and compatible object intersections. Optional fields, imported or generic types, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
@@ -168,6 +168,6 @@ Root and configured `style` helpers suggest common pseudo selectors and at-rule 
 
 A literal map of scoped selector strings to nested declarations. Every selector requires an explicit `&`. Template keys can interpolate previously declared `style` definitions. See [selectors](selectors.md).
 
-### variables
+### vars
 
-A literal map of computed `variable()` keys to static scalar assignments. It is also supported inside selectors and conditions. Inline assignments use the same `variables` property on the generated callable. See [variable](variable.md).
+A literal map of computed `variable()` keys to static scalar assignments. It is also supported inside selectors and conditions. Inline assignments use the same `vars` property on the generated callable. See [variable](variable.md).

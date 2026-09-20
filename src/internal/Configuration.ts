@@ -600,7 +600,7 @@ export type Body<
     | 'selectors'
     | 'targets'
     | 'typography'
-    | 'variables'
+    | 'vars'
     | keyof Style.DeclarationProperties
     | Exclude<Condition.Keys<tokens, Keys<styles>>, `@layer${string}`>
     | '@layer'

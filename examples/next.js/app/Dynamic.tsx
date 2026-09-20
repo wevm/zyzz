@@ -45,7 +45,7 @@ namespace styles {
   })
 
   export const scope = style({
-    variables: { [variables.amount]: 0.5 },
+    vars: { [variables.amount]: 0.5 },
   })
 
   export const track = style({
@@ -81,9 +81,7 @@ export function Dynamic() {
           data-testid="dynamic-bar"
         />
       </div>
-      <div
-        {...styles.scope({ variables: { [variables.amount]: amount / 100 } })}
-      >
+      <div {...styles.scope({ vars: { [variables.amount]: amount / 100 } })}>
         <div {...styles.track()}>
           <div {...styles.inherited()} data-testid="variable-bar" />
         </div>

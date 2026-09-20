@@ -46,7 +46,7 @@ export namespace styles {
   })
 
   export const scope = style({
-    variables: { [variables.amount]: 0.5 },
+    vars: { [variables.amount]: 0.5 },
   })
 
   export const track = style({

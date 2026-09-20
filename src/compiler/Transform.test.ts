@@ -13622,7 +13622,7 @@ describe('variables', () => {
           'import { Config, Vars, variable } from "zyzz";',
           'const theme = Vars.define({ color: { surface: { light: "red", dark: "blue" } } });const themeConfig=Config.create({vars:theme});',
           'const foreground = variable("color");',
-          'export const box = themeConfig.style({ variables: { [foreground]: theme.color.surface }, color: foreground, backgroundImage: `linear-gradient(${theme.color.surface}, transparent)`, boxShadow: `0 0 2px ${theme.color.surface}` })();',
+          'export const box = themeConfig.style({ vars: { [foreground]: theme.color.surface }, color: foreground, backgroundImage: `linear-gradient(${theme.color.surface}, transparent)`, boxShadow: `0 0 2px ${theme.color.surface}` })();',
         ].join('\n'),
       })
       const js = await Esbuild.build({
@@ -13683,7 +13683,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'gradient.ts',
           source:
-            'import { style, variable } from "zyzz"; const color = variable("color"); export const box = style({ variables: { [color]: "red" }, backgroundImage: `linear-gradient(${color}, transparent)` })();',
+            'import { style, variable } from "zyzz"; const color = variable("color"); export const box = style({ vars: { [color]: "red" }, backgroundImage: `linear-gradient(${color}, transparent)` })();',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ptmsdggixg3k_5f_2d_5f_54-red-TJ2a9d{--z-v1ptmsdggixg3k-54:red;}

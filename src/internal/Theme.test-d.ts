@@ -530,7 +530,7 @@ describe('variables', () => {
       const color = variable('color')
 
       const box = theme.style({
-        variables: { [color]: theme.vars.color.surface },
+        vars: { [color]: theme.vars.color.surface },
         backgroundImage: `linear-gradient(${theme.vars.color.surface}, transparent)`,
         boxShadow: `0 0 2px ${theme.vars.color.surface}`,
       })

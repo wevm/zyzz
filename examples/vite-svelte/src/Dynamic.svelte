@@ -15,7 +15,7 @@
   <div {...styles.track()}>
     <div {...styles.bar({ width: `${amount}%` })} data-testid="dynamic-bar"></div>
   </div>
-  <div {...styles.scope({ variables: { [variables.amount]: amount / 100 } })}>
+  <div {...styles.scope({ vars: { [variables.amount]: amount / 100 } })}>
     <div {...styles.track()}>
       <div {...styles.inherited()} data-testid="variable-bar"></div>
     </div>

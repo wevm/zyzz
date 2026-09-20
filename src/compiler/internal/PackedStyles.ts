@@ -319,14 +319,9 @@ export function read(
           const name = string(value)
           if (
             !field ||
-            [
-              '__proto__',
-              'style',
-              'className',
-              'variables',
-              'key',
-              'ref',
-            ].includes(field) ||
+            ['__proto__', 'style', 'className', 'vars', 'key', 'ref'].includes(
+              field,
+            ) ||
             !slots.includes(name)
           )
             throw new Error('Invalid packed dynamic slot.')

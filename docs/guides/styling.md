@@ -155,7 +155,7 @@ Finite local type aliases, interfaces without inheritance, and object intersecti
 
 ### CSS Vars
 
-Use `variable()` for reusable CSS variables. Use `variables` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
+Use `variable()` for reusable CSS variables. Use `vars` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
 
 ```tsx
 import { style, variable } from 'zyzz'
@@ -166,14 +166,14 @@ namespace variables {
 
 namespace styles {
   export const label = style({
-    variables: { [variables.accent]: 'tomato' },
+    vars: { [variables.accent]: 'tomato' },
     color: variables.accent,
   })
 }
 
 function Label() {
   return (
-    <span {...styles.label({ variables: { [variables.accent]: 'blue' } })}>
+    <span {...styles.label({ vars: { [variables.accent]: 'blue' } })}>
       Hello
     </span>
   )

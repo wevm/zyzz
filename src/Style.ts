@@ -28,7 +28,7 @@ export type Accepted<
     | 'selectors'
     | 'targets'
     | 'typography'
-    | 'variables'
+    | 'vars'
   >,
   never
 > &
@@ -49,7 +49,7 @@ export type Accepted<
                     : never
                 }
               : never
-            : key extends 'variables'
+            : key extends 'vars'
               ? style[key] extends Record<string, unknown>
                 ? {
                     [name in keyof style[key]]: style[key][name] extends
@@ -827,7 +827,7 @@ type WithoutRelationships<value> = value extends readonly unknown[]
   ? unknown
   : value extends object
     ? {
-        [key in keyof value]: key extends symbol | 'selectors' | 'variables'
+        [key in keyof value]: key extends symbol | 'selectors' | 'vars'
           ? never
           : key extends keyof Literal.Properties
             ? unknown

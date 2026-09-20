@@ -41,7 +41,7 @@ export namespace styles {
   export const card = style({ color: accent, padding: '8px' })
 }
 
-// Spread styles.card({ variables: accent.set('red') }) on the element.
+// Spread styles.card({ vars: accent.set('red') }) on the element.
 ```
 
 Ordinary static styles derive their class names from ordered declaration data. Without the compiler plugin, independent variables, empty or referenced style identities, dynamic styles, variants, themes, and named stylesheet declarations require explicit IDs.

@@ -97,7 +97,7 @@ describe('compile', () => {
     expect(output.css.includes(`.${card().className}{`)).toMatchInlineSnapshot(
       'true',
     )
-    expect(card({ variables: accent.set('red') })).toMatchInlineSnapshot(`
+    expect(card({ vars: accent.set('red') })).toMatchInlineSnapshot(`
       {
         "className": "z-content-1wyeijq1ll9w4",
         "style": {
@@ -189,7 +189,7 @@ describe('compile', () => {
       const padding = style({ padding: '16px', animationName: spin });
       const button = variants({ variants: { size: { fluid: (values: { width: \`\${number}px\` }) => ({ width: values.width }), fixed: { width: '10px' } } }, conditions: { wide: '@media (min-width: 500px)' } }, { id: 'button' });
       export function render(enabled: boolean) {
-        return { theme:theme(), parent: parent(), child: child(), box: cx(left({ variables: accent.set('green') }), enabled && padding()), button: button({ size: { fluid: { width: '20px' } }, conditions: { wide: { size: { fluid: { width: '30px' } } } } }) };
+        return { theme:theme(), parent: parent(), child: child(), box: cx(left({ vars: accent.set('green') }), enabled && padding()), button: button({ size: { fluid: { width: '20px' } }, conditions: { wide: { size: { fluid: { width: '30px' } } } } }) };
       }`
       const browser = await chromium.launch()
       try {

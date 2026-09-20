@@ -16,7 +16,7 @@ export function create(
     })
     const external = input.className
     const style: Record<string, string | number | undefined> = {
-      ...input.variables,
+      ...input.vars,
       ...input.style,
     }
 

@@ -135,7 +135,7 @@ export type Inputs<values> = {
     | 'key'
     | 'ref'
     | 'style'
-    | 'variables'
+    | 'vars'
     | '__proto__'
     ? never
     : Extract<values[key], `${string}!${string}`> extends never

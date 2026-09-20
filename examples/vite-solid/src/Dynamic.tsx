@@ -46,7 +46,7 @@ namespace styles {
   })
 
   export const scope = style({
-    variables: { [variables.amount]: 0.5 },
+    vars: { [variables.amount]: 0.5 },
   })
 
   export const track = style({
@@ -84,7 +84,7 @@ export function Dynamic() {
       </div>
       <div
         {...styles.scope({
-          variables: { [variables.amount]: amount() / 100 },
+          vars: { [variables.amount]: amount() / 100 },
         })}
       >
         <div {...styles.track()}>

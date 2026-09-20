@@ -44,7 +44,7 @@ export function body(input: Record<string, unknown>): Record<string, unknown> {
           descriptors.web = { ...web, value: body(web.value) }
         return [[key, Object.create(Object.getPrototypeOf(value), descriptors)]]
       }
-      if (key === 'selectors' || key === 'variables')
+      if (key === 'selectors' || key === 'vars')
         return Object.entries(value as Record<string, unknown>).map(
           ([name, entry]) => [
             name,
@@ -95,7 +95,7 @@ export function create(
         ...result.style,
       }
       for (const [field, value] of Object.entries(values ?? {})) {
-        if (['className', 'style', 'variables'].includes(field)) continue
+        if (['className', 'style', 'vars'].includes(field)) continue
         style[Identity.slot(id!, field)] =
           value === '' ? ' ' : (value as string | number)
       }
@@ -107,9 +107,7 @@ export function create(
         attributes: [],
         slots: dynamic
           ? Object.keys(values ?? {})
-              .filter(
-                (key) => !['className', 'style', 'variables'].includes(key),
-              )
+              .filter((key) => !['className', 'style', 'vars'].includes(key))
               .map((key) => Identity.slot(id!, key))
           : [],
       },

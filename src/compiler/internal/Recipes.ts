@@ -194,7 +194,7 @@ export function expand(
         'key',
         'ref',
         'style',
-        'variables',
+        'vars',
       ].includes(axis)
     )
       throw new Themes.InvalidError(

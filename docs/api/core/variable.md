@@ -11,17 +11,17 @@ namespace variables {
 
 namespace styles {
   export const label = style({
-    variables: { [variables.accent]: 'tomato' },
+    vars: { [variables.accent]: 'tomato' },
     color: variables.accent,
     selectors: {
-      '&:hover': { variables: { [variables.accent]: 'purple' } },
+      '&:hover': { vars: { [variables.accent]: 'purple' } },
     },
   })
 }
 
 function Label() {
   return (
-    <span {...styles.label({ variables: { [variables.accent]: 'blue' } })}>
+    <span {...styles.label({ vars: { [variables.accent]: 'blue' } })}>
       Hello
     </span>
   )
@@ -88,14 +88,14 @@ Both signed and unsigned length domains emit `<length>`; percentage domains emit
 
 - Type: `variable.Reference<kind>`
 
-An opaque reference usable as a declaration value, in template expressions, and as a computed key inside `variables`. Names are compiler-owned. Ordinary namespaces or objects can group independent references.
+An opaque reference usable as a declaration value, in template expressions, and as a computed key inside `vars`. Names are compiler-owned. Ordinary namespaces or objects can group independent references.
 
 ## Inline Assignments
 
-Pass `variables` to the generated style callable using the same computed keys as static declarations. Values are returned under `style` (or serialized for HTML output); no rules are generated. Explicit `style` overrides win on duplicate keys. Inputs remain unchanged.
+Pass `vars` to the generated style callable using the same computed keys as static declarations. Values are returned under `style` (or serialized for HTML output); no rules are generated. Explicit `style` overrides win on duplicate keys. Inputs remain unchanged.
 
 ```ts
-styles.label({ variables: { [variables.accent]: 'blue' } })
+styles.label({ vars: { [variables.accent]: 'blue' } })
 ```
 
 Values may be strings, numbers, or `undefined` to omit an inline assignment. Computed keys lose individual domain information in TypeScript here too.
@@ -112,7 +112,7 @@ const style = { ...accent.set('blue'), ...gap.set('12px') }
 
 ## Static Assignments
 
-The `variables` property emits static custom-property declarations in authored order, including inside selectors and conditional rules. Values may be scalar strings, numbers, or compatible theme references. TypeScript widens computed object keys, so these assignments cannot enforce each key's individual domain. `.set(value)` retains domain checking.
+The `vars` property emits static custom-property declarations in authored order, including inside selectors and conditional rules. Values may be scalar strings, numbers, or compatible theme references. TypeScript widens computed object keys, so these assignments cannot enforce each key's individual domain. `.set(value)` retains domain checking.
 
 ## Source Requirements
 

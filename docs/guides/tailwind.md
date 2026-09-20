@@ -343,13 +343,13 @@ namespace variables {
 
 namespace styles {
   export const label = style({
-    variables: { [variables.accent]: '#2563eb' },
+    vars: { [variables.accent]: '#2563eb' },
     color: variables.accent,
   })
 }
 
 const example = (
-  <span {...styles.label({ variables: { [variables.accent]: '#9333ea' } })}>
+  <span {...styles.label({ vars: { [variables.accent]: '#9333ea' } })}>
     Account
   </span>
 )

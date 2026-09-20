@@ -37,6 +37,6 @@ export type Properties<
     keyof styles]?: Typography.Names<tokens> | (string & {})
 }
 
-// Inferred validation checks extra fields, including variables and configured shorthands.
+// Inferred validation checks extra fields, including vars and configured shorthands.
 type Nested<tokens extends Theme.Tokens> = Properties<tokens> &
   Readonly<Record<string, unknown>>

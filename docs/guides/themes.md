@@ -2,6 +2,8 @@
 
 Define shared tokens, apply theme scopes, and choose light or dark mode. See [Getting Started](../introduction/getting-started.md) for compilation setup.
 
+For shared values independent of property categories, use [Variables](../api/core/Variables/README.md). Variable sets support default or custom mappings, conditional values, and named scopes through `Config.create({ variables })`.
+
 ## Recipes
 
 ### Use Themes

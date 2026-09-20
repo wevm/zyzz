@@ -8,13 +8,16 @@ import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
-import type * as Literal from './internal/Literal.js'
+import * as Literal from './internal/Literal.js'
 import type { style } from './styleFunction.js'
 import { variants } from './variants.js'
 import * as Scheme from './internal/Scheme.js'
 import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
+import * as VariableSets from './internal/VariableSets.js'
+import * as Variables from './Variables.js'
+import * as Selection from './runtime/Selection.js'
 import * as Token from './internal/Token.js'
 import type * as Typography from './internal/Typography.js'
 
@@ -26,11 +29,111 @@ export function create(): create.ReturnType<{}>
  * Bound helpers reference extracted CSS; this factory emits no CSS rules.
  * @throws {InvalidError} If options, themes, defaults, or layer names are invalid.
  */
-export function create<const options extends create.Options>(
-  options: options & NoInfer<Validated<options>>,
-): create.ReturnType<options>
-export function create(options: create.Options = {}): unknown {
-  const input = record(options)
+export function create<const options extends create.Options | VariableOptions>(
+  options: options &
+    NoInfer<
+      options extends VariableOptions
+        ? VariableValidation<options>
+        : Validated<options>
+    >,
+): options extends VariableOptions
+  ? VariableConfig<options>
+  : options extends create.Options
+    ? create.ReturnType<options>
+    : never
+export function create(
+  options: create.Options | VariableOptions = {},
+): unknown {
+  let input = record(options)
+  const variableMode = input.variables !== undefined
+  const variableCatalog = variableMode && input.defaultVariables !== undefined
+  const variableMappings = VariableSets.mappings(input.mappings)
+  if (variableMode) {
+    if (
+      input.theme !== undefined ||
+      input.themes !== undefined ||
+      input.defaultTheme !== undefined
+    )
+      throw new InvalidError('Use variables without theme options.')
+    const normalize = (value: unknown) => {
+      const definition =
+        value &&
+        typeof value === 'object' &&
+        Object.getOwnPropertyDescriptor(value, Token.definition)?.value
+          ? (value as Variables.Definition)
+          : Variables.define(value as Variables.Values)
+      const theme = VariableSets.theme(definition, variableMappings)
+      const metadata = theme[Token.definition]
+      const names = new Map<string, string>()
+      for (const path of Object.keys(metadata.values)) {
+        const [category, ...parts] = path.split('.')
+        const targets =
+          variableMappings?.[category!] ??
+          Object.keys(Literal.rules).filter((property) =>
+            Token.accepts(
+              category as Token.Group,
+              property as keyof Literal.Properties,
+            ),
+          )
+        for (const property of targets) {
+          const key = `${property}:${parts.join('.')}`
+          if (names.has(key))
+            throw new InvalidError(
+              `Ambiguous variable token ${parts.join('.')} for ${property}.`,
+            )
+          names.set(key, path)
+        }
+      }
+      return theme
+    }
+    const { variables, defaultVariables, mappings: _mappings, ...rest } = input
+    input = variableCatalog
+      ? {
+          ...rest,
+          defaultTheme: defaultVariables,
+          themes: Object.fromEntries(
+            Object.entries(record(variables)).map(([name, value]) => [
+              name,
+              normalize(value),
+            ]),
+          ),
+        }
+      : { ...rest, theme: normalize(variables) }
+  } else if (
+    input.mappings !== undefined ||
+    input.defaultVariables !== undefined
+  ) {
+    throw new InvalidError('mappings and defaultVariables require variables.')
+  }
+  function finish(result: Record<string, unknown>) {
+    if (!variableMode) return Object.freeze(result)
+    const theme = result.theme as Theme.Definition
+    const catalog = result.themes as
+      | Record<string, Theme.Definition>
+      | undefined
+    const entries = () =>
+      catalog
+        ? Object.entries(catalog).map(
+            ([name, value]) => [name, value.className] as const,
+          )
+        : [['default', theme.className] as const]
+    let select: ReturnType<typeof Selection.create> | undefined
+    const variables = (options: { set?: string; colorScheme?: string } = {}) =>
+      (select ??= Selection.create(
+        entries(),
+        input.output === 'html',
+        'set',
+        variableCatalog ? String(input.defaultTheme) : 'default',
+      ))(options)
+    return Object.freeze({
+      appearance: result.appearance,
+      script: result.script,
+      style: result.style,
+      variables,
+      variants: result.variants,
+      vars: theme.tokens,
+    })
+  }
 
   for (const key of Object.keys(input))
     if (
@@ -120,6 +223,7 @@ export function create(options: create.Options = {}): unknown {
   })()
 
   const contract = Object.freeze({
+    ...(variableMode ? { variableSet: true, mappings: variableMappings } : {}),
     cssOutput:
       (input.cssOutput as 'atomic' | 'grouped' | undefined) ?? 'atomic',
     ...(shorthands ? { shorthands } : {}),
@@ -221,7 +325,13 @@ export function create(options: create.Options = {}): unknown {
       if (
         queries(base) !== queries(value) ||
         paths.length !== candidate.length ||
-        paths.some((path, index) => path !== candidate[index])
+        paths.some(
+          (path, index) =>
+            path !== candidate[index] ||
+            (variableMode &&
+              VariableSets.domain(base[Token.definition].values[path]!) !==
+                VariableSets.domain(value[Token.definition].values[path]!)),
+        )
       )
         throw new InvalidError(
           `Theme ${JSON.stringify(name)} must have the default theme's complete token paths and domains.`,
@@ -261,7 +371,7 @@ export function create(options: create.Options = {}): unknown {
       }
     })()
 
-    return Object.freeze({
+    return finish({
       appearance,
       script: () => Appearance.create(entries(), { storageKey })(),
       style: boundStyle(
@@ -278,7 +388,7 @@ export function create(options: create.Options = {}): unknown {
 
   if (input.theme !== undefined) {
     const theme = handle(definition(input.theme), 'theme')
-    return Object.freeze({
+    return finish({
       appearance: Appearance.root([], { storageKey }),
       script: Appearance.create([], { storageKey }),
       style: boundStyle(theme as unknown as Theme.Definition),
@@ -288,7 +398,7 @@ export function create(options: create.Options = {}): unknown {
   }
 
   const theme = shorthands ? Token.bind(Theme.define({}), contract) : undefined
-  return Object.freeze({
+  return finish({
     appearance: Appearance.root([], { storageKey }),
     script: Appearance.create([], { storageKey }),
     style: boundStyle(theme),
@@ -694,3 +804,139 @@ type Validated<options> = Record<
           }
         }
       : {})
+
+/** Variables, optional named alternatives, and category-to-property mappings. */
+export type VariableOptions = {
+  /** CSS representation inherited by bound helpers; atomic by default. */
+  readonly cssOutput?: 'atomic' | 'grouped' | undefined
+  /** Required default key when variables contains named sets. */
+  readonly defaultVariables?: string | undefined
+  /** Stable identity required without source rewriting. */
+  readonly id?: string | undefined
+  /** Ordered CSS layer names. */
+  readonly layers?: readonly string[] | undefined
+  /** Per-category replacements for default property mappings; an empty array disables lookup. */
+  readonly mappings?: Variables.Mappings | undefined
+  /** Styling props format; React by default. */
+  readonly output?: style.Output | undefined
+  /** Explicit local property aliases. */
+  readonly shorthands?: Shorthands.Map | undefined
+  /** Preference storage key; zyzz by default. */
+  readonly storageKey?: string | undefined
+  /** One inline or reusable set, or a catalog with defaultVariables. */
+  readonly variables:
+    | Variables.Values
+    | Variables.Definition
+    | Readonly<Record<string, Variables.Definition | Variables.Values>>
+}
+
+type VariableValues<options extends VariableOptions> = options extends {
+  defaultVariables: infer key
+}
+  ? key extends keyof options['variables']
+    ? Variables.Extract<options['variables'][key]>
+    : never
+  : Variables.Extract<options['variables']>
+
+type VariableTokens<options extends VariableOptions> = Variables.Mapped<
+  VariableValues<options>,
+  options extends { mappings: infer mappings } ? mappings : {}
+>
+
+type VariableInput<input> = input extends {
+  readonly [Token.definition]: Token.Metadata
+}
+  ? input
+  : input extends Variables.Values
+    ? Parameters<typeof Variables.define<input>>[0]
+    : never
+
+type VariableMatch<input, base> = base extends Variables.Value
+  ? input extends Variables.Value
+    ? Variables.Domain<Variables.Scalar<input>> extends Variables.Domain<
+        Variables.Scalar<base>
+      >
+      ? input
+      : never
+    : never
+  : {
+      readonly [key in keyof input | keyof base]: key extends keyof base
+        ? key extends keyof input
+          ? VariableMatch<input[key], base[key]>
+          : never
+        : never
+    }
+
+type VariableValidation<options extends VariableOptions> =
+  VariableOptions extends options
+    ? unknown
+    : Record<Exclude<keyof options, keyof VariableOptions>, never> &
+        (options extends { defaultVariables: infer selected }
+          ? {
+              readonly defaultVariables: keyof options['variables']
+              readonly variables: {
+                readonly [key in keyof options['variables']]: VariableInput<
+                  options['variables'][key]
+                > &
+                  (selected extends keyof options['variables']
+                    ? Variables.Extract<
+                        options['variables'][key]
+                      > extends VariableMatch<
+                        Variables.Extract<options['variables'][key]>,
+                        Variables.Extract<options['variables'][selected]>
+                      >
+                      ? unknown
+                      : never
+                    : never)
+              }
+            }
+          : { readonly variables: VariableInput<options['variables']> })
+
+/** Configured authoring, portable references, and scoped set selection. */
+export type VariableConfig<options extends VariableOptions> = {
+  /** Reads and persists the root set and color scheme. */
+  readonly appearance: Appearance.Root<
+    options extends { defaultVariables: unknown }
+      ? keyof options['variables'] & string
+      : never
+  >
+  /** Generates the root preference restoration script. */
+  readonly script: () => string
+  /** Authors styles with configured tokens and property aliases. */
+  readonly style: StyleFactory<
+    VariableTokens<options>,
+    options extends { layers: readonly (infer layer extends string)[] }
+      ? layer
+      : never,
+    options extends { output: infer output extends style.Output }
+      ? output
+      : 'react',
+    Mappings<options>
+  >
+  /** Authors recipes with the same variable and mapping contract. */
+  readonly variants: variants.Bound<
+    VariableTokens<options>,
+    options extends { output: infer output extends style.Output }
+      ? output
+      : 'react',
+    options extends { layers: readonly (infer layer extends string)[] }
+      ? layer
+      : never,
+    Mappings<options>
+  >
+  /** Explicit portable references, independent of shorthand mappings. */
+  readonly vars: Variables.References<VariableValues<options>>
+  /** Applies a named or default set and optional color scheme to a scope. */
+  readonly variables: (options?: {
+    /** Catalog key; omitted to select the configured default. */
+    readonly set?: options extends { defaultVariables: unknown }
+      ? keyof options['variables'] & string
+      : never
+    /** Explicit scheme; omitted to preserve inherited selection. */
+    readonly colorScheme?: 'light' | 'dark' | 'light dark' | undefined
+  }) => style.Props<
+    options extends { output: infer output extends style.Output }
+      ? output
+      : 'react'
+  >
+}

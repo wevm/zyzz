@@ -8,13 +8,18 @@ import * as Config from '../../Config.js'
 import * as Shorthands from '../../internal/Shorthands.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
+import * as VariableSets from '../../internal/VariableSets.js'
+import * as Variables from '../../Variables.js'
 import type * as Themes from './Themes.js'
 
 /** Reads a direct configuration factory without executing authored expressions. */
 export function collect(options: collect.Options): Themes.Link {
   function data(node: Ast.Node): unknown {
     const linked = options.resolve(node)
-    if (linked?.kind === 'theme') return linked.definition
+    if (linked?.kind === 'theme')
+      return linked.call.variableSet
+        ? VariableSets.from(linked.definition[Token.definition])
+        : linked.definition
 
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return data(node.expression)
@@ -77,12 +82,43 @@ export function collect(options: collect.Options): Themes.Link {
       'Config.create accepts one literal options object.',
     )
 
-  const input = (
+  let input = (
     options.expression.arguments.length
       ? data(options.expression.arguments[0]!)
       : {}
   ) as Config.create.Options
 
+  const authored = input as unknown as Config.VariableOptions
+  const variableMode = authored.variables !== undefined
+  if (variableMode) {
+    Config.create(authored)
+    const wrap = (value: Variables.Definition | Variables.Values) =>
+      VariableSets.theme(
+        Token.definition in value
+          ? (value as Variables.Definition)
+          : Variables.define(value as Variables.Values),
+        authored.mappings,
+      )
+    const {
+      variables,
+      defaultVariables,
+      mappings: _mappings,
+      ...rest
+    } = authored
+    input =
+      defaultVariables === undefined
+        ? { ...rest, theme: wrap(variables as Variables.Definition) }
+        : {
+            ...rest,
+            defaultTheme: defaultVariables,
+            themes: Object.fromEntries(
+              Object.entries(variables).map(([key, value]) => [
+                key,
+                wrap(value as Variables.Definition),
+              ]),
+            ),
+          }
+  }
   const config = Config.create(input)
 
   const catalog = (() => {
@@ -102,6 +138,12 @@ export function collect(options: collect.Options): Themes.Link {
       ? options.name
       : Identity.requireId(input.id, 'Config.create')
   const contract = Object.freeze({
+    ...(variableMode
+      ? {
+          variableSet: true,
+          mappings: VariableSets.mappings(authored.mappings),
+        }
+      : {}),
     [Token.identity]: identity,
     cssOutput: input.cssOutput ?? 'atomic',
     ...(input.shorthands
@@ -151,6 +193,16 @@ export function collect(options: collect.Options): Themes.Link {
   if ('themes' in config && selected)
     members[JSON.stringify(['theme'])] = selected
 
+  if (variableMode && selected)
+    members[JSON.stringify(['vars'])] = {
+      ...selected,
+      call: {
+        ...selected.call,
+        directVariables: true,
+        type: `import('zyzz').Variables.References<${selected.call.tokenType}>`,
+      },
+    }
+
   const definition =
     selected?.definition ?? Token.bind(Theme.define({}), contract)
 
@@ -189,6 +241,9 @@ export function collect(options: collect.Options): Themes.Link {
   return {
     binding: options.name,
     call: {
+      ...(variableMode
+        ? { variableConfig: true, variableMappings: authored.mappings }
+        : {}),
       appearance: true,
       script: true,
       end: options.expression.end,
@@ -199,7 +254,9 @@ export function collect(options: collect.Options): Themes.Link {
       options: normalized,
       start: options.expression.start,
       tokenType: selected?.call.tokenType ?? '{}',
-      type: `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
+      type: variableMode
+        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, variables: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVariables: normalized.defaultTheme } : {}), ...(authored.mappings ? { mappings: VariableSets.mappings(authored.mappings) } : {}) })}>`
+        : `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
     },
     definition,
     kind: 'config',
@@ -224,10 +281,12 @@ export declare namespace collect {
 
 /** Encodes validated literal options as a declaration type, never executable text. */
 export function type(value: unknown): string {
+  if (Token.is(value)) return `import('zyzz').Theme.Reference<'${value.group}'>`
   if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
 
   return `{${Object.entries(value)
+    .filter(([, value]) => value !== undefined)
     .map(([key, value]) => `readonly ${JSON.stringify(key)}:${type(value)}`)
     .join(';')}}`
 }

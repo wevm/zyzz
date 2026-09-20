@@ -771,16 +771,25 @@ function resolve(
     (metadata.contract === value.contract ||
       (metadata.contract[Token.identity] !== undefined &&
         metadata.contract[Token.identity] === value.contract[Token.identity]))
-  const resolved = shared
+  let resolved = shared
     ? Object.hasOwn(metadata.values, value.path)
       ? metadata.values[value.path]
       : undefined
     : value.value
   if (resolved === undefined)
     fail('unsupported_value', 'Theme is missing a live token.', path)
+  while (Token.is(resolved)) resolved = resolved.value
+  if (typeof resolved === 'object' && 'default' in resolved)
+    fail(
+      'unsupported_feature',
+      'Media-conditioned variables require a web target.',
+      path,
+    )
   if (typeof resolved === 'object' && resolved.light !== resolved.dark)
     resolution.schemeIndependent = false
-  const scalar = typeof resolved === 'object' ? resolved[scheme] : resolved
+  let scalar = typeof resolved === 'object' ? resolved[scheme] : resolved
+  while (Token.is(scalar)) scalar = scalar.value
+  if (typeof scalar === 'object' && 'light' in scalar) scalar = scalar[scheme]
   if (typeof scalar !== 'string' && typeof scalar !== 'number')
     fail(
       'unsupported_value',

@@ -15,6 +15,8 @@ export function create() {
     { identity: string | undefined; paths: Map<string, string> }
   >()
 
+  const defaults = new Map<string, Token.Value>()
+
   function serialize(token: Token.Reference): string {
     const value = token.value
     let contract = contracts.get(token.contract)
@@ -37,6 +39,7 @@ export function create() {
       contract.paths.set(token.path, name)
     }
 
+    if (token.contract.variableSet) defaults.set(name, value)
     return `var(${name},${literal(value)})`
   }
 
@@ -102,13 +105,52 @@ export function create() {
         .join('')
 
       rules.push(`.${className}{${body}}`)
+      for (const [path, name] of contract.paths)
+        conditional(data.values[path]!, name, `.${className}`, rules)
     }
 
     // Scheme rules travel with the module that can apply them, so lowered
     // light-dark() resolves wherever selection helpers load.
     if (schemes) rules.push(Scheme.css)
 
-    return { classes: Object.freeze(classes), css: rules.join('\n') }
+    const fallback: string[] = []
+    for (const [name, value] of defaults) {
+      fallback.push(`:root{${name}:${literal(value)};}`)
+      conditional(value, name, ':root', fallback)
+    }
+    return {
+      classes: Object.freeze(classes),
+      css: [...fallback, ...rules].join('\n'),
+    }
+  }
+
+  function literal(value: Token.Value): string {
+    if (Token.is(value)) return serialize(value)
+    if (typeof value !== 'object') return String(value)
+    if ('default' in value) return literal(value.default)
+    return `light-dark(${literal(value.light)},${literal(value.dark)})`
+  }
+
+  function conditional(
+    value: Token.Value,
+    name: string,
+    selector: string,
+    rules: string[],
+  ) {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Token.is(value) ||
+      !('default' in value)
+    )
+      return
+    conditional(value.default, name, selector, rules)
+    for (const [query, entry] of Object.entries(value)) {
+      if (query === 'default') continue
+      const nested = [`${selector}{${name}:${literal(entry)};}`]
+      conditional(entry, name, selector, nested)
+      rules.push(`${query}{${nested.join('')}}`)
+    }
   }
 
   return { emit, serialize }
@@ -120,12 +162,6 @@ export function encode(value: string): string {
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
-}
-
-function literal(value: Token.Value): string {
-  return typeof value === 'object'
-    ? `light-dark(${value.light},${value.dark})`
-    : String(value)
 }
 
 function variable(index: number | string, path: string): string {

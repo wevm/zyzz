@@ -15,32 +15,58 @@ export function create<
 >(entries: entries, html?: html): create.ReturnType<entries[number][0], html>
 export function create(
   entries: readonly (readonly [string, string])[],
+  html: boolean,
+  key: 'set',
+  defaultSet?: string,
+): (input?: { set?: string; colorScheme?: string }) => {
+  className?: string
+  class?: string
+  style?: unknown
+}
+export function create(
+  entries: readonly (readonly [string, string])[],
   html = false,
-) {
+  key: 'set' | 'theme' = 'theme',
+  defaultSet?: string,
+): unknown {
   const catalog = Object.fromEntries(entries)
 
-  const select = (input: { theme: string; colorScheme?: string }) => {
+  const select = (
+    input: {
+      theme?: string
+      set?: string
+      colorScheme?: string
+    } = {},
+  ) => {
+    const selected =
+      input && typeof input === 'object'
+        ? (input[key] ?? defaultSet)
+        : undefined
     if (
       !input ||
       typeof input !== 'object' ||
       Array.isArray(input) ||
-      !Object.hasOwn(input, 'theme') ||
-      typeof input.theme !== 'string' ||
-      !Object.hasOwn(catalog, input.theme) ||
+      (!Object.hasOwn(input, key) && defaultSet === undefined) ||
+      typeof selected !== 'string' ||
+      !Object.hasOwn(catalog, selected!) ||
       Object.keys(input).some(
-        (key) => key !== 'theme' && key !== 'colorScheme',
+        (field) => field !== key && field !== 'colorScheme',
       ) ||
       (input.colorScheme !== undefined &&
         !['light', 'dark', 'light dark'].includes(input.colorScheme))
     )
-      throw new TypeError('Invalid theme selection.')
+      throw new TypeError(
+        key === 'set'
+          ? 'Invalid variable selection.'
+          : 'Invalid theme selection.',
+      )
 
     const scheme = input.colorScheme as Scheme.Name | undefined
 
     return {
       [html ? 'class' : 'className']: scheme
-        ? `${catalog[input.theme]} ${Scheme.classes[scheme]}`
-        : catalog[input.theme],
+        ? `${catalog[selected!]} ${Scheme.classes[scheme]}`
+        : catalog[selected!],
       ...(scheme
         ? {
             style: html ? `color-scheme:${scheme}` : { colorScheme: scheme },

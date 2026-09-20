@@ -22,35 +22,45 @@ export type Atom<value> =
  */
 export type Accepted<style, properties> = {
   [property in keyof style]: property extends keyof properties
-    ? References<style[property], Exclude<properties[property], undefined>> &
-        (style[property] extends Binding.Reference
-          ? Binding.Reference<style[property]['type']> extends Exclude<
-              properties[property],
-              undefined
-            >
-            ? style[property]
-            : never
-          : FunctionValue.Is<style[property]> extends true
-            ? FunctionValue.Accepted<
-                style[property],
-                Exclude<properties[property], undefined>,
-                property
+    ? style[property] extends { readonly [Token.scalar]: infer scalar }
+      ? property extends keyof Literal.Properties
+        ? [scalar] extends [Literal.Properties[property]]
+          ? style[property] & Checked<Record<property, scalar>>[property]
+          : never
+        : never
+      : References<style[property], Exclude<properties[property], undefined>> &
+          (style[property] extends Binding.Reference
+            ? Binding.Reference<style[property]['type']> extends Exclude<
+                properties[property],
+                undefined
               >
-            : Exclude<style[property], undefined> extends Exclude<
-                  properties[property],
-                  undefined
+              ? style[property]
+              : never
+            : FunctionValue.Is<style[property]> extends true
+              ? FunctionValue.Accepted<
+                  style[property],
+                  Exclude<properties[property], undefined>,
+                  property
                 >
-              ? Exclude<style[property], undefined>
-              : property extends keyof Literal.Properties
-                ? style[property] extends string | readonly (number | string)[]
-                  ? Fold<style[property]> extends Input<
-                      | Lowercase<Extract<Literal.Properties[property], string>>
-                      | Extract<Literal.Properties[property], number>
-                    >
-                    ? style[property]
+              : Exclude<style[property], undefined> extends Exclude<
+                    properties[property],
+                    undefined
+                  >
+                ? Exclude<style[property], undefined>
+                : property extends keyof Literal.Properties
+                  ? style[property] extends
+                      | string
+                      | readonly (number | string)[]
+                    ? Fold<style[property]> extends Input<
+                        | Lowercase<
+                            Extract<Literal.Properties[property], string>
+                          >
+                        | Extract<Literal.Properties[property], number>
+                      >
+                      ? style[property]
+                      : Exclude<properties[property], undefined>
                     : Exclude<properties[property], undefined>
-                  : Exclude<properties[property], undefined>
-                : Exclude<properties[property], undefined>)
+                  : Exclude<properties[property], undefined>)
     : never
 }
 

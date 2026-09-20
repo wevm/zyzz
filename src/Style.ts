@@ -625,6 +625,19 @@ export function define(
           return resolved
         })()
 
+        if (
+          Token.is(resolved) &&
+          resolved.contract.variableSet &&
+          !Token.acceptsReference(resolved, key)
+        ) {
+          report(
+            'invalid_value',
+            [name, authoredProperty],
+            'Variable value is incompatible with this property.',
+          )
+          continue
+        }
+
         const value = parsed && resolved === '0' ? 0 : resolved
 
         declarations.push(

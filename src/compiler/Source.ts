@@ -294,7 +294,7 @@ export function extract(options: extract.Options): extract.ReturnType {
 
       const binding =
         node.type === 'Identifier'
-          ? declaration ?? null
+          ? (declaration ?? null)
           : scopeTracker.getDeclaration(node.name)
 
       contributions.read(node, parent, binding)
@@ -348,6 +348,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             name === 'cx' ||
             name === 'style' ||
             name === 'Theme' ||
+            name === 'Variables' ||
             name === 'variable' ||
             name === 'variants'
           )
@@ -992,7 +993,7 @@ export function extract(options: extract.Options): extract.ReturnType {
                     )
                   : targets.every(
                       (target) =>
-                        Token.accepts(part.group, target) ||
+                        Token.acceptsReference(part, target) ||
                         (part.group === 'color' &&
                           Expression.acceptsColor(template, target)),
                     ))
@@ -1014,7 +1015,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             reference &&
             Token.is(reference) &&
             !targets.every((target) =>
-              Token.accepts(reference.group, target),
+              Token.acceptsReference(reference, target),
             ) &&
             !targets.every((target) =>
               dynamicValues?.accepts(

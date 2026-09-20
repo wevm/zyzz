@@ -1,5 +1,13 @@
 # Config.create
 
+Use `variables` to bind shared values and `mappings` to select the properties that accept each category. See [Variables](../Variables/README.md) for definitions, default mappings, conditional values, and named-set selection.
+
+```ts
+const { style, variables, vars } = Config.create({
+  variables: { color: { accent: '#2563eb' } },
+})
+```
+
 > [!NOTE]
 > Named config exports, callable theme selection, variables, and layer compilation are implemented. The initialization `script` is supported; `variants` supports token-aware recipes.
 

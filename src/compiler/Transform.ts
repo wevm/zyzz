@@ -138,7 +138,9 @@ export function compile(options: compile.Options): compile.ReturnType {
               ? property.key.name
               : property.key.type === 'Literal'
                 ? property.key.value
-                : undefined) !== 'themes',
+                : undefined) !== 'themes' &&
+            (property.key.type !== 'Identifier' ||
+              property.key.name !== 'variables'),
         )
       )
         unusedSelections.add(Expression.unwrap(node.init).start)
@@ -565,6 +567,24 @@ export function compile(options: compile.Options): compile.ReturnType {
         return `${root ? `appearance:${appearance}.root(${entries}${rootOptions}),` : ''}${script ? `script:${appearance}.create(${entries}${scriptOptions}),` : ''}`
       }
 
+      if (call.variableConfig) {
+        usesSelection = true
+        const entries = call.options?.themes
+          ? Object.entries(call.members)
+              .filter(([key]) => {
+                const path = JSON.parse(key) as string[]
+                return path[0] === 'themes' && path.length === 2
+              })
+              .map(([key, name]) => [
+                (JSON.parse(key) as string[])[1],
+                emitted.themes[name],
+              ])
+          : [['default', emitted.themes[call.name]]]
+        const fallback = call.options?.defaultTheme ?? 'default'
+        const selector = `${selection}.create(${JSON.stringify(entries)},${call.options?.output === 'html'},'set',${JSON.stringify(fallback)})`
+        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}variables:/*#__PURE__*/${selector}}`
+      }
+
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
           Object.entries(call.members)
@@ -944,6 +964,18 @@ export function compile(options: compile.Options): compile.ReturnType {
           // Scheme selection rules accompany the scopes and have no authored source.
           Mapping.addMapping(cssMap, { generated: { column: 0, line } })
 
+          return rule
+        }
+
+        if (
+          rule.startsWith(':root{') ||
+          (rule.startsWith('@media ') &&
+            (rule.includes(':root{') ||
+              Object.values(emitted.themes).some((name) =>
+                rule.includes(`.${name}{`),
+              )))
+        ) {
+          Mapping.addMapping(cssMap, { generated: { column: 0, line } })
           return rule
         }
 

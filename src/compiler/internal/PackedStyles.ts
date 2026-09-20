@@ -94,11 +94,10 @@ export function read(
       )
       // Catalog themes share identities and paths but retain distinct fallback values.
       tokens.set(
-        JSON.stringify([
-          value.contract[Token.identity],
-          value.path,
-          value.value,
-        ]),
+        JSON.stringify(
+          [value.contract[Token.identity], value.path, value.value],
+          encode,
+        ),
         value,
       )
       return
@@ -430,20 +429,22 @@ export function write(definition: Definition): unknown {
           cssOutput: definition.style.cssOutput ?? 'atomic',
         },
       },
-      (_, value: unknown) => {
-        if (Token.is(value))
-          return {
-            identity: value.contract[Token.identity],
-            kind: 'token',
-            path: value.path,
-            value: value.value,
-          }
-        if (Token.isExpression(value))
-          return { kind: 'expression', parts: value.parts }
-        return value
-      },
+      encode,
     ),
   )
+}
+
+function encode(_: string, value: unknown): unknown {
+  if (Token.is(value))
+    return {
+      identity: value.contract[Token.identity],
+      kind: 'token',
+      path: value.path,
+      value: value.value,
+    }
+  if (Token.isExpression(value))
+    return { kind: 'expression', parts: value.parts }
+  return value
 }
 
 function array(value: unknown): unknown[] {

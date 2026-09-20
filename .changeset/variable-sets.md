@@ -1,5 +1,5 @@
 ---
-'zyzz': major
+'zyzz': patch
 ---
 
 Replaced theme APIs with `Vars`, configurable variable sets, callable `vars` references and scope selection, and `vars` assignments.

@@ -127,9 +127,9 @@ Metro compiles styles during iOS and Android bundling. Connect the [React provid
 Use the unplugin adapters with Rollup, Webpack, or esbuild:
 
 ```ts
-import { zyzz } from 'zyzz/esbuild'
+import { zyzz } from 'zyzz/unplugin'
 
-const plugins = [zyzz()]
+const plugins = [zyzz.esbuild()] // or zyzz.rollup() / zyzz.webpack()
 ```
 
 The adapters emit `zyzz.css` and `zyzz.js` beside the JavaScript bundle. Load these files in the application document. See [Bundler Setup](docs/api/unplugin/README.md) for configuration and output requirements.

@@ -16,13 +16,13 @@ Compile web styles through [unplugin](https://unplugin.unjs.io/guide/) with Roll
 
 ```ts
 import { build } from 'esbuild'
-import { zyzz } from 'zyzz/esbuild'
+import { zyzz } from 'zyzz/unplugin'
 
 await build({
   bundle: true,
   entryPoints: ['src/main.ts'],
   outdir: 'dist',
-  plugins: [zyzz()],
+  plugins: [zyzz.esbuild()],
 })
 ```
 
@@ -31,12 +31,12 @@ esbuild requires `outdir` and `write: true`, which is the default. `outfile` and
 ### Rollup
 
 ```ts
-import { zyzz } from 'zyzz/rollup'
+import { zyzz } from 'zyzz/unplugin'
 
 export default {
   input: 'src/main.js',
   output: { dir: 'dist', format: 'es' },
-  plugins: [zyzz()],
+  plugins: [zyzz.rollup()],
 }
 ```
 
@@ -45,11 +45,11 @@ Keep the application's package-resolution and TypeScript/JSX plugins. Place Zyzz
 ### Webpack
 
 ```ts
-import { zyzz } from 'zyzz/webpack'
+import { zyzz } from 'zyzz/unplugin'
 
 export default {
   entry: './src/main.js',
-  plugins: [zyzz()],
+  plugins: [zyzz.webpack()],
 }
 ```
 

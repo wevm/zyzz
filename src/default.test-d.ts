@@ -1,13 +1,6 @@
 /** Checks the published opt-in theme's token and recipe inference. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import {
-  appearance,
-  script,
-  style,
-  theme,
-  tokens,
-  variants,
-} from 'zyzz/default'
+import { appearance, script, style, vars, tokens, variants } from 'zyzz/default'
 
 describe('default', () => {
   test('accepts Geist typography sets in styles and variants', () => {
@@ -36,7 +29,7 @@ describe('default', () => {
       readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
     }>()
     // @ts-expect-error The default config has no named theme catalog.
-    appearance.set({ theme: 'other' })
+    appearance.set({ set: 'other' })
   })
 
   test('preserves bundled tokens, aliases, and payload selections', () => {
@@ -57,7 +50,7 @@ describe('default', () => {
       size: { custom: { padding: '12px' } },
       conditions: { wide: { size: null } },
     })
-    style({ color: theme.tokens.color.blue[700], padding: 4 })
+    style({ color: vars.color.blue[700], padding: 4 })
     expectTypeOf(tokens.breakpoints.md).toEqualTypeOf<'48rem'>()
     // @ts-expect-error Unknown bundled token.
     style({ color: 'missing' })

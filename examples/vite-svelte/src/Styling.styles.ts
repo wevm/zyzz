@@ -1,5 +1,5 @@
 /** Demonstrates literal reuse, states, fallbacks, and styling overrides. @module */
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 /** Static declarations, ordered fallbacks, importance, and token references. */
 export namespace styles {
@@ -31,8 +31,8 @@ export namespace styles {
   export const label = style({
     ...shape,
     border: '1px solid',
-    borderColor: theme.vars.color.accent,
-    color: theme.tokens.color.accent,
+    borderColor: vars.color.accent,
+    color: vars.color.accent,
     display: ['block', 'inline-flex'],
     fontWeight: '600 !important',
   })

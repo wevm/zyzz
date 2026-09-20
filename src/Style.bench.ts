@@ -1,13 +1,14 @@
+import { Vars } from 'zyzz'
 /**
  * Measures complete theme shorthand resolution and CSS emission against explicit references.
  * @module
  */
 import { bench, describe } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 for (const count of [10, 100]) {
-  const theme = Theme.define({
+  const theme = Vars.define({
     color: { brand: '#06c' },
     spacing: { md: '8px' },
   })
@@ -16,8 +17,8 @@ for (const count of [10, 100]) {
     Array.from({ length: count }, (_, index) => [
       `card-${index}`,
       {
-        color: theme.tokens.color.brand,
-        padding: theme.tokens.spacing.md,
+        color: theme.color.brand,
+        padding: theme.spacing.md,
         width: `${index}px` as const,
       },
     ]),
@@ -39,14 +40,14 @@ for (const count of [10, 100]) {
       Css.compile({
         cssOutput: 'grouped',
         styles: Style.define(explicit),
-        themes: { base: theme },
+        vars: { base: theme },
       })
     })
     bench('inferred token names', () => {
       Css.compile({
         cssOutput: 'grouped',
-        styles: Style.define(named, { theme }),
-        themes: { base: theme },
+        styles: Style.define(named, { vars: theme }),
+        vars: { base: theme },
       })
     })
   })

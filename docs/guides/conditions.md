@@ -12,8 +12,8 @@ Define typed thresholds in config, then reference them in media and container co
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
-  theme: {
+export const { style, vars } = Config.create({
+  vars: {
     breakpoints: { tablet: '48rem' },
     containerNames: ['sidebar'],
     containers: { card: '24rem' },

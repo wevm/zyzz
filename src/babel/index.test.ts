@@ -265,7 +265,7 @@ export const marker = 'original-location'
         expect(() =>
           compile(source, platform),
         ).toThrowErrorMatchingInlineSnapshot(
-          `[Native.CompileError: /Fixture.ts: Native static modules do not support CSS contributions, variables, or web theme controls.]`,
+          `[Native.CompileError: /Fixture.ts: Native static modules do not support CSS contributions, variables, or web set controls.]`,
         )
   })
 

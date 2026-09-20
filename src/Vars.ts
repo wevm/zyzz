@@ -1,9 +1,14 @@
 /** Defines immutable variable sets and compatible scoped overrides. @module */
+import type * as Theme from './internal/Theme.js'
 import * as Identity from './internal/Identity.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as VariableSets from './internal/VariableSets.js'
 import type { style } from './styleFunction.js'
+
+/** Portable scalar reference with its accepted value domain. */
+export type Reference<group extends Token.Group = Token.Group> =
+  Token.Reference<group>
 
 const shape = Symbol('zyzz.variables.shape')
 
@@ -21,10 +26,14 @@ export type Value =
     })
 
 /** Nested categories and variable paths. */
-export type Values = { readonly [key: string]: Value | Values }
+export type Values = {
+  readonly [key: string]: Value | Values | readonly string[]
+}
 
 /** Immutable references retaining their shared set contract. */
-export type Definition<values extends Values = Values> = References<values> & {
+export type Definition<values extends Values = Values> = (Values extends values
+  ? {}
+  : References<values>) & {
   /** Authored value shape retained for inference. */
   readonly [shape]: values
   /** Compiler-owned identity and values. */
@@ -32,12 +41,15 @@ export type Definition<values extends Values = Values> = References<values> & {
 }
 
 /** Reference tree preserving the domain of each scalar leaf. */
-export type References<values> = {
-  readonly [key in keyof values]: values[key] extends Value
+export type References<values, root extends boolean = true> = {
+  readonly [key in Exclude<
+    keyof values,
+    root extends true ? 'breakpoints' | 'containers' | 'containerNames' : never
+  >]: values[key] extends Value
     ? Token.Reference<Domain<Scalar<values[key]>>> & {
         readonly [Token.scalar]: Scalar<values[key]>
       }
-    : References<values[key]>
+    : References<values[key], false>
 }
 
 /** Resolves the scalar types represented by all conditional branches. */
@@ -45,19 +57,21 @@ export type Scalar<value> = Value extends value
   ? string | number
   : value extends { readonly [Token.scalar]: infer scalar }
     ? scalar
-    : value extends Token.Reference<infer group>
-      ? group extends 'color'
-        ? Literal.Color
-        : group extends 'spacing'
-          ? Literal.Length
-          : group extends 'number'
-            ? number
-            : string
-      : value extends { default: unknown }
-        ? Scalar<value[keyof value]>
-        : value extends { light: infer light; dark: infer dark }
-          ? Scalar<light | dark>
-          : value
+    : value extends readonly string[]
+      ? value
+      : value extends Token.Reference<infer group>
+        ? group extends 'color'
+          ? Literal.Color
+          : group extends 'spacing'
+            ? Literal.Length
+            : group extends 'number'
+              ? number
+              : string
+        : value extends { default: unknown }
+          ? Scalar<value[keyof value]>
+          : value extends { light: infer light; dark: infer dark }
+            ? Scalar<light | dark>
+            : value
 
 /** Scalar domain shared by compatible set alternatives. */
 export type Domain<value> = [value] extends [Literal.Color]
@@ -78,7 +92,7 @@ export function define<const values extends Values>(
     ...(options.id === undefined
       ? {}
       : {
-          [Token.identity]: Identity.requireId(options.id, 'Variables.define'),
+          [Token.identity]: Identity.requireId(options.id, 'Vars.define'),
           [Token.complete]: true,
         }),
   })
@@ -98,6 +112,7 @@ export function extend<const values extends Values>(
     overrides,
     metadata.contract,
     metadata.values,
+    metadata.queries,
   ) as Definition<values>
 }
 
@@ -134,9 +149,15 @@ export type Mappings = Readonly<
 >
 
 /** Type carrier for configured shorthand lookup. */
-export type Mapped<values, mappings> = {
+export type Mapped<values, mappings> = (Pick<
+  values,
+  keyof values &
+    ('breakpoints' | 'containers' | 'containerNames' | 'typography')
+> extends infer metadata extends Theme.Tokens
+  ? metadata
+  : {}) & {
   readonly color?: undefined
-  readonly [Token.mapping]: {
+  readonly '~vars': {
     readonly values: values
     readonly mappings: mappings
   }
@@ -157,29 +178,61 @@ export class InvalidError extends Error {
     super(`${JSON.stringify(path)}: ${message}`)
   }
   /** Stable diagnostic name. */
-  override name = 'Variables.InvalidError'
+  override name = 'Vars.InvalidError'
 }
 
 type Validated<value> = Values extends value
   ? value
-  : value extends Token.Reference
+  : value extends readonly string[]
     ? value
-    : value extends string | number
-      ? Literal.Checked<value>
-      : value extends { default: infer base }
-        ? Conditional<Compatible<Scalar<base>>> &
-            Record<Exclude<keyof value, 'default' | `@media ${string}`>, never>
-        : value extends { light: unknown } | { dark: unknown }
-          ? {
-              readonly light: Literal.Color | Token.Reference<'color'>
-              readonly dark: Literal.Color | Token.Reference<'color'>
-            } & Record<Exclude<keyof value, 'light' | 'dark'>, never>
-          : {
-              readonly [key in keyof value]: key extends
-                | `${string}.${string}`
-                | `${string}!${string}`
-                | `@${string}`
-                | ''
-                ? never
-                : Validated<value[key]>
-            }
+    : value extends Token.Reference
+      ? value
+      : value extends string | number
+        ? Literal.Checked<value>
+        : value extends { default: infer base }
+          ? Conditional<Compatible<Scalar<base>>> &
+              Record<
+                Exclude<keyof value, 'default' | `@media ${string}`>,
+                never
+              >
+          : value extends { light: unknown; dark: unknown }
+            ? Pair<value>
+            : keyof value extends 'light' | 'dark'
+              ? Pair<value>
+              : {
+                  readonly [key in keyof value]: key extends
+                    | `${string}.${string}`
+                    | `${string}!${string}`
+                    | `@${string}`
+                    | ''
+                    ? never
+                    : Validated<value[key]>
+                }
+
+/** Applies a compatible variable set and optional color scheme to a scope. */
+export type Selector<
+  name extends string,
+  output extends style.Output = 'react',
+> = {
+  <
+    const selection extends {
+      readonly set?: name
+      readonly colorScheme?: 'light' | 'dark' | 'light dark' | undefined
+    } = {},
+  >(
+    options?: selection &
+      Record<Exclude<keyof selection, 'set' | 'colorScheme'>, never>,
+  ): style.Props<output>
+}
+
+type Pair<value> = {
+  readonly light: Literal.Color | Token.Reference<'color'>
+  readonly dark: Literal.Color | Token.Reference<'color'>
+} & Record<Exclude<keyof value, 'light' | 'dark'>, never>
+
+/** Configured references and a selector for compatible scopes. */
+export type Bound<
+  values extends Values,
+  name extends string = never,
+  output extends style.Output = 'react',
+> = Definition<values> & Selector<name, output>

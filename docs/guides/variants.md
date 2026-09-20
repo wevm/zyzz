@@ -6,7 +6,7 @@ Define finite choices, defaults, and compound matches for one element. Begin wit
 
 ### Define Variants
 
-Add typed choices to a component. This example imports `{ variants }` from the [theme config](themes.md#use-themes); import from `zyzz` for token-free recipes.
+Add typed choices to a component. This example imports `{ variants }` from the [theme config](themes.md#define-variables); import from `zyzz` for token-free recipes.
 
 ```tsx
 import type { Props } from 'zyzz'

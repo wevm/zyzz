@@ -1,5 +1,6 @@
 /** Verifies scalar parameter domains through the public CSS function helper. @module */
 import { style } from 'zyzz'
+
 import { cssFunction } from 'zyzz/web'
 import { describe, test } from 'vite-plus/test'
 describe('cssFunction', () => {

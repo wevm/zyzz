@@ -4,7 +4,8 @@
  */
 import * as Scheme from '../../internal/Scheme.js'
 import * as Token from '../../internal/Token.js'
-import type * as Theme from '../../Theme.js'
+import type * as Vars from '../../Vars.js'
+import type * as Theme from '../../internal/Theme.js'
 
 /** Collects live token references within one in-memory compilation graph. */
 export function create() {
@@ -44,7 +45,7 @@ export function create() {
   }
 
   function emit(
-    themes: Readonly<Record<string, Theme.Definition>>,
+    themes: Readonly<Record<string, Theme.Definition | Vars.Definition>>,
     schemes = false,
   ) {
     const classes: Record<string, string> = Object.create(null)

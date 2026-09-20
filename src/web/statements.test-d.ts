@@ -1,6 +1,7 @@
 /** Checks statement options and computed query/function authoring through public imports. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { style } from 'zyzz'
+
 import { cssFunction, customMedia, importCss, namespace } from 'zyzz/web'
 
 describe('statements', () => {

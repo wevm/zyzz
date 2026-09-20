@@ -141,9 +141,9 @@ Bound aliases and re-exports retain their contracts through source graphs and pa
 Theme helpers can share a module-level `const` destructuring declaration, including renamed bindings:
 
 ```ts
-import { Theme } from 'zyzz'
+import { Vars } from 'zyzz'
 
-const theme = Theme.define({ color: { brand: '#06c' } })
+const theme = Vars.define({ color: { brand: '#06c' } })
 const { style: style, variants: recipe } = theme
 export { style, recipe }
 ```

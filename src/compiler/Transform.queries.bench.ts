@@ -19,7 +19,7 @@ const bundled = await Fs.readFile(
 )
 for (const count of [10, 100, 1000]) {
   const source =
-    'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"},fontWeight:{medium:500}});' +
+    'import {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"},fontWeight:{medium:500}});' +
     Array.from(
       { length: count },
       (_, index) =>

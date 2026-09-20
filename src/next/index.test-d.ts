@@ -3,6 +3,7 @@ import type { NextConfig } from 'next'
 import type { ComponentProps } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { style } from 'zyzz'
+
 import { zyzz } from 'zyzz/next'
 
 describe('zyzz', () => {

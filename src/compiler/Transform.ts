@@ -43,7 +43,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
       portableNames[call.name] = call.portable
     }
-    for (const [name, theme] of Object.entries(extracted.themes))
+    for (const [name, theme] of Object.entries(extracted.vars))
       if (
         (Object.keys(theme[Token.definition].values).length ||
           extracted.themeCalls.some(
@@ -57,7 +57,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         !theme[Token.definition].contract[Token.identity]?.startsWith('id-')
       )
         throw new Error(
-          'CSS-only themes require an explicit id on Config.create or Theme.define.',
+          'CSS-only themes require an explicit id on Config.create or Vars.define.',
         )
     for (const call of extracted.contributionCalls ?? [])
       if (
@@ -217,7 +217,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       }
     })(),
     contributions: extracted.contributions,
-    themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
+    vars: Object.keys(extracted.vars).length ? extracted.vars : undefined,
   })
 
   let runtime = '__zyzzProps'
@@ -542,11 +542,12 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const call of extracted.themeCalls) {
-    const scope = (name: string) => ({ className: emitted.themes[name] })
+    const scope = (name: string) => ({ className: emitted.vars[name] })
 
     const props = (() => {
+      if (call.variableSet) return '{}'
       if (!call.members)
-        return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+        return `{className:${JSON.stringify(emitted.vars[call.name])}}`
 
       const script = extracted.themeScripts?.includes(call.name)
       const root = extracted.themeAppearances?.includes(call.name)
@@ -561,14 +562,22 @@ export function compile(options: compile.Options): compile.ReturnType {
           : ''
         const rootOptions =
           storage || defaultTheme
-            ? `,${JSON.stringify({ ...(defaultTheme ? { defaultTheme } : {}), ...(storage ? { storageKey: storage } : {}) })}`
+            ? `,${JSON.stringify({ ...(defaultTheme ? { defaultVars: defaultTheme } : {}), ...(storage ? { storageKey: storage } : {}) })}`
             : ''
 
         return `${root ? `appearance:${appearance}.root(${entries}${rootOptions}),` : ''}${script ? `script:${appearance}.create(${entries}${scriptOptions}),` : ''}`
       }
 
       if (call.variableConfig) {
-        usesSelection = true
+        const selected =
+          extracted.themeSelections?.includes(call.name) ||
+          Object.values(extracted.themeExports ?? {}).some(
+            (link) =>
+              link.call.name === call.name &&
+              link.kind === 'config' &&
+              !link.call.initialization &&
+              !link.call.root,
+          )
         const entries = call.options?.themes
           ? Object.entries(call.members)
               .filter(([key]) => {
@@ -577,12 +586,15 @@ export function compile(options: compile.Options): compile.ReturnType {
               })
               .map(([key, name]) => [
                 (JSON.parse(key) as string[])[1],
-                emitted.themes[name],
+                emitted.vars[name],
               ])
-          : [['default', emitted.themes[call.name]]]
+          : [['default', emitted.vars[call.name]]]
         const fallback = call.options?.defaultTheme ?? 'default'
+        if (!selected)
+          return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined).replace(/,$/, '')}}`
+        usesSelection = true
         const selector = `${selection}.create(${JSON.stringify(entries)},${call.options?.output === 'html'},'set',${JSON.stringify(fallback)})`
-        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}variables:/*#__PURE__*/${selector}}`
+        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}vars:/*#__PURE__*/${selector}}`
       }
 
       if (call.options?.themes) {
@@ -591,7 +603,7 @@ export function compile(options: compile.Options): compile.ReturnType {
             .filter(([key]) => (JSON.parse(key) as string[]).length === 2)
             .map(([key, name]) => [
               (JSON.parse(key) as string[])[1]!,
-              emitted.themes[name],
+              emitted.vars[name],
             ]),
         )
 
@@ -615,7 +627,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     })()
 
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
+      ? ` as ${call.type ?? `import('zyzz').Vars.Definition<${call.tokenType}>`}`
       : ''
 
     module.overwrite(call.start, call.end, `(${props}${assertion})`)
@@ -627,7 +639,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         module.overwrite(
           alias.start,
           alias.end,
-          `(${options.source.slice(alias.start, alias.end)} as ${alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`})`,
+          `(${options.source.slice(alias.start, alias.end)} as ${alias.type ?? `import('zyzz').Vars.Definition<${alias.tokenType}>`})`,
         )
 
       continue
@@ -639,7 +651,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       ? `{${members.map((member) => `${member}:undefined`).join(',')}}`
       : 'undefined'
     const type =
-      alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`
+      alias.type ?? `import('zyzz').Vars.Definition<${alias.tokenType}>`
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as unknown as ${alias.destructured ? `{${members.map((member) => `readonly ${member}:${type}['${member}']`).join(';')}}` : `${type}['${member}']`}`
       : ''
@@ -687,7 +699,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       module.overwrite(
         reference.start,
         reference.end,
-        JSON.stringify(emitted.themes[reference.name]),
+        JSON.stringify(emitted.vars[reference.name]),
       )
 
   replacements.push(
@@ -712,7 +724,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'cx', 'style', 'Theme', 'variable', 'variants']
+            ? ['Config', 'cx', 'style', 'Vars', 'variable', 'variants']
             : [
                 'Css',
                 'cssFunction',
@@ -850,14 +862,14 @@ export function compile(options: compile.Options): compile.ReturnType {
   const themeOwners = new Map(
     extracted.themeCalls.flatMap((call) =>
       [...new Set([call.name, ...Object.values(call.members ?? {})])].map(
-        (name) => [emitted.themes[name], { ...call, name }] as const,
+        (name) => [emitted.vars[name], { ...call, name }] as const,
       ),
     ),
   )
 
   const linkedOwners = new Map(
     Object.entries(options[Themes.context]?.owners ?? {}).map(
-      ([key, owner]) => [emitted.themes[key], owner],
+      ([key, owner]) => [emitted.vars[key], owner],
     ),
   )
 
@@ -893,9 +905,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       Css.compile({
         styles: { styles: [] },
         contributions: [contribution.definition],
-        themes: Object.keys(extracted.themes).length
-          ? extracted.themes
-          : undefined,
+        vars: Object.keys(extracted.vars).length ? extracted.vars : undefined,
       }).contributionCss ?? ''
     if (!rendered) continue
     for (const _ of rendered.split('\n')) {
@@ -953,7 +963,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           return rule
         }
 
-        if (Object.values(emitted.themes).includes(name)) {
+        if (Object.values(emitted.vars).includes(name)) {
           // Packed theme declarations have no authored source in this graph.
           Mapping.addMapping(cssMap, { generated: { column: 0, line } })
 
@@ -971,7 +981,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           rule.startsWith(':root{') ||
           (rule.startsWith('@media ') &&
             (rule.includes(':root{') ||
-              Object.values(emitted.themes).some((name) =>
+              Object.values(emitted.vars).some((name) =>
                 rule.includes(`.${name}{`),
               )))
         ) {
@@ -1143,7 +1153,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       sourcesContent: map.sourcesContent!,
       version: 3 as const,
     },
-    themes: emitted.themes,
+    vars: emitted.vars,
   })
 }
 
@@ -1183,7 +1193,7 @@ export declare namespace compile {
     /** Standard rewritten-module map, including original source content. */
     readonly map: Mapping.EncodedSourceMap
     /** Stable scope classes keyed by local module/binding identity. */
-    readonly themes: Readonly<Record<string, string>>
+    readonly vars: Readonly<Record<string, string>>
   }
 }
 

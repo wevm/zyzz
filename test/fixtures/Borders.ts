@@ -177,13 +177,5 @@ export const styles = {
 } as const satisfies Style.LiteralProperties
 
 /** Token precedence, physical/logical conflicts, and repeated fallback source spans. */
-export const source = `import { Config, style } from 'zyzz';
-const zyzz = Config.create({theme:{color:{brand:'#fff'},borderColor:{brand:'#06c'},borderRadius:{round:'8px'}}});
-export const box = zyzz.style({
-  borderStyle:'solid',borderWidth:'2px',borderLeftWidth:'3px',borderInlineStartWidth:['4px','5px !important'],
-  borderColor:'brand',borderInlineEndColor:zyzz.theme.tokens.color.brand,
-  borderRadius:'round',borderStartStartRadius:'10px',
-  outlineColor:'brand',outlineStyle:'dashed',outlineWidth:'2px',outlineOffset:'-1px'
-})();
-export const physical = style({borderWidth:'2px',borderInlineStartWidth:'5px',borderLeftWidth:'3px',borderStyle:'solid'})();
-`
+export const source =
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{color:{brand:'#fff'},borderColor:{brand:'#06c'},borderRadius:{round:'8px'}}});\nexport const box = zyzz.style({\n  borderStyle:'solid',borderWidth:'2px',borderLeftWidth:'3px',borderInlineStartWidth:['4px','5px !important'],\n  borderColor:'brand',borderInlineEndColor:zyzz.vars.color.brand,\n  borderRadius:'round',borderStartStartRadius:'10px',\n  outlineColor:'brand',outlineStyle:'dashed',outlineWidth:'2px',outlineOffset:'-1px'\n})();\nexport const physical = style({borderWidth:'2px',borderInlineStartWidth:'5px',borderLeftWidth:'3px',borderStyle:'solid'})();\n"

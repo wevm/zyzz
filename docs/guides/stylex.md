@@ -10,7 +10,7 @@ Migrate a StyleX application to Zyzz while preserving its appearance and behavio
 6. [States And Queries](#states-and-queries)
 7. [Component Variants](#component-variants)
 8. [Dynamic Values](#dynamic-values)
-9. [Variables And Themes](#variables-and-themes)
+9. [Vars And Themes](#variables-and-themes)
 10. [Stylesheets And Delivery](#stylesheets-and-delivery)
 11. [API Reference](#api-reference)
 12. [Finish Migrating](#finish-migrating)
@@ -452,7 +452,7 @@ Both examples bind a value to a precompiled CSS variable. Preserve units explici
 
 Zyzz callbacks support explicit scalar inputs and supported local type aliases. Imported or generic dynamic input types are outside the current extraction boundary. See [Dynamic Values](styling.md#dynamic-values) for source restrictions.
 
-## Variables And Themes
+## Vars And Themes
 
 ### Design Tokens
 
@@ -477,8 +477,8 @@ For a Zyzz design system, group those values by token domain in a config:
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { style, theme, variants } = Config.create({
-  theme: {
+export const { style, vars, variants } = Config.create({
+  vars: {
     color: { accent: '#2563eb', surface: '#fff', text: '#111' },
     spacing: { gap: '16px' },
   },
@@ -486,12 +486,12 @@ export const { style, theme, variants } = Config.create({
 ```
 
 ```tsx
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const panel = style({
     backgroundColor: 'surface',
-    color: theme.tokens.color.text,
+    color: vars.color.text,
     padding: 'gap',
   })
 }
@@ -501,9 +501,9 @@ export function Panel() {
 }
 ```
 
-The configured helper resolves token names. Explicit `theme.tokens` references avoid collisions with CSS literals. Use `theme.vars` for CSS expressions. Zyzz config modules are ordinary source modules and do not require a `.stylex.ts` suffix.
+The configured helper resolves token names. Explicit `vars` references avoid collisions with CSS literals. Use `vars` for CSS expressions. Zyzz config modules are ordinary source modules and do not require a `.stylex.ts` suffix.
 
-### Independent Variables
+### Independent Vars
 
 Not every StyleX variable belongs in a Zyzz theme group. Use [`variable`](../api/core/variable.md) for a custom property with its own scope and assignments:
 
@@ -516,7 +516,7 @@ namespace variables {
 
 namespace styles {
   export const scope = style({
-    variables: { [variables.accent]: '#2563eb' },
+    vars: { [variables.accent]: '#2563eb' },
   })
 
   export const label = style({ color: variables.accent })
@@ -541,18 +541,18 @@ StyleX's [`createTheme`](https://stylexjs.com/docs/learn/theming/creating-themes
 
 ```ts
 // zyzz.config.ts
-import { Config, Theme } from 'zyzz'
+import { Config, Vars } from 'zyzz'
 
-const base = Theme.define({
+const base = Vars.define({
   color: { accent: '#2563eb', surface: '#fff', text: '#111' },
   spacing: { gap: '16px' },
 })
 
-const mint = Theme.extend(base, { color: { accent: '#047857' } })
+const mint = Vars.extend(base, { color: { accent: '#047857' } })
 
-export const { style, themes } = Config.create({
-  defaultTheme: 'base',
-  themes: {
+export const { style, varss } = Config.create({
+  defaultVars: 'base',
+  vars: {
     base,
     mint,
   },
@@ -560,7 +560,7 @@ export const { style, themes } = Config.create({
 ```
 
 ```tsx
-import { style, themes } from './zyzz.config.js'
+import { style, varss } from './zyzz.config.js'
 
 namespace styles {
   export const label = style({ color: 'accent' })
@@ -568,7 +568,7 @@ namespace styles {
 
 export function Preview() {
   return (
-    <section {...themes({ theme: 'mint' })}>
+    <section {...vars({ set: 'mint' })}>
       <span {...styles.label()}>Account</span>
     </section>
   )
@@ -585,7 +585,7 @@ For StyleX variables driven by `prefers-color-scheme`, preserve the media query 
 import { Config } from 'zyzz'
 
 const { style } = Config.create({
-  theme: {
+  vars: {
     color: {
       surface: { dark: '#111', light: '#fff' },
       text: { dark: '#fff', light: '#111' },

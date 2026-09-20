@@ -17,7 +17,7 @@ const tokens = declarations.find(
   (node) => node.id.type === 'Identifier' && node.id.name === 'tokens',
 )!.init!
 const config = declarations.find(
-  (node) => node.id.type === 'ObjectPattern',
+  (node) => node.id.type === 'Identifier' && node.id.name === 'config',
 )!.init!
 if (tokens.type !== 'TSAsExpression' || config.type !== 'CallExpression')
   throw new Error('Unexpected bundled configuration source layout.')
@@ -28,7 +28,7 @@ const property = options.properties.find(
   (node) =>
     node.type === 'Property' &&
     node.key.type === 'Identifier' &&
-    node.key.name === 'theme',
+    node.key.name === 'vars',
 )
 if (!property || property.type !== 'Property')
   throw new Error('Missing bundled theme.')

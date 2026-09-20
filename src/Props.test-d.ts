@@ -1,6 +1,7 @@
 /** Verifies inferred component props through the public entrypoint. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { type Props, Theme, variants } from 'zyzz'
+import { type Props, variants } from 'zyzz'
+import * as Theme from './internal/Theme.js'
 
 describe('Props.Variants', () => {
   test('preserves selections and styling overrides', () => {

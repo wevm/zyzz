@@ -1,10 +1,15 @@
 /** Checks variable reference domains and configured token inference. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, Variables } from 'zyzz'
+import * as Zyzz from 'zyzz'
+import { Config, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('retains query-like names inside categories', () => {
+    const vars = Vars.define({ color: { containers: '#fff' } })
+    expectTypeOf(vars.color.containers.group).toEqualTypeOf<'color'>()
+  })
   test('infers mapped names and explicit reference domains', () => {
-    const base = Variables.define({
+    const base = Vars.define({
       color: { accent: '#2563eb' },
       spacing: {
         page: { default: '16px', '@media (min-width: 768px)': '32px' },
@@ -12,7 +17,7 @@ describe('define', () => {
       surface: { panel: '#fff' },
     })
     const config = Config.create({
-      variables: base,
+      vars: base,
       mappings: { spacing: ['padding'], surface: ['backgroundColor'] },
     })
     config.style({
@@ -27,21 +32,21 @@ describe('define', () => {
     config.style({ color: 'missing' })
     // @ts-expect-error color references do not supply lengths
     config.style({ width: config.vars.color.accent })
-    const disabled = Config.create({ variables: base, mappings: { color: [] } })
+    const disabled = Config.create({ vars: base, mappings: { color: [] } })
     // @ts-expect-error disabled category
     disabled.style({ color: 'accent' })
     disabled.style({ color: disabled.vars.color.accent })
     expectTypeOf(config.vars.color.accent.group).toEqualTypeOf<'color'>()
   })
   test('checks conditional domains and explicit string references', () => {
-    Variables.define({
+    Vars.define({
       // @ts-expect-error media branches must retain the default domain
       size: { default: '16px', '@media (min-width: 600px)': '#fff' },
     })
     // @ts-expect-error media leaves require a default
-    Variables.define({ size: { '@media (min-width: 600px)': '16px' } })
+    Vars.define({ size: { '@media (min-width: 600px)': '16px' } })
     const config = Config.create({
-      variables: { misc: { face: 'Inter', length: '16px', negative: '-16px' } },
+      vars: { misc: { face: 'Inter', length: '16px', negative: '-16px' } },
     })
     config.style({
       fontFamily: config.vars.misc.face,
@@ -53,40 +58,65 @@ describe('define', () => {
     config.style({ padding: config.vars.misc.negative })
   })
   test('selects compatible named sets', () => {
-    const base = Variables.define({ color: { accent: '#2563eb' } })
-    const alternate = Variables.extend(base, { color: { accent: '#9333ea' } })
+    const base = Vars.define({ color: { accent: '#2563eb' } })
+    const alternate = Vars.extend(base, { color: { accent: '#9333ea' } })
     const config = Config.create({
-      variables: { base, alternate },
-      defaultVariables: 'base',
+      vars: { base, alternate },
+      defaultVars: 'base',
     })
-    config.variables({ set: 'alternate', colorScheme: 'dark' })
+    config.vars({ set: 'alternate', colorScheme: 'dark' })
     // @ts-expect-error unknown set
-    config.variables({ set: 'missing' })
+    config.vars({ set: 'missing' })
     const invalid = {
-      variables: { base, alternate },
-      defaultVariables: 'missing',
+      vars: { base, alternate },
+      defaultVars: 'missing',
     } as const
     // @ts-expect-error unknown default
     Config.create(invalid)
     const mismatched = {
-      variables: {
+      vars: {
         base,
-        other: Variables.define({ color: { other: '#fff' } }),
+        other: Vars.define({ color: { other: '#fff' } }),
       },
-      defaultVariables: 'base',
+      defaultVars: 'base',
     } as const
     // @ts-expect-error sets must share paths
     Config.create(mismatched)
     const wrongDomain = {
-      variables: {
+      vars: {
         base,
-        other: Variables.define({ color: { accent: '16px' } }),
+        other: Vars.define({ color: { accent: '16px' } }),
       },
-      defaultVariables: 'base',
+      defaultVars: 'base',
     } as const
     // @ts-expect-error sets must share scalar domains
     Config.create(wrongDomain)
     // @ts-expect-error extensions cannot add paths
-    Variables.extend(base, { color: { other: '#fff' } })
+    Vars.extend(base, { color: { other: '#fff' } })
   })
+})
+
+test('exposes one variable API', () => {
+  // @ts-expect-error Removed public module.
+  void Zyzz.Theme
+  // @ts-expect-error Use Vars.
+  void Zyzz.Variables
+  // @ts-expect-error Use vars.
+  Config.create({ theme: {} })
+  // @ts-expect-error Use vars and defaultVars.
+  Config.create({ themes: { base: {} }, defaultTheme: 'base' })
+  const config = Config.create({ vars: { color: { ink: 'red' } } })
+  config.vars()
+  config.vars({ colorScheme: 'dark' })
+  // @ts-expect-error Use set.
+  config.vars({ theme: 'default' })
+  // @ts-expect-error Removed helper.
+  void config.theme
+  // @ts-expect-error Removed catalog helper.
+  void config.themes
+  const html = Config.create({
+    vars: { color: { ink: 'red' } },
+    output: 'html',
+  })
+  expectTypeOf(html.vars().class).toEqualTypeOf<string>()
 })

@@ -6,7 +6,7 @@
   import Queries from './Queries.svelte'
   import Relationships from './Relationships.svelte'
   import Styling from './Styling.svelte'
-  import { appearance, themes } from './zyzz.config.js'
+  import { appearance, vars } from './zyzz.config.js'
 
   let selection = $state(appearance.get())
 
@@ -25,15 +25,15 @@
       <div {...styles.row()}>
         <button
           {...styles.button()}
-          aria-pressed={selection.theme === 'indigo'}
-          onclick={() => select({ theme: 'indigo' })}
+          aria-pressed={selection.set === 'indigo'}
+          onclick={() => select({ set: 'indigo' })}
         >
           Indigo
         </button>
         <button
           {...styles.button()}
-          aria-pressed={selection.theme === 'mint'}
-          onclick={() => select({ theme: 'mint' })}
+          aria-pressed={selection.set === 'mint'}
+          onclick={() => select({ set: 'mint' })}
         >
           Mint
         </button>
@@ -71,12 +71,12 @@
             {...styles.sample()}
             onclick={() =>
               select({
-                theme: selection.theme === 'indigo' ? 'mint' : 'indigo',
+                theme: selection.set === 'indigo' ? 'mint' : 'indigo',
               })}
           >
-            Parent: {selection.theme}
+            Parent: {selection.set}
           </button>
-          <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
+          <div {...vars({ set: 'mint', colorScheme: 'dark' })}>
             <div {...styles.nested()} data-testid="nested-theme">
               <button {...styles.sample()}>Always mint + dark</button>
             </div>

@@ -1,3 +1,4 @@
+import { Vars } from 'zyzz'
 /** Exercises shared authoring through native compilation and static selection. @module */
 import * as StaticValues from '../../test/fixtures/native/StaticValues.js'
 import * as Esbuild from 'esbuild'
@@ -9,7 +10,8 @@ import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import { getQuickJS } from 'quickjs-emscripten'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
+import * as Theme from '../internal/Theme.js'
 import { Source } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
@@ -42,7 +44,7 @@ describe('compose', () => {
     })
     const styles = StyleSheet.select(tables.styles, {
       colorScheme: 'dark',
-      theme: 'default',
+      set: 'default',
     })
     const override = { paddingLeft: 16, color: 'blue' }
     const composed = StyleSheet.compose(styles.card, [false, [override]])
@@ -585,7 +587,7 @@ describe('compile', () => {
     const output = StyleSheet.compile({ styles, units: { px: 2, rem: 16 } })
     const selected = StyleSheet.select(output.styles, {
       colorScheme: 'dark',
-      theme: 'default',
+      set: 'default',
     })
 
     expect(selected).toMatchInlineSnapshot(`
@@ -742,7 +744,7 @@ describe('compile', () => {
     const output = StyleSheet.compile({ styles, units: { px: 2, rem: 16 } })
     const selected = StyleSheet.select(output.styles, {
       colorScheme: 'light',
-      theme: 'default',
+      set: 'default',
     })
 
     expect(selected.card.transform).toMatchInlineSnapshot(`
@@ -946,7 +948,7 @@ describe('compile', () => {
     const output = StyleSheet.compile({ styles })
     const selected = StyleSheet.select(output.styles, {
       colorScheme: 'light',
-      theme: 'default',
+      set: 'default',
     })
 
     expect(selected.card).toMatchInlineSnapshot(`
@@ -1011,7 +1013,7 @@ describe('compile', () => {
           `
         import {Style} from 'zyzz'; import {StyleSheet} from 'zyzz/react-native';
         const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',transform:'translateX(2px) scale(2)',transformOrigin:'-1.5px 25%'}})});
-        console.log(JSON.stringify(StyleSheet.select(output.styles,{theme:'default',colorScheme:'light'})));
+        console.log(JSON.stringify(StyleSheet.select(output.styles,{set:'default',colorScheme:'light'})));
       `,
         ],
         { cwd: directory, timeout: 10_000 },
@@ -1044,21 +1046,21 @@ describe('compile', () => {
     }
   })
 
-  test('shares scheme-independent token tables within each theme', () => {
-    const base = Theme.define({
+  test('shares scheme-independent token tables within each set', () => {
+    const base = Vars.define({
       color: { ink: { dark: '#000', light: '#000' } },
       spacing: { md: '1rem' },
     })
-    const alternate = Theme.extend(base, {
+    const alternate = Vars.extend(base, {
       color: { ink: { dark: '#fff', light: '#f00' } },
       spacing: { md: '2rem' },
     })
     const styles = Style.define({
-      card: { color: base.tokens.color.ink, width: base.tokens.spacing.md },
+      card: { color: base.color.ink, width: base.spacing.md },
     })
     const output = StyleSheet.compile({
       styles,
-      themes: { base, alternate },
+      vars: { base, alternate },
       units: { rem: 16 },
     })
 
@@ -1085,19 +1087,19 @@ describe('compile', () => {
     `)
   })
 
-  test('compiles shared tokens into explicit theme and scheme tables', () => {
-    const base = Theme.define({
+  test('compiles shared tokens into explicit set and scheme tables', () => {
+    const base = Vars.define({
       color: { ink: { dark: '#fff', light: '#000' } },
       spacing: { md: '1rem' },
     })
-    const alternate = Theme.extend(base, { spacing: { md: '2rem' } })
+    const alternate = Vars.extend(base, { spacing: { md: '2rem' } })
     const styles = Style.define({
-      card: { color: base.tokens.color.ink, padding: base.tokens.spacing.md },
+      card: { color: base.color.ink, padding: base.spacing.md },
       fixed: { opacity: 0.5 },
     })
     const output = StyleSheet.compile({
       styles,
-      themes: { base, alternate },
+      vars: { base, alternate },
       units: { rem: 16 },
     })
 
@@ -1130,7 +1132,7 @@ describe('compile', () => {
     )
     expect(Object.isFrozen(output.styles)).toMatchInlineSnapshot('true')
     expect(
-      Css.compile({ styles, themes: { base, alternate } }).css.includes(
+      Css.compile({ styles, vars: { base, alternate } }).css.includes(
         'light-dark(#000,#fff)',
       ),
     ).toMatchInlineSnapshot('true')
@@ -1183,11 +1185,11 @@ describe('compile', () => {
   })
 
   test('does not substitute unrelated token contracts with matching paths', () => {
-    const base = Theme.define({ color: { ink: 'red' } })
-    const unrelated = Theme.define({ color: { ink: 'blue' } })
+    const base = Vars.define({ color: { ink: 'red' } })
+    const unrelated = Vars.define({ color: { ink: 'blue' } })
     const output = StyleSheet.compile({
-      styles: Style.define({ text: { color: base.tokens.color.ink } }),
-      themes: { unrelated },
+      styles: Style.define({ text: { color: base.color.ink } }),
+      vars: { unrelated },
     })
 
     expect(output.styles.unrelated.light.text).toMatchInlineSnapshot(
@@ -1225,8 +1227,8 @@ describe('compile', () => {
   })
 
   test('reports a precise property path without accepting web variables', () => {
-    const theme = Theme.define({ color: { ink: 'red' } })
-    const styles = Style.define({ card: { color: theme.vars.color.ink } })
+    const set = Theme.define({ color: { ink: 'red' } })
+    const styles = Style.define({ card: { color: set.vars.color.ink } })
     try {
       StyleSheet.compile({ styles })
       throw new Error('Expected native rejection')
@@ -1259,7 +1261,7 @@ describe('compile', () => {
     }
   })
 
-  test('rejects invalid unit scales and empty theme maps', () => {
+  test('rejects invalid unit scales and empty set maps', () => {
     const styles = Style.define({ card: { padding: '1px' } })
     expect(() =>
       StyleSheet.compile({ styles, units: { px: 0 } }),
@@ -1267,9 +1269,9 @@ describe('compile', () => {
       `[StyleSheet.CompileError: ["units","px"]: Unit scales must be positive finite px or rem conversions.]`,
     )
     expect(() =>
-      StyleSheet.compile({ styles, themes: {} }),
+      StyleSheet.compile({ styles, vars: {} }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[StyleSheet.CompileError: ["themes"]: Supply at least one theme, or omit themes for a default table.]`,
+      `[StyleSheet.CompileError: ["vars"]: Supply at least one set, or omit vars for a default table.]`,
     )
   })
 
@@ -1282,8 +1284,8 @@ describe('compile', () => {
       stdin: {
         contents: `import {Style} from './src/index.ts'; import {StyleSheet} from './src/react-native/index.ts';
           const output=StyleSheet.compile({styles:Style.define({card:{padding:'8px',color:'#fff',transform:'rotate(90deg)',transformOrigin:'top right'}})});
-          export const result=StyleSheet.select(output.styles,{theme:'default',colorScheme:'dark'});
-          export const stable=result===StyleSheet.select(output.styles,{theme:'default',colorScheme:'dark'});`,
+          export const result=StyleSheet.select(output.styles,{set:'default',colorScheme:'dark'});
+          export const stable=result===StyleSheet.select(output.styles,{set:'default',colorScheme:'dark'});`,
         loader: 'ts',
         resolveDir: Path.resolve(import.meta.dirname, '../..'),
       },
@@ -1337,24 +1339,24 @@ describe('select', () => {
     expect(
       StyleSheet.select(output.styles, {
         colorScheme: 'light',
-        theme: 'default',
+        set: 'default',
       }) === output.styles.default.light,
     ).toMatchInlineSnapshot('true')
     expect(() =>
       StyleSheet.select(output.styles, {
-        theme: '__proto__',
+        set: '__proto__',
         colorScheme: 'light',
       } as never),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[StyleSheet.SelectionError: Select an existing theme label and light or dark colorScheme.]`,
+      `[StyleSheet.SelectionError: Select an existing set label and light or dark colorScheme.]`,
     )
     expect(() =>
       StyleSheet.select(output.styles, {
-        theme: 'default',
+        set: 'default',
         colorScheme: 'system',
       } as never),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[StyleSheet.SelectionError: Select an existing theme label and light or dark colorScheme.]`,
+      `[StyleSheet.SelectionError: Select an existing set label and light or dark colorScheme.]`,
     )
   })
 })

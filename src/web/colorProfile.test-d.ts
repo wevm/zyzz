@@ -1,6 +1,7 @@
 /** Checks the public profile descriptor and reference contract. @module */
 import { colorProfile } from 'zyzz/web'
 import { style } from 'zyzz'
+
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 
 describe('colorProfile', () => {

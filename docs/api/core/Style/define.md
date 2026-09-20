@@ -45,9 +45,9 @@ Style.define(
 )
 ```
 
-### options.theme
+### options.set
 
-- Type: `Theme.Definition`
+- Type: `Vars.Definition`
 - Default: `undefined`
 
 Explicit defined theme enabling shorthand token inference. Optional themes must be narrowed before token names infer.

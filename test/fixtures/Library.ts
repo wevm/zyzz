@@ -21,18 +21,15 @@ export async function create(root: string, options: create.Options = {}) {
   const compiled = Graph.compile({
     modules: {
       '@acme/theme/index.ts': options.configuration
-        ? `import { Config } from 'zyzz';
-export const zyzz = Config.create({defaultTheme:'base',layers:['components'],themes:{base:{color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}},mint:{color:{brand:{light:'#175',dark:'#afa'}},spacing:{md:'8px'}}}});
-export const design = zyzz;
-export const theme = zyzz.themes.base;
-export const reusable = Config.create({theme});
-export const style = zyzz.style;
-export const props = zyzz.style({color:'brand',padding:'md'})();`
-        : `import { Theme } from 'zyzz';
-export const theme = Theme.define({color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}});
-export const mint = Theme.extend(theme,{color:{brand:{light:'#175',dark:'#afa'}}});
-export const style = theme.style;
-export const props = style({color:'brand',padding:'md'})();`,
+        ? "import { Config } from 'zyzz';\nexport const zyzz = Config.create({defaultVars:'base',layers:['components'],vars:{base:{color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}},mint:{color:{brand:{light:'#175',dark:'#afa'}},spacing:{md:'8px'}}}});\nexport const design = zyzz;\nexport const theme = zyzz.vars;\nexport const reusable = Config.create({vars:theme});\nexport const style = zyzz.style;\nexport const props = zyzz.style({color:'brand',padding:'md'})();"
+        : `import {Config,Vars} from 'zyzz';
+const base=Vars.define({color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}});
+const mint=Vars.extend(base,{color:{brand:{light:'#175',dark:'#afa'}}});
+const config=Config.create({vars:{base,mint},defaultVars:'base'});
+export const style=config.style;
+export const vars=config.vars;
+export const theme=vars;
+export const props=style({color:'brand',padding:'md'})();`,
     },
   })
 

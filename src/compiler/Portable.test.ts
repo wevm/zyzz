@@ -1,5 +1,6 @@
+import { Vars } from 'zyzz'
 /** Exercises unchanged authoring against extracted CSS and optional source optimization. @module */
-import { Config, cx, style, Theme, variable, variants } from '../index.js'
+import { Config, cx, style, variable, variants } from '../index.js'
 import { customMedia } from '../web/index.js'
 import { Graph, Transform } from './index.js'
 import * as Trace from '@jridgewell/trace-mapping'
@@ -14,9 +15,14 @@ import {
 
 describe('compile', () => {
   test('keeps extended theme scopes stable without a source transform', () => {
-    const base = Theme.define({ color: { primary: 'red' } }, { id: 'palette' })
-    const alternate = Theme.extend(base, { color: { primary: 'blue' } })
-    const source = `import { Theme } from 'zyzz'; const base = Theme.define({ color: { primary: 'red' } }, { id: 'palette' }); const alternate = Theme.extend(base, { color: { primary: 'blue' } }); export const scope = alternate.className; export const card = base.style({ color: 'primary' });`
+    const base = Vars.define({ color: { primary: 'red' } }, { id: 'palette' })
+    const alternate = Vars.extend(base, { color: { primary: 'blue' } })
+    const config = Config.create({
+      vars: { base, alternate },
+      defaultVars: 'base',
+      id: 'scopes',
+    })
+    const source = `import {Config,Vars} from 'zyzz';const base=Vars.define({color:{primary:'red'}},{id:'palette'});const alternate=Vars.extend(base,{color:{primary:'blue'}});const config=Config.create({vars:{base,alternate},defaultVars:'base',id:'scopes'});export const scope=config.vars({set:'alternate'}).className;export const card=config.style({color:'primary'});`
     const output = Transform.compile({
       compiler: false,
       moduleId: 'app.ts',
@@ -24,7 +30,9 @@ describe('compile', () => {
     })
 
     expect(output.code).toBe(source)
-    expect(output.css).toContain(`.${alternate.className}{`)
+    expect(output.css).toContain(
+      `.${config.vars({ set: 'alternate' }).className}{`,
+    )
   })
 
   test('matches explicitly named custom queries without rewriting source', () => {
@@ -145,12 +153,11 @@ describe('compile', () => {
   test('binds a configured theme with an explicit identity', () => {
     const config = Config.create({
       id: 'app',
-      theme: { color: { primary: 'red' } },
+      vars: { color: { primary: 'red' } },
     })
     const card = config.style({ color: 'primary' })
-    const source = `import { Config } from 'zyzz';
-      const { style, theme } = Config.create({ id: 'app', theme: { color: { primary: 'red' } } });
-      export const card = style({ color: 'primary' });`
+    const source =
+      "import { Config } from 'zyzz';\n      const { style, vars:theme } = Config.create({ id: 'app', vars: { color: { primary: 'red' } } });\n      export const card = style({ color: 'primary' });"
     const output = Graph.compile({
       compiler: false,
       modules: { 'app/theme.ts': source },
@@ -160,7 +167,7 @@ describe('compile', () => {
       output.modules['app/theme.ts']!.css.includes(card().className),
     ).toMatchInlineSnapshot('true')
     expect(
-      output.modules['app/theme.ts']!.css.includes(config.theme.className),
+      output.modules['app/theme.ts']!.css.includes(config.vars().className),
     ).toMatchInlineSnapshot('true')
   })
 })
@@ -175,14 +182,14 @@ describe('compile', () => {
       global({ body: { margin: '0' } });
       const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } }, { id: 'spin' });
       const accent = variable('color', { id: 'accent' });
-      const { style: themed, theme } = Config.create({ cssOutput: '${cssOutput}', id: 'palette', theme: { color: { primary: 'red' } } });
+      const { style: themed, vars:theme } = Config.create({ cssOutput: '${cssOutput}', id: 'palette', vars:{ color: { primary: 'red' } } });
       const parent = style({}, { id: 'parent' });
       const child = themed({ color: 'primary', selectors: { [\`\${parent} &\`]: { backgroundColor: 'blue' } } });
       const left = style({ paddingLeft: '8px', color: accent });
       const padding = style({ padding: '16px', animationName: spin });
       const button = variants({ variants: { size: { fluid: (values: { width: \`\${number}px\` }) => ({ width: values.width }), fixed: { width: '10px' } } }, conditions: { wide: '@media (min-width: 500px)' } }, { id: 'button' });
       export function render(enabled: boolean) {
-        return { theme: { className: theme.className }, parent: parent(), child: child(), box: cx(left({ variables: accent.set('green') }), enabled && padding()), button: button({ size: { fluid: { width: '20px' } }, conditions: { wide: { size: { fluid: { width: '30px' } } } } }) };
+        return { theme:theme(), parent: parent(), child: child(), box: cx(left({ variables: accent.set('green') }), enabled && padding()), button: button({ size: { fluid: { width: '20px' } }, conditions: { wide: { size: { fluid: { width: '30px' } } } } }) };
       }`
       const browser = await chromium.launch()
       try {
@@ -313,13 +320,13 @@ describe('Transform.compile', () => {
   })
   test('rejects missing ids on selectable empty scopes and locates invalid selector ids', () => {
     for (const source of [
-      `import {Config} from 'zyzz';const {themes}=Config.create({themes:{light:{},dark:{}},defaultTheme:'light'});themes({theme:'dark'})`,
-      `import {Theme} from 'zyzz';const theme=Theme.define({});export const scope=theme.className`,
+      "import {Config} from 'zyzz';const {vars:themes}=Config.create({vars:{light:{},dark:{}},defaultVars:'light'});themes({set:'dark'})",
+      "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';const theme=Vars.define({}); const themeConfig=Config.create({vars:theme});export const scope=themeConfig.vars().className",
     ])
       expect(() =>
         Transform.compile({ compiler: false, moduleId: 'empty.ts', source }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Error: CSS-only themes require an explicit id on Config.create or Theme.define.]`,
+        `[Error: CSS-only themes require an explicit id on Config.create or Vars.define.]`,
       )
     expect(() =>
       Transform.compile({
@@ -337,17 +344,14 @@ describe('cx', () => {
     const config = Config.create({
       id: 'html',
       output: 'html',
-      themes: {
+      vars: {
         light: { color: { primary: 'red' } },
         dark: { color: { primary: 'blue' } },
       },
-      defaultTheme: 'light',
+      defaultVars: 'light',
     })
     expect(
-      cx(
-        config.themes({ theme: 'dark' }),
-        config.style({ color: 'primary' })(),
-      ),
+      cx(config.vars({ set: 'dark' }), config.style({ color: 'primary' })()),
     ).toMatchInlineSnapshot(`
     {
       "class": "z-compose-1wfpeq21v73xyw z_theme-id-68-74-6d-6c-dark",
@@ -363,9 +367,9 @@ describe('Graph.compile', () => {
         compiler: false,
         modules: {
           'a.ts':
-            "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'red'}},{id:'same'}); export const card=t.style({color:'primary'})",
+            "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz'; const t=Vars.define({color:{primary:'red'}},{id:'same'}); const tConfig=Config.create({vars:t}); export const card=tConfig.style({color:'primary'})",
           'b.ts':
-            "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'blue'}},{id:'same'}); export const card=t.style({color:'primary'})",
+            "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz'; const t=Vars.define({color:{primary:'blue'}},{id:'same'}); const tConfig=Config.create({vars:t}); export const card=tConfig.style({color:'primary'})",
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -420,7 +424,8 @@ describe('Graph.compile', () => {
     const theme = Graph.compile({
       compiler: false,
       modules: {
-        'theme.ts': `import {Theme} from 'zyzz';export const theme=Theme.define({color:{primary:'red'}},{id:'same'})`,
+        'theme.ts':
+          "import {Vars} from 'zyzz';export const theme=Vars.define({color:{primary:'red'}},{id:'same'})",
       },
     })
     expect(() =>
@@ -428,7 +433,8 @@ describe('Graph.compile', () => {
         compiler: false,
         contracts: { 'theme.js': theme.contracts['theme.ts']! },
         modules: {
-          'app.ts': `import {Theme} from 'zyzz';export const theme=Theme.define({color:{primary:'blue'}},{id:'same'})`,
+          'app.ts':
+            "import {Vars} from 'zyzz';export const theme=Vars.define({color:{primary:'blue'}},{id:'same'})",
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(

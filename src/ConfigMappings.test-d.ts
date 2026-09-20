@@ -1,44 +1,61 @@
+import { Vars } from 'zyzz'
 /** Checks exact alias keys and every expanded target's token/value domain. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, Theme } from 'zyzz'
+import { Config, style } from 'zyzz'
 
 describe('create', () => {
   test('preserves HTML output on mapped theme handles', () => {
-    const { theme } = Config.create({
+    const themeConfig = Config.create({
       output: 'html',
-      theme: { padding: { sm: '4px' } },
+      vars: { padding: { sm: '4px' } },
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
     })
 
-    expectTypeOf(theme.style({ px: 'sm' })()).toHaveProperty('class')
+    expectTypeOf(themeConfig.style({ px: 'sm' })()).toHaveProperty('class')
 
-    const extended = Theme.extend(theme, { padding: { sm: '8px' } })
+    const extended = Vars.extend(themeConfig.vars, { padding: { sm: '8px' } })
+    const extendedConfig = Config.create({
+      vars: extended,
+      output: 'html',
+      shorthands: {
+        px: ['paddingLeft', 'paddingRight'],
+        'padding-x': ['paddingLeft', 'paddingRight'],
+      },
+    })
 
-    expectTypeOf(extended.style({ px: 'sm' })()).toHaveProperty('class')
+    expectTypeOf(extendedConfig.style({ px: 'sm' })()).toHaveProperty('class')
 
     // @ts-expect-error HTML output does not expose React className
-    void extended.style({ px: 'sm' })().className
+    void extendedConfig.style({ px: 'sm' })().className
 
     expectTypeOf(
-      theme.style((values: { width: '4px' | '8px' }) => ({ px: values.width }))(
-        {
-          width: '4px',
-        },
-      ).style,
+      themeConfig.style((values: { width: '4px' | '8px' }) => ({
+        px: values.width,
+      }))({
+        width: '4px',
+      }).style,
     ).toEqualTypeOf<string | undefined>()
     // @ts-expect-error HTML handles do not expose React className
-    expectTypeOf(theme.style({ px: 'sm' })().className).toEqualTypeOf<never>()
+    void themeConfig.style({ px: 'sm' })().className
   })
   test('preserves configured aliases through theme extensions', () => {
-    const { theme } = Config.create({
-      theme: { spacing: { sm: '4px' } },
+    const themeConfig = Config.create({
+      vars: { spacing: { sm: '4px' } },
       shorthands: { 'padding-x': ['paddingLeft', 'paddingRight'] },
     })
-    const extended = Theme.extend(theme, { spacing: { sm: '8px' } })
+    const extended = Vars.extend(themeConfig.vars, { spacing: { sm: '8px' } })
+    const extendedConfig = Config.create({
+      vars: extended,
+      output: 'html',
+      shorthands: {
+        px: ['paddingLeft', 'paddingRight'],
+        'padding-x': ['paddingLeft', 'paddingRight'],
+      },
+    })
 
-    extended.style({ 'padding-x': 'sm' })
+    extendedConfig.style({ 'padding-x': 'sm' })
     // @ts-expect-error extension retains finite alias names
-    extended.style({ unknownAlias: 'sm' })
+    extendedConfig.style({ unknownAlias: 'sm' })
   })
   test('does not infer aliases from a widened mapping record', () => {
     const { style } = Config.create({
@@ -53,12 +70,12 @@ describe('create', () => {
     Config.create({ shorthands: { 1: ['paddingLeft'] } })
   })
   test('infers aliases through nested styles and bound handles', () => {
-    const { style: configured, theme } = Config.create({
+    const { style: configured } = Config.create({
       shorthands: {
         px: ['paddingLeft', 'paddingRight'],
         mixed: ['marginLeft', 'paddingLeft'],
       },
-      theme: {
+      vars: {
         margin: { gap: '-4px', shared: '4px' },
         padding: { shared: '8px' },
       },
@@ -68,7 +85,7 @@ describe('create', () => {
       configured({ px: 'shared', ':hover': { px: 'shared !important' } })(),
     ).toHaveProperty('className')
 
-    theme.style({ px: 'shared' })
+    configured({ px: 'shared' })
     configured({ mixed: 'shared' })
     configured((values: { width: '10px' | '20px' }) => ({ px: values.width }))
     // @ts-expect-error every target must accept the token
@@ -91,7 +108,8 @@ describe('create', () => {
     Config.create({ shorthands: { padding: ['paddingLeft'] } })
     // @ts-expect-error aliases cannot target aliases
     Config.create({ shorthands: { px: ['paddingX'] } })
-    // @ts-expect-error padding tokens must be nonnegative
-    Config.create({ theme: { padding: { bad: '-2px' } } })
+    const negative = Config.create({ vars: { padding: { bad: '-2px' } } })
+    // @ts-expect-error padding declarations must be nonnegative
+    negative.style({ padding: negative.vars.padding.bad })
   })
 })

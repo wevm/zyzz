@@ -6,7 +6,7 @@ import type * as Native from 'zyzz/react-native'
 declare const Style: typeof Zyzz.Style
 declare const StyleSheet: typeof Native.StyleSheet
 declare const styles: Zyzz.Style.Definition<'card' | 'label'>
-declare const theme: Zyzz.Theme.Definition
+declare const set: Zyzz.Vars.Definition
 
 /** Warms the common native authoring and table contracts. */
 export function baseline() {
@@ -17,9 +17,9 @@ export function baseline() {
 bench('native / compile and select named tables', () => {
   const output = StyleSheet.compile({
     styles,
-    themes: { alternate: theme, base: theme },
+    vars: { alternate: set, base: set },
   })
-  StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'alternate' })
+  StyleSheet.select(output.styles, { colorScheme: 'dark', set: 'alternate' })
 }).types([432, 'instantiations'])
 
 bench('native / compose compiled styles', () => {

@@ -20,8 +20,8 @@ export type Definition<
 
 /**
  * Compiles every finite selection, including omitted axes, before application.
- * @param options - Static recipe, themes, and explicit native destination inputs.
- * @returns Immutable native tables with at most 256 selections per theme and scheme.
+ * @param options - Static recipe, vars, and explicit native destination inputs.
+ * @returns Immutable native tables with at most 256 selections per set and scheme.
  * @throws {CompileError} When recipe data is invalid or exceeds the selection budget.
  * @throws {StyleSheet.CompileError} When selected declarations cannot compile for native.
  */
@@ -108,7 +108,7 @@ export declare namespace compile {
     /** Validated static recipe retained by Source.extract. */
     readonly recipe: recipe
   }
-  /** Immutable tables retaining recipe metadata and theme labels. */
+  /** Immutable tables retaining recipe metadata and set labels. */
   type ReturnType<
     recipe extends Recipe.Definition = Recipe.Definition,
     themeName extends string = string,

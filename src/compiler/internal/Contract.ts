@@ -3,16 +3,16 @@
  * @module
  */
 import type * as Binding from '../../internal/Binding.js'
-import * as Config from '../../Config.js'
+import * as Config from '../../internal/Configuration.js'
 import * as Configurations from './Configurations.js'
 import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import * as Identifiers from './Identifiers.js'
 import * as PackedStyles from './PackedStyles.js'
 import * as Shorthands from '../../internal/Shorthands.js'
 import * as Stylesheets from './Stylesheets.js'
-import * as Theme from '../../Theme.js'
+import * as Theme from '../../internal/Theme.js'
 import * as VariableSets from '../../internal/VariableSets.js'
-import * as Variables from '../../Variables.js'
+import * as Vars from '../../Vars.js'
 import type * as Themes from './Themes.js'
 import * as Token from '../../internal/Token.js'
 
@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25,
+      22, 23, 24, 25, 26,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -91,8 +91,8 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    if (entry.variableSet === true && (data.version as number) < 25)
-      throw new Error('Variable sets require contract version 25 or later.')
+    if (entry.variableSet === true && (data.version as number) < 26)
+      throw new Error('Vars contracts require contract version 26 or later.')
     const mappings = VariableSets.mappings(entry.mappings)
     if (
       entry.cssOutput !== undefined &&
@@ -153,7 +153,7 @@ export function read(
     const definition =
       entry.variableSet === true
         ? VariableSets.theme(
-            Variables.define(decode(entry.tokens) as Variables.Values),
+            Vars.define(decode(entry.tokens) as Vars.Values),
             mappings,
           )
         : Theme.define(record(entry.tokens) as Theme.Tokens)
@@ -255,7 +255,7 @@ export function read(
       const reference = string(entry.reference)
       if (
         ![
-          9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+          9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -384,7 +384,7 @@ export function read(
         Config.create(
           variableOptions(
             options,
-            entry.variableMappings as Variables.Mappings | undefined,
+            entry.variableMappings as Vars.Mappings | undefined,
           ),
         )
       else Config.create(options as Config.create.Options)
@@ -411,7 +411,7 @@ export function read(
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
       ? entry.variableConfig === true
-        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Variables.Mappings | undefined))}>`
+        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | undefined))}>`
         : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
@@ -434,20 +434,20 @@ export function read(
         ...(entry.variableSet === true
           ? {
               variableSet: true,
-              type: `import('zyzz').Variables.Definition<${types[theme]!}>`,
+              type: `import('zyzz').Vars.Definition<${types[theme]!}>`,
             }
           : {}),
         ...(entry.directVariables === true
           ? {
               directVariables: true,
-              type: `import('zyzz').Variables.${entry.variableSet === true ? 'Definition' : 'References'}<${types[theme]!}>`,
+              type: `import('zyzz').Vars.${entry.variableSet === true ? 'Definition' : 'References'}<${types[theme]!}>`,
             }
           : {}),
         ...(entry.variableConfig === true
           ? {
               variableConfig: true,
               variableMappings: entry.variableMappings as
-                | Variables.Mappings
+                | Vars.Mappings
                 | undefined,
             }
           : {}),
@@ -474,7 +474,7 @@ export function read(
         ...(options
           ? {
               options,
-              type: `${outputType}${entry.initialization === true ? "['script']" : entry.root === true ? "['appearance']" : entry.selection === true ? (entry.variableConfig === true ? "['variables']" : "['themes']") : ''}`,
+              type: `${outputType}${entry.initialization === true ? "['script']" : entry.root === true ? "['appearance']" : entry.selection === true ? (entry.variableConfig === true ? "['vars']" : "['themes']") : ''}`,
             }
           : {}),
         ...(members
@@ -673,7 +673,7 @@ export function write(
           (theme) => theme[Token.definition].contract.variableSet,
         )
       )
-        return 25
+        return 26
       if (
         Object.values(themes).some((theme) =>
           Object.hasOwn(theme.tokens, 'typography'),
@@ -970,13 +970,13 @@ function encode(value: unknown): unknown {
 
 function variableOptions(
   options: Record<string, unknown>,
-  mappings?: Variables.Mappings,
+  mappings?: Vars.Mappings,
 ): Config.VariableOptions {
   const { theme, themes, defaultTheme, ...rest } = options
   return {
     ...rest,
-    variables: (themes ?? theme) as Variables.Values,
-    ...(themes ? { defaultVariables: String(defaultTheme) } : {}),
+    vars: (themes ?? theme) as Vars.Values,
+    ...(themes ? { defaultVars: String(defaultTheme) } : {}),
     ...(mappings ? { mappings } : {}),
   }
 }

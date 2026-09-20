@@ -41,9 +41,9 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [style](api/core/style.md): Reference and examples.
 - [Config](api/core/Config/README.md): Section index.
 - [Config.create](api/core/Config/create.md): Reference and examples.
-- [Theme](api/core/Theme/README.md): Section index.
-- [Theme.define](api/core/Theme/define.md): Reference and examples.
-- [Theme.extend](api/core/Theme/extend.md): Reference and examples.
+- [Vars](api/core/Vars/README.md): Section index.
+- [Vars.define](api/core/Vars/README.md): Reference and examples.
+- [Vars.extend](api/core/Vars/README.md): Reference and examples.
 - [variants](api/core/variants.md): Reference and examples.
 - [cx](api/core/cx.md): Reference and examples.
 - [Style](api/core/Style/README.md): Section index.

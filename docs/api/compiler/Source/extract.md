@@ -96,19 +96,19 @@ Validated ordered styles accepted by `Css.compile`. Extraction alone does not re
 output.styles
 ```
 
-## Theme Source
+## Variable Source
 
-Theme factories require literal token data in module-level `const` bindings. Extensions reference preceding local themes. Literal keys, nested palettes, numeric keys, and transparent `as` / `satisfies` wrappers are supported; expressions, spreads, mutation, namespace imports, and dynamic factories produce diagnostics without executing application code.
+Variable factories require literal values in module-level `const` bindings. Extensions reference preceding local variable sets. Literal keys, nested palettes, numeric keys, and transparent `as` / `satisfies` wrappers are supported; expressions, spreads, mutation, namespace imports, and dynamic factories produce diagnostics without executing application code.
 
 Bound `style` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `style`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings; use [Graph.compile](../Graph/compile.md) for imported/exported theme contracts, authoring aliases, and re-exports.
 
-Explicit `theme.tokens` paths are supported as scalar property values or fallback entries in bound style calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain; optional/dynamic access, token-object escapes, and root style token values produce diagnostics.
+Explicit `vars` paths are supported as scalar property values or fallback entries in bound style calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain; optional/dynamic access, token-object escapes, and root style token values produce diagnostics.
 
-Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Scope-map keys derive from module/binding identity.
+Pass both `styles` and `vars` to `Css.compile` when using extraction without rewriting. Scope-map keys derive from module/binding identity.
 
 ## Configuration Source
 
-`Config.create` accepts literal options with preceding reusable themes or inline token data. Config-bound `style`, static `theme`/`themes.<name>` token and class reads, and immutable aliases share the theme compiler. `defaultTheme` selects shorthand fallbacks; each configuration retains an isolated identity.
+`Config.create` accepts literal options with preceding reusable variable sets or inline values. Config-bound `style`, explicit `vars.<path>` references, `vars()` scope selection, and immutable aliases share the variable contract. `defaultVars` selects shorthand fallbacks; each configuration retains an isolated identity.
 
 Use the source graph for named config imports and re-exports. Dynamic access, object escapes, mutation, layer bodies, and variants produce diagnostics. Source is never evaluated.
 

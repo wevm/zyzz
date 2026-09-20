@@ -1,7 +1,9 @@
 /** Verifies recipe inference and rejected authoring through the public entrypoint. @module */
 import type { CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, Theme, variants } from 'zyzz'
+import { variants } from 'zyzz'
+import * as Theme from './internal/Theme.js'
+import * as Config from './internal/Configuration.js'
 
 describe('variants', () => {
   test('accepts React inline overrides through inferred recipe props', () => {

@@ -2,17 +2,17 @@
  * Defines typed token contracts and compatible immutable theme overrides.
  * @module
  */
-import { MissingTransformError, style } from './styleFunction.js'
-import * as Authoring from './internal/Authoring.js'
-import * as Identity from './internal/Identity.js'
-import { variants } from './variants.js'
-import type * as Binding from './internal/Binding.js'
-import type * as Literal from './internal/Literal.js'
-import * as Query from './internal/Query.js'
-import * as Token from './internal/Token.js'
-import * as Typography from './internal/Typography.js'
-import type * as Value from './internal/Value.js'
-import type * as Style from './Style.js'
+import { MissingTransformError, style } from '../styleFunction.js'
+import * as Authoring from './Authoring.js'
+import * as Identity from './Identity.js'
+import { variants } from '../variants.js'
+import type * as Binding from './Binding.js'
+import type * as Literal from './Literal.js'
+import * as Query from './Query.js'
+import * as Token from './Token.js'
+import * as Typography from './Typography.js'
+import type * as Value from './Value.js'
+import type * as Style from '../Style.js'
 
 /** Complete color-scheme pair or a shared color. */
 export type Color =
@@ -96,7 +96,7 @@ export type Definition<
   /** Token-aware single-element recipe authoring. */
   readonly variants: boundVariants
   /** Web variable references; source templates retain their identity and fallback. */
-  readonly vars: Token.Variables<References<tokens>>
+  readonly vars: Token.Vars<References<tokens>>
 }
 
 /**

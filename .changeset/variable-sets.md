@@ -1,14 +1,18 @@
 ---
-'zyzz': minor
+'zyzz': major
 ---
 
-Added shared variable sets with conditional values, configurable property mappings, typed references, and scoped selection.
+Replaced theme APIs with `Vars`, configurable variable sets, and callable `vars` references and scope selection.
 
-```ts
-const base = Variables.define({ color: { accent: '#2563eb' } })
-const alternate = Variables.extend(base, { color: { accent: '#9333ea' } })
-const { style, variables, vars } = Config.create({
-  variables: { base, alternate },
-  defaultVariables: 'base',
-})
+```diff
+-import { Theme, Config } from 'zyzz'
+-const base = Theme.define({ color: { accent: '#2563eb' } })
+-const { theme, themes } = Config.create({ themes: { base }, defaultTheme: 'base' })
+-theme.tokens.color.accent
+-themes({ theme: 'base', colorScheme: 'dark' })
++import { Vars, Config } from 'zyzz'
++const base = Vars.define({ color: { accent: '#2563eb' } })
++const { vars } = Config.create({ vars: { base }, defaultVars: 'base' })
++vars.color.accent
++vars({ set: 'base', colorScheme: 'dark' })
 ```

@@ -21,7 +21,7 @@ export default function App() {
   const [theme, setTheme] = useState<'blue' | 'green'>('blue')
   const resolved = scheme === 'system' ? system : scheme
   return (
-    <Provider colorScheme={resolved} theme={theme}>
+    <Provider colorScheme={resolved} set={theme}>
       <Samples
         scheme={scheme}
         colorScheme={resolved}

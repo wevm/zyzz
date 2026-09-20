@@ -13,7 +13,7 @@ import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Syntax from './internal/Syntax.js'
 import * as Walker from 'oxc-walker'
-import type * as Theme from '../Theme.js'
+import type * as Theme from '../internal/Theme.js'
 import * as Token from '../internal/Token.js'
 import * as Contract from './internal/Contract.js'
 import * as Relative from './internal/Relative.js'
@@ -135,7 +135,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       Object.keys(options.native ?? {}).length ||
     Object.entries(cache?.native ?? {}).some(([key, value]) => {
       const next = Reflect.get(options.native ?? {}, key)
-      if (key !== 'fonts' && key !== 'themes' && key !== 'units')
+      if (key !== 'fonts' && key !== 'vars' && key !== 'units')
         return value !== next
 
       return (
@@ -961,7 +961,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
           source: options.modules[moduleId]!,
         }
 
-    Object.assign(themes, result.themes)
+    Object.assign(themes, result.vars)
     visiting.delete(moduleId)
 
     return result
@@ -1060,7 +1060,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       native: {
         ...options.native,
         ...(options.native.fonts && { fonts: { ...options.native.fonts } }),
-        ...(options.native.themes && { themes: { ...options.native.themes } }),
+        ...(options.native.vars && { vars: { ...options.native.vars } }),
         ...(options.native.units && { units: { ...options.native.units } }),
       },
       resolutions: Object.freeze(resolutions),
@@ -1121,7 +1121,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
             ? ''
             : (Css.compile({
                 styles: { styles: [] },
-                themes: sharedThemes,
+                vars: sharedThemes,
                 contributions: [contribution],
               }).contributionCss ?? ''),
         layers: contribution.kind === 'layers' ? [contribution.names] : [],
@@ -1345,7 +1345,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
           )
         identities.set(name, signature)
       }
-      for (const [name, theme] of Object.entries(module.themes)) {
+      for (const [name, theme] of Object.entries(module.vars)) {
         const data = theme[Token.definition]
         if (data.contract[Token.identity]?.startsWith('id-'))
           register(`theme:${name}`, JSON.stringify(data.values))
@@ -1403,7 +1403,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
             [Themes.context]: {
               extracted: Object.freeze({
                 ...extracted.get(moduleId)!,
-                themes: sharedThemes,
+                vars: sharedThemes,
                 contributions: undefined,
               }),
               links: {},
@@ -1581,6 +1581,6 @@ function nativeOutput(
     get map() {
       return (sourceMap ??= JSON.parse(output.map) as Mapping.EncodedSourceMap)
     },
-    themes: Object.freeze({}),
+    vars: Object.freeze({}),
   })
 }

@@ -13,7 +13,7 @@ describe('create', () => {
       platform: 'ios',
       reducedMotion: false,
       rtl: false,
-      theme: 'default',
+      set: 'default',
       preprocessors: {
         borderWidth: (_value, context) => context.hairlineWidth,
       },
@@ -37,7 +37,7 @@ describe('create', () => {
       readonly color: typeof opaque
     }>()
     expectTypeOf(host.getSnapshot()).toEqualTypeOf<Host.Snapshot>()
-    host.update({ theme: 'alternate', colorScheme: 'dark', density: 3 })
+    host.update({ set: 'alternate', colorScheme: 'dark', density: 3 })
     // @ts-expect-error Platform is fixed for a host lifecycle.
     host.update({ platform: 'android' })
     // @ts-expect-error Scheme must be resolved by the device adapter.

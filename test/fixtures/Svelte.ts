@@ -6,7 +6,7 @@ import { styles, theme, variant } from './styles';
 let expanded = $state(false);
 onMount(() => { document.documentElement.dataset.ready = 'true' });
 </script>
-<main style="width:400px"><section class={theme.className} style:color-scheme={expanded ? 'dark' : 'light'}>
+<main style="width:400px"><section class={theme().class} style:color-scheme={expanded ? 'dark' : 'light'}>
 <div id="card" {...styles.card({ width: expanded ? '75%' : '25%', ...(expanded ? {} : { style: { marginTop: '12px', opacity: 0.5, '--note': '"<&>"' } }) })}>Card</div>
 <div id="variant" {...variant(expanded)}>Variant</div>
 <button id="toggle" onclick={() => expanded = !expanded}>Toggle</button>
@@ -18,14 +18,8 @@ document.documentElement.dataset.identity = String(original === document.querySe
 document.querySelector('#dispose')!.addEventListener('click', () => unmount(app));`,
   'server.tsx': `import { render as renderComponent } from 'svelte/server'; import App from './App.svelte';
 export function render() { const result = renderComponent(App); return { html: result.body, script: result.head }; }`,
-  'styles.ts': `import { Config, cx } from 'zyzz';
-import {controls} from '@acme/variants';
-import '@acme/variants/style.css';
-export function variant(expanded:boolean){return cx(controls.button({size:expanded?{custom:{padding:'20px'}}:undefined,active:expanded,conditions:{wide:{size:'lg'}}}),controls.override())}
-export const { style, theme } = Config.create({ output: 'html', theme: { color: { text: { light: '#000000', dark: '#ffffff' } } } });
-export namespace styles {
-  export const card = style((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))
-}`,
+  'styles.ts':
+    "import { Config, cx } from 'zyzz';\nimport {controls} from '@acme/variants';\nimport '@acme/variants/style.css';\nexport function variant(expanded:boolean){return cx(controls.button({size:expanded?{custom:{padding:'20px'}}:undefined,active:expanded,conditions:{wide:{size:'lg'}}}),controls.override())}\nexport const { style, vars:theme } = Config.create({ output: 'html', vars: { color: { text: { light: '#000000', dark: '#ffffff' } } } });\nexport namespace styles {\n  export const card = style((values: { width: `${number}%` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))\n}",
   'types.tsx': `import type { HTMLAttributes } from 'svelte/elements'; import { styles } from './styles';
 const attributes: HTMLAttributes<HTMLDivElement> = styles.card({ width: '25%' });
 // @ts-expect-error Dynamic values retain their CSS unit contract.

@@ -5,8 +5,8 @@
 import * as Binding from './Binding.js'
 import type * as Query from './Query.js'
 import type * as Shorthands from './Shorthands.js'
-import type * as Theme from '../Theme.js'
-import type * as VariableSets from '../Variables.js'
+import type * as Theme from './Theme.js'
+import type * as VariableSets from '../Vars.js'
 import * as Literal from './Literal.js'
 
 /** Checks a reference's property domain. */
@@ -82,15 +82,19 @@ export function acceptsReference(
     }
     if (reference.group === 'color') return Binding.accepts('color', property)
     if (reference.group === 'spacing')
-      return Binding.accepts(
-        value.endsWith('%')
-          ? value.startsWith('-')
-            ? 'signedPercentage'
-            : 'percentage'
-          : value.startsWith('-')
-            ? 'signedLength'
-            : 'length',
-        property,
+      return (
+        (Literal.rule(property)?.kind === 'compound' &&
+          accepts('spacing', property)) ||
+        Binding.accepts(
+          value.endsWith('%')
+            ? value.startsWith('-')
+              ? 'signedPercentage'
+              : 'percentage'
+            : value.startsWith('-')
+              ? 'signedLength'
+              : 'length',
+          property,
+        )
       )
     return (
       Literal.isLiteral(property, value) ||
@@ -206,18 +210,18 @@ export type Variable<group extends Group = Group> = `var(--${string})` &
   }
 
 /** Replaces portable scalar leaves with web-only references. */
-export type Variables<tree> =
+export type Vars<tree> =
   tree extends Reference<infer group>
     ? Variable<group>
-    : { readonly [key in keyof tree]: Variables<tree[key]> }
+    : { readonly [key in keyof tree]: Vars<tree[key]> }
 
 /** Creates web-only reference leaves without changing contract identities. */
-export function variables<tree>(tree: tree): Variables<tree> {
+export function variables<tree>(tree: tree): Vars<tree> {
   if (is(tree))
     return Object.freeze({
       ...tree,
       [web]: true as const,
-    }) as unknown as Variables<tree>
+    }) as unknown as Vars<tree>
 
   return Object.freeze(
     Object.fromEntries(
@@ -226,7 +230,7 @@ export function variables<tree>(tree: tree): Variables<tree> {
         variables(value),
       ]),
     ),
-  ) as Variables<tree>
+  ) as Vars<tree>
 }
 
 /** Internal definition metadata; never enumerable consumer output. */
@@ -281,15 +285,12 @@ export type Metadata = {
 /** Literal domain carried by explicit variable references during type checking. */
 export const scalar = Symbol('zyzz.variable.scalar')
 
-/** Configured category mappings retained by public authoring types. */
-export const mapping = Symbol('zyzz.variable.mappings')
-
 /** Inferred shorthand names whose leaves belong to a property domain. */
 export type Names<
   tokens,
   property extends keyof Literal.Properties,
 > = tokens extends {
-  readonly [mapping]: { values: infer values; mappings: infer mappings }
+  readonly '~vars': { values: infer values; mappings: infer mappings }
 }
   ? {
       [category in keyof values]: category extends keyof mappings
@@ -415,8 +416,28 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     ?.value as Metadata | undefined
   if (!data) throw new Error('Expected a theme definition.')
 
+  const groups = [
+    'backgroundColor',
+    'borderColor',
+    'borderRadius',
+    'margin',
+    'padding',
+    'spacing',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'letterSpacing',
+    'lineHeight',
+    'textColor',
+    'color',
+  ] as const
+
   if (data.contract.variableSet) {
-    for (const [path, entry] of Object.entries(data.values)) {
+    for (const [path, entry] of Object.entries(data.values).sort(
+      ([left], [right]) =>
+        groups.indexOf(left.split('.')[0] as (typeof groups)[number]) -
+        groups.indexOf(right.split('.')[0] as (typeof groups)[number]),
+    )) {
       const [category, ...parts] = path.split('.')
       const mapped = data.contract.mappings?.[category!]
       if (
@@ -448,21 +469,7 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
   }
 
   // Specific groups precede shared colors regardless of authored group order.
-  for (const group of [
-    'backgroundColor',
-    'borderColor',
-    'borderRadius',
-    'margin',
-    'padding',
-    'spacing',
-    'fontFamily',
-    'fontSize',
-    'fontWeight',
-    'letterSpacing',
-    'lineHeight',
-    'textColor',
-    'color',
-  ] as const) {
+  for (const group of groups) {
     if (!accepts(group, options.property)) continue
 
     const path = `${group}.${value}`

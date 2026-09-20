@@ -15,16 +15,8 @@ export const controls = {
 } as const
 
 /** Source includes shared colors, explicit spacing references, and line fallbacks. */
-export const source = `import { Config, style } from 'zyzz';
-const zyzz = Config.create({theme:{color:{brand:'#06c'},textColor:{brand:'#f00'},spacing:{offset:'4px',stroke:'2px'}}});
-export const automatic = style({textDecorationLine:'underline',textDecorationThickness:'from-font',textUnderlineOffset:'auto',textDecorationSkipInk:'auto'})();
-export const decorated = zyzz.style({
-  textDecorationLine:['underline','underline overline !important'],
-  textDecorationColor:'brand',textDecorationStyle:'wavy',
-  textDecorationThickness:zyzz.theme.tokens.spacing.stroke,textUnderlineOffset:'offset',textDecorationSkipInk:'none'
-})();
-export const percentage = style({textDecorationLine:'line-through',textDecorationThickness:'10%',textUnderlineOffset:'-10%'})();
-`
+export const source =
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{color:{brand:'#06c'},textColor:{brand:'#f00'},spacing:{offset:'4px',stroke:'2px'}}});\nexport const automatic = style({textDecorationLine:'underline',textDecorationThickness:'from-font',textUnderlineOffset:'auto',textDecorationSkipInk:'auto'})();\nexport const decorated = zyzz.style({\n  textDecorationLine:['underline','underline overline !important'],\n  textDecorationColor:'brand',textDecorationStyle:'wavy',\n  textDecorationThickness:zyzz.vars.spacing.stroke,textUnderlineOffset:'offset',textDecorationSkipInk:'none'\n})();\nexport const percentage = style({textDecorationLine:'line-through',textDecorationThickness:'10%',textUnderlineOffset:'-10%'})();\n"
 
 /** Public declarations exercise finite combinations and explicit defaults. */
 export const styles = {

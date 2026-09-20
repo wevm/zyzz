@@ -1,3 +1,4 @@
+import { Vars } from 'zyzz'
 /**
  * Exercises the public Transform workflow through real collaborating modules.
  * @module
@@ -74,7 +75,7 @@ import * as Util from 'node:util'
 import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
 import { beforeAll, describe, expect, test } from 'vite-plus/test'
-import { Config, Style, Theme } from 'zyzz'
+import { Config, Style } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Dynamic, Props } from 'zyzz/runtime'
 import { Css } from 'zyzz/web'
@@ -86,9 +87,8 @@ describe('compile', () => {
     test('preserves live packed styles and complete theme token scopes', () => {
       const library = Graph.compile({
         modules: {
-          'library.ts': `import {Config} from 'zyzz';
-            export const {style, themes} = Config.create({defaultTheme:'mint',themes:{mint:{color:{brand:'red',extra:'blue'}}}});
-            export namespace styles { export const card = style({color:'brand'}); }`,
+          'library.ts':
+            "import {Config} from 'zyzz';\n            export const {style, vars:themes} = Config.create({defaultVars:'mint',vars:{mint:{color:{brand:'red',extra:'blue'}}}});\n            export namespace styles { export const card = style({color:'brand'}); }",
         },
       })
       const output = Graph.compile({
@@ -98,7 +98,7 @@ describe('compile', () => {
           'app.ts': `import {style} from 'zyzz'; import {styles, themes} from 'library';
             const unused = style({width:'123px'});
             export const props = styles.card();
-            export const scope = themes({theme:'mint'});`,
+            export const scope = themes({set:'mint'});`,
         },
       })
 
@@ -861,20 +861,23 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-aauzfj1an5ia3-zyzz-theme{--z-taauzfj1an5ia3-zyzz-color_2e_brand:#06c;--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke:2px;--z-taauzfj1an5ia3-zyzz-spacing_2e_offset:4px;}
-      .z-text-decoration-line-underline-9CMWVR-0{text-decoration-line:underline;}
-      .z-text-decoration-thickness-from-font-9CMWVR-1{text-decoration-thickness:from-font;}
-      .z-text-underline-offset-auto-9CMWVR-2{text-underline-offset:auto;}
-      .z-text-decoration-skip-ink-auto-9CMWVR-3{text-decoration-skip-ink:auto;}
-      .z-text-decoration-line-1pmjpC-0{text-decoration-line:underline;text-decoration-line:underline overline!important;}
+      ":root{--z-taauzfj1an5ia3-zyzz-color_2e_brand:#06c;}
+      :root{--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke:2px;}
+      :root{--z-taauzfj1an5ia3-zyzz-spacing_2e_offset:4px;}
+      .z_theme-aauzfj1an5ia3-zyzz-theme{--z-taauzfj1an5ia3-zyzz-color_2e_brand:#06c;--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke:2px;--z-taauzfj1an5ia3-zyzz-spacing_2e_offset:4px;}
+      .z-text-decoration-line-underline-iEAvaB-0{text-decoration-line:underline;}
+      .z-text-decoration-thickness-from-font-iEAvaB-1{text-decoration-thickness:from-font;}
+      .z-text-underline-offset-auto-iEAvaB-2{text-underline-offset:auto;}
+      .z-text-decoration-skip-ink-auto-iEAvaB-3{text-decoration-skip-ink:auto;}
+      .z-text-decoration-line-eIkZEt-0{text-decoration-line:underline;text-decoration-line:underline overline!important;}
       .z-text-decoration-color-fv4y95{text-decoration-color:var(--z-taauzfj1an5ia3-zyzz-color_2e_brand,#06c);}
       .z-text-decoration-style-wavy-9i30TM{text-decoration-style:wavy;}
-      .z-text-decoration-thickness-JsEJLG-3{text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);}
-      .z-text-underline-offset-848GxD-4{text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);}
-      .z-text-decoration-skip-ink-none-8JMewl-5{text-decoration-skip-ink:none;}
-      .z-text-decoration-line-line-through-0jA2LR-0{text-decoration-line:line-through;}
-      .z-text-decoration-thickness-F-PWpk-1{text-decoration-thickness:10%;}
-      .z-text-underline-offset-xmZFFp-2{text-underline-offset:-10%;}"
+      .z-text-decoration-thickness-zTgXlo-3{text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);}
+      .z-text-underline-offset-bqQGLo-4{text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);}
+      .z-text-decoration-skip-ink-none-miKXW5-5{text-decoration-skip-ink:none;}
+      .z-text-decoration-line-line-through-tddxXl-0{text-decoration-line:line-through;}
+      .z-text-decoration-thickness-wtcpUU-1{text-decoration-thickness:10%;}
+      .z-text-underline-offset-avUMsN-2{text-underline-offset:-10%;}"
     `)
 
     const lines = output.css.split('\n')
@@ -902,10 +905,13 @@ describe('compile', () => {
       moduleId: 'example/decoration.ts',
       source: TextDecoration.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -997,23 +1003,24 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-r52i20xb74bg-zyzz-theme{--z-tr52i20xb74bg-zyzz-spacing_2e_indent:12px;}
-      .z-w-65px-UVwUbf-0{width:65px;}
+      ":root{--z-tr52i20xb74bg-zyzz-spacing_2e_indent:12px;}
+      .z_theme-r52i20xb74bg-zyzz-theme{--z-tr52i20xb74bg-zyzz-spacing_2e_indent:12px;}
+      .z-w-65px-dQt16--0{width:65px;}
       .z-word-break-break-all-ot4UW4{word-break:break-all;}
       .z-letter-spacing-TifHQj{letter-spacing:normal;letter-spacing:2px;}
-      .z-w-200px-kq0cg--0{width:200px;}
+      .z-w-200px-LF6llf-0{width:200px;}
       .z-text-indent-Y-QHx5{text-indent:var(--z-tr52i20xb74bg-zyzz-spacing_2e_indent,12px);}
       .z-text-align-last-start-ot4UW4{text-align-last:start;}
       .z-hyphens-manual-ot4UW4{hyphens:manual;}
       .z-text-transform-uppercase-ot4UW4{text-transform:uppercase;}
-      .z-w-65px-hAAALv-0{width:65px;}
+      .z-w-65px-co-n1--0{width:65px;}
       .z-overflow-hidden-ot4UW4{overflow:hidden;}
-      .z-white-space-kiFJGe-2{white-space:pre;white-space:nowrap!important;}
+      .z-white-space-DC8JqJ-2{white-space:pre;white-space:nowrap!important;}
       .z-text-overflow-ellipsis-ot4UW4{text-overflow:ellipsis;}
       .z-word-spacing-3px-ot4UW4{word-spacing:3px;}
-      .z-w-65px-hiyCVf-0{width:65px;}
+      .z-w-65px-E27HF--0{width:65px;}
       .z-overflow-wrap-anywhere-ot4UW4{overflow-wrap:anywhere;}
-      .z-white-space-normal-hiyCVf-2{white-space:normal;}"
+      .z-white-space-normal-E27HF--2{white-space:normal;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1039,10 +1046,13 @@ describe('compile', () => {
       moduleId: 'example/text.ts',
       source: TextFlow.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1145,27 +1155,28 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-10s7rhx1h1kg6d-zyzz-theme{--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge:10px;}
+      ":root{--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge:10px;}
+      .z_theme-10s7rhx1h1kg6d-zyzz-theme{--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge:10px;}
       .z-display-flex-x98OZk{display:flex;}
       .z-gap-40px-x98OZk{gap:40px;}
       .z-overflow-auto-x98OZk{overflow:auto;}
-      .z-w-100px-5SskBI-3{width:100px;}
-      .z-h-100px-5SskBI-4{height:100px;}
-      .z-scroll-padding-2dpRGq-5{scroll-padding:var(--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge,10px);}
-      .z-scroll-snap-type-KYY9Rn-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
+      .z-w-100px-WEBT-s-3{width:100px;}
+      .z-h-100px-WEBT-s-4{height:100px;}
+      .z-scroll-padding-IWEFRx-5{scroll-padding:var(--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge,10px);}
+      .z-scroll-snap-type-ZU4VbJ-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
       .z-flex-direction-column-x98OZk{flex-direction:column;}
-      .z-w-100px-t2z-lc-1{width:100px;}
-      .z-h-100px-t2z-lc-2{height:100px;}
-      .z-scroll-padding-10px-t2z-lc-3{scroll-padding:10px;}
-      .z-scroll-snap-type-h2CUsA-4{scroll-snap-type:y mandatory;}
-      .z-w-60px-CZ7IMc-0{width:60px;}
-      .z-h-60px-CZ7IMc-1{height:60px;}
+      .z-w-100px-1PtSgY-1{width:100px;}
+      .z-h-100px-1PtSgY-2{height:100px;}
+      .z-scroll-padding-10px-1PtSgY-3{scroll-padding:10px;}
+      .z-scroll-snap-type-2DaL4Z-4{scroll-snap-type:y mandatory;}
+      .z-w-60px-rU0IbY-0{width:60px;}
+      .z-h-60px-rU0IbY-1{height:60px;}
       .z-flex-shrink-0-x98OZk{flex-shrink:0;}
       .z-scroll-margin-5px-x98OZk{scroll-margin:5px;}
-      .z-scroll-snap-align-start-CZ7IMc-4{scroll-snap-align:start;}
+      .z-scroll-snap-align-start-rU0IbY-4{scroll-snap-align:start;}
       .z-scroll-snap-stop-b0QiNb{scroll-snap-stop:normal;scroll-snap-stop:always!important;}
-      .z-scroll-snap-align-ZiVh6M-0{scroll-snap-align:none center;}
-      .z-scroll-snap-type--ilOjM-1{scroll-snap-type:both proximity;}"
+      .z-scroll-snap-align-uiJXME-0{scroll-snap-align:none center;}
+      .z-scroll-snap-type-l_1M2z-1{scroll-snap-type:both proximity;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1193,10 +1204,13 @@ describe('compile', () => {
       moduleId: 'example/snapping.ts',
       source: Snapping.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1280,20 +1294,22 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-1567lwky4x5t8-zyzz-theme{--z-t1567lwky4x5t8-zyzz-spacing_2e_offset:20px;--z-t1567lwky4x5t8-zyzz-spacing_2e_auto:24px;}
+      ":root{--z-t1567lwky4x5t8-zyzz-spacing_2e_offset:20px;}
+      :root{--z-t1567lwky4x5t8-zyzz-spacing_2e_auto:24px;}
+      .z_theme-1567lwky4x5t8-zyzz-theme{--z-t1567lwky4x5t8-zyzz-spacing_2e_offset:20px;--z-t1567lwky4x5t8-zyzz-spacing_2e_auto:24px;}
       .z-overflow-auto-B6dQF9{overflow:auto;}
-      .z-h-100px-3Tf0Em-1{height:100px;}
+      .z-h-100px-bftsc6-1{height:100px;}
       .z-w-100px-B6dQF9{width:100px;}
-      .z-scroll-behavior-auto-3Tf0Em-3{scroll-behavior:auto;}
-      .z-scroll-padding-top-g6s675-4{scroll-padding-top:10px;scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px);}
-      .z-scroll-padding-inline-auto-3Tf0Em-5{scroll-padding-inline:auto;}
-      .z-overscroll-behavior-IMs-AT-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
-      .z-overscroll-behavior-x-none-3Tf0Em-7{overscroll-behavior-x:none;}
+      .z-scroll-behavior-auto-bftsc6-3{scroll-behavior:auto;}
+      .z-scroll-padding-top-2hx14M-4{scroll-padding-top:10px;scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px);}
+      .z-scroll-padding-inline-auto-bftsc6-5{scroll-padding-inline:auto;}
+      .z-overscroll-behavior-6FskK2-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
+      .z-overscroll-behavior-x-none-bftsc6-7{overscroll-behavior-x:none;}
       .z-scroll-margin-top-10px-B6dQF9{scroll-margin-top:10px;}
-      .z-h-20px-07Li8C-1{height:20px;}
-      .z-scroll-padding-top-dLi-j7-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
-      .z-scroll-padding-block-start-YVvvze-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
-      .z-scroll-behavior-smooth-Gx3RrC-0{scroll-behavior:smooth;}"
+      .z-h-20px-fNdzr6-1{height:20px;}
+      .z-scroll-padding-top-OOH_Nh-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
+      .z-scroll-padding-block-start-KOiBmS-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
+      .z-scroll-behavior-smooth-ne7xz6-0{scroll-behavior:smooth;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1321,10 +1337,13 @@ describe('compile', () => {
       moduleId: 'example/scrolling.ts',
       source: Scrolling.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1399,25 +1418,27 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-flktdz142jfd9-zyzz-theme{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
-      .z-inline-size-min-content-wgvHpz-0{inline-size:min-content;}
-      .z-inline-size-max-content-CDZc7j-0{inline-size:max-content;}
-      .z-inline-size-iZORfz-0{inline-size:100%;inline-size:fit-content!important;}
-      .z-min-width-auto-1vbD03-1{min-width:auto;}
-      .z-max-width-none-1vbD03-2{max-width:none;}
-      .z-w-dc70wo-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
-      .z-min-inline-size-Ibw0E3-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
-      .z-max-inline-size-max-content-k8Xc3j-1{max-inline-size:max-content;}
-      .z-block-size-fit-content-k8Xc3j-2{block-size:fit-content;}
-      .z-min-block-size-auto-k8Xc3j-3{min-block-size:auto;}
-      .z-max-block-size-none-k8Xc3j-4{max-block-size:none;}
-      .z-flex-basis-content-G_jsJj-0{flex-basis:content;}
-      .z-w-5px-G_jsJj-1{width:5px;}
+      ":root{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;}
+      :root{--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
+      .z_theme-flktdz142jfd9-zyzz-theme{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
+      .z-inline-size-min-content-5cBdPj-0{inline-size:min-content;}
+      .z-inline-size-max-content-TN22FP-0{inline-size:max-content;}
+      .z-inline-size-Tr8mIh-0{inline-size:100%;inline-size:fit-content!important;}
+      .z-min-width-auto-0P-NXj-1{min-width:auto;}
+      .z-max-width-none-0P-NXj-2{max-width:none;}
+      .z-w-icTS5f-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
+      .z-min-inline-size-Jf7i5K-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
+      .z-max-inline-size-max-content-ffbLLP-1{max-inline-size:max-content;}
+      .z-block-size-fit-content-ffbLLP-2{block-size:fit-content;}
+      .z-min-block-size-auto-ffbLLP-3{min-block-size:auto;}
+      .z-max-block-size-none-ffbLLP-4{max-block-size:none;}
+      .z-flex-basis-content-M0EtnP-0{flex-basis:content;}
+      .z-w-5px-M0EtnP-1{width:5px;}
       .z-flex-shrink-0-e3yyNT{flex-shrink:0;}
-      .z-min-width-0-G_jsJj-3{min-width:0;}
-      .z-flex-basis-auto-_mfIlz-0{flex-basis:auto;}
-      .z-w-5px-_mfIlz-1{width:5px;}
-      .z-min-width-0-_mfIlz-2{min-width:0;}"
+      .z-min-width-0-M0EtnP-3{min-width:0;}
+      .z-flex-basis-auto-hpTNz3-0{flex-basis:auto;}
+      .z-w-5px-hpTNz3-1{width:5px;}
+      .z-min-width-0-hpTNz3-2{min-width:0;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1445,10 +1466,13 @@ describe('compile', () => {
       moduleId: 'example/sizing.ts',
       source: Sizing.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1499,10 +1523,13 @@ describe('compile', () => {
       moduleId: 'example/borders.ts',
       source: Borders.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1569,22 +1596,25 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-1qal89srxpye2-zyzz-theme{--z-t1qal89srxpye2-zyzz-borderColor_2e_brand:#06c;--z-t1qal89srxpye2-zyzz-color_2e_brand:#fff;--z-t1qal89srxpye2-zyzz-borderRadius_2e_round:8px;}
+      ":root{--z-t1qal89srxpye2-zyzz-borderColor_2e_brand:#06c;}
+      :root{--z-t1qal89srxpye2-zyzz-color_2e_brand:#fff;}
+      :root{--z-t1qal89srxpye2-zyzz-borderRadius_2e_round:8px;}
+      .z_theme-1qal89srxpye2-zyzz-theme{--z-t1qal89srxpye2-zyzz-borderColor_2e_brand:#06c;--z-t1qal89srxpye2-zyzz-color_2e_brand:#fff;--z-t1qal89srxpye2-zyzz-borderRadius_2e_round:8px;}
       .z-border-style-solid-U8cv88{border-style:solid;}
-      .z-border-width-2px-ZKGS-D-1{border-width:2px;}
-      .z-border-left-width-3px-ZKGS-D-2{border-left-width:3px;}
-      .z-border-inline-start-width-SowM47-3{border-inline-start-width:4px;border-inline-start-width:5px!important;}
-      .z-border-color-KAvvOR-4{border-color:var(--z-t1qal89srxpye2-zyzz-borderColor_2e_brand,#06c);}
-      .z-border-inline-end-color-WbFSH0-5{border-inline-end-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);}
-      .z-border-radius-MF4-_J-6{border-radius:var(--z-t1qal89srxpye2-zyzz-borderRadius_2e_round,8px);}
-      .z-border-start-start-radius-10px-ZKGS-D-7{border-start-start-radius:10px;}
+      .z-border-width-2px-OmZ9Fn-1{border-width:2px;}
+      .z-border-left-width-3px-OmZ9Fn-2{border-left-width:3px;}
+      .z-border-inline-start-width-Pou_K_-3{border-inline-start-width:4px;border-inline-start-width:5px!important;}
+      .z-border-color-QWSdra-4{border-color:var(--z-t1qal89srxpye2-zyzz-borderColor_2e_brand,#06c);}
+      .z-border-inline-end-color-MoRbHh-5{border-inline-end-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);}
+      .z-border-radius-EmtPxN-6{border-radius:var(--z-t1qal89srxpye2-zyzz-borderRadius_2e_round,8px);}
+      .z-border-start-start-radius-10px-OmZ9Fn-7{border-start-start-radius:10px;}
       .z-outline-color-9SuLX6{outline-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);}
       .z-outline-style-dashed-U8cv88{outline-style:dashed;}
       .z-outline-width-2px-U8cv88{outline-width:2px;}
       .z-outline-offset--1px-U8cv88{outline-offset:-1px;}
-      .z-border-width-2px-epdaJn-0{border-width:2px;}
-      .z-border-inline-start-width-5px-epdaJn-1{border-inline-start-width:5px;}
-      .z-border-left-width-3px-epdaJn-2{border-left-width:3px;}"
+      .z-border-width-2px-VvysFT-0{border-width:2px;}
+      .z-border-inline-start-width-5px-VvysFT-1{border-inline-start-width:5px;}
+      .z-border-left-width-3px-VvysFT-2{border-left-width:3px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1614,28 +1644,29 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-bjw6jw1i067e2-zyzz-theme{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
+      ":root{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
+      .z_theme-bjw6jw1i067e2-zyzz-theme{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
       .z-display-flex-aqbEb1{display:flex;}
       .z-flex-wrap-wrap-aqbEb1{flex-wrap:wrap;}
-      .z-w-180px-zPfrNm-2{width:180px;}
-      .z-h-100px-zPfrNm-3{height:100px;}
+      .z-w-180px-nAQ_x6-2{width:180px;}
+      .z-h-100px-nAQ_x6-3{height:100px;}
       .z-align-content-space-between-aqbEb1{align-content:space-between;}
       .z-align-items-flex-start-aqbEb1{align-items:flex-start;}
       .z-flex-basis-sA-b3W{flex-basis:40px;flex-basis:var(--z-tbjw6jw1i067e2-zyzz-spacing_2e_item,60px);}
       .z-flex-grow-0-aqbEb1{flex-grow:0;}
       .z-flex-shrink-0-aqbEb1{flex-shrink:0;}
-      .z-h-20px-M8KMIS-3{height:20px;}
+      .z-h-20px-bxIax6-3{height:20px;}
       .z-align-self-flex-end-aqbEb1{align-self:flex-end;}
       .z-order-hwVILE{order:-1!important;}
-      .z-w-40px-V7HzgC-0{width:40px;}
-      .z-h-40px-V7HzgC-1{height:40px;}
-      .z-overflow-rGkkVn-2{overflow:hidden;overflow:clip!important;}
-      .z-overflow-x-visible-V7HzgC-3{overflow-x:visible;}
-      .z-w-40px-p18qo6-0{width:40px;}
-      .z-h-40px-p18qo6-1{height:40px;}
-      .z-overflow-x-clip-p18qo6-2{overflow-x:clip;}
-      .z-overflow-hidden-p18qo6-3{overflow:hidden;}
-      .z-overflow-y-scroll-p18qo6-4{overflow-y:scroll;}"
+      .z-w-40px-8azwEC-0{width:40px;}
+      .z-h-40px-8azwEC-1{height:40px;}
+      .z-overflow-JU3xMv-2{overflow:hidden;overflow:clip!important;}
+      .z-overflow-x-visible-8azwEC-3{overflow-x:visible;}
+      .z-w-40px-n2FAKC-0{width:40px;}
+      .z-h-40px-n2FAKC-1{height:40px;}
+      .z-overflow-x-clip-n2FAKC-2{overflow-x:clip;}
+      .z-overflow-hidden-n2FAKC-3{overflow:hidden;}
+      .z-overflow-y-scroll-n2FAKC-4{overflow-y:scroll;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1661,10 +1692,13 @@ describe('compile', () => {
       moduleId: 'example/flex.ts',
       source: Flex.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1774,19 +1808,23 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-9k2sno1hln8ye-zyzz-theme{--z-t9k2sno1hln8ye-zyzz-spacing_2e_space:12px;}
-      .z-w-60px-OlHPEn-0{width:60px;}
-      .z-inline-size-l_dNGm-1{inline-size:70px;inline-size:80px!important;}
-      .z-block-size-40px-OlHPEn-2{block-size:40px;}
-      .z-pl-2px-OlHPEn-3{padding-left:2px;}
-      .z-padding-inline-start-txhE0h-4{padding-inline-start:4px;padding-inline-start:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px);}
+      ":root{--z-t9k2sno1hln8ye-zyzz-spacing_2e_space:12px;}
+      .z_theme-9k2sno1hln8ye-zyzz-theme{--z-t9k2sno1hln8ye-zyzz-spacing_2e_space:12px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-w-60px-ZzrZeD-0{width:60px;}
+      .z-inline-size-QczWmH-1{inline-size:70px;inline-size:80px!important;}
+      .z-block-size-40px-ZzrZeD-2{block-size:40px;}
+      .z-pl-2px-ZzrZeD-3{padding-left:2px;}
+      .z-padding-inline-start-VY-kAd-4{padding-inline-start:4px;padding-inline-start:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px);}
       .z-margin-inline-end-IqqfJ7{margin-inline-end:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px)!important;}
       .z-position-relative-8D9lB8{position:relative;}
       .z-inset-inline-start--3px-8D9lB8{inset-inline-start:-3px;}
-      .z-inline-size-30px-m3kDun-0{inline-size:30px;}
-      .z-w-50px-m3kDun-1{width:50px;}
-      .z-padding-inline-start-6px-m3kDun-2{padding-inline-start:6px;}
-      .z-pl-8px-m3kDun-3{padding-left:8px;}"
+      .z-inline-size-30px-0-IlGT-0{inline-size:30px;}
+      .z-w-50px-0-IlGT-1{width:50px;}
+      .z-padding-inline-start-6px-0-IlGT-2{padding-inline-start:6px;}
+      .z-pl-8px-0-IlGT-3{padding-left:8px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1812,10 +1850,13 @@ describe('compile', () => {
       moduleId: 'example/logical.ts',
       source: Logical.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -1916,34 +1957,29 @@ describe('compile', () => {
   test('important zero shorthands retain token identity before literal coercion', () => {
     const output = Transform.compile({
       moduleId: 'zero.ts',
-      source: `import { style, Theme } from 'zyzz';
-const theme = Theme.define({spacing:{0:'8px'}});
-export const token = theme.style({padding:'0 !important'})();
-export const literal = style({padding:'0 !important'})();
-export const plain = theme.style({padding:0})();`,
+      source:
+        "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz';\nconst theme = Vars.define({spacing:{0:'8px'}}); const themeConfig=Config.create({vars:theme});\nexport const token = themeConfig.style({padding:'0 !important'})();\nexport const literal = style({padding:'0 !important'})();\nexport const plain = themeConfig.style({padding:0})();",
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-1s1gwcevjtf8w-theme{--z-t1s1gwcevjtf8w-theme-spacing_2e_0:8px;}
-      .z-p-11ufxO-0{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
-      .z-p-I2yndx-0{padding:0!important;}
-      .z-p-0-O_qzUu-0{padding:0;}"
+      ":root{--z-t1s1gwcevjtf8w-themeConfig-spacing_2e_0:8px;}
+      .z_theme-1s1gwcevjtf8w-themeConfig-theme{--z-t1s1gwcevjtf8w-themeConfig-spacing_2e_0:8px;}
+      .z-p-x4v4Z--0{padding:var(--z-t1s1gwcevjtf8w-themeConfig-spacing_2e_0,8px)!important;}
+      .z-p-GAeFrk-0{padding:0!important;}
+      .z-p-0-sdLMle-0{padding:0;}"
     `)
   })
 
   test('asserted fallback arrays retain token references and entry source maps', () => {
     const output = Transform.compile({
       moduleId: 'assertions.ts',
-      source: `import { Theme } from 'zyzz';
-const theme = Theme.define({color:{brand:'#06c'}});
-export const props = theme.style({
-  display: ['block','flex'] as const,
-  color: ((['#000',theme.tokens.color.brand] as const) satisfies readonly unknown[])!,
-})();`,
+      source:
+        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme});\nexport const props = themeConfig.style({\n  display: ['block','flex'] as const,\n  color: ((['#000',theme.color.brand] as const) satisfies readonly unknown[])!,\n})();",
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-color_2e_brand:#06c;}
+      ":root{--z-t1jvt0134f5zz3-theme-color_2e_brand:#06c;}
+      .z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-color_2e_brand:#06c;}
       .z-display-U_rJeO{display:block;display:flex;}
       .z-text-F6AKVF{color:#000;color:var(--z-t1jvt0134f5zz3-theme-color_2e_brand,#06c);}"
     `)
@@ -1959,7 +1995,7 @@ export const props = theme.style({
     ).toMatchInlineSnapshot(`
       {
         "column": 19,
-        "line": 5,
+        "line": 6,
         "name": "color",
         "source": "assertions.ts",
       }
@@ -1973,14 +2009,15 @@ export const props = theme.style({
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-1aowg2i1i6ewzi-zyzz-theme{--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space:1lh;}
+      ":root{--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space:1lh;}
+      .z_theme-1aowg2i1i6ewzi-zyzz-theme{--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space:1lh;}
       .z-w-_gPMUm{width:50vw;width:50cqi!important;}
       .z-h-10dvh-G4uFmF{height:10dvh;}
-      .z-ml--1in-_FGNL6-2{margin-left:-1in;}
+      .z-ml--1in-zgJnWS-2{margin-left:-1in;}
       .z-border-width-1pc-G4uFmF{border-width:1pc;}
       .z-border-style-solid-G4uFmF{border-style:solid;}
       .z-p-7mLDlp{padding:1rem;padding:var(--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space,1lh);}
-      .z-mt-EtOdQ1-1{margin-top:2rlh!important;}"
+      .z-mt-IWexDq-1{margin-top:2rlh!important;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2006,10 +2043,13 @@ export const props = theme.style({
       moduleId: 'example/lengths.ts',
       source: Lengths.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -2064,22 +2104,20 @@ export const props = theme.style({
     expect(() =>
       Transform.compile({
         moduleId: 'example/reserved.ts',
-        source: `import { Theme } from 'zyzz';
-const theme = Theme.define({spacing:{md:'4px','md!':'8px'}});
-export const props = theme.style({padding:'md!'})();`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({spacing:{md:'4px','md!':'8px'}}); const themeConfig=Config.create({vars:theme});\nexport const props = themeConfig.style({padding:'md!'})();",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/reserved.ts:44: ["spacing","md!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
+      `[Source.ExtractError: example/reserved.ts:72: ["spacing","md!"]: Expected a nonempty variable key without dots or conditions.]`,
     )
     expect(() =>
       Transform.compile({
         moduleId: 'example/reserved-config.ts',
-        source: `import { Config } from 'zyzz';
-const zyzz = Config.create({theme:{spacing:{'nested!':{md:'8px'}}}});
-export const props = zyzz.style({padding:'nested!.md'})();`,
+        source:
+          "import { Config } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{'nested!':{md:'8px'}}}});\nexport const props = zyzz.style({padding:'nested!.md'})();",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
+      `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Expected a nonempty variable key without dots or conditions.]`,
     )
   })
 
@@ -2090,15 +2128,18 @@ export const props = zyzz.style({padding:'nested!.md'})();`,
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-1ne2r2w17wkfe-theme{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
-      .z_theme-1ne2r2w17wkfe-mint{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#175;}
-      .z-text-7Oiy69-0{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;}
+      ":root{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
+      .z_theme-1ne2r2w17wkfe-theme{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-text-if2jZ5-0{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;}
       .z-display-W2zXiw{display:block;display:flex;}
       .z-opacity-K3H7Sb{opacity:0.25!important;opacity:0.75;}
-      .z-p-htYKYS-3{padding:4px!important;padding:8px;}
-      .z-pl-12px-qX-Arb-4{padding-left:12px;}
-      .z-text-TuQ21f-0{color:#fff;}
-      .z-p-20px-ZTM9jr-1{padding:20px;}"
+      .z-p-GOrg9U-3{padding:4px!important;padding:8px;}
+      .z-pl-12px-moVkSb-4{padding-left:12px;}
+      .z-text-mKkKJj-0{color:#fff;}
+      .z-p-20px-xIq_IH-1{padding:20px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2112,7 +2153,7 @@ export const props = zyzz.style({padding:'nested!.md'})();`,
     ).toMatchInlineSnapshot(`
       {
         "column": 18,
-        "line": 6,
+        "line": 7,
         "name": "color",
         "source": "example/fallbacks.ts",
       }
@@ -2124,10 +2165,13 @@ export const props = zyzz.style({padding:'nested!.md'})();`,
       moduleId: 'example/fallbacks.ts',
       source: Declarations.source,
     })
-    const js = await Esbuild.transform(output.code, {
-      loader: 'ts',
+    const js = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+      bundle: true,
+      conditions: ['src'],
       format: 'esm',
-    })
+      write: false,
+    }).then((result) => ({ code: result.outputFiles[0]!.text }))
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
@@ -2144,7 +2188,7 @@ export const props = zyzz.style({padding:'nested!.md'})();`,
         await page
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).color),
-      ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+      ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
       expect(
         await page
           .locator('#card')
@@ -2168,27 +2212,30 @@ export const props = zyzz.style({padding:'nested!.md'})();`,
   test('explicit token paths compile through bound aliases with defining fallbacks', async () => {
     const result = Transform.compile({
       moduleId: 'example/tokens.ts',
-      source: `import { Theme } from 'zyzz';
-const theme = Theme.define({ color: { transparent: '#06c', palette: { 500: '#123' } }, spacing: { 0: '8px', 4: '16px' } });
-const alternate = Theme.extend(theme, { color: { transparent: '#175', palette: { 500: '#456' } } });
-const { style } = theme;
-export const scope = alternate.className;
-export const props = style({ color: theme.tokens.color.transparent, borderColor: (theme['tokens'].color.palette['500']!), padding: theme.tokens.spacing[0] })();
-`,
+      source:
+        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({ color: { transparent: '#06c', palette: { 500: '#123' } }, spacing: { 0: '8px', 4: '16px' } }); const themeConfig=Config.create({vars:theme});\nconst alternate = Vars.extend(theme, { color: { transparent: '#175', palette: { 500: '#456' } } }); const alternateConfig=Config.create({vars:alternate});\nconst { style } = themeConfig;\nexport const scope = alternateConfig.vars().className;\nexport const props = style({ color: theme.color.transparent, borderColor: (theme.color.palette['500']!), padding: theme.spacing[0] })();\n",
     })
 
     expect(result.code).toMatchInlineSnapshot(`
       "
-      const theme = ({className:"z_theme-1wr3l4n1jk260t-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
-      const alternate = ({className:"z_theme-1wr3l4n1jk260t-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
-      const { style } = ({style:undefined} as unknown as {readonly style:import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>['style']});
-      export const scope = "z_theme-1wr3l4n1jk260t-alternate";
+      import { Selection as __zyzzSelection } from 'zyzz/runtime';
+
+
+      const theme = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly "500":"#123"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
+      const alternate = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>); const alternateConfig=({vars:/*#__PURE__*/__zyzzSelection.create([["default","z_theme-1wr3l4n1jk260t-alternateConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#175";readonly "palette":{readonly "500":"#456"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
+      const { style } = (themeConfig as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly "500":"#123"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
+      export const scope = alternateConfig.vars().className;
       export const props = ({className:"z-text-rmYo07 z-border-color-f9o0Ri z-p-NCEDJ5"});
       "
     `)
     expect(result.css).toMatchInlineSnapshot(`
-      ".z_theme-1wr3l4n1jk260t-theme{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#06c;--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#123;--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
-      .z_theme-1wr3l4n1jk260t-alternate{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#175;--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#456;--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
+      ":root{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#06c;}
+      :root{--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#123;}
+      :root{--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
+      .z_theme-1wr3l4n1jk260t-theme{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#06c;--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#123;--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
       .z-text-rmYo07{color:var(--z-t1wr3l4n1jk260t-theme-color_2e_transparent,#06c);}
       .z-border-color-f9o0Ri{border-color:var(--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500,#123);}
       .z-p-NCEDJ5{padding:var(--z-t1wr3l4n1jk260t-theme-spacing_2e_0,8px);}"
@@ -2198,7 +2245,7 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
       bundle: true,
       format: 'cjs',
       metafile: true,
-      stdin: { contents: result.code, loader: 'ts' },
+      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
       write: false,
     })
 
@@ -2241,7 +2288,7 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     ).toMatchInlineSnapshot(`
       {
         "column": 29,
-        "line": 6,
+        "line": 7,
         "name": "color",
         "source": "example/tokens.ts",
       }
@@ -2252,10 +2299,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color[key] });`,
+        source:
+          "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({ color: theme.color[key] });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Token paths require static property names without optional access.]`,
+      `[Source.ExtractError: example/tokens.ts:190: Token paths require static property names without optional access.]`,
     )
   })
 
@@ -2263,10 +2311,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color.missing });`,
+        source:
+          "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({ color: theme.color.missing });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Unknown theme token path.]`,
+      `[Source.ExtractError: example/tokens.ts:190: Unknown theme token path.]`,
     )
   })
 
@@ -2274,10 +2323,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color });`,
+        source:
+          "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({ color: theme.color });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Expected a scalar theme token reference.]`,
+      `[Source.ExtractError: example/tokens.ts:190: Expected a scalar theme token reference.]`,
     )
   })
 
@@ -2285,10 +2335,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const value = theme.tokens.color.brand;`,
+        source:
+          "import { Config, style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); export const value = theme.color.brand;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Token references must be direct property values in bound theme style calls.]`,
+      `[Source.ExtractError: example/tokens.ts:116: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2296,10 +2347,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); style({ color: theme.tokens.color.brand });`,
+        source:
+          "import { Config, style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); style({ color: theme.color.brand });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:104: Token references must be direct property values in bound theme style calls.]`,
+      `[Source.ExtractError: example/tokens.ts:110: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2307,10 +2359,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color.brand + '' });`,
+        source:
+          "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({ color: theme.color.brand + '' });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Token references must be direct property values in bound theme style calls.]`,
+      `[Source.ExtractError: example/tokens.ts:190: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2318,10 +2371,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.tokens.color.brand = value;`,
+        source:
+          "import { Config, style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); theme.color.brand = value;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:89: Token references must be direct property values in bound theme style calls.]`,
+      `[Source.ExtractError: example/tokens.ts:95: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2329,10 +2383,11 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color?.brand });`,
+        source:
+          "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({ color: theme.color?.brand });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Token paths require static property names without optional access.]`,
+      `[Source.ExtractError: example/tokens.ts:190: Token paths require static property names without optional access.]`,
     )
   })
 
@@ -2340,20 +2395,17 @@ export const props = style({ color: theme.tokens.color.transparent, borderColor:
     expect(() =>
       Transform.compile({
         moduleId: 'example/tokens.ts',
-        source: `import { style, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.style({ color: theme.tokens.color.brand.value });`,
+        source:
+          "import {Config} from 'zyzz';\nimport { style, Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({ color: theme.color.brand.value });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:110: Unknown theme token path.]`,
+      `[Source.ExtractError: example/tokens.ts:190: Unknown theme token path.]`,
     )
   })
 
   test('local themes compile to scope constants and executable token styles', async () => {
-    const source = `import { Theme } from 'zyzz';
-const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { 1: '4px', md: '8px' } });
-const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
-export type Brand = typeof theme.tokens.color.brand;
-export const scope = alternate.className;
-export const props = theme.style({ color: 'brand', padding: 'md' })();`
+    const source =
+      "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { 1: '4px', md: '8px' } }); const themeConfig=Config.create({vars:theme});\nconst alternate = Vars.extend(theme, { color: { brand: '#f00' } }); const alternateConfig=Config.create({vars:alternate});\nexport type Brand = typeof theme.color.brand;\nexport const scope = alternateConfig.vars().className;\nexport const props = themeConfig.style({ color: 'brand', padding: 'md' })();"
 
     const result = Transform.compile({ moduleId: 'example/theme.ts', source })
 
@@ -2361,35 +2413,44 @@ export const props = theme.style({ color: 'brand', padding: 'md' })();`
       bundle: true,
       format: 'esm',
       metafile: true,
-      stdin: { contents: result.code, loader: 'ts' },
+      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
       write: false,
     })
 
     expect(result.code).toMatchInlineSnapshot(`
       "
-      const theme = ({className:"z_theme-1dre7461ulsxz8-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>);
-      const alternate = ({className:"z_theme-1dre7461ulsxz8-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>);
-      export type Brand = typeof theme.tokens.color.brand;
-      export const scope = "z_theme-1dre7461ulsxz8-alternate";
-      export const props = ({className:"z-text-8pFDUM z-p-PeTtVV"});"
+      import { Selection as __zyzzSelection } from 'zyzz/runtime';
+
+
+      const theme = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":{readonly "light":"#000";readonly "dark":"#fff"}};readonly "spacing":{readonly "1":"4px";readonly "md":"8px"}}}>);
+      const alternate = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>); const alternateConfig=({vars:/*#__PURE__*/__zyzzSelection.create([["default","z_theme-1dre7461ulsxz8-alternateConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#f00"};readonly "spacing":{readonly "1":"4px";readonly "md":"8px"}}}>);
+      export type Brand = typeof theme.color.brand;
+      export const scope = alternateConfig.vars().className;
+      export const props = ({className:"z-text-NkgP7l z-p-g7ntpl"});"
     `)
     expect(result.css).toMatchInlineSnapshot(`
-      ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:light-dark(#000,#fff);--z-t1dre7461ulsxz8-theme-spacing_2e_md:8px;}
-      .z_theme-1dre7461ulsxz8-alternate{--z-t1dre7461ulsxz8-theme-color_2e_brand:#f00;--z-t1dre7461ulsxz8-theme-spacing_2e_md:8px;}
-      .z-text-8pFDUM{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,light-dark(#000,#fff));}
-      .z-p-PeTtVV{padding:var(--z-t1dre7461ulsxz8-theme-spacing_2e_md,8px);}"
+      ":root{--z-t1dre7461ulsxz8-themeConfig-color_2e_brand:light-dark(#000,#fff);}
+      :root{--z-t1dre7461ulsxz8-themeConfig-spacing_2e_md:8px;}
+      .z_theme-1dre7461ulsxz8-themeConfig-theme{--z-t1dre7461ulsxz8-themeConfig-color_2e_brand:light-dark(#000,#fff);--z-t1dre7461ulsxz8-themeConfig-spacing_2e_md:8px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-text-NkgP7l{color:var(--z-t1dre7461ulsxz8-themeConfig-color_2e_brand,light-dark(#000,#fff));}
+      .z-p-g7ntpl{padding:var(--z-t1dre7461ulsxz8-themeConfig-spacing_2e_md,8px);}"
     `)
-    expect(result.themes).toMatchInlineSnapshot(`
+    expect(result.vars).toMatchInlineSnapshot(`
       {
         "1dre7461ulsxz8-alternate": "z_theme-1dre7461ulsxz8-alternate",
+        "1dre7461ulsxz8-alternateConfig-theme": "z_theme-1dre7461ulsxz8-alternateConfig-theme",
         "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+        "1dre7461ulsxz8-themeConfig-theme": "z_theme-1dre7461ulsxz8-themeConfig-theme",
       }
     `)
     expect(bundle.metafile!.outputs['stdin.js']!.imports).toMatchInlineSnapshot(
       `[]`,
     )
     expect(
-      bundle.outputFiles[0]!.text.includes('Theme.define'),
+      bundle.outputFiles[0]!.text.includes('Vars.define'),
     ).toMatchInlineSnapshot('false')
 
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-theme-types-'))
@@ -2399,7 +2460,7 @@ export const props = theme.style({ color: 'brand', padding: 'md' })();`
 
       await Fs.writeFile(
         file,
-        `${result.code}\ntheme.style({ padding: 1 });\n// @ts-expect-error The numeric token 2 is undeclared.\ntheme.style({ padding: 2 });`,
+        `${result.code}\nthemeConfig.style({ padding: 1 });\n// @ts-expect-error The numeric token 2 is undeclared.\nthemeConfig.style({ padding: 2 });`,
       )
 
       const checked = await Util.promisify(ChildProcess.execFile)(
@@ -2439,25 +2500,30 @@ export const props = theme.style({ color: 'brand', padding: 'md' })();`
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 35,
-        "line": 6,
+        "column": 41,
+        "line": 7,
         "name": "color",
         "source": "example/theme.ts",
       }
     `)
-    expect(Trace.originalPositionFor(map, { column: 0, line: 1 }))
-      .toMatchInlineSnapshot(`
-      {
-        "column": 14,
-        "line": 2,
-        "name": "1dre7461ulsxz8-theme",
-        "source": "example/theme.ts",
-      }
-    `)
+    expect(
+      Trace.originalPositionFor(map, {
+        column: 0,
+        line: lines.findIndex((line) => line.startsWith('.z_theme-')) + 1,
+      }),
+    ).toMatchInlineSnapshot(`
+        {
+          "column": 134,
+          "line": 3,
+          "name": "1dre7461ulsxz8-themeConfig-theme",
+          "source": "example/theme.ts",
+        }
+      `)
   }, 35_000)
 
   test('theme identity survives value edits and preceding unrelated definitions', () => {
-    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.style({ color: 'brand' })();`
+    const source =
+      "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); export const scope = themeConfig.vars().className; export const props = themeConfig.style({ color: 'brand' })();"
     const original = Transform.compile({ moduleId: 'example/theme.ts', source })
     const changed = Transform.compile({
       moduleId: 'example/theme.ts',
@@ -2468,49 +2534,56 @@ export const props = theme.style({ color: 'brand', padding: 'md' })();`
       moduleId: 'example/theme.ts',
       source: source.replace(
         'const theme',
-        "const other = Theme.define({ spacing: { sm: '4px' } }); const theme",
+        "const other = Vars.define({ spacing: { sm: '4px' } }); const theme",
       ),
     })
 
     const separate = Transform.compile({ moduleId: 'another/theme.ts', source })
 
-    expect(original.themes).toMatchInlineSnapshot(`
+    expect(original.vars).toMatchInlineSnapshot(`
       {
         "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+        "1dre7461ulsxz8-themeConfig-theme": "z_theme-1dre7461ulsxz8-themeConfig-theme",
       }
     `)
-    expect(changed.themes).toMatchInlineSnapshot(`
+    expect(changed.vars).toMatchInlineSnapshot(`
       {
         "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+        "1dre7461ulsxz8-themeConfig-theme": "z_theme-1dre7461ulsxz8-themeConfig-theme",
       }
     `)
-    expect(inserted.themes).toMatchInlineSnapshot(`
+    expect(inserted.vars).toMatchInlineSnapshot(`
       {
         "1dre7461ulsxz8-other": "z_theme-1dre7461ulsxz8-other",
         "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+        "1dre7461ulsxz8-themeConfig-theme": "z_theme-1dre7461ulsxz8-themeConfig-theme",
       }
     `)
-    expect(separate.themes).toMatchInlineSnapshot(`
+    expect(separate.vars).toMatchInlineSnapshot(`
       {
         "134fgjpd7aup3-theme": "z_theme-134fgjpd7aup3-theme",
+        "134fgjpd7aup3-themeConfig-theme": "z_theme-134fgjpd7aup3-themeConfig-theme",
       }
     `)
     expect(original.css.match(/--z-t[^,:;]+/g)).toMatchInlineSnapshot(`
       [
-        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
-        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
       ]
     `)
     expect(changed.css.match(/--z-t[^,:;]+/g)).toMatchInlineSnapshot(`
       [
-        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
-        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
       ]
     `)
     expect(inserted.css.match(/--z-t[^,:;]+/g)).toMatchInlineSnapshot(`
       [
-        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
-        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
+        "--z-t1dre7461ulsxz8-themeConfig-color_2e_brand",
       ]
     `)
   })
@@ -2530,13 +2603,14 @@ export const props = theme.style({ color: 'brand', padding: 'md' })();`
         return ''
       })()
 
-      const source = `import { Theme } from 'zyzz';
-const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { md: '8px' } });
-const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
-export const alternateScope = alternate.className;
-export const baseScope = theme.className;
+      const source = `import { Config, Vars } from 'zyzz';
+const base = Vars.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { md: '8px' } });
+const alternate = Vars.extend(base, { color: { brand: '#f00' } });
+const theme = Config.create({vars:{base,alternate},defaultVars:'base'});
+export const alternateScope = theme.vars({set:'alternate'}).className;
+export const baseScope = theme.vars().className;
 ${alias}
-export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.style' : 'style'}(${kind === 'tokens' ? '{ color: theme.tokens.color.brand, padding: theme.tokens.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
+export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.style' : 'style'}(${kind === 'tokens' ? '{ color: theme.vars.color.brand, padding: theme.vars.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
 
       const result = Transform.compile({ moduleId: 'example/theme.ts', source })
 
@@ -2626,13 +2700,15 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.style' :
   )
 
   test('JavaScript theme modules remain JavaScript and shadowed factories remain untouched', async () => {
-    const source = `import { Theme as T } from 'zyzz'; const theme = T.define({ color: { brand: '#000' } }); export const props = theme.style({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }`
+    const source =
+      "import { Config, Vars as T } from 'zyzz'; const values = T.define({ color: { brand: '#000' } }); const theme = Config.create({vars:values}); export const props = theme.style({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }"
     const result = Transform.compile({ moduleId: 'example/theme.js', source })
     const transformed = await Esbuild.transform(result.code, { loader: 'js' })
 
     expect(transformed.code).toMatchInlineSnapshot(`
-      "import { Theme as T } from "zyzz";
-      const theme = { className: "z_theme-1kg4lys8lrjea-theme" };
+      "import { Vars as T } from "zyzz";
+      const values = {};
+      const theme = {};
       export const props = { className: "z-text-eDorHo" };
       export function other(T2) {
         return T2.define({ arbitrary: true });
@@ -2645,10 +2721,11 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.style' :
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#000' } });`,
+        source:
+          "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#000' } });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:43: Define local themes with a module-level const; exported themes require source linking.]`,
+      `[Source.ExtractError: example/theme.ts:42: Define local themes with a module-level const; exported themes require source linking.]`,
     )
   })
 
@@ -2656,51 +2733,47 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.style' :
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: readColor() } });`,
+        source:
+          "import { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: readColor() } });",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:75: Theme values must be literal data; expressions are not evaluated.]`,
+      `[Source.ExtractError: example/theme.ts:73: Theme values must be literal data; expressions are not evaluated.]`,
     )
   })
 
   test('theme style aliases and destructuring compile with lexical shadowing', async () => {
     const result = Transform.compile({
       moduleId: 'example/aliases.ts',
-      source: `import { Theme } from 'zyzz';
-const theme = Theme.define({ color: { brand: '#06c' }, spacing: { md: '8px' } });
-const style = theme.style;
-const chained = style;
-const { style: renamed } = theme;
-export type Styles = Parameters<typeof renamed>[0];
-export const first = chained({ color: 'brand' })();
-export const second = renamed({ padding: 'md' })();
-export function shadow(style: (input: string) => string) { return style('untouched') }
-`,
+      source:
+        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({ color: { brand: '#06c' }, spacing: { md: '8px' } }); const themeConfig=Config.create({vars:theme});\nconst style = themeConfig.style;\nconst chained = style;\nconst { style: renamed } = themeConfig;\nexport type Styles = Parameters<typeof renamed>[0];\nexport const first = chained({ color: 'brand' })();\nexport const second = renamed({ padding: 'md' })();\nexport function shadow(style: (input: string) => string) { return style('untouched') }\n",
     })
 
     expect(result.code).toMatchInlineSnapshot(`
       "
-      const theme = ({className:"z_theme-1ypjmwd1mnjqht-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>);
-      const style = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['style']);
-      const chained = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['style']);
-      const { style: renamed } = ({style:undefined} as unknown as {readonly style:import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['style']});
+
+      const theme = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}}>);
+      const style = (undefined as unknown as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}}>['style']);
+      const chained = (undefined as unknown as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}}>['style']);
+      const { style: renamed } = (themeConfig as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}}>);
       export type Styles = Parameters<typeof renamed>[0];
-      export const first = ({className:"z-text-dGicqt"});
-      export const second = ({className:"z-p-vjzitQ"});
+      export const first = ({className:"z-text-5JOpkP"});
+      export const second = ({className:"z-p-Q36UJr"});
       export function shadow(style: (input: string) => string) { return style('untouched') }
       "
     `)
     expect(result.css).toMatchInlineSnapshot(`
-      ".z_theme-1ypjmwd1mnjqht-theme{--z-t1ypjmwd1mnjqht-theme-color_2e_brand:#06c;--z-t1ypjmwd1mnjqht-theme-spacing_2e_md:8px;}
-      .z-text-dGicqt{color:var(--z-t1ypjmwd1mnjqht-theme-color_2e_brand,#06c);}
-      .z-p-vjzitQ{padding:var(--z-t1ypjmwd1mnjqht-theme-spacing_2e_md,8px);}"
+      ":root{--z-t1ypjmwd1mnjqht-themeConfig-color_2e_brand:#06c;}
+      :root{--z-t1ypjmwd1mnjqht-themeConfig-spacing_2e_md:8px;}
+      .z_theme-1ypjmwd1mnjqht-themeConfig-theme{--z-t1ypjmwd1mnjqht-themeConfig-color_2e_brand:#06c;--z-t1ypjmwd1mnjqht-themeConfig-spacing_2e_md:8px;}
+      .z-text-5JOpkP{color:var(--z-t1ypjmwd1mnjqht-themeConfig-color_2e_brand,#06c);}
+      .z-p-Q36UJr{padding:var(--z-t1ypjmwd1mnjqht-themeConfig-spacing_2e_md,8px);}"
     `)
 
     const bundle = await Esbuild.build({
       bundle: true,
       format: 'cjs',
       metafile: true,
-      stdin: { contents: result.code, loader: 'ts' },
+      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
       write: false,
     })
 
@@ -2724,8 +2797,8 @@ export function shadow(style: (input: string) => string) { return style('untouch
       )
 
       expect(executed.stdout).toMatchInlineSnapshot(`
-        "{"className":"z-text-dGicqt"}
-        {"className":"z-p-vjzitQ"}
+        "{"className":"z-text-5JOpkP"}
+        {"className":"z-p-Q36UJr"}
         untouched
         "
       `)
@@ -2769,18 +2842,16 @@ style({ color: 'md' });
   test('JavaScript aliases remain JavaScript and parameter initializers retain lexical bindings', async () => {
     const result = Transform.compile({
       moduleId: 'example/aliases.js',
-      source: `import { Theme } from 'zyzz';
-const theme = Theme.define({color:{brand:'#06c'}});
-const { style } = theme;
-export function card(value = style({color:'brand'})()) { var style = 1; return value }
-`,
+      source:
+        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme});\nconst { style } = themeConfig;\nexport function card(value = style({color:'brand'})()) { var style = 1; return value }\n",
     })
 
     expect(result.code).toMatchInlineSnapshot(`
       "
-      const theme = ({className:"z_theme-1yrnmp3116l80n-theme"});
-      const { style } = ({style:undefined});
-      export function card(value = ({className:"z-text-sxFbO7"})) { var style = 1; return value }
+
+      const theme = ({}); const themeConfig=({});
+      const { style } = themeConfig;
+      export function card(value = ({className:"z-text-RfZfDy"})) { var style = 1; return value }
       "
     `)
 
@@ -2793,10 +2864,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const style = theme.style;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); export const style = themeConfig.style;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:95: Theme style aliases require a local module-level const binding.]`,
+      `[Source.ExtractError: example/aliases.ts:169: Theme style aliases require a local module-level const binding.]`,
     )
   })
 
@@ -2804,10 +2876,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; consume(style);`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); const style = themeConfig.style; consume(style);",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:117: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:197: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2815,10 +2888,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; (style as unknown) = value;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); const style = themeConfig.style; (style as unknown) = value;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:110: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:190: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2826,10 +2900,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { style = fallback } = theme;`,
+        source:
+          "import { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const { style = fallback } = theme;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:90: Destructure only style or variants into const bindings without defaults or rest properties.]`,
+      `[Source.ExtractError: example/aliases.ts:88: Destructure only style or variants into const bindings without defaults or rest properties.]`,
     )
   })
 
@@ -2837,10 +2912,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { style, ...rest } = theme;`,
+        source:
+          "import { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const { style, ...rest } = theme;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:97: Destructure only style or variants into const bindings without defaults or rest properties.]`,
+      `[Source.ExtractError: example/aliases.ts:95: Destructure only style or variants into const bindings without defaults or rest properties.]`,
     )
   })
 
@@ -2848,10 +2924,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); let style = theme.style;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); let style = themeConfig.style;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:86: Theme style aliases require a local module-level const binding.]`,
+      `[Source.ExtractError: example/aliases.ts:160: Theme style aliases require a local module-level const binding.]`,
     )
   })
 
@@ -2859,10 +2936,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); style({color:'brand'}); const style = theme.style;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); style({color:'brand'}); const style = themeConfig.style;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:82: Theme style alias references must follow their definition.]`,
+      `[Source.ExtractError: example/aliases.ts:156: Theme style alias references must follow their definition.]`,
     )
   })
 
@@ -2870,10 +2948,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; style?.({color:'brand'});`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); const style = themeConfig.style; style?.({color:'brand'});",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:109: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:189: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
@@ -2881,17 +2960,18 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/aliases.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const style = theme.style; export { style };`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); const style = themeConfig.style; export { style };",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:118: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:198: Theme style aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 
   test.each([
-    'Z.Theme.define({ color: { brand: "#000" } })',
-    'Z["Theme"].define({ color: { brand: "#000" } })',
-    'Z.Theme.extend(base, {})',
+    'Z.Vars.define({ color: { brand: "#000" } })',
+    'Z["Vars"].define({ color: { brand: "#000" } })',
+    'Z.Vars.extend(base, {})',
   ])('namespace theme factories produce a source diagnostic: %s', (factory) => {
     expect(() =>
       Transform.compile({
@@ -2899,7 +2979,7 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
         source: `import * as Z from 'zyzz'; const theme = ${factory}; export const scope = theme.className;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/namespace.ts:41: Import Theme by name; namespace authoring calls are not supported yet.]`,
+      `[Source.ExtractError: example/namespace.ts:41: Import Vars by name; namespace authoring calls are not supported yet.]`,
     )
   })
 
@@ -2907,10 +2987,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className as string) = value;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); (theme.color.brand as string) = value;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:163: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2918,10 +2999,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className!) = value;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); (theme.color.brand!) = value;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:163: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2929,10 +3011,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className satisfies string) = value;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); (theme.color.brand satisfies string) = value;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:163: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2940,10 +3023,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); ((theme.className as string)!) = value;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); ((theme.color.brand as string)!) = value;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:163: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2951,10 +3035,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className as string)++;`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); (theme.color.brand as string)++;",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:163: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2962,10 +3047,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); delete (theme.className as string);`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); delete (theme.color.brand as string);",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:170: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2973,10 +3059,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); ({ value: (theme.className as string) } = input);`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); ({ value: (theme.color.brand as string) } = input);",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:89: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:173: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2984,10 +3071,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); for ((theme.className as string) of values) {}`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); for ((theme.color.brand as string) of values) {}",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:168: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -2995,10 +3083,11 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
     expect(() =>
       Transform.compile({
         moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); ({ value: theme.className } = input);`,
+        source:
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); ({ value: theme.color.brand } = input);",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:89: Theme scope properties cannot be reassigned.]`,
+      `[Source.ExtractError: example/theme.ts:172: Token references must be direct property values in bound theme style calls.]`,
     )
   })
 
@@ -3010,7 +3099,7 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
       bundle: true,
       format: 'esm',
       metafile: true,
-      stdin: { contents: result.code, loader: 'ts' },
+      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
       write: false,
     })
 
@@ -3291,7 +3380,7 @@ export function card(value = style({color:'brand'})()) { var style = 1; return v
             "button": "z-p-0",
           },
           "css": ".z-p-0{padding:0;}",
-          "themes": {},
+          "vars": {},
         }
       `)
 
@@ -3346,13 +3435,8 @@ global({'s|item':{color:'red'}});`
     test('counts contribution CSS separately from theme output', () => {
       const output = Transform.compile({
         moduleId: 'theme.ts',
-        source: `import {Config} from 'zyzz';import {counterStyle,fontFace} from 'zyzz/web';
-const config=Config.create({theme:{color:{brand:'red'}}});
-export const dots=counterStyle({symbols:'"x"'});
-fontFace({fontFamily:'Evidence',src:'url(/font.ttf)'});
-export namespace styles {
-  export const text = config.style({color:'brand'})
-}`,
+        source:
+          "import {Config} from 'zyzz';import {counterStyle,fontFace} from 'zyzz/web';\nconst config=Config.create({vars:{color:{brand:'red'}}});\nexport const dots=counterStyle({symbols:'\"x\"'});\nfontFace({fontFamily:'Evidence',src:'url(/font.ttf)'});\nexport namespace styles {\n  export const text = config.style({color:'brand'})\n}",
       })
       const trace = new Trace.TraceMap(output.cssMap)
       const line =
@@ -3720,15 +3804,14 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     test('resolves configured queries across CSS whitespace and comment boundaries', () => {
       const output = Transform.compile({
         moduleId: 'queries.ts',
-        source: `import {Theme} from 'zyzz';const theme=Theme.define({breakpoints:{tablet:'48rem'}});export namespace styles {
-  export const card = theme.style({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})
-}`,
+        source:
+          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';const theme=Vars.define({breakpoints:{tablet:'48rem'}}); const themeConfig=Config.create({vars:theme});export namespace styles {\n  export const card = themeConfig.style({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})\n}",
       })
       expect(output.css).toMatchInlineSnapshot(
         `
-      ".z-text-O-xAbs-0{@media (width >= 48rem){color:red;}}
-      .z-text-LxE8J2-1{@media (width >= 48rem){color:blue;}}"
-    `,
+        ".z-text-C6CpCV-0{@media (width >= 48rem){color:red;}}
+        .z-text-UVWB9y-1{@media (width >= 48rem){color:blue;}}"
+      `,
       )
     })
     test('keeps scope, layer, and scroll-state nesting in authored order', () => {
@@ -4002,10 +4085,13 @@ describe('backgrounds', () => {
         moduleId: 'backgrounds.ts',
         source: Backgrounds.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -4312,10 +4398,13 @@ describe('borderLists', () => {
         moduleId: 'border-lists.ts',
         source: BorderLists.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -4416,10 +4505,13 @@ describe('borderShorthand', () => {
         moduleId: 'border-shorthand.ts',
         source: BorderShorthand.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -4549,10 +4641,13 @@ describe('boxLists', () => {
         moduleId: 'box-lists.ts',
         source: BoxLists.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -4623,10 +4718,10 @@ describe('boxLists', () => {
 describe('case', () => {
   describe('compile', () => {
     test('case-insensitive literals retain precedence over same-spelled tokens', () => {
-      const theme = Theme.define({ color: { Brand: 'blue', ReD: 'blue' } })
+      const theme = Vars.define({ color: { Brand: 'blue', ReD: 'blue' } })
       const styles = Style.define(
         { card: { color: 'ReD', display: 'FlEx', padding: '2PX' } },
-        { theme },
+        { vars: theme },
       )
 
       expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
@@ -4652,7 +4747,7 @@ describe('case', () => {
     })
 
     test('escaped literals retain native token semantics with importance', async () => {
-      const theme = Theme.define({ color: { '\\72 ed': 'blue' } })
+      const theme = Vars.define({ color: { '\\72 ed': 'blue' } })
 
       const styles = Style.define(
         {
@@ -4662,7 +4757,7 @@ describe('case', () => {
             padding: '1\\70 x',
           },
         },
-        { theme },
+        { vars: theme },
       )
 
       const output = Css.compile({ styles })
@@ -4800,10 +4895,13 @@ describe('colors', () => {
         moduleId: 'colors.ts',
         source: Colors.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -4951,10 +5049,13 @@ describe('columns', () => {
         moduleId: 'columns.ts',
         source: Columns.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -5034,7 +5135,7 @@ describe('columns', () => {
 
 describe('conditions', () => {
   const source =
-    'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.style({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
+    'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
   describe('compile', () => {
     test('preserves media case and ignores selector comments for dynamic locality', () => {
       const source =
@@ -5290,14 +5391,16 @@ describe('conditions', () => {
     test('preserves authored nesting and resolves distinct threshold domains', () => {
       expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
         .toMatchInlineSnapshot(`
-          ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
-          .z-p-kYs3pA-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
-          .z-hover-p-0lCB0j-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
-          .z-w-P2Hadq-2{@media (48rem <= width < 64rem){width:100px;}}
-          .z-h-S1seq7-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
-          .z-display-e7qdU--4{@container sidebar (width >= 24rem){display:grid;}}
-          .z-gap-rEUQub-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
-          .z-opacity-OkCu9R-6{@starting-style{opacity:0;}}"
+          ":root{--z-tw47itm14d5v1i-themeConfig-spacing_2e_small:4px;}
+          :root{--z-tw47itm14d5v1i-themeConfig-spacing_2e_large:16px;}
+          .z_theme-w47itm14d5v1i-themeConfig-theme{--z-tw47itm14d5v1i-themeConfig-spacing_2e_small:4px;--z-tw47itm14d5v1i-themeConfig-spacing_2e_large:16px;}
+          .z-p-wxQtIA-0{padding:var(--z-tw47itm14d5v1i-themeConfig-spacing_2e_small,4px);}
+          .z-hover-p-DlB8xt-1{&:hover{padding:var(--z-tw47itm14d5v1i-themeConfig-spacing_2e_large,16px);}}
+          .z-w--gsuhV-2{@media (48rem <= width < 64rem){width:100px;}}
+          .z-h-HwYKSx-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+          .z-display-Ay-PKn-4{@container sidebar (width >= 24rem){display:grid;}}
+          .z-gap-nYddQ3-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-themeConfig-spacing_2e_small,4px);}}
+          .z-opacity-w_jxIg-6{@starting-style{opacity:0;}}"
         `)
     })
     test('retains dynamic and theme variables inside nested contexts', () => {
@@ -5305,34 +5408,35 @@ describe('conditions', () => {
         Transform.compile({
           moduleId: 'dynamic.ts',
           source:
-            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{gap:"4px"}}); export const box=theme.style((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.vars.spacing.gap} + 2px)`}}))',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({spacing:{gap:"4px"}}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.spacing.gap} + 2px)`}}))',
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
-        .z-hover-opacity-Sn8aLJ-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
-        .z-hover-ml-4knNd5-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
+        ":root{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
+        .z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
+        .z-hover-opacity-2NSthD-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-168-61-6c-70-68-61);}}
+        .z-hover-ml-KYyP18-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
       `)
     })
     test('resolves imported thresholds through the packed contract', () => {
       const library = Graph.compile({
         modules: {
           'theme.ts':
-            'import {Theme} from "zyzz"; export const theme=Theme.define({breakpoints:{tablet:"48rem"}})',
+            'import {Vars} from "zyzz"; export const theme=Vars.define({breakpoints:{tablet:"48rem"}})',
         },
       })
 
       const output = Graph.compile({
         contracts: { 'library.js': library.contracts['theme.ts']! },
-        imports: { 'app.ts': { library: 'library.js' } },
+        imports: { 'app.ts': { library: 'library.js', zyzz: null } },
         modules: {
           'app.ts':
-            'import {theme} from "library"; export const box=theme.style({"@media tablet":{width:"100px"}})()',
+            'import {Config} from \'zyzz\';\nimport {theme} from "library"; const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style({"@media tablet":{width:"100px"}})()',
         },
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z_theme-1xn44ix111xh3v-theme{}
-        .z-w-zU8jVu-0{@media (width >= 48rem){width:100px;}}"
+        .z-w-nvOmb7-0{@media (width >= 48rem){width:100px;}}"
       `)
     })
     test.each([
@@ -5343,7 +5447,7 @@ describe('conditions', () => {
       try {
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"}}); theme.style({${JSON.stringify(key)}:{width:"1px"}})`,
+          source: `import {Config} from "zyzz"; const {style}=Config.create({vars:{breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"}}}); style({${JSON.stringify(key)}:{width:"1px"}})`,
         })
         throw new Error('Expected rejection')
       } catch (error) {
@@ -5366,7 +5470,7 @@ describe('conditions', () => {
       const output = Transform.compile({
         moduleId: 'container.ts',
         source:
-          'import {Theme} from "zyzz"; const theme=Theme.define({containers:{card:"24rem"},containerNames:["sidebar"]}); export const box=theme.style({width:"40px","@container sidebar >=card":{width:"100px"}})()',
+          'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({containers:{card:"24rem"},containerNames:["sidebar"]}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style({width:"40px","@container sidebar >=card":{width:"100px"}})()',
       })
 
       const browser = await chromium.launch()
@@ -5574,10 +5678,13 @@ describe('containerSizing', () => {
         moduleId: 'sizing.ts',
         source: ContainerSizing.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -5754,10 +5861,11 @@ describe('contributions', () => {
         Transform.compile({
           moduleId: 'app.ts',
           source:
-            'import {Theme} from "zyzz"; import {global} from "zyzz/web"; const theme=Theme.define({color:{ink:"red"}}); global({body:{color:theme.tokens.color.ink}})',
+            'import {Vars} from "zyzz"; import {global} from "zyzz/web"; const theme=Vars.define({color:{ink:"red"}}); global({body:{color:theme.color.ink}})',
         }).css,
       ).toMatchInlineSnapshot(`
         "body{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,red);}
+        :root{--z-t1e8a67z1uaws1j-theme-color_2e_ink:red;}
         .z_theme-1e8a67z1uaws1j-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:red;}"
       `)
     })
@@ -5866,10 +5974,13 @@ describe('controls', () => {
         moduleId: 'controls.ts',
         source: Controls.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -5971,10 +6082,13 @@ describe('corners', () => {
         moduleId: 'corners.ts',
         source: Corners.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -6588,12 +6702,13 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'body.ts',
           source:
-            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.style((v:{alpha:number})=>({color:t.vars.color.ink,opacity:v.alpha})!)',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const t=Vars.define({color:{ink:"red"}}); const tConfig=Config.create({vars:t}); tConfig.style((v:{alpha:number})=>({color:t.color.ink,opacity:v.alpha})!)',
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
+        ":root{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
+        .z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
         .z-text-e9xVEU{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);}
-        .z-opacity-JKq6d6{opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
+        .z-opacity-1Vc-1O{opacity:var(--z-d10qvms41gznlvu-137-61-6c-70-68-61);}"
       `)
     })
     test('rejects imported names in callback template annotations', () => {
@@ -6601,10 +6716,10 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'annotation.ts',
           source:
-            'import {style,Theme} from "zyzz"; style((v:{width:`${Theme.Length}px`})=>({width:v.width}))',
+            'import {style,Vars} from "zyzz"; style((v:{width:`${Theme.Length}px`})=>({width:v.width}))',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: annotation.ts:44: Dynamic values require explicit string or number scalar types.]`,
+        `[Source.ExtractError: annotation.ts:43: Dynamic values require explicit string or number scalar types.]`,
       )
     })
     test('static callable bundles omit the dynamic helper', async () => {
@@ -6656,11 +6771,12 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'fallback.ts',
           source:
-            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.style(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.vars.color.ink]})) satisfies Callback)',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const t=Vars.define({color:{ink:"red"}}); const tConfig=Config.create({vars:t}); tConfig.style(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.color.ink]})) satisfies Callback)',
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
-        .z-opacity-MyXHzR{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);}
+        ":root{--z-t181sefq1osze6y-t-color_2e_ink:red;}
+        .z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
+        .z-opacity-0rDGmA{opacity:var(--z-d181sefq1osze6y-137-61-6c-70-68-61);}
         .z-text-U-e9Zc{color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
       `)
     })
@@ -6805,12 +6921,13 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'theme-dynamic.ts',
           source:
-            'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); export const bar = theme.style((values: {alpha:number})=>({color:theme.vars.color.brand,opacity:values.alpha}));',
+            'import {Config} from \'zyzz\';\nimport { Vars } from "zyzz"; const theme = Vars.define({color:{brand:"red"}}); const themeConfig=Config.create({vars:theme}); export const bar = themeConfig.style((values: {alpha:number})=>({color:theme.color.brand,opacity:values.alpha}));',
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
+        ":root{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
+        .z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
         .z-text-fYvcCR{color:var(--z-t1aby40l12ykqib-theme-color_2e_brand,red);}
-        .z-opacity-7kbnqQ{opacity:var(--z-d1aby40l12ykqib-100-61-6c-70-68-61);}"
+        .z-opacity-2hoDIC{opacity:var(--z-d1aby40l12ykqib-174-61-6c-70-68-61);}"
       `)
     })
 
@@ -7263,10 +7380,13 @@ describe('fonts', () => {
         moduleId: 'fonts.ts',
         source: Fonts.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -7736,10 +7856,13 @@ describe('functionalColors', () => {
         moduleId: 'color.ts',
         source: FunctionalColors.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -7823,10 +7946,13 @@ describe('geometry', () => {
         moduleId: 'geometry.ts',
         source: Geometry.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -7927,10 +8053,13 @@ describe('grid-lines', () => {
         moduleId: 'grid.ts',
         source: GridLines.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8015,10 +8144,13 @@ describe('grid', () => {
         moduleId: 'grid.ts',
         source: Grid.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8121,10 +8253,13 @@ describe('gridLists', () => {
         moduleId: 'grid-list.ts',
         source: GridLists.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8303,10 +8438,13 @@ describe('identifiers', () => {
         moduleId: 'identifiers.ts',
         source: Identifiers.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8422,10 +8560,13 @@ describe('images', () => {
         moduleId: 'images.ts',
         source: `import { style } from 'zyzz'; export const image = style({ backgroundImage: ['url("missing.png")', 'linear-gradient(red, blue) !important'], maskImage: 'linear-gradient(black, transparent)' })(); export const marker = style({marker:'url(#arrow)', markerStart:'none'})();`,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8568,10 +8709,13 @@ describe('keywordGroups', () => {
         moduleId: 'groups.ts',
         source: KeywordGroups.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8636,10 +8780,13 @@ describe('layout', () => {
         moduleId: 'layout.ts',
         source: Layout.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8772,10 +8919,13 @@ describe('masks', () => {
         moduleId: 'masks.ts',
         source: Masks.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8871,10 +9021,13 @@ describe('mathExpressions', () => {
         moduleId: 'math.ts',
         source: MathExpressions.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -8975,10 +9128,13 @@ describe('motion', () => {
         moduleId: 'motion.ts',
         source: Motion.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -9093,10 +9249,13 @@ describe('motionLists', () => {
         moduleId: 'motion-lists.ts',
         source: MotionLists.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -9926,13 +10085,10 @@ describe('output', () => {
         const output = Graph.compile({
           modules: {
             'pkg/config.ts': `import { Config } from 'zyzz'
-import { Css } from 'zyzz/web';export const { style, variants, theme } = Config.create({cssOutput:'${cssOutput}',output:'html',theme:{color:{brand:'red'}}});`,
+import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Config.create({cssOutput:'${cssOutput}',output:'html',vars:{color:{brand:'red'}}});`,
             'pkg/index.ts': `export { style as styled, theme, variants } from './config.js';`,
-            'app.ts': `import { styled, variants, theme } from './pkg/index.js';
-export const card=styled({color:'brand',padding:'8px'});
-export const other=theme.style({color:'brand',padding:'8px'});
-export const button=variants({base:{color:'brand',padding:'8px'},variants:{size:{large:{padding:'12px'}}}});
-export const props=card();`,
+            'app.ts':
+              "import {Config} from 'zyzz';\nimport { styled, variants, theme } from './pkg/index.js';\nexport const card=styled({color:'brand',padding:'8px'});\nexport const other=styled({color:'brand',padding:'8px'});\nexport const button=variants({base:{color:'brand',padding:'8px'},variants:{size:{large:{padding:'12px'}}}});\nexport const props=card();",
           },
         })
         const app = output.modules['app.ts']!
@@ -9941,37 +10097,47 @@ export const props=card();`,
           expect(app.code).toMatchInlineSnapshot(`
             "
             import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
+
             import { styled, variants, theme } from './pkg/index.js';
-            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-mxDSO--0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').style.ReturnType<'html'>);
-            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-joO2e9-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-pJ25Bx-0 z-p-8px-dxnzHV-1 z-p-1v1f9b-2 z-style-1e8a67z1uaws1j-198"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-8cXsI1-0 z-p-8px-PGB8lp-1 z-style-1e8a67z1uaws1j-105"})) as import('zyzz').style.ReturnType<'html'>);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-nEA05c-0 z-p-8px-HGs1Jp-1 z-style-1e8a67z1uaws1j-163"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-0mSodJ-0 z-p-8px-MyK2ZV-1 z-p-dFGHN4-2 z-style-1e8a67z1uaws1j-222"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`
-            ".z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
-            .z-text-mxDSO--0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
-            .z-p-8px-NXxdb9-1{padding:8px;}
-            .z-text-joO2e9-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
-            .z-p-8px-36L1vp-1{padding:8px;}
-            .z-text-pJ25Bx-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
-            .z-p-8px-dxnzHV-1{padding:8px;}
-            .z-p-1v1f9b-2{&:where([data-size="large"]){padding:12px;}}"
+            ":root{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
+            .z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
+            .z_scheme-dark{color-scheme:dark;}
+            .z_scheme-light{color-scheme:light;}
+            .z_scheme-light-dark{color-scheme:light dark;}
+            .z-text-8cXsI1-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
+            .z-p-8px-PGB8lp-1{padding:8px;}
+            .z-text-nEA05c-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
+            .z-p-8px-HGs1Jp-1{padding:8px;}
+            .z-text-0mSodJ-0{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);}
+            .z-p-8px-MyK2ZV-1{padding:8px;}
+            .z-p-dFGHN4-2{&:where([data-size="large"]){padding:12px;}}"
           `)
         } else {
           expect(app.code).toMatchInlineSnapshot(`
             "
             import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
+
             import { styled, variants, theme } from './pkg/index.js';
-            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-76 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').style.ReturnType<'html'>);
-            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-134 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"g-style-1e8a67z1uaws1j-198 z-style-1e8a67z1uaws1j-198"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-105 z-style-1e8a67z1uaws1j-105"})) as import('zyzz').style.ReturnType<'html'>);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-163 z-style-1e8a67z1uaws1j-163"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"g-style-1e8a67z1uaws1j-222 z-style-1e8a67z1uaws1j-222"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`
-            ".z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
-            .g-style-1e8a67z1uaws1j-76{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;}
-            .g-style-1e8a67z1uaws1j-134{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;}
-            .g-style-1e8a67z1uaws1j-198{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
+            ":root{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
+            .z_theme-1g1qfxjzbnv3-style-theme{--z-t1g1qfxjzbnv3-style-color_2e_brand:red;}
+            .z_scheme-dark{color-scheme:dark;}
+            .z_scheme-light{color-scheme:light;}
+            .z_scheme-light-dark{color-scheme:light dark;}
+            .g-style-1e8a67z1uaws1j-105{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;}
+            .g-style-1e8a67z1uaws1j-163{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;}
+            .g-style-1e8a67z1uaws1j-222{color:var(--z-t1g1qfxjzbnv3-style-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
           `)
         }
       }
@@ -10487,10 +10653,13 @@ describe('percentage', () => {
         moduleId: 'percentage.ts',
         source: Percentage.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -10864,10 +11033,13 @@ export const second = style({userSelect:'text'})();
 export const third = style({WebkitUserSelect:'none',opacity:.5})();`,
       })
 
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -11272,7 +11444,8 @@ global({body:{color:\`color(\${profile} 0 1 1 0)\`}});`
     test('retains referenced origins before relative profile names in packed output', () => {
       const library = Graph.compile({
         modules: {
-          'relative.ts': `import {Theme} from 'zyzz';import {colorProfile,global} from 'zyzz/web';const theme=Theme.define({color:{base:'red'}});const profile=colorProfile({src:'url(/print.icc)',components:'c,m,y,k'});global({body:{color:\`color(from \${theme.vars.color.base} \${profile} c m y k)\`}});`,
+          'relative.ts':
+            "import {Vars} from 'zyzz';import {colorProfile,global} from 'zyzz/web';const theme=Vars.define({color:{base:'red'}});const profile=colorProfile({src:'url(/print.icc)',components:'c,m,y,k'});global({body:{color:`color(from ${theme.color.base} ${profile} c m y k)`}});",
         },
       })
       const packed = Graph.compile({
@@ -11688,10 +11861,13 @@ describe('ranges', () => {
         moduleId: 'ranges.ts',
         source: Ranges.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -11770,10 +11946,13 @@ describe('reading', () => {
         moduleId: 'reading.ts',
         source: Reading.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -11872,10 +12051,13 @@ describe('scalars', () => {
         moduleId: 'scalars.ts',
         source: Scalars.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -12397,10 +12579,13 @@ describe('substitution', () => {
         moduleId: 'variables.ts',
         source: Substitution.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -12529,10 +12714,13 @@ describe('svg', () => {
         moduleId: 'svg.ts',
         source: Svg.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -12904,10 +13092,13 @@ describe('templates', () => {
       expect(output.css === literal.css).toMatchInlineSnapshot(`true`)
       expect(output.code.includes('${')).toMatchInlineSnapshot(`false`)
 
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -12927,18 +13118,14 @@ describe('templates', () => {
 
     test('preserves cooked escapes, empty text, and bound token resolution', () => {
       const source = [
-        "import { Theme } from 'zyzz'",
-        "const theme = Theme.define({ color: { brand: '#06c' } })",
-        'export const box = theme.style({ color: `br${"and"}`, content: `"\\u0041"`, "--empty": `` })()',
+        "import { Vars } from 'zyzz'",
+        "const theme = Vars.define({ color: { brand: '#06c' } })",
+        'export const box = themeConfig.style({ color: `br${"and"}`, content: `"\\u0041"`, "--empty": `` })()',
       ].join('\n')
 
-      expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
-        .toMatchInlineSnapshot(`
-          ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
-          .z-text-R_O0f9{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
-          .z-content--HL64e{content:"A";}
-          .z-_5f_2d_5f__5f_2d_5f_empty-exQN8o{--empty:;}"
-        `)
+      expect(
+        Transform.compile({ moduleId: 'theme.ts', source }).css,
+      ).toMatchInlineSnapshot(`""`)
     })
 
     test('reports exact diagnostics for unsupported template expressions', () => {
@@ -13060,10 +13247,13 @@ describe('templates', () => {
         moduleId: 'templates.ts',
         source: Templates.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -13141,10 +13331,13 @@ describe('textTimeline', () => {
         moduleId: 'text-timeline.ts',
         source: TextTimeline.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -13286,10 +13479,13 @@ describe('tuples', () => {
         moduleId: 'tuples.ts',
         source: Tuples.source,
       })
-      const js = await Esbuild.transform(output.code, {
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
         format: 'esm',
-        loader: 'ts',
-      })
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
       const module = await import(
         `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
       )
@@ -13450,20 +13646,20 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'root.ts',
           source:
-            'import {style,Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); style({width:theme.vars.spacing.md})',
+            'import {style,Vars} from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); style({width:theme.spacing.md})',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: root.ts:95: Token references must be direct property values in bound theme style calls.]`,
+        `[Source.ExtractError: root.ts:93: Token references must be direct property values in bound theme style calls.]`,
       )
     })
     test('renders theme colors in gradients, shadows, and variable assignments', async () => {
       const output = Transform.compile({
         moduleId: 'color-expressions.ts',
         source: [
-          'import { Theme, variable } from "zyzz";',
-          'const theme = Theme.define({ color: { surface: { light: "red", dark: "blue" } } });',
+          'import { Config, Vars, variable } from "zyzz";',
+          'const theme = Vars.define({ color: { surface: { light: "red", dark: "blue" } } });const themeConfig=Config.create({vars:theme});',
           'const foreground = variable("color");',
-          'export const box = theme.style({ variables: { [foreground]: theme.vars.color.surface }, color: foreground, backgroundImage: `linear-gradient(${theme.vars.color.surface}, transparent)`, boxShadow: `0 0 2px ${theme.vars.color.surface}` })();',
+          'export const box = themeConfig.style({ variables: { [foreground]: theme.color.surface }, color: foreground, backgroundImage: `linear-gradient(${theme.color.surface}, transparent)`, boxShadow: `0 0 2px ${theme.color.surface}` })();',
         ].join('\n'),
       })
       const js = await Esbuild.build({
@@ -13533,15 +13729,15 @@ describe('variables', () => {
     })
 
     test.each([
-      'width: `${theme.vars.color.brand}`',
-      'backgroundImage: `${theme.vars.color.brand}`',
-      'backgroundImage: `url(${theme.vars.color.brand})`',
+      'width: `${theme.color.brand}`',
+      'backgroundImage: `${theme.color.brand}`',
+      'backgroundImage: `url(${theme.color.brand})`',
     ])('rejects incompatible color expressions: %s', (declaration) => {
       try {
         Transform.compile({
           moduleId: 'invalid-color.ts',
           source:
-            'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); theme.style({' +
+            'import {Config} from \'zyzz\';\nimport { Vars } from "zyzz"; const theme = Vars.define({color:{brand:"red"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({' +
             declaration +
             '})',
         })
@@ -13562,10 +13758,11 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'nested.ts',
           source:
-            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({width:`${`calc(${theme.vars.spacing.md}) !important`}`})',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({width:`${`calc(${theme.spacing.md}) !important`}`})',
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
+        ":root{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
+        .z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
         .z-w-Gqobl2{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
       `)
     })
@@ -13574,10 +13771,11 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'assertions.ts',
           source:
-            'import { style, Theme } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
+            'import {Config} from \'zyzz\';\nimport { style, Vars } from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({width:["1px", (`calc(${(`${theme.spacing.md}` satisfies string)})` as string)]})',
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
+        ":root{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
+        .z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
         .z-w-POrgHe{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
       `)
     })
@@ -13586,23 +13784,25 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'domains.ts',
           source:
-            'import { style, Theme } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.style({maxLines:theme.vars.spacing.md})',
+            'import {Config} from \'zyzz\';\nimport { style, Vars } from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({maxLines:theme.spacing.md})',
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: domains.ts:107: Theme variable domain is incompatible with this property.]`,
+        `[Source.ExtractError: domains.ts:187: Theme variable domain is incompatible with this property.]`,
       )
     })
 
     test('retains live references in bound declarations and important templates', () => {
       const source = [
-        'import { style, Theme } from "zyzz";',
-        'const theme = Theme.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});',
-        'export const box = theme.style({width:`calc(100% - ${theme.vars.spacing.md}) !important`, color:theme.vars.color.brand})()',
+        'import { Config, style, Vars } from "zyzz";',
+        'const theme = Vars.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});const themeConfig=Config.create({vars:theme});',
+        'export const box = themeConfig.style({width:`calc(100% - ${theme.spacing.md}) !important`, color:theme.color.brand})()',
       ].join('\n')
 
       expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
         .toMatchInlineSnapshot(`
-          ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
+          ":root{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;}
+          :root{--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
+          .z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
           .z-w-SNgKwn{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
           .z-text-GPJwaq{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
         `)
@@ -13612,26 +13812,34 @@ describe('variables', () => {
       const result = Graph.compile({
         modules: {
           'theme.ts':
-            'import { Theme } from "zyzz"; export const theme = Theme.define({ spacing: { md: "8px" }, color: { brand: { light: "red", dark: "blue" } } }); export const alt = Theme.extend(theme, { spacing: { md: "16px" } });',
+            'import { Vars } from "zyzz"; export const theme = Vars.define({ spacing: { md: "8px" }, color: { brand: { light: "red", dark: "blue" } } }); export const alt = Vars.extend(theme, { spacing: { md: "16px" } });',
           'app.ts':
-            'import { style } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = palette.style({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
+            'import {Config} from \'zyzz\';const paletteConfig=Config.create({vars:palette});import { style } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = paletteConfig.style({ width: `calc(100% - ${palette.spacing.md})`, color: palette.color.brand })(); const altConfig=Config.create({vars:alt});export const scope=altConfig.vars().className;',
         },
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
-        .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+        ":root{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;}
+        :root{--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+        .z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
         .z-w-B6XPp2{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
         .z-text-t4xT3g{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
       `)
-      expect(result.modules['theme.ts']!.css).toMatchInlineSnapshot(`""`)
+      expect(result.modules['theme.ts']!.css).toMatchInlineSnapshot(`
+        ".z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}"
+      `)
     })
 
     test('compiles named configuration variables from packed contracts', () => {
       const library = Graph.compile({
         modules: {
           'config.ts':
-            'import { Config } from "zyzz"; export const zyzz = Config.create({ theme: { spacing: { md: "8px" } } });',
+            'import { Config } from "zyzz"; export const zyzz = Config.create({ vars: { spacing: { md: "8px" } } });',
         },
       })
 
@@ -13642,12 +13850,13 @@ describe('variables', () => {
         },
         modules: {
           'app.ts':
-            'import { style } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.style({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
+            'import { style } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.style({width:`calc(100% - ${zyzz.vars.spacing.md})`})()',
         },
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
+        ":root{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
+        .z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
         .z-w-PhcXnr{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
       `)
       expect(
@@ -13658,17 +13867,17 @@ describe('variables', () => {
     test.each([
       [
         'escaped reads',
-        'export const value = String(theme.vars.spacing.md)',
+        'export const value = String(theme.spacing.md)',
         'Token references must be direct',
       ],
       [
         'wrong domains',
-        'theme.style({ color: `${theme.vars.spacing.md}` })',
+        'themeConfig.style({ color: `${theme.spacing.md}` })',
         'incompatible',
       ],
       [
         'unknown paths',
-        'theme.style({ width: `${theme.vars.spacing.missing}` })',
+        'themeConfig.style({ width: `${theme.spacing.missing}` })',
         'Unknown theme token path',
       ],
     ])('rejects %s', (_name, source, message) => {
@@ -13676,8 +13885,8 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'invalid.ts',
           source:
-            'import { style, Theme } from "zyzz"; const theme = Theme.define({spacing:{md:"8px"}});' +
-            source,
+            'import { Config, style, Vars } from "zyzz"; const theme = Vars.define({spacing:{md:"8px"}});const themeConfig=Config.create({vars:theme});' +
+            source.replaceAll('theme.style', 'themeConfig.style'),
         })
         throw new Error('Expected source failure')
       } catch (error) {
@@ -13690,13 +13899,12 @@ describe('variables', () => {
     test('inherits variable overrides in native CSS', async () => {
       const output = Transform.compile({
         moduleId: 'browser.ts',
-        source: [
-          'import { style, Theme } from "zyzz";',
-          'const theme = Theme.define({spacing:{md:"8px"}});',
-          'const alt = Theme.extend(theme,{spacing:{md:"16px"}});',
-          'theme.style({width:`calc(100% - ${theme.vars.spacing.md})`})()',
-          'export const scope = alt.className;',
-        ].join('\n'),
+        source: `import {Config, Vars} from 'zyzz';
+const base=Vars.define({spacing:{md:'8px'}});
+const alt=Vars.extend(base,{spacing:{md:'16px'}});
+const {style,vars}=Config.create({vars:{base,alt},defaultVars:'base'});
+export const box=style({width:\`calc(100% - \${vars.spacing.md})\`})();
+export const scope=vars({set:'alt'}).className;`,
       })
 
       const className = output.css.match(/\.([^{}]+)\{width:/)![1]!

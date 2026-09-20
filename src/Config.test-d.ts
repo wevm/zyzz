@@ -3,7 +3,8 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, Theme } from 'zyzz'
+import * as Theme from './internal/Theme.js'
+import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
   test('infers style helpers with either CSS output mode', () => {
@@ -164,12 +165,12 @@ describe('create', () => {
 
     expectTypeOf(named.appearance.get()).toEqualTypeOf<{
       readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
-      readonly theme: 'base' | 'mint'
+      readonly set: 'base' | 'mint'
     }>()
     named.appearance.set({ colorScheme: 'dark' })
-    named.appearance.set({ theme: 'mint' })
+    named.appearance.set({ set: 'mint' })
     // @ts-expect-error Unknown catalog names are rejected.
-    named.appearance.set({ theme: 'ocean' })
+    named.appearance.set({ set: 'ocean' })
 
     const single = Config.create({ theme: { color: { brand: '#06c' } } })
 
@@ -177,7 +178,7 @@ describe('create', () => {
       readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
     }>()
     // @ts-expect-error Single themes select only a scheme.
-    single.appearance.set({ theme: 'base' })
+    single.appearance.set({ set: 'base' })
     // @ts-expect-error Storage keys are strings.
     Config.create({ storageKey: 42 })
   })

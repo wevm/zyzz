@@ -11,7 +11,8 @@ describe('root', () => {
   test('applies fields over the current root selection and persists them for the script', async () => {
     const graph = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {appearance,script,themes}=Config.create({defaultTheme:'base',storageKey:'fixture',themes:{base:{color:{ink:'#123456'}},mint:{color:{ink:'#008844'}}}});export const mint=themes.mint.className;`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const {appearance,script,vars:themes}=Config.create({defaultVars:'base',storageKey:'fixture',vars:{base:{color:{ink:'#123456'}},mint:{color:{ink:'#008844'}}}});export const mint=themes({set:'mint'}).className;",
       },
     })
     const code = graph.modules['config.ts']!.code
@@ -20,7 +21,7 @@ describe('root', () => {
       code.includes('appearance:__zyzzAppearance.root('),
     ).toMatchInlineSnapshot('true')
     expect(
-      code.includes('"defaultTheme":"base","storageKey":"fixture"'),
+      code.includes('"defaultVars":"base","storageKey":"fixture"'),
     ).toMatchInlineSnapshot('true')
 
     const bundle = await Esbuild.build({
@@ -52,10 +53,10 @@ describe('root', () => {
       // Without root classes the default theme is reported and the scheme inherits.
       expect(await page.evaluate('Fixture.appearance.get()'))
         .toMatchInlineSnapshot(`
-        {
-          "theme": "base",
-        }
-      `)
+          {
+            "set": "base",
+          }
+        `)
 
       await page.evaluate("Fixture.appearance.set({ colorScheme: 'dark' })")
 
@@ -69,17 +70,17 @@ describe('root', () => {
       ).toMatchInlineSnapshot(`"dark"`)
       expect(
         await page.evaluate("localStorage.getItem('fixture')"),
-      ).toMatchInlineSnapshot(`"{"theme":"base","colorScheme":"dark"}"`)
+      ).toMatchInlineSnapshot(`"{"set":"base","colorScheme":"dark"}"`)
 
-      await page.evaluate("Fixture.appearance.set({ theme: 'mint' })")
+      await page.evaluate("Fixture.appearance.set({ set:'mint' })")
 
       expect(await page.evaluate('Fixture.appearance.get()'))
         .toMatchInlineSnapshot(`
-        {
-          "colorScheme": "dark",
-          "theme": "mint",
-        }
-      `)
+          {
+            "colorScheme": "dark",
+            "set": "mint",
+          }
+        `)
       expect(
         await page.evaluate(
           'document.documentElement.className === `external ${Fixture.mint} z_scheme-dark`',
@@ -97,16 +98,16 @@ describe('root', () => {
 
       expect(await page.evaluate('Fixture.appearance.get()'))
         .toMatchInlineSnapshot(`
-        {
-          "theme": "mint",
-        }
-      `)
+          {
+            "set": "mint",
+          }
+        `)
       expect(
         await page.evaluate('document.documentElement.style.colorScheme'),
       ).toMatchInlineSnapshot(`""`)
       expect(
         await page.evaluate("localStorage.getItem('fixture')"),
-      ).toMatchInlineSnapshot(`"{"theme":"mint","colorScheme":null}"`)
+      ).toMatchInlineSnapshot(`"{"set":"mint","colorScheme":null}"`)
 
       // The cleared scheme restores over a server-rendered scheme on the next load.
       await page.evaluate(
@@ -124,16 +125,16 @@ describe('root', () => {
 
       expect(
         await page.evaluate(
-          "(() => { try { Fixture.appearance.set({ theme: 'ocean' }); return 'applied' } catch (error) { return String(error) } })()",
+          "(() => { try { Fixture.appearance.set({ set:'ocean' }); return 'applied' } catch (error) { return String(error) } })()",
         ),
-      ).toMatchInlineSnapshot(`"TypeError: Invalid theme selection."`)
+      ).toMatchInlineSnapshot(`"TypeError: Invalid set selection."`)
 
       // Rejected input leaves the root classes and the saved record untouched.
       expect(
         await page.evaluate(
           "(() => { try { Fixture.appearance.set({ colorScheme: 'sepia' }); return 'applied' } catch (error) { return String(error) } })()",
         ),
-      ).toMatchInlineSnapshot(`"TypeError: Invalid theme selection."`)
+      ).toMatchInlineSnapshot(`"TypeError: Invalid set selection."`)
       expect(
         await page.evaluate(
           'document.documentElement.className === `external ${Fixture.mint}`',
@@ -141,7 +142,7 @@ describe('root', () => {
       ).toMatchInlineSnapshot('true')
       expect(
         await page.evaluate("localStorage.getItem('fixture')"),
-      ).toMatchInlineSnapshot(`"{"theme":"mint","colorScheme":null}"`)
+      ).toMatchInlineSnapshot(`"{"set":"mint","colorScheme":null}"`)
     } finally {
       await browser?.close()
       await new Promise<void>((resolve, reject) =>
@@ -154,11 +155,11 @@ describe('root', () => {
     expect(() =>
       Appearance.root([['mint', 'z_theme-mint']]),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[TypeError: defaultTheme must name a catalog theme.]`,
+      `[TypeError: defaultVars must name a catalog set.]`,
     )
     expect(
       Object.keys(
-        Appearance.root([['mint', 'z_theme-mint']], { defaultTheme: 'mint' }),
+        Appearance.root([['mint', 'z_theme-mint']], { defaultVars: 'mint' }),
       ),
     ).toMatchInlineSnapshot(`
       [

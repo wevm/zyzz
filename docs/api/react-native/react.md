@@ -18,7 +18,7 @@ export function Root() {
 }
 ```
 
-`Provider` accepts a resolved `colorScheme` (`light` or `dark`), an optional `theme` name, and `children`. Omit `theme` to use each configuration's default. Supply application state for explicit scheme or theme overrides. Return to the device value to resume system appearance. Unknown names in a themed definition fail during selection.
+`Provider` accepts a resolved `colorScheme` (`light` or `dark`), an optional `set` name, and `children`. Omit `set` to use each configuration's default. Supply application state for explicit scheme or theme overrides. Return to the device value to resume system appearance. Unknown names in a themed definition fail during selection.
 
 The provider uses React context. Nested providers and separate roots are isolated. Compiled function components subscribe unconditionally, including memoized components, and preserve component state when selection changes. No process-wide theme state or device listener is installed by Zyzz; React Native's `useColorScheme` owns the appearance subscription.
 
@@ -29,11 +29,11 @@ import { Text } from 'react-native'
 import { Config } from 'zyzz'
 
 const { style } = Config.create({
-  themes: {
+  vars: {
     base: { color: { ink: { light: '#111', dark: '#eee' } } },
     alternate: { color: { ink: { light: '#900', dark: '#fcc' } } },
   },
-  defaultTheme: 'base',
+  defaultVars: 'base',
 })
 const label = style({ color: 'ink' })
 

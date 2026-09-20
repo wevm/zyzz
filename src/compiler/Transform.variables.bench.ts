@@ -3,7 +3,7 @@ import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 
 const source =
-  'import { style, Theme } from "zyzz"; const theme = Theme.define({spacing:{md:"8px"}}); export const box = theme.style({width:`calc(100% - ${theme.vars.spacing.md})`})()'
+  'import {Config} from \'zyzz\';\nimport { style, Vars } from "zyzz"; const theme = Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); export const box = themeConfig.style({width:`calc(100% - ${theme.spacing.md})`})()'
 describe('theme variable templates', () => {
   bench(
     'compile',

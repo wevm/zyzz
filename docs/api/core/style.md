@@ -142,11 +142,14 @@ Types: `style.ErrorType`, `style.Options`, `style.Props`, `style.ReturnType`, an
 Scoped pseudo keys (`:hover`, `::before`) and explicit `&` selectors retain declaration inference at every depth. `@media`, `@container`, `@supports`, and `@starting-style` compile to native CSS nesting, preserving authored order and specificity. Raw syntax is checked by the source compiler.
 
 ```ts
-const theme = Theme.define({
+import { Config, Vars } from 'zyzz'
+
+const theme = Vars.define({
   breakpoints: { tablet: '48rem' },
   spacing: { gap: '1rem' },
 })
-const panel = theme.style({
+const config = Config.create({ vars: theme })
+const panel = config.style({
   padding: 'gap',
   ':hover': { opacity: 0.8 },
   '@media tablet': { display: 'grid' },

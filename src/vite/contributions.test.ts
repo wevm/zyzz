@@ -17,12 +17,12 @@ describe('zyzz', () => {
     try {
       await Fs.writeFile(
         Path.join(root, 'theme.ts'),
-        `import {Theme} from 'zyzz';export const theme=Theme.define({color:{brand:'red'}});`,
+        "import {Vars} from 'zyzz';export const theme=Vars.define({color:{brand:'red'}});",
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import {style} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export namespace styles {
-  export const card = style({color:theme.tokens.color.brand})
+        `import {Config} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export const {style,vars}=Config.create({vars:theme});export namespace styles {
+  export const card = style({color:vars.color.brand})
 }`,
       )
       server = await Vite.createServer({
@@ -46,8 +46,8 @@ describe('zyzz', () => {
 
       const development = await server.ssrLoadModule('/app.ts')
 
-      expect(development.theme.className).toMatchInlineSnapshot(
-        `"z_theme-8emm311c7xzi9-theme"`,
+      expect(development.vars().className).toMatchInlineSnapshot(
+        `"z_theme-1hl3v031oo9bot-style-theme"`,
       )
 
       const result = await Vite.build({
@@ -76,12 +76,12 @@ describe('zyzz', () => {
         `data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`
       )
 
-      expect(production.theme.className).toMatchInlineSnapshot(
-        `"z_theme-8emm311c7xzi9-theme"`,
+      expect(production.vars().className).toMatchInlineSnapshot(
+        `"z_theme-1hl3v031oo9bot-style-theme"`,
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-xd11RZ z-style-1hl3v031oo9bot-135",
+          "className": "z-text-ji3Z1V z-style-1hl3v031oo9bot-175",
         }
       `)
     } finally {
@@ -248,7 +248,7 @@ describe('zyzz', () => {
           "Build failed with 1 error:
 
           [plugin zyzz] <root>/app.ts
-          Source.ExtractError: <external>/index.js:0: Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+          Source.ExtractError: /private<external>/index.js:0: Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
         `)
       }
     } finally {

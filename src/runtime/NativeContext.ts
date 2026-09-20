@@ -3,12 +3,12 @@ import type * as Native from './Native.js'
 
 const binding = Symbol('zyzz.native.context')
 
-/** Render-local theme and resolved appearance. */
+/** Render-local set and resolved appearance. */
 export type Context = {
   /** Resolved system appearance or an explicit override. */
   readonly colorScheme: 'dark' | 'light'
-  /** Named compiled theme; omission uses each configuration default. */
-  readonly theme?: string | undefined
+  /** Named compiled set; omission uses each configuration default. */
+  readonly set?: string | undefined
 }
 
 type Callable = (input: never) => Native.Props<object>
@@ -19,17 +19,17 @@ type Tables = Readonly<
 /** Retains compiled alternatives without selecting a device context at module evaluation. */
 export function create<const tables extends Tables>(
   tables: tables,
-  defaultTheme: keyof tables & string,
+  defaultVars: keyof tables & string,
 ): tables[keyof tables]['light'] {
   const fallback =
-    Object.keys(tables).length === 1 && defaultTheme === 'default'
+    Object.keys(tables).length === 1 && defaultVars === 'default'
       ? tables.default
       : undefined
 
   function select(context: Context, input?: never) {
-    const theme = context.theme ?? defaultTheme
-    const table = tables[theme] ?? fallback
-    if (!table) throw new Error(`Unknown native theme: ${theme}.`)
+    const set = context.set ?? defaultVars
+    const table = tables[set] ?? fallback
+    if (!table) throw new Error(`Unknown native set: ${set}.`)
     return table[context.colorScheme](input!).style
   }
   function props(input?: never) {

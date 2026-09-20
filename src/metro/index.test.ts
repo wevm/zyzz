@@ -94,7 +94,7 @@ describe('zyzz', () => {
       const source = (width: number) =>
         `import { style } from './Theme'; export const box = style({ color: 'ink', width: '${width}px', targets: { ios: { opacity: 0.123 }, android: { opacity: 0.456 } } });`
       const theme = (color: string) =>
-        `import {Config} from 'zyzz'; export const {style} = Config.create({themes:{base:{color:{ink:{light:'${color}',dark:'#abcdef'}}},alternate:{color:{ink:{light:'#123abc',dark:'#456def'}}}},defaultTheme:'base'});`
+        `import {Config} from 'zyzz'; export const {style} = Config.create({vars:{base:{color:{ink:{light:'${color}',dark:'#abcdef'}}},alternate:{color:{ink:{light:'#123abc',dark:'#456def'}}}},defaultVars:'base'});`
       await Fs.writeFile(Path.join(root, 'Theme.ts'), theme('#112233'))
       await Fs.writeFile(Path.join(root, 'Style.ts'), source(123))
 

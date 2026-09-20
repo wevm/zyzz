@@ -8,12 +8,12 @@ import type * as Zyzz from 'zyzz'
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
 declare const Style: typeof Zyzz.Style
-declare const Theme: typeof Zyzz.Theme
+declare const Vars: typeof Zyzz.Vars
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
   Style.define({ base: { color: '#000' } })
-  Theme.define({ color: { base: '#000' } })
+  Vars.define({ color: { base: '#000' } })
 }
 
 bench('define / literal named styles', () => {
@@ -54,7 +54,7 @@ bench('define / compound declarations', () => {
 }).types([262988, 'instantiations'])
 
 bench('define / theme shorthand names', () => {
-  const theme = Theme.define({
+  const theme = Vars.define({
     color: { brand: '#06c', ink: '#111' },
     spacing: { 4: '1rem', md: '8px' },
   })
@@ -62,8 +62,8 @@ bench('define / theme shorthand names', () => {
   Style.define(
     {
       card: { color: 'brand', padding: 4 },
-      label: { color: theme.tokens.color.ink, margin: 'md' },
+      label: { color: theme.color.ink, margin: 'md' },
     },
-    { theme },
+    { vars: theme },
   )
 }).types([63356, 'instantiations'])

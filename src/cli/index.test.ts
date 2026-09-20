@@ -229,7 +229,7 @@ describe('zyzz', () => {
       await Fs.mkdir(Path.join(root, 'src'))
       await Fs.writeFile(
         Path.join(root, 'src/index.ts'),
-        `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});export const card=style({color:'ink',targets:{ios:{opacity:0.5},android:{opacity:0.8}}});`,
+        "import {Config} from 'zyzz';const {style}=Config.create({vars:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});export const card=style({color:'ink',targets:{ios:{opacity:0.5},android:{opacity:0.8}}});",
       )
       const bin = Path.join(root, 'node_modules/.bin/zyzz')
       const run = (args: string[]) =>

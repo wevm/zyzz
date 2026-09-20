@@ -9,6 +9,7 @@ import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
+
 import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
@@ -701,7 +702,7 @@ describe('compile', () => {
       .z-p-4px-VwIMi--1{padding:4px;}
       .z-text-Ojq1qR-0{color:#555;}
       .z-p-5px-E61DqP-1{padding:5px;}",
-        "themes": {},
+        "vars": {},
       }
     `)
 
@@ -788,7 +789,7 @@ describe('compile', () => {
       .z-mt--2px{margin-top:-2px;}
       .z-text-kJGhCa{color:#fff;}
       .z-block{display:block;}",
-        "themes": {},
+        "vars": {},
       }
     `)
 
@@ -800,7 +801,7 @@ describe('compile', () => {
       frozen:
         Object.isFrozen(result) &&
         Object.isFrozen(result.classes) &&
-        Object.isFrozen(result.themes),
+        Object.isFrozen(result.vars),
       reordered: styles.styles.every(
         (style) => reversed.classes[style.name] === result.classes[style.name],
       ),
@@ -815,12 +816,12 @@ describe('compile', () => {
       }
     `)
     expect(Css.compile({ styles: Style.define({}) })).toMatchInlineSnapshot(`
-    {
-      "classes": {},
-      "css": "",
-      "themes": {},
-    }
-  `)
+      {
+        "classes": {},
+        "css": "",
+        "vars": {},
+      }
+    `)
   })
 
   test('compiler diagnostics reject duplicate style names without emitting CSS', () => {
@@ -1289,24 +1290,27 @@ describe('names', () => {
     })
 
     test('scopes separately delivered source modules and theme references', () => {
-      const source = `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{brand:'red'}}});export const card=style({display:'flex',color:'brand'});`
+      const source =
+        "import {Config} from 'zyzz';const {style}=Config.create({vars:{color:{brand:'red'}}});export const card=style({display:'flex',color:'brand'});"
       const first = Transform.compile({ moduleId: 'first.ts', source })
       const second = Transform.compile({ moduleId: 'second.ts', source })
 
       expect(first.css).toMatchInlineSnapshot(`
-        ".z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
+        ":root{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
+        .z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
         .z-display-flex-QPs-Od{display:flex;}
         .z-text--mgEZB{color:var(--z-t1mlrxl41f5va70-style-color_2e_brand,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
-        ".z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
+        ":root{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
+        .z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
         .z-display-flex-IjSBTf{display:flex;}
         .z-text-GRogKQ{color:var(--z-t1d6eq581s6owy-style-color_2e_brand,red);}"
       `)
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({theme:{"className":"z_theme-1mlrxl41f5va70-style-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text--mgEZB z-style-1mlrxl41f5va70-105"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text--mgEZB z-style-1mlrxl41f5va70-104"});"
       `)
     })
 
@@ -1796,49 +1800,49 @@ describe('output', () => {
       const grouped = Css.compile({ cssOutput: 'grouped', styles })
 
       expect(output).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "card": "z-text-red z-p-8px",
-          "label": "z-text-red",
-        },
-        "css": ".z-text-red{color:red;}
-      .z-p-8px{padding:8px;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "card": "z-text-red z-p-8px",
+            "label": "z-text-red",
+          },
+          "css": ".z-text-red{color:red;}
+        .z-p-8px{padding:8px;}",
+          "vars": {},
+        }
+      `)
       expect(atomic).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "card": "z-text-red z-p-8px",
-          "label": "z-text-red",
-        },
-        "css": ".z-text-red{color:red;}
-      .z-p-8px{padding:8px;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "card": "z-text-red z-p-8px",
+            "label": "z-text-red",
+          },
+          "css": ".z-text-red{color:red;}
+        .z-p-8px{padding:8px;}",
+          "vars": {},
+        }
+      `)
       expect(grouped).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "card": "g-card",
-          "label": "g-label",
-        },
-        "css": ".g-card{color:red;padding:8px;}
-      .g-label{color:red;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "card": "g-card",
+            "label": "g-label",
+          },
+          "css": ".g-card{color:red;padding:8px;}
+        .g-label{color:red;}",
+          "vars": {},
+        }
+      `)
       expect(Css.compile({ styles })).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "card": "z-text-red z-p-8px",
-          "label": "z-text-red",
-        },
-        "css": ".z-text-red{color:red;}
-      .z-p-8px{padding:8px;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "card": "z-text-red z-p-8px",
+            "label": "z-text-red",
+          },
+          "css": ".z-text-red{color:red;}
+        .z-p-8px{padding:8px;}",
+          "vars": {},
+        }
+      `)
     })
 
     test('retains fallback sequences, importance, and stylesheet contributions', () => {
@@ -1886,20 +1890,20 @@ describe('output', () => {
           styles,
         }),
       ).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "card": "g_0 g_1",
-          "card-1": "g_2",
-          "card_s1": "g_3",
-          "x": "g_0",
-        },
-        "css": ".g_0{color:red;}
-      .g_1{padding:1px;}
-      .g_2{margin:2px;}
-      .g_3{display:block;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "card": "g_0 g_1",
+            "card-1": "g_2",
+            "card_s1": "g_3",
+            "x": "g_0",
+          },
+          "css": ".g_0{color:red;}
+        .g_1{padding:1px;}
+        .g_2{margin:2px;}
+        .g_3{display:block;}",
+          "vars": {},
+        }
+      `)
     })
   })
 })

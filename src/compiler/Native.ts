@@ -13,7 +13,7 @@ import * as Walker from 'oxc-walker'
 
 /**
  * Compiles local style and variants calls for an explicit native context.
- * @param options - Shared source, destination mappings, and selected theme/scheme.
+ * @param options - Shared source, destination mappings, and selected set/scheme.
  * @returns Native callables, source map, and static recipe tables.
  * @throws {Source.ExtractError} For invalid source authoring.
  * @throws {CompileError} For native features outside the static source boundary.
@@ -38,7 +38,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       (extracted.themeAppearances?.length || extracted.themeScripts?.length))
   )
     throw new CompileError(
-      'Native static modules do not support CSS contributions, variables, or web theme controls.',
+      'Native static modules do not support CSS contributions, variables, or web set controls.',
     )
   const parsed = options[Themes.context]?.parsed ?? Syntax.parse(options)
   const names = new Set(options[Themes.context]?.identifiers)
@@ -93,10 +93,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   const staticTables = new Map<Source.Call, Variants.Definition>()
   if (options.contextual) {
-    const groups = new Map<
-      StyleSheet.compile.Options['themes'],
-      Source.Call[]
-    >()
+    const groups = new Map<StyleSheet.compile.Options['vars'], Source.Call[]>()
     for (const call of extracted.calls) {
       if (
         call.recipe ||
@@ -106,12 +103,12 @@ export function compile(options: compile.Options): compile.ReturnType {
         call.output === 'html'
       )
         continue
-      const themes = call.nativeContext?.themes ?? options.themes
-      const group = groups.get(themes)
+      const vars = call.nativeContext?.vars ?? options.vars
+      const group = groups.get(vars)
       if (group) group.push(call)
-      else groups.set(themes, [call])
+      else groups.set(vars, [call])
     }
-    for (const [themes, calls] of groups) {
+    for (const [vars, calls] of groups) {
       if (calls.length < 2) continue
       try {
         const compiled = StyleSheet.compile({
@@ -126,13 +123,13 @@ export function compile(options: compile.Options): compile.ReturnType {
               })),
             })),
           },
-          themes,
+          vars,
           units: options.units,
         })
         for (const call of calls) {
           const styles = Object.fromEntries(
-            Object.entries(compiled.styles).map(([theme, schemes]) => [
-              theme,
+            Object.entries(compiled.styles).map(([set, schemes]) => [
+              set,
               Object.freeze({
                 light: Object.freeze({ '0': schemes.light[call.name]! }),
                 dark: Object.freeze({ '0': schemes.dark[call.name]! }),
@@ -237,32 +234,32 @@ export function compile(options: compile.Options): compile.ReturnType {
     bindings?: ReturnType<typeof NativeBindings.prepare>,
   ): string {
     if (contextOptions.contextual) {
-      const themes = call?.nativeContext?.themes ?? contextOptions.themes
+      const vars = call?.nativeContext?.vars ?? contextOptions.vars
       if (!call?.slots && !call?.recipe?.payloads?.length)
         compiled ??= Variants.compile({
           recipe,
           fonts: contextOptions.fonts,
           platform: contextOptions.platform,
-          themes,
+          vars,
           units: contextOptions.units,
         })
       else {
         try {
           bindings = NativeBindings.prepare(recipe, call!, {
             ...contextOptions,
-            themes,
+            vars,
           })
         } catch (error) {
           if (error instanceof StyleSheet.CompileError) throw error
           throw new CompileError((error as Error).message)
         }
       }
-      const defaultTheme =
-        call?.nativeContext?.defaultTheme ?? contextOptions.theme ?? 'default'
+      const defaultVars =
+        call?.nativeContext?.defaultVars ?? contextOptions.set ?? 'default'
       const tables = new Map<string, string>()
-      const alternatives = (themes ? Object.keys(themes) : ['default']).map(
-        (theme) => ({
-          theme,
+      const alternatives = (vars ? Object.keys(vars) : ['default']).map(
+        (set) => ({
+          set,
           schemes: (['light', 'dark'] as const).map((colorScheme) => {
             const value = callable(
               recipe,
@@ -271,8 +268,8 @@ export function compile(options: compile.Options): compile.ReturnType {
               {
                 ...contextOptions,
                 contextual: false,
-                themes,
-                theme,
+                vars,
+                set,
                 colorScheme,
               },
               compiled,
@@ -285,8 +282,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         }),
       )
       const entries = alternatives.map(
-        ({ theme, schemes }) =>
-          `${JSON.stringify(theme)}:{${schemes.map(({ colorScheme, value }) => `${JSON.stringify(colorScheme)}:${tables.get(value)}`).join(',')}}`,
+        ({ set, schemes }) =>
+          `${JSON.stringify(set)}:{${schemes.map(({ colorScheme, value }) => `${JSON.stringify(colorScheme)}:${tables.get(value)}`).join(',')}}`,
       )
       const parameters = [...tables.values()].map((name, index) =>
         typed ? `${name}:T${index}` : name,
@@ -294,7 +291,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       const types = typed
         ? `<${parameters.map((_, index) => `const T${index} extends (input:never)=>import('zyzz/runtime').Native.Props<object>`).join(',')},>`
         : ''
-      const expression = `${types}(${parameters.join(',')})=>${helper}Context.create({${entries.join(',')}},${JSON.stringify(defaultTheme)})`
+      const expression = `${types}(${parameters.join(',')})=>${helper}Context.create({${entries.join(',')}},${JSON.stringify(defaultVars)})`
       let context = contexts.get(expression)
       if (!context) {
         context = `${helper}ContextFactory${contexts.size}`
@@ -351,12 +348,12 @@ export function compile(options: compile.Options): compile.ReturnType {
       recipe,
       fonts: contextOptions.fonts,
       platform: contextOptions.platform,
-      themes: contextOptions.themes,
+      vars: contextOptions.vars,
       units: contextOptions.units,
     })
     recipes[name] = compiled
     const styles = StyleSheet.select(compiled.styles, {
-      theme: contextOptions.theme ?? 'default',
+      set: contextOptions.set ?? 'default',
       colorScheme: contextOptions.colorScheme,
     })
     const cached = compiledCalls.get(compiled)
@@ -743,7 +740,7 @@ export declare namespace compile {
     readonly [Edits.runtime]?: boolean | undefined
     /** Compiler-owned graph context. */
     readonly [Themes.context]?: Themes.Context | undefined
-    /** Retain every theme and scheme for render-local selection. */
+    /** Retain every set and scheme for render-local selection. */
     readonly contextual?: boolean | undefined
     /** Scheme compiled into this module's callables. Recompile to select another scheme. */
     readonly colorScheme: StyleSheet.ColorScheme
@@ -751,8 +748,8 @@ export declare namespace compile {
     readonly moduleId: string
     /** Shared local style and variants authoring. */
     readonly source: string
-    /** Label selected from supplied themes. Defaults to the token-fallback default table. */
-    readonly theme?: string | undefined
+    /** Label selected from supplied vars. Defaults to the token-fallback default table. */
+    readonly set?: string | undefined
   }
   /** Executable source with immutable recipe tables and authored source mappings. */
   type ReturnType = {
@@ -762,7 +759,7 @@ export declare namespace compile {
     readonly code: string
     /** Version-three source map encoded as JSON. */
     readonly map: string
-    /** All theme/scheme tables for each extracted definition. */
+    /** All set/scheme tables for each extracted definition. */
     readonly recipes: Readonly<Record<string, Variants.Definition>>
   }
 }

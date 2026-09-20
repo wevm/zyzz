@@ -19,13 +19,13 @@ export function compile(
   return {
     ...prepared,
     styles: StyleSheet.select(prepared.styles, {
-      theme: options.theme ?? 'default',
+      set: options.set ?? 'default',
       colorScheme: options.colorScheme,
     }),
   }
 }
 
-/** Prepares immutable programs and all theme/scheme tables before selection. */
+/** Prepares immutable programs and all set/scheme tables before selection. */
 export function prepare(
   recipe: Recipe.Definition,
   call: Pick<Source.Call, 'slots' | 'recipe'>,
@@ -131,7 +131,7 @@ export function prepare(
     styles: { styles: fragments },
     fonts: options.fonts,
     platform: options.platform,
-    themes: options.themes,
+    vars: options.vars,
     units: options.units,
   })
   return {

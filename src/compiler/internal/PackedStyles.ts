@@ -8,7 +8,7 @@ import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
 import * as Literal from '../../internal/Literal.js'
 import type * as Source from '../Source.js'
 import type * as Style from '../../Style.js'
-import type * as Theme from '../../Theme.js'
+import type * as Theme from '../../internal/Theme.js'
 import * as Token from '../../internal/Token.js'
 
 /** Portable composition inputs; selection behavior remains in the compiled callable. */

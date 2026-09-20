@@ -5,14 +5,15 @@ import * as Path from 'node:path'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Source, Transform } from 'zyzz/compiler'
+import { Graph, Transform } from 'zyzz/compiler'
 import { Config } from 'zyzz'
 
 describe('create', () => {
   test('distinguishes catalog names from configuration helpers', async () => {
     const library = Graph.compile({
       modules: {
-        'index.ts': `import {Config} from 'zyzz';const config=Config.create({defaultTheme:'style',themes:{style:{color:{ink:'red'}},themes:{color:{ink:'blue'}}}});export const select=config.themes;const {style:styleTheme,themes:themesTheme}=select;export const first=styleTheme.className;export const second=themesTheme.className;`,
+        'index.ts':
+          "import {Config} from 'zyzz';const config=Config.create({defaultVars:'style',vars:{style:{color:{ink:'red'}},vars:{color:{ink:'blue'}}}});export const select=config.vars;export const first=select({set:'style'}).className;export const second=select({set:'vars'}).className;",
       },
     })
 
@@ -20,7 +21,7 @@ describe('create', () => {
       contracts: { 'lib.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { lib: 'lib.js' } },
       modules: {
-        'app.ts': `import {select,first,second} from 'lib';const {style:styleTheme,themes:themesTheme}=select;export const same=first===styleTheme.className && second===themesTheme.className;`,
+        'app.ts': `import {select,first,second} from 'lib';export const same=first===select({set:'style'}).className && second===select({set:'vars'}).className;`,
       },
     })
 
@@ -49,7 +50,7 @@ describe('create', () => {
     test(`renders packed ${output} selection and stable component rules in Chromium`, async () => {
       const library = Graph.compile({
         modules: {
-          'index.ts': `import {Config} from 'zyzz';export const {style,themes}=Config.create({output:'${output}',defaultTheme:'base',themes:{base:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
+          'index.ts': `import {Config} from 'zyzz';export const {style,vars}=Config.create({output:'${output}',defaultVars:'base',vars:{base:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
         },
       })
 
@@ -57,9 +58,9 @@ describe('create', () => {
         contracts: { 'lib.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { lib: 'lib.js' } },
         modules: {
-          'app.ts': `import {style,themes} from 'lib';export namespace styles {
+          'app.ts': `import {style,vars} from 'lib';export namespace styles {
   export const card = style({color:'ink'})
-}export const select=themes;`,
+}export const select=vars;`,
         },
       })
 
@@ -80,7 +81,7 @@ describe('create', () => {
         await page.addScriptTag({ content: code })
 
         const colors = await page.evaluate(
-          `(()=>{const el=document.getElementById('card'),scope=document.getElementById('scope'),props=Fixture.styles.card();el.className=props.class??props.className;return [['base','light'],['mint','dark']].map(([theme,colorScheme])=>{const props=Fixture.select({theme,colorScheme});scope.className=props.class??props.className;if(typeof props.style==='string')scope.setAttribute('style',props.style);else Object.assign(scope.style,props.style);return getComputedStyle(el).color})})()`,
+          `(()=>{const el=document.getElementById('card'),scope=document.getElementById('scope'),props=Fixture.styles.card();el.className=props.class??props.className;return [['base','light'],['mint','dark']].map(([theme,colorScheme])=>{const props=Fixture.select({set:theme,colorScheme});scope.className=props.class??props.className;if(typeof props.style==='string')scope.setAttribute('style',props.style);else Object.assign(scope.style,props.style);return getComputedStyle(el).color})})()`,
         )
 
         expect(colors).toMatchInlineSnapshot(`
@@ -98,7 +99,8 @@ describe('create', () => {
   test('aliases named selectors through local and packed member access', () => {
     const library = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}});const select=config.themes;export const props=select({theme:'base'});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const config=Config.create({defaultVars:'base',vars:{base:{color:{ink:'red'}}}});const select=config.vars;export const props=select({set:'base'});",
       },
     })
 
@@ -106,18 +108,19 @@ describe('create', () => {
       contracts: { 'lib.js': library.contracts['config.ts']! },
       imports: { 'app.ts': { lib: 'lib.js' } },
       modules: {
-        'app.ts': `import {config} from 'lib';const select=config.themes;const alias=select;export const props=alias({theme:'base'});`,
+        'app.ts': `import {config} from 'lib';const select=config.vars;const alias=select;export const props=alias({set:'base'});`,
       },
     })
 
     expect(
-      app.modules['app.ts']!.code.includes('alias({theme:'),
+      app.modules['app.ts']!.code.includes('alias({set:'),
     ).toMatchInlineSnapshot('true')
   })
   test('destructures named selectors from packed full configurations', () => {
     const library = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const config=Config.create({defaultVars:'base',vars:{base:{color:{ink:'red'}}}});",
       },
     })
 
@@ -125,7 +128,7 @@ describe('create', () => {
       contracts: { 'lib.js': library.contracts['config.ts']! },
       imports: { 'app.ts': { lib: 'lib.js' } },
       modules: {
-        'app.ts': `import {config} from 'lib';const {themes:select,theme,style}=config;export const props=select({theme:'base'});export const card=style({color:theme.tokens.color.ink});`,
+        'app.ts': `import {config} from 'lib';const {vars:select,style}=config;export const props=select({set:'base'});export const card=style({color:select.color.ink});`,
       },
     })
 
@@ -134,18 +137,19 @@ describe('create', () => {
     )
   })
   test('reports missing transforms and removes unused selection runtime from bundles', async () => {
-    const { themes } = Config.create({
-      defaultTheme: 'base',
-      themes: { base: {} },
+    const { vars } = Config.create({
+      defaultVars: 'base',
+      vars: { base: {} },
     })
 
-    expect(() => themes({ theme: 'base' })).toThrowErrorMatchingInlineSnapshot(
+    expect(() => vars({ set: 'base' })).toThrowErrorMatchingInlineSnapshot(
       `[Error: Config.create requires an explicit id without the compiler plugin.]`,
     )
 
     const graph = Graph.compile({
       modules: {
-        'app.ts': `import {Config} from 'zyzz';const {style}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}},other:{color:{ink:'blue'}}}});export const props=style({color:'ink'})();`,
+        'app.ts':
+          "import {Config} from 'zyzz';const {style}=Config.create({defaultVars:'base',vars:{base:{color:{ink:'red'}},other:{color:{ink:'blue'}}}});export const props=style({color:'ink'})();",
       },
     })
 
@@ -167,11 +171,11 @@ describe('create', () => {
     ).toMatchInlineSnapshot('false')
   })
   test('rejects selectors on configurations without named catalogs', () => {
-    const errors = ['{}', "{theme:{color:{ink:'red'}}}"].map((options) => {
+    const errors = ['{}'].map((options) => {
       try {
         Graph.compile({
           modules: {
-            'app.js': `import {Config} from 'zyzz';const config=Config.create(${options});config.themes({theme:'base'})`,
+            'app.js': `import {Config} from 'zyzz';const config=Config.create(${options});config.vars({set:'base'})`,
           },
         })
 
@@ -183,21 +187,21 @@ describe('create', () => {
 
     expect(errors).toMatchInlineSnapshot(`
       [
-        [Source.ExtractError: app.js:59: Theme selection requires a named catalog.],
-        [Source.ExtractError: app.js:84: Theme selection requires a named catalog.],
+        [Source.ExtractError: app.js:59: This configuration has no vars.],
       ]
     `)
   })
   test('versions complete named configurations as callable and isolates builtin bindings', async () => {
     const graph = Graph.compile({
       modules: {
-        'config.js': `import {Config} from 'zyzz';const Object=null,Array=null,TypeError=null,globalThis=null;export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}});export const selected=config.themes({theme:'base',colorScheme:'dark'})`,
+        'config.js':
+          "import {Config} from 'zyzz';const Object=null,Array=null,TypeError=null,globalThis=null;export const config=Config.create({defaultVars:'base',vars:{base:{color:{ink:'red'}}}});export const selected=config.vars({set:'base',colorScheme:'dark'})",
       },
     })
 
     expect(
       JSON.parse(graph.contracts['config.js']!).version,
-    ).toMatchInlineSnapshot(`18`)
+    ).toMatchInlineSnapshot(`26`)
 
     const bundle = await Esbuild.build({
       stdin: {
@@ -217,66 +221,35 @@ describe('create', () => {
 
     expect(value.style.colorScheme).toMatchInlineSnapshot('"dark"')
   })
-  test('preserves legacy static catalogs while rejecting callable selection', () => {
+  test('rejects variable catalogs recorded with old schemas', () => {
     const library = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}})`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const config=Config.create({defaultVars:'base',vars:{base:{color:{ink:'red'}}}})",
       },
     })
-
-    const legacy = JSON.parse(library.contracts['config.ts']!)
-
-    legacy.version = 2
-    for (const theme of Object.values(legacy.themes) as {
-      cssOutput?: string
-    }[])
-      delete theme.cssOutput
-
-    const contracts = { 'lib.js': JSON.stringify(legacy) },
-      imports = { 'app.ts': { lib: 'lib.js' } }
-
-    const staticOutput = Graph.compile({
-      contracts,
-      imports,
-      modules: {
-        'app.ts': `import {config} from 'lib';export const name=config.themes.base.className`,
-      },
-    })
-
-    expect(
-      staticOutput.modules['app.ts']!.code.includes('z_theme'),
-    ).toMatchInlineSnapshot('true')
-
-    for (const source of [
-      `import {config} from 'lib';config.themes({theme:'base'})`,
-      `import {config} from 'lib';const {themes}=config;themes({theme:'base'})`,
-    ])
-      expect(() =>
-        Graph.compile({ contracts, imports, modules: { 'app.ts': source } }),
-      ).toThrow(Source.ExtractError)
-
-    const forwarded = Graph.compile({
-      contracts,
-      imports,
-      modules: { 'app.ts': `export {config} from 'lib'` },
-    })
-
-    expect(() =>
-      Graph.compile({
-        contracts: { 'forward.js': forwarded.contracts['app.ts']! },
-        imports: { 'main.ts': { forward: 'forward.js' } },
-        modules: {
-          'main.ts': `import {config} from 'forward';config.themes({theme:'base'})`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: main.ts:31: This legacy catalog is not callable; rebuild its library.]`,
-    )
+    for (const version of [2, 18, 25]) {
+      const contract = JSON.parse(library.contracts['config.ts']!)
+      contract.version = version
+      for (const source of [
+        "import {config} from 'lib';config.vars({set:'base'})",
+        "import {config} from 'lib';const {vars}=config;vars({set:'base'})",
+        "export {config} from 'lib'",
+      ])
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': source },
+          }),
+        ).toThrow('Vars contracts require contract version 26 or later.')
+    }
   })
   test('rejects unchecked selector names, fields, and schemes', async () => {
     const graph = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {themes}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'#123456'}}}});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const {vars:vars}=Config.create({defaultVars:'base',vars:{base:{color:{ink:'#123456'}}}});",
       },
     })
 
@@ -294,28 +267,28 @@ describe('create', () => {
     })
 
     const select = Vm.runInNewContext(
-      `${bundle.outputFiles[0]!.text};Fixture.themes;`,
+      `${bundle.outputFiles[0]!.text};Fixture.vars;`,
     ) as (input: unknown) => unknown
 
     for (const input of [
-      { theme: 'missing' },
-      { theme: 1 },
-      { theme: 'toString' },
-      { theme: 'base', colorScheme: 'invalid' },
-      { theme: 'base', extra: true },
+      { set: 'missing' },
+      { set: 1 },
+      { set: 'toString' },
+      { set: 'base', colorScheme: 'invalid' },
+      { set: 'base', extra: true },
       null,
     ])
       expect(() => select(input)).toThrowErrorMatchingInlineSnapshot(
-        '[TypeError: Invalid theme selection.]',
+        '[TypeError: Invalid variable selection.]',
       )
   })
 
   for (const output of ['react', 'html'] as const) {
-    test(`selects imported and packed ${output} themes without changing component rules`, async () => {
+    test(`selects imported and packed ${output} vars without changing component rules`, async () => {
       const library = Graph.compile({
         modules: {
-          'config.ts': `import { Config } from 'zyzz'; export const { style, theme, themes } = Config.create({output:'${output}',defaultTheme:'ocean',themes:{ocean:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
-          'index.ts': `export { style, theme, themes as select } from './config.js';`,
+          'config.ts': `import { Config } from 'zyzz'; export const { style, vars } = Config.create({output:'${output}',defaultVars:'ocean',vars:{ocean:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
+          'index.ts': `export { style, vars as select } from './config.js';`,
         },
       })
 
@@ -323,9 +296,9 @@ describe('create', () => {
         contracts: { 'library/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { library: 'library/index.js' } },
         modules: {
-          'app.ts': `import { select, style, theme } from 'library'; export namespace styles {
-  export const card = style({color:select.mint.tokens.color.ink})
-} export const mint=select.mint.className; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
+          'app.ts': `import { select, style } from 'library'; export namespace styles {
+  export const card = style({color:select.color.ink})
+} export const mint=select({set:'mint'})['${output === 'html' ? 'class' : 'className'}']; export const first=select({set:'ocean'}); export const second=select({set:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({set:name});`,
         },
       })
 
@@ -379,9 +352,8 @@ describe('create', () => {
   test('nested selections inherit tokens and independently force color schemes in a browser', async () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {Config} from 'zyzz'; const {style,themes}=Config.create({defaultTheme:'a',themes:{a:{color:{ink:{light:'#123456',dark:'#abcdef'}}},b:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}}); export namespace styles {
-  export const card = style({color:'ink'})
-} export const outer=themes({theme:'a',colorScheme:'light'}); export const inner=themes({theme:'b',colorScheme:'dark'});`,
+        'app.ts':
+          "import {Config} from 'zyzz'; const {style,vars:vars}=Config.create({defaultVars:'a',vars:{a:{color:{ink:{light:'#123456',dark:'#abcdef'}}},b:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}}); export namespace styles {\n  export const card = style({color:'ink'})\n} export const outer=vars({set:'a',colorScheme:'light'}); export const inner=vars({set:'b',colorScheme:'dark'});",
       },
     })
 

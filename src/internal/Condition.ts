@@ -1,5 +1,5 @@
 /** Typed nested selector and condition keys without a general string index. @module */
-import type * as Theme from '../Theme.js'
+import type * as Theme from './Theme.js'
 
 type Case<text extends string> = text extends `${infer first}${infer rest}`
   ? `${Lowercase<first> | Uppercase<first>}${Case<rest>}`

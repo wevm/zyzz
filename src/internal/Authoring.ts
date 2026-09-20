@@ -4,7 +4,7 @@ import * as Html from '../runtime/CompositionHtml.js'
 import * as Identity from './Identity.js'
 import * as Props from '../runtime/Props.js'
 import * as Style from '../Style.js'
-import type * as Theme from '../Theme.js'
+import type * as Theme from './Theme.js'
 
 /** Private ownership used by uncompiled composition; never spread onto DOM props. */
 export const metadata = Symbol.for('zyzz.authoring')
@@ -84,7 +84,7 @@ export function create(
           ) => Style.Definition
         )(
           { style: body(input as Record<string, unknown>) },
-          { theme: options.theme },
+          { vars: options.theme },
         ).styles[0]!,
       )
   const props = Props.create({ className })

@@ -57,7 +57,7 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
   for (const count of [10, 100, 1000]) {
     const header =
       kind !== 'literal'
-        ? `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#fff' } }); const alternate = Theme.extend(theme, { color: { brand: '#000' } }); export const scope = alternate.className;`
+        ? "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#fff' } }); const themeConfig=Config.create({vars:theme}); const alternate = Vars.extend(theme, { color: { brand: '#000' } }); const alternateConfig=Config.create({vars:alternate}); export const scope = alternateConfig.vars().className;"
         : `import { style } from 'zyzz';`
 
     const color = (() => {

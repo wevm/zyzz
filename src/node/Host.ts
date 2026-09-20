@@ -54,8 +54,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         fonts:
           options.native.fonts && Object.freeze({ ...options.native.fonts }),
         // Theme definitions are immutable. Only the caller-owned catalog needs copying.
-        themes:
-          options.native.themes && Object.freeze({ ...options.native.themes }),
+        vars: options.native.vars && Object.freeze({ ...options.native.vars }),
         units:
           options.native.units && Object.freeze({ ...options.native.units }),
       })

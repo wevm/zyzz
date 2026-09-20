@@ -1,6 +1,7 @@
+import { Vars } from 'zyzz'
 /** Verifies native recipe tables through shared source extraction and compilation. @module */
 import { describe, expect, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { Source } from 'zyzz/compiler'
 import { Variants } from 'zyzz/react-native'
 
@@ -70,8 +71,8 @@ describe('compile', () => {
     )
   })
 
-  test('compiles themes and schemes without retaining caller-owned metadata', () => {
-    const theme = Theme.define({
+  test('compiles vars and schemes without retaining caller-owned metadata', () => {
+    const set = Vars.define({
       color: { ink: { light: '#000', dark: '#fff' } },
     })
     const axes = { tone: ['quiet'] }
@@ -82,11 +83,11 @@ describe('compile', () => {
         rules: [
           {
             matches: [],
-            value: Style.define({ text: { color: theme.tokens.color.ink } }),
+            value: Style.define({ text: { color: set.color.ink } }),
           },
         ],
       },
-      themes: { brand: theme },
+      vars: { brand: set },
     })
     expect(result.styles.brand!.light['0']!.color).toMatchInlineSnapshot(
       '"#000"',

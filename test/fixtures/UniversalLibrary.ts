@@ -9,7 +9,8 @@ import { Graph } from 'zyzz/compiler'
 /** Static shared authoring used by source, packed, and benchmark consumers. */
 export const modules = {
   'button.ts': `import {variants} from './config.js';export const button=variants({base:{color:'ink'},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}},active:{true:{opacity:1},false:{opacity:0.5}}},defaultVariants:{size:'small',active:false},compoundVariants:[{when:{size:'large',active:true},style:{targets:{web:{opacity:0.8},native:{opacity:0.8}}}}]});`,
-  'config.ts': `import {Config} from 'zyzz';export const {variants}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});`,
+  'config.ts':
+    "import {Config} from 'zyzz';export const {variants}=Config.create({vars:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});",
   'index.ts': `export {button} from './button.js';`,
 } as const
 

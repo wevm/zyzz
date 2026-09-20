@@ -1,6 +1,6 @@
 /** Verifies the bound script factory signature in all configuration modes. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config } from 'zyzz'
+import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
   test('infers the script factory without theme input', () => {

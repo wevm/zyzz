@@ -39,21 +39,21 @@ const example = <div {...styles.card()}>Card</div>
 
 ## Configuration
 
-`Config.create` binds authoring functions to explicit tokens and layers. Export `const { style, theme } = Config.create(...)` from `zyzz.config.ts` and import `{ style, theme }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Export `const { style, vars } = Config.create(...)` from `zyzz.config.ts` and import `{ style, vars }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
 
 ```ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
+export const { style, vars } = Config.create({
   layers: ['base', 'components'],
-  theme: { spacing: { md: '1rem' } },
+  vars: { spacing: { md: '1rem' } },
 })
 ```
 
 - **Layers:** infer keys such as `@layer components`; unknown names fail.
 - **No theme:** authoring stays token-free.
-- **One theme:** accepts inline tokens or a reusable `Theme.define` value.
-- **Several themes:** use `themes` with a required `defaultTheme`.
+- **One theme:** accepts inline tokens or a reusable `Vars.define` value.
+- **Several themes:** use `vars` with a required `defaultVars`.
 
 Named alternatives share the default's token paths and domains. Config returns compatible handles without mutating independent definitions. Imports outside that config receive no ambient tokens or layer types.
 
@@ -65,16 +65,16 @@ namespace styles {
 }
 ```
 
-Named helper exports preserve the config's inferred contract. Access CSS references through `theme.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
+Named helper exports preserve the config's inferred contract. Access CSS references through `vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
 
 ## Themes & Tokens
 
 A theme defines named values and their property domains. It contains token data, without a name or scheme metadata wrapper.
 
 ```ts
-import { Theme } from 'zyzz'
+import { Vars } from 'zyzz'
 
-const theme = Theme.define({
+const theme = Vars.define({
   color: { brand: { dark: '#8cf', light: '#06c' } },
   spacing: { md: '1rem' },
 })
@@ -94,19 +94,19 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 Named `themes({ theme, colorScheme? })` selections return generated scope classes and, with a scheme, a compiled scheme class plus inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
-Use the selector from a [named-theme config](guides/themes.md#selecting-a-theme):
+Use the selector from a [named-theme config](guides/themes.md#selecting-sets):
 
 ```tsx
 import { themes } from './zyzz.config.js'
 
 const example = (
-  <section {...themes({ theme: 'mint', colorScheme: 'dark' })}>Content</section>
+  <section {...vars({ set: 'mint', colorScheme: 'dark' })}>Content</section>
 )
 ```
 
 - **Color pairs:** `{ dark, light }` compiles to `light-dark()`.
 - **Color scheme:** `light` or `dark` selects explicitly; `light dark` follows browser preference.
-- **Extensions:** `Theme.extend` changes existing values while preserving the contract.
+- **Extensions:** `Vars.extend` changes existing values while preserving the contract.
 - **Theme selection:** changes tokens independently of color scheme.
 
 ## Composition and Overrides
@@ -191,11 +191,10 @@ Specificity follows the authored selector. Use explicit `:where(...)` to lower c
 
 Token names infer by property. A text-color token cannot become a spacing token.
 
-| Value                     | Purpose                                             |
-| ------------------------- | --------------------------------------------------- |
-| `theme.tokens.spacing.md` | Portable typed token reference                      |
-| `theme.vars.spacing.md`   | CSS variable reference for web expressions          |
-| Query threshold           | Compiled literal; unaffected by theme scope changes |
+| Value             | Purpose                                              |
+| ----------------- | ---------------------------------------------------- |
+| `vars.spacing.md` | Typed reference for declarations and web expressions |
+| Query threshold   | Compiled literal; unaffected by theme scope changes  |
 
 Callbacks bind per-instance values to precompiled custom properties. Their rule structure stays static.
 

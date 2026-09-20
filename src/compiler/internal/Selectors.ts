@@ -2,7 +2,7 @@
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
 import * as Condition from '../../internal/Condition.js'
-import * as Theme from '../../Theme.js'
+import * as Theme from '../../internal/Theme.js'
 import * as AtRules from './AtRules.js'
 import * as Identity from '../../internal/Identity.js'
 import * as Identifiers from './Identifiers.js'

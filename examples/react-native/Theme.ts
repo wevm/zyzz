@@ -2,7 +2,7 @@
 import { Config } from 'zyzz'
 
 export const { style, variants } = Config.create({
-  themes: {
+  vars: {
     blue: {
       color: {
         accent: { light: '#2563eb', dark: '#93c5fd' },
@@ -22,5 +22,5 @@ export const { style, variants } = Config.create({
       },
     },
   },
-  defaultTheme: 'blue',
+  defaultVars: 'blue',
 })

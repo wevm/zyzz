@@ -4,6 +4,7 @@
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
+
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
@@ -35,7 +36,7 @@ describe('compile', () => {
 
     // @ts-expect-error Results are readonly.
     result.classes.card = 'changed'
-    Css.compile({ styles: Style.define({}), themes: {} })
+    Css.compile({ styles: Style.define({}), vars: {} })
 
     const independent = Css.compile({
       composition: 'independent',

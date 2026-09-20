@@ -1,6 +1,7 @@
 /** Checks scalar references, assignment domains, and nested authoring through public APIs. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, variable } from 'zyzz'
+import { style, variable } from 'zyzz'
+import * as Config from './internal/Configuration.js'
 
 describe('variable', () => {
   test('accepts untyped references and scalar inline values', () => {

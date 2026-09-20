@@ -1,15 +1,15 @@
-# Variables
+# Vars
 
 Define shared values independently of their CSS property mappings. Variable sets support nested categories, light/dark colors, ordered media overrides, and references to other sets.
 
 ```ts
-import { Config, Variables } from 'zyzz'
+import { Config, Vars } from 'zyzz'
 
-const palette = Variables.define({
+const palette = Vars.define({
   gray: { 50: '#fafafa', 900: '#171717' },
 })
 
-const base = Variables.define({
+const base = Vars.define({
   color: {
     foreground: { light: palette.gray[900], dark: palette.gray[50] },
     accent: '#2563eb',
@@ -19,18 +19,18 @@ const base = Variables.define({
   },
 })
 
-const alternate = Variables.extend(base, {
+const alternate = Vars.extend(base, {
   color: { accent: '#9333ea' },
 })
 
-export const { style, variables, vars } = Config.create({
-  variables: { base, alternate },
-  defaultVariables: 'base',
+export const { style, vars } = Config.create({
+  vars: { base, alternate },
+  defaultVars: 'base',
 })
 ```
 
 ```tsx
-import { style, variables, vars } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const card = style({ color: 'foreground', padding: 'page' })
@@ -38,7 +38,7 @@ namespace styles {
 }
 
 const example = (
-  <section {...variables({ set: 'alternate', colorScheme: 'dark' })}>
+  <section {...vars({ set: 'alternate', colorScheme: 'dark' })}>
     <div {...styles.card()}>Content</div>
   </section>
 )
@@ -46,19 +46,19 @@ const example = (
 
 ## Definitions
 
-`Variables.define(values, options?)` returns an immutable reference tree with the same paths. Leaves accept strings, finite numbers, references, complete `{ light, dark }` color pairs, or an object with `default` and `@media ...` keys. `options.id` supplies a stable identity without source rewriting.
+`Vars.define(values, options?)` returns an immutable reference tree with the same paths. Leaves accept strings, finite numbers, references, complete `{ light, dark }` color pairs, or an object with `default` and `@media ...` keys. `options.id` supplies a stable identity without source rewriting.
 
-`Variables.extend(base, overrides)` returns a compatible set. Overrides replace whole leaves, including conditional values and color pairs. Omitted paths retain their values. New paths and incompatible domains throw `Variables.InvalidError`.
+`Vars.extend(base, overrides)` returns a compatible set. Overrides replace whole leaves, including conditional values and color pairs. Omitted paths retain their values. New paths and incompatible domains throw `Vars.InvalidError`.
 
 References retain their source identity. Extending a set changes values within its scope without changing the paths used by consumers. Separate definitions retain independent identities.
 
 ## Mappings
 
-A single set needs only `Config.create({ variables: base })`. Inline variable records are also supported. Default category mappings follow the existing token groups: `color` supplies color properties, `spacing` supplies spacing and sizing properties, and typography scalar categories supply their matching properties.
+A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow the existing token groups: `color` supplies color properties, `spacing` supplies spacing and sizing properties, and typography scalar categories supply their matching properties.
 
 ```ts
-export const { style, variables, vars } = Config.create({
-  variables: base,
+export const { style, vars } = Config.create({
+  vars: base,
   mappings: {
     color: ['color', 'backgroundColor'],
     spacing: ['padding', 'gap'],
@@ -78,8 +78,10 @@ Web compilation emits custom properties and media rules ahead of time. Switching
 
 ## Selection
 
-Named sets require `defaultVariables` and identical paths and domains. `variables({ set, colorScheme })` returns styling props for an enclosing element. Omitting `set` selects the configured default. `variables()` applies the default scope. Single-set configs accept only an optional color scheme.
+Named sets require `defaultVars` and identical paths and domains. `vars({ set, colorScheme })` returns styling props for an enclosing element. Omitting `set` selects the configured default. `vars()` applies the default scope. Single-set configs accept only an optional color scheme.
 
 Nested scopes select their own values. The nearest enclosing scope supplies variable values. `colorScheme` accepts `light`, `dark`, or `light dark`; omitting it preserves the inherited scheme.
 
-Source linking and packed-library contracts retain variable definitions, references, mappings, and selection helpers. Variable-set libraries require compiler contract version 25 or later.
+Source linking and packed-library contracts retain variable definitions, references, mappings, and selection helpers. Variable-set libraries require compiler contract version 26 or later.
+
+`config.vars` is both the reference tree and the scope selector. `Vars` replaces the removed `Theme` module; configuration uses `vars` and `defaultVars`. Appearance controls read and save `{ set, colorScheme }`.

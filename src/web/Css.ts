@@ -10,7 +10,8 @@ import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'
-import type * as Theme from '../Theme.js'
+import type * as Vars from '../Vars.js'
+import type * as Theme from '../internal/Theme.js'
 import * as Themes from './internal/Themes.js'
 
 /** Explicit ordered stylesheet contribution data. */
@@ -665,9 +666,9 @@ export function compile<
 
   try {
     scopes =
-      theme || options.themes || options.schemes
+      theme || options.vars || options.schemes
         ? (theme ??= Themes.create()).emit(
-            options.themes ?? {},
+            options.vars ?? {},
             options.schemes ?? false,
           )
         : { classes: Object.freeze({}), css: '' }
@@ -676,7 +677,7 @@ export function compile<
       {
         code: 'invalid_theme',
         message: (error as Error).message,
-        path: ['themes'],
+        path: ['vars'],
       },
     ])
   }
@@ -694,7 +695,7 @@ export function compile<
     ...(contributionCss ? { contributionCss, scopedCss } : {}),
     classes: Object.freeze(classes),
     css: [contributionCss, scopedCss].filter(Boolean).join('\n'),
-    themes: scopes.classes as Readonly<Record<themeName, string>>,
+    vars: scopes.classes as Readonly<Record<themeName, string>>,
   })
 }
 
@@ -732,7 +733,9 @@ export declare namespace compile {
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
     /** Named scopes; only variables referenced by these styles are emitted. */
-    readonly themes?: Readonly<Record<themeName, Theme.Definition>> | undefined
+    readonly vars?:
+      | Readonly<Record<themeName, Theme.Definition | Vars.Definition>>
+      | undefined
   }
 
   /** Static web artifacts with precisely inferred authored names. */
@@ -749,7 +752,7 @@ export declare namespace compile {
     /** Factored CSS preserving cascade behavior, without reset or layers. */
     readonly css: string
     /** Scope classes keyed by the supplied theme labels. */
-    readonly themes: Readonly<Record<themeName, string>>
+    readonly vars: Readonly<Record<themeName, string>>
   }
 }
 

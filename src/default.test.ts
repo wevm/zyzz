@@ -63,11 +63,11 @@ describe('default', () => {
         )
         await Fs.writeFile(
           Path.join(root, 'app.ts'),
-          `import {appearance,variants,theme} from 'zyzz/default';
+          `import {appearance,variants,vars} from 'zyzz/default';
         namespace styles {
           export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
         }
-        document.querySelector('main')!.className=theme.className;
+        document.querySelector('main')!.className=vars().className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
         const element=document.querySelector('button')!;
         element.className=props.className;
@@ -87,7 +87,7 @@ describe('default', () => {
 const initialization: string = script();
 appearance.set({colorScheme:'dark'});
 // @ts-expect-error The default config has no named theme catalog.
-appearance.set({theme:'other'});
+appearance.set({set:'other'});
 const button=variants({base:{typography:'button.14'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}}});
 button({size:{custom:{padding:'12px'}}});
 // @ts-expect-error Dynamic choices require complete scoped payloads.
@@ -124,7 +124,7 @@ variants({base:{color:'missing'}});`,
           .filter((entry) => entry.type === 'chunk')
           .map((entry) => entry.code)
           .join('\n')
-        expect(scripts.includes('Theme.define')).toMatchInlineSnapshot('false')
+        expect(scripts.includes('Vars.define')).toMatchInlineSnapshot('false')
         expect(scripts.includes('#99ceff')).toMatchInlineSnapshot('false')
         expect(scripts.includes('#0a4380')).toMatchInlineSnapshot('false')
         const server = await Vite.preview({
@@ -226,7 +226,7 @@ variants({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot('24')
+        ).toMatchInlineSnapshot('26')
         expect(
           (
             await Fs.readFile(

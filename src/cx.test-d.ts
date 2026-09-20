@@ -1,6 +1,7 @@
 /** Checks applied-props-only composition through the public root entrypoint. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, cx, style, variants } from 'zyzz'
+import { cx, style, variants } from 'zyzz'
+import * as Config from './internal/Configuration.js'
 
 describe('cx', () => {
   test('returns one props object and rejects unrelated inputs', () => {

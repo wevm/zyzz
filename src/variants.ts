@@ -6,7 +6,7 @@ import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
 import type * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
-import type * as Theme from './Theme.js'
+import type * as Theme from './internal/Theme.js'
 
 type Axes<definition> = definition extends { readonly variants: infer axes }
   ? axes

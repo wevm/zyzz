@@ -15,18 +15,8 @@ export const controls = {
 } as const
 
 /** Source covers tokens, per-entry maps, priority, and scroll-into-view offsets. */
-export const source = `import { Config, style } from 'zyzz';
-const zyzz = Config.create({theme:{spacing:{auto:'24px',offset:'20px'}}});
-export const container = zyzz.style({
-  overflow:'auto',height:'100px',width:'100px',scrollBehavior:'auto',
-  scrollPaddingTop:['10px',zyzz.theme.tokens.spacing.offset],
-  scrollPaddingInline:'auto',overscrollBehavior:['auto','contain !important'],overscrollBehaviorX:'none'
-})();
-export const target = style({scrollMarginTop:'10px',height:'20px'})();
-export const explicit = zyzz.style({scrollPaddingTop:zyzz.theme.tokens.spacing.auto})();
-export const named = zyzz.style({scrollPaddingBlockStart:'offset !important'})();
-export const smooth = style({scrollBehavior:'smooth'})();
-`
+export const source =
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{auto:'24px',offset:'20px'}}});\nexport const container = zyzz.style({\n  overflow:'auto',height:'100px',width:'100px',scrollBehavior:'auto',\n  scrollPaddingTop:['10px',zyzz.vars.spacing.offset],\n  scrollPaddingInline:'auto',overscrollBehavior:['auto','contain !important'],overscrollBehaviorX:'none'\n})();\nexport const target = style({scrollMarginTop:'10px',height:'20px'})();\nexport const explicit = zyzz.style({scrollPaddingTop:zyzz.vars.spacing.auto})();\nexport const named = zyzz.style({scrollPaddingBlockStart:'offset !important'})();\nexport const smooth = style({scrollBehavior:'smooth'})();\n"
 
 /** Complete property vocabulary; declaration order deliberately exercises overlap. */
 export const styles = {

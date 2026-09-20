@@ -198,7 +198,8 @@ describe('zyzz', () => {
 
   test('builds and updates native modules without web delivery', async () => {
     const { root, config } = await create({
-      'config.ts': `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});`,
+      'config.ts':
+        "import {Config} from 'zyzz';export const {style}=Config.create({vars:{color:{ink:{light:'#123456',dark:'#abcdef'}}}});",
       'index.ts': `import {style} from './config.js';export const card=style({color:'ink',targets:{ios:{opacity:0.5},android:{opacity:0.8}}});export const props=card();`,
     })
     const context: { colorScheme: 'dark' | 'light'; platform: 'android' } = {
@@ -220,7 +221,8 @@ describe('zyzz', () => {
       expect(html.includes('localStorage')).toMatchInlineSnapshot('false')
       await Watch.write({
         path: Path.join(root, 'config.ts'),
-        source: `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#fedcba'}}}});`,
+        source:
+          "import {Config} from 'zyzz';export const {style}=Config.create({vars:{color:{ink:{light:'#123456',dark:'#fedcba'}}}});",
       })
       await vi.waitFor(async () => {
         const updated = await server.transformRequest('/index.ts')
@@ -274,19 +276,30 @@ describe('zyzz', () => {
 
   for (const configuration of [false, true]) {
     function source(value: string) {
-      if (!configuration) return value
-
-      return value
+      const migrated = value
         .replace(
-          '{ mint, props as libraryProps, style, theme }',
+          /\{ mint, props as libraryProps, style, theme \}/g,
+          '{ vars, props as libraryProps, style, theme }',
+        )
+        .replace(
+          '{ mint, props, style, theme }',
+          '{ vars, props, style, theme }',
+        )
+        .replaceAll('theme.tokens.', 'theme.')
+        .replaceAll('mint.className', "vars({set:'mint'}).className")
+        .replaceAll('theme.className', 'vars().className')
+      if (!configuration) return migrated
+      return migrated
+        .replace(
+          '{ vars, props as libraryProps, style, theme }',
           '{ zyzz, props as libraryProps }',
         )
-        .replace('{ mint, props, style, theme }', '{ zyzz, props }')
+        .replace('{ vars, props, style, theme }', '{ zyzz, props }')
         .replace('{ style, theme }', '{ zyzz }')
-        .replace(/\btheme\./g, 'zyzz.themes.base.')
-        .replace(/\bmint\./g, 'zyzz.themes.mint.')
-        .replace(/\bstyle\(/g, 'zyzz.style(')
-        .replace('Theme.extend(theme,', 'Theme.extend(zyzz.themes.base,')
+        .replace(/\btheme\./g, 'zyzz.vars.')
+        .replace(/(?<!\.)\bvars\(/g, 'zyzz.vars(')
+        .replace(/(?<!\.)\bstyle\(/g, 'zyzz.style(')
+        .replace('Vars.extend(theme,', 'Vars.extend(zyzz.vars,')
         .replaceAll('zyzz.zyzz.style', 'zyzz.style')
     }
 
@@ -418,10 +431,9 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         )
         await Fs.writeFile(
           Path.join(root, 'app.ts'),
-          source(`import { mint, props, style, theme } from '@acme/theme'; import { Theme } from 'zyzz'; import '@acme/theme/style.css';
-const extended = Theme.extend(theme, {spacing:{md:'16px'}});
-const app = style({color:'brand'})();
-document.body.innerHTML = '<main class="' + mint.className + '"><div id="library" class="' + props.className + '"></div><div id="app" class="' + app.className + '"></div><section class="' + theme.className + '"><div id="nested" class="' + app.className + '"></div></section><section class="' + extended.className + '"><div id="extended" class="' + props.className + '"></div></section></main>';`),
+          source(
+            "import {Config} from 'zyzz';\nimport { mint, props, style, theme } from '@acme/theme'; import { Vars } from 'zyzz'; import '@acme/theme/style.css';\nconst extended = Vars.extend(theme, {spacing:{md:'16px'}}); const extendedConfig=Config.create({vars:extended});const extendedProps=extendedConfig.style({color:'brand',padding:'md'})();\nconst app = style({color:'brand'})();\ndocument.body.innerHTML = '<main class=\"' + mint.className + '\"><div id=\"library\" class=\"' + props.className + '\"></div><div id=\"app\" class=\"' + app.className + '\"></div><section class=\"' + theme.className + '\"><div id=\"nested\" class=\"' + app.className + '\"></div></section><section class=\"' + extendedConfig.vars().className + '\"><div id=\"extended\" class=\"' + extendedProps.className + '\"></div></section></main>';",
+          ),
         )
 
         const config: Vite.InlineConfig = {
@@ -520,7 +532,10 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     async (cssOutput) => {
       const { config, root } = await create({
         ...Fixture.lazyFiles,
-        'theme.ts': `import { Config } from 'zyzz'; export const { theme } = Config.create({ cssOutput: '${cssOutput}', theme: { color: { brand: '#06c' } } });`,
+        'config.ts': Fixture.files['config.ts'].replace(
+          'Config.create({',
+          `Config.create({cssOutput:'${cssOutput}',`,
+        ),
       })
 
       try {
@@ -566,7 +581,11 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
           )
           .join('')
 
-        expect(entryCss.trim()).toMatchInlineSnapshot('""')
+        expect(entryCss.trim()).toMatchInlineSnapshot(`
+          ".z_scheme-dark{color-scheme:dark;}
+          .z_scheme-light{color-scheme:light;}
+          .z_scheme-light-dark{color-scheme:light dark;}"
+        `)
         expect(entries['lazy.ts']?.isDynamicEntry).toMatchInlineSnapshot('true')
         expect(entries['lazy.ts']?.css?.length).toMatchInlineSnapshot('1')
 
@@ -655,7 +674,10 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     async (cssOutput) => {
       const { config, root } = await create({
         ...Fixture.lazyFiles,
-        'theme.ts': `import { Config } from 'zyzz'; export const { theme } = Config.create({ cssOutput: '${cssOutput}', theme: { color: { brand: '#06c' } } });`,
+        'config.ts': Fixture.files['config.ts'].replace(
+          'Config.create({',
+          `Config.create({cssOutput:'${cssOutput}',`,
+        ),
       })
       const server = await Vite.createServer(config)
       let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
@@ -731,7 +753,10 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     async (cssOutput) => {
       const { config, root } = await create({
         ...Fixture.lazyFiles,
-        'theme.ts': `import { Config } from 'zyzz'; export const { theme } = Config.create({ cssOutput: '${cssOutput}', theme: { color: { brand: '#06c' } } });`,
+        'config.ts': Fixture.files['config.ts'].replace(
+          'Config.create({',
+          `Config.create({cssOutput:'${cssOutput}',`,
+        ),
       })
       let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
       let preview: Vite.PreviewServer | undefined
@@ -758,7 +783,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
               [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules])
                 .length,
           ),
-        ).toMatchInlineSnapshot('0')
+        ).toMatchInlineSnapshot(`3`)
         expect(
           await page.locator('#card').getAttribute('class'),
         ).toMatchInlineSnapshot('null')
@@ -841,12 +866,50 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         throw new Error('No stylesheet emitted')
 
       expect(String(sheet.source)).toMatchInlineSnapshot(`
-        ".z_theme-8emm311c7xzi9-theme{--z-t8emm311c7xzi9-theme-color_2e_brand:#06c;}
-        .z-text-VVV-uM{color:var(--z-t8emm311c7xzi9-theme-color_2e_brand,#06c);}
-        .z-p-8px-rxmkdJ{padding:8px;}.z_theme-8emm311c7xzi9-theme{--z-t8emm311c7xzi9-theme-color_2e_brand:#06c;}
-        .z_theme-wo97ow1iqyoeo-mint{--z-t8emm311c7xzi9-theme-color_2e_brand:#175;}
-        .z-text-VVV-uM{color:var(--z-t8emm311c7xzi9-theme-color_2e_brand,#06c);}
-        .z-p-8px-rxmkdJ{padding:8px;}"
+        ".z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        :root{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
+        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
+        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-p-8px-rxmkdJ{padding:8px;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        :root{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
+        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
+        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-p-8px-rxmkdJ{padding:8px;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}"
       `)
 
       const javascript = result.output
@@ -969,10 +1032,14 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
           : JSON.stringify(loaded.map),
       )
 
-      const location = Trace.originalPositionFor(trace, { column: 0, line: 1 })
+      const line =
+        loaded.code
+          .split('\n')
+          .findIndex((line) => line.includes('color:var(')) + 1
+      const location = Trace.originalPositionFor(trace, { column: 0, line })
 
       expect(Path.relative(root, location.source!)).toMatchInlineSnapshot(
-        `"theme.ts"`,
+        `"card.ts"`,
       )
       expect(location.line).toMatchInlineSnapshot(`1`)
 
@@ -1031,8 +1098,8 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
 
       await message(socket, () =>
         Fs.writeFile(
-          Path.join(root, 'main.ts'),
-          Fixture.files['main.ts'].replace('./alternate', './new-theme'),
+          Path.join(root, 'config.ts'),
+          Fixture.files['config.ts'].replace('./alternate', './new-theme'),
         ),
       )
 
@@ -1118,9 +1185,10 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     // An unrelated earlier module and layer-free configurations exercise whole-project discovery.
     const files = {
       'a.ts': 'export const unrelated = 1',
-      'config.ts': `import { Config } from 'zyzz'; export const { style, themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const other = Config.create({ defaultTheme: 'night', themes: { night: { color: { ink: '#000000' } }, 'brand.dark': { color: { ink: '#ffffff' } } } }); export const { script: onlyScript } = Config.create({ defaultTheme: 'solo', themes: { solo: { color: { ink: '#aabbcc' } } } });`,
+      'config.ts':
+        "import { Config } from 'zyzz'; export const { style, vars:themes } = Config.create({ defaultVars: 'base', vars: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const other = Config.create({ defaultVars: 'night', vars: { night: { color: { ink: '#000000' } }, 'brand.dark': { color: { ink: '#ffffff' } } } }); export const { script: onlyScript } = Config.create({ defaultVars: 'solo', vars: { solo: { color: { ink: '#aabbcc' } } } });",
       'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
-      'main.ts': `import { themes } from './config'; const root = document.documentElement; root.dataset.initial = root.className; root.dataset.mint = themes.mint.className; root.dataset.ready = 'true';`,
+      'main.ts': `import { themes } from './config'; const root = document.documentElement; root.dataset.initial = root.className; root.dataset.mint = themes({set:'mint'}).className; root.dataset.ready = 'true';`,
     }
     const { config, root } = await create(files)
     const browser = await chromium.launch({ headless: true })
@@ -1247,7 +1315,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         'document.documentElement.dataset.ready === "true"',
       )
       await page.evaluate(
-        `localStorage.setItem('zyzz', JSON.stringify({ theme: 'mint', colorScheme: 'dark' }))`,
+        `localStorage.setItem('zyzz', JSON.stringify({ set:'mint', colorScheme: 'dark' }))`,
       )
       await page.reload()
       await page.waitForFunction(
@@ -1294,7 +1362,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     const page = (entry: string) =>
       `<!doctype html><html><head><title>${entry}</title></head><body><script type="module" src="/${entry}.ts"></script></body></html>`
     const configuration = (name: string) =>
-      `import { Config } from 'zyzz'; export const { style, themes } = Config.create({ defaultTheme: '${name}', storageKey: '${name}', themes: { ${name}: { color: { ink: '#123456' } } } });`
+      `import { Config } from 'zyzz'; export const { style, vars:themes } = Config.create({ defaultVars: '${name}', storageKey: '${name}', vars: { ${name}: { color: { ink: '#123456' } } } });`
     // Each page imports only style, so its configuration module leaves the bundle.
     // Page c reaches its configuration only through a lazy import.
     const files = {
@@ -1434,7 +1502,8 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       // wrapper repacks that contribution, so its contract names the dependency.
       const dependency = Graph.compile({
         modules: {
-          'index.ts': `import { Config } from 'zyzz'; import { global } from 'zyzz/web'; global({ body: { margin: 0 } }); export const { style, themes } = Config.create({ defaultTheme: 'nested', storageKey: 'nested', themes: { nested: { color: { ink: '#123456' } } } });`,
+          'index.ts':
+            "import { Config } from 'zyzz'; import { global } from 'zyzz/web'; global({ body: { margin: 0 } }); export const { style, vars:themes } = Config.create({ defaultVars: 'nested', storageKey: 'nested', vars: { nested: { color: { ink: '#123456' } } } });",
         },
       })
       const wrapper = Graph.compile({

@@ -1,7 +1,7 @@
 /** Shares tokens, named themes, layers, and HTML attribute output. @module */
-import { Config, Theme } from 'zyzz'
+import { Config, Vars } from 'zyzz'
 
-const base = Theme.define({
+const base = Vars.define({
   borderRadius: { card: '1rem' },
   breakpoints: { wide: '48rem' },
   color: {
@@ -20,17 +20,17 @@ const base = Theme.define({
   textColor: { subtle: { dark: '#aaaab8', light: '#626273' } },
 })
 
-const mint = Theme.extend(base, {
+const mint = Vars.extend(base, {
   color: { accent: { dark: '#6ee7b7', light: '#047857' } },
 })
 
 /** Solid binds native attributes, so applied styles return `class` and a serialized `style`. */
-export const { appearance, script, style, theme, themes } = Config.create({
-  defaultTheme: 'indigo',
+export const { appearance, script, style, vars } = Config.create({
+  defaultVars: 'indigo',
   layers: ['reset', 'base', 'components'],
   output: 'html',
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  themes: {
+  vars: {
     indigo: base,
     mint,
   },

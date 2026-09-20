@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { variable } from 'zyzz'
+
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('variable', () => {
@@ -263,7 +264,7 @@ export namespace styles {
           source: `import {style,variable} from 'zyzz'; style({color:accent});const accent=variable('color')`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:50: Variables must be declared before use.]`,
+        `[Source.ExtractError: invalid.ts:50: Vars must be declared before use.]`,
       )
       expect(() =>
         Transform.compile({
@@ -271,7 +272,7 @@ export namespace styles {
           source: `import {style,variable} from 'zyzz'; style({color:variables.accent});namespace variables {export const accent=variable('color')}`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:50: Variables must be declared before use.]`,
+        `[Source.ExtractError: invalid.ts:50: Vars must be declared before use.]`,
       )
       expect(() =>
         Transform.compile({

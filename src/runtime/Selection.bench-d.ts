@@ -21,8 +21,8 @@ bench('create / react catalog selection', () => {
     ['slate', 'z-slate'],
   ])
 
-  void select({ colorScheme: 'dark', theme: 'mint' }).className
-  void select.ocean.className
+  void select({ colorScheme: 'dark', set: 'mint' }).className
+  void select({ set: 'ocean' }).className
 }).types([141, 'instantiations'])
 
 bench('create / html catalog selection', () => {
@@ -34,5 +34,5 @@ bench('create / html catalog selection', () => {
     true,
   )
 
-  void select({ theme: 'ocean' }).class
+  void select({ set: 'ocean' }).class
 }).types([125, 'instantiations'])

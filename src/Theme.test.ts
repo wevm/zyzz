@@ -2,13 +2,15 @@
  * Exercises the public Theme workflow through real collaborating modules.
  * @module
  */
-import { theme as bundled, tokens as contextTokens } from './default.js'
+import { tokens as contextTokens } from './default.js'
+const bundled = Theme.define(contextTokens)
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
+import * as Theme from './internal/Theme.js'
 import { Graph, Transform } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
 import { Css } from 'zyzz/web'
@@ -24,7 +26,7 @@ describe('define', () => {
     'maps expanded typography fields to their authored declaration: %s',
     (typography) => {
       const source = `import {Config} from 'zyzz';
-const {style}=Config.create({theme:{typography:{body:{fontSize:'14px',fontWeight:400,lineHeight:'20px'}}}});
+const {style}=Config.create({vars:{typography:{body:{fontSize:'14px',fontWeight:400,lineHeight:'20px'}}}});
 export const body=style({
   fontWeight: 500,
   typography: '${typography}',
@@ -147,16 +149,16 @@ export const body=style({
         },
         important: { typography: 'heading.32 !important' },
       },
-      { theme: base },
+      { vars: base },
     )
-    const output = Css.compile({ styles, themes: { alternate, base } })
+    const output = Css.compile({ styles, vars: { alternate, base } })
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage({
         viewport: { width: 600, height: 400 },
       })
       await page.setContent(
-        `<style>${output.css}</style><main class="${output.themes.base}"><p id="title" class="${output.classes.title}">Title</p><p id="mono" class="${output.classes.mono}">Mono</p><p id="responsive" class="${output.classes.responsive}">Responsive</p><p id="important" style="font-size:10px" class="${output.classes.important}">Important</p></main>`,
+        `<style>${output.css}</style><main class="${output.vars.base}"><p id="title" class="${output.classes.title}">Title</p><p id="mono" class="${output.classes.mono}">Mono</p><p id="responsive" class="${output.classes.responsive}">Responsive</p><p id="important" style="font-size:10px" class="${output.classes.important}">Important</p></main>`,
       )
 
       expect(
@@ -200,7 +202,7 @@ export const body=style({
         .locator('main')
         .evaluate(
           (element, className) => element.setAttribute('class', className),
-          output.themes.alternate,
+          output.vars.alternate,
         )
       expect(
         await page
@@ -244,9 +246,9 @@ export const body=style({
       fonts: { Geist: 'Geist-Native' },
       styles: Style.define(
         { title: { typography: 'heading.32', fontWeight: 500 } },
-        { theme },
+        { vars: theme },
       ),
-      themes: { alternate, base: theme },
+      vars: { alternate, base: theme },
     })
 
     expect(output.styles.base.light.title).toMatchInlineSnapshot(`
@@ -266,11 +268,12 @@ export const body=style({
   test('retains typography sets through packed configurations and recipe compilation', () => {
     const library = Graph.compile({
       modules: {
-        'theme.ts': `import {Config} from 'zyzz';export const {style,theme,variants}=Config.create({theme:{typography:{copy:{14:{fontSize:'14px',fontWeight:400,lineHeight:'20px'}}}}});`,
+        'theme.ts':
+          "import {Config} from 'zyzz';export const {style,vars:theme,variants}=Config.create({vars:{typography:{copy:{14:{fontSize:'14px',fontWeight:400,lineHeight:'20px'}}}}});",
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`24`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
 
     expect(() =>
       Graph.compile({
@@ -280,33 +283,36 @@ export const body=style({
             version: 23,
           }),
         },
-        imports: { 'app.ts': { library: 'library.js' } },
+        imports: { 'app.ts': { library: 'library.js', zyzz: null } },
         modules: {
           'app.ts': `import {style} from 'library';export const body=style({typography:'copy.14'});`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Packed typography sets require contract version 24 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
     )
 
     const consumer = Graph.compile({
       contracts: { 'library.js': contract },
-      imports: { 'app.ts': { library: 'library.js' } },
+      imports: { 'app.ts': { library: 'library.js', zyzz: null } },
       modules: {
-        'app.ts': `import {style,theme,variants} from 'library';export const body=style({typography:'copy.14'});export const strong=style({fontWeight:theme.tokens.typography.copy[14].fontWeight});export const text=variants({base:{typography:'copy.14'},variants:{strong:{true:{fontWeight:550}}}});`,
+        'app.ts': `import {style,theme,variants} from 'library';export const body=style({typography:'copy.14'});export const strong=style({fontWeight:theme.typography.copy[14].fontWeight});export const text=variants({base:{typography:'copy.14'},variants:{strong:{true:{fontWeight:550}}}});`,
       },
     })
 
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-style-theme{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize:14px;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight:400;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight:20px;}
+      ":root{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize:14px;}
+      :root{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight:400;}
+      :root{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight:20px;}
+      .z_theme-1xn44ix111xh3v-style-theme{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize:14px;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight:400;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight:20px;}
       .z-font-size-Oi_QYm-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
       .z-font-weight-xWS6L8-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
       .z-line-height-NiWjJz-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
       .z-font-weight-qIDn1A-0{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-font-size-4r4jms-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
-      .z-font-weight-frA_17-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-line-height-qvDm7K-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
-      .z-font-weight-dSbxAJ-3{&:where([data-strong="true"]){font-weight:550;}}"
+      .z-font-size-lLWBdR-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
+      .z-font-weight-6BAxVw-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
+      .z-line-height-9Wx-s3-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
+      .z-font-weight-G4wOi6-3{&:where([data-strong="true"]){font-weight:550;}}"
     `)
   })
 
@@ -317,7 +323,7 @@ export const body=style({
         typography: { heading: { 32: { fontSize: '32px' } } },
       })
       expect(() =>
-        Style.define({ title: { typography } } as never, { theme }),
+        Style.define({ title: { typography } } as never, { vars: theme }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Style.InvalidError: ["title","typography"]: Expected a named typography set from the bound theme.]`,
       )
@@ -347,7 +353,7 @@ export const body=style({
     const reference = theme.tokens.color!.brand as Theme.Reference<'color'>
     const output = Css.compile({
       styles: Style.define({ card: { color: reference } }),
-      themes: { base: theme },
+      vars: { base: theme },
     })
 
     expect(output.css).toMatchInlineSnapshot(`
@@ -371,7 +377,7 @@ export const body=style({
         t_0: { color: '#175' },
         'z_theme-base': { color: base.tokens.color.brand.primary },
       }),
-      themes: { base, 'foo.bar': alternate, foo_2e_bar: base },
+      vars: { base, 'foo.bar': alternate, foo_2e_bar: base },
     })
 
     expect(output.classes).toMatchInlineSnapshot(`
@@ -389,7 +395,7 @@ export const body=style({
       .z-text-4iVqd5-0{color:#175;}
       .z-text-SnBR4v-0{color:var(--z1,#fff);}"
     `)
-    expect(output.themes).toMatchInlineSnapshot(`
+    expect(output.vars).toMatchInlineSnapshot(`
       {
         "base": "t_0",
         "foo.bar": "t_1",
@@ -403,12 +409,12 @@ export const body=style({
       const page = await browser.newPage()
 
       await page.setContent(`<style>${output.css}</style>
-        <section class="${output.themes['foo.bar']}">
+        <section class="${output.vars['foo.bar']}">
           <div id="nested" class="${output.classes['z_theme-base']}"></div>
           <div id="escaped" class="${output.classes.other}"></div>
           <div id="collision" class="${output.classes.t_0}"></div>
         </section>
-        <section class="${output.themes.foo_2e_bar}"><div id="base" class="${output.classes['z_theme-base']}"></div></section>`)
+        <section class="${output.vars.foo_2e_bar}"><div id="base" class="${output.classes['z_theme-base']}"></div></section>`)
 
       expect(
         await page
@@ -448,7 +454,7 @@ export const body=style({
       independent: { color: independent.tokens.color.brand },
     })
 
-    const result = Css.compile({ styles, themes: { base: theme, independent } })
+    const result = Css.compile({ styles, vars: { base: theme, independent } })
 
     expect(result.css).toMatchInlineSnapshot(`
       ".t_0{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
@@ -464,7 +470,7 @@ export const body=style({
         "independent": "z-text-AbT2X3-0",
       }
     `)
-    expect(result.themes).toMatchInlineSnapshot(`
+    expect(result.vars).toMatchInlineSnapshot(`
       {
         "base": "t_0",
         "independent": "t_1",
@@ -476,7 +482,7 @@ export const body=style({
       .z-p-B1LbZi{padding:var(--z2,8px);}
       .z-text-AbT2X3-0{color:var(--z3,#06c);}"
     `)
-    expect(Css.compile({ styles, themes: { independent, renamed: theme } }).css)
+    expect(Css.compile({ styles, vars: { independent, renamed: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z3:#06c;}
         .t_1{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
@@ -505,7 +511,7 @@ export const body=style({
       'theme-base': { color: theme.tokens.color.brand },
     })
 
-    expect(Css.compile({ styles, themes: { base: theme } }).css)
+    expect(Css.compile({ styles, vars: { base: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z0:#06c;}
         .z-text-gsB0EO{color:var(--z0,#06c);}"
@@ -528,7 +534,7 @@ export const body=style({
           input,
         ]) as Theme.Definition
 
-        Css.compile({ styles: Style.define({}), themes: { base: theme } })
+        Css.compile({ styles: Style.define({}), vars: { base: theme } })
       } catch (cause) {
         error = cause
       }
@@ -584,7 +590,7 @@ describe('extend', () => {
     const alternate = Theme.extend(theme, { color: { brand: '#fff' } })
     const styles = Style.define({ card: { padding: theme.tokens.spacing.md } })
 
-    expect(Css.compile({ styles, themes: { alternate, base: theme } }).css)
+    expect(Css.compile({ styles, vars: { alternate, base: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z0:1lh;}
         .t_1{--z0:1lh;}
@@ -619,7 +625,7 @@ describe('extend', () => {
     })
 
     expect(
-      Css.compile({ styles, themes: { alternate, base: theme, nested } }).css,
+      Css.compile({ styles, vars: { alternate, base: theme, nested } }).css,
     ).toMatchInlineSnapshot(`
       ".t_0{--z0:#f00;--z1:8px;}
       .t_1{--z0:#06c;--z1:8px;}
@@ -682,7 +688,7 @@ describe('extend', () => {
 
     const output = Css.compile({
       styles,
-      themes: { alternate, base: theme, nested },
+      vars: { alternate, base: theme, nested },
     })
     const browser = await chromium.launch()
 
@@ -691,9 +697,9 @@ describe('extend', () => {
 
       await page.setContent(`<style>:root{color-scheme:light dark}${output.css}</style>
         <div id="fallback" class="${output.classes.button}"></div>
-        <section class="${output.themes.alternate}">
+        <section class="${output.vars.alternate}">
           <div id="alternate" class="${output.classes.button}"></div>
-          <section class="${output.themes.nested}"><div id="nested" class="${output.classes.button}"></div></section>
+          <section class="${output.vars.nested}"><div id="nested" class="${output.classes.button}"></div></section>
           <div id="forced" style="color-scheme:dark" class="${output.classes.button}"></div>
         </section>`)
 
@@ -771,13 +777,13 @@ describe('queries', () => {
       const result = Graph.compile({
         modules: {
           'config.ts':
-            'import {Config,Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({theme})',
+            'import {Config,Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({vars:theme})',
         },
       })
 
       expect(
         JSON.parse(result.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`18`)
+      ).toMatchInlineSnapshot(`26`)
       expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
         .toMatchInlineSnapshot(`
       {
@@ -805,7 +811,7 @@ describe('queries', () => {
         Css.compile({
           styles: Style.define(
             { body: { fontSize: '2xl', borderRadius: '2xl' } },
-            { theme },
+            { vars: theme },
           ),
         }).css,
       ).toMatchInlineSnapshot(
@@ -826,7 +832,10 @@ describe('queries', () => {
       )
 
       const generated = source
-        .slice(source.indexOf('  theme: {') + 9, source.lastIndexOf('})'))
+        .slice(
+          source.indexOf('  vars: {') + 8,
+          source.indexOf('\n})', source.indexOf('  vars: {')),
+        )
         .trim()
         .replace(/,$/, '')
 
@@ -849,13 +858,16 @@ describe('queries', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-26ntzho2pyyt-appearance-theme{--z-t26ntzho2pyyt-appearance-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-appearance-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-appearance-color_2e_blue_2e_500:light-dark(#99ceff,#0a4380);}
+        ":root{--z-t26ntzho2pyyt-config-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";}
+        :root{--z-t26ntzho2pyyt-config-fontSize_2e_base:1rem;}
+        :root{--z-t26ntzho2pyyt-config-color_2e_blue_2e_500:light-dark(#99ceff,#0a4380);}
+        .z_theme-26ntzho2pyyt-config-theme{--z-t26ntzho2pyyt-config-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-config-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-config-color_2e_blue_2e_500:light-dark(#99ceff,#0a4380);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-font-family-FdwTzB{font-family:var(--z-t26ntzho2pyyt-appearance-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z-font-size-UJWhNF{font-size:var(--z-t26ntzho2pyyt-appearance-fontSize_2e_base,1rem);}
-        .z-text-n00Kwk{color:var(--z-t26ntzho2pyyt-appearance-color_2e_blue_2e_500,light-dark(#99ceff,#0a4380));}"
+        .z-font-family-GS_mYx{font-family:var(--z-t26ntzho2pyyt-config-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z-font-size-WS5zHH{font-size:var(--z-t26ntzho2pyyt-config-fontSize_2e_base,1rem);}
+        .z-text-wudS4h{color:var(--z-t26ntzho2pyyt-config-color_2e_blue_2e_500,light-dark(#99ceff,#0a4380));}"
       `)
 
       const built = await Esbuild.build({
@@ -922,7 +934,7 @@ describe('queries', () => {
         },
       })
 
-      const output = Css.compile({ styles, themes: { base: theme, alternate } })
+      const output = Css.compile({ styles, vars: { base: theme, alternate } })
 
       expect(output.css).toMatchInlineSnapshot(`
         ".t_0{--z0:1rem;--z1:500;}
@@ -941,7 +953,7 @@ describe('queries', () => {
       const library = Graph.compile({
         modules: {
           'theme.ts':
-            'import {Theme} from "zyzz"; export const theme=Theme.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}})',
+            'import {Vars} from "zyzz"; export const theme=Vars.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}})',
         },
       })
 
@@ -951,16 +963,18 @@ describe('queries', () => {
 
       const consumer = Graph.compile({
         contracts: { 'library.js': packed },
-        imports: { 'app.ts': { library: 'library.js' } },
+        imports: { 'app.ts': { library: 'library.js', zyzz: null } },
         modules: {
           'app.ts':
-            'import {theme} from "library"; export const body=theme.style({fontSize:"body"})()',
+            'import {Config} from "zyzz"; import {theme} from "library"; const config=Config.create({vars:theme}); export const body=config.style({fontSize:"body"})()',
         },
       })
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
-        .z-font-size-6_nacQ{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
+        ":root{--z-t1e8a67z1uaws1j-config-fontSize_2e_body:1rem;}
+        .z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
+        .z_theme-1e8a67z1uaws1j-config-theme{--z-t1e8a67z1uaws1j-config-fontSize_2e_body:1rem;}
+        .z-font-size-tf-SY6{font-size:var(--z-t1e8a67z1uaws1j-config-fontSize_2e_body,1rem);}"
       `)
     })
     test('Chromium applies bundled typography and scheme colors', async () => {
@@ -971,14 +985,14 @@ describe('queries', () => {
         },
       })
 
-      const output = Css.compile({ styles, themes: { base: bundled } })
+      const output = Css.compile({ styles, vars: { base: bundled } })
       const browser = await chromium.launch()
 
       try {
         const page = await browser.newPage()
 
         await page.setContent(
-          `<style>${output.css}</style><div class="${output.themes.base}" style="color-scheme:light"><p id="body" class="${output.classes.body}">Text</p></div>`,
+          `<style>${output.css}</style><div class="${output.vars.base}" style="color-scheme:light"><p id="body" class="${output.classes.body}">Text</p></div>`,
         )
 
         expect(
@@ -1017,7 +1031,7 @@ describe('queries', () => {
         },
       })
 
-      const output = Css.compile({ styles, themes: { default: bundled } })
+      const output = Css.compile({ styles, vars: { default: bundled } })
 
       expect(output.css).toMatchInlineSnapshot(`
         ".t_0{--z0:light-dark(#171717,#ededed);--z1:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z2:1rem;--z3:1rem;}
@@ -1038,10 +1052,10 @@ describe('queries', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:${value}}})`,
+          source: `import {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:${value}}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:40: ["breakpoints","tablet"]: Expected a named nonnegative length threshold.]`,
+        `[Source.ExtractError: invalid.ts:39: ["breakpoints","tablet"]: Expected a named nonnegative length threshold.]`,
       )
     })
   })

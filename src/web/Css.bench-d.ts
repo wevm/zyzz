@@ -10,7 +10,7 @@ import type * as Web from 'zyzz/web'
 // analyzes bench bodies without executing them.
 declare const Css: typeof Web.Css
 declare const Style: typeof Zyzz.Style
-declare const Theme: typeof Zyzz.Theme
+declare const Vars: typeof Zyzz.Vars
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
@@ -37,18 +37,18 @@ bench('compile / independent composition', () => {
 }).types([5895, 'instantiations'])
 
 bench('compile / theme scopes', () => {
-  const base = Theme.define({
+  const base = Vars.define({
     color: { brand: '#06c' },
     spacing: { md: '8px' },
   })
-  const alternate = Theme.extend(base, { spacing: { md: '12px' } })
+  const alternate = Vars.extend(base, { spacing: { md: '12px' } })
   const result = Css.compile({
     styles: Style.define(
       { card: { color: 'brand', padding: 'md' } },
-      { theme: base },
+      { vars: base },
     ),
-    themes: { alternate, base },
+    vars: { alternate, base },
   })
 
-  void result.themes.alternate
+  void result.vars.alternate
 }).types([145890, 'instantiations'])

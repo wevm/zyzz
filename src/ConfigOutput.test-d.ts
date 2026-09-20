@@ -1,6 +1,6 @@
 /** Checks native renderer output through configured authoring. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config } from 'zyzz'
+import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
   test('selects HTML output for static and dynamic style applications', () => {

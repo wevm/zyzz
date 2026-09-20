@@ -16,13 +16,13 @@ The bound function derives the theme catalog, compiled scope classes, and defaul
 
 ## Storage
 
-The script reads the localStorage entry named by the configuration's [`storageKey`](create.md#optionsstoragekey), `'zyzz'` by default. [`appearance.set()`](create.md#appearance) writes the same record, so both helpers always agree on the key. The record is a JSON object whose supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, `'light dark'`, or `null`). Either field may be omitted. A `null` scheme, written by `appearance.set({ colorScheme: undefined })`, removes the scheme class and inline `color-scheme` so a cleared selection outlives a server-rendered scheme.
+The script reads the localStorage entry named by the configuration's [`storageKey`](create.md#optionsstoragekey), `'zyzz'` by default. [`appearance.set()`](create.md#appearance) writes the same record, so both helpers always agree on the key. The record is a JSON object whose supported fields are `set` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, `'light dark'`, or `null`). Either field may be omitted. A `null` scheme, written by `appearance.set({ colorScheme: undefined })`, removes the scheme class and inline `color-scheme` so a cleared selection outlives a server-rendered scheme.
 
 ```ts
 export const { appearance, script } = Config.create({
-  defaultTheme: 'base',
+  defaultVars: 'base',
   storageKey: 'my-app-appearance',
-  themes,
+  vars: themes,
 })
 ```
 
@@ -44,4 +44,4 @@ React root markup can use `suppressHydrationWarning` for attributes changed befo
 
 See [Restore Preferences](../../../guides/themes.md#restore-preferences) for complete markup and the localStorage record.
 
-Static configured styles do not retain the initialization helper. Exporting a full config retains it for consumers; destructuring only `style`, `theme`, or `themes` avoids its runtime bytes. Packed configurations compiled without initialization capability must be rebuilt before calling `script()`.
+Static configured styles do not retain the initialization helper. Exporting a full config retains it for consumers; destructuring only `style`, `vars`, or `variants` avoids its runtime bytes. Packed configurations compiled without initialization capability must be rebuilt before calling `script()`.

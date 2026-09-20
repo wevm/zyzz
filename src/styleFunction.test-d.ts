@@ -5,7 +5,9 @@
 /* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, Style, Theme } from 'zyzz'
+import { style, Style } from 'zyzz'
+import * as Theme from './internal/Theme.js'
+import * as Config from './internal/Configuration.js'
 import { counterStyle, fontPaletteValues, positionTry } from 'zyzz/web'
 
 describe('style', () => {

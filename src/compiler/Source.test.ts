@@ -355,7 +355,7 @@ type Definition = ReturnType<typeof define>;
           "themeAliases": [],
           "themeCalls": [],
           "themeReferences": [],
-          "themes": {},
+          "vars": {},
         },
         "rules": ".z-p-8px-MJI7ZV-0{padding:8px;}
       .z-pl-0-MJI7ZV-1{padding-left:0;}
@@ -415,7 +415,7 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
         "themeAliases": [],
         "themeCalls": [],
         "themeReferences": [],
-        "themes": {},
+        "vars": {},
       }
     `)
   })

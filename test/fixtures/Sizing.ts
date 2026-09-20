@@ -3,13 +3,5 @@
  * @module
  */
 /** Source exercises sizing keywords alongside ordinary dimensions and tokens. */
-export const source = `import { Config, style } from 'zyzz';
-const zyzz = Config.create({theme:{spacing:{'min-content':'24px',narrow:'40px'}}});
-export const minimum = zyzz.style({inlineSize:'min-content'})();
-export const maximum = style({inlineSize:'max-content'})();
-export const fit = style({inlineSize:['100%','fit-content !important'],minWidth:'auto',maxWidth:'none'})();
-export const explicit = zyzz.style({width:zyzz.theme.tokens.spacing['min-content']})();
-export const constrained = zyzz.style({minInlineSize:'narrow',maxInlineSize:'max-content',blockSize:'fit-content',minBlockSize:'auto',maxBlockSize:'none'})();
-export const content = style({flexBasis:'content',width:'5px',flexShrink:0,minWidth:0})();
-export const automatic = style({flexBasis:'auto',width:'5px',flexShrink:0,minWidth:0})();
-`
+export const source =
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{'min-content':'24px',narrow:'40px'}}});\nexport const minimum = zyzz.style({inlineSize:'min-content'})();\nexport const maximum = style({inlineSize:'max-content'})();\nexport const fit = style({inlineSize:['100%','fit-content !important'],minWidth:'auto',maxWidth:'none'})();\nexport const explicit = zyzz.style({width:zyzz.vars.spacing['min-content']})();\nexport const constrained = zyzz.style({minInlineSize:'narrow',maxInlineSize:'max-content',blockSize:'fit-content',minBlockSize:'auto',maxBlockSize:'none'})();\nexport const content = style({flexBasis:'content',width:'5px',flexShrink:0,minWidth:0})();\nexport const automatic = style({flexBasis:'auto',width:'5px',flexShrink:0,minWidth:0})();\n"

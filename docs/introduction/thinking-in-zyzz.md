@@ -100,8 +100,8 @@ In `zyzz.config.ts`, export the configured helpers:
 ```ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
-  theme: {
+export const { style, vars } = Config.create({
+  vars: {
     color: { surface: '#fff' },
     spacing: { comfortable: '1.5rem' },
   },

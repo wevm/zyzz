@@ -29,8 +29,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         ...options.native,
         fonts:
           options.native.fonts && Object.freeze({ ...options.native.fonts }),
-        themes:
-          options.native.themes && Object.freeze({ ...options.native.themes }),
+        vars: options.native.vars && Object.freeze({ ...options.native.vars }),
         units:
           options.native.units && Object.freeze({ ...options.native.units }),
       })

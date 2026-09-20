@@ -2,37 +2,6 @@
 
 Migrate a Tailwind CSS v4 application to Zyzz while preserving its appearance and behavior. This guide follows Tailwind's [Core concepts](https://tailwindcss.com/docs/styling-with-utility-classes), with comparisons for configuration, component styles, and CSS delivery.
 
-> [!TIP]
-> Start with [`zyzz/default`](../api/default.md) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Geist colors and typography. No `zyzz.config.ts` is required.
->
-> ```tsx
-> import { style } from 'zyzz/default'
->
-> namespace styles {
->   export const card = style({
->     backgroundColor: 'surface',
->     borderRadius: 'lg',
->     color: 'foreground',
->     colorScheme: 'light dark',
->     display: 'grid',
->     gap: 4,
->     padding: 6,
->   })
->
->   export const title = style({ typography: 'heading.24' })
-> }
->
-> export function Card() {
->   return (
->     <article {...styles.card()}>
->       <h2 {...styles.title()}>Account</h2>
->     </article>
->   )
-> }
-> ```
->
-> `padding: 6` selects `1.5rem`, like Tailwind's default `p-6`. Colors and typography differ from Tailwind's defaults. Use an [application config](#export-helpers) to preserve existing design tokens. The [build integration](#configure-compilation) is still required; fonts and resets remain explicit.
-
 1. [Before Migrating](#before-migrating)
 2. [Thinking In Zyzz](#thinking-in-zyzz)
 3. [Migrate Setup](#migrate-setup)
@@ -230,6 +199,37 @@ export default defineConfig({
 ```
 
 The snippet shows only the Zyzz entry. The plugin transforms source and delivers its CSS. A PostCSS import alone cannot compile Zyzz definitions. For other builds, follow [Next.js](../introduction/next.md) or [CLI](../introduction/cli.md) setup.
+
+> [!TIP]
+> Start with [`zyzz/default`](../api/default.md) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Geist colors and typography. No `zyzz.config.ts` is required.
+>
+> ```tsx
+> import { style } from 'zyzz/default'
+>
+> namespace styles {
+>   export const card = style({
+>     backgroundColor: 'surface',
+>     borderRadius: 'lg',
+>     color: 'foreground',
+>     colorScheme: 'light dark',
+>     display: 'grid',
+>     gap: 4,
+>     padding: 6,
+>   })
+>
+>   export const title = style({ typography: 'heading.24' })
+> }
+>
+> export function Card() {
+>   return (
+>     <article {...styles.card()}>
+>       <h2 {...styles.title()}>Account</h2>
+>     </article>
+>   )
+> }
+> ```
+>
+> `padding: 6` selects `1.5rem`, like Tailwind's default `p-6`. Colors and typography differ from Tailwind's defaults. Use an [application config](#export-helpers) to preserve existing design tokens. The [build integration](#configure-compilation) is still required; fonts and resets remain explicit.
 
 ### Export Helpers
 

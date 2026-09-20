@@ -200,6 +200,10 @@ export default defineConfig({
 
 The snippet shows only the Zyzz entry. The plugin transforms source and delivers its CSS. A PostCSS import alone cannot compile Zyzz definitions. For other builds, follow [Next.js](../introduction/next.md) or [CLI](../introduction/cli.md) setup.
 
+### Configure Themes
+
+Themes supply the tokens available to `style` and `variants`. Use the bundled theme or define an application theme that preserves existing Tailwind values.
+
 > [!TIP]
 > Start with [`zyzz/default`](../api/default.md) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Geist colors and typography. No `zyzz.config.ts` is required.
 >
@@ -229,9 +233,9 @@ The snippet shows only the Zyzz entry. The plugin transforms source and delivers
 > }
 > ```
 >
-> `padding: 6` selects `1.5rem`, like Tailwind's default `p-6`. Colors and typography differ from Tailwind's defaults. Use an [application config](#export-helpers) to preserve existing design tokens. The [build integration](#configure-compilation) is still required; fonts and resets remain explicit.
+> `padding: 6` selects `1.5rem`, like Tailwind's default `p-6`. Colors and typography differ from Tailwind's defaults. Use a [custom theme](#custom-theme) to preserve existing design tokens. The [build integration](#configure-compilation) is still required; fonts and resets remain explicit.
 
-### Export Helpers
+#### Custom Theme
 
 Move the values needed by migrated components into an explicit config. This example establishes the config used by later snippets importing `./zyzz.config.js`:
 
@@ -765,7 +769,7 @@ namespace styles {
 }
 ```
 
-This snippet uses the [setup config](#export-helpers). References follow compatible theme scopes. They are not runtime setters or measurements. If JavaScript needs a resolved CSS value, read it from the relevant element with the browser's computed-style APIs.
+This snippet uses the [setup config](#custom-theme). References follow compatible theme scopes. They are not runtime setters or measurements. If JavaScript needs a resolved CSS value, read it from the relevant element with the browser's computed-style APIs.
 
 ### Theme Scopes
 

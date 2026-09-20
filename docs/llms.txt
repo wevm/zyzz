@@ -31,6 +31,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [CSS Output](guides/css-output.md): Atomic and grouped CSS, composition, and delivery.
 - [Build & Delivery](guides/compilation.md): Compile and publish matching artifacts, then deliver styles during server rendering.
 - [Testing & Migration](guides/testing.md): Verify rendered behavior, diagnose failures, and migrate existing components.
+- [Migrating from StyleX](guides/stylex.md): Translate StyleX definitions, composition, variables, themes, and CSS delivery.
 - [React Native](guides/native.md): Compile shared definitions and select native theme tables.
 
 ## API

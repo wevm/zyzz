@@ -863,6 +863,29 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     }
   })
 
+  test('ignores Node builtins in unreachable server files during browser discovery', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'server.ts': `import { readFile } from 'node:fs/promises'; import path from 'path'; export const read = () => readFile(path.resolve('data.json'));`,
+    })
+    try {
+      const result = await Vite.build({
+        ...config,
+        environments: { client: { resolve: { noExternal: true } } },
+        build: { write: false },
+      })
+      const output = Array.isArray(result) ? result[0]! : result
+      if (!('output' in output)) throw new Error('Unexpected watch build')
+      expect(
+        output.output.some(
+          (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+        ),
+      ).toMatchInlineSnapshot(`true`)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('serves shared and module stylesheets with Vite CSS queries', async () => {
     const { config, root } = await create({
       ...Fixture.files,

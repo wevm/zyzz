@@ -205,6 +205,18 @@ export async function verify(options: verify.Options) {
 
     const production = await start('start')
     const page = await browser.newPage()
+    page.on('pageerror', (error) =>
+      logs.push(`Browser error: ${error.message}`),
+    )
+    page.on('console', (message) => {
+      if (message.type() === 'error')
+        logs.push(`Browser console: ${message.text()}`)
+    })
+    page.on('requestfailed', (request) =>
+      logs.push(
+        `Request failed: ${request.url()} ${request.failure()?.errorText}`,
+      ),
+    )
     let resume!: () => void
     const scripts = new Promise<void>((resolve) => {
       resume = resolve

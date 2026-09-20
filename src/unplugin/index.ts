@@ -566,6 +566,13 @@ const portable = createUnplugin<Options | undefined, false>(
           return output
         },
       },
+      webpack(compiler) {
+        compiler.hooks.watchRun.tap('zyzz', () => {
+          // Directory invalidations must also discard cached source reads before the graph and loaders rebuild.
+          for (const file of compiler.modifiedFiles ?? [])
+            if (directories.has(file)) compiler.inputFileSystem?.purge?.(file)
+        })
+      },
     }
   },
 )

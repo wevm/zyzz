@@ -16,7 +16,7 @@ export default defineConfig({
 ```
 
 - **Development:** run the existing dev command; edits update transformed modules and CSS.
-- **Imports:** import source components normally. Import token-free `style` or named `{ style, theme }` helpers from config.
+- **Imports:** import source components normally. Import token-free `style` or named `{ style, vars }` helpers from config.
 - **Production:** run the existing build command; the adapter emits linked CSS assets.
 
 No generated component imports or manual stylesheet import is required. Theme source is analyzed without executing application code. Vite owns alias resolution, TypeScript/JSX lowering, final CSS processing, and asset delivery.
@@ -37,8 +37,10 @@ const { props } = await import('./card')
 element.className = props.className
 
 // card.ts
+import { Config } from 'zyzz'
 import { theme } from './theme'
-export const props = theme.style({ color: 'brand' })()
+const config = Config.create({ vars: theme })
+export const props = config.style({ color: 'brand' })()
 ```
 
 ## Configuration
@@ -47,14 +49,14 @@ export const props = theme.style({ color: 'brand' })()
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
-  theme: { color: { brand: '#06c' } },
+export const { style, vars } = Config.create({
+  vars: { color: { brand: '#06c' } },
 })
 ```
 
 ```ts
 // card.ts
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 export namespace styles {
   export const card = style({ color: 'brand' })
@@ -62,7 +64,7 @@ export namespace styles {
 element.className = `${theme.className} ${styles.card().className}`
 ```
 
-`defaultTheme` selects shorthand token fallbacks for named catalogs. Use `themes({ theme: 'mint' })` to select a scope, with an optional `colorScheme` override. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, and variants remain unsupported.
+`defaultVars` selects shorthand token fallbacks for named catalogs. Use `vars({ set: 'mint' })` to select a scope, with an optional `colorScheme` override. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, and variants remain unsupported.
 
 ## Theme Libraries
 

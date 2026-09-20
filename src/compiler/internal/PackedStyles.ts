@@ -8,7 +8,7 @@ import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
 import * as Literal from '../../internal/Literal.js'
 import type * as Source from '../Source.js'
 import type * as Style from '../../Style.js'
-import type * as Theme from '../../Theme.js'
+import type * as Theme from '../../internal/Theme.js'
 import * as Token from '../../internal/Token.js'
 
 /** Portable composition inputs; selection behavior remains in the compiled callable. */
@@ -94,11 +94,10 @@ export function read(
       )
       // Catalog themes share identities and paths but retain distinct fallback values.
       tokens.set(
-        JSON.stringify([
-          value.contract[Token.identity],
-          value.path,
-          value.value,
-        ]),
+        JSON.stringify(
+          [value.contract[Token.identity], value.path, value.value],
+          encode,
+        ),
         value,
       )
       return
@@ -320,14 +319,9 @@ export function read(
           const name = string(value)
           if (
             !field ||
-            [
-              '__proto__',
-              'style',
-              'className',
-              'variables',
-              'key',
-              'ref',
-            ].includes(field) ||
+            ['__proto__', 'style', 'className', 'vars', 'key', 'ref'].includes(
+              field,
+            ) ||
             !slots.includes(name)
           )
             throw new Error('Invalid packed dynamic slot.')
@@ -430,20 +424,22 @@ export function write(definition: Definition): unknown {
           cssOutput: definition.style.cssOutput ?? 'atomic',
         },
       },
-      (_, value: unknown) => {
-        if (Token.is(value))
-          return {
-            identity: value.contract[Token.identity],
-            kind: 'token',
-            path: value.path,
-            value: value.value,
-          }
-        if (Token.isExpression(value))
-          return { kind: 'expression', parts: value.parts }
-        return value
-      },
+      encode,
     ),
   )
+}
+
+function encode(_: string, value: unknown): unknown {
+  if (Token.is(value))
+    return {
+      identity: value.contract[Token.identity],
+      kind: 'token',
+      path: value.path,
+      value: value.value,
+    }
+  if (Token.isExpression(value))
+    return { kind: 'expression', parts: value.parts }
+  return value
 }
 
 function array(value: unknown): unknown[] {

@@ -2,9 +2,11 @@
  * Collects live theme references and emits graph-local variables and scope rules.
  * @module
  */
+import * as Identity from '../../internal/Identity.js'
 import * as Scheme from '../../internal/Scheme.js'
 import * as Token from '../../internal/Token.js'
-import type * as Theme from '../../Theme.js'
+import type * as Vars from '../../Vars.js'
+import type * as Theme from '../../internal/Theme.js'
 
 /** Collects live token references within one in-memory compilation graph. */
 export function create() {
@@ -14,6 +16,8 @@ export function create() {
     Token.Contract,
     { identity: string | undefined; paths: Map<string, string> }
   >()
+
+  const defaults = new Map<string, string>()
 
   function serialize(token: Token.Reference): string {
     const value = token.value
@@ -41,7 +45,7 @@ export function create() {
   }
 
   function emit(
-    themes: Readonly<Record<string, Theme.Definition>>,
+    themes: Readonly<Record<string, Theme.Definition | Vars.Definition>>,
     schemes = false,
   ) {
     const classes: Record<string, string> = Object.create(null)
@@ -102,13 +106,58 @@ export function create() {
         .join('')
 
       rules.push(`.${className}{${body}}`)
+      for (const [path, name] of contract.paths)
+        conditional(data.values[path]!, name, `.${className}`, rules)
     }
 
     // Scheme rules travel with the module that can apply them, so lowered
     // light-dark() resolves wherever selection helpers load.
     if (schemes) rules.push(Scheme.css)
 
-    return { classes: Object.freeze(classes), css: rules.join('\n') }
+    return {
+      classes: Object.freeze(classes),
+      css: [...defaults.values(), ...rules].join('\n'),
+    }
+  }
+
+  function literal(value: Token.Value): string {
+    if (Token.is(value)) return serialize(value)
+    if (typeof value !== 'object') return String(value)
+    if ('default' in value) {
+      // Separate fallback properties preserve extensions and resolve references within each scope.
+      const base = literal(value.default)
+      const rules = [`:where(*){--fallback:${base};}`]
+      conditional(value, '--fallback', ':where(*)', rules)
+      const css = rules.join('')
+      const name = `--z-f${Identity.hash(css)}`
+      const emitted = [`:where(*){${name}:${base};}`]
+      conditional(value, name, ':where(*)', emitted)
+      defaults.set(name, emitted.join(''))
+      return `var(${name})`
+    }
+    return `light-dark(${literal(value.light)},${literal(value.dark)})`
+  }
+
+  function conditional(
+    value: Token.Value,
+    name: string,
+    selector: string,
+    rules: string[],
+  ) {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Token.is(value) ||
+      !('default' in value)
+    )
+      return
+    conditional(value.default, name, selector, rules)
+    for (const [query, entry] of Object.entries(value)) {
+      if (query === 'default') continue
+      const nested = [`${selector}{${name}:${literal(entry)};}`]
+      conditional(entry, name, selector, nested)
+      rules.push(`${query}{${nested.join('')}}`)
+    }
   }
 
   return { emit, serialize }
@@ -120,12 +169,6 @@ export function encode(value: string): string {
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
-}
-
-function literal(value: Token.Value): string {
-  return typeof value === 'object'
-    ? `light-dark(${value.light},${value.dark})`
-    : String(value)
 }
 
 function variable(index: number | string, path: string): string {

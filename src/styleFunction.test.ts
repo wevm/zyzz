@@ -8,6 +8,7 @@ import { chromium } from 'playwright'
 import * as Ts from 'typescript-api'
 import { describe, expect, test } from 'vite-plus/test'
 import { Config, Style, style } from 'zyzz'
+
 import { Graph, Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
@@ -16,7 +17,7 @@ describe('style', () => {
     ["import { style } from 'zyzz'", ''],
     [
       "import { Config } from 'zyzz'",
-      "const { style } = Config.create({ theme: { fontSize: { hero: '72px' }, breakpoints: { tablet: '48rem' } } })",
+      "const { style } = Config.create({ vars: { fontSize: { hero: '72px' }, breakpoints: { tablet: '48rem' } } })",
     ],
     ["import { style } from 'zyzz/default'", ''],
   ])(
@@ -1506,13 +1507,8 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
     test('compiles empty theme and configured HTML definitions', () => {
       const result = Graph.compile({
         modules: {
-          'empty.ts': `import { Config, style, Theme } from 'zyzz';
-const theme = Theme.define({});
-const config = Config.create({ output: 'html', theme: {} });
-export const themed = theme.style();
-export const configured = config.style();
-export const bare = style()();
-export const child = config.style({selectors:{[\`\${themed} > &, \${configured} + &\`]:{ color: 'red' }}});`,
+          'empty.ts':
+            "import { Config, style, Vars } from 'zyzz';\nconst theme = Vars.define({}); const themeConfig=Config.create({vars:theme});\nconst config = Config.create({ output: 'html', vars: {} });\nexport const themed = themeConfig.style();\nexport const configured = config.style();\nexport const bare = style()();\nexport const child = config.style({selectors:{[`${themed} > &, ${configured} + &`]:{ color: 'red' }}});",
         },
       })
 
@@ -1520,15 +1516,15 @@ export const child = config.style({selectors:{[\`\${themed} > &, \${configured} 
         "
         import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps } from 'zyzz/runtime';
 
-        const theme = ({className:"z_theme-urrzb11meswl3-theme"} as import('zyzz').Theme.Definition<{}>);
-        const config = ({theme:{"className":"z_theme-urrzb11meswl3-config-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{};readonly "output":"html"}>);
-        export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-160"});
-        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-urrzb11meswl3-201"})) as import('zyzz').style.ReturnType<'html'>);
+        const theme = ({} as import('zyzz').Vars.Definition<{}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{}}>);
+        const config = ({} as import('zyzz').Config.VariableConfig<{readonly "output":"html";readonly "vars":{}}>);
+        export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-204"});
+        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-urrzb11meswl3-251"})) as import('zyzz').style.ReturnType<'html'>);
         export const bare = ({className:""});
-        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-uYJ59A-0 z-style-urrzb11meswl3-269"})) as import('zyzz').style.ReturnType<'html'>);"
+        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-dMTSE6-0 z-style-urrzb11meswl3-319"})) as import('zyzz').style.ReturnType<'html'>);"
       `)
       expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
-        `".z-text-uYJ59A-0{.z-style-urrzb11meswl3-160 > &, .z-style-urrzb11meswl3-201 + &{color:red;}}"`,
+        `".z-text-dMTSE6-0{.z-style-urrzb11meswl3-204 > &, .z-style-urrzb11meswl3-251 + &{color:red;}}"`,
       )
     })
 
@@ -1648,7 +1644,7 @@ const card=style({}); export const label=style((values:{opacity:number})=>({sele
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-39"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-opacity-rAgY3A-0 z-style-1h5dayl7tfv4v-69"+" "+external:"z-opacity-rAgY3A-0 z-style-1h5dayl7tfv4v-69",style:{...input.variables,...style,"--z-d1h5dayl7tfv4v-69-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
+        const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-39"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-opacity-rAgY3A-0 z-style-1h5dayl7tfv4v-69"+" "+external:"z-opacity-rAgY3A-0 z-style-1h5dayl7tfv4v-69",style:{...input.vars,...style,"--z-d1h5dayl7tfv4v-69-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
       `)
       expect(() =>
         Source.extract({

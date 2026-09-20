@@ -1,10 +1,12 @@
 /**
- * Checks consumer inference and rejected inputs through the public Theme API.
+ * Checks consumer inference and rejected inputs through the internal scalar contract.
  * @module
  */
-import { style as queriesStyle } from './default.js'
+import { style as queriesStyle } from '../default.js'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, Style, Theme, variable } from 'zyzz'
+import { style, Style, variable } from 'zyzz'
+import * as Theme from './Theme.js'
+import * as Config from './Configuration.js'
 import { Css, global } from 'zyzz/web'
 
 describe('define', () => {
@@ -102,7 +104,7 @@ describe('define', () => {
       typography: 'heading.32 !important',
       ':hover': { typography: 'label.14' },
     })
-    Style.define({ title: { typography: 'heading.32' } }, { theme })
+    Style.define({ title: { typography: 'heading.32' } }, { vars: theme })
     expectTypeOf(theme.tokens.typography.heading[32].fontSize).toEqualTypeOf<
       Theme.Reference<'fontSize'>
     >()
@@ -170,15 +172,15 @@ describe('define', () => {
     })
     const result = Css.compile({
       styles: Style.define({}),
-      themes: { alternate, base: theme },
+      vars: { alternate, base: theme },
     })
 
-    expectTypeOf<keyof typeof result.themes>().toEqualTypeOf<
+    expectTypeOf<keyof typeof result.vars>().toEqualTypeOf<
       'alternate' | 'base'
     >()
 
     // @ts-expect-error Unknown scope labels remain unavailable.
-    expectTypeOf(result.themes.missing)
+    expectTypeOf(result.vars.missing)
 
     // @ts-expect-error Root style remains literal-only.
     style({ color: theme.tokens.color.blue[500] })
@@ -239,7 +241,7 @@ describe('define', () => {
     // @ts-expect-error An explicitly undefined group contributes no token names.
     omitted.style({ padding: 'missing' })
     // @ts-expect-error Undefined groups do not enable shorthand in named styles.
-    Style.define({ card: { padding: 'missing' } }, { theme: omitted })
+    Style.define({ card: { padding: 'missing' } }, { vars: omitted })
   })
 
   test('rejects reserved token keys', () => {
@@ -528,7 +530,7 @@ describe('variables', () => {
       const color = variable('color')
 
       const box = theme.style({
-        variables: { [color]: theme.vars.color.surface },
+        vars: { [color]: theme.vars.color.surface },
         backgroundImage: `linear-gradient(${theme.vars.color.surface}, transparent)`,
         boxShadow: `0 0 2px ${theme.vars.color.surface}`,
       })

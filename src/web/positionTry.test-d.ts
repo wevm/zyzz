@@ -1,6 +1,7 @@
 /** Checks positionTry through its public descriptor contract. @module */
 import { describe, test, expectTypeOf } from 'vite-plus/test'
 import { style } from 'zyzz'
+
 import { positionTry } from 'zyzz/web'
 describe('positionTry', () => {
   test('preserves its descriptor and identity domains', () => {

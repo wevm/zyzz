@@ -56,10 +56,10 @@ Css.compile({ development: true, styles })
 - Type: `boolean`
 - Default: `false`
 
-Emit the `color-scheme` selection classes applied by `themes()`, `appearance`, and `script()`. Source compilation sets this for modules that reference those helpers, so bundlers lowering `light-dark()` initialize their helpers from the same stylesheet.
+Emit the `color-scheme` selection classes applied by `vars()`, `appearance`, and `script()`. Source compilation sets this for modules that reference those helpers, so bundlers lowering `light-dark()` initialize their helpers from the same stylesheet.
 
 ```ts
-Css.compile({ schemes: true, styles, themes: { base: theme } })
+Css.compile({ schemes: true, styles, vars: { base: theme } })
 ```
 
 ### options.scope
@@ -84,15 +84,15 @@ Validated ordered style data.
 Css.compile({ styles })
 ```
 
-### options.themes
+### options.vars
 
-- Type: `Readonly<Record<string, Theme.Definition>>` (keys inferred)
+- Type: `Readonly<Record<string, Vars.Definition>>` (keys inferred)
 - Default: `undefined`
 
 Named theme definitions for inherited scopes.
 
 ```ts
-Css.compile({ styles, themes: { base: theme } })
+Css.compile({ styles, vars: { base: theme } })
 ```
 
 ### options.contributions
@@ -144,7 +144,7 @@ const shared = output.contributionCss
 const moduleCss = output.scopedCss ?? output.css
 ```
 
-### themes
+### vars
 
 - Type: `Readonly<Record<themeName, string>>`
 
@@ -153,7 +153,7 @@ Frozen scope class map retaining theme keys. Empty when no themes are supplied.
 Anonymous themes use compact identifiers scoped to this compilation. Source-owned theme contracts retain stable identifiers for separately compiled components. Consume the returned scope map and distribute it with the matching CSS.
 
 ```ts
-output.themes
+output.vars
 ```
 
 ## Errors

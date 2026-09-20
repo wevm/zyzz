@@ -15,7 +15,8 @@ describe('create', () => {
   test('retains initialization for local and packed property aliases', async () => {
     const library = Graph.compile({
       modules: {
-        'index.ts': `import {Config} from 'zyzz';const config=Config.create({defaultTheme:'base',themes:{base:{}}});export const restore=config.script;export const script=restore();`,
+        'index.ts':
+          "import {Config} from 'zyzz';const config=Config.create({defaultVars:'base',vars:{base:{}}});export const restore=config.script;export const script=restore();",
       },
     })
 
@@ -40,7 +41,8 @@ describe('create', () => {
   test('rejects script destructuring from legacy and selection contracts', () => {
     const library = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{}}});export const select=config.themes;`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const config=Config.create({defaultVars:'base',vars:{base:{}}});export const select=config.vars;",
       },
     })
 
@@ -74,7 +76,8 @@ describe('create', () => {
   test('omits unavailable script methods from legacy alias declarations', () => {
     const library = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({theme:{color:{ink:'red'}}});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const config=Config.create({});",
       },
     })
 
@@ -128,7 +131,8 @@ describe('create', () => {
   test('reads style exports from contracts recorded before version 19', () => {
     const library = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {style,theme}=Config.create({theme:{color:{ink:'red'}}});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const {style}=Config.create({});",
       },
     })
     const contract = JSON.parse(library.contracts['config.ts']!)
@@ -144,17 +148,19 @@ describe('create', () => {
       contracts: { 'lib.js': JSON.stringify(contract) },
       imports: { 'app.ts': { lib: 'lib.js' } },
       modules: {
-        'app.ts': `import {style} from 'lib';export const props=style({color:'ink'})();`,
+        'app.ts': `import {style} from 'lib';export const props=style({color:'red'})();`,
       },
     })
 
-    expect(app.modules['app.ts']!.css.includes('red')).toMatchInlineSnapshot(`true`)
+    expect(app.modules['app.ts']!.css.includes('red')).toMatchInlineSnapshot(
+      `true`,
+    )
   })
   test('omits initialization from static configured styles', () => {
     for (const options of [
       '{}',
-      "{theme:{color:{ink:'#123456'}}}",
-      "{defaultTheme:'base',themes:{base:{color:{ink:'#123456'}}}}",
+      "{vars:{color:{ink:'#123456'}}}",
+      "{defaultVars:'base',vars:{base:{color:{ink:'#123456'}}}}",
     ]) {
       const graph = Graph.compile({
         modules: {
@@ -211,8 +217,8 @@ describe('create', () => {
 
   for (const config of [
     '{}',
-    "{theme:{color:{ink:'#123456'}}}",
-    "{defaultTheme:'base',themes:{base:{color:{ink:'#123456'}},constructor:{color:{ink:'#008844'}}}}",
+    "{vars:{color:{ink:'#123456'}}}",
+    "{defaultVars:'base',vars:{base:{color:{ink:'#123456'}},constructor:{color:{ink:'#008844'}}}}",
   ]) {
     test(`exports a server-safe packed script for ${config}`, async () => {
       const library = Graph.compile({
@@ -286,7 +292,8 @@ describe('create', () => {
   test('restores each valid field before body parsing under CSP and preserves server defaults', async () => {
     const graph = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {script,themes}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'#123456'}},constructor:{color:{ink:'#008844'}}}});export const initial=themes({theme:'base'});export const saved=themes({theme:'constructor'});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const {script,vars:themes}=Config.create({defaultVars:'base',vars:{base:{color:{ink:'#123456'}},constructor:{color:{ink:'#008844'}}}});export const initial=themes({set:'base'});export const saved=themes({set:'constructor'});",
       },
     })
 
@@ -343,17 +350,17 @@ describe('create', () => {
 
       for (const [saved, theme, scheme] of [
         [
-          JSON.stringify({ theme: 'constructor', colorScheme: 'dark' }),
+          JSON.stringify({ set: 'constructor', colorScheme: 'dark' }),
           compiled.saved.className,
           'dark',
         ],
         [
-          JSON.stringify({ theme: 'missing', colorScheme: 'dark' }),
+          JSON.stringify({ set: 'missing', colorScheme: 'dark' }),
           compiled.initial.className,
           'dark',
         ],
         [
-          JSON.stringify({ theme: 'constructor', colorScheme: 'invalid' }),
+          JSON.stringify({ set: 'constructor', colorScheme: 'invalid' }),
           compiled.saved.className,
           'light',
         ],

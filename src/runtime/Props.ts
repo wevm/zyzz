@@ -8,14 +8,14 @@ import type { style } from '../styleFunction.js'
  * Binds compiled classes to the web styling override contract.
  * Returns fresh props; without variable assignments, inline styles retain their identity.
  * Never generates rules or changes the supplied overrides.
- * @returns A callable accepting className, style, and variables.
+ * @returns A callable accepting className, style, and vars.
  */
 export function create({ className }: create.Options): style.ReturnType {
   return ((overrides?: style.Options) => {
     if (!overrides) return { className }
 
-    const { className: external, style, variables } = overrides
-    const inline = variables ? { ...variables, ...style } : style
+    const { className: external, style, vars } = overrides
+    const inline = vars ? { ...vars, ...style } : style
     const merged =
       className && external ? `${className} ${external}` : external || className
 

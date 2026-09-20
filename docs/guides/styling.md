@@ -124,14 +124,14 @@ Arrays preserve fallback order; the suffix ` !important` marks importance.
 #### Theme Expressions
 
 ```ts
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
-  export const panel = style({ width: `calc(100% - ${theme.vars.spacing.md})` })
+  export const panel = style({ width: `calc(100% - ${vars.spacing.md})` })
 }
 ```
 
-Import `{ style, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `variable()` declares independent CSS variables.
+Import `{ style, vars }` from the [config module](../concepts.md#configuration) and access `vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `variable()` declares independent CSS variables.
 
 #### Static Bindings
 
@@ -153,29 +153,27 @@ namespace styles {
 
 Finite local type aliases, interfaces without inheritance, and object intersections describe dynamic inputs. Imported or generic types still require a directly supported local annotation.
 
-### CSS Variables
+### CSS Vars
 
-Use `variable()` for reusable CSS variables. Use `variables` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
+Use `variable()` for reusable CSS variables. Use `vars` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
 
 ```tsx
 import { style, variable } from 'zyzz'
 
-namespace variables {
+namespace vars {
   export const accent = variable('color')
 }
 
 namespace styles {
   export const label = style({
-    variables: { [variables.accent]: 'tomato' },
-    color: variables.accent,
+    vars: { [vars.accent]: 'tomato' },
+    color: vars.accent,
   })
 }
 
 function Label() {
   return (
-    <span {...styles.label({ variables: { [variables.accent]: 'blue' } })}>
-      Hello
-    </span>
+    <span {...styles.label({ vars: { [vars.accent]: 'blue' } })}>Hello</span>
   )
 }
 ```

@@ -12,7 +12,7 @@ declare const fontFace: typeof Web.fontFace
 declare const global: typeof Web.global
 declare const keyframes: typeof Web.keyframes
 declare const layers: typeof Web.layers
-declare const Theme: typeof Zyzz.Theme
+declare const Vars: typeof Zyzz.Vars
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
@@ -22,14 +22,14 @@ export function baseline() {
 }
 
 bench('global / selectors and grouping rules', () => {
-  const theme = Theme.define({ color: { ink: '#111' } })
+  const theme = Vars.define({ color: { ink: '#111' } })
 
   global({
     '@layer reset': { '*': { boxSizing: 'border-box', margin: 0 } },
     '@media (prefers-reduced-motion: reduce)': {
       '*': { animationDuration: '0.01ms !important' },
     },
-    body: { color: theme.vars.color.ink, padding: '2px' },
+    body: { color: theme.color.ink, padding: '2px' },
     'h1, h2': { fontWeight: 700, lineHeight: 1.2 },
   })
   layers(['reset', 'base', 'components'])

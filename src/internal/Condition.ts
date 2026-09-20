@@ -1,5 +1,5 @@
 /** Typed nested selector and condition keys without a general string index. @module */
-import type * as Theme from '../Theme.js'
+import type * as Theme from './Theme.js'
 
 /** Concrete suggestions supplement open selector and query patterns. */
 export type Suggestions =

@@ -1,6 +1,7 @@
 /** Checks scalar references, assignment domains, and nested authoring through public APIs. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, variable } from 'zyzz'
+import { style, variable } from 'zyzz'
+import * as Config from './internal/Configuration.js'
 
 describe('variable', () => {
   test('accepts untyped references and scalar inline values', () => {
@@ -14,7 +15,7 @@ describe('variable', () => {
       zIndex: value,
     })
     style({
-      variables: { [value]: 'inline-flex' },
+      vars: { [value]: 'inline-flex' },
       selectors: { '&:hover': { display: value } },
     })
     style({ width: `calc(${value} * 2)` })
@@ -22,21 +23,25 @@ describe('variable', () => {
     value.set('1px 2px red')
     value.set(42)
     const card = style({ display: value })
+    card({ vars: { [value]: 'grid' } })
+    card({ vars: { [value]: undefined } })
+    // @ts-expect-error Use vars for inline assignments.
     card({ variables: { [value]: 'grid' } })
-    card({ variables: { [value]: undefined } })
+    // @ts-expect-error Use vars for static assignments.
+    style({ variables: { [value]: 'grid' } })
     const dynamic = style((input: { opacity: number }) => ({
       opacity: input.opacity,
     }))
-    dynamic({ opacity: 0.5, variables: { [value]: 42 } })
+    dynamic({ opacity: 0.5, vars: { [value]: 42 } })
     const { style: htmlStyle } = Config.create({ output: 'html' })
-    htmlStyle({ display: value })({ variables: { [value]: 'flex' } })
+    htmlStyle({ display: value })({ vars: { [value]: 'flex' } })
 
     // @ts-expect-error Variable assignments must be scalar.
-    card({ variables: { [value]: true } })
+    card({ vars: { [value]: true } })
     // @ts-expect-error Literal variable names must be custom properties.
-    card({ variables: { color: 'red' } })
+    card({ vars: { color: 'red' } })
     // @ts-expect-error Variable assignments are a reserved styling override.
-    style((input: { variables: number }) => ({ opacity: input.variables }))
+    style((input: { vars: number }) => ({ opacity: input.vars }))
     expectTypeOf(value.set('blue')).toEqualTypeOf<
       Readonly<Record<`--${string}`, 'blue'>>
     >()
@@ -62,8 +67,8 @@ describe('variable', () => {
       marginLeft: signed,
     })
     style({
-      variables: { [accent]: 'tomato', [gap]: '12px' },
-      selectors: { '&:hover': { variables: { [accent]: 'purple' } } },
+      vars: { [accent]: 'tomato', [gap]: '12px' },
+      selectors: { '&:hover': { vars: { [accent]: 'purple' } } },
     })
     style({ width: `calc(${gap} * 2)` })
     const card = style({ color: accent })
@@ -101,7 +106,7 @@ describe('variable', () => {
     // @ts-expect-error Declarations remain typed inside selectors.
     style({ selectors: { '&:hover': { width: accent } } })
     // @ts-expect-error Variables contain scalar assignments.
-    style({ variables: { [accent]: { color: 'red' } } })
+    style({ vars: { [accent]: { color: 'red' } } })
     // @ts-expect-error Only supported scalar domains are accepted.
     variable('anything')
   })

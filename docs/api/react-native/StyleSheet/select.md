@@ -7,7 +7,7 @@ import { StyleSheet } from 'zyzz/react-native'
 
 const selected = StyleSheet.select(output.styles, {
   colorScheme: 'dark',
-  theme: 'base',
+  set: 'base',
 })
 ```
 
@@ -25,7 +25,7 @@ const selected = StyleSheet.select(output.styles, {
 Precompiled native styles.
 
 ```ts
-StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'base' })
+StyleSheet.select(output.styles, { colorScheme: 'dark', set: 'base' })
 ```
 
 ### options.colorScheme
@@ -36,10 +36,10 @@ StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'base' })
 Color scheme chosen by the application adapter.
 
 ```ts
-StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'base' })
+StyleSheet.select(output.styles, { colorScheme: 'dark', set: 'base' })
 ```
 
-### options.theme
+### options.set
 
 - Type: Inferred table label
 - Required: Yes.
@@ -47,7 +47,7 @@ StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'base' })
 Selects a precompiled theme.
 
 ```ts
-StyleSheet.select(output.styles, { colorScheme: 'light', theme: 'base' })
+StyleSheet.select(output.styles, { colorScheme: 'light', set: 'base' })
 ```
 
 ## Returns

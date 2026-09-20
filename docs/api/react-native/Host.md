@@ -39,7 +39,7 @@ A platform change requires another host and definitions compiled for that destin
 | Input           | Type                 | Behavior                                                                      |
 | --------------- | -------------------- | ----------------------------------------------------------------------------- |
 | `platform`      | `'android' \| 'ios'` | Fixed compilation destination.                                                |
-| `theme`         | `string`             | Nonempty compiled theme label. Binding factories validate catalog membership. |
+| `set`           | `string`             | Nonempty compiled theme label. Binding factories validate catalog membership. |
 | `colorScheme`   | `'dark' \| 'light'`  | Resolved appearance.                                                          |
 | `density`       | `number`             | Positive finite physical pixels per logical unit.                             |
 | `fontScale`     | `number`             | Positive finite system font scale.                                            |

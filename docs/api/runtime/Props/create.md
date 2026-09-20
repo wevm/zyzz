@@ -34,7 +34,7 @@ The returned callable accepts the [application parameters](../../core/style.md#a
 
 - Type: `style.ReturnType`
 
-Callable accepting className, style, and variables overrides. Variables merge into returned inline styles before explicit style overrides.
+Callable accepting className, style, and variables overrides. Vars merge into returned inline styles before explicit style overrides.
 
 ```ts
 const props = card({ style: { padding: '1rem' } })

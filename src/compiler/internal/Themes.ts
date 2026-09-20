@@ -10,11 +10,13 @@ import type * as RuleReference from '../../internal/RuleReference.js'
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
 import type * as Binding from '../../internal/Binding.js'
-import * as Config from '../../Config.js'
+import * as Config from '../../internal/Configuration.js'
 import * as Expression from './Expression.js'
 import * as Configurations from './Configurations.js'
 import * as Token from '../../internal/Token.js'
-import * as Theme from '../../Theme.js'
+import * as Theme from '../../internal/Theme.js'
+import * as VariableSets from '../../internal/VariableSets.js'
+import * as Vars from '../../Vars.js'
 import type * as Source from '../Source.js'
 import type * as PackedStyles from './PackedStyles.js'
 
@@ -30,6 +32,10 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  readonly variableSet?: boolean | undefined
+  readonly directVariables?: boolean | undefined
+  readonly variableConfig?: boolean | undefined
+  readonly variableMappings?: Vars.Mappings | undefined
   /** Whether this bound authoring alias declares recipes. */
   readonly recipe?: boolean | undefined
   /** Static CSS function signature shared during extraction and packed serialization. */
@@ -132,6 +138,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const definitions = new Map<number, Call>()
   const factories = new Set<number>()
   const imports = new Set<number>()
+  const variableImports = new Set<number>()
   const configImports = new Set<number>()
   const configs = new Map<string, Link>()
   const configBindings = new Map<number, Link>()
@@ -165,10 +172,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         specifier.importKind !== 'type' &&
         (specifier.imported.type === 'Identifier'
           ? specifier.imported.name
-          : specifier.imported.value) === 'Theme'
-      )
+          : specifier.imported.value) === 'Vars'
+      ) {
         imports.add(specifier.start)
-      else if (
+        variableImports.add(specifier.start)
+      } else if (
         specifier.type === 'ImportSpecifier' &&
         specifier.importKind !== 'type' &&
         (specifier.imported.type === 'Identifier'
@@ -239,6 +247,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
   const namespaces = new Set<string>()
   const configNamespaces = new Set<string>()
+  const variableNamespaces = new Set<string>()
+  for (const node of program.body)
+    if (node.type === 'ImportDeclaration')
+      for (const specifier of node.specifiers)
+        if (variableImports.has(specifier.start))
+          variableNamespaces.add(specifier.local.name)
 
   for (const node of program.body)
     if (node.type === 'ImportDeclaration')
@@ -301,15 +315,16 @@ export function collect(program: Ast.Program, options: collect.Options) {
       !config.call.initialization &&
       !config.call.root &&
       path.length === 1 &&
-      ['themes', 'script', 'appearance'].includes(path[0]!)
+      ['themes', 'vars', 'script', 'appearance'].includes(path[0]!)
     ) {
       const key = path[0]!
+      if (config.call.variableConfig && key === 'themes') return undefined
 
       if (key === 'script') scripts.add(config.call.name)
       if (key === 'appearance') appearances.add(config.call.name)
 
       if (key === 'themes' && !config.call.options?.themes) return undefined
-      if (key === 'themes') selections.add(config.call.name)
+      if (key === 'themes' || key === 'vars') selections.add(config.call.name)
 
       if (key === 'script' && !config.call.script)
         fail(
@@ -327,7 +342,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         Object.entries(config.members ?? {}).flatMap(([name, member]) => {
           const parts = JSON.parse(name) as string[]
 
-          return key === 'themes' && parts[0] === 'themes'
+          return (key === 'themes' || key === 'vars') && parts[0] === 'themes'
             ? [[JSON.stringify(parts.slice(1)), member]]
             : []
         }),
@@ -361,7 +376,43 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return { selection: true }
   }
 
+  function readReference(node: Ast.Node): Token.Reference | undefined {
+    if (node.type !== 'MemberExpression') return undefined
+    const path: string[] = []
+    let root: Ast.Node = node
+    while (root.type === 'MemberExpression' && !root.optional) {
+      const key =
+        !root.computed && root.property.type === 'Identifier'
+          ? root.property.name
+          : root.property.type === 'Literal'
+            ? String(root.property.value)
+            : undefined
+      if (key === undefined) return undefined
+      path.unshift(key)
+      root = root.object
+    }
+    if (root.type !== 'Identifier') return undefined
+    const call = names.get(root.name)
+    if (!call) return undefined
+    let value: unknown = themes[call.name]?.tokens
+    if (!call.variableSet && !call.directVariables) {
+      if (!['vars', 'tokens'].includes(path.shift()!)) return undefined
+    }
+    for (const key of path)
+      value =
+        value && typeof value === 'object'
+          ? Object.getOwnPropertyDescriptor(value, key)?.value
+          : undefined
+    return Token.is(value) ? value : undefined
+  }
+
   function data(node: Ast.Node): unknown {
+    const reference = readReference(node)
+    if (reference) {
+      factoryReferences.add(node.start)
+      return reference
+    }
+
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return data(node.expression)
 
@@ -440,7 +491,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return type(node.expression)
 
-    if (node.type !== 'ObjectExpression') return JSON.stringify(data(node))
+    if (node.type !== 'ObjectExpression') return Configurations.type(data(node))
 
     return `{${node.properties
       .map((property) => {
@@ -545,7 +596,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         member.property.name === 'define'
       ) {
         const id = Identifiers.explicit(expression)
-        if (id !== undefined) name = Identity.requireId(id, 'Theme.define')
+        if (id !== undefined) name = Identity.requireId(id, 'Vars.define')
       }
 
       if (configNamespaces.has(expression.callee.object.name)) {
@@ -611,7 +662,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
               !link.call.root &&
               (key === 'script' ||
                 key === 'appearance' ||
-                (key === 'themes' && link.call.options?.themes))
+                (key === 'themes' && link.call.options?.themes) ||
+                (key === 'vars' && link.call.variableConfig))
             ) {
               if (
                 (key === 'script' && !link.call.script) ||
@@ -626,14 +678,16 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
               if (key === 'script') scripts.add(link.call.name)
               if (key === 'appearance') appearances.add(link.call.name)
-              if (key === 'themes') selections.add(link.call.name)
+              if (key === 'themes' || key === 'vars')
+                selections.add(link.call.name)
 
               const members = Object.fromEntries(
                 Object.entries(link.members ?? {}).flatMap(
                   ([pathKey, member]) => {
                     const path = JSON.parse(pathKey) as string[]
 
-                    return key === 'themes' && path[0] === 'themes'
+                    return (key === 'themes' || key === 'vars') &&
+                      (path[0] === 'themes' || path[0] === 'vars')
                       ? [[JSON.stringify(path.slice(1)), member]]
                       : []
                   },
@@ -665,6 +719,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
               continue
             }
 
+            if (link.call.variableConfig && ['theme', 'themes'].includes(key))
+              fail('Use vars for references and scope selection.', id)
+
             const member = link.members?.[JSON.stringify([key])]
 
             if (!member)
@@ -680,7 +737,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
               exports[id.name] = member
           }
         } catch (error) {
-          if (!(error instanceof Config.InvalidError)) throw error
+          if (
+            !(error instanceof Config.InvalidError) &&
+            !(error instanceof Vars.InvalidError)
+          )
+            throw error
 
           fail(error.message, expression)
         }
@@ -698,17 +759,28 @@ export function collect(program: Ast.Program, options: collect.Options) {
             expression.arguments.length < 1 ||
             expression.arguments.length > 2
           )
-            fail('Theme.define requires one literal token object.', expression)
+            fail(
+              'Vars.define requires one literal variable object.',
+              expression,
+            )
 
           const input = data(expression.arguments[0]!)
 
           tokenType = type(expression.arguments[0]!)
 
-          const original = Theme.define(input as Theme.Tokens)
+          const variableSet = variableNamespaces.has(
+            expression.callee.object.name,
+          )
+          const original = variableSet
+            ? VariableSets.theme(Vars.define(input as Vars.Values))
+            : Theme.define(input as Theme.Tokens)
 
           definition = Token.bind(
             original,
-            Object.freeze({ [Token.identity]: name }),
+            Object.freeze({
+              ...original[Token.definition].contract,
+              [Token.identity]: name,
+            }),
           )
         } else {
           const base = expression.arguments[0]
@@ -716,15 +788,22 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           if (expression.arguments.length !== 2 || !parent)
             fail(
-              'Theme.extend requires a preceding local theme and literal overrides.',
+              'Vars.extend requires a preceding variable set and literal overrides.',
               expression,
             )
 
           factoryReferences.add(base!.start)
-          definition = Theme.extend(
-            themes[parent.name]!,
-            data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
-          )
+          definition = variableNamespaces.has(expression.callee.object.name)
+            ? VariableSets.theme(
+                Vars.extend(
+                  VariableSets.from(themes[parent.name]![Token.definition]),
+                  data(expression.arguments[1]!) as Vars.Overrides<Vars.Values>,
+                ),
+              )
+            : Theme.extend(
+                themes[parent.name]!,
+                data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
+              )
           if (
             definition[Token.definition].contract[Token.identity]?.startsWith(
               'id-',
@@ -736,12 +815,23 @@ export function collect(program: Ast.Program, options: collect.Options) {
         }
       } catch (error) {
         if (error instanceof InvalidError) throw error
-        if (!(error instanceof Theme.InvalidError)) throw error
+        if (
+          !(error instanceof Theme.InvalidError) &&
+          !(error instanceof Vars.InvalidError)
+        )
+          throw error
 
         fail(error.message, expression)
       }
 
       const call = Object.freeze({
+        ...(variableNamespaces.has(expression.callee.object.name)
+          ? {
+              variableSet: true,
+              directVariables: true,
+              type: `import('zyzz').Vars.Definition<${tokenType}>`,
+            }
+          : {}),
         ...(output ? { output } : {}),
         end: expression.end,
         name,
@@ -850,7 +940,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
           !link.call.root &&
           (key === 'script' ||
             key === 'appearance' ||
-            (key === 'themes' && link.call.options?.themes))
+            (key === 'themes' && link.call.options?.themes) ||
+            (key === 'vars' && link.call.variableConfig))
         ) {
           if (
             (key === 'script' && !link.call.script) ||
@@ -865,13 +956,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           if (key === 'script') scripts.add(link.call.name)
           if (key === 'appearance') appearances.add(link.call.name)
-          if (key === 'themes') selections.add(link.call.name)
+          if (key === 'themes' || key === 'vars') selections.add(link.call.name)
 
           const members = Object.fromEntries(
             Object.entries(link.members ?? {}).flatMap(([pathKey, member]) => {
               const path = JSON.parse(pathKey) as string[]
 
-              return key === 'themes' && path[0] === 'themes'
+              return (key === 'themes' || key === 'vars') &&
+                (path[0] === 'themes' || path[0] === 'vars')
                 ? [[JSON.stringify(path.slice(1)), member]]
                 : []
             }),
@@ -901,6 +993,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           continue
         }
+
+        if (link.call.variableConfig && ['theme', 'themes'].includes(key))
+          fail('Use vars for references and scope selection.', id)
 
         const member = link.members?.[JSON.stringify([key])]
 
@@ -1281,15 +1376,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
           path.length === 1 &&
           !config.call.selection &&
           !config.call.initialization &&
-          ['script', 'themes'].includes(path[0]!) &&
+          ['script', 'themes', 'vars'].includes(path[0]!) &&
           ancestors[index - 1]?.type === 'CallExpression' &&
           (ancestors[index - 1] as Ast.CallExpression).callee === target &&
           !(ancestors[index - 1] as Ast.CallExpression).optional
         ) {
+          if (path[0] === 'vars' && !config.call.variableConfig)
+            fail('This configuration has no vars.', target)
           if (path[0] === 'themes' && !config.call.options?.themes)
             fail('Theme selection requires a named catalog.', target)
 
-          if (path[0] === 'themes' && config.call.catalogOnly)
+          if (
+            (path[0] === 'themes' || path[0] === 'vars') &&
+            config.call.catalogOnly
+          )
             fail(
               'This legacy catalog is not callable; rebuild its library.',
               target,
@@ -1305,7 +1405,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
             scripts.add(config.call.name)
           }
 
-          if (path[0] === 'themes') selections.add(config.call.name)
+          if (path[0] === 'themes' || path[0] === 'vars')
+            selections.add(config.call.name)
 
           return true
         }
@@ -1333,7 +1434,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
           return true
         }
 
-        const linked = config.members?.[JSON.stringify(path)]
+        if (
+          config.call.variableConfig &&
+          ['theme', 'themes'].includes(path[0]!)
+        )
+          fail('Use vars for references and scope selection.', target)
+        const linked =
+          config.call.variableConfig && config.call.selection
+            ? undefined
+            : config.members?.[JSON.stringify(path)]
         if (linked)
           return themeReference(
             target,
@@ -1342,6 +1451,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
             linked.call,
           )
       }
+
+      if (config.call.selection && config.call.variableConfig && path.length)
+        return themeReference(node, parent, ancestors, {
+          ...config.call,
+          directVariables: true,
+        })
 
       // A compiled selector is an ordinary runtime function, so passing or storing it is safe.
       if (config.call.selection && !config.call.catalogOnly && !path.length) {
@@ -1373,7 +1488,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
     theme: Call,
   ): boolean {
     const grandparent = ancestors.at(-3)
-    if (factoryReferences.has(node.start)) return true
+    if (
+      factoryReferences.has(node.start) ||
+      ancestors.some((ancestor) => factoryReferences.has(ancestor.start))
+    )
+      return true
     if (exportReferences.has(node.start)) return true
     if (aliasReferences.has(node.start)) return true
 
@@ -1390,9 +1509,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (
       parent.type === 'MemberExpression' &&
       parent.object === node &&
-      ((parent.property.type === 'Identifier' &&
-        !parent.computed &&
-        ['tokens', 'vars'].includes(parent.property.name)) ||
+      (theme.directVariables ||
+        (parent.property.type === 'Identifier' &&
+          !parent.computed &&
+          ['tokens', 'vars'].includes(parent.property.name)) ||
         (parent.property.type === 'Literal' &&
           parent.computed &&
           ['tokens', 'vars'].includes(String(parent.property.value))))
@@ -1401,16 +1521,18 @@ export function collect(program: Ast.Program, options: collect.Options) {
         fail('Token references cannot use optional access.', parent)
 
       const variable =
-        parent.property.type === 'Identifier'
+        theme.directVariables ||
+        (parent.property.type === 'Identifier'
           ? parent.property.name === 'vars'
           : parent.property.type === 'Literal' &&
-            parent.property.value === 'vars'
+            parent.property.value === 'vars')
 
-      let value: unknown = variable
-        ? themes[theme.name]!.vars
-        : themes[theme.name]!.tokens
-      let target: Ast.Node = parent
-      let index = ancestors.length - 3
+      let value: unknown =
+        variable && !theme.directVariables
+          ? themes[theme.name]!.vars
+          : themes[theme.name]!.tokens
+      let target: Ast.Node = theme.directVariables ? node : parent
+      let index = ancestors.length - (theme.directVariables ? 2 : 3)
 
       for (; index >= 0; index--) {
         const ancestor = ancestors[index]!
@@ -1611,7 +1733,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       parent.property.type !== 'Identifier'
     )
       fail(
-        'Use local theme.style calls, theme.className reads, or Theme.extend; other theme references require source linking.',
+        'Use Config.create or Vars.extend with variable definitions; other references require source linking.',
         node,
       )
 
@@ -1714,8 +1836,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         )
         if (!alias?.options?.themes) return undefined
         const context = {
-          defaultTheme: String(alias.options.defaultTheme),
-          themes: Object.fromEntries(
+          defaultVars: String(alias.options.defaultTheme),
+          vars: Object.fromEntries(
             Object.entries(
               alias.options.themes as Record<
                 string,
@@ -1723,25 +1845,31 @@ export function collect(program: Ast.Program, options: collect.Options) {
               >,
             ).map(([name, values]) => [
               name,
-              Token.bind(Theme.define(values), contract),
+              Token.bind(
+                contract.variableSet
+                  ? VariableSets.theme(Vars.define(values as Vars.Values))
+                  : Theme.define(values),
+                contract,
+              ),
             ]),
           ),
         }
-        Object.freeze(context.themes)
+        Object.freeze(context.vars)
         nativeContexts.set(contract, Object.freeze(context))
         return context
       }
       const entries = Object.entries(config.members ?? {}).flatMap(
         ([key, value]) => {
           const path = JSON.parse(key) as string[]
-          return path[0] === 'themes' && path.length === 2
+          return (path[0] === 'themes' || path[0] === 'vars') &&
+            path.length === 2
             ? [[path[1]!, value.definition] as const]
             : []
         },
       )
       const context = Object.freeze({
-        defaultTheme: String(config.call.options.defaultTheme),
-        themes: Object.freeze(Object.fromEntries(entries)),
+        defaultVars: String(config.call.options.defaultTheme),
+        vars: Object.freeze(Object.fromEntries(entries)),
       })
       nativeContexts.set(contract, context)
       return context

@@ -30,7 +30,7 @@ namespace styles {
 
 - Type: Nested style declaration objects.
 
-Declarations retain CSS and configured-token inference. Nested `variables`, selectors, and conditional at-rules preserve authored order. The source compiler parses selector syntax and resolves local, imported, aliased, and packed style identities without runtime selector construction.
+Declarations retain CSS and configured-token inference. Nested `vars`, selectors, and conditional at-rules preserve authored order. The source compiler parses selector syntax and resolves local, imported, aliased, and packed style identities without runtime selector construction.
 
 ## Specificity
 

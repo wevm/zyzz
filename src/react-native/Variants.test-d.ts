@@ -1,19 +1,20 @@
-/** Checks literal native recipe metadata and theme labels through public imports. @module */
+import { Vars } from 'zyzz'
+/** Checks literal native recipe metadata and set labels through public imports. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { Source } from 'zyzz/compiler'
 import { StyleSheet, Variants } from 'zyzz/react-native'
 
 describe('compile', () => {
-  test('preserves inline axes, choices, defaults, and named themes', () => {
-    const theme = Theme.define({ color: { ink: 'red' } })
+  test('preserves inline axes, choices, defaults, and named vars', () => {
+    const set = Vars.define({ color: { ink: 'red' } })
     const output = Variants.compile({
       recipe: {
         axes: { tone: ['quiet', 'loud'], size: ['small'] },
         defaults: { tone: 'quiet', size: null },
         rules: [{ matches: [], value: Style.define({ card: { opacity: 1 } }) }],
       },
-      themes: { brand: theme, alternate: theme },
+      vars: { brand: set, alternate: set },
     })
 
     expectTypeOf<keyof typeof output.axes>().toEqualTypeOf<'size' | 'tone'>()
@@ -28,13 +29,13 @@ describe('compile', () => {
     expectTypeOf(
       StyleSheet.select(output.styles, {
         colorScheme: 'dark',
-        theme: 'brand',
+        set: 'brand',
       })['0'],
     ).toEqualTypeOf<StyleSheet.NativeStyle | undefined>()
-    // @ts-expect-error Only declared theme labels are available.
+    // @ts-expect-error Only declared set labels are available.
     expectTypeOf(output.styles.typo).not.toBeAny()
-    // @ts-expect-error Selection retains compiled theme labels.
-    StyleSheet.select(output.styles, { colorScheme: 'light', theme: 'typo' })
+    // @ts-expect-error Selection retains compiled set labels.
+    StyleSheet.select(output.styles, { colorScheme: 'light', set: 'typo' })
     // @ts-expect-error Only declared axes are available.
     expectTypeOf(output.axes.typo).not.toBeAny()
     // @ts-expect-error Choice names retain the finite recipe contract.
@@ -44,7 +45,7 @@ describe('compile', () => {
     expectTypeOf(choice).not.toBeAny()
   })
 
-  test('retains const recipe inputs and infers the omitted theme', () => {
+  test('retains const recipe inputs and infers the omitted set', () => {
     const recipe = {
       axes: { active: ['true', 'false'] },
       defaults: { active: 'false' },
@@ -55,7 +56,7 @@ describe('compile', () => {
     expectTypeOf(output.axes).toEqualTypeOf<typeof recipe.axes>()
     expectTypeOf(output.defaults).toEqualTypeOf<typeof recipe.defaults>()
     expectTypeOf<keyof typeof output.styles>().toEqualTypeOf<'default'>()
-    // @ts-expect-error Omitted themes only produce the default table.
+    // @ts-expect-error Omitted vars only produce the default table.
     expectTypeOf(output.styles.brand).not.toBeAny()
   })
 

@@ -14,8 +14,8 @@ pnpm add zyzz
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
-  theme: {
+export const { style, vars } = Config.create({
+  vars: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
@@ -26,13 +26,13 @@ export const { style, theme } = Config.create({
 
 ```tsx
 // Button.tsx
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const button = style({
     backgroundColor: 'brand',
     padding: 'md',
-    width: `calc(100% - ${theme.vars.spacing.md})`,
+    width: `calc(100% - ${vars.spacing.md})`,
   })
 }
 
@@ -54,5 +54,5 @@ Importing config alone does not emit CSS. The [CLI](cli.md) compiles source modu
 ## Continue
 
 1. [Style Components](../guides/styling.md#style-components).
-2. [Use Themes](../guides/themes.md#use-themes).
+2. [Use Themes](../guides/themes.md#define-variables).
 3. [Define Variants](../guides/variants.md#define-variants).

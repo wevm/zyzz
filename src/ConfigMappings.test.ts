@@ -5,10 +5,11 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { Config, Style } from 'zyzz'
+import * as Configuration from './internal/Configuration.js'
 
 describe('create', () => {
   test('retains alias source paths in structural diagnostics', () => {
-    const { theme } = Config.create({
+    const { theme } = Configuration.create({
       theme: {},
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
     })
@@ -18,7 +19,7 @@ describe('create', () => {
         // @ts-expect-error exercise unchecked invalid fallback input
         { card: { px: [] } },
         {
-          theme,
+          vars: theme,
           locations: [
             { path: ['card', 'px'], source: 'app.ts', start: 10, end: 12 },
           ],
@@ -70,18 +71,20 @@ describe('create', () => {
   test('writes version five for dedicated spacing groups without aliases', () => {
     const result = Graph.compile({
       modules: {
-        'config.ts': `import {Config} from 'zyzz';export const {theme}=Config.create({theme:{margin:{gap:'-4px'},padding:{gap:'4px'}}});`,
+        'config.ts':
+          "import {Config} from 'zyzz';export const {vars:theme}=Config.create({vars:{margin:{gap:'-4px'},padding:{gap:'4px'}}});",
       },
     })
 
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`17`)
+    ).toMatchInlineSnapshot(`26`)
   })
   test('preserves mapped HTML theme handles through source and packed aliases', async () => {
     const library = Graph.compile({
       modules: {
-        'index.ts': `import {Config} from 'zyzz';const config=Config.create({output:'html',theme:{padding:{sm:'4px'}},shorthands:{px:['paddingLeft','paddingRight']}});export const theme=config.theme;export const bound=theme.style;export const staticStyle=bound({px:'sm'});`,
+        'index.ts':
+          "import {Config} from 'zyzz';export const config=Config.create({output:'html',vars:{padding:{sm:'4px'}},shorthands:{px:['paddingLeft','paddingRight']}});export const theme=config.vars;export const bound=config.style;export const staticStyle=bound({px:'sm'});",
       },
     })
 
@@ -89,7 +92,8 @@ describe('create', () => {
       contracts: { 'library/index.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
       modules: {
-        'app.ts': `import {Theme} from 'zyzz';import {theme,staticStyle} from 'library';const extended=Theme.extend(theme,{padding:{sm:'12px'}});export const extension=extended.style({px:'sm'})();const {style}=theme;export const destructured=style({px:'sm'})();const bound=theme.style;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=theme.style({px:'sm'})();export const source=staticStyle();`,
+        'app.ts':
+          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';import {config,theme,staticStyle} from 'library';const extended=Vars.extend(theme,{padding:{sm:'12px'}}); const extendedConfig=Config.create({vars:extended,output:'html',shorthands:{px:['paddingLeft','paddingRight']}});export const extension=extendedConfig.style({px:'sm'})();const {style}=config;export const destructured=style({px:'sm'})();const bound=config.style;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=config.style({px:'sm'})();export const source=staticStyle();",
       },
     })
 
@@ -115,23 +119,24 @@ describe('create', () => {
     expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
-        "class": "z-pl-rTuHcE-0 z-pr-XwpZ0V-1",
+        "class": "z-pl-xDRLdf-0 z-pr-1wshtm-1",
       }
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "class": "z-pl-ECFxVx-0 z-pr-Ar0hzP-1 z-style-1wfnqsmu0q6os-234",
+        "class": "z-pl-60Tybp-0 z-pr-7yEicI-1 z-style-1wfnqsmu0q6os-240",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "class": "z-pl-MXp9W9-0 z-pr-0P3zkT-1",
-        "style": "--z-d1e8a67z1uaws1j-287-77-69-64-74-68:8px",
+        "class": "z-pl-_b2wfb-0 z-pr-QGnYgP-1",
+        "style": "--z-d1e8a67z1uaws1j-443-77-69-64-74-68:8px",
       }
     `)
   })
 
-  const config = `import {Config} from 'zyzz';export const {style,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
+  const config =
+    "import {Config} from 'zyzz';export const {style,vars:theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},vars:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});"
   const source = `import {style,theme} from 'library';export namespace styles {
   export const card = style({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm !important'}})
 
@@ -200,7 +205,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot(`19`)
+    expect(changed.version).toMatchInlineSnapshot(`26`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>
@@ -222,7 +227,8 @@ describe('create', () => {
   test('retains mapped extension annotations through packed exports', () => {
     const library = Graph.compile({
       modules: {
-        'theme.ts': `import {Config,Theme} from 'zyzz';const {theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight']},theme:{spacing:{sm:'4px'}}});export const extended=Theme.extend(theme,{spacing:{sm:'8px'}});`,
+        'theme.ts':
+          "import {Config,Vars} from 'zyzz';const {vars:theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight']},vars:{spacing:{sm:'4px'}}});export const extended=Vars.extend(theme,{spacing:{sm:'8px'}});",
       },
     })
 
@@ -234,7 +240,8 @@ describe('create', () => {
       contracts: { 'lib.js': library.contracts['theme.ts']! },
       imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
       modules: {
-        'app.ts': `import {Theme} from 'zyzz';import {extended} from 'lib';export const next=Theme.extend(extended,{spacing:{sm:'12px'}});export const card=next.style({px:'sm'});`,
+        'app.ts':
+          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';import {extended} from 'lib';export const next=Vars.extend(extended,{spacing:{sm:'12px'}}); const nextConfig=Config.create({vars:next,shorthands:{px:['paddingLeft','paddingRight']}});export const card=nextConfig.style({px:'sm'});",
       },
     })
 
@@ -245,28 +252,28 @@ describe('create', () => {
       ".z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
       .z_theme-1xn44ix111xh3v-extended{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:8px;}
       .z_theme-1e8a67z1uaws1j-next{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:12px;}
-      .z-pl-OJ5iBP-0{padding-left:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}
-      .z-pr-B_AHva-1{padding-right:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}"
+      .z_theme-1e8a67z1uaws1j-nextConfig-theme{--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm:12px;}
+      .z-pl-8Ct53_-0{padding-left:var(--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm,12px);}
+      .z-pr-AoT0tF-1{padding-right:var(--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm,12px);}"
     `)
   })
   test('accepts quoted aliases and independently validates numeric targets', () => {
     const graph = Graph.compile({
       modules: {
-        'app.ts': `import {Config,Theme} from 'zyzz';const {style,theme}=Config.create({shorthands:{'padding-x':['paddingLeft','paddingRight'],mixed:['scale','order']},theme:{spacing:{sm:'4px'}}});const extended=Theme.extend(theme,{spacing:{sm:'8px'}});export namespace styles {
-  export const card = extended.style({'padding-x':'sm'})
-
-  export const dynamic = style((values:{n:1|2})=>({mixed:values.n}))
-}`,
+        'app.ts':
+          "import {Config,Vars} from 'zyzz';const {style,vars:theme}=Config.create({shorthands:{'padding-x':['paddingLeft','paddingRight'],mixed:['scale','order']},vars:{spacing:{sm:'4px'}}});const extended=Vars.extend(theme,{spacing:{sm:'8px'}}); const extendedConfig=Config.create({vars:extended,shorthands:{'padding-x':['paddingLeft','paddingRight']}});export namespace styles {\n  export const card = extendedConfig.style({'padding-x':'sm'})\n\n  export const dynamic = style((values:{n:1|2})=>({mixed:values.n}))\n}",
       },
     })
 
     expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1e8a67z1uaws1j-style-theme{--z-t1e8a67z1uaws1j-style-spacing_2e_sm:4px;}
-      .z_theme-1e8a67z1uaws1j-extended{--z-t1e8a67z1uaws1j-style-spacing_2e_sm:8px;}
-      .z-pl-6wJSfX-0{padding-left:var(--z-t1e8a67z1uaws1j-style-spacing_2e_sm,8px);}
-      .z-pr-B4Vpd4-1{padding-right:var(--z-t1e8a67z1uaws1j-style-spacing_2e_sm,8px);}
-      .z-scale-RSMJdB{scale:var(--z-d1e8a67z1uaws1j-343-6e);}
-      .z-order-zJSzEd{order:var(--z-d1e8a67z1uaws1j-343-6e);}"
+      ".z_theme-1e8a67z1uaws1j-extendedConfig-theme{--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm:8px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-pl-IaZIIw-0{padding-left:var(--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm,8px);}
+      .z-pr-5TLj9h-1{padding-right:var(--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm,8px);}
+      .z-scale-cmGIW3{scale:var(--z-d1e8a67z1uaws1j-460-6e);}
+      .z-order-Z0FtxJ{order:var(--z-d1e8a67z1uaws1j-460-6e);}"
     `)
   })
   test('preserves ordered targets and spacing precedence across packed imports', () => {

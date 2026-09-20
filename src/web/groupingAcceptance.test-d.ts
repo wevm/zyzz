@@ -1,5 +1,6 @@
 /** Checks grouping-rule authoring contexts through public web entrypoints. @module */
 import { style } from 'zyzz'
+
 import { describe, test } from 'vite-plus/test'
 import { global } from 'zyzz/web'
 
@@ -9,7 +10,7 @@ describe('grouping rules', () => {
     global({
       '@media only screen and (color)': { body: { color: 'red' } },
       '@supports selector(:has(.child))': { body: { color: 'red' } },
-      '@container card style(--theme: dark)': { body: { color: 'red' } },
+      '@container card style(--vars: dark)': { body: { color: 'red' } },
       '@container scroll-state(stuck: top)': { body: { color: 'red' } },
       '@scope (.root) to (.limit)': { body: { color: 'red' } },
       '@layer base.components': { body: { color: 'red' } },

@@ -60,7 +60,7 @@ Each script reads the localStorage entry named by its configuration's `storageKe
 
 ## Options
 
-`zyzz({ compiler?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+`zyzz({ compiler?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Vars, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
 
 ## Native Output
 

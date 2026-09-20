@@ -3,7 +3,7 @@ import { variable } from 'zyzz'
 import { style } from './zyzz.config.js'
 
 /** A registered, inherited variable assigned by a parent scope. */
-export namespace variables {
+export namespace vars {
   export const amount = variable('number', {
     inherits: true,
     initialValue: 0.5,
@@ -41,12 +41,12 @@ export namespace styles {
     backgroundColor: 'muted',
     borderRadius: '0.5rem',
     height: '0.75rem',
-    opacity: variables.amount,
+    opacity: vars.amount,
     width: '100%',
   })
 
   export const scope = style({
-    variables: { [variables.amount]: 0.5 },
+    vars: { [vars.amount]: 0.5 },
   })
 
   export const track = style({

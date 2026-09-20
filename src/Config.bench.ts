@@ -3,7 +3,8 @@
  * @module
  */
 import { bench, describe } from 'vite-plus/test'
-import { Config, Style } from 'zyzz'
+import { Config, Style, Vars } from 'zyzz'
+
 import { Css } from 'zyzz/web'
 
 for (const count of [10, 100]) {
@@ -18,9 +19,15 @@ for (const count of [10, 100]) {
     bench(
       'normalize + validate + emit',
       () => {
+        const base = Vars.define({
+          color: { brand: { light: '#06c', dark: '#9cf' } },
+        })
+        const mint = Vars.extend(base, {
+          color: { brand: { light: '#175', dark: '#afa' } },
+        })
         const zyzz = Config.create({
-          defaultTheme: 'base',
-          themes: {
+          defaultVars: 'base',
+          vars: {
             base: { color: { brand: { light: '#06c', dark: '#9cf' } } },
             mint: { color: { brand: { light: '#175', dark: '#afa' } } },
           },
@@ -28,8 +35,8 @@ for (const count of [10, 100]) {
 
         Css.compile({
           cssOutput: 'grouped',
-          styles: Style.define(styles, { theme: zyzz.themes.base }),
-          themes: zyzz.themes,
+          styles: Style.define(styles, { vars: zyzz.vars }),
+          vars: { base, mint },
         })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },

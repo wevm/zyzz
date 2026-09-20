@@ -55,13 +55,5 @@ export const styles = {
 } as const satisfies Record<string, Style.LiteralProperties>
 
 /** Source preserves mixed-axis declaration order and token priority. */
-export const source = `import { Config, style } from 'zyzz';
-const zyzz = Config.create({theme:{spacing:{space:'12px'}}});
-export const logical = zyzz.style({
-  width:'60px',inlineSize:['70px','80px !important'],blockSize:'40px',
-  paddingLeft:'2px',paddingInlineStart:['4px',zyzz.theme.tokens.spacing.space],
-  marginInlineEnd:'space !important',position:'relative',insetInlineStart:'-3px'
-})();
-export const physical = style({inlineSize:'30px',width:'50px',paddingInlineStart:'6px',paddingLeft:'8px'})();
-export const scope = zyzz.theme.className;
-`
+export const source =
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{space:'12px'}}});\nexport const logical = zyzz.style({\n  width:'60px',inlineSize:['70px','80px !important'],blockSize:'40px',\n  paddingLeft:'2px',paddingInlineStart:['4px',zyzz.vars.spacing.space],\n  marginInlineEnd:'space !important',position:'relative',insetInlineStart:'-3px'\n})();\nexport const physical = style({inlineSize:'30px',width:'50px',paddingInlineStart:'6px',paddingLeft:'8px'})();\nexport const scope = zyzz.vars().className;\n"

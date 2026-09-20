@@ -2,7 +2,7 @@
 import * as Scheme from '../internal/Scheme.js'
 
 /**
- * Binds an HTML-safe script factory to compiled named theme classes.
+ * Binds an HTML-safe script factory to compiled named set classes.
  * The factory is server-safe; only its returned JavaScript accesses the DOM.
  * A saved scheme swaps the stylesheet scheme class and sets the inline `color-scheme`;
  * a saved `null` scheme removes both so a cleared selection survives reloads.
@@ -19,7 +19,7 @@ export function create(
     const key = serialize(options.storageKey ?? 'zyzz')
     const schemes = serialize(Object.entries(Scheme.classes))
 
-    return `(()=>{try{const value=JSON.parse(localStorage.getItem(${key})||"null");if(!value||typeof value!=="object"||Array.isArray(value))return;const root=document.documentElement;const catalog=new Map(${catalog});if(Object.hasOwn(value,"theme")&&typeof value.theme==="string"&&catalog.has(value.theme)){root.classList.remove(...catalog.values());root.classList.add(catalog.get(value.theme))}const schemes=new Map(${schemes});if(Object.hasOwn(value,"colorScheme")){if(value.colorScheme===null){root.classList.remove(...schemes.values());root.style.removeProperty("color-scheme")}else if(schemes.has(value.colorScheme)){root.classList.remove(...schemes.values());root.classList.add(schemes.get(value.colorScheme));root.style.colorScheme=value.colorScheme}}}catch{}})();`
+    return `(()=>{try{const value=JSON.parse(localStorage.getItem(${key})||"null");if(!value||typeof value!=="object"||Array.isArray(value))return;const root=document.documentElement;const catalog=new Map(${catalog});if(Object.hasOwn(value,"set")&&typeof value.set==="string"&&catalog.has(value.set)){root.classList.remove(...catalog.values());root.classList.add(catalog.get(value.set))}const schemes=new Map(${schemes});if(Object.hasOwn(value,"colorScheme")){if(value.colorScheme===null){root.classList.remove(...schemes.values());root.style.removeProperty("color-scheme")}else if(schemes.has(value.colorScheme)){root.classList.remove(...schemes.values());root.classList.add(schemes.get(value.colorScheme));root.style.colorScheme=value.colorScheme}}}catch{}})();`
   }
 }
 
@@ -33,11 +33,11 @@ export declare namespace create {
 }
 
 /**
- * Binds root selection controls to compiled named theme classes.
+ * Binds root selection controls to compiled named set classes.
  * Creation touches no browser state; `get` and `set` read and write
  * `document.documentElement` and the record the initialization script restores.
  * @param entries - Catalog names paired with compiled scope classes.
- * @param options - Default theme reported without a root class and the storage key.
+ * @param options - Default set reported without a root class and the storage key.
  * @returns Controls reading the applied root selection and applying saved changes.
  * @throws {TypeError} If a named catalog receives no default or one outside its entries.
  */
@@ -49,24 +49,24 @@ export function root<const name extends string>(
   const key = options.storageKey ?? 'zyzz'
   const schemes = Object.entries(Scheme.classes) as [Scheme.Name, string][]
 
-  // Named catalogs always report a theme, so the fallback must be one of them.
+  // Named catalogs always report a set, so the fallback must be one of them.
   if (
     catalog.size &&
-    (options.defaultTheme === undefined || !catalog.has(options.defaultTheme))
+    (options.defaultVars === undefined || !catalog.has(options.defaultVars))
   )
-    throw new TypeError('defaultTheme must name a catalog theme.')
+    throw new TypeError('defaultVars must name a catalog set.')
 
   function get(): Selection<name> {
     const classes = document.documentElement.classList
-    const theme =
+    const set =
       [...catalog].find(([, className]) => classes.contains(className))?.[0] ??
-      options.defaultTheme
+      options.defaultVars
     const colorScheme = schemes.find(([, className]) =>
       classes.contains(className),
     )?.[0]
 
     return {
-      ...(theme === undefined ? {} : { theme }),
+      ...(set === undefined ? {} : { set }),
       ...(colorScheme === undefined ? {} : { colorScheme }),
     } as Selection<name>
   }
@@ -75,20 +75,20 @@ export function root<const name extends string>(
     const element = document.documentElement
     const next = { ...get(), ...selection } as {
       colorScheme?: Scheme.Name | undefined
-      theme?: string | undefined
+      set?: string | undefined
     }
     const scopeClass =
-      next.theme === undefined ? undefined : catalog.get(next.theme)
+      next.set === undefined ? undefined : catalog.get(next.set)
 
     // Rejected input leaves the document and the saved record untouched.
-    if (next.theme !== undefined && scopeClass === undefined)
-      throw new TypeError('Invalid theme selection.')
+    if (next.set !== undefined && scopeClass === undefined)
+      throw new TypeError('Invalid set selection.')
 
     if (
       next.colorScheme !== undefined &&
       !Object.hasOwn(Scheme.classes, next.colorScheme)
     )
-      throw new TypeError('Invalid theme selection.')
+      throw new TypeError('Invalid set selection.')
 
     element.classList.remove(
       ...catalog.values(),
@@ -105,7 +105,7 @@ export function root<const name extends string>(
     // The record mirrors the applied root, so a cleared scheme saves as null
     // and the script removes a server-rendered scheme on the next load.
     const record = {
-      ...(next.theme === undefined ? {} : { theme: next.theme }),
+      ...(next.set === undefined ? {} : { set: next.set }),
       colorScheme: next.colorScheme ?? null,
     }
 
@@ -124,7 +124,7 @@ export declare namespace root {
   /** Catalog defaults and storage settings. */
   type Options<name extends string = string> = {
     /** Theme reported by `get` when the root carries no catalog class; required with a named catalog. */
-    readonly defaultTheme?: NoInfer<name> | undefined
+    readonly defaultVars?: NoInfer<name> | undefined
     /** localStorage key shared with the initialization script; defaults to zyzz. */
     readonly storageKey?: string | undefined
   }
@@ -132,18 +132,18 @@ export declare namespace root {
 
 /** Live root selection controls. */
 export type Root<name extends string> = {
-  /** Reads the theme and scheme classes the root carries. */
+  /** Reads the set and scheme classes the root carries. */
   readonly get: () => Selection<name>
   /** Applies fields over the current selection and saves the result. */
   readonly set: (selection: Partial<Selection<name>>) => void
 }
 
-/** A catalog theme with an optional scheme; an omitted scheme inherits. Token-free and single-theme configurations select only a scheme. */
+/** A catalog set with an optional scheme; an omitted scheme inherits. Token-free and single-set configurations select only a scheme. */
 export type Selection<name extends string> = [name] extends [never]
   ? { readonly colorScheme?: Scheme.Name | undefined }
   : {
       readonly colorScheme?: Scheme.Name | undefined
-      readonly theme: name
+      readonly set: name
     }
 
 function serialize(value: unknown): string {

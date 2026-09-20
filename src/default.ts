@@ -596,8 +596,8 @@ export const tokens = {
 
 /** Default appearance, restoration script, and authoring helpers with bundled light/dark tokens. */
 // Generated from tokens by scripts/default-theme.ts; edit tokens and regenerate.
-export const { appearance, script, style, theme, variants } = Config.create({
-  theme: {
+const config = Config.create({
+  vars: {
     borderRadius: {
       xs: '0.125rem',
       sm: '0.25rem',
@@ -1175,3 +1175,22 @@ export const { appearance, script, style, theme, variants } = Config.create({
     },
   },
 })
+
+/** Default appearance helper. */
+export const appearance: Config.create.ReturnType<{
+  vars: typeof tokens
+}>['appearance'] = config.appearance
+/** Default script helper. */
+export const script: Config.create.ReturnType<{
+  vars: typeof tokens
+}>['script'] = config.script
+/** Default style helper. */
+export const style: Config.create.ReturnType<{ vars: typeof tokens }>['style'] =
+  config.style
+/** Default vars helper. */
+export const vars: Config.create.ReturnType<{ vars: typeof tokens }>['vars'] =
+  config.vars
+/** Default variants helper. */
+export const variants: Config.create.ReturnType<{
+  vars: typeof tokens
+}>['variants'] = config.variants

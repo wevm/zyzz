@@ -23,9 +23,9 @@ Compilation applies the base, selected axes in declaration order, and matching c
 
 Every axis includes a null choice that suppresses its default. Tables use mixed-radix indices with the first axis varying fastest and null following its declared choices. Compilation rejects more than 256 selections per theme and scheme before allocating tables. Identical outputs share immutable objects.
 
-`themes`, `units`, `fonts`, and `platform` follow `StyleSheet.compile`. Dynamic payloads and named conditions do not produce `staticRecipe` data. Selectors, queries, unsupported values, and missing platform inputs remain errors. Device rendering and host interoperability remain separate acceptance work.
+`vars`, `units`, `fonts`, and `platform` follow `StyleSheet.compile`. Dynamic payloads and named conditions do not produce `staticRecipe` data. Selectors, queries, unsupported values, and missing platform inputs remain errors. Device rendering and host interoperability remain separate acceptance work.
 
-Literal recipe axes, choices, defaults, and named theme keys are preserved in the compiled type. Omitting `themes` infers a single `default` table. Source-extracted recipes retain their broader metadata types.
+Literal recipe axes, choices, defaults, and named theme keys are preserved in the compiled type. Omitting `vars` infers a single `default` table. Source-extracted recipes retain their broader metadata types.
 
 ## API
 
@@ -72,16 +72,16 @@ The selection count is the product of each axis's choice count plus one for omis
 Variants.compile({ recipe: extracted.calls[0]!.staticRecipe! })
 ```
 
-### options.themes
+### options.vars
 
-Type: `Readonly<Record<themeName, Theme.Definition>>`. Optional.
+Type: `Readonly<Record<themeName, Vars.Definition>>`. Optional.
 
 Omission creates a `default` table using token fallbacks. Supplied theme labels become output keys. An empty map is invalid. Compatible theme definitions replace token values for each scheme. Unrelated token contracts retain their own fallbacks.
 
 ```ts
 Variants.compile({
   recipe,
-  themes: { base: theme, alternate: Theme.extend(theme, {}) },
+  vars: { base: theme, alternate: Vars.extend(theme, {}) },
 })
 ```
 

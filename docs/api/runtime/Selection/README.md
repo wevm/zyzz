@@ -4,21 +4,21 @@ Select compiler-owned theme classes and optional color-scheme props. A selected 
 
 ## create
 
-`Selection.create(entries, html?)` returns a selector and named catalog members.
+`Selection.create(entries, html?)` returns a scope selector.
 
 ```ts
 import { Selection } from 'zyzz/runtime'
 
-const themes = Selection.create([
+const vars = Selection.create([
   ['base', 'z-base'],
   ['mint', 'z-mint'],
 ])
-const props = themes({ theme: 'mint', colorScheme: 'dark' })
+const props = vars({ set: 'mint', colorScheme: 'dark' })
 ```
 
 ### entries
 
-Type: `readonly (readonly [string, string])[]`. Required compatible theme names paired with compiler-assigned scope classes. Names infer the selector's accepted `theme` values.
+Type: `readonly (readonly [string, string])[]`. Required compatible theme names paired with compiler-assigned scope classes. Names infer the selector's accepted `set` values.
 
 ```ts
 Selection.create([['base', 'z-base']])
@@ -29,20 +29,20 @@ Selection.create([['base', 'z-base']])
 Type: `boolean`. Optional; defaults to `false`. Selects HTML attributes with serialized CSS when true, or React props otherwise.
 
 ```ts
-const themes = Selection.create([['base', 'z-base']], true)
-themes({ theme: 'base', colorScheme: 'light dark' })
+const vars = Selection.create([['base', 'z-base']], true)
+vars({ set: 'base', colorScheme: 'light dark' })
 ```
 
 ## Returned Selector
 
-The callable accepts `{ theme, colorScheme? }`. Unknown theme names, option keys, and schemes throw `TypeError`.
+The callable accepts `{ set, colorScheme? }`. Unknown theme names, option keys, and schemes throw `TypeError`.
 
-### theme
+### set
 
 Type: an inferred catalog key. Required; selects one compiled scope.
 
 ```ts
-themes({ theme: 'base' })
+vars({ set: 'base' })
 ```
 
 ### colorScheme
@@ -50,16 +50,15 @@ themes({ theme: 'base' })
 Type: `'light' | 'dark' | 'light dark' | undefined`. Optional; omission adds no inline scheme declaration, preserving inheritance.
 
 ```ts
-themes({ theme: 'mint', colorScheme: 'dark' })
+vars({ set: 'mint', colorScheme: 'dark' })
 ```
 
 ### className
 
-Type: `string`. Present on React output and every named catalog member; contains the compiled scope class, followed by the scheme class when a scheme is selected.
+Type: `string`. Present on React output; contains the compiled scope class, followed by the scheme class when a scheme is selected.
 
 ```ts
-themes({ theme: 'mint' }).className
-themes.mint.className
+vars({ set: 'mint' }).className
 ```
 
 ### class
@@ -67,7 +66,7 @@ themes.mint.className
 Type: `string`. Replaces `className` on HTML selector output.
 
 ```ts
-Selection.create([['base', 'z-base']], true)({ theme: 'base' }).class
+Selection.create([['base', 'z-base']], true)({ set: 'base' }).class
 ```
 
 ### style
@@ -75,6 +74,6 @@ Selection.create([['base', 'z-base']], true)({ theme: 'base' }).class
 Type: `{ readonly colorScheme: 'light' | 'dark' | 'light dark' }` for React output, or `string` for HTML output. Omitted when no scheme is selected. The scheme class in `className` carries the same `color-scheme` in the stylesheet, which lowered `light-dark()` helpers require. HTML attribute escaping belongs to the renderer.
 
 ```ts
-themes({ theme: 'base', colorScheme: 'dark' }).style
+vars({ set: 'base', colorScheme: 'dark' }).style
 // { colorScheme: 'dark' }
 ```

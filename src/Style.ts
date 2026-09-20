@@ -2,6 +2,8 @@
  * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
+import * as VariableSets from './internal/VariableSets.js'
+import type * as Vars from './Vars.js'
 import * as Condition from './internal/Condition.js'
 import * as Query from './internal/Query.js'
 import * as Binding from './internal/Binding.js'
@@ -9,7 +11,7 @@ import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Typography from './internal/Typography.js'
 import * as Value from './internal/Value.js'
-import type * as Theme from './Theme.js'
+import type * as Theme from './internal/Theme.js'
 import * as Targets from './internal/Targets.js'
 
 /** Validates only authored keys, recursively retaining nested token inference. */
@@ -26,7 +28,7 @@ export type Accepted<
     | 'selectors'
     | 'targets'
     | 'typography'
-    | 'variables'
+    | 'vars'
   >,
   never
 > &
@@ -47,7 +49,7 @@ export type Accepted<
                     : never
                 }
               : never
-            : key extends 'variables'
+            : key extends 'vars'
               ? style[key] extends Record<string, unknown>
                 ? {
                     [name in keyof style[key]]: style[key][name] extends
@@ -173,6 +175,22 @@ export type Declaration = {
  * @throws {InvalidError} If the input structure cannot represent ordered declarations.
  */
 export function define<
+  const values extends Vars.Values,
+  const styles extends Record<string, unknown>,
+>(
+  styles: styles &
+    NoInfer<Exact<styles, Vars.Mapped<values, {}>>> & {
+      [key in keyof styles]: WithoutRelationships<styles[key]>
+    },
+  options: {
+    readonly vars: Vars.Definition<values>
+    readonly locations?: readonly SourceLocation[]
+  },
+): Definition<
+  `${Extract<keyof styles, string | number>}`,
+  Targets.Domains<styles>
+>
+export function define<
   const styles extends Record<string, unknown>,
   const tokens extends Theme.Tokens,
 >(
@@ -199,6 +217,11 @@ export function define(
   styles: Record<string, unknown>,
   options: define.Options = {},
 ): Definition {
+  const theme =
+    options.vars &&
+    (typeof Reflect.get(options.vars, 'style') === 'function'
+      ? (options.vars as Theme.Definition)
+      : VariableSets.theme(options.vars as Vars.Definition))
   if ((options[nesting] ?? 0) > 128)
     throw new InvalidError([
       {
@@ -303,7 +326,7 @@ export function define(
     if (name.length === 0)
       report('invalid_structure', [name], 'Style names must not be empty.')
 
-    const mappings = options.theme?.[Token.definition].contract.shorthands
+    const mappings = theme?.[Token.definition].contract.shorthands
     const authored = entries(style, [name]).filter(
       ([key, value]) => key !== 'targets' || value !== undefined,
     )
@@ -392,7 +415,7 @@ export function define(
         }
 
         const path = parsed?.value ?? input
-        const entries = Typography.entries(options.theme, path)
+        const entries = Typography.entries(theme, path)
         if (!entries.length) {
           report(
             'invalid_value',
@@ -406,12 +429,9 @@ export function define(
         const explicit = new Set(
           authored.flatMap(([property]) => mappings?.[property] ?? [property]),
         )
-        return Typography.entries(
-          options.theme,
-          path,
-          explicit,
-          parsed?.important,
-        ).map(([field, value]) => [field, value, property] as const)
+        return Typography.entries(theme, path, explicit, parsed?.important).map(
+          ([field, value]) => [field, value, property] as const,
+        )
       },
     )
 
@@ -431,7 +451,7 @@ export function define(
           const condition = Condition.is(key)
             ? Query.resolve(
                 key,
-                options.theme?.[Token.definition].queries ?? {
+                theme?.[Token.definition].queries ?? {
                   breakpoints: {},
                   containers: {},
                   containerNames: [],
@@ -588,7 +608,7 @@ export function define(
         const scalar = parsed ? parsed.value : entry
 
         const resolved = (() => {
-          if (!options.theme) return scalar
+          if (!theme) return scalar
 
           if (typeof scalar !== 'string' && typeof scalar !== 'number')
             return scalar
@@ -598,7 +618,7 @@ export function define(
 
           const resolved = Token.resolve(scalar, {
             property: key,
-            theme: options.theme,
+            theme,
           })
 
           if (Token.is(resolved)) {
@@ -611,6 +631,19 @@ export function define(
 
           return resolved
         })()
+
+        if (
+          Token.is(resolved) &&
+          resolved.contract.variableSet &&
+          !Token.acceptsReference(resolved, key)
+        ) {
+          report(
+            'invalid_value',
+            [name, authoredProperty],
+            'Variable value is incompatible with this property.',
+          )
+          continue
+        }
 
         const value = parsed && resolved === '0' ? 0 : resolved
 
@@ -654,11 +687,11 @@ export declare namespace define {
   } & ([tokens] extends [never]
     ? {
         /** Optional themes do not enable shorthand inference. */
-        readonly theme?: Theme.Definition | undefined
+        readonly vars?: Theme.Definition | Vars.Definition | undefined
       }
     : {
         /** Shorthand inference requires a defined token contract. */
-        readonly theme: Theme.Definition<tokens>
+        readonly vars: Theme.Definition<tokens>
       })
 }
 
@@ -794,7 +827,7 @@ type WithoutRelationships<value> = value extends readonly unknown[]
   ? unknown
   : value extends object
     ? {
-        [key in keyof value]: key extends symbol | 'selectors' | 'variables'
+        [key in keyof value]: key extends symbol | 'selectors' | 'vars'
           ? never
           : key extends keyof Literal.Properties
             ? unknown

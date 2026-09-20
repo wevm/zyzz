@@ -19,7 +19,7 @@ describe('zyzz', () => {
         const { style } = Config.create({ cssOutput: '${cssOutput}' });
         const accent = variable('color', { id: 'vite-accent' });
         const card = style({ color: accent, padding: '8px' });
-        const props = card({ variables: accent.set('red') }); Object.assign(globalThis, { fixture: { props } });`,
+        const props = card({ vars: accent.set('red') }); Object.assign(globalThis, { fixture: { props } });`,
         )
         const page = await browser.newPage()
         for (const compiler of [false, true]) {

@@ -3,7 +3,7 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import type { Style, Theme } from 'zyzz'
+import type { Style } from 'zyzz'
 import { Source } from 'zyzz/compiler'
 
 describe('extract', () => {
@@ -12,12 +12,12 @@ describe('extract', () => {
 
     expectTypeOf(result.styles).toEqualTypeOf<Style.Definition>()
     expectTypeOf(result.calls).toEqualTypeOf<readonly Source.Call[]>()
-    expectTypeOf(result.themes).toEqualTypeOf<
-      Readonly<Record<string, Theme.Definition>>
+    expectTypeOf(result.vars).toEqualTypeOf<
+      Readonly<Record<string, import('../internal/Theme.js').Definition>>
     >()
 
     // @ts-expect-error Extracted scope maps are readonly.
-    result.themes.extra = result.themes.existing!
+    result.vars.extra = result.vars.existing!
     // @ts-expect-error A portable host module ID is required.
     Source.extract({ source: '' })
     // @ts-expect-error Call-site metadata is immutable.

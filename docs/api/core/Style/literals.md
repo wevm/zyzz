@@ -100,7 +100,7 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 ```ts
 import { Config } from 'zyzz'
 
-const { style } = Config.create({ theme: { spacing: { header: '4rem' } } })
+const { style } = Config.create({ vars: { spacing: { header: '4rem' } } })
 namespace styles {
   export const scroller = style({
     overflow: 'auto',
@@ -214,7 +214,7 @@ namespace styles {
 
 [Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
 
-Hyphenation dictionaries and language-sensitive casing remain browser-owned. Indentation modifiers, custom overflow strings, extended transformation keywords, whitespace longhands, font families, and native text conversion remain deferred. Composite typography sets are documented under [Theme.define](../Theme/define.md#tokenstypography).
+Hyphenation dictionaries and language-sensitive casing remain browser-owned. Indentation modifiers, custom overflow strings, extended transformation keywords, whitespace longhands, font families, and native text conversion remain deferred. Composite typography sets are documented under [Vars.define](../Vars/README.md#tokenstypography).
 
 ## Intrinsic Sizing
 
@@ -235,7 +235,7 @@ style({
 | Maximum dimensions               | `none`, `fit-content`, `min-content`, `max-content`            |
 | `flexBasis`                      | `auto`, `content`, `fit-content`, `min-content`, `max-content` |
 
-Valid CSS keywords precede same-named theme tokens. An explicit `theme.tokens.spacing['min-content']` reference still selects that token's length. Theme spacing values remain lengths; keywords are not accepted as padding or margin values. Function forms such as `fit-content(20rem)`, `stretch`, and native intrinsic sizing remain deferred.
+Valid CSS keywords precede same-named theme tokens. An explicit `vars.spacing['min-content']` reference still selects that token's length. Theme spacing values remain lengths; keywords are not accepted as padding or margin values. Function forms such as `fit-content(20rem)`, `stretch`, and native intrinsic sizing remain deferred.
 
 ## Borders and Outlines
 
@@ -317,7 +317,7 @@ Nonempty arrays emit repeated declarations in authored order. Each entry is inde
 
 The space and lowercase suffix are required. Bare `!`, unspaced `!important`, and alternate keyword spellings are rejected.
 
-Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md !important` from naming both a token and an important `md` declaration. `Theme.define` and inline Config themes reject these keys in types and runtime validation.
+Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md !important` from naming both a token and an important `md` declaration. `Vars.define` and inline Config themes reject these keys in types and runtime validation.
 
 Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5 !important'` or `'0 !important'`. Empty, sparse, and accessor-backed fallbacks fail structurally. Value validity is checked statically. Quoted image URLs retain their contents when a trailing importance marker is separated.
 
@@ -500,7 +500,7 @@ Tab sizes are nonnegative safe integers. Custom counter styles/strings, length-b
 
 ## Color Keywords
 
-All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Absolute rgb()/rgba(), hsl()/hsla(), hwb(), lab()/lch(), oklab()/oklch(), and predefined color() spaces accept finite literal channels, alpha, and modern none components. Legacy separators retain their restrictions. Relative colors, nested functions, comments, and escaped spellings remain deferred.
+All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit vars references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Absolute rgb()/rgba(), hsl()/hsla(), hwb(), lab()/lch(), oklab()/oklch(), and predefined color() spaces accept finite literal channels, alpha, and modern none components. Legacy separators retain their restrictions. Relative colors, nested functions, comments, and escaped spellings remain deferred.
 
 ## Container and Field Sizing
 

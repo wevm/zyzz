@@ -1,3 +1,4 @@
+import { Vars } from 'zyzz'
 /**
  * Measures pure theme emission and stylesheet sizes before final processing.
  * @module
@@ -5,23 +6,23 @@
 import * as Fs from 'node:fs/promises'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 for (const count of [10, 100]) {
-  const theme = Theme.define({
+  const theme = Vars.define({
     color: { brand: { dark: '#fff', light: '#000' } },
     spacing: { md: '8px' },
   })
-  const alternate = Theme.extend(theme, { spacing: { md: '16px' } })
+  const alternate = Vars.extend(theme, { spacing: { md: '16px' } })
 
   const styles = Style.define(
     Object.fromEntries(
       Array.from({ length: count }, (_, index) => [
         `card-${index}`,
         {
-          color: theme.tokens.color.brand,
-          padding: theme.tokens.spacing.md,
+          color: theme.color.brand,
+          padding: theme.spacing.md,
           width: `${index}px` as const,
         },
       ]),
@@ -32,7 +33,7 @@ for (const count of [10, 100]) {
     composition: 'independent',
     cssOutput: 'grouped',
     styles,
-    themes: { alternate, base: theme },
+    vars: { alternate, base: theme },
   })
 
   await Fs.mkdir('bench/results/themes', { recursive: true })
@@ -51,7 +52,7 @@ for (const count of [10, 100]) {
         composition: 'independent',
         cssOutput: 'grouped',
         styles,
-        themes: { alternate, base: theme },
+        vars: { alternate, base: theme },
       })
     })
   })

@@ -1,5 +1,5 @@
 /** Supplies editor hints independently of inferred declaration validation. @module */
-import type * as Theme from '../Theme.js'
+import type * as Theme from './Theme.js'
 import type * as Condition from './Condition.js'
 import type * as Literal from './Literal.js'
 import type * as Token from './Token.js'
@@ -37,6 +37,6 @@ export type Properties<
     keyof styles]?: Typography.Names<tokens> | (string & {})
 }
 
-// Inferred validation checks extra fields, including variables and configured shorthands.
+// Inferred validation checks extra fields, including vars and configured shorthands.
 type Nested<tokens extends Theme.Tokens> = Properties<tokens> &
   Readonly<Record<string, unknown>>

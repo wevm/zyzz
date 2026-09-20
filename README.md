@@ -202,7 +202,7 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `theme`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Scales use conventional named steps, and colors ship as light/dark pairs.
+The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `vars`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Scales use conventional named steps, and colors ship as light/dark pairs.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -212,15 +212,15 @@ namespace styles {
 }
 ```
 
-Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to override existing tokens while retaining all other values and the same token contract.
+Extend the default theme with [`Vars.extend`](docs/api/core/Vars/README.md) to override existing tokens while retaining all other values and the same token contract.
 
 ```ts
 // zyzz.config.ts
-import { Config, Theme } from 'zyzz'
-import { theme as defaultTheme } from 'zyzz/default'
+import { Config, Vars } from 'zyzz'
+import { vars as defaultVars } from 'zyzz/default'
 
-export const { style, theme, variants } = Config.create({
-  theme: Theme.extend(defaultTheme, {
+export const { style, vars, variants } = Config.create({
+  vars: Vars.extend(defaultVars, {
     color: { blue: { 700: '#175' } },
   }),
 })
@@ -242,8 +242,8 @@ Export named config helpers with an application's own tokens. Colors accept a sh
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { style, theme, variants } = Config.create({
-  theme: {
+export const { style, vars, variants } = Config.create({
+  vars: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
   },
@@ -258,14 +258,14 @@ namespace styles {
 }
 ```
 
-Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
+Use [`Vars.define`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
 ### Color Schemes (Light/Dark Mode)
 
 Apply the theme to `<html>` and select a color scheme through its callable props:
 
 ```tsx
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const card = style({ color: 'text', padding: 'sm' })
@@ -273,7 +273,7 @@ namespace styles {
 
 export function Document() {
   return (
-    <html {...theme({ colorScheme: 'light dark' })}>
+    <html {...vars({ colorScheme: 'light dark' })}>
       <head>
         <title>My App</title>
       </head>
@@ -285,11 +285,11 @@ export function Document() {
 }
 ```
 
-The theme returns its generated `className`, including a compiled scheme class, and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `themes({ theme: 'mint', colorScheme: 'dark' })`.
+The theme returns its generated `className`, including a compiled scheme class, and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `vars({ set: 'mint', colorScheme: 'dark' })`.
 
 Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
 
-For saved preferences, `script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint, and `appearance.set({ theme: 'mint', colorScheme: 'dark' })` applies and saves a change from the client. System preference needs no script or provider.
+For saved preferences, `script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint, and `appearance.set({ set: 'mint', colorScheme: 'dark' })` applies and saves a change from the client. System preference needs no script or provider.
 
 ### Variants
 
@@ -321,7 +321,7 @@ const example = <Button size="sm" />
 
 ### Dynamic Styles
 
-Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style`/`variables` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
+Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style`/`vars` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
 import { style } from 'zyzz'
@@ -347,24 +347,24 @@ export function Bar() {
 
 ### Value Syntax
 
-Use the suffix ` !important` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
+Use the suffix ` !important` for importance and arrays for ordered fallbacks. `vars` provides typed references for declarations and CSS expressions.
 
 ```ts
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const panel = style({
     display: ['block', 'grid'],
     color: 'brand !important',
-    borderColor: theme.vars.color.brand,
-    width: `calc(100% - ${theme.vars.spacing.md})`,
+    borderColor: vars.color.brand,
+    width: `calc(100% - ${vars.spacing.md})`,
   })
 }
 ```
 
 ### Composition
 
-Prefer state attributes for conditional styling. Calls accept `className`, `style`, and `variables` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
+Prefer state attributes for conditional styling. Calls accept `className`, `style`, and `vars` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
 import { cx, style } from 'zyzz'

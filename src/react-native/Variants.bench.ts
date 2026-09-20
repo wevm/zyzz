@@ -1,13 +1,14 @@
+import { Vars } from 'zyzz'
 /** Measures bounded native recipe compilation through source extraction and themed tables. @module */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import { bench, describe } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { Source } from 'zyzz/compiler'
 import { Variants } from 'zyzz/react-native'
 
-const base = Theme.define({ color: { ink: { dark: '#fff', light: '#000' } } })
-const alternate = Theme.extend(base, {
+const base = Vars.define({ color: { ink: { dark: '#fff', light: '#000' } } })
+const alternate = Vars.extend(base, {
   color: { ink: { dark: '#ddd', light: '#222' } },
 })
 const axes = {
@@ -71,15 +72,15 @@ for (const [label, variants] of [
       rules: [
         {
           matches: [],
-          value: Style.define({ text: { color: base.tokens.color.ink } }),
+          value: Style.define({ text: { color: base.color.ink } }),
         },
         ...recipe.rules,
       ],
     },
-    themes: { alternate, base },
+    vars: { alternate, base },
   } as const
 
-  describe(`native variants / ${label} / 2 themes / 2 schemes`, () => {
+  describe(`native variants / ${label} / 2 vars / 2 schemes`, () => {
     bench(
       'compile',
       () => {
@@ -101,8 +102,8 @@ for (const [label, variants] of [
         setup: async () => {
           if (label === '512 selections rejected') return
           const output = Variants.compile(options)
-          const tables = Object.values(output.styles).flatMap((theme) =>
-            Object.values(theme).flatMap(Object.values),
+          const tables = Object.values(output.styles).flatMap((set) =>
+            Object.values(set).flatMap(Object.values),
           )
           const directory = Path.resolve('bench/results/native-variants')
           await Fs.mkdir(directory, { recursive: true })

@@ -28,7 +28,7 @@ export function create<
     'highContrast',
     'reducedMotion',
     'rtl',
-    'theme',
+    'set',
   ] as const
   const bindings = new Set<(context: Snapshot) => () => void>()
   const listeners = new Set<(context: Snapshot) => void>()
@@ -45,8 +45,8 @@ export function create<
         (key) => !keys.includes(key as (typeof keys)[number]),
       ) ||
       (values.colorScheme !== 'light' && values.colorScheme !== 'dark') ||
-      typeof values.theme !== 'string' ||
-      !values.theme.trim() ||
+      typeof values.set !== 'string' ||
+      !values.set.trim() ||
       typeof values.density !== 'number' ||
       !Number.isFinite(values.density) ||
       values.density <= 0 ||
@@ -58,7 +58,7 @@ export function create<
       typeof values.rtl !== 'boolean'
     )
       throw new InputError(
-        'Provide a theme, resolved scheme, positive finite scales, and boolean accessibility inputs.',
+        'Provide a set, resolved scheme, positive finite scales, and boolean accessibility inputs.',
       )
     const hairlineWidth =
       Math.round(0.4 * values.density) / values.density || 1 / values.density
@@ -265,8 +265,8 @@ export type Inputs = {
   readonly reducedMotion: boolean
   /** Whether layout follows a right-to-left direction. */
   readonly rtl: boolean
-  /** Compiled theme label selected by binding factories. */
-  readonly theme: string
+  /** Compiled set label selected by binding factories. */
+  readonly set: string
 }
 
 /** An operation attempted to change a disposed or currently updating host. */

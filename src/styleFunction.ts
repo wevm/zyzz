@@ -16,10 +16,10 @@ type InlineProperties<properties extends string> = {
 }
 
 type VariableOptions<input> = input extends {
-  readonly variables: infer variables
+  readonly vars: infer variables
 }
   ? {
-      readonly variables: {
+      readonly vars: {
         readonly [key in keyof variables]: string extends key
           ? variables[key]
           : key extends `--${string}`
@@ -99,7 +99,7 @@ export declare namespace style {
               | InlineProperties<keyof Literal.Properties>)
       | undefined
     /** Inline custom-property assignments, merged before explicit style overrides. */
-    readonly variables?:
+    readonly vars?:
       | Readonly<Record<`--${string}`, string | number | undefined>>
       | undefined
   }

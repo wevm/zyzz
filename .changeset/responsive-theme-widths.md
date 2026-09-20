@@ -8,7 +8,7 @@ Added border-width tokens and responsive typography sets with media and containe
 import { Config } from 'zyzz'
 
 const { style } = Config.create({
-  theme: {
+  vars: {
     borderWidth: { regular: '1px' },
     breakpoints: { tablet: '48rem' },
     typography: {

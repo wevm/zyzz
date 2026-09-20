@@ -9,15 +9,15 @@ Compile shared definitions and select native theme tables. Begin with [Getting S
 Compile shared definitions into native tables, then select a theme and color scheme before rendering.
 
 ```ts
-import { Style, Theme } from 'zyzz'
+import { Style, Vars } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
-const theme = Theme.define({ color: { text: { dark: '#eee', light: '#111' } } })
-const styles = Style.define({ text: { color: theme.tokens.color.text } })
-const output = StyleSheet.compile({ styles, themes: { base: theme } })
+const theme = Vars.define({ color: { text: { dark: '#eee', light: '#111' } } })
+const styles = Style.define({ text: { color: theme.color.text } })
+const output = StyleSheet.compile({ styles, vars: { base: theme } })
 const selected = StyleSheet.select(output.styles, {
   colorScheme: 'dark',
-  theme: 'base',
+  set: 'base',
 })
 ```
 

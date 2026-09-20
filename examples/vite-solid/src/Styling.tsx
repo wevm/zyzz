@@ -1,7 +1,7 @@
 /** @jsxImportSource solid-js */
 /** Demonstrates literal reuse, states, fallbacks, and styling overrides. @module */
 import { createSignal } from 'solid-js'
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const button = style({
@@ -32,8 +32,8 @@ namespace styles {
   export const label = style({
     ...shape,
     border: '1px solid',
-    borderColor: theme.vars.color.accent,
-    color: theme.tokens.color.accent,
+    borderColor: vars.color.accent,
+    color: vars.color.accent,
     display: ['block', 'inline-flex'],
     fontWeight: '600 !important',
   })

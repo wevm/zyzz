@@ -64,7 +64,7 @@ export function read(
         'key',
         'ref',
         'style',
-        'variables',
+        'vars',
         '__proto__',
       ].includes(key) ||
       Object.hasOwn(slots, key)

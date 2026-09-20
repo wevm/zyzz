@@ -1,6 +1,6 @@
 # Default config
 
-The opt-in `zyzz/default` entrypoint exports `appearance`, `script`, `style`, `theme`, and `variants` from a default `Config.create` configuration, plus raw `tokens`. Vite and Next.js consume its packed compiler contract. Core imports do not load the bundled data.
+The opt-in `zyzz/default` entrypoint exports `appearance`, `script`, `style`, `vars`, and `variants` from a default `Config.create` configuration, plus raw `tokens`. Vite and Next.js consume its packed compiler contract. Core imports do not load the bundled data.
 
 ```ts
 import { style, variants } from 'zyzz/default'
@@ -34,7 +34,7 @@ Color steps switch with the ordinary color-scheme contract. Steps whose values m
 
 Fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Shadows, blur, easing, animation, and perspective are outside the theme contract and are not bundled. `sans` and `mono` lead with the bundled faces before system stacks, and `serif` is a system stack.
 
-Third-party scale data retains its MIT notice under `src/themes/`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
+Third-party scale data retains its MIT notice under `src/themes/`. Raw `tokens` are independent of `vars` references.
 
 Themes can also define `breakpoints`, `containers`, and `containerNames`. These are compile-time query metadata, excluded from declaration references and emitted CSS variables. Thresholds use fixed nonnegative CSS lengths, with relative units preserved. Extensions may change existing thresholds; runtime theme scope changes do not change compiled thresholds. Nested condition authoring resolves aliases from these groups, including comparison and range forms.
 
@@ -81,11 +81,11 @@ Explicit typography fields in the same block override preset fields regardless o
 
 Variants are complete sets, such as `copy.14.strong`. They change typography only. Geist's descendant colors, capitalization, and tabular-number treatments remain explicit style declarations. No descendant selectors or font loading are installed.
 
-Individual fields remain available through `theme.tokens.typography.heading[32].fontSize` and `theme.vars.typography.heading[32].fontSize`. [Theme.extend](./core/Theme/extend.md) overrides existing fields while preserving inherited theme references.
+Individual fields remain available through `vars.typography.heading[32].fontSize`. [Vars.extend](./core/Vars/README.md) overrides existing fields while preserving inherited theme references.
 
 ### Signature
 
-Signature: `theme.style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](./core/style.md) apply; untransformed execution throws `style.MissingTransformError`.
+Signature: `style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](./core/style.md) apply; untransformed execution throws `style.MissingTransformError`.
 
 ```ts
 const card = style({ padding: 4 })
@@ -94,24 +94,24 @@ card({ className: 'external' })
 
 ## variants
 
-Signature: `theme.variants(definition)`. Accepts base styles, ordered axes, defaults, compounds, named conditions, and typed dynamic choices. Returns a recipe callable with inferred selections and styling overrides. See [variants parameters, returns, and errors](./core/variants.md). Authoring requires compilation; runtime selection performs no validation.
+Signature: `variants(definition)`. Accepts base styles, ordered axes, defaults, compounds, named conditions, and typed dynamic choices. Returns a recipe callable with inferred selections and styling overrides. See [variants parameters, returns, and errors](./core/variants.md). Authoring requires compilation; runtime selection performs no validation.
 
 ```ts
 const button = variants({ variants: { size: { sm: { padding: 2 } } } })
 button({ size: 'sm' })
 ```
 
-## theme
+## vars
 
-Type: the inferred single-theme `Config.Handle` for the bundled tokens. Exposes the compiled `className`, bound `style` and `variants`, token references, and variable references. It takes no parameters. The [Theme return properties](./core/Theme/define.md#returns) describe each member. Apply its class to an ancestor of token-consuming styles.
+The callable reference tree from the default configuration. Use `vars.color.blue[700]` for an explicit reference, and call `vars({ colorScheme: 'dark' })` to apply its scope. The default configuration has one set, so it accepts no `set` option.
 
 ```tsx
-<section className={theme.className}>Content</section>
+<section {...vars({ colorScheme: 'dark' })}>Content</section>
 ```
 
 ## tokens
 
-Type: the literal bundled token record. It takes no parameters and contains raw values and query metadata; reading it has no authoring error. `theme.tokens` carries portable references and `theme.vars` carries variable references instead.
+Type: the literal bundled token record. It takes no parameters and contains raw values and query metadata; reading it has no authoring error. `vars` carries typed references.
 
 ```ts
 const color = tokens.color.blue[700]

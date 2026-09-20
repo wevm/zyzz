@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { variable } from 'zyzz'
+
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('variable', () => {
@@ -23,13 +24,13 @@ export namespace variables {
   export const gap = variable('length', {inherits: true, initialValue: '4px'})
 }
 export namespace styles {
-  export const card = style({variables: {[variables.accent]: 'tomato', [variables.gap]: '12px'}})
+  export const card = style({vars: {[variables.accent]: 'tomato', [variables.gap]: '12px'}})
   export const label = style({
     color: variables.accent,
     padding: variables.gap,
     selectors: {
       '&:nth-child(even)': {opacity: 0.5},
-      [\`\${card}[data-open] &\`]: {variables: {[variables.accent]: 'purple'}},
+      [\`\${card}[data-open] &\`]: {vars: {[variables.accent]: 'purple'}},
     },
   })
 }`
@@ -163,7 +164,7 @@ export namespace styles {
         contracts: publisher.contracts,
         imports: { 'app.ts': { './values.js': 'values.ts', zyzz: null } },
         modules: {
-          'app.ts': `import {style} from 'zyzz'; import {value} from './values.js'; export const card=style({variables:{[value]:'inline-flex'},display:value,selectors:{'&:hover':{display:value}}}); export {value}`,
+          'app.ts': `import {style} from 'zyzz'; import {value} from './values.js'; export const card=style({vars:{[value]:'inline-flex'},display:value,selectors:{'&:hover':{display:value}}}); export {value}`,
         },
       })
 
@@ -210,7 +211,7 @@ export namespace styles {
         ).toMatchInlineSnapshot(`"inline-flex"`)
 
         await page.evaluate(`{
-        for (const [key,value] of Object.entries(Fixture.card({variables:{[Fixture.value]:'grid'}}).style))
+        for (const [key,value] of Object.entries(Fixture.card({vars:{[Fixture.value]:'grid'}}).style))
           document.querySelector('div').style.setProperty(key,value);
       }`)
 
@@ -235,7 +236,7 @@ export namespace styles {
         contracts: publisher.contracts,
         imports: { 'app.ts': { './barrel.js': 'lib/barrel.ts', zyzz: null } },
         modules: {
-          'app.ts': `import {style} from 'zyzz'; import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=style({variables:{[accent]:'blue'},color:accent,selectors:{[\`\${styles.card}:hover &\`]:{variables:{[accent]:'green'}}}}); export const inline=accent.set('red')`,
+          'app.ts': `import {style} from 'zyzz'; import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=style({vars:{[accent]:'blue'},color:accent,selectors:{[\`\${styles.card}:hover &\`]:{vars:{[accent]:'green'}}}}); export const inline=accent.set('red')`,
         },
       })
 
@@ -263,7 +264,7 @@ export namespace styles {
           source: `import {style,variable} from 'zyzz'; style({color:accent});const accent=variable('color')`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:50: Variables must be declared before use.]`,
+        `[Source.ExtractError: invalid.ts:50: Vars must be declared before use.]`,
       )
       expect(() =>
         Transform.compile({
@@ -271,7 +272,7 @@ export namespace styles {
           source: `import {style,variable} from 'zyzz'; style({color:variables.accent});namespace variables {export const accent=variable('color')}`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:50: Variables must be declared before use.]`,
+        `[Source.ExtractError: invalid.ts:50: Vars must be declared before use.]`,
       )
       expect(() =>
         Transform.compile({
@@ -284,18 +285,18 @@ export namespace styles {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {style} from 'zyzz';style({variables:{accent:'red'}})`,
+          source: `import {style} from 'zyzz';style({vars:{accent:'red'}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:45: Variable assignments require declared variable keys.]`,
+        `[Source.ExtractError: invalid.ts:40: Variable assignments require declared variable keys.]`,
       )
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {style,variable} from 'zyzz'; const accent=variable('color'); style({variables:{[accent]:{color:'red'}}})`,
+          source: `import {style,variable} from 'zyzz'; const accent=variable('color'); style({vars:{[accent]:{color:'red'}}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:96: Expected a literal string or number; expressions are not evaluated.]`,
+        `[Source.ExtractError: invalid.ts:91: Expected a literal string or number; expressions are not evaluated.]`,
       )
       expect(() =>
         Transform.compile({
@@ -390,7 +391,7 @@ export namespace styles {
         )
         await page.evaluate(`{
         const [first]=document.querySelectorAll('span');
-        const props=Fixture.styles.label({variables:{[Fixture.variables.accent]:'blue'}});
+        const props=Fixture.styles.label({vars:{[Fixture.variables.accent]:'blue'}});
         for(const [key,value]of Object.entries(props.style))first.style.setProperty(key,value);
       }`)
         expect(await read()).toMatchInlineSnapshot(`

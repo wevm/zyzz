@@ -1,3 +1,4 @@
+import { Config } from 'zyzz'
 /**
  * Measures type instantiations contributed by public root style authoring.
  * @module
@@ -8,12 +9,12 @@ import type * as Zyzz from 'zyzz'
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
 declare const style: typeof Zyzz.style
-declare const Theme: typeof Zyzz.Theme
+declare const Vars: typeof Zyzz.Vars
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
   style({ color: '#000' })
-  Theme.define({ color: { base: '#000' } })
+  Vars.define({ color: { base: '#000' } })
 }
 
 bench('style / literal declarations', () => {
@@ -66,15 +67,16 @@ bench('style / applied overrides', () => {
 }).types([10656, 'instantiations'])
 
 bench('style / bound theme tokens', () => {
-  const theme = Theme.define({
+  const theme = Vars.define({
     color: { brand: '#06c', ink: { dark: '#fff', light: '#000' } },
     spacing: { 4: '1rem', md: '8px' },
   })
+  const themeConfig = Config.create({ vars: theme })
 
-  theme.style({
+  themeConfig.style({
     ':hover': { color: 'brand' },
     color: 'ink',
     padding: ['md', '2px !important'],
-    width: theme.tokens.spacing[4],
+    width: theme.spacing[4],
   })
 }).types([64207, 'instantiations'])

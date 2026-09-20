@@ -13,7 +13,8 @@ import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Tailwind from 'tailwindcss'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
+import * as Theme from '../src/internal/Theme.js'
 import { Css } from 'zyzz/web'
 import * as Compilation from './Compilation.js'
 
@@ -111,7 +112,7 @@ export const themes={alternate:stylex.props(alternate),base:stylex.props(base)};
 
     await Fs.writeFile(
       Path.join(directory, 'panda.config.ts'),
-      `export default ${JSON.stringify({ include: ['./panda.ts'], outdir: 'styled-system', preflight: false, presets: ['@pandacss/preset-base'], staticCss: { themes: ['*'] }, theme: pandaTheme(base), themes: { alternate: pandaTheme(alternate), base: pandaTheme(base) } })}`,
+      `export default ${JSON.stringify({ include: ['./panda.ts'], outdir: 'styled-system', preflight: false, presets: ['@pandacss/preset-base'], staticCss: { themes: ['*'] }, vars: pandaTheme(base), themes: { alternate: pandaTheme(alternate), base: pandaTheme(base) } })}`,
     )
     await Fs.writeFile(
       Path.join(directory, 'panda.ts'),
@@ -348,11 +349,11 @@ export async function zyzz(fixture: Fixture): Promise<Compilation.Bundle> {
     cssOutput: 'grouped',
     composition: 'independent',
     styles: fixture.zyzz,
-    themes: fixture.themes,
+    vars: fixture.themes,
   })
 
   const themes = Object.fromEntries(
-    Object.entries(output.themes).map(([name, className]) => [
+    Object.entries(output.vars).map(([name, className]) => [
       name,
       { className },
     ]),
@@ -372,6 +373,6 @@ export async function zyzzTokens(
 ): Promise<Compilation.Bundle> {
   return zyzz({
     ...fixture,
-    zyzz: Style.define(fixture.zyzzTokens, { theme: fixture.themes.base }),
+    zyzz: Style.define(fixture.zyzzTokens, { vars: fixture.themes.base }),
   })
 }

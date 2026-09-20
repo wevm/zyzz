@@ -9,7 +9,8 @@ import * as Worker from 'node:worker_threads'
 import { chromium } from 'playwright'
 import { getQuickJS } from 'quickjs-emscripten'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
+import * as Theme from './internal/Theme.js'
 import { Css } from 'zyzz/web'
 import { components } from '../test/fixtures/components.js'
 
@@ -138,7 +139,7 @@ describe('define', () => {
         },
         link: { color: 'blue.500' },
       },
-      { theme },
+      { vars: theme },
     )
 
     const explicit = Style.define({
@@ -155,7 +156,7 @@ describe('define', () => {
     const alternate = Theme.extend(theme, { spacing: { 4: '2rem' } })
     const output = Css.compile({
       styles: named,
-      themes: { alternate, base: theme },
+      vars: { alternate, base: theme },
     })
 
     expect(output.css).toMatchInlineSnapshot(`
@@ -170,8 +171,7 @@ describe('define', () => {
     `)
     expect(
       output.css ===
-        Css.compile({ styles: explicit, themes: { alternate, base: theme } })
-          .css,
+        Css.compile({ styles: explicit, vars: { alternate, base: theme } }).css,
     ).toMatchInlineSnapshot('true')
   })
 
@@ -185,7 +185,7 @@ describe('define', () => {
       Theme.define({ color: { brand: 'red' }, spacing: { brand: '4px' } }),
       Theme.define({ color: { brand: 'blue' }, spacing: { brand: '8px' } }),
     ]) {
-      const named = Style.define(styles, { theme })
+      const named = Style.define(styles, { vars: theme })
 
       const explicit = Style.define({
         first: {
@@ -201,8 +201,8 @@ describe('define', () => {
       })
 
       expect(
-        Css.compile({ styles: named, themes: { base: theme } }).css ===
-          Css.compile({ styles: explicit, themes: { base: theme } }).css,
+        Css.compile({ styles: named, vars: { base: theme } }).css ===
+          Css.compile({ styles: explicit, vars: { base: theme } }).css,
       ).toMatchInlineSnapshot(`true`)
     }
   })
@@ -221,7 +221,7 @@ describe('define', () => {
         },
         literal: { color: 'white', padding: 0, width: '1rem' },
       },
-      { theme },
+      { vars: theme },
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
@@ -244,9 +244,9 @@ describe('define', () => {
     })
     const styles = Style.define(
       { card: { color: 'brand', padding: 'md' } },
-      { theme },
+      { vars: theme },
     )
-    const output = Css.compile({ styles, themes: { alternate, base: theme } })
+    const output = Css.compile({ styles, vars: { alternate, base: theme } })
     const browser = await chromium.launch()
 
     try {
@@ -273,7 +273,7 @@ describe('define', () => {
 
       await page.locator('main').evaluate((element, scope) => {
         element.setAttribute('class', scope)
-      }, output.themes.alternate)
+      }, output.vars.alternate)
 
       expect(await read()).toMatchInlineSnapshot(`
         {
@@ -768,7 +768,8 @@ describe('define', () => {
   `)
   })
 
-  const portableSource = `import { Style } from 'zyzz'; import { Css } from 'zyzz/web';
+  const portableSource = `import { Style } from 'zyzz'
+; import { Css } from 'zyzz/web';
 export const result = Css.compile({ styles: Style.define({ button: { color: '#f00', padding: 0 } }) });`
 
   async function portableBundle() {
@@ -807,7 +808,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
         },
         "css": ".z-text-oLANea{color:#f00;}
       .z-p-0{padding:0;}",
-        "themes": {},
+        "vars": {},
       }
     `)
 
@@ -829,7 +830,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
           },
           "css": ".z-text-oLANea{color:#f00;}
         .z-p-0{padding:0;}",
-          "themes": {},
+          "vars": {},
         }
       `)
     } finally {
@@ -852,7 +853,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
             },
             "css": ".z-text-oLANea{color:#f00;}
           .z-p-0{padding:0;}",
-            "themes": {},
+            "vars": {},
           }
         `)
       } finally {
@@ -879,7 +880,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
           },
           "css": ".z-text-oLANea{color:#f00;}
         .z-p-0{padding:0;}",
-          "themes": {},
+          "vars": {},
         }
       `)
 
@@ -910,7 +911,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
           },
           "css": ".z-text-oLANea{color:#f00;}
         .z-p-0{padding:0;}",
-          "themes": {},
+          "vars": {},
         }
       `)
     } finally {

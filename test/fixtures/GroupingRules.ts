@@ -3,8 +3,8 @@ export const rules = {
   container: [
     '@container (width > 1px)',
     '@container card (width >= 1px)',
-    '@container style(--theme: dark)',
-    '@container card style(--theme: dark)',
+    '@container style(--vars: dark)',
+    '@container card style(--vars: dark)',
     '@container scroll-state(stuck: top)',
     '@container card scroll-state(scrollable: bottom)',
     '@container not (width > 1px)',

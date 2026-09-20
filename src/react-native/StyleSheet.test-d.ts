@@ -1,6 +1,7 @@
+import { Vars } from 'zyzz'
 /** Checks inferred native labels and explicit native authoring constraints. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, Style, Theme, style } from 'zyzz'
+import { Config, Style, style } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 import type { StyleProp as NativeStyleProp } from '../../test/fixtures/native/StyleProp.js'
 
@@ -74,7 +75,7 @@ describe('compile', () => {
       'scroll' | undefined
     >()
     expectTypeOf(
-      StyleSheet.select(ios.styles, { theme: 'default', colorScheme: 'dark' })
+      StyleSheet.select(ios.styles, { set: 'default', colorScheme: 'dark' })
         .image.overflow,
     ).toEqualTypeOf<'visible' | undefined>()
     const native = { transformOrigin: [1, 2] }
@@ -129,7 +130,7 @@ describe('compile', () => {
         native: { fontVariant: ['small-caps'], lineHeight: 24 },
       },
     })
-    const bound = Config.create({ theme: { color: { brand: '#06c' } } })
+    const bound = Config.create({ vars: { color: { brand: '#06c' } } })
     const label = bound.style({
       targets: { web: { color: 'brand' }, ios: { fontFamily: 'System' } },
     })
@@ -282,18 +283,18 @@ describe('compile', () => {
     expectTypeOf(invalid).not.toBeAny()
   })
 
-  test('retains style and theme labels through native lookup', () => {
-    const base = Theme.define({ spacing: { md: '1rem' } })
+  test('retains style and set labels through native lookup', () => {
+    const base = Vars.define({ spacing: { md: '1rem' } })
     const styles = Style.define({
-      card: { padding: base.tokens.spacing.md } satisfies StyleSheet.Properties,
+      card: { padding: base.spacing.md } satisfies StyleSheet.Properties,
     })
     const output = StyleSheet.compile({
       styles,
-      themes: { base },
+      vars: { base },
       units: { rem: 16 },
     })
     const selected = StyleSheet.select(output.styles, {
-      theme: 'base',
+      set: 'base',
       colorScheme: 'dark',
     })
 
@@ -301,9 +302,9 @@ describe('compile', () => {
     expectTypeOf<keyof typeof selected>().toEqualTypeOf<'card'>()
     expectTypeOf(selected.card).toMatchTypeOf<StyleSheet.NativeStyle>()
     // @ts-expect-error Theme labels come from the compiled table.
-    StyleSheet.select(output.styles, { theme: 'missing', colorScheme: 'dark' })
+    StyleSheet.select(output.styles, { set: 'missing', colorScheme: 'dark' })
     // @ts-expect-error Device preferences must be resolved by a host.
-    StyleSheet.select(output.styles, { theme: 'base', colorScheme: 'system' })
+    StyleSheet.select(output.styles, { set: 'base', colorScheme: 'system' })
   })
 
   test('constrains native authoring before shared definitions erase property types', () => {
@@ -317,17 +318,16 @@ describe('compile', () => {
     const units = { padding: '1em' } satisfies StyleSheet.Properties
     // @ts-expect-error CSS fallback arrays are unsupported.
     const fallback = { color: ['red', 'blue'] } satisfies StyleSheet.Properties
-    const theme = Theme.define({
+    const set = Vars.define({
       color: { ink: 'red' },
       spacing: { md: '1rem' },
     })
     const variable = {
-      // @ts-expect-error Web variables are distinct from portable tokens.
-      color: theme.vars.color.ink,
+      color: set.color.ink,
     } satisfies StyleSheet.Properties
     const domain = {
       // @ts-expect-error Native tokens retain property domains.
-      padding: theme.tokens.color.ink,
+      padding: set.color.ink,
     } satisfies StyleSheet.Properties
 
     expectTypeOf(grid).not.toBeAny()

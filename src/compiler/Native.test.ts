@@ -52,14 +52,8 @@ describe('compile', () => {
   test('executes static batches across independent theme contracts', async () => {
     const output = Graph.compile({
       modules: {
-        'styles.ts': `import {Config,style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
-          const {style:a}=Config.create({themes:{base:{spacing:{cell:'2px'}},alternate:{spacing:{cell:'6px'}}},defaultTheme:'base'});
-          const {style:b}=Config.create({themes:{base:{spacing:{cell:'4px'}},alternate:{spacing:{cell:'8px'}}},defaultTheme:'base'});
-          const a1=a({width:'cell'});const a2=a({height:'cell'});
-          const b1=b({width:'cell'});const b2=b({height:'cell'});
-          const plain1=style({fontSize:'10px',lineHeight:1.5});
-          const plain2=style({opacity:0.2,targets:{ios:{opacity:0.7}}});
-          export const results=[a1,a2,b1,b2,plain1,plain2].map(value=>NativeContext.resolve(value().style,{theme:'alternate',colorScheme:'dark'}));`,
+        'styles.ts':
+          "import {Config,style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';\n          const {style:a}=Config.create({vars:{base:{spacing:{cell:'2px'}},alternate:{spacing:{cell:'6px'}}},defaultVars:'base'});\n          const {style:b}=Config.create({vars:{base:{spacing:{cell:'4px'}},alternate:{spacing:{cell:'8px'}}},defaultVars:'base'});\n          const a1=a({width:'cell'});const a2=a({height:'cell'});\n          const b1=b({width:'cell'});const b2=b({height:'cell'});\n          const plain1=style({fontSize:'10px',lineHeight:1.5});\n          const plain2=style({opacity:0.2,targets:{ios:{opacity:0.7}}});\n          export const results=[a1,a2,b1,b2,plain1,plain2].map(value=>NativeContext.resolve(value().style,{set:'alternate',colorScheme:'dark'}));",
       },
       native: {
         colorScheme: 'light',
@@ -112,13 +106,8 @@ describe('compile', () => {
   test('resolves compiled inputs while retaining context errors and ordinary callbacks', async () => {
     const output = Graph.compile({
       modules: {
-        'styles.ts': `import {Config} from 'zyzz'; import {NativeContext} from 'zyzz/runtime';
-          const {style}=Config.create({themes:{base:{color:{ink:'#112233'}},alternate:{color:{ink:'#0000ff'}}},defaultTheme:'base'});
-          const meter=style((value:{width:string})=>({color:'ink',width:value.width}));
-          const context={colorScheme:'dark',theme:'alternate'};
-          function message(context) { try { NativeContext.resolve(meter,context,{width:'12px'}); return 'no error' } catch(error) { return error.message } }
-          const callback=NativeContext.resolve((value)=>({opacity:value.opacity}),context);
-          export const results={direct:NativeContext.resolve(meter,context,{width:'12px'}),callback:callback({opacity:0.4}),missing:message(undefined),unknown:message({colorScheme:'dark',theme:'missing'})};`,
+        'styles.ts':
+          "import {Config} from 'zyzz'; import {NativeContext} from 'zyzz/runtime';\n          const {style}=Config.create({vars:{base:{color:{ink:'#112233'}},alternate:{color:{ink:'#0000ff'}}},defaultVars:'base'});\n          const meter=style((value:{width:string})=>({color:'ink',width:value.width}));\n          const context={colorScheme:'dark',set:'alternate'};\n          function message(context) { try { NativeContext.resolve(meter,context,{width:'12px'}); return 'no error' } catch(error) { return error.message } }\n          const callback=NativeContext.resolve((value)=>({opacity:value.opacity}),context);\n          export const results={direct:NativeContext.resolve(meter,context,{width:'12px'}),callback:callback({opacity:0.4}),missing:message(undefined),unknown:message({colorScheme:'dark',set:'missing'})};",
       },
       native: { colorScheme: 'light', contextual: true },
     })
@@ -133,27 +122,14 @@ describe('compile', () => {
           "width": 12,
         },
         "missing": "Compiled native styles require a Zyzz Provider.",
-        "unknown": "Unknown native theme: missing.",
+        "unknown": "Unknown native set: missing.",
       }
     `)
   })
 
   test('reuses default native props while resolving independent themes and overrides', async () => {
-    const source = `import {Config} from 'zyzz';
-      import {NativeContext} from 'zyzz/runtime';
-      const {style}=Config.create({themes:{base:{color:{ink:{light:'#112233',dark:'#ddeeff'}}},alternate:{color:{ink:{light:'#ff0000',dark:'#0000ff'}}}},defaultTheme:'base'});
-      const ink=style({color:'ink'});
-      const defaults=ink();
-      const override={opacity:0.4};
-      const applied=ink({style:override});
-      const light={colorScheme:'light',theme:'base'} as const;
-      const dark={colorScheme:'dark',theme:'alternate'} as const;
-      const resolve=(value,context)=>NativeContext.resolve(value.style,context);
-      const first=resolve(defaults,light);
-      const second=resolve(defaults,dark);
-      const overridden=resolve(applied,dark);
-      override.opacity=0.8;
-      export const results={same:defaults===ink(),frozen:Object.isFrozen(defaults)&&Object.isFrozen(defaults.style),first,second,again:resolve(defaults,light),override:overridden[1]===override,opacity:overridden[1].opacity,callerFrozen:Object.isFrozen(override)};`
+    const source =
+      "import {Config} from 'zyzz';\n      import {NativeContext} from 'zyzz/runtime';\n      const {style}=Config.create({vars:{base:{color:{ink:{light:'#112233',dark:'#ddeeff'}}},alternate:{color:{ink:{light:'#ff0000',dark:'#0000ff'}}}},defaultVars:'base'});\n      const ink=style({color:'ink'});\n      const defaults=ink();\n      const override={opacity:0.4};\n      const applied=ink({style:override});\n      const light={colorScheme:'light',set:'base'} as const;\n      const dark={colorScheme:'dark',set:'alternate'} as const;\n      const resolve=(value,context)=>NativeContext.resolve(value.style,context);\n      const first=resolve(defaults,light);\n      const second=resolve(defaults,dark);\n      const overridden=resolve(applied,dark);\n      override.opacity=0.8;\n      export const results={same:defaults===ink(),frozen:Object.isFrozen(defaults)&&Object.isFrozen(defaults.style),first,second,again:resolve(defaults,light),override:overridden[1]===override,opacity:overridden[1].opacity,callerFrozen:Object.isFrozen(override)};"
     const output = Graph.compile({
       modules: { 'styles.ts': source },
       native: { colorScheme: 'light', contextual: true },
@@ -445,7 +421,8 @@ describe('compile', () => {
   test('invalidates a reused native context after scheme changes', () => {
     const compiler = Graph.create()
     const modules = {
-      'card.ts': `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});export const card=style({color:'ink'});`,
+      'card.ts':
+        "import {Config} from 'zyzz';const {style}=Config.create({vars:{color:{ink:{light:'#000000',dark:'#ffffff'}}}});export const card=style({color:'ink'});",
     }
     const native: NonNullable<Graph.compile.Options['native']> & {
       colorScheme: 'dark' | 'light'
@@ -635,9 +612,8 @@ describe('compile', () => {
   })
 
   test('compiles local configured tokens for explicit schemes', async () => {
-    const source = `import {Config} from 'zyzz';
-const config=Config.create({theme:{color:{ink:{light:'#000',dark:'#fff'}}}});
-export const card=config.variants({base:{color:'ink'},variants:{tone:{quiet:{opacity:0.5}}},defaultVariants:{tone:'quiet'}});`
+    const source =
+      "import {Config} from 'zyzz';\nconst config=Config.create({vars:{color:{ink:{light:'#000',dark:'#fff'}}}});\nexport const card=config.variants({base:{color:'ink'},variants:{tone:{quiet:{opacity:0.5}}},defaultVariants:{tone:'quiet'}});"
     const light = await execute(
       Native.compile({ source, moduleId: 'theme.ts', colorScheme: 'light' })
         .code,

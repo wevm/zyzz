@@ -1,3 +1,4 @@
+import { Vars } from 'zyzz'
 /**
  * Exercises the public Host workflow through real collaborating modules.
  * @module
@@ -22,7 +23,6 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test, vi } from 'vite-plus/test'
-import { Theme } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 
@@ -354,14 +354,13 @@ describe('create', () => {
       colorScheme: 'light' as 'dark' | 'light',
       fonts: { Inter: 'Inter-Regular' },
       platform: 'ios' as 'android' | 'ios',
-      theme: 'initial',
-      themes: { changed: Theme.define({}), initial: Theme.define({}) },
+      set: 'initial',
+      vars: { changed: Vars.define({}), initial: Vars.define({}) },
       units: { px: 2, rem: 16 },
     }
     const options = { native, outDir, packageId: 'native-app', root }
-    const source = `import {Config} from 'zyzz';
-      const {style}=Config.create({theme:{color:{ink:{light:'#123456',dark:'#654321'}}}});
-      export const card=style({color:'ink',fontFamily:'Inter',fontSize:'1rem',width:'10px',targets:{ios:{opacity:0.7},android:{opacity:0.3}}});`
+    const source =
+      "import {Config} from 'zyzz';\n      const {style}=Config.create({vars:{color:{ink:{light:'#123456',dark:'#654321'}}}});\n      export const card=style({color:'ink',fontFamily:'Inter',fontSize:'1rem',width:'10px',targets:{ios:{opacity:0.7},android:{opacity:0.3}}});"
 
     try {
       await Fs.writeFile(Path.join(root, 'card.ts'), source)
@@ -371,9 +370,9 @@ describe('create', () => {
       await using host = await pending
       native.fonts.Inter = 'Inter-Bold'
       native.platform = 'android'
-      native.theme = 'changed'
-      delete (native.themes as Partial<typeof native.themes>).initial
-      delete (native.themes as Partial<typeof native.themes>).changed
+      native.set = 'changed'
+      delete (native.vars as Partial<typeof native.vars>).initial
+      delete (native.vars as Partial<typeof native.vars>).changed
       native.units.px = 3
       native.units.rem = 20
 
@@ -427,7 +426,8 @@ describe('create', () => {
   test('publishes native modules and recovers watched imported token edits', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-native-'))
     const outDir = Path.join(root, 'output')
-    const config = `import {Config} from 'zyzz';export const {style}=Config.create({theme:{color:{ink:'#123456'}}});`
+    const config =
+      "import {Config} from 'zyzz';export const {style}=Config.create({vars:{color:{ink:'#123456'}}});"
     try {
       await Fs.writeFile(Path.join(root, 'theme.ts'), config)
       await Fs.writeFile(
@@ -582,11 +582,7 @@ describe('create', () => {
     try {
       await Fs.writeFile(
         Path.join(root, 'card.ts'),
-        `import { Theme } from 'zyzz';
-const theme = Theme.define({ color: { brand: '#ff0000' } });
-const alternate = Theme.extend(theme, { color: { brand: '#0000ff' } });
-export const scope = alternate.className;
-export const card = theme.style({ color: 'brand', display: 'flex', padding: '8px' })();`,
+        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({ color: { brand: '#ff0000' } });\nconst alternate = Vars.extend(theme, { color: { brand: '#0000ff' } }); const config=Config.create({vars:{base:theme,alternate},defaultVars:'base'});\nexport const scope = config.vars({set:'alternate'}).className;\nexport const card = config.style({ color: 'brand', display: 'flex', padding: '8px' })();",
       )
       await host.build()
 
@@ -623,7 +619,7 @@ export const card = theme.style({ color: 'brand', display: 'flex', padding: '8px
         await page
           .locator('div')
           .evaluate((element) => getComputedStyle(element).color),
-      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
       expect(
         await page
           .locator('div')
@@ -826,10 +822,7 @@ export const widget = style({ color: '#ff0000', padding: '4px' });`,
     try {
       await Fs.writeFile(
         Path.join(root, 'local.ts'),
-        `import { Config } from 'zyzz';
-const { style, appearance } = Config.create({ defaultTheme: 'base', storageKey: 'kept', themes: { base: { color: { ink: '#123456' } } } });
-export const card = style({ color: 'ink' });
-export const select = appearance.set;`,
+        "import { Config } from 'zyzz';\nconst { style, appearance } = Config.create({ defaultVars: 'base', storageKey: 'kept', vars: { base: { color: { ink: '#123456' } } } });\nexport const card = style({ color: 'ink' });\nexport const select = appearance.set;",
       )
       // A scheme-only configuration emits no CSS and exports no binding, so
       // the catalog alone justifies the module's contract.
@@ -859,8 +852,8 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
           }
         ).version
 
-      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`21`)
-      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`18`)
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`26`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`26`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -959,7 +952,7 @@ export const card = style({ backgroundImage: 'url(./icon.svg)', maskImage: 'url(
     const external = Path.join(root, 'public/zyzz.js')
     const configuration = (storageKey: string) =>
       `import { Config } from 'zyzz';
-export const { style, themes } = Config.create({ defaultTheme: 'base', storageKey: '${storageKey}', themes: { base: { color: { ink: '#123456' } } } });`
+export const { style, themes } = Config.create({ defaultVars: 'base', storageKey: '${storageKey}', vars: { base: { color: { ink: '#123456' } } } });`
 
     try {
       await Fs.mkdir(source)
@@ -1198,31 +1191,32 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
     const host = await Host.create({ outDir, packageId: 'example', root })
     const notifications = Watch.create({ path: 'card.ts.css' })
     const themePath = Path.join(root, 'theme.ts')
-    const themeSource = `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'}});`
+    const themeSource =
+      "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#06c'}});"
 
     try {
       await Fs.writeFile(themePath, themeSource)
       await Fs.writeFile(
         Path.join(root, 'card.ts'),
-        `import { theme } from './theme.js'; export const props = theme.style({color:'brand'})();`,
+        `import {Config} from 'zyzz';import { theme } from './theme.js';const config=Config.create({vars:theme}); export const props = config.style({color:'brand'})();`,
       )
       await host.build()
 
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}}},"version":1}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#06c"}}}},"version":26}"`,
       )
 
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(before).toMatchInlineSnapshot(`
-        ".z_theme-1dre7461ulsxz8-theme {
-          --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
+        ":root, .z_theme-4lx6a318y1wl5-config-theme {
+          --z-t4lx6a318y1wl5-config-color_2e_brand: #06c;
         }
 
-        .z-text-kp0eqE {
-          color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
+        .z-text-iFSAHB {
+          color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #06c);
         }
         "
       `)
@@ -1236,18 +1230,18 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}}},"version":1}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#175"}}}},"version":26}"`,
       )
 
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ".z_theme-1dre7461ulsxz8-theme {
-          --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
+        ":root, .z_theme-4lx6a318y1wl5-config-theme {
+          --z-t4lx6a318y1wl5-config-color_2e_brand: #175;
         }
 
-        .z-text-OqGLWz {
-          color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
+        .z-text-kLQX9z {
+          color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #175);
         }
         "
       `)
@@ -1255,17 +1249,17 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       await expect(
         notifications.next(() => Fs.rm(themePath)),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: example/card.ts:0: Missing source module: ./theme.js]`,
+        `[Source.ExtractError: example/card.ts:28: Missing source module: ./theme.js]`,
       )
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z_theme-1dre7461ulsxz8-theme {
-            --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
+          ":root, .z_theme-4lx6a318y1wl5-config-theme {
+            --z-t4lx6a318y1wl5-config-color_2e_brand: #175;
           }
 
-          .z-text-OqGLWz {
-            color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
+          .z-text-kLQX9z {
+            color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #175);
           }
           "
         `)
@@ -1274,12 +1268,12 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z_theme-1dre7461ulsxz8-theme {
-            --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
+          ":root, .z_theme-4lx6a318y1wl5-config-theme {
+            --z-t4lx6a318y1wl5-config-color_2e_brand: #06c;
           }
 
-          .z-text-kp0eqE {
-            color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
+          .z-text-iFSAHB {
+            color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #06c);
           }
           "
         `)
@@ -1293,7 +1287,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-theme-host-'))
     const outDir = Path.join(root, 'output')
     const host = await Host.create({ outDir, packageId: 'example', root })
-    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; const { style } = theme; export const props = style({ color: theme.tokens.color.brand })();`
+    const source =
+      "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; const theme = Vars.define({ color: { brand: '#000' } }); const themeConfig=Config.create({vars:theme}); export const scope = themeConfig.vars().className; const { style } = themeConfig; export const props = style({ color: theme.color.brand })();"
 
     try {
       await Fs.writeFile(Path.join(root, 'theme.ts'), source)
@@ -1305,8 +1300,20 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       )
 
       expect(before).toMatchInlineSnapshot(`
-        ".z_theme-1dre7461ulsxz8-theme {
+        ":root, .z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
+        }
+
+        .z_scheme-dark {
+          color-scheme: dark;
+        }
+
+        .z_scheme-light {
+          color-scheme: light;
+        }
+
+        .z_scheme-light-dark {
+          color-scheme: light dark;
         }
 
         .z-text-rocWbC {
@@ -1336,8 +1343,20 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const after = await Fs.readFile(Path.join(outDir, 'theme.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ".z_theme-1dre7461ulsxz8-theme {
+        ":root, .z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
+        }
+
+        .z_scheme-dark {
+          color-scheme: dark;
+        }
+
+        .z_scheme-light {
+          color-scheme: light;
+        }
+
+        .z_scheme-light-dark {
+          color-scheme: light dark;
         }
 
         .z-text-wwHZc8 {

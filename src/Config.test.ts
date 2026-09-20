@@ -6,7 +6,9 @@ import * as Path from 'node:path'
 import * as Ts from 'typescript-api'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Config, Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
+import * as Theme from './internal/Theme.js'
+import * as Config from './internal/Configuration.js'
 import { Css } from 'zyzz/web'
 
 describe('create', () => {
@@ -14,8 +16,8 @@ describe('create', () => {
     const root = Path.resolve(import.meta.dirname, '..')
     const file = Path.join(root, '.fixture-config-editor.ts')
     let source = `import { Config } from 'zyzz'
-import { theme } from 'zyzz/default'
-const { style } = Config.create({ theme })
+import { tokens } from 'zyzz/default'
+const { style } = Config.create({ vars: tokens })
 const pane = style({ alignItems: 'center', fontFamily: 'sans', typography: 'copy.18' })
 const dynamic = style((values: { width: \`\${number}px\` }) => ({
   width: values.width,
@@ -104,21 +106,27 @@ dynamic({ width: '12px' })
     }
 
     try {
-      expect(service.getSemanticDiagnostics(file)).toMatchInlineSnapshot(`[]`)
+      expect(
+        service
+          .getSemanticDiagnostics(file)
+          .map((diagnostic) =>
+            Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
+          ),
+      ).toMatchInlineSnapshot(`[]`)
       expect(complete('typography', 'copy.18', '')).toMatchInlineSnapshot(`
         [
           "button.12",
           "button.14",
           "button.16",
-          "copy.13",
           "copy.14",
           "copy.16",
+          "copy.13",
           "copy.18",
           "copy.20",
           "copy.24",
-          "copy.13.mono",
           "copy.14.strong",
           "copy.16.strong",
+          "copy.13.mono",
           "copy.18.strong",
           "copy.20.strong",
           "copy.24.strong",
@@ -137,18 +145,18 @@ dynamic({ width: '12px' })
           "heading.24.subtle",
           "heading.32.subtle",
           "label.12",
-          "label.13",
           "label.14",
           "label.16",
+          "label.13",
           "label.18",
           "label.20",
-          "label.13.mono",
           "label.14.strong",
           "label.16.strong",
+          "label.13.mono",
           "label.12.mono",
           "label.12.strong",
-          "label.13.strong",
           "label.14.mono",
+          "label.13.strong",
         ]
       `)
       expect(complete('typography', 'copy.18', 'copy.')).toMatchInlineSnapshot(`
@@ -156,15 +164,15 @@ dynamic({ width: '12px' })
           "button.12",
           "button.14",
           "button.16",
-          "copy.13",
           "copy.14",
           "copy.16",
+          "copy.13",
           "copy.18",
           "copy.20",
           "copy.24",
-          "copy.13.mono",
           "copy.14.strong",
           "copy.16.strong",
+          "copy.13.mono",
           "copy.18.strong",
           "copy.20.strong",
           "copy.24.strong",
@@ -183,22 +191,23 @@ dynamic({ width: '12px' })
           "heading.24.subtle",
           "heading.32.subtle",
           "label.12",
-          "label.13",
           "label.14",
           "label.16",
+          "label.13",
           "label.18",
           "label.20",
-          "label.13.mono",
           "label.14.strong",
           "label.16.strong",
+          "label.13.mono",
           "label.12.mono",
           "label.12.strong",
-          "label.13.strong",
           "label.14.mono",
+          "label.13.strong",
         ]
       `)
       expect(complete('alignItems', 'center', '')).toMatchInlineSnapshot(`
         [
+          "normal",
           "baseline",
           "center",
           "end",
@@ -206,7 +215,6 @@ dynamic({ width: '12px' })
           "flex-end",
           "flex-start",
           "last baseline",
-          "normal",
           "safe center",
           "safe end",
           "safe flex-end",
@@ -254,14 +262,14 @@ dynamic({ width: '12px' })
       `)
       expect(diagnose("fontFamily: 'sans'", "unknownProperty: 'sans'"))
         .toMatchInlineSnapshot(`
-        [
-          {
-            "code": 2322,
-            "message": "Type 'string' is not assignable to type 'never'.",
-            "span": "unknownProperty",
-          },
-        ]
-      `)
+          [
+            {
+              "code": 2322,
+              "message": "Type 'string' is not assignable to type 'never'.",
+              "span": "unknownProperty",
+            },
+          ]
+        `)
     } finally {
       service.dispose()
     }
@@ -306,7 +314,7 @@ dynamic({ width: '12px' })
           padding: zyzz.themes.base.tokens.spacing.md,
         },
       }),
-      themes: zyzz.themes,
+      vars: zyzz.themes,
     })
 
     expect(output.css).toMatchInlineSnapshot(`
@@ -323,7 +331,7 @@ dynamic({ width: '12px' })
         styles: Style.define({
           card: { color: zyzz.themes.base.tokens.color.brand },
         }),
-        themes: { original: base },
+        vars: { original: base },
       }).css,
     ).toMatchInlineSnapshot(`".z-text-gsB0EO{color:var(--z0,#06c);}"`)
 
@@ -334,7 +342,7 @@ dynamic({ width: '12px' })
         styles: Style.define({
           card: { color: other.theme.tokens.color.brand },
         }),
-        themes: zyzz.themes,
+        vars: zyzz.themes,
       }).css,
     ).toMatchInlineSnapshot(`".z-text-gsB0EO{color:var(--z0,#06c);}"`)
   })
@@ -361,7 +369,7 @@ dynamic({ width: '12px' })
           padding: zyzz.themes.base.tokens.spacing.md,
         },
       }),
-      themes: zyzz.themes,
+      vars: zyzz.themes,
     })
 
     const browser = await chromium.launch()
@@ -370,7 +378,7 @@ dynamic({ width: '12px' })
       const page = await browser.newPage()
 
       await page.setContent(
-        `<style>${output.css}</style><main class="${output.themes.mint}"><div id="mint" class="${output.classes.card}"></div><section class="${output.themes.base}"><div id="base" class="${output.classes.card}"></div></section></main>`,
+        `<style>${output.css}</style><main class="${output.vars.mint}"><div id="mint" class="${output.classes.card}"></div><section class="${output.vars.base}"><div id="base" class="${output.classes.card}"></div></section></main>`,
       )
 
       expect(
@@ -416,11 +424,8 @@ dynamic({ width: '12px' })
 
     expect(
       Css.compile({
-        styles: Style.define(
-          { card: { padding: 'md' } },
-          { theme: zyzz.theme },
-        ),
-        themes: { selected: zyzz.theme },
+        styles: Style.define({ card: { padding: 'md' } }, { vars: zyzz.theme }),
+        vars: { selected: zyzz.theme },
       }).css,
     ).toMatchInlineSnapshot(`
       ".t_0{--z0:12px;}
@@ -513,6 +518,6 @@ function emit(input: unknown) {
 
   return Css.compile({
     styles: Style.define({ card: { color: '#06c' } }),
-    themes: 'themes' in config ? config.themes : {},
+    vars: 'themes' in config ? config.themes : {},
   })
 }

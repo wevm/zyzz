@@ -30,16 +30,7 @@ describe('zyzz', () => {
         )
         await Fs.writeFile(
           Path.join(root, 'main.ts'),
-          `
-import { Config, Theme } from 'zyzz'
-const base = Theme.define({ color: { surface: { light: '#ffffff', dark: '#202029' }, text: { light: '#20202a', dark: '#f4f4f8' } } })
-const { style, themes } = Config.create({ defaultTheme: 'base', themes: { base } })
-const card = style({ backgroundColor: 'surface', color: 'text', border: '1px solid', borderColor: 'text' })
-const scope = themes({ theme: 'base', colorScheme: 'light' })
-const props = card()
-document.body.innerHTML = '<main class="' + scope.className + '"><div id="card" class="' + props.className + '">Theme</div></main>'
-Object.assign(document.querySelector('main').style, scope.style)
-`,
+          "\nimport { Config, Vars } from 'zyzz'\nconst base = Vars.define({ color: { surface: { light: '#ffffff', dark: '#202029' }, text: { light: '#20202a', dark: '#f4f4f8' } } })\nconst { style, vars:themes } = Config.create({ defaultVars: 'base', vars: { base } })\nconst card = style({ backgroundColor: 'surface', color: 'text', border: '1px solid', borderColor: 'text' })\nconst scope = themes({ set:'base', colorScheme: 'light' })\nconst props = card()\ndocument.body.innerHTML = '<main class=\"' + scope.className + '\"><div id=\"card\" class=\"' + props.className + '\">Theme</div></main>'\nObject.assign(document.querySelector('main').style, scope.style)\n",
         )
         const config: Vite.InlineConfig = {
           build: { cssMinify, cssTarget: ['chrome123'] },

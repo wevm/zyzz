@@ -27,13 +27,13 @@ import * as Scope from './internal/Scope.js'
 import type * as Shorthands from '../internal/Shorthands.js'
 import * as Static from './internal/Static.js'
 import * as Style from '../Style.js'
-import type * as Theme from '../Theme.js'
+import type * as Theme from '../internal/Theme.js'
 import * as Themes from './internal/Themes.js'
 import * as ThemeValues from '../web/internal/Themes.js'
 import * as Token from '../internal/Token.js'
 import * as Typography from '../internal/Typography.js'
 import * as Value from '../internal/Value.js'
-import * as Variables from './internal/Variables.js'
+import * as Vars from './internal/Vars.js'
 import * as Walker from 'oxc-walker'
 
 // JavaScript extraction supplies untyped values. Keep structural checks without
@@ -49,9 +49,9 @@ export type Call = {
   readonly nativeContext?:
     | {
         /** Default label selected when the provider omits its theme. */
-        readonly defaultTheme: string
+        readonly defaultVars: string
         /** Compatible alternatives from the owning configuration. */
-        readonly themes: Readonly<Record<string, Theme.Definition>>
+        readonly vars: Readonly<Record<string, Theme.Definition>>
       }
     | undefined
   /** Class identity available without source rewriting. */
@@ -180,6 +180,27 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   const namespace = identity(options.moduleId)
   const parsed = options[Themes.context]?.parsed ?? Syntax.parse(options)
+  for (const node of parsed.program.body) {
+    if (node.type !== 'ImportDeclaration' || node.source.value !== 'zyzz')
+      continue
+    for (const specifier of node.specifiers) {
+      if (specifier.type !== 'ImportSpecifier') continue
+      const name =
+        specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : specifier.imported.value
+      if (name === 'Theme' || name === 'Variables')
+        throw new ExtractError([
+          {
+            code: 'unsupported_syntax',
+            message: `Import Vars instead of ${name}.`,
+            source: options.moduleId,
+            start: specifier.start,
+            end: specifier.end,
+          },
+        ])
+    }
+  }
 
   if (parsed.errors.length) {
     for (const error of parsed.errors) {
@@ -222,7 +243,7 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   const variables = (() => {
     try {
-      return Variables.collect(
+      return Vars.collect(
         program,
         namespace,
         scopeTracker,
@@ -350,6 +371,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             name === 'cx' ||
             name === 'style' ||
             name === 'Theme' ||
+            name === 'Vars' ||
             name === 'variable' ||
             name === 'variants'
           )
@@ -698,7 +720,7 @@ export function extract(options: extract.Options): extract.ReturnType {
                 ? entry.key.value
                 : undefined
             : undefined
-        if (key !== 'selectors' && key !== 'variables') {
+        if (key !== 'selectors' && key !== 'vars') {
           properties.push(entry)
           continue
         }
@@ -995,7 +1017,7 @@ export function extract(options: extract.Options): extract.ReturnType {
                     )
                   : targets.every(
                       (target) =>
-                        Token.accepts(part.group, target) ||
+                        Token.acceptsReference(part, target) ||
                         (part.group === 'color' &&
                           Expression.acceptsColor(template, target)),
                     ))
@@ -1017,7 +1039,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             reference &&
             Token.is(reference) &&
             !targets.every((target) =>
-              Token.accepts(reference.group, target),
+              Token.acceptsReference(reference, target),
             ) &&
             !targets.every((target) =>
               dynamicValues?.accepts(
@@ -1152,7 +1174,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     try {
       const definition = define(
         { [name]: values },
-        { locations, theme: themes?.styles.get(call.start)?.theme },
+        { locations, vars: themes?.styles.get(call.start)?.theme },
       )
 
       function validate(style: Style.NamedStyle, path: readonly string[]) {
@@ -1208,7 +1230,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           matches,
           value: define(
             { [`${name}-${index}`]: object(value) },
-            { locations, theme: themes?.styles.get(call.start)?.theme },
+            { locations, vars: themes?.styles.get(call.start)?.theme },
           ),
         })),
       }
@@ -1359,7 +1381,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       const rendered = Css.compile({
         styles: { styles: [] },
         contributions: contributionData,
-        themes: themes?.themes,
+        vars: themes?.themes,
       }).css
       AtRules.transform({
         filename: options.moduleId,
@@ -1497,7 +1519,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         }
       : {}),
     themeReferences: Object.freeze(themes?.references ?? []),
-    themes: themes?.themes ?? Object.freeze({}),
+    vars: themes?.themes ?? Object.freeze({}),
   })
 }
 
@@ -1529,7 +1551,7 @@ export declare namespace extract {
     readonly contributions?: readonly Css.Contribution[] | undefined
     readonly contributionCalls?: readonly Contributions.Call[] | undefined
     /** Explicit variable contracts replaced by fixed slot data. */
-    readonly variableCalls?: readonly Variables.Call[] | undefined
+    readonly variableCalls?: readonly Vars.Call[] | undefined
     /** Direct calls in source order. */
     readonly calls: readonly Call[]
     /** Validated definitions accepted by Css.compile. */
@@ -1556,7 +1578,7 @@ export declare namespace extract {
     /** Resolved authoring exports when extracted as part of a source graph. */
     readonly themeExports?: Readonly<Record<string, Themes.Link>> | undefined
     /** Stable scope keys and validated local theme definitions. */
-    readonly themes: Readonly<Record<string, Theme.Definition>>
+    readonly vars: Readonly<Record<string, Theme.Definition>>
   }
 }
 

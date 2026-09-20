@@ -9,7 +9,7 @@ Migrate a Tailwind CSS v4 application to Zyzz while preserving its appearance an
 5. [States And Selectors](#states-and-selectors)
 6. [Responsive Design](#responsive-design)
 7. [Dark Mode](#dark-mode)
-8. [Theme Variables](#theme-variables)
+8. [Theme Vars](#theme-variables)
 9. [Colors](#colors)
 10. [Custom Styles](#custom-styles)
 11. [Source Detection](#source-detection)
@@ -243,8 +243,8 @@ Move the values needed by migrated components into an explicit config. This exam
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { style, theme, variants } = Config.create({
-  theme: {
+export const { style, vars, variants } = Config.create({
+  vars: {
     breakpoints: { md: '48rem' },
     color: { brand: '#2563eb' },
     spacing: { 2: '0.5rem', 4: '1rem', 6: '1.5rem' },
@@ -252,7 +252,7 @@ export const { style, theme, variants } = Config.create({
 })
 ```
 
-Import helpers from that module to access those tokens. A filename alone does not install a global theme. See [Theme Variables](#theme-variables) for mapping `@theme` and preserving custom values.
+Import helpers from that module to access those tokens. A filename alone does not install a global theme. See [Theme Vars](#theme-variables) for mapping `@theme` and preserving custom values.
 
 ### Stylesheets And Resets
 
@@ -328,7 +328,7 @@ namespace styles {
 
 Spaces remain ordinary spaces. CSS functions need valid CSS syntax. Arbitrary properties become supported camelCase properties. Standard custom properties can remain in ordinary CSS, or use [typed variables](#css-variables) when their definitions belong in Zyzz.
 
-### CSS Variables
+### CSS Vars
 
 Existing references such as `bg-(--brand)` become `backgroundColor: 'var(--brand)'`. Keep the existing declaration of `--brand` until its consumers migrate.
 
@@ -337,25 +337,23 @@ For a reusable variable owned by Zyzz:
 ```tsx
 import { style, variable } from 'zyzz'
 
-namespace variables {
+namespace vars {
   export const accent = variable('color')
 }
 
 namespace styles {
   export const label = style({
-    variables: { [variables.accent]: '#2563eb' },
-    color: variables.accent,
+    vars: { [vars.accent]: '#2563eb' },
+    color: vars.accent,
   })
 }
 
 const example = (
-  <span {...styles.label({ variables: { [variables.accent]: '#9333ea' } })}>
-    Account
-  </span>
+  <span {...styles.label({ vars: { [vars.accent]: '#9333ea' } })}>Account</span>
 )
 ```
 
-Definitions emit static assignments. Applications bind per-element values. Computed assignment keys lose individual domain information in TypeScript; `variables.accent.set(value)` retains that check. See [variable](../api/core/variable.md).
+Definitions emit static assignments. Applications bind per-element values. Computed assignment keys lose individual domain information in TypeScript; `vars.accent.set(value)` retains that check. See [variable](../api/core/variable.md).
 
 ### Conditional Styles
 
@@ -549,7 +547,7 @@ Use `@media (48rem <= width < 64rem)` for the default `md:max-lg:` range. Use `@
 
 ### Custom Breakpoints
 
-Move custom `--breakpoint-*` values into `theme.breakpoints`, keeping their original units. Aliases compile to literal query thresholds. Changing a runtime theme scope does not change those thresholds. Arbitrary `min-*` and `max-*` values can remain raw queries.
+Move custom `--breakpoint-*` values into `vars.breakpoints` in the config, keeping their original units. Aliases compile to literal query thresholds. Changing a runtime theme scope does not change those thresholds. Arbitrary `min-*` and `max-*` values can remain raw queries.
 
 ### Container Queries
 
@@ -586,7 +584,7 @@ const example = (
 )
 ```
 
-Named thresholds belong in `theme.containers`; declared names belong in `theme.containerNames`. Unnamed queries omit the name. Max and range queries retain their CSS bounds. Container-relative lengths such as `50cqw` remain CSS values. See [Responsive Styles](conditions.md#responsive-styles).
+Named thresholds belong in `vars.containers` in the config; declared names belong in `vars.containerNames`. Unnamed queries omit the name. Max and range queries retain their CSS bounds. Container-relative lengths such as `50cqw` remain CSS values. See [Responsive Styles](conditions.md#responsive-styles).
 
 ## Dark Mode
 
@@ -634,8 +632,8 @@ After preserving existing behavior, repeated light/dark color pairs can become s
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { appearance, script, style, theme } = Config.create({
-  theme: {
+export const { appearance, script, style, vars } = Config.create({
+  vars: {
     color: {
       foreground: { dark: '#fff', light: '#111' },
       surface: { dark: '#111', light: '#fff' },
@@ -661,17 +659,17 @@ Pairs compile to `light-dark()` and follow the element's effective `color-scheme
 
 The paired-color config exports `appearance`. `appearance.set({ colorScheme: 'dark' })` updates and persists the root scheme; `'light dark'` restores system preference. `appearance.get()` reads the applied state. Import it from the same config as the styles.
 
-Named theme catalogs can select a subtree with `themes({ theme: 'base', colorScheme: 'dark' })`. Theme selection and color scheme are separate choices. See [Color Schemes](themes.md#color-schemes).
+Named theme catalogs can select a subtree with `vars({ set: 'base', colorScheme: 'dark' })`. Theme selection and color scheme are separate choices. See [Color Schemes](themes.md#color-schemes).
 
 ### Persist Preferences
 
-Existing Tailwind toggle code can stay while selector-based dark styles remain. When switching to Zyzz controls, migrate stored preferences explicitly. Zyzz's default `zyzz` record contains `theme` and/or `colorScheme`; an existing `theme: 'dark'` string in another record is not automatically converted.
+Existing Tailwind toggle code can stay while selector-based dark styles remain. When switching to Zyzz controls, migrate stored preferences explicitly. Zyzz's default `zyzz` record contains `set` and/or `colorScheme`; an existing `theme: 'dark'` string in another record is not automatically converted.
 
 ### Prevent Flashes
 
 Set the initial root scheme and restore saved preferences before visible content paints. Vite injects the config's initialization script by default. Other integrations can render `script()` early in the document head, with a CSP nonce when required. Follow [Restore Preferences](themes.md#restore-preferences) for hydration and storage behavior.
 
-## Theme Variables
+## Theme Vars
 
 ### Theme Configuration
 
@@ -688,8 +686,8 @@ Tailwind's [`@theme`](https://tailwindcss.com/docs/theme) defines utility tokens
 ```ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
-  theme: {
+export const { style, vars } = Config.create({
+  vars: {
     breakpoints: { md: '48rem' },
     color: { brand: '#2563eb' },
     spacing: { gutter: '1.5rem' },
@@ -697,7 +695,7 @@ export const { style, theme } = Config.create({
 })
 ```
 
-`bg-brand p-gutter` becomes `style({ backgroundColor: 'brand', padding: 'gutter' })` using that configured helper. Nested palettes use dotted paths, such as `blue.500`. CSS literals win when they collide with token names; use `theme.tokens` to reference such a token explicitly.
+`bg-brand p-gutter` becomes `style({ backgroundColor: 'brand', padding: 'gutter' })` using that configured helper. Nested palettes use dotted paths, such as `blue.500`. CSS literals win when they collide with token names; use `vars` to reference such a token explicitly.
 
 ### Token Mappings
 
@@ -720,21 +718,21 @@ Tailwind's scalar `--spacing` generates multiples. Zyzz's spacing groups contain
 
 ### Extend Themes
 
-Use `Theme.define` for a reusable base and `Theme.extend` for compatible overrides:
+Use `Vars.define` for a reusable base and `Vars.extend` for compatible overrides:
 
 ```ts
-import { Config, Theme } from 'zyzz'
+import { Config, Vars } from 'zyzz'
 
-const base = Theme.define({
+const base = Vars.define({
   color: { brand: '#2563eb' },
   spacing: { gutter: '1.5rem' },
 })
-const roomy = Theme.extend(base, { spacing: { gutter: '2rem' } })
+const roomy = Vars.extend(base, { spacing: { gutter: '2rem' } })
 
-export const { style, theme } = Config.create({ theme: roomy })
+export const { style, vars } = Config.create({ vars: roomy })
 ```
 
-`Theme.extend` changes existing paths while retaining their contract. Add new paths to the base definition when designing a shared contract. It is not an unrestricted merge of arbitrary new token groups. See [Theme.extend](../api/core/Theme/extend.md).
+`Vars.extend` changes existing paths while retaining their contract. Add new paths to the base definition when designing a shared contract. It is not an unrestricted merge of arbitrary new token groups. See [Vars.extend](../api/core/Vars/README.md).
 
 ### Replace Defaults
 
@@ -744,27 +742,27 @@ Import `style` from `zyzz/default` only when its values are intentional. Importi
 
 ### Share Themes
 
-Export a `Theme.define` value from a shared module and import it into application configs. Components import the resulting helpers. Published theme packages need matching compiler metadata; see [Shared Configuration](themes.md#shared-configuration) and [Publish Libraries](compilation.md#publish-libraries).
+Export a `Vars.define` value from a shared module and import it into application configs. Components import the resulting helpers. Published theme packages need matching compiler metadata; see [Shared Configuration](themes.md#shared-configuration) and [Publish Libraries](compilation.md#publish-libraries).
 
 ### Inline Themes
 
 Tailwind's `@theme inline` can make utilities use a referenced variable directly. Preserve that variable reference in the Zyzz declaration, such as `fontFamily: 'var(--font-app)'`, while keeping its declaration and scope. Do not assume introducing a generated theme variable preserves the same inherited-variable resolution.
 
-### Static Variables
+### Static Vars
 
 Tailwind's `@theme static` requests variables even when utilities do not use them. Zyzz emits used theme tokens and has no equivalent all-token emission flag. Keep an explicit application-owned CSS variable stylesheet when external CSS or scripts require stable, always-present variable names.
 
 ### Variable References
 
-Use `theme.tokens.spacing[4]` for a typed token reference and `theme.vars.spacing[4]` in a web CSS expression:
+Use the same `vars.spacing[4]` reference in declarations and web CSS expressions:
 
 ```ts
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const panel = style({
-    padding: theme.tokens.spacing[4],
-    width: `calc(100% - ${theme.vars.spacing[4]})`,
+    padding: vars.spacing[4],
+    width: `calc(100% - ${vars.spacing[4]})`,
   })
 }
 ```
@@ -773,9 +771,9 @@ This snippet uses the [setup config](#custom-theme). References follow compatibl
 
 ### Theme Scopes
 
-Configure `themes` and `defaultTheme` for named compatible alternatives, then apply `themes({ theme: 'mint' })` to a document or subtree. The selection changes inherited token values while components retain their style definitions. Independently defined themes do not share a contract solely because their keys match.
+Configure `vars` and `defaultVars` for named compatible alternatives, then apply `vars({ set: 'mint' })` to a document or subtree. The selection changes inherited token values while components retain their style definitions. Independently defined themes do not share a contract solely because their keys match.
 
-See [Selecting a Theme](themes.md#selecting-a-theme) for a complete catalog. Breakpoint and container thresholds remain compile-time metadata and do not change with runtime scopes.
+See [Selecting a Theme](themes.md#selecting-sets) for a complete catalog. Breakpoint and container thresholds remain compile-time metadata and do not change with runtime scopes.
 
 ### Unsupported Groups
 
@@ -800,11 +798,11 @@ After migrating literal palettes, names such as `surface` and `foreground` can d
 Preserve color alpha separately from element opacity. For Tailwind `bg-brand/50`, use a CSS mix referencing the configured brand:
 
 ```ts
-import { style, theme } from './zyzz.config.js'
+import { style, vars } from './zyzz.config.js'
 
 namespace styles {
   export const panel = style({
-    backgroundColor: `color-mix(in oklab, ${theme.vars.color.brand} 50%, transparent)`,
+    backgroundColor: `color-mix(in oklab, ${vars.color.brand} 50%, transparent)`,
   })
 }
 ```

@@ -1,14 +1,14 @@
+import { Vars } from 'zyzz'
 /** Verifies literal stylesheet contribution contracts through public entrypoints. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Theme } from 'zyzz'
 import { layers, fontFace, global, keyframes } from 'zyzz/web'
 
 describe('stylesheet contributions', () => {
   test('accepts checked literals and theme variables', () => {
-    const theme = Theme.define({ color: { ink: 'red' } })
+    const theme = Vars.define({ color: { ink: 'red' } })
 
     global({
-      body: { color: theme.vars.color.ink, padding: '2px' },
+      body: { color: theme.color.ink, padding: '2px' },
       '@layer reset': { '*': { margin: 0 } },
     })
     fontFace({ fontFamily: 'App', src: 'url(/app.woff2)', fontDisplay: 'swap' })

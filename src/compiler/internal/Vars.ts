@@ -2,7 +2,7 @@
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
 import type * as Binding from '../../internal/Binding.js'
-import * as Theme from '../../Theme.js'
+import * as Theme from '../../internal/Theme.js'
 import type * as Css from '../../web/Css.js'
 import * as Identity from '../../internal/Identity.js'
 import * as Expression from './Expression.js'
@@ -481,7 +481,7 @@ export function collect(
       ) ?? resolve(node)
     if (!link) return false
     if (link.call.start >= 0 && node.start < link.call.end)
-      throw new InvalidError('Variables must be declared before use.', node)
+      throw new InvalidError('Vars must be declared before use.', node)
     return true
   }
 

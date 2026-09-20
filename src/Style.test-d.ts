@@ -17,7 +17,9 @@ import * as TextDecoration from '../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, Style, Theme } from 'zyzz'
+import { style, Style } from 'zyzz'
+import * as Theme from './internal/Theme.js'
+import * as Config from './internal/Configuration.js'
 
 describe('intrinsic scalar prefixes', () => {
   test('rejects optional unknown keys on broad style annotations', () => {
@@ -702,7 +704,7 @@ describe('define', () => {
     })
     const themed = Style.define(
       { card: { color: 'brand', padding: 4 } },
-      { theme },
+      { vars: theme },
     )
 
     expectTypeOf(themed.styles).toEqualTypeOf<
@@ -710,9 +712,9 @@ describe('define', () => {
     >()
 
     // @ts-expect-error Theme inference cannot widen to accept unknown tokens.
-    Style.define({ card: { color: 'missing' } }, { theme })
+    Style.define({ card: { color: 'missing' } }, { vars: theme })
     // @ts-expect-error Tokens remain property-specific.
-    Style.define({ card: { padding: 'brand' } }, { theme })
+    Style.define({ card: { padding: 'brand' } }, { vars: theme })
     // @ts-expect-error Names require an explicitly supplied theme.
     Style.define({ card: { color: 'brand' } })
 
@@ -721,18 +723,18 @@ describe('define', () => {
     // @ts-expect-error A token-aware option bag requires a theme.
     const missingTheme: Style.define.Options<Tokens> = {}
     // @ts-expect-error A token-aware option bag cannot explicitly omit the theme.
-    const undefinedTheme: Style.define.Options<Tokens> = { theme: undefined }
+    const undefinedTheme: Style.define.Options<Tokens> = { vars: undefined }
 
     void missingTheme
     void undefinedTheme
 
-    const presentTheme: Style.define.Options<Tokens> = { theme }
+    const presentTheme: Style.define.Options<Tokens> = { vars: theme }
 
     expectTypeOf(
       Style.define({ card: { color: 'brand' } }, presentTheme).styles,
     ).toEqualTypeOf<Style.Definition<'card'>['styles']>()
 
-    const optionalTheme = {} as { theme?: typeof theme | undefined }
+    const optionalTheme = {} as { vars?: typeof theme | undefined }
 
     Style.define({ card: { color: '#fff' } }, optionalTheme)
     // @ts-expect-error A potentially absent theme cannot enable shorthand names.
@@ -742,8 +744,8 @@ describe('define', () => {
       card: { color: 'brand' },
     })
 
-    if (optionalTheme.theme)
-      Style.define({ card: { color: 'brand' } }, { theme: optionalTheme.theme })
+    if (optionalTheme.vars)
+      Style.define({ card: { color: 'brand' } }, { vars: optionalTheme.vars })
   })
 })
 
@@ -829,7 +831,7 @@ describe('style', () => {
 
     Style.define(
       { card: { padding: 'space !important' } },
-      { theme: lengthTheme },
+      { vars: lengthTheme },
     )
     // @ts-expect-error A time unit is not a CSS length.
     style({ width: '1ms' })
@@ -1661,7 +1663,7 @@ describe('conditions', () => {
       })
       const styles = {} as Style.Properties<Theme.Tokens>
 
-      Style.define({ styles }, { theme })
+      Style.define({ styles }, { vars: theme })
 
       const declarations = {} as Style.DeclarationProperties & {
         widht?: string

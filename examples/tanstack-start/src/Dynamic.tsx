@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { variable } from 'zyzz'
 import { style } from './zyzz.config.js'
 
-namespace variables {
+namespace vars {
   export const amount = variable('number', {
     inherits: true,
     initialValue: 0.5,
@@ -40,12 +40,12 @@ namespace styles {
     backgroundColor: 'muted',
     borderRadius: '0.5rem',
     height: '0.75rem',
-    opacity: variables.amount,
+    opacity: vars.amount,
     width: '100%',
   })
 
   export const scope = style({
-    variables: { [variables.amount]: 0.5 },
+    vars: { [vars.amount]: 0.5 },
   })
 
   export const track = style({
@@ -81,9 +81,7 @@ export function Dynamic() {
           data-testid="dynamic-bar"
         />
       </div>
-      <div
-        {...styles.scope({ variables: { [variables.amount]: amount / 100 } })}
-      >
+      <div {...styles.scope({ vars: { [vars.amount]: amount / 100 } })}>
         <div {...styles.track()}>
           <div {...styles.inherited()} data-testid="variable-bar" />
         </div>

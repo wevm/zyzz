@@ -27,10 +27,8 @@ export type RecipeCallable<input> = <
 /** Adapts a published web callable's payload to native styling overrides. */
 export type From<fn> = fn extends (...args: infer args) => unknown
   ? [] extends args
-    ? RecipeCallable<
-        Omit<NonNullable<args[0]>, 'style' | 'className' | 'variables'>
-      >
-    : Callable<Omit<NonNullable<args[0]>, 'style' | 'className' | 'variables'>>
+    ? RecipeCallable<Omit<NonNullable<args[0]>, 'style' | 'className' | 'vars'>>
+    : Callable<Omit<NonNullable<args[0]>, 'style' | 'className' | 'vars'>>
   : never
 
 /** Ordered static and dynamic assignments selected by finite recipe choices. */

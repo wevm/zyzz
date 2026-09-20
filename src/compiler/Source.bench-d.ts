@@ -22,5 +22,5 @@ bench('extract / styles, calls, and themes', () => {
 
   void result.calls[0]?.name
   void result.styles.styles[0]?.declarations
-  void result.themes.base?.className
+  void result.vars.base?.className
 }).types([41, 'instantiations'])

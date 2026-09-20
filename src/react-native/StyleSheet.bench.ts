@@ -1,27 +1,28 @@
+import { Vars } from 'zyzz'
 /** Measures native table compilation and identity-preserving selection. @module */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import { bench, describe } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
-const base = Theme.define({
+const base = Vars.define({
   color: { ink: { dark: '#fff', light: '#000' } },
   spacing: { md: '1rem' },
 })
-const alternate = Theme.extend(base, { spacing: { md: '2rem' } })
+const alternate = Vars.extend(base, { spacing: { md: '2rem' } })
 const styles = Style.define(
   Object.fromEntries(
     Array.from({ length: 100 }, (_, index) => [
       `card${index}`,
-      { color: base.tokens.color.ink, padding: base.tokens.spacing.md },
+      { color: base.color.ink, padding: base.spacing.md },
     ]),
   ),
 )
-const options = { styles, themes: { alternate, base }, units: { rem: 16 } }
+const options = { styles, vars: { alternate, base }, units: { rem: 16 } }
 const output = StyleSheet.compile(options)
 
-describe('native tables / 100 styles / 2 themes / 2 schemes', () => {
+describe('native tables / 100 styles / 2 vars / 2 schemes', () => {
   bench(
     'compile',
     () => {
@@ -39,8 +40,8 @@ describe('native tables / 100 styles / 2 themes / 2 schemes', () => {
               entries: 400,
               jsonBytes: Buffer.byteLength(JSON.stringify(output.styles)),
               uniqueStyles: new Set(
-                Object.values(output.styles).flatMap((theme) =>
-                  Object.values(theme).flatMap(Object.values),
+                Object.values(output.styles).flatMap((set) =>
+                  Object.values(set).flatMap(Object.values),
                 ),
               ).size,
             },
@@ -59,7 +60,7 @@ describe('native tables / 100 styles / 2 themes / 2 schemes', () => {
     () => {
       StyleSheet.select(output.styles, {
         colorScheme: 'dark',
-        theme: 'alternate',
+        set: 'alternate',
       })
     },
     { time: 1000, warmupTime: 500 },

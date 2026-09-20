@@ -8,11 +8,11 @@ import type * as Zyzz from 'zyzz'
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
 declare const Config: typeof Zyzz.Config
-declare const Theme: typeof Zyzz.Theme
+declare const Vars: typeof Zyzz.Vars
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
-  Config.create({ theme: { color: { base: '#000' } } }).style({ color: 'base' })
+  Config.create({ vars: { color: { base: '#000' } } }).style({ color: 'base' })
 }
 
 bench('create / token-free authoring', () => {
@@ -23,10 +23,10 @@ bench('create / token-free authoring', () => {
 }).types([16414, 'instantiations'])
 
 bench('create / inline theme with layers and shorthands', () => {
-  const { style, theme } = Config.create({
+  const { style, vars: theme } = Config.create({
     layers: ['base', 'components'],
     shorthands: { px: ['paddingLeft', 'paddingRight'] },
-    theme: {
+    vars: {
       color: { brand: '#06c' },
       padding: { md: '8px' },
       spacing: { md: '8px' },
@@ -35,19 +35,19 @@ bench('create / inline theme with layers and shorthands', () => {
 
   style({
     '@layer components': { color: 'brand', px: 'md' },
-    ':hover': { color: theme.tokens.color.brand },
+    ':hover': { color: theme.color.brand },
     margin: 'md',
   })
 }).types([47664, 'instantiations'])
 
 bench('create / named theme catalog', () => {
-  const base = Theme.define({
+  const base = Vars.define({
     color: { brand: '#06c' },
     spacing: { md: '8px' },
   })
-  const { style, themes } = Config.create({
-    defaultTheme: 'base',
-    themes: {
+  const { style, vars: themes } = Config.create({
+    defaultVars: 'base',
+    vars: {
       base,
       mint: {
         color: { brand: { dark: '#afa', light: '#175' } },
@@ -57,7 +57,7 @@ bench('create / named theme catalog', () => {
   })
 
   style({ color: 'brand', padding: 'md' })
-  themes({ colorScheme: 'dark', theme: 'mint' })
+  themes({ colorScheme: 'dark', set: 'mint' })
 }).types([108537, 'instantiations'])
 
 bench('create / html output', () => {

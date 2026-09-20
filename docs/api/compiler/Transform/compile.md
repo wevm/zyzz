@@ -117,7 +117,7 @@ Local theme factories and scope reads become constants. Bound style calls compil
 
 Theme variable and scope identities derive from the stable package/module ID and defining binding. Token-value edits and unrelated source insertions preserve those identities; renaming the binding or module changes them. Scope rules trace to their factory and element declarations to their authored properties. The file host uses this transform and rebuilds CSS after edits.
 
-Untransformed `theme.style` calls and `theme.className` reads throw the missing-transform error. In-memory compilation reads scope classes from `Css.compile(...).themes` instead.
+Untransformed `config.style` calls and `config.vars()` selections throw the missing-transform error. In-memory compilation reads scope classes from `Css.compile(...).vars` instead.
 
 ## Errors
 

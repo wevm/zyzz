@@ -4,19 +4,19 @@ import * as NativeContext from '../runtime/NativeContext.js'
 
 const context = React.createContext(styles(undefined))
 
-/** Supplies theme and resolved device appearance to compiled native components. */
+/** Supplies set and resolved device appearance to compiled native components. */
 export function Provider(props: Provider.Props) {
   if (
     (props.colorScheme !== 'light' && props.colorScheme !== 'dark') ||
-    (props.theme !== undefined &&
-      (typeof props.theme !== 'string' || !props.theme.trim()))
+    (props.set !== undefined &&
+      (typeof props.set !== 'string' || !props.set.trim()))
   )
     throw new Error(
-      'Native appearance requires a resolved light/dark scheme and a nonempty theme name.',
+      'Native appearance requires a resolved light/dark scheme and a nonempty set name.',
     )
   const value = React.useMemo(
-    () => styles({ colorScheme: props.colorScheme, theme: props.theme }),
-    [props.colorScheme, props.theme],
+    () => styles({ colorScheme: props.colorScheme, set: props.set }),
+    [props.colorScheme, props.set],
   )
   return React.createElement(context.Provider, { value }, props.children)
 }

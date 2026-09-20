@@ -3,12 +3,12 @@
 Resolve shared definitions into deeply frozen native tables, indexed by theme label, color scheme, and style name.
 
 ```ts
-import { Style, Theme } from 'zyzz'
+import { Style, Vars } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
-const theme = Theme.define({ color: { text: { light: '#111', dark: '#fff' } } })
-const styles = Style.define({ text: { color: theme.tokens.color.text } })
-const output = StyleSheet.compile({ styles, themes: { base: theme } })
+const theme = Vars.define({ color: { text: { light: '#111', dark: '#fff' } } })
+const styles = Style.define({ text: { color: theme.color.text } })
+const output = StyleSheet.compile({ styles, vars: { base: theme } })
 ```
 
 ## Parameters
@@ -33,16 +33,16 @@ Select the platform branch after common native declarations. The compiler never 
 StyleSheet.compile({ styles, platform: 'android' })
 ```
 
-### options.themes
+### options.vars
 
-Type: `Readonly<Record<string, Theme.Definition>>`. Optional.
+Type: `Readonly<Record<string, Vars.Definition>>`. Optional.
 
-Explicit output labels. Omitting themes creates a `default` table using each token's own fallback. An empty theme map is invalid. Compatible `Theme.extend` and normalized config handles replace token values. Unrelated contracts keep their own fallbacks, even when token paths have matching names.
+Explicit output labels. Omitting themes creates a `default` table using each token's own fallback. An empty theme map is invalid. Compatible `Vars.extend` and normalized config handles replace token values. Unrelated contracts keep their own fallbacks, even when token paths have matching names.
 
 ```ts
 StyleSheet.compile({
   styles,
-  themes: { base: theme, alternate: Theme.extend(theme, {}) },
+  vars: { base: theme, alternate: Vars.extend(theme, {}) },
 })
 ```
 

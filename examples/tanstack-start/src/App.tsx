@@ -5,7 +5,7 @@ import { Dynamic } from './Dynamic.js'
 import { Motion } from './Motion.js'
 import { Relationships } from './Relationships.js'
 import { Styling } from './Styling.js'
-import { appearance, style, themes } from './zyzz.config.js'
+import { appearance, style, vars } from './zyzz.config.js'
 
 global({
   '@layer base': {
@@ -79,7 +79,7 @@ namespace styles {
 export function App() {
   // Server rendering has no document, so the applied selection is read after hydration.
   const [selection, setSelection] = useState<ReturnType<typeof appearance.get>>(
-    { theme: 'indigo' },
+    { set: 'indigo' },
   )
 
   useEffect(() => setSelection(appearance.get()), [])
@@ -103,15 +103,15 @@ export function App() {
           <div {...styles.row()}>
             <button
               {...styles.button()}
-              aria-pressed={selection.theme === 'indigo'}
-              onClick={() => select({ theme: 'indigo' })}
+              aria-pressed={selection.set === 'indigo'}
+              onClick={() => select({ set: 'indigo' })}
             >
               Indigo
             </button>
             <button
               {...styles.button()}
-              aria-pressed={selection.theme === 'mint'}
-              onClick={() => select({ theme: 'mint' })}
+              aria-pressed={selection.set === 'mint'}
+              onClick={() => select({ set: 'mint' })}
             >
               Mint
             </button>
@@ -152,13 +152,13 @@ export function App() {
                 {...styles.sample()}
                 onClick={() =>
                   select({
-                    theme: selection.theme === 'indigo' ? 'mint' : 'indigo',
+                    set: selection.set === 'indigo' ? 'mint' : 'indigo',
                   })
                 }
               >
-                Parent: {selection.theme}
+                Parent: {selection.set}
               </button>
-              <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
+              <div {...vars({ set: 'mint', colorScheme: 'dark' })}>
                 <div {...styles.nested()} data-testid="nested-theme">
                   <button {...styles.sample()}>Always mint + dark</button>
                 </div>

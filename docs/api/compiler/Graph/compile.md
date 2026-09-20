@@ -8,13 +8,15 @@ import { Graph } from 'zyzz/compiler'
 const output = Graph.compile({
   modules: {
     'app/theme.ts': `
-      import { Theme } from 'zyzz'
-      export const theme = Theme.define({ color: { brand: '#06c' } })
+      import { Vars } from 'zyzz'
+      export const theme = Vars.define({ color: { brand: '#06c' } })
     `,
     'app/card.ts': `
+      import { Config } from 'zyzz'
       import { theme } from './theme.js'
       export namespace styles {
-        export const card = theme.style({ color: 'brand' })
+        const config = Config.create({ vars: theme })
+        export const card = config.style({ color: 'brand' })
       }
     `,
   },
@@ -86,7 +88,7 @@ Graph.compile({ modules: { 'app/card.ts': source } })
 - Type: Native compilation context with required `colorScheme`.
 - Default: Web output.
 
-Compile source and packed static callables into native style props. `platform`, `themes`, `theme`, `fonts`, and `units` follow [native source compilation](../Native.md). Native output contains module code, maps, contracts, and dependencies, with empty CSS and class metadata. Source rewriting is required.
+Compile source and packed static callables into native style props. `platform`, `vars`, `set`, `fonts`, and `units` follow [native source compilation](../Native.md). Native output contains module code, maps, contracts, and dependencies, with empty CSS and class metadata. Source rewriting is required.
 
 ## Returns
 
@@ -161,7 +163,7 @@ for (const placeholder of Object.keys(output.sharedAssets ?? {}))
 Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2; version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
 
 ```ts
-import { style, theme } from '@acme/theme'
+import { style, vars } from '@acme/theme'
 
 export namespace styles {
   export const card = style({ color: 'brand' })

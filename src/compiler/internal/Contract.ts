@@ -3,14 +3,16 @@
  * @module
  */
 import type * as Binding from '../../internal/Binding.js'
-import * as Config from '../../Config.js'
+import * as Config from '../../internal/Configuration.js'
 import * as Configurations from './Configurations.js'
 import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import * as Identifiers from './Identifiers.js'
 import * as PackedStyles from './PackedStyles.js'
 import * as Shorthands from '../../internal/Shorthands.js'
 import * as Stylesheets from './Stylesheets.js'
-import * as Theme from '../../Theme.js'
+import * as Theme from '../../internal/Theme.js'
+import * as VariableSets from '../../internal/VariableSets.js'
+import * as Vars from '../../Vars.js'
 import type * as Themes from './Themes.js'
 import * as Token from '../../internal/Token.js'
 
@@ -24,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25,
+      22, 23, 24, 25, 26,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -56,12 +58,53 @@ export function read(
     for (const entry of Object.values(record(data.exports))) collect(entry)
   }
 
+  function decode(value: unknown): unknown {
+    if (!value || typeof value !== 'object') return value
+    if (Array.isArray(value)) return value.map(decode)
+    const fields = record(value)
+    if (Object.hasOwn(fields, '$object'))
+      return Object.fromEntries(
+        Object.entries(record(fields.$object)).map(([key, value]) => [
+          key,
+          decode(value),
+        ]),
+      )
+    if (Object.hasOwn(fields, '$variable')) {
+      const reference = record(fields.$variable)
+      const identity = string(reference.identity)
+      let contract = identities.get(identity)
+      if (contract && !contract.variableSet)
+        throw new Error(
+          'Conflicting packed variable-set modes for one identity.',
+        )
+      if (!contract) {
+        contract = Object.freeze({
+          variableSet: true,
+          [Token.identity]: identity,
+        })
+        identities.set(identity, contract)
+      }
+      const resolved = decode(reference.value) as Token.Value
+      return Token.create({
+        contract,
+        group: VariableSets.domain(resolved),
+        path: string(reference.path),
+        value: resolved,
+      })
+    }
+    return Object.fromEntries(
+      Object.entries(fields).map(([key, value]) => [key, decode(value)]),
+    )
+  }
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
 
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
+    if (entry.variableSet === true && (data.version as number) < 26)
+      throw new Error('Vars contracts require contract version 26 or later.')
+    const mappings = VariableSets.mappings(entry.mappings)
     if (
       entry.cssOutput !== undefined &&
       entry.cssOutput !== 'atomic' &&
@@ -78,6 +121,16 @@ export function read(
         ? Shorthands.read(entry.shorthands)
         : undefined
     let contract = identities.get(identity)
+    if (
+      contract &&
+      Boolean(contract.variableSet) !== (entry.variableSet === true)
+    )
+      throw new Error('Conflicting packed variable-set modes for one identity.')
+    if (
+      contract &&
+      JSON.stringify(contract.mappings ?? {}) !== JSON.stringify(mappings ?? {})
+    )
+      throw new Error('Conflicting packed variable mappings for one identity.')
     if (
       contract &&
       Shorthands.signature(contract.shorthands) !==
@@ -97,6 +150,12 @@ export function read(
 
     if (!contract) {
       contract = Object.freeze({
+        ...(entry.variableSet === true
+          ? {
+              variableSet: true,
+              mappings,
+            }
+          : {}),
         ...(entry.shorthands !== undefined
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
@@ -107,7 +166,13 @@ export function read(
       identities.set(identity, contract)
     }
 
-    const definition = Theme.define(record(entry.tokens) as Theme.Tokens)
+    const definition =
+      entry.variableSet === true
+        ? VariableSets.theme(
+            Vars.define(decode(entry.tokens) as Vars.Values),
+            mappings,
+          )
+        : Theme.define(record(entry.tokens) as Theme.Tokens)
     if (
       (data.version as number) < 24 &&
       Object.hasOwn(definition.tokens, 'typography')
@@ -215,7 +280,7 @@ export function read(
       const reference = string(entry.reference)
       if (
         ![
-          9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+          9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -263,10 +328,7 @@ export function read(
     }
 
     if (entry.kind === 'style-reference') {
-      if (
-        entry.style !== undefined &&
-        ![16, 17, 18, 19, 20, 21, 22, 23, 24].includes(data.version as number)
-      )
+      if (entry.style !== undefined && (data.version as number) < 16)
         throw new Error(
           'Packed callable styles require contract version 16 or later.',
         )
@@ -340,10 +402,17 @@ export function read(
         : undefined
 
     const options =
-      entry.options === undefined ? undefined : record(entry.options)
+      entry.options === undefined ? undefined : record(decode(entry.options))
 
     if (options) {
-      Config.create(options as Config.create.Options)
+      if (entry.variableConfig === true)
+        Config.create(
+          variableOptions(
+            options,
+            entry.variableMappings as Vars.Mappings | undefined,
+          ),
+        )
+      else Config.create(options as Config.create.Options)
       if (
         (data.version as number) >= 17 &&
         (options.cssOutput ?? 'atomic') !==
@@ -366,7 +435,9 @@ export function read(
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
-      ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
+      ? entry.variableConfig === true
+        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | undefined))}>`
+        : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
     const hidden = [
@@ -385,6 +456,26 @@ export function read(
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.variableSet === true
+          ? {
+              variableSet: true,
+              type: `import('zyzz').Vars.Definition<${types[theme]!}>`,
+            }
+          : {}),
+        ...(entry.directVariables === true
+          ? {
+              directVariables: true,
+              type: `import('zyzz').Vars.${entry.variableSet === true ? 'Definition' : 'References'}<${types[theme]!}>`,
+            }
+          : {}),
+        ...(entry.variableConfig === true
+          ? {
+              variableConfig: true,
+              variableMappings: entry.variableMappings as
+                | Vars.Mappings
+                | undefined,
+            }
+          : {}),
         ...(entry.recipe === true ? { recipe: true } : {}),
         ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
@@ -408,7 +499,7 @@ export function read(
         ...(options
           ? {
               options,
-              type: `${outputType}${entry.initialization === true ? "['script']" : entry.root === true ? "['appearance']" : entry.selection === true ? "['themes']" : ''}`,
+              type: `${outputType}${entry.initialization === true ? "['script']" : entry.root === true ? "['appearance']" : entry.selection === true ? (entry.variableConfig === true ? "['vars']" : "['themes']") : ''}`,
             }
           : {}),
         ...(members
@@ -468,6 +559,7 @@ function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
 }
 
 function type(value: unknown): string {
+  if (Token.is(value)) return Configurations.type(value)
   if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
 
@@ -534,6 +626,11 @@ export function write(
       }
 
     return {
+      ...(link.call.variableSet ? { variableSet: true } : {}),
+      ...(link.call.directVariables ? { directVariables: true } : {}),
+      ...(link.call.variableConfig
+        ? { variableConfig: true, variableMappings: link.call.variableMappings }
+        : {}),
       ...(link.call.recipe ? { recipe: true } : {}),
       ...(link.call.output ? { output: link.call.output } : {}),
       ...(link.call.script &&
@@ -550,7 +647,7 @@ export function write(
       ...(link.call.selection ? { selection: true } : {}),
       ...(link.call.initialization ? { initialization: true } : {}),
       ...(link.call.root ? { root: true } : {}),
-      ...(link.call.options ? { options: link.call.options } : {}),
+      ...(link.call.options ? { options: encode(link.call.options) } : {}),
       ...(link.members
         ? {
             members: Object.fromEntries(
@@ -584,12 +681,24 @@ export function write(
           ...(theme[Token.definition].contract.cssOutput
             ? { cssOutput: theme[Token.definition].contract.cssOutput }
             : {}),
+          ...(theme[Token.definition].contract.variableSet
+            ? {
+                variableSet: true,
+                mappings: theme[Token.definition].contract.mappings,
+              }
+            : {}),
           identity: theme[Token.definition].contract[Token.identity],
-          tokens: input(theme),
+          tokens: encode(input(theme)),
         },
       ]),
     ),
     version: (() => {
+      if (
+        Object.values(themes).some(
+          (theme) => theme[Token.definition].contract.variableSet,
+        )
+      )
+        return 26
       if (
         Object.values(themes).some(
           (theme) =>
@@ -875,4 +984,36 @@ function extended(signature: NonNullable<Themes.Call['function']>): boolean {
       /[\\\u0080-\uffff]/.test(parameter.name + (parameter.syntax ?? '*')),
     )
   )
+}
+
+function encode(value: unknown): unknown {
+  if (Token.is(value))
+    return {
+      $variable: {
+        identity: value.contract[Token.identity],
+        path: value.path,
+        value: encode(value.value),
+      },
+    }
+  if (Array.isArray(value)) return value.map(encode)
+  if (!value || typeof value !== 'object') return value
+  const fields = Object.fromEntries(
+    Object.entries(value).map(([key, value]) => [key, encode(value)]),
+  )
+  return Object.hasOwn(fields, '$variable') || Object.hasOwn(fields, '$object')
+    ? { $object: fields }
+    : fields
+}
+
+function variableOptions(
+  options: Record<string, unknown>,
+  mappings?: Vars.Mappings,
+): Config.VariableOptions {
+  const { theme, themes, defaultTheme, ...rest } = options
+  return {
+    ...rest,
+    vars: (themes ?? theme) as Vars.Values,
+    ...(themes ? { defaultVars: String(defaultTheme) } : {}),
+    ...(mappings ? { mappings } : {}),
+  }
 }

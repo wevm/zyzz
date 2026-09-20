@@ -4,7 +4,7 @@ import * as Html from '../runtime/CompositionHtml.js'
 import * as Identity from './Identity.js'
 import * as Props from '../runtime/Props.js'
 import * as Style from '../Style.js'
-import type * as Theme from '../Theme.js'
+import type * as Theme from './Theme.js'
 
 /** Private ownership used by uncompiled composition; never spread onto DOM props. */
 export const metadata = Symbol.for('zyzz.authoring')
@@ -44,7 +44,7 @@ export function body(input: Record<string, unknown>): Record<string, unknown> {
           descriptors.web = { ...web, value: body(web.value) }
         return [[key, Object.create(Object.getPrototypeOf(value), descriptors)]]
       }
-      if (key === 'selectors' || key === 'variables')
+      if (key === 'selectors' || key === 'vars')
         return Object.entries(value as Record<string, unknown>).map(
           ([name, entry]) => [
             name,
@@ -84,7 +84,7 @@ export function create(
           ) => Style.Definition
         )(
           { style: body(input as Record<string, unknown>) },
-          { theme: options.theme },
+          { vars: options.theme },
         ).styles[0]!,
       )
   const props = Props.create({ className })
@@ -95,7 +95,7 @@ export function create(
         ...result.style,
       }
       for (const [field, value] of Object.entries(values ?? {})) {
-        if (['className', 'style', 'variables'].includes(field)) continue
+        if (['className', 'style', 'vars'].includes(field)) continue
         style[Identity.slot(id!, field)] =
           value === '' ? ' ' : (value as string | number)
       }
@@ -107,9 +107,7 @@ export function create(
         attributes: [],
         slots: dynamic
           ? Object.keys(values ?? {})
-              .filter(
-                (key) => !['className', 'style', 'variables'].includes(key),
-              )
+              .filter((key) => !['className', 'style', 'vars'].includes(key))
               .map((key) => Identity.slot(id!, key))
           : [],
       },

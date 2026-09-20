@@ -39,15 +39,15 @@ Serialization errors propagate to the caller. The returned script catches storag
 
 ## root
 
-`Appearance.root(entries, options?)` returns `{ get, set }`. The compiler supplies it as the configuration's `appearance` member; `options.defaultTheme` is the catalog default reported without a root class and `options.storageKey` matches the script's key. The catalog name type is inferred from `entries`, and a named catalog requires a `defaultTheme` among them or creation throws `TypeError`.
+`Appearance.root(entries, options?)` returns `{ get, set }`. The compiler supplies it as the configuration's `appearance` member; `options.defaultVars` is the catalog default reported without a root class and `options.storageKey` matches the script's key. The catalog name type is inferred from `entries`, and a named catalog requires a `defaultVars` among them or creation throws `TypeError`.
 
 ```ts
 const appearance = Appearance.root([['mint', 'z_theme-mint']], {
-  defaultTheme: 'mint',
+  defaultVars: 'mint',
 })
 
 appearance.set({ colorScheme: 'dark' })
-appearance.get() // { theme: 'mint', colorScheme: 'dark' }
+appearance.get() // { set: 'mint', colorScheme: 'dark' }
 ```
 
 `get()` reads the theme and scheme classes on `document.documentElement`. `set()` merges fields over that reading, replaces the catalog and scheme classes plus the inline `color-scheme`, and writes the record; blocked storage keeps the change for the current document. Unknown themes or schemes throw `TypeError`.

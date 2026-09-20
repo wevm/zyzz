@@ -85,8 +85,8 @@ Each panel has `1rem` padding and displays "Content". Text is `#111` in light mo
 ```ts
 import { Config } from 'zyzz'
 
-export const { style, theme } = Config.create({
-  theme: {
+export const { style, vars } = Config.create({
+  vars: {
     color: { content: { dark: '#eee', light: '#111' } },
     spacing: { panel: '1rem' },
   },

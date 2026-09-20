@@ -1,6 +1,7 @@
-/** Compiles portable declarations into immutable native theme tables. @module */
+/** Compiles portable declarations into immutable native set tables. @module */
 import type * as Style from '../Style.js'
-import type * as Theme from '../Theme.js'
+import type * as Vars from '../Vars.js'
+import type * as Theme from '../internal/Theme.js'
 import * as Token from '../internal/Token.js'
 import type * as Native from '../internal/NativeProperties.js'
 import * as Values from './internal/Values.js'
@@ -18,7 +19,7 @@ export const absoluteFill = Object.freeze({
   top: 0,
 } as const)
 
-/** Explicit theme alternative, never inferred from a device. */
+/** Explicit set alternative, never inferred from a device. */
 export type ColorScheme = 'dark' | 'light'
 
 /** Failure to represent the supplied definitions on the native target. */
@@ -46,7 +47,7 @@ export class CompileError extends Error {
 }
 
 /**
- * Resolves portable tokens into two static scheme tables per supplied theme.
+ * Resolves portable tokens into two static scheme tables per supplied set.
  * px defaults to one native logical unit. rem and font families require mappings.
  * No device state, CSS parser, stylesheet registration, or runtime binding is used.
  * @throws {CompileError} For unsupported semantics or invalid conversion inputs.
@@ -63,7 +64,7 @@ export function compile<
   },
 ): compile.ReturnType<name, themeName, definition, platform> {
   for (const key of Object.keys(options))
-    if (!['fonts', 'platform', 'styles', 'themes', 'units'].includes(key))
+    if (!['fonts', 'platform', 'styles', 'vars', 'units'].includes(key))
       fail('invalid_options', 'Unknown native compiler option.', [key])
 
   if (
@@ -137,15 +138,18 @@ export function compile<
     }
   }
 
-  const themes: readonly (readonly [string, Theme.Definition | undefined])[] =
-    options.themes === undefined
+  const vars: readonly (readonly [
+    string,
+    Theme.Definition | Vars.Definition | undefined,
+  ])[] =
+    options.vars === undefined
       ? [['default', undefined]]
-      : Object.entries(options.themes)
-  if (!themes.length)
+      : Object.entries(options.vars)
+  if (!vars.length)
     fail(
       'invalid_options',
-      'Supply at least one theme, or omit themes for a default table.',
-      ['themes'],
+      'Supply at least one set, or omit vars for a default table.',
+      ['vars'],
     )
 
   const tables: Record<
@@ -156,23 +160,19 @@ export function compile<
   const diagnostics: Diagnostic[] = []
   let independent: Readonly<Record<string, NativeStyle>> | undefined
 
-  for (const [label, theme] of themes) {
+  for (const [label, set] of vars) {
     if (!label)
-      fail('invalid_options', 'Theme labels must be nonempty.', [
-        'themes',
-        label,
-      ])
+      fail('invalid_options', 'Theme labels must be nonempty.', ['vars', label])
     const metadata =
-      theme &&
-      (Object.getOwnPropertyDescriptor(theme, Token.definition)?.value as
+      set &&
+      (Object.getOwnPropertyDescriptor(set, Token.definition)?.value as
         | Token.Metadata
         | undefined)
-    if (options.themes !== undefined && !metadata)
-      fail(
-        'invalid_options',
-        'Expected a Theme.define or Config theme handle.',
-        ['themes', label],
-      )
+    if (options.vars !== undefined && !metadata)
+      fail('invalid_options', 'Expected a Theme.define or Config set handle.', [
+        'vars',
+        label,
+      ])
 
     const schemes = {} as Record<
       ColorScheme,
@@ -387,7 +387,9 @@ export declare namespace compile {
     /** Immutable shared definitions, also accepted by Css.compile. */
     readonly styles: Style.Definition<name>
     /** Explicit output labels. Omission creates the token-fallback default table. */
-    readonly themes?: Readonly<Record<themeName, Theme.Definition>> | undefined
+    readonly vars?:
+      | Readonly<Record<themeName, Theme.Definition | Vars.Definition>>
+      | undefined
     /** Positive logical-unit scales. px defaults to one, rem has no default. */
     readonly units?:
       | { readonly px?: number | undefined; readonly rem?: number | undefined }
@@ -514,7 +516,7 @@ type Compiled<definition, platform, name extends string> =
 
 /** Optional native authoring constraint used with satisfies before Style.define. */
 export type Properties = {
-  /** Portable literals or property-compatible scalar theme references. */
+  /** Portable literals or property-compatible scalar set references. */
   readonly [property in keyof typeof properties]?:
     | Atom<(typeof properties)[property]>
     | Reference<property>
@@ -522,7 +524,7 @@ export type Properties = {
 
 /**
  * Looks up an existing table without allocating or resolving device state.
- * @throws {SelectionError} For unknown own theme labels or color schemes.
+ * @throws {SelectionError} For unknown own set labels or color schemes.
  */
 export function select<const tables extends Tables>(
   styles: tables,
@@ -536,12 +538,12 @@ export function select<name extends string, themeName extends string>(
     !styles ||
     !options ||
     (options.colorScheme !== 'light' && options.colorScheme !== 'dark') ||
-    !Object.hasOwn(styles, options.theme)
+    !Object.hasOwn(styles, options.set)
   )
     throw new SelectionError(
-      'Select an existing theme label and light or dark colorScheme.',
+      'Select an existing set label and light or dark colorScheme.',
     )
-  return styles[options.theme][options.colorScheme]
+  return styles[options.set][options.colorScheme]
 }
 
 /** Native lookup options. */
@@ -551,7 +553,7 @@ export declare namespace select {
     /** Precompiled color scheme. */
     readonly colorScheme: ColorScheme
     /** Own label in the compiled tables. */
-    readonly theme: themeName
+    readonly set: themeName
   }
 }
 
@@ -771,23 +773,28 @@ function resolve(
     (metadata.contract === value.contract ||
       (metadata.contract[Token.identity] !== undefined &&
         metadata.contract[Token.identity] === value.contract[Token.identity]))
-  const resolved = shared
+  let resolved = shared
     ? Object.hasOwn(metadata.values, value.path)
       ? metadata.values[value.path]
       : undefined
     : value.value
   if (resolved === undefined)
     fail('unsupported_value', 'Theme is missing a live token.', path)
-  if (typeof resolved === 'object' && resolved.light !== resolved.dark)
-    resolution.schemeIndependent = false
-  const scalar = typeof resolved === 'object' ? resolved[scheme] : resolved
-  if (typeof scalar !== 'string' && typeof scalar !== 'number')
-    fail(
-      'unsupported_value',
-      'Expected a complete scalar color-scheme pair.',
-      path,
-    )
-  return scalar
+  while (typeof resolved === 'object') {
+    if (Token.is(resolved)) {
+      resolved = resolved.value
+      continue
+    }
+    if ('default' in resolved)
+      fail(
+        'unsupported_feature',
+        'Media-conditioned variables require a web target.',
+        path,
+      )
+    if (resolved.light !== resolved.dark) resolution.schemeIndependent = false
+    resolved = resolved[scheme]
+  }
+  return resolved
 }
 
 type TransformValues = {

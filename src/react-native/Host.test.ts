@@ -1,3 +1,4 @@
+import { Vars } from 'zyzz'
 /** Exercises explicit native host state through compiled tables and runtime callables. @module */
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -6,7 +7,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Style } from 'zyzz'
 import { Native as Compiler } from 'zyzz/compiler'
 import { Host, StyleSheet } from 'zyzz/react-native'
 import { Native, type NativeDynamic } from 'zyzz/runtime'
@@ -19,20 +20,20 @@ const initial = {
   platform: 'ios',
   reducedMotion: false,
   rtl: false,
-  theme: 'base',
+  set: 'base',
 } as const
 
 function tables(): StyleSheet.Tables<'card'> {
-  const base = Theme.define({ color: { ink: { light: '#000', dark: '#fff' } } })
-  const alternate = Theme.extend(base, {
+  const base = Vars.define({ color: { ink: { light: '#000', dark: '#fff' } } })
+  const alternate = Vars.extend(base, {
     color: { ink: { light: '#f00', dark: '#00f' } },
   })
   return StyleSheet.compile({
     platform: 'ios',
-    themes: { base, alternate },
+    vars: { base, alternate },
     styles: Style.define({
       card: {
-        color: base.tokens.color.ink,
+        color: base.color.ink,
         targets: { ios: { opacity: 0.8 }, android: { opacity: 0.4 } },
       },
     }),
@@ -40,7 +41,7 @@ function tables(): StyleSheet.Tables<'card'> {
 }
 
 describe('create', () => {
-  test('updates precompiled themes and schemes before notification and cleans up the adapter', () => {
+  test('updates precompiled vars and schemes before notification and cleans up the adapter', () => {
     const styles = tables()
     const device = new Events.EventEmitter()
     let cleanups = 0
@@ -65,7 +66,7 @@ describe('create', () => {
     const first = card().style
     const seen: unknown[] = []
     const unsubscribe = host.subscribe((snapshot) =>
-      seen.push([snapshot.theme, snapshot.colorScheme, card().style]),
+      seen.push([snapshot.set, snapshot.colorScheme, card().style]),
     )
 
     host.update({ colorScheme: 'light' })
@@ -73,7 +74,7 @@ describe('create', () => {
     expect(card().style === first).toMatchInlineSnapshot('true')
     expect(seen).toMatchInlineSnapshot(`[]`)
     device.emit('appearance', { colorScheme: 'dark' })
-    host.update({ theme: 'alternate' })
+    host.update({ set: 'alternate' })
     expect(seen).toMatchInlineSnapshot(`
       [
         [
@@ -98,9 +99,9 @@ describe('create', () => {
     expect(Object.isFrozen(card().style)).toMatchInlineSnapshot('true')
     const committed = host.getSnapshot()
     expect(() =>
-      host.update({ theme: 'missing' }),
+      host.update({ set: 'missing' }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[StyleSheet.SelectionError: Select an existing theme label and light or dark colorScheme.]`,
+      `[StyleSheet.SelectionError: Select an existing set label and light or dark colorScheme.]`,
     )
     expect(host.getSnapshot() === committed).toMatchInlineSnapshot('true')
     expect(card().style).toMatchInlineSnapshot(`
@@ -207,7 +208,7 @@ describe('create', () => {
         "platform": "ios",
         "reducedMotion": true,
         "rtl": true,
-        "theme": "base",
+        "set": "base",
       }
     `)
     expect(other.getSnapshot()).toMatchInlineSnapshot(`
@@ -221,7 +222,7 @@ describe('create', () => {
         "platform": "android",
         "reducedMotion": false,
         "rtl": false,
-        "theme": "base",
+        "set": "base",
       }
     `)
     host.dispose()
@@ -237,7 +238,7 @@ describe('create', () => {
       const compiled = Compiler.compile({
         moduleId: 'host-dynamic.ts',
         colorScheme,
-        source: `import {Config} from 'zyzz';const {style}=Config.create({theme:{color:{ink:{light:'#000',dark:'#fff'}}}});export const card=style((input:{alpha:number;gap:string})=>({color:'ink',opacity:input.alpha,padding:input.gap}));`,
+        source: `import {Config} from 'zyzz';const {style}=Config.create({vars:{color:{ink:{light:'#000',dark:'#fff'}}}});export const card=style((input:{alpha:number;gap:string})=>({color:'ink',opacity:input.alpha,padding:input.gap}));`,
       })
       const bundle = await Esbuild.build({
         stdin: {
@@ -540,7 +541,7 @@ host.dispose();`,
       { density: 0 },
       { density: Infinity },
       { fontScale: -1 },
-      { theme: '' },
+      { set: '' },
       { colorScheme: 'system' },
       { rtl: 1 },
       { platform: 'android' },
@@ -549,7 +550,7 @@ host.dispose();`,
       expect(() =>
         host.update(patch as Partial<Host.Inputs>),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Host.InputError: Provide a theme, resolved scheme, positive finite scales, and boolean accessibility inputs.]`,
+        `[Host.InputError: Provide a set, resolved scheme, positive finite scales, and boolean accessibility inputs.]`,
       )
       expect(host.getSnapshot() === previous).toMatchInlineSnapshot('true')
     }

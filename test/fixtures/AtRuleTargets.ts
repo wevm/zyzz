@@ -5,8 +5,8 @@ import * as Named from './NamedDescriptors.js'
 /** Public source and independently authored native rules for compatibility review. */
 export const rules = {
   '@container': {
-    css: '@container card style(--theme: dark){body{color:red}}',
-    source: `import {global} from 'zyzz/web';global({'@container card style(--theme: dark)':{body:{color:'red'}}});`,
+    css: '@container card style(--vars: dark){body{color:red}}',
+    source: `import {global} from 'zyzz/web';global({'@container card style(--vars: dark)':{body:{color:'red'}}});`,
   },
   '@counter-style': {
     css: '@counter-style probe{system:additive;additive-symbols:10 "X",1 "I",0 "O";fallback:decimal;negative:"(" ")";pad:2 "0";prefix:"[";range:0 99;speak-as:numbers;suffix:"]";symbols:"I"}',

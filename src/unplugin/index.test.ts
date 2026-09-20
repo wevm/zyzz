@@ -18,7 +18,7 @@ async function fixture() {
   const root = await Fs.mkdtemp(Path.resolve('.fixture-unplugin-'))
   await Fs.writeFile(
     Path.join(root, 'theme.js'),
-    `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#0066cc' } });`,
+    "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#0066cc' } });",
   )
   await Fs.writeFile(
     Path.join(root, 'global.js'),
@@ -26,7 +26,7 @@ async function fixture() {
   )
   await Fs.writeFile(
     Path.join(root, 'main.js'),
-    `import { theme } from './theme.js'; export const props = theme.style({ color: 'brand', padding: '8px' })();`,
+    `import {Config} from 'zyzz';import { theme } from './theme.js';const config=Config.create({vars:theme}); export const props = config.style({ color: 'brand', padding: '8px' })();`,
   )
   return root
 }
@@ -175,7 +175,7 @@ describe('zyzz', () => {
       await context.rebuild()
       await Fs.writeFile(
         Path.join(root, 'theme.js'),
-        `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#ff0000' } });`,
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
       )
       await Fs.rm(Path.join(root, 'global.js'))
       await context.rebuild()
@@ -239,7 +239,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'theme.js'),
-        `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#ff0000' } });`,
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
       )
       await vi.waitFor(
         async () => {
@@ -406,7 +406,7 @@ describe('zyzz', () => {
       for (const color of ['#0066cc', '#ff0000']) {
         await Fs.writeFile(
           Path.join(root, 'theme.js'),
-          `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '${color}' } });`,
+          `import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '${color}' } });`,
         )
         const build = await Rollup.rollup({
           cache,
@@ -501,7 +501,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'theme.js'),
-        `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#ff0000' } });`,
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
       )
       await vi.waitFor(
         async () => {

@@ -1,6 +1,6 @@
 /** Demonstrates literal reuse, states, fallbacks, and styling overrides. @module */
 import { useState } from 'react'
-import { style, theme } from './zyzz.config'
+import { style, vars } from './zyzz.config'
 
 namespace styles {
   export const button = style({
@@ -31,8 +31,8 @@ namespace styles {
   export const label = style({
     ...shape,
     border: '1px solid',
-    borderColor: theme.vars.color.accent,
-    color: theme.tokens.color.accent,
+    borderColor: vars.color.accent,
+    color: vars.color.accent,
     display: ['block', 'inline-flex'],
     fontWeight: '600 !important',
   })

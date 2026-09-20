@@ -1,4 +1,5 @@
 /** Exercises public recipe compilation and real browser choice transitions. @module */
+import * as Packed from '../test/fixtures/Packed.js'
 import * as Library from '../test/fixtures/VariantLibrary.js'
 import * as Watch from '../test/fixtures/Watch.js'
 import * as Trace from '@jridgewell/trace-mapping'
@@ -364,15 +365,12 @@ describe('bound', () => {
   describe('variants', () => {
     test('retains mixed theme bindings through renamed exports and packed consumers', async () => {
       const modules = {
-        'theme.ts': `import {Theme} from 'zyzz';
-export const theme=Theme.define({color:{brand:'#06c'}});
-const {style,variants:recipe}=theme;
-const alias=recipe;
-export {style,alias};`,
+        'theme.ts':
+          "import {Config} from 'zyzz';\nexport const {vars:theme,style,variants:recipe}=Config.create({vars:{color:{brand:'#06c'}}});\nconst alias=recipe;\nexport {alias};",
         'index.ts': `export {style as styled,alias as variants,theme} from './theme.js';`,
       }
       const app = `import {styled,variants,theme} from './index.js';
-export const scope=theme.className;
+export const scope=theme().className;
 export const base=styled({color:'black',padding:'6px'});
 export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'red'}}},defaultVariants:{intent:'primary'}});`
       const publisher = Graph.compile({ modules })
@@ -392,18 +390,15 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
         ),
       ).toMatchInlineSnapshot(`false`)
 
-      const bundled = await Esbuild.build({
-        stdin: {
-          contents: packed.modules['app.ts']!.code,
-          loader: 'ts',
-          resolveDir: process.cwd(),
-        },
-        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
-        bundle: true,
-        format: 'iife',
-        globalName: 'App',
-        write: false,
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: Object.fromEntries(
+          Object.entries({ ...publisher.modules, ...packed.modules }).map(
+            ([id, module]) => [id, module.code],
+          ),
+        ),
       })
+
       const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox'],
@@ -413,7 +408,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
         await page.setContent(
           `<style>${publisher.sharedCss ?? ''}\n${packed.sharedCss ?? ''}\n${packed.modules['app.ts']!.css}</style><main><button>Button</button></main>`,
         )
-        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.addScriptTag({ content: code + ';globalThis.App=Fixture;' })
         expect(
           await page.evaluate(`{
         document.querySelector('main').className=App.scope;
@@ -455,8 +450,9 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     })
 
     test('preserves configured aliases through source and packed contracts', async () => {
-      const config = `import {Config} from 'zyzz'; export const {variants,theme}=Config.create({output:'html',theme:{color:{brand:'#06c'}},shorthands:{px:['paddingLeft','paddingRight']}})`
-      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme.className; export const button=recipe({base:{px:'8px'},variants:{intent:{primary:{color:'brand'},quiet:{color:'black'}}},defaultVariants:{intent:'primary'}})`
+      const config =
+        "import {Config} from 'zyzz'; export const {variants,vars:theme}=Config.create({output:'html',vars:{color:{brand:'#06c'}},shorthands:{px:['paddingLeft','paddingRight']}})"
+      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme().class; export const button=recipe({base:{px:'8px'},variants:{intent:{primary:{color:'brand'},quiet:{color:'black'}}},defaultVariants:{intent:'primary'}})`
       const publisher = Graph.compile({ modules: { 'config.ts': config } })
       const result = Graph.compile({
         modules: { 'app.ts': app },
@@ -469,10 +465,13 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
         ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
-        .z-pl-8px-MIN2nV-0{padding-left:8px;}
-        .z-pr-8px-MIN2nV-1{padding-right:8px;}
-        .z-text-KnkPic-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
-        .z-text-BKrHvw-3{&:where([data-intent="quiet"]){color:black;}}"
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-pl-8px-XE91MF-0{padding-left:8px;}
+        .z-pr-8px-XE91MF-1{padding-right:8px;}
+        .z-text-tZh6GS-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
+        .z-text-d5fLEX-3{&:where([data-intent="quiet"]){color:black;}}"
       `,
       )
       expect(
@@ -480,19 +479,16 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       ).toMatchInlineSnapshot('true')
       expect(
         JSON.parse(publisher.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`19`)
-      const bundled = await Esbuild.build({
-        stdin: {
-          contents: result.modules['app.ts']!.code,
-          loader: 'ts',
-          resolveDir: process.cwd(),
-        },
-        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
-        bundle: true,
-        format: 'iife',
-        globalName: 'App',
-        write: false,
+      ).toMatchInlineSnapshot(`26`)
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: Object.fromEntries(
+          Object.entries({ ...publisher.modules, ...result.modules }).map(
+            ([id, module]) => [id, module.code],
+          ),
+        ),
       })
+
       const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox'],
@@ -502,7 +498,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
         await page.setContent(
           `<style>${publisher.sharedCss ?? ''}\n${result.sharedCss ?? ''}\n${result.modules['app.ts']!.css}</style><main><button>Button</button></main>`,
         )
-        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.addScriptTag({ content: code + ';globalThis.App=Fixture;' })
         await page.evaluate(`{
         document.querySelector('main').className=App.scope;
         const button=document.querySelector('button');
@@ -538,7 +534,8 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     test('supports local theme recipes and destructured aliases', async () => {
       const output = Graph.compile({
         modules: {
-          'app.ts': `import {Theme} from 'zyzz'; const theme=Theme.define({color:{brand:'#06c'}}); const {variants}=theme; export const a=theme.variants({base:{color:'brand'}}); export const b=variants({base:{color:'brand'}});`,
+          'app.ts':
+            "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz'; const theme=Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme}); const {variants}=themeConfig; export const a=themeConfig.variants({base:{color:'brand'}}); export const b=variants({base:{color:'brand'}});",
         },
       })
       const bundled = await Esbuild.build({
@@ -559,12 +556,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       )
       expect(module.exports.a()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-A-1hgE z-style-1e8a67z1uaws1j-117",
+          "className": "z-text-EAkT71 z-style-1e8a67z1uaws1j-197",
         }
       `)
       expect(module.exports.b()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-A-1hgE z-style-1e8a67z1uaws1j-172",
+          "className": "z-text-EAkT71 z-style-1e8a67z1uaws1j-258",
         }
       `)
     })
@@ -572,10 +569,10 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
 })
 
 describe('conditions', () => {
-  const config = `import {Config} from 'zyzz';
-export const {variants,theme}=Config.create({output:'html',theme:{breakpoints:{md:'600px'},color:{brand:'black'}}});`
+  const config =
+    "import {Config} from 'zyzz';\nexport const {variants,vars:theme}=Config.create({output:'html',vars:{breakpoints:{md:'600px'},color:{brand:'black'}}});"
   const source = `import {variants,theme} from './config.js';
-export const scope=theme.className;
+export const scope=theme().class;
 export const button=variants({
   base:{padding:'2px',borderWidth:'0px',borderStyle:'solid',color:'brand',opacity:1,fontWeight:400},
   conditions:{wide:'@media >=md',compact:'@media/**/(height < 500px), print',grid:'@supports(display: grid)'},
@@ -680,18 +677,15 @@ export const button=variants({
         ),
       ).toMatchInlineSnapshot('true')
 
-      const bundled = await Esbuild.build({
-        stdin: {
-          contents: output.code,
-          loader: 'ts',
-          resolveDir: process.cwd(),
-        },
-        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
-        bundle: true,
-        format: 'iife',
-        globalName: 'App',
-        write: false,
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: Object.fromEntries(
+          Object.entries({ ...publisher.modules, ...result.modules }).map(
+            ([id, module]) => [id, module.code],
+          ),
+        ),
       })
+
       const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox'],
@@ -707,7 +701,7 @@ export const button=variants({
           @media screen and (height >= 500px) and (width < 600px){#control{padding:4px;border-width:2px;font-weight:600}}
           @media screen and (height >= 500px) and (width >= 600px){#control{padding:12px;color:blue;font-weight:700}}
         </style><main><button id="button">Recipe</button><button id="control">Control</button></main>`)
-        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.addScriptTag({ content: code + ';globalThis.App=Fixture;' })
         await page.evaluate(`{
         document.querySelector('main').className=App.scope;
         window.read = id => {
@@ -874,12 +868,12 @@ describe('packed', () => {
           await Fs.writeFile(
             Path.join(root, 'app.ts'),
             `import {cx} from 'zyzz';
-import {controls as imported,theme} from '@acme/variants';
+import {controls as imported,vars} from '@acme/variants';
 const controls=imported;
 const {button:buttonVariant}=controls;
 import '@acme/variants/style.css';
 const element=document.querySelector('button')!;
-document.querySelector('main')!.className=theme.className;
+document.querySelector('main')!.className=vars().className;
 export function apply(size?:'sm'|'lg'|null|{custom:{padding:\`\${number}px\`}},active=false,wide=false,override=true) {
   const props=cx(buttonVariant({size,active,conditions:{wide:{size:wide?'lg':undefined}}}),override && controls.override());
   for(const attribute of [...element.attributes]) element.removeAttribute(attribute.name);
@@ -1058,8 +1052,8 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version
-          if (output === 'react') expect(version).toMatchInlineSnapshot(`21`)
-          else expect(version).toMatchInlineSnapshot(`17`)
+          if (output === 'react') expect(version).toMatchInlineSnapshot(`26`)
+          else expect(version).toMatchInlineSnapshot(`26`)
         } finally {
           await browser.close()
           if (server)
@@ -1238,7 +1232,8 @@ describe('payloads', () => {
     })
 
     test('retains bound shorthands and same-named payload fields through packed contracts', async () => {
-      const config = `import {Config} from 'zyzz';export const {variants}=Config.create({output:'html',theme:{color:{brand:'black'}},shorthands:{px:['paddingLeft','paddingRight']}});`
+      const config =
+        "import {Config} from 'zyzz';export const {variants}=Config.create({output:'html',vars:{color:{brand:'black'}},shorthands:{px:['paddingLeft','paddingRight']}});"
       const source = `import {variants as recipe} from './config.js';export const button=recipe({base:{borderColor:'brand'},variants:{size:{custom:(values:{value:\`\${number}px\`})=>({px:values.value,paddingLeft:'3px'})},tone:{custom:(values:{value:'red'|'blue'})=>({color:values.value})},constructor:{normal:{}}},defaultVariants:{size:{custom:{value:'12px'}},tone:{custom:{value:'red'}}}});`
       const publisher = Graph.compile({ modules: { 'config.ts': config } })
       const packed = Graph.compile({

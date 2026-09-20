@@ -85,7 +85,7 @@ css: { targets: { chrome: 100 << 16, safari: (15 << 16) | (4 << 8) } }
 - Type: `Host.create.Options['native']`
 - Default: `undefined`, which emits web output.
 
-Compile native modules and source maps without CSS or web initialization. Requires `compiler` and `modules` to remain enabled. The host snapshots the context and its mapping objects at creation. Caller mutations do not change subsequent builds. Theme definitions are immutable values created by `Theme.define` or `Theme.extend`.
+Compile native modules and source maps without CSS or web initialization. Requires `compiler` and `modules` to remain enabled. The host snapshots the context and its mapping objects at creation. Caller mutations do not change subsequent builds. Theme definitions are immutable values created by `Vars.define` or `Vars.extend`.
 
 ```ts
 await using host = await Host.create({
@@ -137,32 +137,32 @@ Select platform overrides. Required when authored styles contain platform branch
 native: { colorScheme: 'light', platform: 'android' }
 ```
 
-### options.native.theme
+### options.native.set
 
 - Type: `string`
 - Default: `'default'`
 
-Select a label from `themes`. The label must exist in the compiled tables. Without `themes`, the default table uses authored token fallbacks.
+Select a label from `vars`. The label must exist in the compiled tables. Without `vars`, the default table uses authored token fallbacks.
 
 ```ts
-native: { colorScheme: 'light', theme: 'brand', themes: { brand } }
+native: { colorScheme: 'light', set: 'brand', vars: { brand } }
 ```
 
-### options.native.themes
+### options.native.vars
 
-- Type: `Readonly<Record<string, Theme.Definition>>`
+- Type: `Readonly<Record<string, Vars.Definition>>`
 - Default: A default table using authored token fallbacks.
 
-Supply immutable theme definitions keyed by output label. Select a label with `theme`.
+Supply immutable variable definitions keyed by output label. Select a label with `set`.
 
 ```ts
-import { Theme } from 'zyzz'
+import { Vars } from 'zyzz'
 import { Host } from 'zyzz/node'
 
-const brand = Theme.define({ color: { ink: '#123456' } })
+const brand = Vars.define({ color: { ink: '#123456' } })
 
 await using host = await Host.create({
-  native: { colorScheme: 'light', theme: 'brand', themes: { brand } },
+  native: { colorScheme: 'light', set: 'brand', vars: { brand } },
   outDir: 'dist-native',
   packageId: 'my-library',
   root: 'src',

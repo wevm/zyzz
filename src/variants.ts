@@ -62,8 +62,10 @@ type Keys<value> = value extends unknown ? keyof value : never
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
-type Input<definition> = Selections<Axes<definition>> &
-  style.Options &
+type Input<definition, output extends style.Output> = Selections<
+  Axes<definition>
+> &
+  style.Options<output> &
   (keyof Conditions<definition> extends never
     ? {}
     : {
@@ -191,10 +193,10 @@ export declare namespace variants {
 
   /** Callable selection; omitted values use defaults and null suppresses them. */
   type ReturnType<definition, output extends style.Output = 'react'> = <
-    const input extends Input<definition> = Input<definition>,
+    const input extends Input<definition, output> = Input<definition, output>,
   >(
     input?: input &
-      Record<Exclude<Keys<input>, keyof Input<definition>>, never>,
+      Record<Exclude<Keys<input>, keyof Input<definition, output>>, never>,
   ) => style.Props<output> & {
     readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
       | string

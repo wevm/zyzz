@@ -63,7 +63,7 @@ styles.card({ className: 'external' })
 - Type: `style.Options["style"]`
 - Default: `undefined`
 
-Literal inline overrides. Events, children, and accessibility props stay on the component.
+React inline CSS values, including `CSSProperties`. Values may be strings, numbers, or `undefined`. Overrides pass through without token resolution or runtime CSS validation. HTML configurations retain CSS value types with explicit units. Authored definitions retain their stricter CSS types. Events, children, and accessibility props stay on the component.
 
 ```ts
 styles.card({ style: { padding: '2rem' } })

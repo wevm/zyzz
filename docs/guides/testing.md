@@ -53,6 +53,8 @@ See [Compatibility](../introduction/compatibility.md) before assuming a preview 
 
 For Tailwind CSS v4, follow [Migrating from Tailwind](tailwind.md) for configuration, utility styles, source discovery, and incremental migration.
 
+For StyleX, follow [Migrating from StyleX](stylex.md) for definitions, composition, variables, themes, and incremental migration.
+
 Migrate one component and its computed styles at a time. Preserve layout, states, theme behavior, and CSS delivery before expanding adoption.
 
 | Existing Approach        | Zyzz Authoring                          |

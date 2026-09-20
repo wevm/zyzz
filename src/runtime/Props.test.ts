@@ -4,6 +4,7 @@
  */
 import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
+import type { CSSProperties } from 'react'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import { Props } from 'zyzz/runtime'
@@ -168,5 +169,19 @@ export const text = '🎉';`
   `)
 
     expect(consumer.text).toMatchInlineSnapshot(`"🎉"`)
+
+    const inline: CSSProperties = Object.freeze({
+      opacity: undefined,
+      padding: 12,
+    })
+
+    expect(bind({ style: inline }).style).toBe(inline)
+    expect(consumer.button({ style: inline }).style).toEqual({
+      opacity: undefined,
+      padding: 12,
+    })
+    expect(consumer.button({ style: { padding: 'md' } }).style).toEqual({
+      padding: 'md',
+    })
   })
 })

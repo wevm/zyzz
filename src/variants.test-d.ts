@@ -1,8 +1,25 @@
 /** Verifies recipe inference and rejected authoring through the public entrypoint. @module */
+import type { CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, Theme, variants } from 'zyzz'
 
 describe('variants', () => {
+  test('accepts React inline overrides through inferred recipe props', () => {
+    const button = variants({
+      variants: { size: { small: { padding: '8px' } } },
+    })
+    const inline: CSSProperties = { opacity: undefined, padding: 12 }
+    const props: NonNullable<Parameters<typeof button>[0]> = {
+      size: 'small',
+      style: inline,
+    }
+
+    button(props)
+    button({ size: 'small', style: undefined })
+    // @ts-expect-error Inline values remain scalar.
+    button({ style: { padding: false } })
+  })
+
   test('infers choices, booleans, null, defaults, compounds, and overrides', () => {
     const button = variants({
       base: { display: 'inline-flex' },

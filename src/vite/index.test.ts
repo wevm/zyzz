@@ -863,6 +863,42 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     }
   })
 
+  test('serves shared and module stylesheets with Vite CSS queries', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'main.ts':
+        Fixture.files['main.ts'] +
+        `import { style } from 'zyzz'; export const box = style({ margin: '2px' });`,
+    })
+    const server = await Vite.createServer(config)
+    try {
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const origin = `http://127.0.0.1:${address.port}`
+      const code = await (await fetch(`${origin}/main.ts`)).text()
+      const paths = [
+        ...code.matchAll(/import\s*["']([^"']*zyzz:[^"']+\.css)["']/g),
+      ].map((match) => match[1]!)
+      expect(paths.length).toMatchInlineSnapshot(`2`)
+      const stylesheets: string[] = []
+      for (const path of paths) {
+        const direct = await fetch(`${origin}${path}?direct`)
+        expect(direct.status).toMatchInlineSnapshot(`200`)
+        expect(direct.headers.get('content-type')).toContain('text/css')
+        stylesheets.push(await direct.text())
+        const inline = await fetch(`${origin}${path}?inline`)
+        expect(inline.status).toMatchInlineSnapshot(`200`)
+        expect(await inline.text()).toContain('export default')
+      }
+      expect(stylesheets.join('')).toContain('margin:2px')
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('development invalidates virtual CSS after theme edits and recovers from deletion', async () => {
     const { config, root } = await create()
     const server = await Vite.createServer(config)

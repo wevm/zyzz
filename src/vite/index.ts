@@ -371,7 +371,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         // Zyzz authoring and runtime entrypoints are handled by the static transform.
         if (
           specifier === 'zyzz' ||
-          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
+          (specifier.startsWith('zyzz/') &&
+              specifier !== 'zyzz/default')
         ) {
           resolutions[specifier] = null
           continue
@@ -1241,6 +1242,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     async load(id) {
       if (!id.startsWith(prefix)) return
+      id = id.split('?', 1)[0]!
 
       const file =
         id === sharedId

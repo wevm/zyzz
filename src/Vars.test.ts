@@ -9,6 +9,194 @@ import { Config, Style, Vars } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
 describe('define', () => {
+  test('merges derived vars and follows palette overrides on native', () => {
+    const base = Vars.define(
+      { color: { palette: { ink: '#123456' } }, spacing: { small: '4px' } },
+      (vars) => ({
+        color: { foreground: vars.color.palette.ink },
+        spacing: { large: '16px' },
+      }),
+      { id: 'derived-native' },
+    )
+    const other = Vars.extend(base, { color: { palette: { ink: '#abcdef' } } })
+    const styles = Style.define({
+      card: { color: base.color.foreground, padding: base.spacing.large },
+    })
+    const result = StyleSheet.compile({ styles, vars: { base, other } })
+    expect(result.styles.base.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#123456",
+        "paddingBottom": 16,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "paddingTop": 16,
+      }
+    `)
+    expect(result.styles.other.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#abcdef",
+        "paddingBottom": 16,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "paddingTop": 16,
+      }
+    `)
+    expect(() =>
+      Vars.extend(base, { color: { palette: { ink: base.color.foreground } } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["color","palette","ink"]: Cyclic variables are not supported.]`,
+    )
+    expect(() =>
+      Vars.define({ color: { ink: '#000' } }, () => ({
+        color: { ink: '#fff' },
+      })),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["color","ink"]: Derived variables cannot replace existing paths.]`,
+    )
+    expect(() =>
+      Vars.define({ color: { palette: { ink: '#000' } } }, () => ({
+        color: { palette: '#fff' },
+      })),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["color","palette"]: Derived variables cannot replace existing paths.]`,
+    )
+    expect(() =>
+      Vars.define({ spacing: { small: '4px' } }, () => ({
+        spacing: { small: { nested: '8px' } },
+      })),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","small"]: Derived variables cannot replace existing paths.]`,
+    )
+  })
+
+  test('preserves anonymous derived references through configured mappings', () => {
+    const base = Vars.define({ palette: { ink: '#123456' } }, (vars) => ({
+      color: { foreground: vars.palette.ink },
+    }))
+    const other = Vars.extend(base, { palette: { ink: '#abcdef' } })
+    const config = Config.create({
+      id: 'derived-config',
+      vars: other,
+      mappings: { color: ['color'] },
+    })
+    const result = StyleSheet.compile({
+      styles: Style.define({ card: { color: config.vars.color.foreground } }),
+    })
+    expect(result.styles.default.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#abcdef",
+      }
+    `)
+  })
+
+  test.each(['expression', 'block', 'function'])(
+    'compiles derived vars through source and packed browser scopes: %s',
+    async (form) => {
+      const value =
+        '({color:{foreground:{light:vars.color.palette.ink,dark:vars.color.palette.paper}},spacing:{large:vars.spacing.small}})'
+      const callback = (() => {
+        if (form === 'expression') return `vars => ${value}, {id:'derived-web'}`
+        if (form === 'block') return `vars => { return ${value} }`
+        return `function(vars) { return ${value} }`
+      })()
+      const source = `import {Config, Vars} from 'zyzz';
+      const base = Vars.define({color:{palette:{ink:'#123456',paper:'#ffffff'}},spacing:{small:{default:'4px','@media (min-width: 600px)':'16px'}}},
+        ${callback});
+      const other = Vars.extend(base,{color:{palette:{ink:'#abcdef',paper:'#000000'}},spacing:{small:{default:'8px','@media (min-width: 600px)':'32px'}}});
+      export const {style,vars}=Config.create({vars:{base,other},defaultVars:'base'});`
+      const app = `import {style,vars} from 'library';
+      export const base=vars({set:'base',colorScheme:'light'});
+      export const other=vars({set:'other',colorScheme:'light'});
+      export const dark=vars({set:'other',colorScheme:'dark'});
+      export const card=style({color:'foreground',padding:'large'});`
+      const library = Graph.compile({ modules: { 'index.ts': source } })
+      const browser = await chromium.launch()
+      try {
+        for (const packed of [false, true]) {
+          const result = Graph.compile(
+            packed
+              ? {
+                  contracts: {
+                    'library/index.js': library.contracts['index.ts']!,
+                  },
+                  imports: { 'app.ts': { library: 'library/index.js' } },
+                  modules: { 'app.ts': app },
+                }
+              : {
+                  imports: {
+                    'app.ts': { library: 'index.ts' },
+                    'index.ts': { zyzz: null },
+                  },
+                  modules: { 'index.ts': source, 'app.ts': app },
+                },
+          )
+          const code = await Packed.bundle({
+            entry: 'app.ts',
+            modules: { 'app.ts': result.modules['app.ts']!.code },
+            packages: {
+              library: {
+                'index.ts': (packed ? library : result).modules['index.ts']!
+                  .code,
+              },
+            },
+          })
+          const fixture = Vm.runInNewContext(`${code};Fixture;`)
+          const page = await browser.newPage({
+            viewport: { width: 500, height: 600 },
+          })
+          await page.setContent(
+            `<style>${
+              (packed ? library.modules['index.ts']!.css : '') +
+              Object.values(result.modules)
+                .map((module) => module.css)
+                .join('')
+            }</style>${['base', 'other', 'dark'].map((key) => `<div class="${fixture[key].className}"><div class="${fixture.card().className}" data-card></div></div>`).join('')}`,
+          )
+          expect(
+            await page.locator('[data-card]').evaluateAll((nodes) =>
+              nodes.map((node) => ({
+                color: getComputedStyle(node).color,
+                padding: getComputedStyle(node).padding,
+              })),
+            ),
+          ).toMatchInlineSnapshot(`
+          [
+            {
+              "color": "rgb(18, 52, 86)",
+              "padding": "4px",
+            },
+            {
+              "color": "rgb(171, 205, 239)",
+              "padding": "8px",
+            },
+            {
+              "color": "rgb(0, 0, 0)",
+              "padding": "8px",
+            },
+          ]
+        `)
+          await page.setViewportSize({ width: 800, height: 600 })
+          expect(
+            await page
+              .locator('[data-card]')
+              .evaluateAll((nodes) =>
+                nodes.map((node) => getComputedStyle(node).padding),
+              ),
+          ).toMatchInlineSnapshot(`
+            [
+              "16px",
+              "32px",
+              "32px",
+            ]
+          `)
+          await page.close()
+        }
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
   test('accepts custom categories named tokens in portable styles', () => {
     const vars = Vars.define(
       { tokens: { ink: '#123456' } },

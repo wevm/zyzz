@@ -99,8 +99,9 @@ export function read(value: string): string | undefined {
 /** Reads an explicit authoring identity shared with uncompiled execution. */
 export function explicit(
   call: import('@oxc-project/types').CallExpression,
+  index = 1,
 ): string | undefined {
-  const argument = call.arguments[1]
+  const argument = call.arguments[index]
   if (!argument) return undefined
   if (argument.type !== 'ObjectExpression' || argument.properties.length !== 1)
     throw new Error('Definition options require one literal id.')

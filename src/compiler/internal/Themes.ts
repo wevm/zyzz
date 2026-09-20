@@ -376,7 +376,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return { selection: true }
   }
 
-  function readReference(node: Ast.Node): Token.Reference | undefined {
+  type Derived = { name: string; vars: Vars.Definition }
+
+  function readReference(
+    node: Ast.Node,
+    derived?: Derived,
+  ): Token.Reference | undefined {
     if (node.type !== 'MemberExpression') return undefined
     const path: string[] = []
     let root: Ast.Node = node
@@ -392,10 +397,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
       root = root.object
     }
     if (root.type !== 'Identifier') return undefined
+    const local = derived?.name === root.name
     const call = names.get(root.name)
-    if (!call) return undefined
-    let value: unknown = themes[call.name]?.tokens
-    if (!call.variableSet && !call.directVariables) {
+    if (!local && !call) return undefined
+    let value: unknown = local ? derived.vars : themes[call!.name]?.tokens
+    if (!local && !call!.variableSet && !call!.directVariables) {
       if (!['vars', 'tokens'].includes(path.shift()!)) return undefined
     }
     for (const key of path)
@@ -406,15 +412,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return Token.is(value) ? value : undefined
   }
 
-  function data(node: Ast.Node): unknown {
-    const reference = readReference(node)
+  function data(node: Ast.Node, derived?: Derived): unknown {
+    const reference = readReference(node, derived)
     if (reference) {
       factoryReferences.add(node.start)
       return reference
     }
 
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
-      return data(node.expression)
+      return data(node.expression, derived)
 
     if (
       node.type === 'Literal' &&
@@ -435,7 +441,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         if (!element || element.type === 'SpreadElement')
           return fail('Theme arrays require dense literal elements.', node)
 
-        return data(element)
+        return data(element, derived)
       })
 
     if (node.type !== 'ObjectExpression')
@@ -477,7 +483,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (key === undefined || Object.hasOwn(result, key))
         return fail('Theme data requires unique literal keys.', property)
 
-      result[key] = data(property.value)
+      result[key] = data(property.value, derived)
     }
 
     return result
@@ -595,7 +601,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
         !configNamespaces.has(expression.callee.object.name) &&
         member.property.name === 'define'
       ) {
-        const id = Identifiers.explicit(expression)
+        const argument = expression.arguments[1]
+        const callback = argument && Expression.unwrap(argument)
+        const id = Identifiers.explicit(
+          expression,
+          callback?.type === 'ArrowFunctionExpression' ||
+            callback?.type === 'FunctionExpression'
+            ? 2
+            : 1,
+        )
         if (id !== undefined) name = Identity.requireId(id, 'Vars.define')
       }
 
@@ -757,22 +771,71 @@ export function collect(program: Ast.Program, options: collect.Options) {
         if (member.property.name === 'define') {
           if (
             expression.arguments.length < 1 ||
-            expression.arguments.length > 2
+            expression.arguments.length > 3
           )
             fail(
               'Vars.define requires one literal variable object.',
               expression,
             )
 
-          const input = data(expression.arguments[0]!)
+          let input = data(expression.arguments[0]!)
 
           tokenType = type(expression.arguments[0]!)
 
           const variableSet = variableNamespaces.has(
             expression.callee.object.name,
           )
+          const argument = expression.arguments[1]
+          const callback = argument && Expression.unwrap(argument)
+          if (
+            variableSet &&
+            (callback?.type === 'ArrowFunctionExpression' ||
+              callback?.type === 'FunctionExpression')
+          ) {
+            const parameter = callback.params[0]
+            const body = (() => {
+              if (callback.body?.type !== 'BlockStatement') return callback.body
+              if (
+                callback.body.body.length === 1 &&
+                callback.body.body[0]?.type === 'ReturnStatement'
+              )
+                return callback.body.body[0].argument
+              return undefined
+            })()
+            if (
+              callback.async ||
+              callback.generator ||
+              callback.params.length !== 1 ||
+              parameter?.type !== 'Identifier' ||
+              !body
+            )
+              fail(
+                'Derived variables require one named parameter and a literal return value.',
+                callback,
+              )
+
+            const base = VariableSets.build(
+              input,
+              Object.freeze({ variableSet: true, [Token.identity]: name }),
+            )
+            input = VariableSets.merge(
+              input,
+              data(body, { name: parameter.name, vars: base }),
+            )
+            tokenType = Configurations.type(input)
+          } else if (expression.arguments.length > 2)
+            fail(
+              'Vars.define accepts a third argument only with a derived callback.',
+              expression,
+            )
+
           const original = variableSet
-            ? VariableSets.theme(Vars.define(input as Vars.Values))
+            ? VariableSets.theme(
+                VariableSets.build(
+                  input,
+                  Object.freeze({ variableSet: true, [Token.identity]: name }),
+                ),
+              )
             : Theme.define(input as Theme.Tokens)
 
           definition = Token.bind(

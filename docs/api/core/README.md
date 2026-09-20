@@ -12,7 +12,7 @@ Typed style definitions, themes, configuration, and callable authoring.
 | [cx](cx.md)                                  | Compose applied generated styles while retaining their owned bindings. |
 | [Props.Variants](variants.md#inferred-props) | Infer recipe selections and styling overrides.                         |
 | [Style](Style/README.md)                     | Ordered style data and validation.                                     |
-| [Vars](Vars/README.md)                       | Shared variable sets, conditional values, and scoped selection.        |
+| [Vars](Vars/README.md)                       | Shared variable sets, derived values, and scoped selection.            |
 | [variants](variants.md)                      | Define finite style choices for one element.                           |
 | [variable](variable.md)                      | Explicit shared variable contracts.                                    |
 

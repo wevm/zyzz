@@ -984,11 +984,17 @@ export function extract(options: extract.Options): extract.ReturnType {
                 !(Binding.is(part)
                   ? (dynamicValues !== undefined &&
                       Object.values(dynamicValues.slots).includes(part)) ||
-                    targets.every((target) =>
-                      Binding.accepts(part.type, target),
+                    targets.every(
+                      (target) =>
+                        Binding.accepts(part.type, target) ||
+                        (part.type === 'color' &&
+                          Expression.acceptsColor(template, target)),
                     )
-                  : targets.every((target) =>
-                      Token.accepts(part.group, target),
+                  : targets.every(
+                      (target) =>
+                        Token.accepts(part.group, target) ||
+                        (part.group === 'color' &&
+                          Expression.acceptsColor(template, target)),
                     ))
               ) {
                 report(

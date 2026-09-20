@@ -229,3 +229,36 @@ test('accepts root scalar names and restricts arrays to root containerNames', ()
   // @ts-expect-error Root variable keys cannot contain dots.
   Vars.define({ 'color.ink': '#fff' })
 })
+
+describe('full paths', () => {
+  test('accepts compatible paths across categories', () => {
+    const config = Config.create({
+      vars: {
+        surface: { nested: { ink: '#123456' } },
+        spacing: { page: '16px' },
+        opacity: { muted: 0.5 },
+        breakpoints: { desktop: '800px' },
+      },
+      mappings: false,
+      shorthands: { px: ['paddingLeft', 'paddingRight'] },
+    })
+    config.style({
+      color: 'surface.nested.ink',
+      backgroundColor: 'surface.nested.ink !important',
+      width: 'spacing.page',
+      px: 'spacing.page',
+      opacity: 'opacity.muted',
+      ':hover': { color: config.vars.surface.nested.ink },
+    })
+    // @ts-expect-error full paths replace category shortcuts
+    config.style({ width: 'page' })
+    // @ts-expect-error colors cannot be used as lengths
+    config.style({ width: 'surface.nested.ink' })
+    // @ts-expect-error lengths cannot be used as colors
+    config.style({ color: 'spacing.page' })
+    // @ts-expect-error query metadata does not declare a variable
+    config.style({ width: 'breakpoints.desktop' })
+    // @ts-expect-error unknown full path
+    config.style({ color: 'surface.missing' })
+  })
+})

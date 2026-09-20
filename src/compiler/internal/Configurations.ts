@@ -28,6 +28,8 @@ export function collect(options: collect.Options): Themes.Link {
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return data(node.expression)
 
+    if (node.type === 'Literal' && node.value === false) return false
+
     if (node.type === 'ArrayExpression')
       return node.elements.map((node) => {
         if (!node || node.type === 'SpreadElement')
@@ -260,7 +262,7 @@ export function collect(options: collect.Options): Themes.Link {
       start: options.expression.start,
       tokenType: selected?.call.tokenType ?? '{}',
       type: variableMode
-        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.mappings ? { mappings: VariableSets.mappings(authored.mappings) } : {}) })}>`
+        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.mappings !== undefined ? { mappings: VariableSets.mappings(authored.mappings) } : {}) })}>`
         : `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
     },
     definition,

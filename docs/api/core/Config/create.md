@@ -23,7 +23,7 @@ export const { appearance, script, style, vars, variants } = Config.create({
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `vars`        | One inline record or `Vars.define` result, or a catalog of compatible sets. Omit for token-free authoring.                          |
 | `defaultVars` | Required catalog key when `vars` contains named sets.                                                                               |
-| `mappings`    | Category-to-property mappings. Each supplied category replaces its default mapping; `[]` disables shorthand lookup.                 |
+| `mappings`    | Category-to-property mappings. Each category replaces its default; `[]` disables its shortcuts. `false` enables full paths.         |
 | `shorthands`  | Local property aliases such as `{ px: ['paddingLeft', 'paddingRight'] }`. Each expanded property validates its value independently. |
 | `layers`      | Ordered CSS layer names used by bound styles and recipes.                                                                           |
 | `output`      | `'react'` by default; `'html'` returns `class` and serialized inline styles.                                                        |
@@ -55,3 +55,23 @@ appearance.set({ set: 'alternate', colorScheme: 'dark' })
 `script()` returns HTML-safe JavaScript that restores saved root preferences before rendering. Generate it on the server or at build time and execute it before the page paints. See [script](script.md).
 
 See [Vars](../Vars/README.md) for derived references, conditional values, query aliases, and scope inheritance.
+
+## Full variable paths
+
+Set `mappings: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS literals and explicit references still work. Values must match the property's CSS syntax.
+
+```ts
+const { style, vars } = Config.create({
+  vars: {
+    surface: { foreground: '#123456' },
+    spacing: { page: '16px' },
+  },
+  mappings: false,
+})
+
+const card = style({
+  color: 'surface.foreground',
+  width: 'spacing.page',
+  padding: vars.spacing.page,
+})
+```

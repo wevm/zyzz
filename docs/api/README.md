@@ -14,5 +14,6 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/node](node/README.md)                 | Build and watch filesystem sources with explicit output ownership.                 |
 | [zyzz/react-native](react-native/README.md) | Compile shared definitions into native tables and select themes and schemes.       |
 | [zyzz/runtime](runtime/README.md)           | Bind compiled class lists to styling overrides without generating CSS.             |
+| [zyzz/unplugin](unplugin/README.md)         | Compile web styles with Rollup, Webpack, esbuild, or the existing Vite adapter.    |
 | [zyzz/vite](vite/README.md)                 | Connect source transformation and CSS delivery to Vite.                            |
 | [zyzz/web](web/README.md)                   | Compile web CSS and declare stylesheet contributions and element relationships.    |

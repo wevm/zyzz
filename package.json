@@ -48,11 +48,13 @@
     "quickjs-emscripten": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "rollup": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "typescript-api": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:",
+    "webpack": "catalog:",
     "zile": "catalog:"
   },
   "packageManager": "pnpm@11.19.0",
@@ -106,6 +108,11 @@
       "types": "./dist/default.d.ts",
       "default": "./dist/default.js"
     },
+    "./esbuild": {
+      "src": "./src/esbuild/index.ts",
+      "types": "./dist/esbuild/index.d.ts",
+      "default": "./dist/esbuild/index.js"
+    },
     "./metro": {
       "src": "./src/metro/index.ts",
       "types": "./dist/metro/index.d.ts",
@@ -145,10 +152,20 @@
       "src": "./src/reset.css",
       "default": "./dist/reset.css"
     },
+    "./rollup": {
+      "src": "./src/rollup/index.ts",
+      "types": "./dist/rollup/index.d.ts",
+      "default": "./dist/rollup/index.js"
+    },
     "./runtime": {
       "src": "./src/runtime/index.ts",
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
+    },
+    "./unplugin": {
+      "src": "./src/unplugin/index.ts",
+      "types": "./dist/unplugin/index.d.ts",
+      "default": "./dist/unplugin/index.js"
     },
     "./vite": {
       "src": "./src/vite/index.ts",
@@ -159,6 +176,11 @@
       "src": "./src/web/index.ts",
       "types": "./dist/web/index.d.ts",
       "default": "./dist/web/index.js"
+    },
+    "./webpack": {
+      "src": "./src/webpack/index.ts",
+      "types": "./dist/webpack/index.d.ts",
+      "default": "./dist/webpack/index.js"
     }
   },
   "dependencies": {
@@ -171,7 +193,8 @@
     "magic-string": "catalog:",
     "oxc-parser": "catalog:",
     "oxc-resolver": "catalog:",
-    "oxc-walker": "catalog:"
+    "oxc-walker": "catalog:",
+    "unplugin": "catalog:"
   },
   "peerDependencies": {
     "@babel/core": "catalog:peers",

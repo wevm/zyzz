@@ -47,21 +47,18 @@ Use [Dynamic Values](styling.md#dynamic-values) for typed per-instance bindings.
 
 ### Share Styles
 
-Keep exported definitions in an ordinary source module and import them where needed. Config remains an explicit dependency.
+Export definitions directly from a shared module and import the module as a namespace where needed. Config remains an explicit dependency.
 
 ```ts
+// button.styles.ts
 import { style } from './zyzz.config.js'
 
-// button.styles.ts
-
-export namespace styles {
-  export const button = style({ padding: 'md' })
-}
+export const button = style({ padding: 'md' })
 ```
 
 ```tsx
 // Button.tsx
-import { styles } from './button.styles.js'
+import * as styles from './button.styles.js'
 
 export function Button() {
   return <button {...styles.button()}>Save</button>
@@ -69,9 +66,6 @@ export function Button() {
 ```
 
 The bundler integration resolves and transforms imports of compiled `style(...)` definitions. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
-
-> [!NOTE]
-> Imported arbitrary object records passed into a separate `style(record)` call remain preview.
 
 ### Override Styles
 

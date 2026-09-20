@@ -510,16 +510,16 @@ Not every StyleX variable belongs in a Zyzz theme group. Use [`variable`](../api
 ```tsx
 import { style, variable } from 'zyzz'
 
-namespace variables {
+namespace vars {
   export const accent = variable('color')
 }
 
 namespace styles {
   export const scope = style({
-    vars: { [variables.accent]: '#2563eb' },
+    vars: { [vars.accent]: '#2563eb' },
   })
 
-  export const label = style({ color: variables.accent })
+  export const label = style({ color: vars.accent })
 }
 
 export function Label() {

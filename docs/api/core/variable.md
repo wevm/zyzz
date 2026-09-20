@@ -5,25 +5,23 @@ Declare one optionally typed CSS variable, reference it in styles, and assign va
 ```tsx
 import { style, variable } from 'zyzz'
 
-namespace variables {
+namespace vars {
   export const accent = variable('color')
 }
 
 namespace styles {
   export const label = style({
-    vars: { [variables.accent]: 'tomato' },
-    color: variables.accent,
+    vars: { [vars.accent]: 'tomato' },
+    color: vars.accent,
     selectors: {
-      '&:hover': { vars: { [variables.accent]: 'purple' } },
+      '&:hover': { vars: { [vars.accent]: 'purple' } },
     },
   })
 }
 
 function Label() {
   return (
-    <span {...styles.label({ vars: { [variables.accent]: 'blue' } })}>
-      Hello
-    </span>
+    <span {...styles.label({ vars: { [vars.accent]: 'blue' } })}>Hello</span>
   )
 }
 ```
@@ -95,7 +93,7 @@ An opaque reference usable as a declaration value, in template expressions, and 
 Pass `vars` to the generated style callable using the same computed keys as static declarations. Values are returned under `style` (or serialized for HTML output); no rules are generated. Explicit `style` overrides win on duplicate keys. Inputs remain unchanged.
 
 ```ts
-styles.label({ vars: { [variables.accent]: 'blue' } })
+styles.label({ vars: { [vars.accent]: 'blue' } })
 ```
 
 Values may be strings, numbers, or `undefined` to omit an inline assignment. Computed keys lose individual domain information in TypeScript here too.

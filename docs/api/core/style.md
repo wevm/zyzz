@@ -77,7 +77,7 @@ styles.card({ style: { padding: '2rem' } })
 Inline custom-property assignments keyed by variable references. These merge into returned styles before explicit `style` overrides; private callback bindings remain authoritative. Input objects are not mutated. Computed keys cannot enforce individual variable domains in TypeScript.
 
 ```ts
-styles.label({ vars: { [variables.accent]: 'blue' } })
+styles.label({ vars: { [vars.accent]: 'blue' } })
 ```
 
 ## Returns

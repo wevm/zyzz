@@ -160,22 +160,20 @@ Use `variable()` for reusable CSS variables. Use `vars` in both definitions and 
 ```tsx
 import { style, variable } from 'zyzz'
 
-namespace variables {
+namespace vars {
   export const accent = variable('color')
 }
 
 namespace styles {
   export const label = style({
-    vars: { [variables.accent]: 'tomato' },
-    color: variables.accent,
+    vars: { [vars.accent]: 'tomato' },
+    color: vars.accent,
   })
 }
 
 function Label() {
   return (
-    <span {...styles.label({ vars: { [variables.accent]: 'blue' } })}>
-      Hello
-    </span>
+    <span {...styles.label({ vars: { [vars.accent]: 'blue' } })}>Hello</span>
   )
 }
 ```

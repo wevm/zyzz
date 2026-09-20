@@ -4,7 +4,7 @@ import { createSignal } from 'solid-js'
 import { variable } from 'zyzz'
 import { style } from './zyzz.config.js'
 
-namespace variables {
+namespace vars {
   export const amount = variable('number', {
     inherits: true,
     initialValue: 0.5,
@@ -41,12 +41,12 @@ namespace styles {
     backgroundColor: 'muted',
     borderRadius: '0.5rem',
     height: '0.75rem',
-    opacity: variables.amount,
+    opacity: vars.amount,
     width: '100%',
   })
 
   export const scope = style({
-    vars: { [variables.amount]: 0.5 },
+    vars: { [vars.amount]: 0.5 },
   })
 
   export const track = style({
@@ -84,7 +84,7 @@ export function Dynamic() {
       </div>
       <div
         {...styles.scope({
-          vars: { [variables.amount]: amount() / 100 },
+          vars: { [vars.amount]: amount() / 100 },
         })}
       >
         <div {...styles.track()}>

@@ -337,25 +337,23 @@ For a reusable variable owned by Zyzz:
 ```tsx
 import { style, variable } from 'zyzz'
 
-namespace variables {
+namespace vars {
   export const accent = variable('color')
 }
 
 namespace styles {
   export const label = style({
-    vars: { [variables.accent]: '#2563eb' },
-    color: variables.accent,
+    vars: { [vars.accent]: '#2563eb' },
+    color: vars.accent,
   })
 }
 
 const example = (
-  <span {...styles.label({ vars: { [variables.accent]: '#9333ea' } })}>
-    Account
-  </span>
+  <span {...styles.label({ vars: { [vars.accent]: '#9333ea' } })}>Account</span>
 )
 ```
 
-Definitions emit static assignments. Applications bind per-element values. Computed assignment keys lose individual domain information in TypeScript; `variables.accent.set(value)` retains that check. See [variable](../api/core/variable.md).
+Definitions emit static assignments. Applications bind per-element values. Computed assignment keys lose individual domain information in TypeScript; `vars.accent.set(value)` retains that check. See [variable](../api/core/variable.md).
 
 ### Conditional Styles
 

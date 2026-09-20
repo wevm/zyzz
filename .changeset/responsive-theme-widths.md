@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added border-width tokens and responsive typography sets with media and container queries.

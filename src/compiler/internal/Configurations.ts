@@ -213,10 +213,14 @@ export function collect(options: collect.Options): Themes.Link {
         return {
           defaultTheme: input.defaultTheme,
           themes: Object.fromEntries(
-            Object.entries(catalog).map(([name, theme]) => [
-              name,
-              { ...values(theme.tokens), ...theme[Token.definition].queries },
-            ]),
+            Object.keys(catalog).map((name) => {
+              const theme =
+                members[JSON.stringify(['themes', name])]!.definition!
+              return [
+                name,
+                { ...values(theme.tokens), ...theme[Token.definition].queries },
+              ]
+            }),
           ),
         }
       }
@@ -224,8 +228,8 @@ export function collect(options: collect.Options): Themes.Link {
       if ('theme' in config) {
         return {
           theme: {
-            ...values(config.theme.tokens),
-            ...config.theme[Token.definition].queries,
+            ...values(definition.tokens),
+            ...definition[Token.definition].queries,
           },
         }
       }

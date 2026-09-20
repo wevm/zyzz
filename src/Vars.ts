@@ -86,8 +86,25 @@ export type Domain<value> = [value] extends [Literal.Color]
 /** Creates typed references without emitting CSS or reading the environment. */
 export function define<const values extends Values>(
   values: values & NoInfer<Validated<values, false, true>>,
+  options?: style.DefinitionOptions,
+): Definition<values>
+/** Deeply merges derived leaves, rejecting duplicate paths and leaf/category conflicts. */
+export function define<
+  const values extends Values,
+  const derived extends Values,
+>(
+  values: values & NoInfer<Validated<values, false, true>>,
+  derive: ((vars: References<values>) => derived) &
+    NoInfer<(vars: References<values>) => Validated<derived, false, true>>,
+  options?: style.DefinitionOptions,
+): Definition<Merge<values, derived>>
+export function define(
+  values: Values,
+  derive: style.DefinitionOptions | ((vars: References<Values>) => Values) = {},
   options: style.DefinitionOptions = {},
-): Definition<values> {
+): Definition {
+  if (typeof derive !== 'function') options = derive
+
   const contract = Object.freeze({
     variableSet: true,
     ...(options.id === undefined
@@ -97,7 +114,21 @@ export function define<const values extends Values>(
           [Token.complete]: true,
         }),
   })
-  return VariableSets.build(values, contract) as Definition<values>
+  const base = VariableSets.build(values, contract)
+  if (typeof derive !== 'function') return base
+
+  const merged = VariableSets.merge(values, derive(base as References<Values>))
+  return VariableSets.build(merged, contract)
+}
+
+type Merge<base, derived> = {
+  readonly [key in keyof base | keyof derived]: key extends keyof derived
+    ? key extends keyof base
+      ? Merge<base[key], derived[key]>
+      : derived[key]
+    : key extends keyof base
+      ? base[key]
+      : never
 }
 
 /** Replaces existing leaves while preserving paths, domains, and reference identity. */

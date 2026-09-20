@@ -9,6 +9,7 @@ import type * as Theme from './Theme.js'
 import type * as ValueSyntax from './Value.js'
 import type * as VariableSets from '../Vars.js'
 import * as Literal from './Literal.js'
+import * as VariableData from './VariableSets.js'
 
 /** Checks a reference's property domain. */
 export function accepts(
@@ -116,6 +117,9 @@ export function bind<tokens extends Theme.Tokens>(
 ): Theme.Definition<tokens> {
   type Tree = { [key: string]: Reference | Tree }
 
+  const metadata = original[definition]
+  const values = VariableData.rebind(metadata, contract)
+
   function rebind(tree: Theme.References<Theme.Tokens>): Tree {
     return Object.freeze(
       Object.fromEntries(
@@ -126,7 +130,7 @@ export function bind<tokens extends Theme.Tokens>(
                 contract,
                 group: value.group,
                 path: value.path,
-                value: value.value,
+                value: values[value.path]!,
               })
             : rebind(value as Theme.References<Theme.Tokens>),
         ]),
@@ -148,7 +152,7 @@ export function bind<tokens extends Theme.Tokens>(
         vars: variables(tokens),
       },
       definition,
-      { value: Object.freeze({ ...original[definition], contract }) },
+      { value: Object.freeze({ ...metadata, contract, values }) },
     ),
   ) as Theme.Definition<tokens>
 }

@@ -48,6 +48,30 @@ const example = (
 
 `Vars.define(values, options?)` returns an immutable reference tree with the same paths. Leaves accept strings, finite numbers, references, complete `{ light, dark }` color pairs, or an object with `default` and `@media ...` keys. `options.id` supplies a stable identity without source rewriting.
 
+`Vars.define(values, derive, options?)` adds derived values through a callback receiving typed references to the base values. Categories merge recursively. Duplicate leaves and leaf/category conflicts throw `Vars.InvalidError`. The callback cannot reference derived values. Both forms accept `options.id`.
+
+```ts
+const base = Vars.define(
+  { color: { palette: { ink: '#171717', paper: '#fafafa' } } },
+  (vars) => ({
+    color: {
+      foreground: {
+        light: vars.color.palette.ink,
+        dark: vars.color.palette.paper,
+      },
+    },
+  }),
+)
+
+const alternate = Vars.extend(base, {
+  color: { palette: { ink: '#2563eb' } },
+})
+```
+
+The result includes `base.color.palette` and `base.color.foreground`. References remain live within the set, so the alternate palette also changes its derived foreground. Overrides that introduce reference cycles throw `Vars.InvalidError`.
+
+Source compilation accepts an inline synchronous callback with one named parameter and a literal object result, either as an expression or a single `return` statement. The compiler reads the callback without executing application code.
+
 `Vars.extend(base, overrides)` returns a compatible set. Overrides replace whole leaves, including conditional values and color pairs. Omitted paths retain their values. New paths and incompatible domains throw `Vars.InvalidError`.
 
 References retain their source identity. Extending a set changes values within its scope without changing the paths used by consumers. Separate definitions retain independent identities.

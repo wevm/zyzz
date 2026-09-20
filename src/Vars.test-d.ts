@@ -4,6 +4,40 @@ import * as Zyzz from 'zyzz'
 import { Config, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('infers deeply merged derived references', () => {
+    const base = Vars.define(
+      { color: { palette: { ink: '#123456' } }, spacing: { small: '4px' } },
+      (vars) => {
+        expectTypeOf(vars.color.palette.ink.group).toEqualTypeOf<'color'>()
+        // @ts-expect-error Derived paths are not available in the callback.
+        void vars.color.foreground
+        return {
+          color: { foreground: vars.color.palette.ink },
+          spacing: { large: '16px' },
+        }
+      },
+      { id: 'derived' },
+    )
+    expectTypeOf(base.color.foreground.group).toEqualTypeOf<'color'>()
+    expectTypeOf(base.color.palette.ink.group).toEqualTypeOf<'color'>()
+    expectTypeOf(base.spacing.large.group).toEqualTypeOf<'spacing'>()
+    const other = Vars.extend(base, { color: { palette: { ink: '#abcdef' } } })
+    const { style } = Config.create({
+      vars: { base, other },
+      defaultVars: 'base',
+    })
+    style({ color: 'foreground', padding: 'large' })
+    // @ts-expect-error Color references cannot supply lengths.
+    style({ width: base.color.foreground })
+    // @ts-expect-error Derived values must satisfy literal validation.
+    Vars.define({ ink: '#fff' }, (vars) => ({ invalid: '#ggg', alias: vars.ink }))
+    // @ts-expect-error Derived conditional branches retain the base value domain.
+    Vars.define({ ink: '#fff' }, (vars) => ({
+      alias: vars.ink,
+      size: { default: '4px', '@media (min-width: 600px)': '#fff' },
+    }))
+    Vars.define({ ink: '#fff' }, { id: 'existing' })
+  })
   test('retains query-like names inside categories', () => {
     const vars = Vars.define({ color: { containers: '#fff' } })
     expectTypeOf(vars.color.containers.group).toEqualTypeOf<'color'>()

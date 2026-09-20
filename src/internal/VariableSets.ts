@@ -21,6 +21,11 @@ export function theme(
     ...metadata.contract,
     ...(mappings ? { mappings } : {}),
   })
+  const tokens = from({
+    ...metadata,
+    contract,
+    values: rebind(metadata, contract),
+  })
   const definition = Object.create(null)
   Object.defineProperties(definition, {
     ...Object.getOwnPropertyDescriptors(original),
@@ -33,9 +38,9 @@ export function theme(
       },
       enumerable: true,
     },
-    tokens: { value: variables, enumerable: true },
-    vars: { value: variables, enumerable: true },
-    [Token.definition]: { value: Object.freeze({ ...metadata, contract }) },
+    tokens: { value: tokens, enumerable: true },
+    vars: { value: tokens, enumerable: true },
+    [Token.definition]: { value: tokens[Token.definition] },
   })
   return Object.freeze(definition) as Theme.Definition
 }
@@ -177,6 +182,8 @@ function buildTree(
   queries?: Query.Metadata,
   paths?: Token.Metadata['paths'],
 ) {
+  values = rebind({ contract, values }, contract)
+
   type Tree = { [key: string]: Tree | Token.Reference }
   const tree: Tree = Object.create(null)
   for (const [path, value] of Object.entries(values)) {
@@ -338,6 +345,103 @@ export function mappings(input: unknown): Vars.Mappings | undefined {
           )
         return [category, Object.freeze([...value])]
       }),
+    ),
+  )
+}
+
+/** Combines disjoint variable leaves without mutating either authored record. */
+export function merge(
+  base: unknown,
+  derived: unknown,
+  path: string[] = [],
+): Vars.Values {
+  const result: Record<string, unknown> = Object.assign(
+    Object.create(null),
+    Object.fromEntries(record(base, path)),
+  )
+
+  for (const [key, value] of record(derived, path)) {
+    const next = [...path, key]
+    if (Object.hasOwn(result, key)) {
+      for (const entry of [result[key], value])
+        if (
+          !entry ||
+          typeof entry !== 'object' ||
+          Array.isArray(entry) ||
+          Token.is(entry) ||
+          'default' in entry ||
+          ('light' in entry && 'dark' in entry) ||
+          (Object.keys(entry).length <= 2 &&
+            ('light' in entry || 'dark' in entry))
+        )
+          throw new Vars.InvalidError(
+            next,
+            'Derived variables cannot replace existing paths.',
+          )
+
+      result[key] = merge(result[key], value, next)
+    } else result[key] = value
+  }
+
+  return result as Vars.Values
+}
+
+/** Updates references within a set while retaining references to independent sets. */
+export function rebind(
+  metadata: Token.Metadata,
+  contract: Token.Contract,
+): Token.Metadata['values'] {
+  const active = new Set<string>()
+  const values: Record<string, Token.Value> = Object.create(null)
+
+  function resolve(value: Token.Value): Token.Value {
+    if (Token.is(value)) {
+      if (
+        value.contract !== metadata.contract &&
+        (metadata.contract[Token.identity] === undefined ||
+          value.contract[Token.identity] !== metadata.contract[Token.identity])
+      )
+        return value
+
+      return Token.create({
+        contract,
+        group: value.group,
+        path: value.path,
+        value: visit(value.path),
+      })
+    }
+    if (typeof value !== 'object') return value
+
+    return Object.freeze(
+      Object.fromEntries(
+        Object.entries(value).map(([key, entry]) => [key, resolve(entry)]),
+      ),
+    ) as Token.Value
+  }
+
+  function visit(path: string): Token.Value {
+    if (Object.hasOwn(values, path)) return values[path]!
+    if (active.has(path))
+      throw new Vars.InvalidError(
+        path.split('.'),
+        'Cyclic variables are not supported.',
+      )
+    if (!Object.hasOwn(metadata.values, path))
+      throw new Vars.InvalidError(
+        path.split('.'),
+        'Referenced variable path is missing.',
+      )
+
+    active.add(path)
+    values[path] = resolve(metadata.values[path]!)
+    active.delete(path)
+    return values[path]!
+  }
+
+  for (const path of Object.keys(metadata.values)) visit(path)
+  return Object.freeze(
+    Object.fromEntries(
+      Object.keys(metadata.values).map((path) => [path, values[path]!]),
     ),
   )
 }

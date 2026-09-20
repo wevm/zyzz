@@ -2,6 +2,8 @@
 
 How styles, tokens, and compilation behave. Use [Guides](guides/README.md) for complete tasks and [API](api/README.md) for contracts.
 
+[Thinking in Zyzz](introduction/thinking-in-zyzz.md) applies these principles to component organization and everyday styling decisions.
+
 ## Principles
 
 - **Agnostic:** pure contracts do not depend on a framework, host, or bundler.

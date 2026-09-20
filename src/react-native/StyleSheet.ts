@@ -780,25 +780,21 @@ function resolve(
     : value.value
   if (resolved === undefined)
     fail('unsupported_value', 'Theme is missing a live token.', path)
-  while (Token.is(resolved)) resolved = resolved.value
-  if (typeof resolved === 'object' && 'default' in resolved)
-    fail(
-      'unsupported_feature',
-      'Media-conditioned variables require a web target.',
-      path,
-    )
-  if (typeof resolved === 'object' && resolved.light !== resolved.dark)
-    resolution.schemeIndependent = false
-  let scalar = typeof resolved === 'object' ? resolved[scheme] : resolved
-  while (Token.is(scalar)) scalar = scalar.value
-  if (typeof scalar === 'object' && 'light' in scalar) scalar = scalar[scheme]
-  if (typeof scalar !== 'string' && typeof scalar !== 'number')
-    fail(
-      'unsupported_value',
-      'Expected a complete scalar color-scheme pair.',
-      path,
-    )
-  return scalar
+  while (typeof resolved === 'object') {
+    if (Token.is(resolved)) {
+      resolved = resolved.value
+      continue
+    }
+    if ('default' in resolved)
+      fail(
+        'unsupported_feature',
+        'Media-conditioned variables require a web target.',
+        path,
+      )
+    if (resolved.light !== resolved.dark) resolution.schemeIndependent = false
+    resolved = resolved[scheme]
+  }
+  return resolved
 }
 
 type TransformValues = {

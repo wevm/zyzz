@@ -516,7 +516,7 @@ namespace variables {
 
 namespace styles {
   export const scope = style({
-    vars: { [variables.accent]: '#2563eb' },
+    variables: { [variables.accent]: '#2563eb' },
   })
 
   export const label = style({ color: variables.accent })

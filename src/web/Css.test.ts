@@ -1296,14 +1296,12 @@ describe('names', () => {
       const second = Transform.compile({ moduleId: 'second.ts', source })
 
       expect(first.css).toMatchInlineSnapshot(`
-        ":root{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
-        .z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
+        ".z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
         .z-display-flex-QPs-Od{display:flex;}
         .z-text--mgEZB{color:var(--z-t1mlrxl41f5va70-style-color_2e_brand,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
-        ":root{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
-        .z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
+        ".z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
         .z-display-flex-IjSBTf{display:flex;}
         .z-text-GRogKQ{color:var(--z-t1d6eq581s6owy-style-color_2e_brand,red);}"
       `)

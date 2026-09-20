@@ -464,8 +464,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ":root{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
-        .z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
+        ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}

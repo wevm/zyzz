@@ -70,7 +70,8 @@ export function build(
       typeof input === 'string' ||
       typeof input === 'number' ||
       Token.is(input) ||
-      (input &&
+      (path.length > 0 &&
+        input &&
         typeof input === 'object' &&
         ('default' in input ||
           ('light' in input && 'dark' in input) ||
@@ -119,6 +120,25 @@ export function build(
   for (const key of ['breakpoints', 'containers', 'containerNames'] as const) {
     if (Object.hasOwn(fields, key)) {
       const value = fields[key]
+      if (base) {
+        if (key === 'containerNames') {
+          if (
+            JSON.stringify(value) !==
+            JSON.stringify(baseQueries?.containerNames ?? [])
+          )
+            throw new Vars.InvalidError(
+              [key],
+              'Extensions cannot change container identities.',
+            )
+        } else {
+          for (const [name] of record(value, [key]))
+            if (!Object.hasOwn(baseQueries?.[key] ?? {}, name))
+              throw new Vars.InvalidError(
+                [key, name],
+                'Extensions cannot add query thresholds.',
+              )
+        }
+      }
       Object.assign(queries, {
         [key]:
           key === 'containerNames'

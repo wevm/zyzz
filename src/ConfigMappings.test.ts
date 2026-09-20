@@ -249,8 +249,7 @@ describe('create', () => {
       consumer.modules['app.ts']!.code.includes('shorthands:'),
     ).toMatchInlineSnapshot('true')
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ":root{--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm:12px;}
-      .z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
+      ".z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
       .z_theme-1xn44ix111xh3v-extended{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:8px;}
       .z_theme-1e8a67z1uaws1j-next{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:12px;}
       .z_theme-1e8a67z1uaws1j-nextConfig-theme{--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm:12px;}
@@ -267,8 +266,7 @@ describe('create', () => {
     })
 
     expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ":root{--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm:8px;}
-      .z_theme-1e8a67z1uaws1j-extendedConfig-theme{--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm:8px;}
+      ".z_theme-1e8a67z1uaws1j-extendedConfig-theme{--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -282,9 +280,7 @@ describe('create', () => {
     const { app } = compile()
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ":root{--z-tu8smm21l81sow-style-margin_2e_sm:-8px;}
-      :root{--z-tu8smm21l81sow-style-padding_2e_sm:12px;}
-      .z_theme-u8smm21l81sow-style-theme{--z-tu8smm21l81sow-style-margin_2e_sm:-8px;--z-tu8smm21l81sow-style-padding_2e_sm:12px;--z-tu8smm21l81sow-style-spacing_2e_sm:4px;}
+      ".z_theme-u8smm21l81sow-style-theme{--z-tu8smm21l81sow-style-margin_2e_sm:-8px;--z-tu8smm21l81sow-style-padding_2e_sm:12px;--z-tu8smm21l81sow-style-spacing_2e_sm:4px;}
       .z-pl-KWN2eh-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
       .z-pr-Fc2gxL-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
       .z-pl-2px-CGhyBp-2{padding-left:2px;}

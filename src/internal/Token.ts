@@ -6,6 +6,7 @@ import * as Binding from './Binding.js'
 import type * as Query from './Query.js'
 import type * as Shorthands from './Shorthands.js'
 import type * as Theme from './Theme.js'
+import type * as ValueSyntax from './Value.js'
 import type * as VariableSets from '../Vars.js'
 import * as Literal from './Literal.js'
 
@@ -303,12 +304,12 @@ export type Names<
       [category in keyof values]: category extends keyof mappings
         ? mappings[category] extends readonly unknown[]
           ? property extends mappings[category][number]
-            ? Paths<values[category]>
+            ? Paths<values[category], property>
             : never
           : never
         : category extends Group
           ? property extends Properties<category>
-            ? Paths<values[category]>
+            ? Paths<values[category], property>
             : never
           : never
     }[keyof values]
@@ -321,7 +322,9 @@ export type Names<
         : never
     }[Extract<keyof tokens, Group>]
 
-type Paths<tree> = [tree] extends [never]
+type Paths<tree, property extends keyof Literal.Properties = never> = [
+  tree,
+] extends [never]
   ? never
   : string extends keyof tree
     ? string
@@ -329,16 +332,30 @@ type Paths<tree> = [tree] extends [never]
         [key in Extract<keyof tree, number | string>]: NonNullable<
           tree[key]
         > extends Value
-          ?
-              | key
-              | `${key}`
-              | (key extends `${infer numericKey extends number}`
-                  ? `${numericKey}` extends key
-                    ? numericKey
-                    : never
-                  : never)
-          : `${key}.${Paths<NonNullable<tree[key]>>}`
+          ? [property] extends [never]
+            ? PathKey<key>
+            : VariableSets.Scalar<
+                  NonNullable<tree[key]>
+                > extends Literal.Properties[property] &
+                  ValueSyntax.Checked<
+                    Record<
+                      property,
+                      VariableSets.Scalar<NonNullable<tree[key]>>
+                    >
+                  >[property]
+              ? PathKey<key>
+              : never
+          : `${key}.${Paths<NonNullable<tree[key]>, property>}`
       }[Extract<keyof tree, number | string>]
+
+type PathKey<key extends number | string> =
+  | key
+  | `${key}`
+  | (key extends `${infer numericKey extends number}`
+      ? `${numericKey}` extends key
+        ? numericKey
+        : never
+      : never)
 
 /** Property domains accepted by each token group. */
 export type Properties<group extends Group> = `--${string}` | Property<group>

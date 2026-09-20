@@ -119,7 +119,12 @@ export function create(
           )
         : [['default', theme.className] as const]
     let select: ReturnType<typeof Selection.create> | undefined
-    const vars = (options: { set?: string; colorScheme?: string } = {}) =>
+    const vars = (
+      options: {
+        set?: string | undefined
+        colorScheme?: string | undefined
+      } = {},
+    ) =>
       (select ??= Selection.create(
         entries(),
         input.output === 'html',

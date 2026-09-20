@@ -869,7 +869,6 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         ".z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        :root{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
         .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
         .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
         .z_scheme-dark{color-scheme:dark;}
@@ -893,7 +892,6 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        :root{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
         .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
         .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
         .z_scheme-dark{color-scheme:dark;}

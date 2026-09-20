@@ -85,7 +85,7 @@ export type Domain<value> = [value] extends [Literal.Color]
 
 /** Creates typed references without emitting CSS or reading the environment. */
 export function define<const values extends Values>(
-  values: values & NoInfer<Validated<values>>,
+  values: values & NoInfer<Validated<values, false, true>>,
   options: style.DefinitionOptions = {},
 ): Definition<values> {
   const contract = Object.freeze({
@@ -183,40 +183,61 @@ export class InvalidError extends Error {
   override name = 'Vars.InvalidError'
 }
 
-type Validated<value, typography extends boolean = false> = Values extends value
+type Validated<
+  value,
+  typography extends boolean = false,
+  root extends boolean = false,
+> = Values extends value
   ? value
   : value extends readonly string[]
-    ? value
+    ? never
     : value extends Token.Reference
       ? value
       : value extends string | number
         ? Literal.Checked<value>
-        : value extends { default: infer base }
-          ? Conditional<Compatible<Scalar<base>>> &
-              Record<
-                Exclude<keyof value, 'default' | `@media ${string}`>,
-                never
-              >
-          : value extends { light: unknown; dark: unknown }
-            ? Pair<value>
-            : keyof value extends 'light' | 'dark'
+        : root extends true
+          ? {
+              readonly [key in keyof value]: key extends 'containerNames'
+                ? value[key] extends readonly string[]
+                  ? value[key]
+                  : never
+                : key extends
+                      | `${string}.${string}`
+                      | `${string}!${string}`
+                      | `@${string}`
+                      | ''
+                  ? never
+                  : Validated<
+                      value[key],
+                      key extends 'typography' ? true : false
+                    >
+            }
+          : value extends { default: infer base }
+            ? Conditional<Compatible<Scalar<base>>> &
+                Record<
+                  Exclude<keyof value, 'default' | `@media ${string}`>,
+                  never
+                >
+            : value extends { light: unknown; dark: unknown }
               ? Pair<value>
-              : {
-                  readonly [key in keyof value]: key extends
-                    | `${string}.${string}`
-                    | `${string}!${string}`
-                    | `@${string}`
-                    | ''
-                    ? typography extends true
-                      ? key extends Typography.Condition
-                        ? Validated<value[key], true>
+              : keyof value extends 'light' | 'dark'
+                ? Pair<value>
+                : {
+                    readonly [key in keyof value]: key extends
+                      | `${string}.${string}`
+                      | `${string}!${string}`
+                      | `@${string}`
+                      | ''
+                      ? typography extends true
+                        ? key extends Typography.Condition
+                          ? Validated<value[key], true>
+                          : never
                         : never
-                      : never
-                    : Validated<
-                        value[key],
-                        key extends 'typography' ? true : typography
-                      >
-                }
+                      : Validated<
+                          value[key],
+                          key extends 'typography' ? true : typography
+                        >
+                  }
 
 /** Applies a compatible variable set and optional color scheme to a scope. */
 export type Selector<
@@ -225,7 +246,7 @@ export type Selector<
 > = {
   <
     const selection extends {
-      readonly set?: name
+      readonly set?: name | undefined
       readonly colorScheme?: 'light' | 'dark' | 'light dark' | undefined
     } = {},
   >(

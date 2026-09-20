@@ -140,3 +140,58 @@ test('infers responsive typography and border widths', () => {
   // @ts-expect-error Border-width tokens do not apply to border-image widths.
   style({ borderImageWidth: 'regular' })
 })
+
+test('validates mapped leaf values and optional selections', () => {
+  const base = Vars.define({
+    mixed: {
+      ink: '#fff',
+      gap: '4px',
+      negative: '-4px',
+      nested: { gap: '8px' },
+      opacity: 0.5,
+      order: 2,
+    },
+  })
+  const { style, vars } = Config.create({
+    vars: base,
+    mappings: { mixed: ['padding', 'opacity', 'zIndex'] },
+  })
+  style({ padding: 'gap', opacity: 'opacity', zIndex: 'order' })
+  style({ padding: 'nested.gap' })
+  // @ts-expect-error Color leaves cannot supply padding.
+  style({ padding: 'ink' })
+  // @ts-expect-error Padding cannot be negative.
+  style({ padding: 'negative' })
+  // @ts-expect-error Z-index requires an integer.
+  style({ zIndex: 'opacity' })
+  vars({ set: undefined })
+  const config = Config.create({
+    vars: { base, other: Vars.extend(base, {}) },
+    defaultVars: 'base',
+  })
+  const selection: 'base' | 'other' | undefined = undefined as
+    | 'base'
+    | 'other'
+    | undefined
+  config.vars({ set: selection })
+})
+
+test('accepts root scalar names and restricts arrays to root containerNames', () => {
+  const vars = Vars.define({
+    light: '8px',
+    dark: 2,
+    default: 'red',
+    containerNames: ['card'],
+  })
+  expectTypeOf(vars.light.group).toEqualTypeOf<'spacing'>()
+  expectTypeOf(vars.dark.group).toEqualTypeOf<'number'>()
+  expectTypeOf(vars.default.group).toEqualTypeOf<'color'>()
+  // @ts-expect-error Nested arrays are not variable leaves.
+  Vars.define({ spacing: { scale: ['4px'] } })
+  // @ts-expect-error Arrays are only root containerNames metadata.
+  Vars.define({ scale: ['4px'] })
+  // @ts-expect-error Nested containerNames are ordinary variables.
+  Vars.define({ spacing: { containerNames: ['card'] } })
+  // @ts-expect-error Root variable keys cannot contain dots.
+  Vars.define({ 'color.ink': '#fff' })
+})

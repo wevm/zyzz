@@ -343,7 +343,7 @@ namespace variables {
 
 namespace styles {
   export const label = style({
-    vars: { [variables.accent]: '#2563eb' },
+    variables: { [variables.accent]: '#2563eb' },
     color: variables.accent,
   })
 }

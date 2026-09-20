@@ -11,7 +11,7 @@ namespace variables {
 
 namespace styles {
   export const label = style({
-    vars: { [variables.accent]: 'tomato' },
+    variables: { [variables.accent]: 'tomato' },
     color: variables.accent,
     selectors: {
       '&:hover': { variables: { [variables.accent]: 'purple' } },

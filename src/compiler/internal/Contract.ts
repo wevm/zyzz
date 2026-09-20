@@ -62,10 +62,21 @@ export function read(
     if (!value || typeof value !== 'object') return value
     if (Array.isArray(value)) return value.map(decode)
     const fields = record(value)
+    if (Object.hasOwn(fields, '$object'))
+      return Object.fromEntries(
+        Object.entries(record(fields.$object)).map(([key, value]) => [
+          key,
+          decode(value),
+        ]),
+      )
     if (Object.hasOwn(fields, '$variable')) {
       const reference = record(fields.$variable)
       const identity = string(reference.identity)
       let contract = identities.get(identity)
+      if (contract && !contract.variableSet)
+        throw new Error(
+          'Conflicting packed variable-set modes for one identity.',
+        )
       if (!contract) {
         contract = Object.freeze({
           variableSet: true,
@@ -110,6 +121,11 @@ export function read(
         ? Shorthands.read(entry.shorthands)
         : undefined
     let contract = identities.get(identity)
+    if (
+      contract &&
+      Boolean(contract.variableSet) !== (entry.variableSet === true)
+    )
+      throw new Error('Conflicting packed variable-set modes for one identity.')
     if (
       contract &&
       JSON.stringify(contract.mappings ?? {}) !== JSON.stringify(mappings ?? {})
@@ -981,9 +997,12 @@ function encode(value: unknown): unknown {
     }
   if (Array.isArray(value)) return value.map(encode)
   if (!value || typeof value !== 'object') return value
-  return Object.fromEntries(
+  const fields = Object.fromEntries(
     Object.entries(value).map(([key, value]) => [key, encode(value)]),
   )
+  return Object.hasOwn(fields, '$variable') || Object.hasOwn(fields, '$object')
+    ? { $object: fields }
+    : fields
 }
 
 function variableOptions(

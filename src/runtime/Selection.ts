@@ -19,7 +19,7 @@ export function create(
   html: boolean,
   key: 'set',
   defaultSet?: string,
-): (input?: { set?: string; colorScheme?: string }) => {
+): (input?: { set?: string | undefined; colorScheme?: string | undefined }) => {
   className?: string
   class?: string
   style?: unknown
@@ -34,8 +34,8 @@ export function create(
 
   const select = (
     input: {
-      set?: string
-      colorScheme?: string
+      set?: string | undefined
+      colorScheme?: string | undefined
     } = {},
   ) => {
     const selected =

@@ -97,7 +97,7 @@ Named `themes({ theme, colorScheme? })` selections return generated scope classe
 Use the selector from a [named-theme config](guides/themes.md#selecting-sets):
 
 ```tsx
-import { themes } from './zyzz.config.js'
+import { vars } from './zyzz.config.js'
 
 const example = (
   <section {...vars({ set: 'mint', colorScheme: 'dark' })}>Content</section>

@@ -2,6 +2,7 @@
  * Collects live theme references and emits graph-local variables and scope rules.
  * @module
  */
+import * as Identity from '../../internal/Identity.js'
 import * as Scheme from '../../internal/Scheme.js'
 import * as Token from '../../internal/Token.js'
 import type * as Vars from '../../Vars.js'
@@ -16,7 +17,7 @@ export function create() {
     { identity: string | undefined; paths: Map<string, string> }
   >()
 
-  const defaults = new Map<string, Token.Value>()
+  const defaults = new Map<string, string>()
 
   function serialize(token: Token.Reference): string {
     const value = token.value
@@ -40,7 +41,6 @@ export function create() {
       contract.paths.set(token.path, name)
     }
 
-    if (token.contract.variableSet) defaults.set(name, value)
     return `var(${name},${literal(value)})`
   }
 
@@ -114,21 +114,27 @@ export function create() {
     // light-dark() resolves wherever selection helpers load.
     if (schemes) rules.push(Scheme.css)
 
-    const fallback: string[] = []
-    for (const [name, value] of defaults) {
-      fallback.push(`:root{${name}:${literal(value)};}`)
-      conditional(value, name, ':root', fallback)
-    }
     return {
       classes: Object.freeze(classes),
-      css: [...fallback, ...rules].join('\n'),
+      css: [...defaults.values(), ...rules].join('\n'),
     }
   }
 
   function literal(value: Token.Value): string {
     if (Token.is(value)) return serialize(value)
     if (typeof value !== 'object') return String(value)
-    if ('default' in value) return literal(value.default)
+    if ('default' in value) {
+      // Separate fallback properties preserve extensions and resolve references within each scope.
+      const base = literal(value.default)
+      const rules = [`:where(*){--fallback:${base};}`]
+      conditional(value, '--fallback', ':where(*)', rules)
+      const css = rules.join('')
+      const name = `--z-f${Identity.hash(css)}`
+      const emitted = [`:where(*){${name}:${base};}`]
+      conditional(value, name, ':where(*)', emitted)
+      defaults.set(name, emitted.join(''))
+      return `var(${name})`
+    }
     return `light-dark(${literal(value.light)},${literal(value.dark)})`
   }
 

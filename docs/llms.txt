@@ -11,6 +11,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Next.js Setup](introduction/next.md): Next.js configuration and consumer setup.
 - [CLI Setup](introduction/cli.md): Reference and examples.
 - [Why Zyzz](introduction/why-zyzz.md): Reference and examples.
+- [Thinking in Zyzz](introduction/thinking-in-zyzz.md): Co-location, composition, authoring feedback, and styling conventions.
 - [Editor and Agents](introduction/editor-agents.md): Reference and examples.
 - [Compatibility](introduction/compatibility.md): Reference and examples.
 - [FAQ](introduction/faq.md): Reference and examples.

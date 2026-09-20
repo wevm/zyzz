@@ -43,6 +43,8 @@ export function Card() {
 - **Minimal.** Small, composable APIs keep configuration and dependencies optional.
 - **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
 
+Read [Thinking in Zyzz](docs/introduction/thinking-in-zyzz.md) for co-location, composition, and styling conventions.
+
 ## Features
 
 - [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.

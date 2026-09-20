@@ -18,6 +18,11 @@ type CompletionProperties<styles = Record<string, unknown>> = {
 
 type Keys<value> = value extends unknown ? keyof value : never
 
+// Keep named and custom-property instantiations separate so framework interfaces need no index signature.
+type InlineProperties<properties extends string> = {
+  readonly [property in properties]?: string | number | undefined
+}
+
 type VariableOptions<input> = input extends {
   readonly variables: infer variables
 }
@@ -80,7 +85,7 @@ export declare namespace style {
   type DefinitionOptions = { readonly id?: string | undefined }
   /** Callable compiled bindings with required scalar inputs and styling overrides. */
   type Dynamic<values, output extends Output = 'react'> = Reference &
-    (<const input extends values & Options>(
+    (<const input extends values & Options<output>>(
       input: input &
         VariableOptions<input> &
         Record<Exclude<keyof input, keyof values | keyof Options>, never>,
@@ -90,11 +95,17 @@ export declare namespace style {
   type ErrorType = Error
 
   /** Styling overrides consumed by a transformed definition. */
-  type Options = {
+  type Options<output extends Output = 'react'> = {
     /** External class names appended to the generated classes. */
     readonly className?: string | undefined
-    /** Literal inline styling overrides. */
-    readonly style?: Literal.Properties | undefined
+    /** Inline overrides. React accepts scalar values, while HTML requires CSS units. */
+    readonly style?:
+      | (output extends 'html'
+          ? Literal.Properties
+          :
+              | InlineProperties<keyof typeof Literal.rules>
+              | InlineProperties<keyof Literal.Properties>)
+      | undefined
     /** Inline custom-property assignments, merged before explicit style overrides. */
     readonly variables?:
       | Readonly<Record<`--${string}`, string | number | undefined>>
@@ -118,7 +129,7 @@ export declare namespace style {
 
   /** Callable definition; source rewriting supplies its implementation. */
   type ReturnType<output extends Output = 'react'> = Reference &
-    (<const options extends Options = Options>(
+    (<const options extends Options<output> = Options<output>>(
       options?: options &
         VariableOptions<options> &
         Record<Exclude<Keys<options>, keyof Options>, never>,

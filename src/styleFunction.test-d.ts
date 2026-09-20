@@ -3,11 +3,53 @@
  * @module
  */
 /* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
+import type { ComponentPropsWithoutRef, CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, style, Style, Theme } from 'zyzz'
 import { counterStyle, fontPaletteValues, positionTry } from 'zyzz/web'
 
 describe('style', () => {
+  test('accepts React inline styles without weakening authored declarations', () => {
+    const card = style({ padding: '8px' })
+    const dynamic = style((values: { width: `${number}%` }) => ({
+      width: values.width,
+    }))
+    const themed = Theme.define({ spacing: { md: '8px' } }).style({
+      padding: 'md',
+    })
+    const configured = Config.create({ theme: {} }).style({ padding: '8px' })
+    const inline: CSSProperties = {
+      color: 'var(--ink)',
+      opacity: undefined,
+      padding: 12,
+    }
+    const props: ComponentPropsWithoutRef<'button'> = {
+      className: 'external',
+      style: inline,
+    }
+
+    expectTypeOf<CSSProperties>().toExtend<
+      NonNullable<style.Options['style']>
+    >()
+    expectTypeOf(
+      card({ className: props.className, style: props.style }),
+    ).toEqualTypeOf<style.Props>()
+    dynamic({ style: props.style, width: '50%' })
+    themed({ style: props.style })
+    configured({ style: props.style })
+    card({ style: { '--accent': undefined, padding: 12 } })
+    card({ style: undefined })
+
+    // @ts-expect-error Inline values remain scalar.
+    card({ style: { opacity: false } })
+    // @ts-expect-error Conditions belong in authored declarations.
+    card({ style: { color: { ':hover': 'red' } } })
+    // @ts-expect-error Authored lengths still require units or configured tokens.
+    style({ padding: 12 })
+    // @ts-expect-error Authored values retain CSS domain checks.
+    style({ display: 'invalid' })
+  })
+
   test('retains inference with explicit definition identities', () => {
     const card = style({ color: 'red' }, { id: 'card' })
     const bar = style(

@@ -325,8 +325,10 @@ describe('style', () => {
     renamedStyle({ colour: 'brand' })
     // @ts-expect-error Chained aliases require declared numeric spacing keys.
     chainedStyle({ padding: 5 })
-    // @ts-expect-error Applied alias styles accept only literal overrides.
-    renamedStyle({ padding: 'md' })({ style: { padding: 'md' } })
+    renamedStyle({ padding: 'md' })({
+      // @ts-expect-error Inline overrides cannot resolve structured theme references.
+      style: { padding: shorthand.tokens.spacing.md },
+    })
 
     expectTypeOf(
       chainedStyle({
@@ -367,8 +369,8 @@ describe('style', () => {
     themedStyle({ color: 'md' })
     // @ts-expect-error Nonzero numeric spacing requires a declared key.
     themedStyle({ padding: 5 })
-    // @ts-expect-error Styling overrides remain literal-only.
-    themedCard({ style: { padding: 'md' } })
+    // @ts-expect-error Inline overrides cannot resolve structured theme references.
+    themedCard({ style: { padding: shorthand.tokens.spacing.md } })
     // @ts-expect-error Unknown properties are rejected.
     themedStyle({ colour: 'brand' })
     // @ts-expect-error Root authoring does not inherit the imported theme.

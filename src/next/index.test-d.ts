@@ -29,7 +29,7 @@ describe('zyzz', () => {
       ComponentProps<'h1'>
     >()
     expectTypeOf(dynamic({ opacity: 0.5 })).toExtend<ComponentProps<'button'>>()
-    // @ts-expect-error Output compatibility must not widen authoring overrides.
-    staticStyle({ style: { opacity: 'opaque' } })
+    // @ts-expect-error Inline overrides require scalar values.
+    staticStyle({ style: { opacity: false } })
   })
 })

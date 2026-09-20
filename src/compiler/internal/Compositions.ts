@@ -497,6 +497,12 @@ export function collect(options: collect.Options) {
             ),
           }
         : {}),
+      typography: new Map(
+        selected.flatMap((call) => [...(call.typography ?? [])]),
+      ),
+      typographyQueries: new Map(
+        selected.flatMap((call) => [...(call.typographyQueries ?? [])]),
+      ),
       name,
       start: node.start,
       end: node.end,
@@ -538,6 +544,12 @@ export function collect(options: collect.Options) {
           start: call.start,
           end: call.end,
           compositionCase: true,
+          typography: new Map(
+            included.flatMap((call) => [...(call.typography ?? [])]),
+          ),
+          typographyQueries: new Map(
+            included.flatMap((call) => [...(call.typographyQueries ?? [])]),
+          ),
           body: {
             ...call.body!,
             properties: included.flatMap((call) => properties(call)),

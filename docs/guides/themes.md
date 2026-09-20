@@ -45,7 +45,7 @@ namespace styles {
 }
 ```
 
-Each set bundles font family, size, weight, letter spacing, and line height. Explicit typography fields override preset fields within the same block. [Custom sets](../api/core/Theme/define.md#tokenstypography) use the same nested structure and support field overrides with `Theme.extend`.
+Each set bundles font family, size, weight, letter spacing, and line height. Sets can include `@media` and `@container` blocks. Explicit typography fields override base and conditional preset fields within the same block. [Custom sets](../api/core/Theme/define.md#tokenstypography) use the same nested structure and support field overrides with `Theme.extend`.
 
 ### Property Mappings
 

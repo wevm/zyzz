@@ -165,7 +165,7 @@ export type Contract = {
   /** Whether values belong to independent variables rather than fixed theme categories. */
   readonly variableSet?: boolean | undefined
   /** Configuration-local category-to-property mappings. */
-  readonly mappings?: VariableSets.Mappings | undefined
+  readonly mappings?: VariableSets.Mappings | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Configuration-local property aliases, inherited by bound handles. */
@@ -304,19 +304,24 @@ export type Names<
 > = tokens extends {
   readonly '~vars': { values: infer values; mappings: infer mappings }
 }
-  ? {
-      [category in keyof values]: category extends keyof mappings
-        ? mappings[category] extends readonly unknown[]
-          ? property extends mappings[category][number]
-            ? Paths<values[category], property>
+  ? mappings extends false
+    ? Paths<
+        Omit<values, 'breakpoints' | 'containers' | 'containerNames'>,
+        property
+      >
+    : {
+        [category in keyof values]: category extends keyof mappings
+          ? mappings[category] extends readonly unknown[]
+            ? property extends mappings[category][number]
+              ? Paths<values[category], property>
+              : never
             : never
-          : never
-        : category extends Group
-          ? property extends Properties<category>
-            ? Paths<values[category], property>
+          : category extends Group
+            ? property extends Properties<category>
+              ? Paths<values[category], property>
+              : never
             : never
-          : never
-    }[keyof values]
+      }[keyof values]
   : {
       [group in Extract<
         keyof tokens,
@@ -473,12 +478,15 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
         groups.indexOf(right.split('.')[0] as (typeof groups)[number]),
     )) {
       const [category, ...parts] = path.split('.')
-      const mapped = data.contract.mappings?.[category!]
+      const mappings = data.contract.mappings
+      const mapped = mappings === false ? undefined : mappings?.[category!]
       if (
-        parts.join('.') !== String(value) ||
-        !(mapped
-          ? mapped.includes(options.property)
-          : accepts(category as Group, options.property))
+        mappings === false
+          ? path !== String(value)
+          : parts.join('.') !== String(value) ||
+            !(mapped
+              ? mapped.includes(options.property)
+              : accepts(category as Group, options.property))
       )
         continue
       return create({

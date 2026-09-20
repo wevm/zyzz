@@ -89,13 +89,14 @@ describe('define', () => {
     `)
   })
 
-  test.each(['expression', 'block', 'function'])(
+  test.each(['expression', 'block', 'function', 'full paths'])(
     'compiles derived vars through source and packed browser scopes: %s',
     async (form) => {
       const value =
         '({color:{foreground:{light:vars.color.palette.ink,dark:vars.color.palette.paper}},spacing:{large:vars.spacing.small}})'
       const callback = (() => {
-        if (form === 'expression') return `vars => ${value}, {id:'derived-web'}`
+        if (form === 'expression' || form === 'full paths')
+          return `vars => ${value}, {id:'derived-web'}`
         if (form === 'block') return `vars => { return ${value} }`
         return `function(vars) { return ${value} }`
       })()
@@ -103,12 +104,12 @@ describe('define', () => {
       const base = Vars.define({color:{palette:{ink:'#123456',paper:'#ffffff'}},spacing:{small:{default:'4px','@media (min-width: 600px)':'16px'}}},
         ${callback});
       const other = Vars.extend(base,{color:{palette:{ink:'#abcdef',paper:'#000000'}},spacing:{small:{default:'8px','@media (min-width: 600px)':'32px'}}});
-      export const {style,vars}=Config.create({vars:{base,other},defaultVars:'base'});`
+      export const {style,vars}=Config.create({vars:{base,other},defaultVars:'base',${form === 'full paths' ? 'mappings:false,' : ''}});`
       const app = `import {style,vars} from 'library';
       export const base=vars({set:'base',colorScheme:'light'});
       export const other=vars({set:'other',colorScheme:'light'});
       export const dark=vars({set:'other',colorScheme:'dark'});
-      export const card=style({color:'foreground',padding:'large'});`
+      export const card=style({borderColor: vars.color.foreground, color:'${form === 'full paths' ? 'color.' : ''}foreground',padding:'${form === 'full paths' ? 'spacing.' : ''}large'});`
       const library = Graph.compile({ modules: { 'index.ts': source } })
       const browser = await chromium.launch()
       try {
@@ -196,6 +197,32 @@ describe('define', () => {
       }
     },
   )
+
+  test('validates full paths against property domains', () => {
+    const config = Config.create({
+      id: 'full-paths',
+      vars: { surface: { ink: '#123456' }, size: { page: '16px' } },
+      mappings: false,
+    })
+    config.style({ color: 'surface.ink', width: 'size.page' })
+    expect(() =>
+      // @ts-expect-error color values cannot be used as lengths
+      config.style({ width: 'surface.ink' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["style","width"]: Variable value is incompatible with this property.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'index.ts': `import {Config} from 'zyzz';
+        const {style}=Config.create({vars:{surface:{ink:'#123456'}},mappings:false});
+        export const card=style({width:'surface.ink'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: index.ts:154: Variable value is incompatible with this property.]`,
+    )
+  })
 
   test('accepts custom categories named tokens in portable styles', () => {
     const vars = Vars.define(

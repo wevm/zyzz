@@ -63,6 +63,7 @@ export function create(
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values)
       const theme = VariableSets.theme(definition, variableMappings)
+      if (variableMappings === false) return theme
       const metadata = theme[Token.definition]
       const names = new Map<string, string>()
       for (const path of Object.keys(metadata.values)) {
@@ -812,8 +813,8 @@ export type VariableOptions = {
   readonly id?: string | undefined
   /** Ordered CSS layer names. */
   readonly layers?: readonly string[] | undefined
-  /** Per-category replacements for default property mappings; an empty array disables lookup. */
-  readonly mappings?: Vars.Mappings | undefined
+  /** Category mappings; false enables full paths in every compatible property. */
+  readonly mappings?: Vars.Mappings | false | undefined
   /** Styling props format; React by default. */
   readonly output?: style.Output | undefined
   /** Explicit local property aliases. */

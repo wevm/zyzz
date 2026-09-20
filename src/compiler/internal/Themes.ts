@@ -35,7 +35,7 @@ export type Call = {
   readonly variableSet?: boolean | undefined
   readonly directVariables?: boolean | undefined
   readonly variableConfig?: boolean | undefined
-  readonly variableMappings?: Vars.Mappings | undefined
+  readonly variableMappings?: Vars.Mappings | false | undefined
   /** Whether this bound authoring alias declares recipes. */
   readonly recipe?: boolean | undefined
   /** Static CSS function signature shared during extraction and packed serialization. */

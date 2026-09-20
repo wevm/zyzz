@@ -11,7 +11,7 @@ import * as Vars from '../Vars.js'
 /** Wraps a variable set for the shared style/compiler contract. */
 export function theme(
   variables: Vars.Definition,
-  mappings?: Vars.Mappings,
+  mappings?: Vars.Mappings | false,
 ): Theme.Definition {
   const original = Theme.define({})
   const metadata = variables[Token.definition]
@@ -19,7 +19,7 @@ export function theme(
     throw new Vars.InvalidError([], 'Expected a variable set.')
   const contract = Object.freeze({
     ...metadata.contract,
-    ...(mappings ? { mappings } : {}),
+    ...(mappings !== undefined ? { mappings } : {}),
   })
   const tokens = from({
     ...metadata,
@@ -320,8 +320,8 @@ export function domain(value: Token.Value): Token.Group {
 }
 
 /** Copies and validates category mappings without retaining mutable caller input. */
-export function mappings(input: unknown): Vars.Mappings | undefined {
-  if (input === undefined) return undefined
+export function mappings(input: unknown): Vars.Mappings | false | undefined {
+  if (input === undefined || input === false) return input
   return Object.freeze(
     Object.fromEntries(
       record(input, ['mappings']).map(([category, value]) => {

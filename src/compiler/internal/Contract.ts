@@ -409,7 +409,7 @@ export function read(
         Config.create(
           variableOptions(
             options,
-            entry.variableMappings as Vars.Mappings | undefined,
+            entry.variableMappings as Vars.Mappings | false | undefined,
           ),
         )
       else Config.create(options as Config.create.Options)
@@ -436,7 +436,7 @@ export function read(
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
       ? entry.variableConfig === true
-        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | undefined))}>`
+        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
         : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
@@ -473,6 +473,7 @@ export function read(
               variableConfig: true,
               variableMappings: entry.variableMappings as
                 | Vars.Mappings
+                | false
                 | undefined,
             }
           : {}),
@@ -1007,13 +1008,13 @@ function encode(value: unknown): unknown {
 
 function variableOptions(
   options: Record<string, unknown>,
-  mappings?: Vars.Mappings,
+  mappings?: Vars.Mappings | false,
 ): Config.VariableOptions {
   const { theme, themes, defaultTheme, ...rest } = options
   return {
     ...rest,
     vars: (themes ?? theme) as Vars.Values,
     ...(themes ? { defaultVars: String(defaultTheme) } : {}),
-    ...(mappings ? { mappings } : {}),
+    ...(mappings !== undefined ? { mappings } : {}),
   }
 }

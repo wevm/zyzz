@@ -16,6 +16,7 @@ import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
 import * as Token from './internal/Token.js'
+import type * as Typography from './internal/Typography.js'
 
 /** Creates token-free authoring without a configuration file or global state. */
 export function create(): create.ReturnType<{}>
@@ -472,6 +473,10 @@ type CompletionProperties<tokens, styles = Record<string, unknown>> = {
     | (string & {})
     | number
     | object
+} & {
+  readonly [property in 'typography' & keyof styles]?:
+    | Typography.Names<tokens>
+    | (string & {})
 }
 
 /** Checked declaration body shared by configured styles and recipe choices. */

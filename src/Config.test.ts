@@ -16,7 +16,7 @@ describe('create', () => {
     let source = `import { Config } from 'zyzz'
 import { theme } from 'zyzz/default'
 const { style } = Config.create({ theme })
-const pane = style({ alignItems: 'center', fontFamily: 'sans' })
+const pane = style({ alignItems: 'center', fontFamily: 'sans', typography: 'copy.18' })
 const dynamic = style((values: { width: \`\${number}px\` }) => ({
   width: values.width,
   alignItems: 'center',
@@ -105,6 +105,98 @@ dynamic({ width: '12px' })
 
     try {
       expect(service.getSemanticDiagnostics(file)).toMatchInlineSnapshot(`[]`)
+      expect(complete('typography', 'copy.18', '')).toMatchInlineSnapshot(`
+        [
+          "button.12",
+          "button.14",
+          "button.16",
+          "copy.13",
+          "copy.14",
+          "copy.16",
+          "copy.18",
+          "copy.20",
+          "copy.24",
+          "copy.13.mono",
+          "copy.14.strong",
+          "copy.16.strong",
+          "copy.18.strong",
+          "copy.20.strong",
+          "copy.24.strong",
+          "heading.14",
+          "heading.16",
+          "heading.20",
+          "heading.24",
+          "heading.32",
+          "heading.40",
+          "heading.48",
+          "heading.56",
+          "heading.64",
+          "heading.72",
+          "heading.16.subtle",
+          "heading.20.subtle",
+          "heading.24.subtle",
+          "heading.32.subtle",
+          "label.12",
+          "label.13",
+          "label.14",
+          "label.16",
+          "label.18",
+          "label.20",
+          "label.13.mono",
+          "label.14.strong",
+          "label.16.strong",
+          "label.12.mono",
+          "label.12.strong",
+          "label.13.strong",
+          "label.14.mono",
+        ]
+      `)
+      expect(complete('typography', 'copy.18', 'copy.')).toMatchInlineSnapshot(`
+        [
+          "button.12",
+          "button.14",
+          "button.16",
+          "copy.13",
+          "copy.14",
+          "copy.16",
+          "copy.18",
+          "copy.20",
+          "copy.24",
+          "copy.13.mono",
+          "copy.14.strong",
+          "copy.16.strong",
+          "copy.18.strong",
+          "copy.20.strong",
+          "copy.24.strong",
+          "heading.14",
+          "heading.16",
+          "heading.20",
+          "heading.24",
+          "heading.32",
+          "heading.40",
+          "heading.48",
+          "heading.56",
+          "heading.64",
+          "heading.72",
+          "heading.16.subtle",
+          "heading.20.subtle",
+          "heading.24.subtle",
+          "heading.32.subtle",
+          "label.12",
+          "label.13",
+          "label.14",
+          "label.16",
+          "label.18",
+          "label.20",
+          "label.13.mono",
+          "label.14.strong",
+          "label.16.strong",
+          "label.12.mono",
+          "label.12.strong",
+          "label.13.strong",
+          "label.14.mono",
+        ]
+      `)
       expect(complete('alignItems', 'center', '')).toMatchInlineSnapshot(`
         [
           "baseline",

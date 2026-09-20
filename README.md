@@ -67,9 +67,9 @@ npm install zyzz
 Choose an integration or compile styles with the CLI or compiler API:
 
 - [Vite](#vite)
-- [Other Bundlers](#other-bundlers)
 - [Next.js](#nextjs)
 - [React Native](#react-native)
+- [Other Bundlers](#other-bundlers)
 - [CLI](#cli)
 - [Compiler API](#compiler-api)
 
@@ -88,18 +88,6 @@ export default defineConfig({
 ```
 
 Import components normally. The plugin transforms source modules and delivers CSS automatically during development and production builds. See [Vite Setup](docs/introduction/vite.md).
-
-### Other Bundlers
-
-Use the unplugin adapters with Rollup, Webpack, or esbuild:
-
-```ts
-import { zyzz } from 'zyzz/esbuild'
-
-const plugins = [zyzz()]
-```
-
-The adapters emit `zyzz.css` and `zyzz.js` beside the JavaScript bundle. Load these files in the application document. See [Bundler Setup](docs/api/unplugin/README.md) for configuration and output requirements.
 
 ### Next.js
 
@@ -131,6 +119,18 @@ export default zyzz(getDefaultConfig(import.meta.dirname), {
 ```
 
 Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/react-native).
+
+### Other Bundlers
+
+Use the unplugin adapters with Rollup, Webpack, or esbuild:
+
+```ts
+import { zyzz } from 'zyzz/esbuild'
+
+const plugins = [zyzz()]
+```
+
+The adapters emit `zyzz.css` and `zyzz.js` beside the JavaScript bundle. Load these files in the application document. See [Bundler Setup](docs/api/unplugin/README.md) for configuration and output requirements.
 
 ### CLI
 

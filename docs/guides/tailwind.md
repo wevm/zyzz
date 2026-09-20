@@ -1,4 +1,4 @@
-# From Tailwind
+# Migrating from Tailwind
 
 Migrate a Tailwind CSS v4 application to Zyzz while preserving its appearance and behavior. This guide follows Tailwind's [Core concepts](https://tailwindcss.com/docs/styling-with-utility-classes), with comparisons for configuration, component styles, and CSS delivery.
 

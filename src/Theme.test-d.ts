@@ -4,8 +4,8 @@
  */
 import { style as queriesStyle } from './default.js'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, style, Style, Theme } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { Config, style, Style, Theme, variable } from 'zyzz'
+import { Css, global } from 'zyzz/web'
 
 describe('define', () => {
   test('infers nested typography names and property domains', () => {
@@ -452,6 +452,30 @@ describe('queries', () => {
 
 describe('variables', () => {
   describe('define', () => {
+    test('accepts color expressions and static variable assignments', () => {
+      const theme = Theme.define({
+        color: { surface: { light: 'red', dark: 'blue' } },
+      })
+      const color = variable('color')
+
+      const box = theme.style({
+        variables: { [color]: theme.vars.color.surface },
+        backgroundImage: `linear-gradient(${theme.vars.color.surface}, transparent)`,
+        boxShadow: `0 0 2px ${theme.vars.color.surface}`,
+      })
+      box()
+      global({ ':root': { '--surface': theme.vars.color.surface } })
+      theme.style({ color: `${theme.vars.color.surface} !important` })
+      // @ts-expect-error Template-friendly references retain direct property domains.
+      theme.style({ width: theme.vars.color.surface })
+      // @ts-expect-error Fallbacks retain reference domains.
+      theme.style({ width: ['1px', theme.vars.color.surface] })
+      // @ts-expect-error Root styles cannot consume theme references through fallbacks.
+      style({ color: ['red', theme.vars.color.surface] })
+
+      // @ts-expect-error A color alone is not an image.
+      theme.style({ backgroundImage: theme.vars.color.surface })
+    })
     test('retains web reference domains and config inference', () => {
       const theme = Theme.define({
         color: { brand: 'red' },

@@ -54,7 +54,11 @@ export type Accepted<
                       | number
                       | string
                       ? Literal.Checked<style[key][name]>
-                      : never
+                      : literal extends true
+                        ? never
+                        : style[key][name] extends Token.Reference
+                          ? style[key][name]
+                          : never
                   }
                 : never
               : key extends 'typography'
@@ -753,7 +757,7 @@ export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
     | Value.Atom<Token.Names<tokens, property>>
     | {
         [group in Token.Group]: property extends Token.Properties<group>
-          ? Token.Reference<group>
+          ? Value.Atom<Token.Reference<group> | Token.Variable<group>>
           : never
       }[Token.Group]
   >

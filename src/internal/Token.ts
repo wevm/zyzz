@@ -13,6 +13,7 @@ export function accepts(
   group: Group,
   property: keyof Literal.Properties,
 ): boolean {
+  if (property.startsWith('--')) return true
   if (group === 'color') return Literal.rule(property)?.kind === 'color'
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
@@ -153,9 +154,10 @@ export function compose(
 export const web = Symbol('zyzz.web.variable')
 
 /** Web reference with the original token domain. */
-export type Variable<group extends Group = Group> = Reference<group> & {
-  readonly [web]: true
-}
+export type Variable<group extends Group = Group> = `var(--${string})` &
+  Reference<group> & {
+    readonly [web]: true
+  }
 
 /** Replaces portable scalar leaves with web-only references. */
 export type Variables<tree> =
@@ -255,7 +257,9 @@ type Paths<tree> = [tree] extends [never]
       }[Extract<keyof tree, number | string>]
 
 /** Property domains accepted by each token group. */
-export type Properties<group extends Group> = group extends 'margin' | 'padding'
+export type Properties<group extends Group> = `--${string}` | Property<group>
+
+type Property<group extends Group> = group extends 'margin' | 'padding'
   ? Exclude<
       Extract<keyof Literal.Properties, `${group}${string}`>,
       'marginTrim'

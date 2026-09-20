@@ -22,36 +22,45 @@ export type Atom<value> =
  */
 export type Accepted<style, properties> = {
   [property in keyof style]: property extends keyof properties
-    ? style[property] extends Binding.Reference
-      ? Binding.Reference<style[property]['type']> extends Exclude<
-          properties[property],
-          undefined
-        >
-        ? style[property]
-        : never
-      : FunctionValue.Is<style[property]> extends true
-        ? FunctionValue.Accepted<
-            style[property],
-            Exclude<properties[property], undefined>,
-            property
-          >
-        : Exclude<style[property], undefined> extends Exclude<
+    ? References<style[property], Exclude<properties[property], undefined>> &
+        (style[property] extends Binding.Reference
+          ? Binding.Reference<style[property]['type']> extends Exclude<
               properties[property],
               undefined
             >
-          ? Exclude<style[property], undefined>
-          : property extends keyof Literal.Properties
-            ? style[property] extends string | readonly (number | string)[]
-              ? Fold<style[property]> extends Input<
-                  | Lowercase<Extract<Literal.Properties[property], string>>
-                  | Extract<Literal.Properties[property], number>
+            ? style[property]
+            : never
+          : FunctionValue.Is<style[property]> extends true
+            ? FunctionValue.Accepted<
+                style[property],
+                Exclude<properties[property], undefined>,
+                property
+              >
+            : Exclude<style[property], undefined> extends Exclude<
+                  properties[property],
+                  undefined
                 >
-                ? style[property]
-                : Exclude<properties[property], undefined>
-              : Exclude<properties[property], undefined>
-            : Exclude<properties[property], undefined>
+              ? Exclude<style[property], undefined>
+              : property extends keyof Literal.Properties
+                ? style[property] extends string | readonly (number | string)[]
+                  ? Fold<style[property]> extends Input<
+                      | Lowercase<Extract<Literal.Properties[property], string>>
+                      | Extract<Literal.Properties[property], number>
+                    >
+                    ? style[property]
+                    : Exclude<properties[property], undefined>
+                  : Exclude<properties[property], undefined>
+                : Exclude<properties[property], undefined>)
     : never
 }
+
+type References<value, allowed> = value extends Token.Reference
+  ? value extends Extract<allowed, Token.Reference>
+    ? unknown
+    : never
+  : value extends readonly unknown[]
+    ? { [key in keyof value]: References<value[key], allowed> }
+    : unknown
 
 type Fold<value> = value extends string
   ? Lexical.Fold<Canonical<Spaces<Normalized<Lexical.Normalized<value>>>>>

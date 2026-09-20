@@ -4,7 +4,33 @@
  */
 import type * as Ast from '@oxc-project/types'
 import * as Binding from '../../internal/Binding.js'
+import * as Literal from '../../internal/Literal.js'
 import * as Token from '../../internal/Token.js'
+import * as Tree from 'css-tree'
+
+/** Checks color substitutions inside compound CSS values without widening direct reference domains. */
+export function acceptsColor(
+  expression: Token.Expression,
+  property: keyof Literal.Properties,
+): boolean {
+  const value = expression.parts
+    .map((part) => {
+      if (typeof part === 'string') return part
+      if (Binding.is(part) ? part.type === 'color' : part.group === 'color')
+        return 'rgb(1 2 3)'
+      return 'var(--zyzz-reference)'
+    })
+    .join('')
+    .replace(/ !important$/, '')
+
+  try {
+    return (
+      Tree.lexer.matchProperty(Literal.name(property), value).error === null
+    )
+  } catch {
+    return false
+  }
+}
 
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
 export function template(

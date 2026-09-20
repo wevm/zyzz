@@ -112,7 +112,7 @@ const style = { ...accent.set('blue'), ...gap.set('12px') }
 
 ## Static Assignments
 
-The `variables` property emits static custom-property declarations in authored order, including inside selectors and conditional rules. Values must be scalar strings or numbers. TypeScript widens computed object keys, so these assignments cannot enforce each key's individual domain. `.set(value)` retains domain checking.
+The `variables` property emits static custom-property declarations in authored order, including inside selectors and conditional rules. Values may be scalar strings, numbers, or compatible theme references. TypeScript widens computed object keys, so these assignments cannot enforce each key's individual domain. `.set(value)` retains domain checking.
 
 ## Source Requirements
 

@@ -13456,6 +13456,107 @@ describe('variables', () => {
         `[Source.ExtractError: root.ts:95: Token references must be direct property values in bound theme style calls.]`,
       )
     })
+    test('renders theme colors in gradients, shadows, and variable assignments', async () => {
+      const output = Transform.compile({
+        moduleId: 'color-expressions.ts',
+        source: [
+          'import { Theme, variable } from "zyzz";',
+          'const theme = Theme.define({ color: { surface: { light: "red", dark: "blue" } } });',
+          'const foreground = variable("color");',
+          'export const box = theme.style({ variables: { [foreground]: theme.vars.color.surface }, color: foreground, backgroundImage: `linear-gradient(${theme.vars.color.surface}, transparent)`, boxShadow: `0 0 2px ${theme.vars.color.surface}` })();',
+        ].join('\n'),
+      })
+      const js = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+        },
+        bundle: true,
+        write: false,
+        conditions: ['src'],
+        format: 'esm',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.outputFiles[0]!.text).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${output.css}</style><div id="actual" class="${module.box.className}"></div>`,
+        )
+
+        const computed = []
+        for (const scheme of ['light', 'dark']) {
+          await page.evaluate((scheme) => {
+            document.documentElement.style.colorScheme = scheme
+          }, scheme)
+          computed.push(
+            await page.locator('#actual').evaluate((element) => {
+              const style = getComputedStyle(element)
+              return [style.color, style.backgroundImage, style.boxShadow]
+            }),
+          )
+        }
+        expect(computed).toMatchInlineSnapshot(`
+          [
+            [
+              "rgb(255, 0, 0)",
+              "linear-gradient(rgb(255, 0, 0), rgba(0, 0, 0, 0))",
+              "rgb(255, 0, 0) 0px 0px 2px 0px",
+            ],
+            [
+              "rgb(0, 0, 255)",
+              "linear-gradient(rgb(0, 0, 255), rgba(0, 0, 0, 0))",
+              "rgb(0, 0, 255) 0px 0px 2px 0px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('compiles independent color variables inside gradients', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'gradient.ts',
+          source:
+            'import { style, variable } from "zyzz"; const color = variable("color"); export const box = style({ variables: { [color]: "red" }, backgroundImage: `linear-gradient(${color}, transparent)` })();',
+        }).css,
+      ).toMatchInlineSnapshot(`
+        ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ptmsdggixg3k_5f_2d_5f_54-red-TJ2a9d{--z-v1ptmsdggixg3k-54:red;}
+        .z-background-image-_Y7mUB{background-image:linear-gradient(var(--z-v1ptmsdggixg3k-54), transparent);}"
+      `)
+    })
+
+    test.each([
+      'width: `${theme.vars.color.brand}`',
+      'backgroundImage: `${theme.vars.color.brand}`',
+      'backgroundImage: `url(${theme.vars.color.brand})`',
+    ])('rejects incompatible color expressions: %s', (declaration) => {
+      try {
+        Transform.compile({
+          moduleId: 'invalid-color.ts',
+          source:
+            'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); theme.style({' +
+            declaration +
+            '})',
+        })
+        throw new Error('Expected an incompatible color diagnostic')
+      } catch (error) {
+        if (!(error instanceof Source.ExtractError)) throw error
+        expect(error.diagnostics.map((diagnostic) => diagnostic.message))
+          .toMatchInlineSnapshot(`
+            [
+              "Theme variable domain is incompatible with this property.",
+            ]
+          `)
+      }
+    })
+
     test('strips importance across nested template segments', () => {
       expect(
         Transform.compile({

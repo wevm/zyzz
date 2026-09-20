@@ -10,6 +10,7 @@ import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import { isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Scope from '../compiler/internal/Scope.js'
@@ -296,6 +297,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     everything = false,
   ) {
     async function resolve(source: string, importer: string) {
+      if (isBuiltin(source)) return { id: source, external: true }
       const resolved = await host.resolve(source, importer)
       if (!resolved) return resolved
 
@@ -371,8 +373,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         // Zyzz authoring and runtime entrypoints are handled by the static transform.
         if (
           specifier === 'zyzz' ||
-          (specifier.startsWith('zyzz/') &&
-              specifier !== 'zyzz/default')
+          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
         ) {
           resolutions[specifier] = null
           continue
@@ -524,8 +525,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           const specifier = node.source.value
           if (
             specifier === 'zyzz' ||
-            (specifier.startsWith('zyzz/') &&
-              specifier !== 'zyzz/default')
+            (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
           )
             continue
 

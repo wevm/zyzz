@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added unplugin adapters for Rollup, Webpack, and esbuild with shared CSS output and access to the existing Vite integration.

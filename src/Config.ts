@@ -7,8 +7,8 @@ import * as Authoring from './internal/Authoring.js'
 import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
+import type * as Completion from './internal/Completion.js'
 import type * as Condition from './internal/Condition.js'
-import type * as Literal from './internal/Literal.js'
 import type { style } from './styleFunction.js'
 import { variants } from './variants.js'
 import * as Scheme from './internal/Scheme.js'
@@ -16,7 +16,6 @@ import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
 import * as Token from './internal/Token.js'
-import type * as Typography from './internal/Typography.js'
 
 /** Creates token-free authoring without a configuration file or global state. */
 export function create(): create.ReturnType<{}>
@@ -446,7 +445,7 @@ export type StyleFactory<
         NoInfer<
           Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
         >) &
-      CompletionProperties<tokens, NoInfer<styles>>,
+      Completion.Properties<tokens, NoInfer<styles>>,
     ...options: Parameters<callback> extends [Record<string, string | number>]
       ? values extends Binding.Inputs<values>
         ? [options?: style.DefinitionOptions]
@@ -456,28 +455,12 @@ export type StyleFactory<
   <const styles extends Record<string, unknown>>(
     styles: styles &
       NoInfer<Body<styles, tokens, layers, mappings>> &
-      CompletionProperties<tokens>,
+      Completion.Properties<tokens>,
     options?: style.DefinitionOptions,
   ): style.ReturnType<output>
 }
 
 type Keys<styles> = styles extends unknown ? keyof styles : never
-
-/** Keeps completion hints separate from inferred declaration validation. */
-type CompletionProperties<tokens, styles = Record<string, unknown>> = {
-  readonly [property in keyof Literal.Properties & keyof styles]?:
-    | (string extends Literal.Properties[property]
-        ? never
-        : Literal.Properties[property])
-    | Token.Names<tokens, property>
-    | (string & {})
-    | number
-    | object
-} & {
-  readonly [property in 'typography' & keyof styles]?:
-    | Typography.Names<tokens>
-    | (string & {})
-}
 
 /** Checked declaration body shared by configured styles and recipe choices. */
 export type Body<

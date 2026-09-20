@@ -1,6 +1,36 @@
 /** Typed nested selector and condition keys without a general string index. @module */
 import type * as Theme from '../Theme.js'
 
+/** Concrete suggestions supplement open selector and query patterns. */
+export type Suggestions =
+  | '::after'
+  | '::backdrop'
+  | '::before'
+  | '::first-letter'
+  | '::first-line'
+  | '::marker'
+  | '::placeholder'
+  | '::selection'
+  | ':active'
+  | ':checked'
+  | ':disabled'
+  | ':empty'
+  | ':enabled'
+  | ':first-child'
+  | ':focus'
+  | ':focus-visible'
+  | ':focus-within'
+  | ':hover'
+  | ':last-child'
+  | ':only-child'
+  | ':visited'
+  | '@container'
+  | '@layer'
+  | '@media'
+  | '@scope'
+  | '@starting-style'
+  | '@supports'
+
 type Case<text extends string> = text extends `${infer first}${infer rest}`
   ? `${Lowercase<first> | Uppercase<first>}${Case<rest>}`
   : ''

@@ -4,17 +4,9 @@
  */
 import * as Authoring from './internal/Authoring.js'
 import type * as Binding from './internal/Binding.js'
+import type * as Completion from './internal/Completion.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Style from './Style.js'
-
-/** Restricts callback hints to inferred declarations instead of expanding every property grammar. */
-type CompletionProperties<styles = Record<string, unknown>> = {
-  readonly [property in keyof typeof Literal.rules & keyof styles]?:
-    | Literal.Properties[property]
-    | (string & {})
-    | number
-    | object
-}
 
 type Keys<value> = value extends unknown ? keyof value : never
 
@@ -54,7 +46,7 @@ export function style<
       values: values,
     ) => styles &
       NoInfer<Style.Accepted<styles, {}, true> & Binding.Checked<styles>>) &
-    CompletionProperties<NoInfer<styles>>,
+    Completion.Properties<{}, NoInfer<styles>>,
   // Exclude invalid callbacks by arity so they cannot mask object-property diagnostics.
   ...options: Parameters<callback> extends [Record<string, string | number>]
     ? values extends Binding.Inputs<values>
@@ -65,7 +57,7 @@ export function style<
 export function style<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<Style.Accepted<styles, {}, true>> &
-    CompletionProperties,
+    Completion.Properties,
   options?: style.DefinitionOptions,
 ): style.ReturnType
 export function style(

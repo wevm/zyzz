@@ -52,6 +52,20 @@ Border color palette for whole borders and physical/logical sides, preferred ove
 Theme.define({ borderColor: { subtle: '#eee' } })
 ```
 
+### tokens.borderWidth
+
+- Type: `Theme.Tokens["borderWidth"]`
+- Default: `undefined`
+
+Border width palette for whole borders and physical/logical sides. Leaves are nonnegative literal lengths or zero. Percentages, color schemes, outline widths, and border-image widths are excluded. CSS keywords such as `thin` and `thick` retain their literal meaning; use an unambiguous name or a token reference.
+
+```ts
+const theme = Theme.define({
+  borderWidth: { regular: '1px', hairline: '0.5px' },
+})
+const border = theme.style({ borderWidth: 'regular', borderStyle: 'solid' })
+```
+
 ### tokens.borderRadius
 
 - Type: `Theme.Tokens["borderRadius"]`
@@ -134,7 +148,7 @@ Theme.define({ containerNames: ['sidebar'] })
 - Type: `Theme.Tokens["typography"]`
 - Default: `undefined`
 
-Nested sets of `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight`. Each set supplies one or more literal properties. Other keys name nested sets, including variants alongside a base set's fields. Dots separate path segments and cannot appear in keys. Font property names are reserved for scalar fields.
+Nested sets of `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight`. Each set supplies one or more literal properties. Other keys name nested sets, including variants alongside a base set's fields. Dots separate named path segments; query strings may contain decimal values. Font property names are reserved for scalar fields.
 
 ```ts
 const theme = Theme.define({
@@ -160,7 +174,25 @@ const alternate = Theme.extend(theme, {
 })
 ```
 
-Explicit typography fields override preset fields within the same style block regardless of property order. Nested sets do not inherit their parent's fields. Extensions may override existing scalar fields, but cannot add sets or properties.
+Sets also accept nested `@media` and `@container` blocks using the theme's query aliases or raw CSS queries:
+
+```ts
+const theme = Theme.define({
+  breakpoints: { tablet: '48rem' },
+  typography: {
+    heading: {
+      fontSize: '24px',
+      lineHeight: '28px',
+      '@media >=tablet': { fontSize: '40px', lineHeight: '44px' },
+    },
+  },
+})
+const title = theme.style({ typography: 'heading' })
+```
+
+Query blocks contain only typography fields and further queries. Selectors and other at-rules are unsupported. Query-only sets are allowed. Native compilation rejects responsive sets, matching its existing query restriction.
+
+Explicit typography fields override the preset's base and conditional fields within the same style block regardless of property order. Nested sets do not inherit their parent's fields. Extensions may override existing scalar fields, but cannot add sets or properties.
 
 Expanded fields retain theme scope identity on web and use normal font mappings and length conversion on native.
 

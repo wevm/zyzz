@@ -24,7 +24,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24,
+      22, 23, 24, 25,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -114,6 +114,15 @@ export function read(
     )
       throw new Error(
         'Packed typography sets require contract version 24 or later.',
+      )
+
+    if (
+      (data.version as number) < 25 &&
+      (definition[Token.definition].paths ||
+        Object.hasOwn(definition.tokens, 'borderWidth'))
+    )
+      throw new Error(
+        'Packed responsive typography and border widths require contract version 25 or later.',
       )
 
     themes[name] = Token.bind(definition, contract)
@@ -581,6 +590,15 @@ export function write(
       ]),
     ),
     version: (() => {
+      if (
+        Object.values(themes).some(
+          (theme) =>
+            theme[Token.definition].paths ||
+            Object.hasOwn(theme.tokens, 'borderWidth'),
+        )
+      )
+        return 25
+
       if (
         Object.values(themes).some((theme) =>
           Object.hasOwn(theme.tokens, 'typography'),

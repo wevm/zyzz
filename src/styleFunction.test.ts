@@ -12,6 +12,135 @@ import { Graph, Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('style', () => {
+  test.each([
+    ["import { style } from 'zyzz'", ''],
+    [
+      "import { Config } from 'zyzz'",
+      "const { style } = Config.create({ theme: { fontSize: { hero: '72px' }, breakpoints: { tablet: '48rem' } } })",
+    ],
+    ["import { style } from 'zyzz/default'", ''],
+  ])(
+    'suggests nested declarations and structural keys through %s',
+    (imports, setup) => {
+      const root = Path.resolve(import.meta.dirname, '..')
+      const file = Path.join(root, '.fixture-nested-editor.ts')
+      const source = `${imports}
+${setup}
+const quoted = style({ '/* key */': {} })
+const card = style({
+  /* root */
+  '@media (min-width: 768px)': {
+    /* media */
+    fontSize: '/* font */',
+    width: '/* width */',
+    '::before': {
+      /* pseudo */
+      display: '/* display */',
+    },
+  },
+})
+`
+      const options: Ts.CompilerOptions = {
+        module: Ts.ModuleKind.ESNext,
+        moduleResolution: Ts.ModuleResolutionKind.Bundler,
+        noEmit: true,
+        paths: {
+          zyzz: [Path.join(root, 'src/index.ts')],
+          'zyzz/default': [Path.join(root, 'src/default.ts')],
+        },
+        skipLibCheck: true,
+        strict: true,
+        target: Ts.ScriptTarget.ESNext,
+        types: [],
+      }
+      const snapshots = new Map<string, Ts.IScriptSnapshot>()
+      const service = Ts.createLanguageService({
+        fileExists: (path) => path === file || Ts.sys.fileExists(path),
+        getCompilationSettings: () => options,
+        getCurrentDirectory: () => root,
+        getDefaultLibFileName: Ts.getDefaultLibFilePath,
+        getScriptFileNames: () => [file],
+        getScriptSnapshot: (path) => {
+          const cached = snapshots.get(path)
+          if (cached) return cached
+
+          const text = path === file ? source : Ts.sys.readFile(path)
+          if (text === undefined) return undefined
+
+          const snapshot = Ts.ScriptSnapshot.fromString(text)
+          snapshots.set(path, snapshot)
+          return snapshot
+        },
+        getScriptVersion: () => '0',
+        readDirectory: Ts.sys.readDirectory,
+        readFile: (path) => (path === file ? source : Ts.sys.readFile(path)),
+      })
+
+      try {
+        for (const marker of ['root', 'media', 'pseudo', 'key']) {
+          const names =
+            service
+              .getCompletionsAtPosition(
+                file,
+                source.indexOf(`/* ${marker} */`),
+                {},
+              )
+              ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
+          if (marker === 'root') {
+            expect(names.includes('::before')).toMatchInlineSnapshot(`true`)
+            if (setup)
+              expect(names.includes('@media tablet')).toMatchInlineSnapshot(
+                `true`,
+              )
+          }
+          expect(
+            [
+              'fontFamily',
+              'height',
+              '::after',
+              ':hover',
+              '@media',
+              '@supports',
+            ].filter((name) => names.includes(name)),
+          ).toMatchInlineSnapshot(`
+          [
+            "fontFamily",
+            "height",
+            "::after",
+            ":hover",
+            "@media",
+            "@supports",
+          ]
+        `)
+        }
+        for (const [marker, expected] of [
+          ['font', 'medium'],
+          ['width', 'auto'],
+          ['display', 'flex'],
+        ]) {
+          const names =
+            service
+              .getCompletionsAtPosition(
+                file,
+                source.indexOf(`/* ${marker} */`),
+                {},
+              )
+              ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
+          expect(names.includes(expected!)).toMatchInlineSnapshot(`true`)
+        }
+        if (setup) {
+          const names =
+            service
+              .getCompletionsAtPosition(file, source.indexOf('/* font */'), {})
+              ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
+          expect(names.includes('hero')).toMatchInlineSnapshot(`true`)
+        }
+      } finally {
+        service.dispose()
+      }
+    },
+  )
+
   test('suggests CSS properties and reports invalid declarations on their keys', () => {
     const root = Path.resolve(import.meta.dirname, '..')
     const file = Path.join(root, '.fixture-editor.ts')
@@ -123,6 +252,33 @@ dynamic({ width: '12px' })
       expect(completions?.entries.map((entry) => entry.name))
         .toMatchInlineSnapshot(`
       [
+        ""::after"",
+        ""::backdrop"",
+        ""::before"",
+        ""::first-letter"",
+        ""::first-line"",
+        ""::marker"",
+        ""::placeholder"",
+        ""::selection"",
+        "":active"",
+        "":checked"",
+        "":disabled"",
+        "":empty"",
+        "":enabled"",
+        "":first-child"",
+        "":focus-visible"",
+        "":focus-within"",
+        "":focus"",
+        "":hover"",
+        "":last-child"",
+        "":only-child"",
+        "":visited"",
+        ""@container"",
+        ""@layer"",
+        ""@media"",
+        ""@scope"",
+        ""@starting-style"",
+        ""@supports"",
         "accentColor",
         "alignContent",
         "alignmentBaseline",

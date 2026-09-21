@@ -106,11 +106,10 @@ function Index() {
                       key={text}
                       {...styles.headingWord()}
                     >
-                      {text}
+                      {text} styles
                     </span>
                   ))}
-                </span>{' '}
-                styles
+                </span>
               </span>
               <br />
               for modern interfaces

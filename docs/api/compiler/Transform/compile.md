@@ -128,3 +128,11 @@ Source maps trace generated artifacts back to original authoring. See [Publish L
 See [Transform](README.md) for related methods and types.
 
 Relative URLs in stylesheet contributions require `Graph.compile` and a relocation host. A standalone transform rejects them; absolute, data, fragment, query-only, and empty URLs retain their authored resolution.
+
+## CSS reset
+
+Set `reset: true` to include the bundled reset in the returned `css`. The default is `false`. CSS source maps remain available. Each call includes its own reset; use `Graph.compile` when combining modules into one stylesheet.
+
+```ts
+const output = Transform.compile({ moduleId: 'app.ts', reset: true, source })
+```

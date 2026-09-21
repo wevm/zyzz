@@ -31,6 +31,10 @@ const options = z.object({
     .string()
     .optional()
     .describe('Stable compiled package identity'),
+  reset: z
+    .boolean()
+    .default(false)
+    .describe('Include the bundled web CSS reset'),
   script: z
     .string()
     .optional()
@@ -182,6 +186,7 @@ async function open(context: open.Context) {
     outDir: Path.resolve(context.options['out-dir']),
     packageId,
     root: Path.resolve(context.args.src ?? 'src'),
+    reset: context.options.reset,
     ...(context.options.script === undefined
       ? {}
       : { script: Path.resolve(context.options.script) }),

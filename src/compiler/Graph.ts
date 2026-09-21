@@ -19,6 +19,7 @@ import * as Contract from './internal/Contract.js'
 import * as Relative from './internal/Relative.js'
 import * as Themes from './internal/Themes.js'
 import * as Source from './Source.js'
+import * as Reset from './internal/Reset.js'
 import * as Scope from './internal/Scope.js'
 import * as Static from './internal/Static.js'
 import * as Transform from './Transform.js'
@@ -65,6 +66,8 @@ export declare namespace compile {
       | undefined
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>
+    /** Include the bundled web reset in the emitted stylesheet. Defaults to false. */
+    readonly reset?: boolean | undefined
   }
 
   /** Compiled modules and their direct source dependencies. */
@@ -121,6 +124,7 @@ type Cache = {
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
   resolutions: Readonly<Record<string, string>>
   native: compile.Options['native']
+  reset: boolean
   result: compile.ReturnType
   schemes: boolean
   sources: Readonly<Record<string, string>>
@@ -148,10 +152,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
     })
   )
     cache = undefined
+  if (options.native && options.reset)
+    throw new Native.CompileError(
+      'The CSS reset is only available for web output.',
+    )
   if (options.native && options.compiler === false)
     throw new Native.CompileError(
       'Native graph compilation requires source rewriting.',
     )
+  if (cache?.reset !== !!options.reset) cache = undefined
   if (cache?.compiler !== (options.compiler !== false)) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
@@ -1063,6 +1072,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ...(options.native.vars && { vars: { ...options.native.vars } }),
         ...(options.native.units && { units: { ...options.native.units } }),
       },
+      reset: false,
       resolutions: Object.freeze(resolutions),
       result: Object.freeze({
         contracts: Object.freeze(
@@ -1271,7 +1281,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   })()
 
-  const sharedCss = shared.css
+  const reset = options.reset ? Reset.inject(shared.css, shared.map) : shared
+  const sharedCss = reset.css
   // Every stylesheet includes all graph scopes, including unimported alternatives.
   const names = Object.keys(themes)
   const previousNames = Object.keys(previous?.themes ?? {})
@@ -1510,11 +1521,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
     libraries: Object.freeze(libraries),
     native: undefined,
     resolutions: Object.freeze(resolutions),
+    reset: !!options.reset,
     result: Object.freeze({
       ...(sharedCss
         ? {
             sharedCss,
-            sharedCssMap: shared.map,
+            sharedCssMap: reset.map,
             sharedAssets: shared.assets,
             sharedAssetOwners: shared.owners,
           }

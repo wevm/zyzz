@@ -17,6 +17,58 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
+  test('includes the reset only when requested and rejects native output', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-reset-'))
+    try {
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(root, 'src/button.ts'),
+        "import {style} from 'zyzz';export const button=style({padding:'8px'});",
+      )
+      const bin = Path.resolve('dist/cli/index.js')
+      await exec(
+        process.execPath,
+        [bin, 'build', 'src', '--out-dir', 'plain'],
+        { cwd: root },
+      )
+      await exec(
+        process.execPath,
+        [bin, 'build', 'src', '--out-dir', 'reset', '--reset'],
+        { cwd: root },
+      )
+
+      expect(
+        await Fs.readFile(Path.join(root, 'plain/zyzz.css'), 'utf8'),
+      ).not.toContain('@layer reset')
+      expect(
+        await Fs.readFile(Path.join(root, 'reset/zyzz.css'), 'utf8'),
+      ).toContain('@layer reset')
+      await expect(
+        exec(
+          process.execPath,
+          [
+            bin,
+            'build',
+            'src',
+            '--out-dir',
+            'native',
+            '--target',
+            'native',
+            '--color-scheme',
+            'light',
+            '--reset',
+          ],
+          { cwd: root },
+        ),
+      ).rejects.toMatchObject({
+        code: 1,
+        stdout: expect.stringContaining('only available for web output'),
+      })
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('builds and watches a source-free package through the published CLI', async () => {
     const root = await Fs.realpath(
       await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-cli-package-')),

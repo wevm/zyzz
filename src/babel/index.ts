@@ -24,6 +24,8 @@ export type NativeOptions = {
   readonly moduleId?: string | undefined
   /** Native destination selected by the bundler. */
   readonly platform: 'android' | 'ios'
+  /** Web-only option. Native builds reject true. */
+  readonly reset?: boolean | undefined
   /** Native compiler selection. Omission preserves existing native configurations. */
   readonly target?: 'native' | undefined
   /** Conversion factors for authored lengths. */
@@ -36,6 +38,8 @@ export type WebOptions = {
   readonly cssOutput?: Transform.compile.Options['cssOutput']
   /** Portable identity. Defaults to the filename relative to Babel's root. */
   readonly moduleId?: string | undefined
+  /** Include the bundled reset in stylesheet metadata. Defaults to false. */
+  readonly reset?: boolean | undefined
   /** Selects rewritten JavaScript and extracted CSS. */
   readonly target: 'web'
 }
@@ -62,6 +66,8 @@ declare module '@babel/core' {
 
 /** Rewrites direct Zyzz imports while preserving authored source locations. */
 export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
+  if (options.target !== 'web' && options.reset)
+    throw new Error('The CSS reset is only available for web output.')
   const prepared = new WeakSet<Babel.types.File>()
   const callables = new WeakSet<Babel.types.Node>()
   const parsing = new WeakMap<object, Babel.TransformOptions>()
@@ -146,6 +152,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
             .join('/')
         const output = Transform.compile({
           cssOutput: options.cssOutput,
+          reset: options.reset,
           moduleId,
           source: file.code,
         })

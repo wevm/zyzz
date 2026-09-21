@@ -71,3 +71,11 @@ zyzz({ native: { colorScheme: 'dark', platform: 'ios' } })
 `native` accepts the [graph compiler context](../compiler/Graph/compile.md) and captures it when the plugin is created. Native mode emits modules and maps without virtual CSS imports or initialization scripts. It skips browser CSS target configuration and requires source compilation. Restart the build to change native context.
 
 Vite still owns module resolution and bundling. This option does not provide a Metro adapter or device rendering. Web output remains the default.
+
+## CSS reset
+
+Set `reset: true` to include the bundled `zyzz/reset.css` in generated CSS. The default is `false`. The reset uses the lowest-priority `reset` layer and follows Vite's CSS delivery, including server-rendered pages. Remove an explicit reset import when enabling this option. Native output rejects `reset: true`.
+
+```ts
+export default defineConfig({ plugins: [zyzz({ reset: true })] })
+```

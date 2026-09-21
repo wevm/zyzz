@@ -76,13 +76,13 @@ describe('zyzz', () => {
             globalName: 'App',
             outdir: Path.join(root, 'dist'),
             entryNames: 'app',
-            plugins: [esbuild({ root })],
+            plugins: [esbuild({ root, reset: true })],
           })
         } else if (bundler === 'rollup') {
           const build = await Rollup.rollup({
             input: Path.join(root, 'main.js'),
             plugins: [
-              rollup({ root }),
+              rollup({ root, reset: true }),
               {
                 name: 'runtime',
                 resolveId(id) {
@@ -111,7 +111,7 @@ describe('zyzz', () => {
               filename: 'app.js',
               library: { name: 'App', type: 'var' },
             },
-            plugins: [webpack({ root })],
+            plugins: [webpack({ root, reset: true })],
             resolve: { alias: { 'zyzz/runtime': runtime } },
           })
           try {
@@ -136,6 +136,9 @@ describe('zyzz', () => {
             "padding": "8px",
           }
         `)
+        const css = await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8')
+        expect(css).toContain('@layer reset')
+        expect(css.match(/box-sizing: border-box/g)).toHaveLength(1)
         const map = JSON.parse(
           await Fs.readFile(Path.join(root, 'dist/zyzz.css.map'), 'utf8'),
         ) as { sources: string[]; sourcesContent: string[] }

@@ -14,6 +14,7 @@ import * as Namespaces from './internal/Namespaces.js'
 import * as Scheme from '../internal/Scheme.js'
 import * as Syntax from './internal/Syntax.js'
 import * as Source from './Source.js'
+import * as Reset from './internal/Reset.js'
 import type * as Style from '../Style.js'
 import * as Themes from './internal/Themes.js'
 import * as Walker from 'oxc-walker'
@@ -1148,11 +1149,17 @@ export function compile(options: compile.Options): compile.ReturnType {
     Mapping.toEncodedMap(cssMap),
     true,
   )
+  const output = options.reset
+    ? Reset.inject(
+        namespaced.css,
+        namespaced.map ?? Mapping.toEncodedMap(cssMap),
+      )
+    : namespaced
   return Object.freeze({
     classes,
     code: portable ? options.source : module.toString(),
-    css: namespaced.css,
-    cssMap: namespaced.map ?? Mapping.toEncodedMap(cssMap),
+    css: output.css,
+    cssMap: output.map ?? Mapping.toEncodedMap(cssMap),
     map: {
       file: options.moduleId,
       mappings: map.mappings,
@@ -1179,6 +1186,8 @@ export declare namespace compile {
     readonly cssOutput?: Css.compile.Options['cssOutput']
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
+    /** Include the bundled web reset in the emitted stylesheet. Defaults to false. */
+    readonly reset?: boolean | undefined
     /**
      * Emit the `color-scheme` selection classes beside the theme scopes.
      * Defaults to this module's own selector, root, and script references.

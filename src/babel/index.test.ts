@@ -43,6 +43,16 @@ async function execute(code: string) {
 }
 
 describe('zyzz', () => {
+  test('rejects the web reset for native output', () => {
+    expect(() =>
+      Babel.transformSync("import {style} from 'zyzz';", {
+        babelrc: false,
+        configFile: false,
+        plugins: [[zyzz, { platform: 'ios', reset: true }]],
+      }),
+    ).toThrow('only available for web output')
+  })
+
   test('executes platform styles, variants, and changing payloads without authoring callbacks', async () => {
     const source = `import { style, variants } from 'zyzz'
       const box = style({ width: '10px', targets: { ios: { opacity: 0.5 }, android: { opacity: 0.8 } } })
@@ -298,12 +308,13 @@ describe('web', () => {
         babelrc: false,
         configFile: false,
         filename: '/project/left/Styles.ts',
-        plugins: [[zyzz, { target: 'web', cssOutput }]],
+        plugins: [[zyzz, { target: 'web', cssOutput, reset: true }]],
         presets: [preset],
         root: '/project',
         sourceMaps: true,
       })!
       const metadata = output.metadata!.zyzz!
+      expect(metadata.css).toContain('@layer reset')
       expect(metadata.moduleId).toMatchInlineSnapshot(`"left/Styles.ts"`)
       expect(
         metadata.cssMap.sourcesContent?.includes(source),

@@ -90,7 +90,7 @@ describe('zyzz', () => {
       'tokens.ts': `export const tokens={copy:{fontFamily:'Evidence',fontSize:'20px'}};export type Tokens=typeof tokens;`,
       'config.ts': `import {tokens} from './tokens';import {fontFace,global} from 'zyzz/web';fontFace({fontFamily:'Evidence',src:'url("@fixture/font/font.ttf") format("truetype")'});global({p:tokens.copy});`,
     })
-    const directory = await Fs.mkdtemp(Path.resolve('.fixture-font-'))
+    const directory = await Fs.mkdtemp(Path.resolve('.fixture-font-@pnpm+'))
     const browser = await chromium.launch()
     let server: Vite.ViteDevServer | Vite.PreviewServer | undefined
     try {

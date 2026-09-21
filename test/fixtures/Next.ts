@@ -82,7 +82,8 @@ export async function verify(options: verify.Options) {
       'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {style} from '@config';import {variant,packedTheme} from './variants';namespace styles{export const button=style((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><div className={packedTheme().className}><div id="packed" {...variant(active)}>Packed</div></div><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button></>}`,
       'app/variants.ts': `import {cx} from 'zyzz';import {controls} from '@acme/variants';import '@acme/variants/style.css';export {vars as packedTheme} from '@acme/variants';export function variant(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),controls.override())}`,
       'app/config.ts': config,
-      'app/content.mdx': `import {style} from '@config'\n\nexport const content = style({color:'brand'})\n\n<p id="mdx" {...content()}>MDX</p>\n`,
+      'app/content.mdx': `import Content from './mdx-content'\n\n<Content>MDX</Content>\n`,
+      'app/mdx-content.tsx': `import {style} from '@config';const content=style({color:'brand'});export default function Content({children}:{children:React.ReactNode}){return <p id="mdx" {...content()}>{children}</p>}`,
       'app/layout.tsx': `import 'next/root-params';import {vars} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={vars().className}><body>{children}</body></html>}`,
       'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
       'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
@@ -439,18 +440,21 @@ export async function verify(options: verify.Options) {
     await page.goto(development.url)
     await Fs.writeFile(
       Path.join(app, 'app/content.mdx'),
-      files['app/content.mdx'].replace("color:'brand'", "color:'purple'"),
+      files['app/content.mdx'].replace('>MDX<', '>Updated MDX<'),
     )
-    await vi.waitFor(
-      async () => {
-        expect(
-          await page
-            .locator('#mdx')
-            .evaluate((node) => getComputedStyle(node).color),
-        ).toMatchInlineSnapshot('"rgb(128, 0, 128)"')
-      },
+    await page.waitForFunction(
+      () => document.querySelector('#mdx')?.textContent === 'Updated MDX',
+      undefined,
       { timeout: 30_000 },
     )
+    expect(await page.locator('#mdx').textContent()).toMatchInlineSnapshot(
+      '"Updated MDX"',
+    )
+    expect(
+      await page
+        .locator('#mdx')
+        .evaluate((node) => getComputedStyle(node).color),
+    ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
     await page.locator('button[data-ready=true]').click()
     await page.waitForFunction(
       () => {

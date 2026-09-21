@@ -1435,7 +1435,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
       }
 
     for (const call of extracted.get(moduleId)!.calls)
-      if (call.identity)
+      if (
+        call.identity &&
+        !call.composition &&
+        !call.runtimeComposition &&
+        !call.compositionCase
+      )
         styleClasses[call.identity] = modules[moduleId]!.classes[call.name]!
   }
 

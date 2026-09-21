@@ -19,17 +19,18 @@ export const { appearance, script, style, vars, variants } = Config.create({
 
 ## Options
 
-| Option        | Purpose                                                                                                                             |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `vars`        | One inline record or `Vars.define` result, or a catalog of compatible sets. Omit for token-free authoring.                          |
-| `defaultVars` | Required catalog key when `vars` contains named sets.                                                                               |
-| `mappings`    | Category-to-property mappings. Each category replaces its default; `[]` disables its shortcuts. `false` enables full paths.         |
-| `shorthands`  | Local property aliases such as `{ px: ['paddingLeft', 'paddingRight'] }`. Each expanded property validates its value independently. |
-| `layers`      | Ordered CSS layer names used by bound styles and recipes.                                                                           |
-| `output`      | `'react'` by default; `'html'` returns `class` and serialized inline styles.                                                        |
-| `cssOutput`   | `'atomic'` by default; `'grouped'` emits scoped declaration blocks.                                                                 |
-| `storageKey`  | Preference storage key shared by `appearance` and `script()`. Defaults to `'zyzz'`.                                                 |
-| `id`          | Stable identity required when using authoring without source rewriting.                                                             |
+| Option         | Purpose                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `vars`         | One inline record or `Vars.define` result, or a catalog of compatible sets. Omit for token-free authoring.                          |
+| `defaultVars`  | Required catalog key when `vars` contains named sets.                                                                               |
+| `mappings`     | Category-to-property mappings. Each category replaces its default; `[]` disables its shortcuts. `false` enables full paths.         |
+| `shorthands`   | Local property aliases such as `{ px: ['paddingLeft', 'paddingRight'] }`. Each expanded property validates its value independently. |
+| `defaultLayer` | Fallback layer for bound styles and recipes. Explicit `@layer` blocks override it. Omit to keep declarations unlayered.             |
+| `layers`       | Ordered CSS layer names used by bound styles and recipes.                                                                           |
+| `output`       | `'react'` by default; `'html'` returns `class` and serialized inline styles.                                                        |
+| `cssOutput`    | `'atomic'` by default; `'grouped'` emits scoped declaration blocks.                                                                 |
+| `storageKey`   | Preference storage key shared by `appearance` and `script()`. Defaults to `'zyzz'`.                                                 |
+| `id`           | Stable identity required when using authoring without source rewriting.                                                             |
 
 All named sets must have matching paths and compatible value domains. Unknown options and incompatible sets throw `Config.InvalidError`. Invalid variable values throw `Vars.InvalidError`.
 
@@ -75,3 +76,28 @@ const card = style({
   padding: vars.spacing.page,
 })
 ```
+
+## Default layer
+
+`defaultLayer` places ordinary declarations, selectors, media queries, and recipe choices in a named layer. `layers` declares precedence independently. Explicit named or anonymous `@layer` blocks retain their authored placement, including inside selectors or media queries. Invalid layer names throw `Config.InvalidError`.
+
+```ts
+export const { style, variants } = Config.create({
+  defaultLayer: 'components',
+  layers: ['components', 'overrides'],
+})
+
+namespace styles {
+  export const button = variants({
+    base: { color: 'red' },
+    variants: { size: { large: { padding: '16px' } } },
+  })
+
+  export const label = style({
+    color: 'red',
+    '@layer overrides': { color: 'blue' },
+  })
+}
+```
+
+Normal unlayered caller styles outrank layered component styles. Styles sharing one default layer still follow the normal cascade. The default does not change variable scopes or global stylesheet contributions. Packed configs using this option require compiler contract version 27 or later.

@@ -3,10 +3,34 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
+import { Config as PublicConfig } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
+  test('accepts defaultLayer with and without variable sets', () => {
+    const { style, variants } = PublicConfig.create({
+      defaultLayer: 'components',
+      layers: ['components', 'overrides'],
+      mappings: false,
+      vars: { color: { brand: 'red' } },
+    })
+    expectTypeOf(
+      style({ color: 'color.brand', '@layer overrides': { color: 'blue' } })()
+        .className,
+    ).toEqualTypeOf<string>()
+    expectTypeOf(
+      variants({ base: { color: 'color.brand' } })().className,
+    ).toEqualTypeOf<string>()
+    PublicConfig.create({ defaultLayer: 'components.buttons' }).style({
+      color: 'red',
+    })
+    // @ts-expect-error Default layers require a name.
+    PublicConfig.create({ defaultLayer: false })
+    // @ts-expect-error Unknown layers remain invalid explicit overrides.
+    style({ '@layer unknown': { color: 'red' } })
+  })
+
   test('infers style helpers with either CSS output mode', () => {
     const { style, variants } = Config.create({ cssOutput: 'grouped' })
     expectTypeOf(style({ color: 'red' })().className).toEqualTypeOf<string>()

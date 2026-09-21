@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26,
+      22, 23, 24, 25, 26, 27,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -116,6 +116,13 @@ export function read(
       | 'grouped'
       | undefined
 
+    if (entry.defaultLayer !== undefined) {
+      if ((data.version as number) < 27)
+        throw new Error('Default layers require contract version 27 or later.')
+      Config.create({ defaultLayer: entry.defaultLayer as string })
+    }
+    const defaultLayer = entry.defaultLayer as string | undefined
+
     const shorthands =
       entry.shorthands !== undefined
         ? Shorthands.read(entry.shorthands)
@@ -148,6 +155,11 @@ export function read(
         'Conflicting packed CSS output modes for one theme identity.',
       )
 
+    if (contract && contract.defaultLayer !== defaultLayer)
+      throw new Error(
+        'Conflicting packed default layers for one theme identity.',
+      )
+
     if (!contract) {
       contract = Object.freeze({
         ...(entry.variableSet === true
@@ -160,6 +172,7 @@ export function read(
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
         ...(cssOutput ? { cssOutput } : {}),
+        ...(defaultLayer !== undefined ? { defaultLayer } : {}),
         [Token.complete]: true,
         [Token.identity]: identity,
       })
@@ -281,6 +294,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+          27,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -420,6 +434,14 @@ export function read(
       )
         throw new Error(
           'Configuration CSS output disagrees with linked theme metadata.',
+        )
+
+      if (
+        options.defaultLayer !==
+        definition[Token.definition].contract.defaultLayer
+      )
+        throw new Error(
+          'Configuration default layer disagrees with linked theme metadata.',
         )
 
       if (
@@ -679,6 +701,9 @@ export function write(
           ...(theme[Token.definition].contract.shorthands
             ? { shorthands: theme[Token.definition].contract.shorthands }
             : {}),
+          ...(theme[Token.definition].contract.defaultLayer !== undefined
+            ? { defaultLayer: theme[Token.definition].contract.defaultLayer }
+            : {}),
           ...(theme[Token.definition].contract.cssOutput
             ? { cssOutput: theme[Token.definition].contract.cssOutput }
             : {}),
@@ -694,6 +719,13 @@ export function write(
       ]),
     ),
     version: (() => {
+      if (
+        Object.values(themes).some(
+          (theme) =>
+            theme[Token.definition].contract.defaultLayer !== undefined,
+        )
+      )
+        return 27
       if (
         Object.values(themes).some(
           (theme) => theme[Token.definition].contract.variableSet,

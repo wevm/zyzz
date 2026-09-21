@@ -149,6 +149,9 @@ export function collect(options: collect.Options): Themes.Link {
       : {}),
     [Token.identity]: identity,
     cssOutput: input.cssOutput ?? 'atomic',
+    ...(input.defaultLayer !== undefined
+      ? { defaultLayer: input.defaultLayer }
+      : {}),
     ...(input.shorthands
       ? { shorthands: Shorthands.read(input.shorthands) }
       : {}),
@@ -239,6 +242,9 @@ export function collect(options: collect.Options): Themes.Link {
       return {}
     })(),
     ...(input.cssOutput ? { cssOutput: input.cssOutput } : {}),
+    ...(input.defaultLayer !== undefined
+      ? { defaultLayer: input.defaultLayer }
+      : {}),
     ...(input.shorthands ? { shorthands: input.shorthands } : {}),
     ...(input.output ? { output: input.output } : {}),
     ...(input.layers ? { layers: input.layers } : {}),

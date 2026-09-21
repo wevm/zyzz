@@ -151,6 +151,7 @@ export function create(
       ![
         'cssOutput',
         'id',
+        'defaultLayer',
         'defaultTheme',
         'layers',
         'output',
@@ -188,13 +189,26 @@ export function create(
   if (input.theme !== undefined && input.themes !== undefined)
     throw new InvalidError('Use either theme or themes, not both.')
 
-  if (input.layers !== undefined) {
-    if (!Array.isArray(input.layers))
+  if (
+    input.defaultLayer !== undefined &&
+    typeof input.defaultLayer !== 'string'
+  )
+    throw new InvalidError('defaultLayer must be a CSS layer name.')
+
+  if (input.layers !== undefined || input.defaultLayer !== undefined) {
+    if (input.layers !== undefined && !Array.isArray(input.layers))
       throw new InvalidError('layers must be an array.')
 
+    const layers = (input.layers ?? []) as readonly unknown[]
     const seen = new Set<string>()
 
-    for (const layer of input.layers) {
+    for (const layer of [
+      ...layers,
+      ...(input.defaultLayer === undefined ||
+      layers.includes(input.defaultLayer)
+        ? []
+        : [input.defaultLayer]),
+    ]) {
       if (
         typeof layer !== 'string' ||
         !/^(?:--|-?[_a-zA-Z])[\w-]*(?:\.(?:--|-?[_a-zA-Z])[\w-]*)*$/.test(
@@ -235,6 +249,9 @@ export function create(
 
   const contract = Object.freeze({
     ...(variableMode ? { variableSet: true, mappings: variableMappings } : {}),
+    ...(input.defaultLayer !== undefined
+      ? { defaultLayer: input.defaultLayer as string }
+      : {}),
     cssOutput:
       (input.cssOutput as 'atomic' | 'grouped' | undefined) ?? 'atomic',
     ...(shorthands ? { shorthands } : {}),
@@ -411,7 +428,10 @@ export function create(
     })
   }
 
-  const theme = shorthands ? Token.bind(Theme.define({}), contract) : undefined
+  const theme =
+    shorthands || input.defaultLayer !== undefined
+      ? Token.bind(Theme.define({}), contract)
+      : undefined
   return finish({
     appearance: Appearance.root([], { storageKey }),
     script: Appearance.create([], { storageKey }),
@@ -426,6 +446,8 @@ export declare namespace create {
   type Options = {
     /** CSS representation inherited by bound helpers; atomic by default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
+    /** Fallback CSS layer for bound styles and variants; unlayered when omitted. */
+    readonly defaultLayer?: string | undefined
     /** Stable theme identity required without source rewriting. */
     readonly id?: string | undefined
     /** Explicit ordered property aliases; none are installed by default. */
@@ -807,6 +829,8 @@ type Validated<options> = Record<
 export type VariableOptions = {
   /** CSS representation inherited by bound helpers; atomic by default. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
+  /** Fallback CSS layer for bound styles and variants; unlayered when omitted. */
+  readonly defaultLayer?: string | undefined
   /** Required default key when vars contains named sets. */
   readonly defaultVars?: string | undefined
   /** Stable identity required without source rewriting. */

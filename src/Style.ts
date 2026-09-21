@@ -669,9 +669,44 @@ export function define(
 
   if (diagnostics.length) throw new InvalidError(diagnostics)
 
+  const defaultLayer = theme?.[Token.definition].contract.defaultLayer
+  // Apply defaults after validation to retain authored diagnostic paths and explicit layer nesting.
+  function layered(style: NamedStyle): NamedStyle {
+    const { targets, ...body } = style
+    return Object.freeze({
+      ...body,
+      declarations: style.rules ? style.declarations : Object.freeze([]),
+      rules: Object.freeze(
+        style.rules
+          ? style.rules.map((rule) =>
+              rule.condition === '@layer' ||
+              rule.condition?.startsWith('@layer ')
+                ? rule
+                : Object.freeze({ ...rule, style: layered(rule.style) }),
+            )
+          : [
+              {
+                condition: `@layer ${defaultLayer}`,
+                style: Object.freeze(body),
+              },
+            ],
+      ),
+      ...(targets
+        ? {
+            targets: Object.freeze({
+              ...targets,
+              ...(targets.web ? { web: layered(targets.web) } : {}),
+            }),
+          }
+        : {}),
+    })
+  }
+
   // Validated names are precisely the input's enumerable string keys.
   return Object.freeze({
-    styles: Object.freeze(output),
+    styles: Object.freeze(
+      defaultLayer && !options[nesting] ? output.map(layered) : output,
+    ),
   })
 }
 

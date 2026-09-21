@@ -195,8 +195,10 @@ The writer selects the lowest version required by the exported capabilities:
 | 8       | Variable references and registered custom properties |
 | 24      | Composite typography sets                            |
 | 25      | Responsive typography and border-width tokens        |
+| 26      | Variable sets and mappings                           |
+| 27      | Configuration default layers                         |
 
-Typography sets require version 24 so older compilers reject their contracts explicitly. This reader accepts versions 1 through 25. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+Typography sets require version 24 so older compilers reject their contracts explicitly. This reader accepts versions 1 through 27. Configs with `defaultLayer` require version 27 so older readers reject the unsupported default. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
 
 `sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
 

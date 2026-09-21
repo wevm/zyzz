@@ -60,6 +60,14 @@ async function compile(context: Context, source: string) {
           part === '..' || part === 'node_modules' || part.startsWith('.'),
       )
 
+  // Next.js hoists instrumentation CSS out of route stylesheets without loading it.
+  if (
+    /^(?:src\/)?instrumentation-client\.[cm]?[jt]s$/.test(
+      Path.relative(root, context.resourcePath).split(Path.sep).join('/'),
+    )
+  )
+    return { code: source, map: undefined }
+
   if (options.mode !== 'shared' && !eligible(context.resourcePath))
     return { code: source, map: undefined }
 

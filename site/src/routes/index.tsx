@@ -47,6 +47,7 @@ const headingWords = [
   'Composable',
   'Performant',
   'Light',
+  'Self-describing',
 ] as const
 
 const installCommands = {
@@ -328,7 +329,8 @@ namespace styles {
   export const heading = style({
     typography: 'heading.56',
     '@media (max-width: 1200px)': { typography: 'heading.40' },
-    '@media (max-width: 600px)': { typography: 'heading.32' },
+    '@media (max-width: 1000px)': { typography: 'heading.32' },
+    '@media (max-width: 360px)': { typography: 'heading.24' },
   })
   export const headingLine = style({
     whiteSpace: 'nowrap',

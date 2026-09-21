@@ -18,6 +18,12 @@ catalogs:
     '@cloudflare/vite-plugin':
       specifier: ^1.26.0
       version: 1.56.0
+    '@fontsource-variable/geist':
+      specifier: ^5.3.0
+      version: 5.3.0
+    '@fontsource-variable/geist-mono':
+      specifier: ^5.3.0
+      version: 5.3.0
     '@jridgewell/gen-mapping':
       specifier: ^0.3.13
       version: 0.3.13
@@ -534,6 +540,12 @@ importers:
 
   site:
     dependencies:
+      '@fontsource-variable/geist':
+        specifier: 'catalog:'
+        version: 5.3.0
+      '@fontsource-variable/geist-mono':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@tanstack/react-router':
         specifier: 1.170.35
         version: 1.170.35(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1736,6 +1748,12 @@ packages:
   '@expo/xcpretty@4.4.5':
     resolution: {integrity: sha512-J3eL4n4h5QTwfD0SIz8OIk6/+sOL/hFZAMacgCM07UNlxBQfJipEpIC2AQxvGkbYeStByJ0TVhQAJo+DeNgaSQ==}
     hasBin: true
+
+  '@fontsource-variable/geist-mono@5.3.0':
+    resolution: {integrity: sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw==}
+
+  '@fontsource-variable/geist@5.3.0':
+    resolution: {integrity: sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -7963,6 +7981,10 @@ snapshots:
       '@babel/code-frame': 7.29.7
       chalk: 4.1.2
       js-yaml: 4.3.2
+
+  '@fontsource-variable/geist-mono@5.3.0': {}
+
+  '@fontsource-variable/geist@5.3.0': {}
 
   '@img/colour@1.1.0': {}
 

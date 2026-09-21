@@ -191,6 +191,7 @@ namespace styles {
     overflowX: 'auto',
     padding: '28px 30px 32px',
     tabSize: 2,
+    '& code': { font: 'inherit' },
     ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '-2px' },
     '@media (max-width: 600px)': {
       typography: 'label.12.mono',

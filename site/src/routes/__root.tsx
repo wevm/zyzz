@@ -1,12 +1,18 @@
 /** Defines the shared HTML document. @module */
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { style } from 'zyzz/default'
 import reset from 'zyzz/reset.css?url'
+import fonts from '../fonts.css?url'
 
 /** Defines the document shell and page metadata. */
 export const Route = createRootRoute({
   head: () => ({
     links: [
+      {
+        href: fonts,
+        rel: 'stylesheet',
+      },
       {
         href: reset,
         rel: 'stylesheet',
@@ -39,11 +45,15 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body {...styles.body()}>
         {children}
 
         <Scripts />
       </body>
     </html>
   )
+}
+
+namespace styles {
+  export const body = style({ typography: 'copy.16' })
 }

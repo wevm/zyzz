@@ -1,4 +1,3 @@
-import { Config } from 'zyzz'
 /**
  * Measures type instantiations contributed by public root style authoring.
  * @module
@@ -8,13 +7,15 @@ import type * as Zyzz from 'zyzz'
 
 // Type-only imports keep the fixture free of runtime module loading; attest
 // analyzes bench bodies without executing them.
+declare const Config: typeof Zyzz.Config
 declare const style: typeof Zyzz.style
 declare const Vars: typeof Zyzz.Vars
 
 /** Resolves the shared authoring contracts before any bench body is measured. */
 export function baseline() {
   style({ color: '#000' })
-  Vars.define({ color: { base: '#000' } })
+  const vars = Vars.define({ color: { base: '#000' } })
+  Config.create({ vars }).style({ color: 'base' })
 }
 
 bench('style / literal declarations', () => {

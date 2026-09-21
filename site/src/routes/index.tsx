@@ -156,10 +156,6 @@ function Index() {
           </p>
         </section>
         <section aria-label="Zyzz code example" {...styles.example()}>
-          <div {...styles.exampleHeader()}>
-            <span {...styles.fileMarker()} aria-hidden="true" />
-            index.tsx
-          </div>
           <pre tabIndex={0} {...styles.code()}>
             <code>{example}</code>
           </pre>
@@ -243,22 +239,6 @@ namespace styles {
     borderRadius: '10px',
     minWidth: 0,
     overflow: 'hidden',
-  })
-  export const exampleHeader = style({
-    typography: 'label.14.strong',
-    alignItems: 'center',
-    borderBottom: '1px solid #222',
-    color: '#eee',
-    display: 'flex',
-    gap: '12px',
-    padding: '20px 30px',
-  })
-  export const fileMarker = style({
-    backgroundColor: '#b3c7ff',
-    borderRadius: '2px',
-    height: '16px',
-    transform: 'rotate(-15deg)',
-    width: '4px',
   })
   export const header = style({
     alignItems: 'center',

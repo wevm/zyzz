@@ -1,6 +1,6 @@
 /** Renders the site home page. @module */
 import { createFileRoute } from '@tanstack/react-router'
-import { style } from '../zyzz.config.js'
+import { style } from 'zyzz/default'
 
 /** Renders the home page. */
 export const Route = createFileRoute('/')({

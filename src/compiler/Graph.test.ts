@@ -26,6 +26,33 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('uses exported default typography values in global declarations', async () => {
+    const result = Graph.compile({
+      modules: {
+        'default.ts': await Fs.readFile(
+          Path.join(root, 'src/default.ts'),
+          'utf8',
+        ),
+        'config.ts': `import {tokens} from './default.js';import {global} from 'zyzz/web';global({button:tokens.typography.button['16']});`,
+      },
+    })
+
+    expect(result.sharedCss).toContain('button{')
+    expect(result.sharedCss).toContain('font-size:16px')
+    expect(result.sharedCss).toContain('line-height:20px')
+    expect(result.sharedCss).toContain('font-family:Geist,')
+  })
+
+  test('rejects mutations of literal objects used in global declarations', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'config.ts': `import {global} from 'zyzz/web';const copy={fontSize:'16px'};copy.fontSize='24px';global({body:copy});`,
+        },
+      }),
+    ).toThrow('Static data cannot be mutated')
+  })
+
   test('preserves shared style ownership across successive compositions', async () => {
     const result = Graph.compile({
       modules: {

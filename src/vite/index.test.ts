@@ -17,6 +17,7 @@ import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 import * as Library from '../../test/fixtures/Library.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
+import * as Font from '../../test/fixtures/AtRuleFont.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 
 async function create(files: Readonly<Record<string, string>> = Fixture.files) {
@@ -82,6 +83,73 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('loads package font URLs and static global values in development and production', async () => {
+    const { config, root } = await create({
+      'index.html':
+        '<script type="module" src="/config.ts"></script><p>AAA</p>',
+      'tokens.ts': `export const tokens={copy:{fontFamily:'Evidence',fontSize:'20px'}};export type Tokens=typeof tokens;`,
+      'config.ts': `import {tokens} from './tokens';import {fontFace,global} from 'zyzz/web';fontFace({fontFamily:'Evidence',src:'url("@fixture/font/font.ttf") format("truetype")'});global({p:tokens.copy});`,
+    })
+    const directory = await Fs.mkdtemp(Path.resolve('.fixture-font-'))
+    const browser = await chromium.launch()
+    let server: Vite.ViteDevServer | Vite.PreviewServer | undefined
+    try {
+      await Fs.writeFile(
+        Path.join(directory, 'package.json'),
+        JSON.stringify({
+          name: '@fixture/font',
+          exports: { './font.ttf': './font.ttf' },
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(directory, 'font.ttf'),
+        Buffer.from(Font.url.split(',')[1]!, 'base64'),
+      )
+      await Fs.mkdir(Path.join(root, 'node_modules/@fixture'), {
+        recursive: true,
+      })
+      await Fs.symlink(directory, Path.join(root, 'node_modules/@fixture/font'))
+      for (const production of [false, true]) {
+        if (production) {
+          await Vite.build(config)
+          server = await Vite.preview({
+            ...config,
+            preview: { host: '127.0.0.1', port: 0 },
+          })
+        } else {
+          server = await Vite.createServer(config)
+          await server.listen()
+        }
+        const page = await browser.newPage()
+        await page.goto(server.resolvedUrls!.local[0]!)
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('p')!).fontFamily ===
+            'Evidence',
+        )
+        expect(
+          await page.evaluate(async () => {
+            await document.fonts.load('20px Evidence', 'AAA')
+            const range = document.createRange()
+            range.selectNodeContents(document.querySelector('p')!)
+            return {
+              loaded: document.fonts.check('20px Evidence', 'AAA'),
+              width: range.getBoundingClientRect().width,
+            }
+          }),
+        ).toEqual({ loaded: true, width: 36 })
+        await page.close()
+        await server.close()
+        server = undefined
+      }
+    } finally {
+      await server?.close()
+      await browser.close()
+      await Fs.rm(root, { recursive: true, force: true })
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  }, 30000)
+
   for (const reset of [undefined, false, true])
     test(`delivers optional reset in development and production (${reset})`, async () => {
       const { config, root } = await create({

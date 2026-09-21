@@ -204,6 +204,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## Tooling
 
+- Declare all package dependencies with `catalog:` or a named catalog reference. Keep dependency versions and workspace references in `pnpm-workspace.yaml`, never inline in package manifests.
 - Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
 - Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
 - Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.

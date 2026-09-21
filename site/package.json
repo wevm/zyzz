@@ -16,17 +16,17 @@
     "@tanstack/react-start": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "zyzz": "workspace:*"
+    "zyzz": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.26.0",
-    "@tanstack/router-cli": "^1.132.0",
+    "@cloudflare/vite-plugin": "catalog:",
+    "@tanstack/router-cli": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "wrangler": "^4.70.0"
+    "wrangler": "catalog:"
   }
 }

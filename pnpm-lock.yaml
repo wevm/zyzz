@@ -15,6 +15,9 @@ catalogs:
     '@changesets/cli':
       specifier: ^3.0.3
       version: 3.0.3
+    '@cloudflare/vite-plugin':
+      specifier: ^1.26.0
+      version: 1.56.0
     '@jridgewell/gen-mapping':
       specifier: ^0.3.13
       version: 0.3.13
@@ -33,6 +36,9 @@ catalogs:
     '@stylexjs/stylex':
       specifier: ^0.19.0
       version: 0.19.0
+    '@tanstack/router-cli':
+      specifier: ^1.132.0
+      version: 1.167.38
     '@types/babel__core':
       specifier: ^7.20.5
       version: 7.20.5
@@ -117,6 +123,9 @@ catalogs:
     webpack:
       specifier: ^5.111.1
       version: 5.111.1
+    wrangler:
+      specifier: ^4.70.0
+      version: 4.135.0
     zile:
       specifier: 0.0.30
       version: 0.0.30
@@ -542,10 +551,10 @@ importers:
         version: link:..
     devDependencies:
       '@cloudflare/vite-plugin':
-        specifier: ^1.26.0
+        specifier: 'catalog:'
         version: 1.56.0(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))(wrangler@4.135.0(@types/node@24.13.3))
       '@tanstack/router-cli':
-        specifier: ^1.132.0
+        specifier: 'catalog:'
         version: 1.167.38(supports-color@10.2.2)
       '@types/node':
         specifier: ^24.10.1
@@ -566,7 +575,7 @@ importers:
         specifier: ^8.2.2
         version: 8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
       wrangler:
-        specifier: ^4.70.0
+        specifier: 'catalog:'
         version: 4.135.0(@types/node@24.13.3)
 
 packages:

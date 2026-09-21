@@ -908,7 +908,17 @@ export function extract(options: extract.Options): extract.ReturnType {
 
         function value(node: Ast.Node, path: readonly string[]): unknown {
           const unwrapped = Expression.unwrap(node)
-          if (unwrapped.type === 'ObjectExpression') {
+          if (
+            unwrapped.type === 'ObjectExpression' &&
+            unwrapped.properties.some(
+              (field) =>
+                field.type === 'Property' &&
+                (field.key.type === 'Identifier'
+                  ? field.key.name === 'custom'
+                  : field.key.type === 'Literal' &&
+                    field.key.value === 'custom'),
+            )
+          ) {
             const field = unwrapped.properties[0]
             if (
               unwrapped.properties.length !== 1 ||

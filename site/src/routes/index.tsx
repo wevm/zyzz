@@ -64,7 +64,7 @@ function Index() {
     const interval = window.setInterval(() => {
       if (!motion.matches && document.visibilityState === 'visible')
         setWord((index) => (index + 1) % headingWords.length)
-    }, 2000)
+    }, 4000)
     const reset = () => setWord(0)
     motion.addEventListener('change', reset)
     return () => {

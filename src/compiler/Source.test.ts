@@ -9,6 +9,49 @@ import { Css } from 'zyzz/web'
 import { StyleSheet } from 'zyzz/react-native'
 
 describe('extract', () => {
+  test.each(['native', 'ios', 'android'] as const)(
+    'compiles %s-only styles with a default layer',
+    (target) => {
+      const result = Source.extract({
+        moduleId: 'native.ts',
+        source: `import {Config} from 'zyzz';
+const {style} = Config.create({defaultLayer: 'components'});
+export const card = style({targets: {${target}: {opacity: 0.5}, web: {color: 'red'}}});`,
+      })
+      const output = StyleSheet.compile({
+        styles: result.styles,
+        platform: target === 'android' ? 'android' : 'ios',
+      })
+
+      expect(Object.values(output.styles.default.light)).toMatchInlineSnapshot(`
+        [
+          {
+            "opacity": 0.5,
+          },
+        ]
+      `)
+      expect(result.styles.styles[0]!.rules).toMatchInlineSnapshot(`[]`)
+    },
+  )
+
+  test('keeps synthesized default layer rules immutable after extraction', () => {
+    const result = Source.extract({
+      moduleId: 'layer.ts',
+      source: `import {Config} from 'zyzz';
+const {style} = Config.create({defaultLayer: 'components'});
+export const card = style({color: 'red'});`,
+    })
+    const rule = result.styles.styles[0]!.rules![0]!
+    const before = Css.compile({ styles: result.styles }).css
+
+    expect(
+      Reflect.set(rule, 'condition', '@layer overrides'),
+    ).toMatchInlineSnapshot(`false`)
+    expect(
+      Css.compile({ styles: result.styles }).css === before,
+    ).toMatchInlineSnapshot(`true`)
+  })
+
   test('retains ordered static recipe alternatives for native compilation', () => {
     const result = Source.extract({
       moduleId: 'recipe.ts',

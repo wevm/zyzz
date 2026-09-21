@@ -673,24 +673,28 @@ export function define(
   // Apply defaults after validation to retain authored diagnostic paths and explicit layer nesting.
   function layered(style: NamedStyle): NamedStyle {
     const { targets, ...body } = style
+    const rules = (() => {
+      if (style.rules)
+        return style.rules.map((rule) =>
+          rule.condition === '@layer' || rule.condition?.startsWith('@layer ')
+            ? rule
+            : Object.freeze({ ...rule, style: layered(rule.style) }),
+        )
+
+      if (!style.declarations.length) return []
+
+      return [
+        Object.freeze({
+          condition: `@layer ${defaultLayer}`,
+          style: Object.freeze(body),
+        }),
+      ]
+    })()
+
     return Object.freeze({
       ...body,
       declarations: style.rules ? style.declarations : Object.freeze([]),
-      rules: Object.freeze(
-        style.rules
-          ? style.rules.map((rule) =>
-              rule.condition === '@layer' ||
-              rule.condition?.startsWith('@layer ')
-                ? rule
-                : Object.freeze({ ...rule, style: layered(rule.style) }),
-            )
-          : [
-              {
-                condition: `@layer ${defaultLayer}`,
-                style: Object.freeze(body),
-              },
-            ],
-      ),
+      rules: Object.freeze(rules),
       ...(targets
         ? {
             targets: Object.freeze({

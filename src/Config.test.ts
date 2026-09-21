@@ -41,7 +41,9 @@ export const anonymous = style({ color: 'red', '@layer': { color: 'purple' } });
 export const token = themed.style({ color: 'brand' });
 export const props = { anonymous: anonymous(), token: token(), button: button({size:'large'}), explicit: explicit(), dynamic: dynamic({width:'20px'}), plain: plain() };`
       const library = Graph.compile({ modules: { 'config.ts': config } })
-      expect(JSON.parse(library.contracts['config.ts']!).version).toBe(27)
+      expect(
+        JSON.parse(library.contracts['config.ts']!).version,
+      ).toMatchInlineSnapshot(`27`)
 
       const browser = await chromium.launch()
       try {
@@ -88,28 +90,33 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
           expect(
             await page
               .locator('#button')
+              .evaluate((e) => getComputedStyle(e).paddingTop),
+          ).toMatchInlineSnapshot(`"16px"`)
+          expect(
+            await page
+              .locator('#button')
               .evaluate((e) => getComputedStyle(e).borderRadius),
-          ).toBe('8px')
+          ).toMatchInlineSnapshot(`"8px"`)
           expect(
             await page
               .locator('#explicit')
               .evaluate((e) => getComputedStyle(e).color),
-          ).toBe('rgb(0, 0, 255)')
+          ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
           expect(
             await page
               .locator('#dynamic')
               .evaluate((e) => getComputedStyle(e).width),
-          ).toBe('20px')
+          ).toMatchInlineSnapshot(`"20px"`)
           expect(
             await page
               .locator('#anonymous')
               .evaluate((e) => getComputedStyle(e).color),
-          ).toBe('rgb(128, 0, 128)')
+          ).toMatchInlineSnapshot(`"rgb(128, 0, 128)"`)
           expect(
             await page
               .locator('#token')
               .evaluate((e) => getComputedStyle(e).color),
-          ).toBe('rgb(255, 0, 0)')
+          ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
           await page
             .locator('#token')
             .evaluate((e) => e.classList.add('caller'))
@@ -117,7 +124,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
             await page
               .locator('#token')
               .evaluate((e) => getComputedStyle(e).color),
-          ).toBe('rgb(0, 128, 0)')
+          ).toMatchInlineSnapshot(`"rgb(0, 128, 0)"`)
           await page
             .locator('#plain')
             .evaluate((e) => e.classList.add('caller'))
@@ -126,7 +133,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
             await page
               .locator('#plain')
               .evaluate((e) => getComputedStyle(e).color),
-          ).toBe('rgb(0, 128, 0)')
+          ).toMatchInlineSnapshot(`"rgb(0, 128, 0)"`)
           await page.close()
         }
       } finally {
@@ -151,38 +158,75 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
       })
     const mismatched = JSON.parse(library.contracts['config.ts']!)
     mismatched.exports.style.options.defaultLayer = 'overrides'
-    expect(() => read(mismatched)).toThrow(
-      'Configuration default layer disagrees',
+    expect(() => read(mismatched)).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:0: Invalid library contract: Configuration default layer disagrees with linked theme metadata.]`,
     )
 
     const outdated = JSON.parse(library.contracts['config.ts']!)
     outdated.version = 26
-    expect(() => read(outdated)).toThrow(
-      'Default layers require contract version 27',
+    expect(() => read(outdated)).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:0: Invalid library contract: Default layers require contract version 27 or later.]`,
     )
   })
 
-  test('rejects invalid default layers and retains duplicate layer validation', () => {
-    for (const defaultLayer of [
-      '',
-      'bad name',
-      'initial',
-      'a.inherit',
-      false,
-      null,
-    ]) {
-      expect(() => PublicConfig.create({ defaultLayer } as never)).toThrow()
+  test.each(['', 'bad name', 'initial', 'a.inherit'])(
+    'rejects invalid default layer %s',
+    (defaultLayer) => {
+      expect(() =>
+        PublicConfig.create({ defaultLayer } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Config.InvalidError: Layer names must be plain CSS identifiers, optionally dotted.]`,
+      )
       expect(() =>
         Graph.compile({
           modules: {
             'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultLayer:${JSON.stringify(defaultLayer)}});`,
           },
         }),
-      ).toThrow()
-    }
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: config.ts:48: Layer names must be plain CSS identifiers, optionally dotted.]`,
+      )
+    },
+  )
+
+  test.each([false, null])(
+    'rejects non-string default layer %s',
+    (defaultLayer) => {
+      expect(() =>
+        PublicConfig.create({ defaultLayer } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Config.InvalidError: defaultLayer must be a CSS layer name.]`,
+      )
+    },
+  )
+
+  test('rejects non-string default layers during extraction', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultLayer:false});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:48: defaultLayer must be a CSS layer name.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultLayer:null});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:76: Theme values must be literal data; expressions are not evaluated.]`,
+    )
+  })
+
+  test('retains duplicate layer validation', () => {
     expect(() =>
       PublicConfig.create({ defaultLayer: 'base', layers: ['base', 'base'] }),
-    ).toThrow('Duplicate layer')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Duplicate layer: base]`,
+    )
     expect(() =>
       PublicConfig.create({ defaultLayer: 'components.buttons' }),
     ).not.toThrow()

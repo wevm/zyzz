@@ -3,7 +3,7 @@
 import { createSignal, Show } from 'solid-js'
 import { keyframes } from 'zyzz/web'
 import grid from './grid.svg'
-import { enter } from './motion.js'
+import { enter } from './animations.js'
 import { style } from './zyzz.config.js'
 
 const pulse = keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } })
@@ -18,7 +18,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: 0,
+      minWidth: '[0]',
       paddingTop: 'md',
     },
   })
@@ -29,7 +29,7 @@ namespace styles {
     animationDuration: '600ms',
     animationName: enter,
     backgroundColor: 'backdrop',
-    borderRadius: '0.5rem',
+    borderRadius: '[0.5rem]',
     marginTop: 'md',
     padding: 'card',
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
@@ -42,9 +42,9 @@ namespace styles {
     animationIterationCount: 'infinite',
     animationName: pulse,
     backgroundColor: 'accent',
-    borderRadius: '50%',
-    height: '1rem',
-    width: '1rem',
+    borderRadius: '[50%]',
+    height: '[1rem]',
+    width: '[1rem]',
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
   })
 }

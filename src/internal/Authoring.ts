@@ -95,11 +95,6 @@ export function create(
   const apply = (values?: style.Options & Record<string, unknown>) => {
     let result = props(values as style.Options)
     if (dynamic) {
-      if (options.theme)
-        Style.define(
-          { style: body(input(values) as Record<string, unknown>) } as never,
-          { vars: options.theme },
-        )
       const style: Record<string, string | number | undefined> = {
         ...result.style,
       }
@@ -174,14 +169,6 @@ export function variants(
       )[choice]!
       const axisIndex = axes.findIndex(([name]) => name === axis)
       const choiceIndex = Object.keys(axes[axisIndex]![1]).indexOf(choice)
-      const callback = axes[axisIndex]![1][choice]
-      if (options.theme && typeof callback === 'function')
-        Style.define(
-          {
-            style: body(callback(payload) as Record<string, unknown>),
-          } as never,
-          { vars: options.theme },
-        )
       for (const [field, value] of Object.entries(payload))
         bindings[
           Identity.slot(

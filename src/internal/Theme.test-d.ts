@@ -10,6 +10,15 @@ import * as Config from './Configuration.js'
 import { Css, global } from 'zyzz/web'
 
 describe('define', () => {
+  test('retains token enforcement on exported theme handles', () => {
+    const config = Config.create({ theme: { spacing: { md: '8px' } } })
+    const theme = config.theme
+    theme.style({ padding: 'md' })
+    theme.style({ padding: '[7px]' })
+    // @ts-expect-error Exported handles still require configured tokens.
+    theme.style({ padding: '7px' })
+  })
+
   test('infers responsive typography and border width domains', () => {
     const { style, theme } = Config.create({
       theme: {
@@ -331,7 +340,7 @@ describe('style', () => {
 
     const extracted: ParametersStyle = {
       color: 'brand',
-      padding: ['md', '2px !important'],
+      padding: ['md', '[2px] !important'],
     }
 
     themed(extracted)

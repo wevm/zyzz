@@ -14,6 +14,35 @@ import {
 } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('applying configured definitions never invokes authoring callbacks', () => {
+    const { style, variants } = Config.create({
+      id: 'callbacks',
+      vars: { spacing: { md: '8px' } },
+    })
+    let calls = 0
+    const callback = (values: { width: '7px' }) => {
+      calls++
+      return { width: `[${values.width}]` as const }
+    }
+    const box = style(callback, { id: 'box' })
+    const button = variants(
+      { variants: { size: { custom: callback } } },
+      { id: 'button' },
+    )
+    box({ width: '7px' })
+    box({ width: '7px' })
+    button({ size: { custom: { width: '7px' } } })
+    expect(calls).toBe(0)
+    const source = `import {Config} from 'zyzz';const {style}=Config.create({id:'callbacks',vars:{spacing:{md:'8px'}}});export const box=style((values:{width:'7px'})=>({width:\`[\${values.width}]\`}),{id:'box'});`
+    const output = Transform.compile({
+      compiler: false,
+      moduleId: 'app.ts',
+      source,
+    })
+    expect(output.code).toBe(source)
+    expect(output.css).toContain('width:var(')
+  })
+
   test('keeps extended theme scopes stable without a source transform', () => {
     const base = Vars.define({ color: { primary: 'red' } }, { id: 'palette' })
     const alternate = Vars.extend(base, { color: { primary: 'blue' } })

@@ -594,7 +594,9 @@ export type StyleFactory<
         values: values,
       ) => styles &
         NoInfer<
-          Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
+          Body<styles, tokens, layers, mappings> &
+            Binding.Checked<styles> &
+            Binding.TokenSlots<styles, values, tokens, mappings>
         >) &
       Completion.Properties<tokens, NoInfer<styles>>,
     ...options: Parameters<callback> extends [Record<string, string | number>]

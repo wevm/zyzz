@@ -21,6 +21,21 @@ export type Atom<value> =
  * Checks authored properties and retains validated input types to avoid expanding whole-property fallback unions.
  */
 export type Accepted<style, properties> = {
+  [property in keyof style]: AcceptedValue<
+    style[property],
+    property,
+    properties
+  >
+}
+
+type AcceptedValue<value, property extends PropertyKey, properties> =
+  Extract<value, `[${string}]` | `[${string}] !important`> extends never
+    ? AcceptedMember<Record<property, value>, properties>[property]
+    : value extends unknown
+      ? AcceptedMember<Record<property, value>, properties>[property]
+      : never
+
+type AcceptedMember<style, properties> = {
   [property in keyof style]: property extends keyof properties
     ? style[property] extends `[${infer value}]` | `[${infer value}] !important`
       ?
@@ -392,7 +407,7 @@ export function parse(
     return {
       ...(parsed.custom ? { custom: true } : {}),
       important: parsed.important,
-      value: Token.compose(parts),
+      value: Token.compose(parts.filter((part) => part !== '')),
     }
   }
 
@@ -475,6 +490,12 @@ function bracketed(value: string): boolean {
     }
     if (quote) {
       if (character === quote) quote = ''
+      continue
+    }
+    if (character === '/' && value[index + 1] === '*') {
+      const end = value.indexOf('*/', index + 2)
+      if (end < 0) return false
+      index = end + 1
       continue
     }
     if (character === '"' || character === "'") {

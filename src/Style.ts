@@ -68,14 +68,20 @@ export type Accepted<
                   ? never
                   : Value.Atom<Typography.Names<tokens>>
                 : key extends keyof Literal.Properties
-                  ? Value.Accepted<
-                      Pick<style, key>,
-                      literal extends true
+                  ? (literal extends true
+                      ? LiteralDeclarations
+                      : keyof tokens extends never
                         ? LiteralDeclarations
-                        : DeclarationProperties<tokens>
-                    >[key] &
-                      Value.Checked<Pick<style, key>, tokens>[key] &
-                      Value.Tokens<style[key], tokens, key>
+                        : DeclarationProperties<tokens>)[key] extends style[key]
+                    ? style[key]
+                    : Value.Accepted<
+                        Pick<style, key>,
+                        literal extends true
+                          ? LiteralDeclarations
+                          : DeclarationProperties<tokens>
+                      >[key] &
+                        Value.Checked<Pick<style, key>, tokens>[key] &
+                        Value.Tokens<style[key], tokens, key>
                   : key extends Condition.Keys<tokens, key>
                     ? [style[key]] extends [undefined]
                       ? never
@@ -652,7 +658,7 @@ export function define(
           !custom &&
           Token.mapped(theme, key) &&
           !Token.is(resolved) &&
-          !Binding.is(resolved) &&
+          !(Binding.is(resolved) && !resolved.name.startsWith('--z-d')) &&
           !(
             Token.isExpression(resolved) &&
             resolved.parts.every((part) => Token.is(part) || part === '')
@@ -795,6 +801,7 @@ export class InvalidError extends Error {
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?: Value.Atom<
     | Exclude<Literal.Properties[property], undefined>
+    | `[${string}]`
     | Binding.Reference<'*'>
     | {
         [kind in Binding.Kind]: property extends Binding.Property<
@@ -833,7 +840,13 @@ export type NamedStyle<name extends string = string> = {
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
 export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
-    | LiteralAtoms[property]
+    | (property extends `--${string}`
+        ? LiteralAtoms[property]
+        : [Token.Names<tokens, property>] extends [never]
+          ? LiteralAtoms[property]
+          :
+              | Value.Atom<`[${string}]`>
+              | Extract<LiteralAtoms[property], Binding.Reference>)
     | Value.Atom<Token.Names<tokens, property>>
     | {
         [group in Token.Group]: property extends Token.Properties<group>

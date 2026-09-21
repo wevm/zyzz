@@ -51,6 +51,7 @@ type CheckedChoice<
       values: values,
     ) => CheckedStyles<body, tokens, layers, mappings> &
       Binding.Checked<body> &
+      Binding.TokenSlots<body, values, tokens, mappings> &
       (string extends keyof values
         ? never
         : values extends Record<string, string | number> &

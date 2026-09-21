@@ -15,7 +15,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: 0,
+      minWidth: '[0]',
       paddingTop: 'md',
     },
   })
@@ -41,7 +41,7 @@ namespace styles {
     borderRadius: '[0.5rem]',
     height: '[0.75rem]',
     opacity: vars.amount,
-    width: '100%',
+    width: '[100%]',
   })
 
   export const scope = style({

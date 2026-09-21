@@ -8,7 +8,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: 0,
+      minWidth: '[0]',
       paddingTop: 'md',
     },
   })
@@ -20,7 +20,7 @@ namespace styles {
   export const item = style({
     border: '1px solid',
     borderColor: 'line',
-    borderRadius: '0.5rem',
+    borderRadius: '[0.5rem]',
     marginTop: 'sm',
     padding: 'sm',
     selectors: {

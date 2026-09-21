@@ -116,6 +116,32 @@ export const dynamic=style((values:{padding:'7px'})=>({padding:\`[\${values.padd
     }
   })
 
+  test('ignores incompatible token leaves and CSS comment brackets', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Config} from 'zyzz';
+const unmapped=Config.create({vars:{color:{gap:'8px'}}});
+const mapped=Config.create({vars:{space:{gap:'8px'}},mappings:{space:['color']}});
+const configured=Config.create({vars:{spacing:{md:'8px'}}});
+export const first=unmapped.style({color:'red'});
+export const second=mapped.style({color:'blue'});
+export const third=configured.style({width:'[calc(1px /* ] */ + 2px)]'});`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-text-red-PCFOOF-0{color:red;}
+      .z-text-blue-0H1A4V-0{color:blue;}
+      .z-w-aL5Pfl{width:calc(1px /* ] */ + 2px);}"
+    `)
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{spacing:{md:'8px'}}});export const invalid=style((values:{padding:'md'})=>({padding:values.padding}));`,
+        },
+      }),
+    ).toThrow('Expected a configured token or a bracketed CSS value.')
+  })
+
   test('unwraps escapes once while preserving grid lines and quoted brackets', () => {
     const result = Graph.compile({
       modules: {
@@ -633,7 +659,7 @@ dynamic({ width: '12px' })
         [
           {
             "code": 2322,
-            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", "first baseline", ... 21 more ..., "unsafe start"]; }> | Reference<...>>, ...Atom<...>[]])'.",
+            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", "first baseline", ... 21 more ..., "unsafe start"]; }> | \`[\${string}]\` | Reference<...>>, ...Atom<...>[]])'.",
             "span": "alignItems",
           },
         ]

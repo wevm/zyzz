@@ -537,24 +537,26 @@ export function mapped(
   if (property.startsWith('--')) return false
   const data = Object.getOwnPropertyDescriptor(theme, definition)
     ?.value as Metadata
-  return Object.entries(data.values).some(([path]) => {
+  return Object.keys(data.values).some((path) => {
     const category = path.split('.')[0]!
-    if (data.contract.mappings === false) {
-      let leaf: unknown = Object.getOwnPropertyDescriptor(
-        theme,
-        'tokens',
-      )?.value
-      for (const key of path.split('.'))
-        leaf =
-          leaf && typeof leaf === 'object'
-            ? Object.getOwnPropertyDescriptor(leaf, key)?.value
-            : undefined
-      return is(leaf) && acceptsReference(leaf, property)
-    }
-    const targets = data.contract.mappings?.[category]
-    return targets
-      ? targets.includes(property)
-      : accepts(category as Group, property)
+    const targets =
+      data.contract.mappings === false
+        ? undefined
+        : data.contract.mappings?.[category]
+    if (
+      data.contract.mappings !== false &&
+      !(targets
+        ? targets.includes(property)
+        : accepts(category as Group, property))
+    )
+      return false
+    let leaf: unknown = Object.getOwnPropertyDescriptor(theme, 'tokens')?.value
+    for (const key of path.split('.'))
+      leaf =
+        leaf && typeof leaf === 'object'
+          ? Object.getOwnPropertyDescriptor(leaf, key)?.value
+          : undefined
+    return is(leaf) && acceptsReference(leaf, property)
   })
 }
 

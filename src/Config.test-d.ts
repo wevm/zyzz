@@ -3,11 +3,51 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config as PublicConfig } from 'zyzz'
+import { Config as PublicConfig, Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
+  test('preserves bracket unions and reusable property annotations', () => {
+    const flag = Boolean(Math.random())
+    const config = PublicConfig.create({ vars: { spacing: { md: '8px' } } })
+    config.style({ padding: flag ? 'md' : '[7px]' })
+    config.style({ padding: [flag ? 'md' : '[7px]', '[2px]'] })
+    PublicConfig.create().style({ color: flag ? 'red' : '[blue]' })
+    const literal: Style.Properties = { width: '[7px]' }
+    const declarations: Style.LiteralProperties = { width: '[7px]' }
+    const tokens = { spacing: { md: '8px' } } as const
+    const themed = { padding: '[7px]' } satisfies Style.Properties<
+      typeof tokens
+    >
+    const properties: Style.DeclarationProperties<typeof tokens> = {
+      padding: 'md',
+    }
+    config.style(themed)
+    void properties
+    void literal
+    void declarations
+    // @ts-expect-error Annotations require escapes for configured properties.
+    const raw: Style.Properties<typeof tokens> = { padding: '7px' }
+    // @ts-expect-error A union cannot hide an invalid arbitrary value.
+    config.style({ padding: flag ? 'md' : '[invalid]' })
+    // @ts-expect-error Dynamic slots cannot resolve token names.
+    config.style((values: { padding: 'md' }) => ({ padding: values.padding }))
+    config.variants({
+      variants: {
+        size: {
+          // @ts-expect-error Dynamic recipe slots cannot resolve token names.
+          custom: (values: { padding: 'md' }) => ({ padding: values.padding }),
+        },
+      },
+    })
+    void raw
+    const incompatible = PublicConfig.create({
+      vars: { color: { gap: '8px' } },
+    })
+    incompatible.style({ color: 'red' })
+  })
+
   test('requires tokens or bracketed CSS when values exist', () => {
     const { style, variants, vars } = PublicConfig.create({
       shorthands: { px: ['paddingLeft', 'paddingRight'] },

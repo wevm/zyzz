@@ -252,6 +252,19 @@ describe('compile', () => {
     `)
   })
 
+  test('executes bracketed dynamic scalars without empty expression segments', async () => {
+    const output = Native.compile({
+      moduleId: 'bracketed.ts',
+      colorScheme: 'light',
+      source:
+        "import {Config} from 'zyzz'; const {style}=Config.create({vars:{spacing:{md:'8px'}}}); const bar=style((values:{width:string})=>({width:`[${values.width}]`})); export const results=bar({width:'12px'});",
+      units: { px: 2 },
+    })
+    expect((await execute(output.code)).results).toEqual({
+      style: { width: 24 },
+    })
+  })
+
   test('executes imported and packed dynamic contracts without publisher source', async () => {
     const directory = await Fs.mkdtemp(Path.resolve('.fixture-native-payload-'))
     try {

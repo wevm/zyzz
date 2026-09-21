@@ -820,7 +820,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       let url: string
 
-      if (/[?#%]/.test(file)) {
+      if (asset.package || /[?#%]/.test(file)) {
         if (entry.environment.mode === 'build') {
           url = await host.asset(file)
 

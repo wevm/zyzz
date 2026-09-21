@@ -1336,10 +1336,10 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       // A source error stays with its module; the document still initializes
       // from the catalogs collected before the edit.
-      await Fs.writeFile(
-        Path.join(root, 'config.ts'),
-        files['config.ts'].replace("'#123456'", 'unknownColor()'),
-      )
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'].replace("'#123456'", 'unknownColor()'),
+      })
 
       const broken = await server.transformIndexHtml(
         '/index.html',
@@ -1350,11 +1350,14 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       // An edit that drops the configuration import while failing to compile
       // keeps scoping the document through the last successful graph.
-      await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
-      await Fs.writeFile(
-        Path.join(root, 'main.ts'),
-        `import { style } from 'zyzz'; export const broken = style({ color: unknownColor() });`,
-      )
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'],
+      })
+      await Watch.write({
+        path: Path.join(root, 'main.ts'),
+        source: `import { style } from 'zyzz'; export const broken = style({ color: unknownColor() });`,
+      })
 
       const detached = await server.transformIndexHtml(
         '/index.html',
@@ -1363,16 +1366,19 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       expect(scripts(detached)).toMatchInlineSnapshot('3')
 
-      await Fs.writeFile(Path.join(root, 'main.ts'), files['main.ts'])
+      await Watch.write({
+        path: Path.join(root, 'main.ts'),
+        source: files['main.ts'],
+      })
 
       // Removed configurations leave the document on the next request.
-      await Fs.writeFile(
-        Path.join(root, 'config.ts'),
-        files['config.ts'].slice(
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'].slice(
           0,
           files['config.ts'].indexOf(' export const other'),
         ),
-      )
+      })
 
       const reduced = await server.transformIndexHtml(
         '/index.html',
@@ -1382,10 +1388,10 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       expect(scripts(reduced)).toMatchInlineSnapshot('1')
 
       // A module that stops emitting a contract altogether drops its catalogs too.
-      await Fs.writeFile(
-        Path.join(root, 'config.ts'),
-        `export const themes = { mint: { className: 'plain' } }`,
-      )
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: `export const themes = { mint: { className: 'plain' } }`,
+      })
 
       const detachedConfiguration = await server.transformIndexHtml(
         '/index.html',
@@ -1394,7 +1400,10 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       expect(scripts(detachedConfiguration)).toMatchInlineSnapshot('0')
 
-      await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'],
+      })
       await server.close()
       server = undefined
 

@@ -132,6 +132,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
   const appearances = new Set<string>()
+  const scopeApplications = new Map<
+    number,
+    { end: number; output: 'html' | undefined }
+  >()
   const selections = new Set<string>()
   const calls: Call[] = []
   const scripts = new Set<string>()
@@ -1371,7 +1375,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
             node,
           )
 
-        if (config.call.selection) selections.add(config.call.name)
+        if (config.call.selection) {
+          selections.add(config.call.name)
+          scopeApplications.set(parent.start, {
+            end: parent.end,
+            output: config.call.options?.output === 'html' ? 'html' : undefined,
+          })
+        }
         if (config.call.initialization) scripts.add(config.call.name)
 
         return true
@@ -1468,8 +1478,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
             scripts.add(config.call.name)
           }
 
-          if (path[0] === 'themes' || path[0] === 'vars')
+          if (path[0] === 'themes' || path[0] === 'vars') {
             selections.add(config.call.name)
+            const application = ancestors[index - 1]!
+            scopeApplications.set(application.start, {
+              end: application.end,
+              output:
+                config.call.options?.output === 'html' ? 'html' : undefined,
+            })
+          }
 
           return true
         }
@@ -1943,6 +1960,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     exports: Object.freeze(exports),
     reference,
     references,
+    scopeApplications,
     scripts,
     selections,
     staticTokens,

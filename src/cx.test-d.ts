@@ -5,6 +5,19 @@ import * as Config from './internal/Configuration.js'
 
 describe('cx', () => {
   test('returns one props object and rejects unrelated inputs', () => {
+    const { vars } = Config.create({ vars: { color: { brand: 'red' } } })
+    expectTypeOf(cx(vars(), style({ color: 'red' })())).toHaveProperty(
+      'className',
+    )
+    const { vars: htmlVars, style: scopedHtml } = Config.create({
+      output: 'html',
+      vars: { color: { brand: 'red' } },
+    })
+    expectTypeOf(
+      cx(htmlVars({ colorScheme: 'dark' }), scopedHtml({ color: 'brand' })()),
+    ).toHaveProperty('class')
+    // @ts-expect-error Scope and style output kinds must agree.
+    cx(htmlVars(), style({ color: 'red' })())
     const a = style({ color: 'red' })
     const b = style({ padding: '8px' })
     expectTypeOf(cx(a(), false, null, undefined, b())).toHaveProperty(

@@ -193,6 +193,7 @@ export function collect(options: collect.Options) {
   )) {
     const selected: Source.Call[] = []
     const inputs: NonNullable<Source.Call['runtimeComposition']>[number][] = []
+    const outputs = new Set<'html' | undefined>()
     let runtime = false
     let conditions = 0
     const attributes = new Map<string, string>()
@@ -256,7 +257,6 @@ export function collect(options: collect.Options) {
       const resolved = bindings.resolve(expression, nodes)
       const conditional =
         resolved.type === 'LogicalExpression' && resolved.operator === '&&'
-      const condition = conditional ? conditions++ : undefined
       const value = conditional
         ? bindings.resolve(resolved.right, nodes)
         : resolved
@@ -305,6 +305,19 @@ export function collect(options: collect.Options) {
           'Composition requires statically known local style applications.',
           value,
         )
+      const scope = options.scopes?.get(value.start)
+      if (scope?.end === value.end) {
+        outputs.add(scope.output)
+        inputs.push({
+          start: expression.start,
+          end: expression.end,
+          name: '',
+          owners: [],
+        })
+        runtime = true
+        continue
+      }
+      const condition = conditional ? conditions++ : undefined
       const nested = calls.get(value.start)
       if (nested?.compositionCases && resolved !== expression)
         throw new Themes.InvalidError(
@@ -379,7 +392,8 @@ export function collect(options: collect.Options) {
           options.source.slice(application.start, application.calleeEnd),
         )
     }
-    if (selected.some((call) => call.output !== selected[0]?.output))
+    for (const call of selected) outputs.add(call.output)
+    if (outputs.size > 1)
       throw new Themes.InvalidError(
         'Composition cannot mix HTML and React props.',
         node,
@@ -513,7 +527,7 @@ export function collect(options: collect.Options) {
         end: node.end,
         properties: selected.flatMap((call) => properties(call)),
       },
-      ...(selected[0]?.output ? { output: selected[0].output } : {}),
+      ...(outputs.has('html') ? { output: 'html' as const } : {}),
       ...(identities.length ? { identity: identities.join(' ') } : {}),
     }
     calls.set(node.start, call)
@@ -616,6 +630,13 @@ export declare namespace collect {
     readonly links?: Readonly<Record<string, Themes.Link>> | undefined
     /** Parsed module with lexical binding scopes. */
     readonly program: Ast.Program
+    /** Validated variable scope applications preserved as runtime props. */
+    readonly scopes?:
+      | ReadonlyMap<
+          number,
+          { readonly end: number; readonly output: 'html' | undefined }
+        >
+      | undefined
     /** Source used to preserve initialization-sensitive binding reads. */
     readonly source: string
     /** Validated ordered style bodies. */

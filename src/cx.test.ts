@@ -1,6 +1,8 @@
 /** Verifies static composition order against native CSS controls in Chromium. @module */
 import * as Corpus from '../bench/Corpus.js'
 import * as Fixture from '../test/fixtures/composition.js'
+import * as Packed from '../test/fixtures/Packed.js'
+import * as Vm from 'node:vm'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -11,9 +13,94 @@ import * as Util from 'node:util'
 import { parseSync } from 'oxc-parser'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Source, Transform } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('cx', () => {
+  test.each(['react', 'html'] as const)(
+    'composes variable scopes with %s styles',
+    async (output) => {
+      const graph = Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz'; export const config = Config.create({output: '${output}', mappings: false, vars: {color: {brand: '#123456'}}}); export const {vars, style} = config;`,
+          'app.ts': `import {cx, Config} from 'zyzz'; import {config, vars, style} from './config.js';
+          const root = style({color: 'color.brand'});
+          const local = Config.create({output: '${output}', vars: {color: {brand: '#abcdef'}}});
+          const {vars: localVars} = local;
+          export const scope = vars();
+          const applied = vars(); const alias = applied; export const aliased = cx(alias, root());
+          let reads = 0; function scheme() { reads++; return 'dark'; }
+          export const evaluated = cx(vars({colorScheme: scheme()}), root()); export const count = reads;
+          export const direct = cx(vars({colorScheme: 'dark'}), root());
+          export const member = cx(config.vars(), root());
+          export const localScope = cx(localVars(), root());
+          export const only = cx(vars());
+          export const nested = cx(cx(vars(), root()), root());
+          export const conditional = (enabled: boolean) => cx(enabled && vars({colorScheme: 'dark'}), enabled && root());
+          export const invalid = () => cx(vars({set: 'missing'}), root());`,
+        },
+        imports: {
+          'app.ts': { zyzz: null, './config.js': 'config.ts' },
+          'config.ts': { zyzz: null },
+        },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: Object.fromEntries(
+          Object.entries(graph.modules).map(([name, module]) => [
+            name,
+            module.code,
+          ]),
+        ),
+      })
+      const fixture = Vm.runInNewContext(`${code};Fixture;`)
+      const key = output === 'html' ? 'class' : 'className'
+      for (const props of [
+        fixture.direct,
+        fixture.member,
+        fixture.aliased,
+        fixture.evaluated,
+        fixture.only,
+        fixture.nested,
+        fixture.conditional(true),
+      ])
+        expect(props[key].split(' ')).toContain(fixture.scope[key])
+      expect(fixture.conditional(false)[key]).not.toContain(fixture.scope[key])
+      expect(fixture.direct.style).toEqual(
+        output === 'html' ? 'color-scheme:dark' : { colorScheme: 'dark' },
+      )
+      expect(fixture.count).toBe(1)
+      expect(() => fixture.invalid()).toThrow('Invalid variable selection.')
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        const css =
+          (graph.sharedCss ?? '') +
+          Object.values(graph.modules)
+            .map((module) => module.css)
+            .join('')
+        await page.setContent(
+          `<style>${css}</style><div id="root" class="${fixture.direct[key]}"></div>`,
+        )
+        expect(
+          await page
+            .locator('#root')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toBe('rgb(18, 52, 86)')
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test('rejects mixed variable scope and style outputs', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'mixed.ts',
+        source: `import {Config, cx, style} from 'zyzz'; const {vars} = Config.create({output: 'html', vars: {color: {brand: 'red'}}}); const root = style({color: 'red'}); cx(vars(), root());`,
+      }),
+    ).toThrow('Composition cannot mix HTML and React props.')
+  })
+
   test('uses lexical references and expands each selected mapping', () => {
     const source = `import { Config, cx, style } from 'zyzz';
       const { style: bound } = Config.create({ shorthands: { px: ['paddingLeft', 'paddingRight'] } });

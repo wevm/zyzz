@@ -289,15 +289,28 @@ async function compile(context: Context, source: string) {
     )
       .split(Path.sep)
       .join('/')
+    // Turbopack appends the output extension to loader-transformed resource paths.
+    const resource = await Fs.stat(context.resourcePath).then(
+      () => context.resourcePath,
+      async (error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') throw error
+        const original = context.resourcePath.slice(
+          0,
+          -Path.extname(context.resourcePath).length,
+        )
+        await Fs.access(original)
+        return original
+      },
+    )
     const requests = [
       ...(graph.sharedCss
         ? [
-            `import ${JSON.stringify(sharedFile.startsWith('.') ? sharedFile : `./${sharedFile}`)};`,
+            `import ${JSON.stringify(sharedFile.startsWith('../') ? sharedFile : `./${sharedFile}`)};`,
           ]
         : []),
       ...(output.css
         ? [
-            `import ${JSON.stringify(`./${Path.basename(context.resourcePath)}?zyzz-style`)};`,
+            `import ${JSON.stringify(`./${Path.basename(resource)}?zyzz-style`)};`,
           ]
         : []),
     ]
@@ -327,7 +340,7 @@ async function compile(context: Context, source: string) {
       .split(Path.sep)
       .join('/')
     requests.push(
-      `import ${JSON.stringify(relative.startsWith('.') ? relative : `./${relative}`)};`,
+      `import ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
     )
   }
 

@@ -506,12 +506,13 @@ export function extract(
   scanned: ReturnType<typeof scan>,
   tokens: ReadonlyMap<number, { end: number; reference: Token.Reference }>,
   starts?: number[],
+  resolve: (node: Ast.Node) => Ast.Node = Expression.unwrap,
 ): readonly Css.Contribution[] {
   const result: Css.Contribution[] = []
   function value(node: Ast.Node, property?: string): unknown {
     const reference = tokens.get(node.start)
     if (reference?.end === node.end) return reference.reference
-    node = Expression.unwrap(node)
+    node = Expression.unwrap(resolve(node))
 
     const animation = scanned.references.get(node.start)
     if (animation) return animation
@@ -545,7 +546,9 @@ export function extract(
 
     if (node.type === 'TemplateLiteral') {
       const template = Expression.template(node, 0, (expression, prefix) => {
-        const node = Expression.unwrap(expression)
+        const node = Expression.unwrap(resolve(expression))
+        if (node.type === 'Literal' && typeof node.value === 'string')
+          return node.value
         const name = scanned.references.get(node.start)
         const kind = name ? scanned.kinds.get(name) : undefined
         if (

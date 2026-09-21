@@ -5757,11 +5757,11 @@ describe('contributions', () => {
       body::before{content:"url(relative)";}"
     `)
     })
-    test('rejects conditional classes and shadowed undefined descriptors', () => {
+    test('rejects conditional classes and runtime descriptors', () => {
       for (const source of [
         `class Never { static { global({body:{color:'red'}}) } }`,
         `const unused = false ? class { static { global({body:{color:'red'}}) } } : null`,
-        `const undefined = 'bold'; fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined})`,
+        `const undefined = getWeight(); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined})`,
       ])
         expect(() =>
           Transform.compile({
@@ -5769,6 +5769,13 @@ describe('contributions', () => {
             source: `import {global,fontFace} from 'zyzz/web'; ${source}`,
           }),
         ).toThrow()
+    })
+    test('resolves an immutable shadowed undefined descriptor instead of omitting it', () => {
+      const output = Transform.compile({
+        moduleId: 'font.ts',
+        source: `import {fontFace} from 'zyzz/web';const undefined='bold';fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined});`,
+      })
+      expect(output.css).toContain('font-weight:bold')
     })
     test('locates a malformed later contribution at its own span', () => {
       expect(() =>

@@ -3,6 +3,9 @@
  * @module
  */
 import * as Path from 'node:path'
+import * as Packed from '../test/fixtures/Packed.js'
+import { Graph } from 'zyzz/compiler'
+import { Config as PublicConfig } from 'zyzz'
 import * as Ts from 'typescript-api'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
@@ -12,6 +15,179 @@ import * as Config from './internal/Configuration.js'
 import { Css } from 'zyzz/web'
 
 describe('create', () => {
+  test.each(['atomic', 'grouped'] as const)(
+    'applies default layers to %s styles and recipes through source and packed configs',
+    async (cssOutput) => {
+      const config = `import { Config } from 'zyzz';
+export const { style, variants } = Config.create({
+  cssOutput: '${cssOutput}',
+  defaultLayer: 'components',
+  layers: ['components', 'overrides'],
+});
+export const themed = Config.create({ defaultLayer: 'components', vars: {color: {brand: 'red'}} });`
+      const source = `import { style, variants, themed } from './config';
+export const button = variants({
+  base: { color: 'red', padding: '4px', ':hover': { color: 'orange' } },
+  variants: { size: { large: { padding: '16px' } } },
+  compoundVariants: [{ when: {size: 'large'}, style: { borderRadius: '8px' } }],
+});
+export const explicit = style({
+  color: 'red',
+  '@media (min-width: 1px)': { '@layer overrides': { color: 'blue' } },
+});
+export const dynamic = style((values: { width: '20px' }) => ({ width: values.width }));
+export const plain = style({ color: 'red', ':hover': { color: 'orange' } });
+export const anonymous = style({ color: 'red', '@layer': { color: 'purple' } });
+export const token = themed.style({ color: 'brand' });
+export const props = { anonymous: anonymous(), token: token(), button: button({size:'large'}), explicit: explicit(), dynamic: dynamic({width:'20px'}), plain: plain() };`
+      const library = Graph.compile({ modules: { 'config.ts': config } })
+      expect(JSON.parse(library.contracts['config.ts']!).version).toBe(27)
+
+      const browser = await chromium.launch()
+      try {
+        for (const packed of [false, true]) {
+          const result = Graph.compile({
+            ...(packed
+              ? { contracts: { 'config.ts': library.contracts['config.ts']! } }
+              : {}),
+            imports: {
+              'app.ts': { './config': 'config.ts' },
+              'config.ts': { zyzz: null },
+            },
+            modules: {
+              ...(!packed ? { 'config.ts': config } : {}),
+              'app.ts': source,
+            },
+          })
+          const bundle = await Packed.bundle({
+            entry: 'app.ts',
+            modules: {
+              'app.ts': result.modules['app.ts']!.code,
+              'config.ts': (result.modules['config.ts'] ??
+                library.modules['config.ts'])!.code,
+            },
+          })
+          const page = await browser.newPage()
+          await page.setContent(`<style>${result.sharedCss ?? ''}${Object.values(
+            result.modules,
+          )
+            .map((module) => module.css)
+            .join('')}</style>
+<style>.caller { color: green; }</style><div id="button"></div><div id="explicit"></div><div id="dynamic"></div><div id="plain"></div><div id="anonymous"></div><div id="token"></div>`)
+          await page.addScriptTag({
+            type: 'module',
+            content: `${bundle}; for (const [id, props] of Object.entries(Fixture.props)) { const e=document.getElementById(id); e.textContent=id; e.className=props.className; for (const [key,value] of Object.entries(props.style ?? {})) e.style.setProperty(key,value); for (const [key,value] of Object.entries(props)) if (key.startsWith("data-")) e.setAttribute(key,value); }`,
+          })
+          await expect
+            .poll(() =>
+              page
+                .locator('#button')
+                .evaluate((e) => getComputedStyle(e).paddingTop),
+            )
+            .toBe('16px')
+          expect(
+            await page
+              .locator('#button')
+              .evaluate((e) => getComputedStyle(e).borderRadius),
+          ).toBe('8px')
+          expect(
+            await page
+              .locator('#explicit')
+              .evaluate((e) => getComputedStyle(e).color),
+          ).toBe('rgb(0, 0, 255)')
+          expect(
+            await page
+              .locator('#dynamic')
+              .evaluate((e) => getComputedStyle(e).width),
+          ).toBe('20px')
+          expect(
+            await page
+              .locator('#anonymous')
+              .evaluate((e) => getComputedStyle(e).color),
+          ).toBe('rgb(128, 0, 128)')
+          expect(
+            await page
+              .locator('#token')
+              .evaluate((e) => getComputedStyle(e).color),
+          ).toBe('rgb(255, 0, 0)')
+          await page
+            .locator('#token')
+            .evaluate((e) => e.classList.add('caller'))
+          expect(
+            await page
+              .locator('#token')
+              .evaluate((e) => getComputedStyle(e).color),
+          ).toBe('rgb(0, 128, 0)')
+          await page
+            .locator('#plain')
+            .evaluate((e) => e.classList.add('caller'))
+          await page.locator('#plain').hover()
+          expect(
+            await page
+              .locator('#plain')
+              .evaluate((e) => getComputedStyle(e).color),
+          ).toBe('rgb(0, 128, 0)')
+          await page.close()
+        }
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test('rejects packed default layer mismatches and unsupported schema versions', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {style}=Config.create({defaultLayer:'components'});`,
+      },
+    })
+    const read = (contract: unknown) =>
+      Graph.compile({
+        contracts: { 'config.ts': JSON.stringify(contract) },
+        imports: { 'app.ts': { './config': 'config.ts' } },
+        modules: {
+          'app.ts': `import {style} from './config';export const button=style({color:'red'});`,
+        },
+      })
+    const mismatched = JSON.parse(library.contracts['config.ts']!)
+    mismatched.exports.style.options.defaultLayer = 'overrides'
+    expect(() => read(mismatched)).toThrow(
+      'Configuration default layer disagrees',
+    )
+
+    const outdated = JSON.parse(library.contracts['config.ts']!)
+    outdated.version = 26
+    expect(() => read(outdated)).toThrow(
+      'Default layers require contract version 27',
+    )
+  })
+
+  test('rejects invalid default layers and retains duplicate layer validation', () => {
+    for (const defaultLayer of [
+      '',
+      'bad name',
+      'initial',
+      'a.inherit',
+      false,
+      null,
+    ]) {
+      expect(() => PublicConfig.create({ defaultLayer } as never)).toThrow()
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultLayer:${JSON.stringify(defaultLayer)}});`,
+          },
+        }),
+      ).toThrow()
+    }
+    expect(() =>
+      PublicConfig.create({ defaultLayer: 'base', layers: ['base', 'base'] }),
+    ).toThrow('Duplicate layer')
+    expect(() =>
+      PublicConfig.create({ defaultLayer: 'components.buttons' }),
+    ).not.toThrow()
+  })
+
   test('suggests configured CSS values and theme tokens with property diagnostics', () => {
     const root = Path.resolve(import.meta.dirname, '..')
     const file = Path.join(root, '.fixture-config-editor.ts')

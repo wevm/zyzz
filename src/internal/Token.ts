@@ -168,6 +168,8 @@ export type Contract = {
   readonly mappings?: VariableSets.Mappings | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
+  /** Fallback layer for declarations without an explicit layer. */
+  readonly defaultLayer?: string | undefined
   /** Configuration-local property aliases, inherited by bound handles. */
   readonly shorthands?: Shorthands.Map | undefined
   readonly [complete]?: boolean | undefined

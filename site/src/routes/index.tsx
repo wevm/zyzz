@@ -1,6 +1,6 @@
 /** Renders the landing page and introductory styling example. @module */
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -57,6 +57,25 @@ const installCommands = {
 
 function Index() {
   const [word, setWord] = useState(0)
+  const wordsRef = useRef<HTMLSpanElement>(null)
+  const [offset, setOffset] = useState(0)
+
+  useLayoutEffect(() => {
+    const words = wordsRef.current
+    const active = words?.children[word]
+    if (!words || !active) return
+
+    const measure = () =>
+      setOffset(
+        active.getBoundingClientRect().width -
+          words.getBoundingClientRect().width,
+      )
+    const observer = new ResizeObserver(measure)
+    observer.observe(words)
+    observer.observe(active)
+    measure()
+    return () => observer.disconnect()
+  }, [word])
 
   useEffect(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -99,16 +118,23 @@ function Index() {
           >
             <span aria-hidden="true">
               <span {...styles.headingLine()}>
-                <span {...styles.headingWords()}>
+                <span ref={wordsRef} {...styles.headingWords()}>
                   {headingWords.map((text, index) => (
                     <span
                       data-active={index === word}
                       key={text}
                       {...styles.headingWord()}
                     >
-                      {text} styles
+                      {text}
                     </span>
                   ))}
+                </span>
+                <span
+                  {...styles.headingSuffix()}
+                  style={{ transform: `translateX(${offset}px)` }}
+                >
+                  {' '}
+                  styles
                 </span>
               </span>
               <br />
@@ -307,9 +333,16 @@ namespace styles {
   export const headingLine = style({
     whiteSpace: 'nowrap',
   })
+  export const headingSuffix = style({
+    display: 'inline-block',
+    whiteSpace: 'pre',
+    transition: 'transform 240ms cubic-bezier(0.23, 1, 0.32, 1)',
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  })
   export const headingWord = style({
     filter: 'blur(8px)',
     gridArea: '1 / 1',
+    justifySelf: 'start',
     opacity: 0,
     transition:
       'opacity 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms cubic-bezier(0.23, 1, 0.32, 1)',

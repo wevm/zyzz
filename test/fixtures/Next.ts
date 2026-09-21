@@ -84,7 +84,7 @@ export async function verify(options: verify.Options) {
       'app/config.ts': config,
       'app/content.mdx': `import Content from './mdx-content'\n\n<Content>MDX</Content>\n`,
       'app/mdx-content.tsx': `import {style} from '@config';const content=style({color:'brand'});export default function Content({children}:{children:React.ReactNode}){return <p id="mdx" {...content()}>{children}</p>}`,
-      'app/layout.tsx': `import 'next/root-params';import {vars} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={vars().className}><body>{children}</body></html>}`,
+      'app/layout.tsx': `import 'next/root-params';import {cx} from 'zyzz';import {style,vars} from '@config';const root=style({color:'brand'});export default function Layout({children}:{children:React.ReactNode}){return <html {...cx(vars({colorScheme:'light'}),root())}><body>{children}</body></html>}`,
       'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
       'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
       'app/page.tsx': `import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import Client from './client';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
@@ -246,6 +246,16 @@ export async function verify(options: verify.Options) {
     ).toMatchInlineSnapshot('true')
     await page.unroute('**/*.js')
     expect(response?.status()).toMatchInlineSnapshot('200')
+    expect(
+      await page
+        .locator('html')
+        .evaluate((node) => getComputedStyle(node).color),
+    ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
+    expect(
+      await page
+        .locator('html')
+        .evaluate((node) => getComputedStyle(node).colorScheme),
+    ).toMatchInlineSnapshot('"light"')
     expect(
       await page
         .locator('#mdx')

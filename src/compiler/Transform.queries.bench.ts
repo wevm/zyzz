@@ -19,7 +19,7 @@ const bundled = await Fs.readFile(
 )
 for (const count of [10, 100, 1000]) {
   const source =
-    'import {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"},fontWeight:{medium:500}});' +
+    'import {Config,Vars} from "zyzz"; const vars=Vars.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"},fontWeight:{medium:500}});const theme=Config.create({vars});' +
     Array.from(
       { length: count },
       (_, index) =>
@@ -73,7 +73,7 @@ describe('compile / integration corpus with query metadata', () => {
             moduleId: fixture.name,
             source:
               fixture.source +
-              '\nimport {Theme as QueryTheme} from "zyzz"; const queryTheme=QueryTheme.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}}); export const queryBody=queryTheme.style({fontSize:"body"})()',
+              '\nimport {Config as QueryConfig} from "zyzz"; const queryTheme=QueryConfig.create({vars:{breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}}}); export const queryBody=queryTheme.style({fontSize:"body"})()',
           })
     },
     { time: 1000, warmupTime: 500 },

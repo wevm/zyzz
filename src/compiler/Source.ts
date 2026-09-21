@@ -1305,6 +1305,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           identity: namespace,
           links: options[Themes.context]?.links,
           program,
+          scopes: themes?.scopeApplications,
           source: options.source,
           styles,
         })) {

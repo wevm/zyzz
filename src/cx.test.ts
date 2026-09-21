@@ -1,6 +1,8 @@
 /** Verifies static composition order against native CSS controls in Chromium. @module */
 import * as Corpus from '../bench/Corpus.js'
 import * as Fixture from '../test/fixtures/composition.js'
+import * as Packed from '../test/fixtures/Packed.js'
+import * as Scopes from '../test/fixtures/scopes.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -8,12 +10,224 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
 import * as Util from 'node:util'
+import * as Vm from 'node:vm'
 import { parseSync } from 'oxc-parser'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Source, Transform } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('cx', () => {
+  test.each(['react', 'html'] as const)(
+    'composes variable scopes with %s styles',
+    async (output) => {
+      const graph = Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz'; export const config = Config.create({output: '${output}', mappings: false, vars: {color: {brand: '#123456'}}}); export const {vars, style} = config;`,
+          'app.ts': `import {cx, Config} from 'zyzz'; import {config, vars, style} from './config.js';
+          const root = style({color: 'color.brand'});
+          const local = Config.create({output: '${output}', vars: {color: {brand: '#abcdef'}}});
+          const {vars: localVars} = local;
+          export const scope = vars();
+          const applied = vars(); const alias = applied; export const aliased = cx(alias, root());
+          let reads = 0; function scheme() { reads++; return 'dark'; }
+          export const evaluated = cx(vars({colorScheme: scheme()}), root()); export const count = reads;
+          export const direct = cx(vars({colorScheme: 'dark'}), root());
+          export const member = cx(config.vars(), root());
+          export const localScope = cx(localVars(), root());
+          export const only = cx(vars());
+          export const nested = cx(cx(vars(), root()), root());
+          export const conditional = (enabled: boolean) => cx(enabled && vars({colorScheme: 'dark'}), enabled && root());
+          export const invalid = () => cx(vars({set: 'missing'}), root());`,
+        },
+        imports: {
+          'app.ts': { zyzz: null, './config.js': 'config.ts' },
+          'config.ts': { zyzz: null },
+        },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: Object.fromEntries(
+          Object.entries(graph.modules).map(([name, module]) => [
+            name,
+            module.code,
+          ]),
+        ),
+      })
+      const fixture = Vm.runInNewContext(`${code};Fixture;`)
+      const key = output === 'html' ? 'class' : 'className'
+      for (const props of [
+        fixture.direct,
+        fixture.member,
+        fixture.aliased,
+        fixture.evaluated,
+        fixture.only,
+        fixture.nested,
+        fixture.conditional(true),
+      ])
+        expect(
+          props[key].split(' ').includes(fixture.scope[key]),
+        ).toMatchInlineSnapshot(`true`)
+      expect(
+        fixture.conditional(false)[key].includes(fixture.scope[key]),
+      ).toMatchInlineSnapshot(`false`)
+      if (output === 'html')
+        expect(fixture.direct.style).toMatchInlineSnapshot(
+          `"color-scheme:dark"`,
+        )
+      else
+        expect(fixture.direct.style).toMatchInlineSnapshot(`
+          {
+            "colorScheme": "dark",
+          }
+        `)
+      expect(fixture.count).toMatchInlineSnapshot(`1`)
+      expect(() => fixture.invalid()).toThrowErrorMatchingInlineSnapshot(
+        `[TypeError: Invalid variable selection.]`,
+      )
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        const css =
+          (graph.sharedCss ?? '') +
+          Object.values(graph.modules)
+            .map((module) => module.css)
+            .join('')
+        await page.setContent(
+          `<style>${css}</style><div id="root" class="${fixture.direct[key]}"></div>`,
+        )
+        expect(
+          await page
+            .locator('#root')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot(`"rgb(18, 52, 86)"`)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test.each(['react', 'html'] as const)(
+    'consumes packed variable scopes with %s output',
+    async (output) => {
+      const library = Graph.compile({
+        modules: {
+          'index.ts': `import {Config} from 'zyzz'; export const config=Config.create({output:'${output}',vars:{color:{brand:'#123456'}}}); export const {vars:scope,style}=config; export const root=style({color:'brand'});`,
+        },
+      })
+      const consumer = Graph.compile({
+        contracts: { '@acme/scopes/index.js': library.contracts['index.ts']! },
+        imports: {
+          'app.ts': { '@acme/scopes': '@acme/scopes/index.js', zyzz: null },
+        },
+        modules: {
+          'app.ts': `import {cx} from 'zyzz'; import {scope as vars,root} from '@acme/scopes'; const selected=vars({colorScheme:'dark'}); const alias=selected; export const props=cx(alias,root()); export const scope=vars(); export const only=cx(vars());`,
+        },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': consumer.modules['app.ts']!.code },
+        packages: {
+          '@acme/scopes': { 'index.js': library.modules['index.ts']!.code },
+        },
+      })
+      const fixture = Vm.runInNewContext(`${code};Fixture;`)
+      const key = output === 'html' ? 'class' : 'className'
+      expect(
+        fixture.props[key].split(' ').includes(fixture.scope[key]),
+      ).toMatchInlineSnapshot(`true`)
+      expect(fixture.only[key]).toMatchInlineSnapshot(
+        `"z_theme-1wfnqsmu0q6os-config-theme"`,
+      )
+      expect(Object.keys(fixture.props).includes(key)).toMatchInlineSnapshot(
+        `true`,
+      )
+      if (output === 'html')
+        expect(fixture.props.style).toMatchInlineSnapshot(`"color-scheme:dark"`)
+      else
+        expect(fixture.props.style).toMatchInlineSnapshot(
+          `
+          {
+            "colorScheme": "dark",
+          }
+        `,
+        )
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        const css = [library, consumer]
+          .map(
+            (graph) =>
+              (graph.sharedCss ?? '') +
+              Object.values(graph.modules)
+                .map((module) => module.css)
+                .join(''),
+          )
+          .join('')
+        await page.setContent(
+          `<style>${css}</style><div id="root" class="${fixture.props[key]}"></div>`,
+        )
+        expect(
+          await page
+            .locator('#root')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot(`"rgb(18, 52, 86)"`)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test.each(['react', 'html'] as const)(
+    'matches manual scope props in %s',
+    async (output) => {
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        for (const composition of ['manual', 'cx'] as const) {
+          const compiled = Transform.compile({
+            moduleId: 'scope.ts',
+            source: Scopes.create(output, composition),
+          })
+          const code = await Packed.bundle({
+            entry: 'scope.ts',
+            modules: { 'scope.ts': compiled.code },
+          })
+          const fixture = Vm.runInNewContext(`${code};Fixture;`)
+          const props = fixture.apply('dark')
+          await page.setContent(
+            `<style>${compiled.css}</style><div id="root" class="${props.className ?? props.class}" style="color-scheme:dark"></div>`,
+          )
+          expect(
+            await page
+              .locator('#root')
+              .evaluate((node) => getComputedStyle(node).color),
+          ).toMatchInlineSnapshot(`"rgb(18, 52, 86)"`)
+          if (output === 'html')
+            expect(props.style).toMatchInlineSnapshot(`"color-scheme:dark"`)
+          else
+            expect(props.style).toMatchInlineSnapshot(`
+              {
+                "colorScheme": "dark",
+              }
+            `)
+        }
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test('rejects mixed variable scope and style outputs', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'mixed.ts',
+        source: `import {Config, cx, style} from 'zyzz'; const {vars} = Config.create({output: 'html', vars: {color: {brand: 'red'}}}); const root = style({color: 'red'}); cx(vars(), root());`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: mixed.ts:155: Composition cannot mix HTML and React props.]`,
+    )
+  })
+
   test('uses lexical references and expands each selected mapping', () => {
     const source = `import { Config, cx, style } from 'zyzz';
       const { style: bound } = Config.create({ shorthands: { px: ['paddingLeft', 'paddingRight'] } });

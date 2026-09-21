@@ -62,7 +62,7 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
 
     const color = (() => {
       if (kind === 'tokens') {
-        return 'theme.tokens.color.brand'
+        return 'theme.color.brand'
       }
 
       if (kind !== 'literal') {
@@ -72,10 +72,10 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
       return "'#fff'"
     })()
 
-    const source = `${header}\n${kind === 'alias' ? 'const { style } = theme;' : ''}\n${Array.from(
+    const source = `${header}\n${kind === 'alias' ? 'const { style } = themeConfig;' : ''}\n${Array.from(
       { length: count },
       (_, index) =>
-        `export const card${index} = ${kind === 'theme' || kind === 'tokens' ? 'theme.style' : 'style'}({ color: ${color}, padding: '${index}px' });`,
+        `export const card${index} = ${kind === 'theme' || kind === 'tokens' ? 'themeConfig.style' : 'style'}({ color: ${color}, padding: '${index}px' });`,
     ).join('\n')}`
 
     const name = (() => {

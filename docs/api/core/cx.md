@@ -55,6 +55,24 @@ Repeated applications replace their private slots and variant attributes togethe
 
 HTML compositions retain canonical inputs in a nonenumerable property on generated applications used by composition and exported HTML callables. The merged result serializes once, without parsing style strings. Normal HTML applications keep their existing representation; renderer spreads and HTML serialization receive only ordinary attributes.
 
+## Variable Scopes
+
+Pass `vars()` alongside applied styles to place a variable scope on the same element. Scope classes and optional `colorScheme` props are preserved, including conditional selections. Scope calls retain their normal runtime validation.
+
+```tsx
+import { Config, cx } from 'zyzz'
+
+const { style, vars } = Config.create({
+  vars: { color: { brand: '#06c' } },
+  mappings: false,
+})
+const root = style({ color: 'color.brand' })
+
+const page = <html {...cx(vars({ colorScheme: 'dark' }), root())} />
+```
+
+Scopes use the normal CSS cascade; argument order does not select a winning scope when multiple scopes define the same variables.
+
 ## Props Bindings
 
 ```ts

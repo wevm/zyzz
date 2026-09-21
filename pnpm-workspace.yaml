@@ -9,6 +9,10 @@ allowBuilds:
   workerd: true
 
 catalog:
+  '@iconify-json/simple-icons': '^1.2.97'
+  '@svgr/core': '^8.1.0'
+  '@svgr/plugin-jsx': '^8.1.0'
+  'unplugin-icons': '^24.0.0'
   '@ark/attest': '0.56.3'
   '@babel/core': '^7.29.7'
   '@changesets/cli': '^3.0.3'

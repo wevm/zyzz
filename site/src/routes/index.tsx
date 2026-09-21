@@ -1,6 +1,8 @@
 /** Renders the landing page and introductory styling example. @module */
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import GitHubIcon from '~icons/simple-icons/github'
+import { Button } from '../components/Button.js'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -147,12 +149,13 @@ function Index() {
             CSS. Keep your styles close to your code.
           </p>
           <div {...styles.actions()}>
-            <a href={docsUrl} {...styles.primaryLink()}>
+            <Button href={docsUrl}>
               Read the docs <span aria-hidden="true">↗</span>
-            </a>
-            <a href="https://github.com/wevm/zyzz" {...styles.secondaryLink()}>
-              GitHub <span aria-hidden="true">↗</span>
-            </a>
+            </Button>
+            <Button href="https://github.com/wevm/zyzz" variant="secondary">
+              <GitHubIcon aria-hidden="true" width="20" height="20" />
+              GitHub
+            </Button>
           </div>
           <div {...styles.install()}>
             <div
@@ -179,7 +182,7 @@ function Index() {
             </div>
             <div {...styles.commandRow()}>
               <code {...styles.command()}>{installCommands[manager]}</code>
-              <button
+              <Button
                 aria-label="Copy install command"
                 onClick={async () => {
                   try {
@@ -192,7 +195,8 @@ function Index() {
                   }
                 }}
                 type="button"
-                {...styles.copy()}
+                variant="ghost"
+                size="icon"
               >
                 <svg
                   aria-hidden="true"
@@ -216,7 +220,7 @@ function Index() {
                     strokeWidth="1.5"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
           <p aria-live="polite" {...styles.copyStatus()}>
@@ -278,18 +282,6 @@ namespace styles {
     gap: '12px',
     justifyContent: 'space-between',
     padding: '20px 22px',
-  })
-  export const copy = style({
-    alignItems: 'center',
-    borderRadius: '4px',
-    color: '#999',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'center',
-    minHeight: '32px',
-    minWidth: '32px',
-    ':hover': { color: '#fff' },
-    ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '3px' },
   })
   export const copyStatus = style({
     typography: 'copy.13',
@@ -411,33 +403,5 @@ namespace styles {
     backgroundColor: '#121212',
     color: '#fafafa',
     minHeight: '100svh',
-  })
-  export const primaryLink = style({
-    typography: 'button.16',
-    alignItems: 'center',
-    backgroundColor: '#fafafa',
-    border: '1px solid #fafafa',
-    borderRadius: '7px',
-    color: '#111',
-    display: 'inline-flex',
-    gap: '24px',
-    padding: '15px 22px',
-    textDecoration: 'none',
-    ':hover': { backgroundColor: '#ddd' },
-    ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '4px' },
-  })
-  export const secondaryLink = style({
-    typography: 'button.16',
-    alignItems: 'center',
-    backgroundColor: '#191919',
-    border: '1px solid #303030',
-    borderRadius: '7px',
-    color: '#eee',
-    display: 'inline-flex',
-    gap: '24px',
-    padding: '15px 22px',
-    textDecoration: 'none',
-    ':hover': { backgroundColor: '#252525' },
-    ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '4px' },
   })
 }

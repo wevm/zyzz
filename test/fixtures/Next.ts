@@ -46,6 +46,10 @@ export async function verify(options: verify.Options) {
         '--package-lock=false',
         tarball.filename,
         'next@16.3.5',
+        '@next/mdx@16.3.5',
+        '@mdx-js/loader@3.1.1',
+        '@mdx-js/react@3.1.1',
+        '@types/mdx@2.0.14',
         'react@19.2.4',
         'react-dom@19.2.4',
         'typescript@7.0.2',
@@ -78,12 +82,16 @@ export async function verify(options: verify.Options) {
       'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {style} from '@config';import {variant,packedTheme} from './variants';namespace styles{export const button=style((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><div className={packedTheme().className}><div id="packed" {...variant(active)}>Packed</div></div><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button></>}`,
       'app/variants.ts': `import {cx} from 'zyzz';import {controls} from '@acme/variants';import '@acme/variants/style.css';export {vars as packedTheme} from '@acme/variants';export function variant(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),controls.override())}`,
       'app/config.ts': config,
+      'app/content.mdx': `import Content from './mdx-content'\n\n<Content>MDX</Content>\n`,
+      'app/mdx-content.tsx': `import {style} from '@config';const content=style({color:'brand'});export default function Content({children}:{children:React.ReactNode}){return <p id="mdx" {...content()}>{children}</p>}`,
       'app/layout.tsx': `import 'next/root-params';import {vars} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={vars().className}><body>{children}</body></html>}`,
       'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
       'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
-      'app/page.tsx': `import Navigation from './navigation';import {style} from '@config';import Client from './client';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
+      'app/page.tsx': `import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import Client from './client';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
       'app/stream/page.tsx': `import {Suspense} from 'react';import {style} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=style({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
-      'next.config.ts': `import {zyzz} from 'zyzz/next';import * as Path from 'node:path';export default zyzz(async()=>({productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
+      'next.config.ts': `import createMDX from '@next/mdx';import {zyzz} from 'zyzz/next';import * as Path from 'node:path';const withMDX=createMDX({});export default zyzz(async()=>withMDX({pageExtensions:['ts','tsx','mdx'],productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
+      'mdx-components.tsx': `export function useMDXComponents(){return {}}`,
+      'mdx.d.ts': `declare module '*.mdx' {const Content: import('react').ComponentType;export default Content}`,
       'tsconfig.json': JSON.stringify({
         compilerOptions: {
           exactOptionalPropertyTypes: true,
@@ -238,6 +246,11 @@ export async function verify(options: verify.Options) {
     ).toMatchInlineSnapshot('true')
     await page.unroute('**/*.js')
     expect(response?.status()).toMatchInlineSnapshot('200')
+    expect(
+      await page
+        .locator('#mdx')
+        .evaluate((node) => getComputedStyle(node).color),
+    ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
     await Fs.mkdir('test-results', { recursive: true })
     await Fs.writeFile(
       `test-results/next-${bundler}-styles.json`,
@@ -425,6 +438,23 @@ export async function verify(options: verify.Options) {
 
     const development = await start('dev')
     await page.goto(development.url)
+    await Fs.writeFile(
+      Path.join(app, 'app/content.mdx'),
+      files['app/content.mdx'].replace('>MDX<', '>Updated MDX<'),
+    )
+    await page.waitForFunction(
+      () => document.querySelector('#mdx')?.textContent === 'Updated MDX',
+      undefined,
+      { timeout: 30_000 },
+    )
+    expect(await page.locator('#mdx').textContent()).toMatchInlineSnapshot(
+      '"Updated MDX"',
+    )
+    expect(
+      await page
+        .locator('#mdx')
+        .evaluate((node) => getComputedStyle(node).color),
+    ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
     await page.locator('button[data-ready=true]').click()
     await page.waitForFunction(
       () => {

@@ -9,6 +9,73 @@ import { Config, Style, Vars } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
 describe('define', () => {
+  test('resolves breakpoint aliases in responsive variable fallbacks', async () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Config, Vars} from 'zyzz';
+          const tokens = Vars.define({
+            breakpoints: {tablet: '768px'},
+            dimension: {space: {default: '16px', '@media >=tablet': '32px'}},
+          }, (vars) => ({dimension: {derived: vars.dimension.space}}));
+          export const {style, vars} = Config.create({vars: tokens, mappings: false});
+          export const card = style({padding: 'dimension.derived'});`,
+      },
+    })
+    const css = (result.sharedCss ?? '') + result.modules['app.ts']!.css
+    expect(css.includes('@media >=tablet')).toMatchInlineSnapshot('false')
+    expect(css.includes('@media (width >= 768px)')).toMatchInlineSnapshot(
+      'true',
+    )
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': result.modules['app.ts']!.code },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 767, height: 600 },
+      })
+      await page.setContent(
+        `<style>${css}</style><div id="fallback" class="${fixture.card().className}"></div><div class="${fixture.vars().className}"><div id="scoped" class="${fixture.card().className}"></div></div>`,
+      )
+      expect(
+        await page
+          .locator('#fallback, #scoped')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).padding),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "16px",
+          "16px",
+        ]
+      `)
+      await page.setViewportSize({ width: 768, height: 600 })
+      expect(
+        await page
+          .locator('#fallback, #scoped')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).padding),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "32px",
+          "32px",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+    expect(() =>
+      Vars.define({
+        spacing: { page: { default: '16px', '@media >=missing': '32px' } },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","page","@media >=missing"]: Unknown query threshold.]`,
+    )
+  })
+
   test('merges derived vars and follows palette overrides on native', () => {
     const base = Vars.define(
       { color: { palette: { ink: '#123456' } }, spacing: { small: '4px' } },

@@ -85,7 +85,7 @@ export function build(
     ) {
       if (!path.length)
         throw new Vars.InvalidError(path, 'Expected a variable record.')
-      const value = read(input, path)
+      const value = read(input, path, queryData)
       const name = path.join('.')
       if (base && !Object.hasOwn(base, name))
         throw new Vars.InvalidError(
@@ -239,6 +239,7 @@ function record(input: unknown, path: string[]) {
 function read(
   input: unknown,
   path: string[],
+  queries: Query.Metadata | undefined,
   active = new Set<object>(),
 ): Token.Value {
   if (Token.is(input)) return input
@@ -261,11 +262,21 @@ function read(
       entries.map(([key, value]) => {
         let condition = key
         try {
-          if (key !== 'default') condition = Condition.normalize(key)
+          if (key !== 'default')
+            condition = Condition.normalize(
+              Query.resolve(
+                key,
+                queries ?? {
+                  breakpoints: {},
+                  containers: {},
+                  containerNames: [],
+                },
+              ),
+            )
         } catch (error) {
           throw new Vars.InvalidError([...path, key], (error as Error).message)
         }
-        return [condition, read(value, [...path, key], next)]
+        return [condition, read(value, [...path, key], queries, next)]
       }),
     ) as Token.Conditions
     const expected = domain(result.default)
@@ -281,8 +292,8 @@ function read(
     Object.hasOwn(fields, 'light') &&
     Object.hasOwn(fields, 'dark')
   ) {
-    const light = read(fields.light, [...path, 'light'], next)
-    const dark = read(fields.dark, [...path, 'dark'], next)
+    const light = read(fields.light, [...path, 'light'], queries, next)
+    const dark = read(fields.dark, [...path, 'dark'], queries, next)
     if (domain(light) !== 'color' || domain(dark) !== 'color')
       throw new Vars.InvalidError(path, 'Color schemes require colors.')
     return Object.freeze({ light, dark })

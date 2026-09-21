@@ -5,6 +5,7 @@ import { Vars } from 'zyzz'
  */
 import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
 import * as Fixture from '../../test/fixtures/ThemeGraph.js'
+import * as Packed from '../../test/fixtures/Packed.js'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Library from '../../test/fixtures/VariantLibrary.js'
 import * as Trace from '@jridgewell/trace-mapping'
@@ -25,6 +26,56 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('preserves shared style ownership across successive compositions', async () => {
+    const result = Graph.compile({
+      modules: {
+        'shared.ts': `import {style} from 'zyzz'; export const paragraph = style({margin: 0});`,
+        'first.ts': `import {cx,style} from 'zyzz'; import {paragraph} from './shared.js'; const detail = style({marginBlockStart: '24px'}); export const first = cx(paragraph(), detail());`,
+        'second.ts': `import {cx,style} from 'zyzz'; import {paragraph} from './shared.js'; const detail = style({marginBlockStart: '72px'}); export const second = cx(paragraph(), detail());`,
+        'entry.ts': `export {first} from './first.js'; export {second} from './second.js';`,
+      },
+      imports: {
+        'shared.ts': { zyzz: null },
+        'first.ts': { zyzz: null, './shared.js': 'shared.ts' },
+        'second.ts': { zyzz: null, './shared.js': 'shared.ts' },
+        'entry.ts': { './first.js': 'first.ts', './second.js': 'second.ts' },
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'entry.ts',
+      modules: Object.fromEntries(
+        Object.entries(result.modules).map(([name, module]) => [
+          name,
+          module.code,
+        ]),
+      ),
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${result.sharedCss ?? ''}${Object.values(result.modules)
+          .map((module) => module.css)
+          .join(
+            '',
+          )}</style><p id="first" class="${fixture.first.className}"></p><p id="second" class="${fixture.second.className}"></p>`,
+      )
+      expect(
+        await page
+          .locator('#first')
+          .evaluate((node) => getComputedStyle(node).marginTop),
+      ).toBe('24px')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).marginTop),
+      ).toBe('72px')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('releases native parser trees while retaining lazy source maps', async () => {
     const directory = await Fs.mkdtemp(
       Path.resolve('.fixture-native-retention-'),

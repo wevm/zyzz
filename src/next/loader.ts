@@ -90,10 +90,11 @@ async function compile(context: Context, source: string) {
 
       const specifier = node.source.value
       links[specifier] = null
+      // Next owns this virtual module, which has no physical stylesheet contract.
+      if (specifier === 'next/root-params') continue
       if (
         specifier === 'zyzz' ||
-        (specifier.startsWith('zyzz/') &&
-          specifier !== 'zyzz/default') ||
+        (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default') ||
         specifier.startsWith('node:')
       )
         continue

@@ -91,6 +91,16 @@ Type: `boolean`. Defaults to `true`.
 
 Rewrite static authoring calls into compiled props. `false` preserves authoring calls while generating CSS and requires the compiler's explicit-identity contract.
 
+### reset
+
+Type: `boolean`. Defaults to `false`.
+
+Include the packaged CSS reset in `zyzz.css`, with its layer ordered before authored layers. Supported by the esbuild, Rollup, Webpack, and Vite factories.
+
+```ts
+zyzz.esbuild({ reset: true })
+```
+
 ## Rebuilds and errors
 
 Each build scans the source root again. Imported themes, source modules, local assets, and discovered directories are watched. Edits, additions, and removals replace the aggregate stylesheet. Portable adapters rebuild output files; development servers own browser reload behavior.

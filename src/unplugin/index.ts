@@ -3,6 +3,7 @@ import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Reset from '../node/Reset.js'
 import * as Parser from 'oxc-parser'
 import { createUnplugin } from 'unplugin'
 import type { UnpluginBuildContext } from 'unplugin'
@@ -16,6 +17,8 @@ import * as Vite from '../vite/index.js'
 export type Options = {
   /** Rewrite authoring calls. Defaults to true. */
   readonly compiler?: boolean | undefined
+  /** Include the CSS reset. Defaults to false. */
+  readonly reset?: boolean | undefined
   /** Source directory scanned for modules and global contributions. Defaults to the working directory. */
   readonly root?: string | undefined
 }
@@ -280,6 +283,7 @@ const portable = createUnplugin<Options | undefined, false>(
 
           const result = compiler.compile({
             compiler: options.compiler,
+            reset: options.reset ? Reset.read() : undefined,
             contracts,
             imports,
             modules,

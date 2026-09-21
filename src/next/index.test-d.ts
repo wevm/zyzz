@@ -8,14 +8,19 @@ import { zyzz } from 'zyzz/next'
 
 describe('zyzz', () => {
   test('preserves synchronous asynchronous and phase-valued configurations', () => {
-    expectTypeOf(zyzz({ reactStrictMode: true })).toEqualTypeOf<NextConfig>()
     expectTypeOf(
-      zyzz(Promise.resolve({ reactStrictMode: true })),
+      zyzz({ reactStrictMode: true }, { reset: true }),
+    ).toEqualTypeOf<NextConfig>()
+    expectTypeOf(
+      zyzz(Promise.resolve({ reactStrictMode: true }), { reset: true }),
     ).toEqualTypeOf<Promise<NextConfig>>()
-    const config = zyzz(async (phase, { defaultConfig }) => ({
-      ...defaultConfig,
-      env: { phase },
-    }))
+    const config = zyzz(
+      async (phase, { defaultConfig }) => ({
+        ...defaultConfig,
+        env: { phase },
+      }),
+      { reset: true },
+    )
     expectTypeOf(config).toEqualTypeOf<zyzz.Factory>()
   })
 

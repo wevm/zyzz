@@ -36,6 +36,8 @@ export type WebOptions = {
   readonly cssOutput?: Transform.compile.Options['cssOutput']
   /** Portable identity. Defaults to the filename relative to Babel's root. */
   readonly moduleId?: string | undefined
+  /** Import the CSS reset once per transformed module. Defaults to false. */
+  readonly reset?: boolean | undefined
   /** Selects rewritten JavaScript and extracted CSS. */
   readonly target: 'web'
 }
@@ -326,7 +328,27 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
     visitor:
       options.target !== 'web' && options.colorScheme === undefined
         ? NativeJsx.visitor(api, callables)
-        : {},
+        : {
+            Program(path) {
+              if (options.target !== 'web' || !options.reset) return
+              if (
+                path.node.body.some(
+                  (node) =>
+                    node.type === 'ImportDeclaration' &&
+                    node.source.value === 'zyzz/reset.css',
+                )
+              )
+                return
+
+              path.unshiftContainer(
+                'body',
+                api.types.importDeclaration(
+                  [],
+                  api.types.stringLiteral('zyzz/reset.css'),
+                ),
+              )
+            },
+          },
   }
   return plugin
 }

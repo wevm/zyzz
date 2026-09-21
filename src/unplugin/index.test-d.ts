@@ -8,10 +8,14 @@ import { zyzz } from 'zyzz/unplugin'
 
 describe('zyzz', () => {
   test('returns native bundler plugins', () => {
-    expectTypeOf(zyzz.esbuild({ root: 'src' })).toEqualTypeOf<EsbuildPlugin>()
-    expectTypeOf(zyzz.rollup()).toEqualTypeOf<RollupPlugin>()
-    expectTypeOf(zyzz.vite()).toEqualTypeOf<VitePlugin>()
-    expectTypeOf(zyzz.webpack()).toEqualTypeOf<WebpackPluginInstance>()
+    expectTypeOf(
+      zyzz.esbuild({ root: 'src', reset: true }),
+    ).toEqualTypeOf<EsbuildPlugin>()
+    expectTypeOf(zyzz.rollup({ reset: true })).toEqualTypeOf<RollupPlugin>()
+    expectTypeOf(zyzz.vite({ reset: true })).toEqualTypeOf<VitePlugin>()
+    expectTypeOf(
+      zyzz.webpack({ reset: true }),
+    ).toEqualTypeOf<WebpackPluginInstance>()
 
     // @ts-expect-error Vite supplies its own project root.
     zyzz.vite({ root: 'src' })

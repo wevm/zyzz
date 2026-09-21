@@ -50,6 +50,7 @@ async function render(root: string) {
       element.className = app.props.className
       const computed = getComputedStyle(element)
       return {
+        boxSizing: computed.boxSizing,
         color: computed.color,
         margin: getComputedStyle(document.body).margin,
         padding: computed.padding,
@@ -63,100 +64,105 @@ async function render(root: string) {
 const runtime = Path.resolve('dist/runtime/index.js')
 
 describe('zyzz', () => {
-  for (const bundler of ['esbuild', 'rollup', 'webpack'] as const) {
-    test(`${bundler} emits matching JavaScript, shared CSS, and source maps`, async () => {
-      const root = await fixture()
-      try {
-        if (bundler === 'esbuild') {
-          await Esbuild.build({
-            alias: { 'zyzz/runtime': runtime },
-            bundle: true,
-            entryPoints: [Path.join(root, 'main.js')],
-            format: 'iife',
-            globalName: 'App',
-            outdir: Path.join(root, 'dist'),
-            entryNames: 'app',
-            plugins: [esbuild({ root })],
-          })
-        } else if (bundler === 'rollup') {
-          const build = await Rollup.rollup({
-            input: Path.join(root, 'main.js'),
-            plugins: [
-              rollup({ root }),
-              {
-                name: 'runtime',
-                resolveId(id) {
-                  if (id === 'zyzz/runtime') return runtime
-                },
-              },
-            ],
-          })
-          try {
-            await build.write({
-              dir: Path.join(root, 'dist'),
-              entryFileNames: 'app.js',
+  for (const reset of [false, true])
+    for (const bundler of ['esbuild', 'rollup', 'webpack'] as const) {
+      test(`${bundler} emits matching JavaScript, shared CSS, and source maps (reset: ${reset})`, async () => {
+        const root = await fixture()
+        try {
+          if (bundler === 'esbuild') {
+            await Esbuild.build({
+              alias: { 'zyzz/runtime': runtime },
+              bundle: true,
+              entryPoints: [Path.join(root, 'main.js')],
               format: 'iife',
-              name: 'App',
+              globalName: 'App',
+              outdir: Path.join(root, 'dist'),
+              entryNames: 'app',
+              plugins: [esbuild({ root, reset })],
             })
-          } finally {
-            await build.close()
+          } else if (bundler === 'rollup') {
+            const build = await Rollup.rollup({
+              input: Path.join(root, 'main.js'),
+              plugins: [
+                rollup({ root, reset }),
+                {
+                  name: 'runtime',
+                  resolveId(id) {
+                    if (id === 'zyzz/runtime') return runtime
+                  },
+                },
+              ],
+            })
+            try {
+              await build.write({
+                dir: Path.join(root, 'dist'),
+                entryFileNames: 'app.js',
+                format: 'iife',
+                name: 'App',
+              })
+            } finally {
+              await build.close()
+            }
+          } else {
+            const compiler = Webpack({
+              context: root,
+              entry: './main.js',
+              mode: 'development',
+              output: {
+                path: Path.join(root, 'dist'),
+                filename: 'app.js',
+                library: { name: 'App', type: 'var' },
+              },
+              plugins: [webpack({ root, reset })],
+              resolve: { alias: { 'zyzz/runtime': runtime } },
+            })
+            try {
+              await new Promise<void>((resolve, reject) =>
+                compiler.run((error, stats) =>
+                  error || stats?.hasErrors()
+                    ? reject(error ?? new Error(stats?.toString('errors-only')))
+                    : resolve(),
+                ),
+              )
+            } finally {
+              await new Promise<void>((resolve, reject) =>
+                compiler.close((error) => (error ? reject(error) : resolve())),
+              )
+            }
           }
-        } else {
-          const compiler = Webpack({
-            context: root,
-            entry: './main.js',
-            mode: 'development',
-            output: {
-              path: Path.join(root, 'dist'),
-              filename: 'app.js',
-              library: { name: 'App', type: 'var' },
-            },
-            plugins: [webpack({ root })],
-            resolve: { alias: { 'zyzz/runtime': runtime } },
-          })
-          try {
-            await new Promise<void>((resolve, reject) =>
-              compiler.run((error, stats) =>
-                error || stats?.hasErrors()
-                  ? reject(error ?? new Error(stats?.toString('errors-only')))
-                  : resolve(),
-              ),
-            )
-          } finally {
-            await new Promise<void>((resolve, reject) =>
-              compiler.close((error) => (error ? reject(error) : resolve())),
-            )
-          }
-        }
 
-        expect(await render(root)).toMatchInlineSnapshot(`
+          const rendered = await render(root)
+          const { boxSizing, ...styles } = rendered
+          if (reset) expect(boxSizing).toMatchInlineSnapshot('"border-box"')
+          else expect(boxSizing).toMatchInlineSnapshot('"content-box"')
+          expect(styles).toMatchInlineSnapshot(`
           {
             "color": "rgb(0, 102, 204)",
             "margin": "0px",
             "padding": "8px",
           }
         `)
-        const map = JSON.parse(
-          await Fs.readFile(Path.join(root, 'dist/zyzz.css.map'), 'utf8'),
-        ) as { sources: string[]; sourcesContent: string[] }
-        expect(
-          map.sources.some((file) => file.endsWith('/main.js')),
-        ).toMatchInlineSnapshot('true')
-        expect(
-          map.sourcesContent.some((source) =>
-            source.includes("padding: '8px'"),
-          ),
-        ).toMatchInlineSnapshot('true')
-        expect(
-          (await Fs.readFile(Path.join(root, 'dist/app.js'), 'utf8')).includes(
-            'Theme.define',
-          ),
-        ).toMatchInlineSnapshot('false')
-      } finally {
-        await Fs.rm(root, { force: true, recursive: true })
-      }
-    }, 30000)
-  }
+          const map = JSON.parse(
+            await Fs.readFile(Path.join(root, 'dist/zyzz.css.map'), 'utf8'),
+          ) as { sources: string[]; sourcesContent: string[] }
+          expect(
+            map.sources.some((file) => file.endsWith('/main.js')),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            map.sourcesContent.some((source) =>
+              source.includes("padding: '8px'"),
+            ),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            (
+              await Fs.readFile(Path.join(root, 'dist/app.js'), 'utf8')
+            ).includes('Theme.define'),
+          ).toMatchInlineSnapshot('false')
+        } finally {
+          await Fs.rm(root, { force: true, recursive: true })
+        }
+      }, 30000)
+    }
 
   test('esbuild recompiles imported themes and removes deleted global contributions', async () => {
     const root = await fixture()
@@ -181,6 +187,7 @@ describe('zyzz', () => {
       await context.rebuild()
       expect(await render(root)).toMatchInlineSnapshot(`
         {
+          "boxSizing": "content-box",
           "color": "rgb(255, 0, 0)",
           "margin": "8px",
           "padding": "8px",
@@ -269,6 +276,7 @@ describe('zyzz', () => {
       )
       expect(await render(root)).toMatchInlineSnapshot(`
         {
+          "boxSizing": "content-box",
           "color": "rgb(255, 0, 0)",
           "margin": "0px",
           "padding": "8px",
@@ -388,6 +396,7 @@ describe('zyzz', () => {
       })
       expect(await render(root)).toMatchInlineSnapshot(`
         {
+          "boxSizing": "content-box",
           "color": "rgb(0, 102, 204)",
           "margin": "8px",
           "padding": "8px",
@@ -462,6 +471,7 @@ describe('zyzz', () => {
       })
       expect(await render(root)).toMatchInlineSnapshot(`
         {
+          "boxSizing": "content-box",
           "color": "rgb(0, 102, 204)",
           "margin": "0px",
           "padding": "8px",

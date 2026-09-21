@@ -90,6 +90,16 @@ Graph.compile({ modules: { 'app/card.ts': source } })
 
 Compile source and packed static callables into native style props. `platform`, `vars`, `set`, `fonts`, and `units` follow [native source compilation](../Native.md). Native output contains module code, maps, contracts, and dependencies, with empty CSS and class metadata. Source rewriting is required.
 
+### options.reset
+
+Type: `string | undefined`. Defaults to `undefined`.
+
+Reset stylesheet contents supplied by a web adapter. The compiler includes these contents in shared CSS, preserves source content in its map, and orders the `reset` layer before authored layers. File access remains the adapter's responsibility.
+
+```ts
+Graph.compile({ modules, reset: resetCss })
+```
+
 ## Returns
 
 ### contracts

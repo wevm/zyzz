@@ -21,7 +21,12 @@ export const Route = createRootRoute({
         name: 'viewport',
       },
       {
-        title: 'Zyzz',
+        title: 'Zyzz · Style with TypeScript',
+      },
+      {
+        content:
+          'Type-safe styles, variables, and themes. Compile to static CSS with Zyzz.',
+        name: 'description',
       },
     ],
   }),

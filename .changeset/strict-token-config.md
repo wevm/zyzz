@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added opt-in strict token validation and explicit custom CSS values.

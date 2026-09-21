@@ -250,12 +250,12 @@ export async function verify(options: verify.Options) {
       await page
         .locator('html')
         .evaluate((node) => getComputedStyle(node).color),
-    ).toBe('rgb(0, 102, 204)')
+    ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
     expect(
       await page
         .locator('html')
         .evaluate((node) => getComputedStyle(node).colorScheme),
-    ).toBe('light')
+    ).toMatchInlineSnapshot('"light"')
     expect(
       await page
         .locator('#mdx')

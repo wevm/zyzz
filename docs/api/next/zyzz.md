@@ -15,7 +15,7 @@ export default zyzz({
 
 ## Signature
 
-`zyzz(nextConfig)`
+`zyzz(nextConfig, options?)`
 
 ## Parameters
 
@@ -28,6 +28,17 @@ Existing application configuration. Options and build hooks/rules are preserved.
 
 ```ts
 zyzz({ reactStrictMode: true })
+```
+
+### options.reset
+
+- Type: `boolean`
+- Default: `false`
+
+Include the packaged CSS reset through Webpack or Turbopack CSS delivery. The `reset` layer precedes authored layers. No explicit stylesheet import is needed.
+
+```ts
+export default zyzz({ reactStrictMode: true }, { reset: true })
 ```
 
 ## Returns

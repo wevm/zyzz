@@ -82,6 +82,51 @@ function message(
 }
 
 describe('zyzz', () => {
+  for (const reset of [undefined, false, true])
+    test(`delivers optional reset in development and production (${reset})`, async () => {
+      const { config, root } = await create({
+        'index.html':
+          '<script type="module" src="/app.ts"></script><h1>Heading</h1><button>Button</button>',
+        'app.ts': `import {global,layers} from 'zyzz/web';layers(['components']);global({'@layer components':{button:{fontSize:'24px'}}});`,
+      })
+      config.plugins = [zyzz({ reset })]
+      const browser = await chromium.launch({ headless: true })
+      let server: Vite.ViteDevServer | Vite.PreviewServer | undefined
+      try {
+        for (const production of [false, true]) {
+          if (production) {
+            await Vite.build(config)
+            server = await Vite.preview({
+              ...config,
+              preview: { host: '127.0.0.1', port: 0 },
+            })
+          } else {
+            server = await Vite.createServer(config)
+            await server.listen()
+          }
+          const page = await browser.newPage()
+          await page.goto(server.resolvedUrls!.local[0]!)
+          await page.waitForFunction(
+            () =>
+              getComputedStyle(document.querySelector('button')!).fontSize ===
+              '24px',
+          )
+          const sizing = await page
+            .locator('h1')
+            .evaluate((node) => getComputedStyle(node).boxSizing)
+          if (reset) expect(sizing).toMatchInlineSnapshot('"border-box"')
+          else expect(sizing).toMatchInlineSnapshot('"content-box"')
+          await page.close()
+          await server.close()
+          server = undefined
+        }
+      } finally {
+        await server?.close()
+        await browser.close()
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    }, 30000)
+
   test('builds a source-free namespace package for web and native consumers', async () => {
     const root = await Fs.mkdtemp(
       Path.join(Os.tmpdir(), 'zyzz-routing-consumer-'),

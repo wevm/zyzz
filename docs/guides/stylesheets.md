@@ -109,6 +109,16 @@ Font URLs retain source ownership. Reachable keyframes emit stable references. F
 
 ### Optional Reset
 
+Enable the reset in a web plugin, such as Vite:
+
+```ts
+zyzz({ reset: true })
+```
+
+Next.js uses `zyzz(nextConfig, { reset: true })`. The esbuild, Rollup, Webpack, and unplugin adapters accept the same option. Babel accepts it with `target: 'web'` and inserts a CSS import for the consuming bundler. The default is `false`.
+
+An explicit import remains supported when plugin injection is disabled:
+
 ```ts
 import 'zyzz/reset.css'
 ```

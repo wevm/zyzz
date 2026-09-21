@@ -53,3 +53,11 @@ Use [`zyzz/metro`](../metro/README.md) with Expo for automatic platform selectio
 A filename is required for authoring modules. Ordinary modules pass through. Unsupported target semantics fail during compilation. Web and fixed-context native compilation retain the literal, per-module boundary. Runtime native compilation accepts a closed `modules` graph and optional host-resolved `imports`; Metro supplies these automatically for local imported themes and helpers.
 
 Public types include `Options`, its `WebOptions` and `NativeOptions` branches, and `WebMetadata`. Babel's metadata declaration is extended with optional `zyzz` stylesheet output.
+
+## CSS reset
+
+For web builds, `reset: true` inserts `import 'zyzz/reset.css'` unless the module already imports it. The consuming bundler must support CSS imports. The default is `false`.
+
+```ts
+plugins: [[zyzz, { target: 'web', reset: true }]]
+```

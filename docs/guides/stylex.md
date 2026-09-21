@@ -124,7 +124,7 @@ This snippet shows only the Zyzz entry. Retain the framework plugin and StyleX i
 
 ### Preserve Existing CSS
 
-Keep application stylesheets, fonts, resets, and third-party CSS. Zyzz's reset is optional and requires an explicit `import 'zyzz/reset.css'`. Adding it during migration can change elements that were previously styled only by browser defaults or application CSS.
+Keep application stylesheets, fonts, resets, and third-party CSS. Zyzz's reset is optional and can be enabled with the plugin's `reset: true` option or `import 'zyzz/reset.css'`. Adding it during migration can change elements that were previously styled only by browser defaults or application CSS.
 
 ### Run Both Libraries
 

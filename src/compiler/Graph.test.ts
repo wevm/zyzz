@@ -3016,6 +3016,71 @@ describe('stylesheets', () => {
       }
     })
 
+    test('injects host reset CSS below component layers in Chromium', async () => {
+      const source = `import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+      const reset = await Fs.readFile(Path.resolve('src/reset.css'), 'utf8')
+      const compiler = Graph.create()
+      const result = compiler.compile({ modules: { 'app.ts': source }, reset })
+      expect(
+        compiler
+          .compile({ modules: { 'app.ts': source } })
+          .sharedCss?.includes('box-sizing'),
+      ).toMatchInlineSnapshot('false')
+      expect(() =>
+        compiler.compile({
+          modules: {
+            'app.ts': `import {layers} from 'zyzz/web';layers(['components','reset']);`,
+          },
+          reset,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:0: Conflicting layer order constraints.]`,
+      )
+      const browser = await chromium.launch({ headless: true })
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${result.sharedCss}</style><button>Button</button><img><h1>Heading</h1><ul><li>Item</li></ul>`,
+        )
+
+        expect(
+          await page
+            .locator('button')
+            .evaluate((node) => getComputedStyle(node).fontSize),
+        ).toMatchInlineSnapshot('"24px"')
+        expect(
+          await page
+            .locator('img')
+            .evaluate((node) => getComputedStyle(node).maxWidth),
+        ).toMatchInlineSnapshot('"none"')
+
+        expect(
+          await page
+            .locator('h1')
+            .evaluate((node) => [
+              getComputedStyle(node).fontSize,
+              getComputedStyle(node).fontWeight,
+              getComputedStyle(node).marginTop,
+            ]),
+        ).toMatchInlineSnapshot(`
+          [
+            "16px",
+            "400",
+            "0px",
+          ]
+        `)
+        expect(
+          await page
+            .locator('ul')
+            .evaluate((node) => getComputedStyle(node).listStyleType),
+        ).toMatchInlineSnapshot('"none"')
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('links default-exported keyframes from packed libraries', () => {
       const library = Graph.compile({
         modules: {

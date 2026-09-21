@@ -89,7 +89,7 @@ export async function verify(options: verify.Options) {
       'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
       'app/page.tsx': `import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import Client from './client';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
       'app/stream/page.tsx': `import {Suspense} from 'react';import {style} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=style({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
-      'next.config.ts': `import createMDX from '@next/mdx';import {zyzz} from 'zyzz/next';import * as Path from 'node:path';const withMDX=createMDX({});export default zyzz(async()=>withMDX({pageExtensions:['ts','tsx','mdx'],productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
+      'next.config.ts': `import createMDX from '@next/mdx';import {zyzz} from 'zyzz/next';import * as Path from 'node:path';const withMDX=createMDX({});export default zyzz(async()=>withMDX({pageExtensions:['ts','tsx','mdx'],productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}), {reset:true});`,
       'mdx-components.tsx': `export function useMDXComponents(){return {}}`,
       'mdx.d.ts': `declare module '*.mdx' {const Content: import('react').ComponentType;export default Content}`,
       'tsconfig.json': JSON.stringify({
@@ -279,6 +279,11 @@ export async function verify(options: verify.Options) {
     expect(
       (await response!.text()).includes('class="z-'),
     ).toMatchInlineSnapshot('true')
+    expect(
+      await page
+        .locator('body')
+        .evaluate((node) => getComputedStyle(node).margin),
+    ).toMatchInlineSnapshot('"0px"')
     await page.waitForFunction(
       () => {
         const element = document.querySelector('h1')

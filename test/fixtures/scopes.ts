@@ -1,7 +1,7 @@
 /** Supplies equivalent variable scope applications for correctness and benchmarks. @module */
 
 /** Creates a configured style with manual or compiled scope composition. */
-export function source(output: 'html' | 'react', composition: 'manual' | 'cx') {
+export function create(output: 'html' | 'react', composition: 'manual' | 'cx') {
   const key = output === 'html' ? 'class' : 'className'
   const application =
     composition === 'cx'

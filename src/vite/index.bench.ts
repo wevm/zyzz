@@ -37,7 +37,7 @@ for (const count of [10, 100]) {
           await Fs.writeFile(
             Path.join(root, 'main.ts'),
             [
-              `import { mint } from './alternate'; document.body.className = mint.className;`,
+              `import { vars } from './config'; document.body.className = vars({set:'mint'}).className;`,
               ...Array.from(
                 { length: count },
                 (_, index) =>

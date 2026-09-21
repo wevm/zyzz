@@ -20,7 +20,7 @@ for (const output of ['react', 'html'] as const) {
   for (const composition of ['manual', 'cx'] as const) {
     const options = {
       moduleId: 'scope.ts',
-      source: Scopes.source(output, composition),
+      source: Scopes.create(output, composition),
     }
     const compiled = Transform.compile(options)
     const bundled = await Esbuild.build({

@@ -54,10 +54,16 @@ jobs:
       - name: Benchmark baseline on this runner
         if: github.event_name != 'push'
         id: baseline
+        env:
+          BENCH_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          # Use the same migrated fixtures with both compiler revisions.
+          git fetch origin "$BENCH_HEAD_SHA"
+          git restore --source=FETCH_HEAD -- src/compiler/Transform.bench.ts src/compiler/Transform.queries.bench.ts src/vite/index.bench.ts
           if test -f bench/Runtime.bench.ts; then pnpm exec playwright install --with-deps chromium; fi
           mkdir -p bench/results
           git rev-parse HEAD > bench/results/commit.txt
+          git diff -- src/compiler/Transform.bench.ts src/compiler/Transform.queries.bench.ts src/vite/index.bench.ts > bench/results/fixtures.patch
           sha256sum pnpm-lock.yaml > bench/results/lockfile.txt
           lscpu > bench/results/cpu.txt
           free -b > bench/results/memory.txt

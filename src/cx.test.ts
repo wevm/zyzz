@@ -186,7 +186,7 @@ describe('cx', () => {
         for (const composition of ['manual', 'cx'] as const) {
           const compiled = Transform.compile({
             moduleId: 'scope.ts',
-            source: Scopes.source(output, composition),
+            source: Scopes.create(output, composition),
           })
           const code = await Packed.bundle({
             entry: 'scope.ts',

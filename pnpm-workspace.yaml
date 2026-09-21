@@ -2,9 +2,11 @@ packages:
   - '.'
   - bench/native/app
   - examples/*
+  - site
 
 allowBuilds:
   esbuild: true
+  workerd: true
 
 catalog:
   '@ark/attest': '0.56.3'

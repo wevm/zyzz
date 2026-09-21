@@ -62,11 +62,11 @@ namespace styles {
   export const page = style({
     backgroundColor: 'surface',
     color: 'text',
-    minHeight: '100vh',
+    minHeight: '[100vh]',
     padding: 'md',
   })
 
-  export const content = style({ marginInline: 'auto', maxWidth: '48rem' })
+  export const content = style({ marginInline: '[auto]', maxWidth: '[48rem]' })
 
   export const grid = style({
     display: 'grid',

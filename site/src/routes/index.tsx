@@ -1,7 +1,7 @@
 /** Renders the landing page and introductory styling example. @module */
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { style } from 'zyzz/default'
+import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
 export const Route = createFileRoute('/')({

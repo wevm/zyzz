@@ -49,6 +49,7 @@ Read [Thinking in Zyzz](docs/introduction/thinking-in-zyzz.md) for co-location, 
 
 - [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
 - [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Strict Tokens**](#strict-tokens): opt-in token enforcement for consistent styles, with explicit escapes for custom values.
 - [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
 - [**Variants**](#variants): typed component choices, defaults, and compound rules.
 - [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
@@ -259,6 +260,30 @@ namespace styles {
 ```
 
 Use [`Vars.define`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
+
+### Strict Tokens
+
+Set `strict: true` to require tokens for CSS properties covered by your configuration. The same rules apply to styles, variants, and nested declarations. Properties without configured tokens still accept ordinary CSS values.
+
+```ts
+import { Config } from 'zyzz'
+
+const { style } = Config.create({
+  strict: true,
+  vars: {
+    color: { foreground: '#171717' },
+    spacing: { md: '8px' },
+  },
+})
+
+const button = style({
+  color: 'foreground',
+  display: 'inline-flex',
+  padding: 'md',
+})
+```
+
+See [Strict tokens](docs/api/core/Config/create.md#strict-tokens) for property mappings, custom values, and validation behavior.
 
 ### Color Schemes (Light/Dark Mode)
 

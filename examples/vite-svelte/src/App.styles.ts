@@ -30,7 +30,7 @@ export namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: 0,
+      minWidth: '[0]',
       paddingTop: 'md',
     },
   })
@@ -58,11 +58,11 @@ export namespace styles {
   export const page = style({
     backgroundColor: 'surface',
     color: 'text',
-    minHeight: '100vh',
+    minHeight: '[100vh]',
     padding: 'md',
   })
 
-  export const content = style({ marginInline: 'auto', maxWidth: '48rem' })
+  export const content = style({ marginInline: '[auto]', maxWidth: '[48rem]' })
 
   export const grid = style({
     display: 'grid',

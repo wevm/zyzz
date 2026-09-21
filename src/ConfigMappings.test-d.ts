@@ -30,7 +30,7 @@ describe('create', () => {
 
     expectTypeOf(
       themeConfig.style((values: { width: '4px' | '8px' }) => ({
-        px: values.width,
+        px: `[${values.width}]`,
       }))({
         width: '4px',
       }).style,
@@ -87,7 +87,9 @@ describe('create', () => {
 
     configured({ px: 'shared' })
     configured({ mixed: 'shared' })
-    configured((values: { width: '10px' | '20px' }) => ({ px: values.width }))
+    configured((values: { width: '10px' | '20px' }) => ({
+      px: `[${values.width}]`,
+    }))
     // @ts-expect-error every target must accept the token
     configured({ mixed: 'gap' })
     // @ts-expect-error padding rejects negative lengths
@@ -97,7 +99,7 @@ describe('create', () => {
     // @ts-expect-error unknown aliases remain errors
     configured({ paddingX: '4px' })
     // @ts-expect-error dynamic numbers do not represent lengths
-    configured((values: { width: number }) => ({ px: values.width }))
+    configured((values: { width: number }) => ({ px: `[${values.width}]` }))
   })
   test('rejects malformed definitions', () => {
     // @ts-expect-error empty targets

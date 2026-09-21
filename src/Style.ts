@@ -75,7 +75,7 @@ export type Accepted<
                         : DeclarationProperties<tokens>
                     >[key] &
                       Value.Checked<Pick<style, key>, tokens>[key] &
-                      Value.Strict<style[key], tokens, key>
+                      Value.Tokens<style[key], tokens, key>
                   : key extends Condition.Keys<tokens, key>
                     ? [style[key]] extends [undefined]
                       ? never
@@ -597,37 +597,7 @@ export function define(
           continue
         }
 
-        const custom =
-          entry !== null &&
-          typeof entry === 'object' &&
-          Object.hasOwn(entry, 'custom')
-        let raw = entry
-        if (custom) {
-          const fields = entries(entry, [name, authoredProperty])
-          if (fields.length !== 1 || fields[0]?.[0] !== 'custom') {
-            report(
-              'invalid_structure',
-              [name, authoredProperty],
-              'Custom values require exactly one custom data property.',
-            )
-            continue
-          }
-          raw = fields[0][1]
-          if (
-            typeof raw !== 'string' &&
-            typeof raw !== 'number' &&
-            !Binding.is(raw) &&
-            !Token.isExpression(raw)
-          ) {
-            report(
-              'invalid_value',
-              [name, authoredProperty],
-              'Custom values must be CSS strings or numbers.',
-            )
-            continue
-          }
-        }
-        const parsed = Value.parse(raw, key)
+        const parsed = Value.parse(entry, key)
         if (parsed && 'invalid' in parsed) {
           report(
             'invalid_value',
@@ -636,7 +606,8 @@ export function define(
           )
           continue
         }
-        const scalar = parsed ? parsed.value : raw
+        const custom = parsed?.custom
+        const scalar = parsed ? parsed.value : entry
 
         const resolved = (() => {
           if (!theme || custom) return scalar
@@ -677,10 +648,11 @@ export function define(
         }
 
         if (
-          theme?.[Token.definition].contract.strict &&
+          theme &&
           !custom &&
           Token.mapped(theme, key) &&
           !Token.is(resolved) &&
+          !Binding.is(resolved) &&
           !(
             Token.isExpression(resolved) &&
             resolved.parts.every((part) => Token.is(part) || part === '')
@@ -689,7 +661,7 @@ export function define(
           report(
             'invalid_value',
             [name, authoredProperty],
-            'Strict mode requires a configured token or { custom: value }.',
+            'Expected a configured token or a bracketed CSS value.',
           )
           continue
         }

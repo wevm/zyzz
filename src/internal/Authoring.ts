@@ -5,7 +5,6 @@ import * as Identity from './Identity.js'
 import * as Props from '../runtime/Props.js'
 import * as Style from '../Style.js'
 import type * as Theme from './Theme.js'
-import * as Token from './Token.js'
 
 /** Private ownership used by uncompiled composition; never spread onto DOM props. */
 export const metadata = Symbol.for('zyzz.authoring')
@@ -75,7 +74,7 @@ export function create(
   if (!dynamic && !id && Object.keys(input as object).length === 0)
     Identity.requireId(undefined, 'Empty style')
 
-  if (id && !dynamic && options.theme?.[Token.definition].contract.strict)
+  if (id && !dynamic && options.theme)
     Style.define({ style: body(input as Record<string, unknown>) } as never, {
       vars: options.theme,
     })
@@ -96,7 +95,7 @@ export function create(
   const apply = (values?: style.Options & Record<string, unknown>) => {
     let result = props(values as style.Options)
     if (dynamic) {
-      if (options.theme?.[Token.definition].contract.strict)
+      if (options.theme)
         Style.define(
           { style: body(input(values) as Record<string, unknown>) } as never,
           { vars: options.theme },
@@ -135,7 +134,7 @@ export function variants(
   options: Options = {},
 ): unknown {
   const id = Identity.requireId(options.id, 'variants')
-  if (options.theme?.[Token.definition].contract.strict) {
+  if (options.theme) {
     const styles = [
       input.base,
       ...Object.values(
@@ -176,10 +175,7 @@ export function variants(
       const axisIndex = axes.findIndex(([name]) => name === axis)
       const choiceIndex = Object.keys(axes[axisIndex]![1]).indexOf(choice)
       const callback = axes[axisIndex]![1][choice]
-      if (
-        options.theme?.[Token.definition].contract.strict &&
-        typeof callback === 'function'
-      )
+      if (options.theme && typeof callback === 'function')
         Style.define(
           {
             style: body(callback(payload) as Record<string, unknown>),

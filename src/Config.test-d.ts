@@ -8,66 +8,70 @@ import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
-  test('requires configured tokens with explicit custom escapes', () => {
+  test('requires tokens or bracketed CSS when values exist', () => {
     const { style, variants, vars } = PublicConfig.create({
-      strict: true,
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
-      vars: { color: { brand: 'red', red: 'blue' }, spacing: { md: '8px' } },
+      vars: { color: { brand: 'red' }, spacing: { md: '8px' } },
     })
-    style({ color: 'brand', padding: 'md', display: 'flex' })
-    style({ color: vars.color.brand, padding: ['md', { custom: '7px' }] })
-    style({ color: { custom: '#123456' }, px: { custom: '7px' } })
-    style({ ':hover': { color: 'red' }, targets: { web: { padding: 'md' } } })
-    style({ color: 'brand !important' })
-    style((values: { padding: '7px' }) => ({
-      padding: { custom: values.padding },
-    }))
-    // @ts-expect-error Arbitrary callback values require a custom escape.
-    style((values: { padding: '7px' }) => ({ padding: values.padding }))
-    // @ts-expect-error Mapped colors require tokens.
-    style({ color: '#123456' })
-    // @ts-expect-error Literal token collisions still use only configured names.
-    style({ color: 'green' })
-    // @ts-expect-error Every fallback must use tokens or a custom escape.
+    style({
+      padding: 'md',
+      marginTop: '[7px]',
+      color: '[#123456]',
+      width: '[calc(100% - 2rem)]',
+    })
+    style({ color: vars.color.brand, padding: ['md', '[7px]'], px: '[7px]' })
+    style({
+      color: '[red] !important',
+      display: 'flex',
+      ':hover': { padding: '[2px]' },
+    })
+    style((values: { padding: '7px' }) => ({ padding: `[${values.padding}]` }))
+    style({ opacity: '[0.5]' })
+    // @ts-expect-error Brackets unwrap once and do not bypass CSS syntax.
+    style({ padding: '[[7px]]' })
+    // @ts-expect-error Empty escapes are not CSS values.
+    style({ padding: '[]' })
+    // @ts-expect-error Arbitrary mapped values require brackets.
+    style({ padding: '7px' })
+    // @ts-expect-error Every fallback is checked.
     style({ padding: ['md', '7px'] })
-    // @ts-expect-error Nested declarations retain strict mode.
-    style({ ':hover': { color: '#123456' } })
-    // @ts-expect-error Shorthands retain strict mode.
-    style({ px: '7px' })
-    // @ts-expect-error Custom escapes still validate CSS.
-    style({ padding: { custom: 'invalid' } })
-    // @ts-expect-error Custom escapes accept scalar CSS values.
-    style({ padding: { custom: { custom: '7px' } } })
-    // @ts-expect-error Fallbacks remain nonempty.
-    style({ padding: [] })
-    // @ts-expect-error Custom escapes cannot contain extra fields.
-    style({ padding: { custom: '7px', extra: true } })
+    // @ts-expect-error Brackets preserve CSS validation.
+    style({ padding: '[invalid]' })
+    // @ts-expect-error Malformed CSS remains invalid.
+    style({ color: '[#oops]' })
+    // @ts-expect-error The object escape was removed.
+    style({ padding: { custom: '7px' } })
+    // @ts-expect-error Nested styles retain token enforcement.
+    style({ ':hover': { padding: '7px' } })
+    // @ts-expect-error Variants retain token enforcement.
+    variants({ variants: { size: { large: { padding: '7px' } } } })
     variants({
       base: { padding: 'md' },
-      variants: { tone: { brand: { color: 'brand' } } },
+      variants: { size: { large: { padding: '[7px]' } } },
     })
-    // @ts-expect-error Variant choices retain strict mode.
-    variants({ variants: { tone: { brand: { color: '#123456' } } } })
-    // @ts-expect-error Compound variants retain strict mode.
+    // @ts-expect-error Arbitrary callback values require brackets.
+    style((values: { padding: '7px' }) => ({ padding: values.padding }))
+    // @ts-expect-error Shorthands retain token enforcement.
+    style({ px: '7px' })
+    // @ts-expect-error Compound variants retain token enforcement.
     variants({ compoundVariants: [{ when: {}, style: { padding: '7px' } }] })
-    PublicConfig.create({ strict: true }).style({ color: 'red' })
+    // @ts-expect-error Fallbacks remain nonempty.
+    style({ padding: [] })
     PublicConfig.create({
-      strict: false,
-      vars: { color: { brand: 'red' } },
-    }).style({ color: 'blue' })
-    PublicConfig.create({
-      strict: true,
       mappings: { ink: ['color'] },
       vars: { ink: { brand: 'red' } },
     }).style({ color: 'brand', backgroundColor: 'blue' })
     const full = PublicConfig.create({
-      strict: true,
       mappings: false,
       vars: { color: { brand: 'red' } },
     })
     full.style({ color: 'color.brand' })
-    // @ts-expect-error Full paths retain strict mode.
+    // @ts-expect-error Full paths require the complete token name.
     full.style({ color: 'red' })
+    PublicConfig.create().style({ padding: '7px', color: '[red]' })
+    PublicConfig.create({ vars: {} }).style({ padding: '[7px]', color: 'red' })
+    // @ts-expect-error The strict option was removed.
+    PublicConfig.create({ strict: true })
   })
 
   test('accepts defaultLayer with and without variable sets', () => {
@@ -78,7 +82,7 @@ describe('create', () => {
       vars: { color: { brand: 'red' } },
     })
     expectTypeOf(
-      style({ color: 'color.brand', '@layer overrides': { color: 'blue' } })()
+      style({ color: 'color.brand', '@layer overrides': { color: '[blue]' } })()
         .className,
     ).toEqualTypeOf<string>()
     expectTypeOf(

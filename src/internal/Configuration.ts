@@ -157,7 +157,6 @@ export function create(
         'output',
         'shorthands',
         'storageKey',
-        'strict',
         'theme',
         'themes',
       ].includes(key)
@@ -186,9 +185,6 @@ export function create(
     input.cssOutput !== 'grouped'
   )
     throw new InvalidError('cssOutput must be atomic or grouped.')
-
-  if (input.strict !== undefined && typeof input.strict !== 'boolean')
-    throw new InvalidError('strict must be a boolean.')
 
   if (input.theme !== undefined && input.themes !== undefined)
     throw new InvalidError('Use either theme or themes, not both.')
@@ -252,7 +248,6 @@ export function create(
   })()
 
   const contract = Object.freeze({
-    ...(input.strict === true ? { strict: true } : {}),
     ...(variableMode ? { variableSet: true, mappings: variableMappings } : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer as string }
@@ -467,8 +462,6 @@ export declare namespace create {
     readonly layers?: readonly string[] | undefined
     /** localStorage key shared by `script()` and `appearance`; zyzz by default. */
     readonly storageKey?: string | undefined
-    /** Requires tokens for mapped properties. Defaults to false. */
-    readonly strict?: boolean | undefined
   } & (
     | {
         /** Single inline or reusable theme. */ readonly theme: Input
@@ -522,7 +515,7 @@ export declare namespace create {
   } & (options extends { theme: infer input }
     ? {
         /** Isolated single-theme contract. */ readonly theme: Handle<
-          Strict<options> & ExtractTokens<input>,
+          ExtractTokens<input>,
           Mappings<options>,
           options extends { output: infer output extends style.Output }
             ? output
@@ -552,7 +545,7 @@ export declare namespace create {
               : 'react'
           >) & {
             readonly [name in keyof catalog]: Handle<
-              Strict<options> & ExtractTokens<catalog[name]>,
+              ExtractTokens<catalog[name]>,
               Mappings<options>,
               options extends { output: infer output extends style.Output }
                 ? output
@@ -764,18 +757,13 @@ function record(value: unknown): Record<string, unknown> {
   return result
 }
 
-type Strict<options> = options extends { strict: true }
-  ? { readonly [Token.strict]: true }
-  : {}
-
-type Tokens<options> = Strict<options> &
-  (options extends { theme: infer input }
-    ? ExtractTokens<input>
-    : options extends { themes: infer catalog; defaultTheme: infer key }
-      ? key extends keyof catalog
-        ? ExtractTokens<catalog[key]>
-        : never
-      : {})
+type Tokens<options> = options extends { theme: infer input }
+  ? ExtractTokens<input>
+  : options extends { themes: infer catalog; defaultTheme: infer key }
+    ? key extends keyof catalog
+      ? ExtractTokens<catalog[key]>
+      : never
+    : {}
 
 type ValidInput<input> = input extends Theme.Definition
   ? input
@@ -861,8 +849,6 @@ export type VariableOptions = {
   readonly shorthands?: Shorthands.Map | undefined
   /** Preference storage key; zyzz by default. */
   readonly storageKey?: string | undefined
-  /** Requires tokens for mapped properties. Defaults to false. */
-  readonly strict?: boolean | undefined
   /** One inline or reusable set, or a catalog with defaultVars. */
   readonly vars:
     | Vars.Values
@@ -878,11 +864,10 @@ type VariableValues<options extends VariableOptions> = options extends {
     : never
   : Vars.Extract<options['vars']>
 
-type VariableTokens<options extends VariableOptions> = Strict<options> &
-  Vars.Mapped<
-    VariableValues<options>,
-    options extends { mappings: infer mappings } ? mappings : {}
-  >
+type VariableTokens<options extends VariableOptions> = Vars.Mapped<
+  VariableValues<options>,
+  options extends { mappings: infer mappings } ? mappings : {}
+>
 
 type VariableInput<input> = input extends {
   readonly [Token.definition]: Token.Metadata

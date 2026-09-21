@@ -2,12 +2,9 @@
 'zyzz': patch
 ---
 
-Added opt-in strict token validation and explicit custom CSS values.
+Required configured tokens by default and added bracketed strings for arbitrary CSS values.
 
 ```ts
-const { style } = Config.create({
-  strict: true,
-  vars: { spacing: { md: '8px' } },
-})
-style({ padding: 'md', marginTop: { custom: '7px' } })
+const { style } = Config.create({ vars: { spacing: { md: '8px' } } })
+style({ padding: 'md', marginTop: '[7px]' })
 ```

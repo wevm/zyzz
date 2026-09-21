@@ -40,7 +40,7 @@ describe('default', () => {
         size: {
           sm: { padding: 4 },
           custom: (values: { padding: `${number}px` }) => ({
-            padding: values.padding,
+            padding: `[${values.padding}]` as const,
           }),
         },
       },

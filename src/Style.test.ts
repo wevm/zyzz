@@ -177,8 +177,8 @@ describe('define', () => {
 
   test('repeated shorthand tokens remain isolated by property and theme', () => {
     const styles = {
-      first: { color: 'brand', padding: 'brand', width: '1px' },
-      second: { color: 'brand', padding: 'brand', width: '2px' },
+      first: { color: 'brand', padding: 'brand', width: '[1px]' },
+      second: { color: 'brand', padding: 'brand', width: '[2px]' },
     } as const
 
     for (const theme of [
@@ -207,7 +207,7 @@ describe('define', () => {
     }
   })
 
-  test('CSS literals and zero precede colliding token names', () => {
+  test('token names precede colliding CSS literals and zero', () => {
     const theme = Theme.define({
       color: { white: '#000' },
       spacing: { 0: '8px', '1rem': '2rem' },
@@ -225,11 +225,9 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-tiiNj6-0{color:var(--z0,#000);}
-      .z-p-Bic1dz-1{padding:var(--z1,8px);}
-      .z-text-white-I_VjYx-0{color:white;}
-      .z-p-0-I_VjYx-1{padding:0;}
-      .z-w-1rem{width:1rem;}"
+      ".z-text-ILT4D2{color:var(--z0,#000);}
+      .z-p-Fm87Na{padding:var(--z1,8px);}
+      .z-w-Z_n-Q7{width:var(--z2,2rem);}"
     `)
   })
 

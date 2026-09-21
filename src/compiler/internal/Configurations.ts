@@ -28,8 +28,7 @@ export function collect(options: collect.Options): Themes.Link {
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return data(node.expression)
 
-    if (node.type === 'Literal' && typeof node.value === 'boolean')
-      return node.value
+    if (node.type === 'Literal' && node.value === false) return false
 
     if (node.type === 'ArrayExpression')
       return node.elements.map((node) => {
@@ -150,7 +149,6 @@ export function collect(options: collect.Options): Themes.Link {
       : {}),
     [Token.identity]: identity,
     cssOutput: input.cssOutput ?? 'atomic',
-    ...(input.strict === true ? { strict: true } : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer }
       : {}),
@@ -244,7 +242,6 @@ export function collect(options: collect.Options): Themes.Link {
       return {}
     })(),
     ...(input.cssOutput ? { cssOutput: input.cssOutput } : {}),
-    ...(input.strict === true ? { strict: true } : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer }
       : {}),

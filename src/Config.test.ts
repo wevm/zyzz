@@ -15,17 +15,9 @@ import * as Config from './internal/Configuration.js'
 import { Css } from 'zyzz/web'
 
 describe('create', () => {
-  test('enforces strict tokens through source and packed configs', async () => {
-    const config = `import {Config} from 'zyzz';
-export const {style, variants, vars} = Config.create({
-  strict: true,
-  shorthands: {px: ['paddingLeft', 'paddingRight']},
-  vars: {color: {brand: '#123456', red: 'blue'}, spacing: {md: '8px'}},
-});`
+  test('enforces tokens and bracket escapes through source and packed configs', async () => {
+    const config = `import {Config} from 'zyzz'; export const {style,variants,vars}=Config.create({vars:{color:{brand:'#123456',red:'blue'},spacing:{md:'8px'}}});`
     const library = Graph.compile({ modules: { 'config.ts': config } })
-    expect(
-      JSON.parse(library.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`28`)
     for (const packed of [false, true]) {
       function compile(body: string) {
         return Graph.compile({
@@ -38,52 +30,50 @@ export const {style, variants, vars} = Config.create({
           },
           modules: {
             ...(!packed ? { 'config.ts': config } : {}),
-            'app.ts': `import {style, variants, vars} from './config'; ${body}`,
+            'app.ts': `import {style,variants,vars} from './config'; ${body}`,
           },
         })
       }
       const result =
-        compile(`export const card = style({color: 'red', padding: ['md', {custom: '7px'}], display: 'flex', ':hover': {color: {custom: '#123456'}}});
-export const button = variants({base: {px: 'md'}, variants: {tone: {brand: {color: vars.color.brand}}}});`)
+        compile(`export const card=style({color:'red',padding:['md','[7px]'],display:'flex',width:'[calc(100% - 2rem)]',':hover':{color:'[#123456]'}});
+export const button=variants({base:{padding:'md'},variants:{tone:{brand:{color:'[red] !important'}}}});
+export const dynamic=style((values:{padding:'7px'})=>({padding:\`[\${values.padding}]\`}));`)
       expect(
         result.modules['app.ts']!.css.split('\n')
           .filter((line) => line.startsWith('.z-'))
           .join('\n'),
       ).toMatchInlineSnapshot(`
-        ".z-text-qhgO5X-0{color:var(--z-tu8smm21l81sow-style-color_2e_red,blue);}
-        .z-p-rmwvL0-1{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);padding:7px;}
-        .z-display-flex-qpuD0V-2{display:flex;}
-        .z-hover-text-_zDx6T-3{&:hover{color:#123456;}}
-        .z-pl-zjrfBq-0{padding-left:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);}
-        .z-pr-qVmsv1-1{padding-right:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);}
-        .z-text-GsSyIx-2{&:where([data-tone="brand"]){color:var(--z-tu8smm21l81sow-style-color_2e_brand,#123456);}}"
+        ".z-text-I1m4uR-0{color:var(--z-tu8smm21l81sow-style-color_2e_red,blue);}
+        .z-p-Jcl9Q8-1{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);padding:7px;}
+        .z-display-flex-Ngq2-V-2{display:flex;}
+        .z-w-2xz02S-3{width:calc(100% - 2rem);}
+        .z-hover-text-A_aLRM-4{&:hover{color:#123456;}}
+        .z-p-kMvgWE-0{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);}
+        .z-text-Ckldvi-1{&:where([data-tone="brand"]){color:red!important;}}
+        .z-p-PpuJFr-0{padding:var(--z-d1e8a67z1uaws1j-306-70-61-64-64-69-6e-67);}"
       `)
-      const errors = [
-        `style({color: '#123456'})`,
-        `style({padding: ['md', '7px']})`,
-        `style({px: '7px'})`,
-        `style({':hover': {color: 'green'}})`,
-        `style({targets: {web: {color: 'green'}}})`,
-        `variants({variants: {tone: {brand: {color: 'green'}}}})`,
-        `variants({compoundVariants: [{when: {}, style: {padding: '7px'}}]})`,
-      ].map((body) => {
-        try {
-          compile(`export const invalid = ${body}`)
-          return 'accepted'
-        } catch (error) {
-          return (error as Error).message
-        }
-      })
-      expect(errors).toMatchInlineSnapshot(`
+      expect(
         [
-          "app.ts:85: Strict mode requires a configured token or { custom: value }.",
-          "app.ts:87: Strict mode requires a configured token or { custom: value }.",
-          "app.ts:82: Strict mode requires a configured token or { custom: value }.
-        app.ts:82: Strict mode requires a configured token or { custom: value }.",
-          "app.ts:96: Strict mode requires a configured token or { custom: value }.",
-          "app.ts:101: Strict mode requires a configured token or { custom: value }.",
-          "app.ts:114: Strict mode requires a configured token or { custom: value }.",
-          "app.ts:128: Strict mode requires a configured token or { custom: value }.",
+          `style({padding:'7px'})`,
+          `style({padding:['md','7px']})`,
+          `style({':hover':{color:'green'}})`,
+          `variants({variants:{tone:{brand:{color:'green'}}}})`,
+          `style({padding:{custom:'7px'}})`,
+        ].map((body) => {
+          try {
+            compile(`export const invalid=${body}`)
+            return 'accepted'
+          } catch (error) {
+            return (error as Error).message
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        [
+          "app.ts:82: Expected a configured token or a bracketed CSS value.",
+          "app.ts:82: Expected a configured token or a bracketed CSS value.",
+          "app.ts:90: Expected a configured token or a bracketed CSS value.",
+          "app.ts:106: Expected a configured token or a bracketed CSS value.",
+          "app.ts:82: Expected a literal string or number; expressions are not evaluated.",
         ]
       `)
       const bundle = await Packed.bundle({
@@ -98,152 +88,89 @@ export const button = variants({base: {px: 'md'}, variants: {tone: {brand: {colo
       try {
         const page = await browser.newPage()
         await page.setContent(
-          `<style>${result.modules['app.ts']!.css}</style><div id="card">card</div>`,
+          `<style>${result.modules['app.ts']!.css}</style><div id="card">card</div><div id="dynamic">dynamic</div>`,
         )
         await page.addScriptTag({
           type: 'module',
-          content: `${bundle}; document.querySelector('#card').className = Fixture.card().className;`,
+          content: `${bundle};document.querySelector('#card').className=Fixture.card().className;const props=Fixture.dynamic({padding:'7px'});const element=document.querySelector('#dynamic');element.className=props.className;for(const [name,value] of Object.entries(props.style))element.style.setProperty(name,value);`,
         })
         expect(
-          await page.locator('#card').evaluate((element) => {
-            const style = getComputedStyle(element)
-            return {
-              color: style.color,
-              display: style.display,
-              padding: style.padding,
-            }
-          }),
+          await page.locator('#card').evaluate((e) => ({
+            color: getComputedStyle(e).color,
+            padding: getComputedStyle(e).padding,
+          })),
         ).toMatchInlineSnapshot(`
           {
             "color": "rgb(0, 0, 255)",
-            "display": "flex",
             "padding": "7px",
           }
         `)
+        expect(
+          await page
+            .locator('#dynamic')
+            .evaluate((e) => getComputedStyle(e).padding),
+        ).toMatchInlineSnapshot(`"7px"`)
       } finally {
         await browser.close()
       }
     }
   })
 
-  test('retains strict mode in runtime authoring and callback compilation', () => {
-    const config = PublicConfig.create({
-      id: 'strict',
-      strict: true,
+  test('unwraps escapes once while preserving grid lines and quoted brackets', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {style} from 'zyzz'; export const box=style({opacity:'[0.5]',content:'["[label]"]',gridTemplateColumns:'[[start] 1fr [end]]',width:'[7px] !important'});`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-opacity-Bf5AW1{opacity:0.5;}
+      .z-content-asf5XU{content:"[label]";}
+      .z-grid-template-columns-jipVUg{grid-template-columns:[start] 1fr [end];}
+      .z-w-Rh5BCy{width:7px!important;}"
+    `)
+  })
+
+  test('accepts either spelling when configured values are absent', () => {
+    const sources = [
+      `Config.create()`,
+      `Config.create({vars:{}})`,
+      `Config.create({vars:{spacing:{md:'8px'}}})`,
+    ]
+    expect(
+      sources.map(
+        (config) =>
+          Graph.compile({
+            modules: {
+              'app.ts': `import {Config} from 'zyzz';const {style}=${config};export const label=style({color:['red','[blue]']});`,
+            },
+          }).modules['app.ts']!.css,
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        ".z-text-FiU56C{color:red;color:blue;}",
+        ".z-text-FiU56C{color:red;color:blue;}",
+        ".z-text-FiU56C{color:red;color:blue;}",
+      ]
+    `)
+    const { style } = PublicConfig.create({
+      id: 'config',
       vars: { spacing: { md: '8px' } },
     })
     expect(() =>
-      config.style({ padding: '7px' } as never, { id: 'invalid' }),
+      style({ padding: '7px' } as never, { id: 'invalid' }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["style","padding"]: Strict mode requires a configured token or { custom: value }.]`,
+      `[Style.InvalidError: ["style","padding"]: Expected a configured token or a bracketed CSS value.]`,
     )
-    expect(() =>
-      config.variants({ base: { padding: '7px' } } as never, { id: 'invalid' }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["style","padding"]: Strict mode requires a configured token or { custom: value }.]`,
-    )
-    expect(config.style({ padding: { custom: '7px' } }, { id: 'custom' })())
+    expect(style({ padding: '[7px]' }, { id: 'custom' })())
       .toMatchInlineSnapshot(`
       {
         "className": "z-style-id-63-75-73-74-6f-6d",
       }
     `)
-    const result = Graph.compile({
-      modules: {
-        'app.ts': `import {Config} from 'zyzz';
-const {style} = Config.create({strict:true, vars:{spacing:{md:'8px'}}});
-export const box = style((values: {padding: '7px'}) => ({padding: {custom: values.padding}}));`,
-      },
-    })
-    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-p-nWvqgR{padding:var(--z-d1e8a67z1uaws1j-121-70-61-64-64-69-6e-67);}"`,
-    )
     expect(() =>
-      PublicConfig.create({ strict: 'yes' } as never),
+      PublicConfig.create({ strict: true } as never),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Config.InvalidError: strict must be a boolean.]`,
-    )
-  })
-
-  test('honors strict mappings, literal escapes, and opt-out', () => {
-    const sources = [
-      `const {style} = Config.create({strict:true, mappings:{ink:['color']}, vars:{ink:{brand:'red'}}}); export const box=style({color:'brand', backgroundColor:'blue'});`,
-      `const {style} = Config.create({strict:true, mappings:false, vars:{ink:{brand:'red'}}}); export const box=style({color:'ink.brand', padding:'7px'});`,
-      `const {style} = Config.create({strict:true, mappings:{color:[]}, vars:{color:{brand:'red'}}}); export const box=style({color:'blue'});`,
-      `const {style} = Config.create({strict:false, vars:{color:{red:'blue'}}}); export const box=style({color:'red'});`,
-      `const {style} = Config.create({strict:true, vars:{color:{red:'blue'}}}); export const box=style({color:{custom:'red !important'}});`,
-    ]
-    expect(
-      sources.map(
-        (source) =>
-          Graph.compile({
-            modules: { 'app.ts': `import {Config} from 'zyzz'; ${source}` },
-          }).modules['app.ts']!.css,
-      ),
-    ).toMatchInlineSnapshot(`
-      [
-        ".z_theme-1e8a67z1uaws1j-style-theme{--z-t1e8a67z1uaws1j-style-ink_2e_brand:red;}
-      .z-text-eQfErD{color:var(--z-t1e8a67z1uaws1j-style-ink_2e_brand,red);}
-      .z-bg-blue-Jgxd-Q{background-color:blue;}",
-        ".z_theme-1e8a67z1uaws1j-style-theme{--z-t1e8a67z1uaws1j-style-ink_2e_brand:red;}
-      .z-text-eQfErD{color:var(--z-t1e8a67z1uaws1j-style-ink_2e_brand,red);}
-      .z-p-7px-Jgxd-Q{padding:7px;}",
-        ".z-text-blue-Jgxd-Q{color:blue;}",
-        ".z-text-red-Jgxd-Q{color:red;}",
-        ".z-text-To5ZUr{color:red!important;}",
-      ]
-    `)
-    const config = PublicConfig.create({
-      strict: true,
-      id: 'strict',
-      vars: { spacing: { md: '8px' } },
-    })
-    const errors = [
-      { padding: { custom: { custom: '7px' } } },
-      { padding: { custom: '7px', extra: true } },
-      {
-        padding: {
-          get custom() {
-            throw new Error('Accessor executed')
-          },
-        },
-      },
-    ].map((styles) => {
-      try {
-        config.style(styles as never)
-        return 'accepted'
-      } catch (error) {
-        return (error as Error).message
-      }
-    })
-    expect(errors).toMatchInlineSnapshot(`
-      [
-        "["style","padding"]: Custom values must be CSS strings or numbers.",
-        "["style","padding"]: Custom values require exactly one custom data property.",
-        "["style","padding","custom"]: Only enumerable string-keyed data properties are supported; accessors and symbols are not evaluated.
-      ["style","padding"]: Custom values require exactly one custom data property.",
-      ]
-    `)
-  })
-
-  test('rejects inconsistent packed strict configuration metadata', () => {
-    const library = Graph.compile({
-      modules: {
-        'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({strict:true, vars:{color:{brand:'red'}}});`,
-      },
-    })
-    const contract = JSON.parse(library.contracts['config.ts']!)
-    contract.exports.style.options.strict = false
-    expect(() =>
-      Graph.compile({
-        contracts: { 'config.ts': JSON.stringify(contract) },
-        imports: { 'app.ts': { './config': 'config.ts' } },
-        modules: {
-          'app.ts': `import {style} from './config'; export const label=style({color:'red'});`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: config.ts:0: Invalid library contract: Configuration strict mode disagrees with linked theme metadata.]`,
+      `[Config.InvalidError: Unknown configuration option: strict]`,
     )
   })
 
@@ -472,7 +399,7 @@ import { tokens } from 'zyzz/default'
 const { style } = Config.create({ vars: tokens })
 const pane = style({ alignItems: 'center', fontFamily: 'sans', typography: 'copy.18' })
 const dynamic = style((values: { width: \`\${number}px\` }) => ({
-  width: values.width,
+  width: \`[\${values.width}]\`,
   alignItems: 'center',
 }))
 dynamic({ width: '12px' })
@@ -695,7 +622,6 @@ dynamic({ width: '12px' })
       `)
       expect(complete('fontFamily', 'sans', '')).toMatchInlineSnapshot(`
         [
-          "",
           "mono",
           "sans",
           "serif",

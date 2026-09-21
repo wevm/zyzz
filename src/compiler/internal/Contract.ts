@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28,
+      22, 23, 24, 25, 26, 27,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -104,12 +104,6 @@ export function read(
     const identity = string(entry.identity)
     if (entry.variableSet === true && (data.version as number) < 26)
       throw new Error('Vars contracts require contract version 26 or later.')
-    if (entry.strict !== undefined) {
-      if ((data.version as number) < 28)
-        throw new Error('Strict tokens require contract version 28 or later.')
-      Config.create({ strict: entry.strict as boolean })
-    }
-    const strict = entry.strict === true
     const mappings = VariableSets.mappings(entry.mappings)
     if (
       entry.cssOutput !== undefined &&
@@ -161,9 +155,6 @@ export function read(
         'Conflicting packed CSS output modes for one theme identity.',
       )
 
-    if (contract && Boolean(contract.strict) !== strict)
-      throw new Error('Conflicting packed strict modes for one identity.')
-
     if (contract && contract.defaultLayer !== defaultLayer)
       throw new Error(
         'Conflicting packed default layers for one theme identity.',
@@ -181,7 +172,6 @@ export function read(
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
         ...(cssOutput ? { cssOutput } : {}),
-        ...(strict ? { strict } : {}),
         ...(defaultLayer !== undefined ? { defaultLayer } : {}),
         [Token.complete]: true,
         [Token.identity]: identity,
@@ -304,7 +294,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28,
+          27,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -444,14 +434,6 @@ export function read(
       )
         throw new Error(
           'Configuration CSS output disagrees with linked theme metadata.',
-        )
-
-      if (
-        Boolean(options.strict) !==
-        Boolean(definition[Token.definition].contract.strict)
-      )
-        throw new Error(
-          'Configuration strict mode disagrees with linked theme metadata.',
         )
 
       if (
@@ -719,7 +701,6 @@ export function write(
           ...(theme[Token.definition].contract.shorthands
             ? { shorthands: theme[Token.definition].contract.shorthands }
             : {}),
-          ...(theme[Token.definition].contract.strict ? { strict: true } : {}),
           ...(theme[Token.definition].contract.defaultLayer !== undefined
             ? { defaultLayer: theme[Token.definition].contract.defaultLayer }
             : {}),
@@ -738,12 +719,6 @@ export function write(
       ]),
     ),
     version: (() => {
-      if (
-        Object.values(themes).some(
-          (theme) => theme[Token.definition].contract.strict,
-        )
-      )
-        return 28
       if (
         Object.values(themes).some(
           (theme) =>

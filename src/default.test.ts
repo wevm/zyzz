@@ -65,7 +65,7 @@ describe('default', () => {
           Path.join(root, 'app.ts'),
           `import {appearance,variants,vars} from 'zyzz/default';
         namespace styles {
-          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:'sm'}});
+          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`[\${values.padding}]\` as const})}},defaultVariants:{size:'sm'}});
         }
         document.querySelector('main')!.className=vars().className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
@@ -88,7 +88,7 @@ const initialization: string = script();
 appearance.set({colorScheme:'dark'});
 // @ts-expect-error The default config has no named theme catalog.
 appearance.set({set:'other'});
-const button=variants({base:{typography:'button.14'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}}});
+const button=variants({base:{typography:'button.14'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`[\${values.padding}]\` as const})}}});
 button({size:{custom:{padding:'12px'}}});
 // @ts-expect-error Dynamic choices require complete scoped payloads.
 button({size:'custom'});

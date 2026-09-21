@@ -184,7 +184,7 @@ describe('compile', () => {
       const accent = variable('color', { id: 'accent' });
       const { style: themed, vars:theme } = Config.create({ cssOutput: '${cssOutput}', id: 'palette', vars:{ color: { primary: 'red' } } });
       const parent = style({}, { id: 'parent' });
-      const child = themed({ color: 'primary', selectors: { [\`\${parent} &\`]: { backgroundColor: 'blue' } } });
+      const child = themed({ color: 'primary', selectors: { [\`\${parent} &\`]: { backgroundColor: '[blue]' } } });
       const left = style({ paddingLeft: '8px', color: accent });
       const padding = style({ padding: '16px', animationName: spin });
       const button = variants({ variants: { size: { fluid: (values: { width: \`\${number}px\` }) => ({ width: values.width }), fixed: { width: '10px' } } }, conditions: { wide: '@media (min-width: 500px)' } }, { id: 'button' });

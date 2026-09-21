@@ -48,14 +48,16 @@ Local keyframes use stable module-and-binding names; unused local definitions ar
 
 ## Static values
 
-Global declarations accept immutable local values and literal exports from modules in the source graph, including raw default tokens. Type-only references do not affect static extraction. Mutations and runtime calls remain unsupported.
+Global declarations accept immutable local values and literal exports from modules in the source graph, including typography objects. Type-only references do not affect static extraction. Mutations and runtime calls remain unsupported.
 
 ```ts
-import { tokens } from 'zyzz/default'
 import { global } from 'zyzz/web'
+import { tokens } from './tokens.js'
 
 global({
   body: { fontFamily: tokens.fontFamily.sans },
   button: tokens.typography.button['16'],
 })
 ```
+
+Include the token source module in the graph. Packed library contracts do not expose arbitrary constant exports.

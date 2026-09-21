@@ -2,7 +2,6 @@
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import reset from 'zyzz/reset.css?url'
-import { style } from '../zyzz.config.js'
 
 /** Defines the document shell and page metadata. */
 export const Route = createRootRoute({
@@ -35,15 +34,11 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body {...styles.body()}>
+      <body>
         {children}
 
         <Scripts />
       </body>
     </html>
   )
-}
-
-namespace styles {
-  export const body = style({ fontFamily: 'system-ui, sans-serif' })
 }

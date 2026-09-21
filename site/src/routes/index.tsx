@@ -177,36 +177,33 @@ namespace styles {
     marginTop: '36px',
   })
   export const brand = style({
+    typography: 'heading.40',
     color: '#fafafa',
-    fontSize: '40px',
-    fontWeight: 800,
-    letterSpacing: '-2px',
-    lineHeight: 1,
     textDecoration: 'none',
   })
   export const byline = style({
+    typography: 'label.16',
     color: '#888',
-    fontSize: '16px',
     marginLeft: '20px',
     textDecoration: 'none',
     ':hover': { color: '#ddd' },
   })
   export const code = style({
+    typography: 'label.14.mono',
     color: '#d4d4d4',
-    fontFamily: 'mono',
-    fontSize: '13px',
-    lineHeight: 1.8,
     margin: 0,
     overflowX: 'auto',
     padding: '28px 30px 32px',
     tabSize: 2,
     ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '-2px' },
-    '@media (max-width: 600px)': { fontSize: '12px', padding: '22px 20px' },
+    '@media (max-width: 600px)': {
+      typography: 'label.12.mono',
+      padding: '22px 20px',
+    },
   })
   export const command = style({
+    typography: 'label.14.mono',
     color: '#d4d4d4',
-    fontFamily: 'mono',
-    fontSize: '15px',
   })
   export const commandRow = style({
     alignItems: 'center',
@@ -228,15 +225,14 @@ namespace styles {
     ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '3px' },
   })
   export const copyStatus = style({
+    typography: 'copy.13',
     color: '#a3a3a3',
-    fontSize: '13px',
     minHeight: '24px',
     paddingTop: '8px',
   })
   export const description = style({
+    typography: 'copy.20',
     color: '#a3a3a3',
-    fontSize: '20px',
-    lineHeight: 1.7,
     marginTop: '28px',
     maxWidth: '440px',
   })
@@ -249,12 +245,11 @@ namespace styles {
     overflow: 'hidden',
   })
   export const exampleHeader = style({
+    typography: 'label.14.strong',
     alignItems: 'center',
     borderBottom: '1px solid #222',
     color: '#eee',
     display: 'flex',
-    fontSize: '14px',
-    fontWeight: 500,
     gap: '12px',
     padding: '20px 30px',
   })
@@ -274,17 +269,16 @@ namespace styles {
     '@media (max-width: 600px)': { padding: '28px 24px' },
   })
   export const headerLink = style({
+    typography: 'label.16',
     color: '#a3a3a3',
-    fontSize: '16px',
     marginLeft: 'auto',
     textDecoration: 'none',
     ':hover': { color: '#fff' },
   })
   export const heading = style({
-    fontSize: 'clamp(48px, 5.2vw, 76px)',
-    fontWeight: 650,
-    letterSpacing: '-0.055em',
-    lineHeight: 1.06,
+    typography: 'heading.72',
+    '@media (max-width: 1200px)': { typography: 'heading.56' },
+    '@media (max-width: 600px)': { typography: 'heading.48' },
   })
   export const install = style({
     backgroundColor: '#181818',
@@ -321,10 +315,10 @@ namespace styles {
     '@media (max-width: 600px)': { padding: '12px 24px 40px' },
   })
   export const manager = style({
+    typography: 'button.14',
     borderBottom: '2px solid transparent',
     color: '#999',
     cursor: 'pointer',
-    fontSize: '14px',
     padding: '13px 12px',
     '&[aria-pressed="true"]': { borderBottomColor: '#eee', color: '#eee' },
     ':hover': { color: '#fff' },
@@ -336,14 +330,13 @@ namespace styles {
     minHeight: '100svh',
   })
   export const primaryLink = style({
+    typography: 'button.16',
     alignItems: 'center',
     backgroundColor: '#fafafa',
     border: '1px solid #fafafa',
     borderRadius: '7px',
     color: '#111',
     display: 'inline-flex',
-    fontSize: '15px',
-    fontWeight: 600,
     gap: '24px',
     padding: '15px 22px',
     textDecoration: 'none',
@@ -351,14 +344,13 @@ namespace styles {
     ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '4px' },
   })
   export const secondaryLink = style({
+    typography: 'button.16',
     alignItems: 'center',
     backgroundColor: '#191919',
     border: '1px solid #303030',
     borderRadius: '7px',
     color: '#eee',
     display: 'inline-flex',
-    fontSize: '15px',
-    fontWeight: 500,
     gap: '24px',
     padding: '15px 22px',
     textDecoration: 'none',

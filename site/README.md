@@ -12,7 +12,7 @@ pnpm --dir site dev
 
 Zyzz is linked from the workspace. Its Vite plugin compiles styles from `site/src/zyzz.config.ts` and the route modules, with `zyzz/reset.css` loaded in the document head.
 
-The site runs at http://localhost:3000. The home page is `site/src/App.tsx`.
+The site runs at http://localhost:3000. The home page is `site/src/routes/index.tsx`.
 
 ```sh
 pnpm --dir site check:types

@@ -1,6 +1,7 @@
 /** Renders the landing page and introductory styling example. @module */
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { TextMorph } from 'torph/react'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -40,6 +41,15 @@ namespace styles {
 const Button = (
   <button {...styles.button()}>Get started</button>
 )`
+const headingWords = [
+  'Universal',
+  'Type-safe',
+  'Standard',
+  'Composable',
+  'Performant',
+  'Light',
+] as const
+
 const installCommands = {
   npm: 'npm install zyzz',
   pnpm: 'pnpm add zyzz',
@@ -47,6 +57,22 @@ const installCommands = {
 } as const
 
 function Index() {
+  const [word, setWord] = useState(0)
+
+  useEffect(() => {
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const interval = window.setInterval(() => {
+      if (!motion.matches && document.visibilityState === 'visible')
+        setWord((index) => (index + 1) % headingWords.length)
+    }, 3000)
+    const reset = () => setWord(0)
+    motion.addEventListener('change', reset)
+    return () => {
+      window.clearInterval(interval)
+      motion.removeEventListener('change', reset)
+    }
+  }, [])
+
   const [manager, setManager] = useState<keyof typeof installCommands>('npm')
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
     'idle',
@@ -67,10 +93,22 @@ function Index() {
       </header>
       <main {...styles.main()}>
         <section aria-labelledby="heading" {...styles.intro()}>
-          <h1 id="heading" {...styles.heading()}>
-            Style with
-            <br />
-            TypeScript.
+          <h1
+            aria-label="Universal styles for modern interfaces"
+            id="heading"
+            {...styles.heading()}
+          >
+            <span aria-hidden="true">
+              <TextMorph
+                as="span"
+                duration={400}
+                ease="cubic-bezier(0.77, 0, 0.175, 1)"
+              >
+                {headingWords[word]!}
+              </TextMorph>
+              <br />
+              styles for modern interfaces
+            </span>
           </h1>
           <p {...styles.description()}>
             Write type-safe styles, variables, and themes. Compile to static

@@ -499,7 +499,7 @@ export async function verify(options: verify.Options) {
       Path.join(app, 'app/page.tsx'),
       files['app/page.tsx'].replace(
         "padding:'md'",
-        "padding:'md',backgroundColor:'red'",
+        "padding:'md',backgroundColor:'[red]'",
       ),
     )
     await page.waitForFunction(

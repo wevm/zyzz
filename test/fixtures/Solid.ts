@@ -20,7 +20,7 @@ document.querySelector('#dispose')!.addEventListener('click', () => dispose());`
   'server.tsx': `import { generateHydrationScript, renderToString } from 'solid-js/web'; import { App } from './App';
 export function render() { return { html: renderToString(() => <App />), script: generateHydrationScript() }; }`,
   'styles.ts':
-    "import { Config, cx } from 'zyzz';\nimport {controls} from '@acme/variants';\nimport '@acme/variants/style.css';\nexport function variant(expanded:boolean){return cx(controls.button({size:expanded?{custom:{padding:'20px'}}:undefined,active:expanded,conditions:{wide:{size:'lg'}}}),controls.override())}\nexport const { style, vars:theme } = Config.create({ output: 'html', vars: { color: { text: { light: '#000000', dark: '#ffffff' } } } });\nexport namespace styles {\n  export const card = style((values: { width: `${number}%` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))\n}",
+    "import { Config, cx } from 'zyzz';\nimport {controls} from '@acme/variants';\nimport '@acme/variants/style.css';\nexport function variant(expanded:boolean){return cx(controls.button({size:expanded?{custom:{padding:'20px'}}:undefined,active:expanded,conditions:{wide:{size:'lg'}}}),controls.override())}\nexport const { style, vars:theme } = Config.create({ output: 'html', vars: { color: { text: { light: '#000000', dark: '#ffffff' } } } });\nexport namespace styles {\n  export const card = style((values: { width: `${number}%` }) => ({ color: 'text', backgroundColor: '[#0066cc]', height: '20px', width: values.width }))\n}",
   'types.tsx': `import { styles } from './styles';
 const attributes = styles.card({ width: '25%' });
 const element = <div {...attributes} />;

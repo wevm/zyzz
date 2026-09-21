@@ -30,7 +30,11 @@ export type StyleFactory<tokens extends Tokens> = {
     styles: ((
       values: values,
     ) => styles &
-      NoInfer<Style.Accepted<styles, tokens> & Binding.Checked<styles>>) &
+      NoInfer<
+        Style.Accepted<styles, tokens> &
+          Binding.Checked<styles> &
+          Binding.TokenSlots<styles, values, tokens>
+      >) &
       (values extends Binding.Inputs<values> ? unknown : never),
     options?: style.DefinitionOptions,
   ): style.Dynamic<values>

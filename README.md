@@ -49,6 +49,7 @@ Read [Thinking in Zyzz](docs/introduction/thinking-in-zyzz.md) for co-location, 
 
 - [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
 - [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Token Values**](#token-values): configured tokens by default, with bracketed strings for arbitrary CSS.
 - [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
 - [**Variants**](#variants): typed component choices, defaults, and compound rules.
 - [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
@@ -260,6 +261,30 @@ namespace styles {
 
 Use [`Vars.define`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
+### Token Values
+
+Use configured tokens for consistent styles, or bracketed strings for arbitrary CSS. Properties without configured tokens accept both plain and bracketed values. No extra option is needed.
+
+```ts
+import { Config } from 'zyzz'
+
+const { style } = Config.create({
+  vars: {
+    color: { foreground: '#171717' },
+    spacing: { md: '8px' },
+  },
+})
+
+const button = style({
+  padding: 'md',
+  marginTop: '[7px]',
+  color: '[#123456]',
+  width: '[calc(100% - 2rem)]',
+})
+```
+
+See [Token values](docs/api/core/Config/create.md#token-values) for mappings, fallbacks, and validation behavior.
+
 ### Color Schemes (Light/Dark Mode)
 
 Apply the theme to `<html>` and select a color scheme through its callable props:
@@ -357,7 +382,7 @@ namespace styles {
     display: ['block', 'grid'],
     color: 'brand !important',
     borderColor: vars.color.brand,
-    width: `calc(100% - ${vars.spacing.md})`,
+    width: `[calc(100% - ${vars.spacing.md})]`,
   })
 }
 ```

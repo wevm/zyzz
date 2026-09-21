@@ -74,6 +74,10 @@ export function create(
   if (!dynamic && !id && Object.keys(input as object).length === 0)
     Identity.requireId(undefined, 'Empty style')
 
+  if (id && !dynamic && options.theme)
+    Style.define({ style: body(input as Record<string, unknown>) } as never, {
+      vars: options.theme,
+    })
   const className = id
     ? `z-style-${id}`
     : Identity.style(
@@ -125,6 +129,23 @@ export function variants(
   options: Options = {},
 ): unknown {
   const id = Identity.requireId(options.id, 'variants')
+  if (options.theme) {
+    const styles = [
+      input.base,
+      ...Object.values(
+        (input.variants ?? {}) as Record<string, Record<string, unknown>>,
+      ).flatMap(Object.values),
+      ...((input.compoundVariants ?? []) as readonly { style: unknown }[]).map(
+        (entry) => entry.style,
+      ),
+    ]
+    for (const input of styles)
+      if (input && typeof input === 'object')
+        Style.define(
+          { style: body(input as Record<string, unknown>) } as never,
+          { vars: options.theme },
+        )
+  }
   const className = `z-style-${id}`
   const axes = Object.entries(
     (input.variants ?? {}) as Record<string, Record<string, unknown>>,

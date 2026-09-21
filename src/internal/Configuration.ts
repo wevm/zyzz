@@ -277,14 +277,16 @@ export function create(
       })
     }
   }
-  function boundVariants(
-    definition: Record<string, unknown>,
-    options: style.DefinitionOptions = {},
-  ) {
-    return Authoring.variants(definition, {
-      ...options,
-      output: input.output as style.Output | undefined,
-    })
+  function boundVariants(theme?: Theme.Definition) {
+    return (
+      definition: Record<string, unknown>,
+      options: style.DefinitionOptions = {},
+    ) =>
+      Authoring.variants(definition, {
+        ...options,
+        output: input.output as style.Output | undefined,
+        theme,
+      })
   }
   function handle(theme: Theme.Definition, name: string) {
     const original = Token.bind(theme, contract)
@@ -313,7 +315,7 @@ export function create(
     })
     Object.assign(select, {
       style: boundStyle(original),
-      variants: boundVariants,
+      variants: boundVariants(original),
     })
     return select
   }
@@ -410,7 +412,9 @@ export function create(
       ),
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
-      variants: boundVariants,
+      variants: boundVariants(
+        bound[input.defaultTheme] as unknown as Theme.Definition,
+      ),
     })
   }
 
@@ -424,7 +428,7 @@ export function create(
       script: Appearance.create([], { storageKey }),
       style: boundStyle(theme as unknown as Theme.Definition),
       theme,
-      variants: boundVariants,
+      variants: boundVariants(theme as unknown as Theme.Definition),
     })
   }
 
@@ -436,7 +440,7 @@ export function create(
     appearance: Appearance.root([], { storageKey }),
     script: Appearance.create([], { storageKey }),
     style: boundStyle(theme),
-    variants: boundVariants,
+    variants: boundVariants(theme),
   })
 }
 
@@ -590,7 +594,9 @@ export type StyleFactory<
         values: values,
       ) => styles &
         NoInfer<
-          Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
+          Body<styles, tokens, layers, mappings> &
+            Binding.Checked<styles> &
+            Binding.TokenSlots<styles, values, tokens, mappings>
         >) &
       Completion.Properties<tokens, NoInfer<styles>>,
     ...options: Parameters<callback> extends [Record<string, string | number>]

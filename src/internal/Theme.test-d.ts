@@ -10,6 +10,15 @@ import * as Config from './Configuration.js'
 import { Css, global } from 'zyzz/web'
 
 describe('define', () => {
+  test('retains token enforcement on exported theme handles', () => {
+    const config = Config.create({ theme: { spacing: { md: '8px' } } })
+    const theme = config.theme
+    theme.style({ padding: 'md' })
+    theme.style({ padding: '[7px]' })
+    // @ts-expect-error Exported handles still require configured tokens.
+    theme.style({ padding: '7px' })
+  })
+
   test('infers responsive typography and border width domains', () => {
     const { style, theme } = Config.create({
       theme: {
@@ -331,7 +340,7 @@ describe('style', () => {
 
     const extracted: ParametersStyle = {
       color: 'brand',
-      padding: ['md', '2px !important'],
+      padding: ['md', '[2px] !important'],
     }
 
     themed(extracted)
@@ -354,7 +363,7 @@ describe('style', () => {
     themed({ padding: '0x10px' })
     // @ts-expect-error Inferred dimensions still reject non-CSS whitespace within numeric values.
     themed({ padding: '2 px' })
-    themed({ padding: ' 2px' })
+    themed({ padding: '[ 2px]' })
     // @ts-expect-error Unknown properties remain rejected alongside known properties.
     themed({ color: 'brand', colour: 'red' })
     // @ts-expect-error Ordered fallbacks cannot be empty.
@@ -429,7 +438,7 @@ describe('style', () => {
 
     Theme.extend(shorthand, { spacing: { 4: '2rem' } }).style({ padding: 4 })
     themedStyle({ color: 'foreground', padding: 'md' })
-    themedStyle({ color: shorthand.tokens.color.brand, padding: 0 })
+    themedStyle({ color: shorthand.tokens.color.brand, padding: '[0]' })
     // @ts-expect-error Unknown theme paths are rejected.
     themedStyle({ color: 'blue.600' })
     // @ts-expect-error A text token cannot be used as a background.
@@ -556,9 +565,9 @@ describe('variables', () => {
       theme.style({
         color: theme.vars.color.brand,
         // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
-        width: `calc(100% - ${theme.vars.spacing.md})`,
+        width: `[calc(100% - ${theme.vars.spacing.md})]`,
       })
-      theme.style({ padding: [theme.vars.spacing.md, '2px'] })
+      theme.style({ padding: [theme.vars.spacing.md, '[2px]'] })
       theme.style({ color: theme.vars.color.brand })
       // @ts-expect-error Variable domains cannot cross properties.
       theme.style({ color: theme.vars.spacing.md })

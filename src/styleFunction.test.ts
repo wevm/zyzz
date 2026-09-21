@@ -1345,24 +1345,24 @@ dynamic({ width: '12px' })
     `)
       expect(diagnose("display: 'flex'", "display: 'invalid-display'"))
         .toMatchInlineSnapshot(`
-      [
-        {
-          "code": 2322,
-          "message": "Type '"invalid-display"' is not assignable to type '("invalid-display" & Reference<"*">) | ("invalid-display" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["block", "block flex", "block flow", "block flow list-item", ... 106 more ..., "table-row-group"]; }> | Reference<...>>, ...Atom<...>[]])'.",
-          "span": "display",
-        },
-      ]
-    `)
+          [
+            {
+              "code": 2322,
+              "message": "Type '"invalid-display"' is not assignable to type '("invalid-display" & Reference<"*">) | ("invalid-display" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["block", "block flex", "block flow", "block flow list-item", ... 106 more ..., "table-row-group"]; }> | \`[\${string}]\` | Reference<...>>, ...Atom<...>[]])'.",
+              "span": "display",
+            },
+          ]
+        `)
       expect(diagnose('opacity: 0.5', "opacity: 'invalid-opacity'"))
         .toMatchInlineSnapshot(`
-      [
-        {
-          "code": 2322,
-          "message": "Type '"invalid-opacity"' is not assignable to type '"invalid-opacity" & Fallbacks<Atom<Reference<"*"> | Reference<"number"> | Reference<"percentage"> | Value<{ readonly kind: "number"; readonly min: number; readonly max: number; readonly percentage: true; }>>>'.",
-          "span": "opacity",
-        },
-      ]
-    `)
+          [
+            {
+              "code": 2322,
+              "message": "Type '"invalid-opacity"' is not assignable to type '"invalid-opacity" & Fallbacks<Atom<\`[\${string}]\` | Reference<"*"> | Reference<"number"> | Reference<"percentage"> | Value<{ readonly kind: "number"; readonly min: number; readonly max: number; readonly percentage: true; }>>>'.",
+              "span": "opacity",
+            },
+          ]
+        `)
       expect(diagnose("alignItems: 'center'", "unknownProperty: 'center'"))
         .toMatchInlineSnapshot(`
       [

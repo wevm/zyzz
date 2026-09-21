@@ -444,11 +444,11 @@ export type Reference<group extends Group = Group> = {
 
 const reference = Symbol('zyzz.token')
 
-/** Resolves shorthand tokens with literal precedence, with specific colors first. */
+/** Resolves configured token names, with specific color groups first. */
 export function resolve(value: unknown, options: resolve.Options): unknown {
   if (
-    (typeof value !== 'string' && typeof value !== 'number') ||
-    Literal.isLiteral(options.property, value)
+    options.property.startsWith('--') ||
+    (typeof value !== 'string' && typeof value !== 'number')
   )
     return value
 
@@ -527,6 +527,37 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
   }
 
   return value
+}
+
+/** Whether the configured catalog supplies tokens for a property. */
+export function mapped(
+  theme: object,
+  property: keyof Literal.Properties,
+): boolean {
+  if (property.startsWith('--')) return false
+  const data = Object.getOwnPropertyDescriptor(theme, definition)
+    ?.value as Metadata
+  return Object.keys(data.values).some((path) => {
+    const category = path.split('.')[0]!
+    const targets =
+      data.contract.mappings === false
+        ? undefined
+        : data.contract.mappings?.[category]
+    if (
+      data.contract.mappings !== false &&
+      !(targets
+        ? targets.includes(property)
+        : accepts(category as Group, property))
+    )
+      return false
+    let leaf: unknown = Object.getOwnPropertyDescriptor(theme, 'tokens')?.value
+    for (const key of path.split('.'))
+      leaf =
+        leaf && typeof leaf === 'object'
+          ? Object.getOwnPropertyDescriptor(leaf, key)?.value
+          : undefined
+    return is(leaf) && acceptsReference(leaf, property)
+  })
 }
 
 /** Input contract for theme token resolution. */

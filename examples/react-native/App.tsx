@@ -158,7 +158,7 @@ namespace styles {
   export const meter = style((values: { width: `${number}px` }) => ({
     backgroundColor: 'accent',
     height: '16px',
-    width: values.width,
+    width: `[${values.width}]`,
   }))
 
   export const page = style({ backgroundColor: 'page' })

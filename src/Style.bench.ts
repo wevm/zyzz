@@ -30,7 +30,7 @@ for (const count of [10, 100]) {
       {
         color: 'brand' as const,
         padding: 'md' as const,
-        width: `${index}px` as const,
+        width: `[${index}px]` as const,
       },
     ]),
   )

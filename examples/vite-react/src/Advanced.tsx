@@ -47,7 +47,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: 0,
+      minWidth: '[0]',
       paddingTop: 'md',
     },
   })
@@ -61,23 +61,23 @@ namespace styles {
     gap: 'sm',
   })
 
-  export const graphic = style({ '& svg|svg': { color: '#047857' } })
+  export const graphic = style({ '& svg|svg': { color: '[#047857]' } })
 
-  export const profileFallback = style({ color: '#4338ca' })
+  export const profileFallback = style({ color: '[#4338ca]' })
 
   export const sample = style({
     border: '1px solid',
     borderColor: 'line',
-    borderRadius: '0.5rem',
+    borderRadius: '[0.5rem]',
     marginTop: 'md',
     padding: 'md',
     [roomy]: { borderStyle: 'dashed' },
   })
 
-  export const functionValue = style({ marginLeft: double('8px') })
+  export const functionValue = style({ marginLeft: `[${double('8px')}]` })
 
   export const profileColor = style({
-    color: `color(${profile} 0.26 0.22 0.79)`,
+    color: `[color(${profile} 0.26 0.22 0.79)]`,
   })
 
   export const typography = style({
@@ -92,7 +92,7 @@ namespace styles {
     backgroundColor: 'surface',
     border: '1px solid',
     borderColor: 'line',
-    borderRadius: '0.5rem',
+    borderRadius: '[0.5rem]',
     color: 'text',
     padding: 'md',
     positionAnchor: '--playground-anchor',

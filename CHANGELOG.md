@@ -1,5 +1,19 @@
 # zyzz
 
+## 0.0.5
+
+### Patch Changes
+
+- 0448373: Fixed default layers for native-only styles and froze synthesized layer rules.
+- 6d5fb05: Added support for variable scope applications in `cx` compositions.
+  
+  ```tsx
+  <html {...cx(vars(), styles.root())} />
+  ```
+- 0d61d9f: Fixed breakpoint aliases in responsive variable fallbacks and stylesheet delivery for loader-generated Next.js modules.
+- 817eb8e: Fixed Next.js loader graph discovery for virtual `next/root-params` imports.
+- 0d61d9f: Fixed shared style class ownership across successive cross-module compositions.
+
 ## 0.0.4
 
 ### Patch Changes

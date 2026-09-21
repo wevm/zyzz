@@ -18,7 +18,6 @@
     "@tanstack/react-start": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "torph": "catalog:",
     "zyzz": "catalog:"
   },
   "devDependencies": {

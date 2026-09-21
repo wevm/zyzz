@@ -1,7 +1,6 @@
 /** Renders the landing page and introductory styling example. @module */
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { TextMorph } from 'torph/react'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -99,13 +98,20 @@ function Index() {
             {...styles.heading()}
           >
             <span aria-hidden="true">
-              <TextMorph
-                as="span"
-                duration={400}
-                ease="cubic-bezier(0.77, 0, 0.175, 1)"
-              >
-                {`${headingWords[word]} styles`}
-              </TextMorph>
+              <span {...styles.headingLine()}>
+                <span {...styles.headingWords()}>
+                  {headingWords.map((text, index) => (
+                    <span
+                      data-active={index === word}
+                      key={text}
+                      {...styles.headingWord()}
+                    >
+                      {text}
+                    </span>
+                  ))}
+                </span>{' '}
+                styles
+              </span>
               <br />
               for modern interfaces
             </span>
@@ -298,6 +304,30 @@ namespace styles {
     typography: 'heading.56',
     '@media (max-width: 1200px)': { typography: 'heading.40' },
     '@media (max-width: 600px)': { typography: 'heading.32' },
+  })
+  export const headingLine = style({
+    whiteSpace: 'nowrap',
+  })
+  export const headingWord = style({
+    filter: 'blur(8px)',
+    gridArea: '1 / 1',
+    opacity: 0,
+    transition:
+      'opacity 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms cubic-bezier(0.23, 1, 0.32, 1)',
+    selectors: {
+      '&[data-active="true"]': {
+        filter: 'blur(0)',
+        opacity: 1,
+        transitionDelay: '80ms',
+      },
+    },
+    '@media (prefers-reduced-motion: reduce)': {
+      filter: 'none',
+      transition: 'none',
+    },
+  })
+  export const headingWords = style({
+    display: 'inline-grid',
   })
   export const install = style({
     backgroundColor: '#181818',

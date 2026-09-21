@@ -60,9 +60,6 @@ export async function create(options: create.Options): Promise<Runtime> {
       })
     : undefined
 
-  if (native && options.reset)
-    throw new Error('The CSS reset is only available for web output.')
-
   if (native && (options.compiler === false || options.modules === false))
     throw new Error('Native builds require rewritten module output.')
 
@@ -443,7 +440,6 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     const graph = compiler.compile({
       compiler: options.compiler,
-      reset: options.reset,
       native,
       modules,
       contracts,
@@ -949,8 +945,6 @@ export declare namespace create {
     readonly outDir?: string | undefined
     /** Stable package identity prepended to relative source module IDs. */
     readonly packageId: string
-    /** Include the bundled web reset. Defaults to false. */
-    readonly reset?: boolean | undefined
     /** Directory scanned for supported JavaScript/TypeScript source files. */
     readonly root: string
     /**

@@ -32,8 +32,6 @@ export function zyzz<const config extends Config>(
     'platform' | 'target' | 'moduleId' | 'modules' | 'imports' | 'colorScheme'
   > = {},
 ): zyzz.ReturnType<config> {
-  if (options.reset)
-    throw new Error('The CSS reset is only available for web output.')
   if (Object.hasOwn(options, 'colorScheme'))
     throw new Error(
       'Select colorScheme through the React provider, not Metro configuration.',

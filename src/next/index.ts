@@ -9,26 +9,21 @@ import * as Path from 'node:path'
  * Preserves existing configuration hooks and creates `.zyzz/next` beneath the working directory.
  * Throws file-system errors during setup; compilation errors are reported by the bundler.
  */
-export function zyzz(config: NextConfig, options?: zyzz.Options): NextConfig
-export function zyzz(config: zyzz.Factory, options?: zyzz.Options): zyzz.Factory
-export function zyzz(
-  config: Promise<NextConfig>,
-  options?: zyzz.Options,
-): Promise<NextConfig>
+export function zyzz(config: NextConfig): NextConfig
+export function zyzz(config: zyzz.Factory): zyzz.Factory
+export function zyzz(config: Promise<NextConfig>): Promise<NextConfig>
 export function zyzz(
   config: NextConfig | zyzz.Factory | Promise<NextConfig>,
-  options: zyzz.Options = {},
 ): NextConfig | zyzz.Factory | Promise<NextConfig> {
   if (typeof config === 'function')
-    return async (phase, context) => zyzz(await config(phase, context), options)
-  if (config instanceof Promise)
-    return config.then((value) => zyzz(value, options))
+    return async (phase, context) => zyzz(await config(phase, context))
+  if (config instanceof Promise) return config.then(zyzz)
 
   const loader = Module.createRequire(import.meta.url).resolve(
     'zyzz/next/loader',
   )
-  const loaderOptions = { reset: options.reset ?? false, root: process.cwd() }
-  const shared = Path.join(loaderOptions.root, '.zyzz', 'next', 'shared.css')
+  const options = { root: process.cwd() }
+  const shared = Path.join(options.root, '.zyzz', 'next', 'shared.css')
   Fs.mkdirSync(Path.dirname(shared), { recursive: true })
   try {
     Fs.writeFileSync(shared, '', { flag: 'wx' })
@@ -42,10 +37,7 @@ export function zyzz(
       all: [{ not: 'foreign' as const }, { not: { query: /zyzz-style/ } }],
     },
     loaders: [
-      {
-        loader,
-        options: { ...loaderOptions, bundler: 'turbopack', mode: 'source' },
-      },
+      { loader, options: { ...options, bundler: 'turbopack', mode: 'source' } },
     ],
   }
 
@@ -75,11 +67,7 @@ export function zyzz(
             loaders: [
               {
                 loader,
-                options: {
-                  ...loaderOptions,
-                  bundler: 'turbopack',
-                  mode: 'style',
-                },
+                options: { ...options, bundler: 'turbopack', mode: 'style' },
               },
             ],
             as: '*.css',
@@ -89,11 +77,7 @@ export function zyzz(
           loaders: [
             {
               loader,
-              options: {
-                ...loaderOptions,
-                bundler: 'turbopack',
-                mode: 'shared',
-              },
+              options: { ...options, bundler: 'turbopack', mode: 'shared' },
             },
           ],
         },
@@ -106,12 +90,12 @@ export function zyzz(
       result.module.rules.push({
         enforce: 'pre',
         exclude: /node_modules/,
-        include: loaderOptions.root,
+        include: options.root,
         test: /\.[cm]?[jt]sx?$/,
         use: [
           {
             loader,
-            options: { ...loaderOptions, bundler: 'webpack', mode: 'source' },
+            options: { ...options, bundler: 'webpack', mode: 'source' },
           },
         ],
       })
@@ -127,10 +111,4 @@ export declare namespace zyzz {
     phase: string,
     context: { defaultConfig: NextConfig },
   ) => NextConfig | Promise<NextConfig>
-
-  /** Optional web stylesheet behavior. */
-  type Options = {
-    /** Include the bundled web reset. Defaults to false. */
-    readonly reset?: boolean | undefined
-  }
 }

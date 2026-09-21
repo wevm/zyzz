@@ -14,7 +14,6 @@ type Context = {
   getOptions(): {
     bundler: string
     mode: 'shared' | 'source' | 'style'
-    reset?: boolean | undefined
     root: string
   }
   getResolve(
@@ -193,12 +192,7 @@ async function compile(context: Context, source: string) {
   }
   for (const file of Object.keys(contracts)) await dependencies(file)
 
-  const graph = Graph.compile({
-    contracts,
-    imports,
-    modules,
-    reset: options.reset,
-  })
+  const graph = Graph.compile({ contracts, imports, modules })
   const output = graph.modules[id(context.resourcePath)]
 
   const assets = new Map<string, string>()

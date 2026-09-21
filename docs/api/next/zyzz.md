@@ -49,11 +49,3 @@ Compilation and resolution failures are reported through the active bundler. Sou
 The wrapper requires no separate Babel or PostCSS setup. Underlying loaders or transforms remain internal choices, validated separately for Webpack and Turbopack.
 
 See [Next.js Setup](../../introduction/next.md) and the [entrypoint overview](README.md).
-
-## CSS reset
-
-Pass `reset: true` in the second argument to include the bundled reset through Next.js CSS delivery. The default is `false`. Object, promise, and factory configurations support this option with both bundlers. Remove an explicit reset import when enabling this option.
-
-```ts
-export default zyzz({ reactStrictMode: true }, { reset: true })
-```

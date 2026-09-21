@@ -16,8 +16,6 @@ import * as Vite from '../vite/index.js'
 export type Options = {
   /** Rewrite authoring calls. Defaults to true. */
   readonly compiler?: boolean | undefined
-  /** Include the bundled web reset. Defaults to false. */
-  readonly reset?: boolean | undefined
   /** Source directory scanned for modules and global contributions. Defaults to the working directory. */
   readonly root?: string | undefined
 }
@@ -282,7 +280,6 @@ const portable = createUnplugin<Options | undefined, false>(
 
           const result = compiler.compile({
             compiler: options.compiler,
-            reset: options.reset,
             contracts,
             imports,
             modules,

@@ -26,53 +26,6 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
-  test('includes one opt-in reset with source maps and lower cascade priority', async () => {
-    const modules = {
-      'a.ts': `import {style} from 'zyzz'; export const a=style({padding:'12px'});`,
-      'b.ts': `import {global,importCss,namespace} from 'zyzz/web'; importCss({url:'data:text/css,h1%7Bcolor%3Ablue%7D'}); namespace({prefix:'s',uri:'http://www.w3.org/2000/svg'}); global({'s|svg': {color:'red'},'@layer app': {body: {margin:'17px'}}});`,
-    }
-    const compiler = Graph.create()
-    const plain = compiler.compile({ modules })
-    const result = compiler.compile({ modules, reset: true })
-    const reset = await Fs.readFile(Path.join(root, 'src/reset.css'), 'utf8')
-
-    expect(plain.sharedCss ?? '').not.toContain('@layer reset')
-    expect(result.sharedCss).toContain(reset.trim())
-    expect(result.sharedCss!.split(reset.trim())).toHaveLength(2)
-    expect(result.modules['a.ts']!.css).not.toContain('@layer reset')
-    expect(result.sharedCssMap!.sourcesContent).toContain(reset)
-    expect(compiler.compile({ modules, reset: false }).sharedCss).toBe(
-      plain.sharedCss,
-    )
-    expect(() =>
-      Graph.compile({ modules, native: { colorScheme: 'light' }, reset: true }),
-    ).toThrow('only available for web output')
-
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage()
-      await page.setContent(
-        `<style>${result.sharedCss ?? ''}${Object.values(result.modules)
-          .map((module) => module.css)
-          .join('')}</style><button>Button</button><svg></svg>`,
-      )
-      expect(
-        await page.evaluate(() => ({
-          boxSizing: getComputedStyle(document.querySelector('button')!)
-            .boxSizing,
-          color: getComputedStyle(document.querySelector('svg')!).color,
-          margin: getComputedStyle(document.body).margin,
-        })),
-      ).toEqual({
-        boxSizing: 'border-box',
-        color: 'rgb(255, 0, 0)',
-        margin: '17px',
-      })
-    } finally {
-      await browser.close()
-    }
-  })
-
   test('preserves shared style ownership across successive compositions', async () => {
     const result = Graph.compile({
       modules: {

@@ -34,9 +34,6 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           options.native.units && Object.freeze({ ...options.native.units }),
       })
     : undefined
-  if (native && options.reset)
-    throw new Error('The CSS reset is only available for web output.')
-
   if (native && options.compiler === false)
     throw new Error('Native builds require source compilation.')
 
@@ -643,7 +640,6 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     const result = entry.compiler.compile({
       compiler: options.compiler,
-      reset: options.reset,
       native,
       contracts,
       development: entry.environment.mode !== 'build',
@@ -1469,8 +1465,6 @@ export declare namespace zyzz {
     readonly compiler?: boolean | undefined
     /** Native context captured at creation. Disables CSS delivery and initialization scripts. */
     readonly native?: Graph.compile.Options['native']
-    /** Include the bundled web reset. Defaults to false. */
-    readonly reset?: boolean | undefined
     /**
      * Inline each configuration's `script()` at the start of index.html's head.
      * False skips injection for documents that inline the script themselves.

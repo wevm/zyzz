@@ -207,11 +207,3 @@ Compile independent libraries with package-qualified module IDs (the file host s
 Repacked stylesheet sections retain an import chain to their declaring contract. Hosts must supply each chain edge in `imports` and its adjacent sidecar in `contracts`; Vite resolves and watches these dependencies recursively, including nested package installations. Asset validation uses the declaring package root. Source content and offsets participate in packed contribution conflict checks, and each sidecar validates its layer constraints before rendering.
 
 Importing `zyzz/reset.css` adds reset-first layer constraints to shared CSS and packed output. Conflicting configured orders fail compilation. Packed animations and variable slots must have nonconflicting identities; package-qualified source module IDs prevent independent libraries from generating the same private names.
-
-## CSS reset
-
-Set `reset: true` to include the bundled reset once in `sharedCss`. The default is `false`. Load shared CSS before module CSS. The reset uses the lowest-priority `reset` layer, preserves CSS source maps, and is omitted from packed library contracts. Native output rejects this option.
-
-```ts
-const output = Graph.compile({ modules, reset: true })
-```

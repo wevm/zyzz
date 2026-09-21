@@ -98,14 +98,3 @@ Each build scans the source root again. Imported themes, source modules, local a
 Compilation rejects unsupported authoring, unresolved required dependencies, and assets escaping their owning package. Source transforms preceding Zyzz are rejected rather than replaced with stale source. Filesystem and bundler errors propagate through the build.
 
 Vite, Next.js, and Metro retain their existing adapters. This entrypoint exposes only the verified Rollup, Webpack, esbuild, and Vite factories.
-
-## CSS reset
-
-Set `reset: true` to include the bundled reset in generated CSS. The default is `false`. This option applies to the esbuild, Rollup, Webpack, and Vite adapters. Remove an explicit reset import when enabling this option.
-
-```ts
-zyzz.esbuild({ reset: true })
-zyzz.rollup({ reset: true })
-zyzz.webpack({ reset: true })
-zyzz.vite({ reset: true })
-```

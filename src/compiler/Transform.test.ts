@@ -14155,29 +14155,3 @@ describe('viewTransition', () => {
     })
   })
 })
-
-test('emits the opt-in reset while preserving original CSS mappings', () => {
-  const source =
-    "import {style} from 'zyzz'; export const button=style({padding:'12px'});"
-  const plain = Transform.compile({ moduleId: 'reset.ts', source })
-  const result = Transform.compile({
-    moduleId: 'reset.ts',
-    reset: true,
-    source,
-  })
-
-  expect(plain.css).not.toContain('@layer reset')
-  expect(result.css).toContain('@layer reset')
-  expect(result.css).toContain(plain.css)
-  const position = result.css.lastIndexOf('padding:')
-  const prefix = result.css.slice(0, position)
-  const location = Trace.originalPositionFor(
-    new Trace.TraceMap(result.cssMap),
-    {
-      line: prefix.split('\n').length,
-      column: prefix.length - prefix.lastIndexOf('\n') - 1,
-    },
-  )
-  expect(location.source).toBe('reset.ts')
-  expect(location.line).toBe(1)
-})

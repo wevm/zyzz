@@ -7,7 +7,6 @@ import * as Net from 'node:net'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
 import { describe, expect, test } from 'vite-plus/test'
-import { zyzz } from 'zyzz/metro'
 
 const require = Module.createRequire(
   Path.resolve('examples/react-native/package.json'),
@@ -15,12 +14,6 @@ const require = Module.createRequire(
 const expo = require.resolve('expo/bin/cli')
 
 describe('zyzz', () => {
-  test('rejects the web reset for native output', () => {
-    expect(() => zyzz({}, { reset: true })).toThrow(
-      'only available for web output',
-    )
-  })
-
   test('invalidates source-mode caches when compiler implementation changes', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-metro-cache-'))
     try {

@@ -8,7 +8,7 @@ import { zyzz } from 'zyzz/vite'
 export default defineConfig({
   plugins: [
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
-    zyzz({ reset: true }),
+    zyzz(),
     tanstackStart(),
     react(),
   ],

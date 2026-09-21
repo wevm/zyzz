@@ -185,6 +185,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 ## UI Conventions
 
 - In the site, implement recognizable design-system elements, such as buttons, as shared components in `site/src/components/` (the site's `src/components/`). Compose pages from these components.
+- Prefer existing `zyzz/default` variables and typography tokens over custom variables or arbitrary values in site styles. Introduce a custom value only when no suitable default token expresses the design.
 - Shared site components must be general-purpose and available across the site. Keep page-specific content, layout, and sections on their page.
 - During every page design round, consult the user about potential shared components before adding them. Propose the components and their general responsibilities, and wait for agreement before implementation.
 

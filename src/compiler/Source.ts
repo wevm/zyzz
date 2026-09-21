@@ -908,6 +908,29 @@ export function extract(options: extract.Options): extract.ReturnType {
 
         function value(node: Ast.Node, path: readonly string[]): unknown {
           const unwrapped = Expression.unwrap(node)
+          if (unwrapped.type === 'ObjectExpression') {
+            const field = unwrapped.properties[0]
+            if (
+              unwrapped.properties.length !== 1 ||
+              field?.type !== 'Property' ||
+              field.computed ||
+              field.method ||
+              field.kind !== 'init' ||
+              (field.key.type === 'Identifier'
+                ? field.key.name
+                : field.key.type === 'Literal'
+                  ? field.key.value
+                  : undefined) !== 'custom'
+            ) {
+              report(
+                'unsupported_syntax',
+                'Custom values require exactly one custom data property.',
+                unwrapped,
+              )
+              return undefined
+            }
+            return { custom: value(field.value, path) }
+          }
           const token =
             variables.references.get(unwrapped.start) ??
             themes?.tokens.get(unwrapped.start)

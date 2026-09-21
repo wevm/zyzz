@@ -29,6 +29,7 @@ export const { appearance, script, style, vars, variants } = Config.create({
 | `layers`       | Ordered CSS layer names used by bound styles and recipes.                                                                           |
 | `output`       | `'react'` by default; `'html'` returns `class` and serialized inline styles.                                                        |
 | `cssOutput`    | `'atomic'` by default; `'grouped'` emits scoped declaration blocks.                                                                 |
+| `strict`       | Requires configured tokens for mapped CSS properties. Defaults to `false`. Use `{ custom: value }` for an explicit CSS literal.     |
 | `storageKey`   | Preference storage key shared by `appearance` and `script()`. Defaults to `'zyzz'`.                                                 |
 | `id`           | Stable identity required when using authoring without source rewriting.                                                             |
 
@@ -76,6 +77,33 @@ const card = style({
   padding: vars.spacing.page,
 })
 ```
+
+## Strict tokens
+
+Set `strict: true` to require configured token names or compatible variable references wherever the configuration supplies tokens for a CSS property. Properties without tokens still accept ordinary CSS. The same rules apply to fallback arrays, shorthands, selectors, conditions, web target branches, and recipe styles.
+
+```ts
+const { style } = Config.create({
+  strict: true,
+  vars: {
+    color: { foreground: '#171717' },
+    spacing: { md: '8px' },
+  },
+})
+
+const button = style({
+  color: 'foreground',
+  padding: 'md',
+  display: 'inline-flex',
+  marginTop: { custom: '7px' },
+})
+```
+
+An unwrapped `padding: '7px'` is an error. `{ custom: '7px' }` bypasses token resolution and retains normal CSS type checking. Each fallback entry can carry its own escape. A custom value must be a CSS scalar, not another declaration object.
+
+Strict mode honors `mappings`, including full paths with `mappings: false`. Configured names take precedence over CSS literals, so a color token named `red` resolves to that variable. Use `{ custom: 'red' }` for the CSS color. Omitting `strict` preserves existing literal precedence.
+
+TypeScript checks authored declarations, and compilation rejects unwrapped arbitrary values even in JavaScript. Packed strict configurations require compiler contract version 28 or later. Native-only target branches retain their separate platform value contracts.
 
 ## Default layer
 

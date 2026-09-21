@@ -74,7 +74,8 @@ export type Accepted<
                         ? LiteralDeclarations
                         : DeclarationProperties<tokens>
                     >[key] &
-                      Value.Checked<Pick<style, key>, tokens>[key]
+                      Value.Checked<Pick<style, key>, tokens>[key] &
+                      Value.Strict<style[key], tokens, key>
                   : key extends Condition.Keys<tokens, key>
                     ? [style[key]] extends [undefined]
                       ? never
@@ -596,7 +597,37 @@ export function define(
           continue
         }
 
-        const parsed = Value.parse(entry, key)
+        const custom =
+          entry !== null &&
+          typeof entry === 'object' &&
+          Object.hasOwn(entry, 'custom')
+        let raw = entry
+        if (custom) {
+          const fields = entries(entry, [name, authoredProperty])
+          if (fields.length !== 1 || fields[0]?.[0] !== 'custom') {
+            report(
+              'invalid_structure',
+              [name, authoredProperty],
+              'Custom values require exactly one custom data property.',
+            )
+            continue
+          }
+          raw = fields[0][1]
+          if (
+            typeof raw !== 'string' &&
+            typeof raw !== 'number' &&
+            !Binding.is(raw) &&
+            !Token.isExpression(raw)
+          ) {
+            report(
+              'invalid_value',
+              [name, authoredProperty],
+              'Custom values must be CSS strings or numbers.',
+            )
+            continue
+          }
+        }
+        const parsed = Value.parse(raw, key)
         if (parsed && 'invalid' in parsed) {
           report(
             'invalid_value',
@@ -605,10 +636,10 @@ export function define(
           )
           continue
         }
-        const scalar = parsed ? parsed.value : entry
+        const scalar = parsed ? parsed.value : raw
 
         const resolved = (() => {
-          if (!theme) return scalar
+          if (!theme || custom) return scalar
 
           if (typeof scalar !== 'string' && typeof scalar !== 'number')
             return scalar
@@ -641,6 +672,24 @@ export function define(
             'invalid_value',
             [name, authoredProperty],
             'Variable value is incompatible with this property.',
+          )
+          continue
+        }
+
+        if (
+          theme?.[Token.definition].contract.strict &&
+          !custom &&
+          Token.mapped(theme, key) &&
+          !Token.is(resolved) &&
+          !(
+            Token.isExpression(resolved) &&
+            resolved.parts.every((part) => Token.is(part) || part === '')
+          )
+        ) {
+          report(
+            'invalid_value',
+            [name, authoredProperty],
+            'Strict mode requires a configured token or { custom: value }.',
           )
           continue
         }

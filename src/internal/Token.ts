@@ -164,6 +164,8 @@ export const complete = Symbol('zyzz.contract.complete')
 export type Contract = {
   /** Whether values belong to independent variables rather than fixed theme categories. */
   readonly variableSet?: boolean | undefined
+  /** Restricts mapped declarations to configured tokens. */
+  readonly strict?: boolean | undefined
   /** Configuration-local category-to-property mappings. */
   readonly mappings?: VariableSets.Mappings | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
@@ -298,6 +300,9 @@ export type Metadata = {
 
 /** Literal domain carried by explicit variable references during type checking. */
 export const scalar = Symbol('zyzz.variable.scalar')
+
+/** Type-only marker carried by strict configuration token contracts. */
+export const strict = Symbol('zyzz.config.strict')
 
 /** Inferred shorthand names whose leaves belong to a property domain. */
 export type Names<
@@ -446,15 +451,13 @@ const reference = Symbol('zyzz.token')
 
 /** Resolves shorthand tokens with literal precedence, with specific colors first. */
 export function resolve(value: unknown, options: resolve.Options): unknown {
-  if (
-    (typeof value !== 'string' && typeof value !== 'number') ||
-    Literal.isLiteral(options.property, value)
-  )
-    return value
+  if (typeof value !== 'string' && typeof value !== 'number') return value
 
   const data = Object.getOwnPropertyDescriptor(options.theme, definition)
     ?.value as Metadata | undefined
   if (!data) throw new Error('Expected a theme definition.')
+  if (!data.contract.strict && Literal.isLiteral(options.property, value))
+    return value
 
   const groups = [
     'backgroundColor',
@@ -527,6 +530,34 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
   }
 
   return value
+}
+
+/** Whether the configured catalog supplies tokens for a property. */
+export function mapped(
+  theme: object,
+  property: keyof Literal.Properties,
+): boolean {
+  const data = Object.getOwnPropertyDescriptor(theme, definition)
+    ?.value as Metadata
+  return Object.entries(data.values).some(([path]) => {
+    const category = path.split('.')[0]!
+    if (data.contract.mappings === false) {
+      let leaf: unknown = Object.getOwnPropertyDescriptor(
+        theme,
+        'tokens',
+      )?.value
+      for (const key of path.split('.'))
+        leaf =
+          leaf && typeof leaf === 'object'
+            ? Object.getOwnPropertyDescriptor(leaf, key)?.value
+            : undefined
+      return is(leaf) && acceptsReference(leaf, property)
+    }
+    const targets = data.contract.mappings?.[category]
+    return targets
+      ? targets.includes(property)
+      : accepts(category as Group, property)
+  })
 }
 
 /** Input contract for theme token resolution. */

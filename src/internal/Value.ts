@@ -22,46 +22,81 @@ export type Atom<value> =
  */
 export type Accepted<style, properties> = {
   [property in keyof style]: property extends keyof properties
-    ? style[property] extends { readonly [Token.scalar]: infer scalar }
-      ? property extends keyof Literal.Properties
-        ? [scalar] extends [Literal.Properties[property]]
-          ? style[property] & Checked<Record<property, scalar>>[property]
-          : never
+    ? style[property] extends { readonly custom: infer value }
+      ? value extends string | number
+        ? {
+            readonly custom: Accepted<
+              Record<property, value>,
+              Literal.Properties
+            >[property]
+          } & Record<Exclude<keyof style[property], 'custom'>, never>
         : never
-      : References<style[property], Exclude<properties[property], undefined>> &
-          (style[property] extends Binding.Reference
-            ? Binding.Reference<style[property]['type']> extends Exclude<
-                properties[property],
-                undefined
-              >
-              ? style[property]
+      : Extract<
+            style[property] extends readonly unknown[]
+              ? style[property][number]
+              : never,
+            { readonly custom: unknown }
+          > extends never
+        ? style[property] extends { readonly [Token.scalar]: infer scalar }
+          ? property extends keyof Literal.Properties
+            ? [scalar] extends [Literal.Properties[property]]
+              ? style[property] & Checked<Record<property, scalar>>[property]
               : never
-            : FunctionValue.Is<style[property]> extends true
-              ? FunctionValue.Accepted<
-                  style[property],
-                  Exclude<properties[property], undefined>,
-                  property
-                >
-              : Exclude<style[property], undefined> extends Exclude<
+            : never
+          : References<
+              style[property],
+              Exclude<properties[property], undefined>
+            > &
+              (style[property] extends Binding.Reference
+                ? Binding.Reference<style[property]['type']> extends Exclude<
                     properties[property],
                     undefined
                   >
-                ? Exclude<style[property], undefined>
-                : property extends keyof Literal.Properties
-                  ? style[property] extends
-                      | string
-                      | readonly (number | string)[]
-                    ? Fold<style[property]> extends Input<
-                        | Lowercase<
-                            Extract<Literal.Properties[property], string>
-                          >
-                        | Extract<Literal.Properties[property], number>
+                  ? style[property]
+                  : never
+                : FunctionValue.Is<style[property]> extends true
+                  ? FunctionValue.Accepted<
+                      style[property],
+                      Exclude<properties[property], undefined>,
+                      property
+                    >
+                  : Exclude<style[property], undefined> extends Exclude<
+                        properties[property],
+                        undefined
                       >
-                      ? style[property]
-                      : Exclude<properties[property], undefined>
-                    : Exclude<properties[property], undefined>
-                  : Exclude<properties[property], undefined>)
+                    ? Exclude<style[property], undefined>
+                    : property extends keyof Literal.Properties
+                      ? style[property] extends
+                          | string
+                          | readonly (number | string)[]
+                        ? Fold<style[property]> extends Input<
+                            | Lowercase<
+                                Extract<Literal.Properties[property], string>
+                              >
+                            | Extract<Literal.Properties[property], number>
+                          >
+                          ? style[property]
+                          : Exclude<properties[property], undefined>
+                        : Exclude<properties[property], undefined>
+                      : Exclude<properties[property], undefined>)
+        : style[property] extends readonly [unknown, ...unknown[]]
+          ? AcceptedArray<style[property], property, properties>
+          : never
     : never
+}
+
+type AcceptedArray<values, property extends PropertyKey, properties> = {
+  [index in keyof values]: Accepted<
+    Record<property, values[index]>,
+    properties
+  >[property]
+}
+
+type CheckedArray<values, property extends PropertyKey, tokens> = {
+  [index in keyof values]: Checked<
+    Record<property, values[index]>,
+    tokens
+  >[property]
 }
 
 type References<value, allowed> = value extends Token.Reference
@@ -80,45 +115,56 @@ type Fold<value> = value extends string
 
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
-  [property in keyof style]: style[property] extends string & Binding.Reference
-    ? style[property] extends Binding.Reference<'*'>
-      ? unknown
-      : Checked<
-          { [key in property]: Binding.Reference<style[property]['type']> },
-          tokens
-        >[property]
-    : Literal.Properties extends style
-      ? unknown
-      : Importance<style[property]> &
-          RuleReference.Check<style[property], property> &
-          (property extends keyof typeof Literal.rules
-            ? style[property] extends (property extends
-                | 'gridArea'
-                | 'gridColumn'
-                | 'gridColumnEnd'
-                | 'gridColumnStart'
-                | 'gridRow'
-                | 'gridRowEnd'
-                | 'gridRowStart'
-                ? Fold<style[property]> extends Grid.Checked<
-                    Fold<style[property]>,
-                    property extends 'gridArea'
-                      ? 4
-                      : property extends 'gridColumn' | 'gridRow'
-                        ? 2
-                        : 1
-                  >
+  [property in keyof style]: style[property] extends {
+    readonly custom: infer value
+  }
+    ? { readonly custom: Checked<Record<property, value>>[property] }
+    : Extract<
+          style[property] extends readonly unknown[]
+            ? style[property][number]
+            : never,
+          { readonly custom: unknown }
+        > extends never
+      ? style[property] extends string & Binding.Reference
+        ? style[property] extends Binding.Reference<'*'>
+          ? unknown
+          : Checked<
+              { [key in property]: Binding.Reference<style[property]['type']> },
+              tokens
+            >[property]
+        : Literal.Properties extends style
+          ? unknown
+          : Importance<style[property]> &
+              RuleReference.Check<style[property], property> &
+              (property extends keyof typeof Literal.rules
+                ? style[property] extends (property extends
+                    | 'gridArea'
+                    | 'gridColumn'
+                    | 'gridColumnEnd'
+                    | 'gridColumnStart'
+                    | 'gridRow'
+                    | 'gridRowEnd'
+                    | 'gridRowStart'
+                    ? Fold<style[property]> extends Grid.Checked<
+                        Fold<style[property]>,
+                        property extends 'gridArea'
+                          ? 4
+                          : property extends 'gridColumn' | 'gridRow'
+                            ? 2
+                            : 1
+                      >
+                      ? unknown
+                      : never
+                    : unknown) &
+                    Check<
+                      style[property],
+                      Token.Names<tokens, property>,
+                      (typeof Literal.rules)[property]
+                    >
                   ? unknown
                   : never
-                : unknown) &
-                Check<
-                  style[property],
-                  Token.Names<tokens, property>,
-                  (typeof Literal.rules)[property]
-                >
-              ? unknown
-              : never
-            : unknown)
+                : unknown)
+      : CheckedArray<style[property], property, tokens>
 }
 
 type Importance<value> = value extends readonly unknown[]
@@ -337,3 +383,20 @@ export function parse(
 
   return { important: true as const, value }
 }
+
+/** Requires configured names or compatible references for mapped properties. */
+export type Strict<
+  value,
+  tokens,
+  property extends keyof Literal.Properties,
+> = tokens extends { readonly [Token.strict]: true }
+  ? [Token.Names<tokens, property>] extends [never]
+    ? unknown
+    : value extends readonly unknown[]
+      ? { [index in keyof value]: Strict<value[index], tokens, property> }
+      : value extends { readonly custom: unknown } | Token.Reference
+        ? unknown
+        : value extends Atom<Token.Names<tokens, property>>
+          ? unknown
+          : never
+  : unknown

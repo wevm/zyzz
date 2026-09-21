@@ -104,10 +104,10 @@ function Index() {
                 duration={400}
                 ease="cubic-bezier(0.77, 0, 0.175, 1)"
               >
-                {headingWords[word]!}
+                {`${headingWords[word]} styles`}
               </TextMorph>
               <br />
-              styles for modern interfaces
+              for modern interfaces
             </span>
           </h1>
           <p {...styles.description()}>
@@ -295,9 +295,9 @@ namespace styles {
     ':hover': { color: '#fff' },
   })
   export const heading = style({
-    typography: 'heading.72',
-    '@media (max-width: 1200px)': { typography: 'heading.56' },
-    '@media (max-width: 600px)': { typography: 'heading.48' },
+    typography: 'heading.56',
+    '@media (max-width: 1200px)': { typography: 'heading.40' },
+    '@media (max-width: 600px)': { typography: 'heading.32' },
   })
   export const install = style({
     backgroundColor: '#181818',

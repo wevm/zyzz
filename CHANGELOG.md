@@ -1,5 +1,21 @@
 # zyzz
 
+## 0.0.6
+
+### Patch Changes
+
+- 513ab36: Added opt-in `reset: true` support to web plugins.
+- d6fc653: Fixed missing Next.js shared styles when client instrumentation is present.
+- 35e72ff: Added static token values in stylesheet contributions and package font URL resolution in Vite.
+  
+  ```ts
+  import { global } from 'zyzz/web'
+  
+  const tokens = { fontFamily: { sans: 'Geist' } }
+  
+  global({ body: { fontFamily: tokens.fontFamily.sans } })
+  ```
+
 ## 0.0.5
 
 ### Patch Changes

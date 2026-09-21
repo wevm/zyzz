@@ -1,5 +1,86 @@
 # zyzz
 
+## 0.0.4
+
+### Patch Changes
+
+- 9514cae: Fixed theme color references in compound CSS, custom properties, and important declarations.
+- d739d3d: Fixed browser style discovery in projects with Node.js imports.
+- 7a883dd: Added `Config.create({ defaultLayer })` to place styles and variants in a fallback CSS layer while preserving explicit layer blocks.
+  
+  ```ts
+  const { style, variants } = Config.create({
+    defaultLayer: 'components',
+    layers: ['components', 'overrides'],
+  })
+  ```
+- a607d2b: Added a derived-values callback to `Vars.define` with deep merging and live references across variable-set overrides.
+  
+  ```ts
+  const vars = Vars.define({ color: { ink: '#171717' } }, (vars) => ({
+    color: { foreground: vars.color.ink },
+  }))
+  ```
+- 5e27572: Aligned all default color palettes with Geist's sRGB light and dark colors.
+- a3e521b: Added full variable paths in compatible CSS properties with `mappings: false`.
+  
+  ```ts
+  const { style } = Config.create({
+    vars: { surface: { foreground: '#123456' } },
+    mappings: false,
+  })
+  const text = style({ color: 'surface.foreground' })
+  ```
+- 6b09256: Fixed callable style overrides to accept React's `CSSProperties`.
+- 8b9a7c1: Fixed Vite stylesheet requests with CSS query parameters.
+- 6270888: Added border-width tokens and responsive typography sets with media and container queries.
+  
+  ```ts
+  import { Config } from 'zyzz'
+  
+  const { style } = Config.create({
+    vars: {
+      borderWidth: { regular: '1px' },
+      breakpoints: { tablet: '48rem' },
+      typography: {
+        heading: {
+          fontSize: '24px',
+          '@media >=tablet': { fontSize: '40px' },
+        },
+      },
+    },
+  })
+  const title = style({ typography: 'heading', borderWidth: 'regular' })
+  ```
+- f6ff0de: Fixed selector and at-rule key suggestions and nested property and value autocomplete in root and configured styles.
+- d74c04b: Added typography token autocomplete to configured style helpers.
+- 448d20a: Added unplugin adapters for Rollup, Webpack, and esbuild with shared CSS output and access to the existing Vite integration.
+  
+  ```ts
+  import { zyzz } from 'zyzz/esbuild'
+  
+  const plugins = [zyzz()]
+  ```
+- f82020d: Replaced theme APIs with `Vars`, configurable variable sets, callable `vars` references and scope selection, and `vars` assignments.
+  
+  ```diff
+  -import { Theme, Config } from 'zyzz'
+  -const base = Theme.define({ color: { accent: '#2563eb' } })
+  -const { theme, themes } = Config.create({ themes: { base }, defaultTheme: 'base' })
+  -theme.tokens.color.accent
+  -themes({ theme: 'base', colorScheme: 'dark' })
+  -style({ variables: { [accent]: 'tomato' } })
+  -label({ variables: { [accent]: 'blue' } })
+  +import { Vars, Config } from 'zyzz'
+  +const base = Vars.define({ color: { accent: '#2563eb' } })
+  +const { vars } = Config.create({ vars: { base }, defaultVars: 'base' })
+  +vars.color.accent
+  +vars({ set: 'base', colorScheme: 'dark' })
+  +style({ vars: { [accent]: 'tomato' } })
+  +label({ vars: { [accent]: 'blue' } })
+  ```
+- 8e04e2c: Fixed stale Webpack source reads when watched directories changed.
+
 ## 0.0.3
 
 ### Patch Changes

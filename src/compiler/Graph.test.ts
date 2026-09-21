@@ -26,6 +26,33 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('uses exported default typography values in global declarations', async () => {
+    const result = Graph.compile({
+      modules: {
+        'default.ts': await Fs.readFile(
+          Path.join(root, 'src/default.ts'),
+          'utf8',
+        ),
+        'config.ts': `import {tokens} from './default.js';import {global} from 'zyzz/web';global({button:tokens.typography.button['16']});`,
+      },
+    })
+
+    expect(result.sharedCss).toContain('button{')
+    expect(result.sharedCss).toContain('font-size:16px')
+    expect(result.sharedCss).toContain('line-height:20px')
+    expect(result.sharedCss).toContain('font-family:Geist,')
+  })
+
+  test('rejects mutations of literal objects used in global declarations', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'config.ts': `import {global} from 'zyzz/web';const copy={fontSize:'16px'};copy.fontSize='24px';global({body:copy});`,
+        },
+      }),
+    ).toThrow('Static data cannot be mutated')
+  })
+
   test('preserves shared style ownership across successive compositions', async () => {
     const result = Graph.compile({
       modules: {
@@ -2978,6 +3005,71 @@ describe('stylesheets', () => {
 
         await page.setContent(
           `<style>${result.sharedCss}\n${reset}</style><button>Button</button><img><h1>Heading</h1><ul><li>Item</li></ul>`,
+        )
+
+        expect(
+          await page
+            .locator('button')
+            .evaluate((node) => getComputedStyle(node).fontSize),
+        ).toMatchInlineSnapshot('"24px"')
+        expect(
+          await page
+            .locator('img')
+            .evaluate((node) => getComputedStyle(node).maxWidth),
+        ).toMatchInlineSnapshot('"none"')
+
+        expect(
+          await page
+            .locator('h1')
+            .evaluate((node) => [
+              getComputedStyle(node).fontSize,
+              getComputedStyle(node).fontWeight,
+              getComputedStyle(node).marginTop,
+            ]),
+        ).toMatchInlineSnapshot(`
+          [
+            "16px",
+            "400",
+            "0px",
+          ]
+        `)
+        expect(
+          await page
+            .locator('ul')
+            .evaluate((node) => getComputedStyle(node).listStyleType),
+        ).toMatchInlineSnapshot('"none"')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('injects host reset CSS below component layers in Chromium', async () => {
+      const source = `import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+      const reset = await Fs.readFile(Path.resolve('src/reset.css'), 'utf8')
+      const compiler = Graph.create()
+      const result = compiler.compile({ modules: { 'app.ts': source }, reset })
+      expect(
+        compiler
+          .compile({ modules: { 'app.ts': source } })
+          .sharedCss?.includes('box-sizing'),
+      ).toMatchInlineSnapshot('false')
+      expect(() =>
+        compiler.compile({
+          modules: {
+            'app.ts': `import {layers} from 'zyzz/web';layers(['components','reset']);`,
+          },
+          reset,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:0: Conflicting layer order constraints.]`,
+      )
+      const browser = await chromium.launch({ headless: true })
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${result.sharedCss}</style><button>Button</button><img><h1>Heading</h1><ul><li>Item</li></ul>`,
         )
 
         expect(

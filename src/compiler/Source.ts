@@ -471,7 +471,10 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   pending.sort((a, b) => a.start - b.start)
 
-  const staticCalls = new Set(pending.map((call) => call.start))
+  const staticCalls = new Set([
+    ...pending.map((call) => call.start),
+    ...contributions.calls.map((call) => call.start),
+  ])
   const opaque = new Set(variables.references.keys())
   const normalized = new Map<number, Ast.Node | Error>()
   const selectorKeys = new Set<number>()
@@ -1365,6 +1368,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         contributions,
         themes?.tokens ?? new Map(),
         contributionStarts,
+        (node) => staticData.resolve(node, staticCalls),
       ),
       ...(themes?.calls ?? []).flatMap((call) =>
         call.options?.layers

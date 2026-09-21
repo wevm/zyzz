@@ -4,6 +4,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
 import * as Graph from '../compiler/Graph.js'
+import * as Reset from '../node/Reset.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Contract from '../compiler/internal/Contract.js'
 
@@ -14,6 +15,7 @@ type Context = {
   getOptions(): {
     bundler: string
     mode: 'shared' | 'source' | 'style'
+    reset?: boolean | undefined
     root: string
   }
   getResolve(
@@ -192,7 +194,12 @@ async function compile(context: Context, source: string) {
   }
   for (const file of Object.keys(contracts)) await dependencies(file)
 
-  const graph = Graph.compile({ contracts, imports, modules })
+  const graph = Graph.compile({
+    contracts,
+    imports,
+    modules,
+    reset: options.reset ? Reset.read() : undefined,
+  })
   const output = graph.modules[id(context.resourcePath)]
 
   const assets = new Map<string, string>()

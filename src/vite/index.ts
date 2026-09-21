@@ -10,6 +10,7 @@ import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Reset from '../node/Reset.js'
 import { isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -34,6 +35,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           options.native.units && Object.freeze({ ...options.native.units }),
       })
     : undefined
+  if (native && options.reset)
+    throw new Error('The CSS reset is only supported by web builds.')
   if (native && options.compiler === false)
     throw new Error('Native builds require source compilation.')
 
@@ -640,6 +643,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     const result = entry.compiler.compile({
       compiler: options.compiler,
+      reset: options.reset ? Reset.read() : undefined,
       native,
       contracts,
       development: entry.environment.mode !== 'build',
@@ -762,17 +766,39 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     for (const [key, target] of Object.entries(result.sharedAssets ?? {})) {
       const raw = target.split(/[?#]/)[0]!
 
-      const file = await Fs.realpath(
-        target.startsWith('app/')
-          ? Path.join(root, decodeURIComponent(raw.slice(4)))
-          : Path.isAbsolute(raw)
-            ? decodeURIComponent(raw)
-            : (() => {
-                throw new Error('Asset path escapes the Vite graph.')
-              })(),
-      )
-
       const identity = result.sharedAssetOwners?.[key]
+      const path = target.startsWith('app/')
+        ? Path.join(root, decodeURIComponent(raw.slice(4)))
+        : Path.isAbsolute(raw)
+          ? decodeURIComponent(raw)
+          : undefined
+      if (!path) throw new Error('Asset path escapes the Vite graph.')
+
+      const asset = await (async () => {
+        try {
+          return { file: await Fs.realpath(path), package: false }
+        } catch (error) {
+          if (
+            (error as NodeJS.ErrnoException).code !== 'ENOENT' ||
+            !identity?.startsWith('app/')
+          )
+            throw error
+
+          const importer = Path.join(root, identity.slice(4))
+          const specifier = Path.relative(Path.dirname(importer), path)
+            .split(Path.sep)
+            .join('/')
+          if (specifier.startsWith('.') || Path.isAbsolute(specifier))
+            throw error
+          const resolved = await host.resolve(specifier, importer)
+          if (!resolved || resolved.external) throw error
+          return {
+            file: await Fs.realpath(resolved.id.split('?')[0]!),
+            package: true,
+          }
+        }
+      })()
+      const file = asset.file
 
       const owner = identity?.startsWith('app/')
         ? appRoot
@@ -782,9 +808,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       const relative = owner ? Path.relative(owner, file) : '..'
       if (
-        relative === '..' ||
-        relative.startsWith(`..${Path.sep}`) ||
-        Path.isAbsolute(relative)
+        !asset.package &&
+        (relative === '..' ||
+          relative.startsWith(`..${Path.sep}`) ||
+          Path.isAbsolute(relative))
       )
         throw new Error('Asset path escapes its owning package.')
 
@@ -1465,6 +1492,8 @@ export declare namespace zyzz {
     readonly compiler?: boolean | undefined
     /** Native context captured at creation. Disables CSS delivery and initialization scripts. */
     readonly native?: Graph.compile.Options['native']
+    /** Include the CSS reset. Defaults to false. */
+    readonly reset?: boolean | undefined
     /**
      * Inline each configuration's `script()` at the start of index.html's head.
      * False skips injection for documents that inline the script themselves.

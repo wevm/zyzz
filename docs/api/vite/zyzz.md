@@ -18,7 +18,7 @@ export default defineConfig({ plugins: [zyzz()] })
 
 ## Parameters
 
-Optional `compiler`, `native`, and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
+Optional `compiler`, `native`, `reset`, and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
 
 ## Browser Targets
 
@@ -60,7 +60,17 @@ Each script reads the localStorage entry named by its configuration's `storageKe
 
 ## Options
 
-`zyzz({ compiler?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Vars, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+`zyzz({ compiler?: boolean, reset?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Vars, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+
+### reset
+
+Type: `boolean`. Defaults to `false`.
+
+Include `zyzz/reset.css` in shared CSS and order its `reset` layer before authored layers. No explicit stylesheet import is needed. Native builds reject this option.
+
+```ts
+zyzz({ reset: true })
+```
 
 ## Native Output
 

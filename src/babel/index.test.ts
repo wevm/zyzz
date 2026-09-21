@@ -287,6 +287,67 @@ export const marker = 'original-location'
 })
 
 describe('web', () => {
+  test('injects the optional reset without duplicating explicit imports', async () => {
+    for (const source of [
+      'export const value = 1',
+      "import 'zyzz/reset.css'; export const value = 1",
+    ]) {
+      const result = Babel.transformSync(source, {
+        babelrc: false,
+        configFile: false,
+        filename: Path.resolve('app.js'),
+        plugins: [[zyzz, { target: 'web', reset: true }]],
+      })!
+
+      expect(
+        result.code?.match(/zyzz\/reset.css/g)?.length,
+      ).toMatchInlineSnapshot('1')
+    }
+
+    const transformed = Babel.transformSync(
+      "import {style} from 'zyzz';export const props=style({padding: '12px'})()",
+      {
+        babelrc: false,
+        configFile: false,
+        filename: Path.resolve('app.js'),
+        plugins: [[zyzz, { target: 'web', reset: true }]],
+      },
+    )!
+    const bundle = await Esbuild.build({
+      bundle: true,
+      format: 'iife',
+      globalName: 'App',
+      outdir: 'dist',
+      stdin: { contents: transformed.code!, resolveDir: process.cwd() },
+      write: false,
+    })
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage()
+      const css = bundle.outputFiles.find((file) =>
+        file.path.endsWith('.css'),
+      )!.text
+      const js = bundle.outputFiles.find((file) =>
+        file.path.endsWith('.js'),
+      )!.text
+      await page.setContent(
+        `<style>${css}\n${transformed.metadata!.zyzz!.css}</style><h1>Heading</h1><script>${js};document.querySelector('h1').className=App.props.className;</script>`,
+      )
+      expect(
+        await page
+          .locator('h1')
+          .evaluate((node) => getComputedStyle(node).margin),
+      ).toMatchInlineSnapshot('"0px"')
+      expect(
+        await page
+          .locator('h1')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"12px"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   for (const cssOutput of ['atomic', 'grouped'] as const)
     test(`renders extracted ${cssOutput} CSS with dynamic bindings and selectors`, async () => {
       const source = `import { style, variants } from 'zyzz'

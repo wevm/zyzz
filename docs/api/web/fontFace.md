@@ -97,3 +97,19 @@ fontFace(
 ```
 
 Descriptors include `fontFeatureSettings` and `fontVariationSettings`, alongside family, source, display, style, stretch, weight, Unicode range, size adjustment, and metric overrides.
+
+## Package fonts in Vite
+
+The Vite adapter resolves a missing source-relative font URL through Vite's package resolver. Package exports and aliases apply. Development serves the font locally; production emits a bundled asset. Other hosts retain their existing relative-asset behavior.
+
+```ts
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  fontDisplay: 'swap',
+  fontFamily: 'Geist',
+  fontStyle: 'normal',
+  fontWeight: '100 900',
+  src: 'url("@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2")',
+})
+```

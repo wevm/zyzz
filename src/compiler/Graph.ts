@@ -65,6 +65,8 @@ export declare namespace compile {
       | undefined
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>
+    /** Optional reset stylesheet supplied by the host, ordered before authored layers. */
+    readonly reset?: string | undefined
   }
 
   /** Compiled modules and their direct source dependencies. */
@@ -119,6 +121,7 @@ type Cache = {
   development: boolean
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
+  reset: string | undefined
   resolutions: Readonly<Record<string, string>>
   native: compile.Options['native']
   result: compile.ReturnType
@@ -148,11 +151,16 @@ function build(options: compile.Options, cache?: Cache): Cache {
     })
   )
     cache = undefined
+  if (options.native && options.reset !== undefined)
+    throw new Native.CompileError(
+      'The CSS reset is only supported by web builds.',
+    )
   if (options.native && options.compiler === false)
     throw new Native.CompileError(
       'Native graph compilation requires source rewriting.',
     )
   if (cache?.compiler !== (options.compiler !== false)) cache = undefined
+  if (cache?.reset !== options.reset) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
   const ids = Object.keys(options.modules).sort()
@@ -1063,6 +1071,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ...(options.native.vars && { vars: { ...options.native.vars } }),
         ...(options.native.units && { units: { ...options.native.units } }),
       },
+      reset: options.reset,
       resolutions: Object.freeze(resolutions),
       result: Object.freeze({
         contracts: Object.freeze(
@@ -1244,6 +1253,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     try {
       const sharedSections = ids.flatMap((id) => reachable(id, sharedVisited))
       const resetSource =
+        (options.reset === undefined ? undefined : 'zyzz/reset.css') ??
         resetOwners[0] ??
         sharedSections.find((section) => section.key === 'optional-reset-order')
           ?.source
@@ -1262,6 +1272,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
               },
             ]),
         ...sharedSections,
+        ...(options.reset === undefined
+          ? []
+          : [
+              {
+                source: 'zyzz/reset.css',
+                key: 'optional-reset',
+                css: options.reset,
+                content: options.reset,
+                layers: [['reset']],
+              },
+            ]),
       ])
     } catch (error) {
       return fail(
@@ -1509,6 +1530,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     extracted,
     libraries: Object.freeze(libraries),
     native: undefined,
+    reset: options.reset,
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
       ...(sharedCss

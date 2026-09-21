@@ -117,6 +117,7 @@ export function create(
       const binding = scope.getDeclaration(node.name) ?? null
       if (!binding && node.name === 'undefined') absent.add(node.start)
       if (!binding || !values.has(binding.node.start)) return binding
+      if (ancestors.some((node) => node.type === 'TSTypeQuery')) return binding
 
       references.set(node.start, binding.node.start)
       const value = Expression.unwrap(values.get(binding.node.start)!)

@@ -2559,7 +2559,7 @@ describe('output', () => {
               const source = `import {Config,cx} from 'zyzz';import {controls,style} from '@acme/variants';
 const {style:configured}=Config.create({cssOutput:'${consumer}'});
 const override=configured({paddingLeft:'5px'});
-export const authored=style({color:'[red]',padding:'[6px]'});
+export const authored=style({color:'red !custom',padding:'6px !custom'});
 export function sample(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),override())}`
               const input = {
                 contracts: { 'library/index.js': contract },

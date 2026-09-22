@@ -93,7 +93,7 @@ describe('create', () => {
       imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
       modules: {
         'app.ts':
-          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';import {config,theme,staticStyle} from 'library';const extended=Vars.extend(theme,{padding:{sm:'12px'}}); const extendedConfig=Config.create({vars:extended,output:'html',shorthands:{px:['paddingLeft','paddingRight']}});export const extension=extendedConfig.style({px:'sm'})();const {style}=config;export const destructured=style({px:'sm'})();const bound=config.style;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:`[${values.width}]`}))({width:'8px'});export const direct=config.style({px:'sm'})();export const source=staticStyle();",
+          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';import {config,theme,staticStyle} from 'library';const extended=Vars.extend(theme,{padding:{sm:'12px'}}); const extendedConfig=Config.create({vars:extended,output:'html',shorthands:{px:['paddingLeft','paddingRight']}});export const extension=extendedConfig.style({px:'sm'})();const {style}=config;export const destructured=style({px:'sm'})();const bound=config.style;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:`${values.width} !custom`}))({width:'8px'});export const direct=config.style({px:'sm'})();export const source=staticStyle();",
       },
     })
 
@@ -119,7 +119,7 @@ describe('create', () => {
     expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
-        "class": "z-pl-MRC0gH-0 z-pr-J7bikM-1",
+        "class": "z-pl--idl73-0 z-pr-kvCfLs-1",
       }
     `)
     expect(result.source).toMatchInlineSnapshot(`
@@ -138,13 +138,13 @@ describe('create', () => {
   const config =
     "import {Config} from 'zyzz';export const {style,vars:theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},vars:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});"
   const source = `import {style,theme} from 'library';export namespace styles {
-  export const card = style({px:'sm',paddingLeft:'[2px]',':hover':{paddingX:'sm !important'}})
+  export const card = style({px:'sm',paddingLeft:'2px !custom',':hover':{paddingX:'sm !important'}})
 
   export const mixed = style({space:'sm'})
 
   export const handle = theme.style({px:'sm'})
 
-  export const dynamic = style((values:{width:'10px'|'20px'})=>({px:\`[\${values.width}]\`}))
+  export const dynamic = style((values:{width:'10px'|'20px'})=>({px:\`\${values.width} !custom\`}))
 }`
 
   function compile() {
@@ -286,12 +286,12 @@ describe('create', () => {
       .z-pl-2px-CGhyBp-2{padding-left:2px;}
       .z-hover-pl-eR_rpb-3{&:hover{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px)!important;}}
       .z-hover-pr-TDwfLY-4{&:hover{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px)!important;}}
-      .z-ml-dxxsHt-0{margin-left:var(--z-tu8smm21l81sow-style-margin_2e_sm,-8px);}
-      .z-pl-AuFj4P-1{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pl-mc5sgv-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pr-T2MFrD-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pl-a_tVgc-0{padding-left:var(--z-d1e8a67z1uaws1j-275-77-69-64-74-68);}
-      .z-pr-8PVyOp-1{padding-right:var(--z-d1e8a67z1uaws1j-275-77-69-64-74-68);}"
+      .z-ml--XKnZT-0{margin-left:var(--z-tu8smm21l81sow-style-margin_2e_sm,-8px);}
+      .z-pl-PHaTir-1{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      .z-pl-T3UYB5-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      .z-pr-Pvanyp-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      .z-pl-Q2O7X3-0{padding-left:var(--z-d1e8a67z1uaws1j-281-77-69-64-74-68);}
+      .z-pr-3dnBGX-1{padding-right:var(--z-d1e8a67z1uaws1j-281-77-69-64-74-68);}"
     `)
     expect(app.modules['app.ts']!.code.includes('px:')).toMatchInlineSnapshot(
       'false',

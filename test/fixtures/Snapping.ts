@@ -15,7 +15,7 @@ export const controls = {
 
 /** Source exercises token padding, snap fallback order, and two-axis alignment. */
 export const source =
-  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{edge:'10px'}}});\nexport const horizontal = zyzz.style({\n  display:'flex',gap:'[40px]',overflow:'auto',width:'[100px]',height:'[100px]',\n  scrollPadding:'edge',scrollSnapType:['x proximity','x mandatory !important']\n})();\nexport const vertical = style({display:'flex',flexDirection:'column',gap:'40px',overflow:'auto',width:'100px',height:'100px',scrollPadding:'10px',scrollSnapType:'y mandatory'})();\nexport const item = style({width:'60px',height:'60px',flexShrink:0,scrollMargin:'5px',scrollSnapAlign:'start',scrollSnapStop:['normal','always !important']})();\nexport const pair = style({scrollSnapAlign:'none center',scrollSnapType:'both proximity'})();\n"
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{edge:'10px'}}});\nexport const horizontal = zyzz.style({\n  display:'flex',gap:'40px !custom',overflow:'auto',width:'100px !custom',height:'100px !custom',\n  scrollPadding:'edge',scrollSnapType:['x proximity','x mandatory !important']\n})();\nexport const vertical = style({display:'flex',flexDirection:'column',gap:'40px',overflow:'auto',width:'100px',height:'100px',scrollPadding:'10px',scrollSnapType:'y mandatory'})();\nexport const item = style({width:'60px',height:'60px',flexShrink:0,scrollMargin:'5px',scrollSnapAlign:'start',scrollSnapStop:['normal','always !important']})();\nexport const pair = style({scrollSnapAlign:'none center',scrollSnapType:'both proximity'})();\n"
 
 /** Valid authored declarations are checked through the public in-memory boundary. */
 export const styles = {

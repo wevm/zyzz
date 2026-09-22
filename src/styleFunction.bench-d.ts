@@ -77,7 +77,7 @@ bench('style / bound theme tokens', () => {
   themeConfig.style({
     ':hover': { color: 'brand' },
     color: 'ink',
-    padding: ['md', '[2px] !important'],
+    padding: ['md', '2px !custom !important'],
     width: theme.spacing[4],
   })
 }).types([64207, 'instantiations'])

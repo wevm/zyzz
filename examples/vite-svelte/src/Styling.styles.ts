@@ -12,7 +12,7 @@ export namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: '[0]',
+      minWidth: '0 !custom',
       paddingTop: 'md',
     },
   })
@@ -26,7 +26,10 @@ export namespace styles {
     gap: 'sm',
   })
 
-  const shape = { borderRadius: '[2px]', padding: '[0.25rem]' } as const
+  const shape = {
+    borderRadius: '2px !custom',
+    padding: '0.25rem !custom',
+  } as const
 
   export const label = style({
     ...shape,

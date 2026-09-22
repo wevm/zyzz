@@ -16,7 +16,7 @@ import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 for (const count of [10, 100]) {
   const modules = {
     ...Fixture.modules,
-    'pkg/card.ts': `import { style } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'[${index}px]'})();`).join('\n')}`,
+    'pkg/card.ts': `import { style } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'${index}px !custom'})();`).join('\n')}`,
   }
 
   describe(`theme graph / ${count} styles`, () => {
@@ -194,7 +194,7 @@ for (const count of [10, 100]) {
   })
   const contracts = { 'library/index.js': library.contracts['pkg/index.ts']! }
   const modules = {
-    'app/card.ts': `import { style } from '@acme/theme'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'[${index}px]'})();`).join('\n')}`,
+    'app/card.ts': `import { style } from '@acme/theme'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'${index}px !custom'})();`).join('\n')}`,
   }
 
   describe(`packed theme graph / ${count} styles`, () => {
@@ -217,7 +217,7 @@ for (const count of [10, 100]) {
 for (const count of [10, 100]) {
   const modules = {
     ...ConfigFixture.modules,
-    'pkg/card.ts': `import { design as zyzz } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = zyzz.style({color:'brand',padding:'[${index}px]'})();`).join('\n')}`,
+    'pkg/card.ts': `import { design as zyzz } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = zyzz.style({color:'brand',padding:'${index}px !custom'})();`).join('\n')}`,
   }
 
   describe(`configuration graph / ${count} styles`, () => {

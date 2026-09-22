@@ -29,7 +29,10 @@ export type Accepted<style, properties> = {
 }
 
 type AcceptedValue<value, property extends PropertyKey, properties> =
-  Extract<value, `[${string}]` | `[${string}] !important`> extends never
+  Extract<
+    value,
+    `${string} !custom` | `${string} !custom !important`
+  > extends never
     ? AcceptedMember<Record<property, value>, properties>[property]
     : value extends unknown
       ? AcceptedMember<Record<property, value>, properties>[property]
@@ -37,22 +40,15 @@ type AcceptedValue<value, property extends PropertyKey, properties> =
 
 type AcceptedMember<style, properties> = {
   [property in keyof style]: property extends keyof properties
-    ? style[property] extends `[${infer value}]` | `[${infer value}] !important`
-      ?
-          | (property extends 'gridTemplateColumns' | 'gridTemplateRows'
-              ? style[property] extends LiteralAccepted<
-                  Pick<style, property>,
-                  Literal.Properties
-                >[property]
-                ? style[property]
-                : never
-              : never)
-          | (ScalarValue<value, property> extends LiteralAccepted<
-              Record<property, ScalarValue<value, property>>,
-              Literal.Properties
-            >[property]
-              ? style[property]
-              : never)
+    ? style[property] extends
+        | `${infer value} !custom`
+        | `${infer value} !custom !important`
+      ? ScalarValue<value, property> extends LiteralAccepted<
+          Record<property, ScalarValue<value, property>>,
+          Literal.Properties
+        >[property]
+        ? style[property]
+        : never
       : style[property] extends readonly [unknown, ...unknown[]]
         ? AcceptedArray<style[property], property, properties>
         : LiteralAccepted<Pick<style, property>, properties>[property]
@@ -135,15 +131,11 @@ type Fold<value> = value extends string
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
   [property in keyof style]: style[property] extends
-    | `[${infer value}]`
-    | `[${infer value}] !important`
-    ?
-        | (property extends 'gridTemplateColumns' | 'gridTemplateRows'
-            ? LiteralChecked<Pick<style, property>>[property]
-            : never)
-        | LiteralChecked<
-            Record<property, ScalarValue<value, property>>
-          >[property]
+    | `${infer value} !custom`
+    | `${infer value} !custom !important`
+    ? value extends `${string} !${'custom' | 'important'}`
+      ? never
+      : LiteralChecked<Record<property, ScalarValue<value, property>>>[property]
     : style[property] extends readonly [unknown, ...unknown[]]
       ? CheckedArray<style[property], property, tokens>
       : LiteralChecked<Pick<style, property>, tokens>[property]
@@ -214,8 +206,8 @@ export type Tokens<
             | Token.Reference
             | Token.Variable
             | `${Token.Variable} !important`
-            | `[${string}]`
-            | `[${string}] !important`
+            | `${string} !custom`
+            | `${string} !custom !important`
         ? unknown
         : value extends Atom<Token.Names<tokens, property>>
           ? unknown
@@ -361,7 +353,7 @@ export type Fallbacks<atom> = atom | readonly [atom, ...atom[]]
 /** One declaration or a nonempty ordered sequence of declaration fallbacks. */
 export type Input<value> = Fallbacks<Atom<Exclude<value, undefined>>>
 
-/** Splits a trailing importance marker without interpreting quoted or escaped text. */
+/** Splits trailing custom and importance markers without interpreting quoted or escaped text. */
 export function parse(
   input: unknown,
   property: keyof Literal.Properties,
@@ -383,16 +375,6 @@ export function parse(
 
     const parts = [...input.parts]
     let remaining = text.length - String(parsed.value).length
-    if (parsed.custom) {
-      for (let index = 0; index < parts.length; index++) {
-        const part = parts[index]
-        if (part === '') continue
-        if (typeof part !== 'string') return undefined
-        parts[index] = part.slice(1)
-        break
-      }
-      remaining--
-    }
 
     for (let index = parts.length - 1; remaining > 0 && index >= 0; index--) {
       const part = parts[index]
@@ -434,37 +416,38 @@ export function parse(
       '',
     )
 
-    if (!escaped(marker) && (suffix === '' || suffix === 'important')) break
+    if (
+      !escaped(marker) &&
+      (suffix === '' || suffix === 'important' || suffix === 'custom')
+    )
+      break
 
     marker = marker === 0 ? -1 : input.lastIndexOf('!', marker - 1)
   }
 
-  if (marker < 0) {
-    if (bracketed(input))
-      return {
-        custom: true,
-        important: false,
-        value: scalar(input.slice(1, -1)),
-      }
-    return undefined
-  }
-  if (input.slice(marker - 1) !== ' !important' || escaped(marker - 1))
+  if (marker < 0) return undefined
+  const suffix = input.slice(marker - 1)
+  if (
+    (suffix !== ' !important' && suffix !== ' !custom') ||
+    escaped(marker - 1)
+  )
     return { invalid: true }
 
   let end = marker
-
   while (end > 0 && /[ \t\n\r\f]/.test(input[end - 1]!) && !escaped(end - 1))
     end--
 
   const body = input.slice(0, end)
-  const custom = bracketed(body)
-  const text = custom ? body.slice(1, -1) : body
-  const value = scalar(text)
+  if (!body) return { invalid: true }
+  const nested = parse(body, property)
+  if (nested && 'invalid' in nested) return nested
+  const custom = suffix === ' !custom'
+  if (nested && (custom || nested.important)) return { invalid: true }
 
   return {
-    ...(custom ? { custom: true } : {}),
-    important: true as const,
-    value,
+    ...(custom || nested?.custom ? { custom: true } : {}),
+    important: !custom,
+    value: nested?.value ?? scalar(body),
   }
 
   function scalar(text: string): number | string {
@@ -475,35 +458,4 @@ export function parse(
       ? Number(text)
       : text
   }
-}
-
-/** Recognizes one enclosing pair without consuming native grid line lists. */
-function bracketed(value: string): boolean {
-  if (!value.startsWith('[') || !value.endsWith(']')) return false
-  let depth = 0
-  let quote = ''
-  for (let index = 0; index < value.length; index++) {
-    const character = value[index]!
-    if (character === '\\') {
-      index++
-      continue
-    }
-    if (quote) {
-      if (character === quote) quote = ''
-      continue
-    }
-    if (character === '/' && value[index + 1] === '*') {
-      const end = value.indexOf('*/', index + 2)
-      if (end < 0) return false
-      index = end + 1
-      continue
-    }
-    if (character === '"' || character === "'") {
-      quote = character
-      continue
-    }
-    if (character === '[') depth++
-    if (character === ']' && --depth === 0) return index === value.length - 1
-  }
-  return false
 }

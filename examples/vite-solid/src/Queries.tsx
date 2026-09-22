@@ -8,7 +8,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: '[0]',
+      minWidth: '0 !custom',
       paddingTop: 'md',
     },
   })
@@ -25,15 +25,15 @@ namespace styles {
   export const container = style((values: { width: `${number}%` }) => ({
     containerName: 'preview',
     containerType: 'inline-size',
-    maxWidth: '[100%]',
-    width: `[${values.width}]`,
+    maxWidth: '100% !custom',
+    width: `${values.width} !custom`,
   }))
 
   export const content = style({
     backgroundColor: 'backdrop',
     border: '1px solid',
     borderColor: 'line',
-    borderRadius: '[0.5rem]',
+    borderRadius: '0.5rem !custom',
     display: 'grid',
     gap: 'sm',
     marginTop: 'md',

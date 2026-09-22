@@ -18,7 +18,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: '[0]',
+      minWidth: '0 !custom',
       paddingTop: 'md',
     },
   })
@@ -29,7 +29,7 @@ namespace styles {
     animationDuration: '600ms',
     animationName: enter,
     backgroundColor: 'backdrop',
-    borderRadius: '[0.5rem]',
+    borderRadius: '0.5rem !custom',
     marginTop: 'md',
     padding: 'card',
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
@@ -42,9 +42,9 @@ namespace styles {
     animationIterationCount: 'infinite',
     animationName: pulse,
     backgroundColor: 'accent',
-    borderRadius: '[50%]',
-    height: '[1rem]',
-    width: '[1rem]',
+    borderRadius: '50% !custom',
+    height: '1rem !custom',
+    width: '1rem !custom',
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
   })
 }

@@ -15,7 +15,7 @@ namespace styles {
     '@layer components': {
       borderTop: '1px solid',
       borderColor: 'line',
-      minWidth: '[0]',
+      minWidth: '0 !custom',
       paddingTop: 'md',
     },
   })
@@ -31,17 +31,17 @@ namespace styles {
 
   export const bar = style((values: { width: `${number}%` }) => ({
     backgroundColor: 'accent',
-    borderRadius: '[0.5rem]',
-    height: '[0.75rem]',
-    width: `[${values.width}]`,
+    borderRadius: '0.5rem !custom',
+    height: '0.75rem !custom',
+    width: `${values.width} !custom`,
   }))
 
   export const inherited = style({
     backgroundColor: 'muted',
-    borderRadius: '[0.5rem]',
-    height: '[0.75rem]',
+    borderRadius: '0.5rem !custom',
+    height: '0.75rem !custom',
     opacity: vars.amount,
-    width: '[100%]',
+    width: '100% !custom',
   })
 
   export const scope = style({
@@ -50,7 +50,7 @@ namespace styles {
 
   export const track = style({
     backgroundColor: 'backdrop',
-    borderRadius: '[0.5rem]',
+    borderRadius: '0.5rem !custom',
     marginTop: 'md',
     overflow: 'hidden',
   })

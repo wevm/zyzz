@@ -175,6 +175,7 @@ async function compile(context: Context, source: string) {
         return original
       },
     )
+    // Changed CSS needs a new resource identity when a server component refreshes.
     const requests = [
       ...(graph.sharedCss
         ? [
@@ -183,7 +184,7 @@ async function compile(context: Context, source: string) {
         : []),
       ...(output.css
         ? [
-            `import ${JSON.stringify(`./${Path.basename(resource)}?zyzz-style`)};`,
+            `import ${JSON.stringify(`./${Path.basename(resource)}?zyzz-style=${Crypto.createHash('sha256').update(output.css).digest('hex').slice(0, 16)}`)};`,
           ]
         : []),
     ]

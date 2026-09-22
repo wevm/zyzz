@@ -60,9 +60,9 @@ export async function verify(options: verify.Options) {
     )
 
     // A dependency symlink back to an ancestor, as a package linked from its
-    // own repository, must not break root discovery; the Webpack scenarios
-    // keep the plain root so both tracking paths stay covered.
-    if (bundler === 'turbopack')
+    // own repository, must not break root discovery. Atomic builds keep a plain
+    // root to cover server-component CSS updates without linked dependencies.
+    if (bundler === 'turbopack' && cssOutput === 'grouped')
       await Fs.symlink(app, Path.join(app, 'node_modules', 'ancestor'))
 
     await VariantLibrary.create(app, {

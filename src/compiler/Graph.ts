@@ -195,14 +195,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ]),
   )
 
-  // File-set changes can alter extensionless resolution even without source edits.
+  // Host resolutions remain explicit when generated modules enter or leave the graph.
   const previous = (() => {
     if (
       cache &&
       cache.contracts === contracts &&
       cache.development === !!options.development &&
-      ids.length === Object.keys(cache.sources).length &&
-      ids.every((id) => Object.hasOwn(cache.sources, id))
+      (options.imports !== undefined ||
+        (ids.length === Object.keys(cache.sources).length &&
+          ids.every((id) => Object.hasOwn(cache.sources, id))))
     ) {
       return cache
     }
@@ -211,6 +212,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   })()
   if (
     previous &&
+    ids.length === Object.keys(previous.sources).length &&
     Object.keys(resolutions).length ===
       Object.keys(previous.resolutions).length &&
     Object.entries(resolutions).every(
@@ -604,12 +606,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
     if (
       previous &&
+      Object.hasOwn(previous.sources, moduleId) &&
       source === previous.sources[moduleId] &&
       resolutions[moduleId] === previous.resolutions[moduleId] &&
       previous.result.dependencies[moduleId]!.every(
         (target) =>
           Object.hasOwn(libraries, target) ||
-          visit(target) === previous.extracted.get(target),
+          (Object.hasOwn(options.modules, target) &&
+            visit(target) === previous.extracted.get(target)),
       )
     ) {
       return retain(

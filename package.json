@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "bench:adapters": "pnpm build && node bench/adapters/Run.ts",
     "bench:check": "vp test run --config bench/Check.config.ts --no-file-parallelism",
     "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",

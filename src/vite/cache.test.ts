@@ -9,20 +9,20 @@ describe('zyzz', () => {
       expect(await CompilerCache.verify(adapter)).toMatchInlineSnapshot(`
         {
           "cold": {
-            "extractions": 14,
-            "parses": 19,
+            "extractions": 6,
+            "parses": 12,
           },
           "edited": {
-            "extractions": 12,
-            "parses": 15,
+            "extractions": 4,
+            "parses": 8,
           },
           "settled": {
             "extractions": 0,
-            "parses": 6,
+            "parses": 3,
           },
           "warm": {
             "extractions": 0,
-            "parses": 6,
+            "parses": 3,
           },
         }
       `)

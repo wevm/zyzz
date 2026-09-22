@@ -1,13 +1,91 @@
 name: Benchmarks
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed, opened, ready_for_review, reopened, synchronize]
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 jobs:
-  checks:
+  adapters:
     if: github.event.action != 'closed'
+    name: Application workload (${{ matrix.lane }})
+    strategy:
+      fail-fast: false
+      matrix:
+        lane:
+          [
+            api,
+            host,
+            cli,
+            esbuild,
+            rollup,
+            webpack,
+            vite,
+            browser-vite,
+            browser-next,
+            browser-next-webpack,
+          ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ADAPTER_COMPONENTS: '96'
+      ADAPTER_SAMPLES: '3'
+      ADAPTER_LANES: ${{ matrix.lane }}
+    steps:
+      - name: Clone candidate
+        uses: actions/checkout@v4
+      - name: Save shared benchmark fixture
+        run: cp -R bench/adapters "$RUNNER_TEMP/adapter-fixture"
+      - name: Clone baseline
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Measure baseline
+        id: adapter-baseline
+        continue-on-error: true
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p bench/adapters
+          cp -R "$RUNNER_TEMP/adapter-fixture/." bench/adapters/
+          pnpm build
+          trap 'cp -R bench/results "$RUNNER_TEMP/adapter-baseline"' EXIT
+          node bench/adapters/Run.ts
+      - name: Clone candidate
+        uses: actions/checkout@v4
+      - name: Install candidate dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Measure candidate
+        run: |
+          pnpm build
+          node bench/adapters/Run.ts
+      - name: Retain baseline
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          if test -d "$RUNNER_TEMP/adapter-baseline"; then
+            mkdir -p bench/results/baseline
+            cp -R "$RUNNER_TEMP/adapter-baseline/." bench/results/baseline/
+          fi
+      - name: Compare adapter samples
+        if: success() && steps.adapter-baseline.outcome == 'success'
+        run: node bench/adapters/Compare.ts bench/results/baseline/adapters.json bench/results/adapters.json
+      - name: Report unavailable baseline
+        if: always() && steps.adapter-baseline.outcome == 'failure'
+        run: echo 'Baseline workload failed correctness or execution. Candidate results are not a valid performance comparison.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload application workload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-workload-${{ matrix.lane }}
+          path: bench/results/
+          retention-days: 30
+  checks:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Benchmark checks and Next.js comparisons
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +111,7 @@ jobs:
           retention-days: 30
     timeout-minutes: 30
   compiler:
-    if: github.event.action != 'closed'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Compiler benchmarks
     env:
       BENCH_SIZE_THRESHOLD: '105'
@@ -207,7 +285,7 @@ jobs:
     timeout-minutes: 50
   benchmarks:
     name: Benchmarks
-    if: ${{ !cancelled() && github.event.action != 'closed' }}
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.action != 'closed' }}
     needs: [checks, compiler, renders, type-benches]
     runs-on: ubuntu-latest
     steps:
@@ -223,7 +301,7 @@ jobs:
           test "$COMPILER_RESULT" = success
           test "$RENDER_RESULT" = success
   renders:
-    if: github.event.action != 'closed'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: React renders
     permissions:
       contents: read
@@ -301,7 +379,7 @@ jobs:
     timeout-minutes: 30
   report:
     name: Benchmark Report
-    if: ${{ !cancelled() && github.event.action != 'closed' }}
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.action != 'closed' }}
     needs: [compiler, renders]
     permissions:
       actions: read
@@ -340,7 +418,7 @@ jobs:
           path: reports/comment.md
     timeout-minutes: 5
   type-benches:
-    if: github.event.action != 'closed'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Type instantiations (${{ matrix.shard }}/2)
     env:
       NODE_OPTIONS: --max-old-space-size=4096

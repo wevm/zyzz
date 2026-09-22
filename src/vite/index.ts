@@ -47,6 +47,18 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     ReturnType<typeof Snapshot.create>
   >()
   const states = new WeakMap<Environment, Map<string, Entry>>()
+  const removed = new WeakMap<Environment, Set<string>>()
+  const reads = new WeakMap<Environment, Map<string, string>>()
+  const compilers = new WeakMap<Environment, Graph.create.ReturnType>()
+
+  function compiler(environment: Environment) {
+    let value = compilers.get(environment)
+    if (!value) {
+      value = Graph.create()
+      compilers.set(environment, value)
+    }
+    return value
+  }
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
@@ -55,6 +67,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const graphs = new Map<string, ReadonlySet<string>>()
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
+  const identities = new Map<string, string>()
+  const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   let root: string
 
   function snapshot(environment: Environment) {
@@ -78,7 +92,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   function sourceId(file: string) {
-    return `app/${Path.relative(root, file).split(Path.sep).join('/')}`
+    let id = identities.get(file)
+    if (!id) {
+      id = `app/${Path.relative(root, file).split(Path.sep).join('/')}`
+      identities.set(file, id)
+    }
+    return id
   }
 
   function resource(id: string) {
@@ -288,9 +307,19 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     file: string,
     event: string,
   ) {
+    reads.delete(environment)
     if (event === 'delete') {
+      if (entries(environment).has(file)) {
+        let files = removed.get(environment)
+        if (!files) {
+          files = new Set()
+          removed.set(environment, files)
+        }
+        files.add(file)
+      }
       entries(environment).delete(file)
       snapshot(environment).delete(file, sourceId(file))
+      identities.delete(file)
     }
 
     const pending = discoveries.get(environment)
@@ -348,7 +377,16 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       host.watch(file)
 
       const id = sourceId(file)
-      const text = source ?? (await snapshot(entry.environment).read(file))
+      let cached = reads.get(entry.environment)
+      if (!cached) {
+        cached = new Map()
+        reads.set(entry.environment, cached)
+      }
+      const text =
+        source ??
+        cached.get(file) ??
+        (await snapshot(entry.environment).read(file))
+      cached.set(file, text)
 
       modules[id] = text
 
@@ -452,18 +490,22 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       }
 
       // Lazy imports stay outside this compile but scope the documents that load them.
-      const specifiers: string[] = []
-
-      Walker.walk(parsed.program, {
-        enter(node) {
-          if (
-            node.type === 'ImportExpression' &&
-            node.source.type === 'Literal' &&
-            typeof node.source.value === 'string'
-          )
-            specifiers.push(node.source.value)
-        },
-      })
+      let specifiers = lazyImports.get(parsed)
+      if (!specifiers) {
+        specifiers = []
+        const collected = specifiers
+        Walker.walk(parsed.program, {
+          enter(node) {
+            if (
+              node.type === 'ImportExpression' &&
+              node.source.type === 'Literal' &&
+              typeof node.source.value === 'string'
+            )
+              collected.push(node.source.value)
+          },
+        })
+        lazyImports.set(parsed, specifiers)
+      }
 
       const targets = new Set<string>()
 
@@ -490,8 +532,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const selected = contributionFiles.get(entry.environment)?.has(file)
 
       if (allSources) {
-        const { program } = Parser.parseSync('source.tsx', source, {
-          sourceType: 'module',
+        const { program } = snapshot(entry.environment).parse({
+          moduleId: sourceId(file),
+          source,
         })
         const dynamic: import('@oxc-project/types').ImportExpression[] = []
 
@@ -676,6 +719,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       entry.files = files
       const map = Mapping.toEncodedMap(new Mapping.GenMapping())
       return {
+        imports,
+        modules: result.modules,
         code: output.code,
         contractIds: Object.keys(result.contracts),
         css: '',
@@ -917,6 +962,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     entry.files = files
 
     return {
+      imports,
+      modules: result.modules,
       code: output.code,
       contractIds: Object.keys(compiled),
       css: styles.join('\n'),
@@ -935,6 +982,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   /** Compiles every discovered source once so index.html can inline each configuration's script before modules load. */
   async function initializations(server: ViteDevServer) {
     const environment = server.environments.client
+    reads.delete(environment)
     const host: Host = {
       asset: async (file) => file,
       resolve: (source, importer) =>
@@ -950,7 +998,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       if (file === undefined) return []
 
       entry = {
-        compiler: Graph.create(),
+        compiler: compiler(environment),
         environment,
         file,
         files: new Set([file]),
@@ -1117,6 +1165,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   return {
+    buildStart() {
+      reads.delete(this.environment)
+    },
     config: {
       order: 'post',
       handler(config) {
@@ -1261,27 +1312,73 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     async watchChange(file, change) {
       await updateDiscovery(this.environment, file, change.event)
     },
-    async hotUpdate({ file, modules, timestamp, type }) {
+    async hotUpdate({ file, modules, timestamp, type, server }) {
       await updateDiscovery(this.environment, file, type)
 
-      const affected = new Set(modules)
+      const state = entries(this.environment)
+      const first = [...state.values()].find(
+        (entry) => entry.files.has(file) || eager(file),
+      )
+      if (!first && !removed.get(this.environment)?.has(file)) return modules
+
+      // Failed edits retain normal invalidation so Vite reports errors on reload.
+      const output =
+        first && type === 'update' && eligible(file)
+          ? await compile(
+              first,
+              {
+                resolve: (source, importer) =>
+                  this.environment.pluginContainer.resolveId(source, importer),
+                watch: (file) => {
+                  server.watcher.add(file)
+                },
+                asset: async (file) => file,
+              },
+              undefined,
+              true,
+              true,
+            ).catch(() => undefined)
+          : undefined
+      const affected = new Set(
+        modules.filter((module) => {
+          const entry = module.id && state.get(module.id)
+          return (
+            !output ||
+            !entry ||
+            entry.code !== output.modules[sourceId(entry.file)]?.code ||
+            entry.imports !==
+              JSON.stringify(output.imports[sourceId(entry.file)])
+          )
+        }),
+      )
+      const ids = new Set<string>()
+      if (type === 'delete') ids.add(cssId(file))
 
       for (const entry of entries(this.environment).values()) {
         if (!entry.files.has(file) && !eager(file)) continue
 
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
-        for (const id of [entry.file, cssId(entry.file), sharedId]) {
-          const module = this.environment.moduleGraph.getModuleById(id)
-          if (!module) continue
+        if (
+          !output ||
+          entry.code !== output.modules[sourceId(entry.file)]?.code ||
+          entry.imports !== JSON.stringify(output.imports[sourceId(entry.file)])
+        )
+          ids.add(entry.file)
+        ids.add(cssId(entry.file))
+        ids.add(sharedId)
+      }
 
-          this.environment.moduleGraph.invalidateModule(
-            module,
-            new Set(),
-            timestamp,
-            true,
-          )
-          affected.add(module)
-        }
+      for (const id of ids) {
+        const module = this.environment.moduleGraph.getModuleById(id)
+        if (!module) continue
+
+        this.environment.moduleGraph.invalidateModule(
+          module,
+          new Set(),
+          timestamp,
+          true,
+        )
+        affected.add(module)
       }
 
       return [...affected]
@@ -1298,6 +1395,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         file === undefined
           ? entries(this.environment).values().next().value
           : entries(this.environment).get(file)
+      // A pruned JavaScript module can leave its stylesheet loaded in the browser.
+      if (!entry && file && removed.get(this.environment)?.has(file)) return ''
       if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
 
       const output = await compile(
@@ -1353,12 +1452,13 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       if (!entry) {
         entry = {
-          compiler: Graph.create(),
+          compiler: compiler(this.environment),
           environment: this.environment,
           file: id,
           files: new Set([id]),
         }
         state.set(id, entry)
+        removed.get(this.environment)?.delete(id)
       }
 
       const output = await compile(
@@ -1379,6 +1479,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         },
         code,
       )
+
+      entry.imports = JSON.stringify(output.imports[sourceId(entry.file)])
+      entry.code = output.code
 
       if (native) return { code: output.code, map: JSON.stringify(output.map) }
 
@@ -1479,6 +1582,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 }
 
 type Entry = {
+  code?: string
+  imports?: string
   environment: Environment
   compiler: Graph.create.ReturnType
   file: string

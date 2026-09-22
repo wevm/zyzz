@@ -3,31 +3,63 @@
  * @module
  */
 import { Config } from 'zyzz'
+import { keyframes } from 'zyzz/web'
+
+const spin = keyframes(
+  { to: { transform: 'rotate(360deg)' } },
+  { id: 'zyzz-spin' },
+)
+const ping = keyframes(
+  { '75%, 100%': { transform: 'scale(2)', opacity: 0 } },
+  { id: 'zyzz-ping' },
+)
+const pulse = keyframes({ '50%': { opacity: 0.5 } }, { id: 'zyzz-pulse' })
+const bounce = keyframes(
+  {
+    '0%, 100%': {
+      transform: 'translateY(-25%)',
+      animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+    },
+    '50%': {
+      transform: 'none',
+      animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+    },
+  },
+  { id: 'zyzz-bounce' },
+)
+
+// Retain keyframes referenced by the generated literal animation tokens.
+void [spin, ping, pulse, bounce]
 
 /**
  * Raw bundled values, independent of portable references.
  *
- * Breakpoints, containers, spacing, radii, font sizes, weights, tracking, and
- * leading use the conventional named and quarter-rem scales. Fractional spacing
- * steps are omitted because token paths reserve the dot separator. Colors are
- * ten-step light/dark scales plus `background`, `grayAlpha`, `black`, and
- * `white`. `foreground` aliases `gray.1000` and `surface` aliases
- * `background.100`. Font stacks lead with the named faces and fall back to
- * system fonts. Typography sets use https://vercel.com/geist/typography,
- * with explicit zero tracking outside headings. No fonts are loaded.
+ * Colors retain Geist light/dark pairs. Effects, radii, and query scales follow Tailwind CSS 4.3.3.
+ * Spacing uses an explicit quarter-rem table. Font scales and Geist typography
+ * retain their existing values. Font stacks fall back to system fonts;
+ * no fonts are loaded.
  */
 export const tokens = {
-  borderRadius: {
-    xs: '0.125rem',
-    sm: '0.25rem',
-    md: '0.375rem',
-    lg: '0.5rem',
-    xl: '0.75rem',
-    '2xl': '1rem',
-    '3xl': '1.5rem',
-    '4xl': '2rem',
+  animate: {
+    spin: 'z-kid-7a-79-7a-7a-2d-73-70-69-6e 1s linear infinite',
+    ping: 'z-kid-7a-79-7a-7a-2d-70-69-6e-67 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+    pulse:
+      'z-kid-7a-79-7a-7a-2d-70-75-6c-73-65 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+    bounce: 'z-kid-7a-79-7a-7a-2d-62-6f-75-6e-63-65 1s infinite',
   },
-  breakpoints: {
+  aspect: {
+    video: '16 / 9',
+  },
+  blur: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '24px',
+    '2xl': '40px',
+    '3xl': '64px',
+  },
+  breakpoint: {
     sm: '40rem',
     md: '48rem',
     lg: '64rem',
@@ -152,7 +184,7 @@ export const tokens = {
     },
     white: '#fff',
   },
-  containers: {
+  container: {
     '3xs': '16rem',
     '2xs': '18rem',
     xs: '20rem',
@@ -166,6 +198,19 @@ export const tokens = {
     '5xl': '64rem',
     '6xl': '72rem',
     '7xl': '80rem',
+  },
+  dropShadow: {
+    xs: '0 1px 1px rgb(0 0 0 / 0.05)',
+    sm: '0 1px 2px rgb(0 0 0 / 0.15)',
+    md: '0 3px 3px rgb(0 0 0 / 0.12)',
+    lg: '0 4px 4px rgb(0 0 0 / 0.15)',
+    xl: '0 9px 7px rgb(0 0 0 / 0.1)',
+    '2xl': '0 25px 25px rgb(0 0 0 / 0.15)',
+  },
+  ease: {
+    in: 'cubic-bezier(0.4, 0, 1, 1)',
+    out: 'cubic-bezier(0, 0, 0.2, 1)',
+    'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   fontFamily: {
     mono: '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -198,6 +243,11 @@ export const tokens = {
     extrabold: 800,
     black: 900,
   },
+  insetShadow: {
+    '2xs': 'inset 0 1px rgb(0 0 0 / 0.05)',
+    xs: 'inset 0 1px 1px rgb(0 0 0 / 0.05)',
+    sm: 'inset 0 2px 4px rgb(0 0 0 / 0.05)',
+  },
   letterSpacing: {
     tighter: '-0.05em',
     tight: '-0.025em',
@@ -212,6 +262,33 @@ export const tokens = {
     normal: 1.5,
     relaxed: 1.625,
     loose: 2,
+  },
+  perspective: {
+    dramatic: '100px',
+    near: '300px',
+    normal: '500px',
+    midrange: '800px',
+    distant: '1200px',
+  },
+  radius: {
+    xs: '0.125rem',
+    sm: '0.25rem',
+    md: '0.375rem',
+    lg: '0.5rem',
+    xl: '0.75rem',
+    '2xl': '1rem',
+    '3xl': '1.5rem',
+    '4xl': '2rem',
+  },
+  shadow: {
+    '2xs': '0 1px rgb(0 0 0 / 0.05)',
+    xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    sm: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+    '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+    inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
   },
   spacing: {
     0: '0rem',
@@ -245,6 +322,13 @@ export const tokens = {
     80: '20rem',
     96: '24rem',
     px: '1px',
+  },
+  textShadow: {
+    '2xs': '0px 1px 0px rgb(0 0 0 / 0.15)',
+    xs: '0px 1px 1px rgb(0 0 0 / 0.2)',
+    sm: '0px 1px 0px rgb(0 0 0 / 0.075), 0px 1px 1px rgb(0 0 0 / 0.075), 0px 2px 2px rgb(0 0 0 / 0.075)',
+    md: '0px 1px 1px rgb(0 0 0 / 0.1), 0px 1px 2px rgb(0 0 0 / 0.1), 0px 2px 4px rgb(0 0 0 / 0.1)',
+    lg: '0px 1px 2px rgb(0 0 0 / 0.1), 0px 3px 2px rgb(0 0 0 / 0.1), 0px 4px 8px rgb(0 0 0 / 0.1)',
   },
   typography: {
     button: {
@@ -598,17 +682,26 @@ export const tokens = {
 // Generated from tokens by scripts/default-theme.ts; edit tokens and regenerate.
 const config = Config.create({
   vars: {
-    borderRadius: {
-      xs: '0.125rem',
-      sm: '0.25rem',
-      md: '0.375rem',
-      lg: '0.5rem',
-      xl: '0.75rem',
-      '2xl': '1rem',
-      '3xl': '1.5rem',
-      '4xl': '2rem',
+    animate: {
+      spin: 'z-kid-7a-79-7a-7a-2d-73-70-69-6e 1s linear infinite',
+      ping: 'z-kid-7a-79-7a-7a-2d-70-69-6e-67 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+      pulse:
+        'z-kid-7a-79-7a-7a-2d-70-75-6c-73-65 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      bounce: 'z-kid-7a-79-7a-7a-2d-62-6f-75-6e-63-65 1s infinite',
     },
-    breakpoints: {
+    aspect: {
+      video: '16 / 9',
+    },
+    blur: {
+      xs: '4px',
+      sm: '8px',
+      md: '12px',
+      lg: '16px',
+      xl: '24px',
+      '2xl': '40px',
+      '3xl': '64px',
+    },
+    breakpoint: {
       sm: '40rem',
       md: '48rem',
       lg: '64rem',
@@ -733,7 +826,7 @@ const config = Config.create({
       },
       white: '#fff',
     },
-    containers: {
+    container: {
       '3xs': '16rem',
       '2xs': '18rem',
       xs: '20rem',
@@ -747,6 +840,19 @@ const config = Config.create({
       '5xl': '64rem',
       '6xl': '72rem',
       '7xl': '80rem',
+    },
+    dropShadow: {
+      xs: '0 1px 1px rgb(0 0 0 / 0.05)',
+      sm: '0 1px 2px rgb(0 0 0 / 0.15)',
+      md: '0 3px 3px rgb(0 0 0 / 0.12)',
+      lg: '0 4px 4px rgb(0 0 0 / 0.15)',
+      xl: '0 9px 7px rgb(0 0 0 / 0.1)',
+      '2xl': '0 25px 25px rgb(0 0 0 / 0.15)',
+    },
+    ease: {
+      in: 'cubic-bezier(0.4, 0, 1, 1)',
+      out: 'cubic-bezier(0, 0, 0.2, 1)',
+      'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
     },
     fontFamily: {
       mono: '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -779,6 +885,11 @@ const config = Config.create({
       extrabold: 800,
       black: 900,
     },
+    insetShadow: {
+      '2xs': 'inset 0 1px rgb(0 0 0 / 0.05)',
+      xs: 'inset 0 1px 1px rgb(0 0 0 / 0.05)',
+      sm: 'inset 0 2px 4px rgb(0 0 0 / 0.05)',
+    },
     letterSpacing: {
       tighter: '-0.05em',
       tight: '-0.025em',
@@ -793,6 +904,33 @@ const config = Config.create({
       normal: 1.5,
       relaxed: 1.625,
       loose: 2,
+    },
+    perspective: {
+      dramatic: '100px',
+      near: '300px',
+      normal: '500px',
+      midrange: '800px',
+      distant: '1200px',
+    },
+    radius: {
+      xs: '0.125rem',
+      sm: '0.25rem',
+      md: '0.375rem',
+      lg: '0.5rem',
+      xl: '0.75rem',
+      '2xl': '1rem',
+      '3xl': '1.5rem',
+      '4xl': '2rem',
+    },
+    shadow: {
+      '2xs': '0 1px rgb(0 0 0 / 0.05)',
+      xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+      sm: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+      md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+      lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+      xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+      '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+      inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
     },
     spacing: {
       0: '0rem',
@@ -826,6 +964,13 @@ const config = Config.create({
       80: '20rem',
       96: '24rem',
       px: '1px',
+    },
+    textShadow: {
+      '2xs': '0px 1px 0px rgb(0 0 0 / 0.15)',
+      xs: '0px 1px 1px rgb(0 0 0 / 0.2)',
+      sm: '0px 1px 0px rgb(0 0 0 / 0.075), 0px 1px 1px rgb(0 0 0 / 0.075), 0px 2px 2px rgb(0 0 0 / 0.075)',
+      md: '0px 1px 1px rgb(0 0 0 / 0.1), 0px 1px 2px rgb(0 0 0 / 0.1), 0px 2px 4px rgb(0 0 0 / 0.1)',
+      lg: '0px 1px 2px rgb(0 0 0 / 0.1), 0px 3px 2px rgb(0 0 0 / 0.1), 0px 4px 8px rgb(0 0 0 / 0.1)',
     },
     typography: {
       button: {

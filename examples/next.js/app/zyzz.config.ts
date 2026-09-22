@@ -2,8 +2,8 @@
 import { Config, Vars } from 'zyzz'
 
 const base = Vars.define({
-  borderRadius: { card: '1rem' },
-  breakpoints: { wide: '48rem' },
+  radius: { card: '1rem' },
+  breakpoint: { wide: '48rem' },
   color: {
     accent: { dark: '#a5b4fc', light: '#4338ca' },
     backdrop: { dark: '#252525', light: '#f5f5f5' },

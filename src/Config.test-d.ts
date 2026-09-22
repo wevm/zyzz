@@ -358,3 +358,11 @@ describe('create', () => {
     style({ '@layer': { color: 'red' }, '@layer base': { color: 'blue' } })
   })
 })
+
+test('keeps property groups internal', () => {
+  Config.create({
+    vars: { spacing: { small: '4px' } },
+    // @ts-expect-error Token fallback groups are not configurable.
+    propertyGroups: { width: ['spacing'] },
+  })
+})

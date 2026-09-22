@@ -11,6 +11,193 @@ import type * as VariableSets from '../Vars.js'
 import * as Literal from './Literal.js'
 import * as VariableData from './VariableSets.js'
 
+// Ordered category fallbacks shared by runtime lookup and inferred token names.
+const propertyGroups = {
+  accentColor: ['accentColor', 'color'],
+  animation: ['animate'],
+  aspectRatio: ['aspect'],
+  backgroundColor: ['backgroundColor', 'color'],
+  backgroundImage: ['backgroundImage'],
+  backgroundPosition: ['backgroundPosition'],
+  backgroundSize: ['backgroundSize'],
+  blockSize: ['spacing'],
+  borderBlockColor: ['borderColor', 'color'],
+  borderBlockEndColor: ['borderColor', 'color'],
+  borderBlockEndWidth: ['borderWidth'],
+  borderBlockStartColor: ['borderColor', 'color'],
+  borderBlockStartWidth: ['borderWidth'],
+  borderBlockWidth: ['borderWidth'],
+  borderBottomColor: ['borderColor', 'color'],
+  borderBottomLeftRadius: ['radius'],
+  borderBottomRightRadius: ['radius'],
+  borderBottomWidth: ['borderWidth'],
+  borderColor: ['borderColor', 'color'],
+  borderEndEndRadius: ['radius'],
+  borderEndStartRadius: ['radius'],
+  borderInlineColor: ['borderColor', 'color'],
+  borderInlineEndColor: ['borderColor', 'color'],
+  borderInlineEndWidth: ['borderWidth'],
+  borderInlineStartColor: ['borderColor', 'color'],
+  borderInlineStartWidth: ['borderWidth'],
+  borderInlineWidth: ['borderWidth'],
+  borderLeftColor: ['borderColor', 'color'],
+  borderLeftWidth: ['borderWidth'],
+  borderRadius: ['radius'],
+  borderRightColor: ['borderColor', 'color'],
+  borderRightWidth: ['borderWidth'],
+  borderSpacing: ['borderSpacing', 'spacing'],
+  borderStartEndRadius: ['radius'],
+  borderStartStartRadius: ['radius'],
+  borderTopColor: ['borderColor', 'color'],
+  borderTopLeftRadius: ['radius'],
+  borderTopRightRadius: ['radius'],
+  borderTopWidth: ['borderWidth'],
+  borderWidth: ['borderWidth'],
+  bottom: ['inset', 'spacing'],
+  boxShadow: ['shadow'],
+  caretColor: ['caretColor', 'color'],
+  color: ['textColor', 'color'],
+  columnGap: ['gap', 'spacing'],
+  columnRuleColor: ['color'],
+  columns: ['columns', 'container'],
+  content: ['content'],
+  cursor: ['cursor'],
+  fill: ['fill', 'color'],
+  flexBasis: ['flexBasis', 'spacing', 'container'],
+  floodColor: ['color'],
+  fontFamily: ['fontFamily'],
+  fontSize: ['fontSize'],
+  fontWeight: ['fontWeight'],
+  gap: ['gap', 'spacing'],
+  gridAutoColumns: ['gridAutoColumns'],
+  gridAutoRows: ['gridAutoRows'],
+  gridColumn: ['gridColumn'],
+  gridColumnEnd: ['gridColumnEnd'],
+  gridColumnStart: ['gridColumnStart'],
+  gridRow: ['gridRow'],
+  gridRowEnd: ['gridRowEnd'],
+  gridRowStart: ['gridRowStart'],
+  gridTemplateColumns: ['gridTemplateColumns'],
+  gridTemplateRows: ['gridTemplateRows'],
+  height: ['height', 'spacing'],
+  inlineSize: ['spacing', 'container'],
+  inset: ['inset', 'spacing'],
+  insetBlock: ['inset', 'spacing'],
+  insetBlockEnd: ['inset', 'spacing'],
+  insetBlockStart: ['inset', 'spacing'],
+  insetInline: ['inset', 'spacing'],
+  insetInlineEnd: ['inset', 'spacing'],
+  insetInlineStart: ['inset', 'spacing'],
+  left: ['inset', 'spacing'],
+  letterSpacing: ['letterSpacing'],
+  lightingColor: ['color'],
+  lineClamp: ['lineClamp'],
+  lineHeight: ['lineHeight'],
+  listStyleImage: ['listStyleImage'],
+  listStyleType: ['listStyleType'],
+  margin: ['margin', 'spacing'],
+  marginBlock: ['margin', 'spacing'],
+  marginBlockEnd: ['margin', 'spacing'],
+  marginBlockStart: ['margin', 'spacing'],
+  marginBottom: ['margin', 'spacing'],
+  marginInline: ['margin', 'spacing'],
+  marginInlineEnd: ['margin', 'spacing'],
+  marginInlineStart: ['margin', 'spacing'],
+  marginLeft: ['margin', 'spacing'],
+  marginRight: ['margin', 'spacing'],
+  marginTop: ['margin', 'spacing'],
+  maxBlockSize: ['spacing'],
+  maxHeight: ['maxHeight', 'height', 'spacing'],
+  maxInlineSize: ['spacing', 'container'],
+  maxWidth: ['maxWidth', 'spacing', 'container'],
+  minBlockSize: ['spacing'],
+  minHeight: ['minHeight', 'height', 'spacing'],
+  minInlineSize: ['spacing', 'container'],
+  minWidth: ['minWidth', 'spacing', 'container'],
+  MsScrollbar3dlightColor: ['color'],
+  MsScrollbarArrowColor: ['color'],
+  MsScrollbarBaseColor: ['color'],
+  MsScrollbarDarkshadowColor: ['color'],
+  MsScrollbarFaceColor: ['color'],
+  MsScrollbarHighlightColor: ['color'],
+  MsScrollbarShadowColor: ['color'],
+  MsScrollbarTrackColor: ['color'],
+  objectPosition: ['objectPosition'],
+  opacity: ['opacity'],
+  order: ['order'],
+  outlineColor: ['outlineColor', 'color'],
+  outlineOffset: ['outlineOffset'],
+  outlineWidth: ['outlineWidth'],
+  padding: ['padding', 'spacing'],
+  paddingBlock: ['padding', 'spacing'],
+  paddingBlockEnd: ['padding', 'spacing'],
+  paddingBlockStart: ['padding', 'spacing'],
+  paddingBottom: ['padding', 'spacing'],
+  paddingInline: ['padding', 'spacing'],
+  paddingInlineEnd: ['padding', 'spacing'],
+  paddingInlineStart: ['padding', 'spacing'],
+  paddingLeft: ['padding', 'spacing'],
+  paddingRight: ['padding', 'spacing'],
+  paddingTop: ['padding', 'spacing'],
+  perspective: ['perspective'],
+  perspectiveOrigin: ['perspectiveOrigin'],
+  right: ['inset', 'spacing'],
+  rotate: ['rotate'],
+  rowGap: ['gap', 'spacing'],
+  scale: ['scale'],
+  scrollMargin: ['scrollMargin', 'spacing'],
+  scrollMarginBlock: ['scrollMargin', 'spacing'],
+  scrollMarginBlockEnd: ['scrollMargin', 'spacing'],
+  scrollMarginBlockStart: ['scrollMargin', 'spacing'],
+  scrollMarginBottom: ['scrollMargin', 'spacing'],
+  scrollMarginInline: ['scrollMargin', 'spacing'],
+  scrollMarginInlineEnd: ['scrollMargin', 'spacing'],
+  scrollMarginInlineStart: ['scrollMargin', 'spacing'],
+  scrollMarginLeft: ['scrollMargin', 'spacing'],
+  scrollMarginRight: ['scrollMargin', 'spacing'],
+  scrollMarginTop: ['scrollMargin', 'spacing'],
+  scrollPadding: ['scrollPadding', 'spacing'],
+  scrollPaddingBlock: ['scrollPadding', 'spacing'],
+  scrollPaddingBlockEnd: ['scrollPadding', 'spacing'],
+  scrollPaddingBlockStart: ['scrollPadding', 'spacing'],
+  scrollPaddingBottom: ['scrollPadding', 'spacing'],
+  scrollPaddingInline: ['scrollPadding', 'spacing'],
+  scrollPaddingInlineEnd: ['scrollPadding', 'spacing'],
+  scrollPaddingInlineStart: ['scrollPadding', 'spacing'],
+  scrollPaddingLeft: ['scrollPadding', 'spacing'],
+  scrollPaddingRight: ['scrollPadding', 'spacing'],
+  scrollPaddingTop: ['scrollPadding', 'spacing'],
+  stopColor: ['color'],
+  stroke: ['stroke', 'color'],
+  strokeColor: ['color'],
+  strokeWidth: ['strokeWidth'],
+  textDecorationColor: ['textDecorationColor', 'color'],
+  textDecorationThickness: ['textDecorationThickness'],
+  textEmphasisColor: ['color'],
+  textIndent: ['textIndent', 'spacing'],
+  textShadow: ['textShadow'],
+  textUnderlineOffset: ['textUnderlineOffset'],
+  top: ['inset', 'spacing'],
+  transformOrigin: ['transformOrigin'],
+  transitionDelay: ['transitionDelay'],
+  transitionDuration: ['transitionDuration'],
+  transitionProperty: ['transitionProperty'],
+  transitionTimingFunction: ['ease'],
+  translate: ['translate', 'spacing'],
+  WebkitBorderAfterColor: ['color'],
+  WebkitBorderBeforeColor: ['color'],
+  WebkitBorderEndColor: ['color'],
+  WebkitBorderStartColor: ['color'],
+  WebkitLineClamp: ['lineClamp'],
+  WebkitTapHighlightColor: ['color'],
+  WebkitTextFillColor: ['color'],
+  WebkitTextStrokeColor: ['color'],
+  width: ['width', 'spacing', 'container'],
+  zIndex: ['zIndex'],
+} as const satisfies Partial<
+  Record<keyof Literal.Properties, readonly string[]>
+>
+
 /** Checks a reference's property domain. */
 export function accepts(
   group: Group,
@@ -84,13 +271,31 @@ export function acceptsReference(
           value <= rule.max &&
           (!rule.integer || Number.isInteger(value))
         )
-      return value === 0 && Binding.accepts('length', property)
+      if (rule?.kind === 'grid-line')
+        return Number.isInteger(value) && value !== 0
+      if (property === 'columns') return Number.isInteger(value) && value > 0
+      if (rule?.kind === 'ratio') return value >= 0
+      if (rule && 'numeric' in rule && rule.numeric)
+        return ('negative' in rule && rule.negative === true) || value >= 0
+      return (
+        Binding.accepts('number', property) ||
+        (value === 0 && Binding.accepts('length', property))
+      )
     }
     if (reference.group === 'color') return Binding.accepts('color', property)
     if (reference.group === 'spacing')
       return (
         (Literal.rule(property)?.kind === 'compound' &&
-          accepts('spacing', property)) ||
+          (accepts('spacing', property) ||
+            (property === 'columns' &&
+              !value.endsWith('%') &&
+              !value.startsWith('-')) ||
+            [
+              'backgroundPosition',
+              'objectPosition',
+              'perspectiveOrigin',
+              'transformOrigin',
+            ].includes(property))) ||
         Binding.accepts(
           value.endsWith('%')
             ? value.startsWith('-')
@@ -104,7 +309,16 @@ export function acceptsReference(
       )
     return (
       Literal.isLiteral(property, value) ||
-      Literal.rule(property)?.kind === 'compound'
+      Literal.rule(property)?.kind === 'compound' ||
+      [
+        'ratio',
+        'grid-line',
+        'grid-tracks',
+        'identifier',
+        'rotate',
+        'scale',
+        'translate',
+      ].includes(Literal.rule(property)?.kind ?? '')
     )
   }
   return check(reference.value)
@@ -307,10 +521,7 @@ export type Names<
   readonly '~vars': { values: infer values; mappings: infer mappings }
 }
   ? mappings extends false
-    ? Paths<
-        Omit<values, 'breakpoints' | 'containers' | 'containerNames'>,
-        property
-      >
+    ? Paths<Omit<values, 'breakpoint' | 'containerNames'>, property>
     : {
         [category in keyof values]: category extends keyof mappings
           ? mappings[category] extends readonly unknown[]
@@ -318,10 +529,12 @@ export type Names<
               ? Paths<values[category], property>
               : never
             : never
-          : category extends Group
-            ? property extends Properties<category>
-              ? Paths<values[category], property>
-              : never
+          : category extends (
+                property extends keyof typeof propertyGroups
+                  ? (typeof propertyGroups)[property][number]
+                  : never
+              )
+            ? Paths<values[category], property>
             : never
       }[keyof values]
   : {
@@ -456,28 +669,14 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     ?.value as Metadata | undefined
   if (!data) throw new Error('Expected a theme definition.')
 
-  const groups = [
-    'backgroundColor',
-    'borderColor',
-    'borderRadius',
-    'borderWidth',
-    'margin',
-    'padding',
-    'spacing',
-    'fontFamily',
-    'fontSize',
-    'fontWeight',
-    'letterSpacing',
-    'lineHeight',
-    'textColor',
-    'color',
-  ] as const
+  const groups: readonly string[] =
+    propertyGroups[options.property as keyof typeof propertyGroups] ?? []
 
   if (data.contract.variableSet) {
     for (const [path, entry] of Object.entries(data.values).sort(
       ([left], [right]) =>
-        groups.indexOf(left.split('.')[0] as (typeof groups)[number]) -
-        groups.indexOf(right.split('.')[0] as (typeof groups)[number]),
+        groups.indexOf(left.split('.')[0]!) -
+        groups.indexOf(right.split('.')[0]!),
     )) {
       const [category, ...parts] = path.split('.')
       const mappings = data.contract.mappings
@@ -488,7 +687,7 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
           : parts.join('.') !== String(value) ||
             !(mapped
               ? mapped.includes(options.property)
-              : accepts(category as Group, options.property))
+              : groups.includes(category!))
       )
         continue
       return create({
@@ -512,8 +711,23 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     return value
   }
 
-  // Specific groups precede shared colors regardless of authored group order.
-  for (const group of groups) {
+  const legacyGroups = [
+    'backgroundColor',
+    'borderColor',
+    'borderRadius',
+    'borderWidth',
+    'margin',
+    'padding',
+    'spacing',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'letterSpacing',
+    'lineHeight',
+    'textColor',
+    'color',
+  ] as const
+  for (const group of legacyGroups) {
     if (!accepts(group, options.property)) continue
 
     const path = `${group}.${value}`
@@ -547,7 +761,13 @@ export function mapped(
       data.contract.mappings !== false &&
       !(targets
         ? targets.includes(property)
-        : accepts(category as Group, property))
+        : data.contract.variableSet
+          ? (
+              propertyGroups[property as keyof typeof propertyGroups] as
+                | readonly string[]
+                | undefined
+            )?.includes(category)
+          : accepts(category as Group, property))
     )
       return false
     let leaf: unknown = Object.getOwnPropertyDescriptor(theme, 'tokens')?.value

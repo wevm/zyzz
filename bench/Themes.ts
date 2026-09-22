@@ -166,7 +166,7 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
             backgroundColor: 'surface',
             color: 'foreground',
             padding: 'card',
-            width: `[${index}px]` as const,
+            width: `${index}px !custom` as const,
           },
         ]),
       ),

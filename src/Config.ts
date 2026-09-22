@@ -28,10 +28,6 @@ export function create<const options extends create.Options = {}>(
       throw new Configuration.InvalidError(
         `Use vars and defaultVars instead of ${key}.`,
       )
-  if (Object.hasOwn(options, 'mappings'))
-    throw new Configuration.InvalidError(
-      'Use propertyGroups instead of mappings.',
-    )
   return Configuration.create(
     options as Configuration.VariableOptions,
   ) as create.ReturnType<options>
@@ -44,7 +40,7 @@ export declare namespace create {
     | Configuration.VariableOptions
     | Omit<
         Configuration.VariableOptions,
-        'vars' | 'defaultVars' | 'propertyGroups'
+        'vars' | 'defaultVars' | 'propertyGroups' | 'mappings'
       >
   /** Typed helpers selected by the supplied variable contract. */
   type ReturnType<options extends Options = Options> =

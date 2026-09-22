@@ -390,7 +390,6 @@ test('infers ordered property groups and rejects invalid properties', () => {
   })
   Config.create({
     vars: { spacing: { gap: '8px' } },
-    // @ts-expect-error Removed category-to-property API.
     mappings: { spacing: ['width'] },
   })
 })
@@ -406,4 +405,40 @@ test('uses the first matching group for value domains', () => {
   style({ width: 'gap' })
   // @ts-expect-error The first matching token is a color, not a length.
   style({ width: 'shared' })
+})
+
+test('combines category mappings with property group overrides', () => {
+  const config = Config.create({
+    vars: {
+      space: { gap: '8px' },
+      spacing: { base: '4px' },
+      ink: { brand: '#fff' },
+      width: { wide: '16px' },
+    },
+    mappings: { space: ['padding'], spacing: ['gap'], ink: ['color'] },
+    propertyGroups: { width: ['width', 'space'], color: [] },
+  })
+  config.style({ padding: 'gap', gap: 'base', width: 'wide' })
+  config.style({ width: 'gap', color: config.vars.ink.brand })
+  // @ts-expect-error Category mappings remove default spacing targets.
+  config.style({ height: 'base' })
+  // @ts-expect-error Explicit empty group list overrides category mappings.
+  config.style({ color: 'brand' })
+  const full = Config.create({
+    vars: { space: { gap: '8px' }, ink: { brand: '#fff' } },
+    mappings: false,
+    propertyGroups: { width: ['space'] },
+  })
+  full.style({ width: 'gap', height: 'space.gap', color: 'ink.brand' })
+  // @ts-expect-error Explicit property groups use short names.
+  full.style({ width: 'space.gap' })
+  // @ts-expect-error Unspecified properties still require full paths.
+  full.style({ height: 'gap' })
+  const mapped = Config.create({
+    vars: { space: { gap: '8px' }, ink: { brand: '#fff' } },
+    mappings: { space: ['padding'], ink: ['color'] },
+  })
+  mapped.style({ padding: 'gap', color: 'brand' })
+  // @ts-expect-error Unmapped custom group does not supply width.
+  mapped.style({ width: 'gap' })
 })

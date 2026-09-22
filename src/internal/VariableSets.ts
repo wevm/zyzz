@@ -12,6 +12,7 @@ import * as Vars from '../Vars.js'
 export function theme(
   variables: Vars.Definition,
   propertyGroups?: Vars.PropertyGroups | false,
+  mappings?: Vars.Mappings | false,
 ): Theme.Definition {
   const original = Theme.define({})
   const metadata = variables[Token.definition]
@@ -20,6 +21,7 @@ export function theme(
   const contract = Object.freeze({
     ...metadata.contract,
     ...(propertyGroups !== undefined ? { propertyGroups } : {}),
+    ...(mappings !== undefined ? { mappings } : {}),
   })
   const tokens = from({
     ...metadata,
@@ -329,6 +331,38 @@ export function domain(value: Token.Value): Token.Group {
   )
     return 'spacing'
   return typeof value === 'number' ? 'number' : 'string'
+}
+
+/** Copies and validates category mappings without retaining mutable caller input. */
+export function mappings(input: unknown): Vars.Mappings | false | undefined {
+  if (input === undefined || input === false) return input
+  return Object.freeze(
+    Object.fromEntries(
+      record(input, ['mappings'])
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([category, value]) => {
+          if (
+            !category ||
+            !Array.isArray(value) ||
+            value.some(
+              (property) =>
+                typeof property !== 'string' ||
+                !Object.hasOwn(Literal.rules, property),
+            )
+          )
+            throw new Vars.InvalidError(
+              ['mappings', category],
+              'Expected an array of CSS property names.',
+            )
+          if (new Set(value).size !== value.length)
+            throw new Vars.InvalidError(
+              ['mappings', category],
+              'Property mappings cannot contain duplicates.',
+            )
+          return [category, Object.freeze([...value])]
+        }),
+    ),
+  )
 }
 
 /** Copies and validates ordered property groups without retaining mutable caller input. */

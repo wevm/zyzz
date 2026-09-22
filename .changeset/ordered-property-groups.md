@@ -2,7 +2,7 @@
 'zyzz': patch
 ---
 
-Added configurable ordered token lookup through `propertyGroups`, replacing `mappings`.
+Added configurable ordered token lookup through `propertyGroups` alongside category `mappings`.
 
 ```ts
 import { Config } from 'zyzz'

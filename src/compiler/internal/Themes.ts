@@ -35,6 +35,7 @@ export type Call = {
   readonly variableSet?: boolean | undefined
   readonly directVariables?: boolean | undefined
   readonly variableConfig?: boolean | undefined
+  readonly variableMappings?: Vars.Mappings | false | undefined
   readonly variablePropertyGroups?: Vars.PropertyGroups | false | undefined
   /** Whether this bound authoring alias declares recipes. */
   readonly recipe?: boolean | undefined
@@ -1214,6 +1215,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         options: theme.options,
         variableConfig: theme.variableConfig,
         variablePropertyGroups: theme.variablePropertyGroups,
+        variableMappings: theme.variableMappings,
         output: theme.output,
       })
 

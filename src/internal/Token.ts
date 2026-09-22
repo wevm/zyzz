@@ -380,6 +380,7 @@ export type Contract = {
   readonly variableSet?: boolean | undefined
   /** Configuration-local ordered token groups for each CSS property. */
   readonly propertyGroups?: VariableSets.PropertyGroups | false | undefined
+  readonly mappings?: VariableSets.Mappings | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Fallback layer for declarations without an explicit layer. */
@@ -521,19 +522,32 @@ export type Names<
   readonly '~vars': {
     values: infer values
     propertyGroups: infer propertyGroups
+    mappings: infer mappings
   }
 }
   ? propertyGroups extends false
     ? Paths<Omit<values, 'breakpoint' | 'containerNames'>, property>
-    : GroupNames<
-        values,
-        property extends keyof propertyGroups
-          ? propertyGroups[property]
-          : property extends keyof typeof defaultPropertyGroups
-            ? (typeof defaultPropertyGroups)[property]
-            : [],
-        property
-      >
+    : property extends keyof propertyGroups
+      ? GroupNames<values, propertyGroups[property], property>
+      : mappings extends false
+        ? Paths<Omit<values, 'breakpoint' | 'containerNames'>, property>
+        :
+            | {
+                [category in keyof values]: category extends keyof mappings
+                  ? mappings[category] extends readonly unknown[]
+                    ? property extends mappings[category][number]
+                      ? Paths<values[category], property>
+                      : never
+                    : never
+                  : never
+              }[keyof values]
+            | GroupNames<
+                Omit<values, keyof mappings>,
+                property extends keyof typeof defaultPropertyGroups
+                  ? (typeof defaultPropertyGroups)[property]
+                  : [],
+                property
+              >
   : {
       [group in Extract<
         keyof tokens,
@@ -675,6 +689,33 @@ export type Reference<group extends Group = Group> = {
 
 const reference = Symbol('zyzz.token')
 
+/** Selects explicit property groups before category mappings and built-in fallbacks. */
+export function lookupGroups(
+  contract: Contract,
+  property: keyof Literal.Properties,
+): readonly string[] | false {
+  if (contract.propertyGroups === false) return false
+  const explicit = contract.propertyGroups?.[property]
+  if (explicit !== undefined) return explicit
+  if (contract.mappings === false) return false
+  const defaults: readonly string[] =
+    defaultPropertyGroups[property as keyof typeof defaultPropertyGroups] ?? []
+  const mappings = contract.mappings
+  if (!mappings) return defaults
+  return [
+    ...Object.keys(mappings ?? {}).filter(
+      (category) =>
+        !defaults.includes(category) &&
+        mappings?.[category]?.includes(property),
+    ),
+    ...defaults.filter(
+      (category) =>
+        mappings?.[category] === undefined ||
+        mappings[category]!.includes(property),
+    ),
+  ]
+}
+
 /** Resolves configured token names, with specific color groups first. */
 export function resolve(value: unknown, options: resolve.Options): unknown {
   if (
@@ -687,25 +728,17 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     ?.value as Metadata | undefined
   if (!data) throw new Error('Expected a theme definition.')
 
-  const groups: readonly string[] =
-    (data.contract.propertyGroups === false
-      ? undefined
-      : data.contract.propertyGroups?.[options.property]) ??
-    defaultPropertyGroups[
-      options.property as keyof typeof defaultPropertyGroups
-    ] ??
-    []
+  const groups = lookupGroups(data.contract, options.property)
 
   if (data.contract.variableSet) {
     for (const [path, entry] of Object.entries(data.values).sort(
       ([left], [right]) =>
-        groups.indexOf(left.split('.')[0]!) -
-        groups.indexOf(right.split('.')[0]!),
+        (groups === false ? [] : groups).indexOf(left.split('.')[0]!) -
+        (groups === false ? [] : groups).indexOf(right.split('.')[0]!),
     )) {
       const [category, ...parts] = path.split('.')
-      const propertyGroups = data.contract.propertyGroups
       if (
-        propertyGroups === false
+        groups === false
           ? path !== String(value)
           : parts.join('.') !== String(value) || !groups.includes(category!)
       )
@@ -771,17 +804,13 @@ export function mapped(
   if (property.startsWith('--')) return false
   const data = Object.getOwnPropertyDescriptor(theme, definition)
     ?.value as Metadata
+  const groups = lookupGroups(data.contract, property)
   return Object.keys(data.values).some((path) => {
     const category = path.split('.')[0]!
-    const groups =
-      data.contract.propertyGroups === false
-        ? undefined
-        : (data.contract.propertyGroups?.[property] ??
-          defaultPropertyGroups[property as keyof typeof defaultPropertyGroups])
     if (
-      data.contract.propertyGroups !== false &&
+      groups !== false &&
       !(data.contract.variableSet
-        ? (groups as readonly string[] | undefined)?.includes(category)
+        ? groups.includes(category)
         : accepts(category as Group, property))
     )
       return false

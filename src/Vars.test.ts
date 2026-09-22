@@ -136,7 +136,7 @@ describe('define', () => {
     )
   })
 
-  test('preserves anonymous derived references through configured propertyGroups', () => {
+  test('preserves anonymous derived references through configured mappings', () => {
     const base = Vars.define({ palette: { ink: '#123456' } }, (vars) => ({
       color: { foreground: vars.palette.ink },
     }))
@@ -144,7 +144,7 @@ describe('define', () => {
     const config = Config.create({
       id: 'derived-config',
       vars: other,
-      propertyGroups: { color: ['color'] },
+      mappings: { color: ['color'] },
     })
     const result = StyleSheet.compile({
       styles: Style.define({ card: { color: config.vars.color.foreground } }),
@@ -790,6 +790,87 @@ describe('define', () => {
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: app.ts:119: Variable value is incompatible with this property.]`,
+    )
+  })
+
+  test.each([false, true])(
+    'combines mappings and property groups through packed=%s',
+    async (packed) => {
+      for (const fullPaths of [false, true]) {
+        const source = `import {Config} from 'zyzz'; export const {style,vars}=Config.create({vars:{space:{shared:'24px',only:'32px'},spacing:{base:'8px'},width:{shared:'48px'},ink:{brand:'#123456'}},mappings:${fullPaths ? 'false' : "{space:['width','height'],spacing:['padding'],ink:['color']}"},propertyGroups:{width:['width','space'],height:[]}});`
+        const app = `import {style,vars} from 'library';export const scope=vars();export const first=style({width:'shared',color:'${fullPaths ? 'ink.brand' : 'brand'}',padding:'${fullPaths ? 'spacing.base' : 'base'}',height:vars.space.only})();export const second=style({width:'only'})();`
+        const library = Graph.compile({ modules: { 'config.ts': source } })
+        const result = Graph.compile(
+          packed
+            ? {
+                contracts: { 'library.js': library.contracts['config.ts']! },
+                imports: { 'app.ts': { library: 'library.js' } },
+                modules: { 'app.ts': app },
+              }
+            : {
+                imports: {
+                  'app.ts': { library: 'config.ts' },
+                  'config.ts': { zyzz: null },
+                },
+                modules: { 'config.ts': source, 'app.ts': app },
+              },
+        )
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: { 'app.ts': result.modules['app.ts']!.code },
+          packages: {
+            library: {
+              'index.ts': (packed ? library : result).modules['config.ts']!
+                .code,
+            },
+          },
+        })
+        const fixture = Vm.runInNewContext(`${code};Fixture;`)
+        const browser = await chromium.launch()
+        try {
+          const page = await browser.newPage()
+          await page.setContent(
+            `<style>${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><main class="${fixture.scope.className}"><div id="first" class="${fixture.first.className}"></div><div id="second" class="${fixture.second.className}"></div></main>`,
+          )
+          expect(
+            await page
+              .locator('#first')
+              .evaluate((e) => getComputedStyle(e).width),
+          ).toMatchInlineSnapshot(`"48px"`)
+          expect(
+            await page
+              .locator('#second')
+              .evaluate((e) => getComputedStyle(e).width),
+          ).toMatchInlineSnapshot(`"32px"`)
+          expect(
+            await page
+              .locator('#first')
+              .evaluate((e) => getComputedStyle(e).height),
+          ).toMatchInlineSnapshot(`"32px"`)
+          expect(
+            await page
+              .locator('#first')
+              .evaluate((e) => getComputedStyle(e).padding),
+          ).toMatchInlineSnapshot(`"8px"`)
+          expect(
+            await page
+              .locator('#first')
+              .evaluate((e) => getComputedStyle(e).color),
+          ).toMatchInlineSnapshot(`"rgb(18, 52, 86)"`)
+        } finally {
+          await browser.close()
+        }
+      }
+    },
+  )
+  test('preserves category mapping collision errors without explicit property order', () => {
+    expect(() =>
+      Config.create({
+        vars: { color: { brand: '#fff' }, ink: { brand: '#000' } },
+        mappings: { ink: ['color'] },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Ambiguous variable token brand for color.]`,
     )
   })
 

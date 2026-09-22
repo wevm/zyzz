@@ -47,6 +47,7 @@ export function create(
   let input = record(options)
   const variableMode = input.vars !== undefined
   const variableCatalog = variableMode && input.defaultVars !== undefined
+  const variableMappings = VariableSets.mappings(input.mappings)
   const variablePropertyGroups = VariableSets.propertyGroups(
     input.propertyGroups,
   )
@@ -64,12 +65,43 @@ export function create(
         Object.getOwnPropertyDescriptor(value, Token.definition)?.value
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values)
-      return VariableSets.theme(definition, variablePropertyGroups)
+      const theme = VariableSets.theme(
+        definition,
+        variablePropertyGroups,
+        variableMappings,
+      )
+      if (variableMappings && variablePropertyGroups !== false) {
+        const names = new Map<string, string>()
+        const targets = new Set(Object.values(variableMappings).flat())
+        for (const path of Object.keys(theme[Token.definition].values)) {
+          const [category, ...parts] = path.split('.')
+          for (const property of targets) {
+            if (variablePropertyGroups?.[property] !== undefined) continue
+            const groups = Token.lookupGroups(
+              theme[Token.definition].contract,
+              property,
+            )
+            if (groups === false || !groups.includes(category!)) continue
+            const key = `${property}:${parts.join('.')}`
+            const previous = names.get(key)
+            if (
+              previous &&
+              (variableMappings[category!] || variableMappings[previous])
+            )
+              throw new InvalidError(
+                `Ambiguous variable token ${parts.join('.')} for ${property}.`,
+              )
+            names.set(key, category!)
+          }
+        }
+      }
+      return theme
     }
     const {
       vars,
       defaultVars,
       propertyGroups: _propertyGroups,
+      mappings: _mappings,
       ...rest
     } = input
     input = variableCatalog
@@ -85,10 +117,13 @@ export function create(
         }
       : { ...rest, theme: normalize(vars) }
   } else if (
+    input.mappings !== undefined ||
     input.propertyGroups !== undefined ||
     input.defaultVars !== undefined
   ) {
-    throw new InvalidError('propertyGroups and defaultVars require vars.')
+    throw new InvalidError(
+      'mappings, propertyGroups, and defaultVars require vars.',
+    )
   }
   function finish(result: Record<string, unknown>) {
     if (!variableMode) return Object.freeze(result)
@@ -232,7 +267,11 @@ export function create(
 
   const contract = Object.freeze({
     ...(variableMode
-      ? { variableSet: true, propertyGroups: variablePropertyGroups }
+      ? {
+          variableSet: true,
+          propertyGroups: variablePropertyGroups,
+          mappings: variableMappings,
+        }
       : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer as string }
@@ -830,6 +869,8 @@ export type VariableOptions = {
   readonly layers?: readonly string[] | undefined
   /** Ordered token groups; false enables full paths in every compatible property. */
   readonly propertyGroups?: Vars.PropertyGroups | false | undefined
+  /** Category-to-property overrides; false enables full variable paths. */
+  readonly mappings?: Vars.Mappings | false | undefined
   /** Styling props format; React by default. */
   readonly output?: style.Output | undefined
   /** Explicit local property aliases. */
@@ -853,7 +894,8 @@ type VariableValues<options extends VariableOptions> = options extends {
 
 type VariableTokens<options extends VariableOptions> = Vars.Mapped<
   VariableValues<options>,
-  options extends { propertyGroups: infer mappings } ? mappings : {}
+  options extends { propertyGroups: infer groups } ? groups : {},
+  options extends { mappings: infer mappings } ? mappings : {}
 >
 
 type VariableInput<input> = input extends {

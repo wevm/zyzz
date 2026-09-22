@@ -23,6 +23,7 @@ export const { appearance, script, style, vars, variants } = Config.create({
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `vars`           | One inline record or `Vars.define` result, or a catalog of compatible sets. Omit for token-free authoring.                                  |
 | `defaultVars`    | Required catalog key when `vars` contains named sets.                                                                                       |
+| `mappings`       | Category-to-property overrides. Each category replaces its default targets; `[]` disables its token names. `false` enables full paths.      |
 | `propertyGroups` | Ordered token groups per CSS property. Each list replaces that property's defaults; `[]` disables token lookup. `false` enables full paths. |
 | `shorthands`     | Local property aliases such as `{ px: ['paddingLeft', 'paddingRight'] }`. Each expanded property validates its value independently.         |
 | `defaultLayer`   | Fallback layer for bound styles and recipes. Explicit `@layer` blocks override it. Omit to keep declarations unlayered.                     |
@@ -57,6 +58,25 @@ appearance.set({ set: 'alternate', colorScheme: 'dark' })
 
 See [Vars](../Vars/README.md) for derived references, conditional values, query aliases, and scope inheritance.
 
+## Category mappings
+
+`mappings` selects the CSS properties that accept token names from each category. Each supplied category replaces its default targets; omitted categories retain their built-in targets.
+
+```ts
+const { style } = Config.create({
+  vars: {
+    space: { compact: '8px' },
+    width: { compact: '120px' },
+    ink: { brand: '#123456' },
+  },
+  mappings: { space: ['padding', 'gap'], ink: ['color'] },
+  propertyGroups: { width: ['width', 'space'] },
+})
+style({ padding: 'compact', gap: 'compact', color: 'brand', width: 'compact' })
+```
+
+Here `padding` and `gap` use `space.compact`; `width` uses `width.compact` first and falls back to `space`. Explicit `propertyGroups` entries override category mappings for that property, including `[]`. Without an explicit property order, conflicting names introduced by category mappings are rejected.
+
 ## Property groups
 
 Use `propertyGroups` to override the token groups searched for each CSS property:
@@ -78,11 +98,11 @@ style({ width: 'roomy' }) // 32px
 style({ width: 'wide' }) // 640px
 ```
 
-Every listed group contributes token names. The first group containing a name wins. An explicit list replaces the property's defaults, including their order. Omitted properties retain built-in defaults; `[]` disables token name lookup for that property. Explicit references and CSS literals remain available.
+Every listed group contributes token names. The first group containing a name wins. An explicit list replaces the property's defaults, including their order. Omitted properties use `mappings` and built-in defaults; `[]` disables token name lookup for that property. Explicit references and CSS literals remain available.
 
 ## Full variable paths
 
-Set `propertyGroups: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS values with `!custom` and explicit references still work. Values must match the property's CSS syntax.
+Set `mappings: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS values with `!custom` and explicit references still work. Values must match the property's CSS syntax.
 
 ```ts
 const { style, vars } = Config.create({
@@ -90,7 +110,7 @@ const { style, vars } = Config.create({
     surface: { foreground: '#123456' },
     spacing: { page: '16px' },
   },
-  propertyGroups: false,
+  mappings: false,
 })
 
 const card = style({
@@ -99,6 +119,8 @@ const card = style({
   padding: vars.spacing.page,
 })
 ```
+
+`mappings: false` applies to properties without an explicit `propertyGroups` entry. An explicit list still uses short names. `propertyGroups: false` retains global full-path lookup and takes precedence over category mappings.
 
 ## Token values
 
@@ -126,7 +148,7 @@ Dynamic callbacks cannot select token names from their inputs. Use variants for 
 
 Properties without configured values accept either spelling: `'7px'` or `'7px !custom'`. An empty variable set leaves all properties unrestricted. No `strict` option is required or supported.
 
-Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'red !custom'` always means the CSS color. Property groups and `propertyGroups: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
+Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'red !custom'` always means the CSS color. Property groups and `mappings: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
 
 ## Default layer
 

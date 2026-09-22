@@ -57,7 +57,7 @@ const { style, vars } = Config.create({
 const panel = style({ backgroundColor: 'panel', width: vars.spacing.page })
 ```
 
-`propertyGroups` lists token groups for each CSS property in lookup order. `shorthands` expands local property aliases; every expanded property validates the supplied value. When groups share a token name, the first matching group wins.
+`mappings` assigns token categories to CSS properties. `propertyGroups` overrides that lookup for individual properties with an ordered group list. `shorthands` expands local property aliases; every expanded property validates the supplied value. When groups share a token name, the first matching group wins.
 
 ### Selecting Sets
 

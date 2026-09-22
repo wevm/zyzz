@@ -176,13 +176,18 @@ type Compatible<scalar> = [scalar] extends [Literal.Color]
       ? number | Token.Reference<'number'>
       : string | Token.Reference<'string'>
 
+/** Token categories mapped to the CSS properties that accept their names. */
+export type Mappings = Readonly<
+  Record<string, readonly (keyof Literal.Properties)[]>
+>
+
 /** Ordered token group names for each CSS property. */
 export type PropertyGroups = Readonly<
   Partial<Record<keyof Literal.Properties, readonly string[]>>
 >
 
 /** Type carrier for configured shorthand lookup. */
-export type Mapped<values, propertyGroups> = (Pick<
+export type Mapped<values, propertyGroups, mappings = {}> = (Pick<
   values,
   keyof values & ('breakpoint' | 'container' | 'containerNames' | 'typography')
 > extends infer metadata extends Theme.Tokens
@@ -192,6 +197,7 @@ export type Mapped<values, propertyGroups> = (Pick<
   readonly '~vars': {
     readonly values: values
     readonly propertyGroups: propertyGroups
+    readonly mappings: mappings
   }
 }
 

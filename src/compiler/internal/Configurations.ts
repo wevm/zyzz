@@ -106,11 +106,13 @@ export function collect(options: collect.Options): Themes.Link {
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values),
         authored.propertyGroups,
+        VariableSets.mappings(authored.mappings),
       )
     const {
       vars,
       defaultVars,
       propertyGroups: _propertyGroups,
+      mappings: _mappings,
       ...rest
     } = authored
     input =
@@ -150,6 +152,7 @@ export function collect(options: collect.Options): Themes.Link {
       ? {
           variableSet: true,
           propertyGroups: VariableSets.propertyGroups(authored.propertyGroups),
+          mappings: VariableSets.mappings(authored.mappings),
         }
       : {}),
     [Token.identity]: identity,
@@ -263,6 +266,7 @@ export function collect(options: collect.Options): Themes.Link {
         ? {
             variableConfig: true,
             variablePropertyGroups: authored.propertyGroups,
+            variableMappings: authored.mappings,
           }
         : {}),
       appearance: true,
@@ -276,7 +280,7 @@ export function collect(options: collect.Options): Themes.Link {
       start: options.expression.start,
       tokenType: selected?.call.tokenType ?? '{}',
       type: variableMode
-        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.propertyGroups !== undefined ? { propertyGroups: VariableSets.propertyGroups(authored.propertyGroups) } : {}) })}>`
+        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.mappings !== undefined ? { mappings: VariableSets.mappings(authored.mappings) } : {}), ...(authored.propertyGroups !== undefined ? { propertyGroups: VariableSets.propertyGroups(authored.propertyGroups) } : {}) })}>`
         : `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
     },
     definition,

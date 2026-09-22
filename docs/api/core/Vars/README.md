@@ -92,7 +92,7 @@ export const { style, vars } = Config.create({
 })
 ```
 
-Each supplied array replaces that property's lookup order. Omitted properties keep their defaults. `[]` disables token name lookup for that property. All scalar paths remain available through explicit `vars` references, with CSS value validation independent of group lookup.
+Each supplied array replaces that property's lookup order. Omitted properties use category `mappings` and built-in defaults. `[]` disables token name lookup for that property. All scalar paths remain available through explicit `vars` references, with CSS value validation independent of group lookup.
 
 Names from every listed group are accepted. If multiple groups contain the same name, the first match wins. Configured token names take precedence over CSS literals; use `!custom` to select the literal.
 
@@ -108,7 +108,7 @@ Named sets require `defaultVars` and identical paths and domains. `vars({ set, c
 
 Nested scopes select their own values. The nearest enclosing scope supplies variable values. `colorScheme` accepts `light`, `dark`, or `light dark`; omitting it preserves the inherited scheme.
 
-Source linking and packed-library contracts retain variable definitions, references, property groups, and selection helpers. Property group lookup requires compiler contract version 29 or later.
+Source linking and packed-library contracts retain variable definitions, references, property groups, and selection helpers. Property group lookup requires compiler contract version 29 or later; category mappings require version 30 or later.
 
 `config.vars` is both the reference tree and the scope selector. `Vars` replaces the removed `Theme` module; configuration uses `vars` and `defaultVars`. Appearance controls read and save `{ set, colorScheme }`.
 
@@ -132,7 +132,7 @@ Explicit typography fields override matching base and conditional preset fields 
 
 ## Category fallbacks
 
-The first category containing the requested name wins. Custom `propertyGroups` replace each property's ordered group list; `propertyGroups: false` requires full paths. Explicit references bypass category lookup and retain CSS value validation.
+The first category containing the requested name wins. Custom `propertyGroups` override category `mappings` for each listed property. `mappings: false` requires full paths for properties without an explicit group list. Explicit references bypass category lookup and retain CSS value validation.
 
 | Properties                                                                           | Categories, in order                               |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------- |

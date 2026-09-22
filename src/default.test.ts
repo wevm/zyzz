@@ -18,6 +18,39 @@ describe('default', () => {
     await Fs.access(Path.resolve('dist/default.d.ts'))
   })
 
+  test('regenerates default tokens without built package files', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-default-generator-'))
+    try {
+      await Fs.cp('src', Path.join(root, 'src'), { recursive: true })
+      await Fs.mkdir(Path.join(root, 'scripts'))
+      await Fs.copyFile(
+        'scripts/default-theme.ts',
+        Path.join(root, 'scripts/default-theme.ts'),
+      )
+      await Fs.writeFile(Path.join(root, 'package.json'), '{"type":"module"}')
+      await Fs.symlink(
+        Path.resolve('node_modules'),
+        Path.join(root, 'node_modules'),
+        'dir',
+      )
+      await exec(process.execPath, ['scripts/default-theme.ts'], { cwd: root })
+      const generated = await Fs.readFile(
+        Path.join(root, 'src/default.ts'),
+        'utf8',
+      )
+      expect(
+        generated.includes(
+          'z-kid-7a-79-7a-7a-2d-73-70-69-6e 1s linear infinite',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+      expect((await Fs.readdir(root)).includes('dist')).toMatchInlineSnapshot(
+        `false`,
+      )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test.each([{ conditions: [] }, { conditions: ['src'] }])(
     'renders packed defaults with conditions %j',
     async ({ conditions }) => {

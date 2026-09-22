@@ -189,7 +189,7 @@ export const other=vars({set:'alternate'}).className;`
         modules: { 'app.ts': source },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 29 or later.]`,
     )
     const consumer = Graph.compile({
       contracts: { 'library.js': contract },
@@ -614,7 +614,7 @@ export const body=style({
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 29 or later.]`,
     )
 
     const consumer = Graph.compile({

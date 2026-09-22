@@ -338,30 +338,32 @@ export function propertyGroups(
   if (input === undefined || input === false) return input
   return Object.freeze(
     Object.fromEntries(
-      record(input, ['propertyGroups']).map(([property, value]) => {
-        if (!Object.hasOwn(Literal.rules, property))
-          throw new Vars.InvalidError(
-            ['propertyGroups', property],
-            'Expected a CSS property name.',
+      record(input, ['propertyGroups'])
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([property, value]) => {
+          if (!Object.hasOwn(Literal.rules, property))
+            throw new Vars.InvalidError(
+              ['propertyGroups', property],
+              'Expected a CSS property name.',
+            )
+          if (
+            !Array.isArray(value) ||
+            value.some(
+              (group) =>
+                typeof group !== 'string' || !group || group.includes('.'),
+            )
           )
-        if (
-          !Array.isArray(value) ||
-          value.some(
-            (group) =>
-              typeof group !== 'string' || !group || group.includes('.'),
-          )
-        )
-          throw new Vars.InvalidError(
-            ['propertyGroups', property],
-            'Expected an array of top-level token group names.',
-          )
-        if (new Set(value).size !== value.length)
-          throw new Vars.InvalidError(
-            ['propertyGroups', property],
-            'Token groups cannot contain duplicates.',
-          )
-        return [property, Object.freeze([...value])]
-      }),
+            throw new Vars.InvalidError(
+              ['propertyGroups', property],
+              'Expected an array of top-level token group names.',
+            )
+          if (new Set(value).size !== value.length)
+            throw new Vars.InvalidError(
+              ['propertyGroups', property],
+              'Token groups cannot contain duplicates.',
+            )
+          return [property, Object.freeze([...value])]
+        }),
     ),
   )
 }

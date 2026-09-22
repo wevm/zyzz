@@ -1,7 +1,21 @@
 /** Regenerates the compiler-literal theme from its authoritative raw token declaration. @module */
 import * as Fs from 'node:fs/promises'
 import * as Parser from 'oxc-parser'
-import { keyframes } from 'zyzz/web'
+import * as Url from 'node:url'
+import * as Esbuild from 'esbuild'
+
+const bundled = await Esbuild.build({
+  entryPoints: [
+    Url.fileURLToPath(new URL('../src/web/keyframes.ts', import.meta.url)),
+  ],
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  write: false,
+})
+const { keyframes } = await import(
+  `data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0]!.text).toString('base64')}`
+)
 
 const file = new URL('../src/default.ts', import.meta.url)
 const source = await Fs.readFile(file, 'utf8')

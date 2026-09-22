@@ -69,6 +69,26 @@ export function acceptsVariables(
   }
 }
 
+/** Checks every identifier-token branch before its value becomes a CSS variable. */
+export function acceptsIdentifier(
+  reference: Token.Reference,
+  property: keyof Literal.Properties,
+): boolean {
+  function check(value: Token.Value): boolean {
+    if (Token.is(value)) return check(value.value)
+    if (typeof value === 'object') return Object.values(value).every(check)
+    try {
+      return (
+        Tree.lexer.matchProperty(Literal.name(property), String(value))
+          .error === null
+      )
+    } catch {
+      return false
+    }
+  }
+  return check(reference.value)
+}
+
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
 export function template(
   node: Ast.TemplateLiteral,

@@ -102,8 +102,8 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    if (entry.variableSet === true && (data.version as number) < 26)
-      throw new Error('Vars contracts require contract version 26 or later.')
+    if (entry.variableSet === true && (data.version as number) < 29)
+      throw new Error('Vars contracts require contract version 29 or later.')
     const propertyGroups = VariableSets.propertyGroups(entry.propertyGroups)
     if (
       entry.cssOutput !== undefined &&
@@ -295,7 +295,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27,
+          27, 28, 29,
         ].includes(data.version as number) ||
         ![
           'cssFunction',

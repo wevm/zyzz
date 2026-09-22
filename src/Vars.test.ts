@@ -686,6 +686,113 @@ describe('define', () => {
     )
   })
 
+  test('consumes named rule references alongside variable configurations', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz'; import {customMedia,cssFunction} from 'zyzz/web'; export const {style}=Config.create({vars:{spacing:{gap:'8px'}}}); export const compact=customMedia('(width < 40rem)'); export const twice=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});`,
+      },
+    })
+    const result = Graph.compile({
+      contracts: { 'library.js': library.contracts['config.ts']! },
+      imports: { 'app.ts': { library: 'library.js' } },
+      modules: { 'app.ts': `export {style,compact,twice} from 'library'` },
+    })
+    expect(
+      JSON.parse(result.contracts['app.ts']!).exports.compact.kind,
+    ).toMatchInlineSnapshot(`"rule-reference"`)
+    expect(
+      JSON.parse(result.contracts['app.ts']!).exports.twice.kind,
+    ).toMatchInlineSnapshot(`"rule-reference"`)
+  })
+  test.each([26, 27, 28])(
+    'rejects obsolete variable contracts version %s',
+    (version) => {
+      const library = Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'}}})`,
+        },
+      })
+      const contract = JSON.parse(library.contracts['config.ts']!)
+      contract.version = version
+      expect(() =>
+        Graph.compile({
+          contracts: { 'library.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { library: 'library.js' } },
+          modules: { 'app.ts': `export {style} from 'library'` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 29 or later.]`,
+      )
+    },
+  )
+  test('accepts reordered property keys across packed entrypoints', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'},container:{gap:'16px'}},propertyGroups:{width:['spacing','container'],height:['spacing']}})`,
+      },
+    })
+    const original = library.contracts['config.ts']!
+    const reordered = JSON.parse(original)
+    for (const theme of Object.values(reordered.themes) as {
+      propertyGroups?: object
+    }[])
+      if (theme.propertyGroups)
+        theme.propertyGroups = Object.fromEntries(
+          Object.entries(theme.propertyGroups).reverse(),
+        )
+    reordered.exports.style.variablePropertyGroups = Object.fromEntries(
+      Object.entries(reordered.exports.style.variablePropertyGroups).reverse(),
+    )
+    const result = Graph.compile({
+      contracts: { 'a.js': original, 'b.js': JSON.stringify(reordered) },
+      imports: { 'app.ts': { a: 'a.js', b: 'b.js' } },
+      modules: {
+        'app.ts': `import {style as a} from 'a'; import {style as b} from 'b'; export const first=a({width:'gap'}); export const second=b({height:'gap'});`,
+      },
+    })
+    expect(
+      result.modules['app.ts']!.css.includes('width:var('),
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      result.modules['app.ts']!.css.includes('height:var('),
+    ).toMatchInlineSnapshot(`true`)
+  })
+  test.each(['custom-counter', '"custom marker"', 'escaped\\ name'])(
+    'accepts valid identifier token %s',
+    (value) => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{named:${JSON.stringify(value)}}}}); export const list=style({listStyleType:'named'});`,
+        },
+      })
+      expect(
+        result.modules['app.ts']!.css.includes('list-style-type:var('),
+      ).toMatchInlineSnapshot(`true`)
+    },
+  )
+  test('rejects invalid conditional identifier token values', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{bad:{default:'disc','@media (width > 600px)':'two words?'}}}}); export const list=style({listStyleType:'bad'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:161: Variable value is incompatible with this property.]`,
+    )
+  })
+  test('rejects invalid identifier token values', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{bad:'two words?'}}}); export const list=style({listStyleType:'bad'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:119: Variable value is incompatible with this property.]`,
+    )
+  })
+
   test('rejects incompatible overrides', () => {
     const base = Vars.define({ color: { accent: '#fff' } })
     expect(() =>

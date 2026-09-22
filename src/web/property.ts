@@ -3,15 +3,8 @@ import type * as Context from './internal/Context.js'
 import type * as FunctionSyntax from '../internal/FunctionSyntax.js'
 
 /** Emits an eager registration; initial values are checked by the compiler. */
-export function property<const options extends property.Options>(
-  options: options &
-    Record<Exclude<keyof options, keyof property.Options>, never> & {
-      readonly syntax: FunctionSyntax.Checked<`type(${options['syntax']})`> extends never
-        ? never
-        : options['syntax']
-    } & (options['syntax'] extends '*'
-      ? unknown
-      : { readonly initialValue: string | number }),
+export function property<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): void {
   void options
@@ -33,3 +26,24 @@ export declare namespace property {
     readonly syntax: string
   }
 }
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends property.Options
+  ? options &
+      Record<Exclude<keyof options, keyof property.Options>, never> & {
+        readonly syntax: FunctionSyntax.Checked<`type(${options['syntax']})`> extends never
+          ? never
+          : options['syntax']
+      } & (options['syntax'] extends '*'
+        ? unknown
+        : { readonly initialValue: string | number })
+  : never

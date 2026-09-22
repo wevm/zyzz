@@ -5,11 +5,8 @@ import type * as Literal from '../internal/Literal.js'
 import type * as Style from '../Style.js'
 
 /** Emits an eager page rule, optionally selecting named pages or page pseudo-classes. */
-export function page<const descriptors extends Record<string, unknown>>(
-  options: {
-    readonly descriptors: descriptors & NoInfer<page.Body<descriptors>>
-    readonly selector?: string | undefined
-  },
+export function page<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): void {
   void options
@@ -138,3 +135,23 @@ type Keyword<value extends string> =
     : value extends `${infer rest}${' ' | '\t' | '\n' | '\r' | '\f'}`
       ? Keyword<rest>
       : Lexical.Fold<Lexical.Normalized<value>>
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<input> = input extends {
+  readonly descriptors: infer descriptors
+  readonly selector?: string | undefined
+}
+  ? {
+      readonly descriptors: descriptors & NoInfer<page.Body<descriptors>>
+      readonly selector?: string | undefined
+    } & Record<Exclude<keyof input, 'descriptors' | 'selector'>, never>
+  : never

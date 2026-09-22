@@ -663,740 +663,789 @@ export function extract(
     }
   }
 
-  for (const call of scanned.calls) {
-    const before = result.length
+  function definitions(
+    input: unknown,
+    headers: readonly string[] = [],
+  ): { input: unknown; headers: readonly string[] }[] {
+    const entries = Object.entries(record(input))
+    const groups = new Set(
+      entries
+        .filter(
+          ([key]) =>
+            key === '@layer' ||
+            /^@(media|supports|container|layer)(?=[\t\n\r\f (/])/.test(key),
+        )
+        .map(([key]) => key),
+    )
+    const descriptors = entries.filter(([key]) => !groups.has(key))
+    const body = Object.fromEntries(descriptors)
+    if (!entries.length) return [{ input: body, headers }]
 
+    // A complete descriptor block occupies its first descriptor's authored position.
+    return entries.flatMap(([header, child]) =>
+      groups.has(header)
+        ? definitions(child, [...headers, Condition.normalize(header)])
+        : header === descriptors[0]?.[0]
+          ? [{ input: body, headers }]
+          : [],
+    )
+  }
+
+  for (const call of scanned.calls) {
     try {
-      const input = value(call.argument)
+      const argument = value(call.argument)
       if (call.name && !call.exported && !scanned.used.has(call.name)) continue
-      if (call.kind === 'importCss') {
-        const options = record(input)
-        if (
-          Object.keys(options).some(
-            (key) => !['layer', 'media', 'supports', 'url'].includes(key),
-          ) ||
-          typeof options.url !== 'string' ||
-          Object.entries(options).some(
-            ([key, value]) =>
-              key !== 'url' &&
-              value !== undefined &&
-              typeof value !== 'string' &&
-              !(key === 'layer' && value === true),
-          )
+      const contextValue = call.context ? value(call.context) : undefined
+      if (
+        contextValue !== undefined &&
+        Object.keys(record(contextValue)).some((key) => key !== 'id')
+      )
+        throw new Error(
+          'Unknown contribution context option. Use nested at-rule keys for enclosing groups.',
         )
-          throw new Error(
-            'Expected a stylesheet URL and static import conditions.',
-          )
-        result.push({
-          kind: 'import',
-          url: options.url,
-          ...(options.layer !== undefined
-            ? { layer: options.layer as string | true }
-            : {}),
-          ...(options.supports !== undefined
-            ? { supports: options.supports as string }
-            : {}),
-          ...(options.media !== undefined
-            ? { media: options.media as string }
-            : {}),
-        })
-      } else if (call.kind === 'namespace') {
-        const options = record(input)
-        if (
-          Object.keys(options).some(
-            (key) => !['prefix', 'uri'].includes(key),
-          ) ||
-          typeof options.uri !== 'string' ||
-          (options.prefix !== undefined &&
-            (typeof options.prefix !== 'string' ||
-              Identifiers.read(options.prefix) === undefined))
-        )
-          throw new Error(
-            'Expected a namespace URI and optional identifier prefix.',
-          )
-        result.push({
-          kind: 'namespace',
-          uri: options.uri,
-          ...(options.prefix !== undefined
-            ? { prefix: options.prefix as string }
-            : {}),
-          name: `z-n${scanned.namespace}-${call.start.toString(36)}`,
-        })
-      } else if (call.kind === 'customMedia') {
-        if (typeof input !== 'string' && typeof input !== 'boolean')
-          throw new Error('Expected a media query or boolean.')
-        if (typeof input === 'string') Descriptors.media(input)
-        result.push({ kind: 'custom-media', name: call.name!, query: input })
-      } else if (call.kind === 'cssFunction') {
-        const options = record(input)
-        if (
-          Object.keys(options).some(
-            (key) => !['body', 'parameters', 'returns'].includes(key),
-          ) ||
-          !Array.isArray(options.parameters) ||
-          (options.returns !== undefined &&
-            (typeof options.returns !== 'string' ||
-              !FunctionSyntax.accepts(options.returns)))
-        )
-          throw new Error(
-            'Expected CSS function parameters, body, and optional return syntax.',
-          )
-        const names = new Set<string>()
-        const parameters = options.parameters.map((input) => {
-          const parameter = record(input)
+
+      const inputs = [
+        'importCss',
+        'namespace',
+        'customMedia',
+        'layers',
+        'global',
+      ].includes(call.kind)
+        ? [{ input: argument, headers: [] }]
+        : definitions(argument)
+      let functionSignature: string | undefined
+      for (const { input, headers } of inputs) {
+        const before = result.length
+        if (call.kind === 'importCss') {
+          const options = record(input)
           if (
-            Object.keys(parameter).some(
-              (key) => !['default', 'name', 'syntax'].includes(key),
+            Object.keys(options).some(
+              (key) => !['layer', 'media', 'supports', 'url'].includes(key),
             ) ||
-            typeof parameter.name !== 'string' ||
-            !dashed(parameter.name) ||
-            names.has(Identifiers.read(parameter.name)!) ||
-            (parameter.syntax !== undefined &&
-              (typeof parameter.syntax !== 'string' ||
-                !FunctionSyntax.accepts(parameter.syntax))) ||
-            (parameter.default !== undefined &&
-              typeof parameter.default !== 'string' &&
-              typeof parameter.default !== 'number')
+            typeof options.url !== 'string' ||
+            Object.entries(options).some(
+              ([key, value]) =>
+                key !== 'url' &&
+                value !== undefined &&
+                typeof value !== 'string' &&
+                !(key === 'layer' && value === true),
+            )
           )
             throw new Error(
-              'Expected unique CSS parameters with supported syntaxes and scalar defaults.',
+              'Expected a stylesheet URL and static import conditions.',
             )
-          names.add(Identifiers.read(parameter.name)!)
-          if (parameter.default !== undefined)
-            Functions.value(
-              String(parameter.syntax ?? '*'),
-              String(parameter.default),
+          result.push({
+            kind: 'import',
+            url: options.url,
+            ...(options.layer !== undefined
+              ? { layer: options.layer as string | true }
+              : {}),
+            ...(options.supports !== undefined
+              ? { supports: options.supports as string }
+              : {}),
+            ...(options.media !== undefined
+              ? { media: options.media as string }
+              : {}),
+          })
+        } else if (call.kind === 'namespace') {
+          const options = record(input)
+          if (
+            Object.keys(options).some(
+              (key) => !['prefix', 'uri'].includes(key),
+            ) ||
+            typeof options.uri !== 'string' ||
+            (options.prefix !== undefined &&
+              (typeof options.prefix !== 'string' ||
+                Identifiers.read(options.prefix) === undefined))
+          )
+            throw new Error(
+              'Expected a namespace URI and optional identifier prefix.',
             )
-          return `${parameter.name}${parameter.syntax ? ` ${parameter.syntax === '*' ? 'type(*)' : parameter.syntax}` : ''}${parameter.default !== undefined ? `: ${parameter.default}` : ''}`
-        })
-        function body(input: unknown): readonly Block.Entry[] {
-          return Object.entries(record(input)).flatMap(
+          result.push({
+            kind: 'namespace',
+            uri: options.uri,
+            ...(options.prefix !== undefined
+              ? { prefix: options.prefix as string }
+              : {}),
+            name: `z-n${scanned.namespace}-${call.start.toString(36)}`,
+          })
+        } else if (call.kind === 'customMedia') {
+          if (typeof input !== 'string' && typeof input !== 'boolean')
+            throw new Error('Expected a media query or boolean.')
+          if (typeof input === 'string') Descriptors.media(input)
+          result.push({ kind: 'custom-media', name: call.name!, query: input })
+        } else if (call.kind === 'cssFunction') {
+          const options = record(input)
+          if (
+            Object.keys(options).some(
+              (key) => !['body', 'parameters', 'returns'].includes(key),
+            ) ||
+            !Array.isArray(options.parameters) ||
+            (options.returns !== undefined &&
+              (typeof options.returns !== 'string' ||
+                !FunctionSyntax.accepts(options.returns)))
+          )
+            throw new Error(
+              'Expected CSS function parameters, body, and optional return syntax.',
+            )
+          const names = new Set<string>()
+          const parameters = options.parameters.map((input) => {
+            const parameter = record(input)
+            if (
+              Object.keys(parameter).some(
+                (key) => !['default', 'name', 'syntax'].includes(key),
+              ) ||
+              typeof parameter.name !== 'string' ||
+              !dashed(parameter.name) ||
+              names.has(Identifiers.read(parameter.name)!) ||
+              (parameter.syntax !== undefined &&
+                (typeof parameter.syntax !== 'string' ||
+                  !FunctionSyntax.accepts(parameter.syntax))) ||
+              (parameter.default !== undefined &&
+                typeof parameter.default !== 'string' &&
+                typeof parameter.default !== 'number')
+            )
+              throw new Error(
+                'Expected unique CSS parameters with supported syntaxes and scalar defaults.',
+              )
+            names.add(Identifiers.read(parameter.name)!)
+            if (parameter.default !== undefined)
+              Functions.value(
+                String(parameter.syntax ?? '*'),
+                String(parameter.default),
+              )
+            return `${parameter.name}${parameter.syntax ? ` ${parameter.syntax === '*' ? 'type(*)' : parameter.syntax}` : ''}${parameter.default !== undefined ? `: ${parameter.default}` : ''}`
+          })
+          function body(input: unknown): readonly Block.Entry[] {
+            return Object.entries(record(input)).flatMap(
+              ([key, value]): Block.Entry[] => {
+                if (value === undefined) return []
+                if (/^@(media|supports|container) /.test(key))
+                  return [
+                    {
+                      kind: 'block',
+                      header: Condition.normalize(key),
+                      entries: body(value),
+                    },
+                  ]
+                if (
+                  (key !== 'result' && !dashed(key)) ||
+                  (typeof value !== 'string' && typeof value !== 'number')
+                )
+                  throw new Error(
+                    'CSS function bodies accept result, local variables, and conditional groups.',
+                  )
+                Functions.value('*', String(value))
+                return [{ kind: 'descriptor', name: key, value }]
+              },
+            )
+          }
+          const signature = JSON.stringify({
+            parameters: options.parameters.map((input) => {
+              const parameter = record(input)
+              return [
+                parameter.name,
+                parameter.syntax ?? '*',
+                parameter.default,
+              ]
+            }),
+            returns: options.returns ?? '*',
+          })
+          if (
+            functionSignature !== undefined &&
+            functionSignature !== signature
+          )
+            throw new Error(
+              'Grouped CSS function definitions must use the same parameters and return syntax.',
+            )
+          functionSignature = signature
+          call.function!.parameters =
+            options.parameters as readonly cssFunction.Parameter[]
+          call.function!.returns = (options.returns ??
+            '*') as cssFunction.Syntax
+          result.push({
+            kind: 'block',
+            header: `@function ${call.name}(${parameters.join(',')})${options.returns ? ` returns ${options.returns === '*' ? 'type(*)' : options.returns}` : ''}`,
+            entries: body(options.body),
+          })
+        } else if (call.kind === 'layers') {
+          if (
+            !Array.isArray(input) ||
+            input.some((value) => typeof value !== 'string')
+          )
+            throw new Error('Layers require a literal string list.')
+
+          result.push({ kind: 'layers', names: input })
+        } else if (call.kind === 'global') {
+          for (const [selector, child] of Object.entries(record(input)))
+            result.push({
+              kind: 'rule',
+              selector,
+              style: grouping(selector) ? global(child) : style(child),
+            })
+        } else if (call.kind === 'fontFace') {
+          const declarations = record(input)
+
+          for (const key of Object.keys(declarations))
+            if (
+              declarations[key] === undefined &&
+              key !== 'fontFamily' &&
+              key !== 'src'
+            )
+              delete declarations[key]
+
+          const keys = [
+            'fontFeatureSettings',
+            'fontVariationSettings',
+            'fontFamily',
+            'src',
+            'fontDisplay',
+            'fontStyle',
+            'fontWeight',
+            'fontStretch',
+            'unicodeRange',
+            'sizeAdjust',
+            'ascentOverride',
+            'descentOverride',
+            'lineGapOverride',
+          ]
+          if (
+            typeof declarations.fontFamily !== 'string' ||
+            typeof declarations.src !== 'string' ||
+            Object.entries(declarations).some(
+              ([key, value]) =>
+                !keys.includes(key) ||
+                (typeof value !== 'string' && typeof value !== 'number'),
+            )
+          )
+            throw new Error(
+              'Font faces require family/source and scalar supported descriptors.',
+            )
+
+          for (const [name, value] of Object.entries(declarations))
+            Descriptors.check({ rule: 'font-face', name, value: String(value) })
+          result.push({
+            kind: 'font-face',
+            declarations: declarations as Record<string, string | number>,
+          })
+        } else if (call.kind === 'property') {
+          const options = record(input)
+          const names =
+            typeof options.name === 'string'
+              ? Identifiers.list(options.name, 'space')
+              : undefined
+          if (
+            Object.keys(options).some(
+              (key) =>
+                !['name', 'syntax', 'inherits', 'initialValue'].includes(key),
+            ) ||
+            names?.length !== 1 ||
+            !names[0]!.startsWith('--') ||
+            names[0]!.length <= 2 ||
+            typeof options.syntax !== 'string' ||
+            typeof options.inherits !== 'boolean' ||
+            (options.initialValue !== undefined &&
+              typeof options.initialValue !== 'string' &&
+              typeof options.initialValue !== 'number')
+          )
+            throw new Error(
+              'Expected a native property registration with scalar descriptors.',
+            )
+          if (options.initialValue !== undefined)
+            Properties.initial(String(options.initialValue))
+          result.push({
+            kind: 'property',
+            name: options.name as `--${string}`,
+            syntax: options.syntax,
+            inherits: options.inherits,
+            ...(options.initialValue !== undefined
+              ? { initialValue: options.initialValue as string | number }
+              : {}),
+          })
+        } else if (call.kind === 'page') {
+          const options = record(input)
+          if (
+            Object.keys(options).some(
+              (key) => !['descriptors', 'selector'].includes(key),
+            ) ||
+            (options.selector !== undefined &&
+              typeof options.selector !== 'string')
+          )
+            throw new Error(
+              'Expected page descriptors and an optional selector.',
+            )
+          const margins = [
+            'top-left-corner',
+            'top-left',
+            'top-center',
+            'top-right',
+            'top-right-corner',
+            'bottom-left-corner',
+            'bottom-left',
+            'bottom-center',
+            'bottom-right',
+            'bottom-right-corner',
+            'left-top',
+            'left-middle',
+            'left-bottom',
+            'right-top',
+            'right-middle',
+            'right-bottom',
+          ].map((name) => `@${name}`)
+          const properties =
+            /^(?!border(?:Collapse|Spacing)$)(?:background|border|font|margin|padding|outline)/
+          const names = [
+            'color',
+            'counterIncrement',
+            'counterReset',
+            'direction',
+            'height',
+            'letterSpacing',
+            'lineHeight',
+            'maxHeight',
+            'maxWidth',
+            'minHeight',
+            'minWidth',
+            'quotes',
+            'textAlign',
+            'textDecoration',
+            'textIndent',
+            'textTransform',
+            'visibility',
+            'whiteSpace',
+            'width',
+            'wordSpacing',
+          ]
+          function body(
+            input: unknown,
+            margin = false,
+          ): readonly Block.Entry[] {
+            return Object.entries(record(input)).flatMap(
+              ([key, value]): Block.Entry[] => {
+                if (value === undefined) return []
+                if (!margin && margins.includes(key))
+                  return [
+                    { kind: 'block', header: key, entries: body(value, true) },
+                  ]
+                if (
+                  !margin &&
+                  ['bleed', 'marks', 'pageOrientation', 'size'].includes(key)
+                ) {
+                  if (typeof value !== 'string' && typeof value !== 'number')
+                    throw new Error('Expected a scalar page descriptor.')
+                  Descriptors.check({
+                    rule: 'page',
+                    name: key,
+                    value: String(value),
+                  })
+                  return [
+                    {
+                      kind: 'descriptor',
+                      name: key.replace(
+                        /[A-Z]/g,
+                        (letter) => `-${letter.toLowerCase()}`,
+                      ),
+                      value,
+                    },
+                  ]
+                }
+                if (
+                  !properties.test(key) &&
+                  !names.includes(key) &&
+                  !(
+                    margin &&
+                    [
+                      'content',
+                      'overflow',
+                      'unicodeBidi',
+                      'verticalAlign',
+                      'zIndex',
+                    ].includes(key)
+                  )
+                )
+                  throw new Error(
+                    'Unsupported page or page-margin declaration.',
+                  )
+                return [{ kind: 'style', style: style({ [key]: value }) }]
+              },
+            )
+          }
+          result.push({
+            kind: 'block',
+            header: Condition.normalize(
+              `@page${options.selector ? ` ${options.selector}` : ''}`,
+            ),
+            entries: body(options.descriptors),
+          })
+        } else if (call.kind === 'fontFeatureValues') {
+          const options = record(input)
+          if (
+            Object.keys(options).some(
+              (key) => !['families', 'features', 'fontDisplay'].includes(key),
+            )
+          )
+            throw new Error('Unknown font-feature-values option.')
+          const families = options.families
+          if (
+            typeof families !== 'string' &&
+            (!Array.isArray(families) ||
+              !families.length ||
+              families.some((value) => typeof value !== 'string'))
+          )
+            throw new Error('Expected a font family list.')
+          const familyList = Array.isArray(families)
+            ? families
+                .map(
+                  (value) =>
+                    '"' +
+                    Array.from(value as string, (char) => {
+                      const code = char.codePointAt(0)!
+                      return code < 32 ||
+                        code === 127 ||
+                        char === '"' ||
+                        char === '\\'
+                        ? `\\${code.toString(16)} `
+                        : char
+                    }).join('') +
+                    '"',
+                )
+                .join(',')
+            : families
+          // Validate the native prelude before shielding newer body descriptors.
+          Lightning.transform({
+            filename: 'font-feature-values.css',
+            code: new TextEncoder().encode(
+              `@font-feature-values ${familyList} {}`,
+            ),
+          })
+          const entries: Block.Entry[] = []
+          for (const key of Object.keys(options)) {
+            if (key === 'fontDisplay' && options.fontDisplay !== undefined) {
+              if (
+                typeof options.fontDisplay !== 'string' ||
+                !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
+                  Identifiers.list(options.fontDisplay, 'space')
+                    ?.join(' ')
+                    .replace(/[A-Z]/g, (letter) => letter.toLowerCase()) ?? '',
+                )
+              )
+                throw new Error('Invalid font display descriptor.')
+              entries.push({
+                kind: 'descriptor',
+                name: 'font-display',
+                value: options.fontDisplay,
+              })
+            }
+            if (key !== 'features') continue
+            for (const [header, input] of Object.entries(
+              record(options.features),
+            )) {
+              if (input === undefined) continue
+              if (
+                ![
+                  '@annotation',
+                  '@character-variant',
+                  '@ornaments',
+                  '@styleset',
+                  '@stylistic',
+                  '@swash',
+                ].includes(header)
+              )
+                throw new Error('Unknown font feature block.')
+              const declarations: Block.Entry[] = Object.entries(
+                record(input),
+              ).map(([name, value]) => {
+                const values = Array.isArray(value) ? value : [value]
+                const maximum =
+                  header === '@styleset'
+                    ? Infinity
+                    : header === '@character-variant'
+                      ? 2
+                      : 1
+                if (
+                  !identifier(name) ||
+                  !values.length ||
+                  values.length > maximum ||
+                  values.some(
+                    (value) =>
+                      typeof value !== 'number' ||
+                      !Number.isSafeInteger(value) ||
+                      value < 0,
+                  )
+                )
+                  throw new Error(
+                    'Expected feature aliases with nonnegative integer indices.',
+                  )
+                return { kind: 'descriptor', name, value: values.join(' ') }
+              })
+              entries.push({ kind: 'block', header, entries: declarations })
+            }
+          }
+          result.push({
+            kind: 'block',
+            header: `@font-feature-values ${familyList}`,
+            entries,
+          })
+        } else if (call.kind === 'viewTransition') {
+          const entries = Object.entries(record(input)).flatMap(
             ([key, value]): Block.Entry[] => {
               if (value === undefined) return []
-              if (/^@(media|supports|container) /.test(key))
-                return [
-                  {
-                    kind: 'block',
-                    header: Condition.normalize(key),
-                    entries: body(value),
-                  },
-                ]
               if (
-                (key !== 'result' && !dashed(key)) ||
-                (typeof value !== 'string' && typeof value !== 'number')
+                (key !== 'navigation' && key !== 'types') ||
+                typeof value !== 'string' ||
+                (key === 'navigation' &&
+                  !['auto', 'none'].includes(
+                    Identifiers.list(value, 'space')?.join(' ').toLowerCase() ??
+                      '',
+                  ))
               )
                 throw new Error(
-                  'CSS function bodies accept result, local variables, and conditional groups.',
+                  'Expected navigation or types view-transition descriptors.',
                 )
+              if (key === 'types') {
+                const names = Identifiers.list(value, 'space')
+                if (
+                  !names ||
+                  names.some(
+                    (name) =>
+                      [
+                        'default',
+                        'inherit',
+                        'initial',
+                        'revert',
+                        'revert-layer',
+                        'unset',
+                      ].includes(name.toLowerCase()) ||
+                      (name.toLowerCase() === 'none' && names.length !== 1),
+                  )
+                )
+                  throw new Error(
+                    'Expected none or a list of view-transition custom identifiers.',
+                  )
+              }
               Functions.value('*', String(value))
               return [{ kind: 'descriptor', name: key, value }]
             },
           )
-        }
-        call.function!.parameters =
-          options.parameters as readonly cssFunction.Parameter[]
-        call.function!.returns = (options.returns ?? '*') as cssFunction.Syntax
-        result.push({
-          kind: 'block',
-          header: `@function ${call.name}(${parameters.join(',')})${options.returns ? ` returns ${options.returns === '*' ? 'type(*)' : options.returns}` : ''}`,
-          entries: body(options.body),
-        })
-      } else if (call.kind === 'layers') {
-        if (
-          !Array.isArray(input) ||
-          input.some((value) => typeof value !== 'string')
-        )
-          throw new Error('Layers require a literal string list.')
-
-        result.push({ kind: 'layers', names: input })
-      } else if (call.kind === 'global') {
-        for (const [selector, child] of Object.entries(record(input)))
+          result.push({ kind: 'block', header: '@view-transition', entries })
+        } else if (call.kind === 'positionTry') {
+          const declarations = record(input)
+          const keys = [
+            'alignSelf',
+            'blockSize',
+            'bottom',
+            'height',
+            'inlineSize',
+            'inset',
+            'insetBlock',
+            'insetBlockEnd',
+            'insetBlockStart',
+            'insetInline',
+            'insetInlineEnd',
+            'insetInlineStart',
+            'justifySelf',
+            'left',
+            'margin',
+            'marginBlock',
+            'marginBlockEnd',
+            'marginBlockStart',
+            'marginBottom',
+            'marginInline',
+            'marginInlineEnd',
+            'marginInlineStart',
+            'marginLeft',
+            'marginRight',
+            'marginTop',
+            'maxBlockSize',
+            'maxHeight',
+            'maxInlineSize',
+            'maxWidth',
+            'minBlockSize',
+            'minHeight',
+            'minInlineSize',
+            'minWidth',
+            'placeSelf',
+            'positionAnchor',
+            'positionArea',
+            'right',
+            'top',
+            'width',
+          ]
+          if (Object.keys(declarations).some((key) => !keys.includes(key)))
+            throw new Error('Unsupported position-try declaration.')
+          const block = style(declarations)
+          if (
+            block.rules ||
+            block.declarations.some((value) => value.important)
+          )
+            throw new Error(
+              'Position-try forbids nested rules and important declarations.',
+            )
           result.push({
             kind: 'rule',
-            selector,
-            style: grouping(selector) ? global(child) : style(child),
+            selector: `@position-try ${call.name}`,
+            style: block,
           })
-      } else if (call.kind === 'fontFace') {
-        const declarations = record(input)
-
-        for (const key of Object.keys(declarations))
-          if (
-            declarations[key] === undefined &&
-            key !== 'fontFamily' &&
-            key !== 'src'
-          )
-            delete declarations[key]
-
-        const keys = [
-          'fontFeatureSettings',
-          'fontVariationSettings',
-          'fontFamily',
-          'src',
-          'fontDisplay',
-          'fontStyle',
-          'fontWeight',
-          'fontStretch',
-          'unicodeRange',
-          'sizeAdjust',
-          'ascentOverride',
-          'descentOverride',
-          'lineGapOverride',
-        ]
-        if (
-          typeof declarations.fontFamily !== 'string' ||
-          typeof declarations.src !== 'string' ||
-          Object.entries(declarations).some(
-            ([key, value]) =>
-              !keys.includes(key) ||
-              (typeof value !== 'string' && typeof value !== 'number'),
-          )
-        )
-          throw new Error(
-            'Font faces require family/source and scalar supported descriptors.',
-          )
-
-        for (const [name, value] of Object.entries(declarations))
-          Descriptors.check({ rule: 'font-face', name, value: String(value) })
-        result.push({
-          kind: 'font-face',
-          declarations: declarations as Record<string, string | number>,
-        })
-      } else if (call.kind === 'property') {
-        const options = record(input)
-        const names =
-          typeof options.name === 'string'
-            ? Identifiers.list(options.name, 'space')
-            : undefined
-        if (
-          Object.keys(options).some(
-            (key) =>
-              !['name', 'syntax', 'inherits', 'initialValue'].includes(key),
-          ) ||
-          names?.length !== 1 ||
-          !names[0]!.startsWith('--') ||
-          names[0]!.length <= 2 ||
-          typeof options.syntax !== 'string' ||
-          typeof options.inherits !== 'boolean' ||
-          (options.initialValue !== undefined &&
-            typeof options.initialValue !== 'string' &&
-            typeof options.initialValue !== 'number')
-        )
-          throw new Error(
-            'Expected a native property registration with scalar descriptors.',
-          )
-        if (options.initialValue !== undefined)
-          Properties.initial(String(options.initialValue))
-        result.push({
-          kind: 'property',
-          name: options.name as `--${string}`,
-          syntax: options.syntax,
-          inherits: options.inherits,
-          ...(options.initialValue !== undefined
-            ? { initialValue: options.initialValue as string | number }
-            : {}),
-        })
-      } else if (call.kind === 'page') {
-        const options = record(input)
-        if (
-          Object.keys(options).some(
-            (key) => !['descriptors', 'selector'].includes(key),
-          ) ||
-          (options.selector !== undefined &&
-            typeof options.selector !== 'string')
-        )
-          throw new Error('Expected page descriptors and an optional selector.')
-        const margins = [
-          'top-left-corner',
-          'top-left',
-          'top-center',
-          'top-right',
-          'top-right-corner',
-          'bottom-left-corner',
-          'bottom-left',
-          'bottom-center',
-          'bottom-right',
-          'bottom-right-corner',
-          'left-top',
-          'left-middle',
-          'left-bottom',
-          'right-top',
-          'right-middle',
-          'right-bottom',
-        ].map((name) => `@${name}`)
-        const properties =
-          /^(?!border(?:Collapse|Spacing)$)(?:background|border|font|margin|padding|outline)/
-        const names = [
-          'color',
-          'counterIncrement',
-          'counterReset',
-          'direction',
-          'height',
-          'letterSpacing',
-          'lineHeight',
-          'maxHeight',
-          'maxWidth',
-          'minHeight',
-          'minWidth',
-          'quotes',
-          'textAlign',
-          'textDecoration',
-          'textIndent',
-          'textTransform',
-          'visibility',
-          'whiteSpace',
-          'width',
-          'wordSpacing',
-        ]
-        function body(input: unknown, margin = false): readonly Block.Entry[] {
-          return Object.entries(record(input)).flatMap(
-            ([key, value]): Block.Entry[] => {
-              if (value === undefined) return []
-              if (!margin && margins.includes(key))
-                return [
-                  { kind: 'block', header: key, entries: body(value, true) },
-                ]
-              if (
-                !margin &&
-                ['bleed', 'marks', 'pageOrientation', 'size'].includes(key)
-              ) {
-                if (typeof value !== 'string' && typeof value !== 'number')
-                  throw new Error('Expected a scalar page descriptor.')
-                Descriptors.check({
-                  rule: 'page',
-                  name: key,
-                  value: String(value),
-                })
-                return [
-                  {
-                    kind: 'descriptor',
-                    name: key.replace(
-                      /[A-Z]/g,
-                      (letter) => `-${letter.toLowerCase()}`,
-                    ),
-                    value,
-                  },
-                ]
-              }
-              if (
-                !properties.test(key) &&
-                !names.includes(key) &&
-                !(
-                  margin &&
-                  [
-                    'content',
-                    'overflow',
-                    'unicodeBidi',
-                    'verticalAlign',
-                    'zIndex',
-                  ].includes(key)
-                )
-              )
-                throw new Error('Unsupported page or page-margin declaration.')
-              return [{ kind: 'style', style: style({ [key]: value }) }]
+        } else if (
+          call.kind === 'colorProfile' ||
+          call.kind === 'counterStyle' ||
+          call.kind === 'fontPaletteValues'
+        ) {
+          const descriptors = {
+            colorProfile: {
+              rule: 'color-profile',
+              keys: ['components', 'renderingIntent', 'src'],
+              required: ['src'],
             },
+            counterStyle: {
+              rule: 'counter-style',
+              keys: [
+                'additiveSymbols',
+                'fallback',
+                'negative',
+                'pad',
+                'prefix',
+                'range',
+                'speakAs',
+                'suffix',
+                'symbols',
+                'system',
+              ],
+              required: [],
+            },
+            fontPaletteValues: {
+              rule: 'font-palette-values',
+              keys: ['basePalette', 'fontFamily', 'overrideColors'],
+              required: ['fontFamily'],
+            },
+          } as const
+          const definition = descriptors[call.kind]
+          const declarations = record(input)
+          for (const key of Object.keys(declarations))
+            if (declarations[key] === undefined) delete declarations[key]
+          if (
+            definition.required.some(
+              (key) => typeof declarations[key] !== 'string',
+            ) ||
+            Object.entries(declarations).some(
+              ([key, value]) =>
+                !(definition.keys as readonly string[]).includes(key) ||
+                (typeof value !== 'string' &&
+                  !(
+                    key === 'basePalette' &&
+                    typeof value === 'number' &&
+                    Number.isSafeInteger(value) &&
+                    value >= 0
+                  )),
+            )
           )
-        }
-        result.push({
-          kind: 'block',
-          header: Condition.normalize(
-            `@page${options.selector ? ` ${options.selector}` : ''}`,
-          ),
-          entries: body(options.descriptors),
-        })
-      } else if (call.kind === 'fontFeatureValues') {
-        const options = record(input)
-        if (
-          Object.keys(options).some(
-            (key) => !['families', 'features', 'fontDisplay'].includes(key),
-          )
-        )
-          throw new Error('Unknown font-feature-values option.')
-        const families = options.families
-        if (
-          typeof families !== 'string' &&
-          (!Array.isArray(families) ||
-            !families.length ||
-            families.some((value) => typeof value !== 'string'))
-        )
-          throw new Error('Expected a font family list.')
-        const familyList = Array.isArray(families)
-          ? families
-              .map(
-                (value) =>
-                  '"' +
-                  Array.from(value as string, (char) => {
-                    const code = char.codePointAt(0)!
-                    return code < 32 ||
-                      code === 127 ||
-                      char === '"' ||
-                      char === '\\'
-                      ? `\\${code.toString(16)} `
-                      : char
-                  }).join('') +
-                  '"',
-              )
-              .join(',')
-          : families
-        // Validate the native prelude before shielding newer body descriptors.
-        Lightning.transform({
-          filename: 'font-feature-values.css',
-          code: new TextEncoder().encode(
-            `@font-feature-values ${familyList} {}`,
-          ),
-        })
-        const entries: Block.Entry[] = []
-        for (const key of Object.keys(options)) {
-          if (key === 'fontDisplay' && options.fontDisplay !== undefined) {
-            if (
-              typeof options.fontDisplay !== 'string' ||
-              !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
-                Identifiers.list(options.fontDisplay, 'space')
-                  ?.join(' ')
-                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase()) ?? '',
-              )
+            throw new Error(
+              'Expected supported scalar descriptors and required fields.',
             )
-              throw new Error('Invalid font display descriptor.')
-            entries.push({
-              kind: 'descriptor',
-              name: 'font-display',
-              value: options.fontDisplay,
-            })
-          }
-          if (key !== 'features') continue
-          for (const [header, input] of Object.entries(
-            record(options.features),
-          )) {
-            if (input === undefined) continue
-            if (
-              ![
-                '@annotation',
-                '@character-variant',
-                '@ornaments',
-                '@styleset',
-                '@stylistic',
-                '@swash',
-              ].includes(header)
-            )
-              throw new Error('Unknown font feature block.')
-            const declarations: Block.Entry[] = Object.entries(
-              record(input),
-            ).map(([name, value]) => {
-              const values = Array.isArray(value) ? value : [value]
-              const maximum =
-                header === '@styleset'
-                  ? Infinity
-                  : header === '@character-variant'
-                    ? 2
-                    : 1
-              if (
-                !identifier(name) ||
-                !values.length ||
-                values.length > maximum ||
-                values.some(
-                  (value) =>
-                    typeof value !== 'number' ||
-                    !Number.isSafeInteger(value) ||
-                    value < 0,
-                )
-              )
+          if (call.kind === 'colorProfile') {
+            if (!Identifiers.url(declarations.src as string))
+              throw new Error('Color-profile src requires one URL.')
+            if (typeof declarations.components === 'string') {
+              const names = Identifiers.list(declarations.components, 'comma')
+              if (!names || names.some((name) => name.toLowerCase() === 'none'))
                 throw new Error(
-                  'Expected feature aliases with nonnegative integer indices.',
-                )
-              return { kind: 'descriptor', name, value: values.join(' ') }
-            })
-            entries.push({ kind: 'block', header, entries: declarations })
-          }
-        }
-        result.push({
-          kind: 'block',
-          header: `@font-feature-values ${familyList}`,
-          entries,
-        })
-      } else if (call.kind === 'viewTransition') {
-        const entries = Object.entries(record(input)).flatMap(
-          ([key, value]): Block.Entry[] => {
-            if (value === undefined) return []
-            if (
-              (key !== 'navigation' && key !== 'types') ||
-              typeof value !== 'string' ||
-              (key === 'navigation' &&
-                !['auto', 'none'].includes(
-                  Identifiers.list(value, 'space')?.join(' ').toLowerCase() ??
-                    '',
-                ))
-            )
-              throw new Error(
-                'Expected navigation or types view-transition descriptors.',
-              )
-            if (key === 'types') {
-              const names = Identifiers.list(value, 'space')
-              if (
-                !names ||
-                names.some(
-                  (name) =>
-                    [
-                      'default',
-                      'inherit',
-                      'initial',
-                      'revert',
-                      'revert-layer',
-                      'unset',
-                    ].includes(name.toLowerCase()) ||
-                    (name.toLowerCase() === 'none' && names.length !== 1),
-                )
-              )
-                throw new Error(
-                  'Expected none or a list of view-transition custom identifiers.',
+                  'Color-profile components require comma-separated identifiers other than none.',
                 )
             }
-            Functions.value('*', String(value))
-            return [{ kind: 'descriptor', name: key, value }]
-          },
-        )
-        result.push({ kind: 'block', header: '@view-transition', entries })
-      } else if (call.kind === 'positionTry') {
-        const declarations = record(input)
-        const keys = [
-          'alignSelf',
-          'blockSize',
-          'bottom',
-          'height',
-          'inlineSize',
-          'inset',
-          'insetBlock',
-          'insetBlockEnd',
-          'insetBlockStart',
-          'insetInline',
-          'insetInlineEnd',
-          'insetInlineStart',
-          'justifySelf',
-          'left',
-          'margin',
-          'marginBlock',
-          'marginBlockEnd',
-          'marginBlockStart',
-          'marginBottom',
-          'marginInline',
-          'marginInlineEnd',
-          'marginInlineStart',
-          'marginLeft',
-          'marginRight',
-          'marginTop',
-          'maxBlockSize',
-          'maxHeight',
-          'maxInlineSize',
-          'maxWidth',
-          'minBlockSize',
-          'minHeight',
-          'minInlineSize',
-          'minWidth',
-          'placeSelf',
-          'positionAnchor',
-          'positionArea',
-          'right',
-          'top',
-          'width',
-        ]
-        if (Object.keys(declarations).some((key) => !keys.includes(key)))
-          throw new Error('Unsupported position-try declaration.')
-        const block = style(declarations)
-        if (block.rules || block.declarations.some((value) => value.important))
-          throw new Error(
-            'Position-try forbids nested rules and important declarations.',
-          )
-        result.push({
-          kind: 'rule',
-          selector: `@position-try ${call.name}`,
-          style: block,
-        })
-      } else if (
-        call.kind === 'colorProfile' ||
-        call.kind === 'counterStyle' ||
-        call.kind === 'fontPaletteValues'
-      ) {
-        const descriptors = {
-          colorProfile: {
-            rule: 'color-profile',
-            keys: ['components', 'renderingIntent', 'src'],
-            required: ['src'],
-          },
-          counterStyle: {
-            rule: 'counter-style',
-            keys: [
-              'additiveSymbols',
-              'fallback',
-              'negative',
-              'pad',
-              'prefix',
-              'range',
-              'speakAs',
-              'suffix',
-              'symbols',
-              'system',
-            ],
-            required: [],
-          },
-          fontPaletteValues: {
-            rule: 'font-palette-values',
-            keys: ['basePalette', 'fontFamily', 'overrideColors'],
-            required: ['fontFamily'],
-          },
-        } as const
-        const definition = descriptors[call.kind]
-        const declarations = record(input)
-        for (const key of Object.keys(declarations))
-          if (declarations[key] === undefined) delete declarations[key]
-        if (
-          definition.required.some(
-            (key) => typeof declarations[key] !== 'string',
-          ) ||
-          Object.entries(declarations).some(
-            ([key, value]) =>
-              !(definition.keys as readonly string[]).includes(key) ||
-              (typeof value !== 'string' &&
-                !(
-                  key === 'basePalette' &&
-                  typeof value === 'number' &&
-                  Number.isSafeInteger(value) &&
-                  value >= 0
-                )),
-          )
-        )
-          throw new Error(
-            'Expected supported scalar descriptors and required fields.',
-          )
-        if (call.kind === 'colorProfile') {
-          if (!Identifiers.url(declarations.src as string))
-            throw new Error('Color-profile src requires one URL.')
-          if (typeof declarations.components === 'string') {
-            const names = Identifiers.list(declarations.components, 'comma')
-            if (!names || names.some((name) => name.toLowerCase() === 'none'))
+            if (typeof declarations.renderingIntent === 'string') {
+              const names = Identifiers.list(
+                declarations.renderingIntent,
+                'space',
+              )
+              if (
+                names?.length !== 1 ||
+                ![
+                  'absolute-colorimetric',
+                  'relative-colorimetric',
+                  'perceptual',
+                  'saturation',
+                ].includes(names[0]!.toLowerCase())
+              )
+                throw new Error('Invalid color-profile rendering intent.')
+            }
+          }
+          if (call.kind === 'counterStyle') {
+            const system =
+              typeof declarations.system === 'string'
+                ? Lexical.normalize(declarations.system)
+                    .trim()
+                    .replace(/[A-Z]/g, (letter) => letter.toLowerCase())
+                : 'symbolic'
+            try {
+              Descriptors.check({
+                rule: 'counter-style',
+                name: 'system',
+                value:
+                  typeof declarations.system === 'string'
+                    ? declarations.system
+                    : 'symbolic',
+              })
+            } catch {
               throw new Error(
-                'Color-profile components require comma-separated identifiers other than none.',
+                'Expected a supported counter system, with an integer after fixed.',
+              )
+            }
+            const required =
+              system === 'additive'
+                ? 'additiveSymbols'
+                : system.startsWith('extends ')
+                  ? undefined
+                  : 'symbols'
+            if (
+              required &&
+              (typeof declarations[required] !== 'string' ||
+                !(declarations[required] as string).trim())
+            )
+              throw new Error(
+                'The counter system requires symbols or additiveSymbols.',
               )
           }
-          if (typeof declarations.renderingIntent === 'string') {
-            const names = Identifiers.list(
-              declarations.renderingIntent,
-              'space',
-            )
+          if (call.kind !== 'colorProfile')
+            for (const [name, value] of Object.entries(declarations))
+              Descriptors.check({
+                rule: definition.rule,
+                name,
+                value: String(value),
+              })
+          result.push({
+            kind: 'descriptor',
+            rule: definition.rule,
+            name: call.name!,
+            declarations: declarations as Record<string, string | number>,
+          })
+        } else {
+          const frames = Object.entries(record(input)).map(([stop, input]) => {
+            if (!Keyframes.accepts(stop))
+              throw new Error(
+                'Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.',
+              )
+
+            const frame = style(input)
             if (
-              names?.length !== 1 ||
-              ![
-                'absolute-colorimetric',
-                'relative-colorimetric',
-                'perceptual',
-                'saturation',
-              ].includes(names[0]!.toLowerCase())
+              frame.rules ||
+              frame.declarations.some((value) => value.important)
             )
-              throw new Error('Invalid color-profile rendering intent.')
-          }
+              throw new Error(
+                'Keyframes forbid nested rules and important declarations.',
+              )
+
+            return { stop, style: frame }
+          })
+
+          if (call.exported || scanned.used.has(call.name!))
+            result.push({ kind: 'keyframes', name: call.name!, frames })
         }
-        if (call.kind === 'counterStyle') {
-          const system =
-            typeof declarations.system === 'string'
-              ? Lexical.normalize(declarations.system)
-                  .trim()
-                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase())
-              : 'symbolic'
-          try {
-            Descriptors.check({
-              rule: 'counter-style',
-              name: 'system',
-              value:
-                typeof declarations.system === 'string'
-                  ? declarations.system
-                  : 'symbolic',
-            })
-          } catch {
-            throw new Error(
-              'Expected a supported counter system, with an integer after fixed.',
-            )
-          }
-          const required =
-            system === 'additive'
-              ? 'additiveSymbols'
-              : system.startsWith('extends ')
-                ? undefined
-                : 'symbols'
-          if (
-            required &&
-            (typeof declarations[required] !== 'string' ||
-              !(declarations[required] as string).trim())
-          )
-            throw new Error(
-              'The counter system requires symbols or additiveSymbols.',
-            )
+        for (let index = before; index < result.length; index++) {
+          if (headers.length)
+            result[index] = { ...result[index]!, within: headers }
+          starts?.push(call.start)
         }
-        if (call.kind !== 'colorProfile')
-          for (const [name, value] of Object.entries(declarations))
-            Descriptors.check({
-              rule: definition.rule,
-              name,
-              value: String(value),
-            })
-        result.push({
-          kind: 'descriptor',
-          rule: definition.rule,
-          name: call.name!,
-          declarations: declarations as Record<string, string | number>,
-        })
-      } else {
-        const frames = Object.entries(record(input)).map(([stop, input]) => {
-          if (!Keyframes.accepts(stop))
-            throw new Error(
-              'Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.',
-            )
-
-          const frame = style(input)
-          if (
-            frame.rules ||
-            frame.declarations.some((value) => value.important)
-          )
-            throw new Error(
-              'Keyframes forbid nested rules and important declarations.',
-            )
-
-          return { stop, style: frame }
-        })
-
-        if (call.exported || scanned.used.has(call.name!))
-          result.push({ kind: 'keyframes', name: call.name!, frames })
       }
-      const contextValue = call.context ? value(call.context) : undefined
-      if (contextValue !== undefined) {
-        const context = record(contextValue)
-        if (Object.keys(context).some((key) => !['id', 'within'].includes(key)))
-          throw new Error('Unknown contribution context option.')
-        if (call.kind === 'customMedia' && 'within' in context)
-          throw new Error(
-            'Custom media definitions do not accept a within context.',
-          )
-
-        const within = context.within ?? []
-        if (
-          !Array.isArray(within) ||
-          within.some(
-            (header) =>
-              typeof header !== 'string' ||
-              !(
-                header === '@layer' ||
-                /^@(media|supports|container|layer)(?=[\t\n\r\f (/])/.test(
-                  header,
-                )
-              ),
-          )
-        )
-          throw new Error('Expected enclosing conditional or layer headers.')
-        const headers = within.map((header: string) =>
-          Condition.normalize(header),
-        )
-        for (let index = before; index < result.length; index++)
-          result[index] = { ...result[index]!, within: headers }
-      }
-
-      for (let index = before; index < result.length; index++)
-        starts?.push(call.start)
     } catch (error) {
       throw new Themes.InvalidError((error as Error).message, call)
     }

@@ -5,20 +5,8 @@ import * as Identity from '../internal/Identity.js'
 import type * as RuleReference from '../internal/RuleReference.js'
 
 /** Emits static descriptors and returns a domain-specific CSS name. */
-export function counterStyle<
-  const options extends Omit<counterStyle.Options, 'system'> & {
-    readonly system?: string | undefined
-  },
->(
-  options: options &
-    Record<Exclude<keyof options, keyof counterStyle.Options>, never> &
-    RuleReference.Checked<options> & {
-      readonly system?: Checked<options['system']>
-    } & (System<options['system']> extends 'additive'
-      ? { readonly additiveSymbols: string }
-      : System<options['system']> extends `extends ${string}`
-        ? unknown
-        : { readonly symbols: string }),
+export function counterStyle<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): counterStyle.Reference {
   void options
@@ -80,3 +68,30 @@ type Trim<value extends string> = value extends `${Space}${infer rest}`
   : value extends `${infer rest}${Space}`
     ? Trim<rest>
     : value
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends Omit<
+  counterStyle.Options,
+  'system'
+> & {
+  readonly system?: string | undefined
+}
+  ? options &
+      Record<Exclude<keyof options, keyof counterStyle.Options>, never> &
+      RuleReference.Checked<options> & {
+        readonly system?: Checked<options['system']>
+      } & (System<options['system']> extends 'additive'
+        ? { readonly additiveSymbols: string }
+        : System<options['system']> extends `extends ${string}`
+          ? unknown
+          : { readonly symbols: string })
+  : never

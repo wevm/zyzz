@@ -5,18 +5,9 @@ import type * as Context from './internal/Context.js'
 
 /** Emits static descriptors and returns a domain-specific CSS name. */
 export function fontPaletteValues<
-  const options extends fontPaletteValues.Options,
+  const options extends Record<string, unknown>,
 >(
-  options: options &
-    Record<Exclude<keyof options, keyof fontPaletteValues.Options>, never> &
-    RuleReference.Checked<options> &
-    (options extends { basePalette: infer value extends number }
-      ? `${value}` extends `${bigint}`
-        ? `${value}` extends `-${string}`
-          ? never
-          : unknown
-        : never
-      : unknown),
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): fontPaletteValues.Reference {
   void options
@@ -40,3 +31,26 @@ export declare namespace fontPaletteValues {
   /** Compiler-owned reference usable in the matching CSS domain. */
   type Reference = RuleReference.Reference<'fontPaletteValues'>
 }
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends fontPaletteValues.Options
+  ? options &
+      Record<Exclude<keyof options, keyof fontPaletteValues.Options>, never> &
+      RuleReference.Checked<options> &
+      (options extends { basePalette: infer value extends number }
+        ? `${value}` extends `${bigint}`
+          ? `${value}` extends `-${string}`
+            ? never
+            : unknown
+          : never
+        : unknown)
+  : never

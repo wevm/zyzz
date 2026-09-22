@@ -2396,7 +2396,7 @@ describe('profile', () => {
         )
         await Fs.writeFile(
           path,
-          `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(./before.icc)',components:'r,g,b',renderingIntent:'perceptual'},{within:['@media print']});`,
+          `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({ '@media print': {src:'url(./before.icc)',components:'r,g,b',renderingIntent:'perceptual'} });`,
         )
         await using host = await Host.create({
           root,
@@ -2426,7 +2426,7 @@ describe('profile', () => {
         await notifications.next(() =>
           Watch.write({
             path,
-            source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(./after.icc)',components:'red,green,blue',renderingIntent:'saturation'},{within:['@media print']});`,
+            source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({ '@media print': {src:'url(./after.icc)',components:'red,green,blue',renderingIntent:'saturation'} });`,
           }),
         )
         const updated = await Fs.readFile(
@@ -2638,7 +2638,7 @@ describe('viewTransition', () => {
         const path = Path.join(root, 'transition.ts')
         await Fs.writeFile(
           path,
-          `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto',types:'slide forwards'},{within:['@layer transitions']});`,
+          `import {viewTransition} from 'zyzz/web';viewTransition({ '@layer transitions': {navigation:'auto',types:'slide forwards'} });`,
         )
         await using host = await Host.create({
           root,
@@ -2662,7 +2662,7 @@ describe('viewTransition', () => {
         await notifications.next(() =>
           Watch.write({
             path,
-            source: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'none',types:'backwards'},{within:['@layer transitions']});`,
+            source: `import {viewTransition} from 'zyzz/web';viewTransition({ '@layer transitions': {navigation:'none',types:'backwards'} });`,
           }),
         )
         const updated = await Fs.readFile(

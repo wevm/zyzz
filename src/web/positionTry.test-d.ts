@@ -30,3 +30,13 @@ describe('positionTry', () => {
     })
   })
 })
+
+describe('positionTry', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    positionTry({ '@layer definitions': { '@media screen': { top: '1px' } } })
+    // @ts-expect-error selectors cannot enclose a declaration
+    positionTry({ '.card': { top: '1px' } })
+    // @ts-expect-error enclosing groups belong in the definition
+    positionTry({ top: '1px' }, { within: ['@layer definitions'] })
+  })
+})

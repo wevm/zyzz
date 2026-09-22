@@ -87,13 +87,17 @@ Local keyframes use stable module-and-binding names; unused local definitions ar
 
 ## Enclosing contexts
 
-`context.within` is an optional ordered list of conditional or layer headers, outermost first. Omission or explicit `undefined` uses stylesheet scope. Anonymous `@layer` groups are supported.
+Enclose definitions with nested `@layer`, `@media`, `@supports`, or `@container` keys. Outer keys emit outer groups. A flat definition uses stylesheet scope. Anonymous `@layer` groups are supported. The optional second argument accepts an explicit `id`.
 
 ```ts
-fontFace(
-  { fontFamily: 'Body', src: 'url(/body.woff2)' },
-  { within: ['@layer fonts', '@supports font-tech(variations)'] },
-)
+fontFace({
+  '@layer fonts': {
+    '@supports font-tech(variations)': {
+      fontFamily: 'Body',
+      src: 'url(/body.woff2)',
+    },
+  },
+})
 ```
 
 Descriptors include `fontFeatureSettings` and `fontVariationSettings`, alongside family, source, display, style, stretch, weight, Unicode range, size adjustment, and metric overrides.

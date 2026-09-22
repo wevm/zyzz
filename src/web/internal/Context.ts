@@ -7,10 +7,16 @@ export type Group =
   | `@layer ${string}`
   | `@media ${string}`
   | `@supports ${string}`
-/** Ordered enclosing groups, from outermost to innermost. */
+/** Identity options for stylesheet declarations. */
 export type Options = {
   /** Explicit identity for named declarations without source rewriting. */
   readonly id?: string | undefined
-  /** Enclosing groups; omitted means stylesheet scope. */
-  readonly within?: readonly Group[] | undefined
 }
+
+/** Complete definitions nested inside enclosing group keys. */
+export type Definitions<input> =
+  input extends Record<string, unknown>
+    ? Exclude<keyof input, Group> extends never
+      ? Definitions<input[keyof input]>
+      : Omit<input, Group>
+    : never

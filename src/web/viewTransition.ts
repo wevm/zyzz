@@ -3,19 +3,8 @@ import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
 
 /** Emits an eager view-transition rule; browser navigation owns transition execution. */
-export function viewTransition<
-  const options extends Omit<viewTransition.Options, 'navigation'> & {
-    readonly navigation?: string | undefined
-  },
->(
-  options: options &
-    Record<Exclude<keyof options, keyof viewTransition.Options>, never> & {
-      readonly types?: NoInfer<Types<options['types']>>
-      readonly navigation?: Checked<
-        options['navigation'],
-        Exclude<viewTransition.Options['navigation'], undefined>
-      >
-    },
+export function viewTransition<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): void {
   void options
@@ -87,3 +76,29 @@ type Name<value extends string> = value extends
           | 'unset'
       ? false
       : true
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends Omit<
+  viewTransition.Options,
+  'navigation'
+> & {
+  readonly navigation?: string | undefined
+}
+  ? options &
+      Record<Exclude<keyof options, keyof viewTransition.Options>, never> & {
+        readonly types?: NoInfer<Types<options['types']>>
+        readonly navigation?: Checked<
+          options['navigation'],
+          Exclude<viewTransition.Options['navigation'], undefined>
+        >
+      }
+  : never

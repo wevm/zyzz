@@ -209,3 +209,53 @@ describe('cssFunction', () => {
     integer(1.5)
   })
 })
+
+describe('cssFunction', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    cssFunction({
+      '@layer definitions': {
+        '@media screen': {
+          parameters: [{ name: '--x', syntax: '<length>' }],
+          returns: '<length>',
+          body: { result: 'var(--x)' },
+        },
+      },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    cssFunction({
+      '.card': {
+        parameters: [{ name: '--x', syntax: '<length>' }],
+        returns: '<length>',
+        body: { result: 'var(--x)' },
+      },
+    })
+    cssFunction(
+      {
+        parameters: [{ name: '--x', syntax: '<length>' }],
+        returns: '<length>',
+        body: { result: 'var(--x)' },
+      },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
+  })
+})
+
+describe('cssFunction', () => {
+  test('preserves parameter and return inference inside groups', () => {
+    const length = cssFunction({
+      '@layer functions': {
+        '@media screen': {
+          parameters: [{ name: '--x', syntax: '<length>' }],
+          returns: '<length>',
+          body: { result: 'var(--x)' },
+        },
+      },
+    })
+    style({ width: length('2px') })
+    // @ts-expect-error grouped length parameters reject colors
+    length('red')
+    // @ts-expect-error grouped length results are not colors
+    style({ color: length('2px') })
+  })
+})

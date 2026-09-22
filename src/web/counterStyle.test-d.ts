@@ -43,3 +43,20 @@ describe('counterStyle', () => {
     })
   })
 })
+
+describe('counterStyle', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    counterStyle({
+      '@layer definitions': {
+        '@media screen': { system: 'numeric', symbols: '"0" "1"' },
+      },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    counterStyle({ '.card': { system: 'numeric', symbols: '"0" "1"' } })
+    counterStyle(
+      { system: 'numeric', symbols: '"0" "1"' },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
+  })
+})

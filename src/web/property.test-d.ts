@@ -38,3 +38,37 @@ describe('property', () => {
     property({ name: '--wrong', syntax: '*', inherits: false, unknown: true })
   })
 })
+
+describe('property', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    property({
+      '@layer definitions': {
+        '@media screen': {
+          name: '--size',
+          syntax: '<length>',
+          inherits: false,
+          initialValue: '1px',
+        },
+      },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    property({
+      '.card': {
+        name: '--size',
+        syntax: '<length>',
+        inherits: false,
+        initialValue: '1px',
+      },
+    })
+    property(
+      {
+        name: '--size',
+        syntax: '<length>',
+        inherits: false,
+        initialValue: '1px',
+      },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
+  })
+})

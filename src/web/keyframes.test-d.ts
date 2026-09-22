@@ -25,3 +25,22 @@ describe('keyframes', () => {
     keyframes({ 'unknown 0%': { opacity: 0 } })
   })
 })
+
+describe('keyframes', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    keyframes({
+      '@layer definitions': {
+        '@media screen': { from: { opacity: 0 }, to: { opacity: 1 } },
+      },
+    })
+    // @ts-expect-error nested groups still validate frame stops
+    keyframes({ '@layer motion': { 'unknown 0%': { opacity: 0 } } })
+    // @ts-expect-error selectors cannot enclose a declaration
+    keyframes({ '.card': { from: { opacity: 0 }, to: { opacity: 1 } } })
+    keyframes(
+      { from: { opacity: 0 }, to: { opacity: 1 } },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
+  })
+})

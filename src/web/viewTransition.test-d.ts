@@ -17,7 +17,7 @@ describe('viewTransition', () => {
     // @ts-expect-error types are identifiers, not numbers
     viewTransition({ types: 1 })
     // @ts-expect-error page rules cannot enclose transitions
-    viewTransition({ navigation: 'auto' }, { within: ['@page'] })
+    viewTransition({ '@page': { navigation: 'auto' } })
 
     // @ts-expect-error navigation has a closed domain
     viewTransition({ navigation: 'always' })
@@ -27,5 +27,17 @@ describe('viewTransition', () => {
 describe('viewTransition', () => {
   test('covers descriptor inventory and context errors', () => {
     viewTransition({ navigation: 'auto', types: 'slide forwards' })
+  })
+})
+
+describe('viewTransition', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    viewTransition({
+      '@layer definitions': { '@media screen': { navigation: 'auto' } },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    viewTransition({ '.card': { navigation: 'auto' } })
+    // @ts-expect-error enclosing groups belong in the definition
+    viewTransition({ navigation: 'auto' }, { within: ['@layer definitions'] })
   })
 })

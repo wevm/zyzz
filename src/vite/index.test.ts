@@ -96,7 +96,7 @@ describe('zyzz', () => {
       files[`card${i}.ts`] =
         `import {style} from './config';export const props=style({color:'brand',opacity:${i === 0 ? '0.5' : '1'}})()`
     files['main.ts'] =
-      `${Array.from({ length: 12 }, (_, i) => `import {props as p${i}} from './card${i}';`).join('')}import {vars} from './config';const scope=document.querySelector('#scope')!;scope.className=vars().className;[${Array.from({ length: 12 }, (_, i) => `p${i}`).join(',')}].forEach((p,i)=>{let card=document.querySelector('#card'+i);if(!card){card=document.createElement('div');card.id='card'+i;card.textContent='Card';scope.append(card)}card.className=p.className});if(import.meta.hot)import.meta.hot.accept()`
+      `${Array.from({ length: 12 }, (_, i) => `import {props as p${i}} from './card${i}';`).join('')}import {vars} from './config';const scope=document.querySelector('#scope')!;scope.dataset.renders=String(Number(scope.dataset.renders??0)+1);scope.className=vars().className;[${Array.from({ length: 12 }, (_, i) => `p${i}`).join(',')}].forEach((p,i)=>{let card=document.querySelector('#card'+i);if(!card){card=document.createElement('div');card.id='card'+i;scope.append(card)}card.textContent='Card';card.className=p.className});if(import.meta.hot)import.meta.hot.accept()`
     const { root, config } = await create(files)
     const server = await Vite.createServer(config)
     const browser = await chromium.launch()
@@ -120,6 +120,9 @@ describe('zyzz', () => {
           .locator('#card0')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      expect(
+        await page.locator('#scope').getAttribute('data-renders'),
+      ).toMatchInlineSnapshot('"1"')
       await Watch.write({
         path: Path.join(root, 'card0.ts'),
         source: files['card0.ts']!.replace('0.5', '0.75'),
@@ -134,6 +137,16 @@ describe('zyzz', () => {
           .locator('#card11')
           .evaluate((element) => getComputedStyle(element).opacity),
       ).toMatchInlineSnapshot('"1"')
+      await Watch.write({
+        path: Path.join(root, 'main.ts'),
+        source: files['main.ts']!.replace(
+          "card.textContent='Card'",
+          "card.textContent='Updated'",
+        ),
+      })
+      await page.waitForFunction(
+        () => document.querySelector('#card0')?.textContent === 'Updated',
+      )
       expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
         '"retained"',
       )
@@ -1256,12 +1269,15 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       await message(socket, () => Fs.rm(path))
 
+      await vi.waitUntil(
+        async () => (await fetch(origin + cssPath)).status === 500,
+      )
       expect((await fetch(origin + cssPath)).status).toMatchInlineSnapshot(
         `500`,
       )
 
       await message(socket, () =>
-        Fs.writeFile(path, Fixture.files['alternate.ts']),
+        Watch.write({ path, source: Fixture.files['alternate.ts'] }),
       )
 
       expect((await stylesheet()).includes('#175')).toMatchInlineSnapshot(
@@ -1269,21 +1285,27 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       )
 
       await message(socket, () =>
-        Fs.writeFile(
-          Path.join(root, 'config.ts'),
-          Fixture.files['config.ts'].replace('./alternate', './new-theme'),
-        ),
+        Watch.write({
+          path: Path.join(root, 'config.ts'),
+          source: Fixture.files['config.ts'].replace(
+            './alternate',
+            './new-theme',
+          ),
+        }),
       )
 
+      await vi.waitUntil(
+        async () => (await fetch(origin + cssPath)).status === 500,
+      )
       expect((await fetch(origin + cssPath)).status).toMatchInlineSnapshot(
         `500`,
       )
 
       await message(socket, () =>
-        Fs.writeFile(
-          Path.join(root, 'new-theme.ts'),
-          Fixture.files['alternate.ts'].replace('#175', '#00f'),
-        ),
+        Watch.write({
+          path: Path.join(root, 'new-theme.ts'),
+          source: Fixture.files['alternate.ts'].replace('#175', '#00f'),
+        }),
       )
 
       expect((await stylesheet()).includes('#00f')).toMatchInlineSnapshot(

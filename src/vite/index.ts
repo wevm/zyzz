@@ -47,6 +47,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     ReturnType<typeof Snapshot.create>
   >()
   const states = new WeakMap<Environment, Map<string, Entry>>()
+  const removed = new WeakMap<Environment, Set<string>>()
   const reads = new WeakMap<Environment, Map<string, string>>()
   const compilers = new WeakMap<Environment, Graph.create.ReturnType>()
 
@@ -308,6 +309,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   ) {
     reads.delete(environment)
     if (event === 'delete') {
+      if (entries(environment).has(file)) {
+        let files = removed.get(environment)
+        if (!files) {
+          files = new Set()
+          removed.set(environment, files)
+        }
+        files.add(file)
+      }
       entries(environment).delete(file)
       snapshot(environment).delete(file, sourceId(file))
       identities.delete(file)
@@ -710,6 +719,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       entry.files = files
       const map = Mapping.toEncodedMap(new Mapping.GenMapping())
       return {
+        imports,
+        modules: result.modules,
         code: output.code,
         contractIds: Object.keys(result.contracts),
         css: '',
@@ -951,6 +962,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     entry.files = files
 
     return {
+      imports,
+      modules: result.modules,
       code: output.code,
       contractIds: Object.keys(compiled),
       css: styles.join('\n'),
@@ -1299,27 +1312,73 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     async watchChange(file, change) {
       await updateDiscovery(this.environment, file, change.event)
     },
-    async hotUpdate({ file, modules, timestamp, type }) {
+    async hotUpdate({ file, modules, timestamp, type, server }) {
       await updateDiscovery(this.environment, file, type)
 
-      const affected = new Set(modules)
+      const state = entries(this.environment)
+      const first = [...state.values()].find(
+        (entry) => entry.files.has(file) || eager(file),
+      )
+      if (!first && !removed.get(this.environment)?.has(file)) return modules
+
+      // Failed edits retain normal invalidation so Vite reports errors on reload.
+      const output =
+        first && type === 'update' && eligible(file)
+          ? await compile(
+              first,
+              {
+                resolve: (source, importer) =>
+                  this.environment.pluginContainer.resolveId(source, importer),
+                watch: (file) => {
+                  server.watcher.add(file)
+                },
+                asset: async (file) => file,
+              },
+              undefined,
+              true,
+              true,
+            ).catch(() => undefined)
+          : undefined
+      const affected = new Set(
+        modules.filter((module) => {
+          const entry = module.id && state.get(module.id)
+          return (
+            !output ||
+            !entry ||
+            entry.code !== output.modules[sourceId(entry.file)]?.code ||
+            entry.imports !==
+              JSON.stringify(output.imports[sourceId(entry.file)])
+          )
+        }),
+      )
+      const ids = new Set<string>()
+      if (type === 'delete') ids.add(cssId(file))
 
       for (const entry of entries(this.environment).values()) {
         if (!entry.files.has(file) && !eager(file)) continue
 
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
-        for (const id of [entry.file, cssId(entry.file), sharedId]) {
-          const module = this.environment.moduleGraph.getModuleById(id)
-          if (!module) continue
+        if (
+          !output ||
+          entry.code !== output.modules[sourceId(entry.file)]?.code ||
+          entry.imports !== JSON.stringify(output.imports[sourceId(entry.file)])
+        )
+          ids.add(entry.file)
+        ids.add(cssId(entry.file))
+        ids.add(sharedId)
+      }
 
-          this.environment.moduleGraph.invalidateModule(
-            module,
-            new Set(),
-            timestamp,
-            true,
-          )
-          affected.add(module)
-        }
+      for (const id of ids) {
+        const module = this.environment.moduleGraph.getModuleById(id)
+        if (!module) continue
+
+        this.environment.moduleGraph.invalidateModule(
+          module,
+          new Set(),
+          timestamp,
+          true,
+        )
+        affected.add(module)
       }
 
       return [...affected]
@@ -1336,6 +1395,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         file === undefined
           ? entries(this.environment).values().next().value
           : entries(this.environment).get(file)
+      // A pruned JavaScript module can leave its stylesheet loaded in the browser.
+      if (!entry && file && removed.get(this.environment)?.has(file)) return ''
       if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
 
       const output = await compile(
@@ -1397,6 +1458,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           files: new Set([id]),
         }
         state.set(id, entry)
+        removed.get(this.environment)?.delete(id)
       }
 
       const output = await compile(
@@ -1417,6 +1479,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         },
         code,
       )
+
+      entry.imports = JSON.stringify(output.imports[sourceId(entry.file)])
+      entry.code = output.code
 
       if (native) return { code: output.code, map: JSON.stringify(output.map) }
 
@@ -1517,6 +1582,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 }
 
 type Entry = {
+  code?: string
+  imports?: string
   environment: Environment
   compiler: Graph.create.ReturnType
   file: string

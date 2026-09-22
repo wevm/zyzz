@@ -577,9 +577,8 @@ const portable = createUnplugin<Options | undefined, false>(
       },
       webpack(compiler) {
         compiler.hooks.watchRun.tap('zyzz', () => {
-          // Directory invalidations must also discard cached source reads before the graph and loaders rebuild.
-          for (const file of compiler.modifiedFiles ?? [])
-            if (directories.has(file)) compiler.inputFileSystem?.purge?.(file)
+          // The graph rereads every source, including files absent from Webpack's invalidation batch.
+          for (const file of files) compiler.inputFileSystem?.purge?.(file)
         })
       },
     }

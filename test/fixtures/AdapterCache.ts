@@ -3,6 +3,9 @@ import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Inspector from 'node:inspector/promises'
 import * as Module from 'node:module'
+const Watch = (await import(
+  new URL('./Watch.ts', import.meta.url).href
+)) as typeof import('./Watch.js')
 import * as Path from 'node:path'
 import * as Rollup from 'rollup'
 import * as Url from 'node:url'
@@ -159,10 +162,18 @@ async function setup(): Promise<() => Promise<string>> {
       server: { host: '127.0.0.1', port: 0 },
     })
     await server.listen()
-    editedFile = () =>
-      new Promise<void>((resolve) => {
-        updated = resolve
+    const watching = performance.now()
+    while (!server.watcher.getWatched()[root]?.includes('config.mjs')) {
+      if (performance.now() - watching > 5000)
+        throw new Error('Fixture watcher did not register config.mjs')
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    }
+    const changes = Watch.create({ path: 'config.mjs', timeoutMs: 10000 })
+    updated = () =>
+      changes.onResult({
+        result: { changed: ['config.mjs'], files: ['config.mjs'] },
       })
+    editedFile = () => changes.next()
     close = () => server.close()
     return async () => {
       server.environments.client!.moduleGraph.invalidateAll()

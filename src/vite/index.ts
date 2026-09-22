@@ -47,6 +47,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     ReturnType<typeof Snapshot.create>
   >()
   const states = new WeakMap<Environment, Map<string, Entry>>()
+  const reads = new WeakMap<Environment, Map<string, string>>()
+  const compilers = new WeakMap<Environment, Graph.create.ReturnType>()
+
+  function compiler(environment: Environment) {
+    let value = compilers.get(environment)
+    if (!value) {
+      value = Graph.create()
+      compilers.set(environment, value)
+    }
+    return value
+  }
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
@@ -55,6 +66,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const graphs = new Map<string, ReadonlySet<string>>()
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
+  const identities = new Map<string, string>()
+  const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   let root: string
 
   function snapshot(environment: Environment) {
@@ -78,7 +91,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   function sourceId(file: string) {
-    return `app/${Path.relative(root, file).split(Path.sep).join('/')}`
+    let id = identities.get(file)
+    if (!id) {
+      id = `app/${Path.relative(root, file).split(Path.sep).join('/')}`
+      identities.set(file, id)
+    }
+    return id
   }
 
   function resource(id: string) {
@@ -288,9 +306,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     file: string,
     event: string,
   ) {
+    reads.delete(environment)
     if (event === 'delete') {
       entries(environment).delete(file)
       snapshot(environment).delete(file, sourceId(file))
+      identities.delete(file)
     }
 
     const pending = discoveries.get(environment)
@@ -348,7 +368,16 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       host.watch(file)
 
       const id = sourceId(file)
-      const text = source ?? (await snapshot(entry.environment).read(file))
+      let cached = reads.get(entry.environment)
+      if (!cached) {
+        cached = new Map()
+        reads.set(entry.environment, cached)
+      }
+      const text =
+        source ??
+        cached.get(file) ??
+        (await snapshot(entry.environment).read(file))
+      cached.set(file, text)
 
       modules[id] = text
 
@@ -452,18 +481,22 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       }
 
       // Lazy imports stay outside this compile but scope the documents that load them.
-      const specifiers: string[] = []
-
-      Walker.walk(parsed.program, {
-        enter(node) {
-          if (
-            node.type === 'ImportExpression' &&
-            node.source.type === 'Literal' &&
-            typeof node.source.value === 'string'
-          )
-            specifiers.push(node.source.value)
-        },
-      })
+      let specifiers = lazyImports.get(parsed)
+      if (!specifiers) {
+        specifiers = []
+        const collected = specifiers
+        Walker.walk(parsed.program, {
+          enter(node) {
+            if (
+              node.type === 'ImportExpression' &&
+              node.source.type === 'Literal' &&
+              typeof node.source.value === 'string'
+            )
+              collected.push(node.source.value)
+          },
+        })
+        lazyImports.set(parsed, specifiers)
+      }
 
       const targets = new Set<string>()
 
@@ -490,8 +523,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const selected = contributionFiles.get(entry.environment)?.has(file)
 
       if (allSources) {
-        const { program } = Parser.parseSync('source.tsx', source, {
-          sourceType: 'module',
+        const { program } = snapshot(entry.environment).parse({
+          moduleId: sourceId(file),
+          source,
         })
         const dynamic: import('@oxc-project/types').ImportExpression[] = []
 
@@ -935,6 +969,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   /** Compiles every discovered source once so index.html can inline each configuration's script before modules load. */
   async function initializations(server: ViteDevServer) {
     const environment = server.environments.client
+    reads.delete(environment)
     const host: Host = {
       asset: async (file) => file,
       resolve: (source, importer) =>
@@ -950,7 +985,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       if (file === undefined) return []
 
       entry = {
-        compiler: Graph.create(),
+        compiler: compiler(environment),
         environment,
         file,
         files: new Set([file]),
@@ -1117,6 +1152,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   return {
+    buildStart() {
+      reads.delete(this.environment)
+    },
     config: {
       order: 'post',
       handler(config) {
@@ -1353,7 +1391,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       if (!entry) {
         entry = {
-          compiler: Graph.create(),
+          compiler: compiler(this.environment),
           environment: this.environment,
           file: id,
           files: new Set([id]),

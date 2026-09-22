@@ -83,6 +83,67 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('updates shared dependencies across independently transformed entries', async () => {
+    const files: Record<string, string> = {
+      'theme.ts':
+        "import {Vars} from 'zyzz';export const theme=Vars.define({color:{brand:'red'}})",
+      'config.ts':
+        "import {Config} from 'zyzz';import {theme} from './theme';export const {style,vars}=Config.create({vars:theme})",
+      'index.html':
+        '<input id="state"><main id="scope"></main><script type="module" src="/main.ts"></script>',
+    }
+    for (let i = 0; i < 12; i++)
+      files[`card${i}.ts`] =
+        `import {style} from './config';export const props=style({color:'brand',opacity:${i === 0 ? '0.5' : '1'}})()`
+    files['main.ts'] =
+      `${Array.from({ length: 12 }, (_, i) => `import {props as p${i}} from './card${i}';`).join('')}import {vars} from './config';const scope=document.querySelector('#scope')!;scope.className=vars().className;[${Array.from({ length: 12 }, (_, i) => `p${i}`).join(',')}].forEach((p,i)=>{let card=document.querySelector('#card'+i);if(!card){card=document.createElement('div');card.id='card'+i;card.textContent='Card';scope.append(card)}card.className=p.className});if(import.meta.hot)import.meta.hot.accept()`
+    const { root, config } = await create(files)
+    const server = await Vite.createServer(config)
+    const browser = await chromium.launch()
+    try {
+      await server.listen()
+      const page = await browser.newPage()
+      await page.goto(server.resolvedUrls!.local[0]!)
+      await page.waitForLoadState('networkidle')
+      await page.locator('#state').fill('retained')
+      await Watch.write({
+        path: Path.join(root, 'theme.ts'),
+        source: files['theme.ts']!.replace("'red'", "'blue'"),
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card11')!).color ===
+          'rgb(0, 0, 255)',
+      )
+      expect(
+        await page
+          .locator('#card0')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      await Watch.write({
+        path: Path.join(root, 'card0.ts'),
+        source: files['card0.ts']!.replace('0.5', '0.75'),
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card0')!).opacity ===
+          '0.75',
+      )
+      expect(
+        await page
+          .locator('#card11')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot('"1"')
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"retained"',
+      )
+    } finally {
+      await browser.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('loads package font URLs and static global values in development and production', async () => {
     const { config, root } = await create({
       'index.html':

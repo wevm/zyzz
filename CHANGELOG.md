@@ -1,5 +1,17 @@
 # zyzz
 
+## 0.0.7
+
+### Patch Changes
+
+- 38b59a0: Reused incremental project graphs, parsed modules, and filesystem snapshots across Next.js loader calls.
+- 7cb35f7: Required configured tokens by default and added bracketed strings for arbitrary CSS values.
+  
+  ```ts
+  const { style } = Config.create({ vars: { spacing: { md: '8px' } } })
+  style({ padding: 'md', marginTop: '[7px]' })
+  ```
+
 ## 0.0.6
 
 ### Patch Changes

@@ -53,6 +53,12 @@ Configuration with Zyzz integration attached. It is exported from `next.config.t
 export default zyzz({})
 ```
 
+## Incremental Compilation
+
+Source, style, and shared-CSS requests reuse one incremental graph per project, bundler, and reset setting within each loader worker. Unchanged file contents, syntax, and directory listings are retained. Edits recompile affected modules and dependents, while added and deleted files refresh graph membership.
+
+Resolution still uses the active bundler so aliases, package conditions, and dependency notifications remain current. Caches live for the worker process and are not shared across Turbopack workers.
+
 ## Errors
 
 Compilation and resolution failures are reported through the active bundler. Source diagnostics retain their source locations. Correcting a source error triggers recompilation. File-system errors while creating `.zyzz/next` are thrown during configuration.

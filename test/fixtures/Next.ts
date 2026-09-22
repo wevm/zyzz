@@ -649,6 +649,58 @@ export async function verify(options: verify.Options) {
         .evaluate((element) => getComputedStyle(element).color),
     ).toMatchInlineSnapshot('"rgb(0, 170, 0)"')
 
+    const added = Path.join(app, 'app/cache-added')
+    await Fs.mkdir(added)
+    await Watch.write({
+      path: Path.join(added, 'global.ts'),
+      source:
+        "import {global} from 'zyzz/web';global({':root':{'--cache-probe':'first'}})",
+    })
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--cache-probe',
+        ) === 'first',
+      undefined,
+      { timeout: 30_000 },
+    )
+    await Watch.write({
+      path: Path.join(added, 'global.ts'),
+      source:
+        "import {global} from 'zyzz/web';global({':root':{'--cache-probe':'other'}})",
+    })
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--cache-probe',
+        ) === 'other',
+      undefined,
+      { timeout: 30_000 },
+    )
+    expect(
+      await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--cache-probe',
+        ),
+      ),
+    ).toMatchInlineSnapshot('"other"')
+    await Fs.rm(added, { recursive: true })
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--cache-probe',
+        ) === '',
+      undefined,
+      { timeout: 30_000 },
+    )
+    expect(
+      await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--cache-probe',
+        ),
+      ),
+    ).toMatchInlineSnapshot('""')
+
     development.child.kill('SIGTERM')
     await new Promise<void>((resolve) =>
       development.child.once('exit', () => resolve()),

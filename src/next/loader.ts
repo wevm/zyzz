@@ -1,16 +1,11 @@
 /** Loads a physical source graph through Next.js resolution and emits cache-owned CSS. @module */
+import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
-import * as Parser from 'oxc-parser'
-import * as Graph from '../compiler/Graph.js'
-import * as Reset from '../node/Reset.js'
-import * as AtRules from '../compiler/internal/AtRules.js'
-import * as Contract from '../compiler/internal/Contract.js'
+import * as Project from './internal/Project.js'
 
-type Context = {
-  addContextDependency(directory: string): void
-  addDependency(file: string): void
+type Context = Project.Context & {
   async(): (error: Error | null, code?: string, map?: object) => void
   getOptions(): {
     bundler: string
@@ -18,15 +13,10 @@ type Context = {
     reset?: boolean | undefined
     root: string
   }
-  getResolve(
-    options: object,
-  ): (
-    directory: string,
-    specifier: string,
-    callback: (error: Error | null, file?: string | false) => void,
-  ) => void
-  resourcePath: string
 }
+
+// Next owns loader worker lifetimes. Each project retains only its latest graph in that worker.
+const projects = new Map<string, ReturnType<typeof Project.create>>()
 
 /** Loader-runner boundary used by Webpack and Turbopack. */
 export default function loader(this: Context, source: string): void {
@@ -42,14 +32,6 @@ async function compile(context: Context, source: string) {
   const options = context.getOptions()
   const root = options.root
   const directory = Path.resolve(root, '.zyzz', 'next')
-  const modules: Record<string, string> = Object.create(null)
-  const imports: Record<string, Record<string, string | null>> = Object.create(
-    null,
-  )
-  const contracts: Record<string, string> = Object.create(null)
-  const resolve = context.getResolve({})
-  const id = (file: string) =>
-    `app/${Path.relative(root, file).split(Path.sep).join('/')}`
   const eligible = (file: string) =>
     /\.[cm]?[jt]sx?$/.test(file) &&
     !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(file) &&
@@ -71,144 +53,20 @@ async function compile(context: Context, source: string) {
   if (options.mode !== 'shared' && !eligible(context.resourcePath))
     return { code: source, map: undefined }
 
-  async function visit(file: string, text?: string): Promise<void> {
-    const name = id(file)
-    if (Object.hasOwn(modules, name)) return
-
-    context.addDependency(file)
-    modules[name] = text ?? (await Fs.readFile(file, 'utf8'))
-    const links: Record<string, string | null> = Object.create(null)
-    imports[name] = links
-    const parsed = Parser.parseSync(file, modules[name]!, {
-      sourceType: 'module',
-    })
-
-    for (const node of parsed.program.body) {
-      if (
-        (node.type !== 'ImportDeclaration' &&
-          node.type !== 'ExportNamedDeclaration' &&
-          node.type !== 'ExportAllDeclaration') ||
-        !node.source
-      )
-        continue
-      if (
-        node.type === 'ImportDeclaration'
-          ? node.importKind === 'type'
-          : node.exportKind === 'type'
-      )
-        continue
-
-      const specifier = node.source.value
-      links[specifier] = null
-      // Next owns this virtual module, which has no physical stylesheet contract.
-      if (specifier === 'next/root-params') continue
-      if (
-        specifier === 'zyzz' ||
-        (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default') ||
-        specifier.startsWith('node:')
-      )
-        continue
-
-      const resolved = await new Promise<string | false | undefined>(
-        (accept, reject) => {
-          resolve(Path.dirname(file), specifier, (error, value) =>
-            error ? reject(error) : accept(value),
-          )
-        },
-      )
-      if (!resolved || !/\.[cm]?[jt]sx?$/.test(resolved)) continue
-      if (eligible(resolved)) {
-        links[specifier] = id(resolved)
-        await visit(resolved)
-        continue
-      }
-
-      const sidecar = `${resolved}.zyzz.json`
-      try {
-        contracts[resolved] = await Fs.readFile(sidecar, 'utf8')
-        context.addDependency(sidecar)
-        links[specifier] = resolved
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-      }
-    }
+  const key = JSON.stringify([root, options.bundler, options.reset ?? false])
+  let project = projects.get(key)
+  if (!project) {
+    project = Project.create(options)
+    projects.set(key, project)
   }
-
-  async function discover(directory: string): Promise<void> {
-    const items = await Fs.readdir(directory, { withFileTypes: true })
-
-    // Recursive tracking of a package root follows every installed dependency.
-    // A dependency symlink back to an ancestor, as a package linked from its
-    // own repository, is rejected as a loop, so such a root is tracked through
-    // its files and subdirectories instead.
-    if (
-      !items.some((item) => item.name === 'node_modules') ||
-      !(await loops(directory))
-    )
-      context.addContextDependency(directory)
-
-    for (const item of items) {
-      if (
-        item.name.startsWith('.') ||
-        [
-          'node_modules',
-          'dist',
-          'build',
-          'coverage',
-          'test',
-          'tests',
-          '__tests__',
-        ].includes(item.name)
-      )
-        continue
-      const file = Path.join(directory, item.name)
-      if (item.isDirectory()) await discover(file)
-      else if (item.isFile() && eligible(file)) await visit(file)
-    }
-  }
-
-  if (options.mode !== 'shared') await visit(context.resourcePath, source)
-  await discover(root)
-  const loaded = new Set<string>()
-  async function dependencies(file: string): Promise<void> {
-    if (loaded.has(file)) return
-    loaded.add(file)
-
-    const metadata = Contract.read(contracts[file]!, new Map(), file)
-    for (const section of metadata.stylesheets) {
-      let owner = file
-      for (const specifier of section.dependency ?? []) {
-        const target = await new Promise<string | false | undefined>(
-          (accept, reject) => {
-            resolve(Path.dirname(owner), specifier, (error, value) =>
-              error ? reject(error) : accept(value),
-            )
-          },
-        )
-        if (!target || !Path.isAbsolute(target))
-          throw new Error('Unable to resolve packed stylesheet dependency.')
-
-        const links = (imports[owner] ??= Object.create(null))
-        links[specifier] = target
-        if (!Object.hasOwn(contracts, target)) {
-          const sidecar = `${target}.zyzz.json`
-          contracts[target] = await Fs.readFile(sidecar, 'utf8')
-          context.addDependency(sidecar)
-        }
-        await dependencies(target)
-        owner = target
-      }
-    }
-  }
-  for (const file of Object.keys(contracts)) await dependencies(file)
-
-  const graph = Graph.compile({
-    contracts,
-    imports,
-    modules,
-    reset: options.reset ? Reset.read() : undefined,
-  })
-  const output = graph.modules[id(context.resourcePath)]
+  const graph = await project.compile(
+    context,
+    options.mode === 'shared' ? undefined : source,
+  )
+  const output =
+    graph.modules[
+      `app/${Path.relative(root, context.resourcePath).split(Path.sep).join('/')}`
+    ]
 
   const assets = new Map<string, string>()
   for (const [placeholder, target] of Object.entries(
@@ -360,39 +218,4 @@ async function compile(context: Context, source: string) {
   }
 
   return { code: `${output.code}\n${requests.join('\n')}`, map }
-}
-
-/** Whether an installed dependency links back to the directory or one of its ancestors. */
-async function loops(directory: string): Promise<boolean> {
-  const installed = Path.join(directory, 'node_modules')
-  const entries = await Fs.readdir(installed, { withFileTypes: true }).catch(
-    () => [],
-  )
-  const candidates = (
-    await Promise.all(
-      entries.map(async (entry) => {
-        if (!entry.name.startsWith('@'))
-          return [Path.join(installed, entry.name)]
-
-        const scoped = Path.join(installed, entry.name)
-
-        return (await Fs.readdir(scoped).catch(() => [])).map((name) =>
-          Path.join(scoped, name),
-        )
-      }),
-    )
-  ).flat()
-
-  for (const candidate of candidates) {
-    const stat = await Fs.lstat(candidate).catch(() => undefined)
-    if (!stat?.isSymbolicLink()) continue
-
-    const target = await Fs.realpath(candidate).catch(() => undefined)
-    if (target === undefined) continue
-
-    const relative = Path.relative(target, directory)
-    if (!relative.startsWith('..') && !Path.isAbsolute(relative)) return true
-  }
-
-  return false
 }

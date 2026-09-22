@@ -210,3 +210,7 @@ Tamagui is excluded from the PR matrix because its extraction cost dominates CI 
 ## Native compiler and renders
 
 [Native benchmarks](native/README.md) compare Zyzz, React Native `StyleSheet`, and Unistyles in matched compiler pipelines and release-mode iOS/Android layout workloads. Results are separate from browser measurements.
+
+## Application adapter workload
+
+`pnpm bench:adapters` measures a shared component graph through the compiler API, file host, CLI, Vite, Rollup, esbuild, Webpack, and Next.js. [Workload definitions and timing boundaries](./adapters/README.md) distinguish build completion from browser-visible HMR. The Benchmarks workflow compares PR base and candidate samples on the same runner and runs a larger nightly corpus.

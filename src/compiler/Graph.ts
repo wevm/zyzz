@@ -367,29 +367,6 @@ function build(options: compile.Options, cache?: Cache): Cache {
     let direct: Ast.Node | undefined
     const stars: string[] = []
     for (const statement of program.body) {
-      if (
-        statement.type === 'ImportDeclaration' &&
-        statement.importKind !== 'type'
-      ) {
-        const target = resolve(moduleId, statement.source.value, statement)
-        if (!target) continue
-        for (const specifier of statement.specifiers) {
-          if (
-            specifier.type === 'ImportNamespaceSpecifier' ||
-            (specifier.type === 'ImportSpecifier' &&
-              specifier.importKind === 'type')
-          )
-            continue
-          const imported =
-            specifier.type === 'ImportDefaultSpecifier'
-              ? 'default'
-              : specifier.imported.type === 'Identifier'
-                ? specifier.imported.name
-                : specifier.imported.value
-          const value = constant(target, imported, next)
-          if (value) imports[specifier.local.name] = relocate(value, specifier)
-        }
-      }
       if (statement.type === 'ExportDefaultDeclaration' && name === 'default') {
         direct = statement.declaration
         exported = true
@@ -438,7 +415,47 @@ function build(options: compile.Options, cache?: Cache): Cache {
             .filter((value) => value !== undefined),
         ),
       ]
-      return candidates.length === 1 ? candidates[0] : undefined
+      const value = candidates.length === 1 ? candidates[0] : undefined
+      if (value || !stars.length) constants.set(key, value)
+      return value
+    }
+    if (
+      direct &&
+      [
+        'FunctionDeclaration',
+        'FunctionExpression',
+        'ArrowFunctionExpression',
+        'ClassDeclaration',
+        'ClassExpression',
+      ].includes(direct.type)
+    ) {
+      constants.set(key, undefined)
+      return undefined
+    }
+    for (const statement of program.body) {
+      if (
+        statement.type === 'ImportDeclaration' &&
+        statement.importKind !== 'type'
+      ) {
+        const target = resolve(moduleId, statement.source.value, statement)
+        if (!target) continue
+        for (const specifier of statement.specifiers) {
+          if (
+            specifier.type === 'ImportNamespaceSpecifier' ||
+            (specifier.type === 'ImportSpecifier' &&
+              specifier.importKind === 'type')
+          )
+            continue
+          const imported =
+            specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : specifier.imported.type === 'Identifier'
+                ? specifier.imported.name
+                : specifier.imported.value
+          const value = constant(target, imported, next)
+          if (value) imports[specifier.local.name] = relocate(value, specifier)
+        }
+      }
     }
     const scope = new Scope.Tracker({ preserveExitedScopes: true })
     Walker.walk(program, { scopeTracker: scope })
@@ -1437,12 +1454,18 @@ function build(options: compile.Options, cache?: Cache): Cache {
             },
           })
     // Module-local checks cannot detect truncated ownership hashes colliding across files.
+    const emitted = new Set(
+      Array.from(
+        modules[moduleId]!.css.matchAll(/\.(z-[\w-]+)\{/g),
+        (match) => match[1],
+      ),
+    )
     for (const value of Object.values(modules[moduleId]!.classes))
       for (const name of value.split(' ')) {
         if (
           options.compiler === false ||
           !name.startsWith('z-') ||
-          !modules[moduleId]!.css.includes(`.${name}{`)
+          !emitted.has(name)
         )
           continue
 
@@ -1556,28 +1579,30 @@ function build(options: compile.Options, cache?: Cache): Cache {
             )
             .map((id) => [
               id,
-              Contract.write(
-                Object.fromEntries(
-                  Object.entries(extracted.get(id)!.themeExports ?? {}).map(
-                    ([name, link]) => [name, publishedStyle(link)],
+              modules[id] === previous?.result.modules[id]
+                ? previous!.result.contracts[id]!
+                : Contract.write(
+                    Object.fromEntries(
+                      Object.entries(extracted.get(id)!.themeExports ?? {}).map(
+                        ([name, link]) => [name, publishedStyle(link)],
+                      ),
+                    ),
+                    sharedThemes,
+                    reachable(id).map((section) => ({
+                      ...section,
+                      owner: undefined,
+                      dependency:
+                        section.owner && section.owner !== id
+                          ? dependencyPath(id, section.owner)
+                          : undefined,
+                      source: Stylesheets.relative(
+                        section.owner ?? id,
+                        section.source,
+                      ),
+                    })),
+                    id,
+                    configurations(id),
                   ),
-                ),
-                sharedThemes,
-                reachable(id).map((section) => ({
-                  ...section,
-                  owner: undefined,
-                  dependency:
-                    section.owner && section.owner !== id
-                      ? dependencyPath(id, section.owner)
-                      : undefined,
-                  source: Stylesheets.relative(
-                    section.owner ?? id,
-                    section.source,
-                  ),
-                })),
-                id,
-                configurations(id),
-              ),
             ]),
         ),
       ),

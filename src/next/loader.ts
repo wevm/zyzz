@@ -68,72 +68,80 @@ async function compile(context: Context, source: string) {
       `app/${Path.relative(root, context.resourcePath).split(Path.sep).join('/')}`
     ]
 
-  const assets = new Map<string, string>()
-  for (const [placeholder, target] of Object.entries(
-    graph.sharedAssets ?? {},
-  )) {
-    const raw = target.split(/[?#]/)[0]!
-    const file = await Fs.realpath(
-      target.startsWith('app/')
-        ? Path.join(root, decodeURIComponent(raw.slice(4)))
-        : decodeURIComponent(raw),
-    )
-    const identity = graph.sharedAssetOwners?.[placeholder]
-    let owner = root
-    if (identity && Path.isAbsolute(identity)) {
-      owner = Path.dirname(identity)
-      for (;;) {
-        try {
-          await Fs.access(Path.join(owner, 'package.json'))
-          break
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-          const parent = Path.dirname(owner)
-          if (parent === owner)
-            throw new Error('Packed assets require an owning package.json.')
-          owner = parent
+  const shared =
+    options.mode === 'shared' || options.bundler !== 'turbopack'
+      ? await compileShared()
+      : undefined
+
+  async function compileShared() {
+    const assets = new Map<string, string>()
+    for (const [placeholder, target] of Object.entries(
+      graph.sharedAssets ?? {},
+    )) {
+      const raw = target.split(/[?#]/)[0]!
+      const file = await Fs.realpath(
+        target.startsWith('app/')
+          ? Path.join(root, decodeURIComponent(raw.slice(4)))
+          : decodeURIComponent(raw),
+      )
+      const identity = graph.sharedAssetOwners?.[placeholder]
+      let owner = root
+      if (identity && Path.isAbsolute(identity)) {
+        owner = Path.dirname(identity)
+        for (;;) {
+          try {
+            await Fs.access(Path.join(owner, 'package.json'))
+            break
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+            const parent = Path.dirname(owner)
+            if (parent === owner)
+              throw new Error('Packed assets require an owning package.json.')
+            owner = parent
+          }
         }
       }
+
+      const relative = Path.relative(await Fs.realpath(owner), file)
+      if (
+        !identity ||
+        relative === '..' ||
+        relative.startsWith(`..${Path.sep}`) ||
+        Path.isAbsolute(relative)
+      )
+        throw new Error('Asset path escapes its owning package.')
+
+      context.addDependency(file)
+      assets.set(
+        placeholder,
+        Path.relative(
+          options.bundler === 'turbopack'
+            ? Path.dirname(context.resourcePath)
+            : directory,
+          file,
+        )
+          .split(Path.sep)
+          .map(encodeURIComponent)
+          .join('/') + target.slice(raw.length),
+      )
     }
 
-    const relative = Path.relative(await Fs.realpath(owner), file)
-    if (
-      !identity ||
-      relative === '..' ||
-      relative.startsWith(`..${Path.sep}`) ||
-      Path.isAbsolute(relative)
-    )
-      throw new Error('Asset path escapes its owning package.')
-
-    context.addDependency(file)
-    assets.set(
-      placeholder,
-      Path.relative(
-        options.bundler === 'turbopack'
-          ? Path.dirname(context.resourcePath)
-          : directory,
-        file,
-      )
-        .split(Path.sep)
-        .map(encodeURIComponent)
-        .join('/') + target.slice(raw.length),
-    )
+    return graph.sharedCss
+      ? AtRules.transform({
+          code: Buffer.from(graph.sharedCss),
+          filename: 'shared.css',
+          inputSourceMap: JSON.stringify(graph.sharedCssMap),
+          sourceMap: true,
+          visitor: {
+            Url: (url) =>
+              assets.has(url.url)
+                ? { ...url, url: assets.get(url.url)! }
+                : undefined,
+          },
+        })
+      : undefined
   }
 
-  const shared = graph.sharedCss
-    ? AtRules.transform({
-        code: Buffer.from(graph.sharedCss),
-        filename: 'shared.css',
-        inputSourceMap: JSON.stringify(graph.sharedCssMap),
-        sourceMap: true,
-        visitor: {
-          Url: (url) =>
-            assets.has(url.url)
-              ? { ...url, url: assets.get(url.url)! }
-              : undefined,
-        },
-      })
-    : undefined
   if (options.mode === 'shared')
     return {
       code: shared?.code.toString() ?? '',

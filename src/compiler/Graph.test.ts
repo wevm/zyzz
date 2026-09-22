@@ -26,6 +26,21 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('avoids relocating token imports while probing component exports', async () => {
+    const { stdout } = await Util.promisify(ChildProcess.execFile)(
+      process.execPath,
+      ['test/fixtures/GraphConstants.ts'],
+    )
+    const result = JSON.parse(stdout) as {
+      count: number
+      css: string
+      writes: number
+    }
+    expect(result.count).toMatchInlineSnapshot('2')
+    expect(result.writes).toMatchInlineSnapshot('0')
+    expect(result.css).toMatchInlineSnapshot('".z-text-red-XySf4I{color:red;}"')
+  })
+
   test('uses exported default typography values in global declarations', async () => {
     const result = Graph.compile({
       modules: {

@@ -74,10 +74,26 @@ export function create(options: create.Options) {
 
   async function compile(context: Context, source?: string) {
     const root = options.root
+    const tracked = new Set<string>()
+    function track(file: string) {
+      if (tracked.has(file)) return
+      tracked.add(file)
+      context.addDependency(file)
+    }
     const programs = new Map<string, ReturnType<typeof Syntax.parse>>()
     const seenDirectories = new Set<string>()
     const seenFiles = new Set<string>()
-    async function read(file: string) {
+    const reads = new Map<string, Promise<string>>()
+    function read(file: string) {
+      let pending = reads.get(file)
+      if (!pending) {
+        pending = load(file)
+        reads.set(file, pending)
+      }
+      return pending
+    }
+
+    async function load(file: string) {
       seenFiles.add(file)
       const version = await stamp(file)
       let entry = files.get(file)
@@ -94,7 +110,21 @@ export function create(options: create.Options) {
       Record<string, string | null>
     > = Object.create(null)
     const contracts: Record<string, string> = Object.create(null)
-    const resolve = context.getResolve({})
+    const resolver = context.getResolve({})
+    const resolutions = new Map<string, Promise<string | false | undefined>>()
+    function resolve(directory: string, specifier: string) {
+      const key = JSON.stringify([directory, specifier])
+      let pending = resolutions.get(key)
+      if (!pending) {
+        pending = new Promise<string | false | undefined>((accept, reject) => {
+          resolver(directory, specifier, (error, value) =>
+            error ? reject(error) : accept(value),
+          )
+        })
+        resolutions.set(key, pending)
+      }
+      return pending
+    }
     const id = (file: string) =>
       `app/${Path.relative(root, file).split(Path.sep).join('/')}`
     const eligible = (file: string) =>
@@ -111,7 +141,7 @@ export function create(options: create.Options) {
       const name = id(file)
       if (Object.hasOwn(modules, name)) return
 
-      context.addDependency(file)
+      track(file)
       seenFiles.add(file)
       modules[name] = text ?? (await read(file))
       const links: Record<string, string | null> = Object.create(null)
@@ -127,39 +157,40 @@ export function create(options: create.Options) {
       programs.set(name, entry.parsed)
       const parsed = entry.parsed
 
-      for (const node of parsed.program.body) {
-        if (
-          (node.type !== 'ImportDeclaration' &&
-            node.type !== 'ExportNamedDeclaration' &&
-            node.type !== 'ExportAllDeclaration') ||
-          !node.source
-        )
-          continue
-        if (
-          node.type === 'ImportDeclaration'
-            ? node.importKind === 'type'
-            : node.exportKind === 'type'
-        )
-          continue
+      const resolutions = await Promise.all(
+        parsed.program.body.map(async (node) => {
+          if (
+            (node.type !== 'ImportDeclaration' &&
+              node.type !== 'ExportNamedDeclaration' &&
+              node.type !== 'ExportAllDeclaration') ||
+            !node.source
+          )
+            return undefined
+          if (
+            node.type === 'ImportDeclaration'
+              ? node.importKind === 'type'
+              : node.exportKind === 'type'
+          )
+            return undefined
 
-        const specifier = node.source.value
-        links[specifier] = null
-        // Next owns this virtual module, which has no physical stylesheet contract.
-        if (specifier === 'next/root-params') continue
-        if (
-          specifier === 'zyzz' ||
-          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default') ||
-          specifier.startsWith('node:')
-        )
-          continue
+          const specifier = node.source.value
+          links[specifier] = null
+          // Next owns this virtual module, which has no physical stylesheet contract.
+          if (specifier === 'next/root-params') return undefined
+          if (
+            specifier === 'zyzz' ||
+            (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default') ||
+            specifier.startsWith('node:')
+          )
+            return undefined
 
-        const resolved = await new Promise<string | false | undefined>(
-          (accept, reject) => {
-            resolve(Path.dirname(file), specifier, (error, value) =>
-              error ? reject(error) : accept(value),
-            )
-          },
-        )
+          const resolved = await resolve(Path.dirname(file), specifier)
+          return { specifier, resolved }
+        }),
+      )
+      for (const resolution of resolutions) {
+        if (!resolution) continue
+        const { specifier, resolved } = resolution
         if (!resolved || !/\.[cm]?[jt]sx?$/.test(resolved)) continue
         if (eligible(resolved)) {
           links[specifier] = id(resolved)
@@ -170,7 +201,7 @@ export function create(options: create.Options) {
         const sidecar = `${resolved}.zyzz.json`
         try {
           contracts[resolved] = await read(sidecar)
-          context.addDependency(sidecar)
+          track(sidecar)
           links[specifier] = resolved
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
@@ -240,13 +271,7 @@ export function create(options: create.Options) {
       for (const dependency of library.dependencies) {
         let owner = file
         for (const specifier of dependency) {
-          const target = await new Promise<string | false | undefined>(
-            (accept, reject) => {
-              resolve(Path.dirname(owner), specifier, (error, value) =>
-                error ? reject(error) : accept(value),
-              )
-            },
-          )
+          const target = await resolve(Path.dirname(owner), specifier)
           if (!target || !Path.isAbsolute(target))
             throw new Error('Unable to resolve packed stylesheet dependency.')
 
@@ -255,7 +280,7 @@ export function create(options: create.Options) {
           if (!Object.hasOwn(contracts, target)) {
             const sidecar = `${target}.zyzz.json`
             contracts[target] = await read(sidecar)
-            context.addDependency(sidecar)
+            track(sidecar)
           }
           await dependencies(target)
           owner = target

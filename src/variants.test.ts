@@ -148,7 +148,8 @@ const button = variants({
         service.dispose()
       }
     },
-    30_000,
+    // CI runs the language service alongside other coverage-instrumented suites.
+    90_000,
   )
 
   test('renders registered computed conditions in recipe bodies', async () => {

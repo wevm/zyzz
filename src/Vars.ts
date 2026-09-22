@@ -45,7 +45,7 @@ export type Definition<values extends Values = Values> = (Values extends values
 export type References<values, root extends boolean = true> = {
   readonly [key in Exclude<
     keyof values,
-    root extends true ? 'breakpoints' | 'containers' | 'containerNames' : never
+    root extends true ? 'breakpoint' | 'containerNames' : never
   >]: values[key] extends Value
     ? Token.Reference<Domain<Scalar<values[key]>>> & {
         readonly [Token.scalar]: Scalar<values[key]>
@@ -176,23 +176,22 @@ type Compatible<scalar> = [scalar] extends [Literal.Color]
       ? number | Token.Reference<'number'>
       : string | Token.Reference<'string'>
 
-/** Category names mapped to the CSS properties that accept their shorthand tokens. */
-export type Mappings = Readonly<
-  Record<string, readonly (keyof Literal.Properties)[]>
+/** Ordered token group names for each CSS property. */
+export type PropertyGroups = Readonly<
+  Partial<Record<keyof Literal.Properties, readonly string[]>>
 >
 
 /** Type carrier for configured shorthand lookup. */
-export type Mapped<values, mappings> = (Pick<
+export type Mapped<values, propertyGroups> = (Pick<
   values,
-  keyof values &
-    ('breakpoints' | 'containers' | 'containerNames' | 'typography')
+  keyof values & ('breakpoint' | 'container' | 'containerNames' | 'typography')
 > extends infer metadata extends Theme.Tokens
   ? metadata
   : {}) & {
   readonly color?: undefined
   readonly '~vars': {
     readonly values: values
-    readonly mappings: mappings
+    readonly propertyGroups: propertyGroups
   }
 }
 

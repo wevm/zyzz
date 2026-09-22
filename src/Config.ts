@@ -1,4 +1,4 @@
-/** Binds shared vars, property mappings, and scoped alternatives to authoring. @module */
+/** Binds shared vars, property groups, and scoped alternatives to authoring. @module */
 import type * as Shorthands from './internal/Shorthands.js'
 import * as Configuration from './internal/Configuration.js'
 
@@ -28,6 +28,10 @@ export function create<const options extends create.Options = {}>(
       throw new Configuration.InvalidError(
         `Use vars and defaultVars instead of ${key}.`,
       )
+  if (Object.hasOwn(options, 'mappings'))
+    throw new Configuration.InvalidError(
+      'Use propertyGroups instead of mappings.',
+    )
   return Configuration.create(
     options as Configuration.VariableOptions,
   ) as create.ReturnType<options>
@@ -38,7 +42,10 @@ export declare namespace create {
   /** Variable sets and optional authoring settings. */
   type Options =
     | Configuration.VariableOptions
-    | Omit<Configuration.VariableOptions, 'vars' | 'defaultVars' | 'mappings'>
+    | Omit<
+        Configuration.VariableOptions,
+        'vars' | 'defaultVars' | 'propertyGroups'
+      >
   /** Typed helpers selected by the supplied variable contract. */
   type ReturnType<options extends Options = Options> =
     options extends Configuration.VariableOptions

@@ -64,7 +64,7 @@ import { Config, cx } from 'zyzz'
 
 const { style, vars } = Config.create({
   vars: { color: { brand: '#06c' } },
-  mappings: false,
+  propertyGroups: false,
 })
 const root = style({ color: 'color.brand' })
 

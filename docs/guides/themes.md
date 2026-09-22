@@ -1,6 +1,6 @@
 # Variables & Scopes
 
-Define shared values with `Vars`, bind property mappings with `Config.create`, and select sets on enclosing elements. See [Getting Started](../introduction/getting-started.md) for compilation setup.
+Define shared values with `Vars`, bind property groups with `Config.create`, and select sets on enclosing elements. See [Getting Started](../introduction/getting-started.md) for compilation setup.
 
 ## Recipes
 
@@ -23,7 +23,7 @@ const card = style({ color: 'foreground', padding: 'page' })
 const rail = style({ width: vars.spacing.page })
 ```
 
-References keep their source identity. Changing a primitive through its own scope updates values that reference it. Explicit references retain their scalar domain regardless of category mappings.
+References keep their source identity. Changing a primitive through its own scope updates values that reference it. Explicit references retain their scalar domain regardless of group lookup.
 
 ### Typography Sets
 
@@ -42,18 +42,22 @@ Each set bundles font family, size, weight, letter spacing, and line height. Set
 
 ### Property Mappings
 
-Default mappings connect familiar categories to CSS properties. Dedicated categories such as `padding` take precedence over shared `spacing` for the same name. Custom mappings replace one category at a time; `[]` disables shorthand lookup for that category.
+Default property groups connect CSS properties to familiar token categories. Dedicated categories such as `padding` take precedence over shared `spacing` for the same name. Custom `propertyGroups` replace one property's ordered lookup at a time; `[]` disables token name lookup for that property.
 
 ```ts
 const { style, vars } = Config.create({
   vars: { surface: { panel: '#fff' }, spacing: { page: '1rem' } },
-  mappings: { surface: ['backgroundColor'], spacing: ['padding', 'gap'] },
+  propertyGroups: {
+    backgroundColor: ['surface'],
+    padding: ['spacing'],
+    gap: ['spacing'],
+  },
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
 })
 const panel = style({ backgroundColor: 'panel', width: vars.spacing.page })
 ```
 
-`mappings` assigns variable categories to properties. `shorthands` expands local property aliases; every expanded property validates the supplied value. Custom category mappings cannot introduce ambiguous names for one property.
+`propertyGroups` lists token groups for each CSS property in lookup order. `shorthands` expands local property aliases; every expanded property validates the supplied value. When groups share a token name, the first matching group wins.
 
 ### Selecting Sets
 
@@ -115,8 +119,8 @@ Generate `script()` on the server or at build time and execute its returned Java
 ```ts
 const { style } = Config.create({
   vars: {
-    breakpoints: { tablet: '48rem' },
-    containers: { card: '20rem' },
+    breakpoint: { tablet: '48rem' },
+    container: { card: '20rem' },
     containerNames: ['preview'],
   },
 })

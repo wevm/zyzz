@@ -1,6 +1,6 @@
 # Vars
 
-Define shared values independently of their CSS property mappings. Variable sets support nested categories, light/dark colors, ordered media overrides, and references to other sets.
+Define shared values independently of their CSS property groups. Variable sets support nested categories, light/dark colors, ordered media overrides, and references to other sets.
 
 ```ts
 import { Config, Vars } from 'zyzz'
@@ -76,23 +76,25 @@ Source compilation accepts an inline synchronous callback with one named paramet
 
 References retain their source identity. Extending a set changes values within its scope without changing the paths used by consumers. Separate definitions retain independent identities.
 
-## Mappings
+## Property groups
 
-A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow the existing token groups: `color` supplies color properties, `spacing` supplies spacing and sizing properties, and typography scalar categories supply their matching properties.
+A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default group lookup follows Tailwind’s non-font namespaces and fallback order. Font scalar categories keep their matching properties.
 
 ```ts
 export const { style, vars } = Config.create({
   vars: base,
-  mappings: {
-    color: ['color', 'backgroundColor'],
-    spacing: ['padding', 'gap'],
+  propertyGroups: {
+    color: ['color'],
+    backgroundColor: ['color'],
+    padding: ['spacing'],
+    gap: ['spacing'],
   },
 })
 ```
 
-Each supplied array replaces that category's mapping. Other defaults remain intact. `[]` disables shorthand lookup for that category. Custom categories require a mapping for shorthand lookup. All scalar paths remain available through `vars`, with value-domain checking independent of mappings.
+Each supplied array replaces that property's lookup order. Omitted properties keep their defaults. `[]` disables token name lookup for that property. All scalar paths remain available through explicit `vars` references, with CSS value validation independent of group lookup.
 
-Multiple categories cannot supply the same token name to the same property. CSS literals take precedence over shorthand token names. Use an explicit reference when a token name collides with a CSS literal.
+Names from every listed group are accepted. If multiple groups contain the same name, the first match wins. Configured token names take precedence over CSS literals; use `!custom` to select the literal.
 
 ## Conditions
 
@@ -106,7 +108,7 @@ Named sets require `defaultVars` and identical paths and domains. `vars({ set, c
 
 Nested scopes select their own values. The nearest enclosing scope supplies variable values. `colorScheme` accepts `light`, `dark`, or `light dark`; omitting it preserves the inherited scheme.
 
-Source linking and packed-library contracts retain variable definitions, references, mappings, and selection helpers. Variable-set libraries require compiler contract version 26 or later.
+Source linking and packed-library contracts retain variable definitions, references, property groups, and selection helpers. Property group lookup requires compiler contract version 29 or later.
 
 `config.vars` is both the reference tree and the scope selector. `Vars` replaces the removed `Theme` module; configuration uses `vars` and `defaultVars`. Appearance controls read and save `{ set, colorScheme }`.
 
@@ -117,7 +119,7 @@ The `borderWidth` category maps to physical and logical border-width properties,
 ```ts
 const base = Vars.define({
   borderWidth: { regular: '2px' },
-  breakpoints: { tablet: '48rem' },
+  breakpoint: { tablet: '48rem' },
   typography: {
     heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
   },
@@ -127,3 +129,35 @@ const heading = style({ typography: 'heading', borderWidth: 'regular' })
 ```
 
 Explicit typography fields override matching base and conditional preset fields in the same style block. `Vars.extend` can override existing responsive fields. Native compilation rejects responsive typography queries.
+
+## Category fallbacks
+
+The first category containing the requested name wins. Custom `propertyGroups` replace each property's ordered group list; `propertyGroups: false` requires full paths. Explicit references bypass category lookup and retain CSS value validation.
+
+| Properties                                                                           | Categories, in order                               |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `color`                                                                              | `textColor`, `color`                               |
+| `backgroundColor`                                                                    | `backgroundColor`, `color`                         |
+| Border colors                                                                        | `borderColor`, `color`                             |
+| `accentColor`, `caretColor`, `outlineColor`, `textDecorationColor`, `fill`, `stroke` | Matching property category, `color`                |
+| Other color properties                                                               | `color`                                            |
+| Margin / padding / inset / gap                                                       | Matching category, `spacing`                       |
+| `width`, `minWidth`, `maxWidth`                                                      | Matching property category, `spacing`, `container` |
+| `height`                                                                             | `height`, `spacing`                                |
+| `minHeight`, `maxHeight`                                                             | Matching property category, `height`, `spacing`    |
+| Inline sizes                                                                         | `spacing`, `container`                             |
+| Block sizes                                                                          | `spacing`                                          |
+| `flexBasis`                                                                          | `flexBasis`, `spacing`, `container`                |
+| `columns`                                                                            | `columns`, `container`                             |
+| Scroll margin / padding, `borderSpacing`, `translate`, `textIndent`                  | Matching category, `spacing`                       |
+| Border radii                                                                         | `radius`                                           |
+| `boxShadow`, `textShadow`                                                            | `shadow`, `textShadow`, respectively               |
+| `aspectRatio`, `perspective`                                                         | `aspect`, `perspective`, respectively              |
+| `transitionTimingFunction`, `animation`                                              | `ease`, `animate`, respectively                    |
+| Other mapped properties                                                              | Matching property category                         |
+
+Other matching categories include `backgroundImage`, `backgroundPosition`, `backgroundSize`, `borderWidth`, `content`, `cursor`, grid row/column and template properties, `lineClamp`, `listStyleImage`, `listStyleType`, `objectPosition`, `opacity`, `order`, `outlineOffset`, `outlineWidth`, `perspectiveOrigin`, `rotate`, `scale`, `strokeWidth`, `textDecorationThickness`, `textUnderlineOffset`, `transformOrigin`, `transitionDelay`, `transitionDuration`, `transitionProperty`, and `zIndex`.
+
+`fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` each use only their matching category. `typography` still expands named sets. Spacing does not supply line heights, decoration thickness, or underline offsets.
+
+`blur`, `dropShadow`, and `insetShadow` values require explicit references in ordinary CSS properties. No effect-specific style fields are added. Query aliases use `breakpoint` and `container`; container values also supply sizing declarations.

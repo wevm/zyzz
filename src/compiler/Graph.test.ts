@@ -564,7 +564,7 @@ ${web.modules['app.ts']!.code}`,
         `)
         expect(
           JSON.parse(output.contracts['app/index.ts']!).version,
-        ).toMatchInlineSnapshot(`26`)
+        ).toMatchInlineSnapshot(`29`)
       } finally {
         await Fs.rm(directory, { recursive: true, force: true })
       }
@@ -2540,7 +2540,7 @@ describe('output', () => {
               Path.join(library.installed, 'style.css'),
               'utf8',
             )
-            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
+            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`29`)
             if (producer === 'atomic')
               expect(
                 JSON.parse(contract).exports.controls.members.button.style.style

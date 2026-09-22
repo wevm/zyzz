@@ -47,7 +47,9 @@ export function create(
   let input = record(options)
   const variableMode = input.vars !== undefined
   const variableCatalog = variableMode && input.defaultVars !== undefined
-  const variableMappings = VariableSets.mappings(input.mappings)
+  const variablePropertyGroups = VariableSets.propertyGroups(
+    input.propertyGroups,
+  )
   if (variableMode) {
     if (
       input.theme !== undefined ||
@@ -62,36 +64,14 @@ export function create(
         Object.getOwnPropertyDescriptor(value, Token.definition)?.value
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values)
-      const theme = VariableSets.theme(definition, variableMappings)
-      if (variableMappings === false) return theme
-      const metadata = theme[Token.definition]
-      const names = new Map<string, string>()
-      for (const path of Object.keys(metadata.values)) {
-        const [category, ...parts] = path.split('.')
-        const targets =
-          variableMappings?.[category!] ??
-          Object.keys(Literal.rules).filter((property) =>
-            Token.accepts(
-              category as Token.Group,
-              property as keyof Literal.Properties,
-            ),
-          )
-        for (const property of targets) {
-          const key = `${property}:${parts.join('.')}`
-          if (
-            names.has(key) &&
-            (variableMappings?.[category!] ||
-              variableMappings?.[names.get(key)!.split('.')[0]!])
-          )
-            throw new InvalidError(
-              `Ambiguous variable token ${parts.join('.')} for ${property}.`,
-            )
-          names.set(key, path)
-        }
-      }
-      return theme
+      return VariableSets.theme(definition, variablePropertyGroups)
     }
-    const { vars, defaultVars, mappings: _mappings, ...rest } = input
+    const {
+      vars,
+      defaultVars,
+      propertyGroups: _propertyGroups,
+      ...rest
+    } = input
     input = variableCatalog
       ? {
           ...rest,
@@ -104,8 +84,11 @@ export function create(
           ),
         }
       : { ...rest, theme: normalize(vars) }
-  } else if (input.mappings !== undefined || input.defaultVars !== undefined) {
-    throw new InvalidError('mappings and defaultVars require vars.')
+  } else if (
+    input.propertyGroups !== undefined ||
+    input.defaultVars !== undefined
+  ) {
+    throw new InvalidError('propertyGroups and defaultVars require vars.')
   }
   function finish(result: Record<string, unknown>) {
     if (!variableMode) return Object.freeze(result)
@@ -248,7 +231,9 @@ export function create(
   })()
 
   const contract = Object.freeze({
-    ...(variableMode ? { variableSet: true, mappings: variableMappings } : {}),
+    ...(variableMode
+      ? { variableSet: true, propertyGroups: variablePropertyGroups }
+      : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer as string }
       : {}),
@@ -344,8 +329,8 @@ export function create(
       const data = theme[Token.definition].queries
 
       return JSON.stringify({
-        breakpoints: Object.keys(data?.breakpoints ?? {}).sort(),
-        containers: Object.keys(data?.containers ?? {}).sort(),
+        breakpoint: Object.keys(data?.breakpoint ?? {}).sort(),
+        container: Object.keys(data?.container ?? {}).sort(),
         containerNames: [...(data?.containerNames ?? [])].sort(),
       })
     }
@@ -831,7 +816,7 @@ type Validated<options> = Record<
         }
       : {})
 
-/** Vars, optional named alternatives, and category-to-property mappings. */
+/** Vars, optional named alternatives, and ordered property groups. */
 export type VariableOptions = {
   /** CSS representation inherited by bound helpers; atomic by default. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
@@ -843,8 +828,8 @@ export type VariableOptions = {
   readonly id?: string | undefined
   /** Ordered CSS layer names. */
   readonly layers?: readonly string[] | undefined
-  /** Category mappings; false enables full paths in every compatible property. */
-  readonly mappings?: Vars.Mappings | false | undefined
+  /** Ordered token groups; false enables full paths in every compatible property. */
+  readonly propertyGroups?: Vars.PropertyGroups | false | undefined
   /** Styling props format; React by default. */
   readonly output?: style.Output | undefined
   /** Explicit local property aliases. */
@@ -868,7 +853,7 @@ type VariableValues<options extends VariableOptions> = options extends {
 
 type VariableTokens<options extends VariableOptions> = Vars.Mapped<
   VariableValues<options>,
-  options extends { mappings: infer mappings } ? mappings : {}
+  options extends { propertyGroups: infer mappings } ? mappings : {}
 >
 
 type VariableInput<input> = input extends {
@@ -905,6 +890,16 @@ export type VariableValidation<options extends VariableOptions> =
   VariableOptions extends options
     ? unknown
     : Record<Exclude<keyof options, keyof VariableOptions>, never> &
+        (options extends {
+          propertyGroups: infer groups extends Vars.PropertyGroups
+        }
+          ? {
+              readonly propertyGroups: Record<
+                Exclude<keyof groups, keyof Literal.Properties>,
+                never
+              >
+            }
+          : {}) &
         (options extends { shorthands: infer map extends Shorthands.Map }
           ? { shorthands: Shorthands.Validated<map> }
           : {}) &

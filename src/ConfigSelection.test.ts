@@ -201,7 +201,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(graph.contracts['config.js']!).version,
-    ).toMatchInlineSnapshot(`26`)
+    ).toMatchInlineSnapshot(`29`)
 
     const bundle = await Esbuild.build({
       stdin: {
@@ -242,7 +242,7 @@ describe('create', () => {
             imports: { 'app.ts': { lib: 'lib.js' } },
             modules: { 'app.ts': source },
           }),
-        ).toThrow('Vars contracts require contract version 26 or later.')
+        ).toThrow('Vars contracts require contract version 29 or later.')
     }
   })
   test('rejects unchecked selector names, fields, and schemes', async () => {

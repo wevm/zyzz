@@ -18,6 +18,39 @@ describe('default', () => {
     await Fs.access(Path.resolve('dist/default.d.ts'))
   })
 
+  test('regenerates default tokens without built package files', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-default-generator-'))
+    try {
+      await Fs.cp('src', Path.join(root, 'src'), { recursive: true })
+      await Fs.mkdir(Path.join(root, 'scripts'))
+      await Fs.copyFile(
+        'scripts/default-theme.ts',
+        Path.join(root, 'scripts/default-theme.ts'),
+      )
+      await Fs.writeFile(Path.join(root, 'package.json'), '{"type":"module"}')
+      await Fs.symlink(
+        Path.resolve('node_modules'),
+        Path.join(root, 'node_modules'),
+        'dir',
+      )
+      await exec(process.execPath, ['scripts/default-theme.ts'], { cwd: root })
+      const generated = await Fs.readFile(
+        Path.join(root, 'src/default.ts'),
+        'utf8',
+      )
+      expect(
+        generated.includes(
+          'z-kid-7a-79-7a-7a-2d-73-70-69-6e 1s linear infinite',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+      expect((await Fs.readdir(root)).includes('dist')).toMatchInlineSnapshot(
+        `false`,
+      )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test.each([{ conditions: [] }, { conditions: ['src'] }])(
     'renders packed defaults with conditions %j',
     async ({ conditions }) => {
@@ -65,7 +98,7 @@ describe('default', () => {
           Path.join(root, 'app.ts'),
           `import {appearance,variants,vars} from 'zyzz/default';
         namespace styles {
-          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`\${values.padding} !custom\` as const})}},defaultVariants:{size:'sm'}});
+          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500',boxShadow:'sm',filter:\`blur(\${vars.blur.xs})\`,animation:'pulse',animationDelay:'-1s',animationPlayState:'paused'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`\${values.padding} !custom\` as const})}},defaultVariants:{size:'sm'}});
         }
         document.querySelector('main')!.className=vars().className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
@@ -176,6 +209,24 @@ variants({base:{color:'missing'}});`,
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
           ).toMatchInlineSnapshot(`"rgb(153, 206, 255)"`)
+          expect(
+            await page.locator('button').evaluate((element) => {
+              const style = getComputedStyle(element)
+              return {
+                filter: style.filter,
+                opacity: style.opacity,
+                animationDuration: style.animationDuration,
+                boxShadow: style.boxShadow,
+              }
+            }),
+          ).toMatchInlineSnapshot(`
+            {
+              "animationDuration": "2s",
+              "boxShadow": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px",
+              "filter": "blur(4px)",
+              "opacity": "0.5",
+            }
+          `)
           await page.locator('button').click()
           expect(
             await page.locator('button').getAttribute('data-scheme'),
@@ -226,7 +277,7 @@ variants({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot('26')
+        ).toMatchInlineSnapshot(`29`)
         expect(
           (
             await Fs.readFile(

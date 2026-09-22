@@ -11,7 +11,7 @@ import * as Vars from '../Vars.js'
 /** Wraps a variable set for the shared style/compiler contract. */
 export function theme(
   variables: Vars.Definition,
-  mappings?: Vars.Mappings | false,
+  propertyGroups?: Vars.PropertyGroups | false,
 ): Theme.Definition {
   const original = Theme.define({})
   const metadata = variables[Token.definition]
@@ -19,7 +19,7 @@ export function theme(
     throw new Vars.InvalidError([], 'Expected a variable set.')
   const contract = Object.freeze({
     ...metadata.contract,
-    ...(mappings !== undefined ? { mappings } : {}),
+    ...(propertyGroups !== undefined ? { propertyGroups } : {}),
   })
   const tokens = from({
     ...metadata,
@@ -122,7 +122,7 @@ export function build(
   }
   const fields = Object.fromEntries(record(input, []))
   const queries = { ...baseQueries }
-  for (const key of ['breakpoints', 'containers', 'containerNames'] as const) {
+  for (const key of ['breakpoint', 'container', 'containerNames'] as const) {
     if (Object.hasOwn(fields, key)) {
       const value = fields[key]
       if (base) {
@@ -150,7 +150,8 @@ export function build(
             ? value
             : { ...baseQueries?.[key], ...value },
       })
-      delete fields[key]
+      if (key !== 'container' || Object.keys(value as object).length === 0)
+        delete fields[key]
     }
   }
   const queryData = Theme.define(queries as Theme.Tokens)[Token.definition]
@@ -161,7 +162,7 @@ export function build(
       Condition.normalize(
         Query.resolve(
           path.at(-1)!,
-          queryData ?? { breakpoints: {}, containers: {}, containerNames: [] },
+          queryData ?? { breakpoint: {}, container: {}, containerNames: [] },
         ),
       )
     } catch (error) {
@@ -267,8 +268,8 @@ function read(
               Query.resolve(
                 key,
                 queries ?? {
-                  breakpoints: {},
-                  containers: {},
+                  breakpoint: {},
+                  container: {},
                   containerNames: [],
                 },
               ),
@@ -330,32 +331,39 @@ export function domain(value: Token.Value): Token.Group {
   return typeof value === 'number' ? 'number' : 'string'
 }
 
-/** Copies and validates category mappings without retaining mutable caller input. */
-export function mappings(input: unknown): Vars.Mappings | false | undefined {
+/** Copies and validates ordered property groups without retaining mutable caller input. */
+export function propertyGroups(
+  input: unknown,
+): Vars.PropertyGroups | false | undefined {
   if (input === undefined || input === false) return input
   return Object.freeze(
     Object.fromEntries(
-      record(input, ['mappings']).map(([category, value]) => {
-        if (
-          !category ||
-          !Array.isArray(value) ||
-          value.some(
-            (property) =>
-              typeof property !== 'string' ||
-              !Object.hasOwn(Literal.rules, property),
+      record(input, ['propertyGroups'])
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([property, value]) => {
+          if (!Object.hasOwn(Literal.rules, property))
+            throw new Vars.InvalidError(
+              ['propertyGroups', property],
+              'Expected a CSS property name.',
+            )
+          if (
+            !Array.isArray(value) ||
+            value.some(
+              (group) =>
+                typeof group !== 'string' || !group || group.includes('.'),
+            )
           )
-        )
-          throw new Vars.InvalidError(
-            ['mappings', category],
-            'Expected an array of CSS property names.',
-          )
-        if (new Set(value).size !== value.length)
-          throw new Vars.InvalidError(
-            ['mappings', category],
-            'Property mappings cannot contain duplicates.',
-          )
-        return [category, Object.freeze([...value])]
-      }),
+            throw new Vars.InvalidError(
+              ['propertyGroups', property],
+              'Expected an array of top-level token group names.',
+            )
+          if (new Set(value).size !== value.length)
+            throw new Vars.InvalidError(
+              ['propertyGroups', property],
+              'Token groups cannot contain duplicates.',
+            )
+          return [property, Object.freeze([...value])]
+        }),
     ),
   )
 }

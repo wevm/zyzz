@@ -126,7 +126,7 @@ Tailwind's stylesheet configures the utilities generated for that stylesheet. In
 | `style` from `./zyzz.config.js` | The application's configured tokens and layers |
 | `style` from `zyzz/default`     | Zyzz's opt-in default tokens                   |
 
-The default theme is not a Tailwind compatibility theme. Its colors use Geist scales, and its spacing omits fractional token paths. Preserve the existing values in an application config when visual equivalence matters.
+Non-font token mappings and fallback precedence follow Tailwind. The default theme retains Geist colors and typography, existing font scales, and an explicit spacing table without fractional token paths. Preserve application overrides when visual equivalence matters.
 
 ### Component Variants
 
@@ -245,7 +245,7 @@ import { Config } from 'zyzz'
 
 export const { style, vars, variants } = Config.create({
   vars: {
-    breakpoints: { md: '48rem' },
+    breakpoint: { md: '48rem' },
     color: { brand: '#2563eb' },
     spacing: { 2: '0.5rem', 4: '1rem', 6: '1.5rem' },
   },
@@ -547,7 +547,7 @@ Use `@media (48rem <= width < 64rem)` for the default `md:max-lg:` range. Use `@
 
 ### Custom Breakpoints
 
-Move custom `--breakpoint-*` values into `vars.breakpoints` in the config, keeping their original units. Aliases compile to literal query thresholds. Changing a runtime theme scope does not change those thresholds. Arbitrary `min-*` and `max-*` values can remain raw queries.
+Move custom `--breakpoint-*` values into `vars.breakpoint` in the config, keeping their original units. Aliases compile to literal query thresholds. Changing a runtime theme scope does not change those thresholds. Arbitrary `min-*` and `max-*` values can remain raw queries.
 
 ### Container Queries
 
@@ -584,7 +584,7 @@ const example = (
 )
 ```
 
-Named thresholds belong in `vars.containers` in the config; declared names belong in `vars.containerNames`. Unnamed queries omit the name. Max and range queries retain their CSS bounds. Container-relative lengths such as `50cqw` remain CSS values. See [Responsive Styles](conditions.md#responsive-styles).
+Named thresholds belong in `vars.container` in the config; declared names belong in `vars.containerNames`. Unnamed queries omit the name. Max and range queries retain their CSS bounds. Container-relative lengths such as `50cqw` remain CSS values. See [Responsive Styles](conditions.md#responsive-styles).
 
 ## Dark Mode
 
@@ -688,7 +688,7 @@ import { Config } from 'zyzz'
 
 export const { style, vars } = Config.create({
   vars: {
-    breakpoints: { md: '48rem' },
+    breakpoint: { md: '48rem' },
     color: { brand: '#2563eb' },
     spacing: { gutter: '1.5rem' },
   },
@@ -708,11 +708,11 @@ export const { style, vars } = Config.create({
 | `--font-weight-*`                                                      | `fontWeight`                                                                                          |
 | `--tracking-*`                                                         | `letterSpacing`                                                                                       |
 | `--leading-*`                                                          | `lineHeight`                                                                                          |
-| `--radius-*`                                                           | `borderRadius`                                                                                        |
-| `--breakpoint-*`                                                       | `breakpoints`                                                                                         |
-| `--container-*`                                                        | `containers` for queries; copy sizing values separately for width declarations                        |
-| `--shadow-*`, `--inset-shadow-*`, `--drop-shadow-*`, `--text-shadow-*` | CSS values or independent variables                                                                   |
-| `--blur-*`, `--perspective-*`, `--ease-*`, `--animate-*`               | CSS values, independent variables, or keyframes                                                       |
+| `--radius-*`                                                           | `radius`                                                                                              |
+| `--breakpoint-*`                                                       | `breakpoint`                                                                                          |
+| `--container-*`                                                        | `container` for queries and sizing declarations                                                       |
+| `--shadow-*`, `--inset-shadow-*`, `--drop-shadow-*`, `--text-shadow-*` | `shadow` and `textShadow` map to matching CSS properties; inset/drop shadows use explicit references  |
+| `--blur-*`, `--perspective-*`, `--ease-*`, `--animate-*`               | `blur` uses explicit references; `perspective`, `ease`, and `animate` map to CSS properties           |
 
 Tailwind's scalar `--spacing` generates multiples. Zyzz's spacing groups contain explicit values. Define the required steps or preserve a CSS expression such as `calc(var(--spacing) * 4)`, retaining the variable's declaration. Fractional Tailwind steps can use semantic token names or literal CSS lengths.
 
@@ -787,7 +787,7 @@ Copy the application's actual [color values](https://tailwindcss.com/docs/colors
 
 ### Default Differences
 
-`zyzz/default` uses Geist light/dark scales with steps from `100` to `1000`, plus semantic colors. Tailwind's palette names, steps, and values differ. The same-looking token name does not establish visual equivalence. See [Default Config](../api/default.md).
+`zyzz/default` uses Geist light/dark scales with steps from `100` to `1000`, plus semantic colors. Tailwind's palette names, steps, and values differ. Matching token names do not establish visual equivalence. See [Default Config](../api/default.md).
 
 ### Semantic Colors
 

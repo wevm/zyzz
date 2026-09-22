@@ -14,6 +14,8 @@ import * as Reset from '../node/Reset.js'
 import { isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
+import * as Snapshot from '../node/internal/Snapshot.js'
+import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Scope from '../compiler/internal/Scope.js'
 import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
@@ -40,6 +42,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   if (native && options.compiler === false)
     throw new Error('Native builds require source compilation.')
 
+  const snapshots = new WeakMap<
+    Environment,
+    ReturnType<typeof Snapshot.create>
+  >()
   const states = new WeakMap<Environment, Map<string, Entry>>()
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
@@ -50,6 +56,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
   let root: string
+
+  function snapshot(environment: Environment) {
+    let value = snapshots.get(environment)
+    if (!value) {
+      value = Snapshot.create()
+      snapshots.set(environment, value)
+    }
+    return value
+  }
 
   function entries(environment: Environment) {
     let state = states.get(environment)
@@ -273,7 +288,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     file: string,
     event: string,
   ) {
-    if (event === 'delete') entries(environment).delete(file)
+    if (event === 'delete') {
+      entries(environment).delete(file)
+      snapshot(environment).delete(file, sourceId(file))
+    }
 
     const pending = discoveries.get(environment)
     if (!pending || !eager(file)) return
@@ -330,7 +348,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       host.watch(file)
 
       const id = sourceId(file)
-      const text = source ?? (await Fs.readFile(file, 'utf8'))
+      const text = source ?? (await snapshot(entry.environment).read(file))
 
       modules[id] = text
 
@@ -338,8 +356,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       imports[id] = resolutions
 
-      const parsed = Parser.parseSync('source.tsx', text, {
-        sourceType: 'module',
+      const parsed = snapshot(entry.environment).parse({
+        moduleId: id,
+        source: text,
       })
 
       for (const node of parsed.program.body) {
@@ -642,6 +661,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       )
 
     const result = entry.compiler.compile({
+      [Syntax.cache]: snapshot(entry.environment).programs(modules),
       compiler: options.compiler,
       reset: options.reset ? Reset.read() : undefined,
       native,

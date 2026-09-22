@@ -1,11 +1,52 @@
 /** Verifies recipe inference and rejected authoring through the public entrypoint. @module */
 import type { CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { variants } from 'zyzz'
+import { Config as PublicConfig, variants } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
 describe('variants', () => {
+  test('keeps hinted token declarations and selections constrained', () => {
+    const { variants } = PublicConfig.create({
+      vars: { color: { brand: '#123456' } },
+    })
+    const button = variants({
+      base: { color: 'brand', ':hover': { color: 'brand' } },
+      variants: {
+        tone: {
+          brand: { color: 'brand' },
+          faded: (values: { opacity: number }) => ({
+            color: 'brand' as const,
+            opacity: values.opacity,
+          }),
+        },
+      },
+      compoundVariants: [
+        { when: { tone: 'brand' }, style: { color: 'brand' } },
+      ],
+    })
+
+    button({ tone: 'brand' })
+    button({ tone: { faded: { opacity: 0.5 } } })
+    // @ts-expect-error Hints do not widen inferred choice names.
+    button({ tone: 'missing' })
+    // @ts-expect-error Dynamic payload types remain constrained.
+    button({ tone: { faded: { opacity: 'wrong' } } })
+    // @ts-expect-error Hints do not accept unknown tokens.
+    variants({ base: { color: 'missing' } })
+    variants({
+      // @ts-expect-error Nested choices retain value validation.
+      variants: { tone: { brand: { ':hover': { color: 'missing' } } } },
+    })
+    variants({
+      variants: { tone: { brand: { color: 'brand' } } },
+      compoundVariants: [
+        // @ts-expect-error Compound styles retain token validation.
+        { when: { tone: 'brand' }, style: { color: 'missing' } },
+      ],
+    })
+  })
+
   test('accepts React inline overrides through inferred recipe props', () => {
     const button = variants({
       variants: { size: { small: { padding: '8px' } } },

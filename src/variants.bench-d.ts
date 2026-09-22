@@ -21,4 +21,4 @@ bench('variants / defaults and compounds', () => {
     ],
   })
   button({ loading: false, size: null })
-}).types([31436, 'instantiations'])
+}).types([252118, 'instantiations'])

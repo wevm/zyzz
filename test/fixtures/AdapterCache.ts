@@ -153,8 +153,12 @@ async function setup(): Promise<() => Promise<string>> {
         zyzz.vite(),
         {
           name: 'cache-fixture',
-          hotUpdate() {
-            updated?.()
+          hotUpdate({ file }) {
+            if (
+              this.environment.name === 'client' &&
+              file === Path.join(root, 'config.mjs')
+            )
+              updated?.()
           },
         },
       ],

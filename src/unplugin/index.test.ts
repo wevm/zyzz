@@ -497,6 +497,10 @@ describe('zyzz', () => {
       plugins: [webpack({ root })],
       resolve: { alias: { 'zyzz/runtime': runtime } },
     })
+    let completed = 0
+    compiler.hooks.afterDone.tap('test', () => {
+      completed++
+    })
     let failure: Error | undefined
     const watcher = compiler.watch({}, (error, stats) => {
       if (error || stats?.hasErrors())
@@ -506,10 +510,11 @@ describe('zyzz', () => {
       await vi.waitFor(
         async () => {
           if (failure) throw failure
-          await Fs.access(Path.join(root, 'dist/app.js'))
+          expect(completed).toBeGreaterThan(0)
         },
         { timeout: 10000 },
       )
+      const initial = completed
       await Watch.write({
         path: Path.join(root, 'theme.js'),
         source:
@@ -518,6 +523,7 @@ describe('zyzz', () => {
       await vi.waitFor(
         async () => {
           if (failure) throw failure
+          expect(completed).toBeGreaterThan(initial)
           const css = await Fs.readFile(
             Path.join(root, 'dist/zyzz.css'),
             'utf8',
@@ -527,6 +533,7 @@ describe('zyzz', () => {
         },
         { timeout: 10000 },
       )
+      const updated = completed
       await Watch.write({
         path: Path.join(root, 'added.js'),
         source: `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
@@ -534,6 +541,7 @@ describe('zyzz', () => {
       await vi.waitFor(
         async () => {
           if (failure) throw failure
+          expect(completed).toBeGreaterThan(updated)
           const css = await Fs.readFile(
             Path.join(root, 'dist/zyzz.css'),
             'utf8',

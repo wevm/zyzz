@@ -1,6 +1,6 @@
 # Config.create
 
-Bind styles and recipes to shared variables, named sets, property groups, and CSS layers.
+Bind styles and recipes to shared variables, named sets, property mappings, and CSS layers.
 
 ```ts
 import { Config, Vars } from 'zyzz'
@@ -19,24 +19,24 @@ export const { appearance, script, style, vars, variants } = Config.create({
 
 ## Options
 
-| Option           | Purpose                                                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vars`           | One inline record or `Vars.define` result, or a catalog of compatible sets. Omit for token-free authoring.                                  |
-| `defaultVars`    | Required catalog key when `vars` contains named sets.                                                                                       |
-| `propertyGroups` | Ordered token groups per CSS property. Each list replaces that property's defaults; `[]` disables token lookup. `false` enables full paths. |
-| `shorthands`     | Local property aliases such as `{ px: ['paddingLeft', 'paddingRight'] }`. Each expanded property validates its value independently.         |
-| `defaultLayer`   | Fallback layer for bound styles and recipes. Explicit `@layer` blocks override it. Omit to keep declarations unlayered.                     |
-| `layers`         | Ordered CSS layer names used by bound styles and recipes.                                                                                   |
-| `output`         | `'react'` by default; `'html'` returns `class` and serialized inline styles.                                                                |
-| `cssOutput`      | `'atomic'` by default; `'grouped'` emits scoped declaration blocks.                                                                         |
-| `storageKey`     | Preference storage key shared by `appearance` and `script()`. Defaults to `'zyzz'`.                                                         |
-| `id`             | Stable identity required when using authoring without source rewriting.                                                                     |
+| Option         | Purpose                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `vars`         | One inline record or `Vars.define` result, or a catalog of compatible sets. Omit for token-free authoring.                          |
+| `defaultVars`  | Required catalog key when `vars` contains named sets.                                                                               |
+| `mappings`     | Category-to-property mappings. Each category replaces its default; `[]` disables its shortcuts. `false` enables full paths.         |
+| `shorthands`   | Local property aliases such as `{ px: ['paddingLeft', 'paddingRight'] }`. Each expanded property validates its value independently. |
+| `defaultLayer` | Fallback layer for bound styles and recipes. Explicit `@layer` blocks override it. Omit to keep declarations unlayered.             |
+| `layers`       | Ordered CSS layer names used by bound styles and recipes.                                                                           |
+| `output`       | `'react'` by default; `'html'` returns `class` and serialized inline styles.                                                        |
+| `cssOutput`    | `'atomic'` by default; `'grouped'` emits scoped declaration blocks.                                                                 |
+| `storageKey`   | Preference storage key shared by `appearance` and `script()`. Defaults to `'zyzz'`.                                                 |
+| `id`           | Stable identity required when using authoring without source rewriting.                                                             |
 
 All named sets must have matching paths and compatible value domains. Unknown options and incompatible sets throw `Config.InvalidError`. Invalid variable values throw `Vars.InvalidError`.
 
 ## Helpers
 
-`style` and `variants` use the configured property groups. Explicit references through `vars` remain available independently of those property groups.
+`style` and `variants` use the configured mappings. Explicit references through `vars` remain available independently of those mappings.
 
 ```ts
 const card = style({ color: 'foreground', width: vars.spacing.page })
@@ -57,32 +57,9 @@ appearance.set({ set: 'alternate', colorScheme: 'dark' })
 
 See [Vars](../Vars/README.md) for derived references, conditional values, query aliases, and scope inheritance.
 
-## Property groups
-
-Use `propertyGroups` to override the token groups searched for each CSS property:
-
-```ts
-const { style } = Config.create({
-  vars: {
-    width: { compact: '120px' },
-    spacing: { compact: '16px', roomy: '32px' },
-    container: { wide: '640px' },
-  },
-  propertyGroups: {
-    width: ['width', 'spacing', 'container'],
-    height: [],
-  },
-})
-style({ width: 'compact' }) // 120px
-style({ width: 'roomy' }) // 32px
-style({ width: 'wide' }) // 640px
-```
-
-Every listed group contributes token names. The first group containing a name wins. An explicit list replaces the property's defaults, including their order. Omitted properties retain built-in defaults; `[]` disables token name lookup for that property. Explicit references and CSS literals remain available.
-
 ## Full variable paths
 
-Set `propertyGroups: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS values with `!custom` and explicit references still work. Values must match the property's CSS syntax.
+Set `mappings: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS values with `!custom` and explicit references still work. Values must match the property's CSS syntax.
 
 ```ts
 const { style, vars } = Config.create({
@@ -90,7 +67,7 @@ const { style, vars } = Config.create({
     surface: { foreground: '#123456' },
     spacing: { page: '16px' },
   },
-  propertyGroups: false,
+  mappings: false,
 })
 
 const card = style({
@@ -126,7 +103,7 @@ Dynamic callbacks cannot select token names from their inputs. Use variants for 
 
 Properties without configured values accept either spelling: `'7px'` or `'7px !custom'`. An empty variable set leaves all properties unrestricted. No `strict` option is required or supported.
 
-Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'red !custom'` always means the CSS color. Property groups and `propertyGroups: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
+Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'red !custom'` always means the CSS color. Property mappings and `mappings: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
 
 ## Default layer
 

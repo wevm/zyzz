@@ -14,9 +14,9 @@ import { Config } from 'zyzz'
 
 export const { style, vars } = Config.create({
   vars: {
-    breakpoint: { tablet: '48rem' },
+    breakpoints: { tablet: '48rem' },
     containerNames: ['sidebar'],
-    container: { card: '24rem' },
+    containers: { card: '24rem' },
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })

@@ -917,8 +917,7 @@
       },
       "animation": {
         "grammar": "d7d49307d1261a6581006b634bd2227c4ec6f95237b2bd92579444978c1b4c14",
-        "status": "supported",
-        "evidence": ["src/default.test.ts"]
+        "status": "supported"
       },
       "animation-composition": {
         "grammar": "fad64dc5e773a75b092f06b6ada6028459b1715592ddc46ac97140376447d48c",
@@ -982,8 +981,7 @@
       },
       "aspect-ratio": {
         "grammar": "7152c10f10c3e61495dd77dbf6a79abc06adde7c210812f0799bc6aa05aabbc6",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "backdrop-filter": {
         "grammar": "01d07653ab4eca09f9fa4f5fccdcff18c792ecbf3701e4167a232ac68c90d0ba",
@@ -1260,8 +1258,7 @@
       },
       "border-spacing": {
         "grammar": "86e18eb3b8af0ad95d117bcced1fdb9f1a220fd4a9a28598b10be7c8a33d01b4",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "border-start-end-radius": {
         "grammar": "339578569a317ef066715854559eab6d6df3797a445916824293e92930fb492d",
@@ -1345,8 +1342,7 @@
       },
       "box-shadow": {
         "grammar": "2714e1cf90bf451cb90fafd5cb170bc46ac311b5dcbcda1b08c8a90ecfec33d5",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "box-sizing": {
         "grammar": "44e0d72921158db38cf57fee63788db845c4fbd4be9e19f02b8b530a7d97ccb4",
@@ -1459,8 +1455,7 @@
       },
       "columns": {
         "grammar": "aac6c1950288411a2ca030337d23fb9fc9c4e8bebaeac0ca8c4c3e7ab010968a",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "contain": {
         "grammar": "da7bf572fb59bda9be449a53f46fd867e7c453d76d4707dd3a492a3e273ca27f",
@@ -1640,8 +1635,7 @@
       },
       "filter": {
         "grammar": "fd9d1377d7e55fe3abb72a86993abdb467dabf7a0e0efab9e7d20bed6c20d109",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "flex": {
         "grammar": "9df836d14c0873e2226f357f67064d058e2ac600f9138f51bb2cdf80d624dab7",
@@ -1649,8 +1643,7 @@
       },
       "flex-basis": {
         "grammar": "a51783b8a8142fdbc8b982d1412afb42c762542cb7ff0f14f6dc45a8b47c2d1c",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "flex-direction": {
         "grammar": "72bd26e8bea520eae1dc722bd81a1494f19e40efe420743cfabd247bc4b0fa37",
@@ -1811,8 +1804,7 @@
       },
       "gap": {
         "grammar": "1859f7db559f33be6f7f3c8bdb6d56a6471a93e8c43288816d2d24f376d631d9",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "grid": {
         "grammar": "3ded864c52b9c71251f4edb8b8f8d2c9e2ec73419a9fba13f1cce913a5fa6858",
@@ -1892,8 +1884,7 @@
       },
       "height": {
         "grammar": "f3475d33680410c614976ced1908e361af40310d422261deeb9bd7b938c0085e",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "hyphenate-character": {
         "grammar": "66264ce10714ef355ce377909e082749cba68e11189bddcd4c2168afb19826cb",
@@ -1933,8 +1924,7 @@
       },
       "inline-size": {
         "grammar": "761aee6b3ca7348890148281747abd07f240faa981fcd01e5770a4081a317e34",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "inset": {
         "grammar": "bf5bba935bd6d1f3a2adb76b41d559c3938b636174589e884ca3979ae7cb9c21",
@@ -2212,8 +2202,7 @@
       },
       "max-height": {
         "grammar": "4260077fd130566bf9f29e765e7206db610417f093302431f5f0662b191dd9c2",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "max-inline-size": {
         "grammar": "0a7dbd185cf96bc9f6483a687112e07b0e49496112655df51361bf4471b36f74",
@@ -2225,8 +2214,7 @@
       },
       "max-width": {
         "grammar": "6cc8770a235f3ae793fd4f608cfbd11d039942fca357098b9ab19b6733fe9e45",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "min-block-size": {
         "grammar": "8cb3337074cb94f965c9de28c44b824f4bde6d6f05037909c3c59a765c47b85c",
@@ -2234,8 +2222,7 @@
       },
       "min-height": {
         "grammar": "c4a745b9af32686c92d5ede2f7e376d47b6e637556c446013208f12498bb9149",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "min-inline-size": {
         "grammar": "99c67bb9e0a4ff1cf2775e0a40afa32bdfe4278610d63d65e12f2047113b0809",
@@ -2243,8 +2230,7 @@
       },
       "min-width": {
         "grammar": "a529dc79a5a7bbccc837b46cc3acf9390a718621dee53e6cdfd5f65cac565236",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "mix-blend-mode": {
         "grammar": "77daee812b375c8d965ed03155235695c690c4ea01c5fdbb68f5487391eb1786",
@@ -2457,8 +2443,7 @@
       },
       "perspective": {
         "grammar": "f0e11c6deace2be525efdd4190ca8a65f7a84199de7bfdb86178a401d68ae8a7",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "perspective-origin": {
         "grammar": "5e7bcf98f65a8c17d508df1cba19595710495655b2260c916367ebe3839573f7",
@@ -2622,8 +2607,7 @@
       },
       "scroll-margin-top": {
         "grammar": "0bf12506c4c80044f878e674c0f9c5807d5bde6c0e902d90552e02deecfba9dd",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "scroll-marker-group": {
         "grammar": "875c1cb416f74a8c17ecb4eb14295309d44a49b442910ce8ffd5f206cc3d3eb2",
@@ -2671,8 +2655,7 @@
       },
       "scroll-padding-top": {
         "grammar": "2f6623ffc3cbd7b59b550fd08decc4b34f37d65a9cab0f08a73a9a731e31e911",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "scroll-snap-align": {
         "grammar": "2c3825948076899b388d232121fef3f941094cb1f3c93489966ff71381b1b54f",
@@ -2896,8 +2879,7 @@
       },
       "text-indent": {
         "grammar": "c2e9e7364786add78ef0407359819cae2c4c843937bb9acaae90ae1a9f25a198",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "text-justify": {
         "grammar": "f9eb59b2ecb81fc96359a53c5c7269cb13e66c451c24d8e8e70efb61bbaf4220",
@@ -2917,8 +2899,7 @@
       },
       "text-shadow": {
         "grammar": "1490ae8128695618f6b1df30489696092477661d08c0d216d4f53bd796fc8ddd",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "text-size-adjust": {
         "grammar": "a312ccf9060e2ac0988ce1ac7684d55279dd94695067985fcccde78df3d5f9b8",
@@ -3038,13 +3019,11 @@
       },
       "transition-timing-function": {
         "grammar": "8592fb7c2fd524c3c5cf62945f6c792b519109a8b6ebae74c8c72cc150013880",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "translate": {
         "grammar": "13447f26d1138a4bef4502289bc7f8ac9c0ccbf594a318bf79cd97ef1e5121b0",
-        "status": "supported",
-        "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
+        "status": "supported"
       },
       "trigger-scope": {
         "grammar": "9de3e6372bc60491de0e75d0d5bf6803abb374a7db6ee5355020c2c54fe3a724",
@@ -3113,11 +3092,7 @@
       "width": {
         "grammar": "89a8389f1f24731e8740429594a498414f89f8a6cb6488dac198dbb5cf2ade1d",
         "status": "supported",
-        "evidence": [
-          "src/Vars.test.ts",
-          "src/Vars.test-d.ts",
-          "src/ConfigMappings.test.ts"
-        ]
+        "evidence": ["src/Vars.test.ts", "src/Vars.test-d.ts"]
       },
       "will-change": {
         "grammar": "caceca9439cb6a84a761d1084c46edfc05de0d37c6fad280beabab2eeca6f7a0",

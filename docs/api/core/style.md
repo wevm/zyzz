@@ -145,7 +145,7 @@ Scoped pseudo keys (`:hover`, `::before`) and explicit `&` selectors retain decl
 import { Config, Vars } from 'zyzz'
 
 const theme = Vars.define({
-  breakpoint: { tablet: '48rem' },
+  breakpoints: { tablet: '48rem' },
   spacing: { gap: '1rem' },
 })
 const config = Config.create({ vars: theme })

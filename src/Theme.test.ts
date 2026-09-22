@@ -3,15 +3,14 @@
  * @module
  */
 import { tokens as contextTokens } from './default.js'
-import * as Util from 'node:util'
-const bundled = Vars.define(contextTokens)
+const bundled = Theme.define(contextTokens)
 import * as Packed from '../test/fixtures/Packed.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style, Vars } from 'zyzz'
+import { Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import { Graph, Transform } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
@@ -32,7 +31,7 @@ describe('define', () => {
     const output = Transform.compile({
       moduleId: 'composition.ts',
       source: `import {Config,cx} from 'zyzz';
-const {style}=Config.create({vars:{breakpoint:{tablet:'800px'},typography:{heading:{fontFamily:'serif',fontSize:'24px','@media >=tablet':{fontSize:'40px'}}}}});
+const {style}=Config.create({vars:{breakpoints:{tablet:'800px'},typography:{heading:{fontFamily:'serif',fontSize:'24px','@media >=tablet':{fontSize:'40px'}}}}});
 const heading=style({
   typography:'heading',
   '@media (min-width: 1000px)': { fontWeight: 500 },
@@ -87,7 +86,7 @@ export const combined=${composition};`,
     const output = Transform.compile({
       moduleId: 'responsive.ts',
       source: `import {Config} from 'zyzz';
-const {style}=Config.create({vars:{breakpoint:{tablet:'800px'},typography:{heading:{fontSize:'24px','@media >=tablet':{fontSize:'40px',lineHeight:'48px'}}}}});
+const {style}=Config.create({vars:{breakpoints:{tablet:'800px'},typography:{heading:{fontSize:'24px','@media >=tablet':{fontSize:'40px',lineHeight:'48px'}}}}});
 export const heading=style({
   typography: 'heading',
   fontWeight: 500,
@@ -106,7 +105,7 @@ export const heading=style({
         "fontSize": 4,
         "fontWeight": 5,
         "lineHeight": 4,
-        "style-1up51euxshgne-210": 3,
+        "style-1up51euxshgne-211": 3,
         "typography": 4,
       }
     `)
@@ -115,7 +114,7 @@ export const heading=style({
   test('compiles native border tokens and rejects unsupported responsive queries', () => {
     const theme = Theme.define({
       borderWidth: { regular: '2px' },
-      breakpoint: { tablet: '800px' },
+      breakpoints: { tablet: '800px' },
       typography: {
         heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
       },
@@ -154,8 +153,8 @@ export const heading=style({
         'theme.ts': `import {Config,Vars} from 'zyzz';
 const base=Vars.define({
   borderWidth:{regular:'2px',hairline:'0.5px'},
-  breakpoint:{tablet:'800px'},
-  container:{card:'300px'},
+  breakpoints:{tablet:'800px'},
+  containers:{card:'300px'},
   typography:{heading:{fontSize:'24px',lineHeight:'30px',
     '@media >=tablet':{fontSize:'40px',lineHeight:'48px'},
     '@media (min-width: 1000.5px)':{fontSize:'48px',
@@ -169,7 +168,7 @@ export const {style,vars}=Config.create({vars:{base,alternate},defaultVars:'base
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`29`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
     const source = `import {style,vars} from 'library';
 export const title=style({typography:'heading',borderStyle:'solid',borderWidth:'regular'});
 export const fixed=style({typography:'heading',fontSize:'18px'});
@@ -189,7 +188,7 @@ export const other=vars({set:'alternate'}).className;`
         modules: { 'app.ts': source },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 29 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
     )
     const consumer = Graph.compile({
       contracts: { 'library.js': contract },
@@ -598,7 +597,7 @@ export const body=style({
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`29`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
 
     expect(() =>
       Graph.compile({
@@ -614,7 +613,7 @@ export const body=style({
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 29 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
     )
 
     const consumer = Graph.compile({
@@ -1099,29 +1098,29 @@ describe('queries', () => {
       const result = Graph.compile({
         modules: {
           'config.ts':
-            'import {Config,Vars} from "zyzz"; const theme=Vars.define({breakpoint:{tablet:"48rem"},container:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({vars:theme})',
+            'import {Config,Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({vars:theme})',
         },
       })
 
       expect(
         JSON.parse(result.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`29`)
+      ).toMatchInlineSnapshot(`26`)
       expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
         .toMatchInlineSnapshot(`
-          {
-            "theme": {
-              "breakpoint": {
-                "tablet": "48rem",
-              },
-              "container": {
-                "card": "24rem",
-              },
-              "containerNames": [
-                "sidebar",
-              ],
-            },
-          }
-        `)
+      {
+        "theme": {
+          "breakpoints": {
+            "tablet": "48rem",
+          },
+          "containerNames": [
+            "sidebar",
+          ],
+          "containers": {
+            "card": "24rem",
+          },
+        },
+      }
+    `)
     })
     test('resolves numeric scale names and preserves typography palette keys', () => {
       const theme = Theme.define({
@@ -1148,13 +1147,21 @@ describe('queries', () => {
         new URL('./default.ts', import.meta.url),
         'utf8',
       )
-      const result = Graph.compile({ modules: { 'default.ts': source } })
-      const contract = JSON.parse(result.contracts['default.ts']!)
-      const { containerNames: _, ...generated } = Object.values(
-        contract.themes as Record<string, { tokens: Record<string, unknown> }>,
-      )[0]!.tokens
+      const raw = source.slice(
+        source.indexOf('export const tokens = ') + 22,
+        source.indexOf(' as const'),
+      )
+
+      const generated = source
+        .slice(
+          source.indexOf('  vars: {') + 8,
+          source.indexOf('\n})', source.indexOf('  vars: {')),
+        )
+        .trim()
+        .replace(/,$/, '')
+
       expect(
-        Util.isDeepStrictEqual(generated, contextTokens),
+        raw.trim().replace(/^ +/gm, '') === generated.replace(/^ +/gm, ''),
       ).toMatchInlineSnapshot(`true`)
     })
     test('links bundled source through its exported style boundary', async () => {
@@ -1226,15 +1233,15 @@ describe('queries', () => {
     })
     test('emits typography variables without emitting threshold variables', () => {
       const theme = Theme.define({
-        breakpoint: { tablet: '48rem' },
-        container: { card: '24rem' },
+        breakpoints: { tablet: '48rem' },
+        containers: { card: '24rem' },
         containerNames: ['sidebar'],
         fontSize: { body: '1rem' },
         fontWeight: { medium: 500 },
       })
 
       const alternate = Theme.extend(theme, {
-        breakpoint: { tablet: '50rem' },
+        breakpoints: { tablet: '50rem' },
         fontSize: { body: '1.25rem' },
       })
 
@@ -1264,7 +1271,7 @@ describe('queries', () => {
       const library = Graph.compile({
         modules: {
           'theme.ts':
-            'import {Vars} from "zyzz"; export const theme=Vars.define({breakpoint:{tablet:"48rem"},fontSize:{body:"1rem"}})',
+            'import {Vars} from "zyzz"; export const theme=Vars.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}})',
         },
       })
 
@@ -1287,11 +1294,11 @@ describe('queries', () => {
         .z-font-size-tf-SY6{font-size:var(--z-t1e8a67z1uaws1j-config-fontSize_2e_body,1rem);}"
       `)
     })
-    test('Chromium applies bundled typography and Geist colors across schemes', async () => {
+    test('Chromium applies bundled typography and scheme colors', async () => {
       const styles = Style.define({
         body: {
-          fontSize: bundled.fontSize.base,
-          color: bundled.color.foreground,
+          fontSize: bundled.tokens.fontSize.base,
+          color: bundled.tokens.color.foreground,
         },
       })
 
@@ -1334,10 +1341,10 @@ describe('queries', () => {
     test('compiles the opt-in bundled typography and palette', () => {
       const styles = Style.define({
         body: {
-          color: bundled.color.foreground,
-          fontFamily: bundled.fontFamily.sans,
-          fontSize: bundled.fontSize.base,
-          padding: bundled.spacing[4],
+          color: bundled.tokens.color.foreground,
+          fontFamily: bundled.tokens.fontFamily.sans,
+          fontSize: bundled.tokens.fontSize.base,
+          padding: bundled.tokens.spacing[4],
         },
       })
 
@@ -1350,7 +1357,7 @@ describe('queries', () => {
         .z-font-size-4nuiGJ{font-size:var(--z2,1rem);}
         .z-p-3OsuE-{padding:var(--z3,1rem);}"
       `)
-      expect(contextTokens.breakpoint.md).toMatchInlineSnapshot(`"48rem"`)
+      expect(contextTokens.breakpoints.md).toMatchInlineSnapshot(`"48rem"`)
     })
     test.each([
       '"-1px"',
@@ -1362,10 +1369,10 @@ describe('queries', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {Vars} from "zyzz"; const theme=Vars.define({breakpoint:{tablet:${value}}})`,
+          source: `import {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:${value}}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:39: ["breakpoint","tablet"]: Expected a named nonnegative length threshold.]`,
+        `[Source.ExtractError: invalid.ts:39: ["breakpoints","tablet"]: Expected a named nonnegative length threshold.]`,
       )
     })
   })
@@ -1375,7 +1382,7 @@ describe('queries', () => {
       expect(
         Theme.define({
           fontWeight: { body: { light: 300, bold: 700 } },
-          container: { screen: '1e3px' },
+          containers: { screen: '1e3px' },
         }).tokens.fontWeight.body.light.value,
       ).toMatchInlineSnapshot(`300`)
     })

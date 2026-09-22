@@ -31,7 +31,6 @@ import type * as Theme from '../internal/Theme.js'
 import * as Themes from './internal/Themes.js'
 import * as ThemeValues from '../web/internal/Themes.js'
 import * as Token from '../internal/Token.js'
-import * as Literal from '../internal/Literal.js'
 import * as Typography from '../internal/Typography.js'
 import * as Value from '../internal/Value.js'
 import * as Vars from './internal/Vars.js'
@@ -1022,8 +1021,6 @@ export function extract(options: extract.Options): extract.ReturnType {
                   : targets.every(
                       (target) =>
                         Token.acceptsReference(part, target) ||
-                        (part.contract.variableSet &&
-                          Expression.acceptsVariables(template, target)) ||
                         (part.group === 'color' &&
                           Expression.acceptsColor(template, target)),
                     ))
@@ -1184,22 +1181,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
 
       function validate(style: Style.NamedStyle, path: readonly string[]) {
-        for (const declaration of style.declarations) {
-          if (
-            Token.is(declaration.value) &&
-            declaration.value.contract.variableSet &&
-            Literal.rule(declaration.property)?.kind === 'identifier' &&
-            !Expression.acceptsIdentifier(
-              declaration.value,
-              declaration.property,
-            )
-          )
-            report(
-              'invalid_literal',
-              'Variable value is incompatible with this property.',
-              call,
-            )
-        }
         if (style.targets?.web)
           validate(style.targets.web, [...path, 'targets', 'web'])
         for (const rule of style.rules ?? []) {

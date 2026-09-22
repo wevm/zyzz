@@ -105,14 +105,9 @@ export function collect(options: collect.Options): Themes.Link {
         Token.definition in value
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values),
-        authored.propertyGroups,
+        authored.mappings,
       )
-    const {
-      vars,
-      defaultVars,
-      propertyGroups: _propertyGroups,
-      ...rest
-    } = authored
+    const { vars, defaultVars, mappings: _mappings, ...rest } = authored
     input =
       defaultVars === undefined
         ? { ...rest, theme: wrap(vars as Vars.Definition) }
@@ -149,7 +144,7 @@ export function collect(options: collect.Options): Themes.Link {
     ...(variableMode
       ? {
           variableSet: true,
-          propertyGroups: VariableSets.propertyGroups(authored.propertyGroups),
+          mappings: VariableSets.mappings(authored.mappings),
         }
       : {}),
     [Token.identity]: identity,
@@ -260,10 +255,7 @@ export function collect(options: collect.Options): Themes.Link {
     binding: options.name,
     call: {
       ...(variableMode
-        ? {
-            variableConfig: true,
-            variablePropertyGroups: authored.propertyGroups,
-          }
+        ? { variableConfig: true, variableMappings: authored.mappings }
         : {}),
       appearance: true,
       script: true,
@@ -276,7 +268,7 @@ export function collect(options: collect.Options): Themes.Link {
       start: options.expression.start,
       tokenType: selected?.call.tokenType ?? '{}',
       type: variableMode
-        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.propertyGroups !== undefined ? { propertyGroups: VariableSets.propertyGroups(authored.propertyGroups) } : {}) })}>`
+        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.mappings !== undefined ? { mappings: VariableSets.mappings(authored.mappings) } : {}) })}>`
         : `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
     },
     definition,

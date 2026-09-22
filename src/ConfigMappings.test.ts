@@ -8,221 +8,6 @@ import { Config, Style } from 'zyzz'
 import * as Configuration from './internal/Configuration.js'
 
 describe('create', () => {
-  test('renders Tailwind category precedence through a packed configuration', async () => {
-    const library = Graph.compile({
-      modules: {
-        'config.ts': `import {Config} from 'zyzz';
-        export const {style, vars} = Config.create({vars: {
-          color: {brand: '#112233'}, textColor: {brand: '#445566'},
-          backgroundColor: {brand: '#778899'}, borderColor: {brand: '#aabbcc'},
-          spacing: {shared: '16px', compact: '24px'},
-          container: {wide: '640px', compact: '320px'},
-          width: {compact: '120px'}, minHeight: {compact: '48px'}, height: {compact: '64px'},
-          margin: {compact: '4px'}, padding: {compact: '8px'}, gap: {compact: '12px'},
-          radius: {round: '10px'}, shadow: {soft: '0 2px 4px #0003'},
-          blur: {soft: '2px'}, aspect: {video: '16 / 9'}, ease: {out: 'cubic-bezier(0, 0, 0.2, 1)'},
-        }});`,
-      },
-    })
-    const app = Graph.compile({
-      contracts: { 'library.js': library.contracts['config.ts']! },
-      imports: { 'app.ts': { library: 'library.js', zyzz: null } },
-      modules: {
-        'app.ts': `import {style,vars} from 'library';
-        export const scope = vars();
-        export const card = style({color:'brand',backgroundColor:'brand',borderColor:'brand',width:'compact',minHeight:'compact',maxHeight:'compact',padding:'compact',margin:'compact',gap:'compact',borderRadius:'round',boxShadow:'soft',aspectRatio:'video',transitionTimingFunction:'out',filter:\`blur(\${vars.blur.soft})\`})();
-        export const spaced = style({width:'shared',height:'shared',borderSpacing:'shared',scrollMarginTop:'shared',scrollPaddingTop:'shared',translate:'shared',textIndent:'shared'})();
-        export const sized = style({width:'wide',minWidth:'wide',maxWidth:'wide',flexBasis:'wide',inlineSize:'wide',columns:'wide','@container >=wide':{opacity:0.5}})();`,
-      },
-    })
-    const code = await Packed.bundle({
-      entry: 'app.ts',
-      modules: { 'app.ts': app.modules['app.ts']!.code },
-      packages: { library: { 'index.ts': library.modules['config.ts']!.code } },
-    })
-    const fixture = Vm.runInNewContext(`${code};Fixture;`)
-    const css = (app.sharedCss ?? '') + app.modules['app.ts']!.css
-    expect(css.includes('@container (width >= 640px)')).toMatchInlineSnapshot(
-      `true`,
-    )
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage()
-      await page.setContent(
-        `<style>${css}</style><main class="${fixture.scope.className}"><div id="card" class="${fixture.card.className}"></div><div id="spaced" class="${fixture.spaced.className}"></div><div id="sized" class="${fixture.sized.className}"></div></main>`,
-      )
-      expect(
-        await page.locator('#card').evaluate((element) => {
-          const style = getComputedStyle(element)
-          return [
-            style.color,
-            style.backgroundColor,
-            style.borderTopColor,
-            style.width,
-            style.minHeight,
-            style.maxHeight,
-            style.padding,
-            style.margin,
-            style.gap,
-            style.borderRadius,
-            style.boxShadow,
-            style.aspectRatio,
-            style.transitionTimingFunction,
-            style.filter,
-          ]
-        }),
-      ).toMatchInlineSnapshot(`
-        [
-          "rgb(68, 85, 102)",
-          "rgb(119, 136, 153)",
-          "rgb(170, 187, 204)",
-          "120px",
-          "48px",
-          "64px",
-          "8px",
-          "4px",
-          "12px",
-          "10px",
-          "rgba(0, 0, 0, 0.2) 0px 2px 4px 0px",
-          "16 / 9",
-          "cubic-bezier(0, 0, 0.2, 1)",
-          "blur(2px)",
-        ]
-      `)
-      expect(
-        await page.locator('#spaced').evaluate((element) => {
-          const style = getComputedStyle(element)
-          return [
-            style.width,
-            style.height,
-            style.borderSpacing,
-            style.scrollMarginTop,
-            style.scrollPaddingTop,
-            style.translate,
-            style.textIndent,
-          ]
-        }),
-      ).toMatchInlineSnapshot(`
-        [
-          "16px",
-          "16px",
-          "16px",
-          "16px",
-          "16px",
-          "16px",
-          "16px",
-        ]
-      `)
-      expect(
-        await page.locator('#sized').evaluate((element) => {
-          const style = getComputedStyle(element)
-          return [
-            style.width,
-            style.minWidth,
-            style.maxWidth,
-            style.flexBasis,
-            style.inlineSize,
-            style.columnWidth,
-          ]
-        }),
-      ).toMatchInlineSnapshot(`
-        [
-          "640px",
-          "640px",
-          "640px",
-          "640px",
-          "640px",
-          "640px",
-        ]
-      `)
-    } finally {
-      await browser.close()
-    }
-  })
-  test('renders numeric and compound values from non-font categories', async () => {
-    const result = Graph.compile({
-      modules: {
-        'app.ts': `import {Config} from 'zyzz';
-      const {style}=Config.create({vars:{gridColumn:{pair:'span 2'},gridColumnStart:{second:2},columns:{pair:2},scale:{large:1.25},strokeWidth:{bold:2},listStyleType:{named:'custom-counter'},transitionProperty:{fade:'opacity'},gridTemplateColumns:{split:'20px 1fr'},backgroundPosition:{offset:'10px'},objectPosition:{offset:'10px'},transformOrigin:{offset:'10px'},perspectiveOrigin:{offset:'10px'}}});
-      export const box=style({gridColumn:'pair',columns:'pair',scale:'large',strokeWidth:'bold',listStyleType:'named',transitionProperty:'fade',gridTemplateColumns:'split',backgroundPosition:'offset',objectPosition:'offset',transformOrigin:'offset',perspectiveOrigin:'offset'})();
-      export const start=style({gridColumnStart:'second'})();`,
-      },
-    })
-    const code = await Packed.bundle({
-      entry: 'app.ts',
-      modules: { 'app.ts': result.modules['app.ts']!.code },
-    })
-    const fixture = Vm.runInNewContext(`${code};Fixture;`)
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage()
-      await page.setContent(
-        `<style>${result.modules['app.ts']!.css}</style><div id="box" style="width:100px;height:100px" class="${fixture.box.className}"></div><div id="start" class="${fixture.start.className}"></div>`,
-      )
-      expect(
-        await page.locator('#box').evaluate((element) => {
-          const style = getComputedStyle(element)
-          return [
-            style.gridColumn,
-            style.columnCount,
-            style.scale,
-            style.strokeWidth,
-            style.listStyleType,
-            style.transitionProperty,
-            style.gridTemplateColumns,
-            style.backgroundPosition,
-            style.objectPosition,
-            style.transformOrigin,
-            style.perspectiveOrigin,
-          ]
-        }),
-      ).toMatchInlineSnapshot(`
-        [
-          "span 2",
-          "2",
-          "1.25",
-          "2px",
-          "custom-counter",
-          "opacity",
-          "20px 1fr",
-          "10px 50%",
-          "10px 50%",
-          "10px 50px",
-          "10px 50px",
-        ]
-      `)
-      expect(
-        await page
-          .locator('#start')
-          .evaluate((element) => getComputedStyle(element).gridColumnStart),
-      ).toMatchInlineSnapshot(`"2"`)
-    } finally {
-      await browser.close()
-    }
-  })
-  test.each(['-4px', '50%'])(
-    'rejects invalid column width token %s',
-    (value) => {
-      try {
-        Graph.compile({
-          modules: {
-            'app.ts': `import {Config} from 'zyzz';const {style}=Config.create({vars:{columns:{invalid:${JSON.stringify(value)}}}});export const box=style({columns:'invalid'})();`,
-          },
-        })
-        throw new Error('Expected an invalid column width')
-      } catch (error) {
-        expect(
-          (error as { diagnostics?: { message: string }[] }).diagnostics?.map(
-            (diagnostic) => diagnostic.message,
-          ),
-        ).toMatchInlineSnapshot(`
-        [
-          "Variable value is incompatible with this property.",
-        ]
-      `)
-      }
-    },
-  )
   test('retains alias source paths in structural diagnostics', () => {
     const { theme } = Configuration.create({
       theme: {},
@@ -293,7 +78,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`29`)
+    ).toMatchInlineSnapshot(`26`)
   })
   test('preserves mapped HTML theme handles through source and packed aliases', async () => {
     const library = Graph.compile({
@@ -379,7 +164,7 @@ describe('create', () => {
     return { app, library }
   }
 
-  test('rejects non-record shorthand container', () => {
+  test('rejects non-record shorthand containers', () => {
     expect(() =>
       Config.create({
         shorthands: new Map([['px', ['paddingLeft']]]),
@@ -420,7 +205,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot(`29`)
+    expect(changed.version).toMatchInlineSnapshot(`26`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>

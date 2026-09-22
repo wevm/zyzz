@@ -115,11 +115,11 @@ describe('create', () => {
     // @ts-expect-error Fallbacks remain nonempty.
     style({ padding: [] })
     PublicConfig.create({
-      propertyGroups: { color: ['ink'] },
+      mappings: { ink: ['color'] },
       vars: { ink: { brand: 'red' } },
     }).style({ color: 'brand', backgroundColor: 'blue' })
     const full = PublicConfig.create({
-      propertyGroups: false,
+      mappings: false,
       vars: { color: { brand: 'red' } },
     })
     full.style({ color: 'color.brand' })
@@ -138,7 +138,7 @@ describe('create', () => {
     const { style, variants } = PublicConfig.create({
       defaultLayer: 'components',
       layers: ['components', 'overrides'],
-      propertyGroups: false,
+      mappings: false,
       vars: { color: { brand: 'red' } },
     })
     expectTypeOf(

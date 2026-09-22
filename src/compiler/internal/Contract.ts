@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29,
+      22, 23, 24, 25, 26, 27,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -102,9 +102,9 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    if (entry.variableSet === true && (data.version as number) < 29)
-      throw new Error('Vars contracts require contract version 29 or later.')
-    const propertyGroups = VariableSets.propertyGroups(entry.propertyGroups)
+    if (entry.variableSet === true && (data.version as number) < 26)
+      throw new Error('Vars contracts require contract version 26 or later.')
+    const mappings = VariableSets.mappings(entry.mappings)
     if (
       entry.cssOutput !== undefined &&
       entry.cssOutput !== 'atomic' &&
@@ -135,10 +135,9 @@ export function read(
       throw new Error('Conflicting packed variable-set modes for one identity.')
     if (
       contract &&
-      JSON.stringify(contract.propertyGroups ?? {}) !==
-        JSON.stringify(propertyGroups ?? {})
+      JSON.stringify(contract.mappings ?? {}) !== JSON.stringify(mappings ?? {})
     )
-      throw new Error('Conflicting packed property groups for one identity.')
+      throw new Error('Conflicting packed variable mappings for one identity.')
     if (
       contract &&
       Shorthands.signature(contract.shorthands) !==
@@ -166,7 +165,7 @@ export function read(
         ...(entry.variableSet === true
           ? {
               variableSet: true,
-              propertyGroups,
+              mappings,
             }
           : {}),
         ...(entry.shorthands !== undefined
@@ -184,7 +183,7 @@ export function read(
       entry.variableSet === true
         ? VariableSets.theme(
             Vars.define(decode(entry.tokens) as Vars.Values),
-            propertyGroups,
+            mappings,
           )
         : Theme.define(record(entry.tokens) as Theme.Tokens)
     if (
@@ -295,7 +294,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29,
+          27,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -420,26 +419,11 @@ export function read(
       entry.options === undefined ? undefined : record(decode(entry.options))
 
     if (options) {
-      if (
-        entry.variableConfig === true &&
-        JSON.stringify(
-          VariableSets.propertyGroups(entry.variablePropertyGroups) ?? {},
-        ) !==
-          JSON.stringify(
-            definition[Token.definition].contract.propertyGroups ?? {},
-          )
-      )
-        throw new Error(
-          'Configuration property groups disagree with linked theme metadata.',
-        )
       if (entry.variableConfig === true)
         Config.create(
           variableOptions(
             options,
-            entry.variablePropertyGroups as
-              | Vars.PropertyGroups
-              | false
-              | undefined,
+            entry.variableMappings as Vars.Mappings | false | undefined,
           ),
         )
       else Config.create(options as Config.create.Options)
@@ -474,7 +458,7 @@ export function read(
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
       ? entry.variableConfig === true
-        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variablePropertyGroups as Vars.PropertyGroups | false | undefined))}>`
+        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
         : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
@@ -509,8 +493,8 @@ export function read(
         ...(entry.variableConfig === true
           ? {
               variableConfig: true,
-              variablePropertyGroups: entry.variablePropertyGroups as
-                | Vars.PropertyGroups
+              variableMappings: entry.variableMappings as
+                | Vars.Mappings
                 | false
                 | undefined,
             }
@@ -668,10 +652,7 @@ export function write(
       ...(link.call.variableSet ? { variableSet: true } : {}),
       ...(link.call.directVariables ? { directVariables: true } : {}),
       ...(link.call.variableConfig
-        ? {
-            variableConfig: true,
-            variablePropertyGroups: link.call.variablePropertyGroups,
-          }
+        ? { variableConfig: true, variableMappings: link.call.variableMappings }
         : {}),
       ...(link.call.recipe ? { recipe: true } : {}),
       ...(link.call.output ? { output: link.call.output } : {}),
@@ -729,7 +710,7 @@ export function write(
           ...(theme[Token.definition].contract.variableSet
             ? {
                 variableSet: true,
-                propertyGroups: theme[Token.definition].contract.propertyGroups,
+                mappings: theme[Token.definition].contract.mappings,
               }
             : {}),
           identity: theme[Token.definition].contract[Token.identity],
@@ -741,19 +722,16 @@ export function write(
       if (
         Object.values(themes).some(
           (theme) =>
-            theme[Token.definition].contract.variableSet ||
-            theme[Token.definition].queries,
-        )
-      )
-        return 29
-
-      if (
-        Object.values(themes).some(
-          (theme) =>
             theme[Token.definition].contract.defaultLayer !== undefined,
         )
       )
         return 27
+      if (
+        Object.values(themes).some(
+          (theme) => theme[Token.definition].contract.variableSet,
+        )
+      )
+        return 26
       if (
         Object.values(themes).some(
           (theme) =>
@@ -1062,13 +1040,13 @@ function encode(value: unknown): unknown {
 
 function variableOptions(
   options: Record<string, unknown>,
-  propertyGroups?: Vars.PropertyGroups | false,
+  mappings?: Vars.Mappings | false,
 ): Config.VariableOptions {
   const { theme, themes, defaultTheme, ...rest } = options
   return {
     ...rest,
     vars: (themes ?? theme) as Vars.Values,
     ...(themes ? { defaultVars: String(defaultTheme) } : {}),
-    ...(propertyGroups !== undefined ? { propertyGroups } : {}),
+    ...(mappings !== undefined ? { mappings } : {}),
   }
 }

@@ -239,7 +239,7 @@ type Scalar<group> = group extends
         NonNullable<Literal.Properties[group]>,
         'initial' | 'inherit' | 'unset' | 'revert' | 'revert-layer'
       >
-    : group extends 'breakpoint' | 'container'
+    : group extends 'breakpoints' | 'containers'
       ? Query.Length
       : Color
 
@@ -255,13 +255,13 @@ export type Tokens = {
     | Palette<Exclude<Literal.Length, `${number}%`>>
     | undefined
   /** Compile-time viewport width thresholds. */
-  readonly breakpoint?: Readonly<Record<string, Query.Length>> | undefined
+  readonly breakpoints?: Readonly<Record<string, Query.Length>> | undefined
   /** Shared colors available to every supported color property. */
   readonly color?: Palette<Color> | undefined
   /** Finite CSS container identities for named queries. */
   readonly containerNames?: readonly string[] | undefined
   /** Compile-time container width thresholds. */
-  readonly container?: Readonly<Record<string, Query.Length>> | undefined
+  readonly containers?: Readonly<Record<string, Query.Length>> | undefined
   /** Font family token values; does not load font files. */
   readonly fontFamily?:
     | Palette<NonNullable<Literal.Properties['fontFamily']>>
@@ -308,14 +308,14 @@ function build(
   )
 
   const queries = {
-    breakpoint: Object.assign(
+    breakpoints: Object.assign(
       Object.create(null),
-      baseQueries?.breakpoint,
+      baseQueries?.breakpoints,
     ) as Record<string, string>,
     containerNames: baseQueries?.containerNames ?? [],
-    container: Object.assign(
+    containers: Object.assign(
       Object.create(null),
-      baseQueries?.container,
+      baseQueries?.containers,
     ) as Record<string, string>,
   }
 
@@ -486,13 +486,13 @@ function build(
       continue
     }
 
-    if (group === 'breakpoint' || group === 'container') {
+    if (group === 'breakpoints' || group === 'containers') {
       hasQueries = true
 
       for (const [name, value] of record(palette, [group])) {
         if (
           !/^[a-zA-Z0-9_][a-zA-Z0-9_-]*$/.test(name) ||
-          (group === 'breakpoint' &&
+          (group === 'breakpoints' &&
             ['all', 'screen', 'print'].includes(name)) ||
           !Query.threshold(value)
         )
@@ -628,9 +628,9 @@ function build(
           ...(hasQueries
             ? {
                 queries: Object.freeze({
-                  breakpoint: Object.freeze(queries.breakpoint),
+                  breakpoints: Object.freeze(queries.breakpoints),
                   containerNames: queries.containerNames,
-                  container: Object.freeze(queries.container),
+                  containers: Object.freeze(queries.containers),
                 }),
               }
             : {}),
@@ -785,7 +785,7 @@ type ValidTree<tree, group> = tree extends string | number
   ? group extends 'typography'
     ? never
     : tree extends Scalar<group>
-      ? group extends 'breakpoint' | 'container'
+      ? group extends 'breakpoints' | 'containers'
         ? tree extends `-${string}`
           ? never
           : Literal.Checked<tree>

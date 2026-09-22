@@ -439,10 +439,18 @@ export async function verify(options: verify.Options) {
         .evaluate((element) => getComputedStyle(element).paddingRight),
     ).toMatchInlineSnapshot('"12px"')
     await page.setViewportSize({ width: 450, height: 700 })
-    await page.locator('a[data-link-ready=true][href="/other"]').click()
+
+    const documentNode = await page.locator('html').elementHandle()
+    await page.locator('a[data-link-ready=true][href="/other"]').press('Enter')
     await page.waitForURL(`${production.url}/other`)
-    await page.locator('a[data-link-ready=true][href="/"]').click()
+    expect(
+      await documentNode!.evaluate((node) => node === document.documentElement),
+    ).toMatchInlineSnapshot('true')
+    await page.locator('a[data-link-ready=true][href="/"]').press('Enter')
     await page.waitForURL(`${production.url}/`)
+    expect(
+      await documentNode!.evaluate((node) => node === document.documentElement),
+    ).toMatchInlineSnapshot('true')
     await page.waitForFunction(
       () => {
         const element = document.querySelector('h1')

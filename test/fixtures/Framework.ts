@@ -422,7 +422,9 @@ export async function verify(options: verify.Options) {
           )
         }
 
-        await edit(files['styles.ts'].replace("'[#0066cc]'", 'unknownColor()'))
+        await edit(
+          files['styles.ts'].replace("'#0066cc !custom'", 'unknownColor()'),
+        )
         const overlay = await page.waitForFunction(() =>
           document
             .querySelector('vite-error-overlay')

@@ -502,10 +502,14 @@ describe('zyzz', () => {
       completed++
     })
     let failure: Error | undefined
-    const watcher = compiler.watch({}, (error, stats) => {
-      if (error || stats?.hasErrors())
-        failure = error ?? new Error(stats?.toString('errors-only'))
-    })
+    // Temporary writes and emitted assets must not start a source rebuild.
+    const watcher = compiler.watch(
+      { ignored: ['**/*.tmp', Path.join(root, 'dist')] },
+      (error, stats) => {
+        if (error || stats?.hasErrors())
+          failure = error ?? new Error(stats?.toString('errors-only'))
+      },
+    )
     try {
       await vi.waitFor(
         async () => {

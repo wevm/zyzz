@@ -443,7 +443,7 @@ describe('style', () => {
 
     scrollTheme.style({ scrollPaddingTop: 'offset !important' })
     Config.create({ theme: scrollTheme }).style({
-      scrollPaddingBlock: ['[auto]', scrollTheme.tokens.spacing.portion],
+      scrollPaddingBlock: ['auto !custom', scrollTheme.tokens.spacing.portion],
     })
     Style.define({ box: { scrollPadding: scrollTheme.tokens.spacing.offset } })
     // @ts-expect-error Scroll margin excludes percentages.
@@ -482,7 +482,7 @@ describe('style', () => {
       outlineColor: 'brand',
     })
     Config.create({ theme: borderTheme }).style({
-      borderBlockColor: ['[#000]', borderTheme.tokens.borderColor.brand],
+      borderBlockColor: ['#000 !custom', borderTheme.tokens.borderColor.brand],
     })
     // @ts-expect-error Border widths exclude percentages on physical sides.
     style({ borderTopWidth: '10%' })
@@ -520,7 +520,7 @@ describe('style', () => {
     logicalTheme.style({
       inlineSize: 'md',
       insetBlock: 'md !important',
-      paddingInline: ['[1px]', 'md'],
+      paddingInline: ['1px !custom', 'md'],
     })
     Style.define({
       card: {
@@ -603,7 +603,7 @@ describe('style', () => {
     flexTheme.style({ flexBasis: 'basis !important' })
     Style.define({ item: { flexBasis: flexTheme.tokens.spacing.basis } })
     Config.create({ theme: flexTheme }).style({
-      flexBasis: ['[auto]', 'basis'],
+      flexBasis: ['auto !custom', 'basis'],
     })
     // @ts-expect-error Root sizing has no token names.
     style({ flexBasis: 'basis' })
@@ -765,11 +765,11 @@ describe('style', () => {
 
     configured.style({
       color: [
-        '[#fff]',
+        '#fff !custom',
         'brand !important',
         configured.theme.tokens.color.brand,
       ],
-      padding: ['md !important', '[0]'],
+      padding: ['md !important', '0 !custom'],
     })
     Style.define({ card: { padding: ['1px', '2px !important'] } })
     // @ts-expect-error Fallbacks are nonempty.
@@ -1518,10 +1518,10 @@ describe('compound', () => {
         spacing: { Gap: '2px' },
       })
 
-      theme.style({ color: '[ReD]', padding: '[2PX]' })
+      theme.style({ color: 'ReD !custom', padding: '2PX !custom' })
       theme.style({ color: 'Brand', padding: 'Gap' })
       Config.create({ theme, layers: ['components'] }).style({
-        '@layer components': { color: '[ReD]', padding: '[2PX]' },
+        '@layer components': { color: 'ReD !custom', padding: '2PX !custom' },
       })
       // @ts-expect-error Case folding cannot make an unknown keyword valid.
       style({ display: 'FleEx' })

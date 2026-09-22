@@ -501,7 +501,7 @@ export async function verify(options: verify.Options) {
       Path.join(app, 'app/page.tsx'),
       files['app/page.tsx'].replace(
         "padding:'md'",
-        "padding:'md',backgroundColor:'[red]'",
+        "padding:'md',backgroundColor:'red !custom'",
       ),
     )
     await page.waitForFunction(
@@ -529,7 +529,7 @@ export async function verify(options: verify.Options) {
       path: Path.join(app, 'app/page.tsx'),
       source: files['app/page.tsx'].replace(
         "padding:'md'",
-        "padding:'md',backgroundColor:'[blue]'",
+        "padding:'md',backgroundColor:'blue !custom'",
       ),
     })
     await page.waitForFunction(
@@ -547,7 +547,7 @@ export async function verify(options: verify.Options) {
     await Watch.write({
       path: Path.join(app, 'app/runtime.ts'),
       source:
-        "import {style} from '@config';export const runtime=style({color:'brand',backgroundColor:'[red]'})",
+        "import {style} from '@config';export const runtime=style({color:'brand',backgroundColor:'red !custom'})",
     })
     await page.waitForFunction(
       () =>

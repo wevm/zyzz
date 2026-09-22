@@ -22,7 +22,7 @@ describe('compile', () => {
     let calls = 0
     const callback = (values: { width: '7px' }) => {
       calls++
-      return { width: `[${values.width}]` as const }
+      return { width: `${values.width} !custom` as const }
     }
     const box = style(callback, { id: 'box' })
     const button = variants(
@@ -33,7 +33,7 @@ describe('compile', () => {
     box({ width: '7px' })
     button({ size: { custom: { width: '7px' } } })
     expect(calls).toBe(0)
-    const source = `import {Config} from 'zyzz';const {style}=Config.create({id:'callbacks',vars:{spacing:{md:'8px'}}});export const box=style((values:{width:'7px'})=>({width:\`[\${values.width}]\`}),{id:'box'});`
+    const source = `import {Config} from 'zyzz';const {style}=Config.create({id:'callbacks',vars:{spacing:{md:'8px'}}});export const box=style((values:{width:'7px'})=>({width:\`\${values.width} !custom\`}),{id:'box'});`
     const output = Transform.compile({
       compiler: false,
       moduleId: 'app.ts',
@@ -213,7 +213,7 @@ describe('compile', () => {
       const accent = variable('color', { id: 'accent' });
       const { style: themed, vars:theme } = Config.create({ cssOutput: '${cssOutput}', id: 'palette', vars:{ color: { primary: 'red' } } });
       const parent = style({}, { id: 'parent' });
-      const child = themed({ color: 'primary', selectors: { [\`\${parent} &\`]: { backgroundColor: '[blue]' } } });
+      const child = themed({ color: 'primary', selectors: { [\`\${parent} &\`]: { backgroundColor: 'blue !custom' } } });
       const left = style({ paddingLeft: '8px', color: accent });
       const padding = style({ padding: '16px', animationName: spin });
       const button = variants({ variants: { size: { fluid: (values: { width: \`\${number}px\` }) => ({ width: values.width }), fixed: { width: '10px' } } }, conditions: { wide: '@media (min-width: 500px)' } }, { id: 'button' });

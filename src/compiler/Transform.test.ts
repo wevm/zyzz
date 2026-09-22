@@ -1009,14 +1009,14 @@ describe('compile', () => {
       .z-text-align-last-start-ot4UW4{text-align-last:start;}
       .z-hyphens-manual-ot4UW4{hyphens:manual;}
       .z-text-transform-uppercase-ot4UW4{text-transform:uppercase;}
-      .z-w-65px-3Iz_mv-0{width:65px;}
+      .z-w-65px-sOkKlL-0{width:65px;}
       .z-overflow-hidden-ot4UW4{overflow:hidden;}
-      .z-white-space-gnmb87-2{white-space:pre;white-space:nowrap!important;}
+      .z-white-space-B8kqmq-2{white-space:pre;white-space:nowrap!important;}
       .z-text-overflow-ellipsis-ot4UW4{text-overflow:ellipsis;}
       .z-word-spacing-3px-ot4UW4{word-spacing:3px;}
-      .z-w-65px-5IgI4v-0{width:65px;}
+      .z-w-65px-0Dld4v-0{width:65px;}
       .z-overflow-wrap-anywhere-ot4UW4{overflow-wrap:anywhere;}
-      .z-white-space-normal-5IgI4v-2{white-space:normal;}"
+      .z-white-space-normal-0Dld4v-2{white-space:normal;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1160,18 +1160,18 @@ describe('compile', () => {
       .z-scroll-padding-IWEFRx-5{scroll-padding:var(--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge,10px);}
       .z-scroll-snap-type-ZU4VbJ-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
       .z-flex-direction-column-x98OZk{flex-direction:column;}
-      .z-w-100px-9qUSRs-1{width:100px;}
-      .z-h-100px-9qUSRs-2{height:100px;}
-      .z-scroll-padding-10px-9qUSRs-3{scroll-padding:10px;}
-      .z-scroll-snap-type-boyWbl-4{scroll-snap-type:y mandatory;}
-      .z-w-60px-Lx5AOs-0{width:60px;}
-      .z-h-60px-Lx5AOs-1{height:60px;}
+      .z-w-100px-efkINs-1{width:100px;}
+      .z-h-100px-efkINs-2{height:100px;}
+      .z-scroll-padding-10px-efkINs-3{scroll-padding:10px;}
+      .z-scroll-snap-type-0CAHgi-4{scroll-snap-type:y mandatory;}
+      .z-w-60px-WDzGRs-0{width:60px;}
+      .z-h-60px-WDzGRs-1{height:60px;}
       .z-flex-shrink-0-x98OZk{flex-shrink:0;}
       .z-scroll-margin-5px-x98OZk{scroll-margin:5px;}
-      .z-scroll-snap-align-start-Lx5AOs-4{scroll-snap-align:start;}
+      .z-scroll-snap-align-start-WDzGRs-4{scroll-snap-align:start;}
       .z-scroll-snap-stop-b0QiNb{scroll-snap-stop:normal;scroll-snap-stop:always!important;}
-      .z-scroll-snap-align-Hwnkyv-0{scroll-snap-align:none center;}
-      .z-scroll-snap-type-2id9Tr-1{scroll-snap-type:both proximity;}"
+      .z-scroll-snap-align-5zdd6v-0{scroll-snap-align:none center;}
+      .z-scroll-snap-type-eg333t-1{scroll-snap-type:both proximity;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1299,10 +1299,10 @@ describe('compile', () => {
       .z-overscroll-behavior-6FskK2-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
       .z-overscroll-behavior-x-none-bftsc6-7{overscroll-behavior-x:none;}
       .z-scroll-margin-top-10px-B6dQF9{scroll-margin-top:10px;}
-      .z-h-20px-GmcIiS-1{height:20px;}
-      .z-scroll-padding-top-haih7v-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
-      .z-scroll-padding-block-start-SzhbTa-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
-      .z-scroll-behavior-smooth-ZgT696-0{scroll-behavior:smooth;}"
+      .z-h-20px-ScR0bm-1{height:20px;}
+      .z-scroll-padding-top-jdfyGg-0{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
+      .z-scroll-padding-block-start-YGs-fS-0{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
+      .z-scroll-behavior-smooth-zRbpZm-0{scroll-behavior:smooth;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1317,7 +1317,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 29,
+        "column": 35,
         "line": 5,
         "name": "scrollPaddingTop",
         "source": "example/scrolling.ts",
@@ -1413,23 +1413,23 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-flktdz142jfd9-zyzz-theme{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
       .z-inline-size-min-content-5cBdPj-0{inline-size:min-content;}
-      .z-inline-size-max-content-hRMvdz-0{inline-size:max-content;}
-      .z-inline-size-ZuEr0U-0{inline-size:100%;inline-size:fit-content!important;}
-      .z-min-width-auto-Sq4CrP-1{min-width:auto;}
-      .z-max-width-none-Sq4CrP-2{max-width:none;}
-      .z-w--BviGn-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
-      .z-min-inline-size-9Xykz3-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
-      .z-max-inline-size-max-content-pF6Xfj-1{max-inline-size:max-content;}
-      .z-block-size-fit-content-pF6Xfj-2{block-size:fit-content;}
-      .z-min-block-size-auto-pF6Xfj-3{min-block-size:auto;}
-      .z-max-block-size-none-pF6Xfj-4{max-block-size:none;}
-      .z-flex-basis-content-XFD9y3-0{flex-basis:content;}
-      .z-w-5px-XFD9y3-1{width:5px;}
+      .z-inline-size-max-content-qfHu73-0{inline-size:max-content;}
+      .z-inline-size-mqcX05-0{inline-size:100%;inline-size:fit-content!important;}
+      .z-min-width-auto-vUC0Xz-1{min-width:auto;}
+      .z-max-width-none-vUC0Xz-2{max-width:none;}
+      .z-w-v-syEQ-0{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
+      .z-min-inline-size-X5OzXK-0{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);}
+      .z-max-inline-size-max-content-RhXklP-1{max-inline-size:max-content;}
+      .z-block-size-fit-content-RhXklP-2{block-size:fit-content;}
+      .z-min-block-size-auto-RhXklP-3{min-block-size:auto;}
+      .z-max-block-size-none-RhXklP-4{max-block-size:none;}
+      .z-flex-basis-content-FkSzAP-0{flex-basis:content;}
+      .z-w-5px-FkSzAP-1{width:5px;}
       .z-flex-shrink-0-e3yyNT{flex-shrink:0;}
-      .z-min-width-0-XFD9y3-3{min-width:0;}
-      .z-flex-basis-auto-P8vyLj-0{flex-basis:auto;}
-      .z-w-5px-P8vyLj-1{width:5px;}
-      .z-min-width-0-P8vyLj-2{min-width:0;}"
+      .z-min-width-0-FkSzAP-3{min-width:0;}
+      .z-flex-basis-auto-_igwI3-0{flex-basis:auto;}
+      .z-w-5px-_igwI3-1{width:5px;}
+      .z-min-width-0-_igwI3-2{min-width:0;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1600,9 +1600,9 @@ describe('compile', () => {
       .z-outline-style-dashed-U8cv88{outline-style:dashed;}
       .z-outline-width-2px-U8cv88{outline-width:2px;}
       .z-outline-offset--1px-U8cv88{outline-offset:-1px;}
-      .z-border-width-2px-jAgVdD-0{border-width:2px;}
-      .z-border-inline-start-width-5px-jAgVdD-1{border-inline-start-width:5px;}
-      .z-border-left-width-3px-jAgVdD-2{border-left-width:3px;}"
+      .z-border-width-2px-r_bU77-0{border-width:2px;}
+      .z-border-inline-start-width-5px-r_bU77-1{border-inline-start-width:5px;}
+      .z-border-left-width-3px-r_bU77-2{border-left-width:3px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1645,15 +1645,15 @@ describe('compile', () => {
       .z-h-20px-bxIax6-3{height:20px;}
       .z-align-self-flex-end-aqbEb1{align-self:flex-end;}
       .z-order-hwVILE{order:-1!important;}
-      .z-w-40px-aPzgLm-0{width:40px;}
-      .z-h-40px-aPzgLm-1{height:40px;}
-      .z-overflow-qJ-M6z-2{overflow:hidden;overflow:clip!important;}
-      .z-overflow-x-visible-aPzgLm-3{overflow-x:visible;}
-      .z-w-40px-bsf-_m-0{width:40px;}
-      .z-h-40px-bsf-_m-1{height:40px;}
-      .z-overflow-x-clip-bsf-_m-2{overflow-x:clip;}
-      .z-overflow-hidden-bsf-_m-3{overflow:hidden;}
-      .z-overflow-y-scroll-bsf-_m-4{overflow-y:scroll;}"
+      .z-w-40px-e__d56-0{width:40px;}
+      .z-h-40px-e__d56-1{height:40px;}
+      .z-overflow-onNyVZ-2{overflow:hidden;overflow:clip!important;}
+      .z-overflow-x-visible-e__d56-3{overflow-x:visible;}
+      .z-w-40px-4mlxl6-0{width:40px;}
+      .z-h-40px-4mlxl6-1{height:40px;}
+      .z-overflow-x-clip-4mlxl6-2{overflow-x:clip;}
+      .z-overflow-hidden-4mlxl6-3{overflow:hidden;}
+      .z-overflow-y-scroll-4mlxl6-4{overflow-y:scroll;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1666,7 +1666,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 52,
+        "column": 58,
         "line": 4,
         "name": "flexBasis",
         "source": "example/flex.ts",
@@ -1807,10 +1807,10 @@ describe('compile', () => {
       .z-margin-inline-end-IqqfJ7{margin-inline-end:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px)!important;}
       .z-position-relative-8D9lB8{position:relative;}
       .z-inset-inline-start--3px-8D9lB8{inset-inline-start:-3px;}
-      .z-inline-size-30px-eFyii7-0{inline-size:30px;}
-      .z-w-50px-eFyii7-1{width:50px;}
-      .z-padding-inline-start-6px-eFyii7-2{padding-inline-start:6px;}
-      .z-pl-8px-eFyii7-3{padding-left:8px;}"
+      .z-inline-size-30px-3h-b1D-0{inline-size:30px;}
+      .z-w-50px-3h-b1D-1{width:50px;}
+      .z-padding-inline-start-6px-3h-b1D-2{padding-inline-start:6px;}
+      .z-pl-8px-3h-b1D-3{padding-left:8px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1823,7 +1823,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 38,
+        "column": 50,
         "line": 4,
         "name": "inlineSize",
         "source": "example/logical.ts",
@@ -1959,7 +1959,7 @@ describe('compile', () => {
     const output = Transform.compile({
       moduleId: 'assertions.ts',
       source:
-        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme});\nexport const props = themeConfig.style({\n  display: ['block','flex'] as const,\n  color: ((['[#000]',theme.color.brand] as const) satisfies readonly unknown[])!,\n})();",
+        "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({color:{brand:'#06c'}}); const themeConfig=Config.create({vars:theme});\nexport const props = themeConfig.style({\n  display: ['block','flex'] as const,\n  color: ((['#000 !custom',theme.color.brand] as const) satisfies readonly unknown[])!,\n})();",
     })
 
     expect(output.css).toMatchInlineSnapshot(`
@@ -1978,7 +1978,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 21,
+        "column": 27,
         "line": 6,
         "name": "color",
         "source": "assertions.ts",
@@ -2120,8 +2120,8 @@ describe('compile', () => {
       .z-opacity-K3H7Sb{opacity:0.25!important;opacity:0.75;}
       .z-p-GOrg9U-3{padding:4px!important;padding:8px;}
       .z-pl-12px-moVkSb-4{padding-left:12px;}
-      .z-text-UYJigQ-0{color:#fff;}
-      .z-p-20px-D9UeXb-1{padding:20px;}"
+      .z-text-_RIyUc-0{color:#fff;}
+      .z-p-20px-FchH7r-1{padding:20px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2134,7 +2134,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 20,
+        "column": 26,
         "line": 7,
         "name": "color",
         "source": "example/fallbacks.ts",
@@ -4724,7 +4724,7 @@ describe('case', () => {
       const styles = Style.define(
         {
           card: {
-            color: '[\\72 ed/**/] !important',
+            color: '\\72 ed/**/ !custom !important',
             display: 'bl\\6f ck/**/flow',
             padding: '1\\70 x',
           },
@@ -5107,7 +5107,7 @@ describe('columns', () => {
 
 describe('conditions', () => {
   const source =
-    'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:\'[100px]\',"&[data-active]":{height:\'[20px]\'}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
+    'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:\'100px !custom\',"&[data-active]":{height:\'20px !custom\'}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
   describe('compile', () => {
     test('preserves media case and ignores selector comments for dynamic locality', () => {
       const source =
@@ -5378,7 +5378,7 @@ describe('conditions', () => {
         Transform.compile({
           moduleId: 'dynamic.ts',
           source:
-            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({spacing:{gap:"4px"}}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`[calc(${theme.spacing.gap} + 2px)]`}}))',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({spacing:{gap:"4px"}}); const themeConfig=Config.create({vars:theme}); export const box=themeConfig.style((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.spacing.gap} + 2px) !custom`}}))',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
@@ -6745,7 +6745,7 @@ describe('dynamic', () => {
         Transform.compile({
           moduleId: 'fallback.ts',
           source:
-            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const t=Vars.define({color:{ink:"red"}}); const tConfig=Config.create({vars:t}); tConfig.style(((v:{alpha:number})=>({opacity:v.alpha,color:[\'[blue]\',t.color.ink]})) satisfies Callback)',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const t=Vars.define({color:{ink:"red"}}); const tConfig=Config.create({vars:t}); tConfig.style(((v:{alpha:number})=>({opacity:v.alpha,color:[\'blue !custom\',t.color.ink]})) satisfies Callback)',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
@@ -13728,7 +13728,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'nested.ts',
           source:
-            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({width:`${`[calc(${theme.spacing.md})] !important`}`})',
+            'import {Config} from \'zyzz\';\nimport {Vars} from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({width:`${`calc(${theme.spacing.md}) !custom !important`}`})',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
@@ -13740,7 +13740,7 @@ describe('variables', () => {
         Transform.compile({
           moduleId: 'assertions.ts',
           source:
-            'import {Config} from \'zyzz\';\nimport { style, Vars } from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({width:[\'[1px]\', (`[calc(${(`${theme.spacing.md}` satisfies string)})]` as string)]})',
+            'import {Config} from \'zyzz\';\nimport { style, Vars } from "zyzz"; const theme=Vars.define({spacing:{md:"8px"}}); const themeConfig=Config.create({vars:theme}); themeConfig.style({width:[\'1px !custom\', (`calc(${(`${theme.spacing.md}` satisfies string)}) !custom` as string)]})',
         }).css,
       ).toMatchInlineSnapshot(`
         ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
@@ -13763,7 +13763,7 @@ describe('variables', () => {
       const source = [
         'import { Config, style, Vars } from "zyzz";',
         'const theme = Vars.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});const themeConfig=Config.create({vars:theme});',
-        'export const box = themeConfig.style({width:`[calc(100% - ${theme.spacing.md})] !important`, color:theme.color.brand})()',
+        'export const box = themeConfig.style({width:`calc(100% - ${theme.spacing.md}) !custom !important`, color:theme.color.brand})()',
       ].join('\n')
 
       expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
@@ -13780,7 +13780,7 @@ describe('variables', () => {
           'theme.ts':
             'import { Vars } from "zyzz"; export const theme = Vars.define({ spacing: { md: "8px" }, color: { brand: { light: "red", dark: "blue" } } }); export const alt = Vars.extend(theme, { spacing: { md: "16px" } });',
           'app.ts':
-            'import {Config} from \'zyzz\';const paletteConfig=Config.create({vars:palette});import { style } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = paletteConfig.style({ width: `[calc(100% - ${palette.spacing.md})]`, color: palette.color.brand })(); const altConfig=Config.create({vars:alt});export const scope=altConfig.vars().className;',
+            'import {Config} from \'zyzz\';const paletteConfig=Config.create({vars:palette});import { style } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = paletteConfig.style({ width: `calc(100% - ${palette.spacing.md}) !custom`, color: palette.color.brand })(); const altConfig=Config.create({vars:alt});export const scope=altConfig.vars().className;',
         },
       })
 
@@ -13814,7 +13814,7 @@ describe('variables', () => {
         },
         modules: {
           'app.ts':
-            'import { style } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.style({width:`[calc(100% - ${zyzz.vars.spacing.md})]`})()',
+            'import { style } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.style({width:`calc(100% - ${zyzz.vars.spacing.md}) !custom`})()',
         },
       })
 
@@ -13866,7 +13866,7 @@ describe('variables', () => {
 const base=Vars.define({spacing:{md:'8px'}});
 const alt=Vars.extend(base,{spacing:{md:'16px'}});
 const {style,vars}=Config.create({vars:{base,alt},defaultVars:'base'});
-export const box=style({width:\`[calc(100% - \${vars.spacing.md})]\`})();
+export const box=style({width:\`calc(100% - \${vars.spacing.md}) !custom\`})();
 export const scope=vars({set:'alt'}).className;`,
       })
 

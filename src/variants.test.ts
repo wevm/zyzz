@@ -371,8 +371,8 @@ describe('bound', () => {
       }
       const app = `import {styled,variants,theme} from './index.js';
 export const scope=theme().className;
-export const base=styled({color:'[black]',padding:'[6px]'});
-export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'[red]'}}},defaultVariants:{intent:'primary'}});`
+export const base=styled({color:'black !custom',padding:'6px !custom'});
+export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'red !custom'}}},defaultVariants:{intent:'primary'}});`
       const publisher = Graph.compile({ modules })
       const packed = Graph.compile({
         modules: { 'app.ts': app },
@@ -452,7 +452,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     test('preserves configured aliases through source and packed contracts', async () => {
       const config =
         "import {Config} from 'zyzz'; export const {variants,vars:theme}=Config.create({output:'html',vars:{color:{brand:'#06c'}},shorthands:{px:['paddingLeft','paddingRight']}})"
-      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme().class; export const button=recipe({base:{px:'[8px]'},variants:{intent:{primary:{color:'brand'},quiet:{color:'[black]'}}},defaultVariants:{intent:'primary'}})`
+      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme().class; export const button=recipe({base:{px:'8px !custom'},variants:{intent:{primary:{color:'brand'},quiet:{color:'black !custom'}}},defaultVariants:{intent:'primary'}})`
       const publisher = Graph.compile({ modules: { 'config.ts': config } })
       const result = Graph.compile({
         modules: { 'app.ts': app },
@@ -580,7 +580,7 @@ export const button=variants({
   defaultVariants:{size:'sm',loading:false,constructor:'normal'},
   compoundVariants:[
     {when:{size:['sm','lg'],loading:true},style:{fontWeight:600}},
-    {when:{size:'lg',loading:true},style:{color:'[blue]'}},
+    {when:{size:'lg',loading:true},style:{color:'blue !custom'}},
     {when:{size:'lg',loading:true},style:{fontWeight:700}}
   ]
 });`
@@ -1234,7 +1234,7 @@ describe('payloads', () => {
     test('retains bound shorthands and same-named payload fields through packed contracts', async () => {
       const config =
         "import {Config} from 'zyzz';export const {variants}=Config.create({output:'html',vars:{color:{brand:'black'}},shorthands:{px:['paddingLeft','paddingRight']}});"
-      const source = `import {variants as recipe} from './config.js';export const button=recipe({base:{borderColor:'brand'},variants:{size:{custom:(values:{value:\`\${number}px\`})=>({px:\`[\${values.value}]\`,paddingLeft:'[3px]'})},tone:{custom:(values:{value:'red'|'blue'})=>({color:\`[\${values.value}]\`})},constructor:{normal:{}}},defaultVariants:{size:{custom:{value:'12px'}},tone:{custom:{value:'red'}}}});`
+      const source = `import {variants as recipe} from './config.js';export const button=recipe({base:{borderColor:'brand'},variants:{size:{custom:(values:{value:\`\${number}px\`})=>({px:\`\${values.value} !custom\`,paddingLeft:'3px !custom'})},tone:{custom:(values:{value:'red'|'blue'})=>({color:\`\${values.value} !custom\`})},constructor:{normal:{}}},defaultVariants:{size:{custom:{value:'12px'}},tone:{custom:{value:'red'}}}});`
       const publisher = Graph.compile({ modules: { 'config.ts': config } })
       const packed = Graph.compile({
         modules: { 'app.ts': source },

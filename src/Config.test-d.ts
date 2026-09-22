@@ -8,16 +8,16 @@ import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
 describe('create', () => {
-  test('preserves bracket unions and reusable property annotations', () => {
+  test('preserves custom suffix unions and reusable property annotations', () => {
     const flag = Boolean(Math.random())
     const config = PublicConfig.create({ vars: { spacing: { md: '8px' } } })
-    config.style({ padding: flag ? 'md' : '[7px]' })
-    config.style({ padding: [flag ? 'md' : '[7px]', '[2px]'] })
-    PublicConfig.create().style({ color: flag ? 'red' : '[blue]' })
-    const literal: Style.Properties = { width: '[7px]' }
-    const declarations: Style.LiteralProperties = { width: '[7px]' }
+    config.style({ padding: flag ? 'md' : '7px !custom' })
+    config.style({ padding: [flag ? 'md' : '7px !custom', '2px !custom'] })
+    PublicConfig.create().style({ color: flag ? 'red' : 'blue !custom' })
+    const literal: Style.Properties = { width: '7px !custom' }
+    const declarations: Style.LiteralProperties = { width: '7px !custom' }
     const tokens = { spacing: { md: '8px' } } as const
-    const themed = { padding: '[7px]' } satisfies Style.Properties<
+    const themed = { padding: '7px !custom' } satisfies Style.Properties<
       typeof tokens
     >
     const properties: Style.DeclarationProperties<typeof tokens> = {
@@ -30,7 +30,7 @@ describe('create', () => {
     // @ts-expect-error Annotations require escapes for configured properties.
     const raw: Style.Properties<typeof tokens> = { padding: '7px' }
     // @ts-expect-error A union cannot hide an invalid arbitrary value.
-    config.style({ padding: flag ? 'md' : '[invalid]' })
+    config.style({ padding: flag ? 'md' : 'invalid !custom' })
     // @ts-expect-error Dynamic slots cannot resolve token names.
     config.style((values: { padding: 'md' }) => ({ padding: values.padding }))
     config.variants({
@@ -48,37 +48,54 @@ describe('create', () => {
     incompatible.style({ color: 'red' })
   })
 
-  test('requires tokens or bracketed CSS when values exist', () => {
+  test('requires tokens or CSS with `!custom` when values exist', () => {
     const { style, variants, vars } = PublicConfig.create({
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
       vars: { color: { brand: 'red' }, spacing: { md: '8px' } },
     })
     style({
       padding: 'md',
-      marginTop: '[7px]',
-      color: '[#123456]',
-      width: '[calc(100% - 2rem)]',
+      marginTop: '7px !custom',
+      color: '#123456 !custom',
+      width: 'calc(100% - 2rem) !custom',
     })
-    style({ color: vars.color.brand, padding: ['md', '[7px]'], px: '[7px]' })
     style({
-      color: '[red] !important',
-      display: 'flex',
-      ':hover': { padding: '[2px]' },
+      color: vars.color.brand,
+      padding: ['md', '7px !custom'],
+      px: '7px !custom',
     })
-    style((values: { padding: '7px' }) => ({ padding: `[${values.padding}]` }))
-    style({ opacity: '[0.5]' })
-    // @ts-expect-error Brackets unwrap once and do not bypass CSS syntax.
-    style({ padding: '[[7px]]' })
+    style({
+      color: 'red !custom !important',
+      display: 'flex',
+      ':hover': { padding: '2px !custom' },
+    })
+    style((values: { padding: '7px' }) => ({
+      padding: `${values.padding} !custom`,
+    }))
+    style({ opacity: '0.5 !custom' })
+    style({ opacity: 0.5 })
+    // @ts-expect-error Bracket escapes have been removed.
+    style({ padding: '[7px]' })
+    // @ts-expect-error Custom markers cannot be repeated.
+    style({ padding: '7px !custom !custom' })
+    // @ts-expect-error Importance must follow the custom marker.
+    style({ padding: '7px !important !custom' })
+    // @ts-expect-error Custom markers require a separating space.
+    style({ padding: '7px!custom' })
+    // @ts-expect-error Custom markers use their canonical spelling.
+    style({ padding: '7px !CUSTOM' })
+    // @ts-expect-error Custom values retain CSS syntax validation.
+    style({ padding: '[7px] !custom' })
     // @ts-expect-error Empty escapes are not CSS values.
-    style({ padding: '[]' })
-    // @ts-expect-error Arbitrary mapped values require brackets.
+    style({ padding: ' !custom' })
+    // @ts-expect-error Arbitrary mapped values require !custom.
     style({ padding: '7px' })
     // @ts-expect-error Every fallback is checked.
     style({ padding: ['md', '7px'] })
-    // @ts-expect-error Brackets preserve CSS validation.
-    style({ padding: '[invalid]' })
+    // @ts-expect-error Custom suffixes preserve CSS validation.
+    style({ padding: 'invalid !custom' })
     // @ts-expect-error Malformed CSS remains invalid.
-    style({ color: '[#oops]' })
+    style({ color: '#oops !custom' })
     // @ts-expect-error The object escape was removed.
     style({ padding: { custom: '7px' } })
     // @ts-expect-error Nested styles retain token enforcement.
@@ -87,9 +104,9 @@ describe('create', () => {
     variants({ variants: { size: { large: { padding: '7px' } } } })
     variants({
       base: { padding: 'md' },
-      variants: { size: { large: { padding: '[7px]' } } },
+      variants: { size: { large: { padding: '7px !custom' } } },
     })
-    // @ts-expect-error Arbitrary callback values require brackets.
+    // @ts-expect-error Arbitrary callback values require !custom.
     style((values: { padding: '7px' }) => ({ padding: values.padding }))
     // @ts-expect-error Shorthands retain token enforcement.
     style({ px: '7px' })
@@ -108,8 +125,11 @@ describe('create', () => {
     full.style({ color: 'color.brand' })
     // @ts-expect-error Full paths require the complete token name.
     full.style({ color: 'red' })
-    PublicConfig.create().style({ padding: '7px', color: '[red]' })
-    PublicConfig.create({ vars: {} }).style({ padding: '[7px]', color: 'red' })
+    PublicConfig.create().style({ padding: '7px', color: 'red !custom' })
+    PublicConfig.create({ vars: {} }).style({
+      padding: '7px !custom',
+      color: 'red',
+    })
     // @ts-expect-error The strict option was removed.
     PublicConfig.create({ strict: true })
   })
@@ -122,8 +142,10 @@ describe('create', () => {
       vars: { color: { brand: 'red' } },
     })
     expectTypeOf(
-      style({ color: 'color.brand', '@layer overrides': { color: '[blue]' } })()
-        .className,
+      style({
+        color: 'color.brand',
+        '@layer overrides': { color: 'blue !custom' },
+      })().className,
     ).toEqualTypeOf<string>()
     expectTypeOf(
       variants({ base: { color: 'color.brand' } })().className,

@@ -15,7 +15,7 @@ import * as Config from './internal/Configuration.js'
 import { Css } from 'zyzz/web'
 
 describe('create', () => {
-  test('enforces tokens and bracket escapes through source and packed configs', async () => {
+  test('enforces tokens and custom suffixes through source and packed configs', async () => {
     const config = `import {Config} from 'zyzz'; export const {style,variants,vars}=Config.create({vars:{color:{brand:'#123456',red:'blue'},spacing:{md:'8px'}}});`
     const library = Graph.compile({ modules: { 'config.ts': config } })
     for (const packed of [false, true]) {
@@ -35,9 +35,9 @@ describe('create', () => {
         })
       }
       const result =
-        compile(`export const card=style({color:'red',padding:['md','[7px]'],display:'flex',width:'[calc(100% - 2rem)]',':hover':{color:'[#123456]'}});
-export const button=variants({base:{padding:'md'},variants:{tone:{brand:{color:'[red] !important'}}}});
-export const dynamic=style((values:{padding:'7px'})=>({padding:\`[\${values.padding}]\`}));`)
+        compile(`export const card=style({color:'red',padding:['md','7px !custom'],display:'flex',width:'calc(100% - 2rem) !custom',':hover':{color:'#123456 !custom'}});
+export const button=variants({base:{padding:'md'},variants:{tone:{brand:{color:'red !custom !important'}}}});
+export const dynamic=style((values:{padding:'7px'})=>({padding:\`\${values.padding} !custom\`}));`)
       expect(
         result.modules['app.ts']!.css.split('\n')
           .filter((line) => line.startsWith('.z-'))
@@ -48,9 +48,9 @@ export const dynamic=style((values:{padding:'7px'})=>({padding:\`[\${values.padd
         .z-display-flex-Ngq2-V-2{display:flex;}
         .z-w-2xz02S-3{width:calc(100% - 2rem);}
         .z-hover-text-A_aLRM-4{&:hover{color:#123456;}}
-        .z-p-kMvgWE-0{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);}
-        .z-text-Ckldvi-1{&:where([data-tone="brand"]){color:red!important;}}
-        .z-p-PpuJFr-0{padding:var(--z-d1e8a67z1uaws1j-306-70-61-64-64-69-6e-67);}"
+        .z-p-yH6CNS-0{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);}
+        .z-text-mBg0e8-1{&:where([data-tone="brand"]){color:red!important;}}
+        .z-p-9jV-KR-0{padding:var(--z-d1e8a67z1uaws1j-330-70-61-64-64-69-6e-67);}"
       `)
       expect(
         [
@@ -69,10 +69,10 @@ export const dynamic=style((values:{padding:'7px'})=>({padding:\`[\${values.padd
         }),
       ).toMatchInlineSnapshot(`
         [
-          "app.ts:82: Expected a configured token or a bracketed CSS value.",
-          "app.ts:82: Expected a configured token or a bracketed CSS value.",
-          "app.ts:90: Expected a configured token or a bracketed CSS value.",
-          "app.ts:106: Expected a configured token or a bracketed CSS value.",
+          "app.ts:82: Expected a configured token or a CSS value with the " !custom" suffix.",
+          "app.ts:82: Expected a configured token or a CSS value with the " !custom" suffix.",
+          "app.ts:90: Expected a configured token or a CSS value with the " !custom" suffix.",
+          "app.ts:106: Expected a configured token or a CSS value with the " !custom" suffix.",
           "app.ts:82: Expected a literal string or number; expressions are not evaluated.",
         ]
       `)
@@ -125,7 +125,7 @@ const mapped=Config.create({vars:{space:{gap:'8px'}},mappings:{space:['color']}}
 const configured=Config.create({vars:{spacing:{md:'8px'}}});
 export const first=unmapped.style({color:'red'});
 export const second=mapped.style({color:'blue'});
-export const third=configured.style({width:'[calc(1px /* ] */ + 2px)]'});`,
+export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`,
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
@@ -139,19 +139,64 @@ export const third=configured.style({width:'[calc(1px /* ] */ + 2px)]'});`,
           'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{spacing:{md:'8px'}}});export const invalid=style((values:{padding:'md'})=>({padding:values.padding}));`,
         },
       }),
-    ).toThrow('Expected a configured token or a bracketed CSS value.')
+    ).toThrow(
+      'Expected a configured token or a CSS value with the " !custom" suffix.',
+    )
   })
 
-  test('unwraps escapes once while preserving grid lines and quoted brackets', () => {
+  test('strips custom suffixes while preserving grid lines and quoted brackets', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {style} from 'zyzz'; export const box=style({opacity:'[0.5]',content:'["[label]"]',gridTemplateColumns:'[[start] 1fr [end]]',width:'[7px] !important'});`,
+        'app.ts': `import {style} from 'zyzz'; export const box=style({opacity:'0.5 !custom',content:'"[label]" !custom',gridTemplateColumns:'[start] 1fr [end] !custom',width:'7px !custom !important'});`,
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-opacity-Bf5AW1{opacity:0.5;}
       .z-content-asf5XU{content:"[label]";}
       .z-grid-template-columns-jipVUg{grid-template-columns:[start] 1fr [end];}
+      .z-w-Rh5BCy{width:7px!important;}"
+    `)
+  })
+
+  test('rejects malformed custom markers without consuming quoted text', () => {
+    const invalid = [
+      '7px!custom',
+      '7px !CUSTOM',
+      '7px !custom !custom',
+      '7px !important !custom',
+      ' !custom',
+      '[7px]',
+    ]
+    expect(
+      invalid.map((value) => {
+        try {
+          Graph.compile({
+            modules: {
+              'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{spacing:{md:'8px'}}}); export const box=style({padding:${JSON.stringify(value)}});`,
+            },
+          })
+          return 'accepted'
+        } catch (error) {
+          return (error as Error).message
+        }
+      }),
+    ).toMatchInlineSnapshot(`
+      [
+        "app.ts:119: Value markers require " !custom" followed by optional " !important", or " !important" alone.",
+        "app.ts:119: Value markers require " !custom" followed by optional " !important", or " !important" alone.",
+        "app.ts:119: Value markers require " !custom" followed by optional " !important", or " !important" alone.",
+        "app.ts:119: Value markers require " !custom" followed by optional " !important", or " !important" alone.",
+        "app.ts:119: Value markers require " !custom" followed by optional " !important", or " !important" alone.",
+        "app.ts:119: Expected a configured token or a CSS value with the " !custom" suffix.",
+      ]
+    `)
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {style} from 'zyzz'; export const box=style({content:'"!custom"',width:'7px !custom !important'});`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-content-Vy2tbY{content:"!custom";}
       .z-w-Rh5BCy{width:7px!important;}"
     `)
   })
@@ -167,7 +212,7 @@ export const third=configured.style({width:'[calc(1px /* ] */ + 2px)]'});`,
         (config) =>
           Graph.compile({
             modules: {
-              'app.ts': `import {Config} from 'zyzz';const {style}=${config};export const label=style({color:['red','[blue]']});`,
+              'app.ts': `import {Config} from 'zyzz';const {style}=${config};export const label=style({color:['red','blue !custom']});`,
             },
           }).modules['app.ts']!.css,
       ),
@@ -185,9 +230,9 @@ export const third=configured.style({width:'[calc(1px /* ] */ + 2px)]'});`,
     expect(() =>
       style({ padding: '7px' } as never, { id: 'invalid' }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["style","padding"]: Expected a configured token or a bracketed CSS value.]`,
+      `[Style.InvalidError: ["style","padding"]: Expected a configured token or a CSS value with the " !custom" suffix.]`,
     )
-    expect(style({ padding: '[7px]' }, { id: 'custom' })())
+    expect(style({ padding: '7px !custom' }, { id: 'custom' })())
       .toMatchInlineSnapshot(`
       {
         "className": "z-style-id-63-75-73-74-6f-6d",
@@ -425,7 +470,7 @@ import { tokens } from 'zyzz/default'
 const { style } = Config.create({ vars: tokens })
 const pane = style({ alignItems: 'center', fontFamily: 'sans', typography: 'copy.18' })
 const dynamic = style((values: { width: \`\${number}px\` }) => ({
-  width: \`[\${values.width}]\`,
+  width: \`\${values.width} !custom\`,
   alignItems: 'center',
 }))
 dynamic({ width: '12px' })
@@ -659,7 +704,7 @@ dynamic({ width: '12px' })
         [
           {
             "code": 2322,
-            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", "first baseline", ... 21 more ..., "unsafe start"]; }> | \`[\${string}]\` | Reference<...>>, ...Atom<...>[]])'.",
+            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", "first baseline", ... 21 more ..., "unsafe start"]; }> | \`\${string} !custom\` | Reference<...>>, ...Atom<...>[]])'.",
             "span": "alignItems",
           },
         ]

@@ -16,7 +16,7 @@ export function project(count: number): Record<string, string> {
     ...Object.fromEntries(
       Array.from({ length: count }, (_, index) => [
         `pkg/card${index}.ts`,
-        `import { style } from './index.js'; export const props = style({color:'brand',padding:'[${index}px]'})();`,
+        `import { style } from './index.js'; export const props = style({color:'brand',padding:'${index}px !custom'})();`,
       ]),
     ),
   }

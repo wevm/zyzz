@@ -41,7 +41,7 @@ describe('define', () => {
         "diagnostics": [
           {
             "code": "invalid_value",
-            "message": "Importance requires the suffix " !important".",
+            "message": "Value markers require " !custom" followed by optional " !important", or " !important" alone.",
             "path": [
               "card",
               "color",
@@ -177,8 +177,8 @@ describe('define', () => {
 
   test('repeated shorthand tokens remain isolated by property and theme', () => {
     const styles = {
-      first: { color: 'brand', padding: 'brand', width: '[1px]' },
-      second: { color: 'brand', padding: 'brand', width: '[2px]' },
+      first: { color: 'brand', padding: 'brand', width: '1px !custom' },
+      second: { color: 'brand', padding: 'brand', width: '2px !custom' },
     } as const
 
     for (const theme of [

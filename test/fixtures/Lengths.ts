@@ -59,4 +59,4 @@ export const units = [
 
 /** Literal source with token fallbacks and inherited relative lengths. */
 export const source =
-  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{space:'1lh'}}});\nexport const root = style({width:['50vw','50cqi !important'],height:'10dvh',marginLeft:'-1in',borderWidth:'1pc',borderStyle:'solid'})();\nexport const themed = zyzz.style({padding:['[1rem]',zyzz.vars.spacing.space],marginTop:'[2rlh] !important'})();\n"
+  "import { Config, style } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{space:'1lh'}}});\nexport const root = style({width:['50vw','50cqi !important'],height:'10dvh',marginLeft:'-1in',borderWidth:'1pc',borderStyle:'solid'})();\nexport const themed = zyzz.style({padding:['1rem !custom',zyzz.vars.spacing.space],marginTop:'2rlh !custom !important'})();\n"

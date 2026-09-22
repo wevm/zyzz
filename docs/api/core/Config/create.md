@@ -59,7 +59,7 @@ See [Vars](../Vars/README.md) for derived references, conditional values, query 
 
 ## Full variable paths
 
-Set `mappings: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; bracketed CSS values and explicit references still work. Values must match the property's CSS syntax.
+Set `mappings: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS values with `!custom` and explicit references still work. Values must match the property's CSS syntax.
 
 ```ts
 const { style, vars } = Config.create({
@@ -79,7 +79,7 @@ const card = style({
 
 ## Token values
 
-Properties with configured tokens require a token name or a compatible variable reference. Wrap arbitrary CSS values in brackets to bypass token resolution. These rules apply to styles, variants, nested declarations, and each fallback entry.
+Properties with configured tokens require a token name or a compatible variable reference. Append ` !custom` to arbitrary CSS values to bypass token resolution. These rules apply to styles, variants, nested declarations, and each fallback entry.
 
 ```ts
 const { style } = Config.create({
@@ -91,19 +91,19 @@ const { style } = Config.create({
 
 const button = style({
   padding: 'md',
-  marginTop: '[7px]',
-  color: '[#123456]',
-  width: '[calc(100% - 2rem)]',
+  marginTop: '7px !custom',
+  color: '#123456 !custom',
+  width: 'calc(100% - 2rem) !custom',
 })
 ```
 
-Brackets are removed from emitted CSS. Their contents retain ordinary CSS type checking, and spaces remain spaces. Use `'[red] !important'` for importance and `['md', '[7px]']` for fallbacks. Interpolated values can use a template string such as `` `[${values.width}]` ``.
+The `!custom` suffix is removed from emitted CSS. Values retain ordinary CSS type checking. Use `'red !custom !important'` for importance and `['md', '7px !custom']` for fallbacks. Interpolated values can use a template string such as `` `${values.width} !custom` ``.
 
-Dynamic callbacks cannot select token names from their inputs. Use variants for token choices, or bracketed templates for dynamic CSS values.
+Dynamic callbacks cannot select token names from their inputs. Use variants for token choices, or templates with `!custom` for dynamic CSS values.
 
-Properties without configured values accept either spelling: `'7px'` or `'[7px]'`. An empty variable set leaves all properties unrestricted. No `strict` option is required or supported.
+Properties without configured values accept either spelling: `'7px'` or `'7px !custom'`. An empty variable set leaves all properties unrestricted. No `strict` option is required or supported.
 
-Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'[red]'` always means the CSS color. Property mappings and `mappings: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
+Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'red !custom'` always means the CSS color. Property mappings and `mappings: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
 
 ## Default layer
 

@@ -416,7 +416,7 @@ export function define(
           report(
             'invalid_value',
             [name, property],
-            'Importance requires the suffix " !important".',
+            'Value markers require " !custom" followed by optional " !important", or " !important" alone.',
           )
           return []
         }
@@ -608,7 +608,7 @@ export function define(
           report(
             'invalid_value',
             [name, authoredProperty],
-            'Importance requires the suffix " !important".',
+            'Value markers require " !custom" followed by optional " !important", or " !important" alone.',
           )
           continue
         }
@@ -667,7 +667,7 @@ export function define(
           report(
             'invalid_value',
             [name, authoredProperty],
-            'Expected a configured token or a bracketed CSS value.',
+            'Expected a configured token or a CSS value with the " !custom" suffix.',
           )
           continue
         }
@@ -801,7 +801,7 @@ export class InvalidError extends Error {
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?: Value.Atom<
     | Exclude<Literal.Properties[property], undefined>
-    | `[${string}]`
+    | `${string} !custom`
     | Binding.Reference<'*'>
     | {
         [kind in Binding.Kind]: property extends Binding.Property<
@@ -845,7 +845,7 @@ export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
         : [Token.Names<tokens, property>] extends [never]
           ? LiteralAtoms[property]
           :
-              | Value.Atom<`[${string}]`>
+              | Value.Atom<`${string} !custom`>
               | Extract<LiteralAtoms[property], Binding.Reference>)
     | Value.Atom<Token.Names<tokens, property>>
     | {

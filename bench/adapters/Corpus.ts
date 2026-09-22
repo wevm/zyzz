@@ -6,7 +6,7 @@ import { Graph } from 'zyzz/compiler'
 export function create(count: number) {
   const files: Record<string, string> = {
     'tokens.mjs':
-      "import {Vars} from 'zyzz';export const tokens=Vars.define({color:{brand:'red'},space:{md:'8px'}})",
+      "import {Vars} from 'zyzz';export const tokens=Vars.define({color:{brand:'red'},space:{md:'8px',lg:'16px'}})",
     'config.mjs':
       "import {Config} from 'zyzz';import {tokens} from './tokens.mjs';export const {style,variants,vars}=Config.create({vars:tokens})",
     'globals.mjs': "import {global} from 'zyzz/web';global({body:{margin:0}})",
@@ -15,8 +15,8 @@ export function create(count: number) {
     files[`component${i}.mjs`] =
       `import {style,variants} from './config.mjs';${i ? `import {render as child} from './component${Math.floor((i - 1) / 4)}.mjs';` : ''}
 const container=style({color:'brand',padding:'md',opacity:1});
-const title=style({fontSize:'[${16 + (i % 8)}px]',lineHeight:'[1.5]'});
-const button=variants({variants:{size:{sm:{padding:'md'},lg:{padding:'[16px]'}}},defaultVariants:{size:'sm'}});
+const title=style({fontSize:'${16 + (i % 8)}px',lineHeight:1.5});
+const button=variants({variants:{size:{sm:{padding:'md'},lg:{padding:'lg'}}},defaultVariants:{size:'sm'}});
 export function render(){return {container:container(),title:title(),button:button(),${i ? 'child:child(),' : ''}label:'Component ${i}'}}`
   files['entry.mjs'] =
     `import '@workload/library';import './globals.mjs';${Array.from({ length: count }, (_, i) => `import {render as c${i}} from './component${i}.mjs';`).join('')}export function render(){return [${Array.from({ length: count }, (_, i) => `c${i}()`).join(',')}]}`

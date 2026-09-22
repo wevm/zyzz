@@ -49,7 +49,7 @@ Read [Thinking in Zyzz](docs/introduction/thinking-in-zyzz.md) for co-location, 
 
 - [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
 - [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
-- [**Token Values**](#token-values): configured tokens by default, with bracketed strings for arbitrary CSS.
+- [**Token Values**](#token-values): configured tokens by default, with the `!custom` suffix for arbitrary CSS.
 - [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
 - [**Variants**](#variants): typed component choices, defaults, and compound rules.
 - [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
@@ -263,7 +263,7 @@ Use [`Vars.define`](docs/api/core/Vars/README.md) for reusable definitions outsi
 
 ### Token Values
 
-Use configured tokens for consistent styles, or bracketed strings for arbitrary CSS. Properties without configured tokens accept both plain and bracketed values. No extra option is needed.
+Use configured tokens for consistent styles, or the `!custom` suffix for arbitrary CSS. Properties without configured tokens accept both plain values and values with `!custom`. No extra option is needed.
 
 ```ts
 import { Config } from 'zyzz'
@@ -277,9 +277,9 @@ const { style } = Config.create({
 
 const button = style({
   padding: 'md',
-  marginTop: '[7px]',
-  color: '[#123456]',
-  width: '[calc(100% - 2rem)]',
+  marginTop: '7px !custom',
+  color: '#123456 !custom',
+  width: 'calc(100% - 2rem) !custom',
 })
 ```
 

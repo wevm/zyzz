@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.12
+
+### Patch Changes
+
+- 213276a: Fixed CSS property and token autocomplete in variant declarations.
+
 ## 0.0.11
 
 ### Patch Changes

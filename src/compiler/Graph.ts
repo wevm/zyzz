@@ -127,7 +127,6 @@ type Extraction = {
 
 type Transformed = {
   classes: Readonly<Record<string, string | undefined>>
-  contract?: string | undefined
   extracted: Source.extract.ReturnType
   owners: string
   output: Transform.compile.ReturnType
@@ -1536,8 +1535,6 @@ function build(options: compile.Options, cache?: Cache): Cache {
           })
     transformed.delete(moduleId)
     transformed.set(moduleId, {
-      contract:
-        cached?.output === modules[moduleId] ? cached.contract : undefined,
       classes: Object.fromEntries(
         extracted
           .get(moduleId)!
@@ -1685,32 +1682,28 @@ function build(options: compile.Options, cache?: Cache): Cache {
             )
             .map((id) => [
               id,
-              previous &&
-              modules[id] === previous.result.modules[id] &&
-              previous.result.contracts[id] !== undefined
-                ? previous.result.contracts[id]!
-                : (transformed.get(id)!.contract ??= Contract.write(
-                    Object.fromEntries(
-                      Object.entries(extracted.get(id)!.themeExports ?? {}).map(
-                        ([name, link]) => [name, publishedStyle(link)],
-                      ),
-                    ),
-                    sharedThemes,
-                    reachable(id).map((section) => ({
-                      ...section,
-                      owner: undefined,
-                      dependency:
-                        section.owner && section.owner !== id
-                          ? dependencyPath(id, section.owner)
-                          : undefined,
-                      source: Stylesheets.relative(
-                        section.owner ?? id,
-                        section.source,
-                      ),
-                    })),
-                    id,
-                    configurations(id),
-                  )),
+              Contract.write(
+                Object.fromEntries(
+                  Object.entries(extracted.get(id)!.themeExports ?? {}).map(
+                    ([name, link]) => [name, publishedStyle(link)],
+                  ),
+                ),
+                sharedThemes,
+                reachable(id).map((section) => ({
+                  ...section,
+                  owner: undefined,
+                  dependency:
+                    section.owner && section.owner !== id
+                      ? dependencyPath(id, section.owner)
+                      : undefined,
+                  source: Stylesheets.relative(
+                    section.owner ?? id,
+                    section.source,
+                  ),
+                })),
+                id,
+                configurations(id),
+              ),
             ]),
         ),
       ),

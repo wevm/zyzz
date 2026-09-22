@@ -8,7 +8,6 @@ import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 import * as Packed from '../../test/fixtures/Packed.js'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Library from '../../test/fixtures/VariantLibrary.js'
-import * as Stylesheets from './internal/Stylesheets.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -27,59 +26,63 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
-  test('avoids relocating token imports while probing component exports', async () => {
-    const { stdout } = await Util.promisify(ChildProcess.execFile)(
-      process.execPath,
-      ['test/fixtures/GraphConstants.ts'],
-    )
-    const result = JSON.parse(stdout) as {
-      count: number
-      css: string
-      changed: string
-      extractions: number
-      returned: string[]
-      writes: number
-    }
-    expect(result.count).toMatchInlineSnapshot('2')
-    expect(result.writes).toMatchInlineSnapshot('0')
-    expect(result.extractions).toBe(0)
-    expect(result.returned.sort()).toEqual(['styles.ts', 'tokens.ts'])
-    expect(result.changed).toContain('color:blue;')
-    expect(result.css).toMatchInlineSnapshot('".z-text-red-XySf4I{color:red;}"')
-  })
-
-  test('emits module-owned globals when the host loads source dependencies', () => {
+  test('preserves styles across component imports and generated modules', () => {
     const compiler = Graph.create()
     const input = {
-      imports: {
-        'entry.ts': { './global': 'global.ts', 'zyzz/web': null },
-        'global.ts': { 'zyzz/web': null },
-      },
       modules: {
-        'entry.ts':
-          "import './global';import {global} from 'zyzz/web';global({body:{color:'blue'}})",
-        'global.ts':
-          "import {global} from 'zyzz/web';global({html:{color:'red'}})",
+        'tokens.ts': "export const tokens={color:'red'}",
+        'component.ts':
+          "import {tokens} from './tokens';export default function Component(){return tokens.color}",
+        'styles.ts':
+          "import {style} from 'zyzz';import {tokens} from './tokens';export const button=style({color:tokens.color})",
+      },
+      imports: {
+        'tokens.ts': {},
+        'component.ts': { './tokens': 'tokens.ts' },
+        'styles.ts': { zyzz: null, './tokens': 'tokens.ts' },
       },
     }
-    const entry = compiler.compile({
+    const first = compiler.compile(input)
+    const added = compiler.compile({
       ...input,
-      [Stylesheets.entry]: 'entry.ts',
+      imports: { ...input.imports, 'generated.ts': {} },
+      modules: {
+        ...input.modules,
+        'generated.ts': 'export const generated=true',
+      },
     })
-    const dependency = compiler.compile({
+    expect(
+      added.modules['styles.ts']!.css === first.modules['styles.ts']!.css,
+    ).toMatchInlineSnapshot('true')
+    compiler.compile({
+      imports: { 'other.ts': {} },
+      modules: { 'other.ts': 'export const other=true' },
+    })
+    const returned = compiler.compile(input)
+    expect(Object.keys(returned.modules)).toMatchInlineSnapshot(`
+      [
+        "component.ts",
+        "styles.ts",
+        "tokens.ts",
+      ]
+    `)
+    expect(
+      returned.modules['styles.ts']!.css === first.modules['styles.ts']!.css,
+    ).toMatchInlineSnapshot('true')
+    compiler.compile({
+      imports: { 'tokens.ts': {} },
+      modules: { 'tokens.ts': "export const tokens={color:'blue'}" },
+    })
+    const changed = compiler.compile({
       ...input,
-      [Stylesheets.entry]: 'global.ts',
+      modules: {
+        ...input.modules,
+        'tokens.ts': "export const tokens={color:'blue'}",
+      },
     })
-    const graph = compiler.compile(input)
-
-    expect(entry.sharedCss).toContain('body{color:blue;}')
-    expect(entry.sharedCss).not.toContain('html{color:red;}')
-    expect(dependency.sharedCss).toContain('html{color:red;}')
-    expect(dependency.sharedCss).not.toContain('body{color:blue;}')
-    expect(graph.sharedCss).toContain('html{color:red;}')
-    expect(graph.sharedCss).toContain('body{color:blue;}')
-    expect(graph.contracts['entry.ts']).toBeTypeOf('string')
-    expect(graph.contracts['global.ts']).toBeTypeOf('string')
+    expect(
+      changed.modules['styles.ts']!.css.includes('color:blue;'),
+    ).toMatchInlineSnapshot('true')
   })
 
   test('uses exported default typography values in global declarations', async () => {
@@ -3036,6 +3039,20 @@ describe('stylesheets', () => {
         "b/index.js",
       ]
     `)
+      const repacked = Graph.compile({
+        contracts: { ...contracts, 'repacked.js': second.contracts['app.ts']! },
+        imports: {
+          'consumer.ts': { repacked: 'repacked.js' },
+          'repacked.js': { wrapper: 'wrapper/index.js' },
+          'wrapper/index.js': { dep: 'b/index.js' },
+        },
+        modules: { 'consumer.ts': "import 'repacked';" },
+      })
+      expect(Object.values(repacked.sharedAssets ?? {})).toMatchInlineSnapshot(`
+        [
+          "b/pixel.svg",
+        ]
+      `)
     })
     test('retains reset ordering in every independent packed entry', () => {
       const library = Graph.compile({

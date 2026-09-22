@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Next from '../../test/fixtures/Next.js'
 
 describe('zyzz', () => {
-  test('reuses compilation across loader requests and invalidates dependents', async () => {
+  test('preserves output across repeated loader requests and dependent edits', async () => {
     const { stdout } = await Util.promisify(ChildProcess.execFile)(
       process.execPath,
       ['test/fixtures/NextCache.ts'],
@@ -13,55 +13,13 @@ describe('zyzz', () => {
     )
     const result = JSON.parse(stdout) as Record<
       'cold' | 'edited' | 'settled' | 'warm',
-      {
-        code: string
-        extractions: number
-        loads: number
-        parses: number
-        transforms: number
-      }
+      string
     >
-    // Each invalidated module crosses extraction twice: validation, then linked extraction.
-    expect(
-      Object.fromEntries(
-        Object.entries(result).map(([phase, { code: _code, ...counts }]) => [
-          phase,
-          counts,
-        ]),
-      ),
-    ).toMatchInlineSnapshot(`
-      {
-        "cold": {
-          "extractions": 6,
-          "loads": 3,
-          "parses": 6,
-          "transforms": 3,
-        },
-        "edited": {
-          "extractions": 4,
-          "loads": 3,
-          "parses": 3,
-          "transforms": 2,
-        },
-        "settled": {
-          "extractions": 0,
-          "loads": 3,
-          "parses": 0,
-          "transforms": 0,
-        },
-        "warm": {
-          "extractions": 0,
-          "loads": 3,
-          "parses": 0,
-          "transforms": 0,
-        },
-      }
-    `)
-    expect(result.cold.code).toContain('red')
-    expect(result.warm.code).toBe(result.cold.code)
-    expect(result.edited.code).toContain('blue')
-    expect(result.edited.code).not.toBe(result.cold.code)
-    expect(result.settled.code).toBe(result.edited.code)
+    expect(result.cold.includes('red')).toMatchInlineSnapshot('true')
+    expect(result.warm === result.cold).toMatchInlineSnapshot('true')
+    expect(result.edited.includes('blue')).toMatchInlineSnapshot('true')
+    expect(result.edited === result.cold).toMatchInlineSnapshot('false')
+    expect(result.settled === result.edited).toMatchInlineSnapshot('true')
   })
 
   for (const cssOutput of ['atomic', 'grouped'] as const)

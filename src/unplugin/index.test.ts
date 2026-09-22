@@ -483,6 +483,52 @@ describe('zyzz', () => {
     }
   }, 30000)
 
+  test('webpack uses the graph source when its filesystem cache predates an edit', async () => {
+    const root = await fixture()
+    const compiler = Webpack({
+      context: root,
+      entry: './main.js',
+      mode: 'development',
+      output: {
+        path: Path.join(root, 'dist'),
+        filename: 'app.js',
+        library: { name: 'App', type: 'var' },
+      },
+      plugins: [webpack({ root })],
+      resolve: { alias: { 'zyzz/runtime': runtime } },
+    })
+    compiler.hooks.beforeCompile.tapPromise('edit', async () => {
+      const path = Path.join(root, 'theme.js')
+      await new Promise<void>((resolve, reject) =>
+        compiler.inputFileSystem!.readFile(path, (error) =>
+          error ? reject(error) : resolve(),
+        ),
+      )
+      await Watch.write({
+        path,
+        source:
+          "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
+      })
+    })
+    try {
+      await new Promise<void>((resolve, reject) =>
+        compiler.run((error, stats) =>
+          error || stats?.hasErrors()
+            ? reject(error ?? new Error(stats?.toString('errors-only')))
+            : resolve(),
+        ),
+      )
+      expect((await render(root)).color).toMatchInlineSnapshot(
+        '"rgb(255, 0, 0)"',
+      )
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        compiler.close((error) => (error ? reject(error) : resolve())),
+      )
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30000)
+
   test.each(['filesystem', 'manual'])(
     'webpack watches shared themes and new global contributions with %s invalidation',
     async (invalidation) => {

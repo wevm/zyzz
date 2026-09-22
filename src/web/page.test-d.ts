@@ -71,3 +71,17 @@ describe('page', () => {
     })
   })
 })
+
+describe('page', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    page({
+      '@layer definitions': {
+        '@media screen': { descriptors: { size: 'A4' } },
+      },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    page({ '.card': { descriptors: { size: 'A4' } } })
+    // @ts-expect-error enclosing groups belong in the definition
+    page({ descriptors: { size: 'A4' } }, { within: ['@layer definitions'] })
+  })
+})

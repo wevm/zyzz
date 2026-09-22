@@ -6,14 +6,15 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 
 describe('colorProfile', () => {
   test('accepts profile descriptors and retains the color-space identity domain', () => {
-    const profile = colorProfile(
-      {
-        src: 'url(./print.icc)',
-        components: 'c, m, y, k',
-        renderingIntent: 'relative-colorimetric',
+    const profile = colorProfile({
+      '@media print': {
+        '@layer color': {
+          src: 'url(./print.icc)',
+          components: 'c, m, y, k',
+          renderingIntent: 'relative-colorimetric',
+        },
       },
-      { within: ['@media print', '@layer color'] },
-    )
+    })
     expectTypeOf(profile).toEqualTypeOf<colorProfile.Reference>()
     style({ color: `color(${profile} 0 1 1 0)` })
     for (const renderingIntent of [
@@ -35,8 +36,23 @@ describe('colorProfile', () => {
     // @ts-expect-error source uses CSS URL text
     colorProfile({ src: 3 })
     // @ts-expect-error descriptor rules cannot enclose a profile
-    colorProfile({ src: 'url(/profile.icc)' }, { within: ['@page'] })
+    colorProfile({ '@page': { src: 'url(/profile.icc)' } })
     // @ts-expect-error profiles are color-space identities, not color values
     style({ color: profile })
+  })
+})
+
+describe('colorProfile', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    colorProfile({
+      '@layer definitions': { '@media screen': { src: 'url(/profile.icc)' } },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    colorProfile({ '.card': { src: 'url(/profile.icc)' } })
+    colorProfile(
+      { src: 'url(/profile.icc)' },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
   })
 })

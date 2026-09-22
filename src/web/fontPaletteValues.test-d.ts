@@ -29,3 +29,20 @@ describe('fontPaletteValues', () => {
     })
   })
 })
+
+describe('fontPaletteValues', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    fontPaletteValues({
+      '@layer definitions': {
+        '@media screen': { fontFamily: 'Body', basePalette: 'dark' },
+      },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    fontPaletteValues({ '.card': { fontFamily: 'Body', basePalette: 'dark' } })
+    fontPaletteValues(
+      { fontFamily: 'Body', basePalette: 'dark' },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
+  })
+})

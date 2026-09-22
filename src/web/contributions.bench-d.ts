@@ -45,17 +45,18 @@ bench('keyframes / stop positions', () => {
 }).types([13955, 'instantiations'])
 
 bench('fontFace / descriptor inventory', () => {
-  fontFace(
-    {
-      ascentOverride: '90%',
-      fontDisplay: 'swap',
-      fontFamily: 'Evidence',
-      fontFeatureSettings: '"kern"',
-      fontStyle: 'italic',
-      fontWeight: '400 700',
-      src: 'url(/font.ttf)',
-      unicodeRange: 'U+0000-00FF',
+  fontFace({
+    '@layer': {
+      '@media screen': {
+        ascentOverride: '90%',
+        fontDisplay: 'swap',
+        fontFamily: 'Evidence',
+        fontFeatureSettings: '"kern"',
+        fontStyle: 'italic',
+        fontWeight: '400 700',
+        src: 'url(/font.ttf)',
+        unicodeRange: 'U+0000-00FF',
+      },
     },
-    { within: ['@layer', '@media screen'] },
-  )
+  })
 }).types([24, 'instantiations'])

@@ -3,18 +3,19 @@ import { describe, test } from 'vite-plus/test'
 import { fontFace } from 'zyzz/web'
 describe('fontFace', () => {
   test('checks grouping contexts', () => {
-    fontFace(
-      {
-        fontFamily: 'Body',
-        src: 'local("Arial")',
-        fontFeatureSettings: '"kern"',
-        fontVariationSettings: '"wght" 400',
+    fontFace({
+      '@layer': {
+        '@media screen': {
+          fontFamily: 'Body',
+          src: 'local("Arial")',
+          fontFeatureSettings: '"kern"',
+          fontVariationSettings: '"wght" 400',
+        },
       },
-      { within: ['@layer', '@media screen'] },
-    )
+    })
     fontFace({ fontFamily: 'Body', src: 'url(/font)' }, undefined)
     // @ts-expect-error selectors cannot enclose font declarations
-    fontFace({ fontFamily: 'Body', src: 'url(/font)' }, { within: ['.card'] })
+    fontFace({ '.card': { fontFamily: 'Body', src: 'url(/font)' } })
   })
 })
 
@@ -37,5 +38,24 @@ describe('fontFace', () => {
     })
     // @ts-expect-error page descriptors do not belong in font-face bodies
     fontFace({ fontFamily: 'Evidence', src: 'url(/font.ttf)', size: 'A4' })
+  })
+})
+
+describe('fontFace', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    fontFace({
+      '@layer definitions': {
+        '@media screen': { fontFamily: 'Body', src: 'url(/body.woff2)' },
+      },
+    })
+    // @ts-expect-error grouped font definitions still require a source
+    fontFace({ '@layer fonts': { fontFamily: 'Body' } })
+    // @ts-expect-error selectors cannot enclose a declaration
+    fontFace({ '.card': { fontFamily: 'Body', src: 'url(/body.woff2)' } })
+    fontFace(
+      { fontFamily: 'Body', src: 'url(/body.woff2)' },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
   })
 })

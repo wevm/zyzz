@@ -3756,12 +3756,66 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
 
 describe('atRules', () => {
   describe('compile', () => {
+    test('preserves base definitions and nested conditional branches', () => {
+      const output = Transform.compile({
+        moduleId: 'nested.ts',
+        source: `import {fontFace,keyframes} from 'zyzz/web';
+fontFace({fontFamily:'Base',src:'local("Arial")','@layer fonts':{'@media screen':{fontFamily:'Screen',src:'local("Arial")'}}});
+export const fade=keyframes({from:{opacity:0},to:{opacity:1},'@media (prefers-reduced-motion: reduce)':{from:{opacity:1},to:{opacity:1}}});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(`
+        "@font-face{font-family:Base;src:local("Arial");}
+        @layer fonts{@media screen{@font-face{font-family:Screen;src:local("Arial");}}}
+        @keyframes z-kingwo11j6aspr-66-61-64-65{from{opacity:0;}to{opacity:1;}}
+        @media (prefers-reduced-motion: reduce){@keyframes z-kingwo11j6aspr-66-61-64-65{from{opacity:1;}to{opacity:1;}}}"
+      `)
+    })
+
+    test('preserves group order around complete base definitions', () => {
+      const output = Transform.compile({
+        moduleId: 'order.ts',
+        source: `import {viewTransition} from 'zyzz/web';viewTransition({'@media screen':{navigation:'auto'},navigation:'none','@media print':{navigation:'auto'}});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(`
+        "@media screen{@view-transition{navigation:auto;}}
+        @view-transition{navigation:none;}
+        @media print{@view-transition{navigation:auto;}}"
+      `)
+    })
+
+    test('rejects incomplete grouped descriptors and inconsistent function signatures', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {fontFace} from 'zyzz/web';fontFace({'@layer fonts':{fontFamily:'Body'}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:34: Font faces require family/source and scalar supported descriptors.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({'@media screen':{parameters:[],body:{result:1}},'@media print':{parameters:[{name:'--x'}],body:{result:1}}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:53: Grouped CSS function definitions must use the same parameters and return syntax.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {fontFace} from 'zyzz/web';fontFace({fontFamily:'Body',src:'local("Arial")'},{within:['@layer fonts']});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:34: Unknown contribution context option. Use nested at-rule keys for enclosing groups.]`,
+      )
+    })
+
     test('preserves grouped font descriptors and timeline range stops', () => {
       const output = Transform.compile({
         moduleId: 'rules.ts',
         source: `import { fontFace, keyframes } from 'zyzz/web';
-fontFace({fontFamily:'Body',src:'local("Arial")',fontFeatureSettings:'"kern"',fontVariationSettings:'"wght" 400'}, {within:['@layer fonts','@media screen']});
-export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{opacity:1}}, {within:['@supports (display: grid)']});`,
+fontFace({ '@layer fonts': { '@media screen': {fontFamily:'Body',src:'local("Arial")',fontFeatureSettings:'"kern"',fontVariationSettings:'"wght" 400'} } });
+export const fade = keyframes({ '@supports (display: grid)': {'entry 0%, cover 10%':{opacity:0},'exit 100%':{opacity:1}} });`,
       })
       expect(output.css).toMatchInlineSnapshot(`
       "@layer fonts{@media screen{@font-face{font-family:Body;src:local("Arial");font-feature-settings:"kern";font-variation-settings:"wght" 400;}}}
@@ -3803,7 +3857,7 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {
       const output = Transform.compile({
         moduleId: 'contexts.ts',
-        source: `import {fontFace,keyframes,global} from 'zyzz/web';fontFace({fontFamily:'Body',src:'url(/body)'},undefined);export const fade=keyframes({from:{opacity:0},to:{opacity:1}},void 1);fontFace({fontFamily:'Layered',src:'url(/body)'},{within:['@layer']});global({'@media\\nscreen':{body:{color:'red'}},'@supports(display:grid)':{body:{display:'grid'}},'@media/**/print':{body:{color:'blue'}}});`,
+        source: `import {fontFace,keyframes,global} from 'zyzz/web';fontFace({fontFamily:'Body',src:'url(/body)'},undefined);export const fade=keyframes({from:{opacity:0},to:{opacity:1}},void 1);fontFace({ '@layer': {fontFamily:'Layered',src:'url(/body)'} });global({'@media\\nscreen':{body:{color:'red'}},'@supports(display:grid)':{body:{display:'grid'}},'@media/**/print':{body:{color:'blue'}}});`,
       })
       expect(output.css).toMatchInlineSnapshot(`
       "@font-face{font-family:Body;src:url(/body);}
@@ -6478,7 +6532,7 @@ export namespace styles {
       ]
       const output = Transform.compile({
         moduleId: 'print.ts',
-        source: `import {page} from 'zyzz/web';page({selector:':first',descriptors:{size:'A4 landscape',margin:'2cm',${margins.map((name, index) => JSON.stringify('@' + name) + ':{content:' + JSON.stringify('"' + index + '"') + '}').join(',')},pageOrientation:'upright',marks:'crop cross',bleed:'3mm'}},{within:['@media print']});`,
+        source: `import {page} from 'zyzz/web';page({'@media print':{selector:':first',descriptors:{size:'A4 landscape',margin:'2cm',${margins.map((name, index) => JSON.stringify('@' + name) + ':{content:' + JSON.stringify('"' + index + '"') + '}').join(',')},pageOrientation:'upright',marks:'crop cross',bleed:'3mm'}}});`,
       })
       expect(output.css).toMatchInlineSnapshot(
         `"@media print{@page :first{size:A4 landscape;margin:2cm;@top-left-corner{content:"0";}@top-left{content:"1";}@top-center{content:"2";}@top-right{content:"3";}@top-right-corner{content:"4";}@bottom-left-corner{content:"5";}@bottom-left{content:"6";}@bottom-center{content:"7";}@bottom-right{content:"8";}@bottom-right-corner{content:"9";}@left-top{content:"10";}@left-middle{content:"11";}@left-bottom{content:"12";}@right-top{content:"13";}@right-middle{content:"14";}@right-bottom{content:"15";}page-orientation:upright;marks:crop cross;bleed:3mm;}}"`,
@@ -6488,7 +6542,7 @@ export namespace styles {
     test('retains feature blocks and view-transition descriptors in packed libraries', () => {
       const library = Graph.compile({
         modules: {
-          'document.ts': `import {fontFeatureValues,viewTransition} from 'zyzz/web';fontFeatureValues({families:['Body','Alternate'],fontDisplay:'swap',features:{'@annotation':{circled:1},'@character-variant':{alternate:[2,3]},'@ornaments':{fleuron:4},'@styleset':{editorial:[1,2]},'@stylistic':{round:3},'@swash':{flow:1}}});viewTransition({navigation:'auto',types:'slide forwards'},{within:['@layer transitions']});viewTransition({navigation:'none'},{within:['@media (prefers-reduced-motion: reduce)']});`,
+          'document.ts': `import {fontFeatureValues,viewTransition} from 'zyzz/web';fontFeatureValues({families:['Body','Alternate'],fontDisplay:'swap',features:{'@annotation':{circled:1},'@character-variant':{alternate:[2,3]},'@ornaments':{fleuron:4},'@styleset':{editorial:[1,2]},'@stylistic':{round:3},'@swash':{flow:1}}});viewTransition({ '@layer transitions': {navigation:'auto',types:'slide forwards'} });viewTransition({ '@media (prefers-reduced-motion: reduce)': {navigation:'none'} });`,
         },
       })
       const output = Graph.compile({
@@ -6995,7 +7049,7 @@ describe('finalAcceptance', () => {
           expect(() =>
             Transform.compile({
               moduleId: 'invalid.ts',
-              source: `import {page,property,cssFunction} from 'zyzz/web';${call},{within:[${JSON.stringify(within)}]});`,
+              source: `import {page,property,cssFunction} from 'zyzz/web';${call.replace('(', `({${JSON.stringify(within)}:`)}});`,
             }),
           ).toThrow(Source.ExtractError)
     })
@@ -8595,7 +8649,7 @@ describe('keyframeAcceptance', () => {
       ]) {
         const library = Graph.compile({
           modules: {
-            'frames.ts': `import {keyframes} from 'zyzz/web';\nexport const fade=keyframes({${JSON.stringify(stop)}:{opacity:0},to:{opacity:1}},{within:['@layer motion','@media screen']});`,
+            'frames.ts': `import {keyframes} from 'zyzz/web';\nexport const fade=keyframes({'@layer motion':{'@media screen':{${JSON.stringify(stop)}:{opacity:0},to:{opacity:1}}}});`,
           },
         })
         const packed = Graph.compile({
@@ -11320,7 +11374,7 @@ global({body:{color:\`color(\${profile} 0 1 1 0)\`}});`
         ]) {
           const library = Graph.compile({
             modules: {
-              'profile.ts': `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/print.icc)',components:${JSON.stringify(components)},renderingIntent:${JSON.stringify(renderingIntent)}},{within:['@layer colors','@media print']});`,
+              'profile.ts': `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({'@layer colors':{'@media print':{src:'url(/print.icc)',components:${JSON.stringify(components)},renderingIntent:${JSON.stringify(renderingIntent)}}}});`,
             },
           })
           const packed = Graph.compile({
@@ -12287,7 +12341,7 @@ describe('statements', () => {
           source: `import {customMedia} from 'zyzz/web';export const query=customMedia('(width>1px)',{within:['@layer queries']});`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: query.ts:56: Custom media definitions do not accept a within context.]`,
+        `[Source.ExtractError: query.ts:56: Unknown contribution context option. Use nested at-rule keys for enclosing groups.]`,
       )
     })
     test('rejects conflicting packed customMedia identities', () => {
@@ -13913,7 +13967,7 @@ describe('viewTransition.browser', () => {
         modules: {
           'transitions.ts': `import {viewTransition} from 'zyzz/web';
 viewTransition({navigation:'auto',types:'slide forward'});
-viewTransition({navigation:'none'},{within:['@media (width < 500px)']});`,
+viewTransition({ '@media (width < 500px)': {navigation:'none'} });`,
         },
       })
       const packed = Graph.compile({
@@ -14087,7 +14141,7 @@ describe('viewTransition', () => {
         'slide/**/forwards',
         'slide slide',
       ]) {
-        const source = `import {viewTransition} from 'zyzz/web';\nviewTransition({navigation:${JSON.stringify('\\61 uto')},types:${JSON.stringify(types)}},{within:['@layer transitions','@media (width > 1px)','@supports (color: red)','@container (width > 1px)']});`
+        const source = `import {viewTransition} from 'zyzz/web';\nviewTransition({'@layer transitions':{'@media (width > 1px)':{'@supports (color: red)':{'@container (width > 1px)':{navigation:${JSON.stringify('\\61 uto')},types:${JSON.stringify(types)}}}}}});`
         const direct = Transform.compile({ moduleId: 'transition.ts', source })
         const library = Graph.compile({ modules: { 'transition.ts': source } })
         const packed = Graph.compile({
@@ -14153,10 +14207,10 @@ describe('viewTransition', () => {
         expect(() =>
           Transform.compile({
             moduleId: 'invalid.ts',
-            source: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto'},{within:[${JSON.stringify(within)}]});`,
+            source: `import {viewTransition} from 'zyzz/web';viewTransition({${JSON.stringify(within)}:{navigation:'auto'}});`,
           }),
         ).toThrowErrorMatchingInlineSnapshot(
-          `[Source.ExtractError: invalid.ts:40: Expected enclosing conditional or layer headers.]`,
+          `[Source.ExtractError: invalid.ts:40: Expected navigation or types view-transition descriptors.]`,
         )
       }
     })

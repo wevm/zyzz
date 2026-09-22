@@ -2,9 +2,8 @@
 import type * as Context from './internal/Context.js'
 
 /** Compiles literal font-face descriptors into the initial stylesheet. */
-export function fontFace<const options extends fontFace.Options>(
-  options: options &
-    Record<Exclude<keyof options, keyof fontFace.Options>, never>,
+export function fontFace<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): void {
   void context
@@ -39,3 +38,17 @@ export declare namespace fontFace {
     readonly lineGapOverride?: 'normal' | `${number}%` | undefined
   }
 }
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends fontFace.Options
+  ? options & Record<Exclude<keyof options, keyof fontFace.Options>, never>
+  : never

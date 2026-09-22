@@ -7,11 +7,7 @@ import type * as Context from './internal/Context.js'
 
 /** Emits the restricted position-try declaration set and returns its CSS name. */
 export function positionTry<const declarations extends Record<string, unknown>>(
-  declarations: declarations &
-    NoInfer<
-      Value.Accepted<declarations, positionTry.Declarations> &
-        Value.Checked<declarations>
-    >,
+  declarations: declarations & NoInfer<Accepted<declarations>>,
   context: Context.Options = {},
 ): positionTry.Reference {
   void declarations
@@ -69,3 +65,22 @@ export declare namespace positionTry {
   /** Compiler-owned position fallback name. */
   type Reference = RuleReference.Reference<'positionTry'>
 }
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<declarations> =
+  declarations extends Record<string, unknown>
+    ? declarations &
+        NoInfer<
+          Value.Accepted<declarations, positionTry.Declarations> &
+            Value.Checked<declarations>
+        >
+    : never

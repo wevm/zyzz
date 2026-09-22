@@ -520,6 +520,8 @@ describe('zyzz', () => {
         },
       )
       try {
+        if (!watcher) throw new Error('Webpack watcher did not start.')
+
         await vi.waitFor(
           async () => {
             if (failure) throw failure

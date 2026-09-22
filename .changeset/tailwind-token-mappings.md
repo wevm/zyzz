@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Aligned non-font token mappings and fallback precedence with Tailwind while preserving Geist colors, typography, and explicit spacing values.

@@ -382,11 +382,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         cached = new Map()
         reads.set(entry.environment, cached)
       }
+      // Full-project compilation must not reuse reads from concurrent module transforms.
       const text =
         source ??
-        cached.get(file) ??
+        (everything ? undefined : cached.get(file)) ??
         (await snapshot(entry.environment).read(file))
-      cached.set(file, text)
+      if (!everything) cached.set(file, text)
 
       modules[id] = text
 

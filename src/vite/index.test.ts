@@ -1375,6 +1375,69 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       await Fs.rm(root, { recursive: true, force: true })
     }
   }, 30000)
+
+  test('HTML initialization reads fresh sources during a background transform', async () => {
+    const files = {
+      'a.ts': "import './gate'; import './config'",
+      'background.ts': "import './gate'; export const value = 1",
+      'gate.ts': 'export const value = 1',
+      'config.ts':
+        "import { Config } from 'zyzz'; import { global } from 'zyzz/web'; export const config = Config.create({ defaultVars: 'base', vars: { base: { color: { ink: 'red' } } } }); global({body:{color:'red'}})",
+      'index.html': '<script type="module" src="/a.ts"></script>',
+    }
+    const { config, root } = await create(files)
+    const background = Promise.withResolvers<void>()
+    const document = Promise.withResolvers<void>()
+    let active = false
+    let backgroundWaiting = false
+    let documentWaiting = false
+    config.plugins!.push({
+      name: 'coordinate-source-reads',
+      enforce: 'pre',
+      async resolveId(source, importer) {
+        if (!active || source !== './gate') return
+        if (importer === Path.join(root, 'background.ts')) {
+          backgroundWaiting = true
+          await background.promise
+        } else if (importer === Path.join(root, 'a.ts')) {
+          documentWaiting = true
+          await document.promise
+        }
+      },
+    })
+    const server = await Vite.createServer(config)
+    try {
+      await server.listen()
+      expect(
+        (
+          await server.transformIndexHtml('/index.html', files['index.html'])
+        ).includes('localStorage.getItem("zyzz")'),
+      ).toMatchInlineSnapshot('true')
+      // Requests must observe disk changes even before watcher notifications arrive.
+      await server.watcher.close()
+      active = true
+      const transform = server.transformRequest('/background.ts')
+      await vi.waitUntil(() => backgroundWaiting)
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: 'export const value = 1',
+      })
+      const html = server.transformIndexHtml('/index.html', files['index.html'])
+      await vi.waitUntil(() => documentWaiting)
+      background.resolve()
+      await transform
+      document.resolve()
+      expect(
+        (await html).includes('localStorage.getItem("zyzz")'),
+      ).toMatchInlineSnapshot('false')
+    } finally {
+      background.resolve()
+      document.resolve()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('inlines configuration initialization before other head scripts in development and production', async () => {
     // An unrelated earlier module and layer-free configurations exercise whole-project discovery.
     const files = {

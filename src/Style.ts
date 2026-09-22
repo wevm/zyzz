@@ -656,8 +656,8 @@ export function define(
         if (
           theme &&
           !custom &&
-          Token.mapped(theme, key) &&
           !Token.is(resolved) &&
+          Token.mapped(theme, key) &&
           !(Binding.is(resolved) && !resolved.name.startsWith('--z-d')) &&
           !(
             Token.isExpression(resolved) &&

@@ -153,13 +153,18 @@ async function setup(): Promise<() => Promise<string>> {
         zyzz.vite(),
         {
           name: 'cache-fixture',
-          hotUpdate() {
-            updated?.()
+          hotUpdate({ file }) {
+            if (
+              this.environment.name === 'client' &&
+              file === Path.join(root, 'config.mjs')
+            )
+              updated?.()
           },
         },
       ],
       root,
-      server: { host: '127.0.0.1', port: 0 },
+      // Background transforms can reopen filesystem watchers during teardown.
+      server: { host: '127.0.0.1', port: 0, preTransformRequests: false },
     })
     await server.listen()
     const watching = performance.now()

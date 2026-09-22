@@ -169,7 +169,7 @@ export const {style,vars}=Config.create({vars:{base,alternate},defaultVars:'base
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`28`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`29`)
     const source = `import {style,vars} from 'library';
 export const title=style({typography:'heading',borderStyle:'solid',borderWidth:'regular'});
 export const fixed=style({typography:'heading',fontSize:'18px'});
@@ -598,7 +598,7 @@ export const body=style({
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`28`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`29`)
 
     expect(() =>
       Graph.compile({
@@ -1105,7 +1105,7 @@ describe('queries', () => {
 
       expect(
         JSON.parse(result.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`28`)
+      ).toMatchInlineSnapshot(`29`)
       expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
         .toMatchInlineSnapshot(`
           {

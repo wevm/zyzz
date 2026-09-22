@@ -852,8 +852,8 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
           }
         ).version
 
-      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`28`)
-      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`28`)
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`29`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`29`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -1205,7 +1205,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#06c"}}}},"version":28}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#06c"}}}},"version":29}"`,
       )
 
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
@@ -1230,7 +1230,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#175"}}}},"version":28}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#175"}}}},"version":29}"`,
       )
 
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')

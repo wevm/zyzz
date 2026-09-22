@@ -35,7 +35,7 @@ export type Call = {
   readonly variableSet?: boolean | undefined
   readonly directVariables?: boolean | undefined
   readonly variableConfig?: boolean | undefined
-  readonly variableMappings?: Vars.Mappings | false | undefined
+  readonly variablePropertyGroups?: Vars.PropertyGroups | false | undefined
   /** Whether this bound authoring alias declares recipes. */
   readonly recipe?: boolean | undefined
   /** Static CSS function signature shared during extraction and packed serialization. */
@@ -1213,7 +1213,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         type: theme.type,
         options: theme.options,
         variableConfig: theme.variableConfig,
-        variableMappings: theme.variableMappings,
+        variablePropertyGroups: theme.variablePropertyGroups,
         output: theme.output,
       })
 

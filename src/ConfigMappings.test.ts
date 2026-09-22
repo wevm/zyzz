@@ -293,7 +293,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`28`)
+    ).toMatchInlineSnapshot(`29`)
   })
   test('preserves mapped HTML theme handles through source and packed aliases', async () => {
     const library = Graph.compile({
@@ -420,7 +420,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot(`28`)
+    expect(changed.version).toMatchInlineSnapshot(`29`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>

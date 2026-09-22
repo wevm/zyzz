@@ -1,6 +1,6 @@
 # Vars
 
-Define shared values independently of their CSS property mappings. Variable sets support nested categories, light/dark colors, ordered media overrides, and references to other sets.
+Define shared values independently of their CSS property groups. Variable sets support nested categories, light/dark colors, ordered media overrides, and references to other sets.
 
 ```ts
 import { Config, Vars } from 'zyzz'
@@ -76,23 +76,25 @@ Source compilation accepts an inline synchronous callback with one named paramet
 
 References retain their source identity. Extending a set changes values within its scope without changing the paths used by consumers. Separate definitions retain independent identities.
 
-## Mappings
+## Property groups
 
-A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow Tailwind’s non-font namespaces and fallback order. Font scalar categories keep their matching properties.
+A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default group lookup follows Tailwind’s non-font namespaces and fallback order. Font scalar categories keep their matching properties.
 
 ```ts
 export const { style, vars } = Config.create({
   vars: base,
-  mappings: {
-    color: ['color', 'backgroundColor'],
-    spacing: ['padding', 'gap'],
+  propertyGroups: {
+    color: ['color'],
+    backgroundColor: ['color'],
+    padding: ['spacing'],
+    gap: ['spacing'],
   },
 })
 ```
 
-Each supplied array replaces that category's mapping. Other defaults remain intact. `[]` disables shorthand lookup for that category. Custom categories require a mapping for shorthand lookup. All scalar paths remain available through `vars`, with value-domain checking independent of mappings.
+Each supplied array replaces that property's lookup order. Omitted properties keep their defaults. `[]` disables token name lookup for that property. All scalar paths remain available through explicit `vars` references, with CSS value validation independent of group lookup.
 
-Multiple categories cannot supply the same token name to the same property. CSS literals take precedence over shorthand token names. Use an explicit reference when a token name collides with a CSS literal.
+Names from every listed group are accepted. If multiple groups contain the same name, the first match wins. Configured token names take precedence over CSS literals; use `!custom` to select the literal.
 
 ## Conditions
 
@@ -106,7 +108,7 @@ Named sets require `defaultVars` and identical paths and domains. `vars({ set, c
 
 Nested scopes select their own values. The nearest enclosing scope supplies variable values. `colorScheme` accepts `light`, `dark`, or `light dark`; omitting it preserves the inherited scheme.
 
-Source linking and packed-library contracts retain variable definitions, references, mappings, and selection helpers. Variable-set libraries require compiler contract version 26 or later.
+Source linking and packed-library contracts retain variable definitions, references, property groups, and selection helpers. Property group lookup requires compiler contract version 29 or later.
 
 `config.vars` is both the reference tree and the scope selector. `Vars` replaces the removed `Theme` module; configuration uses `vars` and `defaultVars`. Appearance controls read and save `{ set, colorScheme }`.
 
@@ -130,7 +132,7 @@ Explicit typography fields override matching base and conditional preset fields 
 
 ## Category fallbacks
 
-The first category containing the requested name wins. Custom `mappings` replace the targets of that category; `mappings: false` requires full paths. Explicit references bypass category lookup and retain CSS value validation.
+The first category containing the requested name wins. Custom `propertyGroups` replace each property's ordered group list; `propertyGroups: false` requires full paths. Explicit references bypass category lookup and retain CSS value validation.
 
 | Properties                                                                           | Categories, in order                               |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------- |

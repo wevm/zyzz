@@ -12,7 +12,7 @@ import * as Literal from './Literal.js'
 import * as VariableData from './VariableSets.js'
 
 // Ordered category fallbacks shared by runtime lookup and inferred token names.
-const propertyGroups = {
+const defaultPropertyGroups = {
   accentColor: ['accentColor', 'color'],
   animation: ['animate'],
   aspectRatio: ['aspect'],
@@ -253,7 +253,7 @@ export function accepts(
   return group === property
 }
 
-/** Checks explicit variable values independently of shorthand category mappings. */
+/** Checks explicit variable values independently of token group lookup. */
 export function acceptsReference(
   reference: Reference,
   property: keyof Literal.Properties,
@@ -378,8 +378,8 @@ export const complete = Symbol('zyzz.contract.complete')
 export type Contract = {
   /** Whether values belong to independent variables rather than fixed theme categories. */
   readonly variableSet?: boolean | undefined
-  /** Configuration-local category-to-property mappings. */
-  readonly mappings?: VariableSets.Mappings | false | undefined
+  /** Configuration-local ordered token groups for each CSS property. */
+  readonly propertyGroups?: VariableSets.PropertyGroups | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Fallback layer for declarations without an explicit layer. */
@@ -518,25 +518,22 @@ export type Names<
   tokens,
   property extends keyof Literal.Properties,
 > = tokens extends {
-  readonly '~vars': { values: infer values; mappings: infer mappings }
+  readonly '~vars': {
+    values: infer values
+    propertyGroups: infer propertyGroups
+  }
 }
-  ? mappings extends false
+  ? propertyGroups extends false
     ? Paths<Omit<values, 'breakpoint' | 'containerNames'>, property>
-    : {
-        [category in keyof values]: category extends keyof mappings
-          ? mappings[category] extends readonly unknown[]
-            ? property extends mappings[category][number]
-              ? Paths<values[category], property>
-              : never
-            : never
-          : category extends (
-                property extends keyof typeof propertyGroups
-                  ? (typeof propertyGroups)[property][number]
-                  : never
-              )
-            ? Paths<values[category], property>
-            : never
-      }[keyof values]
+    : GroupNames<
+        values,
+        property extends keyof propertyGroups
+          ? propertyGroups[property]
+          : property extends keyof typeof defaultPropertyGroups
+            ? (typeof defaultPropertyGroups)[property]
+            : [],
+        property
+      >
   : {
       [group in Extract<
         keyof tokens,
@@ -545,6 +542,27 @@ export type Names<
         ? Paths<NonNullable<tokens[group]>>
         : never
     }[Extract<keyof tokens, Group>]
+
+type GroupNames<
+  values,
+  groups,
+  property extends keyof Literal.Properties,
+  seen = never,
+> = groups extends readonly [infer first, ...infer rest]
+  ? first extends keyof values
+    ?
+        | Exclude<Paths<values[first], property>, seen>
+        | GroupNames<values, rest, property, seen | Paths<values[first]>>
+    : GroupNames<values, rest, property, seen>
+  : groups extends readonly []
+    ? never
+    : groups extends readonly (infer group)[]
+      ? {
+          [key in keyof values]: key extends group
+            ? Paths<values[key], property>
+            : never
+        }[keyof values]
+      : never
 
 type Paths<tree, property extends keyof Literal.Properties = never> = [
   tree,
@@ -670,7 +688,13 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
   if (!data) throw new Error('Expected a theme definition.')
 
   const groups: readonly string[] =
-    propertyGroups[options.property as keyof typeof propertyGroups] ?? []
+    (data.contract.propertyGroups === false
+      ? undefined
+      : data.contract.propertyGroups?.[options.property]) ??
+    defaultPropertyGroups[
+      options.property as keyof typeof defaultPropertyGroups
+    ] ??
+    []
 
   if (data.contract.variableSet) {
     for (const [path, entry] of Object.entries(data.values).sort(
@@ -679,15 +703,11 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
         groups.indexOf(right.split('.')[0]!),
     )) {
       const [category, ...parts] = path.split('.')
-      const mappings = data.contract.mappings
-      const mapped = mappings === false ? undefined : mappings?.[category!]
+      const propertyGroups = data.contract.propertyGroups
       if (
-        mappings === false
+        propertyGroups === false
           ? path !== String(value)
-          : parts.join('.') !== String(value) ||
-            !(mapped
-              ? mapped.includes(options.property)
-              : groups.includes(category!))
+          : parts.join('.') !== String(value) || !groups.includes(category!)
       )
         continue
       return create({
@@ -753,21 +773,16 @@ export function mapped(
     ?.value as Metadata
   return Object.keys(data.values).some((path) => {
     const category = path.split('.')[0]!
-    const targets =
-      data.contract.mappings === false
+    const groups =
+      data.contract.propertyGroups === false
         ? undefined
-        : data.contract.mappings?.[category]
+        : (data.contract.propertyGroups?.[property] ??
+          defaultPropertyGroups[property as keyof typeof defaultPropertyGroups])
     if (
-      data.contract.mappings !== false &&
-      !(targets
-        ? targets.includes(property)
-        : data.contract.variableSet
-          ? (
-              propertyGroups[property as keyof typeof propertyGroups] as
-                | readonly string[]
-                | undefined
-            )?.includes(category)
-          : accepts(category as Group, property))
+      data.contract.propertyGroups !== false &&
+      !(data.contract.variableSet
+        ? (groups as readonly string[] | undefined)?.includes(category)
+        : accepts(category as Group, property))
     )
       return false
     let leaf: unknown = Object.getOwnPropertyDescriptor(theme, 'tokens')?.value

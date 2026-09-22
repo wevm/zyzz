@@ -55,7 +55,7 @@ describe('define', () => {
     })
     const config = Config.create({
       vars: base,
-      mappings: { spacing: ['padding'], surface: ['backgroundColor'] },
+      propertyGroups: { padding: ['spacing'], backgroundColor: ['surface'] },
     })
     config.style({
       color: 'accent',
@@ -63,14 +63,17 @@ describe('define', () => {
       backgroundColor: 'panel',
       width: config.vars.spacing.page,
     })
-    // @ts-expect-error spacing mapping replaces the default width mapping
+    // Omitted properties retain their default group lookup.
     config.style({ width: 'page' })
     // @ts-expect-error unknown shorthand
     config.style({ color: 'missing' })
     // @ts-expect-error color references do not supply lengths
     config.style({ width: config.vars.color.accent })
-    const disabled = Config.create({ vars: base, mappings: { color: [] } })
-    // @ts-expect-error disabled category
+    const disabled = Config.create({
+      vars: base,
+      propertyGroups: { color: [] },
+    })
+    // @ts-expect-error disabled property
     disabled.style({ color: 'accent' })
     disabled.style({ color: disabled.vars.color.accent })
     expectTypeOf(config.vars.color.accent.group).toEqualTypeOf<'color'>()
@@ -191,7 +194,11 @@ test('validates mapped leaf values and optional selections', () => {
   })
   const { style, vars } = Config.create({
     vars: base,
-    mappings: { mixed: ['padding', 'opacity', 'zIndex'] },
+    propertyGroups: {
+      padding: ['mixed'],
+      opacity: ['mixed'],
+      zIndex: ['mixed'],
+    },
   })
   style({ padding: 'gap', opacity: 'opacity', zIndex: 'order' })
   style({ padding: 'nested.gap' })
@@ -242,7 +249,7 @@ describe('full paths', () => {
         opacity: { muted: 0.5 },
         breakpoint: { desktop: '800px' },
       },
-      mappings: false,
+      propertyGroups: false,
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
     })
     config.style({
@@ -310,7 +317,7 @@ test('infers Tailwind fallback categories without changing font categories', () 
   })
   // @ts-expect-error Containers do not supply heights.
   config.style({ height: 'wide' })
-  // @ts-expect-error Font mappings do not fall back to spacing.
+  // @ts-expect-error Font groups do not fall back to spacing.
   config.style({ lineHeight: 'space' })
   // @ts-expect-error Decoration thickness has a dedicated category.
   config.style({ textDecorationThickness: 'space' })
@@ -322,7 +329,7 @@ test('infers Tailwind fallback categories without changing font categories', () 
   config.style({ filter: 'soft' })
   const explicit = Config.create({
     vars: { container: { wide: '640px' } },
-    mappings: false,
+    propertyGroups: false,
   })
   explicit.style({ width: 'container.wide' })
 })
@@ -352,4 +359,51 @@ test('infers numeric and compound token names', () => {
     gridTemplateColumns: 'split',
     backgroundPosition: 'offset',
   })
+})
+
+test('infers ordered property groups and rejects invalid properties', () => {
+  const config = Config.create({
+    vars: {
+      width: { narrow: '4px' },
+      spacing: { gap: '8px' },
+      container: { wide: '16px' },
+      palette: { ink: '#fff' },
+    },
+    propertyGroups: {
+      width: ['width', 'spacing', 'container'],
+      height: [],
+      color: ['palette'],
+    },
+  })
+  config.style({ width: 'narrow' })
+  config.style({ width: 'gap' })
+  config.style({ width: 'wide', color: 'ink', padding: 'gap' })
+  // @ts-expect-error Disabled property lookup.
+  config.style({ height: 'gap' })
+  config.style({ height: config.vars.spacing.gap })
+  // @ts-expect-error Unlisted groups cannot supply names.
+  config.style({ backgroundColor: 'ink' })
+  Config.create({
+    vars: { spacing: { gap: '8px' } },
+    // @ts-expect-error CSS property names are required.
+    propertyGroups: { unknown: ['spacing'] },
+  })
+  Config.create({
+    vars: { spacing: { gap: '8px' } },
+    // @ts-expect-error Removed category-to-property API.
+    mappings: { spacing: ['width'] },
+  })
+})
+
+test('uses the first matching group for value domains', () => {
+  const { style } = Config.create({
+    vars: {
+      palette: { shared: '#fff' },
+      spacing: { shared: '8px', gap: '16px' },
+    },
+    propertyGroups: { width: ['palette', 'spacing'] },
+  })
+  style({ width: 'gap' })
+  // @ts-expect-error The first matching token is a color, not a length.
+  style({ width: 'shared' })
 })

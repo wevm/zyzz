@@ -59,4 +59,4 @@ bench('fontFace / descriptor inventory', () => {
       },
     },
   })
-}).types([24, 'instantiations'])
+}).types([1133, 'instantiations'])

@@ -34,7 +34,7 @@ bench('counterStyle / descriptor inventory and identity', () => {
   })
 
   style({ listStyleType: dots })
-}).types([754, 'instantiations'])
+}).types([1289, 'instantiations'])
 
 bench('fontPaletteValues and positionTry / identities', () => {
   const palette = fontPaletteValues({
@@ -77,4 +77,4 @@ bench('fontFeatureValues and viewTransition / descriptors', () => {
     fontDisplay: 'swap',
   })
   viewTransition({ navigation: 'auto', types: 'slide forwards' })
-}).types([1182, 'instantiations'])
+}).types([3240, 'instantiations'])

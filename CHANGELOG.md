@@ -1,5 +1,17 @@
 # zyzz
 
+## 0.0.9
+
+### Patch Changes
+
+- c0c8433: Replaced bracketed arbitrary values with the `!custom` suffix.
+  
+  ```ts
+  style({ padding: '7px !custom', color: 'red !custom !important' })
+  ```
+- 84d4bde: Fixed stale Vite initialization scripts when background transforms overlapped document requests.
+- 7fdef92: Reused Vite compilation and source reads across modules, skipped JavaScript HMR for CSS-only edits, and cleared styles from deleted modules.
+
 ## 0.0.8
 
 ### Patch Changes

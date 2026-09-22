@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.10
+
+### Patch Changes
+
+- b640c31: Aligned token mappings and fallback precedence with Tailwind.
+
 ## 0.0.9
 
 ### Patch Changes

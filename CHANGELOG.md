@@ -1,5 +1,23 @@
 # zyzz
 
+## 0.0.11
+
+### Patch Changes
+
+- 0df91d8: Replaced declaration helper `within` options with nested at-rule keys.
+  
+  ```ts
+  import { fontFace } from 'zyzz/web'
+  
+  fontFace({
+    '@layer base': {
+      fontFamily: 'Body',
+      src: 'url(/body.woff2)',
+    },
+  })
+  ```
+- 4bb3aa0: Fixed Webpack builds reading stale source contents during filesystem updates.
+
 ## 0.0.10
 
 ### Patch Changes

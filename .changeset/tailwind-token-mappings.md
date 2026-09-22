@@ -2,7 +2,7 @@
 'zyzz': minor
 ---
 
-Aligned non-font token categories, defaults, and fallback precedence with Tailwind while preserving typography and explicit spacing values.
+Aligned non-font token mappings and fallback precedence with Tailwind while preserving Geist colors, typography, and explicit spacing values.
 
 ```ts
 import { Config } from 'zyzz'

@@ -1172,13 +1172,13 @@ describe('queries', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-26ntzho2pyyt-config-theme{--z-t26ntzho2pyyt-config-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-config-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-config-color_2e_blue_2e_500:oklch(62.3% 0.214 259.815);}
+        ".z_theme-26ntzho2pyyt-config-theme{--z-t26ntzho2pyyt-config-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-config-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-config-color_2e_blue_2e_500:light-dark(#99ceff,#0a4380);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
         .z-font-family-GS_mYx{font-family:var(--z-t26ntzho2pyyt-config-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
         .z-font-size-WS5zHH{font-size:var(--z-t26ntzho2pyyt-config-fontSize_2e_base,1rem);}
-        .z-text-rfYY_K{color:var(--z-t26ntzho2pyyt-config-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
+        .z-text-wudS4h{color:var(--z-t26ntzho2pyyt-config-color_2e_blue_2e_500,light-dark(#99ceff,#0a4380));}"
       `)
 
       const built = await Esbuild.build({
@@ -1287,11 +1287,11 @@ describe('queries', () => {
         .z-font-size-tf-SY6{font-size:var(--z-t1e8a67z1uaws1j-config-fontSize_2e_body,1rem);}"
       `)
     })
-    test('Chromium preserves bundled typography and Tailwind colors across schemes', async () => {
+    test('Chromium applies bundled typography and Geist colors across schemes', async () => {
       const styles = Style.define({
         body: {
           fontSize: bundled.fontSize.base,
-          color: bundled.color.gray[950],
+          color: bundled.color.foreground,
         },
       })
 
@@ -1314,7 +1314,7 @@ describe('queries', () => {
           await page
             .locator('#body')
             .evaluate((element) => getComputedStyle(element).color),
-        ).toMatchInlineSnapshot(`"oklch(0.13 0.028 261.692)"`)
+        ).toMatchInlineSnapshot(`"rgb(23, 23, 23)"`)
 
         await page
           .locator('#body')
@@ -1326,7 +1326,7 @@ describe('queries', () => {
           await page
             .locator('#body')
             .evaluate((element) => getComputedStyle(element).color),
-        ).toMatchInlineSnapshot(`"oklch(0.13 0.028 261.692)"`)
+        ).toMatchInlineSnapshot(`"rgb(237, 237, 237)"`)
       } finally {
         await browser.close()
       }
@@ -1334,7 +1334,7 @@ describe('queries', () => {
     test('compiles the opt-in bundled typography and palette', () => {
       const styles = Style.define({
         body: {
-          color: bundled.color.gray[950],
+          color: bundled.color.foreground,
           fontFamily: bundled.fontFamily.sans,
           fontSize: bundled.fontSize.base,
           padding: bundled.spacing[4],
@@ -1344,8 +1344,8 @@ describe('queries', () => {
       const output = Css.compile({ styles, vars: { default: bundled } })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".t_0{--z0:oklch(13% 0.028 261.692);--z1:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z2:1rem;--z3:1rem;}
-        .z-text-XLxk9F{color:var(--z0,oklch(13% 0.028 261.692));}
+        ".t_0{--z0:light-dark(#171717,#ededed);--z1:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z2:1rem;--z3:1rem;}
+        .z-text-CZyri6{color:var(--z0,light-dark(#171717,#ededed));}
         .z-font-family-9aYERC{font-family:var(--z1,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
         .z-font-size-4nuiGJ{font-size:var(--z2,1rem);}
         .z-p-3OsuE-{padding:var(--z3,1rem);}"

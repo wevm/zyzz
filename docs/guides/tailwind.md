@@ -126,7 +126,7 @@ Tailwind's stylesheet configures the utilities generated for that stylesheet. In
 | `style` from `./zyzz.config.js` | The application's configured tokens and layers |
 | `style` from `zyzz/default`     | Zyzz's opt-in default tokens                   |
 
-The default theme follows Tailwind 4.3.3 for non-font scales. Font scales and Geist typography remain Zyzz-specific, and spacing uses an explicit table without fractional token paths. Preserve application overrides when visual equivalence matters.
+Non-font token mappings and fallback precedence follow Tailwind. The default theme retains Geist colors and typography, existing font scales, and an explicit spacing table without fractional token paths. Preserve application overrides when visual equivalence matters.
 
 ### Component Variants
 
@@ -205,16 +205,16 @@ The snippet shows only the Zyzz entry. The plugin transforms source and delivers
 Themes supply the tokens available to `style` and `variants`. Use the bundled theme or define an application theme that preserves existing Tailwind values.
 
 > [!TIP]
-> Start with [`zyzz/default`](../api/default.md) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Tailwind colors and Geist typography. No `zyzz.config.ts` is required.
+> Start with [`zyzz/default`](../api/default.md) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Geist colors and typography. No `zyzz.config.ts` is required.
 >
 > ```tsx
 > import { style } from 'zyzz/default'
 >
 > namespace styles {
 >   export const card = style({
->     backgroundColor: 'white',
+>     backgroundColor: 'surface',
 >     borderRadius: 'lg',
->     color: 'gray.950',
+>     color: 'foreground',
 >     colorScheme: 'light dark',
 >     display: 'grid',
 >     gap: 4,
@@ -787,7 +787,7 @@ Copy the application's actual [color values](https://tailwindcss.com/docs/colors
 
 ### Default Differences
 
-`zyzz/default` uses the Tailwind 4.3.3 palette with steps from `50` to `950`. Colors do not change automatically with the color scheme. See [Default Config](../api/default.md).
+`zyzz/default` uses Geist light/dark scales with steps from `100` to `1000`, plus semantic colors. Tailwind's palette names, steps, and values differ. Matching token names do not establish visual equivalence. See [Default Config](../api/default.md).
 
 ### Semantic Colors
 

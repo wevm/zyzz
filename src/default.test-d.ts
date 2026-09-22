@@ -35,7 +35,7 @@ describe('default', () => {
   test('preserves bundled tokens, aliases, and payload selections', () => {
     const button = variants({
       conditions: { wide: '@media >=md' },
-      base: { fontFamily: 'sans', color: 'gray.950' },
+      base: { fontFamily: 'sans', color: 'foreground' },
       variants: {
         size: {
           sm: { padding: 4 },

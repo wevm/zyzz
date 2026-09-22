@@ -175,7 +175,7 @@ variants({base:{color:'missing'}});`,
             await page
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
-          ).toMatchInlineSnapshot(`"oklch(0.623 0.214 259.815)"`)
+          ).toMatchInlineSnapshot(`"rgb(153, 206, 255)"`)
           expect(
             await page.locator('button').evaluate((element) => {
               const style = getComputedStyle(element)
@@ -202,10 +202,10 @@ variants({base:{color:'missing'}});`,
             await page
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
-          ).toMatchInlineSnapshot(`"oklch(0.623 0.214 259.815)"`)
+          ).toMatchInlineSnapshot(`"rgb(10, 67, 128)"`)
           await page.reload()
           await page.waitForFunction(
-            "getComputedStyle(document.querySelector('button')).color === 'oklch(0.623 0.214 259.815)'",
+            "getComputedStyle(document.querySelector('button')).color === 'rgb(10, 67, 128)'",
           )
           expect(
             await page.locator('html').getAttribute('data-restored-scheme'),

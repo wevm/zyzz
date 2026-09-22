@@ -14,34 +14,34 @@ namespace styles {
 }
 ```
 
-The non-font scales follow [Tailwind CSS 4.3.3](https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/tailwindcss/theme.css). Font scales and Geist typography retain their existing values. Fonts require application-owned loading.
+Non-font token mappings and fallback precedence follow Tailwind. Effect, radius, and query scales follow [Tailwind CSS 4.3.3](https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/tailwindcss/theme.css). Geist colors, font scales, and typography retain their existing values. Fonts require application-owned loading.
 
-| Group           | Keys                                                                       |
-| --------------- | -------------------------------------------------------------------------- |
-| `color`         | Tailwind palette families in steps `50` to `950`, plus `black` and `white` |
-| `fontFamily`    | `sans`, `mono`, `serif`                                                    |
-| `fontSize`      | `xs` to `9xl`                                                              |
-| `fontWeight`    | `thin` to `black`                                                          |
-| `letterSpacing` | `tighter` to `widest`                                                      |
-| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                              |
-| `typography`    | Geist `heading`, `button`, `label`, and `copy` sets                        |
-| `spacing`       | `px` and the existing whole-number quarter-rem steps through `96`          |
-| `radius`        | `xs` to `4xl`                                                              |
-| `breakpoint`    | `sm` to `2xl`                                                              |
-| `container`     | `3xs` to `7xl`                                                             |
-| `aspect`        | `video`                                                                    |
-| `shadow`        | `2xs` to `2xl`, `inner`                                                    |
-| `insetShadow`   | `2xs`, `xs`, `sm`                                                          |
-| `dropShadow`    | `xs` to `2xl`                                                              |
-| `textShadow`    | `2xs` to `lg`                                                              |
-| `blur`          | `xs` to `3xl`                                                              |
-| `perspective`   | `dramatic`, `near`, `normal`, `midrange`, `distant`                        |
-| `ease`          | `in`, `out`, `in-out`                                                      |
-| `animate`       | `spin`, `ping`, `pulse`, `bounce`, with keyframes                          |
+| Group           | Keys                                                                  |
+| --------------- | --------------------------------------------------------------------- |
+| `color`         | Geist palette families in steps `100` to `1000`, plus semantic colors |
+| `fontFamily`    | `sans`, `mono`, `serif`                                               |
+| `fontSize`      | `xs` to `9xl`                                                         |
+| `fontWeight`    | `thin` to `black`                                                     |
+| `letterSpacing` | `tighter` to `widest`                                                 |
+| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                         |
+| `typography`    | Geist `heading`, `button`, `label`, and `copy` sets                   |
+| `spacing`       | `px` and the existing whole-number quarter-rem steps through `96`     |
+| `radius`        | `xs` to `4xl`                                                         |
+| `breakpoint`    | `sm` to `2xl`                                                         |
+| `container`     | `3xs` to `7xl`                                                        |
+| `aspect`        | `video`                                                               |
+| `shadow`        | `2xs` to `2xl`, `inner`                                               |
+| `insetShadow`   | `2xs`, `xs`, `sm`                                                     |
+| `dropShadow`    | `xs` to `2xl`                                                         |
+| `textShadow`    | `2xs` to `lg`                                                         |
+| `blur`          | `xs` to `3xl`                                                         |
+| `perspective`   | `dramatic`, `near`, `normal`, `midrange`, `distant`                   |
+| `ease`          | `in`, `out`, `in-out`                                                 |
+| `animate`       | `spin`, `ping`, `pulse`, `bounce`, with keyframes                     |
 
 Rename category keys `borderRadius`, `breakpoints`, and `containers` to `radius`, `breakpoint`, and `container`. Style declarations still use CSS property names such as `borderRadius`.
 
-Palette values stay the same across color schemes. Define application-specific light/dark pairs when needed. The former Geist palette aliases (`foreground`, `surface`, `background`, and `grayAlpha`) are not included.
+Geist colors include light/dark pairs for `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, and `teal`. The palette includes `background.100`, `background.200`, `black`, and `white`. The semantic aliases `foreground` and `surface` match `gray.1000` and `background.100`, respectively.
 
 Spacing remains an explicit table. Numeric names resolve only when present; no scalar `DEFAULT` multiplier is used. Fractional names are omitted because dots separate token paths. Use semantic names or literal CSS lengths for additional steps.
 

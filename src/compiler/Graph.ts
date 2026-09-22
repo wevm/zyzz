@@ -73,6 +73,8 @@ export declare namespace compile {
 
   /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
+    /** Packed resources deduplicated by the host across scoped source outputs. */
+    readonly [Stylesheets.packed]?: readonly Stylesheets.Resource[]
     /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
     readonly contracts: Readonly<Record<string, string>>
     /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
@@ -1325,24 +1327,57 @@ function build(options: compile.Options, cache?: Cache): Cache {
   }
 
   const sharedVisited = new Set<string>()
+  const packed: Stylesheets.Resource[] = []
 
   const shared = (() => {
     try {
       const entry = options[Stylesheets.entry]
+      const packedSections =
+        entry === undefined
+          ? []
+          : (dependencies[entry] ?? [])
+              .filter((id) => Object.hasOwn(libraries, id))
+              .flatMap((id) => reachable(id, sharedVisited))
       const sharedSections =
         entry === undefined
           ? ids.flatMap((id) => reachable(id, sharedVisited))
-          : [
-              ...(dependencies[entry] ?? [])
-                .filter((id) => Object.hasOwn(libraries, id))
-                .flatMap((id) => reachable(id, sharedVisited)),
-              ...(sections.get(entry) ?? []),
-            ]
+          : (sections.get(entry) ?? [])
+      if (packedSections.length) {
+        // Validate combined ownership and ordering before splitting independently loaded resources.
+        Stylesheets.render([...packedSections, ...sharedSections])
+        for (const section of packedSections) {
+          packed.push({
+            id: JSON.stringify([section.owner, section.source, section.key]),
+            ...Stylesheets.render([section]),
+          })
+        }
+      }
       const resetSource =
         (options.reset === undefined ? undefined : 'zyzz/reset.css') ??
         resetOwners[0] ??
         sharedSections.find((section) => section.key === 'optional-reset-order')
           ?.source
+
+      if (packed.length) {
+        const order = Stylesheets.render([
+          ...(resetSource === undefined
+            ? []
+            : [
+                {
+                  source: resetSource,
+                  css: '',
+                  layers: layerNames.length
+                    ? layerNames.map((name) => ['reset', name])
+                    : [['reset']],
+                },
+              ]),
+          ...[...packedSections, ...sharedSections].map((section) => ({
+            ...section,
+            css: '',
+          })),
+        ])
+        if (order.css) packed.unshift({ ...order, id: order.css })
+      }
 
       return Stylesheets.render([
         ...(resetSource === undefined
@@ -1663,6 +1698,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     transformed,
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
+      ...(packed.length ? { [Stylesheets.packed]: packed } : {}),
       ...(sharedCss
         ? {
             sharedCss,

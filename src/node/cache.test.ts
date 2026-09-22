@@ -7,25 +7,25 @@ describe('create', () => {
     '%s reuses unchanged compilation and updates edited dependencies',
     async (adapter) => {
       expect(await CompilerCache.verify(adapter)).toMatchInlineSnapshot(`
-      {
-        "cold": {
-          "extractions": 6,
-          "parses": 9,
-        },
-        "edited": {
-          "extractions": 4,
-          "parses": 6,
-        },
-        "settled": {
-          "extractions": 0,
-          "parses": 0,
-        },
-        "warm": {
-          "extractions": 0,
-          "parses": 0,
-        },
-      }
-    `)
+        {
+          "cold": {
+            "extractions": 6,
+            "parses": 6,
+          },
+          "edited": {
+            "extractions": 4,
+            "parses": 3,
+          },
+          "settled": {
+            "extractions": 0,
+            "parses": 0,
+          },
+          "warm": {
+            "extractions": 0,
+            "parses": 0,
+          },
+        }
+      `)
     },
     60_000,
   )

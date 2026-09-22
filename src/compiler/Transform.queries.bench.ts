@@ -8,7 +8,11 @@ const corpus = await Promise.all(
   (await Fs.readdir(directory))
     .filter((name) => name.endsWith('.ts') && !name.includes('.test.'))
     .map(async (name) => {
-      const fixture = await import(new URL(name, directory).href)
+      const url = new URL(name, directory)
+      if (!/^export const source\b/m.test(await Fs.readFile(url, 'utf8')))
+        return { name, source: undefined }
+
+      const fixture = await import(url.href)
 
       return { name, source: fixture.source as string | undefined }
     }),

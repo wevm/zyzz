@@ -201,7 +201,7 @@ describe('conditions', () => {
     test('retains bound query aliases and HTML props', () => {
       const { variants: recipe } = Config.create({
         output: 'html',
-        theme: { breakpoint: { md: '600px' } },
+        theme: { breakpoints: { md: '600px' } },
       })
       const button = recipe({
         conditions: { wide: '@media >=md' },

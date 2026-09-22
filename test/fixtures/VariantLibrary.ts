@@ -11,7 +11,7 @@ export function sources(options: sources.Options = {}) {
   const { cssOutput, output = 'react' } = options
   return {
     '@acme/variants/config.ts': `import {Config} from 'zyzz';
-export const {style,variants,vars}=Config.create({${cssOutput ? `cssOutput:'${cssOutput}',` : ''}${output === 'html' ? "output:'html'," : ''}vars:{color:{brand:{light:'#0066cc',dark:'#99ccff'}},breakpoint:{wide:'600px'}},shorthands:{px:['paddingLeft','paddingRight']}});`,
+export const {style,variants,vars}=Config.create({${cssOutput ? `cssOutput:'${cssOutput}',` : ''}${output === 'html' ? "output:'html'," : ''}vars:{color:{brand:{light:'#0066cc',dark:'#99ccff'}},breakpoints:{wide:'600px'}},shorthands:{px:['paddingLeft','paddingRight']}});`,
     '@acme/variants/styles.ts': `import {style,variants} from './config.js';
 export namespace styles {
   export const button=variants({

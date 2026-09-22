@@ -14,10 +14,10 @@ describe('define', () => {
       modules: {
         'app.ts': `import {Config, Vars} from 'zyzz';
           const tokens = Vars.define({
-            breakpoint: {tablet: '768px'},
+            breakpoints: {tablet: '768px'},
             dimension: {space: {default: '16px', '@media >=tablet': '32px'}},
           }, (vars) => ({dimension: {derived: vars.dimension.space}}));
-          export const {style, vars} = Config.create({vars: tokens, propertyGroups: false});
+          export const {style, vars} = Config.create({vars: tokens, mappings: false});
           export const card = style({padding: 'dimension.derived'});`,
       },
     })
@@ -136,7 +136,7 @@ describe('define', () => {
     )
   })
 
-  test('preserves anonymous derived references through configured propertyGroups', () => {
+  test('preserves anonymous derived references through configured mappings', () => {
     const base = Vars.define({ palette: { ink: '#123456' } }, (vars) => ({
       color: { foreground: vars.palette.ink },
     }))
@@ -144,7 +144,7 @@ describe('define', () => {
     const config = Config.create({
       id: 'derived-config',
       vars: other,
-      propertyGroups: { color: ['color'] },
+      mappings: { color: ['color'] },
     })
     const result = StyleSheet.compile({
       styles: Style.define({ card: { color: config.vars.color.foreground } }),
@@ -171,7 +171,7 @@ describe('define', () => {
       const base = Vars.define({color:{palette:{ink:'#123456',paper:'#ffffff'}},spacing:{small:{default:'4px','@media (min-width: 600px)':'16px'}}},
         ${callback});
       const other = Vars.extend(base,{color:{palette:{ink:'#abcdef',paper:'#000000'}},spacing:{small:{default:'8px','@media (min-width: 600px)':'32px'}}});
-      export const {style,vars}=Config.create({vars:{base,other},defaultVars:'base',${form === 'full paths' ? 'propertyGroups:false,' : ''}});`
+      export const {style,vars}=Config.create({vars:{base,other},defaultVars:'base',${form === 'full paths' ? 'mappings:false,' : ''}});`
       const app = `import {style,vars} from 'library';
       export const base=vars({set:'base',colorScheme:'light'});
       export const other=vars({set:'other',colorScheme:'light'});
@@ -269,7 +269,7 @@ describe('define', () => {
     const config = Config.create({
       id: 'full-paths',
       vars: { surface: { ink: '#123456' }, size: { page: '16px' } },
-      propertyGroups: false,
+      mappings: false,
     })
     config.style({ color: 'surface.ink', width: 'size.page' })
     expect(() =>
@@ -282,12 +282,12 @@ describe('define', () => {
       Graph.compile({
         modules: {
           'index.ts': `import {Config} from 'zyzz';
-        const {style}=Config.create({vars:{surface:{ink:'#123456'}},propertyGroups:false});
+        const {style}=Config.create({vars:{surface:{ink:'#123456'}},mappings:false});
         export const card=style({width:'surface.ink'});`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: index.ts:160: Variable value is incompatible with this property.]`,
+      `[Source.ExtractError: index.ts:154: Variable value is incompatible with this property.]`,
     )
   })
 
@@ -300,7 +300,7 @@ describe('define', () => {
     const native = StyleSheet.compile({ styles, vars: { base: vars } })
     expect(native.styles.base.light.card).toEqual({ color: '#123456' })
   })
-  test('compiles variable sets, propertyGroups, references, and media conditions', async () => {
+  test('compiles variable sets, mappings, references, and media conditions', async () => {
     const result = Graph.compile({
       modules: {
         'app.ts': `
@@ -313,7 +313,7 @@ describe('define', () => {
         const alternate = Vars.extend(base, { color: { accent: '#9333ea' } })
         const config = Config.create({
           vars: { base, alternate }, defaultVars: 'base',
-          propertyGroups: { backgroundColor: ['surface'], padding: ['spacing'] },
+          mappings: { surface: ['backgroundColor'], spacing: ['padding'] },
         })
         export const scope = config.vars({ set: 'alternate', colorScheme: 'dark' })
         export const card = config.style({ color: 'accent', padding: 'page', width: config.vars.spacing.page, backgroundColor: 'panel' })
@@ -375,7 +375,7 @@ describe('define', () => {
       const palette = Vars.define({ gray: { 50: '#fafafa', 900: '#171717' }, pair: { light: '#171717', dark: '#fafafa' } })
       const base = Vars.define({ color: { foreground: { light: palette.gray[900], dark: palette.gray[50] }, branchPair: { light: palette.pair, dark: palette.pair } }, surface: { paired: palette.pair }, spacing: { page: { default: '16px', '@media (min-width: 768px)': '32px' } } })
       const alternate = Vars.extend(base, { color: { foreground: '#9333ea' } })
-      export const { style, vars } = Config.create({ vars: { base, alternate }, defaultVars: 'base', propertyGroups: { padding: ['spacing'], backgroundColor: ['surface'] } })
+      export const { style, vars } = Config.create({ vars: { base, alternate }, defaultVars: 'base', mappings: { spacing: ['padding'], surface: ['backgroundColor'] } })
       export const packedCard = style({ color: 'foreground', padding: 'page' })`
     const library = Graph.compile({ modules: { 'index.ts': source } })
     const app = Graph.compile({
@@ -525,275 +525,15 @@ describe('define', () => {
     `)
   })
 
-  test.each([false, true])(
-    'renders ordered property groups with packed=%s',
-    async (packed) => {
-      const source = `import {Config} from 'zyzz';
-      export const {style,vars} = Config.create({vars:{
-        width:{shared:'20px',narrow:'24px'}, spacing:{shared:'40px',gap:'48px',auto:'72px'},
-        container:{shared:'80px',wide:'96px'}, color:{brand:'#123456'},
-      },propertyGroups:{width:['container','spacing','width'],height:[]}});`
-      const app = `import {style,vars} from 'library';
-      export const scope=vars();
-      export const first=style({width:'shared',padding:'gap',color:'brand'})();
-      export const second=style({width:'gap',height:'auto'})();
-      export const third=style({width:'narrow',height:vars.spacing.gap})();`
-      const library = Graph.compile({ modules: { 'config.ts': source } })
-      const result = Graph.compile(
-        packed
-          ? {
-              contracts: { 'library.js': library.contracts['config.ts']! },
-              imports: { 'app.ts': { library: 'library.js' } },
-              modules: { 'app.ts': app },
-            }
-          : {
-              imports: {
-                'app.ts': { library: 'config.ts' },
-                'config.ts': { zyzz: null },
-              },
-              modules: { 'app.ts': app, 'config.ts': source },
-            },
-      )
-      const code = await Packed.bundle({
-        entry: 'app.ts',
-        modules: { 'app.ts': result.modules['app.ts']!.code },
-        packages: {
-          library: {
-            'index.ts': (packed ? library : result).modules['config.ts']!.code,
-          },
-        },
-      })
-      const fixture = Vm.runInNewContext(`${code};Fixture;`)
-      const browser = await chromium.launch()
-      try {
-        const page = await browser.newPage()
-        await page.setContent(
-          `<style>${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><main class="${fixture.scope.className}"><div id="first" class="${fixture.first.className}"></div><div id="second" class="${fixture.second.className}"></div><div id="third" class="${fixture.third.className}"></div></main>`,
-        )
-        expect(
-          await page
-            .locator('#first')
-            .evaluate((e) => getComputedStyle(e).width),
-        ).toMatchInlineSnapshot(`"80px"`)
-        expect(
-          await page
-            .locator('#second')
-            .evaluate((e) => getComputedStyle(e).width),
-        ).toMatchInlineSnapshot(`"48px"`)
-        expect(
-          await page
-            .locator('#third')
-            .evaluate((e) => getComputedStyle(e).width),
-        ).toMatchInlineSnapshot(`"24px"`)
-        expect(
-          await page
-            .locator('#third')
-            .evaluate((e) => getComputedStyle(e).height),
-        ).toMatchInlineSnapshot(`"48px"`)
-        expect(
-          await page
-            .locator('#first')
-            .evaluate((e) => getComputedStyle(e).padding),
-        ).toMatchInlineSnapshot(`"48px"`)
-        expect(
-          await page
-            .locator('#first')
-            .evaluate((e) => getComputedStyle(e).color),
-        ).toMatchInlineSnapshot(`"rgb(18, 52, 86)"`)
-      } finally {
-        await browser.close()
-      }
-      expect(
-        result.modules['app.ts']!.css.includes('height:auto'),
-      ).toMatchInlineSnapshot(`true`)
-    },
-  )
-
-  test('rejects unknown properties', () => {
+  test('rejects mapping collisions and incompatible overrides', () => {
     expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; export const config=Config.create({vars:{spacing:{small:'4px'}},propertyGroups:{unknown:['spacing']}})`,
-        },
+      Config.create({
+        vars: { color: { accent: '#fff' }, surface: { accent: '#000' } },
+        mappings: { surface: ['color'] },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:49: ["propertyGroups","unknown"]: Expected a CSS property name.]`,
+      `[Config.InvalidError: Ambiguous variable token accent for color.]`,
     )
-  })
-  test('rejects non-array groups', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; export const config=Config.create({vars:{spacing:{small:'4px'}},propertyGroups:{width:'spacing'}})`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:49: ["propertyGroups","width"]: Expected an array of top-level token group names.]`,
-    )
-  })
-  test('rejects duplicate groups', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; export const config=Config.create({vars:{spacing:{small:'4px'}},propertyGroups:{width:['spacing','spacing']}})`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:49: ["propertyGroups","width"]: Token groups cannot contain duplicates.]`,
-    )
-  })
-  test('rejects empty group names', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; export const config=Config.create({vars:{spacing:{small:'4px'}},propertyGroups:{width:['']}})`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:49: ["propertyGroups","width"]: Expected an array of top-level token group names.]`,
-    )
-  })
-  test('rejects nested group paths', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; export const config=Config.create({vars:{spacing:{small:'4px'}},propertyGroups:{width:['spacing.small']}})`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:49: ["propertyGroups","width"]: Expected an array of top-level token group names.]`,
-    )
-  })
-
-  test('rejects packed property groups that disagree with theme metadata', () => {
-    const library = Graph.compile({
-      modules: {
-        'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'},container:{gap:'16px'}},propertyGroups:{width:['spacing','container']}})`,
-      },
-    })
-    const contract = JSON.parse(library.contracts['config.ts']!)
-    contract.exports.style.variablePropertyGroups.width.reverse()
-    expect(() =>
-      Graph.compile({
-        contracts: { 'library.js': JSON.stringify(contract) },
-        imports: { 'app.ts': { library: 'library.js' } },
-        modules: {
-          'app.ts': `import {style} from 'library'; export const card=style({width:'gap'})`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Configuration property groups disagree with linked theme metadata.]`,
-    )
-  })
-
-  test('consumes named rule references alongside variable configurations', () => {
-    const library = Graph.compile({
-      modules: {
-        'config.ts': `import {Config} from 'zyzz'; import {customMedia,cssFunction} from 'zyzz/web'; export const {style}=Config.create({vars:{spacing:{gap:'8px'}}}); export const compact=customMedia('(width < 40rem)'); export const twice=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});`,
-      },
-    })
-    const result = Graph.compile({
-      contracts: { 'library.js': library.contracts['config.ts']! },
-      imports: { 'app.ts': { library: 'library.js' } },
-      modules: { 'app.ts': `export {style,compact,twice} from 'library'` },
-    })
-    expect(
-      JSON.parse(result.contracts['app.ts']!).exports.compact.kind,
-    ).toMatchInlineSnapshot(`"rule-reference"`)
-    expect(
-      JSON.parse(result.contracts['app.ts']!).exports.twice.kind,
-    ).toMatchInlineSnapshot(`"rule-reference"`)
-  })
-  test.each([26, 27, 28])(
-    'rejects obsolete variable contracts version %s',
-    (version) => {
-      const library = Graph.compile({
-        modules: {
-          'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'}}})`,
-        },
-      })
-      const contract = JSON.parse(library.contracts['config.ts']!)
-      contract.version = version
-      expect(() =>
-        Graph.compile({
-          contracts: { 'library.js': JSON.stringify(contract) },
-          imports: { 'app.ts': { library: 'library.js' } },
-          modules: { 'app.ts': `export {style} from 'library'` },
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 29 or later.]`,
-      )
-    },
-  )
-  test('accepts reordered property keys across packed entrypoints', () => {
-    const library = Graph.compile({
-      modules: {
-        'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'},container:{gap:'16px'}},propertyGroups:{width:['spacing','container'],height:['spacing']}})`,
-      },
-    })
-    const original = library.contracts['config.ts']!
-    const reordered = JSON.parse(original)
-    for (const theme of Object.values(reordered.themes) as {
-      propertyGroups?: object
-    }[])
-      if (theme.propertyGroups)
-        theme.propertyGroups = Object.fromEntries(
-          Object.entries(theme.propertyGroups).reverse(),
-        )
-    reordered.exports.style.variablePropertyGroups = Object.fromEntries(
-      Object.entries(reordered.exports.style.variablePropertyGroups).reverse(),
-    )
-    const result = Graph.compile({
-      contracts: { 'a.js': original, 'b.js': JSON.stringify(reordered) },
-      imports: { 'app.ts': { a: 'a.js', b: 'b.js' } },
-      modules: {
-        'app.ts': `import {style as a} from 'a'; import {style as b} from 'b'; export const first=a({width:'gap'}); export const second=b({height:'gap'});`,
-      },
-    })
-    expect(
-      result.modules['app.ts']!.css.includes('width:var('),
-    ).toMatchInlineSnapshot(`true`)
-    expect(
-      result.modules['app.ts']!.css.includes('height:var('),
-    ).toMatchInlineSnapshot(`true`)
-  })
-  test.each(['custom-counter', '"custom marker"', 'escaped\\ name'])(
-    'accepts valid identifier token %s',
-    (value) => {
-      const result = Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{named:${JSON.stringify(value)}}}}); export const list=style({listStyleType:'named'});`,
-        },
-      })
-      expect(
-        result.modules['app.ts']!.css.includes('list-style-type:var('),
-      ).toMatchInlineSnapshot(`true`)
-    },
-  )
-  test('rejects invalid conditional identifier token values', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{bad:{default:'disc','@media (width > 600px)':'two words?'}}}}); export const list=style({listStyleType:'bad'});`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:161: Variable value is incompatible with this property.]`,
-    )
-  })
-  test('rejects invalid identifier token values', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{bad:'two words?'}}}); export const list=style({listStyleType:'bad'});`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:119: Variable value is incompatible with this property.]`,
-    )
-  })
-
-  test('rejects incompatible overrides', () => {
     const base = Vars.define({ color: { accent: '#fff' } })
     expect(() =>
       // @ts-expect-error invalid color domain
@@ -885,8 +625,8 @@ test('preserves root leaf-shaped names and query contracts', () => {
     light: '8px',
     dark: 2,
     default: 'red',
-    breakpoint: { tablet: '48rem' },
-    container: { compact: '20rem' },
+    breakpoints: { tablet: '48rem' },
+    containers: { compact: '20rem' },
     containerNames: ['card'],
   })
   expect(vars.light.value).toBe('8px')
@@ -894,14 +634,14 @@ test('preserves root leaf-shaped names and query contracts', () => {
   expect(vars.default.value).toBe('red')
   expect(() =>
     Vars.extend(vars, {
-      breakpoint: { tablet: '50rem' },
-      container: { compact: '24rem' },
+      breakpoints: { tablet: '50rem' },
+      containers: { compact: '24rem' },
       containerNames: ['card'],
     }),
   ).not.toThrow()
   for (const overrides of [
-    { breakpoint: { desktop: '80rem' } },
-    { container: { wide: '40rem' } },
+    { breakpoints: { desktop: '80rem' } },
+    { containers: { wide: '40rem' } },
     { containerNames: ['other'] },
   ])
     expect(() => Vars.extend(vars, overrides as never)).toThrow(
@@ -909,7 +649,7 @@ test('preserves root leaf-shaped names and query contracts', () => {
     )
   expect(() =>
     Vars.extend(Vars.define({ ink: '#fff' }), {
-      breakpoint: { desktop: '80rem' },
+      breakpoints: { desktop: '80rem' },
     } as never),
   ).toThrow('Extensions cannot add query thresholds.')
   expect(() => Vars.define({ spacing: { scale: ['4px'] } } as never)).toThrow()

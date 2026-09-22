@@ -121,7 +121,7 @@ export const dynamic=style((values:{padding:'7px'})=>({padding:\`\${values.paddi
       modules: {
         'app.ts': `import {Config} from 'zyzz';
 const unmapped=Config.create({vars:{color:{gap:'8px'}}});
-const mapped=Config.create({vars:{space:{gap:'8px'}},propertyGroups:{color:['space']}});
+const mapped=Config.create({vars:{space:{gap:'8px'}},mappings:{space:['color']}});
 const configured=Config.create({vars:{spacing:{md:'8px'}}});
 export const first=unmapped.style({color:'red'});
 export const second=mapped.style({color:'blue'});
@@ -129,8 +129,8 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-red-m7ItS9-0{color:red;}
-      .z-text-blue-7_DM9p-0{color:blue;}
+      ".z-text-red-PCFOOF-0{color:red;}
+      .z-text-blue-0H1A4V-0{color:blue;}
       .z-w-aL5Pfl{width:calc(1px /* ] */ + 2px);}"
     `)
     expect(() =>
@@ -273,7 +273,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
       const library = Graph.compile({ modules: { 'config.ts': config } })
       expect(
         JSON.parse(library.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`29`)
+      ).toMatchInlineSnapshot(`27`)
 
       const browser = await chromium.launch()
       try {
@@ -568,15 +568,15 @@ dynamic({ width: '12px' })
           "button.12",
           "button.14",
           "button.16",
-          "copy.13",
           "copy.14",
           "copy.16",
+          "copy.13",
           "copy.18",
           "copy.20",
           "copy.24",
-          "copy.13.mono",
           "copy.14.strong",
           "copy.16.strong",
+          "copy.13.mono",
           "copy.18.strong",
           "copy.20.strong",
           "copy.24.strong",
@@ -595,18 +595,18 @@ dynamic({ width: '12px' })
           "heading.24.subtle",
           "heading.32.subtle",
           "label.12",
-          "label.13",
           "label.14",
           "label.16",
+          "label.13",
           "label.18",
           "label.20",
-          "label.13.mono",
           "label.14.strong",
           "label.16.strong",
+          "label.13.mono",
           "label.12.mono",
           "label.12.strong",
-          "label.13.strong",
           "label.14.mono",
+          "label.13.strong",
         ]
       `)
       expect(complete('typography', 'copy.18', 'copy.')).toMatchInlineSnapshot(`
@@ -614,15 +614,15 @@ dynamic({ width: '12px' })
           "button.12",
           "button.14",
           "button.16",
-          "copy.13",
           "copy.14",
           "copy.16",
+          "copy.13",
           "copy.18",
           "copy.20",
           "copy.24",
-          "copy.13.mono",
           "copy.14.strong",
           "copy.16.strong",
+          "copy.13.mono",
           "copy.18.strong",
           "copy.20.strong",
           "copy.24.strong",
@@ -641,22 +641,23 @@ dynamic({ width: '12px' })
           "heading.24.subtle",
           "heading.32.subtle",
           "label.12",
-          "label.13",
           "label.14",
           "label.16",
+          "label.13",
           "label.18",
           "label.20",
-          "label.13.mono",
           "label.14.strong",
           "label.16.strong",
+          "label.13.mono",
           "label.12.mono",
           "label.12.strong",
-          "label.13.strong",
           "label.14.mono",
+          "label.13.strong",
         ]
       `)
       expect(complete('alignItems', 'center', '')).toMatchInlineSnapshot(`
         [
+          "normal",
           "baseline",
           "center",
           "end",
@@ -664,7 +665,6 @@ dynamic({ width: '12px' })
           "flex-end",
           "flex-start",
           "last baseline",
-          "normal",
           "safe center",
           "safe end",
           "safe flex-end",

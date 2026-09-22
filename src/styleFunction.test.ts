@@ -17,7 +17,7 @@ describe('style', () => {
     ["import { style } from 'zyzz'", ''],
     [
       "import { Config } from 'zyzz'",
-      "const { style } = Config.create({ vars: { fontSize: { hero: '72px' }, breakpoint: { tablet: '48rem' } } })",
+      "const { style } = Config.create({ vars: { fontSize: { hero: '72px' }, breakpoints: { tablet: '48rem' } } })",
     ],
     ["import { style } from 'zyzz/default'", ''],
   ])(
@@ -1391,7 +1391,7 @@ dynamic({ width: '12px' })
     expect(calls).toMatchInlineSnapshot('0')
   })
 
-  test('omits undefined target container and branches', () => {
+  test('omits undefined target containers and branches', () => {
     const bound = Config.create({})
 
     expect(style({ opacity: 0.5, targets: undefined })()).toEqual(

@@ -98,9 +98,9 @@ export type Keys<
         ? symbol
         : Relationship | Query)
   | Raw
-  | `@media ${Alias<Names<tokens, 'breakpoint'>>}`
-  | `@container ${Alias<Names<tokens, 'container'>>}`
-  | `@container ${Containers<tokens>} ${Alias<Names<tokens, 'container'>>}`
+  | `@media ${Alias<Names<tokens, 'breakpoints'>>}`
+  | `@container ${Alias<Names<tokens, 'containers'>>}`
+  | `@container ${Containers<tokens>} ${Alias<Names<tokens, 'containers'>>}`
 
 /** Recognizes structured rule keys before declaration parsing. */
 export function is(key: string): boolean {

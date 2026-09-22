@@ -22,7 +22,7 @@ describe('cx', () => {
     async (output) => {
       const graph = Graph.compile({
         modules: {
-          'config.ts': `import {Config} from 'zyzz'; export const config = Config.create({output: '${output}', propertyGroups: false, vars: {color: {brand: '#123456'}}}); export const {vars, style} = config;`,
+          'config.ts': `import {Config} from 'zyzz'; export const config = Config.create({output: '${output}', mappings: false, vars: {color: {brand: '#123456'}}}); export const {vars, style} = config;`,
           'app.ts': `import {cx, Config} from 'zyzz'; import {config, vars, style} from './config.js';
           const root = style({color: 'color.brand'});
           const local = Config.create({output: '${output}', vars: {color: {brand: '#abcdef'}}});

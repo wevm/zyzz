@@ -187,7 +187,7 @@ describe('conditions', () => {
         '@container style(--active: true)': { color: 'red' },
         '@container sidebar style(--active: true)': { color: 'red' },
       })
-      Theme.define({ breakpoint: { 640: '40rem' } }).style({
+      Theme.define({ breakpoints: { 640: '40rem' } }).style({
         '@media 640': { color: 'red' },
       })
       // @ts-expect-error Concrete undefined conditions are rejected.
@@ -199,8 +199,8 @@ describe('conditions', () => {
       })
 
       const theme = Theme.define({
-        breakpoint: { tablet: '48rem', desktop: '64rem' },
-        container: { card: '24rem' },
+        breakpoints: { tablet: '48rem', desktop: '64rem' },
+        containers: { card: '24rem' },
         containerNames: ['sidebar'],
         spacing: { gap: '4px' },
       })

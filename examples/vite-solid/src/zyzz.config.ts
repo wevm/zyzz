@@ -2,8 +2,8 @@
 import { Config, Vars } from 'zyzz'
 
 const base = Vars.define({
-  radius: { card: '1rem' },
-  breakpoint: { wide: '48rem' },
+  borderRadius: { card: '1rem' },
+  breakpoints: { wide: '48rem' },
   color: {
     accent: { dark: '#a5b4fc', light: '#4338ca' },
     backdrop: { dark: '#252525', light: '#f5f5f5' },
@@ -13,7 +13,7 @@ const base = Vars.define({
     text: { dark: '#eeeeee', light: '#111111' },
   },
   containerNames: ['preview'],
-  container: { card: '20rem' },
+  containers: { card: '20rem' },
   margin: { section: '2rem' },
   padding: { card: '1.25rem' },
   spacing: { lg: '1.5rem', md: '1rem', sm: '0.5rem' },

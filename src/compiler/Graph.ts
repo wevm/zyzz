@@ -38,6 +38,8 @@ export declare namespace compile {
 
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** Host entrypoints emit owned stylesheet effects without packed contracts. */
+    readonly [Stylesheets.entry]?: string | undefined
     /** Host syntax from the same immutable source snapshot. */
     readonly [Syntax.cache]?:
       | ReadonlyMap<string, Parser.ParseResult>
@@ -71,6 +73,8 @@ export declare namespace compile {
 
   /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
+    /** Packed resources deduplicated by the host across scoped source outputs. */
+    readonly [Stylesheets.packed]?: readonly Stylesheets.Resource[]
     /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
     readonly contracts: Readonly<Record<string, string>>
     /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
@@ -88,7 +92,7 @@ export declare namespace compile {
   }
 }
 
-/** Creates an isolated compiler that retains only the last successful graph. */
+/** Creates an isolated compiler with bounded extraction reuse across source graphs. */
 export function create(): create.ReturnType {
   let previous: Cache | undefined
 
@@ -112,6 +116,26 @@ export declare namespace create {
   }
 }
 
+type Extraction = {
+  dependencies: readonly string[]
+  extracted: Source.extract.ReturnType
+  inputs: ReadonlyMap<
+    string,
+    Source.extract.ReturnType | ReturnType<typeof Contract.read>
+  >
+  resolution: string
+  source: string
+}
+
+type Transformed = {
+  classes: Readonly<Record<string, string | undefined>>
+  extracted: Source.extract.ReturnType
+  owners: string
+  output: Transform.compile.ReturnType
+  schemes: boolean
+  themes: Readonly<Record<string, Theme.Definition>>
+}
+
 type Cache = {
   compiler: boolean
   composition: Css.compile.Options['composition']
@@ -119,9 +143,12 @@ type Cache = {
 
   contracts: string
   development: boolean
+  entry: string | undefined
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
   reset: string | undefined
+  retained: ReadonlyMap<string, Extraction>
+  transformed: ReadonlyMap<string, Transformed>
   resolutions: Readonly<Record<string, string>>
   native: compile.Options['native']
   result: compile.ReturnType
@@ -195,14 +222,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ]),
   )
 
-  // File-set changes can alter extensionless resolution even without source edits.
+  // Host resolutions remain explicit when generated modules enter or leave the graph.
   const previous = (() => {
     if (
       cache &&
       cache.contracts === contracts &&
       cache.development === !!options.development &&
-      ids.length === Object.keys(cache.sources).length &&
-      ids.every((id) => Object.hasOwn(cache.sources, id))
+      (options.imports !== undefined ||
+        (ids.length === Object.keys(cache.sources).length &&
+          ids.every((id) => Object.hasOwn(cache.sources, id))))
     ) {
       return cache
     }
@@ -211,6 +239,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
   })()
   if (
     previous &&
+    previous.entry === options[Stylesheets.entry] &&
+    ids.length === Object.keys(previous.sources).length &&
     Object.keys(resolutions).length ===
       Object.keys(previous.resolutions).length &&
     Object.entries(resolutions).every(
@@ -224,6 +254,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
   )
     return previous
 
+  const retained = new Map(previous?.retained)
+  const transformed = new Map(previous?.transformed)
   const dependencies: Record<string, readonly string[]> = Object.create(null)
   const extracted = new Map<string, Source.extract.ReturnType>()
   const identifiers = new Map<string, Set<string>>()
@@ -365,29 +397,6 @@ function build(options: compile.Options, cache?: Cache): Cache {
     let direct: Ast.Node | undefined
     const stars: string[] = []
     for (const statement of program.body) {
-      if (
-        statement.type === 'ImportDeclaration' &&
-        statement.importKind !== 'type'
-      ) {
-        const target = resolve(moduleId, statement.source.value, statement)
-        if (!target) continue
-        for (const specifier of statement.specifiers) {
-          if (
-            specifier.type === 'ImportNamespaceSpecifier' ||
-            (specifier.type === 'ImportSpecifier' &&
-              specifier.importKind === 'type')
-          )
-            continue
-          const imported =
-            specifier.type === 'ImportDefaultSpecifier'
-              ? 'default'
-              : specifier.imported.type === 'Identifier'
-                ? specifier.imported.name
-                : specifier.imported.value
-          const value = constant(target, imported, next)
-          if (value) imports[specifier.local.name] = relocate(value, specifier)
-        }
-      }
       if (statement.type === 'ExportDefaultDeclaration' && name === 'default') {
         direct = statement.declaration
         exported = true
@@ -436,7 +445,47 @@ function build(options: compile.Options, cache?: Cache): Cache {
             .filter((value) => value !== undefined),
         ),
       ]
-      return candidates.length === 1 ? candidates[0] : undefined
+      const value = candidates.length === 1 ? candidates[0] : undefined
+      if (value || !stars.length) constants.set(key, value)
+      return value
+    }
+    if (
+      direct &&
+      [
+        'FunctionDeclaration',
+        'FunctionExpression',
+        'ArrowFunctionExpression',
+        'ClassDeclaration',
+        'ClassExpression',
+      ].includes(direct.type)
+    ) {
+      constants.set(key, undefined)
+      return undefined
+    }
+    for (const statement of program.body) {
+      if (
+        statement.type === 'ImportDeclaration' &&
+        statement.importKind !== 'type'
+      ) {
+        const target = resolve(moduleId, statement.source.value, statement)
+        if (!target) continue
+        for (const specifier of statement.specifiers) {
+          if (
+            specifier.type === 'ImportNamespaceSpecifier' ||
+            (specifier.type === 'ImportSpecifier' &&
+              specifier.importKind === 'type')
+          )
+            continue
+          const imported =
+            specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : specifier.imported.type === 'Identifier'
+                ? specifier.imported.name
+                : specifier.imported.value
+          const value = constant(target, imported, next)
+          if (value) imports[specifier.local.name] = relocate(value, specifier)
+        }
+      }
     }
     const scope = new Scope.Tracker({ preserveExitedScopes: true })
     Walker.walk(program, { scopeTracker: scope })
@@ -602,21 +651,34 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
     const source = options.modules[moduleId]!
 
+    const snapshot =
+      previous?.retained.get(moduleId) ??
+      (previous && Object.hasOwn(previous.sources, moduleId)
+        ? {
+            dependencies: previous.result.dependencies[moduleId]!,
+            extracted: previous.extracted.get(moduleId)!,
+            inputs: new Map(
+              previous.result.dependencies[moduleId]!.map((target) => [
+                target,
+                previous.libraries[target] ?? previous.extracted.get(target)!,
+              ]),
+            ),
+            resolution: previous.resolutions[moduleId]!,
+            source: previous.sources[moduleId]!,
+          }
+        : undefined)
     if (
-      previous &&
-      source === previous.sources[moduleId] &&
-      resolutions[moduleId] === previous.resolutions[moduleId] &&
-      previous.result.dependencies[moduleId]!.every(
-        (target) =>
-          Object.hasOwn(libraries, target) ||
-          visit(target) === previous.extracted.get(target),
+      snapshot &&
+      source === snapshot.source &&
+      resolutions[moduleId] === snapshot.resolution &&
+      snapshot.dependencies.every((target) =>
+        Object.hasOwn(libraries, target)
+          ? libraries[target] === snapshot.inputs.get(target)
+          : Object.hasOwn(options.modules, target) &&
+            visit(target) === snapshot.inputs.get(target),
       )
     ) {
-      return retain(
-        moduleId,
-        previous.extracted.get(moduleId)!,
-        previous.result.dependencies[moduleId]!,
-      )
+      return retain(moduleId, snapshot.extracted, snapshot.dependencies)
     }
 
     // Validate identity and syntax through the public source boundary before linking.
@@ -957,6 +1019,20 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
     extracted.set(moduleId, result)
     dependencies[moduleId] = imports
+    retained.delete(moduleId)
+    retained.set(moduleId, {
+      dependencies: imports,
+      extracted: result,
+      inputs: new Map(
+        imports.map((target) => [
+          target,
+          libraries[target] ?? extracted.get(target)!,
+        ]),
+      ),
+      resolution: resolutions[moduleId]!,
+      source: options.modules[moduleId]!,
+    })
+    if (retained.size > 256) retained.delete(retained.keys().next().value!)
 
     for (const call of result.themeCalls)
       for (const name of new Set([
@@ -1072,6 +1148,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ...(options.native.units && { units: { ...options.native.units } }),
       },
       reset: options.reset,
+      entry: options[Stylesheets.entry],
+      retained,
+      transformed,
       resolutions: Object.freeze(resolutions),
       result: Object.freeze({
         contracts: Object.freeze(
@@ -1248,15 +1327,57 @@ function build(options: compile.Options, cache?: Cache): Cache {
   }
 
   const sharedVisited = new Set<string>()
+  const packed: Stylesheets.Resource[] = []
 
   const shared = (() => {
     try {
-      const sharedSections = ids.flatMap((id) => reachable(id, sharedVisited))
+      const entry = options[Stylesheets.entry]
+      const packedSections =
+        entry === undefined
+          ? []
+          : (dependencies[entry] ?? [])
+              .filter((id) => Object.hasOwn(libraries, id))
+              .flatMap((id) => reachable(id, sharedVisited))
+      const sharedSections =
+        entry === undefined
+          ? ids.flatMap((id) => reachable(id, sharedVisited))
+          : (sections.get(entry) ?? [])
+      if (packedSections.length) {
+        // Validate combined ownership and ordering before splitting independently loaded resources.
+        Stylesheets.render([...packedSections, ...sharedSections])
+        for (const section of packedSections) {
+          packed.push({
+            id: JSON.stringify([section.owner, section.source, section.key]),
+            ...Stylesheets.render([section]),
+          })
+        }
+      }
       const resetSource =
         (options.reset === undefined ? undefined : 'zyzz/reset.css') ??
         resetOwners[0] ??
         sharedSections.find((section) => section.key === 'optional-reset-order')
           ?.source
+
+      if (packed.length) {
+        const order = Stylesheets.render([
+          ...(resetSource === undefined
+            ? []
+            : [
+                {
+                  source: resetSource,
+                  css: '',
+                  layers: layerNames.length
+                    ? layerNames.map((name) => ['reset', name])
+                    : [['reset']],
+                },
+              ]),
+          ...[...packedSections, ...sharedSections].map((section) => ({
+            ...section,
+            css: '',
+          })),
+        ])
+        if (order.css) packed.unshift({ ...order, id: order.css })
+      }
 
       return Stylesheets.render([
         ...(resetSource === undefined
@@ -1406,12 +1527,26 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ),
   )
 
+  const ownerSignature = JSON.stringify(owners)
+
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
-    modules[moduleId] =
-      sameThemes &&
-      previous!.schemes === schemes &&
-      extracted.get(moduleId) === previous!.extracted.get(moduleId)
+    const cached = transformed.get(moduleId)
+    const reusable =
+      cached &&
+      cached.extracted === extracted.get(moduleId) &&
+      cached.schemes === schemes &&
+      Object.keys(cached.themes).length === names.length &&
+      names.every((name) => cached.themes[name] === themes[name]) &&
+      Object.entries(cached.classes).every(
+        ([name, value]) => styleClasses[name] === value,
+      ) &&
+      cached.owners === ownerSignature
+    modules[moduleId] = reusable
+      ? cached.output
+      : sameThemes &&
+          previous!.schemes === schemes &&
+          extracted.get(moduleId) === previous!.extracted.get(moduleId)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
             compiler: options.compiler,
@@ -1422,6 +1557,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
             schemes,
             source: options.modules[moduleId]!,
             [Themes.context]: {
+              parsed: parse({ moduleId, source: options.modules[moduleId]! }),
               extracted: Object.freeze({
                 ...extracted.get(moduleId)!,
                 vars: sharedThemes,
@@ -1432,13 +1568,39 @@ function build(options: compile.Options, cache?: Cache): Cache {
               styleClasses,
             },
           })
+    transformed.delete(moduleId)
+    transformed.set(moduleId, {
+      classes: Object.fromEntries(
+        extracted
+          .get(moduleId)!
+          .calls.flatMap((call) =>
+            (call.runtimeComposition ?? []).map((input) => [
+              input.name,
+              styleClasses[input.name],
+            ]),
+          ),
+      ),
+      extracted: extracted.get(moduleId)!,
+      owners: ownerSignature,
+      output: modules[moduleId]!,
+      schemes,
+      themes: sharedThemes,
+    })
+    if (transformed.size > 256)
+      transformed.delete(transformed.keys().next().value!)
     // Module-local checks cannot detect truncated ownership hashes colliding across files.
+    const emitted = new Set(
+      Array.from(
+        modules[moduleId]!.css.matchAll(/\.(z-[\w-]+)\{/g),
+        (match) => match[1],
+      ),
+    )
     for (const value of Object.values(modules[moduleId]!.classes))
       for (const name of value.split(' ')) {
         if (
           options.compiler === false ||
           !name.startsWith('z-') ||
-          !modules[moduleId]!.css.includes(`.${name}{`)
+          !emitted.has(name)
         )
           continue
 
@@ -1531,8 +1693,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
     libraries: Object.freeze(libraries),
     native: undefined,
     reset: options.reset,
+    entry: options[Stylesheets.entry],
+    retained,
+    transformed,
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
+      ...(packed.length ? { [Stylesheets.packed]: packed } : {}),
       ...(sharedCss
         ? {
             sharedCss,
@@ -1543,7 +1709,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         : {}),
       contracts: Object.freeze(
         Object.fromEntries(
-          ids
+          (options[Stylesheets.entry] === undefined ? ids : [])
             .filter(
               (id) =>
                 Object.keys(extracted.get(id)!.themeExports ?? {}).length ||

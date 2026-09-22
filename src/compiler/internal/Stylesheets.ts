@@ -17,6 +17,15 @@ export class ConflictError extends Error {
   override name = 'Stylesheets.ConflictError'
 }
 
+/** Selects module-owned effects when the host loads source dependencies separately. */
+export const entry = Symbol('stylesheet entry')
+
+/** Independently shared packed sections for hosts that load source modules separately. */
+export const packed = Symbol('packed stylesheets')
+
+/** One packed resource with stable source ownership for development updates. */
+export type Resource = ReturnType<typeof render> & { readonly id: string }
+
 /** Ordered CSS owned by one portable source module. */
 export type Section = {
   /** Isolated selector namespaces belonging to the source owner. */

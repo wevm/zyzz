@@ -5,9 +5,9 @@ import * as Module from 'node:module'
 import * as Path from 'node:path'
 
 /**
- * Adds source transformation, CSS delivery, and project dependency watching to both bundlers.
- * Preserves existing configuration hooks and creates `.zyzz/next` beneath the working directory.
- * Throws file-system errors during setup; compilation errors are reported by the bundler.
+ * Adds source transformation, CSS delivery, and imported dependency watching to both bundlers.
+ * Preserves configuration hooks. Compilation emits stylesheets beneath `.zyzz/next`.
+ * Compilation and file-system errors are reported by the bundler.
  */
 export function zyzz(config: NextConfig, options?: zyzz.Options): NextConfig
 export function zyzz(config: zyzz.Factory, options?: zyzz.Options): zyzz.Factory
@@ -27,24 +27,32 @@ export function zyzz(
   const loader = Module.createRequire(import.meta.url).resolve(
     'zyzz/next/loader',
   )
-  const loaderOptions = { reset: options.reset ?? false, root: process.cwd() }
-  const shared = Path.join(loaderOptions.root, '.zyzz', 'next', 'shared.css')
-  Fs.mkdirSync(Path.dirname(shared), { recursive: true })
-  try {
-    Fs.writeFileSync(shared, '', { flag: 'wx' })
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+  const loaderOptions = {
+    development: process.env.NODE_ENV === 'development',
+    reset: options.reset ?? false,
+    root: process.cwd(),
+  }
+  // Turbopack must observe the output directory before taking its filesystem snapshot.
+  const directory = Path.join(loaderOptions.root, '.zyzz', 'next')
+  Fs.mkdirSync(directory, { recursive: true })
+  for (const [name, source] of Object.entries({
+    'package.json': JSON.stringify({ sideEffects: true, type: 'module' }),
+    'style.css': '',
+  })) {
+    try {
+      Fs.writeFileSync(Path.join(directory, name), source, { flag: 'wx' })
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    }
   }
   const pattern = '*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}'
   const existing = config.turbopack?.rules?.[pattern]
   const rule = {
-    condition: {
-      all: [{ not: 'foreign' as const }, { not: { query: /zyzz-style/ } }],
-    },
+    condition: { not: 'foreign' as const },
     loaders: [
       {
         loader,
-        options: { ...loaderOptions, bundler: 'turbopack', mode: 'source' },
+        options: { ...loaderOptions, bundler: 'turbopack' },
       },
     ],
   }
@@ -70,29 +78,16 @@ export function zyzz(
         [pattern]: [
           ...(Array.isArray(existing) ? existing : existing ? [existing] : []),
           rule,
-          {
-            condition: { query: /zyzz-style/ },
-            loaders: [
-              {
-                loader,
-                options: {
-                  ...loaderOptions,
-                  bundler: 'turbopack',
-                  mode: 'style',
-                },
-              },
-            ],
-            as: '*.css',
-          },
         ],
-        '**/.zyzz/next/shared.css': {
+        '**/.zyzz/next/style.css': {
+          condition: { query: /zyzz=/ },
           loaders: [
             {
               loader,
               options: {
                 ...loaderOptions,
                 bundler: 'turbopack',
-                mode: 'shared',
+                mode: 'style',
               },
             },
           ],
@@ -111,7 +106,7 @@ export function zyzz(
         use: [
           {
             loader,
-            options: { ...loaderOptions, bundler: 'webpack', mode: 'source' },
+            options: { ...loaderOptions, bundler: 'webpack' },
           },
         ],
       })

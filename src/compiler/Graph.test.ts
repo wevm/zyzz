@@ -26,6 +26,65 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('preserves styles across component imports and generated modules', () => {
+    const compiler = Graph.create()
+    const input = {
+      modules: {
+        'tokens.ts': "export const tokens={color:'red'}",
+        'component.ts':
+          "import {tokens} from './tokens';export default function Component(){return tokens.color}",
+        'styles.ts':
+          "import {style} from 'zyzz';import {tokens} from './tokens';export const button=style({color:tokens.color})",
+      },
+      imports: {
+        'tokens.ts': {},
+        'component.ts': { './tokens': 'tokens.ts' },
+        'styles.ts': { zyzz: null, './tokens': 'tokens.ts' },
+      },
+    }
+    const first = compiler.compile(input)
+    const added = compiler.compile({
+      ...input,
+      imports: { ...input.imports, 'generated.ts': {} },
+      modules: {
+        ...input.modules,
+        'generated.ts': 'export const generated=true',
+      },
+    })
+    expect(
+      added.modules['styles.ts']!.css === first.modules['styles.ts']!.css,
+    ).toMatchInlineSnapshot('true')
+    compiler.compile({
+      imports: { 'other.ts': {} },
+      modules: { 'other.ts': 'export const other=true' },
+    })
+    const returned = compiler.compile(input)
+    expect(Object.keys(returned.modules)).toMatchInlineSnapshot(`
+      [
+        "component.ts",
+        "styles.ts",
+        "tokens.ts",
+      ]
+    `)
+    expect(
+      returned.modules['styles.ts']!.css === first.modules['styles.ts']!.css,
+    ).toMatchInlineSnapshot('true')
+    compiler.compile({
+      imports: { 'tokens.ts': {} },
+      modules: { 'tokens.ts': "export const tokens={color:'blue'}" },
+    })
+    const changed = compiler.compile({
+      ...input,
+      modules: {
+        ...input.modules,
+        'tokens.ts': "export const tokens={color:'blue'}",
+      },
+    })
+    expect(
+      changed.modules['styles.ts']!.css.includes('color:blue;'),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test('uses exported default typography values in global declarations', async () => {
     const result = Graph.compile({
       modules: {
@@ -2339,6 +2398,75 @@ describe('create', () => {
 })
 
 describe('create', () => {
+  test('retains host-resolved styles across generated module additions and removals', async () => {
+    const compiler = Graph.create()
+    const modules = {
+      'card.ts':
+        "import {style} from 'zyzz';export const card=style({opacity:0.5});",
+    }
+    const imports = { 'card.ts': { zyzz: null } }
+    const first = compiler.compile({ imports, modules })
+    const added = compiler.compile({
+      imports: { ...imports, 'page.mdx.tsx': {} },
+      modules: {
+        ...modules,
+        'page.mdx.tsx': 'export default function Page(){return <h1>Page</h1>}',
+      },
+    })
+
+    expect(
+      added.modules['card.ts'] === first.modules['card.ts'],
+    ).toMatchInlineSnapshot('true')
+    expect(
+      added.modules['page.mdx.tsx']!.code.includes('<h1>Page</h1>'),
+    ).toMatchInlineSnapshot('true')
+
+    const removed = compiler.compile({ imports, modules })
+    expect(
+      removed.modules['card.ts'] === first.modules['card.ts'],
+    ).toMatchInlineSnapshot('true')
+    expect(removed.modules['page.mdx.tsx']).toMatchInlineSnapshot('undefined')
+
+    const edited = compiler.compile({
+      imports,
+      modules: { 'card.ts': modules['card.ts'].replace('0.5', '0.75') },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${edited.modules['card.ts']!.css}</style><h1 class="${Object.values(edited.modules['card.ts']!.classes).join(' ')}">Page</h1>`,
+      )
+      expect(
+        await page
+          .locator('h1')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot('"0.75"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('rejects deleted host dependencies after caching a graph', () => {
+    const compiler = Graph.create()
+    const modules = {
+      'theme.ts': 'export const opacity=0.5;',
+      'card.ts':
+        "import {style} from 'zyzz';import {opacity} from './theme';export const card=style({opacity});",
+    }
+    const imports = {
+      'theme.ts': {},
+      'card.ts': { zyzz: null, './theme': 'theme.ts' },
+    }
+    compiler.compile({ imports, modules })
+
+    expect(() =>
+      compiler.compile({ imports, modules: { 'card.ts': modules['card.ts'] } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: card.ts:27: Missing host source module: ./theme]`,
+    )
+  })
+
   test('host resolution controls aliases and invalidates changed targets', () => {
     const compiler = Graph.create()
 
@@ -2911,6 +3039,20 @@ describe('stylesheets', () => {
         "b/index.js",
       ]
     `)
+      const repacked = Graph.compile({
+        contracts: { ...contracts, 'repacked.js': second.contracts['app.ts']! },
+        imports: {
+          'consumer.ts': { repacked: 'repacked.js' },
+          'repacked.js': { wrapper: 'wrapper/index.js' },
+          'wrapper/index.js': { dep: 'b/index.js' },
+        },
+        modules: { 'consumer.ts': "import 'repacked';" },
+      })
+      expect(Object.values(repacked.sharedAssets ?? {})).toMatchInlineSnapshot(`
+        [
+          "b/pixel.svg",
+        ]
+      `)
     })
     test('retains reset ordering in every independent packed entry', () => {
       const library = Graph.compile({

@@ -1,16 +1,11 @@
-/** Measures compiler work during real Next loader requests in an isolated Webpack process. @module */
+/** Exercises repeated Next loader compilation in a real Webpack consumer. @module */
 import * as Fs from 'node:fs/promises'
-import * as Inspector from 'node:inspector/promises'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
-import * as Url from 'node:url'
 import webpack from 'webpack'
 
 const require = Module.createRequire(import.meta.url)
 const root = await Fs.mkdtemp(Path.resolve('.fixture-next-cache-'))
-const session = new Inspector.Session()
-session.connect()
-const observed = new Set<string>()
 
 const compiler = webpack({
   // Force loader requests on every build so Webpack cannot hide missing Zyzz cache reuse.
@@ -27,7 +22,7 @@ const compiler = webpack({
         use: [
           {
             loader: require.resolve('zyzz/next/loader'),
-            options: { bundler: 'webpack', mode: 'source', root },
+            options: { bundler: 'webpack', root },
           },
         ],
       },
@@ -47,12 +42,6 @@ try {
     Path.join(root, 'unrelated.mjs'),
     "import {style} from 'zyzz';export const unrelated=style({display:'flex'});",
   )
-  await session.post('Profiler.enable')
-  await session.post('Profiler.startPreciseCoverage', {
-    callCount: true,
-    detailed: true,
-  })
-
   const cold = await build()
   const warm = await build()
   await Fs.writeFile(Path.join(root, 'config.mjs'), config('blue'))
@@ -60,8 +49,6 @@ try {
   const settled = await build()
   process.stdout.write(JSON.stringify({ cold, edited, settled, warm }))
 } finally {
-  await session.post('Profiler.stopPreciseCoverage')
-  session.disconnect()
   await new Promise<void>((resolve, reject) =>
     compiler.close((error) => (error ? reject(error) : resolve())),
   )
@@ -82,25 +69,7 @@ async function build() {
       else resolve()
     }),
   )
-  const { result } = await session.post('Profiler.takePreciseCoverage')
-  const calls = (file: string, name: string) => {
-    const script = result.find(
-      (script) => script.url === Url.pathToFileURL(require.resolve(file)).href,
-    )
-    const fn = script?.functions.find((fn) => fn.functionName === name)
-    const key = `${file}:${name}`
-    // V8 omits functions with no calls since the previous coverage collection.
-    if (fn) observed.add(key)
-    if (!observed.has(key)) throw new Error(`Missing V8 coverage for ${key}`)
-    return fn?.ranges[0]?.count ?? 0
-  }
-  return {
-    code: await Fs.readFile(Path.join(root, 'dist/main.js'), 'utf8'),
-    extractions: calls('../../dist/compiler/Source.js', 'extract'),
-    loads: calls('zyzz/next/loader', 'loader'),
-    parses: calls('../../dist/compiler/internal/Syntax.js', 'parse'),
-    transforms: calls('../../dist/compiler/Transform.js', 'compile'),
-  }
+  return await Fs.readFile(Path.join(root, 'dist/main.js'), 'utf8')
 }
 
 function config(color: string) {

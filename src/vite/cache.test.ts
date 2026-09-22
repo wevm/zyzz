@@ -10,11 +10,11 @@ describe('zyzz', () => {
         {
           "cold": {
             "extractions": 14,
-            "parses": 26,
+            "parses": 19,
           },
           "edited": {
             "extractions": 12,
-            "parses": 22,
+            "parses": 15,
           },
           "settled": {
             "extractions": 0,

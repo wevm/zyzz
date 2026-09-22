@@ -6,6 +6,7 @@ import * as Url from 'node:url'
 import { chromium } from 'playwright'
 import * as Rollup from 'rollup'
 import * as Vite from 'vite'
+import * as Watch from '../../test/fixtures/Watch.js'
 import * as Library from '../../test/fixtures/Library.js'
 import { describe, expect, test, vi } from 'vite-plus/test'
 import Webpack from 'webpack'
@@ -509,10 +510,11 @@ describe('zyzz', () => {
         },
         { timeout: 10000 },
       )
-      await Fs.writeFile(
-        Path.join(root, 'theme.js'),
-        "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
-      )
+      await Watch.write({
+        path: Path.join(root, 'theme.js'),
+        source:
+          "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
+      })
       await vi.waitFor(
         async () => {
           if (failure) throw failure
@@ -525,10 +527,10 @@ describe('zyzz', () => {
         },
         { timeout: 10000 },
       )
-      await Fs.writeFile(
-        Path.join(root, 'added.js'),
-        `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
-      )
+      await Watch.write({
+        path: Path.join(root, 'added.js'),
+        source: `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
+      })
       await vi.waitFor(
         async () => {
           if (failure) throw failure

@@ -1,5 +1,12 @@
 # zyzz
 
+## 0.0.8
+
+### Patch Changes
+
+- d8089fd: Reused source snapshots and parsed syntax across Vite, Metro, portable bundler adapters, and CLI builds, and retained incremental Metro compilation state.
+- 0a8dfab: Reduced Next.js cold compilation and incremental work with dependency-scoped graphs, bounded compiler caches, and native CSS hot updates for server components.
+
 ## 0.0.7
 
 ### Patch Changes

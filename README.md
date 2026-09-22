@@ -372,7 +372,7 @@ export function Bar() {
 
 ### Value Syntax
 
-Use the suffix ` !important` for importance and arrays for ordered fallbacks. `vars` provides typed references for declarations and CSS expressions.
+Use the suffix ` !custom` for literal CSS values, ` !important` for importance, and arrays for ordered fallbacks. `vars` provides typed references for declarations and CSS expressions.
 
 ```ts
 import { style, vars } from './zyzz.config.js'
@@ -382,7 +382,7 @@ namespace styles {
     display: ['block', 'grid'],
     color: 'brand !important',
     borderColor: vars.color.brand,
-    width: `[calc(100% - ${vars.spacing.md})]`,
+    width: `calc(100% - ${vars.spacing.md}) !custom`,
   })
 }
 ```

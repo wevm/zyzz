@@ -576,6 +576,20 @@ const portable = createUnplugin<Options | undefined, false>(
         },
       },
       webpack(compiler) {
+        compiler.hooks.compilation.tap('zyzz', (compilation) => {
+          compiler.webpack.NormalModule.getCompilationHooks(compilation)
+            .readResource.for(undefined)
+            .tapAsync({ name: 'zyzz', stage: -1 }, (context, callback) => {
+              void Promise.resolve(pending).then(() => {
+                const source = sources.get(context.resourcePath)
+                if (source === undefined) return callback()
+
+                // Loaders and CSS compilation must consume the same source version.
+                context.addDependency(context.resourcePath)
+                callback(null, source)
+              }, callback)
+            })
+        })
         compiler.hooks.watchRun.tap('zyzz', () => {
           // The graph rereads every source, including files absent from Webpack's invalidation batch.
           for (const file of files) compiler.inputFileSystem?.purge?.(file)

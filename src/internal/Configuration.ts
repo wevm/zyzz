@@ -344,8 +344,8 @@ export function create(
       const data = theme[Token.definition].queries
 
       return JSON.stringify({
-        breakpoints: Object.keys(data?.breakpoints ?? {}).sort(),
-        containers: Object.keys(data?.containers ?? {}).sort(),
+        breakpoint: Object.keys(data?.breakpoint ?? {}).sort(),
+        container: Object.keys(data?.container ?? {}).sort(),
         containerNames: [...(data?.containerNames ?? [])].sort(),
       })
     }

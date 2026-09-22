@@ -1212,6 +1212,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         tokenType: theme.tokenType,
         type: theme.type,
         options: theme.options,
+        variableConfig: theme.variableConfig,
+        variableMappings: theme.variableMappings,
         output: theme.output,
       })
 

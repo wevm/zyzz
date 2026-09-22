@@ -19,7 +19,7 @@ export function baseline() {
 bench('define / scalar and scheme tokens', () => {
   Vars.define({
     backgroundColor: { surface: { dark: '#000', light: '#fff' } },
-    borderRadius: { round: '1rem', sm: '4px' },
+    radius: { round: '1rem', sm: '4px' },
     color: { blue: { 500: '#06c', 700: '#036' }, brand: '#06c' },
     fontSize: { body: '1rem', heading: '2rem' },
     fontWeight: { medium: 500 },
@@ -30,9 +30,9 @@ bench('define / scalar and scheme tokens', () => {
 
 bench('define / query aliases', () => {
   const theme = Vars.define({
-    breakpoints: { desktop: '64rem', tablet: '48rem' },
+    breakpoint: { desktop: '64rem', tablet: '48rem' },
     containerNames: ['sidebar'],
-    containers: { card: '24rem' },
+    container: { card: '24rem' },
     spacing: { gap: '4px' },
   })
   const themeConfig = Config.create({ vars: theme })

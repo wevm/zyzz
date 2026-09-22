@@ -1021,6 +1021,8 @@ export function extract(options: extract.Options): extract.ReturnType {
                   : targets.every(
                       (target) =>
                         Token.acceptsReference(part, target) ||
+                        (part.contract.variableSet &&
+                          Expression.acceptsVariables(template, target)) ||
                         (part.group === 'color' &&
                           Expression.acceptsColor(template, target)),
                     ))

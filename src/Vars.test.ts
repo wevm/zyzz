@@ -14,7 +14,7 @@ describe('define', () => {
       modules: {
         'app.ts': `import {Config, Vars} from 'zyzz';
           const tokens = Vars.define({
-            breakpoints: {tablet: '768px'},
+            breakpoint: {tablet: '768px'},
             dimension: {space: {default: '16px', '@media >=tablet': '32px'}},
           }, (vars) => ({dimension: {derived: vars.dimension.space}}));
           export const {style, vars} = Config.create({vars: tokens, mappings: false});
@@ -625,8 +625,8 @@ test('preserves root leaf-shaped names and query contracts', () => {
     light: '8px',
     dark: 2,
     default: 'red',
-    breakpoints: { tablet: '48rem' },
-    containers: { compact: '20rem' },
+    breakpoint: { tablet: '48rem' },
+    container: { compact: '20rem' },
     containerNames: ['card'],
   })
   expect(vars.light.value).toBe('8px')
@@ -634,14 +634,14 @@ test('preserves root leaf-shaped names and query contracts', () => {
   expect(vars.default.value).toBe('red')
   expect(() =>
     Vars.extend(vars, {
-      breakpoints: { tablet: '50rem' },
-      containers: { compact: '24rem' },
+      breakpoint: { tablet: '50rem' },
+      container: { compact: '24rem' },
       containerNames: ['card'],
     }),
   ).not.toThrow()
   for (const overrides of [
-    { breakpoints: { desktop: '80rem' } },
-    { containers: { wide: '40rem' } },
+    { breakpoint: { desktop: '80rem' } },
+    { container: { wide: '40rem' } },
     { containerNames: ['other'] },
   ])
     expect(() => Vars.extend(vars, overrides as never)).toThrow(
@@ -649,7 +649,7 @@ test('preserves root leaf-shaped names and query contracts', () => {
     )
   expect(() =>
     Vars.extend(Vars.define({ ink: '#fff' }), {
-      breakpoints: { desktop: '80rem' },
+      breakpoint: { desktop: '80rem' },
     } as never),
   ).toThrow('Extensions cannot add query thresholds.')
   expect(() => Vars.define({ spacing: { scale: ['4px'] } } as never)).toThrow()

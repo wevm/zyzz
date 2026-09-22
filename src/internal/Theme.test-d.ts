@@ -23,7 +23,7 @@ describe('define', () => {
     const { style, theme } = Config.create({
       theme: {
         borderWidth: { regular: '1px', hairline: '0.5px' },
-        breakpoints: { tablet: '800px' },
+        breakpoint: { tablet: '800px' },
         typography: {
           heading: {
             fontSize: '24px',
@@ -481,8 +481,8 @@ describe('queries', () => {
 
     test('retains scalar domains', () => {
       const theme = Theme.define({
-        breakpoints: { tablet: '48rem' },
-        containers: { card: '24rem' },
+        breakpoint: { tablet: '48rem' },
+        container: { card: '24rem' },
         fontSize: { body: '1rem' },
         fontWeight: { medium: 500 },
       })
@@ -509,7 +509,7 @@ describe('queries', () => {
         },
       })
       // @ts-expect-error Thresholds are nonnegative.
-      Theme.define({ breakpoints: { bad: '-1px' } })
+      Theme.define({ breakpoint: { bad: '-1px' } })
       // @ts-expect-error Font weights cannot exceed 1000.
       Theme.define({ fontWeight: { bad: 2000 } })
       // @ts-expect-error Font sizes cannot be negative.
@@ -519,11 +519,11 @@ describe('queries', () => {
       // @ts-expect-error CSS-wide keywords cannot be custom-property token leaves.
       Theme.define({ fontSize: { bad: 'initial' } })
       // @ts-expect-error Query metadata is not a declaration variable.
-      void theme.vars.breakpoints.tablet
+      void theme.vars.breakpoint.tablet
       // @ts-expect-error Query metadata is not a portable declaration reference.
-      void theme.tokens.containers.card
+      void theme.tokens.container.card
       // @ts-expect-error Query lengths cannot be percentages.
-      Theme.define({ breakpoints: { tablet: '50%' } })
+      Theme.define({ breakpoint: { tablet: '50%' } })
       // @ts-expect-error Typography references retain their scalar property domain.
       theme.style({ color: theme.tokens.fontSize.body })
     })

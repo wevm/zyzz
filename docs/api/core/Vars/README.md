@@ -78,7 +78,7 @@ References retain their source identity. Extending a set changes values within i
 
 ## Mappings
 
-A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow the existing token groups: `color` supplies color properties, `spacing` supplies spacing and sizing properties, and typography scalar categories supply their matching properties.
+A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow Tailwind’s non-font namespaces and fallback order. Font scalar categories keep their matching properties.
 
 ```ts
 export const { style, vars } = Config.create({
@@ -117,7 +117,7 @@ The `borderWidth` category maps to physical and logical border-width properties,
 ```ts
 const base = Vars.define({
   borderWidth: { regular: '2px' },
-  breakpoints: { tablet: '48rem' },
+  breakpoint: { tablet: '48rem' },
   typography: {
     heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
   },
@@ -127,3 +127,35 @@ const heading = style({ typography: 'heading', borderWidth: 'regular' })
 ```
 
 Explicit typography fields override matching base and conditional preset fields in the same style block. `Vars.extend` can override existing responsive fields. Native compilation rejects responsive typography queries.
+
+## Category fallbacks
+
+The first category containing the requested name wins. Custom `mappings` replace the targets of that category; `mappings: false` requires full paths. Explicit references bypass category lookup and retain CSS value validation.
+
+| Properties                                                                           | Categories, in order                               |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `color`                                                                              | `textColor`, `color`                               |
+| `backgroundColor`                                                                    | `backgroundColor`, `color`                         |
+| Border colors                                                                        | `borderColor`, `color`                             |
+| `accentColor`, `caretColor`, `outlineColor`, `textDecorationColor`, `fill`, `stroke` | Matching property category, `color`                |
+| Other color properties                                                               | `color`                                            |
+| Margin / padding / inset / gap                                                       | Matching category, `spacing`                       |
+| `width`, `minWidth`, `maxWidth`                                                      | Matching property category, `spacing`, `container` |
+| `height`                                                                             | `height`, `spacing`                                |
+| `minHeight`, `maxHeight`                                                             | Matching property category, `height`, `spacing`    |
+| Inline sizes                                                                         | `spacing`, `container`                             |
+| Block sizes                                                                          | `spacing`                                          |
+| `flexBasis`                                                                          | `flexBasis`, `spacing`, `container`                |
+| `columns`                                                                            | `columns`, `container`                             |
+| Scroll margin / padding, `borderSpacing`, `translate`, `textIndent`                  | Matching category, `spacing`                       |
+| Border radii                                                                         | `radius`                                           |
+| `boxShadow`, `textShadow`                                                            | `shadow`, `textShadow`, respectively               |
+| `aspectRatio`, `perspective`                                                         | `aspect`, `perspective`, respectively              |
+| `transitionTimingFunction`, `animation`                                              | `ease`, `animate`, respectively                    |
+| Other mapped properties                                                              | Matching property category                         |
+
+Other matching categories include `backgroundImage`, `backgroundPosition`, `backgroundSize`, `borderWidth`, `content`, `cursor`, grid row/column and template properties, `lineClamp`, `listStyleImage`, `listStyleType`, `objectPosition`, `opacity`, `order`, `outlineOffset`, `outlineWidth`, `perspectiveOrigin`, `rotate`, `scale`, `strokeWidth`, `textDecorationThickness`, `textUnderlineOffset`, `transformOrigin`, `transitionDelay`, `transitionDuration`, `transitionProperty`, and `zIndex`.
+
+`fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` each use only their matching category. `typography` still expands named sets. Spacing does not supply line heights, decoration thickness, or underline offsets.
+
+`blur`, `dropShadow`, and `insetShadow` values require explicit references in ordinary CSS properties. No effect-specific style fields are added. Query aliases use `breakpoint` and `container`; container values also supply sizing declarations.

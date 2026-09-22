@@ -65,7 +65,7 @@ describe('default', () => {
           Path.join(root, 'app.ts'),
           `import {appearance,variants,vars} from 'zyzz/default';
         namespace styles {
-          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`\${values.padding} !custom\` as const})}},defaultVariants:{size:'sm'}});
+          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500',boxShadow:'sm',filter:\`blur(\${vars.blur.xs})\`,animation:'pulse',animationDelay:'-1s',animationPlayState:'paused'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`\${values.padding} !custom\` as const})}},defaultVariants:{size:'sm'}});
         }
         document.querySelector('main')!.className=vars().className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
@@ -175,7 +175,25 @@ variants({base:{color:'missing'}});`,
             await page
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
-          ).toMatchInlineSnapshot(`"rgb(153, 206, 255)"`)
+          ).toMatchInlineSnapshot(`"oklch(0.623 0.214 259.815)"`)
+          expect(
+            await page.locator('button').evaluate((element) => {
+              const style = getComputedStyle(element)
+              return {
+                filter: style.filter,
+                opacity: style.opacity,
+                animationDuration: style.animationDuration,
+                boxShadow: style.boxShadow,
+              }
+            }),
+          ).toMatchInlineSnapshot(`
+            {
+              "animationDuration": "2s",
+              "boxShadow": "rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px",
+              "filter": "blur(4px)",
+              "opacity": "0.5",
+            }
+          `)
           await page.locator('button').click()
           expect(
             await page.locator('button').getAttribute('data-scheme'),
@@ -184,10 +202,10 @@ variants({base:{color:'missing'}});`,
             await page
               .locator('button')
               .evaluate((element) => getComputedStyle(element).color),
-          ).toMatchInlineSnapshot(`"rgb(10, 67, 128)"`)
+          ).toMatchInlineSnapshot(`"oklch(0.623 0.214 259.815)"`)
           await page.reload()
           await page.waitForFunction(
-            "getComputedStyle(document.querySelector('button')).color === 'rgb(10, 67, 128)'",
+            "getComputedStyle(document.querySelector('button')).color === 'oklch(0.623 0.214 259.815)'",
           )
           expect(
             await page.locator('html').getAttribute('data-restored-scheme'),
@@ -226,7 +244,7 @@ variants({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot('26')
+        ).toMatchInlineSnapshot(`28`)
         expect(
           (
             await Fs.readFile(

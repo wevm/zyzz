@@ -32,6 +32,43 @@ export function acceptsColor(
   }
 }
 
+/** Validates explicit variable substitutions in compound values, including every conditional fallback. */
+export function acceptsVariables(
+  expression: Token.Expression,
+  property: keyof Literal.Properties,
+): boolean {
+  if (
+    !['filter', 'backdropFilter', 'boxShadow', 'textShadow'].includes(property)
+  )
+    return false
+  function values(value: Token.Value): readonly string[] {
+    if (Token.is(value)) return values(value.value)
+    if (typeof value === 'object') return Object.values(value).flatMap(values)
+    return [String(value)]
+  }
+  let candidates = ['']
+  for (const part of expression.parts) {
+    if (Binding.is(part)) return false
+    const alternatives = typeof part === 'string' ? [part] : values(part.value)
+    // Bound combinations of independent responsive variables before grammar checks.
+    if (candidates.length * alternatives.length > 256) return false
+    candidates = candidates.flatMap((prefix) =>
+      alternatives.map((value) => prefix + value),
+    )
+  }
+  try {
+    return candidates.every(
+      (value) =>
+        Tree.lexer.matchProperty(
+          Literal.name(property),
+          value.replace(/ !important$/, ''),
+        ).error === null,
+    )
+  } catch {
+    return false
+  }
+}
+
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
 export function template(
   node: Ast.TemplateLiteral,

@@ -3,9 +3,9 @@ import * as Literal from './Literal.js'
 
 /** Named thresholds and eligible container identities. */
 export type Metadata = {
-  readonly breakpoints: Readonly<Record<string, string>>
+  readonly breakpoint: Readonly<Record<string, string>>
   readonly containerNames: readonly string[]
-  readonly containers: Readonly<Record<string, string>>
+  readonly container: Readonly<Record<string, string>>
 }
 
 /** Supported fixed nonnegative threshold lengths. */
@@ -52,7 +52,7 @@ export function resolve(key: string, metadata: Metadata): string {
   if (pieces.length !== 1) throw new Error('Malformed query alias.')
 
   const alias = pieces[0]!
-  const values = kind === 'media' ? metadata.breakpoints : metadata.containers
+  const values = kind === 'media' ? metadata.breakpoint : metadata.container
 
   const read = (name: string) => {
     const value = Object.hasOwn(values, name) ? values[name] : undefined

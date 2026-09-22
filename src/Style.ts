@@ -459,8 +459,8 @@ export function define(
             ? Query.resolve(
                 key,
                 theme?.[Token.definition].queries ?? {
-                  breakpoints: {},
-                  containers: {},
+                  breakpoint: {},
+                  container: {},
                   containerNames: [],
                 },
               )

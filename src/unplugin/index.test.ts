@@ -483,92 +483,104 @@ describe('zyzz', () => {
     }
   }, 30000)
 
-  test('webpack watches shared themes and new global contributions', async () => {
-    const root = await fixture()
-    const compiler = Webpack({
-      context: root,
-      entry: './main.js',
-      mode: 'development',
-      output: {
-        path: Path.join(root, 'dist'),
-        filename: 'app.js',
-        library: { name: 'App', type: 'var' },
-      },
-      plugins: [webpack({ root })],
-      resolve: { alias: { 'zyzz/runtime': runtime } },
-    })
-    let completed = 0
-    compiler.hooks.afterDone.tap('test', () => {
-      completed++
-    })
-    let failure: Error | undefined
-    // Temporary writes and emitted assets must not start a source rebuild.
-    const watcher = compiler.watch(
-      { ignored: ['**/*.tmp', Path.join(root, 'dist')] },
-      (error, stats) => {
-        if (error || stats?.hasErrors())
-          failure = error ?? new Error(stats?.toString('errors-only'))
-      },
-    )
-    try {
-      await vi.waitFor(
-        async () => {
-          if (failure) throw failure
-          expect(completed).toBeGreaterThan(0)
+  test.each(['filesystem', 'manual'])(
+    'webpack watches shared themes and new global contributions with %s invalidation',
+    async (invalidation) => {
+      const root = await fixture()
+      const compiler = Webpack({
+        cache: invalidation !== 'manual',
+        context: root,
+        entry: './main.js',
+        mode: 'development',
+        output: {
+          path: Path.join(root, 'dist'),
+          filename: 'app.js',
+          library: { name: 'App', type: 'var' },
         },
-        { timeout: 10000 },
-      )
-      const initial = completed
-      await Watch.write({
-        path: Path.join(root, 'theme.js'),
-        source:
-          "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
+        plugins: [webpack({ root })],
+        resolve: { alias: { 'zyzz/runtime': runtime } },
       })
-      await vi.waitFor(
-        async () => {
-          if (failure) throw failure
-          expect(completed).toBeGreaterThan(initial)
-          const css = await Fs.readFile(
-            Path.join(root, 'dist/zyzz.css'),
-            'utf8',
-          )
-          if (!css.includes('red'))
-            throw new Error('Waiting for the theme rebuild.')
-        },
-        { timeout: 10000 },
-      )
-      const updated = completed
-      await Watch.write({
-        path: Path.join(root, 'added.js'),
-        source: `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
+      let completed = 0
+      compiler.hooks.afterDone.tap('test', () => {
+        completed++
       })
-      await vi.waitFor(
-        async () => {
-          if (failure) throw failure
-          expect(completed).toBeGreaterThan(updated)
-          const css = await Fs.readFile(
-            Path.join(root, 'dist/zyzz.css'),
-            'utf8',
-          )
-          if (!css.includes('13px'))
-            throw new Error('Waiting for the new contribution.')
+      let failure: Error | undefined
+      // Temporary writes and emitted assets must not start a source rebuild.
+      const watcher = compiler.watch(
+        {
+          ignored: [
+            '**/*.tmp',
+            Path.join(root, 'dist'),
+            ...(invalidation === 'manual' ? [Path.join(root, 'theme.js')] : []),
+          ],
         },
-        { timeout: 10000 },
+        (error, stats) => {
+          if (error || stats?.hasErrors())
+            failure = error ?? new Error(stats?.toString('errors-only'))
+        },
       )
-      expect((await render(root)).color).toMatchInlineSnapshot(
-        '"rgb(255, 0, 0)"',
-      )
-    } finally {
-      if (watcher)
-        await new Promise<void>((resolve, reject) =>
-          watcher.close((error) => (error ? reject(error) : resolve())),
+      try {
+        await vi.waitFor(
+          async () => {
+            if (failure) throw failure
+            expect(completed).toBeGreaterThan(0)
+          },
+          { timeout: 10000 },
         )
-      await new Promise<void>((resolve, reject) =>
-        compiler.close((error) => (error ? reject(error) : resolve())),
-      )
-      await Fs.rm(root, { force: true, recursive: true })
-    }
-  }, 30000)
+        const initial = completed
+        await Watch.write({
+          path: Path.join(root, 'theme.js'),
+          source:
+            "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
+        })
+        if (invalidation === 'manual') watcher.invalidate()
+        await vi.waitFor(
+          async () => {
+            if (failure) throw failure
+            expect(completed).toBeGreaterThan(initial)
+            const css = await Fs.readFile(
+              Path.join(root, 'dist/zyzz.css'),
+              'utf8',
+            )
+            if (!css.includes('red'))
+              throw new Error('Waiting for the theme rebuild.')
+          },
+          { timeout: 10000 },
+        )
+        const updated = completed
+        await Watch.write({
+          path: Path.join(root, 'added.js'),
+          source: `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
+        })
+        await vi.waitFor(
+          async () => {
+            if (failure) throw failure
+            expect(completed).toBeGreaterThan(updated)
+            const css = await Fs.readFile(
+              Path.join(root, 'dist/zyzz.css'),
+              'utf8',
+            )
+            if (!css.includes('13px'))
+              throw new Error('Waiting for the new contribution.')
+          },
+          { timeout: 10000 },
+        )
+        expect((await render(root)).color).toMatchInlineSnapshot(
+          '"rgb(255, 0, 0)"',
+        )
+      } finally {
+        if (watcher)
+          await new Promise<void>((resolve, reject) =>
+            watcher.close((error) => (error ? reject(error) : resolve())),
+          )
+        await new Promise<void>((resolve, reject) =>
+          compiler.close((error) => (error ? reject(error) : resolve())),
+        )
+        await Fs.rm(root, { force: true, recursive: true })
+      }
+    },
+    30000,
+  )
 
   test('esbuild rejects output modes that cannot receive emitted assets', async () => {
     await expect(

@@ -10,6 +10,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
+import * as Ts from 'typescript-api'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
@@ -34,6 +35,122 @@ export namespace styles {
 }`
 
 describe('variants', () => {
+  test.each([
+    ["import { variants } from 'zyzz'", '', 'red'],
+    [
+      "import { Config } from 'zyzz'",
+      "const { variants } = Config.create({ vars: { color: { brand: '#123456' } } })",
+      'brand',
+    ],
+    [
+      "import { Config } from 'zyzz'",
+      "const { variants } = Config.create({ vars: { color: { brand: '#123456' } }, mappings: false, layers: ['base'] })",
+      'color.brand',
+    ],
+    ["import { variants } from 'zyzz/default'", '', 'red'],
+  ])(
+    'suggests recipe declarations through %s',
+    (imports, setup, color) => {
+      const root = Path.resolve(import.meta.dirname, '..')
+      const file = Path.join(root, '.fixture-variants-editor.ts')
+      const source = `${imports}
+${setup}
+const button = variants({
+  base: { /* base */ display: '/* display */', color: '/* baseColor */', flexShrink: '/* shrink */' },
+  variants: {
+    size: {
+      small: { /* choice */ color: '/* choiceColor */', ':hover': { /* nested */ display: '/* nestedDisplay */' } },
+      custom: (values: { opacity: number }) => ({ /* dynamic */ opacity: values.opacity, color: '/* dynamicColor */' }),
+    },
+  },
+  compoundVariants: [{ when: { size: 'small' }, style: { /* compound */ color: '/* compoundColor */' } }],
+})
+`
+      const options: Ts.CompilerOptions = {
+        module: Ts.ModuleKind.ESNext,
+        moduleResolution: Ts.ModuleResolutionKind.Bundler,
+        noEmit: true,
+        paths: {
+          zyzz: [Path.join(root, 'src/index.ts')],
+          'zyzz/default': [Path.join(root, 'src/default.ts')],
+        },
+        skipLibCheck: true,
+        strict: true,
+        target: Ts.ScriptTarget.ESNext,
+        types: [],
+      }
+      const snapshots = new Map<string, Ts.IScriptSnapshot>()
+      const service = Ts.createLanguageService({
+        fileExists: (path) => path === file || Ts.sys.fileExists(path),
+        getCompilationSettings: () => options,
+        getCurrentDirectory: () => root,
+        getDefaultLibFileName: Ts.getDefaultLibFilePath,
+        getScriptFileNames: () => [file],
+        getScriptSnapshot: (path) => {
+          const cached = snapshots.get(path)
+          if (cached) return cached
+
+          const text = path === file ? source : Ts.sys.readFile(path)
+          if (text === undefined) return undefined
+
+          const snapshot = Ts.ScriptSnapshot.fromString(text)
+          snapshots.set(path, snapshot)
+          return snapshot
+        },
+        getScriptVersion: () => '0',
+        readDirectory: Ts.sys.readDirectory,
+        readFile: (path) => (path === file ? source : Ts.sys.readFile(path)),
+      })
+
+      try {
+        for (const marker of [
+          'base',
+          'choice',
+          'nested',
+          'dynamic',
+          'compound',
+        ]) {
+          const names =
+            service
+              .getCompletionsAtPosition(
+                file,
+                source.indexOf(`/* ${marker} */`),
+                {},
+              )
+              ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
+          expect(names.includes('height'), marker).toMatchInlineSnapshot(`true`)
+          expect(names.includes('::before'), marker).toMatchInlineSnapshot(
+            `true`,
+          )
+        }
+        for (const [marker, expected] of [
+          ['display', 'flex'],
+          ['nestedDisplay', 'grid'],
+          ['shrink', 'inherit'],
+          ['baseColor', color],
+          ['choiceColor', color],
+          ['dynamicColor', color],
+          ['compoundColor', color],
+        ]) {
+          const names =
+            service
+              .getCompletionsAtPosition(
+                file,
+                source.indexOf(`/* ${marker} */`),
+                {},
+              )
+              ?.entries.map((entry) => entry.name) ?? []
+          expect(names.includes(expected!), marker).toMatchInlineSnapshot(
+            `true`,
+          )
+        }
+      } finally {
+        service.dispose()
+      }
+    },
+    30_000,
+  )
+
   test('renders registered computed conditions in recipe bodies', async () => {
     const source = `import {variants} from 'zyzz';import {customMedia} from 'zyzz/web';const query=customMedia('(width > 0px)');export const button=variants({base:{[query]:{color:'red'}},variants:{size:{sm:{[query]:{padding:'4px'}}}},defaultVariants:{size:'sm'},compoundVariants:[{when:{size:'sm'},style:{[query]:{opacity:0.5}}}]});`
     const graph = Graph.compile({ modules: { 'computed.ts': source } })

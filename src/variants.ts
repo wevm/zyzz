@@ -3,6 +3,7 @@ import * as Authoring from './internal/Authoring.js'
 import type { style } from './styleFunction.js'
 import type * as Config from './Config.js'
 import type * as Binding from './internal/Binding.js'
+import type * as Completion from './internal/Completion.js'
 import type * as Condition from './internal/Condition.js'
 import type * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
@@ -59,6 +60,35 @@ type CheckedChoice<
           ? unknown
           : never)
   : CheckedStyles<style, tokens, layers, mappings>
+
+type SuggestedStyles<tokens extends Theme.Tokens> =
+  Completion.Properties<tokens> & Readonly<Record<string, unknown>>
+
+/** Editor hints remain independent of declaration and selection validation. */
+type Suggestions<tokens extends Theme.Tokens> = {
+  readonly base?: SuggestedStyles<tokens> | undefined
+  readonly compoundVariants?:
+    | readonly {
+        readonly style: SuggestedStyles<tokens>
+        readonly when: unknown
+      }[]
+    | undefined
+  readonly variants?:
+    | Readonly<
+        Record<
+          string,
+          Readonly<
+            Record<
+              string,
+              | SuggestedStyles<tokens>
+              | ((...args: never[]) => SuggestedStyles<tokens>)
+            >
+          >
+        >
+      >
+    | undefined
+}
+
 type Keys<value> = value extends unknown ? keyof value : never
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
@@ -169,7 +199,9 @@ type Checked<
  * @throws {Error} When uncompiled authoring omits an explicit identity.
  */
 export function variants<const definition extends Record<string, unknown>>(
-  definition: definition & NoInfer<Checked<definition, {}, never, {}>>,
+  definition: definition &
+    NoInfer<Checked<definition, {}, never, {}>> &
+    Suggestions<{}>,
   options: style.DefinitionOptions = {},
 ): variants.ReturnType<definition> {
   return Authoring.variants(
@@ -188,7 +220,8 @@ export declare namespace variants {
     mappings extends Shorthands.Map = {},
   > = <const definition extends Record<string, unknown>>(
     definition: definition &
-      NoInfer<Checked<definition, tokens, layers, mappings>>,
+      NoInfer<Checked<definition, tokens, layers, mappings>> &
+      Suggestions<tokens>,
     options?: style.DefinitionOptions,
   ) => ReturnType<definition, output>
 

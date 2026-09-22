@@ -3,6 +3,7 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Stylesheets from '../compiler/internal/Stylesheets.js'
 import * as Project from './internal/Project.js'
 
 type Context = Project.Context & {
@@ -97,24 +98,30 @@ async function compile(context: Context, source: string) {
     output.code === source &&
     !output.css &&
     !/(?:^|[/\\])(?:layout|_app)\.[cm]?[jt]sx?$/.test(context.resourcePath) &&
-    !graph.sharedCssMap?.sources.some((name) => name !== 'zyzz/reset.css')
+    !graph.sharedCssMap?.sources.some((name) => name !== 'zyzz/reset.css') &&
+    !graph[Stylesheets.packed]?.length
   )
     return { code: source, map }
 
-  const shared = await compileShared()
+  const shared = await compileShared({
+    css: graph.sharedCss ?? '',
+    map: graph.sharedCssMap!,
+    assets: graph.sharedAssets ?? {},
+    owners: graph.sharedAssetOwners ?? {},
+  })
 
-  async function compileShared() {
+  async function compileShared(
+    stylesheet: ReturnType<typeof Stylesheets.render>,
+  ) {
     const assets = new Map<string, string>()
-    for (const [placeholder, target] of Object.entries(
-      graph.sharedAssets ?? {},
-    )) {
+    for (const [placeholder, target] of Object.entries(stylesheet.assets)) {
       const raw = target.split(/[?#]/)[0]!
       const file = await Fs.realpath(
         target.startsWith('app/')
           ? Path.join(root, decodeURIComponent(raw.slice(4)))
           : decodeURIComponent(raw),
       )
-      const identity = graph.sharedAssetOwners?.[placeholder]
+      const identity = stylesheet.owners[placeholder]
       let owner = root
       if (identity && Path.isAbsolute(identity)) {
         owner = Path.dirname(identity)
@@ -151,13 +158,13 @@ async function compile(context: Context, source: string) {
       )
     }
 
-    return graph.sharedCss
+    return stylesheet.css
       ? AtRules.transform({
-          code: Buffer.from(graph.sharedCss),
+          code: Buffer.from(stylesheet.css),
           filename: 'shared.css',
           inputSourceMap: JSON.stringify({
-            ...graph.sharedCssMap,
-            sources: sources(graph.sharedCssMap!.sources),
+            ...stylesheet.map,
+            sources: sources(stylesheet.map.sources),
           }),
           sourceMap: true,
           visitor: {
@@ -171,8 +178,22 @@ async function compile(context: Context, source: string) {
   }
 
   const styles = [
-    { css: shared?.code.toString(), map: shared?.map?.toString() },
-    { css: output.css, map: JSON.stringify(cssMap) },
+    ...(await Promise.all(
+      (graph[Stylesheets.packed] ?? []).map(async (resource) => {
+        const output = await compileShared(resource)
+        return {
+          css: output?.code.toString(),
+          map: output?.map?.toString(),
+          id: resource.id,
+        }
+      }),
+    )),
+    {
+      id: undefined,
+      css: shared?.code.toString(),
+      map: shared?.map?.toString(),
+    },
+    { id: undefined, css: output.css, map: JSON.stringify(cssMap) },
   ]
   const requests: string[] = []
   await Fs.mkdir(directory, { recursive: true })
@@ -196,12 +217,13 @@ async function compile(context: Context, source: string) {
       .update(
         options.development &&
           !(
-            index === 0 &&
+            index === (graph[Stylesheets.packed]?.length ?? 0) &&
             graph.sharedCssMap?.sources.every(
               (name) => name === 'zyzz/reset.css',
             )
           )
-          ? JSON.stringify([context.resourcePath, index, graph.dependencies])
+          ? (stylesheet.id ??
+              JSON.stringify([context.resourcePath, index, graph.dependencies]))
           : css,
       )
       .digest('hex')

@@ -30,7 +30,10 @@ describe('define', () => {
     // @ts-expect-error Color references cannot supply lengths.
     style({ width: base.color.foreground })
     // @ts-expect-error Derived values must satisfy literal validation.
-    Vars.define({ ink: '#fff' }, (vars) => ({ invalid: '#ggg', alias: vars.ink }))
+    Vars.define({ ink: '#fff' }, (vars) => ({
+      invalid: '#ggg',
+      alias: vars.ink,
+    }))
     // @ts-expect-error Derived conditional branches retain the base value domain.
     Vars.define({ ink: '#fff' }, (vars) => ({
       alias: vars.ink,
@@ -39,8 +42,8 @@ describe('define', () => {
     Vars.define({ ink: '#fff' }, { id: 'existing' })
   })
   test('retains query-like names inside categories', () => {
-    const vars = Vars.define({ color: { containers: '#fff' } })
-    expectTypeOf(vars.color.containers.group).toEqualTypeOf<'color'>()
+    const vars = Vars.define({ color: { container: '#fff' } })
+    expectTypeOf(vars.color.container.group).toEqualTypeOf<'color'>()
   })
   test('infers mapped names and explicit reference domains', () => {
     const base = Vars.define({
@@ -158,7 +161,7 @@ test('exposes one variable API', () => {
 test('infers responsive typography and border widths', () => {
   const base = Vars.define({
     borderWidth: { regular: '2px' },
-    breakpoints: { tablet: '48rem' },
+    breakpoint: { tablet: '48rem' },
     typography: {
       heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
     },
@@ -237,7 +240,7 @@ describe('full paths', () => {
         surface: { nested: { ink: '#123456' } },
         spacing: { page: '16px' },
         opacity: { muted: 0.5 },
-        breakpoints: { desktop: '800px' },
+        breakpoint: { desktop: '800px' },
       },
       mappings: false,
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
@@ -257,8 +260,96 @@ describe('full paths', () => {
     // @ts-expect-error lengths cannot be used as colors
     config.style({ color: 'spacing.page' })
     // @ts-expect-error query metadata does not declare a variable
-    config.style({ width: 'breakpoints.desktop' })
+    config.style({ width: 'breakpoint.desktop' })
     // @ts-expect-error unknown full path
     config.style({ color: 'surface.missing' })
+  })
+})
+
+test('infers Tailwind fallback categories without changing font categories', () => {
+  const config = Config.create({
+    vars: {
+      spacing: { space: '16px', percent: '10%' },
+      container: { wide: '640px' },
+      height: { tall: '320px' },
+      radius: { round: '8px' },
+      shadow: { soft: '0 2px 4px #0003' },
+      blur: { soft: '2px' },
+      aspect: { video: '16 / 9' },
+      ease: { out: 'ease-out' },
+      textDecorationThickness: { stroke: '2px' },
+      textUnderlineOffset: { offset: '4px' },
+      fontSize: { body: '16px' },
+      lineHeight: { body: '24px' },
+    },
+  })
+  config.style({
+    width: 'wide',
+    minWidth: 'wide',
+    inlineSize: 'wide',
+    flexBasis: 'wide',
+    columns: 'wide',
+    minHeight: 'tall',
+    maxHeight: 'tall',
+    scrollMarginTop: 'space',
+    scrollPaddingTop: 'space',
+    borderSpacing: 'space',
+    translate: 'space',
+    borderRadius: 'round',
+    boxShadow: 'soft',
+    aspectRatio: 'video',
+    transitionTimingFunction: 'out',
+    textDecorationThickness: 'stroke',
+    textUnderlineOffset: 'offset',
+    fontSize: 'body',
+    lineHeight: 'body',
+  })
+  config.style({
+    width: config.vars.container.wide,
+    filter: `blur(${config.vars.blur.soft})`,
+  })
+  // @ts-expect-error Containers do not supply heights.
+  config.style({ height: 'wide' })
+  // @ts-expect-error Font mappings do not fall back to spacing.
+  config.style({ lineHeight: 'space' })
+  // @ts-expect-error Decoration thickness has a dedicated category.
+  config.style({ textDecorationThickness: 'space' })
+  // @ts-expect-error Underline offsets have a dedicated category.
+  config.style({ textUnderlineOffset: 'space' })
+  // @ts-expect-error Border spacing does not accept percentages.
+  config.style({ borderSpacing: 'percent' })
+  // @ts-expect-error Blur requires an explicit CSS function.
+  config.style({ filter: 'soft' })
+  const explicit = Config.create({
+    vars: { container: { wide: '640px' } },
+    mappings: false,
+  })
+  explicit.style({ width: 'container.wide' })
+})
+
+test('infers numeric and compound token names', () => {
+  const { style } = Config.create({
+    vars: {
+      gridColumn: { pair: 'span 2' },
+      gridColumnStart: { second: 2 },
+      columns: { pair: 2 },
+      scale: { large: 1.25 },
+      strokeWidth: { bold: 2 },
+      listStyleType: { named: 'custom-counter' },
+      transitionProperty: { fade: 'opacity' },
+      gridTemplateColumns: { split: '20px 1fr' },
+      backgroundPosition: { offset: '10px' },
+    },
+  })
+  style({
+    gridColumn: 'pair',
+    gridColumnStart: 'second',
+    columns: 'pair',
+    scale: 'large',
+    strokeWidth: 'bold',
+    listStyleType: 'named',
+    transitionProperty: 'fade',
+    gridTemplateColumns: 'split',
+    backgroundPosition: 'offset',
   })
 })

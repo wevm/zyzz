@@ -1664,7 +1664,7 @@ describe('conditions', () => {
   describe('define', () => {
     test('preserves broad bound declarations and rejects unknown keys', () => {
       const theme: Theme.Definition = Theme.define({
-        breakpoints: { tablet: '48rem' },
+        breakpoint: { tablet: '48rem' },
         color: { accent: 'red' },
       })
       const styles = {} as Style.Properties<Theme.Tokens>

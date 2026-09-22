@@ -45,7 +45,7 @@ export type Definition<values extends Values = Values> = (Values extends values
 export type References<values, root extends boolean = true> = {
   readonly [key in Exclude<
     keyof values,
-    root extends true ? 'breakpoints' | 'containers' | 'containerNames' : never
+    root extends true ? 'breakpoint' | 'containerNames' : never
   >]: values[key] extends Value
     ? Token.Reference<Domain<Scalar<values[key]>>> & {
         readonly [Token.scalar]: Scalar<values[key]>
@@ -184,8 +184,7 @@ export type Mappings = Readonly<
 /** Type carrier for configured shorthand lookup. */
 export type Mapped<values, mappings> = (Pick<
   values,
-  keyof values &
-    ('breakpoints' | 'containers' | 'containerNames' | 'typography')
+  keyof values & ('breakpoint' | 'container' | 'containerNames' | 'typography')
 > extends infer metadata extends Theme.Tokens
   ? metadata
   : {}) & {

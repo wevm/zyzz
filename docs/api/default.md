@@ -14,29 +14,55 @@ namespace styles {
 }
 ```
 
-The bundle covers every scale the theme contract supports. Colors ship as light/dark pairs and font stacks lead with the bundled faces over system fallbacks. It does not download or register fonts.
+Non-font token mappings and fallback precedence follow Tailwind. Effect, radius, and query scales follow [Tailwind CSS 4.3.3](https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/tailwindcss/theme.css). Geist colors, font scales, and typography retain their existing values. Fonts require application-owned loading.
 
-| Group           | Keys                                                                                                                                                                       |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `color`         | `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, `teal` in steps `100` to `1000`, `background.100`/`200`, `black`, `white`, `foreground`, `surface` |
-| `fontFamily`    | `sans`, `mono`, `serif`                                                                                                                                                    |
-| `fontSize`      | `xs` to `9xl`                                                                                                                                                              |
-| `fontWeight`    | `thin` to `black`                                                                                                                                                          |
-| `letterSpacing` | `tighter` to `widest`                                                                                                                                                      |
-| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                                                                                                                              |
-| `typography`    | `heading`, `button`, `label`, and `copy` sets with dotted size and variant paths                                                                                           |
-| `spacing`       | `px`, `0` to `96` whole steps of `0.25rem`                                                                                                                                 |
-| `borderRadius`  | `xs` to `4xl`                                                                                                                                                              |
-| `breakpoints`   | `sm` to `2xl`                                                                                                                                                              |
-| `containers`    | `3xs` to `7xl`                                                                                                                                                             |
+| Group           | Keys                                                                  |
+| --------------- | --------------------------------------------------------------------- |
+| `color`         | Geist palette families in steps `100` to `1000`, plus semantic colors |
+| `fontFamily`    | `sans`, `mono`, `serif`                                               |
+| `fontSize`      | `xs` to `9xl`                                                         |
+| `fontWeight`    | `thin` to `black`                                                     |
+| `letterSpacing` | `tighter` to `widest`                                                 |
+| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                         |
+| `typography`    | Geist `heading`, `button`, `label`, and `copy` sets                   |
+| `spacing`       | `px` and the existing whole-number quarter-rem steps through `96`     |
+| `radius`        | `xs` to `4xl`                                                         |
+| `breakpoint`    | `sm` to `2xl`                                                         |
+| `container`     | `3xs` to `7xl`                                                        |
+| `aspect`        | `video`                                                               |
+| `shadow`        | `2xs` to `2xl`, `inner`                                               |
+| `insetShadow`   | `2xs`, `xs`, `sm`                                                     |
+| `dropShadow`    | `xs` to `2xl`                                                         |
+| `textShadow`    | `2xs` to `lg`                                                         |
+| `blur`          | `xs` to `3xl`                                                         |
+| `perspective`   | `dramatic`, `near`, `normal`, `midrange`, `distant`                   |
+| `ease`          | `in`, `out`, `in-out`                                                 |
+| `animate`       | `spin`, `ping`, `pulse`, `bounce`, with keyframes                     |
 
-Color steps switch with the ordinary color-scheme contract. Steps whose values match in both schemes are single colors. `foreground` aliases `gray.1000` and `surface` aliases `background.100`. `grayAlpha` steps are translucent eight-digit hex values for overlays and borders.
+Rename category keys `borderRadius`, `breakpoints`, and `containers` to `radius`, `breakpoint`, and `container`. Style declarations still use CSS property names such as `borderRadius`.
 
-Fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Shadows, blur, easing, animation, and perspective are outside the theme contract and are not bundled. `sans` and `mono` lead with the bundled faces before system stacks, and `serif` is a system stack.
+Geist colors include light/dark pairs for `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, and `teal`. The palette includes `background.100`, `background.200`, `black`, and `white`. The semantic aliases `foreground` and `surface` match `gray.1000` and `background.100`, respectively.
+
+Spacing remains an explicit table. Numeric names resolve only when present; no scalar `DEFAULT` multiplier is used. Fractional names are omitted because dots separate token paths. Use semantic names or literal CSS lengths for additional steps.
+
+Use `boxShadow: 'md'`, `textShadow: 'sm'`, `aspectRatio: 'video'`, `perspective: 'near'`, `transitionTimingFunction: 'out'`, and `animation: 'spin'` for mapped effects. Blur, drop shadows, and inset shadows remain explicit CSS references:
+
+```ts
+import { style, vars } from 'zyzz/default'
+
+namespace styles {
+  export const frosted = style({
+    filter: `blur(${vars.blur.md})`,
+    boxShadow: vars.insetShadow.sm,
+  })
+}
+```
+
+See [category fallbacks](./core/Vars/README.md#category-fallbacks) for the lookup order. Font-related mappings and typography behavior remain unchanged, including no spacing fallback for `lineHeight`.
+
+`breakpoint` and `containerNames` are query metadata without declaration references. `container` supplies both container-query thresholds and sizing variables. Extensions may change existing thresholds; selecting a runtime scope does not change compiled queries.
 
 Third-party scale data retains its MIT notice under `src/themes/`. Raw `tokens` are independent of `vars` references.
-
-Themes can also define `breakpoints`, `containers`, and `containerNames`. These are compile-time query metadata, excluded from declaration references and emitted CSS variables. Thresholds use fixed nonnegative CSS lengths, with relative units preserved. Extensions may change existing thresholds; runtime theme scope changes do not change compiled thresholds. Nested condition authoring resolves aliases from these groups, including comparison and range forms.
 
 The package includes its versioned `.zyzz.json` contract and generated declarations. Applications compile every finite recipe choice, including conditional selections and dynamic payload slots, through the ordinary theme pipeline. Fonts still require application-owned loading.
 

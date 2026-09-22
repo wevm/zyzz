@@ -479,7 +479,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       ).toMatchInlineSnapshot('true')
       expect(
         JSON.parse(publisher.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`26`)
+      ).toMatchInlineSnapshot(`28`)
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: Object.fromEntries(
@@ -570,7 +570,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
 
 describe('conditions', () => {
   const config =
-    "import {Config} from 'zyzz';\nexport const {variants,vars:theme}=Config.create({output:'html',vars:{breakpoints:{md:'600px'},color:{brand:'black'}}});"
+    "import {Config} from 'zyzz';\nexport const {variants,vars:theme}=Config.create({output:'html',vars:{breakpoint:{md:'600px'},color:{brand:'black'}}});"
   const source = `import {variants,theme} from './config.js';
 export const scope=theme().class;
 export const button=variants({
@@ -1052,8 +1052,8 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version
-          if (output === 'react') expect(version).toMatchInlineSnapshot(`26`)
-          else expect(version).toMatchInlineSnapshot(`26`)
+          if (output === 'react') expect(version).toMatchInlineSnapshot(`28`)
+          else expect(version).toMatchInlineSnapshot(`28`)
         } finally {
           await browser.close()
           if (server)

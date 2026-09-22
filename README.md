@@ -203,7 +203,7 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `vars`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Scales use conventional named steps, and colors ship as light/dark pairs.
+The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `vars`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Non-font token mappings and fallbacks follow Tailwind. Colors and typography follow Geist, and spacing uses an explicit table.
 
 ```ts
 import { style } from 'zyzz/default'

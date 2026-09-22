@@ -78,13 +78,14 @@ export async function verify(options: verify.Options) {
     )
     const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {style,vars}=Config.create({cssOutput:'${cssOutput}',vars:library});`
     const files = {
+      'app/unimported.ts': `import {global} from 'zyzz/web';declare function unknownColor(): 'red';global({body:{color:unknownColor()}});`,
       'app/fonts.ts': `import {fontFace,global,layers} from 'zyzz/web';layers(['reset','base']);fontFace({fontFamily:'NextEvidence',src:'url(./probe.ttf)'},{within:['@layer base']});global({'@layer base':{body:{position:'relative'}}});`,
       'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {style} from '@config';import {variant,packedTheme} from './variants';namespace styles{export const button=style((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><div className={packedTheme().className}><div id="packed" {...variant(active)}>Packed</div></div><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button></>}`,
       'app/variants.ts': `import {cx} from 'zyzz';import {controls} from '@acme/variants';import '@acme/variants/style.css';export {vars as packedTheme} from '@acme/variants';export function variant(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),controls.override())}`,
       'app/config.ts': config,
       'app/content.mdx': `import Content from './mdx-content'\n\n<Content>MDX</Content>\n`,
       'app/mdx-content.tsx': `import {style} from '@config';const content=style({color:'brand'});export default function Content({children}:{children:React.ReactNode}){return <p id="mdx" {...content()}>{children}</p>}`,
-      'app/layout.tsx': `import 'next/root-params';import {cx} from 'zyzz';import {style,vars} from '@config';const root=style({color:'brand'});export default function Layout({children}:{children:React.ReactNode}){return <html {...cx(vars({colorScheme:'light'}),root())}><body>{children}</body></html>}`,
+      'app/layout.tsx': `import './fonts';import 'next/root-params';import {cx} from 'zyzz';import {style,vars} from '@config';const root=style({color:'brand'});export default function Layout({children}:{children:React.ReactNode}){return <html {...cx(vars({colorScheme:'light'}),root())}><body>{children}</body></html>}`,
       'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
       'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
       'app/page.tsx': `import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import Client from './client';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
@@ -523,6 +524,25 @@ export async function verify(options: verify.Options) {
         .locator('button[data-ready]')
         .evaluate((element) => getComputedStyle(element).opacity),
     ).toMatchInlineSnapshot('"0.5"')
+    await Watch.write({
+      path: Path.join(app, 'app/page.tsx'),
+      source: files['app/page.tsx'].replace(
+        "padding:'md'",
+        "padding:'md',backgroundColor:'[blue]'",
+      ),
+    })
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector('h1')!).backgroundColor ===
+        'rgb(0, 0, 255)',
+      undefined,
+      { timeout: 30_000 },
+    )
+    expect(
+      await page
+        .locator('button[data-ready]')
+        .evaluate((element) => getComputedStyle(element).opacity),
+    ).toBe('0.5')
     const changedConfig = (color: string, mode = cssOutput) =>
       `import {Config,Vars} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Vars.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {style,vars}=Config.create({cssOutput:'${mode}',vars:changed});`
     await Fs.writeFile(Path.join(app, 'app/config.ts'), changedConfig('#c00'))
@@ -617,6 +637,10 @@ export async function verify(options: verify.Options) {
       Path.join(app, 'app/broken.ts'),
       `import {global} from 'zyzz/web';declare function unknownColor(): 'red';global({body:{color:unknownColor()}});`,
     )
+    await Watch.write({
+      path: Path.join(app, 'app/config.ts'),
+      source: `import './broken';${changedConfig('#c00')}`,
+    })
     await vi.waitFor(
       () => {
         if (!development.log().includes('broken.ts'))
@@ -656,6 +680,10 @@ export async function verify(options: verify.Options) {
       source:
         "import {global} from 'zyzz/web';global({':root':{'--cache-probe':'first'}})",
     })
+    await Watch.write({
+      path: Path.join(app, 'app/config.ts'),
+      source: `import './cache-added/global';${changedConfig('#0a0')}`,
+    })
     await page.waitForFunction(
       () =>
         getComputedStyle(document.documentElement).getPropertyValue(
@@ -684,6 +712,10 @@ export async function verify(options: verify.Options) {
         ),
       ),
     ).toMatchInlineSnapshot('"other"')
+    await Watch.write({
+      path: Path.join(app, 'app/config.ts'),
+      source: changedConfig('#0a0'),
+    })
     await Fs.rm(added, { recursive: true })
     await page.waitForFunction(
       () =>

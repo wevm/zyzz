@@ -2,4 +2,4 @@
 'zyzz': patch
 ---
 
-Reduced redundant compilation, stylesheet processing, and dependency resolution in Next.js while preserving generated-module caches and refreshing Turbopack styles after edits.
+Reduced Next.js cold compilation and incremental work with dependency-scoped graphs, bounded compiler caches, and native CSS hot updates for server components.

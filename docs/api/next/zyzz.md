@@ -55,13 +55,15 @@ export default zyzz({})
 
 ## Incremental Compilation
 
-Source, style, and shared-CSS requests reuse one incremental graph per project, bundler, and reset setting within each loader worker. Unchanged file contents, syntax, and directory listings are retained. Edits recompile affected modules and dependents, while added and deleted files refresh graph membership.
+Each loader compiles its source and follows style and token imports. Runtime-only function and class imports remain in Next's module graph; their exports are watched for authoring changes. Unimported files contribute no CSS. Import modules that declare global styles or fonts through an application entrypoint or configuration module.
 
-Resolution still uses the active bundler so aliases, package conditions, and dependency notifications remain current. Caches live for the worker process and are not shared across Turbopack workers.
+Unchanged source, syntax, and bounded extraction snapshots are reused within each loader worker. Edits invalidate importing modules. Resolution uses the active bundler so aliases, package conditions, and dependency notifications remain current.
+
+Development emits stable CSS files and generated client imports so Next's native CSS HMR updates server-component styles without reloading the page. Production emits content-addressed CSS imports. Each source module delivers its own global styles and directly imported packed stylesheets.
 
 ## Errors
 
-Compilation and resolution failures are reported through the active bundler. Source diagnostics retain their source locations. Correcting a source error triggers recompilation. File-system errors while creating `.zyzz/next` are thrown during configuration.
+Compilation and resolution failures are reported through the active bundler. Source diagnostics retain their source locations. Correcting a source error triggers recompilation. File-system errors while preparing `.zyzz/next` are reported during configuration; stylesheet emission errors are reported during compilation.
 
 The wrapper requires no separate Babel or PostCSS setup. Underlying loaders or transforms remain internal choices, validated separately for Webpack and Turbopack.
 

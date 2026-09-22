@@ -59,9 +59,48 @@ try {
       .find((script) => script.url === contractUrl)
       ?.functions.find((fn) => fn.functionName === 'write')?.ranges[0]?.count ??
     0
+  const scoped = Graph.create()
+  const input = {
+    imports: {
+      'tokens.ts': imports['tokens.ts'],
+      'styles.ts': imports['styles.ts'],
+    },
+    modules: {
+      'tokens.ts': modules['tokens.ts'],
+      'styles.ts': modules['styles.ts'],
+    },
+  }
+  scoped.compile(input)
+  scoped.compile({
+    imports: { 'other.ts': {} },
+    modules: { 'other.ts': 'export const other = 1' },
+  })
+  await session.post('Profiler.takePreciseCoverage')
+  const returned = scoped.compile(input)
+  const reused = await session.post('Profiler.takePreciseCoverage')
+  const sourceUrl = new URL('./Source.js', url).href
+  const extractions =
+    reused.result
+      .find((script) => script.url === sourceUrl)
+      ?.functions.find((fn) => fn.functionName === 'extract')?.ranges[0]
+      ?.count ?? 0
+  scoped.compile({
+    imports: { 'tokens.ts': {} },
+    modules: { 'tokens.ts': `export const tokens={color:'blue'};` },
+  })
+  const changed = scoped.compile({
+    ...input,
+    modules: {
+      ...input.modules,
+      'tokens.ts': `export const tokens={color:'blue'};`,
+    },
+  })
   process.stdout.write(
     JSON.stringify({
       count: relocate.ranges[0]!.count,
+      extractions,
+      returned: Object.keys(returned.modules),
+      changed: changed.modules['styles.ts']!.css,
       writes,
       css: graph.modules['styles.ts']!.css,
     }),

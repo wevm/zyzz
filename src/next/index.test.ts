@@ -34,14 +34,14 @@ describe('zyzz', () => {
         "cold": {
           "extractions": 6,
           "loads": 3,
-          "parses": 9,
+          "parses": 6,
           "transforms": 3,
         },
         "edited": {
           "extractions": 4,
           "loads": 3,
-          "parses": 6,
-          "transforms": 3,
+          "parses": 3,
+          "transforms": 2,
         },
         "settled": {
           "extractions": 0,

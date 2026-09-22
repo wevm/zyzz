@@ -9,10 +9,12 @@ type Context = Project.Context & {
   async(): (error: Error | null, code?: string, map?: object) => void
   getOptions(): {
     bundler: string
-    mode: 'shared' | 'source' | 'style'
+    development?: boolean | undefined
+    mode?: 'style' | undefined
     reset?: boolean | undefined
     root: string
   }
+  resourceQuery?: string | undefined
 }
 
 // Next owns loader worker lifetimes. Each project retains only its latest graph in that worker.
@@ -32,6 +34,15 @@ async function compile(context: Context, source: string) {
   const options = context.getOptions()
   const root = options.root
   const directory = Path.resolve(root, '.zyzz', 'next')
+  if (options.mode) {
+    const hash = new URLSearchParams(context.resourceQuery).get('zyzz')
+    if (!hash || !/^[a-f0-9]{64}$/.test(hash))
+      throw new Error('Invalid generated stylesheet request.')
+    const file = Path.join(directory, `${hash}.css`)
+    context.addDependency(file)
+    return { code: await Fs.readFile(file, 'utf8'), map: undefined }
+  }
+
   const eligible = (file: string) =>
     /\.[cm]?[jt]sx?$/.test(file) &&
     !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(file) &&
@@ -50,28 +61,47 @@ async function compile(context: Context, source: string) {
   )
     return { code: source, map: undefined }
 
-  if (options.mode !== 'shared' && !eligible(context.resourcePath))
-    return { code: source, map: undefined }
+  if (!eligible(context.resourcePath)) return { code: source, map: undefined }
 
-  const key = JSON.stringify([root, options.bundler, options.reset ?? false])
+  const key = JSON.stringify([
+    root,
+    options.bundler,
+    options.reset ?? false,
+    options.development ?? false,
+  ])
   let project = projects.get(key)
   if (!project) {
     project = Project.create(options)
     projects.set(key, project)
   }
-  const graph = await project.compile(
-    context,
-    options.mode === 'shared' ? undefined : source,
-  )
+  const graph = await project.compile(context, source)
   const output =
     graph.modules[
       `app/${Path.relative(root, context.resourcePath).split(Path.sep).join('/')}`
     ]
 
-  const shared =
-    options.mode === 'shared' || options.bundler !== 'turbopack'
-      ? await compileShared()
-      : undefined
+  if (!output) throw new Error('Missing Next.js source compilation.')
+  // Bundlers resolve map sources relative to the loader resource, not graph identities.
+  const sources = (names: readonly (string | null)[]) =>
+    names.map((name) =>
+      name?.startsWith('app/') ? Path.resolve(root, name.slice(4)) : name,
+    )
+  const map = {
+    ...output.map,
+    file: context.resourcePath,
+    sources: sources(output.map.sources),
+  }
+  const cssMap = { ...output.cssMap, sources: sources(output.cssMap.sources) }
+
+  if (
+    output.code === source &&
+    !output.css &&
+    !/(?:^|[/\\])(?:layout|_app)\.[cm]?[jt]sx?$/.test(context.resourcePath) &&
+    !graph.sharedCssMap?.sources.some((name) => name !== 'zyzz/reset.css')
+  )
+    return { code: source, map }
+
+  const shared = await compileShared()
 
   async function compileShared() {
     const assets = new Map<string, string>()
@@ -114,12 +144,7 @@ async function compile(context: Context, source: string) {
       context.addDependency(file)
       assets.set(
         placeholder,
-        Path.relative(
-          options.bundler === 'turbopack'
-            ? Path.dirname(context.resourcePath)
-            : directory,
-          file,
-        )
+        Path.relative(directory, file)
           .split(Path.sep)
           .map(encodeURIComponent)
           .join('/') + target.slice(raw.length),
@@ -130,7 +155,10 @@ async function compile(context: Context, source: string) {
       ? AtRules.transform({
           code: Buffer.from(graph.sharedCss),
           filename: 'shared.css',
-          inputSourceMap: JSON.stringify(graph.sharedCssMap),
+          inputSourceMap: JSON.stringify({
+            ...graph.sharedCssMap,
+            sources: sources(graph.sharedCssMap!.sources),
+          }),
           sourceMap: true,
           visitor: {
             Url: (url) =>
@@ -142,83 +170,81 @@ async function compile(context: Context, source: string) {
       : undefined
   }
 
-  if (options.mode === 'shared')
-    return {
-      code: shared?.code.toString() ?? '',
-      map: shared?.map
-        ? (JSON.parse(shared.map.toString()) as object)
-        : undefined,
-    }
-  if (!output) throw new Error('Missing Next.js source compilation.')
-  // Bundlers resolve map sources relative to the loader resource, not graph identities.
-  const sources = (names: readonly (string | null)[]) =>
-    names.map((name) =>
-      name?.startsWith('app/') ? Path.resolve(root, name.slice(4)) : name,
-    )
-  const map = {
-    ...output.map,
-    file: context.resourcePath,
-    sources: sources(output.map.sources),
-  }
-  const cssMap = { ...output.cssMap, sources: sources(output.cssMap.sources) }
-  if (options.mode === 'style') return { code: output.css, map: cssMap }
-
-  if (options.bundler === 'turbopack') {
-    const sharedFile = Path.relative(
-      Path.dirname(context.resourcePath),
-      Path.join(directory, 'shared.css'),
-    )
-      .split(Path.sep)
-      .join('/')
-    // Turbopack appends the output extension to loader-transformed resource paths.
-    const resource = await Fs.stat(context.resourcePath).then(
-      () => context.resourcePath,
-      async (error: NodeJS.ErrnoException) => {
-        if (error.code !== 'ENOENT') throw error
-        const original = context.resourcePath.slice(
-          0,
-          -Path.extname(context.resourcePath).length,
-        )
-        await Fs.access(original)
-        return original
-      },
-    )
-    // Changed CSS needs a new resource identity when a server component refreshes.
-    const requests = [
-      ...(graph.sharedCss
-        ? [
-            `import ${JSON.stringify(sharedFile.startsWith('../') ? sharedFile : `./${sharedFile}`)};`,
-          ]
-        : []),
-      ...(output.css
-        ? [
-            `import ${JSON.stringify(`./${Path.basename(resource)}?zyzz-style=${Crypto.createHash('sha256').update(output.css).digest('hex').slice(0, 16)}`)};`,
-          ]
-        : []),
-    ]
-    return { code: `${output.code}\n${requests.join('\n')}`, map }
-  }
   const styles = [
     { css: shared?.code.toString(), map: shared?.map?.toString() },
     { css: output.css, map: JSON.stringify(cssMap) },
   ]
   const requests: string[] = []
   await Fs.mkdir(directory, { recursive: true })
-  for (const stylesheet of styles) {
+  try {
+    await Fs.writeFile(
+      Path.join(directory, 'package.json'),
+      JSON.stringify({ sideEffects: true, type: 'module' }),
+      { flag: 'wx' },
+    )
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+  }
+  for (const [index, stylesheet] of styles.entries()) {
     if (!stylesheet.css) continue
     const css =
       stylesheet.css +
       (stylesheet.map
         ? `\n/*# sourceMappingURL=data:application/json;base64,${Buffer.from(stylesheet.map).toString('base64')} */`
         : '')
-    const hash = Crypto.createHash('sha256').update(css).digest('hex')
+    const hash = Crypto.createHash('sha256')
+      .update(
+        options.development &&
+          !(
+            index === 0 &&
+            graph.sharedCssMap?.sources.every(
+              (name) => name === 'zyzz/reset.css',
+            )
+          )
+          ? JSON.stringify([context.resourcePath, index, graph.dependencies])
+          : css,
+      )
+      .digest('hex')
     const file = Path.join(directory, `${hash}.css`)
-    try {
-      await Fs.writeFile(file, css, { flag: 'wx' })
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    if (options.development) {
+      const previous = await Fs.readFile(file, 'utf8').catch(
+        (error: NodeJS.ErrnoException) => {
+          if (error.code !== 'ENOENT') throw error
+          return undefined
+        },
+      )
+      if (previous !== css) {
+        const temporary = `${file}.${Crypto.randomUUID()}.tmp`
+        await Fs.writeFile(temporary, css)
+        await Fs.rename(temporary, file)
+      }
+    } else {
+      try {
+        await Fs.writeFile(file, css, { flag: 'wx' })
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+      }
     }
-    const relative = Path.relative(Path.dirname(context.resourcePath), file)
+    let request = file
+    if (options.development) {
+      // Server-component CSS needs a client graph edge for Next's native CSS HMR.
+      request = `${file}.js`
+      const stylesheet =
+        options.bundler === 'turbopack'
+          ? `./style.css?zyzz=${hash}`
+          : `./${hash}.css`
+      const code = `'use client';import ${JSON.stringify(stylesheet)};`
+      const existing = await Fs.readFile(request, 'utf8').catch(
+        (error: NodeJS.ErrnoException) => {
+          if (error.code !== 'ENOENT') throw error
+          return undefined
+        },
+      )
+      if (existing !== code) await Fs.writeFile(request, code)
+    } else if (options.bundler === 'turbopack') {
+      request = Path.join(directory, 'style.css') + `?zyzz=${hash}`
+    }
+    const relative = Path.relative(Path.dirname(context.resourcePath), request)
       .split(Path.sep)
       .join('/')
     requests.push(

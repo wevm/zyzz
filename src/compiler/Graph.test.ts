@@ -8,6 +8,7 @@ import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 import * as Packed from '../../test/fixtures/Packed.js'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Library from '../../test/fixtures/VariantLibrary.js'
+import * as Stylesheets from './internal/Stylesheets.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -34,11 +35,51 @@ describe('compile', () => {
     const result = JSON.parse(stdout) as {
       count: number
       css: string
+      changed: string
+      extractions: number
+      returned: string[]
       writes: number
     }
     expect(result.count).toMatchInlineSnapshot('2')
     expect(result.writes).toMatchInlineSnapshot('0')
+    expect(result.extractions).toBe(0)
+    expect(result.returned.sort()).toEqual(['styles.ts', 'tokens.ts'])
+    expect(result.changed).toContain('color:blue;')
     expect(result.css).toMatchInlineSnapshot('".z-text-red-XySf4I{color:red;}"')
+  })
+
+  test('emits module-owned globals when the host loads source dependencies', () => {
+    const compiler = Graph.create()
+    const input = {
+      imports: {
+        'entry.ts': { './global': 'global.ts', 'zyzz/web': null },
+        'global.ts': { 'zyzz/web': null },
+      },
+      modules: {
+        'entry.ts':
+          "import './global';import {global} from 'zyzz/web';global({body:{color:'blue'}})",
+        'global.ts':
+          "import {global} from 'zyzz/web';global({html:{color:'red'}})",
+      },
+    }
+    const entry = compiler.compile({
+      ...input,
+      [Stylesheets.entry]: 'entry.ts',
+    })
+    const dependency = compiler.compile({
+      ...input,
+      [Stylesheets.entry]: 'global.ts',
+    })
+    const graph = compiler.compile(input)
+
+    expect(entry.sharedCss).toContain('body{color:blue;}')
+    expect(entry.sharedCss).not.toContain('html{color:red;}')
+    expect(dependency.sharedCss).toContain('html{color:red;}')
+    expect(dependency.sharedCss).not.toContain('body{color:blue;}')
+    expect(graph.sharedCss).toContain('html{color:red;}')
+    expect(graph.sharedCss).toContain('body{color:blue;}')
+    expect(graph.contracts['entry.ts']).toBeTypeOf('string')
+    expect(graph.contracts['global.ts']).toBeTypeOf('string')
   })
 
   test('uses exported default typography values in global declarations', async () => {

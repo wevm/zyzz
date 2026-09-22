@@ -27,7 +27,7 @@ const compiler = webpack({
         use: [
           {
             loader: require.resolve('zyzz/next/loader'),
-            options: { bundler: 'webpack', mode: 'source', root },
+            options: { bundler: 'webpack', root },
           },
         ],
       },

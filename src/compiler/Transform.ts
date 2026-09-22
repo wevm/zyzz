@@ -96,7 +96,8 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const module = new MagicString(options.source)
-  const program = Syntax.parse(options).program
+  const program = (options[Themes.context]?.parsed ?? Syntax.parse(options))
+    .program
 
   for (const call of extracted.contributionCalls ?? [])
     module.overwrite(

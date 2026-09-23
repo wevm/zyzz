@@ -2,12 +2,18 @@
  * Compares reviewed CSS coverage with pinned upstream grammars and prints CI evidence.
  * @module
  */
+import patch from 'css-tree/definition-syntax-data-patch'
+import functions from 'mdn-data/css/functions.json' with { type: 'json' }
+import properties from 'mdn-data/css/properties.json' with { type: 'json' }
+import selectors from 'mdn-data/css/selectors.json' with { type: 'json' }
+import syntaxes from 'mdn-data/css/syntaxes.json' with { type: 'json' }
+import types from 'mdn-data/css/types.json' with { type: 'json' }
+import units from 'mdn-data/css/units.json' with { type: 'json' }
+import metadata from 'mdn-data/package.json' with { type: 'json' }
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
-import * as Module from 'node:module'
 import * as Path from 'node:path'
 
-const require = Module.createRequire(import.meta.url)
 const requireFull = process.argv.includes('--require-full')
 if (requireFull && process.argv.includes('--update'))
   throw new Error('--require-full cannot be combined with --update')
@@ -19,28 +25,7 @@ const file =
     : Path.resolve(process.argv[inventoryIndex + 1] ?? '')
 if (inventoryIndex !== -1 && !process.argv[inventoryIndex + 1])
   throw new Error('--inventory requires a path')
-const families = [
-  'functions',
-  'properties',
-  'selectors',
-  'syntaxes',
-  'types',
-  'units',
-] as const
-const extensions: Partial<
-  Record<(typeof families)[number], Record<string, unknown>>
-> = {
-  properties: {
-    '-moz-osx-font-smoothing': {
-      status: 'nonstandard',
-      syntax: 'auto | grayscale',
-    },
-    '-webkit-font-smoothing': {
-      status: 'nonstandard',
-      syntax: 'auto | none | antialiased | subpixel-antialiased',
-    },
-  },
-}
+const families = { functions, properties, selectors, syntaxes, types, units }
 
 type Entry = {
   grammar: string
@@ -53,14 +38,18 @@ type Inventory = {
 }
 
 const previous: Inventory = JSON.parse(Fs.readFileSync(file, 'utf8'))
-const version: string = require('mdn-data/package.json').version
+const version = metadata.version
 const current: Inventory = { families: {}, version }
 const changes: string[] = []
-for (const family of families) {
-  const data: Record<string, unknown> = {
-    ...require(`mdn-data/css/${family}.json`),
-    ...extensions[family],
-  }
+for (const [family, upstream] of Object.entries(families)) {
+  const data: Record<string, unknown> = { ...upstream }
+
+  // MDN remains authoritative; CSS Tree only fills inventoried properties it omits.
+  if (family === 'properties')
+    for (const name of Object.keys(previous.families[family] ?? {}))
+      if (!Object.hasOwn(data, name) && Object.hasOwn(patch.properties, name))
+        data[name] = patch.properties[name]
+
   const entries: Record<string, Entry> = {}
 
   current.families[family] = entries

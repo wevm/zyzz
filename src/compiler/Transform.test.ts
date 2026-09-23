@@ -350,6 +350,8 @@ describe('compile', () => {
       }
 
       delete inventory.families.properties['display']
+      inventory.families.properties['-webkit-font-smoothing']!.grammar =
+        'unreviewed'
       inventory.families.properties['color']!.grammar = 'unreviewed'
 
       const file = Path.join(directory, 'coverage.json')
@@ -365,6 +367,7 @@ describe('compile', () => {
       expect(result.status).toMatchInlineSnapshot(`1`)
       expect(result.stderr).toMatchInlineSnapshot(`
         "
+        Changed properties: -webkit-font-smoothing
         Changed properties: color
         Added properties: display
         Unclassified properties: display

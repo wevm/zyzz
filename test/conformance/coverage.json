@@ -476,7 +476,7 @@
         "status": "supported"
       },
       "-moz-osx-font-smoothing": {
-        "grammar": "3b312648b3e51cdc565965847b0ad10a879626ac806124696a179f97654bf757",
+        "grammar": "29826abebb07224f1a156a875d4b223829105bc054cbd43ad7d067df093bf2e1",
         "status": "supported"
       },
       "-moz-outline-radius": {
@@ -792,7 +792,7 @@
         "status": "supported"
       },
       "-webkit-font-smoothing": {
-        "grammar": "550230d889bdf14e5d42ecd68f0153550c278cd969ce6d63093d04c7892770d7",
+        "grammar": "60d44249b9f7230241e0224d67594bc0a0afa8f69bc94f12f0c0b4cef2c40af2",
         "status": "supported"
       },
       "-webkit-line-clamp": {

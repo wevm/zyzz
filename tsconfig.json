@@ -28,6 +28,7 @@
       "zyzz/web": ["./src/web/index.ts"],
       "zyzz/webpack": ["./src/webpack/index.ts"]
     },
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,

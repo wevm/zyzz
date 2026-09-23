@@ -184,6 +184,11 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## UI Conventions
 
+- In the site, implement recognizable design-system elements, such as buttons, as shared components in `site/src/components/` (the site's `src/components/`). Compose pages from these components.
+- Prefer existing `zyzz/default` variables and typography tokens over custom variables or arbitrary values in site styles. Introduce a custom value only when no suitable default token expresses the design.
+- Shared site components must be general-purpose and available across the site. Keep page-specific content, layout, and sections on their page.
+- During every page design round, consult the user about potential shared components before adding them. Propose the components and their general responsibilities, and wait for agreement before implementation.
+
 - Core and public style contracts do not depend on a UI framework or component library.
 - Examples use the platform's normal class/style APIs and accessible native controls. Use an appropriate accessible primitive when an example needs coordinated behavior.
 - Keep interaction, theme, viewport, and accessibility state in target or example adapters. Do not encode DOM selectors as universal native capabilities.
@@ -204,6 +209,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## Tooling
 
+- Declare all package dependencies with `catalog:` or a named catalog reference. Keep dependency versions and workspace references in `pnpm-workspace.yaml`, never inline in package manifests.
 - Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
 - Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
 - Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.

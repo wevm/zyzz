@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.14
+
+### Patch Changes
+
+- 84b5f74: Fixed Next.js builds after restoring caches without generated stylesheets.
+
 ## 0.0.13
 
 ### Patch Changes

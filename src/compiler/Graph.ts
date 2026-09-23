@@ -1649,20 +1649,29 @@ function build(options: compile.Options, cache?: Cache): Cache {
         styleClasses[call.identity] = modules[moduleId]!.classes[call.name]!
   }
 
-  const defaults = new Map<string, Stylesheets.Section>()
+  const defaults = new Set<string>()
+  const defaultRules = new Map<string, ThemeRules.Rule[]>()
   if (options[Stylesheets.entry] === undefined)
     for (const [source, output] of Object.entries(modules))
-      for (const resource of output[ThemeRules.shared] ?? [])
-        if (!defaults.has(resource.id))
-          defaults.set(resource.id, {
-            css: resource.css,
-            key: resource.id,
-            layers: [],
-            source,
-          })
+      for (const resource of output[ThemeRules.shared] ?? []) {
+        if (defaults.has(resource.id)) continue
+        defaults.add(resource.id)
+
+        const rules = defaultRules.get(source) ?? []
+        rules.push(...(resource.rules ?? []))
+        defaultRules.set(source, rules)
+      }
 
   const shared = defaults.size
-    ? renderShared([...sharedSections, ...defaults.values()])
+    ? renderShared([
+        ...sharedSections,
+        ...[...defaultRules].map(([source, rules]) => ({
+          css: ThemeRules.render(rules),
+          key: 'theme-defaults',
+          layers: [],
+          source,
+        })),
+      ])
     : contributions
   const sharedCss = shared.css
 

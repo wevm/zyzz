@@ -17,7 +17,7 @@ export function create() {
     { identity: string | undefined; paths: Map<string, string> }
   >()
 
-  const defaults = new Map<string, string>()
+  const defaults = new Map<string, readonly Rule[]>()
 
   function serialize(token: Token.Reference): string {
     const value = token.value
@@ -51,7 +51,8 @@ export function create() {
     separate?: 'all' | 'defaults',
   ) {
     const classes: Record<string, string> = Object.create(null)
-    const rules: string[] = []
+    const empty: string[] = []
+    const rules: Rule[] = []
 
     for (const [name, theme] of Object.entries(themes)) {
       if (!name) throw new Error('Theme names must be nonempty.')
@@ -96,19 +97,26 @@ export function create() {
       }
 
       if (!contract) continue
+      if (!contract.paths.size) empty.push(`.${className}{}`)
 
-      const body = [...contract.paths]
-        .map(([path, name]) => {
-          const value = data.values[path]
-          if (value === undefined)
-            throw new Error('Theme scope is missing a live token.')
+      const declarations: Rule[] = []
+      // Resolving a value can add references to this contract.
+      const paths = [...contract.paths]
+      for (const [path, name] of paths) {
+        const value = data.values[path]
+        if (value === undefined)
+          throw new Error('Theme scope is missing a live token.')
 
-          const label = contract.identity?.startsWith('src-') ? path : undefined
-          return `${name}:${literal(value, label)};`
+        const label = contract.identity?.startsWith('src-') ? path : undefined
+        declarations.push({
+          conditions: [],
+          property: name,
+          selector: `.${className}`,
+          value: literal(value, label),
         })
-        .join('')
+      }
 
-      rules.push(`.${className}{${body}}`)
+      rules.push(...declarations)
       for (const [path, name] of contract.paths)
         conditional(
           data.values[path]!,
@@ -119,32 +127,45 @@ export function create() {
         )
     }
 
-    // Scheme rules travel with the module that can apply them, so lowered
-    // light-dark() resolves wherever selection helpers load.
-    if (schemes) rules.push(Scheme.css)
+    const scopes = new Map<string, Rule[]>()
+    for (const rule of rules) {
+      const entries = scopes.get(rule.property) ?? []
+      entries.push(rule)
+      scopes.set(rule.property, entries)
+    }
 
     return {
       classes: Object.freeze(classes),
       css:
         separate === 'all'
           ? ''
-          : [...(separate ? [] : defaults.values()), ...rules].join('\n'),
+          : [
+              ...empty,
+              render([
+                ...(separate ? [] : [...defaults.values()].flat()),
+                ...rules,
+              ]),
+              ...(schemes ? [Scheme.css] : []),
+            ]
+              .filter(Boolean)
+              .join('\n'),
       resources: separate
         ? [
-            ...[...defaults].map(([id, css]) => ({ css, id })),
-            // Scope rules stay together to preserve cascade order without one import per token.
-            ...(separate === 'all' && rules.length
-              ? [
-                  {
-                    css: rules.join('\n'),
-                    id: JSON.stringify([
-                      classes,
-                      [...contracts.values()].flatMap((contract) => [
-                        ...contract.paths.values(),
-                      ]),
-                    ]),
-                  },
-                ]
+            ...[...defaults].map(([id, rules]) => ({
+              css: render(rules),
+              id,
+              rules,
+            })),
+            // Keep every scope of a property together so overlapping themes retain precedence.
+            ...(separate === 'all'
+              ? [...scopes].map(([property, rules]) => ({
+                  css: render(rules),
+                  id: JSON.stringify([classes, property]),
+                  rules,
+                }))
+              : []),
+            ...(separate === 'all' && schemes
+              ? [{ css: Scheme.css, id: 'zyzz-color-scheme' }]
               : []),
           ]
         : [],
@@ -157,26 +178,53 @@ export function create() {
     if ('default' in value) {
       // Separate fallback properties preserve extensions and resolve references within each scope.
       const base = literal(value.default, label)
-      const rules = [`:where(*){--fallback:${base};}`]
-      conditional(value, '--fallback', ':where(*)', rules, label)
-      const css = rules.join('')
+      // Rule consolidation must not change existing variable identities.
+      const css = `:where(*){--fallback:${base};}${conditionalCss(value, '--fallback', ':where(*)', label)}`
       const name = label
         ? `--z-${Identity.label(label)}-fallback-${Identity.compact(css)}`
         : `--z-f${Identity.hash(css)}`
-      const emitted = [`:where(*){${name}:${base};}`]
+      const emitted: Rule[] = [
+        { conditions: [], property: name, selector: ':where(*)', value: base },
+      ]
       conditional(value, name, ':where(*)', emitted, label)
-      defaults.set(name, emitted.join(''))
+      defaults.set(name, emitted)
       return `var(${name})`
     }
     return `light-dark(${literal(value.light, label)},${literal(value.dark, label)})`
+  }
+
+  function conditionalCss(
+    value: Token.Value,
+    property: string,
+    selector: string,
+    label?: string,
+  ): string {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Token.is(value) ||
+      !('default' in value)
+    )
+      return ''
+    return (
+      conditionalCss(value.default, property, selector, label) +
+      Object.entries(value)
+        .filter(([query]) => query !== 'default')
+        .map(
+          ([query, entry]) =>
+            `${query}{${selector}{${property}:${literal(entry, label)};}${conditionalCss(entry, property, selector, label)}}`,
+        )
+        .join('')
+    )
   }
 
   function conditional(
     value: Token.Value,
     name: string,
     selector: string,
-    rules: string[],
+    rules: Rule[],
     label?: string,
+    conditions: readonly string[] = [],
   ) {
     if (
       !value ||
@@ -185,12 +233,17 @@ export function create() {
       !('default' in value)
     )
       return
-    conditional(value.default, name, selector, rules, label)
+    conditional(value.default, name, selector, rules, label, conditions)
     for (const [query, entry] of Object.entries(value)) {
       if (query === 'default') continue
-      const nested = [`${selector}{${name}:${literal(entry, label)};}`]
-      conditional(entry, name, selector, nested, label)
-      rules.push(`${query}{${nested.join('')}}`)
+      const nested = [...conditions, query]
+      rules.push({
+        conditions: nested,
+        property: name,
+        selector,
+        value: literal(entry, label),
+      })
+      conditional(entry, name, selector, rules, label, nested)
     }
   }
 
@@ -205,12 +258,70 @@ export function encode(value: string): string {
   )
 }
 
+/** Combines generated declarations without crossing competing declarations of the same property. */
+export function render(rules: readonly Rule[]): string {
+  const groups: {
+    conditions: readonly string[]
+    declarations: Rule[]
+    selector: string
+  }[] = []
+  for (const rule of rules) {
+    let target: (typeof groups)[number] | undefined
+    for (let index = groups.length - 1; index >= 0; index--) {
+      const group = groups[index]!
+      if (
+        group.selector === rule.selector &&
+        JSON.stringify(group.conditions) === JSON.stringify(rule.conditions)
+      ) {
+        target = group
+        break
+      }
+      if (group.declarations.some((entry) => entry.property === rule.property))
+        break
+    }
+    if (!target) {
+      target = {
+        conditions: rule.conditions,
+        declarations: [],
+        selector: rule.selector,
+      }
+      groups.push(target)
+    }
+    const previous = target.declarations.findLast(
+      (entry) => entry.property === rule.property,
+    )
+    if (previous?.value !== rule.value) target.declarations.push(rule)
+  }
+  return groups
+    .map(({ conditions, declarations, selector }) => {
+      let css = `${selector}{${declarations.map(({ property, value }) => `${property}:${value};`).join('')}}`
+      for (const condition of [...conditions].reverse())
+        css = `${condition}{${css}}`
+      return css
+    })
+    .join('\n')
+}
+
 /** One generated definition whose scope order must remain intact. */
 export type Resource = {
   /** Complete fallback or scoped token definition. */
   readonly css: string
   /** Stable identity for stylesheet replacement during development. */
   readonly id: string
+  /** Generated declarations eligible for consolidation. */
+  readonly rules?: readonly Rule[] | undefined
+}
+
+/** One generated custom-property declaration and its ordered conditional scope. */
+export type Rule = {
+  /** Outer-to-inner conditional rules. */
+  readonly conditions: readonly string[]
+  /** Generated custom-property name. */
+  readonly property: string
+  /** Theme or universal fallback selector. */
+  readonly selector: string
+  /** Serialized custom-property value. */
+  readonly value: string
 }
 
 /** Selects independently shareable defaults or all token rules. */

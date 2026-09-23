@@ -32,6 +32,10 @@ describe('compile', () => {
     const output = compiler.compile({ modules: Responsive.modules })
 
     expect(
+      output.sharedCss?.match(/:where\(\*\)/g)?.length,
+    ).toMatchInlineSnapshot('4')
+
+    expect(
       Object.values(output.modules).some((module) =>
         module.css.includes(':where(*)'),
       ),

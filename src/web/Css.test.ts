@@ -65,6 +65,20 @@ describe('compile', () => {
     }
   })
 
+  test('serializes vendor font smoothing declarations', () => {
+    const styles = Style.define({
+      text: {
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+      },
+    })
+
+    expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
+      ".z--webkit-font-smoothing-antialiased{-webkit-font-smoothing:antialiased;}
+      .z--moz-osx-font-smoothing-grayscale{-moz-osx-font-smoothing:grayscale;}"
+    `)
+  })
+
   test('preserves competing responsive token conditions when grouping rules', async () => {
     const vars = Vars.define({
       first: {

@@ -27,6 +27,20 @@ const families = [
   'types',
   'units',
 ] as const
+const extensions: Partial<
+  Record<(typeof families)[number], Record<string, unknown>>
+> = {
+  properties: {
+    '-moz-osx-font-smoothing': {
+      status: 'nonstandard',
+      syntax: 'auto | grayscale',
+    },
+    '-webkit-font-smoothing': {
+      status: 'nonstandard',
+      syntax: 'auto | none | antialiased | subpixel-antialiased',
+    },
+  },
+}
 
 type Entry = {
   grammar: string
@@ -43,7 +57,10 @@ const version: string = require('mdn-data/package.json').version
 const current: Inventory = { families: {}, version }
 const changes: string[] = []
 for (const family of families) {
-  const data: Record<string, unknown> = require(`mdn-data/css/${family}.json`)
+  const data: Record<string, unknown> = {
+    ...require(`mdn-data/css/${family}.json`),
+    ...extensions[family],
+  }
   const entries: Record<string, Entry> = {}
 
   current.families[family] = entries

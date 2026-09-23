@@ -106,9 +106,11 @@ describe('prefixed declarations', () => {
   test('vendor keywords preserve prefixes and domains', () => {
     style({
       MozAppearance: 'button',
+      MozOsxFontSmoothing: 'grayscale',
       MsAccelerator: 'true',
       MsScrollbar3dlightColor: 'red',
       WebkitBorderBefore: '2px solid red',
+      WebkitFontSmoothing: 'antialiased',
       WebkitTextStrokeWidth: '2px',
       WebkitMaskPositionX: 'left, 20%',
       WebkitLineClamp: 2,
@@ -119,10 +121,14 @@ describe('prefixed declarations', () => {
     style({ MsAccelerator: true })
     // @ts-expect-error Vendor keyword domains remain distinct.
     style({ WebkitUserSelect: 'element' })
+    // @ts-expect-error Mozilla font smoothing excludes WebKit keywords.
+    style({ MozOsxFontSmoothing: 'antialiased' })
     // @ts-expect-error Scroll limits exclude percentages.
     style({ MsScrollLimitXMin: '20%' })
     // @ts-expect-error Text stroke widths exclude percentages.
     style({ WebkitTextStrokeWidth: '20%' })
+    // @ts-expect-error WebKit font smoothing excludes Mozilla keywords.
+    style({ WebkitFontSmoothing: 'grayscale' })
   })
 })
 

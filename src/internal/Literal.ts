@@ -2558,6 +2558,7 @@ export const rules = {
     kind: 'enum',
     values: ['block', 'horizontal', 'inline', 'vertical'],
   },
+  MozOsxFontSmoothing: { kind: 'enum', values: ['auto', 'grayscale'] },
   MozOutlineRadius: { ...length, axes: true, items: 4 },
   MozOutlineRadiusBottomleft: length,
   MozOutlineRadiusBottomright: length,
@@ -3644,6 +3645,10 @@ export const rules = {
   WebkitBorderStartStyle: border,
   WebkitBorderStartWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   WebkitBoxReflect: { kind: 'compound', property: 'WebkitBoxReflect' },
+  WebkitFontSmoothing: {
+    kind: 'enum',
+    values: ['antialiased', 'auto', 'none', 'subpixel-antialiased'],
+  },
   WebkitLineClamp: { ...positiveInteger, keywords: ['none'] },
   WebkitMask: { kind: 'compound', property: 'WebkitMask' },
   WebkitMaskAttachment: {

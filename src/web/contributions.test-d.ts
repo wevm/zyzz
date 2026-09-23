@@ -8,7 +8,12 @@ describe('stylesheet contributions', () => {
     const theme = Vars.define({ color: { ink: 'red' } })
 
     global({
-      body: { color: theme.color.ink, padding: '2px' },
+      body: {
+        color: theme.color.ink,
+        MozOsxFontSmoothing: 'grayscale',
+        padding: '2px',
+        WebkitFontSmoothing: 'antialiased',
+      },
       '@layer reset': { '*': { margin: 0 } },
     })
     fontFace({ fontFamily: 'App', src: 'url(/app.woff2)', fontDisplay: 'swap' })

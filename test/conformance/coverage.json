@@ -475,6 +475,10 @@
         "grammar": "0eec1d44dbee87d81e54953a862a748170c7b48be83b05192d969e817ea9ee8e",
         "status": "supported"
       },
+      "-moz-osx-font-smoothing": {
+        "grammar": "3b312648b3e51cdc565965847b0ad10a879626ac806124696a179f97654bf757",
+        "status": "supported"
+      },
       "-moz-outline-radius": {
         "grammar": "faea1f4fcb1f25956c1006610da7f265e9614c578b846fdc985a471fc955532a",
         "status": "supported"
@@ -785,6 +789,10 @@
       },
       "-webkit-box-reflect": {
         "grammar": "6a9d2b0814e50e96af8b0b102cb37af1385bef1c6ea3d57b052d5667055ae467",
+        "status": "supported"
+      },
+      "-webkit-font-smoothing": {
+        "grammar": "550230d889bdf14e5d42ecd68f0153550c278cd969ce6d63093d04c7892770d7",
         "status": "supported"
       },
       "-webkit-line-clamp": {

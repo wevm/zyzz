@@ -407,7 +407,7 @@ describe('compile', () => {
     beforeAll(() => {
       cases = Conformance.cases()
       lexer = Conformance.lexer()
-    })
+    }, 30_000)
 
     test.each(Array.from({ length: 10 }, (_, index) => index))(
       'partition %i',

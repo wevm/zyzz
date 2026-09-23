@@ -13,6 +13,7 @@ const compiler = webpack({
   context: root,
   devtool: false,
   entry: ['./config.mjs', './button.mjs', './unrelated.mjs'],
+  experiments: { css: true },
   mode: 'development',
   module: {
     rules: [
@@ -22,14 +23,18 @@ const compiler = webpack({
         use: [
           {
             loader: require.resolve('zyzz/next/loader'),
-            options: { bundler: 'webpack', root },
+            options: {
+              bundler: 'webpack',
+              development: process.argv.includes('--development'),
+              root,
+            },
           },
         ],
       },
-      { sideEffects: true, test: /\.css$/, type: 'asset/source' },
+      { sideEffects: true, test: /\.css$/, type: 'css' },
     ],
   },
-  output: { path: Path.join(root, 'dist') },
+  output: { cssFilename: 'styles.css', path: Path.join(root, 'dist') },
 })
 
 try {
@@ -47,7 +52,43 @@ try {
   await Fs.writeFile(Path.join(root, 'config.mjs'), config('blue'))
   const edited = await build()
   const settled = await build()
-  process.stdout.write(JSON.stringify({ cold, edited, settled, warm }))
+  const stylesheets = (await Fs.readdir(Path.join(root, '.zyzz/next')))
+    .filter((file) => file.endsWith('.css'))
+    .sort()
+  await Fs.writeFile(
+    Path.join(root, 'dependency.mjs'),
+    'export const value = 1',
+  )
+  await Fs.appendFile(
+    Path.join(root, 'unrelated.mjs'),
+    "import './dependency.mjs';",
+  )
+  await build()
+  const addedStylesheets = (
+    await Fs.readdir(Path.join(root, '.zyzz/next'))
+  ).filter((file) => file.endsWith('.css') && !stylesheets.includes(file))
+  const clients = (await Fs.readdir(Path.join(root, '.zyzz/next'))).filter(
+    (file) => file.endsWith('.js'),
+  )
+  await Fs.writeFile(Path.join(root, 'relocated.mjs'), config('blue'))
+  await Fs.writeFile(
+    Path.join(root, 'config.mjs'),
+    "export * from './relocated.mjs';",
+  )
+  await build()
+  const addedClients = (await Fs.readdir(Path.join(root, '.zyzz/next'))).filter(
+    (file) => file.endsWith('.js') && !clients.includes(file),
+  )
+  process.stdout.write(
+    JSON.stringify({
+      addedClients,
+      addedStylesheets,
+      cold,
+      edited,
+      settled,
+      warm,
+    }),
+  )
 } finally {
   await new Promise<void>((resolve, reject) =>
     compiler.close((error) => (error ? reject(error) : resolve())),
@@ -69,7 +110,10 @@ async function build() {
       else resolve()
     }),
   )
-  return await Fs.readFile(Path.join(root, 'dist/main.js'), 'utf8')
+  return (
+    (await Fs.readFile(Path.join(root, 'dist/main.js'), 'utf8')) +
+    (await Fs.readFile(Path.join(root, 'dist/styles.css'), 'utf8'))
+  )
 }
 
 function config(color: string) {

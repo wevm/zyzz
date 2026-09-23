@@ -455,12 +455,17 @@ export async function verify(options: verify.Options) {
     await page.setViewportSize({ width: 450, height: 700 })
 
     const documentNode = await page.locator('html').elementHandle()
-    await page.locator('a[data-link-ready=true][href="/other"]').press('Enter')
+    // Exercise client routing independently of focus and viewport changes.
+    await page
+      .locator('a[data-link-ready=true][href="/other"]')
+      .evaluate((link: HTMLAnchorElement) => link.click())
     await page.waitForURL(`${production.url}/other`)
     expect(
       await documentNode!.evaluate((node) => node === document.documentElement),
     ).toMatchInlineSnapshot('true')
-    await page.locator('a[data-link-ready=true][href="/"]').press('Enter')
+    await page
+      .locator('a[data-link-ready=true][href="/"]')
+      .evaluate((link: HTMLAnchorElement) => link.click())
     await page.waitForURL(`${production.url}/`)
     expect(
       await documentNode!.evaluate((node) => node === document.documentElement),

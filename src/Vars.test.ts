@@ -214,7 +214,10 @@ describe('define', () => {
           })
           await page.setContent(
             `<style>${
-              (packed ? library.modules['index.ts']!.css : '') +
+              (packed
+                ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+                : '') +
+              (result.sharedCss ?? '') +
               Object.values(result.modules)
                 .map((module) => module.css)
                 .join('')
@@ -321,18 +324,17 @@ describe('define', () => {
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ":where(*){--z-f1i8tofc19dwsq:16px;}@media (min-width: 768px){:where(*){--z-f1i8tofc19dwsq:32px;}}
-      .z_theme-1e8a67z1uaws1j-config-base{--z-t1e8a67z1uaws1j-config-color_2e_accent:#2563eb;--z-t1e8a67z1uaws1j-config-spacing_2e_page:var(--z-f1i8tofc19dwsq);--z-t1e8a67z1uaws1j-config-surface_2e_panel:#fff;}
-      @media (min-width: 768px){.z_theme-1e8a67z1uaws1j-config-base{--z-t1e8a67z1uaws1j-config-spacing_2e_page:32px;}}
-      .z_theme-1e8a67z1uaws1j-config-alternate{--z-t1e8a67z1uaws1j-config-color_2e_accent:#9333ea;--z-t1e8a67z1uaws1j-config-spacing_2e_page:var(--z-f1i8tofc19dwsq);--z-t1e8a67z1uaws1j-config-surface_2e_panel:#fff;}
-      @media (min-width: 768px){.z_theme-1e8a67z1uaws1j-config-alternate{--z-t1e8a67z1uaws1j-config-spacing_2e_page:32px;}}
+      ".z_theme-src-app-bk8jvZf5JrJ-config-base{--z-color-accent-b07u5jufhwM:#2563eb;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
+      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-base{--z-spacing-page-b0L4IfEjMux:32px;}}
+      .z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-color-accent-b07u5jufhwM:#9333ea;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
+      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-spacing-page-b0L4IfEjMux:32px;}}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-VoQob9{color:var(--z-t1e8a67z1uaws1j-config-color_2e_accent,#2563eb);}
-      .z-p-uudsXs{padding:var(--z-t1e8a67z1uaws1j-config-spacing_2e_page,var(--z-f1i8tofc19dwsq));}
-      .z-w-SlwuVH{width:var(--z-t1e8a67z1uaws1j-config-spacing_2e_page,var(--z-f1i8tofc19dwsq));}
-      .z-bg-4MueOF{background-color:var(--z-t1e8a67z1uaws1j-config-surface_2e_panel,#fff);}"
+      .z-text-HedmoP{color:var(--z-color-accent-b07u5jufhwM,#2563eb);}
+      .z-p-IQ2rhY{padding:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
+      .z-w-rDGSnw{width:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
+      .z-bg-b6sB8n{background-color:var(--z-surface-panel-f9kdJUYqBjM,#fff);}"
     `)
     const code = await Packed.bundle({
       entry: 'app.ts',
@@ -345,7 +347,7 @@ describe('define', () => {
         viewport: { width: 500, height: 600 },
       })
       await page.setContent(
-        `<style>${result.modules['app.ts']!.css}</style><div class="${fixture.scope.className}" style="color-scheme:dark"><div id="card" class="${fixture.card().className}"></div></div>`,
+        `<style>${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><div class="${fixture.scope.className}" style="color-scheme:dark"><div id="card" class="${fixture.card().className}"></div></div>`,
       )
       expect(
         await page.locator('#card').evaluate((node) => ({
@@ -397,7 +399,7 @@ describe('define', () => {
         viewport: { width: 1000, height: 600 },
       })
       await page.setContent(
-        `<style>${library.modules['index.ts']!.css}${app.modules['app.ts']!.css}</style><div class="${fixture.scope.className}"><div id="card" class="${fixture.card().className}"></div><div id="packed" class="${fixture.packed().className}"></div></div>`,
+        `<style>${library.sharedCss ?? ''}${library.modules['index.ts']!.css}${app.sharedCss ?? ''}${app.modules['app.ts']!.css}</style><div class="${fixture.scope.className}"><div id="card" class="${fixture.card().className}"></div><div id="packed" class="${fixture.packed().className}"></div></div>`,
       )
       expect(
         await page.locator('#packed').evaluate((node) => ({
@@ -462,7 +464,7 @@ describe('define', () => {
         viewport: { width: 1000, height: 600 },
       })
       await page.setContent(
-        `<style>${graph.modules['app.ts']!.css}</style><div id="scope" class="${fixture.dark.className}"><div id="outer" class="${fixture.card().className}"></div><div class="${fixture.nested.className}"><div id="inner" class="${fixture.card().className}"></div></div></div>`,
+        `<style>${graph.sharedCss ?? ''}${graph.modules['app.ts']!.css}</style><div id="scope" class="${fixture.dark.className}"><div id="outer" class="${fixture.card().className}"></div><div class="${fixture.nested.className}"><div id="inner" class="${fixture.card().className}"></div></div></div>`,
       )
       expect(
         await page
@@ -864,7 +866,10 @@ test('keeps extended reference fallbacks distinct in source and packed scopes', 
       })
       await page.setContent(
         `<style>${
-          (packed ? library.modules['index.ts']!.css : '') +
+          (packed
+            ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+            : '') +
+          (result.sharedCss ?? '') +
           Object.values(result.modules)
             .map((module) => module.css)
             .join('')

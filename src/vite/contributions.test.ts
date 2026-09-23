@@ -47,7 +47,7 @@ describe('zyzz', () => {
       const development = await server.ssrLoadModule('/app.ts')
 
       expect(development.vars().className).toMatchInlineSnapshot(
-        `"z_theme-1hl3v031oo9bot-style-theme"`,
+        `"z_theme-src-app-c4wWbemHxp3-style-theme"`,
       )
 
       const result = await Vite.build({
@@ -77,11 +77,11 @@ describe('zyzz', () => {
       )
 
       expect(production.vars().className).toMatchInlineSnapshot(
-        `"z_theme-1hl3v031oo9bot-style-theme"`,
+        `"z_theme-src-app-c4wWbemHxp3-style-theme"`,
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-ji3Z1V z-style-1hl3v031oo9bot-175",
+          "className": "z-text-_Pp8Rg z-style-1hl3v031oo9bot-175",
         }
       `)
     } finally {

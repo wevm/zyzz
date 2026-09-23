@@ -582,13 +582,13 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
+        ".z_theme-src-config-6Q0EnEZaLq6-variants-theme{--z-color-brand-0624-nva-wL:#06c;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
         .z-pl-8px-XE91MF-0{padding-left:8px;}
         .z-pr-8px-XE91MF-1{padding-right:8px;}
-        .z-text-tZh6GS-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
+        .z-text-x3mkas-2{&:where([data-intent="primary"]){color:var(--z-color-brand-0624-nva-wL,#06c);}}
         .z-text-d5fLEX-3{&:where([data-intent="quiet"]){color:black;}}"
       `,
       )
@@ -674,12 +674,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       )
       expect(module.exports.a()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-EAkT71 z-style-1e8a67z1uaws1j-197",
+          "className": "z-text-NhZ80o z-style-1e8a67z1uaws1j-197",
         }
       `)
       expect(module.exports.b()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-EAkT71 z-style-1e8a67z1uaws1j-258",
+          "className": "z-text-NhZ80o z-style-1e8a67z1uaws1j-258",
         }
       `)
     })

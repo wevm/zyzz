@@ -136,7 +136,7 @@ describe('cx', () => {
         fixture.props[key].split(' ').includes(fixture.scope[key]),
       ).toMatchInlineSnapshot(`true`)
       expect(fixture.only[key]).toMatchInlineSnapshot(
-        `"z_theme-1wfnqsmu0q6os-config-theme"`,
+        `"z_theme-src-index-fqAVCr-SNdO-config-theme"`,
       )
       expect(Object.keys(fixture.props).includes(key)).toMatchInlineSnapshot(
         `true`,

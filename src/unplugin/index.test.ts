@@ -8,6 +8,7 @@ import * as Rollup from 'rollup'
 import * as Vite from 'vite'
 import * as Watch from '../../test/fixtures/Watch.js'
 import * as Library from '../../test/fixtures/Library.js'
+import * as Responsive from '../../test/fixtures/Responsive.js'
 import { describe, expect, test, vi } from 'vite-plus/test'
 import Webpack from 'webpack'
 import { zyzz as esbuild } from 'zyzz/esbuild'
@@ -36,11 +37,14 @@ async function render(root: string) {
   const browser = await chromium.launch({ headless: true })
   try {
     const page = await browser.newPage()
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
     await Fs.writeFile(
       Path.join(root, 'dist/index.html'),
       '<link rel="stylesheet" href="zyzz.css"><div id="card"></div><script src="app.js"></script>',
     )
     await page.goto(Url.pathToFileURL(Path.join(root, 'dist/index.html')).href)
+    expect(errors).toMatchInlineSnapshot('[]')
     return await page.evaluate(() => {
       const element = document.querySelector('#card')!
       const app = (
@@ -70,6 +74,13 @@ describe('zyzz', () => {
       test(`${bundler} emits matching JavaScript, shared CSS, and source maps (reset: ${reset})`, async () => {
         const root = await fixture()
         try {
+          for (const [name, source] of Object.entries(Responsive.modules))
+            await Fs.writeFile(Path.join(root, name), source)
+          await Fs.appendFile(
+            Path.join(root, 'main.js'),
+            "export * from './entry.js';",
+          )
+
           if (bundler === 'esbuild') {
             await Esbuild.build({
               alias: { 'zyzz/runtime': runtime },
@@ -133,6 +144,12 @@ describe('zyzz', () => {
           }
 
           const rendered = await render(root)
+          await Responsive.verify({
+            code:
+              (await Fs.readFile(Path.join(root, 'dist/app.js'), 'utf8')) +
+              ';var Fixture=App;',
+            css: await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'),
+          })
           const { boxSizing, ...styles } = rendered
           if (reset) expect(boxSizing).toMatchInlineSnapshot('"border-box"')
           else expect(boxSizing).toMatchInlineSnapshot('"content-box"')

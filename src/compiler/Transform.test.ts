@@ -41,6 +41,7 @@ import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
 import * as Motion from '../../test/fixtures/Motion.js'
 import * as MotionLists from '../../test/fixtures/MotionLists.js'
 import * as NamedDescriptors from '../../test/fixtures/NamedDescriptors.js'
+import * as Packed from '../../test/fixtures/Packed.js'
 import * as Margins from '../../test/fixtures/PageMargins.js'
 import * as Pages from '../../test/fixtures/Pages.js'
 import * as Percentage from '../../test/fixtures/Percentage.js'
@@ -48,6 +49,7 @@ import * as Prefixed from '../../test/fixtures/Prefixed.js'
 import * as Ranges from '../../test/fixtures/Ranges.js'
 import * as Reading from '../../test/fixtures/Reading.js'
 import * as Registrations from '../../test/fixtures/Registrations.js'
+import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Scalars from '../../test/fixtures/Scalars.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
@@ -83,6 +85,27 @@ import { Css } from 'zyzz/web'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('includes responsive defaults in standalone module CSS', async () => {
+    const output = Transform.compile({
+      moduleId: 'entry.js',
+      source: `import {Config,Vars} from 'zyzz';
+        const tokens=Vars.define({editorial:{labelSize:{default:'14px','@media (width >= 1024px)':'16px'},space:{default:'8px','@media (width >= 1024px)':'12px'}}});
+        const extended=Vars.extend(tokens,{editorial:{labelSize:{default:'20px','@media (width >= 1024px)':'24px'}}});
+        const {style,vars}=Config.create({vars:{base:tokens,large:extended},defaultVars:'base',mappings:false});
+        export const first=style({fontSize:'editorial.labelSize'})();
+        export const second=style({fontSize:'editorial.labelSize',padding:'editorial.space'})();
+        export const base=vars({set:'base'});
+        export const large=vars({set:'large'});`,
+    })
+    await Responsive.verify({
+      code: await Packed.bundle({
+        entry: 'entry.js',
+        modules: { 'entry.js': output.code },
+      }),
+      css: output.css,
+    })
+  })
+
   describe('reachability', () => {
     test('preserves live packed styles and complete theme token scopes', () => {
       const library = Graph.compile({
@@ -2204,7 +2227,7 @@ describe('compile', () => {
 
 
       const theme = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly "500":"#123"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
-      const alternate = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>); const alternateConfig=({vars:/*#__PURE__*/__zyzzSelection.create([["default","z_theme-src-tokens-fva6btVIWWz-alternateConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#175";readonly "palette":{readonly "500":"#456"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
+      const alternate = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>); const alternateConfig=({vars:__zyzzSelection.create([["default","z_theme-src-tokens-fva6btVIWWz-alternateConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#175";readonly "palette":{readonly "500":"#456"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
       const { style } = (themeConfig as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly "500":"#123"}};readonly "spacing":{readonly "0":"8px";readonly "4":"16px"}}}>);
       export const scope = alternateConfig.vars().className;
       export const props = ({className:"z-text-XLfYeo z-border-color-gwNRhi z-p-6OC6yS"});
@@ -2402,7 +2425,7 @@ describe('compile', () => {
 
 
       const theme = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":{readonly "light":"#000";readonly "dark":"#fff"}};readonly "spacing":{readonly "1":"4px";readonly "md":"8px"}}}>);
-      const alternate = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>); const alternateConfig=({vars:/*#__PURE__*/__zyzzSelection.create([["default","z_theme-src-theme-bdnuEpXWEgW-alternateConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#f00"};readonly "spacing":{readonly "1":"4px";readonly "md":"8px"}}}>);
+      const alternate = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>); const alternateConfig=({vars:__zyzzSelection.create([["default","z_theme-src-theme-bdnuEpXWEgW-alternateConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#f00"};readonly "spacing":{readonly "1":"4px";readonly "md":"8px"}}}>);
       export type Brand = typeof theme.color.brand;
       export const scope = alternateConfig.vars().className;
       export const props = ({className:"z-text-YMAKAv z-p-GsrISt"});"

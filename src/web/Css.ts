@@ -670,7 +670,7 @@ export function compile<
         ? (theme ??= Themes.create()).emit(
             options.vars ?? {},
             options.schemes ?? false,
-            options[Themes.shared] ?? false,
+            options[Themes.shared],
           )
         : { classes: Object.freeze({}), css: '', resources: [] }
   } catch (error) {
@@ -712,7 +712,7 @@ export declare namespace compile {
     themeName extends string = string,
   > = {
     /** Separates generated token rules for hosts with independent CSS resources. */
-    readonly [Themes.shared]?: boolean | undefined
+    readonly [Themes.shared]?: 'all' | 'defaults' | undefined
     /** Fixed class identities used by CSS-only consumers. */
     readonly names?: Readonly<Record<string, string>> | undefined
     /**

@@ -597,7 +597,8 @@ export function compile(options: compile.Options): compile.ReturnType {
           return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined).replace(/,$/, '')}}`
         usesSelection = true
         const selector = `${selection}.create(${JSON.stringify(entries)},${call.options?.output === 'html'},'set',${JSON.stringify(fallback)})`
-        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}vars:/*#__PURE__*/${selector}}`
+        // Rollup drops required selectors when a pure call initializes a destructured object property.
+        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}vars:${selector}}`
       }
 
       if (call.options?.themes) {
@@ -1178,7 +1179,7 @@ export declare namespace compile {
   /** Supplied module identity and source; no file loading occurs. */
   type Options = Source.extract.Options & {
     /** Separates generated token definitions for independently loaded modules. */
-    readonly [ThemeRules.shared]?: boolean | undefined
+    readonly [ThemeRules.shared]?: 'all' | 'defaults' | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */

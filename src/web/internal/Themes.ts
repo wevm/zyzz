@@ -48,7 +48,7 @@ export function create() {
   function emit(
     themes: Readonly<Record<string, Theme.Definition | Vars.Definition>>,
     schemes = false,
-    separate = false,
+    separate?: 'all' | 'defaults',
   ) {
     const classes: Record<string, string> = Object.create(null)
     const rules: string[] = []
@@ -125,12 +125,15 @@ export function create() {
 
     return {
       classes: Object.freeze(classes),
-      css: separate ? '' : [...defaults.values(), ...rules].join('\n'),
+      css:
+        separate === 'all'
+          ? ''
+          : [...(separate ? [] : defaults.values()), ...rules].join('\n'),
       resources: separate
         ? [
             ...[...defaults].map(([id, css]) => ({ css, id })),
-            // Keep scoped rules together to preserve cascade order and avoid one stylesheet import per token.
-            ...(rules.length
+            // Scope rules stay together to preserve cascade order without one import per token.
+            ...(separate === 'all' && rules.length
               ? [
                   {
                     css: rules.join('\n'),
@@ -210,7 +213,7 @@ export type Resource = {
   readonly id: string
 }
 
-/** Requests independently shareable token rules from a module compiler. */
+/** Selects independently shareable defaults or all token rules. */
 export const shared = Symbol('shared token rules')
 
 function variable(index: number | string, path: string): string {

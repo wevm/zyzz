@@ -8,12 +8,61 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
+import { Style, Vars } from 'zyzz'
 
 import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('includes responsive defaults in standalone CSS', async () => {
+    const vars = Vars.define({
+      size: { default: '14px', '@media (width >= 1024px)': '16px' },
+    })
+    const output = Css.compile({
+      styles: Style.define({
+        first: { fontSize: vars.size },
+        second: { fontSize: vars.size },
+      }),
+    })
+    expect(output.css.match(/:14px;/g)?.length).toMatchInlineSnapshot('1')
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 800 },
+      })
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.first}"></div><div class="${output.classes.second}"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).fontSize),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "14px",
+          "14px",
+        ]
+      `)
+      await page.setViewportSize({ height: 600, width: 1200 })
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).fontSize),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "16px",
+          "16px",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('deduplicates independent declaration sequences without losing order or importance', () => {
     const styles = Style.define({
       a: { display: ['block', 'grid'], padding: '1px' },

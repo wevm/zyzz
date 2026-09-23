@@ -2,4 +2,4 @@
 'zyzz': patch
 ---
 
-Deduplicated Next.js reset and token CSS and made generated token names readable.
+Deduplicated responsive token defaults across web outputs and the Next.js reset, labeled generated tokens, and preserved variable selectors in Rollup bundles.

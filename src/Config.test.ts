@@ -43,12 +43,12 @@ export const dynamic=style((values:{padding:'7px'})=>({padding:\`\${values.paddi
           .filter((line) => line.startsWith('.z-'))
           .join('\n'),
       ).toMatchInlineSnapshot(`
-        ".z-text-I1m4uR-0{color:var(--z-tu8smm21l81sow-style-color_2e_red,blue);}
-        .z-p-Jcl9Q8-1{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);padding:7px;}
+        ".z-text-tX-cB8-0{color:var(--z-color-red-9tsBrMvpV8k,blue);}
+        .z-p-BfHFOq-1{padding:var(--z-spacing-md-2RzCtjG3BFi,8px);padding:7px;}
         .z-display-flex-Ngq2-V-2{display:flex;}
         .z-w-2xz02S-3{width:calc(100% - 2rem);}
         .z-hover-text-A_aLRM-4{&:hover{color:#123456;}}
-        .z-p-yH6CNS-0{padding:var(--z-tu8smm21l81sow-style-spacing_2e_md,8px);}
+        .z-p-3qmBqK-0{padding:var(--z-spacing-md-2RzCtjG3BFi,8px);}
         .z-text-mBg0e8-1{&:where([data-tone="brand"]){color:red!important;}}
         .z-p-9jV-KR-0{padding:var(--z-d1e8a67z1uaws1j-330-70-61-64-64-69-6e-67);}"
       `)

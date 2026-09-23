@@ -74,7 +74,7 @@ Source compilation appends an ownership hash so independently delivered modules 
 
 Source token variables use readable paths followed by an eleven-character hash, such as `--z-editorial-labelSize-0a1b2c3d4e5`. Responsive defaults include `-fallback-` before the suffix. The suffix retains 64 bits to distinguish matching labels across source modules and packages. Theme scope classes also include the source filename.
 
-The Next.js integration shares generated token definitions and the reset across component stylesheets. Responsive defaults still use `:where(*)` so references resolve within each theme scope.
+The bundler plugins, CLI, and `Graph.compile` share responsive token defaults across module stylesheets. Next.js also shares scope definitions and the reset across components. Responsive defaults use `:where(*)` so references resolve within each theme scope. Standalone `Transform.compile` and `Css.compile` output includes the defaults needed by that compilation.
 
 Vite development uses compact, value-independent names and keeps each style’s declarations separate so CSS-only edits continue styling mounted elements. Production names include readable literal values. Low-level `Css.compile`, `Transform.compile`, and `Graph.compile` callers can select stable development naming with `development: true`.
 

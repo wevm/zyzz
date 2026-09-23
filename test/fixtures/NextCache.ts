@@ -22,7 +22,7 @@ const compiler = webpack({
         use: [
           {
             loader: require.resolve('zyzz/next/loader'),
-            options: { bundler: 'webpack', root },
+            options: { bundler: 'webpack', development: true, root },
           },
         ],
       },
@@ -47,7 +47,24 @@ try {
   await Fs.writeFile(Path.join(root, 'config.mjs'), config('blue'))
   const edited = await build()
   const settled = await build()
-  process.stdout.write(JSON.stringify({ cold, edited, settled, warm }))
+  const stylesheets = (await Fs.readdir(Path.join(root, '.zyzz/next')))
+    .filter((file) => file.endsWith('.css'))
+    .sort()
+  await Fs.writeFile(
+    Path.join(root, 'dependency.mjs'),
+    'export const value = 1',
+  )
+  await Fs.appendFile(
+    Path.join(root, 'unrelated.mjs'),
+    "import './dependency.mjs';",
+  )
+  await build()
+  const addedStylesheets = (
+    await Fs.readdir(Path.join(root, '.zyzz/next'))
+  ).filter((file) => file.endsWith('.css') && !stylesheets.includes(file))
+  process.stdout.write(
+    JSON.stringify({ addedStylesheets, cold, edited, settled, warm }),
+  )
 } finally {
   await new Promise<void>((resolve, reject) =>
     compiler.close((error) => (error ? reject(error) : resolve())),

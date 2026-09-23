@@ -238,8 +238,7 @@ async function compile(context: Context, source: string) {
     const hash = Crypto.createHash('sha256')
       .update(
         options.development
-          ? (stylesheet.id ??
-              JSON.stringify([context.resourcePath, index, graph.dependencies]))
+          ? (stylesheet.id ?? JSON.stringify([context.resourcePath, index]))
           : css,
       )
       .digest('hex')

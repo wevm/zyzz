@@ -14,7 +14,8 @@ describe('zyzz', () => {
     const result = JSON.parse(stdout) as Record<
       'cold' | 'edited' | 'settled' | 'warm',
       string
-    >
+    > & { addedStylesheets: readonly string[] }
+    expect(result.addedStylesheets).toMatchInlineSnapshot('[]')
     expect(result.cold.includes('red')).toMatchInlineSnapshot('true')
     expect(result.warm === result.cold).toMatchInlineSnapshot('true')
     expect(result.edited.includes('blue')).toMatchInlineSnapshot('true')

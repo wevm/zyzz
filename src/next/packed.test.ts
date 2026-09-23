@@ -71,6 +71,13 @@ test.each([false, true])(
         css.match(/--z-editorial-labelSize-fallback-[\w-]+:\s*20px/g)?.length,
       ).toMatchInlineSnapshot('1')
 
+      expect(
+        css.match(/--z-editorial-labelSize-(?!fallback)[\w-]+:\s*var\(/g)
+          ?.length,
+      ).toMatchInlineSnapshot('2')
+      expect(
+        css.match(/--z-editorial-space-(?!fallback)[\w-]+:\s*var\(/g)?.length,
+      ).toMatchInlineSnapshot('2')
       const page = await browser.newPage({
         viewport: { width: 800, height: 600 },
       })

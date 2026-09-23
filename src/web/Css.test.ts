@@ -17,14 +17,16 @@ describe('compile', () => {
   test('includes responsive defaults in standalone CSS', async () => {
     const vars = Vars.define({
       size: { default: '14px', '@media (width >= 1024px)': '16px' },
+      space: { default: '8px', '@media (width >= 1024px)': '12px' },
     })
     const output = Css.compile({
       styles: Style.define({
-        first: { fontSize: vars.size },
+        first: { fontSize: vars.size, padding: vars.space },
         second: { fontSize: vars.size },
       }),
     })
     expect(output.css.match(/:14px;/g)?.length).toMatchInlineSnapshot('1')
+    expect(output.css.match(/:where\(\*\)/g)?.length).toMatchInlineSnapshot('2')
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage({
@@ -56,6 +58,63 @@ describe('compile', () => {
         [
           "16px",
           "16px",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('preserves competing responsive token conditions when grouping rules', async () => {
+    const vars = Vars.define({
+      first: {
+        default: '10px',
+        '@media (width >= 600px)': '20px',
+        '@media (width >= 1000px)': '30px',
+      },
+      second: {
+        default: '12px',
+        '@media (width >= 1000px)': '32px',
+        '@media (width >= 600px)': '22px',
+      },
+    })
+    const output = Css.compile({
+      styles: Style.define({
+        first: { fontSize: vars.first },
+        second: { fontSize: vars.second },
+      }),
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 1200 },
+      })
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.first}"></div><div class="${output.classes.second}"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).fontSize),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "30px",
+          "22px",
+        ]
+      `)
+      await page.setViewportSize({ height: 600, width: 800 })
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).fontSize),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "20px",
+          "22px",
         ]
       `)
     } finally {

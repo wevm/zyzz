@@ -122,7 +122,11 @@ export async function verify(options: verify.Options) {
       [next, 'build', `--${bundler}`],
       {
         cwd: app,
-        env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
+        env: {
+          ...process.env,
+          NEXT_TELEMETRY_DISABLED: '1',
+          NODE_ENV: 'production',
+        },
         timeout: 120_000,
         maxBuffer: 4 * 1024 * 1024,
       },
@@ -138,7 +142,11 @@ export async function verify(options: verify.Options) {
       await Fs.rm(Path.join(app, '.zyzz'), { recursive: true })
       await exec(process.execPath, [next, 'build', '--turbopack'], {
         cwd: app,
-        env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
+        env: {
+          ...process.env,
+          NEXT_TELEMETRY_DISABLED: '1',
+          NODE_ENV: 'production',
+        },
         timeout: 120_000,
         maxBuffer: 4 * 1024 * 1024,
       }).catch((error) => {
@@ -204,7 +212,11 @@ export async function verify(options: verify.Options) {
         ],
         {
           cwd: app,
-          env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
+          env: {
+            ...process.env,
+            NEXT_TELEMETRY_DISABLED: '1',
+            NODE_ENV: mode === 'dev' ? 'development' : 'production',
+          },
           stdio: ['ignore', 'pipe', 'pipe'],
         },
       )
@@ -708,9 +720,13 @@ export async function verify(options: verify.Options) {
     })
     await page
       .waitForFunction(
-        () =>
-          getComputedStyle(document.querySelector('main > h1')!).color ===
-          'rgb(0, 170, 0)',
+        () => {
+          const heading = document.querySelector('main > h1')
+          return (
+            heading !== null &&
+            getComputedStyle(heading).color === 'rgb(0, 170, 0)'
+          )
+        },
         undefined,
         { timeout: 30_000 },
       )
@@ -825,7 +841,11 @@ export async function verify(options: verify.Options) {
     const nativeStarted = performance.now()
     await exec(process.execPath, [next, 'build', `--${bundler}`], {
       cwd: app,
-      env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
+      env: {
+        ...process.env,
+        NEXT_TELEMETRY_DISABLED: '1',
+        NODE_ENV: 'production',
+      },
       timeout: 120_000,
       maxBuffer: 4 * 1024 * 1024,
     }).catch((error) => {

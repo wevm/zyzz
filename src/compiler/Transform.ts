@@ -986,6 +986,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           rule.startsWith(':where(*){--z-') ||
           (rule.startsWith('@media ') &&
             (rule.includes(':root{') ||
+              rule.includes(':where(*){--z-') ||
               Object.values(emitted.vars).some((name) =>
                 rule.includes(`.${name}{`),
               )))

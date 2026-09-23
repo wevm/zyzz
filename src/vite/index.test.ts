@@ -595,7 +595,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           )![1]!
           const css = await (await fetch(origin + cssPath)).text()
 
-          expect(css.includes('--z-t')).toMatchInlineSnapshot(`true`)
+          expect(css.includes('--z-color-brand-')).toMatchInlineSnapshot(`true`)
         } finally {
           await server.close()
         }
@@ -1056,12 +1056,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         ".z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
-        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
+        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
@@ -1079,12 +1079,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
-        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
+        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
@@ -1474,10 +1474,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       // escaping, and a script-only export derives its catalog from the options.
       expect(scripts(development)).toMatchInlineSnapshot('3')
       expect(
-        /z_theme-[a-z0-9]+-other-brand_2e_dark/.test(development),
+        /z_theme-src-config-[\w-]+-other-brand_2e_dark/.test(development),
       ).toMatchInlineSnapshot('true')
       expect(
-        /\["solo","z_theme-[a-z0-9]+-onlyScript-solo"\]/.test(development),
+        /\["solo","z_theme-src-config-[\w-]+-onlyScript-solo"\]/.test(
+          development,
+        ),
       ).toMatchInlineSnapshot('true')
 
       // A source error stays with its module; the document still initializes

@@ -1296,19 +1296,19 @@ describe('names', () => {
       const second = Transform.compile({ moduleId: 'second.ts', source })
 
       expect(first.css).toMatchInlineSnapshot(`
-        ".z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
+        ".z_theme-src-first-dcTfYzugwnm-style-theme{--z-color-brand-fHtUTR8NQiR:red;}
         .z-display-flex-QPs-Od{display:flex;}
-        .z-text--mgEZB{color:var(--z-t1mlrxl41f5va70-style-color_2e_brand,red);}"
+        .z-text-GmhIjO{color:var(--z-color-brand-fHtUTR8NQiR,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
-        ".z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
+        ".z_theme-src-second-b4ZFtPWlT8s-style-theme{--z-color-brand-3r46x-_EBQ5:red;}
         .z-display-flex-IjSBTf{display:flex;}
-        .z-text-GRogKQ{color:var(--z-t1d6eq581s6owy-style-color_2e_brand,red);}"
+        .z-text-GyxiRG{color:var(--z-color-brand-3r46x-_EBQ5,red);}"
       `)
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text--mgEZB z-style-1mlrxl41f5va70-104"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-GmhIjO z-style-1mlrxl41f5va70-104"});"
       `)
     })
 

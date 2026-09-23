@@ -670,8 +670,9 @@ export function compile<
         ? (theme ??= Themes.create()).emit(
             options.vars ?? {},
             options.schemes ?? false,
+            options[Themes.shared] ?? false,
           )
-        : { classes: Object.freeze({}), css: '' }
+        : { classes: Object.freeze({}), css: '', resources: [] }
   } catch (error) {
     throw new CompileError([
       {
@@ -692,6 +693,7 @@ export function compile<
     .join('\n')
 
   return Object.freeze({
+    ...(scopes.resources.length ? { [Themes.shared]: scopes.resources } : {}),
     ...(contributionCss ? { contributionCss, scopedCss } : {}),
     classes: Object.freeze(classes),
     css: [contributionCss, scopedCss].filter(Boolean).join('\n'),
@@ -709,6 +711,8 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Separates generated token rules for hosts with independent CSS resources. */
+    readonly [Themes.shared]?: boolean | undefined
     /** Fixed class identities used by CSS-only consumers. */
     readonly names?: Readonly<Record<string, string>> | undefined
     /**
@@ -743,6 +747,8 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Shared token resources omitted from this module's stylesheet. */
+    readonly [Themes.shared]?: readonly Themes.Resource[] | undefined
     /** Contribution text separated for graph-wide hoisting. */
     readonly contributionCss?: string | undefined
     /** Ordinary scope and style rules when contributions were supplied. */

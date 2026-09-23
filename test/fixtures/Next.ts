@@ -133,6 +133,19 @@ export async function verify(options: verify.Options) {
       build.stdout.includes('Compiled successfully'),
     ).toMatchInlineSnapshot('true')
 
+    // Deployment caches restore Next's cache without Zyzz's generated stylesheets.
+    if (bundler === 'turbopack' && !options.compare) {
+      await Fs.rm(Path.join(app, '.zyzz'), { recursive: true })
+      await exec(process.execPath, [next, 'build', '--turbopack'], {
+        cwd: app,
+        env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
+        timeout: 120_000,
+        maxBuffer: 4 * 1024 * 1024,
+      }).catch((error) => {
+        throw new Error(error.stdout + '\n' + error.stderr)
+      })
+    }
+
     const maps = (
       await Fs.readdir(Path.join(app, '.next/static'), {
         recursive: true,

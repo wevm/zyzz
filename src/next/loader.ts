@@ -36,9 +36,16 @@ async function compile(context: Context, source: string) {
   const root = options.root
   const directory = Path.resolve(root, '.zyzz', 'next')
   if (options.mode) {
-    const hash = new URLSearchParams(context.resourceQuery).get('zyzz')
+    const query = new URLSearchParams(context.resourceQuery)
+    const hash = query.get('zyzz')
     if (!hash || !/^[a-f0-9]{64}$/.test(hash))
       throw new Error('Invalid generated stylesheet request.')
+    const css = query.get('css')
+    if (css !== null)
+      return {
+        code: Buffer.from(css, 'base64url').toString('utf8'),
+        map: undefined,
+      }
     const file = Path.join(directory, `${hash}.css`)
     context.addDependency(file)
     return { code: await Fs.readFile(file, 'utf8'), map: undefined }
@@ -240,7 +247,7 @@ async function compile(context: Context, source: string) {
         await Fs.writeFile(temporary, css)
         await Fs.rename(temporary, file)
       }
-    } else {
+    } else if (options.bundler !== 'turbopack') {
       try {
         await Fs.writeFile(file, css, { flag: 'wx' })
       } catch (error) {
@@ -264,7 +271,10 @@ async function compile(context: Context, source: string) {
       )
       if (existing !== code) await Fs.writeFile(request, code)
     } else if (options.bundler === 'turbopack') {
-      request = Path.join(directory, 'style.css') + `?zyzz=${hash}`
+      // Persist CSS with the cached transform, independently of generated filesystem artifacts.
+      request =
+        Path.join(directory, 'style.css') +
+        `?zyzz=${hash}&css=${Buffer.from(css).toString('base64url')}`
     }
     const relative = Path.relative(Path.dirname(context.resourcePath), request)
       .split(Path.sep)

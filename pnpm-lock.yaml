@@ -21,6 +21,9 @@ catalogs:
     '@jridgewell/trace-mapping':
       specifier: ^0.3.31
       version: 0.3.31
+    '@mdn/browser-compat-data':
+      specifier: 8.1.2
+      version: 8.1.2
     '@oxc-project/types':
       specifier: 0.148.0
       version: 0.148.0
@@ -204,6 +207,9 @@ importers:
       '@changesets/cli':
         specifier: 'catalog:'
         version: 3.0.3
+      '@mdn/browser-compat-data':
+        specifier: 'catalog:'
+        version: 8.1.2
       '@pandacss/node':
         specifier: 'catalog:'
         version: 1.12.1
@@ -1691,6 +1697,9 @@ packages:
   '@manypkg/tools@2.1.2':
     resolution: {integrity: sha512-6QEf6yqFbETdwGITKq57aYoPfX/3K8XFNwsAlx0C1M7o8cb79sv1M3w+tWuWvIcSbNqrLF7OD7YpZMVVz335hQ==}
     engines: {node: '>=20.0.0'}
+
+  '@mdn/browser-compat-data@8.1.2':
+    resolution: {integrity: sha512-pe2qO3VDkRybAvmpr1UfC4zMnvOiVHUp4EMJU8RboulqzEvearRrUWCi/Y0QVRvkfe6Fh5Nahdk9uncU9anrFw==}
 
   '@modelcontextprotocol/server@2.0.0-alpha.4':
     resolution: {integrity: sha512-/KEo3ZJ50HlagHp0lz2vPgfBZFtXHu6zTBXT9XqPc+4O9i4+IbBVWKq/a9yAfv/ifp0u3+mRo8SUk5kMKzhN8A==}
@@ -7660,6 +7669,8 @@ snapshots:
       jju: 1.4.0
       tinyglobby: 0.2.17
       yaml: 2.9.0
+
+  '@mdn/browser-compat-data@8.1.2': {}
 
   '@modelcontextprotocol/server@2.0.0-alpha.4':
     dependencies:

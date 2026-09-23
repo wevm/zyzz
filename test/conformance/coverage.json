@@ -1,4 +1,5 @@
 {
+  "compatibilityVersion": "8.1.2",
   "families": {
     "functions": {
       "abs()": {
@@ -435,9 +436,134 @@
         "grammar": "c3a1b0c31bd4f81e50c2af3a1d13577a994ab34a6df579505f908d75a9d0d662",
         "status": "supported"
       },
+      "-khtml-box-align": {
+        "grammar": "3c55214ab8496dc038b66baf5e479cfae204d14fb131e6d05a49fcd7e0274856",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-direction": {
+        "grammar": "8bb7fa3f6eab187b94ff428663f097d56b425a7fbafecc5662a056802ebbe9ac",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-flex": {
+        "grammar": "6a4ccd5a00ea96a1e6a8aab137c2c396bf7e1f185895a259c755aa1020cda7e8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-flex-group": {
+        "grammar": "3c0e397efc16ff3ad9865df14d720592301d68d098398110467677dabaaf6d8a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-lines": {
+        "grammar": "8ff3aeb71c1c53f65d2710c3a4a35b04c8f500ec5ca0f0cfc6e3f4781e578e38",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-ordinal-group": {
+        "grammar": "608fe05a3acc4fb41fb1685ab51adb3adcfa141ab33e766d92a913a254621151",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-orient": {
+        "grammar": "973726f76f943601de66bc9f18226ee0789679c1ae91ab801d38a714305422ca",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-box-pack": {
+        "grammar": "cda04cad0790f638c5dac6e4edf6728c6be8f3cde427b1b000d95fbd13ebcf85",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-line-break": {
+        "grammar": "524c421d59badd5a4f8aa25ce59ead13061448e79217338709fdf0a1b9b636e6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-opacity": {
+        "grammar": "576060e4e504fe06c63b8901e4af39d52b91376830f75c795897ebf83ce03138",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-user-modify": {
+        "grammar": "932547be58a8b33ec8e7682ea91e1d45f74d71d7ec528b153373cb124a55aae4",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-khtml-user-select": {
+        "grammar": "3c59822b4554e5dfd96185ebd1edbb64e790bf894aa334adc870d9c49ed9846c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation": {
+        "grammar": "2bb6c15a64dfec6e774e285321c33d5bf673152a4d6d1b60d92b74749707ea70",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-delay": {
+        "grammar": "7ca8295d632958adb5cde8871eacf7e0db71b38e9d69b9087a36e99b0a3aee90",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-direction": {
+        "grammar": "5bfb18495dd9231b064b208d7718d0d4f7a5dcb878b941c31c2d2ca808a90e4d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-duration": {
+        "grammar": "3eca8829202558ecd6e6e6d87ea3eb748e594bdedf928c3cb8bf46d835a35a2e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-fill-mode": {
+        "grammar": "c240497d24ff5a061ae70748dd2474061c09307ec83ef7f88f1b06e13a37c687",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-iteration-count": {
+        "grammar": "4a6edb0a9e98647ec168f3c93d59ed8cd4bd214ceea35f2569077f6a677ef058",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-name": {
+        "grammar": "e7ff5b2a0cec75cdfa2d990defb785aaae2367b6bab101a5fad0a0c9d41cdbc5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-play-state": {
+        "grammar": "35f5c094bb50c07f5802e2fe8a5a60a566b33a380246886e33ff34751a05b8ee",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-animation-timing-function": {
+        "grammar": "2bc6c0a580a33242c764e02731afe9e0330e38a3da3bb493f814cccb046f177c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-appearance": {
         "grammar": "8322dc30dec07fbef6b97db2e8139138eae98397fa7fd56d0b84094e51ba6381",
         "status": "supported"
+      },
+      "-moz-backface-visibility": {
+        "grammar": "712364837845e9d00c31f739addbd0c6517addb98d96cf60ae9b4554bc2f16dd",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-background-clip": {
+        "grammar": "fe58d40e7fbd983b735a0f34f680a9410d771004ddd30cdc389dede89fd59ef8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-background-origin": {
+        "grammar": "f61421cd162511a5c11951ad9c9e0b83ca175fe384b0ccc0f78a44db458dedd1",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-background-size": {
+        "grammar": "ee76ed83b16109c81a2bc994a155eb81caf84737aa617c987624e309adaa86ab",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-moz-binding": {
         "grammar": "1cd2c1eeb6aead01ec48b09e45f1aaa31c8d674e9e9473da0c1026dcb0daa65b",
@@ -447,17 +573,152 @@
         "grammar": "9ecd48ff12de47422436a1ce585344f176b6fb372f2eb5a4b0c34e275fc49d5c",
         "status": "supported"
       },
+      "-moz-border-end-color": {
+        "grammar": "6556e51c30f2af8b00fb0b2527e5efe22a38aff89dc1da86fe0d672973cf2db3",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-end-style": {
+        "grammar": "3f000b8564102a81d5e806249b67aec12254fc50387c5315bf3b70fa40185c10",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-end-width": {
+        "grammar": "dc760b759ebc95ddcf229b2103c6ebf8083dddfe1386b8436b2d7fd4312d58b9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-image": {
+        "grammar": "48931eed670093160501c0cabf3ba3c964ef58317fb3fe5e3850f288a38067ce",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-border-left-colors": {
         "grammar": "9ecd48ff12de47422436a1ce585344f176b6fb372f2eb5a4b0c34e275fc49d5c",
         "status": "supported"
+      },
+      "-moz-border-radius": {
+        "grammar": "c051dc5c36114b6ba60d86774404da0d61f62c39b163578788ae5e4c46c46de6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-radius-bottomleft": {
+        "grammar": "6c58cb099327d17ba717d0634d45e031a589127417f8b6e07f7de86d1ab481b7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-radius-bottomright": {
+        "grammar": "b72bd983a3b1d60b2b460b7b0cb1a08a42a53503303c4b7824fa54cdb6c5d32f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-radius-topleft": {
+        "grammar": "ccfb817443c6226e8b40bf72b148fa41c2c757220abdef908740f4adfd3cd86d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-radius-topright": {
+        "grammar": "89a98124769bf06e37d7321f3da1a345eb6e08cf7a7982d2b611e58f373009d2",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-moz-border-right-colors": {
         "grammar": "9ecd48ff12de47422436a1ce585344f176b6fb372f2eb5a4b0c34e275fc49d5c",
         "status": "supported"
       },
+      "-moz-border-start-color": {
+        "grammar": "082b6f6cb8967867a8dc2ce3d9b94fabee19fbe600c619215d0e304b699d4f32",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-border-start-style": {
+        "grammar": "ea84d2883128ba7754177a18684715d0cef963d5c3f5f19eeee0c04685fd1d63",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-border-top-colors": {
         "grammar": "9ecd48ff12de47422436a1ce585344f176b6fb372f2eb5a4b0c34e275fc49d5c",
         "status": "supported"
+      },
+      "-moz-box-align": {
+        "grammar": "3c55214ab8496dc038b66baf5e479cfae204d14fb131e6d05a49fcd7e0274856",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-direction": {
+        "grammar": "8bb7fa3f6eab187b94ff428663f097d56b425a7fbafecc5662a056802ebbe9ac",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-flex": {
+        "grammar": "6a4ccd5a00ea96a1e6a8aab137c2c396bf7e1f185895a259c755aa1020cda7e8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-ordinal-group": {
+        "grammar": "608fe05a3acc4fb41fb1685ab51adb3adcfa141ab33e766d92a913a254621151",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-orient": {
+        "grammar": "973726f76f943601de66bc9f18226ee0789679c1ae91ab801d38a714305422ca",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-pack": {
+        "grammar": "cda04cad0790f638c5dac6e4edf6728c6be8f3cde427b1b000d95fbd13ebcf85",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-shadow": {
+        "grammar": "19bffec7754e5c68959f9421d6cde779aad61d776779ba34d56a6810534e9353",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-box-sizing": {
+        "grammar": "c39820edcb718ea06b5c379a70942e8be7d543452f0fb74b8c279e2216dd87b9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-count": {
+        "grammar": "318f1a6fb4b3cefa5de5166589d9a600f0ddd76d5a9de60e836395674486d0dd",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-fill": {
+        "grammar": "46dc11d7fe2c6879fe202b707269bf2b5b29a86d2800f1311d7c2100d18b213e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-rule": {
+        "grammar": "d8f3b0b6888df1a434838b0336f9baaf043707d739a5198f80dc2c5be1b46e08",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-rule-color": {
+        "grammar": "5c9bfabc78bf112300e8acc1eeff3100fa766d68e11ab78c1fd5b6e77b2b8de8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-rule-style": {
+        "grammar": "022c97e695417d898a0dc352377364479ff595d67396ec746218921e34a0c402",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-rule-width": {
+        "grammar": "76be64939ca89dcf5e8b8a3564ab8ed998672a404a40cddc8e93f9e7c775f0ae",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-column-width": {
+        "grammar": "542caed1a2ef13ea0413af7d6e4563188d796d0b4e0a39643ddf4044daf7cc31",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-columns": {
+        "grammar": "4de125d81a3f6c7868d88cc53d6ed52eaf6ba94049e1daa80e1ac11f97ad451c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-moz-context-properties": {
         "grammar": "d432945c9bc233a7dd58c0004cf8662611d10710561e5bb077921a62b60ee4f4",
@@ -467,13 +728,58 @@
         "grammar": "7ca982160f2d56fcb7624d26a2a3177016d547b81fa36040278e0f6c1099eb6e",
         "status": "supported"
       },
+      "-moz-font-feature-settings": {
+        "grammar": "604bfbb2b3d7d4bbb27945487977026ad4c18f0d8c4558fc87589373236228b6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-font-language-override": {
+        "grammar": "ad165484307d79d4e63e041b186dd089277c096d493a80c2e9eb73ea2c8d9388",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-force-broken-image-icon": {
         "grammar": "3841cfb34cfb84b68eff6d79dde29da74b04c1fc7d9ad3060f1242a3915bcf6e",
         "status": "supported"
       },
+      "-moz-hyphens": {
+        "grammar": "1ed196e26c5c1a457c7a5adee147b7a1007e033abb3031fd583106617b347341",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-margin-end": {
+        "grammar": "464966490aab0b7d601035fdf72786a70cbc64154600143c0633ab2e0c5db330",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-margin-start": {
+        "grammar": "2b3a405adfa12bd3d83f95902aca81bf3085584a54d9bc855201e9523e1fa619",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-opacity": {
+        "grammar": "576060e4e504fe06c63b8901e4af39d52b91376830f75c795897ebf83ce03138",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-orient": {
         "grammar": "0eec1d44dbee87d81e54953a862a748170c7b48be83b05192d969e817ea9ee8e",
         "status": "supported"
+      },
+      "-moz-osx-font-smoothing": {
+        "grammar": "d81150ac2cc32b7cf9febea07a8b13e280d9c422532e6e1f60bba512e2d4d5fc",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-outline": {
+        "grammar": "2198b101ee792605c9e4343c58d92b4db91b335037ea5eafa34030efd9932294",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-outline-color": {
+        "grammar": "be5dd465a2933c424d1dd3048f113cdf818210de0b810796e3bd4c6cfa33e52d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-moz-outline-radius": {
         "grammar": "faea1f4fcb1f25956c1006610da7f265e9614c578b846fdc985a471fc955532a",
@@ -495,13 +801,113 @@
         "grammar": "8428218daabad1bb9737f745b492b48d8650244ff8d86aa1236628e5e8849f79",
         "status": "supported"
       },
+      "-moz-outline-style": {
+        "grammar": "0a0dc688a50b28e2bc9ac42bfe6ea54cba4191b22ac1be479c7d8a76a8da95d7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-outline-width": {
+        "grammar": "e29cd8d3b75eec2b3b20bfd03b4598d4448a143d79058c41efcf18cb219552a8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-padding-end": {
+        "grammar": "cfd451426021d48e3271fabd0c579372e14beec50b86b33d0c5fdfacf385f6a8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-padding-start": {
+        "grammar": "fd68ef2de13a9b148f5e29f84148d251b46a6f983e87d8a69bee63d24e8bf59a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-perspective": {
+        "grammar": "eb35527b561338df8105bce6c90c02379a8e3c32f4024db382edf89ee4fb716d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-perspective-origin": {
+        "grammar": "f81a2046a199e7155c0647de8fcd0f4be992c35d741f17998a0ed093fa8f1704",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-stack-sizing": {
         "grammar": "dffae689d878d2ace8b4fdfce6912900a434d4e2a20d22da5df46851b15e1867",
         "status": "supported"
       },
+      "-moz-tab-size": {
+        "grammar": "814f854875ac987086b3341b3340b90a5afab3bda088f7c23f24b966fbba23e7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-text-align-last": {
+        "grammar": "a807e9376eaa8f4ef1984ab03f9720e8d86653517c8f27419ae542f94b323516",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-moz-text-blink": {
         "grammar": "32018f93f0dc42a0e0d67eac7791bddd6a5ca93a024f49c9fa94f51fff67a6cc",
         "status": "supported"
+      },
+      "-moz-text-decoration-color": {
+        "grammar": "d3e8c8c32adfcb9cd650e41fbf1403c307c56115dfa901e39cc451af70566464",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-text-decoration-line": {
+        "grammar": "e18b4e28c04240f862d121d6c0e9355e28cc563bd6a94d2cbcacba07f7c8c8df",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-text-decoration-style": {
+        "grammar": "4a6d83ab4c002cc7077f547d8e746f2296e3de2e6d9a3971ff2b04b6c4f736b6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-text-size-adjust": {
+        "grammar": "0c257134c53110b734c45d662b56ec561ba826059907810e405355b9437ff1c7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transform": {
+        "grammar": "86f28cfaaaf42e81b07e23957041ced5d17953126180aa9d456c5e297476baa9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transform-origin": {
+        "grammar": "58e205919986b17308bafc410baa7d6695a55254009a6be17118ab14af7aa819",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transform-style": {
+        "grammar": "798612f494f5d34365c43c4f3db39cbc2e62fbd35b1ee13bf7bfebdf31fea5aa",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transition": {
+        "grammar": "e3029394db178df54678f3685e6b8c9585de3d1ff38b85d4ca3d29b26b187021",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transition-delay": {
+        "grammar": "6db7bd80212ac97ba88987ce85d03ff5d1a8cd278875f70a8c89cf4c899bec0e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transition-duration": {
+        "grammar": "846c9dd3f735e74bea03c686b47f5d6152e13918a893f22304ea60ad73ce810e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transition-property": {
+        "grammar": "928d4907724cfd27b7f7bd35f7310289ba4283d1494172f501f91dd11f555464",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-moz-transition-timing-function": {
+        "grammar": "ae47ab1380fd2f2193fdd8e501f1cd2e06bc07a0927774d1a3f48ce41da7db89",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-moz-user-focus": {
         "grammar": "a3ce8814e4441b9898124034edb68524efbb836366177fd0456e4285873fe7f1",
@@ -514,6 +920,11 @@
       "-moz-user-modify": {
         "grammar": "3a4c557d987d6f42dfa345faebb92db40c5f20dde837a0ece0b0e9ed35f10f77",
         "status": "supported"
+      },
+      "-moz-user-select": {
+        "grammar": "3c59822b4554e5dfd96185ebd1edbb64e790bf894aa334adc870d9c49ed9846c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-moz-window-dragging": {
         "grammar": "80bc6755c1e072901aa5e0b23ad7dd10a9dc3c8eb4d5023d505acb606ccaca75",
@@ -567,6 +978,21 @@
         "grammar": "577c5d9875e45226ac9796cc075d0e24bbfff873e599ab0615220f6b2d2d5d7f",
         "status": "supported"
       },
+      "-ms-flex": {
+        "grammar": "af41174a0e39ec014264b028f6006de3ca86e0ae2f66f04489d781a64c41f0c8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-flex-direction": {
+        "grammar": "92ec93f1e16c1de72376297dafe01d74060881eb92cfe586ee91ccc8a400265c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-flex-positive": {
+        "grammar": "858f85ecf9e6485a85220421f21cfdfa956c43ebc600ea58fdcf0a611d224df1",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-ms-flow-from": {
         "grammar": "ed553d1a80f6ec7f046fed7048d69cc08d8e5ca602cb4cbe0f054e46352bf3c9",
         "status": "supported"
@@ -599,13 +1025,43 @@
         "grammar": "a9031e77a4e5cbe8c96d4ec60860ce43cdda48b26bf0c590a3564db3a6d8fee5",
         "status": "supported"
       },
+      "-ms-hyphens": {
+        "grammar": "1ed196e26c5c1a457c7a5adee147b7a1007e033abb3031fd583106617b347341",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-ms-ime-align": {
         "grammar": "45895fd40907a6695741fcd7de26b06189e84002a88fcd0faf57e33e6d40a5b8",
         "status": "supported"
       },
+      "-ms-ime-mode": {
+        "grammar": "acb11c4a84b7693b59d48a244bf5a0a1f92ce91f435c4de3c3b850ddd37101bb",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-line-break": {
+        "grammar": "524c421d59badd5a4f8aa25ce59ead13061448e79217338709fdf0a1b9b636e6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-order": {
+        "grammar": "020db6901cb7dc4cdf937a7a8a08aa7e330c5a54a2daa69936d49155fdfb1141",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-ms-overflow-style": {
         "grammar": "cd887b721df27dac4fa19b27f9591fde639a061128078302cc1b032ebbb53d6b",
         "status": "supported"
+      },
+      "-ms-overflow-x": {
+        "grammar": "1a54cc3fecfa4e476f875f5ebc6eac4fb4ffb1597c8e4d70928e8f4a51437a58",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-overflow-y": {
+        "grammar": "87aab8da23c5ec206cb3349c3b8837a42534ac9b71fd554aab02edc2a5ea4521",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-ms-scroll-chaining": {
         "grammar": "2e690f1229a87a79fe233db1b921f21f80a4438029213c83efea2ccbda7d8ab4",
@@ -695,13 +1151,68 @@
         "grammar": "c6b8409328637ba50f7101ba2bdce63d4766d8601a1e6d0e1f9cc310eeed550a",
         "status": "supported"
       },
+      "-ms-text-combine-horizontal": {
+        "grammar": "cd858a1e0111c1037ef67547ae1039a4c7fd07e32db584c921cf02833c3d0d73",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-text-overflow": {
+        "grammar": "4edc7ef984c36eb78ea05aba0b3e57deabb2cbada8fc7646bd8bc853155cbd72",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-touch-action": {
+        "grammar": "39341a7262184f9a9fc66caedeeb6eff623638aae8f4c7b5367083470d9200e9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-ms-touch-select": {
         "grammar": "e94fec3361b3298dceba97809999a1b0dc0986a8133541f30d26018f4c15a4a7",
         "status": "supported"
       },
+      "-ms-transform": {
+        "grammar": "86f28cfaaaf42e81b07e23957041ced5d17953126180aa9d456c5e297476baa9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-transform-origin": {
+        "grammar": "58e205919986b17308bafc410baa7d6695a55254009a6be17118ab14af7aa819",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-transition": {
+        "grammar": "e3029394db178df54678f3685e6b8c9585de3d1ff38b85d4ca3d29b26b187021",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-transition-delay": {
+        "grammar": "6db7bd80212ac97ba88987ce85d03ff5d1a8cd278875f70a8c89cf4c899bec0e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-transition-duration": {
+        "grammar": "846c9dd3f735e74bea03c686b47f5d6152e13918a893f22304ea60ad73ce810e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-transition-property": {
+        "grammar": "928d4907724cfd27b7f7bd35f7310289ba4283d1494172f501f91dd11f555464",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-ms-transition-timing-function": {
+        "grammar": "ae47ab1380fd2f2193fdd8e501f1cd2e06bc07a0927774d1a3f48ce41da7db89",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-ms-user-select": {
         "grammar": "98ef2adc98380d8b95ce8534c57888ca495647e4e82725dcc8d5632b3ebce613",
         "status": "supported"
+      },
+      "-ms-word-break": {
+        "grammar": "f6078de683c28c7aab1b397ab20df708ad70dd9ef7972ae4fc14c07b895a8589",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-ms-wrap-flow": {
         "grammar": "185891d4c121a19669dcb0d4af05ada8a2a78c9179834e4d061a180614628f26",
@@ -715,9 +1226,219 @@
         "grammar": "9448eea469c7cb8357fe0a124808c29878ff690df4d1b96f816b14c543e13ff2",
         "status": "supported"
       },
+      "-ms-writing-mode": {
+        "grammar": "e776ac5baca1890aa164efcb5e15cfd16694478e359bef87fcb4b9bad917d4fa",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation": {
+        "grammar": "2bb6c15a64dfec6e774e285321c33d5bf673152a4d6d1b60d92b74749707ea70",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-delay": {
+        "grammar": "7ca8295d632958adb5cde8871eacf7e0db71b38e9d69b9087a36e99b0a3aee90",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-direction": {
+        "grammar": "5bfb18495dd9231b064b208d7718d0d4f7a5dcb878b941c31c2d2ca808a90e4d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-duration": {
+        "grammar": "3eca8829202558ecd6e6e6d87ea3eb748e594bdedf928c3cb8bf46d835a35a2e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-fill-mode": {
+        "grammar": "c240497d24ff5a061ae70748dd2474061c09307ec83ef7f88f1b06e13a37c687",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-iteration-count": {
+        "grammar": "4a6edb0a9e98647ec168f3c93d59ed8cd4bd214ceea35f2569077f6a677ef058",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-name": {
+        "grammar": "e7ff5b2a0cec75cdfa2d990defb785aaae2367b6bab101a5fad0a0c9d41cdbc5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-play-state": {
+        "grammar": "35f5c094bb50c07f5802e2fe8a5a60a566b33a380246886e33ff34751a05b8ee",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-animation-timing-function": {
+        "grammar": "2bc6c0a580a33242c764e02731afe9e0330e38a3da3bb493f814cccb046f177c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-background-size": {
+        "grammar": "ee76ed83b16109c81a2bc994a155eb81caf84737aa617c987624e309adaa86ab",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-border-image": {
+        "grammar": "48931eed670093160501c0cabf3ba3c964ef58317fb3fe5e3850f288a38067ce",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-object-fit": {
+        "grammar": "6916be1ca3aa343882ad4186cf8e715bd4343e2751f3fb944400d9f613ae97d5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-object-position": {
+        "grammar": "53f1fde02539b900e5c2fcf0f10f7c03ebeecce665da02bc9db6a98f5d3c700f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-tab-size": {
+        "grammar": "814f854875ac987086b3341b3340b90a5afab3bda088f7c23f24b966fbba23e7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-text-overflow": {
+        "grammar": "4edc7ef984c36eb78ea05aba0b3e57deabb2cbada8fc7646bd8bc853155cbd72",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transform": {
+        "grammar": "86f28cfaaaf42e81b07e23957041ced5d17953126180aa9d456c5e297476baa9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transform-origin": {
+        "grammar": "58e205919986b17308bafc410baa7d6695a55254009a6be17118ab14af7aa819",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transition": {
+        "grammar": "e3029394db178df54678f3685e6b8c9585de3d1ff38b85d4ca3d29b26b187021",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transition-delay": {
+        "grammar": "6db7bd80212ac97ba88987ce85d03ff5d1a8cd278875f70a8c89cf4c899bec0e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transition-duration": {
+        "grammar": "846c9dd3f735e74bea03c686b47f5d6152e13918a893f22304ea60ad73ce810e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transition-property": {
+        "grammar": "928d4907724cfd27b7f7bd35f7310289ba4283d1494172f501f91dd11f555464",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-o-transition-timing-function": {
+        "grammar": "ae47ab1380fd2f2193fdd8e501f1cd2e06bc07a0927774d1a3f48ce41da7db89",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-align-content": {
+        "grammar": "04056d172817c14516aa02586a3d688d516d3d216bfff6d21e6bcd850483062b",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-align-items": {
+        "grammar": "4c43892f15b0d20b19132c4692e7b042ac3d06258b7d1c7f663696b304e0dd23",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-align-self": {
+        "grammar": "cd6109e66965b4e62925d4c4fcc3353361806421a8d14dccc62ae21ea8b668fe",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-alt": {
+        "grammar": "7c121136839fc43a0f951a9fe0486dfab9e6479574399171dd93b32894ed3cc8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation": {
+        "grammar": "2bb6c15a64dfec6e774e285321c33d5bf673152a4d6d1b60d92b74749707ea70",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-delay": {
+        "grammar": "7ca8295d632958adb5cde8871eacf7e0db71b38e9d69b9087a36e99b0a3aee90",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-direction": {
+        "grammar": "5bfb18495dd9231b064b208d7718d0d4f7a5dcb878b941c31c2d2ca808a90e4d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-duration": {
+        "grammar": "3eca8829202558ecd6e6e6d87ea3eb748e594bdedf928c3cb8bf46d835a35a2e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-fill-mode": {
+        "grammar": "c240497d24ff5a061ae70748dd2474061c09307ec83ef7f88f1b06e13a37c687",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-iteration-count": {
+        "grammar": "4a6edb0a9e98647ec168f3c93d59ed8cd4bd214ceea35f2569077f6a677ef058",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-name": {
+        "grammar": "e7ff5b2a0cec75cdfa2d990defb785aaae2367b6bab101a5fad0a0c9d41cdbc5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-play-state": {
+        "grammar": "35f5c094bb50c07f5802e2fe8a5a60a566b33a380246886e33ff34751a05b8ee",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-animation-timing-function": {
+        "grammar": "2bc6c0a580a33242c764e02731afe9e0330e38a3da3bb493f814cccb046f177c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-app-region": {
+        "grammar": "e09bc1e2a17d8a29144da07da06c465162ee41dcd5b239e240ed3bd33d038421",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-appearance": {
         "grammar": "54a92a8eef0511483c8900bca7909b790fe9c478bdfcb0473fa9ddd66c5bb702",
         "status": "supported"
+      },
+      "-webkit-backdrop-filter": {
+        "grammar": "035b99fed73f12aa5e8cf9c863b3b5a9f6fa01f49d2a9037bbddb4fc6760f6fa",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-backface-visibility": {
+        "grammar": "712364837845e9d00c31f739addbd0c6517addb98d96cf60ae9b4554bc2f16dd",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-background-clip": {
+        "grammar": "e1534732dff446d347425b18eb4e9b4bdab4f831eab87e6b16474428a54153fe",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-background-origin": {
+        "grammar": "5f0f21a48633940ca3bf35a4b88943437c49e2535a3f66a6ab1bf16623b1cd52",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-background-size": {
+        "grammar": "ee76ed83b16109c81a2bc994a155eb81caf84737aa617c987624e309adaa86ab",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-border-after": {
         "grammar": "7f206cdf2c3ec9b79ea02147a711c0eefd9318123be68f7531338d380c5abe26",
@@ -751,6 +1472,16 @@
         "grammar": "6b48dc1fd05dd95f490a72e1a5b8f5c80198f8c9996e50d461fe6a52cf89cb26",
         "status": "supported"
       },
+      "-webkit-border-bottom-left-radius": {
+        "grammar": "6c58cb099327d17ba717d0634d45e031a589127417f8b6e07f7de86d1ab481b7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-border-bottom-right-radius": {
+        "grammar": "b72bd983a3b1d60b2b460b7b0cb1a08a42a53503303c4b7824fa54cdb6c5d32f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-border-end": {
         "grammar": "39fdc643c52d34896991b12b5c96f283551bb6d81c0f8b3a78b691f6f65cb0e9",
         "status": "supported"
@@ -766,6 +1497,26 @@
       "-webkit-border-end-width": {
         "grammar": "6b48dc1fd05dd95f490a72e1a5b8f5c80198f8c9996e50d461fe6a52cf89cb26",
         "status": "supported"
+      },
+      "-webkit-border-horizontal-spacing": {
+        "grammar": "fdd2ce4a1b55fcb59e0d2de4502937f05086714dc98e174cd3da1586a2da2a33",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-border-image": {
+        "grammar": "48931eed670093160501c0cabf3ba3c964ef58317fb3fe5e3850f288a38067ce",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-border-image-slice": {
+        "grammar": "235b5326edbb5dce32fccda4a1463015f6313deefb2639198d0f0e4f64ec14a4",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-border-radius": {
+        "grammar": "c051dc5c36114b6ba60d86774404da0d61f62c39b163578788ae5e4c46c46de6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-border-start": {
         "grammar": "d0d36f0c201ac701eaed94b1db178dd83bac177c08ea5650a6f4cfc57a949b36",
@@ -783,13 +1534,318 @@
         "grammar": "6b48dc1fd05dd95f490a72e1a5b8f5c80198f8c9996e50d461fe6a52cf89cb26",
         "status": "supported"
       },
+      "-webkit-border-top-left-radius": {
+        "grammar": "ccfb817443c6226e8b40bf72b148fa41c2c757220abdef908740f4adfd3cd86d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-border-top-right-radius": {
+        "grammar": "89a98124769bf06e37d7321f3da1a345eb6e08cf7a7982d2b611e58f373009d2",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-border-vertical-spacing": {
+        "grammar": "d3ad39acb9b11a52f625ef92a1fa16960695ce2aae424c624f975bf6e977df7d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-align": {
+        "grammar": "3c55214ab8496dc038b66baf5e479cfae204d14fb131e6d05a49fcd7e0274856",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-decoration-break": {
+        "grammar": "9c1db3bf9eed37e9211bfb6e929187ae6552710eb29615ce56905d88d6bf1503",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-direction": {
+        "grammar": "8bb7fa3f6eab187b94ff428663f097d56b425a7fbafecc5662a056802ebbe9ac",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-flex": {
+        "grammar": "6a4ccd5a00ea96a1e6a8aab137c2c396bf7e1f185895a259c755aa1020cda7e8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-flex-group": {
+        "grammar": "3c0e397efc16ff3ad9865df14d720592301d68d098398110467677dabaaf6d8a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-lines": {
+        "grammar": "8ff3aeb71c1c53f65d2710c3a4a35b04c8f500ec5ca0f0cfc6e3f4781e578e38",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-ordinal-group": {
+        "grammar": "608fe05a3acc4fb41fb1685ab51adb3adcfa141ab33e766d92a913a254621151",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-orient": {
+        "grammar": "973726f76f943601de66bc9f18226ee0789679c1ae91ab801d38a714305422ca",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-pack": {
+        "grammar": "cda04cad0790f638c5dac6e4edf6728c6be8f3cde427b1b000d95fbd13ebcf85",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-box-reflect": {
         "grammar": "6a9d2b0814e50e96af8b0b102cb37af1385bef1c6ea3d57b052d5667055ae467",
         "status": "supported"
       },
+      "-webkit-box-shadow": {
+        "grammar": "19bffec7754e5c68959f9421d6cde779aad61d776779ba34d56a6810534e9353",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-box-sizing": {
+        "grammar": "c39820edcb718ea06b5c379a70942e8be7d543452f0fb74b8c279e2216dd87b9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-clip-path": {
+        "grammar": "90f5aa0be54db43b114a4441eb5674bf767c120e64957e408432bf3ff615fac6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-axis": {
+        "grammar": "a59080efe0bc393565fb9fb58433543050a545e36beadb6e81161cdb5c9da2a0",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-break-after": {
+        "grammar": "5885744bdaf127c3e962a89b5846d4cb397bdaf82767856101a23875809e497e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-break-before": {
+        "grammar": "a436eb46f506fe5311fdda2b5f648b5d9bdc469d36be04da7e26bb568391c668",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-break-inside": {
+        "grammar": "6a5eb87427c00fecdf7052a312aec445e4151bf09465a905a878c242228fbd4f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-count": {
+        "grammar": "318f1a6fb4b3cefa5de5166589d9a600f0ddd76d5a9de60e836395674486d0dd",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-fill": {
+        "grammar": "46dc11d7fe2c6879fe202b707269bf2b5b29a86d2800f1311d7c2100d18b213e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-progression": {
+        "grammar": "054d238558383d94f48429836c6b377b6d7dd23faceb2fb3959aec3d2054b139",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-rule": {
+        "grammar": "d8f3b0b6888df1a434838b0336f9baaf043707d739a5198f80dc2c5be1b46e08",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-rule-color": {
+        "grammar": "5c9bfabc78bf112300e8acc1eeff3100fa766d68e11ab78c1fd5b6e77b2b8de8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-rule-style": {
+        "grammar": "022c97e695417d898a0dc352377364479ff595d67396ec746218921e34a0c402",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-rule-width": {
+        "grammar": "76be64939ca89dcf5e8b8a3564ab8ed998672a404a40cddc8e93f9e7c775f0ae",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-span": {
+        "grammar": "bc4e1d03098adc9f40786b38b7b06495eb6869f9ac6233f25b79462d6fb2731d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-column-width": {
+        "grammar": "542caed1a2ef13ea0413af7d6e4563188d796d0b4e0a39643ddf4044daf7cc31",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-columns": {
+        "grammar": "4de125d81a3f6c7868d88cc53d6ed52eaf6ba94049e1daa80e1ac11f97ad451c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-cursor-visibility": {
+        "grammar": "4c21e9601429f3fa79932c17dbd089cede719542c3f2e7c70cec3b0b7fd92aea",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-filter": {
+        "grammar": "1261517a28718d840fec34a408aec59d303734231146a46d5c84de59f36e96e1",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex": {
+        "grammar": "af41174a0e39ec014264b028f6006de3ca86e0ae2f66f04489d781a64c41f0c8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex-basis": {
+        "grammar": "cafa2702bac334783f3177e752da15727db0e16f7dd446de73bbcd9b8f25b67c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex-direction": {
+        "grammar": "92ec93f1e16c1de72376297dafe01d74060881eb92cfe586ee91ccc8a400265c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex-flow": {
+        "grammar": "114bc5e5f6542b7c2a7513cf3bf86c63b501611239620b57a36ba16cc8c01191",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex-grow": {
+        "grammar": "858f85ecf9e6485a85220421f21cfdfa956c43ebc600ea58fdcf0a611d224df1",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex-shrink": {
+        "grammar": "9e901229b7325436ce8f53f9a60150a94d72ceb2619b06b9e62e916d834f5604",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-flex-wrap": {
+        "grammar": "5424694f28442733d112a99fbaae5769a882bb77de891cfdcc1db3d2a432d184",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-font-feature-settings": {
+        "grammar": "604bfbb2b3d7d4bbb27945487977026ad4c18f0d8c4558fc87589373236228b6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-font-kerning": {
+        "grammar": "68be58a2b51ee136214b23e8353167a158c61e029f1b020a37893fa072ccdf69",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-font-smoothing": {
+        "grammar": "c9e2545650c5ef94b3a8b538b26f2373cf613d46a7433a66d81f4c3b09c37de5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-font-variant-ligatures": {
+        "grammar": "51424c2df86d3561d95fe34e45a1f21a05da0978be37cf0249b408973ec2b38d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-hyphenate-character": {
+        "grammar": "8dab6e4eb2bbefc07a37b7705aa6502ffa5c81f483c8831cbcf068e473cef648",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-hyphenate-limit-after": {
+        "grammar": "fef5ff93918471595bbe5fd2e713836c2a08df52856119b30f3408c45b8f0f15",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-hyphenate-limit-before": {
+        "grammar": "b5a1a726fe33274d4b21feab71ad37bded7eea825cc972fa221ef9bec3c402bb",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-hyphenate-limit-lines": {
+        "grammar": "af68278478855d1899a5c756a97a261c0744a2db3e2b083a5e5a63e9f2a50cbb",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-hyphens": {
+        "grammar": "1ed196e26c5c1a457c7a5adee147b7a1007e033abb3031fd583106617b347341",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-initial-letter": {
+        "grammar": "1dd1855e9d60edfa1fdc9e1b2e1c8aea28d4eb71b2e0059cfa225e33a5c715ee",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-justify-content": {
+        "grammar": "d40a904b5cb1a8ddd909ff4c8b85e8f20faab45c90217857ef5b1c518bba2b31",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-line-align": {
+        "grammar": "61f3fbfeeaa215250bda171c6f0f69f8f1064cc44090f20d773737ee631bf613",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-line-box-contain": {
+        "grammar": "19d1e5225bc18d6f07be285dfb77578cea116122ec4405ab2b5c68d1f0b84bb6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-line-break": {
+        "grammar": "524c421d59badd5a4f8aa25ce59ead13061448e79217338709fdf0a1b9b636e6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-line-clamp": {
         "grammar": "aa66951a1cc09d79224e0f9f5f9a567557f9c6ed128cab60cda9e1e7bb96f6c6",
         "status": "supported"
+      },
+      "-webkit-line-grid": {
+        "grammar": "d14af734d9f8f2719c3131a23f506c9a6538a11ecf021634143d96b91306f871",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-line-snap": {
+        "grammar": "6582eb6fdb27901ef41efa60bd39571688c3ce35d3257ad5667d967d0151f3a2",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-locale": {
+        "grammar": "a247c31967b7b238fc4bdd9e4c2e252f2c851bd395fd1fc0769f91802239cbcc",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-logical-height": {
+        "grammar": "4a4b5ef1c9d19ef191e4919b59e13eecb9e22b4de5a33d6d36780aa6e8e0713e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-logical-width": {
+        "grammar": "d628c093932462db75f49111ee3c83ef7d8b85f4ded24557f4a504888a131d5b",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-margin-after": {
+        "grammar": "a22255b97f4d4d846279b8ec5f4d6335808dc7249b1f797890f80f542350fe1c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-margin-before": {
+        "grammar": "580b23048b8a3206be3c483a6c4d517aa620b546ab15aa3101eba4077cc79ba1",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-margin-end": {
+        "grammar": "464966490aab0b7d601035fdf72786a70cbc64154600143c0633ab2e0c5db330",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-margin-start": {
+        "grammar": "2b3a405adfa12bd3d83f95902aca81bf3085584a54d9bc855201e9523e1fa619",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-mask": {
         "grammar": "d083dd6b1b42a4ba43b5a9f0e7cd837a66b1a999c6ce4e395ba559f7e7c7c562",
@@ -798,6 +1854,36 @@
       "-webkit-mask-attachment": {
         "grammar": "2498a07b01e12ca842051c5c4b80075bb40bd8b165434234ac356cc177dd3a21",
         "status": "supported"
+      },
+      "-webkit-mask-box-image": {
+        "grammar": "6309a0de435fdc7cbbe9d511b58120f88099b34a5f3d379ece714e23a41aa5d0",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-mask-box-image-outset": {
+        "grammar": "f967fec466d68eb7ded63e7675a6a6ee3f7bc43b7d08a0fbde8487ed100ff5bb",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-mask-box-image-repeat": {
+        "grammar": "438f92e891f4ae55125261f1f5cadbaee71686f6447c39e51ef8b02fee4a29ef",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-mask-box-image-slice": {
+        "grammar": "78f7b83d3e309448d08e50d3db90e547c9f38dae1c41575293739fc1c9dde615",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-mask-box-image-source": {
+        "grammar": "cad4dc435fa54a22787bf6fa65ee711e93e3bae37a402a903ae9179ad1ec0450",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-mask-box-image-width": {
+        "grammar": "c579578b0a0d831a6d66535faea46c87b588fff53070fcb532345544d619bbfe",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-mask-clip": {
         "grammar": "74c321d633bc0487066b5c6b4e0dc634548d849b02c8b433c19c702c7f756af8",
@@ -843,17 +1929,177 @@
         "grammar": "04da736f09cdf4ab53aba73fdc4ccf8800ab0cb585e25f8b44700b4d325b92b6",
         "status": "supported"
       },
+      "-webkit-mask-source-type": {
+        "grammar": "4d30fc013a05fb6b85cd47f7708acb35f27eeda9b8005a2550fa7934d84a68e1",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-max-inline-size": {
+        "grammar": "1ff470d02e4deff71f967037ec4084239ad238e0079799ad35d753e5717b46d3",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-max-logical-height": {
+        "grammar": "ea74e368cdc188dcb9c8973538296ab66dfecdcb85d7705f2c64e656b5738af8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-max-logical-width": {
+        "grammar": "5eaf44455834ba0a3310813f8f248660d10e5509053a6b4ee95e46309ce5971d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-min-logical-height": {
+        "grammar": "f1fc0944619f965a0067ef184f584b902d5776c1ffeef0c9b538a502d7b91ef8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-min-logical-width": {
+        "grammar": "927c389304d9a0fc7125d10ca51ba252a3f6b157ba7121986f52441957c69c59",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-nbsp-mode": {
+        "grammar": "b7ebecc2d814173fa39f9ee0810c59ff5707829fe84513ca01b7dc206415e354",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-order": {
+        "grammar": "020db6901cb7dc4cdf937a7a8a08aa7e330c5a54a2daa69936d49155fdfb1141",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-overflow-scrolling": {
         "grammar": "2f07a32ee1535cac2f493d0e4759e7aa8e50cdf874468915717100bb4c49b46e",
         "status": "supported"
+      },
+      "-webkit-padding-end": {
+        "grammar": "cfd451426021d48e3271fabd0c579372e14beec50b86b33d0c5fdfacf385f6a8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-padding-start": {
+        "grammar": "fd68ef2de13a9b148f5e29f84148d251b46a6f983e87d8a69bee63d24e8bf59a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-perspective": {
+        "grammar": "68776c1d243fcbd6e0d6bf51afadd8d1da1196c47f8397a8829b9639f5a1a226",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-perspective-origin": {
+        "grammar": "f81a2046a199e7155c0647de8fcd0f4be992c35d741f17998a0ed093fa8f1704",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-perspective-origin-x": {
+        "grammar": "957f557affbbd68239b12e3705145b6b24cd91baf2c54f1361a58bf0a3fa4933",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-perspective-origin-y": {
+        "grammar": "816b45b2da885ca7a2d7a0b854f7a4e60f11a75e9d6effbaf90f94692c13bf9a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-print-color-adjust": {
+        "grammar": "a9f42bfbbf87a1eb56c25913a49042acaadcfe05e10ae616a2a242f1975cbe57",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-rtl-ordering": {
+        "grammar": "02ff08c400f8c8f041d14e3c036340ff87829b6cba0388e27064bde588819fb3",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-ruby-position": {
+        "grammar": "3017d68acfdf9400c48aa1ce6f946c005a2e7a4bdda96095981bdb49adcea52c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-scroll-snap-type": {
+        "grammar": "667b628e68c0a925b0d409e4eb1dbedfcf2453dd653cda7cb1f9bef340eaa118",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-shape-margin": {
+        "grammar": "edca72a7395c09231a69557a19317cd2d821d9ecb6d2f8e4e321806e7efda312",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-tap-highlight-color": {
         "grammar": "db49d1bd186a0fd4962c87291125410017c7e21d5bb6f8f30beda065f4dbf983",
         "status": "supported"
       },
+      "-webkit-text-combine": {
+        "grammar": "87e2caf663e8d1b49c939614162d7ec31a3bd91b06461cdd6982d81a00ec126a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-decoration-color": {
+        "grammar": "d3e8c8c32adfcb9cd650e41fbf1403c307c56115dfa901e39cc451af70566464",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-decoration-line": {
+        "grammar": "e18b4e28c04240f862d121d6c0e9355e28cc563bd6a94d2cbcacba07f7c8c8df",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-decoration-skip": {
+        "grammar": "f5f633e374e8a1b9427db883e84e783882594a6b4ac2e67baefc558e01376d7a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-decoration-style": {
+        "grammar": "4a6d83ab4c002cc7077f547d8e746f2296e3de2e6d9a3971ff2b04b6c4f736b6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-decorations-in-effect": {
+        "grammar": "49d5cab7665087e986ef1cd54ac2b5b010c3ae0d2e969c74a8abfda1cb9fe7ab",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-emphasis": {
+        "grammar": "c637ccf2a03f1becdd9e0397d40a6af5e99dc03d9bf87c5bd6ba5d02c6081a55",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-emphasis-color": {
+        "grammar": "21f9ff3f29c81435142f3443507485df617217b1ec7e53ae285231f8a8f19810",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-emphasis-position": {
+        "grammar": "240d0515718022bc2d4654a1e4d952193fe9fc6e7d5d6849c0e044d840127d02",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-emphasis-style": {
+        "grammar": "653841d2c2809203c1aa92db6ee7c65e9414246720cd70f38549dc5c84ab8514",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-text-fill-color": {
         "grammar": "7c3ece95c8a7789de9920f8c9490de26737c6b1c983d9bead0b1ea8ba517e731",
         "status": "supported"
+      },
+      "-webkit-text-orientation": {
+        "grammar": "3ca54d1f0830a90f085677b894bc0109bb73df2191154b880ea329152018057d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-security": {
+        "grammar": "7dfaf17d89c251273c7b3b46c638ba1144b24e97a704ba9e3f65487dad5be02c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-size-adjust": {
+        "grammar": "0c257134c53110b734c45d662b56ec561ba826059907810e405355b9437ff1c7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-text-stroke": {
         "grammar": "e2c0c2f55a86af081ef365984da911ca158434ac0a85ebca97d03f7dbbf4c9f4",
@@ -867,9 +2113,79 @@
         "grammar": "022cef1aa129e19dde96ba65a15daa8c799881142168b7ea039007f9465a2b44",
         "status": "supported"
       },
+      "-webkit-text-underline-position": {
+        "grammar": "52c2181390efe9b9d8abc21ecd748bb968dc11e13c04c0367df1d67872d2b372",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-text-zoom": {
+        "grammar": "8a52cd7e0310a640451c2641a0c82f0a3be644766ee12432a8a4d177984fa7bc",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "-webkit-touch-callout": {
         "grammar": "5a6b7d3bf39f38971238f51005c1bae04d9ef0361d88a3f8c6fe5fbdae98a4bb",
         "status": "supported"
+      },
+      "-webkit-transform": {
+        "grammar": "86f28cfaaaf42e81b07e23957041ced5d17953126180aa9d456c5e297476baa9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transform-origin": {
+        "grammar": "58e205919986b17308bafc410baa7d6695a55254009a6be17118ab14af7aa819",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transform-origin-x": {
+        "grammar": "18131fadbb8fdbaad5d9c9c161678d93948283f0487f9e9f959e915dbabdbed2",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transform-origin-y": {
+        "grammar": "63578c23e57cbb3aa04debf67ab5f9a17b0a61d4a7be5be0b38bf8e0a8efed53",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transform-origin-z": {
+        "grammar": "f525c952039394f04e7dbaa0f450682cc973f164d0f4ef6431191b22f7edc31c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transform-style": {
+        "grammar": "798612f494f5d34365c43c4f3db39cbc2e62fbd35b1ee13bf7bfebdf31fea5aa",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transition": {
+        "grammar": "e3029394db178df54678f3685e6b8c9585de3d1ff38b85d4ca3d29b26b187021",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transition-delay": {
+        "grammar": "6db7bd80212ac97ba88987ce85d03ff5d1a8cd278875f70a8c89cf4c899bec0e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transition-duration": {
+        "grammar": "846c9dd3f735e74bea03c686b47f5d6152e13918a893f22304ea60ad73ce810e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transition-property": {
+        "grammar": "928d4907724cfd27b7f7bd35f7310289ba4283d1494172f501f91dd11f555464",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-transition-timing-function": {
+        "grammar": "ae47ab1380fd2f2193fdd8e501f1cd2e06bc07a0927774d1a3f48ce41da7db89",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "-webkit-user-drag": {
+        "grammar": "0958ba8db062a04cdd2e825d63940e53375d10112d56e9d02091df62cee90b91",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "-webkit-user-modify": {
         "grammar": "be1b2d844dc7a7c42e92734bd8266631986f4e1c9fd0ad898ee69efef00f55ac",
@@ -878,6 +2194,11 @@
       "-webkit-user-select": {
         "grammar": "05ea379a8604fb0e62e26ca62bd9646972805dd1ece66622062bca85147ab5b7",
         "status": "supported"
+      },
+      "-webkit-writing-mode": {
+        "grammar": "0f3e96fadf61bffa9e44245305c41c580c90010737e58e11352355dec6ece325",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "accent-color": {
         "grammar": "169fb7d01804060c9b5a39db630e6de38e0b4fdfbdba5597b9a466ea6f087c76",
@@ -906,6 +2227,11 @@
       "all": {
         "grammar": "9203e200ccddd568d4fc734ee41622484ea4f34a34524cdadc7e7016101dd443",
         "status": "supported"
+      },
+      "alt": {
+        "grammar": "7c121136839fc43a0f951a9fe0486dfab9e6479574399171dd93b32894ed3cc8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "anchor-name": {
         "grammar": "80521c87f3e08b65e979e1c0678561e8db56f4ffff51ac4c8ff1f60a9b90ccb0",
@@ -1038,6 +2364,16 @@
         "grammar": "7ebb4060e02213ebca841fa02975d71762adafc6591a73c9d464d1982f90bf57",
         "status": "supported"
       },
+      "background-repeat-x": {
+        "grammar": "5301bc56bd903b129a28b1ecad430ac90550f0954be69aad09cd1fb1e84a90ec",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "background-repeat-y": {
+        "grammar": "b9a997b447c9b54027b6de382f33a487c9833b27e72fbe2785cdd76bc69da68d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "background-size": {
         "grammar": "e2897764bd4e872be162624c7d857d6d9052ece35ed1d9ee04947b64ef9fc7de",
         "status": "supported"
@@ -1049,6 +2385,11 @@
       "baseline-source": {
         "grammar": "1fc784eb055ebf92cecd8a477125af93770f73c71fcced89c2719bc975664a94",
         "status": "supported"
+      },
+      "block-ellipsis": {
+        "grammar": "a1a0268c9688cea47f40ae2be1eca7a916aa44604b86f36a1eb62b1892d7b165",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "block-size": {
         "grammar": "da715280c291254bfd8080b8a32f85096e73e535eb190047628dfde0e0ee73bc",
@@ -1364,6 +2705,11 @@
         "grammar": "a8c624f9590fbf1c7ebb3ff1be958755d32eba9b9bd01c99f88682c9ff433311",
         "status": "supported"
       },
+      "buffered-rendering": {
+        "grammar": "8ee2ecf169913636c95bd1e71fad1898ff78e2e969c1d3c5459aa9ac441b2497",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "caption-side": {
         "grammar": "bd9aae0d7a5426ea28bc9389db2f4b9fd20468cbbaad91dd67cc700bf71a01b2",
         "status": "supported"
@@ -1405,9 +2751,24 @@
         "status": "supported",
         "evidence": ["src/Vars.test.ts", "src/Vars.test-d.ts"]
       },
+      "color-adjust": {
+        "grammar": "1010031641732c49c24b7119f94b97e82de63109c0064ea703bf84babe1c6d3f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "color-interpolation": {
+        "grammar": "6faf8d755196a371bad432d7b412eb07f96b90add1a5665274d41123a6157ab7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "color-interpolation-filters": {
         "grammar": "d195b942ccd4fbb993996dcfc9544a27c7fb82c39c2265f3e7c34002df820a01",
         "status": "supported"
+      },
+      "color-rendering": {
+        "grammar": "f40a312a015c17522124c2bf3ec898d422237a4a2d6a84919421f7e20784d80a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "color-scheme": {
         "grammar": "3551b430ad1c94da36b825c11ee0e63e54c3354f3b130b89f0d49dd52f875bd3",
@@ -1433,13 +2794,68 @@
         "grammar": "9ddf1802f64a1799b8ebca2c999786c8d5e13696108a27d82985b32899a3648d",
         "status": "supported"
       },
+      "column-rule-break": {
+        "grammar": "77117312e09da655d7a4f2abf22be6d830baeb1cc17bd41ec6106321075adcc6",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "column-rule-color": {
         "grammar": "a5599afc1c65be95548b3fb669eb9a7a320a91ff1098a3b0b20c9f3328ec51e3",
         "status": "supported"
       },
+      "column-rule-inset": {
+        "grammar": "4dc3476977a6b5fe369f06eafdf5aa9d6f204fb1c657af9aa6b8906b9b22dfb0",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-cap": {
+        "grammar": "2c7f3168cbc4ab92ae68312cc9df8a947eb3d8a2a745ba40b8eb0a31e51b77c5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-cap-end": {
+        "grammar": "c48c81ba1470b0f2643930f17977aa18a3052b930595e7f86066f1a02e364b3d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-cap-start": {
+        "grammar": "943c394c95717cf4a3f329e76b90589cc86d9e9cd29ea1ca845e1bd2b8c17fad",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-end": {
+        "grammar": "8bc7e8cc4d60a3cef414626ccb989de30c911ac1b1e65faa75d5dcbc7a743de5",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-junction": {
+        "grammar": "259e91f0c0f81d00e463e0dba7658b0b44e786a10a9eb3be594b9a5efd5d714b",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-junction-end": {
+        "grammar": "5389d6018506fab15049288722807d1b9416ef699a5b7b18e4f6b8bdaab17369",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-junction-start": {
+        "grammar": "23bea1a21897ed7d07ba25a26612f5e97c1b87612640922e56e797dcebdb54b4",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "column-rule-inset-start": {
+        "grammar": "2081bf6ce367cd9ee34922a6261939ec26198ff1fc5987c5bdfb6212ce94fccb",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "column-rule-style": {
         "grammar": "d803de258a4a1b8c4a4813c3fcea5aea309fe373cdaa424007077bb7962d0334",
         "status": "supported"
+      },
+      "column-rule-visibility-items": {
+        "grammar": "49e3207fa05790b2cc70faf86bb76c45c7c6922821829810d52e5dda3c5c1164",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "column-rule-width": {
         "grammar": "a77efc708eb54a14c0b411775dcddc14fdad55c9f27f59a4ab4e0adbb5d2a53b",
@@ -1505,6 +2921,11 @@
       "content-visibility": {
         "grammar": "a607a0c919d3e009ea99ce9ea4049ff32dce3727b14ee2bd3c2db577e0e5f333",
         "status": "supported"
+      },
+      "continue": {
+        "grammar": "f3efddfb6157e8361d47fab0fca454f3d40b9c5a74e7a8bbe0de71133636ad7f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "corner-block-end-shape": {
         "grammar": "1e7103a79f2782f406fd295fd4f7ec7ea106e297972ebc6fbaf22cd1a78f99c1",
@@ -1688,6 +3109,11 @@
         "grammar": "91a572cfda4012d1056a66007c1a0689d5605fb04d855f9ae77d5f0fdb7f1a39",
         "status": "supported"
       },
+      "flow-tolerance": {
+        "grammar": "ad2729ab18846257bdab9f3fe705131572322d770478a44eb146aec60da5b94e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "font": {
         "grammar": "3f1c081c33d1229756664dcf97c7bb0bc20c6a62b2d4b3bfecec490c6d4adbc2",
         "status": "supported"
@@ -1814,6 +3240,11 @@
         "status": "supported",
         "evidence": ["src/ConfigMappings.test.ts", "src/Vars.test-d.ts"]
       },
+      "glyph-orientation-vertical": {
+        "grammar": "d5e6b669bb9e97925d6dd1daac75d3e1c1af164e2f7d9f0af46fe6aa26bd8f75",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "grid": {
         "grammar": "3ded864c52b9c71251f4edb8b8f8d2c9e2ec73419a9fba13f1cce913a5fa6858",
         "status": "supported"
@@ -1939,6 +3370,11 @@
       "inset": {
         "grammar": "bf5bba935bd6d1f3a2adb76b41d559c3938b636174589e884ca3979ae7cb9c21",
         "status": "supported"
+      },
+      "inset-area": {
+        "grammar": "8e8106a6113b478fbaf765e3b575606e3da4e7dde0120ce4f981dd4b101813fd",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "inset-block": {
         "grammar": "abbcb1c429a04d97fc8d446b6983bc49bc34d3a882a9ea4d20d89e97a3c4ef9f",
@@ -2250,6 +3686,26 @@
         "grammar": "77daee812b375c8d965ed03155235695c690c4ea01c5fdbb68f5487391eb1786",
         "status": "supported"
       },
+      "motion": {
+        "grammar": "e4593c18ee85ad0930cc96f4068c2a1017cabc62f9173e673518b1adf183e33c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "motion-distance": {
+        "grammar": "3ff5d833e077ef99dcb94edfdbda268cb46f4d087e587e9d404b48b79a93f8c8",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "motion-path": {
+        "grammar": "8c6957f677a934ee05c4bbdfdd0684e17b58046e1808cea929a917dd8d071fce",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "motion-rotation": {
+        "grammar": "a4c522bb868c5399432d0192f49ff44f69888e791f8420539141ec757546ce4d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "object-fit": {
         "grammar": "04fc9a62358cb5289a8776e1b66f8ef02b62683d64b92cb60c535b9534bd964b",
         "status": "supported"
@@ -2270,9 +3726,39 @@
         "grammar": "9eb668e1539603a43c5ee01c3efa1cb39998fbc098028452b10787f93b4c8cd3",
         "status": "supported"
       },
+      "offset-block": {
+        "grammar": "f14c06fde90cbf7875cafc19adbff77a4c52ef6ace38d473033dc3198c01df5a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "offset-block-end": {
+        "grammar": "1878547bc1466886bc346c38af16e7e5d960c4a257bd41215121710ebc16e13d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "offset-block-start": {
+        "grammar": "58f5a8183194602b75b3703c6e65b90bb806530ab61dfeeb246bad8f26edf4ed",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "offset-distance": {
         "grammar": "f7113ffd2a93bdb1b30b8621f29f620f31c647bc8825a19d936d3d48d274d0db",
         "status": "supported"
+      },
+      "offset-inline": {
+        "grammar": "222ea2cb0e29dfc0a68308224928eca2af3bc54fc30bf97cd5d0c9d444d135cf",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "offset-inline-end": {
+        "grammar": "74c9dcb1ea5e431d47bcbac2ec41a3fe78543603056ce58c9adecbb7f43b8bcf",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "offset-inline-start": {
+        "grammar": "e6cdc47fe1d02ac5404a98cbcd507b691406532f29a16809378b1d2af33342c2",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "offset-path": {
         "grammar": "6d034b8765e8594f245aa8fa00a4801a0b7c9fd27ebcd80f1e5e72e0bab389c0",
@@ -2285,6 +3771,11 @@
       "offset-rotate": {
         "grammar": "85f94eef5757c2c7930a1962b026f8a70b491cf41ccdf88167e7d425c43bb422",
         "status": "supported"
+      },
+      "offset-rotation": {
+        "grammar": "a4c522bb868c5399432d0192f49ff44f69888e791f8420539141ec757546ce4d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "opacity": {
         "grammar": "81d99e4cc7c4fe0a0d5888c35ab337d0c6c689ed6e0c9602ba1dfcc08d62f1e8",
@@ -2500,6 +3991,11 @@
         "grammar": "3195c7e42e117c74544f99f82aeffa1bb0b4e69a3177137c4bfdfe4970291cd2",
         "status": "supported"
       },
+      "position-try-options": {
+        "grammar": "226b1f7d4f0e3affafaa2925ed5fc7bd210debe58f4214609b7c158e46893e9c",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "position-try-order": {
         "grammar": "d91e23c795d8609bf3d1386cf665edb4fd26564afd5ce7006bd96f26fc5b57cc",
         "status": "supported"
@@ -2544,6 +4040,81 @@
         "grammar": "bf2d0b4b9494b1d7c68dbf104a6f97487ed52344ce6ce1f90532c15b5f7936f6",
         "status": "supported"
       },
+      "row-rule": {
+        "grammar": "9f017c8dfdb57b1c0fa774c653f4d6ad03e79a0214694902ba8d52d7b350d7fc",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-break": {
+        "grammar": "f6cf60348c1dccf3fd5b89a2bda85395f833d3602ca83727d3c30f0ac84db9db",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-color": {
+        "grammar": "c702c1a293c122d421bf67f247dd68ddd34f5045a24081dfaaef0e48d8b382e7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset": {
+        "grammar": "8cb4dfac784098c0339b446bc769924fcd2cf31f709dbd2b4e9583eaa61cf142",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-cap": {
+        "grammar": "88eb46fc5058cabf12bfd5744bf6125ed87516941c0f614985042e8c06e73a7a",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-cap-end": {
+        "grammar": "630478df9968f13164fd2d46089b843e4073eab51183fd1213cefc1aa3666b1d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-cap-start": {
+        "grammar": "5d0451e282263f6d7757aefb5c206bf8d74918b30546f0eff5102a545b2089d3",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-end": {
+        "grammar": "f9fd82598e216596c5ddbd565ba68f66524c8657b3c89a0692d328b79c35ea8e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-junction": {
+        "grammar": "5e01c52d8b71579623dcca4fb747668bbac8ba73617c00d824284903b6fb488e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-junction-end": {
+        "grammar": "03cc53b48266596fb34aca1a0d5c3c322cc19957580bcea59a78134521ead3c4",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-junction-start": {
+        "grammar": "38b4a100294d7f15e9741e6cbe684683a71196104e525539e9a193678412e0cc",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-inset-start": {
+        "grammar": "6eb6e08d33935467c1a201c9ee356c6d92e8107dc54fe43e92e48069d213068d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-style": {
+        "grammar": "43ea85dbce11c05485206d11f8a908a526ca8d566fd0d75c43dadf552d425a09",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-visibility-items": {
+        "grammar": "f3c796cdcd1c29b15d38d8947206945f741002b1e2211d208d25feb80249f43f",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "row-rule-width": {
+        "grammar": "9bc427499d5d9df8850f49d6b8f6a6b5b901d8d2a735bdf7ad3cd9a92f917525",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "ruby-align": {
         "grammar": "ec5d3f102a09652028c5f182182181c9d3a0ecd50e462aee6bda9615b9c21fee",
         "status": "supported"
@@ -2560,6 +4131,66 @@
         "grammar": "7847c1f1d2f10cb08da868bf865a629d777b9a390df2eb1b24ebfdab78540b18",
         "status": "supported"
       },
+      "rule": {
+        "grammar": "a1082c63344eaf1b03280f3d801522b5f5ac3673e21da10badf17802d5f5c61e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-break": {
+        "grammar": "a53ddc3d9e1aca43a03ebe3f66fed142f0ab198fcd995c7d0162956ff5a5a533",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-color": {
+        "grammar": "d021e4a4ab549b440ef77114129980eeacadd13f0eb941849e33a96fb41d6129",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-inset": {
+        "grammar": "d0d10d253d44598cf9572c4cfc4731b1ce956c5b0136bf5ba17b2676c95dad8d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-inset-cap": {
+        "grammar": "b4c177314494644efa62413b4b4c76683204f3cc9eb793191b70d5839d784066",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-inset-end": {
+        "grammar": "f1d4eabc01473e91e1dba21870fab5084f879d40492928adda35240ba9a64d01",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-inset-junction": {
+        "grammar": "63677edccf7d1cf42acd052c9849edf1501e1cd736114acfdd1fffc25de5cbee",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-inset-start": {
+        "grammar": "83c78ec00457537bbb9283be1294c04e2d7691460e31c71306e33a475db3f9f9",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-overlap": {
+        "grammar": "d1b3b160f775a8164a8c5bbe9c56bc2cf878abe93c9da375a4b745d46d5077bc",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-style": {
+        "grammar": "4b2bdfdec55bf6980fceae8ae9a6bd6e8aa32ae63af6a426495bed58e47820f3",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-visibility-items": {
+        "grammar": "2812bcea515c0962a77e793bf37e62daed09941675fb258ca330144a6ddc863e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "rule-width": {
+        "grammar": "e5e9908cdbc35dff6906bd6a529d93525360b3d8d48b8bec48a750a0df1ac353",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "rx": {
         "grammar": "91148350d076d2f1845ada5dbf42523d40b8527b6bc9ae61a44d914bd81f8c8e",
         "status": "supported"
@@ -2571,6 +4202,11 @@
       "scale": {
         "grammar": "fe57a9d2963b7bd2b1454ca6b8793176c343649e3a95add784fc87c370310e32",
         "status": "supported"
+      },
+      "scroll-axis-lock": {
+        "grammar": "d7ba8b5b968805fe7fecd7c25315626ce1b38a85f90ba0256f40fee7ea083b75",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "scroll-behavior": {
         "grammar": "889b24523f4186bdcd35645307733ab53b522b0b7c5bdc24fdb2d49117d0de48",
@@ -2686,6 +4322,31 @@
         "grammar": "220ce4af44b18c6636895400103442f805ff0932338924a878405a2cb20e983d",
         "status": "supported"
       },
+      "scroll-snap-margin": {
+        "grammar": "791479af82c0db38936abed79f5046b8e6bd914f9deff2adf1e384e61df39705",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "scroll-snap-margin-bottom": {
+        "grammar": "246e16461640fc497a8ba09ee20a3e0fd9cc18e6a00fd9517ba9cbd8b1022a39",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "scroll-snap-margin-left": {
+        "grammar": "cdab88059c697b180f07362e652f808938ade20a11dfa4a642d0818aad116aa7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "scroll-snap-margin-right": {
+        "grammar": "305bed8d10f2821a713668a5560241eef654fac124d789809951043833f22b79",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
+      "scroll-snap-margin-top": {
+        "grammar": "c9bc69b6c4540e906c9cd648be4b28ecb82df679fe3b2abf9debe7b450f74771",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "scroll-snap-points-x": {
         "grammar": "f156dbcba37602cc6abcd1740fa80ffd52ad9e277844ed198513efa2bde9a8c8",
         "status": "supported"
@@ -2753,6 +4414,11 @@
       "shape-rendering": {
         "grammar": "cf4e53d166bf72a28dfe641165b4ace36346c6469110996e98c308b46d36c703",
         "status": "supported"
+      },
+      "speak": {
+        "grammar": "f0260408671053832271110097a90e4627e6d88a4a804d77f11b9b109dfa638e",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "speak-as": {
         "grammar": "4873a6dba5f96800922ac393e074a7855cdbd29f5af94df6a823f8dafac8ae3b",
@@ -2865,6 +4531,11 @@
       "text-decoration-skip-ink": {
         "grammar": "986aa72658955dd0f89b0bea62f8e275cba55383be3c59bbd0cb9af0bc717132",
         "status": "supported"
+      },
+      "text-decoration-skip-spaces": {
+        "grammar": "1b00e75e2ad844f5d29ee76f25063d0f6a861c598183f242d04654466933f026",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "text-decoration-style": {
         "grammar": "5f6c8c3bc5267406a9f26b985e10fd8b9145918bd56a82c44cfd6bf4ce537e46",
@@ -3054,6 +4725,11 @@
         "grammar": "c30c51afb43d14ca23c49afb91de02df1c5c34301aa554e9291924071961f408",
         "status": "supported"
       },
+      "user-modify": {
+        "grammar": "932547be58a8b33ec8e7682ea91e1d45f74d71d7ec528b153373cb124a55aae4",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "user-select": {
         "grammar": "47b91ca832e5c77b9d1e562909bc95e03e490f4aef111c529569d2895872048f",
         "status": "supported"
@@ -3086,6 +4762,11 @@
         "grammar": "4f664a348b5988f77fa13204a0510d61c51642d14e3c6b8dfbf3b2460eb4bc1d",
         "status": "supported"
       },
+      "view-transition-group": {
+        "grammar": "2e2d3971a6b03be94effc3f5a21a96f5d04af8de21a28edf12674e00a533640d",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "view-transition-name": {
         "grammar": "8c54e62389e76b4323ad58e79d29ccd35d5b13f7489b5a22142f67183ee4be19",
         "status": "supported"
@@ -3106,6 +4787,11 @@
         "grammar": "0bfd6e8b0c6197a689a8d5ef6337a001417cf9e99c156c24b1c09e91195032eb",
         "status": "supported"
       },
+      "white-space-trim": {
+        "grammar": "5a1f550040923d3ef837317c103e34e0beeb9eb78f2d94696529c46b235ff882",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "widows": {
         "grammar": "bb286d4a0acfecbcf8bdee356e77b21e662e0e1f16e9b681f0c7b9a28f0d5c62",
         "status": "supported"
@@ -3123,6 +4809,11 @@
         "grammar": "caceca9439cb6a84a761d1084c46edfc05de0d37c6fad280beabab2eeca6f7a0",
         "status": "supported"
       },
+      "window-drag": {
+        "grammar": "f7b3aa200088cc64aea60632cc75b52cea5020e2575a032a1155b06d94f47b66",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
+      },
       "word-break": {
         "grammar": "b608717d7a844260b09bc0556995bd277122675ce0a50d9c021bb8e90257d538",
         "status": "supported"
@@ -3134,6 +4825,11 @@
       "word-wrap": {
         "grammar": "d56c6542b08ce8860df0d348bdd2534a0d8e272a53ba21a112629d9dc21bf647",
         "status": "supported"
+      },
+      "wrap-inside": {
+        "grammar": "58e8e5a3360d52ad9a43e93fba4148982e440a623d914c01e8dbb7cf7c0654c7",
+        "status": "supported",
+        "evidence": ["src/compiler/Transform.test.ts"]
       },
       "writing-mode": {
         "grammar": "cdb0c0a60723595d8b590c21740d63f795e1002de5520d5d40665b045c0989bc",
@@ -3835,8 +5531,32 @@
         "grammar": "8dff06fa3b1cc3f1106ffce296ab142e6ed27cd69acf15f235d25bb2e15b6bd9",
         "status": "deferred"
       },
+      "auto-line-color-list": {
+        "grammar": "0800873b0fcebd74bc80bbb4a55ffd2cae7206e3ca19686a4ba21b1f878b0060",
+        "status": "deferred"
+      },
+      "auto-line-style-list": {
+        "grammar": "d449e3f2e464de514a2ccf6ff093260ac4e708637e268aebb67601986cb0bc16",
+        "status": "deferred"
+      },
+      "auto-line-width-list": {
+        "grammar": "4ff4d4a2eb820607c7d6dd71cfdbd700cee85028f0e579bac140f927967b29e2",
+        "status": "deferred"
+      },
       "auto-repeat": {
         "grammar": "f732b12a79e6fa6b5e8e71411eaeb251b7ada9c8fd7eadebcff42d2a5fad8bd6",
+        "status": "deferred"
+      },
+      "auto-repeat-line-color": {
+        "grammar": "ee275be04c69009365087c516446b92bccfed1c32baa8335888355246af6de36",
+        "status": "deferred"
+      },
+      "auto-repeat-line-style": {
+        "grammar": "350c7af6e1c4345bd93ea00152eb4320a38ca5ba48d4109518848527a53d8a40",
+        "status": "deferred"
+      },
+      "auto-repeat-line-width": {
+        "grammar": "431e691c6ab6e652ea5f03ba807edf16bc08ace4f75547467a69d6f58c7e1602",
         "status": "deferred"
       },
       "auto-track-list": {
@@ -4295,6 +6015,30 @@
         "grammar": "97f291f0fd27b123abbce86f5d52226c6b58966ed1480ca9857a0b0e292c5ec0",
         "status": "deferred"
       },
+      "gap-auto-repeat-rule": {
+        "grammar": "3867400dff3c602a98c800dc3483bdcf16a64b0735c838e9ab6694a7d4465fab",
+        "status": "deferred"
+      },
+      "gap-auto-rule-list": {
+        "grammar": "2458ca34c7ab84c7f156b3f3ae698c0a62bc646ab1b5c9055960cb60ed4e25c9",
+        "status": "deferred"
+      },
+      "gap-repeat-rule": {
+        "grammar": "631d11b0d6179684ebaa149cf88b6e824d85e1c985f4a734ebb168f9ed3aa978",
+        "status": "deferred"
+      },
+      "gap-rule": {
+        "grammar": "7e0b1e7b1c45f6a01acd5fa5362a1c6c9e3f37d41b66971c2d3d7fd364482e2d",
+        "status": "deferred"
+      },
+      "gap-rule-list": {
+        "grammar": "dff59a9e2e944cbf1ba937ba214b18373ddbf48d933e37e9c7eb9e98c8efb24d",
+        "status": "deferred"
+      },
+      "gap-rule-or-repeat": {
+        "grammar": "92d48bdb1caad32c018c6b21f2519854e1169c70b80f92d3a69c45b2e369e73e",
+        "status": "deferred"
+      },
       "general-enclosed": {
         "grammar": "8ec4975feae4337aa5b28e8b772b8ec10a1cd5eb71b15db9870a6dc442ca168b",
         "status": "deferred"
@@ -4395,6 +6139,10 @@
         "grammar": "ad657f15c8afc026f7871b1fd2f1416100c19f9c06ab7f965b6553a1fce1b009",
         "status": "deferred"
       },
+      "inset-value": {
+        "grammar": "4d0fd51c82c49161da693c7a6454fed91d275c218d498e8e56feb2e12fea6378",
+        "status": "deferred"
+      },
       "integer": {
         "grammar": "630b4ba924f1ef2c7ee021a9cce8ce89886d6d723ba7596c91815f233a1b0943",
         "status": "deferred"
@@ -4447,6 +6195,14 @@
         "grammar": "588e53dc69941a671bb731e2a38fcadb4c4fe19f74f02f04d64be4d4e15847c1",
         "status": "deferred"
       },
+      "line-color-list": {
+        "grammar": "dcfca9b71927aeaac0502ff9ae69d5204578f38457ba3bdc58ab135c9ebcfd8f",
+        "status": "deferred"
+      },
+      "line-color-or-repeat": {
+        "grammar": "f5b05181082a176a6789364ad6d24c550539bd6100e23f848c1b81c84bf8e68f",
+        "status": "deferred"
+      },
       "line-name-list": {
         "grammar": "f89876bda839066e73e1b93c1a92850d32f9174a1b9d7c5018269a9a411f5a66",
         "status": "deferred"
@@ -4459,9 +6215,25 @@
         "grammar": "9e23380c18b26af261d6623c2bb568b05c8bb7b1d7fea510bfadcf29fe83a758",
         "status": "partial"
       },
+      "line-style-list": {
+        "grammar": "54d8c59863064babe9b4a259452a205da7203760f204ae7da4c85db44866ec5c",
+        "status": "deferred"
+      },
+      "line-style-or-repeat": {
+        "grammar": "c8fa1b4418d4cd07abb3246cf2900aaf908973878abdfd135516cd60e61f7400",
+        "status": "deferred"
+      },
       "line-width": {
         "grammar": "a0eef4aae96203751c64cc12e548944fb60929a2a4f1e146d6e9ab025a294b65",
         "status": "partial"
+      },
+      "line-width-list": {
+        "grammar": "d030abd9d21c25010ee3b18f1f7100b30d6da39cd0b0138eacd239ce73a77981",
+        "status": "deferred"
+      },
+      "line-width-or-repeat": {
+        "grammar": "5cd10e71e85c94f6c1e5bf51b74a10675ae1733d6969a661888a500223b599e4",
+        "status": "deferred"
       },
       "linear()": {
         "grammar": "dd462df66ff4c13642bd0d3b8537199301d53a4c1d109a7ef5b89815b55b328c",
@@ -4829,6 +6601,18 @@
       },
       "rem()": {
         "grammar": "c3c18ed5a20446911229136c64a465c8e61de45e4b7186d9c2019fbf3837c662",
+        "status": "deferred"
+      },
+      "repeat-line-color": {
+        "grammar": "43f33643ecd9698b3b1af84e512d849d1ac8d2c84e12eaae5c057c230b17bea4",
+        "status": "deferred"
+      },
+      "repeat-line-style": {
+        "grammar": "0e8ebc79b089dd76902f27121a7785480cc22a23957ebf42b9a81db3a23d2a1a",
+        "status": "deferred"
+      },
+      "repeat-line-width": {
+        "grammar": "19a892ab873fe7bc85bf9c7821402082d3bc80f41255efea2f8bccbe45995c81",
         "status": "deferred"
       },
       "repeat-style": {

@@ -303,6 +303,8 @@ describe('compile', () => {
       families: { properties: Record<string, { status: string }> }
     }
 
+    expect(Conformance.properties().length).toMatchInlineSnapshot(`1009`)
+
     const implemented = [
       ...Object.keys(Literal.rules).map(Conformance.name),
       '--*',
@@ -5658,7 +5660,7 @@ describe('conformance', () => {
 
         expect(complete.status).toMatchInlineSnapshot(`0`)
         expect(
-          complete.stdout.includes('670/670 (100.00%)'),
+          complete.stdout.includes('1009/1009 (100.00%)'),
         ).toMatchInlineSnapshot(`true`)
 
         inventory.families.properties.color!.status = 'partial'
@@ -5672,7 +5674,7 @@ describe('conformance', () => {
 
         expect(partial.status).toMatchInlineSnapshot(`1`)
         expect(partial.stderr).toMatchInlineSnapshot(
-          `"CSS property conformance is below 100%: 669/670 fully supported; 1 incomplete.\n"`,
+          `"CSS property conformance is below 100%: 1008/1009 fully supported; 1 incomplete.\n"`,
         )
         expect(
           partial.stdout.includes('| color | partial |'),

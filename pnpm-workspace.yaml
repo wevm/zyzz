@@ -12,6 +12,7 @@ catalog:
   '@changesets/cli': '^3.0.3'
   '@jridgewell/gen-mapping': '^0.3.13'
   '@jridgewell/trace-mapping': '^0.3.31'
+  '@mdn/browser-compat-data': '8.1.2'
   '@oxc-project/types': '0.148.0'
   '@pandacss/node': '^1.12.1'
   '@stylexjs/babel-plugin': '^0.19.0'

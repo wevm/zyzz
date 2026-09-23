@@ -5658,7 +5658,7 @@ describe('conformance', () => {
 
         expect(complete.status).toMatchInlineSnapshot(`0`)
         expect(
-          complete.stdout.includes('670/670 (100.00%)'),
+          complete.stdout.includes('672/672 (100.00%)'),
         ).toMatchInlineSnapshot(`true`)
 
         inventory.families.properties.color!.status = 'partial'
@@ -5672,7 +5672,7 @@ describe('conformance', () => {
 
         expect(partial.status).toMatchInlineSnapshot(`1`)
         expect(partial.stderr).toMatchInlineSnapshot(
-          `"CSS property conformance is below 100%: 669/670 fully supported; 1 incomplete.\n"`,
+          `"CSS property conformance is below 100%: 671/672 fully supported; 1 incomplete.\n"`,
         )
         expect(
           partial.stdout.includes('| color | partial |'),

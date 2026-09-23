@@ -263,7 +263,12 @@ export function extract(options: extract.Options): extract.ReturnType {
     try {
       return Themes.collect(program, {
         staticBindings: staticData.bindings,
-        namespace,
+        namespace: `src-${Identity.label(
+          options.moduleId
+            .split('/')
+            .at(-1)!
+            .replace(/\.[cm]?[jt]sx?$/, ''),
+        )}-${Identity.compact(options.moduleId)}`,
         contributionCalls: new Set(
           contributions.calls.map((call) => call.start),
         ),

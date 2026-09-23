@@ -23,6 +23,9 @@ export const entry = Symbol('stylesheet entry')
 /** Independently shared packed sections for hosts that load source modules separately. */
 export const packed = Symbol('packed stylesheets')
 
+/** Reset stylesheet shared independently of authored contributions and layer order. */
+export const reset = Symbol('reset stylesheet')
+
 /** One packed resource with stable source ownership for development updates. */
 export type Resource = ReturnType<typeof render> & { readonly id: string }
 

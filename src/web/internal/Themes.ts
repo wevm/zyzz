@@ -41,12 +41,14 @@ export function create() {
       contract.paths.set(token.path, name)
     }
 
-    return `var(${name},${literal(value)})`
+    const label = contract.identity?.startsWith('src-') ? token.path : undefined
+    return `var(${name},${literal(value, label)})`
   }
 
   function emit(
     themes: Readonly<Record<string, Theme.Definition | Vars.Definition>>,
     schemes = false,
+    separate?: 'all' | 'defaults',
   ) {
     const classes: Record<string, string> = Object.create(null)
     const rules: string[] = []
@@ -101,13 +103,20 @@ export function create() {
           if (value === undefined)
             throw new Error('Theme scope is missing a live token.')
 
-          return `${name}:${literal(value)};`
+          const label = contract.identity?.startsWith('src-') ? path : undefined
+          return `${name}:${literal(value, label)};`
         })
         .join('')
 
       rules.push(`.${className}{${body}}`)
       for (const [path, name] of contract.paths)
-        conditional(data.values[path]!, name, `.${className}`, rules)
+        conditional(
+          data.values[path]!,
+          name,
+          `.${className}`,
+          rules,
+          contract.identity?.startsWith('src-') ? path : undefined,
+        )
     }
 
     // Scheme rules travel with the module that can apply them, so lowered
@@ -116,26 +125,50 @@ export function create() {
 
     return {
       classes: Object.freeze(classes),
-      css: [...defaults.values(), ...rules].join('\n'),
+      css:
+        separate === 'all'
+          ? ''
+          : [...(separate ? [] : defaults.values()), ...rules].join('\n'),
+      resources: separate
+        ? [
+            ...[...defaults].map(([id, css]) => ({ css, id })),
+            // Scope rules stay together to preserve cascade order without one import per token.
+            ...(separate === 'all' && rules.length
+              ? [
+                  {
+                    css: rules.join('\n'),
+                    id: JSON.stringify([
+                      classes,
+                      [...contracts.values()].flatMap((contract) => [
+                        ...contract.paths.values(),
+                      ]),
+                    ]),
+                  },
+                ]
+              : []),
+          ]
+        : [],
     }
   }
 
-  function literal(value: Token.Value): string {
+  function literal(value: Token.Value, label?: string): string {
     if (Token.is(value)) return serialize(value)
     if (typeof value !== 'object') return String(value)
     if ('default' in value) {
       // Separate fallback properties preserve extensions and resolve references within each scope.
-      const base = literal(value.default)
+      const base = literal(value.default, label)
       const rules = [`:where(*){--fallback:${base};}`]
-      conditional(value, '--fallback', ':where(*)', rules)
+      conditional(value, '--fallback', ':where(*)', rules, label)
       const css = rules.join('')
-      const name = `--z-f${Identity.hash(css)}`
+      const name = label
+        ? `--z-${Identity.label(label)}-fallback-${Identity.compact(css)}`
+        : `--z-f${Identity.hash(css)}`
       const emitted = [`:where(*){${name}:${base};}`]
-      conditional(value, name, ':where(*)', emitted)
+      conditional(value, name, ':where(*)', emitted, label)
       defaults.set(name, emitted.join(''))
       return `var(${name})`
     }
-    return `light-dark(${literal(value.light)},${literal(value.dark)})`
+    return `light-dark(${literal(value.light, label)},${literal(value.dark, label)})`
   }
 
   function conditional(
@@ -143,6 +176,7 @@ export function create() {
     name: string,
     selector: string,
     rules: string[],
+    label?: string,
   ) {
     if (
       !value ||
@@ -151,11 +185,11 @@ export function create() {
       !('default' in value)
     )
       return
-    conditional(value.default, name, selector, rules)
+    conditional(value.default, name, selector, rules, label)
     for (const [query, entry] of Object.entries(value)) {
       if (query === 'default') continue
-      const nested = [`${selector}{${name}:${literal(entry)};}`]
-      conditional(entry, name, selector, nested)
+      const nested = [`${selector}{${name}:${literal(entry, label)};}`]
+      conditional(entry, name, selector, nested, label)
       rules.push(`${query}{${nested.join('')}}`)
     }
   }
@@ -171,6 +205,20 @@ export function encode(value: string): string {
   )
 }
 
+/** One generated definition whose scope order must remain intact. */
+export type Resource = {
+  /** Complete fallback or scoped token definition. */
+  readonly css: string
+  /** Stable identity for stylesheet replacement during development. */
+  readonly id: string
+}
+
+/** Selects independently shareable defaults or all token rules. */
+export const shared = Symbol('shared token rules')
+
 function variable(index: number | string, path: string): string {
+  // Packed declarations retain the spelling assigned by their compiler.
+  if (typeof index === 'string' && index.startsWith('src-'))
+    return `--z-${Identity.label(path)}-${Identity.compact(JSON.stringify([index, path]))}`
   return `--z-t${encode(String(index))}-${encode(path)}`
 }

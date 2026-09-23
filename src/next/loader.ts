@@ -3,8 +3,9 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
-import * as Stylesheets from '../compiler/internal/Stylesheets.js'
 import * as Project from './internal/Project.js'
+import * as Stylesheets from '../compiler/internal/Stylesheets.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 
 type Context = Project.Context & {
   async(): (error: Error | null, code?: string, map?: object) => void
@@ -185,6 +186,15 @@ async function compile(context: Context, source: string) {
   }
 
   const styles = [
+    ...(graph[Stylesheets.reset]
+      ? [
+          {
+            css: graph[Stylesheets.reset].css,
+            id: graph[Stylesheets.reset].id,
+            map: JSON.stringify(graph[Stylesheets.reset].map),
+          },
+        ]
+      : []),
     ...(await Promise.all(
       (graph[Stylesheets.packed] ?? []).map(async (resource) => {
         const output = await compileShared(resource)
@@ -200,6 +210,11 @@ async function compile(context: Context, source: string) {
       css: shared?.code.toString(),
       map: shared?.map?.toString(),
     },
+    ...(output[ThemeRules.shared] ?? []).map((resource) => ({
+      css: resource.css,
+      id: resource.id,
+      map: undefined,
+    })),
     { id: undefined, css: output.css, map: JSON.stringify(cssMap) },
   ]
   const requests: string[] = []
@@ -222,13 +237,7 @@ async function compile(context: Context, source: string) {
         : '')
     const hash = Crypto.createHash('sha256')
       .update(
-        options.development &&
-          !(
-            index === (graph[Stylesheets.packed]?.length ?? 0) &&
-            graph.sharedCssMap?.sources.every(
-              (name) => name === 'zyzz/reset.css',
-            )
-          )
+        options.development
           ? (stylesheet.id ??
               JSON.stringify([context.resourcePath, index, graph.dependencies]))
           : css,

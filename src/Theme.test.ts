@@ -102,10 +102,10 @@ export const heading=style({
     )
     expect(mappings).toMatchInlineSnapshot(`
       {
-        "1up51euxshgne-style-theme": 2,
         "fontSize": 4,
         "fontWeight": 5,
         "lineHeight": 4,
+        "src-responsive-f1yBSqAOQxM-style-theme": 2,
         "style-1up51euxshgne-210": 3,
         "typography": 4,
       }
@@ -626,14 +626,14 @@ export const body=style({
     })
 
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-style-theme{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize:14px;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight:400;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight:20px;}
-      .z-font-size-Oi_QYm-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
-      .z-font-weight-xWS6L8-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-line-height-NiWjJz-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
-      .z-font-weight-qIDn1A-0{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-font-size-lLWBdR-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
-      .z-font-weight-6BAxVw-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-line-height-9Wx-s3-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
+      ".z_theme-src-theme-fH_5f_CKDLyhct-style-theme{--z-typography-copy-14-fontSize-60L--UNQxhK:14px;--z-typography-copy-14-fontWeight-3g7VzckPzhb:400;--z-typography-copy-14-lineHeight-1F1bltVmQ7F:20px;}
+      .z-font-size-j4CHLG-0{font-size:var(--z-typography-copy-14-fontSize-60L--UNQxhK,14px);}
+      .z-font-weight-Bl9Y5t-1{font-weight:var(--z-typography-copy-14-fontWeight-3g7VzckPzhb,400);}
+      .z-line-height-9Tsfkk-2{line-height:var(--z-typography-copy-14-lineHeight-1F1bltVmQ7F,20px);}
+      .z-font-weight-QGCpuV-0{font-weight:var(--z-typography-copy-14-fontWeight-3g7VzckPzhb,400);}
+      .z-font-size-BN64Qd-0{font-size:var(--z-typography-copy-14-fontSize-60L--UNQxhK,14px);}
+      .z-font-weight-9gnWmW-1{font-weight:var(--z-typography-copy-14-fontWeight-3g7VzckPzhb,400);}
+      .z-line-height-R7v_vS-2{line-height:var(--z-typography-copy-14-lineHeight-1F1bltVmQ7F,20px);}
       .z-font-weight-G4wOi6-3{&:where([data-strong="true"]){font-weight:550;}}"
     `)
   })
@@ -1172,13 +1172,13 @@ describe('queries', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-26ntzho2pyyt-config-theme{--z-t26ntzho2pyyt-config-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-config-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-config-color_2e_blue_2e_500:light-dark(#99ceff,#0a4380);}
+        ".z_theme-src-default-0vw1oS08GoD-config-theme{--z-fontFamily-sans-3ATvmB8sqEt:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-fontSize-base-9ohsXML6rKQ:1rem;--z-color-blue-500-3CI7iBDWYGL:light-dark(#99ceff,#0a4380);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-font-family-GS_mYx{font-family:var(--z-t26ntzho2pyyt-config-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z-font-size-WS5zHH{font-size:var(--z-t26ntzho2pyyt-config-fontSize_2e_base,1rem);}
-        .z-text-wudS4h{color:var(--z-t26ntzho2pyyt-config-color_2e_blue_2e_500,light-dark(#99ceff,#0a4380));}"
+        .z-font-family-YqSWnF{font-family:var(--z-fontFamily-sans-3ATvmB8sqEt,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z-font-size-QL9uM5{font-size:var(--z-fontSize-base-9ohsXML6rKQ,1rem);}
+        .z-text-_3MfOT{color:var(--z-color-blue-500-3CI7iBDWYGL,light-dark(#99ceff,#0a4380));}"
       `)
 
       const built = await Esbuild.build({
@@ -1282,9 +1282,9 @@ describe('queries', () => {
       })
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
-        .z_theme-1e8a67z1uaws1j-config-theme{--z-t1e8a67z1uaws1j-config-fontSize_2e_body:1rem;}
-        .z-font-size-tf-SY6{font-size:var(--z-t1e8a67z1uaws1j-config-fontSize_2e_body,1rem);}"
+        ".z_theme-src-theme-fH_5f_CKDLyhct-theme{--z-fontSize-body-1pD6FIUpyEv:1rem;}
+        .z_theme-src-app-bk8jvZf5JrJ-config-theme{--z-fontSize-body-f88xY_WHueR:1rem;}
+        .z-font-size-gmpxZa{font-size:var(--z-fontSize-body-f88xY_WHueR,1rem);}"
       `)
     })
     test('Chromium applies bundled typography and Geist colors across schemes', async () => {

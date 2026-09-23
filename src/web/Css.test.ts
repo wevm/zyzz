@@ -8,12 +8,61 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
+import { Style, Vars } from 'zyzz'
 
 import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('includes responsive defaults in standalone CSS', async () => {
+    const vars = Vars.define({
+      size: { default: '14px', '@media (width >= 1024px)': '16px' },
+    })
+    const output = Css.compile({
+      styles: Style.define({
+        first: { fontSize: vars.size },
+        second: { fontSize: vars.size },
+      }),
+    })
+    expect(output.css.match(/:14px;/g)?.length).toMatchInlineSnapshot('1')
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 800 },
+      })
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.first}"></div><div class="${output.classes.second}"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).fontSize),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "14px",
+          "14px",
+        ]
+      `)
+      await page.setViewportSize({ height: 600, width: 1200 })
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).fontSize),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "16px",
+          "16px",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('deduplicates independent declaration sequences without losing order or importance', () => {
     const styles = Style.define({
       a: { display: ['block', 'grid'], padding: '1px' },
@@ -1296,19 +1345,19 @@ describe('names', () => {
       const second = Transform.compile({ moduleId: 'second.ts', source })
 
       expect(first.css).toMatchInlineSnapshot(`
-        ".z_theme-1mlrxl41f5va70-style-theme{--z-t1mlrxl41f5va70-style-color_2e_brand:red;}
+        ".z_theme-src-first-dcTfYzugwnm-style-theme{--z-color-brand-fHtUTR8NQiR:red;}
         .z-display-flex-QPs-Od{display:flex;}
-        .z-text--mgEZB{color:var(--z-t1mlrxl41f5va70-style-color_2e_brand,red);}"
+        .z-text-GmhIjO{color:var(--z-color-brand-fHtUTR8NQiR,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
-        ".z_theme-1d6eq581s6owy-style-theme{--z-t1d6eq581s6owy-style-color_2e_brand:red;}
+        ".z_theme-src-second-b4ZFtPWlT8s-style-theme{--z-color-brand-3r46x-_EBQ5:red;}
         .z-display-flex-IjSBTf{display:flex;}
-        .z-text-GRogKQ{color:var(--z-t1d6eq581s6owy-style-color_2e_brand,red);}"
+        .z-text-GyxiRG{color:var(--z-color-brand-3r46x-_EBQ5,red);}"
       `)
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text--mgEZB z-style-1mlrxl41f5va70-104"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-GmhIjO z-style-1mlrxl41f5va70-104"});"
       `)
     })
 

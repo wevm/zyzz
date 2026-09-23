@@ -15,6 +15,7 @@ import * as Scheme from '../internal/Scheme.js'
 import * as Syntax from './internal/Syntax.js'
 import * as Source from './Source.js'
 import type * as Style from '../Style.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 import * as Themes from './internal/Themes.js'
 import * as Walker from 'oxc-walker'
 
@@ -195,6 +196,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     )
 
   const emitted = Css.compile({
+    [ThemeRules.shared]: options[ThemeRules.shared],
     development: options.development,
     scope: options.moduleId,
     composition: options.composition,
@@ -595,7 +597,8 @@ export function compile(options: compile.Options): compile.ReturnType {
           return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined).replace(/,$/, '')}}`
         usesSelection = true
         const selector = `${selection}.create(${JSON.stringify(entries)},${call.options?.output === 'html'},'set',${JSON.stringify(fallback)})`
-        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}vars:/*#__PURE__*/${selector}}`
+        // Rollup drops required selectors when a pure call initializes a destructured object property.
+        return `{${helpers(JSON.stringify(call.options?.themes ? entries : []), call.options?.themes ? String(fallback) : undefined)}vars:${selector}}`
       }
 
       if (call.options?.themes) {
@@ -980,7 +983,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         if (
           rule.startsWith(':root{') ||
-          rule.startsWith(':where(*){--z-f') ||
+          rule.startsWith(':where(*){--z-') ||
           (rule.startsWith('@media ') &&
             (rule.includes(':root{') ||
               Object.values(emitted.vars).some((name) =>
@@ -1150,6 +1153,9 @@ export function compile(options: compile.Options): compile.ReturnType {
     true,
   )
   return Object.freeze({
+    ...(emitted[ThemeRules.shared]
+      ? { [ThemeRules.shared]: emitted[ThemeRules.shared] }
+      : {}),
     classes,
     code: portable ? options.source : module.toString(),
     css: namespaced.css,
@@ -1172,6 +1178,8 @@ export declare namespace compile {
   type ErrorType = Css.CompileError | Source.ExtractError
   /** Supplied module identity and source; no file loading occurs. */
   type Options = Source.extract.Options & {
+    /** Separates generated token definitions for independently loaded modules. */
+    readonly [ThemeRules.shared]?: 'all' | 'defaults' | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
@@ -1191,6 +1199,8 @@ export declare namespace compile {
   type ReturnType = {
     /** Internal native node replacements, when supplied by the graph adapter. */
     readonly [Edits.key]?: readonly Edits.Edit[] | undefined
+    /** Generated token resources delivered alongside this module's CSS. */
+    readonly [ThemeRules.shared]?: readonly ThemeRules.Resource[] | undefined
     /** Module-scoped class lists keyed by extracted definition identity. */
     readonly classes: Readonly<Record<string, string>>
     /** Rewritten source with imports for surviving props callables. */

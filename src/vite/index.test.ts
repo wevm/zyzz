@@ -16,6 +16,7 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 import * as Library from '../../test/fixtures/Library.js'
+import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
 import * as Font from '../../test/fixtures/AtRuleFont.js'
 import * as Watch from '../../test/fixtures/Watch.js'
@@ -83,6 +84,127 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('shares responsive defaults in production CSS', async () => {
+    const { config, root } = await create(Responsive.modules)
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: {
+          lib: {
+            entry: Path.join(root, 'entry.js'),
+            formats: ['iife'],
+            name: 'Fixture',
+          },
+          minify: false,
+          write: false,
+        },
+      })
+      const output = Array.isArray(result) ? result[0] : result
+      if (!output || !('output' in output))
+        throw new Error('Expected a Vite build')
+      const code = output.output.find((file) => file.type === 'chunk')
+      const css = output.output.find(
+        (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+      )
+      if (code?.type !== 'chunk' || css?.type !== 'asset')
+        throw new Error('Missing fixture output')
+
+      await Responsive.verify({ code: code.code, css: String(css.source) })
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('replaces shared responsive defaults during HMR without reloading', async () => {
+    const { config, root } = await create({
+      ...Responsive.modules,
+      'index.html':
+        '<input id="state"><main></main><script type="module" src="/main.js"></script>',
+      'main.js': `import {base,first,large,second} from './entry.js';document.querySelector('main').innerHTML='<div class="'+base.className+'"><div id="first" class="'+first.className+'"></div><div class="'+large.className+'"><div id="second" class="'+second.className+'"></div></div></div>';if(import.meta.hot)import.meta.hot.accept();`,
+    })
+    const server = await Vite.createServer(config)
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+    try {
+      browser = await chromium.launch()
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 800 },
+      })
+      await page.goto(`http://127.0.0.1:${address.port}`)
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#first')!).fontSize ===
+          '14px',
+      )
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"20px"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"8px"')
+
+      async function css() {
+        return page.evaluate(() =>
+          [...document.styleSheets]
+            .flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText))
+            .join('\n'),
+        )
+      }
+      expect(
+        (await css()).match(/--z-editorial-labelSize-fallback-[\w-]+:\s*14px/g)
+          ?.length,
+      ).toMatchInlineSnapshot('1')
+      await page.setViewportSize({ height: 600, width: 1200 })
+      expect(
+        await page
+          .locator('#first')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"16px"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"24px"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"12px"')
+
+      await page.setViewportSize({ height: 600, width: 800 })
+      await page.waitForLoadState('networkidle')
+      await page.locator('#state').fill('preserved')
+      await Watch.write({
+        path: Path.join(root, 'config.js'),
+        source: Responsive.modules['config.js'].replace("'14px'", "'18px'"),
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#first')!).fontSize ===
+          '18px',
+      )
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"preserved"',
+      )
+      expect(
+        (await css()).match(/--z-editorial-labelSize-fallback-[\w-]+:\s*18px/g)
+          ?.length,
+      ).toMatchInlineSnapshot('1')
+      expect((await css()).includes(': 14px;')).toMatchInlineSnapshot('false')
+    } finally {
+      await browser?.close()
+      await server.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30000)
+
   test('updates shared dependencies across independently transformed entries', async () => {
     const files: Record<string, string> = {
       'theme.ts':
@@ -595,7 +717,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           )![1]!
           const css = await (await fetch(origin + cssPath)).text()
 
-          expect(css.includes('--z-t')).toMatchInlineSnapshot(`true`)
+          expect(css.includes('--z-color-brand-')).toMatchInlineSnapshot(`true`)
         } finally {
           await server.close()
         }
@@ -1056,12 +1178,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         ".z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
-        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
+        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
@@ -1079,12 +1201,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
-        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
+        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
@@ -1474,10 +1596,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       // escaping, and a script-only export derives its catalog from the options.
       expect(scripts(development)).toMatchInlineSnapshot('3')
       expect(
-        /z_theme-[a-z0-9]+-other-brand_2e_dark/.test(development),
+        /z_theme-src-config-[\w-]+-other-brand_2e_dark/.test(development),
       ).toMatchInlineSnapshot('true')
       expect(
-        /\["solo","z_theme-[a-z0-9]+-onlyScript-solo"\]/.test(development),
+        /\["solo","z_theme-src-config-[\w-]+-onlyScript-solo"\]/.test(
+          development,
+        ),
       ).toMatchInlineSnapshot('true')
 
       // A source error stays with its module; the document still initializes

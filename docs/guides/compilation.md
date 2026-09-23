@@ -54,7 +54,9 @@ Consumers load the stylesheet once. They do not need Zyzz compilation for alread
 npx zyzz build
 ```
 
-The defaults compile `src` into `dist`, with adjacent module CSS, `zyzz.shared.css` for shared contributions, `zyzz.css` combining both in dependency order for applications that load one stylesheet, and `zyzz.js` restoring saved theme selections before paint. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
+The defaults compile `src` into `dist`, with adjacent module CSS, `zyzz.shared.css` for shared contributions and responsive token defaults, `zyzz.css` combining both in dependency order, and `zyzz.js` restoring saved theme selections before paint. Load `zyzz.css`, or load `zyzz.shared.css` before the module stylesheets.
+
+Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally. The build selects its input root.
 
 The file host and CLI resolve installed package exports and adjacent `<entry>.zyzz.json` contracts without executing dependency code. Keep sidecars next to published entry modules. `zyzz dev` rebuilds on package or contract changes and retains successful output until invalid dependencies recover. Resolution uses Node import conditions. Packed external asset copying remains unsupported.
 

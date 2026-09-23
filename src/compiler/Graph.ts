@@ -17,6 +17,7 @@ import type * as Theme from '../internal/Theme.js'
 import * as Token from '../internal/Token.js'
 import * as Contract from './internal/Contract.js'
 import * as Relative from './internal/Relative.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 import * as Themes from './internal/Themes.js'
 import * as Source from './Source.js'
 import * as Scope from './internal/Scope.js'
@@ -75,11 +76,13 @@ export declare namespace compile {
   type ReturnType = {
     /** Packed resources deduplicated by the host across scoped source outputs. */
     readonly [Stylesheets.packed]?: readonly Stylesheets.Resource[]
+    /** Independently loaded reset for module-based hosts. */
+    readonly [Stylesheets.reset]?: Stylesheets.Resource | undefined
     /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
     readonly contracts: Readonly<Record<string, string>>
     /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>
-    /** One eager stylesheet for all supplied modules. Load before module CSS. */
+    /** Shared contributions and responsive token defaults. Load before module CSS. */
     readonly sharedCss?: string | undefined
     /** Source map for source-owned and packed global contributions. */
     readonly sharedCssMap?: Mapping.EncodedSourceMap | undefined
@@ -190,6 +193,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
   if (cache?.reset !== options.reset) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
+  if (
+    (cache?.entry === undefined) !==
+    (options[Stylesheets.entry] === undefined)
+  )
+    cache = undefined
   const ids = Object.keys(options.modules).sort()
   const programs = new Map<string, ReturnType<typeof Syntax.parse>>()
   function parse(input: Syntax.parse.Options) {
@@ -1329,7 +1337,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const sharedVisited = new Set<string>()
   const packed: Stylesheets.Resource[] = []
 
-  const shared = (() => {
+  const sharedSections = (() => {
     try {
       const entry = options[Stylesheets.entry]
       const packedSections =
@@ -1379,7 +1387,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         if (order.css) packed.unshift({ ...order, id: order.css })
       }
 
-      return Stylesheets.render([
+      return [
         ...(resetSource === undefined
           ? []
           : [
@@ -1393,7 +1401,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
               },
             ]),
         ...sharedSections,
-        ...(options.reset === undefined
+        ...(options.reset === undefined || entry !== undefined
           ? []
           : [
               {
@@ -1404,7 +1412,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                 layers: [['reset']],
               },
             ]),
-      ])
+      ] satisfies Stylesheets.Section[]
     } catch (error) {
       return fail(
         error instanceof Stylesheets.ConflictError ? error.source : ids[0]!,
@@ -1413,7 +1421,19 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   })()
 
-  const sharedCss = shared.css
+  function renderShared(sections: readonly Stylesheets.Section[]) {
+    try {
+      return Stylesheets.render(sections)
+    } catch (error) {
+      return fail(
+        error instanceof Stylesheets.ConflictError ? error.source : ids[0]!,
+        (error as Error).message,
+      )
+    }
+  }
+
+  const contributions = renderShared(sharedSections)
+
   // Every stylesheet includes all graph scopes, including unimported alternatives.
   const names = Object.keys(themes)
   const previousNames = Object.keys(previous?.themes ?? {})
@@ -1549,6 +1569,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
           extracted.get(moduleId) === previous!.extracted.get(moduleId)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
+            [ThemeRules.shared]:
+              options[Stylesheets.entry] === undefined ? 'defaults' : 'all',
             compiler: options.compiler,
             development: options.development,
             composition: options.composition,
@@ -1627,6 +1649,23 @@ function build(options: compile.Options, cache?: Cache): Cache {
         styleClasses[call.identity] = modules[moduleId]!.classes[call.name]!
   }
 
+  const defaults = new Map<string, Stylesheets.Section>()
+  if (options[Stylesheets.entry] === undefined)
+    for (const [source, output] of Object.entries(modules))
+      for (const resource of output[ThemeRules.shared] ?? [])
+        if (!defaults.has(resource.id))
+          defaults.set(resource.id, {
+            css: resource.css,
+            key: resource.id,
+            layers: [],
+            source,
+          })
+
+  const shared = defaults.size
+    ? renderShared([...sharedSections, ...defaults.values()])
+    : contributions
+  const sharedCss = shared.css
+
   function publishedStyle(link: Themes.Link): Themes.Link {
     return {
       ...link,
@@ -1698,6 +1737,22 @@ function build(options: compile.Options, cache?: Cache): Cache {
     transformed,
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
+      ...(options[Stylesheets.entry] !== undefined &&
+      options.reset !== undefined
+        ? {
+            [Stylesheets.reset]: {
+              id: 'zyzz/reset.css',
+              ...Stylesheets.render([
+                {
+                  content: options.reset,
+                  css: options.reset,
+                  layers: [['reset']],
+                  source: 'zyzz/reset.css',
+                },
+              ]),
+            },
+          }
+        : {}),
       ...(packed.length ? { [Stylesheets.packed]: packed } : {}),
       ...(sharedCss
         ? {

@@ -67,8 +67,8 @@ catalogs:
       specifier: ^1.2.3
       version: 1.2.3
     mdn-data:
-      specifier: 2.35.0
-      version: 2.35.0
+      specifier: 2.36.0
+      version: 2.36.0
     oxc-parser:
       specifier: 0.148.0
       version: 0.148.0
@@ -245,7 +245,7 @@ importers:
         version: 0.28.2
       mdn-data:
         specifier: 'catalog:'
-        version: 2.35.0
+        version: 2.36.0
       next:
         specifier: 16.3.5
         version: 16.3.5(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4704,8 +4704,8 @@ packages:
   mdn-data@2.27.1:
     resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
 
-  mdn-data@2.35.0:
-    resolution: {integrity: sha512-k+1+dEIm2z/BEfdvYzT/fIyAGeDBo/1AJNJI4ilFXJRYoxP/3Ds+GP8shAOIq8jYXY9N5nGB3Ag104NsagmLAA==}
+  mdn-data@2.36.0:
+    resolution: {integrity: sha512-EdCTmJ/7XyvlyqkbL0iHDbK/4b1f1qsZb3+jSihfwfxepmeBfQB7m6nQj6iLv0te037dqYCkbQe+/q0PxWdIOA==}
 
   media-query-parser@2.0.2:
     resolution: {integrity: sha512-1N4qp+jE0pL5Xv4uEcwVUhIkwdUO3S/9gML90nqKA7v7FcOS5vUtatfzok9S9U1EJU8dHWlcv95WLnKmmxZI9w==}
@@ -10461,7 +10461,7 @@ snapshots:
 
   mdn-data@2.27.1: {}
 
-  mdn-data@2.35.0: {}
+  mdn-data@2.36.0: {}
 
   media-query-parser@2.0.2:
     dependencies:

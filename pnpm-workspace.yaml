@@ -36,7 +36,7 @@ catalog:
   'incur': '^0.5.1'
   'lightningcss': '^1.33.0'
   'magic-string': '^1.2.3'
-  'mdn-data': '2.35.0'
+  'mdn-data': '2.36.0'
   'next': '16.3.5'
   'oxc-parser': '0.148.0'
   'oxc-resolver': '11.24.2'

@@ -28,6 +28,7 @@
     "@ark/attest": "catalog:",
     "@babel/core": "catalog:",
     "@changesets/cli": "catalog:",
+    "@mdn/browser-compat-data": "catalog:",
     "@pandacss/node": "catalog:",
     "@stylexjs/babel-plugin": "catalog:",
     "@stylexjs/stylex": "catalog:",

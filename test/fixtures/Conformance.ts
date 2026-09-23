@@ -4,6 +4,7 @@
  */
 import * as CssTree from 'css-tree'
 import * as Module from 'node:module'
+import supplements from '../conformance/property-supplements.json' with { type: 'json' }
 import * as Literal from '../../src/internal/Literal.js'
 import * as Compound from './Compound.js'
 import * as Grammar from './Grammar.js'
@@ -427,17 +428,25 @@ export function lexer() {
 
   return CssTree.fork({
     properties: Object.fromEntries(
-      Object.entries(properties).map(([name, entry]) => [
-        name,
-        // SVG 2 places the range after the production; normalize its grammar notation.
-        name === 'path-length'
-          ? 'none | <length [0,∞]>'
-          : name === 'text-combine-upright'
-            ? 'none | all | [ digits <integer [2,4]>? ]'
-            : entry.syntax,
-      ]),
+      Object.entries({ ...properties, ...supplements.properties }).map(
+        ([name, entry]) => [
+          name,
+          // SVG 2 places the range after the production; normalize its grammar notation.
+          name === 'path-length'
+            ? 'none | <length [0,∞]>'
+            : name === 'text-combine-upright'
+              ? 'none | all | [ digits <integer [2,4]>? ]'
+              : entry.syntax,
+        ],
+      ),
     ),
     types: {
+      ...Object.fromEntries(
+        Object.entries(supplements.syntaxes).map(([name, entry]) => [
+          name,
+          entry.syntax,
+        ]),
+      ),
       ...Object.fromEntries(
         Object.entries(syntaxes).map(([name, entry]) => [name, entry.syntax]),
       ),
@@ -466,6 +475,22 @@ export function name(property: string): string {
 
 /** Independent invalid and intentionally unsupported inputs checked by public type probes. */
 export const rejected = [
+  { property: 'MozOsxFontSmoothing', value: 'antialiased' },
+  { property: 'WebkitFontSmoothing', value: 'grayscale' },
+  { property: 'WebkitTextCombine', value: 'all' },
+  { property: 'WebkitRubyPosition', value: 'over' },
+  { property: 'glyphOrientationVertical', value: 45 },
+  { property: 'WebkitColumnBreakInside', value: 'always' },
+  { property: 'WebkitBorderHorizontalSpacing', value: '10%' },
+  { property: 'WebkitTransformOriginZ', value: '20%' },
+  { property: 'WebkitTextSecurity', value: 'password' },
+  { property: 'flowTolerance', value: '-1px' },
+  { property: 'ruleOverlap', value: 'auto' },
+  { property: 'rowRuleColor', value: 'solid' },
+  { property: 'rowRuleStyle', value: 'red' },
+  { property: 'rowRuleWidth', value: '10%' },
+  { property: 'rowRuleWidth', value: '-1px' },
+  { property: 'whiteSpaceTrim', value: 'discard' },
   { property: 'alignItems', value: 'middle' },
   { property: 'animationDelay', value: '0x10s' },
   { property: 'animationDuration', value: 0 },
@@ -556,7 +581,7 @@ export function properties(): readonly string[] {
     unknown
   > = require('mdn-data/css/properties.json')
 
-  return Object.keys(entries).map((name) => {
+  return Object.keys({ ...entries, ...supplements.properties }).map((name) => {
     if (name === '--*') return '--Probe'
     if (name === '-ms-scrollbar-3dlight-color') return 'MsScrollbar3dlightColor'
 

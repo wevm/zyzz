@@ -1,6 +1,6 @@
 # CSS Conformance
 
-Zyzz owns its property/value types. Pinned `mdn-data` and `css-tree` development dependencies provide independent grammar checks; neither ships in client code.
+Zyzz owns its property/value types. Pinned `mdn-data` and `css-tree` development dependencies provide independent grammar checks. Pinned `@mdn/browser-compat-data` adds property names, alternative names, and vendor prefixes. These discovery and validation dependencies do not ship in client code.
 
 ## Validation Contract
 
@@ -19,7 +19,11 @@ Consumer probes cover property names, token domains, units, hex literals, intege
 | Deferred     | Tracked without an implemented property mapping                                       |
 | Unclassified | Requires review; CI fails                                                             |
 
-Current property coverage is **0 partial, 0 deferred, and 670 supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
+Current property coverage is **0 partial, 0 deferred, and 1009 supported** out of 1009. Removing runtime validation does not promote entries. A partial property receives no completion credit.
+
+Compatibility discovery reads only property-level support statements, including historical prefixes and alternative names. Nested value features are not properties. The `custom-property` dataset key maps to `--*`. Existing MDN grammars remain authoritative. Newly discovered entries start unclassified without inheriting another property's support status.
+
+`property-supplements.json` records independently sourced grammars for compatibility-only properties and referenced gap-decoration productions. Equivalent aliases share authoring rules, while vendor-specific domains such as font smoothing remain separate. Fingerprints cover both upstream discovery metadata and supplements. Browser compatibility records establish names and browser history, not Zyzz support.
 
 ## Evidence
 
@@ -31,9 +35,9 @@ Image and URL mappings include background-image, border-image-source, list-style
 
 ## Completion Gate
 
-`pnpm check:css:full` requires all 670 pinned MDN properties, including vendor and obsolete entries, to be reviewed as supported. Partial, deferred, and unclassified entries receive zero credit. The threshold uses exact counts, not rounded percentages. Grammar drift still fails, and `--update` cannot be combined with the full gate.
+`pnpm check:css:full` requires all 1009 inventoried properties, including vendor and obsolete entries, to be reviewed as supported. Partial, deferred, and unclassified entries receive zero credit. The threshold uses exact counts, not rounded percentages. Grammar drift still fails, and `--update` cannot be combined with the full gate.
 
-The **CSS Property Conformance (100%)** CI job publishes a report even when it fails. Type, grammar, build, and browser checks run alongside it. The ledger records reviewed implementation status; it is not a browser certification. The full gate passes with the reviewed inventory; grammar drift and incomplete future entries still fail.
+The **CSS Property Conformance (100%)** CI job publishes a report even when it fails. Type, grammar, build, and browser checks run alongside it. The ledger records reviewed implementation status; it is not a browser certification. The full gate requires reviewed type, emission, and applicable browser evidence for every inventoried name. Historical spellings unsupported by the installed browser remain visible in the capability report.
 
 ## Upstream Updates
 
@@ -44,11 +48,11 @@ The **CSS Property Conformance (100%)** CI job publishes a report even when it f
 
 Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Normal CI uses the lockfile and does not fetch live grammar.
 
-Sources: [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/csstree/csstree), [CSS Images](https://www.w3.org/TR/css-images-4/), [SVG Markers](https://www.w3.org/TR/svg-markers/).
+Sources: [MDN browser compatibility data](https://github.com/mdn/browser-compat-data), [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/csstree/csstree), [CSS Images](https://www.w3.org/TR/css-images-4/), [SVG Markers](https://www.w3.org/TR/svg-markers/).
 
 ## Compound Properties
 
-Every pinned property now has an authoring type, including custom properties, shorthands, font settings, filters, shadows, motion paths, timelines, and legacy spellings. Custom-property case and arbitrary scalar data are preserved. Named CSS properties still reject unknown names, wrong scalar domains, and invalid finite keywords.
+Every inventoried property has an authoring type, including custom properties, shorthands, font settings, filters, shadows, motion paths, timelines, and legacy spellings. Custom-property case and arbitrary scalar data are preserved. Named CSS properties still reject unknown names, wrong scalar domains, and invalid finite keywords.
 
 The new compound fixture records positive declarations independently of the emitter. Recursive function arguments and open custom identifiers retain CSS text. Argument semantics and open custom identifiers remain browser-owned under the static validation contract. Bounded grammar probes and the complete engine-accepted corpus provide evidence for the modeled property surface.
 

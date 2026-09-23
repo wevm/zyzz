@@ -18,6 +18,7 @@ export function create() {
   >()
 
   const defaults = new Map<string, readonly Rule[]>()
+  const defaultGroups = new Map<Token.Contract, Set<string>>()
 
   function serialize(token: Token.Reference): string {
     const value = token.value
@@ -42,7 +43,7 @@ export function create() {
     }
 
     const label = contract.identity?.startsWith('src-') ? token.path : undefined
-    return `var(${name},${literal(value, label)})`
+    return `var(${name},${literal(value, label, token.contract)})`
   }
 
   function emit(
@@ -51,6 +52,7 @@ export function create() {
     separate?: 'all' | 'defaults',
   ) {
     const classes: Record<string, string> = Object.create(null)
+    const completeDefaults = new Set<Token.Contract>()
     const empty: string[] = []
     const rules: Rule[] = []
 
@@ -97,6 +99,16 @@ export function create() {
       }
 
       if (!contract) continue
+      // Independently compiled consumers must import identical fallback contents.
+      if (separate === 'all' && contract.identity) {
+        completeDefaults.add(data.contract)
+        for (const [path, value] of Object.entries(data.values))
+          literal(
+            value,
+            contract.identity.startsWith('src-') ? path : undefined,
+            data.contract,
+          )
+      }
       if (!contract.paths.size) empty.push(`.${className}{}`)
 
       const declarations: Rule[] = []
@@ -112,7 +124,7 @@ export function create() {
           conditions: [],
           property: name,
           selector: `.${className}`,
-          value: literal(value, label),
+          value: literal(value, label, data.contract),
         })
       }
 
@@ -124,6 +136,8 @@ export function create() {
           `.${className}`,
           rules,
           contract.identity?.startsWith('src-') ? path : undefined,
+          [],
+          data.contract,
         )
     }
 
@@ -133,6 +147,31 @@ export function create() {
       entries.push(rule)
       scopes.set(rule.property, entries)
     }
+
+    const grouped = new Set<string>()
+    const resources: Resource[] = []
+    if (separate === 'all')
+      for (const [contract, names] of defaultGroups) {
+        if (!completeDefaults.has(contract)) continue
+
+        // Sort independent properties only. Each property retains its authored conditional order.
+        const rules = [...names].sort().flatMap((name) => defaults.get(name)!)
+        resources.push({
+          css: render(rules),
+          id: JSON.stringify([
+            contract[Token.identity],
+            'fallbacks',
+            Object.entries(themes)
+              .filter(
+                ([, theme]) => theme[Token.definition].contract === contract,
+              )
+              .map(([name]) => name)
+              .sort(),
+          ]),
+          rules,
+        })
+        for (const name of names) grouped.add(name)
+      }
 
     return {
       classes: Object.freeze(classes),
@@ -151,11 +190,14 @@ export function create() {
               .join('\n'),
       resources: separate
         ? [
-            ...[...defaults].map(([id, rules]) => ({
-              css: render(rules),
-              id,
-              rules,
-            })),
+            ...resources,
+            ...[...defaults]
+              .filter(([id]) => !grouped.has(id))
+              .map(([id, rules]) => ({
+                css: render(rules),
+                id,
+                rules,
+              })),
             // Keep every scope of a property together so overlapping themes retain precedence.
             ...(separate === 'all'
               ? [...scopes].map(([property, rules]) => ({
@@ -172,25 +214,34 @@ export function create() {
     }
   }
 
-  function literal(value: Token.Value, label?: string): string {
+  function literal(
+    value: Token.Value,
+    label?: string,
+    owner?: Token.Contract,
+  ): string {
     if (Token.is(value)) return serialize(value)
     if (typeof value !== 'object') return String(value)
     if ('default' in value) {
       // Separate fallback properties preserve extensions and resolve references within each scope.
-      const base = literal(value.default, label)
+      const base = literal(value.default, label, owner)
       // Rule consolidation must not change existing variable identities.
-      const css = `:where(*){--fallback:${base};}${conditionalCss(value, '--fallback', ':where(*)', label)}`
+      const css = `:where(*){--fallback:${base};}${conditionalCss(value, '--fallback', ':where(*)', label, owner)}`
       const name = label
         ? `--z-${Identity.label(label)}-fallback-${Identity.compact(css)}`
         : `--z-f${Identity.hash(css)}`
       const emitted: Rule[] = [
         { conditions: [], property: name, selector: ':where(*)', value: base },
       ]
-      conditional(value, name, ':where(*)', emitted, label)
+      conditional(value, name, ':where(*)', emitted, label, [], owner)
       defaults.set(name, emitted)
+      if (owner) {
+        const names = defaultGroups.get(owner) ?? new Set<string>()
+        names.add(name)
+        defaultGroups.set(owner, names)
+      }
       return `var(${name})`
     }
-    return `light-dark(${literal(value.light, label)},${literal(value.dark, label)})`
+    return `light-dark(${literal(value.light, label, owner)},${literal(value.dark, label, owner)})`
   }
 
   function conditionalCss(
@@ -198,6 +249,7 @@ export function create() {
     property: string,
     selector: string,
     label?: string,
+    owner?: Token.Contract,
   ): string {
     if (
       !value ||
@@ -207,12 +259,12 @@ export function create() {
     )
       return ''
     return (
-      conditionalCss(value.default, property, selector, label) +
+      conditionalCss(value.default, property, selector, label, owner) +
       Object.entries(value)
         .filter(([query]) => query !== 'default')
         .map(
           ([query, entry]) =>
-            `${query}{${selector}{${property}:${literal(entry, label)};}${conditionalCss(entry, property, selector, label)}}`,
+            `${query}{${selector}{${property}:${literal(entry, label, owner)};}${conditionalCss(entry, property, selector, label, owner)}}`,
         )
         .join('')
     )
@@ -225,6 +277,7 @@ export function create() {
     rules: Rule[],
     label?: string,
     conditions: readonly string[] = [],
+    owner?: Token.Contract,
   ) {
     if (
       !value ||
@@ -233,7 +286,7 @@ export function create() {
       !('default' in value)
     )
       return
-    conditional(value.default, name, selector, rules, label, conditions)
+    conditional(value.default, name, selector, rules, label, conditions, owner)
     for (const [query, entry] of Object.entries(value)) {
       if (query === 'default') continue
       const nested = [...conditions, query]
@@ -241,9 +294,9 @@ export function create() {
         conditions: nested,
         property: name,
         selector,
-        value: literal(entry, label),
+        value: literal(entry, label, owner),
       })
-      conditional(entry, name, selector, rules, label, nested)
+      conditional(entry, name, selector, rules, label, nested, owner)
     }
   }
 

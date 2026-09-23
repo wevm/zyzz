@@ -724,6 +724,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         modules: result.modules,
         code: output.code,
         contractIds: Object.keys(result.contracts),
+        configurations: new Map<string, Catalogs.Catalog>(),
+        connections: staged,
         css: '',
         sharedCss: '',
         cssMap: map,
@@ -758,9 +760,13 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       for (const key of catalogs.keys())
         if (key.startsWith(`${id}\0`)) catalogs.delete(key)
 
+    const configurations = new Map<string, Catalogs.Catalog>()
     for (const [id, contract] of Object.entries(compiled))
-      for (const configuration of Catalogs.read(contract))
-        catalogs.set(`${id}\0${configuration.identity}`, configuration)
+      for (const configuration of Catalogs.read(contract)) {
+        const key = `${id}\0${configuration.identity}`
+        catalogs.set(key, configuration)
+        configurations.set(key, configuration)
+      }
 
     const map = new Mapping.GenMapping()
     const styles: string[] = []
@@ -967,6 +973,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       modules: result.modules,
       code: output.code,
       contractIds: Object.keys(compiled),
+      configurations,
+      connections: staged,
       css: styles.join('\n'),
       sharedCss: new TextDecoder().decode(shared.code),
       sharedCssMap: sharedMap,
@@ -996,7 +1004,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     // The seed only anchors the compile, which visits every discovered source.
     if (!entry || !sources.has(entry.file)) {
       const file = sources.keys().next().value
-      if (file === undefined) return []
+      if (file === undefined) return { catalogs: new Map(), edges: new Map() }
 
       entry = {
         compiler: compiler(environment),
@@ -1019,7 +1027,16 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         if (!output.contractIds.some((id) => key.startsWith(`${id}\0`)))
           catalogs.delete(key)
 
-    return [...catalogs.values()]
+    // Concurrent module transforms must not replace this request's compiled catalogs.
+    return {
+      catalogs: output?.configurations ?? new Map(catalogs),
+      edges: output?.connections ?? new Map(edges),
+    }
+  }
+
+  type DocumentState = {
+    catalogs: ReadonlyMap<string, Catalogs.Catalog>
+    edges: ReadonlyMap<string, ReadonlySet<string>>
   }
 
   /** Catalogs reachable from a served document's module scripts; every catalog when none resolve. */
@@ -1027,6 +1044,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     html: string,
     filename: string,
     resolve: Host['resolve'],
+    { catalogs, edges }: DocumentState,
   ) {
     const reachable = new Set<string>()
 
@@ -1560,7 +1578,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           if (!context.server)
             return entryCatalogs(context.bundle, context.chunk)
 
-          await initializations(context.server)
+          const state = await initializations(context.server)
 
           const environment = context.server.environments.client
 
@@ -1569,6 +1587,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             context.filename,
             (source, importer) =>
               environment.pluginContainer.resolveId(source, importer),
+            state,
           )
         })()
         // Saved preferences apply before any other script or visible content.

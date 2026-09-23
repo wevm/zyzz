@@ -264,33 +264,66 @@ async function compile(context: Context, source: string) {
     }
     let request = file
     if (options.development) {
-      // Server-component CSS needs a client graph edge for Next's native CSS HMR.
-      request = `${file}.js`
-      const stylesheet =
+      request =
         options.bundler === 'turbopack'
-          ? `./style.css?zyzz=${hash}`
-          : `./${hash}.css`
-      const code = `'use client';import ${JSON.stringify(stylesheet)};`
-      const existing = await Fs.readFile(request, 'utf8').catch(
-        (error: NodeJS.ErrnoException) => {
-          if (error.code !== 'ENOENT') throw error
-          return undefined
-        },
-      )
-      if (existing !== code) await Fs.writeFile(request, code)
+          ? Path.join(directory, 'style.css') + `?zyzz=${hash}`
+          : file
     } else if (options.bundler === 'turbopack') {
       // Persist CSS with the cached transform, independently of generated filesystem artifacts.
       request =
         Path.join(directory, 'style.css') +
         `?zyzz=${hash}&css=${Buffer.from(css).toString('base64url')}`
     }
-    const relative = Path.relative(Path.dirname(context.resourcePath), request)
+    const relative = Path.relative(
+      options.development ? directory : Path.dirname(context.resourcePath),
+      request,
+    )
       .split(Path.sep)
       .join('/')
     requests.push(
-      `import ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
+      `${options.development ? '@import' : 'import'} ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
     )
   }
 
+  if (options.development && requests.length) {
+    // Keep the client boundary stable when a dependency changes the stylesheet imports.
+    const hash = Crypto.createHash('sha256')
+      .update(context.resourcePath)
+      .digest('hex')
+    const stylesheet = Path.join(directory, `${hash}.css`)
+    const css = requests.join('\n')
+    const previous = await Fs.readFile(stylesheet, 'utf8').catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') throw error
+        return undefined
+      },
+    )
+    if (previous !== css) {
+      const temporary = `${stylesheet}.${Crypto.randomUUID()}.tmp`
+      await Fs.writeFile(temporary, css)
+      await Fs.rename(temporary, stylesheet)
+    }
+    const file = Path.join(directory, `${hash}.js`)
+    const request =
+      options.bundler === 'turbopack'
+        ? `./style.css?zyzz=${hash}`
+        : `./${hash}.css`
+    try {
+      await Fs.writeFile(
+        file,
+        `'use client';import ${JSON.stringify(request)};`,
+        { flag: 'wx' },
+      )
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    }
+    const relative = Path.relative(Path.dirname(context.resourcePath), file)
+      .split(Path.sep)
+      .join('/')
+    return {
+      code: `${output.code}\nimport ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
+      map,
+    }
+  }
   return { code: `${output.code}\n${requests.join('\n')}`, map }
 }

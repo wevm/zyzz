@@ -61,6 +61,7 @@ test.each([false, true])(
       )
       const css = await Fs.readFile(Path.join(root, 'dist/styles.css'), 'utf8')
       const code = await Fs.readFile(Path.join(root, 'dist/bundle.js'), 'utf8')
+      expect(css.match(/:where\(\*\)/g)?.length).toMatchInlineSnapshot('2')
       expect(
         css.match(/box-sizing:\s*border-box/g)?.length,
       ).toMatchInlineSnapshot('1')

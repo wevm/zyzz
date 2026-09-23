@@ -78,9 +78,11 @@ export async function verify(options: verify.Options) {
     )
     const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {style,vars}=Config.create({cssOutput:'${cssOutput}',vars:library});`
     const files = {
+      'app/responsive-config.ts': `import {Config,Vars} from 'zyzz';const base=Vars.define({measure:{a:{default:'14px','@media (width >= 1024px)':'16px'},b:{default:'8px','@media (width >= 1024px)':'12px'}}});export const {style}=Config.create({vars:base,mappings:false});`,
+      'app/responsive.tsx': `import {style} from './responsive-config';const props=style({paddingTop:'measure.a',paddingBottom:'measure.b'});export default function Responsive(){return <div id="responsive-server" {...props()}/>}`,
       'app/unimported.ts': `import {global} from 'zyzz/web';declare function unknownColor(): 'red';global({body:{color:unknownColor()}});`,
       'app/fonts.ts': `import {fontFace,global,layers} from 'zyzz/web';layers(['reset','base']);fontFace({ '@layer base': {fontFamily:'NextEvidence',src:'url(./probe.ttf)'} });global({'@layer base':{body:{position:'relative'}}});`,
-      'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {style} from '@config';import {variant,packedTheme} from './variants';namespace styles{export const button=style((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><div className={packedTheme().className}><div id="packed" {...variant(active)}>Packed</div></div><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button></>}`,
+      'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {style as responsiveStyle} from './responsive-config';const responsive=responsiveStyle({paddingTop:'measure.a'});import {style} from '@config';import {variant,packedTheme} from './variants';namespace styles{export const button=style((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><span id="responsive-client" {...responsive()}/><div className={packedTheme().className}><div id="packed" {...variant(active)}>Packed</div></div><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button></>}`,
       'app/variants.ts': `import {cx} from 'zyzz';import {controls} from '@acme/variants';import '@acme/variants/style.css';export {vars as packedTheme} from '@acme/variants';export function variant(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),controls.override())}`,
       'app/components.ts': `export {default as Client} from './client';export {default as Content} from './mdx-content';`,
       'app/config.ts': config,
@@ -90,7 +92,7 @@ export async function verify(options: verify.Options) {
       'app/layout.tsx': `import './fonts';import 'next/root-params';import {cx} from 'zyzz';import {style,vars} from '@config';const root=style({color:'brand'});export default function Layout({children}:{children:React.ReactNode}){return <html {...cx(vars({colorScheme:'light'}),root())}><body>{children}</body></html>}`,
       'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
       'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
-      'app/page.tsx': `import {runtime} from './runtime';import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import {Client} from './components';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><p id="runtime" {...runtime()}>Runtime</p><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
+      'app/page.tsx': `import Responsive from './responsive';import {runtime} from './runtime';import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import {Client} from './components';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><Responsive/><p id="runtime" {...runtime()}>Runtime</p><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
       'app/stream/page.tsx': `import {Suspense} from 'react';import {style} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=style({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
       'instrumentation-client.ts': `performance.mark('client-instrumentation');`,
       'next.config.ts': `import createMDX from '@next/mdx';import {zyzz} from 'zyzz/next';import * as Path from 'node:path';const withMDX=createMDX({});export default zyzz(async()=>withMDX({pageExtensions:['ts','tsx','mdx'],productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}), {reset:true});`,
@@ -275,6 +277,55 @@ export async function verify(options: verify.Options) {
     ).toMatchInlineSnapshot('true')
     await page.unroute('**/*.js')
     expect(response?.status()).toMatchInlineSnapshot('200')
+    expect(
+      await page.evaluate(() => {
+        function count(rules: CSSRuleList): number {
+          return [...rules].reduce((total, rule) => {
+            if (rule instanceof CSSStyleRule)
+              return (
+                total +
+                Number(
+                  rule.selectorText === ':where(*)' &&
+                    rule.style.cssText.includes('--z-measure-'),
+                )
+              )
+            return (
+              total +
+              ('cssRules' in rule
+                ? count((rule as CSSGroupingRule).cssRules)
+                : 0)
+            )
+          }, 0)
+        }
+        return [...document.styleSheets].reduce(
+          (total, sheet) => total + count(sheet.cssRules),
+          0,
+        )
+      }),
+    ).toMatchInlineSnapshot('2')
+    await page.setViewportSize({ height: 720, width: 800 })
+    expect(
+      await page
+        .locator('#responsive-server')
+        .evaluate((node) => getComputedStyle(node).paddingTop),
+    ).toMatchInlineSnapshot('"14px"')
+    expect(
+      await page
+        .locator('#responsive-client')
+        .evaluate((node) => getComputedStyle(node).paddingTop),
+    ).toMatchInlineSnapshot('"14px"')
+    await page.setViewportSize({ height: 720, width: 1280 })
+    expect(
+      await page
+        .locator('#responsive-server')
+        .evaluate((node) => getComputedStyle(node).paddingTop),
+    ).toMatchInlineSnapshot('"16px"')
+    expect(
+      await page
+        .locator('#responsive-server')
+        .evaluate((node) => getComputedStyle(node).paddingBottom),
+    ).toMatchInlineSnapshot('"12px"')
+
     expect(
       await page
         .locator('html')
@@ -536,6 +587,30 @@ export async function verify(options: verify.Options) {
         .locator('button[data-ready]')
         .evaluate((element) => getComputedStyle(element).opacity),
     ).toMatchInlineSnapshot('"0.5"')
+    await page.setViewportSize({ height: 720, width: 800 })
+    await Watch.write({
+      path: Path.join(app, 'app/responsive-config.ts'),
+      source: files['app/responsive-config.ts'].replace("'14px'", "'18px'"),
+    })
+    await page.waitForFunction(
+      () => {
+        const node = document.querySelector('#responsive-client')
+        return node !== null && getComputedStyle(node).paddingTop === '18px'
+      },
+      undefined,
+      { timeout: 30_000 },
+    )
+    expect(
+      await page
+        .locator('#responsive-server')
+        .evaluate((node) => getComputedStyle(node).paddingTop),
+    ).toMatchInlineSnapshot('"18px"')
+    expect(
+      await page
+        .locator('button[data-ready]')
+        .evaluate((node) => getComputedStyle(node).opacity),
+    ).toMatchInlineSnapshot('"0.5"')
+    await page.setViewportSize({ height: 720, width: 1280 })
     await Fs.writeFile(
       Path.join(app, 'app/page.tsx'),
       files['app/page.tsx'].replace(

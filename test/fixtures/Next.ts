@@ -711,17 +711,27 @@ export async function verify(options: verify.Options) {
         (grouped) => {
           const heading = document.querySelector('main > h1')
           if (!heading) return false
-          const rules = [...document.styleSheets]
-            .flatMap((sheet) => [...sheet.cssRules])
-            .filter(
-              (rule): rule is CSSStyleRule =>
-                rule instanceof CSSStyleRule &&
-                heading.matches(rule.selectorText) &&
-                Boolean(rule.style.padding),
-            )
+          const styles = [...document.styleSheets].flatMap((sheet) => [
+            ...sheet.cssRules,
+          ])
+          const button = document.querySelector('button[data-ready]')
+          const rules = styles.filter(
+            (rule): rule is CSSStyleRule =>
+              rule instanceof CSSStyleRule &&
+              heading.matches(rule.selectorText) &&
+              Boolean(rule.style.padding),
+          )
           return (
             rules.length > 0 &&
-            rules.every((rule) => Boolean(rule.style.color) === grouped)
+            rules.every((rule) => Boolean(rule.style.color) === grouped) &&
+            button !== null &&
+            styles.some(
+              (rule) =>
+                rule instanceof CSSStyleRule &&
+                button.matches(rule.selectorText) &&
+                Boolean(rule.style.opacity) &&
+                Boolean(rule.style.color) === grouped,
+            )
           )
         },
         mode === 'grouped',
@@ -746,9 +756,23 @@ export async function verify(options: verify.Options) {
       source: "export * from './relocated'",
     })
     await page.waitForFunction(
-      () =>
-        getComputedStyle(document.querySelector('main > h1')!).color ===
-        'rgb(102, 0, 153)',
+      () => {
+        const button = document.querySelector('button[data-ready]')
+        return (
+          getComputedStyle(document.querySelector('main > h1')!).color ===
+            'rgb(102, 0, 153)' &&
+          button !== null &&
+          getComputedStyle(button).color === 'rgb(102, 0, 153)' &&
+          [...document.styleSheets]
+            .flatMap((sheet) => [...sheet.cssRules])
+            .some(
+              (rule) =>
+                rule instanceof CSSStyleRule &&
+                button.matches(rule.selectorText) &&
+                Boolean(rule.style.opacity),
+            )
+        )
+      },
       undefined,
       { timeout: 30_000 },
     )

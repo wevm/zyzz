@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.13
+
+### Patch Changes
+
+- dd17edd: Reduced Next.js rebuild dependencies by following named runtime exports through barrels.
+
 ## 0.0.12
 
 ### Patch Changes

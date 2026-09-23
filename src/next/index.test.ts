@@ -22,6 +22,52 @@ describe('zyzz', () => {
     expect(result.settled === result.edited).toMatchInlineSnapshot('true')
   })
 
+  test('keeps forwarded runtime exports outside the style graph and refreshes changed export kinds', async () => {
+    const { stdout } = await Util.promisify(ChildProcess.execFile)(
+      process.execPath,
+      ['test/fixtures/NextBarrels.ts'],
+      { maxBuffer: 4 * 1024 * 1024 },
+    )
+    expect(JSON.parse(stdout)).toMatchInlineSnapshot(`
+      {
+        "cold": {
+          "blue": false,
+          "dependencies": [
+            "barrel.mjs",
+            "component.mjs",
+            "consumer.mjs",
+            "forward.mjs",
+          ],
+          "green": false,
+          "red": true,
+        },
+        "edited": {
+          "blue": true,
+          "dependencies": [
+            "barrel.mjs",
+            "component.mjs",
+            "consumer.mjs",
+            "forward.mjs",
+          ],
+          "green": false,
+          "red": false,
+        },
+        "reference": {
+          "blue": false,
+          "dependencies": [
+            "barrel.mjs",
+            "component.mjs",
+            "consumer.mjs",
+            "forward.mjs",
+            "unrelated.mjs",
+          ],
+          "green": true,
+          "red": false,
+        },
+      }
+    `)
+  })
+
   for (const cssOutput of ['atomic', 'grouped'] as const)
     for (const bundler of ['webpack', 'turbopack'] as const)
       test(`builds and updates a packed Next.js ${bundler} ${cssOutput} application`, async () => {

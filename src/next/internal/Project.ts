@@ -144,6 +144,103 @@ export function create(options: create.Options) {
       return entry.parsed
     }
 
+    async function callable(
+      file: string,
+      name: string,
+      seen = new Set<string>(),
+    ): Promise<boolean> {
+      const key = JSON.stringify([file, name])
+      if (seen.has(key)) return false
+      seen.add(key)
+      track(file)
+      runtime.add(file)
+      const parsed = parse(id(file), await read(file))
+      const functions = new Set<string>()
+      let defaultBinding: string | undefined
+      for (const statement of parsed.program.body) {
+        if (
+          statement.type === 'ExportDefaultDeclaration' &&
+          [
+            'FunctionDeclaration',
+            'ClassDeclaration',
+            'ArrowFunctionExpression',
+            'FunctionExpression',
+          ].includes(statement.declaration.type)
+        ) {
+          functions.add('default')
+          if (
+            statement.declaration.type === 'FunctionDeclaration' ||
+            statement.declaration.type === 'ClassDeclaration'
+          )
+            defaultBinding = statement.declaration.id?.name
+        }
+        if (statement.type !== 'ExportNamedDeclaration') continue
+        const declaration = statement.declaration
+        if (
+          (declaration?.type === 'FunctionDeclaration' ||
+            declaration?.type === 'ClassDeclaration') &&
+          declaration.id
+        )
+          functions.add(declaration.id.name)
+        if (declaration?.type === 'VariableDeclaration')
+          for (const item of declaration.declarations) {
+            if (
+              item.id.type === 'Identifier' &&
+              item.init &&
+              [
+                'ArrowFunctionExpression',
+                'FunctionExpression',
+                'ClassExpression',
+              ].includes(item.init.type)
+            )
+              functions.add(item.id.name)
+          }
+      }
+      for (const statement of parsed.program.body) {
+        const declaration =
+          statement.type === 'ExportNamedDeclaration'
+            ? statement.declaration
+            : statement
+        if (
+          declaration?.type === 'TSModuleDeclaration' &&
+          declaration.id.type === 'Identifier'
+        ) {
+          functions.delete(declaration.id.name)
+          if (declaration.id.name === defaultBinding)
+            functions.delete('default')
+        }
+      }
+      if (parsed.errors.length) return false
+      if (functions.has(name)) return true
+      for (const statement of parsed.program.body) {
+        if (
+          statement.type !== 'ExportNamedDeclaration' ||
+          !statement.source ||
+          statement.exportKind === 'type'
+        )
+          continue
+        for (const specifier of statement.specifiers) {
+          if (specifier.exportKind === 'type') continue
+          const exported =
+            specifier.exported.type === 'Identifier'
+              ? specifier.exported.name
+              : specifier.exported.value
+          if (exported !== name) continue
+          const target = await resolve(
+            Path.dirname(file),
+            statement.source.value,
+          )
+          if (!target || !eligible(target)) return false
+          const imported =
+            specifier.local.type === 'Identifier'
+              ? specifier.local.name
+              : specifier.local.value
+          return callable(target, imported, seen)
+        }
+      }
+      return false
+    }
+
     async function visit(file: string, text?: string): Promise<void> {
       const name = id(file)
       if (Object.hasOwn(modules, name)) return
@@ -191,82 +288,35 @@ export function create(options: create.Options) {
         const { node, specifier, resolved } = resolution
         if (!resolved || !/\.[cm]?[jt]sx?$/.test(resolved)) continue
         if (eligible(resolved)) {
-          if (node.type === 'ImportDeclaration' && node.specifiers.length) {
-            track(resolved)
-            const parsed = parse(id(resolved), await read(resolved))
-            const functions = new Set<string>()
-            let defaultBinding: string | undefined
-            for (const statement of parsed.program.body) {
-              if (
-                statement.type === 'ExportDefaultDeclaration' &&
-                [
-                  'FunctionDeclaration',
-                  'ClassDeclaration',
-                  'ArrowFunctionExpression',
-                  'FunctionExpression',
-                ].includes(statement.declaration.type)
-              ) {
-                functions.add('default')
-                if (
-                  statement.declaration.type === 'FunctionDeclaration' ||
-                  statement.declaration.type === 'ClassDeclaration'
-                )
-                  defaultBinding = statement.declaration.id?.name
+          if (
+            (node.type === 'ImportDeclaration' ||
+              node.type === 'ExportNamedDeclaration') &&
+            node.specifiers.length
+          ) {
+            const names = node.specifiers.map((specifier) => {
+              if (specifier.type === 'ImportDefaultSpecifier') return 'default'
+              if (specifier.type === 'ImportNamespaceSpecifier')
+                return undefined
+              if (specifier.type === 'ImportSpecifier') {
+                if (specifier.importKind === 'type') return null
+                return specifier.imported.type === 'Identifier'
+                  ? specifier.imported.name
+                  : specifier.imported.value
               }
-              if (statement.type !== 'ExportNamedDeclaration') continue
-              const declaration = statement.declaration
-              if (
-                (declaration?.type === 'FunctionDeclaration' ||
-                  declaration?.type === 'ClassDeclaration') &&
-                declaration.id
-              )
-                functions.add(declaration.id.name)
-              if (declaration?.type === 'VariableDeclaration')
-                for (const item of declaration.declarations) {
-                  if (
-                    item.id.type === 'Identifier' &&
-                    item.init &&
-                    [
-                      'ArrowFunctionExpression',
-                      'FunctionExpression',
-                      'ClassExpression',
-                    ].includes(item.init.type)
-                  )
-                    functions.add(item.id.name)
-                }
-            }
-            for (const statement of parsed.program.body) {
-              const declaration =
-                statement.type === 'ExportNamedDeclaration'
-                  ? statement.declaration
-                  : statement
-              if (
-                declaration?.type === 'TSModuleDeclaration' &&
-                declaration.id.type === 'Identifier'
-              ) {
-                functions.delete(declaration.id.name)
-                if (declaration.id.name === defaultBinding)
-                  functions.delete('default')
-              }
-            }
-            if (
-              !parsed.errors.length &&
-              node.specifiers.every((specifier) =>
-                specifier.type === 'ImportDefaultSpecifier'
-                  ? functions.has('default')
-                  : specifier.type === 'ImportSpecifier' &&
-                    (specifier.importKind === 'type' ||
-                      functions.has(
-                        specifier.imported.type === 'Identifier'
-                          ? specifier.imported.name
-                          : specifier.imported.value,
-                      )),
-              )
-            ) {
-              runtime.add(resolved)
-              track(resolved)
-              continue
-            }
+              if (specifier.exportKind === 'type') return null
+              return specifier.local.type === 'Identifier'
+                ? specifier.local.name
+                : specifier.local.value
+            })
+            // Follow only requested named exports. Runtime implementations remain owned by Next's module graph.
+            const functions = await Promise.all(
+              names.map(async (name) => {
+                if (name === null) return true
+                if (name === undefined) return false
+                return callable(resolved, name)
+              }),
+            )
+            if (functions.every(Boolean)) continue
           }
           links[specifier] = id(resolved)
           await visit(resolved)

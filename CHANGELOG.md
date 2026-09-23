@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.16
+
+### Patch Changes
+
+- a2f1e9c: Consolidated generated theme rules and deduplicated shared theme declarations across Next.js modules.
+
 ## 0.0.15
 
 ### Patch Changes

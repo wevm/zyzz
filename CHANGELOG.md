@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.15
+
+### Patch Changes
+
+- 278260d: Deduplicated responsive token defaults across web outputs and the Next.js reset, labeled generated tokens, and preserved variable selectors in Rollup bundles.
+
 ## 0.0.14
 
 ### Patch Changes

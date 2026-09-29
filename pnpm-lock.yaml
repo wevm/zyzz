@@ -27,6 +27,9 @@ catalogs:
     '@oxc-project/types':
       specifier: 0.148.0
       version: 0.148.0
+    '@oxlint/plugins':
+      specifier: 1.68.0
+      version: 1.68.0
     '@pandacss/node':
       specifier: ^1.12.1
       version: 1.12.1
@@ -81,6 +84,9 @@ catalogs:
     oxc-walker:
       specifier: 1.1.1
       version: 1.1.1
+    oxlint:
+      specifier: 1.72.0
+      version: 1.72.0
     pdf-lib:
       specifier: 1.17.1
       version: 1.17.1
@@ -173,6 +179,9 @@ importers:
       '@oxc-project/types':
         specifier: 'catalog:'
         version: 0.148.0
+      '@oxlint/plugins':
+        specifier: 'catalog:'
+        version: 1.68.0
       css-tree:
         specifier: 'catalog:'
         version: 3.2.1
@@ -255,6 +264,9 @@ importers:
       next:
         specifier: 16.3.5
         version: 16.3.5(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.72.0(oxlint-tsgolint@0.24.0)(vite-plus@0.2.2(@types/node@24.13.3)(@vitest/browser-playwright@4.1.9)(@vitest/coverage-v8@4.1.9)(esbuild@0.28.2)(jiti@2.7.0)(svelte@5.57.0)(terser@5.51.2)(typescript@7.0.2)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))(yaml@2.9.0))
       pdf-lib:
         specifier: 'catalog:'
         version: 1.17.1

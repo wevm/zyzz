@@ -44,6 +44,7 @@
     "esbuild": "catalog:",
     "mdn-data": "catalog:",
     "next": "catalog:",
+    "oxlint": "catalog:",
     "pdf-lib": "catalog:",
     "pkg-pr-new": "catalog:",
     "playwright": "catalog:",
@@ -140,6 +141,11 @@
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
+    "./oxlint": {
+      "src": "./src/oxlint/index.ts",
+      "types": "./dist/oxlint/index.d.ts",
+      "default": "./dist/oxlint/index.js"
+    },
     "./react-native": {
       "src": "./src/react-native/index.ts",
       "types": "./dist/react-native/index.d.ts",
@@ -189,6 +195,7 @@
     "@jridgewell/gen-mapping": "catalog:",
     "@jridgewell/trace-mapping": "catalog:",
     "@oxc-project/types": "catalog:",
+    "@oxlint/plugins": "catalog:",
     "css-tree": "catalog:",
     "incur": "catalog:",
     "lightningcss": "catalog:",

@@ -243,80 +243,90 @@ namespace styles {
   export const actions = style({
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '12px',
-    marginTop: '36px',
+    gap: 3,
+    marginTop: 9,
   })
   export const brand = style({
     typography: 'heading.40',
-    color: '#fafafa',
+    color: 'foreground',
     textDecoration: 'none',
   })
   export const byline = style({
     typography: 'label.16',
-    color: '#888',
-    marginLeft: '20px',
+    color: 'gray.900',
+    marginLeft: 5,
     textDecoration: 'none',
-    ':hover': { color: '#ddd' },
+    ':hover': { color: 'foreground' },
   })
   export const code = style({
     typography: 'label.14.mono',
-    color: '#d4d4d4',
+    color: 'foreground',
     margin: 0,
     overflowX: 'auto',
-    padding: '28px 30px 32px',
+    paddingBottom: 8,
+    paddingInline: 8,
+    paddingTop: 7,
     tabSize: 2,
     '& code': { font: 'inherit' },
-    ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '-2px' },
+    ':focus-visible': {
+      outline: '2px solid',
+      outlineColor: 'gray.600',
+      outlineOffset: '-2px',
+    },
     '@media (max-width: 600px)': {
       typography: 'label.12.mono',
-      padding: '22px 20px',
+      paddingBlock: 5,
+      paddingInline: 5,
     },
   })
   export const command = style({
     typography: 'label.14.mono',
-    color: '#d4d4d4',
+    color: 'foreground',
   })
   export const commandRow = style({
     alignItems: 'center',
     display: 'flex',
-    gap: '12px',
+    gap: 3,
     justifyContent: 'space-between',
-    padding: '20px 22px',
+    paddingBlock: 5,
+    paddingInline: 5,
   })
   export const copyStatus = style({
     typography: 'copy.13',
-    color: '#a3a3a3',
-    minHeight: '24px',
-    paddingTop: '8px',
+    color: 'gray.900',
+    minHeight: 6,
+    paddingTop: 2,
   })
   export const description = style({
     typography: 'copy.20',
-    color: '#a3a3a3',
-    marginTop: '28px',
-    maxWidth: '440px',
+    color: 'gray.900',
+    marginTop: 7,
+    maxWidth: 'md',
   })
   export const example = style({
     alignSelf: 'center',
-    backgroundColor: '#0d0d0d',
-    border: '1px solid #262626',
-    borderRadius: '10px',
+    backgroundColor: 'background.200',
+    border: '1px solid',
+    borderColor: 'gray.400',
+    borderRadius: 'xl',
     minWidth: 0,
     overflow: 'hidden',
   })
   export const header = style({
     alignItems: 'center',
     display: 'flex',
-    margin: '0 auto',
-    maxWidth: '1320px',
-    padding: '42px 48px',
-    '@media (max-width: 600px)': { padding: '28px 24px' },
+    marginInline: 'auto !custom',
+    maxWidth: '7xl',
+    paddingBlock: 10,
+    paddingInline: 12,
+    '@media (max-width: 600px)': { paddingBlock: 7, paddingInline: 6 },
   })
   export const headerLink = style({
     typography: 'label.16',
-    color: '#a3a3a3',
-    marginLeft: 'auto',
+    color: 'gray.900',
+    marginLeft: 'auto !custom',
     textDecoration: 'none',
-    ':hover': { color: '#fff' },
+    ':hover': { color: 'foreground' },
   })
   export const heading = style({
     typography: 'heading.56',
@@ -356,52 +366,68 @@ namespace styles {
     display: 'inline-grid',
   })
   export const install = style({
-    backgroundColor: '#181818',
-    border: '1px solid #2a2a2a',
-    borderRadius: '8px',
-    marginTop: '40px',
-    maxWidth: '440px',
+    backgroundColor: 'gray.100',
+    border: '1px solid',
+    borderColor: 'gray.400',
+    borderRadius: 'lg',
+    marginTop: 10,
+    maxWidth: 'md',
     overflow: 'hidden',
   })
   export const installHeader = style({
-    borderBottom: '1px solid #2a2a2a',
+    borderBottom: '1px solid',
+    borderBottomColor: 'gray.400',
     display: 'flex',
-    gap: '8px',
-    paddingInline: '12px',
+    gap: 2,
+    paddingInline: 3,
   })
   export const intro = style({
     alignSelf: 'center',
     minWidth: 0,
-    paddingBlock: '32px',
+    paddingBlock: 8,
   })
   export const main = style({
     display: 'grid',
-    gap: 'clamp(40px, 6vw, 88px)',
+    gap: 16,
     gridTemplateColumns: 'minmax(0, 0.95fr) minmax(0, 1.05fr)',
-    margin: '0 auto',
-    maxWidth: '1320px',
-    padding: '44px 48px 80px',
+    marginInline: 'auto !custom',
+    maxWidth: '7xl',
+    paddingBottom: 20,
+    paddingInline: 12,
+    paddingTop: 11,
     '@media (max-width: 900px)': {
-      gap: '28px',
+      gap: 7,
       gridTemplateColumns: 'minmax(0, 1fr)',
-      maxWidth: '720px',
-      paddingTop: '12px',
+      maxWidth: '3xl',
+      paddingTop: 3,
     },
-    '@media (max-width: 600px)': { padding: '12px 24px 40px' },
+    '@media (max-width: 600px)': {
+      paddingBottom: 10,
+      paddingInline: 6,
+      paddingTop: 3,
+    },
   })
   export const manager = style({
     typography: 'button.14',
     borderBottom: '2px solid transparent',
-    color: '#999',
+    color: 'gray.900',
     cursor: 'pointer',
-    padding: '13px 12px',
-    '&[aria-pressed="true"]': { borderBottomColor: '#eee', color: '#eee' },
-    ':hover': { color: '#fff' },
-    ':focus-visible': { outline: '2px solid #b3c7ff', outlineOffset: '-4px' },
+    paddingBlock: 3,
+    paddingInline: 3,
+    '&[aria-pressed="true"]': {
+      borderBottomColor: 'foreground',
+      color: 'foreground',
+    },
+    ':hover': { color: 'foreground' },
+    ':focus-visible': {
+      outline: '2px solid',
+      outlineColor: 'gray.600',
+      outlineOffset: '-4px',
+    },
   })
   export const page = style({
-    backgroundColor: '#121212',
-    color: '#fafafa',
-    minHeight: '100svh',
+    backgroundColor: 'background.100',
+    color: 'foreground',
+    minHeight: '100svh !custom',
   })
 }

@@ -1,7 +1,7 @@
 /** Defines the site's global styles and self-hosted fonts. @module */
 import { fontFace, global } from 'zyzz/web'
 
-export { style, variants } from 'zyzz/default'
+export { style, variants, vars } from 'zyzz/default'
 
 const fonts = { mono: 'Geist Mono', sans: 'Geist' }
 

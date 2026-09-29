@@ -2,7 +2,7 @@
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import reset from 'zyzz/reset.css?url'
-import '../zyzz.config.js'
+import { vars } from '../zyzz.config.js'
 
 /** Defines the document shell and page metadata. */
 export const Route = createRootRoute({
@@ -36,7 +36,7 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" {...vars({ colorScheme: 'light dark' })}>
       <head>
         <HeadContent />
       </head>

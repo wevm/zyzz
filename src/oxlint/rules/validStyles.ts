@@ -27,7 +27,7 @@ export const validStyles: Rule = {
           recipe: binding.kind === 'variants',
           visitors: {
             declaration(property, name) {
-              if (name === 'typography') return
+              if (binding.themed && name === 'typography') return
               if (
                 !binding.themed &&
                 !name.startsWith('--') &&

@@ -51,7 +51,9 @@ Named aliases, namespace imports, immutable local aliases, and helpers destructu
 }
 ```
 
-Entries match import specifiers exactly and supplement automatic recognition. Configuration filenames are matched on the import text without filesystem resolution. Recognized configuration modules are assumed to expose Zyzz helpers. The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
+Entries match import specifiers exactly and supplement automatic recognition. Configuration filenames are matched on the import text without filesystem resolution. Recognized configuration modules are assumed to expose `style` and `variants`. Only `zyzz` imports expose recognized `cx` and `Config` helpers.
+
+The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
 
 Declaration rules visit `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. Variant names, selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches are excluded. Apply these web rules only to web authoring files through Oxlint overrides.
 

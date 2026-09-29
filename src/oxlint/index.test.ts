@@ -123,6 +123,155 @@ declared(callback)`
     ).toMatchInlineSnapshot(`[]`)
   })
 
+  test('skips values that escape through object and array containers', async () => {
+    for (const container of [
+      '[value]',
+      '{ value }',
+      '[value as unknown]',
+      '{ value: value! }',
+    ]) {
+      expect(
+        await lint(
+          `import { style } from 'zyzz'
+const value = { margn: '1px', marginLeft: '1px' }
+const box = ${container}
+mutate(box)
+style(value)`,
+          { 'valid-styles': 'error', 'use-logical-properties': 'error' },
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+      expect(
+        await lint(
+          `import { style } from 'zyzz'
+const value = []
+const box = ${container}
+mutate(box)
+style({ display: value })`,
+          { 'valid-styles': 'error' },
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+    }
+    expect(
+      (
+        await lint(
+          `import { style } from 'zyzz'
+const value = { margn: '1px' }
+style(value)`,
+          { 'valid-styles': 'error' },
+        )
+      ).map(({ message }) => message),
+    ).toMatchInlineSnapshot(`
+      [
+        "Unknown CSS property 'margn'.",
+      ]
+    `)
+  })
+
+  test('validates typography for root helpers and defers themed typography', async () => {
+    expect(
+      (
+        await lint(
+          `import { style, variants, Config } from 'zyzz'
+import * as zyzz from 'zyzz'
+import { style as defaults } from 'zyzz/default'
+import { style as configured } from './zyzz.config.ts'
+const { style: themed } = Config.create({})
+style({ typography: 'body' })
+variants({ base: { typography: 'body' } })
+zyzz.style({ typography: 'body' })
+defaults({ typography: 'body' })
+configured({ typography: 'body' })
+themed({ typography: 'body' })`,
+          { 'valid-styles': 'error' },
+        )
+      ).map(({ message }) => message),
+    ).toMatchInlineSnapshot(`
+      [
+        "Unknown CSS property 'typography'.",
+        "Unknown CSS property 'typography'.",
+        "Unknown CSS property 'typography'.",
+      ]
+    `)
+  })
+
+  test('recognizes only style and variants from configuration modules', async () => {
+    for (const source of ['zyzz/default', './zyzz.config.ts', '@/styles.js']) {
+      expect(
+        (
+          await lint(
+            `import { cx, Config, style, variants } from '${source}'
+import * as config from '${source}'
+const a = <div {...cx()} className="unrelated" />
+const b = <div {...config.cx()} className="unrelated" />
+const { style: unrelated } = Config.create({})
+const { style: alsoUnrelated } = config.Config.create({})
+unrelated({ marginLeft: '1px' })
+alsoUnrelated({ marginLeft: '1px' })
+style({ marginLeft: '1px' })
+variants({ base: { marginLeft: '1px' } })
+config.style({ marginLeft: '1px' })
+config.variants({ base: { marginLeft: '1px' } })`,
+            {
+              'no-conflicting-props': 'error',
+              'use-logical-properties': 'error',
+            },
+            { imports: ['@/styles.js'] },
+          )
+        ).map(({ code, line }) => ({ code, line })),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "code": "zyzz(use-logical-properties)",
+            "line": 9,
+          },
+          {
+            "code": "zyzz(use-logical-properties)",
+            "line": 10,
+          },
+          {
+            "code": "zyzz(use-logical-properties)",
+            "line": 11,
+          },
+          {
+            "code": "zyzz(use-logical-properties)",
+            "line": 12,
+          },
+        ]
+      `)
+    }
+    expect(
+      (
+        await lint(
+          `import { cx } from 'zyzz'
+import * as zyzz from 'zyzz'
+const a = <div {...cx()} className="override" />
+const b = <div {...zyzz.cx()} className="override" />
+const { style } = zyzz.Config.create({})
+style({ marginLeft: '1px' })`,
+          {
+            'no-conflicting-props': 'error',
+            'use-logical-properties': 'error',
+          },
+        )
+      ).map(({ code, line }) => ({ code, line })),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "zyzz(no-conflicting-props)",
+          "line": 3,
+        },
+        {
+          "code": "zyzz(no-conflicting-props)",
+          "line": 4,
+        },
+        {
+          "code": "zyzz(use-logical-properties)",
+          "line": 6,
+        },
+      ]
+    `)
+  })
+
   test('lints the existing React playground through published rules', async () => {
     const directory = Path.join(root, 'examples/vite-react/src')
     const files = (await Fs.readdir(directory)).filter((file) =>

@@ -66,11 +66,18 @@ export function create(context: Context) {
       const mutable = binding.references.some((reference) => {
         let value: ESTree.Node = reference.identifier
         while (
-          value.parent?.type === 'MemberExpression' &&
-          value.parent.object === value
+          value.parent &&
+          ((value.parent.type === 'MemberExpression' &&
+            value.parent.object === value) ||
+            unwrap(value.parent) === value)
         )
           value = value.parent
         const parent = value.parent
+        if (
+          parent?.type === 'ArrayExpression' ||
+          (parent?.type === 'Property' && parent.value === value)
+        )
+          return true
         if (parent?.type === 'AssignmentExpression' && parent.left === value)
           return true
         if (
@@ -110,8 +117,13 @@ export function create(context: Context) {
   ): Binding | undefined {
     if (!binding || !name) return undefined
     if (binding.kind === 'module') {
-      if (name === 'Config') return { kind: 'configNamespace', themed: true }
-      if (name === 'style' || name === 'variants' || name === 'cx')
+      if (!binding.themed && name === 'Config')
+        return { kind: 'configNamespace', themed: true }
+      if (
+        name === 'style' ||
+        name === 'variants' ||
+        (!binding.themed && name === 'cx')
+      )
         return { kind: name, themed: binding.themed }
     }
     if (binding.kind === 'configNamespace' && name === 'create')

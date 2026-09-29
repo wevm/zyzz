@@ -1,5 +1,12 @@
 # zyzz
 
+## 0.0.18
+
+### Patch Changes
+
+- 0748faf: Reduced repeated validation of frozen token references during style definition.
+- 0748faf: Updated CSS conformance inventories to MDN data 2.36.0, including the upstream `scroll-axis-lock` grammar.
+
 ## 0.0.17
 
 ### Patch Changes

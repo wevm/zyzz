@@ -4204,7 +4204,7 @@
         "status": "supported"
       },
       "scroll-axis-lock": {
-        "grammar": "d7ba8b5b968805fe7fecd7c25315626ce1b38a85f90ba0256f40fee7ea083b75",
+        "grammar": "6a402b421cfd837003ddb0927349247c244a76b706cf8f3e197048723cefc35f",
         "status": "supported",
         "evidence": ["src/compiler/Transform.test.ts"]
       },
@@ -7313,5 +7313,5 @@
       }
     }
   },
-  "version": "2.35.0"
+  "version": "2.36.0"
 }

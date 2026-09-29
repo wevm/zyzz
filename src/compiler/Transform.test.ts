@@ -293,6 +293,26 @@ describe('compile', () => {
     })
   })
 
+  test('CSS conformance compiles scroll axis locking with fallbacks and importance', () => {
+    const output = Transform.compile({
+      moduleId: 'scroll.ts',
+      source: `import { style } from 'zyzz';
+        export const scroll = style({ scrollAxisLock: ['auto', 'none !important'] })();`,
+    })
+    const declarations: string[] = []
+
+    CssTree.walk(CssTree.parse(output.css), (node) => {
+      if (node.type === 'Declaration') declarations.push(CssTree.generate(node))
+    })
+
+    expect(declarations).toMatchInlineSnapshot(`
+      [
+        "scroll-axis-lock:auto",
+        "scroll-axis-lock:none!important",
+      ]
+    `)
+  })
+
   test('CSS conformance covers every implemented property and pinned upstream grammar', async () => {
     const inventory = JSON.parse(
       await Fs.readFile(

@@ -20,6 +20,7 @@
       "zyzz/next": ["./src/next/index.ts"],
       "zyzz/next/loader": ["./src/next/loader.ts"],
       "zyzz/node": ["./src/node/index.ts"],
+      "zyzz/oxlint": ["./src/oxlint/index.ts"],
       "zyzz/react-native": ["./src/react-native/index.ts"],
       "zyzz/rollup": ["./src/rollup/index.ts"],
       "zyzz/runtime": ["./src/runtime/index.ts"],

@@ -64,10 +64,10 @@ Reports unknown properties in token-free styles, malformed value markers, empty 
 ```ts
 import { style } from 'zyzz'
 
-// Invalid: empty fallbacks and malformed importance.
+// ❌ Invalid: empty fallbacks and malformed importance.
 style({ display: [], color: 'red!important' })
 
-// Valid.
+// ✅ Valid.
 style({ display: ['block', 'flex'], color: 'red !important' })
 ```
 
@@ -85,9 +85,10 @@ namespace styles {
   export const selected = style({ opacity: 0.8 })
 }
 
-// Invalid: the explicit attribute replaces the generated class.
+// ❌ Invalid: the explicit attribute replaces the generated class.
 const invalid = <div {...styles.card()} className="external" />
 
+// ✅ Valid: merge overrides or compose applications.
 const valid = <div {...styles.card({ className: 'external' })} />
 const composed = <div {...cx(styles.card(), styles.selected())} />
 ```
@@ -101,11 +102,13 @@ Reports the physical horizontal properties and corner radii covered by Tempo's [
 ```ts
 import { style } from 'zyzz'
 
-// Reported when enabled.
+// ❌ Invalid when this rule is enabled.
 style({ marginLeft: '16px', paddingRight: '8px' })
 
+// ✅ Valid: use logical properties.
 style({ marginInlineStart: '16px', paddingInlineEnd: '8px' })
 
+// ✅ Valid: explicitly allow an intentional physical edge.
 style({
   // allow-physical-property
   left: '0px',
@@ -122,7 +125,9 @@ Reports unused style and variant definitions inside local, top-level TypeScript 
 import { style } from 'zyzz'
 
 namespace styles {
+  // ✅ Valid: applied below.
   export const card = style({ padding: '16px' })
+  // ❌ Invalid: never used.
   export const unused = style({ color: 'red' })
 }
 
@@ -153,6 +158,11 @@ Accepts one object keyed by exact authored property names. Each restriction has 
 }
 ```
 
-Under this configuration, `color: '#ff0000'`, `padding: '7px'`, and any `zIndex` declaration are reported. `color: theme.tokens.color.accent` and `padding: '4px'` are allowed. An empty `values` array rejects known literals but does not prove that unresolved expressions are tokens. No automatic fixes.
+Under this configuration:
+
+- ❌ Invalid: `color: '#ff0000'`, `padding: '7px'`, and any `zIndex` declaration.
+- ✅ Valid: `color: theme.tokens.color.accent` and `padding: '4px'`.
+
+An empty `values` array rejects known literals but does not prove that unresolved expressions are tokens. No automatic fixes.
 
 All rules support standard Oxlint suppression comments. None require TypeScript type-aware linting.

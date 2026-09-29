@@ -94,7 +94,7 @@ export function compile<
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.
   const logicalSizing = [...properties].some((property) =>
-    /^(min|max)?(blockSize|inlineSize)$/i.test(property),
+    /^(min|max)?(blockSize|inlineSize)$/i.test(canonical(property)),
   )
   const resets = properties.has('all')
   const combinedLines = new Set<string>()
@@ -165,6 +165,7 @@ export function compile<
       [
         'whiteSpace',
         'whiteSpaceCollapse',
+        'whiteSpaceTrim',
         'textWrap',
         'textWrapMode',
         'textWrapStyle',

@@ -19,6 +19,13 @@ type Props = Record<
 /** Checks shared definitions and their computed values at both viewport sizes. */
 export async function verify(options: verify.Options) {
   expect(
+    [...options.css.matchAll(/:where\(\*\)\s*\{([^}]+)\}/g)].some(
+      ([, declarations]) =>
+        (declarations!.match(/--z-[\w-]+:/g)?.length ?? 0) > 1,
+    ),
+  ).toMatchInlineSnapshot('true')
+
+  expect(
     options.css.match(/--z-editorial-labelSize-fallback-[\w-]+:\s*14px/g)
       ?.length,
   ).toMatchInlineSnapshot('1')

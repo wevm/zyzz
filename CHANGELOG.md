@@ -1,5 +1,23 @@
 # zyzz
 
+## 0.0.17
+
+### Patch Changes
+
+- c375cf8: Added typed support for inventoried CSS compatibility properties and automatic discovery of vendor prefixes and alternative names.
+  
+  ```ts
+  style({
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
+    rowRuleColor: 'repeat(2, red, blue)',
+  })
+  ```
+- 932a500: Reduced type-checking work for theme shorthand declarations.
+- 9cc95c4: Grouped compatible responsive fallback declarations across independently compiled Next.js consumers.
+- 4bc5ee3: Preserved development stylesheet identities when imported dependencies changed.
+- 932a500: Fixed development initialization scripts retaining removed configurations during concurrent Vite transforms.
+
 ## 0.0.16
 
 ### Patch Changes

@@ -14,6 +14,70 @@ import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('serializes compatibility properties with their authored spellings', () => {
+    const styles = Style.define({
+      text: {
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+        WebkitAnimationDelay: '0s, 250ms',
+        rowRuleColor: 'repeat(2, red, blue)',
+      },
+    })
+
+    expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
+      ".z--webkit-font-smoothing-antialiased-0NJj2I-0{-webkit-font-smoothing:antialiased;}
+      .z--moz-osx-font-smoothing-grayscale-0NJj2I-1{-moz-osx-font-smoothing:grayscale;}
+      .z--webkit-animation-delay-ijUGkz{-webkit-animation-delay:0s, 250ms;}
+      .z-row-rule-color-nuU-Ma{row-rule-color:repeat(2, red, blue);}"
+    `)
+  })
+
+  test('compatibility aliases and gap shorthands retain repeated overrides', async () => {
+    const styles = Style.define({
+      first: { WebkitTransform: 'translateX(10px)', ruleColor: 'red' },
+      middle: { transform: 'translateX(20px)', rowRuleColor: 'blue' },
+      last: { WebkitTransform: 'translateX(10px)', ruleColor: 'red' },
+    })
+    const output = Css.compile({ styles })
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<!doctype html><body></body>')
+      await page.addStyleTag({ content: output.css })
+      const result = await page.evaluate((classes) => {
+        return [
+          `${classes.first} ${classes.middle}`,
+          `${classes.middle} ${classes.last}`,
+        ].map((className) => {
+          const element = document.createElement('div')
+          element.className = className
+          document.body.append(element)
+          const computed = getComputedStyle(element)
+          return [
+            computed.transform,
+            computed.getPropertyValue('row-rule-color'),
+          ]
+        })
+      }, output.classes)
+
+      expect(result).toMatchInlineSnapshot(`
+        [
+          [
+            "matrix(1, 0, 0, 1, 20, 0)",
+            "rgb(0, 0, 255)",
+          ],
+          [
+            "matrix(1, 0, 0, 1, 10, 0)",
+            "rgb(255, 0, 0)",
+          ],
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('includes responsive defaults in standalone CSS', async () => {
     const vars = Vars.define({
       size: { default: '14px', '@media (width >= 1024px)': '16px' },

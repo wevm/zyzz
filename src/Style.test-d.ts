@@ -21,6 +21,45 @@ import { style, Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
+describe('compatibility properties', () => {
+  test('preserves vendor domains and new property grammars', () => {
+    style({
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale',
+      WebkitAnimationDelay: '0s, 250ms',
+      WebkitAlt: 'attr(data-label)',
+      WebkitTextCombine: 'horizontal',
+      WebkitRubyPosition: 'before',
+      WebkitBackgroundClip: 'padding',
+      WebkitPerspective: 800,
+      glyphOrientationVertical: 90,
+      WebkitColumnBreakInside: 'avoid',
+      rowRule: '1px solid red',
+      rowRuleColor: 'repeat(2, red, blue)',
+      ruleInset: '10px 20% / overlap-join',
+      viewTransitionGroup: 'card',
+      whiteSpaceTrim: 'discard-before discard-after',
+    })
+
+    // @ts-expect-error Mozilla does not accept WebKit smoothing keywords.
+    style({ MozOsxFontSmoothing: 'antialiased' })
+    // @ts-expect-error WebKit does not accept Mozilla smoothing keywords.
+    style({ WebkitFontSmoothing: 'grayscale' })
+    // @ts-expect-error Legacy WebKit text combining uses horizontal, not all.
+    style({ WebkitTextCombine: 'all' })
+    // @ts-expect-error Legacy glyph orientation accepts only zero or ninety degrees.
+    style({ glyphOrientationVertical: 45 })
+    // @ts-expect-error Gap decoration widths exclude percentages.
+    style({ rowRuleWidth: '10%' })
+    // @ts-expect-error Gap decoration widths must be nonnegative.
+    style({ rowRuleWidth: '-1px' })
+    // @ts-expect-error Gap decoration colors exclude line styles.
+    style({ rowRuleColor: 'solid' })
+    // @ts-expect-error Legacy break-inside excludes break-before keywords.
+    style({ WebkitColumnBreakInside: 'always' })
+  })
+})
+
 describe('intrinsic scalar prefixes', () => {
   test('rejects optional unknown keys on broad style annotations', () => {
     const box = {} as Style.Properties & { widht?: string }

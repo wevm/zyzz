@@ -839,22 +839,31 @@ export type NamedStyle<name extends string = string> = {
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
 export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
-  readonly [property in keyof Literal.Properties]: Value.Fallbacks<
-    | (property extends `--${string}`
-        ? LiteralAtoms[property]
-        : [Token.Names<tokens, property>] extends [never]
-          ? LiteralAtoms[property]
-          :
-              | Value.Atom<`${string} !custom`>
-              | Extract<LiteralAtoms[property], Binding.Reference>)
-    | Value.Atom<Token.Names<tokens, property>>
-    | {
-        [group in Token.Group]: property extends Token.Properties<group>
-          ? Value.Atom<Token.Reference<group> | Token.Variable<group>>
-          : never
-      }[Token.Group]
+  readonly [property in keyof Literal.Properties]: DeclarationValue<
+    tokens,
+    property
   >
 }
+
+// A named alias caches each property domain without expanding the full declaration map.
+type DeclarationValue<
+  tokens extends Theme.Tokens,
+  property extends keyof Literal.Properties,
+> = Value.Fallbacks<
+  | (property extends `--${string}`
+      ? LiteralAtoms[property]
+      : [Token.Names<tokens, property>] extends [never]
+        ? LiteralAtoms[property]
+        :
+            | Value.Atom<`${string} !custom`>
+            | Extract<LiteralAtoms[property], Binding.Reference>)
+  | Value.Atom<Token.Names<tokens, property>>
+  | {
+      [group in Token.Group]: property extends Token.Properties<group>
+        ? Value.Atom<Token.Reference<group> | Token.Variable<group>>
+        : never
+    }[Token.Group]
+>
 
 /** Recursive theme-aware declaration and condition authoring. */
 export type Properties<

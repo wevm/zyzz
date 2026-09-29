@@ -1,5 +1,20 @@
 # zyzz
 
+## 0.0.19
+
+### Patch Changes
+
+- 2ecccc2: Added `zyzz/oxlint` rules for style validation, logical properties, conflicting JSX props, unused namespace styles, and project property restrictions.
+  
+  ```ts
+  export default {
+    lint: {
+      jsPlugins: [{ name: 'zyzz', specifier: 'zyzz/oxlint' }],
+      rules: { 'zyzz/valid-styles': 'error' },
+    },
+  }
+  ```
+
 ## 0.0.18
 
 ### Patch Changes

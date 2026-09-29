@@ -115,8 +115,8 @@ Generate `script()` on the server or at build time and execute its returned Java
 ```ts
 const { style } = Config.create({
   vars: {
-    breakpoints: { tablet: '48rem' },
-    containers: { card: '20rem' },
+    breakpoint: { tablet: '48rem' },
+    container: { card: '20rem' },
     containerNames: ['preview'],
   },
 })

@@ -241,6 +241,15 @@ export type Properties = {
   readonly fontVariationSettings:
     | 'normal'
     | List<`${Quoted}${'' | ' '}${number}`>
+  /** Legacy vertical glyph orientation accepts only quarter-turn values. */
+  readonly glyphOrientationVertical:
+    | 'auto'
+    | '0deg'
+    | '90deg'
+    | '0'
+    | '90'
+    | 0
+    | 90
   readonly grid:
     | 'none'
     | Chain<Track | Quoted | 'auto-flow' | 'dense'>
@@ -400,6 +409,53 @@ export type Properties = {
     | 'none'
     | `${Quoted}${'' | ' '}${Quoted}`
     | `${Quoted}${'' | ' '}${Quoted}${string}`
+  /** Gap decoration shorthand with optional repetition. */
+  readonly rowRule: List<
+    | Chain<
+        | Exclude<Dimension, `${number}%`>
+        | Literal.Color
+        | 'thin'
+        | 'medium'
+        | 'thick'
+        | 'none'
+        | 'hidden'
+        | 'dotted'
+        | 'dashed'
+        | 'solid'
+        | 'double'
+        | 'groove'
+        | 'ridge'
+        | 'inset'
+        | 'outset'
+      >
+    | `repeat(${string})`
+  >
+  /** Gap decoration colors with optional repetition. */
+  readonly rowRuleColor: List<Literal.Color | `repeat(${string})`>
+  /** Gap decoration styles with optional repetition. */
+  readonly rowRuleStyle: List<
+    | 'none'
+    | 'hidden'
+    | 'dotted'
+    | 'dashed'
+    | 'solid'
+    | 'double'
+    | 'groove'
+    | 'ridge'
+    | 'inset'
+    | 'outset'
+    | `repeat(${string})`
+  >
+  /** Gap decoration widths with optional repetition. */
+  readonly rowRuleWidth: List<
+    | Exclude<Dimension, `${number}%`>
+    | 'thin'
+    | 'medium'
+    | 'thick'
+    | `repeat(${string})`
+  >
+  /** Cap and junction insets separated by an optional slash. */
+  readonly ruleInset: Chain<Dimension | Percentage | 'overlap-join'>
   readonly scrollSnapCoordinate: 'none' | List<Position>
   readonly scrollSnapDestination: Position
   readonly scrollSnapPointsX: 'none' | `repeat(${string})`

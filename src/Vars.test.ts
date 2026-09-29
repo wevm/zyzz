@@ -14,7 +14,7 @@ describe('define', () => {
       modules: {
         'app.ts': `import {Config, Vars} from 'zyzz';
           const tokens = Vars.define({
-            breakpoints: {tablet: '768px'},
+            breakpoint: {tablet: '768px'},
             dimension: {space: {default: '16px', '@media >=tablet': '32px'}},
           }, (vars) => ({dimension: {derived: vars.dimension.space}}));
           export const {style, vars} = Config.create({vars: tokens, mappings: false});
@@ -214,7 +214,10 @@ describe('define', () => {
           })
           await page.setContent(
             `<style>${
-              (packed ? library.modules['index.ts']!.css : '') +
+              (packed
+                ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+                : '') +
+              (result.sharedCss ?? '') +
               Object.values(result.modules)
                 .map((module) => module.css)
                 .join('')
@@ -291,6 +294,20 @@ describe('define', () => {
     )
   })
 
+  test('validates property domains when reusing a frozen reference', () => {
+    const vars = Vars.define({ surface: { ink: '#123456' } })
+
+    expect(() =>
+      Style.define({
+        first: { color: vars.surface.ink },
+        // @ts-expect-error A reference validated for color is still invalid for width.
+        second: { width: vars.surface.ink },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["second","width"]: Variable value is incompatible with this property.]`,
+    )
+  })
+
   test('accepts custom categories named tokens in portable styles', () => {
     const vars = Vars.define(
       { tokens: { ink: '#123456' } },
@@ -321,18 +338,17 @@ describe('define', () => {
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ":where(*){--z-f1i8tofc19dwsq:16px;}@media (min-width: 768px){:where(*){--z-f1i8tofc19dwsq:32px;}}
-      .z_theme-1e8a67z1uaws1j-config-base{--z-t1e8a67z1uaws1j-config-color_2e_accent:#2563eb;--z-t1e8a67z1uaws1j-config-spacing_2e_page:var(--z-f1i8tofc19dwsq);--z-t1e8a67z1uaws1j-config-surface_2e_panel:#fff;}
-      @media (min-width: 768px){.z_theme-1e8a67z1uaws1j-config-base{--z-t1e8a67z1uaws1j-config-spacing_2e_page:32px;}}
-      .z_theme-1e8a67z1uaws1j-config-alternate{--z-t1e8a67z1uaws1j-config-color_2e_accent:#9333ea;--z-t1e8a67z1uaws1j-config-spacing_2e_page:var(--z-f1i8tofc19dwsq);--z-t1e8a67z1uaws1j-config-surface_2e_panel:#fff;}
-      @media (min-width: 768px){.z_theme-1e8a67z1uaws1j-config-alternate{--z-t1e8a67z1uaws1j-config-spacing_2e_page:32px;}}
+      ".z_theme-src-app-bk8jvZf5JrJ-config-base{--z-color-accent-b07u5jufhwM:#2563eb;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
+      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-base{--z-spacing-page-b0L4IfEjMux:32px;}}
+      .z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-color-accent-b07u5jufhwM:#9333ea;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
+      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-spacing-page-b0L4IfEjMux:32px;}}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-VoQob9{color:var(--z-t1e8a67z1uaws1j-config-color_2e_accent,#2563eb);}
-      .z-p-uudsXs{padding:var(--z-t1e8a67z1uaws1j-config-spacing_2e_page,var(--z-f1i8tofc19dwsq));}
-      .z-w-SlwuVH{width:var(--z-t1e8a67z1uaws1j-config-spacing_2e_page,var(--z-f1i8tofc19dwsq));}
-      .z-bg-4MueOF{background-color:var(--z-t1e8a67z1uaws1j-config-surface_2e_panel,#fff);}"
+      .z-text-HedmoP{color:var(--z-color-accent-b07u5jufhwM,#2563eb);}
+      .z-p-IQ2rhY{padding:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
+      .z-w-rDGSnw{width:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
+      .z-bg-b6sB8n{background-color:var(--z-surface-panel-f9kdJUYqBjM,#fff);}"
     `)
     const code = await Packed.bundle({
       entry: 'app.ts',
@@ -345,7 +361,7 @@ describe('define', () => {
         viewport: { width: 500, height: 600 },
       })
       await page.setContent(
-        `<style>${result.modules['app.ts']!.css}</style><div class="${fixture.scope.className}" style="color-scheme:dark"><div id="card" class="${fixture.card().className}"></div></div>`,
+        `<style>${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><div class="${fixture.scope.className}" style="color-scheme:dark"><div id="card" class="${fixture.card().className}"></div></div>`,
       )
       expect(
         await page.locator('#card').evaluate((node) => ({
@@ -397,7 +413,7 @@ describe('define', () => {
         viewport: { width: 1000, height: 600 },
       })
       await page.setContent(
-        `<style>${library.modules['index.ts']!.css}${app.modules['app.ts']!.css}</style><div class="${fixture.scope.className}"><div id="card" class="${fixture.card().className}"></div><div id="packed" class="${fixture.packed().className}"></div></div>`,
+        `<style>${library.sharedCss ?? ''}${library.modules['index.ts']!.css}${app.sharedCss ?? ''}${app.modules['app.ts']!.css}</style><div class="${fixture.scope.className}"><div id="card" class="${fixture.card().className}"></div><div id="packed" class="${fixture.packed().className}"></div></div>`,
       )
       expect(
         await page.locator('#packed').evaluate((node) => ({
@@ -462,7 +478,7 @@ describe('define', () => {
         viewport: { width: 1000, height: 600 },
       })
       await page.setContent(
-        `<style>${graph.modules['app.ts']!.css}</style><div id="scope" class="${fixture.dark.className}"><div id="outer" class="${fixture.card().className}"></div><div class="${fixture.nested.className}"><div id="inner" class="${fixture.card().className}"></div></div></div>`,
+        `<style>${graph.sharedCss ?? ''}${graph.modules['app.ts']!.css}</style><div id="scope" class="${fixture.dark.className}"><div id="outer" class="${fixture.card().className}"></div><div class="${fixture.nested.className}"><div id="inner" class="${fixture.card().className}"></div></div></div>`,
       )
       expect(
         await page
@@ -523,6 +539,113 @@ describe('define', () => {
       [StyleSheet.CompileError: ["default","light","card","padding"]: Media-conditioned variables require a web target.
       ["default","dark","card","padding"]: Media-conditioned variables require a web target.]
     `)
+  })
+
+  test('consumes named rule references alongside variable configurations', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz'; import {customMedia,cssFunction} from 'zyzz/web'; export const {style}=Config.create({vars:{spacing:{gap:'8px'}}}); export const compact=customMedia('(width < 40rem)'); export const twice=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});`,
+      },
+    })
+    const result = Graph.compile({
+      contracts: { 'library.js': library.contracts['config.ts']! },
+      imports: { 'app.ts': { library: 'library.js' } },
+      modules: { 'app.ts': `export {style,compact,twice} from 'library'` },
+    })
+    expect(
+      JSON.parse(result.contracts['app.ts']!).exports.compact.kind,
+    ).toMatchInlineSnapshot(`"rule-reference"`)
+    expect(
+      JSON.parse(result.contracts['app.ts']!).exports.twice.kind,
+    ).toMatchInlineSnapshot(`"rule-reference"`)
+  })
+  test.each([26, 27])(
+    'rejects obsolete variable contracts version %s',
+    (version) => {
+      const library = Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'}}})`,
+        },
+      })
+      const contract = JSON.parse(library.contracts['config.ts']!)
+      contract.version = version
+      expect(() =>
+        Graph.compile({
+          contracts: { 'library.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { library: 'library.js' } },
+          modules: { 'app.ts': `export {style} from 'library'` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 28 or later.]`,
+      )
+    },
+  )
+  test('accepts reordered category mappings across packed entrypoints', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz'; export const {style}=Config.create({vars:{spacing:{gap:'8px'},container:{gap:'16px'}},mappings:{spacing:['width'],container:['height']}})`,
+      },
+    })
+    const original = library.contracts['config.ts']!
+    const reordered = JSON.parse(original)
+    for (const theme of Object.values(reordered.themes) as {
+      mappings?: object
+    }[])
+      if (theme.mappings)
+        theme.mappings = Object.fromEntries(
+          Object.entries(theme.mappings).reverse(),
+        )
+    reordered.exports.style.variableMappings = Object.fromEntries(
+      Object.entries(reordered.exports.style.variableMappings).reverse(),
+    )
+    const result = Graph.compile({
+      contracts: { 'a.js': original, 'b.js': JSON.stringify(reordered) },
+      imports: { 'app.ts': { a: 'a.js', b: 'b.js' } },
+      modules: {
+        'app.ts': `import {style as a} from 'a'; import {style as b} from 'b'; export const first=a({width:'gap'}); export const second=b({height:'gap'});`,
+      },
+    })
+    expect(
+      result.modules['app.ts']!.css.includes('width:var('),
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      result.modules['app.ts']!.css.includes('height:var('),
+    ).toMatchInlineSnapshot(`true`)
+  })
+  test.each(['custom-counter', '"custom marker"', 'escaped\\ name'])(
+    'accepts valid identifier token %s',
+    (value) => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{named:${JSON.stringify(value)}}}}); export const list=style({listStyleType:'named'});`,
+        },
+      })
+      expect(
+        result.modules['app.ts']!.css.includes('list-style-type:var('),
+      ).toMatchInlineSnapshot(`true`)
+    },
+  )
+  test('rejects invalid conditional identifier token values', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{bad:{default:'disc','@media (width > 600px)':'two words?'}}}}); export const list=style({listStyleType:'bad'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:161: Variable value is incompatible with this property.]`,
+    )
+  })
+  test('rejects invalid identifier token values', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz'; const {style}=Config.create({vars:{listStyleType:{bad:'two words?'}}}); export const list=style({listStyleType:'bad'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:119: Variable value is incompatible with this property.]`,
+    )
   })
 
   test('rejects mapping collisions and incompatible overrides', () => {
@@ -625,8 +748,8 @@ test('preserves root leaf-shaped names and query contracts', () => {
     light: '8px',
     dark: 2,
     default: 'red',
-    breakpoints: { tablet: '48rem' },
-    containers: { compact: '20rem' },
+    breakpoint: { tablet: '48rem' },
+    container: { compact: '20rem' },
     containerNames: ['card'],
   })
   expect(vars.light.value).toBe('8px')
@@ -634,14 +757,14 @@ test('preserves root leaf-shaped names and query contracts', () => {
   expect(vars.default.value).toBe('red')
   expect(() =>
     Vars.extend(vars, {
-      breakpoints: { tablet: '50rem' },
-      containers: { compact: '24rem' },
+      breakpoint: { tablet: '50rem' },
+      container: { compact: '24rem' },
       containerNames: ['card'],
     }),
   ).not.toThrow()
   for (const overrides of [
-    { breakpoints: { desktop: '80rem' } },
-    { containers: { wide: '40rem' } },
+    { breakpoint: { desktop: '80rem' } },
+    { container: { wide: '40rem' } },
     { containerNames: ['other'] },
   ])
     expect(() => Vars.extend(vars, overrides as never)).toThrow(
@@ -649,7 +772,7 @@ test('preserves root leaf-shaped names and query contracts', () => {
     )
   expect(() =>
     Vars.extend(Vars.define({ ink: '#fff' }), {
-      breakpoints: { desktop: '80rem' },
+      breakpoint: { desktop: '80rem' },
     } as never),
   ).toThrow('Extensions cannot add query thresholds.')
   expect(() => Vars.define({ spacing: { scale: ['4px'] } } as never)).toThrow()
@@ -757,7 +880,10 @@ test('keeps extended reference fallbacks distinct in source and packed scopes', 
       })
       await page.setContent(
         `<style>${
-          (packed ? library.modules['index.ts']!.css : '') +
+          (packed
+            ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+            : '') +
+          (result.sharedCss ?? '') +
           Object.values(result.modules)
             .map((module) => module.css)
             .join('')

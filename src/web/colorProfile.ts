@@ -5,16 +5,8 @@ import * as Identity from '../internal/Identity.js'
 import type * as RuleReference from '../internal/RuleReference.js'
 
 /** Emits static descriptors and returns a domain-specific CSS name. */
-export function colorProfile<
-  const options extends Omit<colorProfile.Options, 'renderingIntent'> & {
-    readonly renderingIntent?: string | undefined
-  },
->(
-  options: options &
-    Record<Exclude<keyof options, keyof colorProfile.Options>, never> &
-    RuleReference.Checked<options> & {
-      readonly renderingIntent?: Intent<options['renderingIntent']>
-    },
+export function colorProfile<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): colorProfile.Reference {
   void options
@@ -58,3 +50,26 @@ type Keyword<value extends string> =
     : value extends `${infer rest}${' ' | '\t' | '\n' | '\r' | '\f'}`
       ? Keyword<rest>
       : Lexical.Fold<value>
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends Omit<
+  colorProfile.Options,
+  'renderingIntent'
+> & {
+  readonly renderingIntent?: string | undefined
+}
+  ? options &
+      Record<Exclude<keyof options, keyof colorProfile.Options>, never> &
+      RuleReference.Checked<options> & {
+        readonly renderingIntent?: Intent<options['renderingIntent']>
+      }
+  : never

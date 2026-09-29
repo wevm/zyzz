@@ -49,6 +49,7 @@ Read [Thinking in Zyzz](docs/introduction/thinking-in-zyzz.md) for co-location, 
 
 - [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
 - [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Token Values**](#token-values): configured tokens by default, with the `!custom` suffix for arbitrary CSS.
 - [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
 - [**Variants**](#variants): typed component choices, defaults, and compound rules.
 - [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
@@ -202,7 +203,7 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `vars`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Scales use conventional named steps, and colors ship as light/dark pairs.
+The `zyzz/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `style` and `variants`, plus `vars`, raw `tokens`, `appearance` controls, and a `script()` helper for restoring saved color-scheme preferences. Non-font token mappings and fallbacks follow Tailwind. Colors and typography follow Geist, and spacing uses an explicit table.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -259,6 +260,30 @@ namespace styles {
 ```
 
 Use [`Vars.define`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
+
+### Token Values
+
+Use configured tokens for consistent styles, or the `!custom` suffix for arbitrary CSS. Properties without configured tokens accept both plain values and values with `!custom`. No extra option is needed.
+
+```ts
+import { Config } from 'zyzz'
+
+const { style } = Config.create({
+  vars: {
+    color: { foreground: '#171717' },
+    spacing: { md: '8px' },
+  },
+})
+
+const button = style({
+  padding: 'md',
+  marginTop: '7px !custom',
+  color: '#123456 !custom',
+  width: 'calc(100% - 2rem) !custom',
+})
+```
+
+See [Token values](docs/api/core/Config/create.md#token-values) for mappings, fallbacks, and validation behavior.
 
 ### Color Schemes (Light/Dark Mode)
 
@@ -347,7 +372,7 @@ export function Bar() {
 
 ### Value Syntax
 
-Use the suffix ` !important` for importance and arrays for ordered fallbacks. `vars` provides typed references for declarations and CSS expressions.
+Use the suffix ` !custom` for literal CSS values, ` !important` for importance, and arrays for ordered fallbacks. `vars` provides typed references for declarations and CSS expressions.
 
 ```ts
 import { style, vars } from './zyzz.config.js'
@@ -357,7 +382,7 @@ namespace styles {
     display: ['block', 'grid'],
     color: 'brand !important',
     borderColor: vars.color.brand,
-    width: `calc(100% - ${vars.spacing.md})`,
+    width: `calc(100% - ${vars.spacing.md}) !custom`,
   })
 }
 ```

@@ -36,7 +36,7 @@ Signatures below describe the accepted call shapes. Multi-field helpers receive 
 
 The coverage inventory follows [MDN's at-rule reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules), including descriptors, nested page-margin rules, font-feature blocks, and statement/block forms. Experimental and legacy rules remain explicit inventory entries. Compiler support and browser availability are separate claims.
 
-Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. Descriptor helpers and `keyframes` accept an optional trailing `context = {}` argument containing ordered `within` groups. Statement helpers and `layers` remain top-level.
+Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. Descriptor helpers and `keyframes` accept nested at-rule keys for enclosing groups and an optional trailing `{ id }` for explicit identity. Statement helpers and `layers` remain top-level.
 
 ## Declarations
 
@@ -180,16 +180,22 @@ Full support requires independent type, extraction, emission, map, packaging, an
 
 ## Compilation Contexts
 
-Descriptor helpers accept an optional trailing `{ within }` options object. `within` is an ordered tuple of CSS grouping headers, outermost first. Only grouping contexts legal for the emitted rule are accepted. The default emits at stylesheet scope. Selectors and descriptor blocks are separate contexts.
+Descriptor helpers accept nested `@layer`, `@media`, `@supports`, and `@container` keys around complete definitions. Outer keys emit outer groups. Only contexts legal for the emitted rule are accepted. Flat definitions emit at stylesheet scope. Each conditional branch must contain a complete definition. Selectors and descriptor blocks are separate contexts.
+
+Branches of one `cssFunction` call must declare the same parameter names, syntaxes, defaults, and return syntax. Function bodies can vary between groups.
 
 ```ts
-fontFace(
-  { fontFamily: 'Body', src: 'url("./body.woff2")' },
-  { within: ['@layer fonts', '@supports font-tech(variations)'] },
-)
+fontFace({
+  '@layer fonts': {
+    '@supports font-tech(variations)': {
+      fontFamily: 'Body',
+      src: 'url("./body.woff2")',
+    },
+  },
+})
 ```
 
-Named helpers derive stable identities from the source module and constant binding. No name override is exposed initially. Exported identities retain their definitions across source and packed-library imports. Declaration helpers preserve authored descriptor order. Arrays preserve fallback order where the descriptor grammar permits fallbacks.
+Named helpers derive stable identities from the source module and constant binding. An optional `{ id }` argument provides explicit identity. Exported identities retain their definitions across source and packed-library imports. Declaration helpers preserve authored descriptor order. Arrays preserve fallback order where the descriptor grammar permits fallbacks.
 
 Statement helpers emit at stylesheet scope. Imports precede namespaces and ordinary rules; charset is a UTF-8 output policy, never a nested contribution. Namespace declarations have stylesheet scope and require isolation from unrelated modules. Unsupported namespace combinations must fail compilation instead of changing selectors silently.
 
@@ -242,6 +248,6 @@ property({
 property({ name: '--payload', syntax: '*', inherits: true })
 ```
 
-An optional `{ within: ['@layer defaults', '@media screen'] }` argument encloses the registration. Registration changes CSS computed-value behavior; it does not evaluate values in JavaScript. Compiler diagnostics reject invalid syntax, mismatched initial values, computational dependencies, and injected declarations.
+Nested `@layer defaults` and `@media screen` keys enclose the registration. Registration changes CSS computed-value behavior; it does not evaluate values in JavaScript. Compiler diagnostics reject invalid syntax, mismatched initial values, computational dependencies, and injected declarations.
 
 Page `bleed` accepts relative lengths and dimensional calculations. Page `size` accepts one or two lengths or calculations, as well as named paper sizes and orientation. Percentages and dimensionally incompatible calculations are rejected.

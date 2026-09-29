@@ -10,11 +10,20 @@ import * as Config from './Configuration.js'
 import { Css, global } from 'zyzz/web'
 
 describe('define', () => {
+  test('retains token enforcement on exported theme handles', () => {
+    const config = Config.create({ theme: { spacing: { md: '8px' } } })
+    const theme = config.theme
+    theme.style({ padding: 'md' })
+    theme.style({ padding: '7px !custom' })
+    // @ts-expect-error Exported handles still require configured tokens.
+    theme.style({ padding: '7px' })
+  })
+
   test('infers responsive typography and border width domains', () => {
     const { style, theme } = Config.create({
       theme: {
         borderWidth: { regular: '1px', hairline: '0.5px' },
-        breakpoints: { tablet: '800px' },
+        breakpoint: { tablet: '800px' },
         typography: {
           heading: {
             fontSize: '24px',
@@ -331,7 +340,7 @@ describe('style', () => {
 
     const extracted: ParametersStyle = {
       color: 'brand',
-      padding: ['md', '2px !important'],
+      padding: ['md', '2px !custom !important'],
     }
 
     themed(extracted)
@@ -354,7 +363,7 @@ describe('style', () => {
     themed({ padding: '0x10px' })
     // @ts-expect-error Inferred dimensions still reject non-CSS whitespace within numeric values.
     themed({ padding: '2 px' })
-    themed({ padding: ' 2px' })
+    themed({ padding: ' 2px !custom' })
     // @ts-expect-error Unknown properties remain rejected alongside known properties.
     themed({ color: 'brand', colour: 'red' })
     // @ts-expect-error Ordered fallbacks cannot be empty.
@@ -429,7 +438,7 @@ describe('style', () => {
 
     Theme.extend(shorthand, { spacing: { 4: '2rem' } }).style({ padding: 4 })
     themedStyle({ color: 'foreground', padding: 'md' })
-    themedStyle({ color: shorthand.tokens.color.brand, padding: 0 })
+    themedStyle({ color: shorthand.tokens.color.brand, padding: '0 !custom' })
     // @ts-expect-error Unknown theme paths are rejected.
     themedStyle({ color: 'blue.600' })
     // @ts-expect-error A text token cannot be used as a background.
@@ -472,8 +481,8 @@ describe('queries', () => {
 
     test('retains scalar domains', () => {
       const theme = Theme.define({
-        breakpoints: { tablet: '48rem' },
-        containers: { card: '24rem' },
+        breakpoint: { tablet: '48rem' },
+        container: { card: '24rem' },
         fontSize: { body: '1rem' },
         fontWeight: { medium: 500 },
       })
@@ -500,7 +509,7 @@ describe('queries', () => {
         },
       })
       // @ts-expect-error Thresholds are nonnegative.
-      Theme.define({ breakpoints: { bad: '-1px' } })
+      Theme.define({ breakpoint: { bad: '-1px' } })
       // @ts-expect-error Font weights cannot exceed 1000.
       Theme.define({ fontWeight: { bad: 2000 } })
       // @ts-expect-error Font sizes cannot be negative.
@@ -510,11 +519,11 @@ describe('queries', () => {
       // @ts-expect-error CSS-wide keywords cannot be custom-property token leaves.
       Theme.define({ fontSize: { bad: 'initial' } })
       // @ts-expect-error Query metadata is not a declaration variable.
-      void theme.vars.breakpoints.tablet
+      void theme.vars.breakpoint.tablet
       // @ts-expect-error Query metadata is not a portable declaration reference.
-      void theme.tokens.containers.card
+      void theme.tokens.container.card
       // @ts-expect-error Query lengths cannot be percentages.
-      Theme.define({ breakpoints: { tablet: '50%' } })
+      Theme.define({ breakpoint: { tablet: '50%' } })
       // @ts-expect-error Typography references retain their scalar property domain.
       theme.style({ color: theme.tokens.fontSize.body })
     })
@@ -556,9 +565,9 @@ describe('variables', () => {
       theme.style({
         color: theme.vars.color.brand,
         // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
-        width: `calc(100% - ${theme.vars.spacing.md})`,
+        width: `calc(100% - ${theme.vars.spacing.md}) !custom`,
       })
-      theme.style({ padding: [theme.vars.spacing.md, '2px'] })
+      theme.style({ padding: [theme.vars.spacing.md, '2px !custom'] })
       theme.style({ color: theme.vars.color.brand })
       // @ts-expect-error Variable domains cannot cross properties.
       theme.style({ color: theme.vars.spacing.md })

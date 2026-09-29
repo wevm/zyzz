@@ -2,6 +2,7 @@
  * Compares reviewed CSS coverage with pinned upstream grammars and prints CI evidence.
  * @module
  */
+import type { CompatStatement, Identifier } from '@mdn/browser-compat-data'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
@@ -34,16 +35,65 @@ type Entry = {
 }
 
 type Inventory = {
+  compatibilityVersion: string
   families: Record<string, Record<string, Entry>>
   version: string
 }
 
+type Supplements = {
+  properties: Record<string, unknown>
+  syntaxes: Record<string, unknown>
+}
+const supplements: Supplements = JSON.parse(
+  Fs.readFileSync(Path.join(directory, 'property-supplements.json'), 'utf8'),
+)
 const previous: Inventory = JSON.parse(Fs.readFileSync(file, 'utf8'))
 const version: string = require('mdn-data/package.json').version
-const current: Inventory = { families: {}, version }
+type Compatibility = {
+  __meta: { version: string }
+  css: { properties: Record<string, Identifier> }
+}
+const compatibility: Compatibility = require('@mdn/browser-compat-data')
+const compatibilityVersion = compatibility.__meta.version
+const properties: Record<string, Record<string, CompatStatement>> = {}
+for (const [name, property] of Object.entries(compatibility.css.properties)) {
+  const entry = property.__compat
+  if (!entry) continue
+
+  const names = new Set([name === 'custom-property' ? '--*' : name])
+  for (const support of Object.values(entry.support)) {
+    if (!support || typeof support === 'string') continue
+
+    for (const statement of Array.isArray(support) ? support : [support]) {
+      if (!statement.version_added) continue
+
+      if (statement.alternative_name) names.add(statement.alternative_name)
+      else if (statement.prefix) names.add(`${statement.prefix}${name}`)
+    }
+  }
+
+  for (const alias of names) {
+    properties[alias] ??= {}
+    properties[alias]![name] = entry
+  }
+}
+const current: Inventory = { compatibilityVersion, families: {}, version }
 const changes: string[] = []
 for (const family of families) {
-  const data: Record<string, unknown> = require(`mdn-data/css/${family}.json`)
+  const data: Record<string, unknown> = {
+    ...require(`mdn-data/css/${family}.json`),
+  }
+  if (family === 'properties')
+    for (const [name, compatibility] of Object.entries(properties))
+      // Compatibility discovers names, but cannot establish their value grammars.
+      if (!Object.hasOwn(data, name)) data[name] = { compatibility }
+
+  if (family === 'properties' || family === 'syntaxes')
+    for (const [name, supplement] of Object.entries(supplements[family]))
+      data[name] = Object.hasOwn(data, name)
+        ? { upstream: data[name], supplement }
+        : supplement
+
   const entries: Record<string, Entry> = {}
 
   current.families[family] = entries
@@ -54,7 +104,7 @@ for (const family of families) {
       .update(JSON.stringify(data[name]))
       .digest('hex')
 
-    entries[name] = { grammar, status: old?.status ?? 'unclassified' }
+    entries[name] = { ...old, grammar, status: old?.status ?? 'unclassified' }
 
     if (!old) changes.push(`Added ${family}: ${name}`)
     else if (old.grammar !== grammar) changes.push(`Changed ${family}: ${name}`)
@@ -63,6 +113,10 @@ for (const family of families) {
   for (const name of Object.keys(previous.families[family] ?? {}))
     if (!(name in data)) changes.push(`Removed ${family}: ${name}`)
 }
+if (previous.compatibilityVersion !== compatibilityVersion)
+  changes.unshift(
+    `Browser compatibility data ${previous.compatibilityVersion ?? 'none'} → ${compatibilityVersion}`,
+  )
 if (previous.version !== version)
   changes.unshift(`MDN data ${previous.version} → ${version}`)
 if (process.argv.includes('--update')) {
@@ -74,7 +128,7 @@ if (process.argv.includes('--update')) {
 } else {
   console.log('# CSS Conformance Report\n')
   console.log(
-    `MDN data: ${version}. Grammar drift includes referenced syntaxes and metadata.\n`,
+    `MDN data: ${version}. Browser compatibility data: ${compatibilityVersion}. Fingerprints include grammar and discovery metadata.\n`,
   )
   console.log(
     '| Family | 🟢 Supported | 🟡 Partial | ⚪ Deferred | 🔴 Unclassified |',

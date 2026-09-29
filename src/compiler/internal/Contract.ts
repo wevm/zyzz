@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27,
+      22, 23, 24, 25, 26, 27, 28,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -102,8 +102,8 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    if (entry.variableSet === true && (data.version as number) < 26)
-      throw new Error('Vars contracts require contract version 26 or later.')
+    if (entry.variableSet === true && (data.version as number) < 28)
+      throw new Error('Vars contracts require contract version 28 or later.')
     const mappings = VariableSets.mappings(entry.mappings)
     if (
       entry.cssOutput !== undefined &&
@@ -294,7 +294,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27,
+          27, 28,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -419,6 +419,14 @@ export function read(
       entry.options === undefined ? undefined : record(decode(entry.options))
 
     if (options) {
+      if (
+        entry.variableConfig === true &&
+        JSON.stringify(VariableSets.mappings(entry.variableMappings) ?? {}) !==
+          JSON.stringify(definition[Token.definition].contract.mappings ?? {})
+      )
+        throw new Error(
+          'Configuration mappings disagree with linked variable metadata.',
+        )
       if (entry.variableConfig === true)
         Config.create(
           variableOptions(
@@ -722,16 +730,19 @@ export function write(
       if (
         Object.values(themes).some(
           (theme) =>
+            theme[Token.definition].contract.variableSet ||
+            theme[Token.definition].queries,
+        )
+      )
+        return 28
+
+      if (
+        Object.values(themes).some(
+          (theme) =>
             theme[Token.definition].contract.defaultLayer !== undefined,
         )
       )
         return 27
-      if (
-        Object.values(themes).some(
-          (theme) => theme[Token.definition].contract.variableSet,
-        )
-      )
-        return 26
       if (
         Object.values(themes).some(
           (theme) =>

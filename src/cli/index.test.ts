@@ -10,6 +10,7 @@ import * as Fs from 'node:fs/promises'
 import * as Os from 'node:os'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
+import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 import { describe, expect, test, vi } from 'vite-plus/test'
@@ -17,6 +18,59 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
+  test('emits responsive defaults once across CLI module outputs', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-responsive-'))
+    try {
+      const outDir = Path.join(root, 'dist')
+      const source = Path.join(root, 'src')
+
+      await Fs.mkdir(source)
+      for (const [name, content] of Object.entries(Responsive.modules))
+        await Fs.writeFile(Path.join(source, name), content)
+
+      const args = [
+        Path.resolve('dist/cli/index.js'),
+        'build',
+        source,
+        '--out-dir',
+        outDir,
+        '--package-id',
+        'app',
+      ]
+      await exec(process.execPath, args)
+
+      const bundle = await Esbuild.build({
+        bundle: true,
+        entryPoints: [Path.join(outDir, 'entry.js')],
+        format: 'iife',
+        globalName: 'Fixture',
+        write: false,
+      })
+
+      await Responsive.verify({
+        code: bundle.outputFiles[0]!.text,
+        css: await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8'),
+      })
+      expect(
+        (await Fs.readFile(Path.join(outDir, 'first.js.css'), 'utf8')).includes(
+          ':where(*)',
+        ),
+      ).toMatchInlineSnapshot('false')
+
+      await Fs.writeFile(
+        Path.join(source, 'config.js'),
+        Responsive.modules['config.js'].replace("'14px'", "'18px'"),
+      )
+      await exec(process.execPath, args)
+
+      const updated = await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+      expect(updated.includes(': 14px;')).toMatchInlineSnapshot('false')
+      expect(updated.match(/:\s*18px;/g)?.length).toMatchInlineSnapshot('1')
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('builds and watches a source-free package through the published CLI', async () => {
     const root = await Fs.realpath(
       await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-cli-package-')),

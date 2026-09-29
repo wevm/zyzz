@@ -32,13 +32,20 @@ export default function Page() {
 }
 ```
 
+Global styles and fonts must be imported by the application. Unimported modules are excluded from compilation:
+
+```ts
+// app/layout.tsx
+import './globals'
+```
+
 The function from `zyzz/next` configures the build. Named exports from `zyzz.config.ts` supply typed authoring helpers and theme handles.
 
 - **Development:** the existing Next.js dev command rebuilds styles after source and imported config/theme edits.
 - **Production:** the existing Next.js build command emits transformed modules and matching CSS for server and client rendering.
 - **Setup:** no separate Babel or PostCSS configuration, generated component imports, or manual virtual stylesheet import is required.
 
-The wrapper preserves existing options and composes Webpack hooks and Turbopack rules. Configuration objects, promises, and phase callbacks are accepted, including asynchronous callbacks. It creates `.zyzz/next` for bundler-owned CSS; exclude this directory from version control.
+The wrapper preserves existing options and composes Webpack hooks and Turbopack rules. Configuration objects, promises, and phase callbacks are accepted, including asynchronous callbacks. Compilation creates `.zyzz/next` for bundler-owned CSS; exclude this directory from version control.
 
 The wrapper excludes `light-dark()` from Next.js CSS lowering while preserving other configured feature settings. Theme variables need native color-scheme selection; the lowering otherwise introduces unresolved helper variables. Default build targets are verified in Chromium 153. Browsers without native `light-dark()` remain unsupported; excluding lowering is not a polyfill.
 

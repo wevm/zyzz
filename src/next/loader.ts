@@ -1,32 +1,26 @@
 /** Loads a physical source graph through Next.js resolution and emits cache-owned CSS. @module */
+import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
-import * as Parser from 'oxc-parser'
-import * as Graph from '../compiler/Graph.js'
-import * as Reset from '../node/Reset.js'
-import * as AtRules from '../compiler/internal/AtRules.js'
-import * as Contract from '../compiler/internal/Contract.js'
+import * as Project from './internal/Project.js'
+import * as Stylesheets from '../compiler/internal/Stylesheets.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 
-type Context = {
-  addContextDependency(directory: string): void
-  addDependency(file: string): void
+type Context = Project.Context & {
   async(): (error: Error | null, code?: string, map?: object) => void
   getOptions(): {
     bundler: string
-    mode: 'shared' | 'source' | 'style'
+    development?: boolean | undefined
+    mode?: 'style' | undefined
     reset?: boolean | undefined
     root: string
   }
-  getResolve(
-    options: object,
-  ): (
-    directory: string,
-    specifier: string,
-    callback: (error: Error | null, file?: string | false) => void,
-  ) => void
-  resourcePath: string
+  resourceQuery?: string | undefined
 }
+
+// Next owns loader worker lifetimes. Each project retains only its latest graph in that worker.
+const projects = new Map<string, ReturnType<typeof Project.create>>()
 
 /** Loader-runner boundary used by Webpack and Turbopack. */
 export default function loader(this: Context, source: string): void {
@@ -42,14 +36,22 @@ async function compile(context: Context, source: string) {
   const options = context.getOptions()
   const root = options.root
   const directory = Path.resolve(root, '.zyzz', 'next')
-  const modules: Record<string, string> = Object.create(null)
-  const imports: Record<string, Record<string, string | null>> = Object.create(
-    null,
-  )
-  const contracts: Record<string, string> = Object.create(null)
-  const resolve = context.getResolve({})
-  const id = (file: string) =>
-    `app/${Path.relative(root, file).split(Path.sep).join('/')}`
+  if (options.mode) {
+    const query = new URLSearchParams(context.resourceQuery)
+    const hash = query.get('zyzz')
+    if (!hash || !/^[a-f0-9]{64}$/.test(hash))
+      throw new Error('Invalid generated stylesheet request.')
+    const css = query.get('css')
+    if (css !== null)
+      return {
+        code: Buffer.from(css, 'base64url').toString('utf8'),
+        map: undefined,
+      }
+    const file = Path.join(directory, `${hash}.css`)
+    context.addDependency(file)
+    return { code: await Fs.readFile(file, 'utf8'), map: undefined }
+  }
+
   const eligible = (file: string) =>
     /\.[cm]?[jt]sx?$/.test(file) &&
     !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(file) &&
@@ -68,221 +70,25 @@ async function compile(context: Context, source: string) {
   )
     return { code: source, map: undefined }
 
-  if (options.mode !== 'shared' && !eligible(context.resourcePath))
-    return { code: source, map: undefined }
+  if (!eligible(context.resourcePath)) return { code: source, map: undefined }
 
-  async function visit(file: string, text?: string): Promise<void> {
-    const name = id(file)
-    if (Object.hasOwn(modules, name)) return
-
-    context.addDependency(file)
-    modules[name] = text ?? (await Fs.readFile(file, 'utf8'))
-    const links: Record<string, string | null> = Object.create(null)
-    imports[name] = links
-    const parsed = Parser.parseSync(file, modules[name]!, {
-      sourceType: 'module',
-    })
-
-    for (const node of parsed.program.body) {
-      if (
-        (node.type !== 'ImportDeclaration' &&
-          node.type !== 'ExportNamedDeclaration' &&
-          node.type !== 'ExportAllDeclaration') ||
-        !node.source
-      )
-        continue
-      if (
-        node.type === 'ImportDeclaration'
-          ? node.importKind === 'type'
-          : node.exportKind === 'type'
-      )
-        continue
-
-      const specifier = node.source.value
-      links[specifier] = null
-      // Next owns this virtual module, which has no physical stylesheet contract.
-      if (specifier === 'next/root-params') continue
-      if (
-        specifier === 'zyzz' ||
-        (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default') ||
-        specifier.startsWith('node:')
-      )
-        continue
-
-      const resolved = await new Promise<string | false | undefined>(
-        (accept, reject) => {
-          resolve(Path.dirname(file), specifier, (error, value) =>
-            error ? reject(error) : accept(value),
-          )
-        },
-      )
-      if (!resolved || !/\.[cm]?[jt]sx?$/.test(resolved)) continue
-      if (eligible(resolved)) {
-        links[specifier] = id(resolved)
-        await visit(resolved)
-        continue
-      }
-
-      const sidecar = `${resolved}.zyzz.json`
-      try {
-        contracts[resolved] = await Fs.readFile(sidecar, 'utf8')
-        context.addDependency(sidecar)
-        links[specifier] = resolved
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-      }
-    }
+  const key = JSON.stringify([
+    root,
+    options.bundler,
+    options.reset ?? false,
+    options.development ?? false,
+  ])
+  let project = projects.get(key)
+  if (!project) {
+    project = Project.create(options)
+    projects.set(key, project)
   }
+  const graph = await project.compile(context, source)
+  const output =
+    graph.modules[
+      `app/${Path.relative(root, context.resourcePath).split(Path.sep).join('/')}`
+    ]
 
-  async function discover(directory: string): Promise<void> {
-    const items = await Fs.readdir(directory, { withFileTypes: true })
-
-    // Recursive tracking of a package root follows every installed dependency.
-    // A dependency symlink back to an ancestor, as a package linked from its
-    // own repository, is rejected as a loop, so such a root is tracked through
-    // its files and subdirectories instead.
-    if (
-      !items.some((item) => item.name === 'node_modules') ||
-      !(await loops(directory))
-    )
-      context.addContextDependency(directory)
-
-    for (const item of items) {
-      if (
-        item.name.startsWith('.') ||
-        [
-          'node_modules',
-          'dist',
-          'build',
-          'coverage',
-          'test',
-          'tests',
-          '__tests__',
-        ].includes(item.name)
-      )
-        continue
-      const file = Path.join(directory, item.name)
-      if (item.isDirectory()) await discover(file)
-      else if (item.isFile() && eligible(file)) await visit(file)
-    }
-  }
-
-  if (options.mode !== 'shared') await visit(context.resourcePath, source)
-  await discover(root)
-  const loaded = new Set<string>()
-  async function dependencies(file: string): Promise<void> {
-    if (loaded.has(file)) return
-    loaded.add(file)
-
-    const metadata = Contract.read(contracts[file]!, new Map(), file)
-    for (const section of metadata.stylesheets) {
-      let owner = file
-      for (const specifier of section.dependency ?? []) {
-        const target = await new Promise<string | false | undefined>(
-          (accept, reject) => {
-            resolve(Path.dirname(owner), specifier, (error, value) =>
-              error ? reject(error) : accept(value),
-            )
-          },
-        )
-        if (!target || !Path.isAbsolute(target))
-          throw new Error('Unable to resolve packed stylesheet dependency.')
-
-        const links = (imports[owner] ??= Object.create(null))
-        links[specifier] = target
-        if (!Object.hasOwn(contracts, target)) {
-          const sidecar = `${target}.zyzz.json`
-          contracts[target] = await Fs.readFile(sidecar, 'utf8')
-          context.addDependency(sidecar)
-        }
-        await dependencies(target)
-        owner = target
-      }
-    }
-  }
-  for (const file of Object.keys(contracts)) await dependencies(file)
-
-  const graph = Graph.compile({
-    contracts,
-    imports,
-    modules,
-    reset: options.reset ? Reset.read() : undefined,
-  })
-  const output = graph.modules[id(context.resourcePath)]
-
-  const assets = new Map<string, string>()
-  for (const [placeholder, target] of Object.entries(
-    graph.sharedAssets ?? {},
-  )) {
-    const raw = target.split(/[?#]/)[0]!
-    const file = await Fs.realpath(
-      target.startsWith('app/')
-        ? Path.join(root, decodeURIComponent(raw.slice(4)))
-        : decodeURIComponent(raw),
-    )
-    const identity = graph.sharedAssetOwners?.[placeholder]
-    let owner = root
-    if (identity && Path.isAbsolute(identity)) {
-      owner = Path.dirname(identity)
-      for (;;) {
-        try {
-          await Fs.access(Path.join(owner, 'package.json'))
-          break
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-          const parent = Path.dirname(owner)
-          if (parent === owner)
-            throw new Error('Packed assets require an owning package.json.')
-          owner = parent
-        }
-      }
-    }
-
-    const relative = Path.relative(await Fs.realpath(owner), file)
-    if (
-      !identity ||
-      relative === '..' ||
-      relative.startsWith(`..${Path.sep}`) ||
-      Path.isAbsolute(relative)
-    )
-      throw new Error('Asset path escapes its owning package.')
-
-    context.addDependency(file)
-    assets.set(
-      placeholder,
-      Path.relative(
-        options.bundler === 'turbopack'
-          ? Path.dirname(context.resourcePath)
-          : directory,
-        file,
-      )
-        .split(Path.sep)
-        .map(encodeURIComponent)
-        .join('/') + target.slice(raw.length),
-    )
-  }
-
-  const shared = graph.sharedCss
-    ? AtRules.transform({
-        code: Buffer.from(graph.sharedCss),
-        filename: 'shared.css',
-        inputSourceMap: JSON.stringify(graph.sharedCssMap),
-        sourceMap: true,
-        visitor: {
-          Url: (url) =>
-            assets.has(url.url)
-              ? { ...url, url: assets.get(url.url)! }
-              : undefined,
-        },
-      })
-    : undefined
-  if (options.mode === 'shared')
-    return {
-      code: shared?.code.toString() ?? '',
-      map: shared?.map
-        ? (JSON.parse(shared.map.toString()) as object)
-        : undefined,
-    }
   if (!output) throw new Error('Missing Next.js source compilation.')
   // Bundlers resolve map sources relative to the loader resource, not graph identities.
   const sources = (names: readonly (string | null)[]) =>
@@ -295,104 +101,229 @@ async function compile(context: Context, source: string) {
     sources: sources(output.map.sources),
   }
   const cssMap = { ...output.cssMap, sources: sources(output.cssMap.sources) }
-  if (options.mode === 'style') return { code: output.css, map: cssMap }
 
-  if (options.bundler === 'turbopack') {
-    const sharedFile = Path.relative(
-      Path.dirname(context.resourcePath),
-      Path.join(directory, 'shared.css'),
-    )
-      .split(Path.sep)
-      .join('/')
-    // Turbopack appends the output extension to loader-transformed resource paths.
-    const resource = await Fs.stat(context.resourcePath).then(
-      () => context.resourcePath,
-      async (error: NodeJS.ErrnoException) => {
-        if (error.code !== 'ENOENT') throw error
-        const original = context.resourcePath.slice(
-          0,
-          -Path.extname(context.resourcePath).length,
-        )
-        await Fs.access(original)
-        return original
-      },
-    )
-    const requests = [
-      ...(graph.sharedCss
-        ? [
-            `import ${JSON.stringify(sharedFile.startsWith('../') ? sharedFile : `./${sharedFile}`)};`,
-          ]
-        : []),
-      ...(output.css
-        ? [
-            `import ${JSON.stringify(`./${Path.basename(resource)}?zyzz-style`)};`,
-          ]
-        : []),
-    ]
-    return { code: `${output.code}\n${requests.join('\n')}`, map }
+  if (
+    output.code === source &&
+    !output.css &&
+    !/(?:^|[/\\])(?:layout|_app)\.[cm]?[jt]sx?$/.test(context.resourcePath) &&
+    !graph.sharedCssMap?.sources.some((name) => name !== 'zyzz/reset.css') &&
+    !graph[Stylesheets.packed]?.length
+  )
+    return { code: source, map }
+
+  const shared = await compileShared({
+    css: graph.sharedCss ?? '',
+    map: graph.sharedCssMap!,
+    assets: graph.sharedAssets ?? {},
+    owners: graph.sharedAssetOwners ?? {},
+  })
+
+  async function compileShared(
+    stylesheet: ReturnType<typeof Stylesheets.render>,
+  ) {
+    const assets = new Map<string, string>()
+    for (const [placeholder, target] of Object.entries(stylesheet.assets)) {
+      const raw = target.split(/[?#]/)[0]!
+      const file = await Fs.realpath(
+        target.startsWith('app/')
+          ? Path.join(root, decodeURIComponent(raw.slice(4)))
+          : decodeURIComponent(raw),
+      )
+      const identity = stylesheet.owners[placeholder]
+      let owner = root
+      if (identity && Path.isAbsolute(identity)) {
+        owner = Path.dirname(identity)
+        for (;;) {
+          try {
+            await Fs.access(Path.join(owner, 'package.json'))
+            break
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+            const parent = Path.dirname(owner)
+            if (parent === owner)
+              throw new Error('Packed assets require an owning package.json.')
+            owner = parent
+          }
+        }
+      }
+
+      const relative = Path.relative(await Fs.realpath(owner), file)
+      if (
+        !identity ||
+        relative === '..' ||
+        relative.startsWith(`..${Path.sep}`) ||
+        Path.isAbsolute(relative)
+      )
+        throw new Error('Asset path escapes its owning package.')
+
+      context.addDependency(file)
+      assets.set(
+        placeholder,
+        Path.relative(directory, file)
+          .split(Path.sep)
+          .map(encodeURIComponent)
+          .join('/') + target.slice(raw.length),
+      )
+    }
+
+    return stylesheet.css
+      ? AtRules.transform({
+          code: Buffer.from(stylesheet.css),
+          filename: 'shared.css',
+          inputSourceMap: JSON.stringify({
+            ...stylesheet.map,
+            sources: sources(stylesheet.map.sources),
+          }),
+          sourceMap: true,
+          visitor: {
+            Url: (url) =>
+              assets.has(url.url)
+                ? { ...url, url: assets.get(url.url)! }
+                : undefined,
+          },
+        })
+      : undefined
   }
+
   const styles = [
-    { css: shared?.code.toString(), map: shared?.map?.toString() },
-    { css: output.css, map: JSON.stringify(cssMap) },
+    ...(graph[Stylesheets.reset]
+      ? [
+          {
+            css: graph[Stylesheets.reset].css,
+            id: graph[Stylesheets.reset].id,
+            map: JSON.stringify(graph[Stylesheets.reset].map),
+          },
+        ]
+      : []),
+    ...(await Promise.all(
+      (graph[Stylesheets.packed] ?? []).map(async (resource) => {
+        const output = await compileShared(resource)
+        return {
+          css: output?.code.toString(),
+          map: output?.map?.toString(),
+          id: resource.id,
+        }
+      }),
+    )),
+    {
+      id: undefined,
+      css: shared?.code.toString(),
+      map: shared?.map?.toString(),
+    },
+    ...(output[ThemeRules.shared] ?? []).map((resource) => ({
+      css: resource.css,
+      id: resource.id,
+      map: undefined,
+    })),
+    { id: undefined, css: output.css, map: JSON.stringify(cssMap) },
   ]
   const requests: string[] = []
   await Fs.mkdir(directory, { recursive: true })
-  for (const stylesheet of styles) {
+  try {
+    await Fs.writeFile(
+      Path.join(directory, 'package.json'),
+      JSON.stringify({ sideEffects: true, type: 'module' }),
+      { flag: 'wx' },
+    )
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+  }
+  for (const [index, stylesheet] of styles.entries()) {
     if (!stylesheet.css) continue
     const css =
       stylesheet.css +
       (stylesheet.map
         ? `\n/*# sourceMappingURL=data:application/json;base64,${Buffer.from(stylesheet.map).toString('base64')} */`
         : '')
-    const hash = Crypto.createHash('sha256').update(css).digest('hex')
+    const hash = Crypto.createHash('sha256')
+      .update(
+        options.development
+          ? (stylesheet.id ?? JSON.stringify([context.resourcePath, index]))
+          : css,
+      )
+      .digest('hex')
     const file = Path.join(directory, `${hash}.css`)
+    if (options.development) {
+      const previous = await Fs.readFile(file, 'utf8').catch(
+        (error: NodeJS.ErrnoException) => {
+          if (error.code !== 'ENOENT') throw error
+          return undefined
+        },
+      )
+      if (previous !== css) {
+        const temporary = `${file}.${Crypto.randomUUID()}.tmp`
+        await Fs.writeFile(temporary, css)
+        await Fs.rename(temporary, file)
+      }
+    } else if (options.bundler !== 'turbopack') {
+      try {
+        await Fs.writeFile(file, css, { flag: 'wx' })
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+      }
+    }
+    let request = file
+    if (options.development) {
+      request =
+        options.bundler === 'turbopack'
+          ? Path.join(directory, 'style.css') + `?zyzz=${hash}`
+          : file
+    } else if (options.bundler === 'turbopack') {
+      // Persist CSS with the cached transform, independently of generated filesystem artifacts.
+      request =
+        Path.join(directory, 'style.css') +
+        `?zyzz=${hash}&css=${Buffer.from(css).toString('base64url')}`
+    }
+    const relative = Path.relative(
+      options.development ? directory : Path.dirname(context.resourcePath),
+      request,
+    )
+      .split(Path.sep)
+      .join('/')
+    requests.push(
+      `${options.development ? '@import' : 'import'} ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
+    )
+  }
+
+  if (options.development && requests.length) {
+    // Keep the client boundary stable when a dependency changes the stylesheet imports.
+    const hash = Crypto.createHash('sha256')
+      .update(context.resourcePath)
+      .digest('hex')
+    const stylesheet = Path.join(directory, `${hash}.css`)
+    const css = requests.join('\n')
+    const previous = await Fs.readFile(stylesheet, 'utf8').catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') throw error
+        return undefined
+      },
+    )
+    if (previous !== css) {
+      const temporary = `${stylesheet}.${Crypto.randomUUID()}.tmp`
+      await Fs.writeFile(temporary, css)
+      await Fs.rename(temporary, stylesheet)
+    }
+    const file = Path.join(directory, `${hash}.js`)
+    const request =
+      options.bundler === 'turbopack'
+        ? `./style.css?zyzz=${hash}`
+        : `./${hash}.css`
     try {
-      await Fs.writeFile(file, css, { flag: 'wx' })
+      await Fs.writeFile(
+        file,
+        `'use client';import ${JSON.stringify(request)};`,
+        { flag: 'wx' },
+      )
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
     }
     const relative = Path.relative(Path.dirname(context.resourcePath), file)
       .split(Path.sep)
       .join('/')
-    requests.push(
-      `import ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
-    )
+    return {
+      code: `${output.code}\nimport ${JSON.stringify(relative.startsWith('../') ? relative : `./${relative}`)};`,
+      map,
+    }
   }
-
   return { code: `${output.code}\n${requests.join('\n')}`, map }
-}
-
-/** Whether an installed dependency links back to the directory or one of its ancestors. */
-async function loops(directory: string): Promise<boolean> {
-  const installed = Path.join(directory, 'node_modules')
-  const entries = await Fs.readdir(installed, { withFileTypes: true }).catch(
-    () => [],
-  )
-  const candidates = (
-    await Promise.all(
-      entries.map(async (entry) => {
-        if (!entry.name.startsWith('@'))
-          return [Path.join(installed, entry.name)]
-
-        const scoped = Path.join(installed, entry.name)
-
-        return (await Fs.readdir(scoped).catch(() => [])).map((name) =>
-          Path.join(scoped, name),
-        )
-      }),
-    )
-  ).flat()
-
-  for (const candidate of candidates) {
-    const stat = await Fs.lstat(candidate).catch(() => undefined)
-    if (!stat?.isSymbolicLink()) continue
-
-    const target = await Fs.realpath(candidate).catch(() => undefined)
-    if (target === undefined) continue
-
-    const relative = Path.relative(target, directory)
-    if (!relative.startsWith('..') && !Path.isAbsolute(relative)) return true
-  }
-
-  return false
 }

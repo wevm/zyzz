@@ -4,7 +4,8 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
-import * as Parser from 'oxc-parser'
+import * as Snapshot from '../node/internal/Snapshot.js'
+import * as Syntax from '../compiler/internal/Syntax.js'
 import { createUnplugin } from 'unplugin'
 import type { UnpluginBuildContext } from 'unplugin'
 import * as Graph from '../compiler/Graph.js'
@@ -30,6 +31,7 @@ const portable = createUnplugin<Options | undefined, false>(
   (options = {}, meta) => {
     const root = Path.resolve(options.root ?? process.cwd())
     const compiler = Graph.create()
+    const snapshot = Snapshot.create()
     let graph: Graph.compile.ReturnType | undefined
     let pending: Promise<void> | undefined
     let files = new Set<string>()
@@ -138,7 +140,7 @@ const portable = createUnplugin<Options | undefined, false>(
                 sourcePattern.test(file) &&
                 !excludedPattern.test(file)
               ) {
-                const source = await Fs.readFile(file, 'utf8')
+                const source = await snapshot.read(file)
 
                 files.add(file)
                 sources.set(file, source)
@@ -205,7 +207,7 @@ const portable = createUnplugin<Options | undefined, false>(
 
             files.add(sidecar)
             try {
-              contracts[file] = await Fs.readFile(sidecar, 'utf8')
+              contracts[file] = await snapshot.read(sidecar)
             } catch (error) {
               if (
                 !required &&
@@ -235,8 +237,9 @@ const portable = createUnplugin<Options | undefined, false>(
           await scan(root)
           for (const [file, source] of sources) {
             const links = (imports[identity(file)] = Object.create(null))
-            for (const node of Parser.parseSync(file, source, {
-              sourceType: 'module',
+            for (const node of snapshot.parse({
+              moduleId: identity(file),
+              source,
             }).program.body) {
               if (
                 (node.type !== 'ImportDeclaration' &&
@@ -282,6 +285,7 @@ const portable = createUnplugin<Options | undefined, false>(
           }
 
           const result = compiler.compile({
+            [Syntax.cache]: snapshot.programs(modules),
             compiler: options.compiler,
             reset: options.reset ? Reset.read() : undefined,
             contracts,
@@ -500,6 +504,7 @@ const portable = createUnplugin<Options | undefined, false>(
               Catalogs.read,
             ),
           ).join('\n')
+          snapshot.retain(files, modules)
           graph = result
           if (meta.framework === 'webpack') emit(this)
           if (meta.framework === 'rollup')
@@ -571,10 +576,23 @@ const portable = createUnplugin<Options | undefined, false>(
         },
       },
       webpack(compiler) {
+        compiler.hooks.compilation.tap('zyzz', (compilation) => {
+          compiler.webpack.NormalModule.getCompilationHooks(compilation)
+            .readResource.for(undefined)
+            .tapAsync({ name: 'zyzz', stage: -1 }, (context, callback) => {
+              void Promise.resolve(pending).then(() => {
+                const source = sources.get(context.resourcePath)
+                if (source === undefined) return callback()
+
+                // Loaders and CSS compilation must consume the same source version.
+                context.addDependency(context.resourcePath)
+                callback(null, source)
+              }, callback)
+            })
+        })
         compiler.hooks.watchRun.tap('zyzz', () => {
-          // Directory invalidations must also discard cached source reads before the graph and loaders rebuild.
-          for (const file of compiler.modifiedFiles ?? [])
-            if (directories.has(file)) compiler.inputFileSystem?.purge?.(file)
+          // The graph rereads every source, including files absent from Webpack's invalidation batch.
+          for (const file of files) compiler.inputFileSystem?.purge?.(file)
         })
       },
     }

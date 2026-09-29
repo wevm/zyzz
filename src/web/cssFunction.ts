@@ -6,30 +6,14 @@ import type * as Literal from '../internal/Literal.js'
 import * as Identity from '../internal/Identity.js'
 import type * as Numeric from '../internal/Numeric.js'
 /** Emits a CSS function and returns a callable that formats its fixed CSS expression. */
-export function cssFunction<const options extends cssFunction.Options>(
-  options: options &
-    Record<Exclude<keyof options, keyof cssFunction.Options>, never> & {
-      readonly body: Checked<options['body']>
-      readonly parameters: {
-        [index in keyof options['parameters']]: options['parameters'][index] extends {
-          syntax: infer syntax extends string
-        }
-          ? options['parameters'][index] & {
-              readonly syntax: FunctionSyntax.Checked<syntax>
-            }
-          : options['parameters'][index]
-      }
-    } & {
-      readonly returns?: options extends {
-        returns: infer syntax extends string
-      }
-        ? FunctionSyntax.Checked<syntax>
-        : undefined
-    },
+export function cssFunction<const options extends Record<string, unknown>>(
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): cssFunction.Reference<
-  options['parameters'],
-  options extends { returns: infer syntax extends cssFunction.Syntax }
+  Definitions<options>['parameters'],
+  Definitions<options> extends {
+    returns: infer syntax extends cssFunction.Syntax
+  }
     ? syntax
     : '*'
 > {
@@ -49,8 +33,10 @@ export function cssFunction<const options extends cssFunction.Options>(
       )
       .join(',') +
     ')') as cssFunction.Reference<
-    options['parameters'],
-    options extends { returns: infer syntax extends cssFunction.Syntax }
+    Definitions<options>['parameters'],
+    Definitions<options> extends {
+      returns: infer syntax extends cssFunction.Syntax
+    }
       ? syntax
       : '*'
   >
@@ -179,3 +165,40 @@ type InputSyntax<syntax extends string> =
                                   | '<transform-list>'
                               ? string
                               : syntax
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends cssFunction.Options
+  ? options &
+      Record<Exclude<keyof options, keyof cssFunction.Options>, never> & {
+        readonly body: Checked<options['body']>
+        readonly parameters: {
+          [index in keyof options['parameters']]: options['parameters'][index] extends {
+            syntax: infer syntax extends string
+          }
+            ? options['parameters'][index] & {
+                readonly syntax: FunctionSyntax.Checked<syntax>
+              }
+            : options['parameters'][index]
+        }
+      } & {
+        readonly returns?: options extends {
+          returns: infer syntax extends string
+        }
+          ? FunctionSyntax.Checked<syntax>
+          : undefined
+      }
+  : never
+
+type Definitions<input> = Extract<
+  Context.Definitions<input>,
+  cssFunction.Options
+>

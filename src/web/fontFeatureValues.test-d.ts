@@ -21,14 +21,14 @@ describe('fontFeatureValues', () => {
       fontDisplay: ' SWAP ',
       features: { '@styleset': { editorial: [1, 3] }, '@swash': undefined },
     })
+    // @ts-expect-error unknown nested blocks are rejected
     fontFeatureValues({
       families: 'Body',
-      // @ts-expect-error unknown nested blocks are rejected
       features: { '@unknown': { flow: 1 } },
     })
+    // @ts-expect-error swash accepts one index
     fontFeatureValues({
       families: 'Body',
-      // @ts-expect-error swash accepts one index
       features: { '@swash': { flow: [1, 2] } },
     })
   })
@@ -48,10 +48,35 @@ describe('fontFeatureValues', () => {
         '@swash': { a: 1 },
       },
     })
+    // @ts-expect-error font feature blocks have distinct tuple domains
     fontFeatureValues({
       families: 'Evidence',
-      // @ts-expect-error font feature blocks have distinct tuple domains
       features: { '@stylistic': { a: [1, 2] } },
     })
+  })
+})
+
+describe('fontFeatureValues', () => {
+  test('accepts nested group keys and rejects legacy contexts', () => {
+    fontFeatureValues({
+      '@layer definitions': {
+        '@media screen': {
+          families: ['Body'],
+          features: { '@styleset': { alternate: 1 } },
+        },
+      },
+    })
+    // @ts-expect-error selectors cannot enclose a declaration
+    fontFeatureValues({
+      '.card': {
+        families: ['Body'],
+        features: { '@styleset': { alternate: 1 } },
+      },
+    })
+    fontFeatureValues(
+      { families: ['Body'], features: { '@styleset': { alternate: 1 } } },
+      // @ts-expect-error enclosing groups belong in the definition
+      { within: ['@layer definitions'] },
+    )
   })
 })

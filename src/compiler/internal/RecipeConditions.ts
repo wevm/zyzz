@@ -34,9 +34,9 @@ export function read(options: read.Options): Condition {
     const rule = Query.resolve(
       node.value,
       options.queries ?? {
-        breakpoints: {},
+        breakpoint: {},
         containerNames: [],
-        containers: {},
+        container: {},
       },
     )
     const match = /^@(media|supports)(?=[\s(])\s*([\s\S]+)$/.exec(

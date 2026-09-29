@@ -7,15 +7,7 @@ import type * as Value from '../internal/Value.js'
 
 /** Compiles ordered frame stops and returns a fixed animation name. */
 export function keyframes<const frames extends Record<string, unknown>>(
-  frames: frames &
-    NoInfer<{
-      [key in keyof frames]: key extends string
-        ? Stops<Lexical.Fold<Lexical.Normalized<key>>> extends true
-          ? Value.Accepted<frames[key], Style.DeclarationProperties> &
-              Value.Checked<frames[key]>
-          : never
-        : never
-    }>,
+  frames: frames & NoInfer<Accepted<frames>>,
   context: Context.Options = {},
 ): string {
   void context
@@ -41,3 +33,26 @@ type Stops<value extends string> = value extends `${infer first},${infer rest}`
         | `${'contain' | 'cover' | 'entry' | 'entry-crossing' | 'exit' | 'exit-crossing'}${Space}${number}%`
     ? true
     : false
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<frames> =
+  frames extends Record<string, unknown>
+    ? frames &
+        NoInfer<{
+          [key in keyof frames]: key extends string
+            ? Stops<Lexical.Fold<Lexical.Normalized<key>>> extends true
+              ? Value.Accepted<frames[key], Style.DeclarationProperties> &
+                  Value.Checked<frames[key]>
+              : never
+            : never
+        }>
+    : never

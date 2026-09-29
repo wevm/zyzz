@@ -1,0 +1,1450 @@
+{
+  "properties": {
+    "-khtml-box-align": {
+      "syntax": "start | center | end | baseline | stretch",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-direction": {
+      "syntax": "normal | reverse | inherit",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-flex": {
+      "syntax": "<number>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-flex-group": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-lines": {
+      "syntax": "single | multiple",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-ordinal-group": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-orient": {
+      "syntax": "horizontal | vertical | inline-axis | block-axis | inherit",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-box-pack": {
+      "syntax": "start | center | end | justify",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-line-break": {
+      "syntax": "auto | loose | normal | strict | anywhere",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-opacity": {
+      "syntax": "<opacity-value>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-khtml-user-modify": {
+      "syntax": "read-only | read-write | read-write-plaintext-only",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/user-modify"
+    },
+    "-khtml-user-select": {
+      "syntax": "auto | text | none | all",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation": {
+      "syntax": "<single-animation>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-direction": {
+      "syntax": "<single-animation-direction>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-duration": {
+      "syntax": "[ auto | <time [0s,\u221e]> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-fill-mode": {
+      "syntax": "<single-animation-fill-mode>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-iteration-count": {
+      "syntax": "<single-animation-iteration-count>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-name": {
+      "syntax": "[ none | <keyframes-name> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-play-state": {
+      "syntax": "<single-animation-play-state>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-animation-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-backface-visibility": {
+      "syntax": "visible | hidden",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-background-clip": {
+      "syntax": "[ border-area | border-box | content-box | padding-box | text | border | padding | content ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-background-origin": {
+      "syntax": "[ border-box | content-box | padding-box | border | padding | content ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-background-size": {
+      "syntax": "<bg-size>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-end-color": {
+      "syntax": "<'border-top-color'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-end-style": {
+      "syntax": "<'border-top-style'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-end-width": {
+      "syntax": "<'border-top-width'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-image": {
+      "syntax": "<'border-image-source'> || <'border-image-slice'> [ / <'border-image-width'> | / <'border-image-width'>? / <'border-image-outset'> ]? || <'border-image-repeat'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-radius": {
+      "syntax": "<length-percentage [0,\u221e]>{1,4} [ / <length-percentage [0,\u221e]>{1,4} ]?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-radius-bottomleft": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-radius-bottomright": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-radius-topleft": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-radius-topright": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-start-color": {
+      "syntax": "<'border-top-color'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-border-start-style": {
+      "syntax": "<'border-top-style'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-align": {
+      "syntax": "start | center | end | baseline | stretch",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-direction": {
+      "syntax": "normal | reverse | inherit",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-flex": {
+      "syntax": "<number>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-ordinal-group": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-orient": {
+      "syntax": "horizontal | vertical | inline-axis | block-axis | inherit",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-pack": {
+      "syntax": "start | center | end | justify",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-shadow": {
+      "syntax": "none | <shadow>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-box-sizing": {
+      "syntax": "content-box | border-box",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-count": {
+      "syntax": "<integer> | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-fill": {
+      "syntax": "auto | balance",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-rule": {
+      "syntax": "<'column-rule-width'> || <'column-rule-style'> || <'column-rule-color'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-rule-color": {
+      "syntax": "<color>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-rule-style": {
+      "syntax": "<line-style>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-rule-width": {
+      "syntax": "<line-width>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-column-width": {
+      "syntax": "auto | <length [0,\u221e]>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-columns": {
+      "syntax": "[ <'column-width'> || <'column-count'> ] [ / <'column-height'> ]?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-font-feature-settings": {
+      "syntax": "normal | <feature-tag-value>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-font-language-override": {
+      "syntax": "normal | <string>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-hyphens": {
+      "syntax": "none | manual | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-margin-end": {
+      "syntax": "<'margin-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-margin-start": {
+      "syntax": "<'margin-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-opacity": {
+      "syntax": "<opacity-value>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-osx-font-smoothing": {
+      "syntax": "auto | grayscale",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-smooth"
+    },
+    "-moz-outline": {
+      "syntax": "<'outline-width'> || <'outline-style'> || <'outline-color'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-outline-color": {
+      "syntax": "auto | <color>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-outline-style": {
+      "syntax": "auto | <outline-line-style>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-outline-width": {
+      "syntax": "<line-width>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-padding-end": {
+      "syntax": "<'padding-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-padding-start": {
+      "syntax": "<'padding-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-perspective": {
+      "syntax": "none | <length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-perspective-origin": {
+      "syntax": "<position>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-tab-size": {
+      "syntax": "<integer> | <length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-text-align-last": {
+      "syntax": "auto | start | end | left | right | center | justify",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-text-decoration-color": {
+      "syntax": "<color>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-text-decoration-line": {
+      "syntax": "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-text-decoration-style": {
+      "syntax": "solid | double | dotted | dashed | wavy",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-text-size-adjust": {
+      "syntax": "none | auto | <percentage>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transform": {
+      "syntax": "none | <transform-list>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transform-origin": {
+      "syntax": "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transform-style": {
+      "syntax": "flat | preserve-3d",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transition": {
+      "syntax": "<single-transition>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transition-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transition-duration": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transition-property": {
+      "syntax": "none | <single-transition-property>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-transition-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-moz-user-select": {
+      "syntax": "auto | text | none | all",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-flex": {
+      "syntax": "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-flex-direction": {
+      "syntax": "row | row-reverse | column | column-reverse",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-flex-positive": {
+      "syntax": "<number>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-hyphens": {
+      "syntax": "none | manual | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-ime-mode": {
+      "syntax": "auto | normal | active | inactive | disabled",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-line-break": {
+      "syntax": "auto | loose | normal | strict | anywhere",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-order": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-overflow-x": {
+      "syntax": "visible | hidden | clip | scroll | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-overflow-y": {
+      "syntax": "visible | hidden | clip | scroll | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-text-combine-horizontal": {
+      "syntax": "none | all | [ digits <integer [2,4]>? ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-text-overflow": {
+      "syntax": "[ clip | ellipsis | <string> ]{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-touch-action": {
+      "syntax": "auto | none | [ [ pan-x | pan-left | pan-right ] || [ pan-y | pan-up | pan-down ] || pinch-zoom ] | manipulation",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transform": {
+      "syntax": "none | <transform-list>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transform-origin": {
+      "syntax": "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transition": {
+      "syntax": "<single-transition>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transition-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transition-duration": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transition-property": {
+      "syntax": "none | <single-transition-property>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-transition-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-word-break": {
+      "syntax": "normal | break-all | keep-all | break-word | auto-phrase",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-ms-writing-mode": {
+      "syntax": "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation": {
+      "syntax": "<single-animation>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-direction": {
+      "syntax": "<single-animation-direction>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-duration": {
+      "syntax": "[ auto | <time [0s,\u221e]> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-fill-mode": {
+      "syntax": "<single-animation-fill-mode>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-iteration-count": {
+      "syntax": "<single-animation-iteration-count>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-name": {
+      "syntax": "[ none | <keyframes-name> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-play-state": {
+      "syntax": "<single-animation-play-state>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-animation-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-background-size": {
+      "syntax": "<bg-size>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-border-image": {
+      "syntax": "<'border-image-source'> || <'border-image-slice'> [ / <'border-image-width'> | / <'border-image-width'>? / <'border-image-outset'> ]? || <'border-image-repeat'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-object-fit": {
+      "syntax": "fill | contain | cover | none | scale-down",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-object-position": {
+      "syntax": "<position>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-tab-size": {
+      "syntax": "<integer> | <length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-text-overflow": {
+      "syntax": "[ clip | ellipsis | <string> ]{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transform": {
+      "syntax": "none | <transform-list>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transform-origin": {
+      "syntax": "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transition": {
+      "syntax": "<single-transition>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transition-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transition-duration": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transition-property": {
+      "syntax": "none | <single-transition-property>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-o-transition-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-align-content": {
+      "syntax": "normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-align-items": {
+      "syntax": "normal | stretch | <baseline-position> | [ <overflow-position>? <self-position> ] | anchor-center",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-align-self": {
+      "syntax": "auto | normal | stretch | <baseline-position> | <overflow-position>? <self-position> | anchor-center",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-alt": {
+      "syntax": "<string> | <attr()>",
+      "source": "https://github.com/WebKit/WebKit/blob/6eece09a1c31e47489811edd003d1e36910e9fd3/Source/WebCore/css/parser/CSSPropertyParser.cpp#L3993"
+    },
+    "-webkit-animation": {
+      "syntax": "<single-animation>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-direction": {
+      "syntax": "<single-animation-direction>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-duration": {
+      "syntax": "[ auto | <time [0s,\u221e]> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-fill-mode": {
+      "syntax": "<single-animation-fill-mode>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-iteration-count": {
+      "syntax": "<single-animation-iteration-count>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-name": {
+      "syntax": "[ none | <keyframes-name> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-play-state": {
+      "syntax": "<single-animation-play-state>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-animation-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-app-region": {
+      "syntax": "drag | no-drag | none | move",
+      "source": "https://github.com/chromium/chromium/blob/main/third_party/blink/renderer/core/css/css_properties.json5"
+    },
+    "-webkit-backdrop-filter": {
+      "syntax": "none | <filter-value-list>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-backface-visibility": {
+      "syntax": "visible | hidden",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-background-clip": {
+      "syntax": "[ border-box | content-box | padding-box | text | border | padding | content | -webkit-text ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-background-origin": {
+      "syntax": "[ border-box | content-box | padding-box | border | padding | content | -webkit-text ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-background-size": {
+      "syntax": "<bg-size>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-bottom-left-radius": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-bottom-right-radius": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-horizontal-spacing": {
+      "syntax": "<length [0,\u221e]>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-border-image": {
+      "syntax": "<'border-image-source'> || <'border-image-slice'> [ / <'border-image-width'> | / <'border-image-width'>? / <'border-image-outset'> ]? || <'border-image-repeat'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-image-slice": {
+      "syntax": "[ <number [0,\u221e]> | <percentage [0,\u221e]> ]{1,4} && fill?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-radius": {
+      "syntax": "<length-percentage [0,\u221e]>{1,4} [ / <length-percentage [0,\u221e]>{1,4} ]?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-top-left-radius": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-top-right-radius": {
+      "syntax": "<length-percentage [0,\u221e]>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-border-vertical-spacing": {
+      "syntax": "<length [0,\u221e]>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-box-align": {
+      "syntax": "start | center | end | baseline | stretch",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-decoration-break": {
+      "syntax": "slice | clone",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-direction": {
+      "syntax": "normal | reverse | inherit",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-flex": {
+      "syntax": "<number>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-flex-group": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-lines": {
+      "syntax": "single | multiple",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-ordinal-group": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-orient": {
+      "syntax": "horizontal | vertical | inline-axis | block-axis | inherit",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-pack": {
+      "syntax": "start | center | end | justify",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-shadow": {
+      "syntax": "none | <shadow>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-box-sizing": {
+      "syntax": "content-box | border-box",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-clip-path": {
+      "syntax": "<clip-source> | [ <basic-shape> || <geometry-box> ] | none",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-axis": {
+      "syntax": "horizontal | vertical | auto",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-column-break-after": {
+      "syntax": "auto | always | avoid",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-column-break-before": {
+      "syntax": "auto | always | avoid",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-column-break-inside": {
+      "syntax": "auto | avoid",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-column-count": {
+      "syntax": "<integer> | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-fill": {
+      "syntax": "auto | balance",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-progression": {
+      "syntax": "normal | reverse",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-column-rule": {
+      "syntax": "<'column-rule-width'> || <'column-rule-style'> || <'column-rule-color'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-rule-color": {
+      "syntax": "<color>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-rule-style": {
+      "syntax": "<line-style>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-rule-width": {
+      "syntax": "<line-width>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-span": {
+      "syntax": "none | all",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-column-width": {
+      "syntax": "auto | <length [0,\u221e]>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-columns": {
+      "syntax": "[ <'column-width'> || <'column-count'> ] [ / <'column-height'> ]?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-cursor-visibility": {
+      "syntax": "auto | auto-hide",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-filter": {
+      "syntax": "none | <filter-value-list>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex": {
+      "syntax": "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex-basis": {
+      "syntax": "content | <'width'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex-direction": {
+      "syntax": "row | row-reverse | column | column-reverse",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex-flow": {
+      "syntax": "<'flex-direction'> || <'flex-wrap'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex-grow": {
+      "syntax": "<number>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex-shrink": {
+      "syntax": "<number>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-flex-wrap": {
+      "syntax": "nowrap | [ wrap | wrap-reverse ] || balance",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-font-feature-settings": {
+      "syntax": "normal | <feature-tag-value>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-font-kerning": {
+      "syntax": "auto | normal | none",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-font-smoothing": {
+      "syntax": "auto | none | antialiased | subpixel-antialiased",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-font-variant-ligatures": {
+      "syntax": "normal | none | [ <common-lig-values> || <discretionary-lig-values> || <historical-lig-values> || <contextual-alt-values> ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-hyphenate-character": {
+      "syntax": "auto | <string>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-hyphenate-limit-after": {
+      "syntax": "auto | <integer [0,\u221e]>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-hyphenate-limit-before": {
+      "syntax": "auto | <integer [0,\u221e]>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-hyphenate-limit-lines": {
+      "syntax": "no-limit | <integer [0,\u221e]>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-hyphens": {
+      "syntax": "none | manual | auto",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-initial-letter": {
+      "syntax": "normal | [ <number> <integer>? ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-justify-content": {
+      "syntax": "normal | <content-distribution> | <overflow-position>? [ <content-position> | left | right ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-line-align": {
+      "syntax": "none | edges",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-line-box-contain": {
+      "syntax": "none | [ block || inline || font || glyphs || replaced || inline-box || initial-letter ]",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-line-break": {
+      "syntax": "auto | loose | normal | strict | anywhere",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-line-grid": {
+      "syntax": "none | <custom-ident>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-line-snap": {
+      "syntax": "none | baseline | contain",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-locale": {
+      "syntax": "auto | <string>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-logical-height": {
+      "syntax": "<'width'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-logical-width": {
+      "syntax": "<'width'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-margin-after": {
+      "syntax": "<'margin-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-margin-before": {
+      "syntax": "<'margin-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-margin-end": {
+      "syntax": "<'margin-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-margin-start": {
+      "syntax": "<'margin-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-box-image": {
+      "syntax": "<'mask-border-source'> || <'mask-border-slice'> [ / <'mask-border-width'>? [ / <'mask-border-outset'> ]? ]? || <'mask-border-repeat'> || <'mask-border-mode'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-box-image-outset": {
+      "syntax": "[ <length> | <number> ]{1,4}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-box-image-repeat": {
+      "syntax": "[ stretch | repeat | round | space ]{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-box-image-slice": {
+      "syntax": "<number-percentage>{1,4} fill?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-box-image-source": {
+      "syntax": "none | <image>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-box-image-width": {
+      "syntax": "[ <length-percentage> | <number> | auto ]{1,4}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-mask-source-type": {
+      "syntax": "[ auto | alpha | luminance ]#",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-max-inline-size": {
+      "syntax": "<'max-width'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-max-logical-height": {
+      "syntax": "<'max-width'>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-max-logical-width": {
+      "syntax": "<'max-width'>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-min-logical-height": {
+      "syntax": "<'min-width'>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-min-logical-width": {
+      "syntax": "<'min-width'>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-nbsp-mode": {
+      "syntax": "normal | space",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-order": {
+      "syntax": "<integer>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-padding-end": {
+      "syntax": "<'padding-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-padding-start": {
+      "syntax": "<'padding-top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-perspective": {
+      "syntax": "none | <length [0,\u221e]> | <number [0,\u221e]>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-perspective-origin": {
+      "syntax": "<position>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-perspective-origin-x": {
+      "syntax": "left | center | right | <length-percentage>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-perspective-origin-y": {
+      "syntax": "top | center | bottom | <length-percentage>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-print-color-adjust": {
+      "syntax": "economy | exact",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-rtl-ordering": {
+      "syntax": "logical | visual",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-ruby-position": {
+      "syntax": "before | after | inter-character",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-scroll-snap-type": {
+      "syntax": "none | mandatory | proximity",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-shape-margin": {
+      "syntax": "<length-percentage>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-combine": {
+      "syntax": "none | horizontal",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-decoration-color": {
+      "syntax": "<color>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-decoration-line": {
+      "syntax": "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-decoration-skip": {
+      "syntax": "none | [ objects || [ spaces | [ leading-spaces || trailing-spaces ] ] || edges || box-decoration ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-decoration-style": {
+      "syntax": "solid | double | dotted | dashed | wavy",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-decorations-in-effect": {
+      "syntax": "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-text-emphasis": {
+      "syntax": "<'text-emphasis-style'> || <'text-emphasis-color'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-emphasis-color": {
+      "syntax": "<color>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-emphasis-position": {
+      "syntax": "auto | [ over | under ] && [ right | left ]?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-emphasis-style": {
+      "syntax": "none | [ [ filled | open ] || [ dot | circle | double-circle | triangle | sesame ] ] | <string>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-orientation": {
+      "syntax": "mixed | upright | sideways",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-security": {
+      "syntax": "disc | circle | square | none",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-text-size-adjust": {
+      "syntax": "none | auto | <percentage>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-underline-position": {
+      "syntax": "auto | from-font | [ under || [ left | right ] ]",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-text-zoom": {
+      "syntax": "normal | reset",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-transform": {
+      "syntax": "none | <transform-list>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transform-origin": {
+      "syntax": "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transform-origin-x": {
+      "syntax": "left | center | right | <length-percentage>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-transform-origin-y": {
+      "syntax": "top | center | bottom | <length-percentage>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-transform-origin-z": {
+      "syntax": "<length>",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-transform-style": {
+      "syntax": "flat | preserve-3d",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transition": {
+      "syntax": "<single-transition>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transition-delay": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transition-duration": {
+      "syntax": "<time>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transition-property": {
+      "syntax": "none | <single-transition-property>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-transition-timing-function": {
+      "syntax": "<easing-function>#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "-webkit-user-drag": {
+      "syntax": "auto | none | element",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "-webkit-writing-mode": {
+      "syntax": "horizontal-tb | vertical-lr | vertical-rl | sideways-lr | sideways-rl | lr-tb | rl-tb | tb-rl | lr | rl | tb | horizontal-bt",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "alt": {
+      "syntax": "<string> | <attr()>",
+      "source": "https://github.com/WebKit/WebKit/blob/6eece09a1c31e47489811edd003d1e36910e9fd3/Source/WebCore/css/parser/CSSPropertyParser.cpp#L3993"
+    },
+    "background-repeat-x": {
+      "syntax": "[ repeat | space | round | no-repeat ]#",
+      "source": "https://drafts.csswg.org/css-backgrounds-4/#propdef-background-repeat-x"
+    },
+    "background-repeat-y": {
+      "syntax": "[ repeat | space | round | no-repeat ]#",
+      "source": "https://drafts.csswg.org/css-backgrounds-4/#propdef-background-repeat-y"
+    },
+    "block-ellipsis": {
+      "syntax": "no-ellipsis | auto | <string>",
+      "source": "https://drafts.csswg.org/css-overflow-4/#propdef-block-ellipsis"
+    },
+    "buffered-rendering": {
+      "syntax": "auto | dynamic | static",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "color-adjust": {
+      "syntax": "economy | exact",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "color-interpolation": {
+      "syntax": "auto | sRGB | linearRGB",
+      "source": "https://github.com/WebKit/WebKit/blob/a16dca68c731a40566d6a2b43292aae8e789c788/Source/WebCore/css/CSSProperties.json"
+    },
+    "color-rendering": {
+      "syntax": "auto | optimizeSpeed | optimizeQuality",
+      "source": "https://www.w3.org/TR/SVG11/painting.html#ColorRenderingProperty"
+    },
+    "column-rule-break": {
+      "syntax": "none | normal | intersection",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-break"
+    },
+    "column-rule-inset": {
+      "syntax": "<'column-rule-inset-cap'> [ / <'column-rule-inset-junction'> ]?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset"
+    },
+    "column-rule-inset-cap": {
+      "syntax": "<inset-value> <inset-value>?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-cap"
+    },
+    "column-rule-inset-cap-end": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-cap-end"
+    },
+    "column-rule-inset-cap-start": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-cap-start"
+    },
+    "column-rule-inset-end": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-end"
+    },
+    "column-rule-inset-junction": {
+      "syntax": "<inset-value> <inset-value>?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-junction"
+    },
+    "column-rule-inset-junction-end": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-junction-end"
+    },
+    "column-rule-inset-junction-start": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-junction-start"
+    },
+    "column-rule-inset-start": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-inset-start"
+    },
+    "column-rule-visibility-items": {
+      "syntax": "all | around | between | normal",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-column-rule-visibility-items"
+    },
+    "continue": {
+      "syntax": "auto | discard | collapse | -webkit-legacy",
+      "source": "https://drafts.csswg.org/css-overflow-4/#propdef-continue"
+    },
+    "flow-tolerance": {
+      "syntax": "normal | <length-percentage [0,\u221e]> | infinite",
+      "source": "https://drafts.csswg.org/css-grid-3/#propdef-flow-tolerance"
+    },
+    "glyph-orientation-vertical": {
+      "syntax": "auto | 0deg | 90deg | 0 | 90",
+      "source": "https://drafts.csswg.org/css-writing-modes-4/#propdef-glyph-orientation-vertical"
+    },
+    "inset-area": {
+      "syntax": "none | <position-area>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "motion": {
+      "syntax": "[ <'offset-position'>? [ <'offset-path'> [ <'offset-distance'> || <'offset-rotate'> ]? ]? ]! [ / <'offset-anchor'> ]?",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "motion-distance": {
+      "syntax": "<length-percentage>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "motion-path": {
+      "syntax": "none | <offset-path> || <coord-box>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "motion-rotation": {
+      "syntax": "[ auto | reverse ] || <angle>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-block": {
+      "syntax": "<'top'>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-block-end": {
+      "syntax": "<'top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-block-start": {
+      "syntax": "<'top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-inline": {
+      "syntax": "<'top'>{1,2}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-inline-end": {
+      "syntax": "<'top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-inline-start": {
+      "syntax": "<'top'>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "offset-rotation": {
+      "syntax": "[ auto | reverse ] || <angle>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "position-try-options": {
+      "syntax": "none | [ [<dashed-ident> || <try-tactic>] | <'position-area'> ]#",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "row-rule": {
+      "syntax": "<gap-rule-list> | <gap-auto-rule-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule"
+    },
+    "row-rule-break": {
+      "syntax": "none | normal | intersection",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-break"
+    },
+    "row-rule-color": {
+      "syntax": "<line-color-list> | <auto-line-color-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-color"
+    },
+    "row-rule-inset": {
+      "syntax": "<'column-rule-inset-cap'> [ / <'column-rule-inset-junction'> ]?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset"
+    },
+    "row-rule-inset-cap": {
+      "syntax": "<inset-value> <inset-value>?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-cap"
+    },
+    "row-rule-inset-cap-end": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-cap-end"
+    },
+    "row-rule-inset-cap-start": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-cap-start"
+    },
+    "row-rule-inset-end": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-end"
+    },
+    "row-rule-inset-junction": {
+      "syntax": "<inset-value> <inset-value>?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-junction"
+    },
+    "row-rule-inset-junction-end": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-junction-end"
+    },
+    "row-rule-inset-junction-start": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-junction-start"
+    },
+    "row-rule-inset-start": {
+      "syntax": "<inset-value>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-inset-start"
+    },
+    "row-rule-style": {
+      "syntax": "<line-style-list> | <auto-line-style-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-style"
+    },
+    "row-rule-visibility-items": {
+      "syntax": "all | around | between | normal",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-visibility-items"
+    },
+    "row-rule-width": {
+      "syntax": "<line-width-list> | <auto-line-width-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-row-rule-width"
+    },
+    "rule": {
+      "syntax": "<gap-rule-list> | <gap-auto-rule-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule"
+    },
+    "rule-break": {
+      "syntax": "<'column-rule-break'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-break"
+    },
+    "rule-color": {
+      "syntax": "<line-color-list> | <auto-line-color-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-color"
+    },
+    "rule-inset": {
+      "syntax": "<'column-rule-inset'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-inset"
+    },
+    "rule-inset-cap": {
+      "syntax": "<'column-rule-inset-cap'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-inset-cap"
+    },
+    "rule-inset-end": {
+      "syntax": "<'column-rule-inset-end'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-inset-end"
+    },
+    "rule-inset-junction": {
+      "syntax": "<'column-rule-inset-junction'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-inset-junction"
+    },
+    "rule-inset-start": {
+      "syntax": "<'column-rule-inset-start'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-inset-start"
+    },
+    "rule-overlap": {
+      "syntax": "row-over-column | column-over-row",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-overlap"
+    },
+    "rule-style": {
+      "syntax": "<line-style-list> | <auto-line-style-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-style"
+    },
+    "rule-visibility-items": {
+      "syntax": "<'column-rule-visibility-items'>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-visibility-items"
+    },
+    "rule-width": {
+      "syntax": "<line-width-list> | <auto-line-width-list>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#propdef-rule-width"
+    },
+    "scroll-axis-lock": {
+      "syntax": "auto | none",
+      "source": "https://drafts.csswg.org/css-overflow-5/#propdef-scroll-axis-lock"
+    },
+    "scroll-snap-margin": {
+      "syntax": "<length>{1,4}",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "scroll-snap-margin-bottom": {
+      "syntax": "<length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "scroll-snap-margin-left": {
+      "syntax": "<length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "scroll-snap-margin-right": {
+      "syntax": "<length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "scroll-snap-margin-top": {
+      "syntax": "<length>",
+      "source": "https://github.com/mdn/data/blob/v2.35.0/css/properties.json"
+    },
+    "speak": {
+      "syntax": "auto | never | always",
+      "source": "https://drafts.csswg.org/css-speech-1/#propdef-speak"
+    },
+    "text-decoration-skip-spaces": {
+      "syntax": "none | all | [ start || end ]",
+      "source": "https://drafts.csswg.org/css-text-decor-4/#propdef-text-decoration-skip-spaces"
+    },
+    "user-modify": {
+      "syntax": "read-only | read-write | read-write-plaintext-only",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/user-modify"
+    },
+    "view-transition-group": {
+      "syntax": "normal | contain | nearest | <custom-ident>",
+      "source": "https://drafts.csswg.org/css-view-transitions-2/#propdef-view-transition-group"
+    },
+    "white-space-trim": {
+      "syntax": "none | discard-before || discard-after || discard-inner",
+      "source": "https://drafts.csswg.org/css-text-4/#propdef-white-space-trim"
+    },
+    "window-drag": {
+      "syntax": "none | move",
+      "source": "https://drafts.csswg.org/css-ui-4/#propdef-window-drag"
+    },
+    "wrap-inside": {
+      "syntax": "auto | avoid",
+      "source": "https://drafts.csswg.org/css-text-4/#propdef-wrap-inside"
+    }
+  },
+  "syntaxes": {
+    "auto-line-color-list": {
+      "syntax": "<line-color-or-repeat>#? , <auto-repeat-line-color> , <line-color-or-repeat>#?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-auto-line-color-list"
+    },
+    "auto-line-style-list": {
+      "syntax": "<line-style-or-repeat>#? , <auto-repeat-line-style> , <line-style-or-repeat>#?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-auto-line-style-list"
+    },
+    "auto-line-width-list": {
+      "syntax": "<line-width-or-repeat>#? , <auto-repeat-line-width> , <line-width-or-repeat>#?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-auto-line-width-list"
+    },
+    "auto-repeat-line-color": {
+      "syntax": "repeat( auto , [ <color> ]# )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-auto-repeat-line-color"
+    },
+    "auto-repeat-line-style": {
+      "syntax": "repeat( auto , [ <line-style> ]# )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-auto-repeat-line-style"
+    },
+    "auto-repeat-line-width": {
+      "syntax": "repeat( auto , [ <line-width> ]# )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-auto-repeat-line-width"
+    },
+    "gap-auto-repeat-rule": {
+      "syntax": "repeat( auto , <gap-rule># )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-gap-auto-repeat-rule"
+    },
+    "gap-auto-rule-list": {
+      "syntax": "<gap-rule-or-repeat>#? , <gap-auto-repeat-rule> , <gap-rule-or-repeat>#?",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-gap-auto-rule-list"
+    },
+    "gap-repeat-rule": {
+      "syntax": "repeat( <integer [1,\u221e]> , <gap-rule># )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-gap-repeat-rule"
+    },
+    "gap-rule": {
+      "syntax": "<line-width> || <line-style> || <color>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-gap-rule"
+    },
+    "gap-rule-list": {
+      "syntax": "<gap-rule-or-repeat>#",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-gap-rule-list"
+    },
+    "gap-rule-or-repeat": {
+      "syntax": "<gap-rule> | <gap-repeat-rule>",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-gap-rule-or-repeat"
+    },
+    "inset-value": {
+      "syntax": "<length-percentage> | overlap-join",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-inset-value"
+    },
+    "line-color-list": {
+      "syntax": "<line-color-or-repeat>#",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-line-color-list"
+    },
+    "line-color-or-repeat": {
+      "syntax": "[ <color> | <repeat-line-color> ]",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-line-color-or-repeat"
+    },
+    "line-style-list": {
+      "syntax": "<line-style-or-repeat>#",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-line-style-list"
+    },
+    "line-style-or-repeat": {
+      "syntax": "[ <line-style> | <repeat-line-style> ]",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-line-style-or-repeat"
+    },
+    "line-width-list": {
+      "syntax": "<line-width-or-repeat>#",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-line-width-list"
+    },
+    "line-width-or-repeat": {
+      "syntax": "[ <line-width> | <repeat-line-width> ]",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-line-width-or-repeat"
+    },
+    "repeat-line-color": {
+      "syntax": "repeat( [ <integer [1,\u221e]> ] , [ <color> ]# )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-repeat-line-color"
+    },
+    "repeat-line-style": {
+      "syntax": "repeat( [ <integer [1,\u221e]> ] , [ <line-style> ]# )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-repeat-line-style"
+    },
+    "repeat-line-width": {
+      "syntax": "repeat( [ <integer [1,\u221e]> ] , [ <line-width> ]# )",
+      "source": "https://drafts.csswg.org/css-gaps-1/#typedef-repeat-line-width"
+    }
+  }
+}

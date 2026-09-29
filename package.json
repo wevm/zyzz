@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "bench:adapters": "pnpm build && node bench/adapters/Run.ts",
     "bench:check": "vp test run --config bench/Check.config.ts --no-file-parallelism",
     "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
@@ -27,6 +28,7 @@
     "@ark/attest": "catalog:",
     "@babel/core": "catalog:",
     "@changesets/cli": "catalog:",
+    "@mdn/browser-compat-data": "catalog:",
     "@pandacss/node": "catalog:",
     "@stylexjs/babel-plugin": "catalog:",
     "@stylexjs/stylex": "catalog:",
@@ -60,7 +62,7 @@
   "packageManager": "pnpm@11.19.0",
   "[!start-pkg]": "",
   "name": "zyzz",
-  "version": "0.0.5",
+  "version": "0.0.18",
   "license": "MIT",
   "description": "Modern, universal, simple styling library for the Web and React Native",
   "repository": {

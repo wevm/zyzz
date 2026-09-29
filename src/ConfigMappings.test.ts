@@ -8,6 +8,221 @@ import { Config, Style } from 'zyzz'
 import * as Configuration from './internal/Configuration.js'
 
 describe('create', () => {
+  test('renders Tailwind category precedence through a packed configuration', async () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';
+        export const {style, vars} = Config.create({vars: {
+          color: {brand: '#112233'}, textColor: {brand: '#445566'},
+          backgroundColor: {brand: '#778899'}, borderColor: {brand: '#aabbcc'},
+          spacing: {shared: '16px', compact: '24px'},
+          container: {wide: '640px', compact: '320px'},
+          width: {compact: '120px'}, minHeight: {compact: '48px'}, height: {compact: '64px'},
+          margin: {compact: '4px'}, padding: {compact: '8px'}, gap: {compact: '12px'},
+          radius: {round: '10px'}, shadow: {soft: '0 2px 4px #0003'},
+          blur: {soft: '2px'}, aspect: {video: '16 / 9'}, ease: {out: 'cubic-bezier(0, 0, 0.2, 1)'},
+        }});`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'library.js': library.contracts['config.ts']! },
+      imports: { 'app.ts': { library: 'library.js', zyzz: null } },
+      modules: {
+        'app.ts': `import {style,vars} from 'library';
+        export const scope = vars();
+        export const card = style({color:'brand',backgroundColor:'brand',borderColor:'brand',width:'compact',minHeight:'compact',maxHeight:'compact',padding:'compact',margin:'compact',gap:'compact',borderRadius:'round',boxShadow:'soft',aspectRatio:'video',transitionTimingFunction:'out',filter:\`blur(\${vars.blur.soft})\`})();
+        export const spaced = style({width:'shared',height:'shared',borderSpacing:'shared',scrollMarginTop:'shared',scrollPaddingTop:'shared',translate:'shared',textIndent:'shared'})();
+        export const sized = style({width:'wide',minWidth:'wide',maxWidth:'wide',flexBasis:'wide',inlineSize:'wide',columns:'wide','@container >=wide':{opacity:0.5}})();`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': app.modules['app.ts']!.code },
+      packages: { library: { 'index.ts': library.modules['config.ts']!.code } },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const css = (app.sharedCss ?? '') + app.modules['app.ts']!.css
+    expect(css.includes('@container (width >= 640px)')).toMatchInlineSnapshot(
+      `true`,
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${css}</style><main class="${fixture.scope.className}"><div id="card" class="${fixture.card.className}"></div><div id="spaced" class="${fixture.spaced.className}"></div><div id="sized" class="${fixture.sized.className}"></div></main>`,
+      )
+      expect(
+        await page.locator('#card').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [
+            style.color,
+            style.backgroundColor,
+            style.borderTopColor,
+            style.width,
+            style.minHeight,
+            style.maxHeight,
+            style.padding,
+            style.margin,
+            style.gap,
+            style.borderRadius,
+            style.boxShadow,
+            style.aspectRatio,
+            style.transitionTimingFunction,
+            style.filter,
+          ]
+        }),
+      ).toMatchInlineSnapshot(`
+        [
+          "rgb(68, 85, 102)",
+          "rgb(119, 136, 153)",
+          "rgb(170, 187, 204)",
+          "120px",
+          "48px",
+          "64px",
+          "8px",
+          "4px",
+          "12px",
+          "10px",
+          "rgba(0, 0, 0, 0.2) 0px 2px 4px 0px",
+          "16 / 9",
+          "cubic-bezier(0, 0, 0.2, 1)",
+          "blur(2px)",
+        ]
+      `)
+      expect(
+        await page.locator('#spaced').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [
+            style.width,
+            style.height,
+            style.borderSpacing,
+            style.scrollMarginTop,
+            style.scrollPaddingTop,
+            style.translate,
+            style.textIndent,
+          ]
+        }),
+      ).toMatchInlineSnapshot(`
+        [
+          "16px",
+          "16px",
+          "16px",
+          "16px",
+          "16px",
+          "16px",
+          "16px",
+        ]
+      `)
+      expect(
+        await page.locator('#sized').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [
+            style.width,
+            style.minWidth,
+            style.maxWidth,
+            style.flexBasis,
+            style.inlineSize,
+            style.columnWidth,
+          ]
+        }),
+      ).toMatchInlineSnapshot(`
+        [
+          "640px",
+          "640px",
+          "640px",
+          "640px",
+          "640px",
+          "640px",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+  test('renders numeric and compound values from non-font categories', async () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Config} from 'zyzz';
+      const {style}=Config.create({vars:{gridColumn:{pair:'span 2'},gridColumnStart:{second:2},columns:{pair:2},scale:{large:1.25},strokeWidth:{bold:2},listStyleType:{named:'custom-counter'},transitionProperty:{fade:'opacity'},gridTemplateColumns:{split:'20px 1fr'},backgroundPosition:{offset:'10px'},objectPosition:{offset:'10px'},transformOrigin:{offset:'10px'},perspectiveOrigin:{offset:'10px'}}});
+      export const box=style({gridColumn:'pair',columns:'pair',scale:'large',strokeWidth:'bold',listStyleType:'named',transitionProperty:'fade',gridTemplateColumns:'split',backgroundPosition:'offset',objectPosition:'offset',transformOrigin:'offset',perspectiveOrigin:'offset'})();
+      export const start=style({gridColumnStart:'second'})();`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': result.modules['app.ts']!.code },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${result.modules['app.ts']!.css}</style><div id="box" style="width:100px;height:100px" class="${fixture.box.className}"></div><div id="start" class="${fixture.start.className}"></div>`,
+      )
+      expect(
+        await page.locator('#box').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [
+            style.gridColumn,
+            style.columnCount,
+            style.scale,
+            style.strokeWidth,
+            style.listStyleType,
+            style.transitionProperty,
+            style.gridTemplateColumns,
+            style.backgroundPosition,
+            style.objectPosition,
+            style.transformOrigin,
+            style.perspectiveOrigin,
+          ]
+        }),
+      ).toMatchInlineSnapshot(`
+        [
+          "span 2",
+          "2",
+          "1.25",
+          "2px",
+          "custom-counter",
+          "opacity",
+          "20px 1fr",
+          "10px 50%",
+          "10px 50%",
+          "10px 50px",
+          "10px 50px",
+        ]
+      `)
+      expect(
+        await page
+          .locator('#start')
+          .evaluate((element) => getComputedStyle(element).gridColumnStart),
+      ).toMatchInlineSnapshot(`"2"`)
+    } finally {
+      await browser.close()
+    }
+  })
+  test.each(['-4px', '50%'])(
+    'rejects invalid column width token %s',
+    (value) => {
+      try {
+        Graph.compile({
+          modules: {
+            'app.ts': `import {Config} from 'zyzz';const {style}=Config.create({vars:{columns:{invalid:${JSON.stringify(value)}}}});export const box=style({columns:'invalid'})();`,
+          },
+        })
+        throw new Error('Expected an invalid column width')
+      } catch (error) {
+        expect(
+          (error as { diagnostics?: { message: string }[] }).diagnostics?.map(
+            (diagnostic) => diagnostic.message,
+          ),
+        ).toMatchInlineSnapshot(`
+        [
+          "Variable value is incompatible with this property.",
+        ]
+      `)
+      }
+    },
+  )
   test('retains alias source paths in structural diagnostics', () => {
     const { theme } = Configuration.create({
       theme: {},
@@ -78,7 +293,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`26`)
+    ).toMatchInlineSnapshot(`28`)
   })
   test('preserves mapped HTML theme handles through source and packed aliases', async () => {
     const library = Graph.compile({
@@ -93,7 +308,7 @@ describe('create', () => {
       imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
       modules: {
         'app.ts':
-          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';import {config,theme,staticStyle} from 'library';const extended=Vars.extend(theme,{padding:{sm:'12px'}}); const extendedConfig=Config.create({vars:extended,output:'html',shorthands:{px:['paddingLeft','paddingRight']}});export const extension=extendedConfig.style({px:'sm'})();const {style}=config;export const destructured=style({px:'sm'})();const bound=config.style;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=config.style({px:'sm'})();export const source=staticStyle();",
+          "import {Config} from 'zyzz';\nimport {Vars} from 'zyzz';import {config,theme,staticStyle} from 'library';const extended=Vars.extend(theme,{padding:{sm:'12px'}}); const extendedConfig=Config.create({vars:extended,output:'html',shorthands:{px:['paddingLeft','paddingRight']}});export const extension=extendedConfig.style({px:'sm'})();const {style}=config;export const destructured=style({px:'sm'})();const bound=config.style;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:`${values.width} !custom`}))({width:'8px'});export const direct=config.style({px:'sm'})();export const source=staticStyle();",
       },
     })
 
@@ -119,12 +334,12 @@ describe('create', () => {
     expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
-        "class": "z-pl-xDRLdf-0 z-pr-1wshtm-1",
+        "class": "z-pl-Rg0o7y-0 z-pr-GHGcDr-1",
       }
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "class": "z-pl-60Tybp-0 z-pr-7yEicI-1 z-style-1wfnqsmu0q6os-240",
+        "class": "z-pl-4cVNHn-0 z-pr-cw79m1-1 z-style-1wfnqsmu0q6os-240",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
@@ -138,13 +353,13 @@ describe('create', () => {
   const config =
     "import {Config} from 'zyzz';export const {style,vars:theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},vars:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});"
   const source = `import {style,theme} from 'library';export namespace styles {
-  export const card = style({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm !important'}})
+  export const card = style({px:'sm',paddingLeft:'2px !custom',':hover':{paddingX:'sm !important'}})
 
   export const mixed = style({space:'sm'})
 
   export const handle = theme.style({px:'sm'})
 
-  export const dynamic = style((values:{width:'10px'|'20px'})=>({px:values.width}))
+  export const dynamic = style((values:{width:'10px'|'20px'})=>({px:\`\${values.width} !custom\`}))
 }`
 
   function compile() {
@@ -164,7 +379,7 @@ describe('create', () => {
     return { app, library }
   }
 
-  test('rejects non-record shorthand containers', () => {
+  test('rejects non-record shorthand container', () => {
     expect(() =>
       Config.create({
         shorthands: new Map([['px', ['paddingLeft']]]),
@@ -205,7 +420,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot(`26`)
+    expect(changed.version).toMatchInlineSnapshot(`28`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>
@@ -249,12 +464,12 @@ describe('create', () => {
       consumer.modules['app.ts']!.code.includes('shorthands:'),
     ).toMatchInlineSnapshot('true')
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
-      .z_theme-1xn44ix111xh3v-extended{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:8px;}
-      .z_theme-1e8a67z1uaws1j-next{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:12px;}
-      .z_theme-1e8a67z1uaws1j-nextConfig-theme{--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm:12px;}
-      .z-pl-8Ct53_-0{padding-left:var(--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm,12px);}
-      .z-pr-AoT0tF-1{padding-right:var(--z-t1e8a67z1uaws1j-nextConfig-spacing_2e_sm,12px);}"
+      ".z_theme-src-theme-fH_5f_CKDLyhct-theme-theme{--z-spacing-sm-4AUM-hHtUo6:4px;}
+      .z_theme-src-theme-fH_5f_CKDLyhct-extended{--z-spacing-sm-4AUM-hHtUo6:8px;}
+      .z_theme-src-app-bk8jvZf5JrJ-next{--z-spacing-sm-4AUM-hHtUo6:12px;}
+      .z_theme-src-app-bk8jvZf5JrJ-nextConfig-theme{--z-spacing-sm-2M--bs1pkiH:12px;}
+      .z-pl-vGNQ-x-0{padding-left:var(--z-spacing-sm-2M--bs1pkiH,12px);}
+      .z-pr-v2FbAQ-1{padding-right:var(--z-spacing-sm-2M--bs1pkiH,12px);}"
     `)
   })
   test('accepts quoted aliases and independently validates numeric targets', () => {
@@ -266,12 +481,12 @@ describe('create', () => {
     })
 
     expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1e8a67z1uaws1j-extendedConfig-theme{--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm:8px;}
+      ".z_theme-src-app-bk8jvZf5JrJ-extendedConfig-theme{--z-spacing-sm-b52_WtVArnH:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-pl-IaZIIw-0{padding-left:var(--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm,8px);}
-      .z-pr-5TLj9h-1{padding-right:var(--z-t1e8a67z1uaws1j-extendedConfig-spacing_2e_sm,8px);}
+      .z-pl-Rz8paF-0{padding-left:var(--z-spacing-sm-b52_WtVArnH,8px);}
+      .z-pr--MMDms-1{padding-right:var(--z-spacing-sm-b52_WtVArnH,8px);}
       .z-scale-cmGIW3{scale:var(--z-d1e8a67z1uaws1j-460-6e);}
       .z-order-Z0FtxJ{order:var(--z-d1e8a67z1uaws1j-460-6e);}"
     `)
@@ -280,18 +495,18 @@ describe('create', () => {
     const { app } = compile()
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-u8smm21l81sow-style-theme{--z-tu8smm21l81sow-style-margin_2e_sm:-8px;--z-tu8smm21l81sow-style-padding_2e_sm:12px;--z-tu8smm21l81sow-style-spacing_2e_sm:4px;}
-      .z-pl-KWN2eh-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pr-Fc2gxL-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
+      ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-margin-sm-0cyRFaK-DNq:-8px;--z-padding-sm-2TTQfQz_ALl:12px;--z-spacing-sm-1LZrenG4ZC5:4px;}
+      .z-pl-J0ueoD-0{padding-left:var(--z-padding-sm-2TTQfQz_ALl,12px);}
+      .z-pr-ulBF7i-1{padding-right:var(--z-padding-sm-2TTQfQz_ALl,12px);}
       .z-pl-2px-CGhyBp-2{padding-left:2px;}
-      .z-hover-pl-eR_rpb-3{&:hover{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px)!important;}}
-      .z-hover-pr-TDwfLY-4{&:hover{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px)!important;}}
-      .z-ml-jpnoVx-0{margin-left:var(--z-tu8smm21l81sow-style-margin_2e_sm,-8px);}
-      .z-pl-Ag8zx9-1{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pl-7A80dQ-0{padding-left:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pr-dVv5bd-1{padding-right:var(--z-tu8smm21l81sow-style-padding_2e_sm,12px);}
-      .z-pl-wcqRq1-0{padding-left:var(--z-d1e8a67z1uaws1j-273-77-69-64-74-68);}
-      .z-pr-a5vlok-1{padding-right:var(--z-d1e8a67z1uaws1j-273-77-69-64-74-68);}"
+      .z-hover-pl-7CW7Ck-3{&:hover{padding-left:var(--z-padding-sm-2TTQfQz_ALl,12px)!important;}}
+      .z-hover-pr-in1GnI-4{&:hover{padding-right:var(--z-padding-sm-2TTQfQz_ALl,12px)!important;}}
+      .z-ml-V39_R3-0{margin-left:var(--z-margin-sm-0cyRFaK-DNq,-8px);}
+      .z-pl-OTesAH-1{padding-left:var(--z-padding-sm-2TTQfQz_ALl,12px);}
+      .z-pl-5-ZzBO-0{padding-left:var(--z-padding-sm-2TTQfQz_ALl,12px);}
+      .z-pr-EaRskD-1{padding-right:var(--z-padding-sm-2TTQfQz_ALl,12px);}
+      .z-pl-Q2O7X3-0{padding-left:var(--z-d1e8a67z1uaws1j-281-77-69-64-74-68);}
+      .z-pr-3dnBGX-1{padding-right:var(--z-d1e8a67z1uaws1j-281-77-69-64-74-68);}"
     `)
     expect(app.modules['app.ts']!.code.includes('px:')).toMatchInlineSnapshot(
       'false',

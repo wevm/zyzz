@@ -6,7 +6,9 @@ import * as Url from 'node:url'
 import { chromium } from 'playwright'
 import * as Rollup from 'rollup'
 import * as Vite from 'vite'
+import * as Watch from '../../test/fixtures/Watch.js'
 import * as Library from '../../test/fixtures/Library.js'
+import * as Responsive from '../../test/fixtures/Responsive.js'
 import { describe, expect, test, vi } from 'vite-plus/test'
 import Webpack from 'webpack'
 import { zyzz as esbuild } from 'zyzz/esbuild'
@@ -35,11 +37,14 @@ async function render(root: string) {
   const browser = await chromium.launch({ headless: true })
   try {
     const page = await browser.newPage()
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
     await Fs.writeFile(
       Path.join(root, 'dist/index.html'),
       '<link rel="stylesheet" href="zyzz.css"><div id="card"></div><script src="app.js"></script>',
     )
     await page.goto(Url.pathToFileURL(Path.join(root, 'dist/index.html')).href)
+    expect(errors).toMatchInlineSnapshot('[]')
     return await page.evaluate(() => {
       const element = document.querySelector('#card')!
       const app = (
@@ -69,6 +74,13 @@ describe('zyzz', () => {
       test(`${bundler} emits matching JavaScript, shared CSS, and source maps (reset: ${reset})`, async () => {
         const root = await fixture()
         try {
+          for (const [name, source] of Object.entries(Responsive.modules))
+            await Fs.writeFile(Path.join(root, name), source)
+          await Fs.appendFile(
+            Path.join(root, 'main.js'),
+            "export * from './entry.js';",
+          )
+
           if (bundler === 'esbuild') {
             await Esbuild.build({
               alias: { 'zyzz/runtime': runtime },
@@ -132,6 +144,12 @@ describe('zyzz', () => {
           }
 
           const rendered = await render(root)
+          await Responsive.verify({
+            code:
+              (await Fs.readFile(Path.join(root, 'dist/app.js'), 'utf8')) +
+              ';var Fixture=App;',
+            css: await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'),
+          })
           const { boxSizing, ...styles } = rendered
           if (reset) expect(boxSizing).toMatchInlineSnapshot('"border-box"')
           else expect(boxSizing).toMatchInlineSnapshot('"content-box"')
@@ -482,7 +500,7 @@ describe('zyzz', () => {
     }
   }, 30000)
 
-  test('webpack watches shared themes and new global contributions', async () => {
+  test('webpack uses the graph source when its filesystem cache predates an edit', async () => {
     const root = await fixture()
     const compiler = Webpack({
       context: root,
@@ -496,65 +514,138 @@ describe('zyzz', () => {
       plugins: [webpack({ root })],
       resolve: { alias: { 'zyzz/runtime': runtime } },
     })
-    let failure: Error | undefined
-    const watcher = compiler.watch({}, (error, stats) => {
-      if (error || stats?.hasErrors())
-        failure = error ?? new Error(stats?.toString('errors-only'))
+    compiler.hooks.beforeCompile.tapPromise('edit', async () => {
+      const path = Path.join(root, 'theme.js')
+      await new Promise<void>((resolve, reject) =>
+        compiler.inputFileSystem!.readFile(path, (error) =>
+          error ? reject(error) : resolve(),
+        ),
+      )
+      await Watch.write({
+        path,
+        source:
+          "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
+      })
     })
     try {
-      await vi.waitFor(
-        async () => {
-          if (failure) throw failure
-          await Fs.access(Path.join(root, 'dist/app.js'))
-        },
-        { timeout: 10000 },
-      )
-      await Fs.writeFile(
-        Path.join(root, 'theme.js'),
-        "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
-      )
-      await vi.waitFor(
-        async () => {
-          if (failure) throw failure
-          const css = await Fs.readFile(
-            Path.join(root, 'dist/zyzz.css'),
-            'utf8',
-          )
-          if (!css.includes('red'))
-            throw new Error('Waiting for the theme rebuild.')
-        },
-        { timeout: 10000 },
-      )
-      await Fs.writeFile(
-        Path.join(root, 'added.js'),
-        `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
-      )
-      await vi.waitFor(
-        async () => {
-          if (failure) throw failure
-          const css = await Fs.readFile(
-            Path.join(root, 'dist/zyzz.css'),
-            'utf8',
-          )
-          if (!css.includes('13px'))
-            throw new Error('Waiting for the new contribution.')
-        },
-        { timeout: 10000 },
+      await new Promise<void>((resolve, reject) =>
+        compiler.run((error, stats) =>
+          error || stats?.hasErrors()
+            ? reject(error ?? new Error(stats?.toString('errors-only')))
+            : resolve(),
+        ),
       )
       expect((await render(root)).color).toMatchInlineSnapshot(
         '"rgb(255, 0, 0)"',
       )
     } finally {
-      if (watcher)
-        await new Promise<void>((resolve, reject) =>
-          watcher.close((error) => (error ? reject(error) : resolve())),
-        )
       await new Promise<void>((resolve, reject) =>
         compiler.close((error) => (error ? reject(error) : resolve())),
       )
       await Fs.rm(root, { force: true, recursive: true })
     }
   }, 30000)
+
+  test.each(['filesystem', 'manual'])(
+    'webpack watches shared themes and new global contributions with %s invalidation',
+    async (invalidation) => {
+      const root = await fixture()
+      const compiler = Webpack({
+        cache: invalidation !== 'manual',
+        context: root,
+        entry: './main.js',
+        mode: 'development',
+        output: {
+          path: Path.join(root, 'dist'),
+          filename: 'app.js',
+          library: { name: 'App', type: 'var' },
+        },
+        plugins: [webpack({ root })],
+        resolve: { alias: { 'zyzz/runtime': runtime } },
+      })
+      let completed = 0
+      compiler.hooks.afterDone.tap('test', () => {
+        completed++
+      })
+      let failure: Error | undefined
+      // Temporary writes and emitted assets must not start a source rebuild.
+      const watcher = compiler.watch(
+        {
+          ignored: [
+            '**/*.tmp',
+            Path.join(root, 'dist'),
+            ...(invalidation === 'manual' ? [Path.join(root, 'theme.js')] : []),
+          ],
+        },
+        (error, stats) => {
+          if (error || stats?.hasErrors())
+            failure = error ?? new Error(stats?.toString('errors-only'))
+        },
+      )
+      try {
+        if (!watcher) throw new Error('Webpack watcher did not start.')
+
+        await vi.waitFor(
+          async () => {
+            if (failure) throw failure
+            expect(completed).toBeGreaterThan(0)
+          },
+          { timeout: 10000 },
+        )
+        const initial = completed
+        await Watch.write({
+          path: Path.join(root, 'theme.js'),
+          source:
+            "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#ff0000' } });",
+        })
+        if (invalidation === 'manual') watcher.invalidate()
+        await vi.waitFor(
+          async () => {
+            if (failure) throw failure
+            expect(completed).toBeGreaterThan(initial)
+            const css = await Fs.readFile(
+              Path.join(root, 'dist/zyzz.css'),
+              'utf8',
+            )
+            if (!css.includes('red'))
+              throw new Error('Waiting for the theme rebuild.')
+          },
+          { timeout: 10000 },
+        )
+        const updated = completed
+        await Watch.write({
+          path: Path.join(root, 'added.js'),
+          source: `import { global } from 'zyzz/web'; global({ body: { padding: '13px' } });`,
+        })
+        await vi.waitFor(
+          async () => {
+            if (failure) throw failure
+            expect(completed).toBeGreaterThan(updated)
+            const css = await Fs.readFile(
+              Path.join(root, 'dist/zyzz.css'),
+              'utf8',
+            )
+            if (!css.includes('13px'))
+              throw new Error('Waiting for the new contribution.')
+          },
+          { timeout: 10000 },
+        )
+        expect((await render(root)).color).toMatchInlineSnapshot(
+          '"rgb(255, 0, 0)"',
+        )
+      } finally {
+        if (watcher)
+          await new Promise<void>((resolve, reject) =>
+            watcher.close((error) => (error ? reject(error) : resolve())),
+          )
+        await new Promise<void>((resolve, reject) =>
+          compiler.close((error) => (error ? reject(error) : resolve())),
+        )
+        await Fs.rm(root, { force: true, recursive: true })
+      }
+    },
+    30000,
+  )
 
   test('esbuild rejects output modes that cannot receive emitted assets', async () => {
     await expect(

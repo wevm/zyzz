@@ -68,13 +68,20 @@ export type Accepted<
                   ? never
                   : Value.Atom<Typography.Names<tokens>>
                 : key extends keyof Literal.Properties
-                  ? Value.Accepted<
-                      Pick<style, key>,
-                      literal extends true
+                  ? (literal extends true
+                      ? LiteralDeclarations
+                      : keyof tokens extends never
                         ? LiteralDeclarations
-                        : DeclarationProperties<tokens>
-                    >[key] &
-                      Value.Checked<Pick<style, key>, tokens>[key]
+                        : DeclarationProperties<tokens>)[key] extends style[key]
+                    ? style[key]
+                    : Value.Accepted<
+                        Pick<style, key>,
+                        literal extends true
+                          ? LiteralDeclarations
+                          : DeclarationProperties<tokens>
+                      >[key] &
+                        Value.Checked<Pick<style, key>, tokens>[key] &
+                        Value.Tokens<style[key], tokens, key>
                   : key extends Condition.Keys<tokens, key>
                     ? [style[key]] extends [undefined]
                       ? never
@@ -238,6 +245,17 @@ export function define(
     keyof Literal.Properties,
     Map<string | number, Token.Reference>
   >()
+  const validatedReferences = new WeakSet<object>()
+
+  function isReference(value: unknown): value is Token.Reference {
+    if (typeof value !== 'object' || value === null) return false
+    if (validatedReferences.has(value)) return true
+    if (!Token.is(value)) return false
+
+    // Frozen references can reuse validation across declarations in this definition.
+    validatedReferences.add(value)
+    return true
+  }
 
   function report(
     code: Diagnostic['code'],
@@ -409,7 +427,7 @@ export function define(
           report(
             'invalid_value',
             [name, property],
-            'Importance requires the suffix " !important".',
+            'Value markers require " !custom" followed by optional " !important", or " !important" alone.',
           )
           return []
         }
@@ -452,8 +470,8 @@ export function define(
             ? Query.resolve(
                 key,
                 theme?.[Token.definition].queries ?? {
-                  breakpoints: {},
-                  containers: {},
+                  breakpoint: {},
+                  container: {},
                   containerNames: [],
                 },
               )
@@ -601,14 +619,15 @@ export function define(
           report(
             'invalid_value',
             [name, authoredProperty],
-            'Importance requires the suffix " !important".',
+            'Value markers require " !custom" followed by optional " !important", or " !important" alone.',
           )
           continue
         }
+        const custom = parsed?.custom
         const scalar = parsed ? parsed.value : entry
 
         const resolved = (() => {
-          if (!theme) return scalar
+          if (!theme || custom) return scalar
 
           if (typeof scalar !== 'string' && typeof scalar !== 'number')
             return scalar
@@ -621,7 +640,7 @@ export function define(
             theme,
           })
 
-          if (Token.is(resolved)) {
+          if (isReference(resolved)) {
             let values = references.get(key)
 
             if (!values) references.set(key, (values = new Map()))
@@ -632,8 +651,10 @@ export function define(
           return resolved
         })()
 
+        const reference = isReference(resolved)
+
         if (
-          Token.is(resolved) &&
+          reference &&
           resolved.contract.variableSet &&
           !Token.acceptsReference(resolved, key)
         ) {
@@ -641,6 +662,25 @@ export function define(
             'invalid_value',
             [name, authoredProperty],
             'Variable value is incompatible with this property.',
+          )
+          continue
+        }
+
+        if (
+          theme &&
+          !custom &&
+          !reference &&
+          Token.mapped(theme, key) &&
+          !(Binding.is(resolved) && !resolved.name.startsWith('--z-d')) &&
+          !(
+            Token.isExpression(resolved) &&
+            resolved.parts.every((part) => Token.is(part) || part === '')
+          )
+        ) {
+          report(
+            'invalid_value',
+            [name, authoredProperty],
+            'Expected a configured token or a CSS value with the " !custom" suffix.',
           )
           continue
         }
@@ -774,6 +814,7 @@ export class InvalidError extends Error {
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?: Value.Atom<
     | Exclude<Literal.Properties[property], undefined>
+    | `${string} !custom`
     | Binding.Reference<'*'>
     | {
         [kind in Binding.Kind]: property extends Binding.Property<
@@ -811,16 +852,31 @@ export type NamedStyle<name extends string = string> = {
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
 export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
-  readonly [property in keyof Literal.Properties]: Value.Fallbacks<
-    | LiteralAtoms[property]
-    | Value.Atom<Token.Names<tokens, property>>
-    | {
-        [group in Token.Group]: property extends Token.Properties<group>
-          ? Value.Atom<Token.Reference<group> | Token.Variable<group>>
-          : never
-      }[Token.Group]
+  readonly [property in keyof Literal.Properties]: DeclarationValue<
+    tokens,
+    property
   >
 }
+
+// A named alias caches each property domain without expanding the full declaration map.
+type DeclarationValue<
+  tokens extends Theme.Tokens,
+  property extends keyof Literal.Properties,
+> = Value.Fallbacks<
+  | (property extends `--${string}`
+      ? LiteralAtoms[property]
+      : [Token.Names<tokens, property>] extends [never]
+        ? LiteralAtoms[property]
+        :
+            | Value.Atom<`${string} !custom`>
+            | Extract<LiteralAtoms[property], Binding.Reference>)
+  | Value.Atom<Token.Names<tokens, property>>
+  | {
+      [group in Token.Group]: property extends Token.Properties<group>
+        ? Value.Atom<Token.Reference<group> | Token.Variable<group>>
+        : never
+    }[Token.Group]
+>
 
 /** Recursive theme-aware declaration and condition authoring. */
 export type Properties<

@@ -3,14 +3,15 @@
  * @module
  */
 import { tokens as contextTokens } from './default.js'
-const bundled = Theme.define(contextTokens)
+import * as Util from 'node:util'
+const bundled = Vars.define(contextTokens)
 import * as Packed from '../test/fixtures/Packed.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
+import { Style, Vars } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import { Graph, Transform } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
@@ -31,7 +32,7 @@ describe('define', () => {
     const output = Transform.compile({
       moduleId: 'composition.ts',
       source: `import {Config,cx} from 'zyzz';
-const {style}=Config.create({vars:{breakpoints:{tablet:'800px'},typography:{heading:{fontFamily:'serif',fontSize:'24px','@media >=tablet':{fontSize:'40px'}}}}});
+const {style}=Config.create({vars:{breakpoint:{tablet:'800px'},typography:{heading:{fontFamily:'serif',fontSize:'24px','@media >=tablet':{fontSize:'40px'}}}}});
 const heading=style({
   typography:'heading',
   '@media (min-width: 1000px)': { fontWeight: 500 },
@@ -86,7 +87,7 @@ export const combined=${composition};`,
     const output = Transform.compile({
       moduleId: 'responsive.ts',
       source: `import {Config} from 'zyzz';
-const {style}=Config.create({vars:{breakpoints:{tablet:'800px'},typography:{heading:{fontSize:'24px','@media >=tablet':{fontSize:'40px',lineHeight:'48px'}}}}});
+const {style}=Config.create({vars:{breakpoint:{tablet:'800px'},typography:{heading:{fontSize:'24px','@media >=tablet':{fontSize:'40px',lineHeight:'48px'}}}}});
 export const heading=style({
   typography: 'heading',
   fontWeight: 500,
@@ -101,11 +102,11 @@ export const heading=style({
     )
     expect(mappings).toMatchInlineSnapshot(`
       {
-        "1up51euxshgne-style-theme": 2,
         "fontSize": 4,
         "fontWeight": 5,
         "lineHeight": 4,
-        "style-1up51euxshgne-211": 3,
+        "src-responsive-f1yBSqAOQxM-style-theme": 2,
+        "style-1up51euxshgne-210": 3,
         "typography": 4,
       }
     `)
@@ -114,7 +115,7 @@ export const heading=style({
   test('compiles native border tokens and rejects unsupported responsive queries', () => {
     const theme = Theme.define({
       borderWidth: { regular: '2px' },
-      breakpoints: { tablet: '800px' },
+      breakpoint: { tablet: '800px' },
       typography: {
         heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
       },
@@ -153,8 +154,8 @@ export const heading=style({
         'theme.ts': `import {Config,Vars} from 'zyzz';
 const base=Vars.define({
   borderWidth:{regular:'2px',hairline:'0.5px'},
-  breakpoints:{tablet:'800px'},
-  containers:{card:'300px'},
+  breakpoint:{tablet:'800px'},
+  container:{card:'300px'},
   typography:{heading:{fontSize:'24px',lineHeight:'30px',
     '@media >=tablet':{fontSize:'40px',lineHeight:'48px'},
     '@media (min-width: 1000.5px)':{fontSize:'48px',
@@ -168,7 +169,7 @@ export const {style,vars}=Config.create({vars:{base,alternate},defaultVars:'base
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`28`)
     const source = `import {style,vars} from 'library';
 export const title=style({typography:'heading',borderStyle:'solid',borderWidth:'regular'});
 export const fixed=style({typography:'heading',fontSize:'18px'});
@@ -188,7 +189,7 @@ export const other=vars({set:'alternate'}).className;`
         modules: { 'app.ts': source },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 28 or later.]`,
     )
     const consumer = Graph.compile({
       contracts: { 'library.js': contract },
@@ -597,7 +598,7 @@ export const body=style({
       },
     })
     const contract = library.contracts['theme.ts']!
-    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`26`)
+    expect(JSON.parse(contract).version).toMatchInlineSnapshot(`28`)
 
     expect(() =>
       Graph.compile({
@@ -613,7 +614,7 @@ export const body=style({
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 26 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 28 or later.]`,
     )
 
     const consumer = Graph.compile({
@@ -625,14 +626,14 @@ export const body=style({
     })
 
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-style-theme{--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize:14px;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight:400;--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight:20px;}
-      .z-font-size-Oi_QYm-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
-      .z-font-weight-xWS6L8-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-line-height-NiWjJz-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
-      .z-font-weight-qIDn1A-0{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-font-size-lLWBdR-0{font-size:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontSize,14px);}
-      .z-font-weight-6BAxVw-1{font-weight:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_fontWeight,400);}
-      .z-line-height-9Wx-s3-2{line-height:var(--z-t1xn44ix111xh3v-style-typography_2e_copy_2e_14_2e_lineHeight,20px);}
+      ".z_theme-src-theme-fH_5f_CKDLyhct-style-theme{--z-typography-copy-14-fontSize-60L--UNQxhK:14px;--z-typography-copy-14-fontWeight-3g7VzckPzhb:400;--z-typography-copy-14-lineHeight-1F1bltVmQ7F:20px;}
+      .z-font-size-j4CHLG-0{font-size:var(--z-typography-copy-14-fontSize-60L--UNQxhK,14px);}
+      .z-font-weight-Bl9Y5t-1{font-weight:var(--z-typography-copy-14-fontWeight-3g7VzckPzhb,400);}
+      .z-line-height-9Tsfkk-2{line-height:var(--z-typography-copy-14-lineHeight-1F1bltVmQ7F,20px);}
+      .z-font-weight-QGCpuV-0{font-weight:var(--z-typography-copy-14-fontWeight-3g7VzckPzhb,400);}
+      .z-font-size-BN64Qd-0{font-size:var(--z-typography-copy-14-fontSize-60L--UNQxhK,14px);}
+      .z-font-weight-9gnWmW-1{font-weight:var(--z-typography-copy-14-fontWeight-3g7VzckPzhb,400);}
+      .z-line-height-R7v_vS-2{line-height:var(--z-typography-copy-14-lineHeight-1F1bltVmQ7F,20px);}
       .z-font-weight-G4wOi6-3{&:where([data-strong="true"]){font-weight:550;}}"
     `)
   })
@@ -1098,29 +1099,29 @@ describe('queries', () => {
       const result = Graph.compile({
         modules: {
           'config.ts':
-            'import {Config,Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({vars:theme})',
+            'import {Config,Vars} from "zyzz"; const theme=Vars.define({breakpoint:{tablet:"48rem"},container:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({vars:theme})',
         },
       })
 
       expect(
         JSON.parse(result.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`26`)
+      ).toMatchInlineSnapshot(`28`)
       expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
         .toMatchInlineSnapshot(`
-      {
-        "theme": {
-          "breakpoints": {
-            "tablet": "48rem",
-          },
-          "containerNames": [
-            "sidebar",
-          ],
-          "containers": {
-            "card": "24rem",
-          },
-        },
-      }
-    `)
+          {
+            "theme": {
+              "breakpoint": {
+                "tablet": "48rem",
+              },
+              "container": {
+                "card": "24rem",
+              },
+              "containerNames": [
+                "sidebar",
+              ],
+            },
+          }
+        `)
     })
     test('resolves numeric scale names and preserves typography palette keys', () => {
       const theme = Theme.define({
@@ -1147,21 +1148,13 @@ describe('queries', () => {
         new URL('./default.ts', import.meta.url),
         'utf8',
       )
-      const raw = source.slice(
-        source.indexOf('export const tokens = ') + 22,
-        source.indexOf(' as const'),
-      )
-
-      const generated = source
-        .slice(
-          source.indexOf('  vars: {') + 8,
-          source.indexOf('\n})', source.indexOf('  vars: {')),
-        )
-        .trim()
-        .replace(/,$/, '')
-
+      const result = Graph.compile({ modules: { 'default.ts': source } })
+      const contract = JSON.parse(result.contracts['default.ts']!)
+      const { containerNames: _, ...generated } = Object.values(
+        contract.themes as Record<string, { tokens: Record<string, unknown> }>,
+      )[0]!.tokens
       expect(
-        raw.trim().replace(/^ +/gm, '') === generated.replace(/^ +/gm, ''),
+        Util.isDeepStrictEqual(generated, contextTokens),
       ).toMatchInlineSnapshot(`true`)
     })
     test('links bundled source through its exported style boundary', async () => {
@@ -1179,13 +1172,13 @@ describe('queries', () => {
       })
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-26ntzho2pyyt-config-theme{--z-t26ntzho2pyyt-config-fontFamily_2e_sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-t26ntzho2pyyt-config-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-config-color_2e_blue_2e_500:light-dark(#99ceff,#0a4380);}
+        ".z_theme-src-default-0vw1oS08GoD-config-theme{--z-fontFamily-sans-3ATvmB8sqEt:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-fontSize-base-9ohsXML6rKQ:1rem;--z-color-blue-500-3CI7iBDWYGL:light-dark(#99ceff,#0a4380);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-font-family-GS_mYx{font-family:var(--z-t26ntzho2pyyt-config-fontFamily_2e_sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z-font-size-WS5zHH{font-size:var(--z-t26ntzho2pyyt-config-fontSize_2e_base,1rem);}
-        .z-text-wudS4h{color:var(--z-t26ntzho2pyyt-config-color_2e_blue_2e_500,light-dark(#99ceff,#0a4380));}"
+        .z-font-family-YqSWnF{font-family:var(--z-fontFamily-sans-3ATvmB8sqEt,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z-font-size-QL9uM5{font-size:var(--z-fontSize-base-9ohsXML6rKQ,1rem);}
+        .z-text-_3MfOT{color:var(--z-color-blue-500-3CI7iBDWYGL,light-dark(#99ceff,#0a4380));}"
       `)
 
       const built = await Esbuild.build({
@@ -1233,15 +1226,15 @@ describe('queries', () => {
     })
     test('emits typography variables without emitting threshold variables', () => {
       const theme = Theme.define({
-        breakpoints: { tablet: '48rem' },
-        containers: { card: '24rem' },
+        breakpoint: { tablet: '48rem' },
+        container: { card: '24rem' },
         containerNames: ['sidebar'],
         fontSize: { body: '1rem' },
         fontWeight: { medium: 500 },
       })
 
       const alternate = Theme.extend(theme, {
-        breakpoints: { tablet: '50rem' },
+        breakpoint: { tablet: '50rem' },
         fontSize: { body: '1.25rem' },
       })
 
@@ -1271,7 +1264,7 @@ describe('queries', () => {
       const library = Graph.compile({
         modules: {
           'theme.ts':
-            'import {Vars} from "zyzz"; export const theme=Vars.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}})',
+            'import {Vars} from "zyzz"; export const theme=Vars.define({breakpoint:{tablet:"48rem"},fontSize:{body:"1rem"}})',
         },
       })
 
@@ -1289,16 +1282,16 @@ describe('queries', () => {
       })
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
-        .z_theme-1e8a67z1uaws1j-config-theme{--z-t1e8a67z1uaws1j-config-fontSize_2e_body:1rem;}
-        .z-font-size-tf-SY6{font-size:var(--z-t1e8a67z1uaws1j-config-fontSize_2e_body,1rem);}"
+        ".z_theme-src-theme-fH_5f_CKDLyhct-theme{--z-fontSize-body-1pD6FIUpyEv:1rem;}
+        .z_theme-src-app-bk8jvZf5JrJ-config-theme{--z-fontSize-body-f88xY_WHueR:1rem;}
+        .z-font-size-gmpxZa{font-size:var(--z-fontSize-body-f88xY_WHueR,1rem);}"
       `)
     })
-    test('Chromium applies bundled typography and scheme colors', async () => {
+    test('Chromium applies bundled typography and Geist colors across schemes', async () => {
       const styles = Style.define({
         body: {
-          fontSize: bundled.tokens.fontSize.base,
-          color: bundled.tokens.color.foreground,
+          fontSize: bundled.fontSize.base,
+          color: bundled.color.foreground,
         },
       })
 
@@ -1341,10 +1334,10 @@ describe('queries', () => {
     test('compiles the opt-in bundled typography and palette', () => {
       const styles = Style.define({
         body: {
-          color: bundled.tokens.color.foreground,
-          fontFamily: bundled.tokens.fontFamily.sans,
-          fontSize: bundled.tokens.fontSize.base,
-          padding: bundled.tokens.spacing[4],
+          color: bundled.color.foreground,
+          fontFamily: bundled.fontFamily.sans,
+          fontSize: bundled.fontSize.base,
+          padding: bundled.spacing[4],
         },
       })
 
@@ -1357,7 +1350,7 @@ describe('queries', () => {
         .z-font-size-4nuiGJ{font-size:var(--z2,1rem);}
         .z-p-3OsuE-{padding:var(--z3,1rem);}"
       `)
-      expect(contextTokens.breakpoints.md).toMatchInlineSnapshot(`"48rem"`)
+      expect(contextTokens.breakpoint.md).toMatchInlineSnapshot(`"48rem"`)
     })
     test.each([
       '"-1px"',
@@ -1369,10 +1362,10 @@ describe('queries', () => {
       expect(() =>
         Transform.compile({
           moduleId: 'invalid.ts',
-          source: `import {Vars} from "zyzz"; const theme=Vars.define({breakpoints:{tablet:${value}}})`,
+          source: `import {Vars} from "zyzz"; const theme=Vars.define({breakpoint:{tablet:${value}}})`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:39: ["breakpoints","tablet"]: Expected a named nonnegative length threshold.]`,
+        `[Source.ExtractError: invalid.ts:39: ["breakpoint","tablet"]: Expected a named nonnegative length threshold.]`,
       )
     })
   })
@@ -1382,7 +1375,7 @@ describe('queries', () => {
       expect(
         Theme.define({
           fontWeight: { body: { light: 300, bold: 700 } },
-          containers: { screen: '1e3px' },
+          container: { screen: '1e3px' },
         }).tokens.fontWeight.body.light.value,
       ).toMatchInlineSnapshot(`300`)
     })

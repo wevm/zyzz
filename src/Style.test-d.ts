@@ -21,6 +21,45 @@ import { style, Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
+describe('compatibility properties', () => {
+  test('preserves vendor domains and new property grammars', () => {
+    style({
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale',
+      WebkitAnimationDelay: '0s, 250ms',
+      WebkitAlt: 'attr(data-label)',
+      WebkitTextCombine: 'horizontal',
+      WebkitRubyPosition: 'before',
+      WebkitBackgroundClip: 'padding',
+      WebkitPerspective: 800,
+      glyphOrientationVertical: 90,
+      WebkitColumnBreakInside: 'avoid',
+      rowRule: '1px solid red',
+      rowRuleColor: 'repeat(2, red, blue)',
+      ruleInset: '10px 20% / overlap-join',
+      viewTransitionGroup: 'card',
+      whiteSpaceTrim: 'discard-before discard-after',
+    })
+
+    // @ts-expect-error Mozilla does not accept WebKit smoothing keywords.
+    style({ MozOsxFontSmoothing: 'antialiased' })
+    // @ts-expect-error WebKit does not accept Mozilla smoothing keywords.
+    style({ WebkitFontSmoothing: 'grayscale' })
+    // @ts-expect-error Legacy WebKit text combining uses horizontal, not all.
+    style({ WebkitTextCombine: 'all' })
+    // @ts-expect-error Legacy glyph orientation accepts only zero or ninety degrees.
+    style({ glyphOrientationVertical: 45 })
+    // @ts-expect-error Gap decoration widths exclude percentages.
+    style({ rowRuleWidth: '10%' })
+    // @ts-expect-error Gap decoration widths must be nonnegative.
+    style({ rowRuleWidth: '-1px' })
+    // @ts-expect-error Gap decoration colors exclude line styles.
+    style({ rowRuleColor: 'solid' })
+    // @ts-expect-error Legacy break-inside excludes break-before keywords.
+    style({ WebkitColumnBreakInside: 'always' })
+  })
+})
+
 describe('intrinsic scalar prefixes', () => {
   test('rejects optional unknown keys on broad style annotations', () => {
     const box = {} as Style.Properties & { widht?: string }
@@ -433,9 +472,13 @@ describe('style', () => {
   test('scrolling properties', () => {
     Style.define(Scrolling.styles)
     style({
+      scrollAxisLock: ['auto', 'none !important'],
       scrollMargin: '-2px !important',
       scrollPaddingInline: ['auto', '10%'],
     })
+
+    // @ts-expect-error Axis locking accepts only auto or none.
+    style({ scrollAxisLock: 'always' })
 
     const scrollTheme = Theme.define({
       spacing: { offset: '20px', portion: '10%' },
@@ -443,7 +486,7 @@ describe('style', () => {
 
     scrollTheme.style({ scrollPaddingTop: 'offset !important' })
     Config.create({ theme: scrollTheme }).style({
-      scrollPaddingBlock: ['auto', scrollTheme.tokens.spacing.portion],
+      scrollPaddingBlock: ['auto !custom', scrollTheme.tokens.spacing.portion],
     })
     Style.define({ box: { scrollPadding: scrollTheme.tokens.spacing.offset } })
     // @ts-expect-error Scroll margin excludes percentages.
@@ -482,7 +525,7 @@ describe('style', () => {
       outlineColor: 'brand',
     })
     Config.create({ theme: borderTheme }).style({
-      borderBlockColor: ['#000', borderTheme.tokens.borderColor.brand],
+      borderBlockColor: ['#000 !custom', borderTheme.tokens.borderColor.brand],
     })
     // @ts-expect-error Border widths exclude percentages on physical sides.
     style({ borderTopWidth: '10%' })
@@ -520,7 +563,7 @@ describe('style', () => {
     logicalTheme.style({
       inlineSize: 'md',
       insetBlock: 'md !important',
-      paddingInline: ['1px', 'md'],
+      paddingInline: ['1px !custom', 'md'],
     })
     Style.define({
       card: {
@@ -602,7 +645,9 @@ describe('style', () => {
 
     flexTheme.style({ flexBasis: 'basis !important' })
     Style.define({ item: { flexBasis: flexTheme.tokens.spacing.basis } })
-    Config.create({ theme: flexTheme }).style({ flexBasis: ['auto', 'basis'] })
+    Config.create({ theme: flexTheme }).style({
+      flexBasis: ['auto !custom', 'basis'],
+    })
     // @ts-expect-error Root sizing has no token names.
     style({ flexBasis: 'basis' })
     // @ts-expect-error Flex basis cannot use color tokens.
@@ -762,8 +807,12 @@ describe('style', () => {
     })
 
     configured.style({
-      color: ['#fff', 'brand !important', configured.theme.tokens.color.brand],
-      padding: ['md !important', 0],
+      color: [
+        '#fff !custom',
+        'brand !important',
+        configured.theme.tokens.color.brand,
+      ],
+      padding: ['md !important', '0 !custom'],
     })
     Style.define({ card: { padding: ['1px', '2px !important'] } })
     // @ts-expect-error Fallbacks are nonempty.
@@ -1512,10 +1561,10 @@ describe('compound', () => {
         spacing: { Gap: '2px' },
       })
 
-      theme.style({ color: 'ReD', padding: '2PX' })
+      theme.style({ color: 'ReD !custom', padding: '2PX !custom' })
       theme.style({ color: 'Brand', padding: 'Gap' })
       Config.create({ theme, layers: ['components'] }).style({
-        '@layer components': { color: 'ReD', padding: '2PX' },
+        '@layer components': { color: 'ReD !custom', padding: '2PX !custom' },
       })
       // @ts-expect-error Case folding cannot make an unknown keyword valid.
       style({ display: 'FleEx' })
@@ -1658,7 +1707,7 @@ describe('conditions', () => {
   describe('define', () => {
     test('preserves broad bound declarations and rejects unknown keys', () => {
       const theme: Theme.Definition = Theme.define({
-        breakpoints: { tablet: '48rem' },
+        breakpoint: { tablet: '48rem' },
         color: { accent: 'red' },
       })
       const styles = {} as Style.Properties<Theme.Tokens>

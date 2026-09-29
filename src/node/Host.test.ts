@@ -852,8 +852,8 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
           }
         ).version
 
-      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`26`)
-      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`26`)
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`28`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`28`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -1205,18 +1205,18 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#06c"}}}},"version":26}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#06c"}}},"src-card-12soMKeUUb--config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#06c"}}}},"version":28}"`,
       )
 
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(before).toMatchInlineSnapshot(`
-        ".z_theme-4lx6a318y1wl5-config-theme {
-          --z-t4lx6a318y1wl5-config-color_2e_brand: #06c;
+        ".z_theme-src-card-12soMKeUUb--config-theme {
+          --z-color-brand-ezGqPtSBzq5: #06c;
         }
 
-        .z-text-iFSAHB {
-          color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #06c);
+        .z-text-CARYSz {
+          color: var(--z-color-brand-ezGqPtSBzq5, #06c);
         }
         "
       `)
@@ -1230,18 +1230,18 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"variableSet":true,"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}},"4lx6a318y1wl5-config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"4lx6a318y1wl5-config","tokens":{"color":{"brand":"#175"}}}},"version":26}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#175"}}},"src-card-12soMKeUUb--config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#175"}}}},"version":28}"`,
       )
 
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ".z_theme-4lx6a318y1wl5-config-theme {
-          --z-t4lx6a318y1wl5-config-color_2e_brand: #175;
+        ".z_theme-src-card-12soMKeUUb--config-theme {
+          --z-color-brand-ezGqPtSBzq5: #175;
         }
 
-        .z-text-kLQX9z {
-          color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #175);
+        .z-text-RYIN_L {
+          color: var(--z-color-brand-ezGqPtSBzq5, #175);
         }
         "
       `)
@@ -1254,12 +1254,12 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z_theme-4lx6a318y1wl5-config-theme {
-            --z-t4lx6a318y1wl5-config-color_2e_brand: #175;
+          ".z_theme-src-card-12soMKeUUb--config-theme {
+            --z-color-brand-ezGqPtSBzq5: #175;
           }
 
-          .z-text-kLQX9z {
-            color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #175);
+          .z-text-RYIN_L {
+            color: var(--z-color-brand-ezGqPtSBzq5, #175);
           }
           "
         `)
@@ -1268,12 +1268,12 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z_theme-4lx6a318y1wl5-config-theme {
-            --z-t4lx6a318y1wl5-config-color_2e_brand: #06c;
+          ".z_theme-src-card-12soMKeUUb--config-theme {
+            --z-color-brand-ezGqPtSBzq5: #06c;
           }
 
-          .z-text-iFSAHB {
-            color: var(--z-t4lx6a318y1wl5-config-color_2e_brand, #06c);
+          .z-text-CARYSz {
+            color: var(--z-color-brand-ezGqPtSBzq5, #06c);
           }
           "
         `)
@@ -1300,8 +1300,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       )
 
       expect(before).toMatchInlineSnapshot(`
-        ".z_theme-1dre7461ulsxz8-theme {
-          --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
+        ".z_theme-src-theme-bdnuEpXWEgW-theme {
+          --z-color-brand-63gK3HI9NTW: #000;
         }
 
         .z_scheme-dark {
@@ -1316,8 +1316,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           color-scheme: light dark;
         }
 
-        .z-text-rocWbC {
-          color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #000);
+        .z-text-qIdPiU {
+          color: var(--z-color-brand-63gK3HI9NTW, #000);
         }
         "
       `)
@@ -1343,8 +1343,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const after = await Fs.readFile(Path.join(outDir, 'theme.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ".z_theme-1dre7461ulsxz8-theme {
-          --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
+        ".z_theme-src-theme-bdnuEpXWEgW-theme {
+          --z-color-brand-63gK3HI9NTW: #fff;
         }
 
         .z_scheme-dark {
@@ -1359,8 +1359,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           color-scheme: light dark;
         }
 
-        .z-text-wwHZc8 {
-          color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #fff);
+        .z-text-cQSb5m {
+          color: var(--z-color-brand-63gK3HI9NTW, #fff);
         }
         "
       `)
@@ -2396,7 +2396,7 @@ describe('profile', () => {
         )
         await Fs.writeFile(
           path,
-          `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(./before.icc)',components:'r,g,b',renderingIntent:'perceptual'},{within:['@media print']});`,
+          `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({ '@media print': {src:'url(./before.icc)',components:'r,g,b',renderingIntent:'perceptual'} });`,
         )
         await using host = await Host.create({
           root,
@@ -2426,7 +2426,7 @@ describe('profile', () => {
         await notifications.next(() =>
           Watch.write({
             path,
-            source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(./after.icc)',components:'red,green,blue',renderingIntent:'saturation'},{within:['@media print']});`,
+            source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({ '@media print': {src:'url(./after.icc)',components:'red,green,blue',renderingIntent:'saturation'} });`,
           }),
         )
         const updated = await Fs.readFile(
@@ -2638,7 +2638,7 @@ describe('viewTransition', () => {
         const path = Path.join(root, 'transition.ts')
         await Fs.writeFile(
           path,
-          `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto',types:'slide forwards'},{within:['@layer transitions']});`,
+          `import {viewTransition} from 'zyzz/web';viewTransition({ '@layer transitions': {navigation:'auto',types:'slide forwards'} });`,
         )
         await using host = await Host.create({
           root,
@@ -2662,7 +2662,7 @@ describe('viewTransition', () => {
         await notifications.next(() =>
           Watch.write({
             path,
-            source: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'none',types:'backwards'},{within:['@layer transitions']});`,
+            source: `import {viewTransition} from 'zyzz/web';viewTransition({ '@layer transitions': {navigation:'none',types:'backwards'} });`,
           }),
         )
         const updated = await Fs.readFile(

@@ -1,7 +1,7 @@
 /** Reads a closed local source graph for native authoring without evaluating modules. @module */
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
-import * as Parser from 'oxc-parser'
+import * as Snapshot from '../node/internal/Snapshot.js'
 import type * as Graph from '../compiler/Graph.js'
 
 /** Collects relative source imports; package and asset imports remain owned by Metro. */
@@ -10,6 +10,7 @@ export function read(
   source: string,
   platform: string,
   root: string,
+  snapshot = Snapshot.create(),
 ) {
   const files = new Set<string>()
   const modules: Record<string, string> = Object.create(null)
@@ -31,7 +32,8 @@ export function read(
     modules[id] = source
     const resolved: Record<string, string | null> = Object.create(null)
     imports[id] = resolved
-    for (const statement of Parser.parseSync(filename, source).program.body) {
+    for (const statement of snapshot.parse({ moduleId: id, source }).program
+      .body) {
       if (
         !('source' in statement) ||
         !statement.source ||
@@ -62,7 +64,7 @@ export function read(
       )
       if (!target || !/\.[cm]?[jt]sx?$/.test(target)) continue
       resolved[specifier] = identity(target)
-      visit(target, Fs.readFileSync(target, 'utf8'))
+      visit(target, snapshot.readSync(target))
     }
   }
   visit(filename, source)

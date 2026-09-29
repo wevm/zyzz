@@ -29,7 +29,7 @@ export function source(after = false): string {
     values
       .map(
         ([syntax, initialValue], i) =>
-          `register(${JSON.stringify({ name: `--entry-${i}`, syntax, inherits: after, ...(initialValue === undefined ? {} : { initialValue }) })},{within:['@layer registrations','@media screen']});`,
+          `register({'@layer registrations':{'@media screen':${JSON.stringify({ name: `--entry-${i}`, syntax, inherits: after, ...(initialValue === undefined ? {} : { initialValue }) })}}});`,
       )
       .join('\n') +
     `\nglobal({body:{'--entry-0':'2px',width:'var(--entry-0)'}});`

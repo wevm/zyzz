@@ -217,6 +217,9 @@ describe('zyzz', () => {
             .evaluate((node) => getComputedStyle(node).backgroundColor),
         ).toMatchInlineSnapshot('"rgb(24, 24, 24)"')
         expect(errors).toMatchInlineSnapshot('[]')
+      } catch (error) {
+        if (errors.length) throw new Error(errors.join('\n'), { cause: error })
+        throw error
       } finally {
         await page.close()
         await server.close()

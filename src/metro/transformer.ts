@@ -1,4 +1,7 @@
 /** Chains native authoring compilation into the configured Metro Babel transformer. @module */
+import * as Compilation from '../babel/internal/Compilation.js'
+import * as Compiler from '../compiler/Graph.js'
+import * as Snapshot from '../node/internal/Snapshot.js'
 import type * as Babel from '@babel/core'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
@@ -28,6 +31,8 @@ export function create(
     'platform' | 'target' | 'moduleId' | 'modules' | 'imports' | 'colorScheme'
   > & { readonly root: string },
 ) {
+  const compilers = new Map<string, ReturnType<typeof Compiler.create>>()
+  const snapshot = Snapshot.create()
   const upstream: Upstream = Module.createRequire(import.meta.url)(upstreamPath)
   return {
     getCacheKey(...args: readonly unknown[]) {
@@ -77,6 +82,21 @@ export function create(
         Path.relative(options.root, filename).startsWith(`..${Path.sep}`)
       )
         return upstream.transform(input)
+
+      const graph = Graph.read(
+        filename,
+        input.src,
+        platform,
+        options.root,
+        snapshot,
+      )
+      const key = `${platform}:${filename}`
+      let compiler = compilers.get(key)
+      if (!compiler) {
+        compiler = Compiler.create()
+        compilers.set(key, compiler)
+      }
+
       return upstream.transform({
         ...input,
         plugins: [
@@ -86,7 +106,12 @@ export function create(
               ...options,
               platform,
               target: 'native',
-              ...Graph.read(filename, input.src, platform, options.root),
+              ...graph,
+              [Compilation.key]: {
+                compile: compiler.compile,
+                parse: snapshot.parse,
+                programs: snapshot.programs(graph.modules),
+              },
             },
           ],
           ...(input.plugins ?? []),

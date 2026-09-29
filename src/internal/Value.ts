@@ -21,6 +21,56 @@ export type Atom<value> =
  * Checks authored properties and retains validated input types to avoid expanding whole-property fallback unions.
  */
 export type Accepted<style, properties> = {
+  [property in keyof style]: AcceptedValue<
+    style[property],
+    property,
+    properties
+  >
+}
+
+type AcceptedValue<value, property extends PropertyKey, properties> =
+  Extract<
+    value,
+    `${string} !custom` | `${string} !custom !important`
+  > extends never
+    ? AcceptedMember<Record<property, value>, properties>[property]
+    : value extends unknown
+      ? AcceptedMember<Record<property, value>, properties>[property]
+      : never
+
+type AcceptedMember<style, properties> = {
+  [property in keyof style]: property extends keyof properties
+    ? style[property] extends
+        | `${infer value} !custom`
+        | `${infer value} !custom !important`
+      ? ScalarValue<value, property> extends LiteralAccepted<
+          Record<property, ScalarValue<value, property>>,
+          Literal.Properties
+        >[property]
+        ? style[property]
+        : never
+      : style[property] extends readonly [unknown, ...unknown[]]
+        ? AcceptedArray<style[property], property, properties>
+        : LiteralAccepted<Pick<style, property>, properties>[property]
+    : never
+}
+
+type ScalarValue<value, property> =
+  value extends `${infer numeric extends number}`
+    ? property extends keyof Literal.Properties
+      ? number extends Literal.Properties[property]
+        ? numeric
+        : value
+      : value
+    : value
+
+type AcceptedArray<values, property extends PropertyKey, properties> = {
+  [index in keyof values]: values[index] extends readonly unknown[]
+    ? never
+    : Accepted<Record<property, values[index]>, properties>[property]
+}
+
+type LiteralAccepted<style, properties> = {
   [property in keyof style]: property extends keyof properties
     ? style[property] extends { readonly [Token.scalar]: infer scalar }
       ? property extends keyof Literal.Properties
@@ -80,6 +130,18 @@ type Fold<value> = value extends string
 
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
+  [property in keyof style]: style[property] extends
+    | `${infer value} !custom`
+    | `${infer value} !custom !important`
+    ? value extends `${string} !${'custom' | 'important'}`
+      ? never
+      : LiteralChecked<Record<property, ScalarValue<value, property>>>[property]
+    : style[property] extends readonly [unknown, ...unknown[]]
+      ? CheckedArray<style[property], property, tokens>
+      : LiteralChecked<Pick<style, property>, tokens>[property]
+}
+
+type LiteralChecked<style, tokens = {}> = {
   [property in keyof style]: style[property] extends string & Binding.Reference
     ? style[property] extends Binding.Reference<'*'>
       ? unknown
@@ -120,6 +182,40 @@ export type Checked<style, tokens = {}> = {
               : never
             : unknown)
 }
+
+type CheckedArray<values, property extends PropertyKey, tokens> = {
+  [index in keyof values]: Checked<
+    Record<property, values[index]>,
+    tokens
+  >[property]
+}
+
+/** Requires tokens for properties with configured values. */
+export type Tokens<
+  value,
+  tokens,
+  property extends keyof Literal.Properties,
+> = property extends `--${string}`
+  ? unknown
+  : [Token.Names<tokens, property>] extends [never]
+    ? unknown
+    : value extends readonly unknown[]
+      ? { [index in keyof value]: Tokens<value[index], tokens, property> }
+      : value extends
+            | Binding.Reference
+            | Token.Reference
+            | Token.Variable
+            | `${Token.Variable} !important`
+            | `${string} !custom`
+            | `${string} !custom !important`
+        ? unknown
+        : value extends Atom<Token.Names<tokens, property>>
+          ? unknown
+          : value extends number
+            ? `${value}` extends Token.Names<tokens, property>
+              ? unknown
+              : never
+            : never
 
 type Importance<value> = value extends readonly unknown[]
   ? { [key in keyof value]: Importance<value[key]> }
@@ -257,13 +353,17 @@ export type Fallbacks<atom> = atom | readonly [atom, ...atom[]]
 /** One declaration or a nonempty ordered sequence of declaration fallbacks. */
 export type Input<value> = Fallbacks<Atom<Exclude<value, undefined>>>
 
-/** Splits a trailing importance marker without interpreting quoted or escaped text. */
+/** Splits trailing custom and importance markers without interpreting quoted or escaped text. */
 export function parse(
   input: unknown,
   property: keyof Literal.Properties,
 ):
   | { invalid: true }
-  | { important: boolean; value: number | string | Token.Expression }
+  | {
+      custom?: true
+      important: boolean
+      value: number | string | Token.Expression
+    }
   | undefined {
   if (Token.isExpression(input)) {
     const text = input.parts
@@ -286,7 +386,11 @@ export function parse(
       remaining -= count
     }
 
-    return { important: parsed.important, value: Token.compose(parts) }
+    return {
+      ...(parsed.custom ? { custom: true } : {}),
+      important: parsed.important,
+      value: Token.compose(parts.filter((part) => part !== '')),
+    }
   }
 
   if (typeof input !== 'string') return undefined
@@ -312,28 +416,46 @@ export function parse(
       '',
     )
 
-    if (!escaped(marker) && (suffix === '' || suffix === 'important')) break
+    if (
+      !escaped(marker) &&
+      (suffix === '' || suffix === 'important' || suffix === 'custom')
+    )
+      break
 
     marker = marker === 0 ? -1 : input.lastIndexOf('!', marker - 1)
   }
 
   if (marker < 0) return undefined
-  if (input.slice(marker - 1) !== ' !important' || escaped(marker - 1))
+  const suffix = input.slice(marker - 1)
+  if (
+    (suffix !== ' !important' && suffix !== ' !custom') ||
+    escaped(marker - 1)
+  )
     return { invalid: true }
 
   let end = marker
-
   while (end > 0 && /[ \t\n\r\f]/.test(input[end - 1]!) && !escaped(end - 1))
     end--
 
-  const text = input.slice(0, end)
-  const numeric =
-    Literal.rule(property)?.kind === 'number' ||
-    Literal.rule(property)?.kind === 'grid-line'
-  const value =
-    numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
+  const body = input.slice(0, end)
+  if (!body) return { invalid: true }
+  const nested = parse(body, property)
+  if (nested && 'invalid' in nested) return nested
+  const custom = suffix === ' !custom'
+  if (nested && (custom || nested.important)) return { invalid: true }
+
+  return {
+    ...(custom || nested?.custom ? { custom: true } : {}),
+    important: !custom,
+    value: nested?.value ?? scalar(body),
+  }
+
+  function scalar(text: string): number | string {
+    const numeric =
+      Literal.rule(property)?.kind === 'number' ||
+      Literal.rule(property)?.kind === 'grid-line'
+    return numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
       ? Number(text)
       : text
-
-  return { important: true as const, value }
+  }
 }

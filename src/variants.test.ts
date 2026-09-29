@@ -10,6 +10,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
+import * as Ts from 'typescript-api'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
@@ -34,6 +35,123 @@ export namespace styles {
 }`
 
 describe('variants', () => {
+  test.each([
+    ["import { variants } from 'zyzz'", '', 'red'],
+    [
+      "import { Config } from 'zyzz'",
+      "const { variants } = Config.create({ vars: { color: { brand: '#123456' } } })",
+      'brand',
+    ],
+    [
+      "import { Config } from 'zyzz'",
+      "const { variants } = Config.create({ vars: { color: { brand: '#123456' } }, mappings: false, layers: ['base'] })",
+      'color.brand',
+    ],
+    ["import { variants } from 'zyzz/default'", '', 'red'],
+  ])(
+    'suggests recipe declarations through %s',
+    (imports, setup, color) => {
+      const root = Path.resolve(import.meta.dirname, '..')
+      const file = Path.join(root, '.fixture-variants-editor.ts')
+      const source = `${imports}
+${setup}
+const button = variants({
+  base: { /* base */ display: '/* display */', color: '/* baseColor */', flexShrink: '/* shrink */' },
+  variants: {
+    size: {
+      small: { /* choice */ color: '/* choiceColor */', ':hover': { /* nested */ display: '/* nestedDisplay */' } },
+      custom: (values: { opacity: number }) => ({ /* dynamic */ opacity: values.opacity, color: '/* dynamicColor */' }),
+    },
+  },
+  compoundVariants: [{ when: { size: 'small' }, style: { /* compound */ color: '/* compoundColor */' } }],
+})
+`
+      const options: Ts.CompilerOptions = {
+        module: Ts.ModuleKind.ESNext,
+        moduleResolution: Ts.ModuleResolutionKind.Bundler,
+        noEmit: true,
+        paths: {
+          zyzz: [Path.join(root, 'src/index.ts')],
+          'zyzz/default': [Path.join(root, 'src/default.ts')],
+        },
+        skipLibCheck: true,
+        strict: true,
+        target: Ts.ScriptTarget.ESNext,
+        types: [],
+      }
+      const snapshots = new Map<string, Ts.IScriptSnapshot>()
+      const service = Ts.createLanguageService({
+        fileExists: (path) => path === file || Ts.sys.fileExists(path),
+        getCompilationSettings: () => options,
+        getCurrentDirectory: () => root,
+        getDefaultLibFileName: Ts.getDefaultLibFilePath,
+        getScriptFileNames: () => [file],
+        getScriptSnapshot: (path) => {
+          const cached = snapshots.get(path)
+          if (cached) return cached
+
+          const text = path === file ? source : Ts.sys.readFile(path)
+          if (text === undefined) return undefined
+
+          const snapshot = Ts.ScriptSnapshot.fromString(text)
+          snapshots.set(path, snapshot)
+          return snapshot
+        },
+        getScriptVersion: () => '0',
+        readDirectory: Ts.sys.readDirectory,
+        readFile: (path) => (path === file ? source : Ts.sys.readFile(path)),
+      })
+
+      try {
+        for (const marker of [
+          'base',
+          'choice',
+          'nested',
+          'dynamic',
+          'compound',
+        ]) {
+          const names =
+            service
+              .getCompletionsAtPosition(
+                file,
+                source.indexOf(`/* ${marker} */`),
+                {},
+              )
+              ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
+          expect(names.includes('height'), marker).toMatchInlineSnapshot(`true`)
+          expect(names.includes('::before'), marker).toMatchInlineSnapshot(
+            `true`,
+          )
+        }
+        for (const [marker, expected] of [
+          ['display', 'flex'],
+          ['nestedDisplay', 'grid'],
+          ['shrink', 'inherit'],
+          ['baseColor', color],
+          ['choiceColor', color],
+          ['dynamicColor', color],
+          ['compoundColor', color],
+        ]) {
+          const names =
+            service
+              .getCompletionsAtPosition(
+                file,
+                source.indexOf(`/* ${marker} */`),
+                {},
+              )
+              ?.entries.map((entry) => entry.name) ?? []
+          expect(names.includes(expected!), marker).toMatchInlineSnapshot(
+            `true`,
+          )
+        }
+      } finally {
+        service.dispose()
+      }
+    },
+    // CI runs the language service alongside other coverage-instrumented suites.
+    90_000,
+  )
+
   test('renders registered computed conditions in recipe bodies', async () => {
     const source = `import {variants} from 'zyzz';import {customMedia} from 'zyzz/web';const query=customMedia('(width > 0px)');export const button=variants({base:{[query]:{color:'red'}},variants:{size:{sm:{[query]:{padding:'4px'}}}},defaultVariants:{size:'sm'},compoundVariants:[{when:{size:'sm'},style:{[query]:{opacity:0.5}}}]});`
     const graph = Graph.compile({ modules: { 'computed.ts': source } })
@@ -371,8 +489,8 @@ describe('bound', () => {
       }
       const app = `import {styled,variants,theme} from './index.js';
 export const scope=theme().className;
-export const base=styled({color:'black',padding:'6px'});
-export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'red'}}},defaultVariants:{intent:'primary'}});`
+export const base=styled({color:'black !custom',padding:'6px !custom'});
+export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'red !custom'}}},defaultVariants:{intent:'primary'}});`
       const publisher = Graph.compile({ modules })
       const packed = Graph.compile({
         modules: { 'app.ts': app },
@@ -452,7 +570,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     test('preserves configured aliases through source and packed contracts', async () => {
       const config =
         "import {Config} from 'zyzz'; export const {variants,vars:theme}=Config.create({output:'html',vars:{color:{brand:'#06c'}},shorthands:{px:['paddingLeft','paddingRight']}})"
-      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme().class; export const button=recipe({base:{px:'8px'},variants:{intent:{primary:{color:'brand'},quiet:{color:'black'}}},defaultVariants:{intent:'primary'}})`
+      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme().class; export const button=recipe({base:{px:'8px !custom'},variants:{intent:{primary:{color:'brand'},quiet:{color:'black !custom'}}},defaultVariants:{intent:'primary'}})`
       const publisher = Graph.compile({ modules: { 'config.ts': config } })
       const result = Graph.compile({
         modules: { 'app.ts': app },
@@ -464,13 +582,13 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
+        ".z_theme-src-config-6Q0EnEZaLq6-variants-theme{--z-color-brand-0624-nva-wL:#06c;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
         .z-pl-8px-XE91MF-0{padding-left:8px;}
         .z-pr-8px-XE91MF-1{padding-right:8px;}
-        .z-text-tZh6GS-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
+        .z-text-x3mkas-2{&:where([data-intent="primary"]){color:var(--z-color-brand-0624-nva-wL,#06c);}}
         .z-text-d5fLEX-3{&:where([data-intent="quiet"]){color:black;}}"
       `,
       )
@@ -479,7 +597,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       ).toMatchInlineSnapshot('true')
       expect(
         JSON.parse(publisher.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`26`)
+      ).toMatchInlineSnapshot(`28`)
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: Object.fromEntries(
@@ -556,12 +674,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       )
       expect(module.exports.a()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-EAkT71 z-style-1e8a67z1uaws1j-197",
+          "className": "z-text-NhZ80o z-style-1e8a67z1uaws1j-197",
         }
       `)
       expect(module.exports.b()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-EAkT71 z-style-1e8a67z1uaws1j-258",
+          "className": "z-text-NhZ80o z-style-1e8a67z1uaws1j-258",
         }
       `)
     })
@@ -570,7 +688,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
 
 describe('conditions', () => {
   const config =
-    "import {Config} from 'zyzz';\nexport const {variants,vars:theme}=Config.create({output:'html',vars:{breakpoints:{md:'600px'},color:{brand:'black'}}});"
+    "import {Config} from 'zyzz';\nexport const {variants,vars:theme}=Config.create({output:'html',vars:{breakpoint:{md:'600px'},color:{brand:'black'}}});"
   const source = `import {variants,theme} from './config.js';
 export const scope=theme().class;
 export const button=variants({
@@ -580,7 +698,7 @@ export const button=variants({
   defaultVariants:{size:'sm',loading:false,constructor:'normal'},
   compoundVariants:[
     {when:{size:['sm','lg'],loading:true},style:{fontWeight:600}},
-    {when:{size:'lg',loading:true},style:{color:'blue'}},
+    {when:{size:'lg',loading:true},style:{color:'blue !custom'}},
     {when:{size:'lg',loading:true},style:{fontWeight:700}}
   ]
 });`
@@ -1052,8 +1170,8 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version
-          if (output === 'react') expect(version).toMatchInlineSnapshot(`26`)
-          else expect(version).toMatchInlineSnapshot(`26`)
+          if (output === 'react') expect(version).toMatchInlineSnapshot(`28`)
+          else expect(version).toMatchInlineSnapshot(`28`)
         } finally {
           await browser.close()
           if (server)
@@ -1234,7 +1352,7 @@ describe('payloads', () => {
     test('retains bound shorthands and same-named payload fields through packed contracts', async () => {
       const config =
         "import {Config} from 'zyzz';export const {variants}=Config.create({output:'html',vars:{color:{brand:'black'}},shorthands:{px:['paddingLeft','paddingRight']}});"
-      const source = `import {variants as recipe} from './config.js';export const button=recipe({base:{borderColor:'brand'},variants:{size:{custom:(values:{value:\`\${number}px\`})=>({px:values.value,paddingLeft:'3px'})},tone:{custom:(values:{value:'red'|'blue'})=>({color:values.value})},constructor:{normal:{}}},defaultVariants:{size:{custom:{value:'12px'}},tone:{custom:{value:'red'}}}});`
+      const source = `import {variants as recipe} from './config.js';export const button=recipe({base:{borderColor:'brand'},variants:{size:{custom:(values:{value:\`\${number}px\`})=>({px:\`\${values.value} !custom\`,paddingLeft:'3px !custom'})},tone:{custom:(values:{value:'red'|'blue'})=>({color:\`\${values.value} !custom\`})},constructor:{normal:{}}},defaultVariants:{size:{custom:{value:'12px'}},tone:{custom:{value:'red'}}}});`
       const publisher = Graph.compile({ modules: { 'config.ts': config } })
       const packed = Graph.compile({
         modules: { 'app.ts': source },

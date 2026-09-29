@@ -1,4 +1,5 @@
 /** Compiles local Zyzz authoring before Babel lowers TypeScript and JSX. @module */
+import * as Compilation from './internal/Compilation.js'
 import type * as Babel from '@babel/core'
 import type * as Ast from '@oxc-project/types'
 import * as Syntax from '../compiler/internal/Syntax.js'
@@ -63,7 +64,10 @@ declare module '@babel/core' {
 }
 
 /** Rewrites direct Zyzz imports while preserving authored source locations. */
-export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
+export function zyzz(
+  api: typeof Babel,
+  options: Options & { readonly [Compilation.key]?: Compilation.Context },
+): Babel.PluginObj {
   const prepared = new WeakSet<Babel.types.File>()
   const callables = new WeakSet<Babel.types.Node>()
   const parsing = new WeakMap<object, Babel.TransformOptions>()
@@ -179,8 +183,10 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
           throw new Error(
             'Native Babel graph compilation requires a moduleId present in modules.',
           )
-        return Graph.compile({
-          [Syntax.cache]: parsed ? new Map([[moduleId, parsed]]) : undefined,
+        return (options[Compilation.key]?.compile ?? Graph.compile)({
+          [Syntax.cache]:
+            options[Compilation.key]?.programs ??
+            (parsed ? new Map([[moduleId, parsed]]) : undefined),
           modules: { ...options.modules, [moduleId]: file.code },
           imports: options.imports,
           native: {
@@ -242,7 +248,7 @@ export function zyzz(api: typeof Babel, options: Options): Babel.PluginObj {
       const opts = parsing.get(parserOpts)
       if (!opts) return
       try {
-        const parsed = Syntax.parse({
+        const parsed = (options[Compilation.key]?.parse ?? Syntax.parse)({
           moduleId:
             options.moduleId ??
             `babel/${Path.basename(opts.filename ?? 'source.tsx')}`,

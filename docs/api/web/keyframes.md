@@ -56,13 +56,15 @@ Local keyframes use stable module-and-binding names; unused local definitions ar
 
 ## Enclosing contexts
 
-`context.within` is an optional ordered list of conditional or layer headers, outermost first. Omission or explicit `undefined` uses stylesheet scope. Anonymous `@layer` groups are supported.
+Enclose definitions with nested `@layer`, `@media`, `@supports`, or `@container` keys. Outer keys emit outer groups. A flat definition uses stylesheet scope. Anonymous `@layer` groups are supported. The optional second argument accepts an explicit `id`.
 
 ```ts
-const fade = keyframes(
-  { 'entry 0%': { opacity: 0 }, 'exit 100%': { opacity: 1 } },
-  { within: ['@layer animations'] },
-)
+const fade = keyframes({
+  '@layer animations': {
+    'entry 0%': { opacity: 0 },
+    'exit 100%': { opacity: 1 },
+  },
+})
 ```
 
 Named timeline ranges include `contain`, `cover`, `entry`, `entry-crossing`, `exit`, and `exit-crossing`, each followed by a percentage.

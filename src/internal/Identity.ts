@@ -3,11 +3,43 @@ import * as Binding from './Binding.js'
 import * as Token from './Token.js'
 import type * as Style from '../Style.js'
 
+/** Encodes both hash streams in eleven CSS identifier characters. */
+export function compact(value: string): string {
+  let first = 2166136261
+  let second = 5381
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index)
+    first = Math.imul(first ^ code, 16777619)
+    second = Math.imul(second, 33) ^ code
+  }
+
+  const alphabet =
+    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-'
+  let bits = (BigInt(first >>> 0) << 32n) | BigInt(second >>> 0)
+  let result = ''
+  for (let index = 0; index < 11; index++) {
+    result = alphabet[Number(bits & 63n)]! + result
+    bits >>= 6n
+  }
+
+  return result
+}
+
 /** Encodes an explicit identity without losing punctuation or Unicode distinctions. */
 export function encode(value: string): string {
   return Array.from(value, (character) =>
     character.codePointAt(0)!.toString(16),
   ).join('-')
+}
+
+/** Keeps an authored label readable while its separate hash disambiguates spelling. */
+export function label(value: string): string {
+  return (
+    value
+      .replace(/[^a-zA-Z0-9-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 64) || 'value'
+  )
 }
 
 /** Requires an explicit identity at an uncompiled authoring boundary. */

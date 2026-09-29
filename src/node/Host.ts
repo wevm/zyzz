@@ -13,6 +13,7 @@ import * as Graph from '../compiler/Graph.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Relative from '../compiler/internal/Relative.js'
+import * as Snapshot from './internal/Snapshot.js'
 import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Source from '../compiler/Source.js'
 import * as Transform from '../compiler/Transform.js'
@@ -124,6 +125,7 @@ export async function create(options: create.Options): Promise<Runtime> {
   const manifestPath = Path.join(outDir, '.zyzz.json')
 
   const compiler = Graph.create()
+  const snapshot = Snapshot.create()
   const stylesheets = new WeakMap<Transform.compile.ReturnType, Stylesheet>()
   let closed = false
   let closing: Promise<void> | undefined
@@ -250,7 +252,7 @@ export async function create(options: create.Options): Promise<Runtime> {
           `Source path conflicts with host control files: ${name}`,
         )
 
-      sources[name] = await Fs.readFile(input, 'utf8')
+      sources[name] = await snapshot.read(input)
     }
 
     const modules = Object.fromEntries(
@@ -306,7 +308,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       observe(`${file}.zyzz.json`)
       try {
-        contracts[file] = await Fs.readFile(`${file}.zyzz.json`, 'utf8')
+        contracts[file] = await snapshot.read(`${file}.zyzz.json`)
       } catch (error) {
         if (
           !required &&
@@ -363,7 +365,7 @@ export async function create(options: create.Options): Promise<Runtime> {
       const file = Path.join(root, name)
       const resolutions = (imports[moduleId] = Object.create(null))
 
-      for (const node of Syntax.parse({ moduleId, source }).program.body) {
+      for (const node of snapshot.parse({ moduleId, source }).program.body) {
         if (
           (node.type !== 'ImportDeclaration' &&
             node.type !== 'ExportNamedDeclaration' &&
@@ -439,12 +441,21 @@ export async function create(options: create.Options): Promise<Runtime> {
     }
 
     const graph = compiler.compile({
+      [Syntax.cache]: snapshot.programs(modules),
       compiler: options.compiler,
       native,
       modules,
       contracts,
       imports,
     })
+
+    snapshot.retain(
+      new Set([
+        ...inputs,
+        ...Object.keys(contracts).map((file) => `${file}.zyzz.json`),
+      ]),
+      modules,
+    )
 
     const artifactNames = [
       'zyzz.css',
@@ -818,6 +829,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     closing = (async () => {
       await tail
+      snapshot.clear()
       await lock.close()
       await Fs.rm(lockPath)
     })()

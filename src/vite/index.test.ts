@@ -16,6 +16,7 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 import * as Library from '../../test/fixtures/Library.js'
+import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
 import * as Font from '../../test/fixtures/AtRuleFont.js'
 import * as Watch from '../../test/fixtures/Watch.js'
@@ -83,6 +84,201 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('shares responsive defaults in production CSS', async () => {
+    const { config, root } = await create(Responsive.modules)
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: {
+          lib: {
+            entry: Path.join(root, 'entry.js'),
+            formats: ['iife'],
+            name: 'Fixture',
+          },
+          minify: false,
+          write: false,
+        },
+      })
+      const output = Array.isArray(result) ? result[0] : result
+      if (!output || !('output' in output))
+        throw new Error('Expected a Vite build')
+      const code = output.output.find((file) => file.type === 'chunk')
+      const css = output.output.find(
+        (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+      )
+      if (code?.type !== 'chunk' || css?.type !== 'asset')
+        throw new Error('Missing fixture output')
+
+      await Responsive.verify({ code: code.code, css: String(css.source) })
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('replaces shared responsive defaults during HMR without reloading', async () => {
+    const { config, root } = await create({
+      ...Responsive.modules,
+      'index.html':
+        '<input id="state"><main></main><script type="module" src="/main.js"></script>',
+      'main.js': `import {base,first,large,second} from './entry.js';document.querySelector('main').innerHTML='<div class="'+base.className+'"><div id="first" class="'+first.className+'"></div><div class="'+large.className+'"><div id="second" class="'+second.className+'"></div></div></div>';if(import.meta.hot)import.meta.hot.accept();`,
+    })
+    const server = await Vite.createServer(config)
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+    try {
+      browser = await chromium.launch()
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 800 },
+      })
+      await page.goto(`http://127.0.0.1:${address.port}`)
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#first')!).fontSize ===
+          '14px',
+      )
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"20px"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"8px"')
+
+      async function css() {
+        return page.evaluate(() =>
+          [...document.styleSheets]
+            .flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText))
+            .join('\n'),
+        )
+      }
+      expect(
+        (await css()).match(/--z-editorial-labelSize-fallback-[\w-]+:\s*14px/g)
+          ?.length,
+      ).toMatchInlineSnapshot('1')
+      await page.setViewportSize({ height: 600, width: 1200 })
+      expect(
+        await page
+          .locator('#first')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"16px"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"24px"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"12px"')
+
+      await page.setViewportSize({ height: 600, width: 800 })
+      await page.waitForLoadState('networkidle')
+      await page.locator('#state').fill('preserved')
+      await Watch.write({
+        path: Path.join(root, 'config.js'),
+        source: Responsive.modules['config.js'].replace("'14px'", "'18px'"),
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#first')!).fontSize ===
+          '18px',
+      )
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"preserved"',
+      )
+      expect(
+        (await css()).match(/--z-editorial-labelSize-fallback-[\w-]+:\s*18px/g)
+          ?.length,
+      ).toMatchInlineSnapshot('1')
+      expect((await css()).includes(': 14px;')).toMatchInlineSnapshot('false')
+    } finally {
+      await browser?.close()
+      await server.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30000)
+
+  test('updates shared dependencies across independently transformed entries', async () => {
+    const files: Record<string, string> = {
+      'theme.ts':
+        "import {Vars} from 'zyzz';export const theme=Vars.define({color:{brand:'red'}})",
+      'config.ts':
+        "import {Config} from 'zyzz';import {theme} from './theme';export const {style,vars}=Config.create({vars:theme})",
+      'index.html':
+        '<input id="state"><main id="scope"></main><script type="module" src="/main.ts"></script>',
+    }
+    for (let i = 0; i < 12; i++)
+      files[`card${i}.ts`] =
+        `import {style} from './config';export const props=style({color:'brand',opacity:${i === 0 ? '0.5' : '1'}})()`
+    files['main.ts'] =
+      `${Array.from({ length: 12 }, (_, i) => `import {props as p${i}} from './card${i}';`).join('')}import {vars} from './config';const scope=document.querySelector('#scope')!;scope.dataset.renders=String(Number(scope.dataset.renders??0)+1);scope.className=vars().className;[${Array.from({ length: 12 }, (_, i) => `p${i}`).join(',')}].forEach((p,i)=>{let card=document.querySelector('#card'+i);if(!card){card=document.createElement('div');card.id='card'+i;scope.append(card)}card.textContent='Card';card.className=p.className});if(import.meta.hot)import.meta.hot.accept()`
+    const { root, config } = await create(files)
+    const server = await Vite.createServer(config)
+    const browser = await chromium.launch()
+    try {
+      await server.listen()
+      const page = await browser.newPage()
+      await page.goto(server.resolvedUrls!.local[0]!)
+      await page.waitForLoadState('networkidle')
+      await page.locator('#state').fill('retained')
+      await Watch.write({
+        path: Path.join(root, 'theme.ts'),
+        source: files['theme.ts']!.replace("'red'", "'blue'"),
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card11')!).color ===
+          'rgb(0, 0, 255)',
+      )
+      expect(
+        await page
+          .locator('#card0')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      expect(
+        await page.locator('#scope').getAttribute('data-renders'),
+      ).toMatchInlineSnapshot('"1"')
+      await Watch.write({
+        path: Path.join(root, 'card0.ts'),
+        source: files['card0.ts']!.replace('0.5', '0.75'),
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card0')!).opacity ===
+          '0.75',
+      )
+      expect(
+        await page
+          .locator('#card11')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot('"1"')
+      await Watch.write({
+        path: Path.join(root, 'main.ts'),
+        source: files['main.ts']!.replace(
+          "card.textContent='Card'",
+          "card.textContent='Updated'",
+        ),
+      })
+      await page.waitForFunction(
+        () => document.querySelector('#card0')?.textContent === 'Updated',
+      )
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"retained"',
+      )
+    } finally {
+      await browser.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('loads package font URLs and static global values in development and production', async () => {
     const { config, root } = await create({
       'index.html':
@@ -521,7 +717,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           )![1]!
           const css = await (await fetch(origin + cssPath)).text()
 
-          expect(css.includes('--z-t')).toMatchInlineSnapshot(`true`)
+          expect(css.includes('--z-color-brand-')).toMatchInlineSnapshot(`true`)
         } finally {
           await server.close()
         }
@@ -982,12 +1178,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         ".z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
-        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
+        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
@@ -1005,12 +1201,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-at20x21hp1ylu-style-base{--z-tat20x21hp1ylu-style-color_2e_brand:#06c;}
-        .z_theme-at20x21hp1ylu-style-mint{--z-tat20x21hp1ylu-style-color_2e_brand:#175;}
+        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
+        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-92J1_6{color:var(--z-tat20x21hp1ylu-style-color_2e_brand,#06c);}
+        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
@@ -1195,12 +1391,15 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       await message(socket, () => Fs.rm(path))
 
+      await vi.waitUntil(
+        async () => (await fetch(origin + cssPath)).status === 500,
+      )
       expect((await fetch(origin + cssPath)).status).toMatchInlineSnapshot(
         `500`,
       )
 
       await message(socket, () =>
-        Fs.writeFile(path, Fixture.files['alternate.ts']),
+        Watch.write({ path, source: Fixture.files['alternate.ts'] }),
       )
 
       expect((await stylesheet()).includes('#175')).toMatchInlineSnapshot(
@@ -1208,21 +1407,27 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       )
 
       await message(socket, () =>
-        Fs.writeFile(
-          Path.join(root, 'config.ts'),
-          Fixture.files['config.ts'].replace('./alternate', './new-theme'),
-        ),
+        Watch.write({
+          path: Path.join(root, 'config.ts'),
+          source: Fixture.files['config.ts'].replace(
+            './alternate',
+            './new-theme',
+          ),
+        }),
       )
 
+      await vi.waitUntil(
+        async () => (await fetch(origin + cssPath)).status === 500,
+      )
       expect((await fetch(origin + cssPath)).status).toMatchInlineSnapshot(
         `500`,
       )
 
       await message(socket, () =>
-        Fs.writeFile(
-          Path.join(root, 'new-theme.ts'),
-          Fixture.files['alternate.ts'].replace('#175', '#00f'),
-        ),
+        Watch.write({
+          path: Path.join(root, 'new-theme.ts'),
+          source: Fixture.files['alternate.ts'].replace('#175', '#00f'),
+        }),
       )
 
       expect((await stylesheet()).includes('#00f')).toMatchInlineSnapshot(
@@ -1292,6 +1497,69 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       await Fs.rm(root, { recursive: true, force: true })
     }
   }, 30000)
+
+  test('HTML initialization reads fresh sources during a background transform', async () => {
+    const files = {
+      'a.ts': "import './gate'; import './config'",
+      'background.ts': "import './gate'; export const value = 1",
+      'gate.ts': 'export const value = 1',
+      'config.ts':
+        "import { Config } from 'zyzz'; import { global } from 'zyzz/web'; export const config = Config.create({ defaultVars: 'base', vars: { base: { color: { ink: 'red' } } } }); global({body:{color:'red'}})",
+      'index.html': '<script type="module" src="/a.ts"></script>',
+    }
+    const { config, root } = await create(files)
+    const background = Promise.withResolvers<void>()
+    const document = Promise.withResolvers<void>()
+    let active = false
+    let backgroundWaiting = false
+    let documentWaiting = false
+    config.plugins!.push({
+      name: 'coordinate-source-reads',
+      enforce: 'pre',
+      async resolveId(source, importer) {
+        if (!active || source !== './gate') return
+        if (importer === Path.join(root, 'background.ts')) {
+          backgroundWaiting = true
+          await background.promise
+        } else if (importer === Path.join(root, 'a.ts')) {
+          documentWaiting = true
+          await document.promise
+        }
+      },
+    })
+    const server = await Vite.createServer(config)
+    try {
+      await server.listen()
+      expect(
+        (
+          await server.transformIndexHtml('/index.html', files['index.html'])
+        ).includes('localStorage.getItem("zyzz")'),
+      ).toMatchInlineSnapshot('true')
+      // Requests must observe disk changes even before watcher notifications arrive.
+      await server.watcher.close()
+      active = true
+      const transform = server.transformRequest('/background.ts')
+      await vi.waitUntil(() => backgroundWaiting)
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: 'export const value = 1',
+      })
+      const html = server.transformIndexHtml('/index.html', files['index.html'])
+      await vi.waitUntil(() => documentWaiting)
+      background.resolve()
+      await transform
+      document.resolve()
+      expect(
+        (await html).includes('localStorage.getItem("zyzz")'),
+      ).toMatchInlineSnapshot('false')
+    } finally {
+      background.resolve()
+      document.resolve()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('inlines configuration initialization before other head scripts in development and production', async () => {
     // An unrelated earlier module and layer-free configurations exercise whole-project discovery.
     const files = {
@@ -1328,18 +1596,20 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       // escaping, and a script-only export derives its catalog from the options.
       expect(scripts(development)).toMatchInlineSnapshot('3')
       expect(
-        /z_theme-[a-z0-9]+-other-brand_2e_dark/.test(development),
+        /z_theme-src-config-[\w-]+-other-brand_2e_dark/.test(development),
       ).toMatchInlineSnapshot('true')
       expect(
-        /\["solo","z_theme-[a-z0-9]+-onlyScript-solo"\]/.test(development),
+        /\["solo","z_theme-src-config-[\w-]+-onlyScript-solo"\]/.test(
+          development,
+        ),
       ).toMatchInlineSnapshot('true')
 
       // A source error stays with its module; the document still initializes
       // from the catalogs collected before the edit.
-      await Fs.writeFile(
-        Path.join(root, 'config.ts'),
-        files['config.ts'].replace("'#123456'", 'unknownColor()'),
-      )
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'].replace("'#123456'", 'unknownColor()'),
+      })
 
       const broken = await server.transformIndexHtml(
         '/index.html',
@@ -1350,11 +1620,14 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       // An edit that drops the configuration import while failing to compile
       // keeps scoping the document through the last successful graph.
-      await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
-      await Fs.writeFile(
-        Path.join(root, 'main.ts'),
-        `import { style } from 'zyzz'; export const broken = style({ color: unknownColor() });`,
-      )
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'],
+      })
+      await Watch.write({
+        path: Path.join(root, 'main.ts'),
+        source: `import { style } from 'zyzz'; export const broken = style({ color: unknownColor() });`,
+      })
 
       const detached = await server.transformIndexHtml(
         '/index.html',
@@ -1363,16 +1636,19 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       expect(scripts(detached)).toMatchInlineSnapshot('3')
 
-      await Fs.writeFile(Path.join(root, 'main.ts'), files['main.ts'])
+      await Watch.write({
+        path: Path.join(root, 'main.ts'),
+        source: files['main.ts'],
+      })
 
       // Removed configurations leave the document on the next request.
-      await Fs.writeFile(
-        Path.join(root, 'config.ts'),
-        files['config.ts'].slice(
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'].slice(
           0,
           files['config.ts'].indexOf(' export const other'),
         ),
-      )
+      })
 
       const reduced = await server.transformIndexHtml(
         '/index.html',
@@ -1382,10 +1658,10 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       expect(scripts(reduced)).toMatchInlineSnapshot('1')
 
       // A module that stops emitting a contract altogether drops its catalogs too.
-      await Fs.writeFile(
-        Path.join(root, 'config.ts'),
-        `export const themes = { mint: { className: 'plain' } }`,
-      )
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: `export const themes = { mint: { className: 'plain' } }`,
+      })
 
       const detachedConfiguration = await server.transformIndexHtml(
         '/index.html',
@@ -1394,7 +1670,10 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
 
       expect(scripts(detachedConfiguration)).toMatchInlineSnapshot('0')
 
-      await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
+      await Watch.write({
+        path: Path.join(root, 'config.ts'),
+        source: files['config.ts'],
+      })
       await server.close()
       server = undefined
 

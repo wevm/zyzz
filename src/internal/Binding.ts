@@ -127,6 +127,36 @@ export type Checked<style> = {
         : unknown
 }
 
+/** Excludes token-name slots, which cannot resolve token names during application. */
+export type TokenSlots<style, values, tokens, mappings = {}> = {
+  [property in keyof style]: property extends keyof Literal.Properties
+    ? SlotValue<
+        style[property],
+        values[keyof values],
+        Token.Names<tokens, property>
+      >
+    : property extends keyof mappings
+      ? mappings[property] extends readonly (infer target extends
+          keyof Literal.Properties)[]
+        ? SlotValue<
+            style[property],
+            values[keyof values],
+            Token.Names<tokens, target>
+          >
+        : unknown
+      : property extends 'vars'
+        ? unknown
+        : style[property] extends Record<string, unknown>
+          ? TokenSlots<style[property], values, tokens, mappings>
+          : unknown
+}
+
+type SlotValue<value, inputs, names> = value extends readonly unknown[]
+  ? { [key in keyof value]: SlotValue<value[key], inputs, names> }
+  : Extract<Extract<value, inputs>, names> extends never
+    ? unknown
+    : never
+
 /** Rejects reserved callback field names and importance-bearing value domains. */
 export type Inputs<values> = {
   [key in keyof values]: key extends

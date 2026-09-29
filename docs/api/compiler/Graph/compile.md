@@ -135,6 +135,17 @@ output.modules['app/card.ts']?.css
 
 Scope and variable identities retain the defining module/binding. CSS maps trace source scope rules to their factory and declarations to the consuming styles. Imported metadata scope rules are unmapped because their original source is not present. JavaScript/JSX lowering remains the consuming build's responsibility.
 
+### sharedCss
+
+Type: `string | undefined`. Shared contributions and responsive token defaults, deduplicated across modules. Load once before module CSS and replace it after recompilation.
+
+```ts
+const css = [
+  output.sharedCss,
+  ...Object.values(output.modules).map((module) => module.css),
+].join('\n')
+```
+
 ### sharedCssMap
 
 Type: `EncodedSourceMap | undefined`. Maps the combined shared stylesheet to its source-owned and packed contributions. Present with nonempty shared CSS; source content is retained when published by its owner.
@@ -185,7 +196,9 @@ The graph normalizes configured themes without executing library code. Source ed
 
 ## Shared stylesheet delivery
 
-When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles; contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.
+The result includes `sharedCss` when the graph has shared contributions or responsive token defaults. It contains graph-wide layer declarations, global rules, font faces, live keyframes, and deduplicated defaults. Load it once, before the CSS from `modules`. Module CSS references these defaults and remains necessary for local styles.
+
+Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles. Removed contributions and defaults must also disappear from delivery. Bundler plugins and the CLI handle this lifecycle. Standalone `Transform.compile` and `Css.compile` calls return complete CSS for their inputs.
 
 Packed contracts containing responsive typography or border-width tokens use schema version 25. Flat typography sets use version 24. Query metadata and scalar typography groups require at least version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Readers accept implemented schema versions and reject unknown future versions explicitly.
 

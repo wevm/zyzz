@@ -4,25 +4,9 @@ import type * as Lexical from '../internal/Lexical.js'
 
 /** Emits eager font feature aliases in authored block and declaration order. */
 export function fontFeatureValues<
-  const options extends Omit<fontFeatureValues.Options, 'fontDisplay'> & {
-    readonly fontDisplay?: string | undefined
-  },
+  const options extends Record<string, unknown>,
 >(
-  options: options &
-    Record<Exclude<keyof options, keyof fontFeatureValues.Options>, never> & {
-      readonly fontDisplay?: Checked<
-        options['fontDisplay'],
-        Exclude<fontFeatureValues.Options['fontDisplay'], undefined>
-      >
-    } & {
-      readonly features: Record<
-        Exclude<
-          keyof options['features'],
-          keyof fontFeatureValues.Options['features']
-        >,
-        never
-      >
-    },
+  options: options & NoInfer<Accepted<options>>,
   context: Context.Options = {},
 ): void {
   void options
@@ -77,3 +61,36 @@ type Checked<value, domain> = value extends string
     ? value
     : never
   : undefined
+
+type Accepted<input> = {
+  [key in keyof input as key extends Context.Group ? key : never]: Accepted<
+    input[key]
+  >
+} & (keyof input extends never
+  ? Definition<input>
+  : Exclude<keyof input, Context.Group> extends never
+    ? unknown
+    : Definition<Omit<input, Context.Group>>)
+
+type Definition<options> = options extends Omit<
+  fontFeatureValues.Options,
+  'fontDisplay'
+> & {
+  readonly fontDisplay?: string | undefined
+}
+  ? options &
+      Record<Exclude<keyof options, keyof fontFeatureValues.Options>, never> & {
+        readonly fontDisplay?: Checked<
+          options['fontDisplay'],
+          Exclude<fontFeatureValues.Options['fontDisplay'], undefined>
+        >
+      } & {
+        readonly features: Record<
+          Exclude<
+            keyof options['features'],
+            keyof fontFeatureValues.Options['features']
+          >,
+          never
+        >
+      }
+  : never

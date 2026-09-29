@@ -245,6 +245,17 @@ export function define(
     keyof Literal.Properties,
     Map<string | number, Token.Reference>
   >()
+  const validatedReferences = new WeakSet<object>()
+
+  function isReference(value: unknown): value is Token.Reference {
+    if (typeof value !== 'object' || value === null) return false
+    if (validatedReferences.has(value)) return true
+    if (!Token.is(value)) return false
+
+    // Frozen references can reuse validation across declarations in this definition.
+    validatedReferences.add(value)
+    return true
+  }
 
   function report(
     code: Diagnostic['code'],
@@ -629,7 +640,7 @@ export function define(
             theme,
           })
 
-          if (Token.is(resolved)) {
+          if (isReference(resolved)) {
             let values = references.get(key)
 
             if (!values) references.set(key, (values = new Map()))
@@ -640,8 +651,10 @@ export function define(
           return resolved
         })()
 
+        const reference = isReference(resolved)
+
         if (
-          Token.is(resolved) &&
+          reference &&
           resolved.contract.variableSet &&
           !Token.acceptsReference(resolved, key)
         ) {
@@ -656,7 +669,7 @@ export function define(
         if (
           theme &&
           !custom &&
-          !Token.is(resolved) &&
+          !reference &&
           Token.mapped(theme, key) &&
           !(Binding.is(resolved) && !resolved.name.startsWith('--z-d')) &&
           !(

@@ -294,6 +294,20 @@ describe('define', () => {
     )
   })
 
+  test('validates property domains when reusing a frozen reference', () => {
+    const vars = Vars.define({ surface: { ink: '#123456' } })
+
+    expect(() =>
+      Style.define({
+        first: { color: vars.surface.ink },
+        // @ts-expect-error A reference validated for color is still invalid for width.
+        second: { width: vars.surface.ink },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["second","width"]: Variable value is incompatible with this property.]`,
+    )
+  })
+
   test('accepts custom categories named tokens in portable styles', () => {
     const vars = Vars.define(
       { tokens: { ink: '#123456' } },

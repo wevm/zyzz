@@ -3,7 +3,6 @@ import type { Rule } from '@oxlint/plugins'
 import * as Bindings from '../internal/Bindings.js'
 import * as Declarations from '../internal/Declarations.js'
 
-// Matches Tempo's initial policy. Physical edges remain valid when explicitly exempted.
 const replacements: Readonly<Record<string, string>> = {
   borderBottomLeftRadius: 'borderEndStartRadius',
   borderBottomRightRadius: 'borderEndEndRadius',

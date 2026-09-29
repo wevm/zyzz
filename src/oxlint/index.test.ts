@@ -131,16 +131,82 @@ declared(callback)`
     expect(files.length > 0).toMatchInlineSnapshot(`true`)
     for (const file of files)
       expect(
-        await lint(
-          await Fs.readFile(Path.join(directory, file), 'utf8'),
-          {
-            'no-conflicting-props': 'error',
-            'no-unused': 'error',
-            'valid-styles': 'error',
-          },
-          { imports: ['./zyzz.config.js'] },
-        ),
+        await lint(await Fs.readFile(Path.join(directory, file), 'utf8'), {
+          'no-conflicting-props': 'error',
+          'no-unused': 'error',
+          'valid-styles': 'error',
+        }),
       ).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('recognizes config filenames without registering import paths', async () => {
+    for (const source of [
+      './zyzz.config.ts',
+      '../zyzz.config.mjs',
+      '@/theme/zyzz.config.js',
+      'zyzz.config.cts',
+    ]) {
+      expect(
+        await lint(
+          `import { style as css } from '${source}'
+css({ marginLeft: '1px' })`,
+          { 'use-logical-properties': 'error' },
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "code": "zyzz(use-logical-properties)",
+            "column": 7,
+            "line": 2,
+            "message": "Use a CSS logical property instead of 'marginLeft', such as 'marginInlineStart' for horizontal LTR layouts.",
+          },
+        ]
+      `)
+    }
+    expect(
+      await lint(
+        `import * as theme from '@/zyzz.config.ts'
+const card = theme.style({ color: 'red' })
+const element = <div {...card()} className="override" />`,
+        { 'no-conflicting-props': 'error' },
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "zyzz(no-conflicting-props)",
+          "column": 34,
+          "line": 3,
+          "message": "Pass 'className' into the Zyzz style call to merge styling props.",
+        },
+      ]
+    `)
+  })
+
+  test('keeps explicit imports and excludes config lookalikes', async () => {
+    const source = `import { style as custom } from '@/styles.js'
+import { style as prefix } from '@/other-zyzz.config.ts'
+import { style as directory } from '@/zyzz.config.ts/helpers.js'
+import { style as suffix } from '@/zyzz.configured.ts'
+custom({ left: '0px' })
+prefix({ left: '0px' })
+directory({ left: '0px' })
+suffix({ left: '0px' })`
+    expect(
+      await lint(
+        source,
+        { 'use-logical-properties': 'error' },
+        { imports: ['@/styles.js'] },
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "zyzz(use-logical-properties)",
+          "column": 10,
+          "line": 5,
+          "message": "Use a CSS logical property instead of 'left', such as 'insetInlineStart' for horizontal LTR layouts.",
+        },
+      ]
+    `)
   })
 
   test('tracks helpers, aliases, configuration modules, and lexical shadowing', async () => {
@@ -155,13 +221,8 @@ const c = configured({ borderLeft: 'none' })
 const d = themed({ left: '0px' })
 function unrelated(style: Function) { return style({ marginLeft: '1px' }) }
 const e = variants({ base: { right: '0px' }, variants: { left: { true: { paddingLeft: '1px' } } }, defaultVariants: { left: true }, compoundVariants: [{ when: { left: true }, style: { marginRight: '1px' } }] })`
-    expect(
-      await lint(
-        source,
-        { 'use-logical-properties': 'error' },
-        { imports: ['@/zyzz.config.js'] },
-      ),
-    ).toMatchInlineSnapshot(`
+    expect(await lint(source, { 'use-logical-properties': 'error' }))
+      .toMatchInlineSnapshot(`
       [
         {
           "code": "zyzz(use-logical-properties)",

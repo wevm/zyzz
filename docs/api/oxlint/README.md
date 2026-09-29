@@ -37,19 +37,21 @@ export default defineConfig({
 
 ## Imports
 
-Rules recognize `zyzz`, `zyzz/default`, named aliases, namespace imports, immutable local aliases, and helpers destructured from local `Config.create()` calls. Lexical shadowing is respected. Application configuration modules must be listed explicitly:
+Rules recognize `zyzz`, `zyzz/default`, and imports whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts`, `../zyzz.config.mjs`, or `@/zyzz.config.js`. No settings are needed for these configuration filenames.
+
+Named aliases, namespace imports, immutable local aliases, and helpers destructured from local `Config.create()` calls are supported. Lexical shadowing is respected. Modules with other filenames can be registered explicitly:
 
 ```json
 {
   "settings": {
     "zyzz": {
-      "imports": ["@/zyzz.config.js", "./zyzz.config.js"]
+      "imports": ["@/styles.js"]
     }
   }
 }
 ```
 
-Entries match import specifiers exactly and supplement the built-in sources. Configured modules expose named `style` and `variants` helpers. The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
+Entries match import specifiers exactly and supplement automatic recognition. Configuration filenames are matched on the import text without filesystem resolution. Recognized configuration modules are assumed to expose Zyzz helpers. The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
 
 Declaration rules visit `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. Variant names, selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches are excluded. Apply these web rules only to web authoring files through Oxlint overrides.
 

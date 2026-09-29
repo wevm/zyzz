@@ -15,7 +15,7 @@ export type Binding = {
   readonly themed: boolean
 }
 
-/** Resolves helpers using lexical scope and explicitly configured import sources. */
+/** Resolves helpers using lexical scope, configuration filenames, and explicit import sources. */
 export function create(context: Context) {
   const settings = context.settings.zyzz
   const imports = new Set(['zyzz', 'zyzz/default'])
@@ -139,7 +139,8 @@ export function create(context: Context) {
         if (
           parent?.type !== 'ImportDeclaration' ||
           parent.importKind === 'type' ||
-          !imports.has(parent.source.value)
+          (!imports.has(parent.source.value) &&
+            !/(?:^|\/)zyzz\.config\.[^/]+$/.test(parent.source.value))
         )
           return undefined
         const module: Binding = {

@@ -472,9 +472,13 @@ describe('style', () => {
   test('scrolling properties', () => {
     Style.define(Scrolling.styles)
     style({
+      scrollAxisLock: ['auto', 'none !important'],
       scrollMargin: '-2px !important',
       scrollPaddingInline: ['auto', '10%'],
     })
+
+    // @ts-expect-error Axis locking accepts only auto or none.
+    style({ scrollAxisLock: 'always' })
 
     const scrollTheme = Theme.define({
       spacing: { offset: '20px', portion: '10%' },

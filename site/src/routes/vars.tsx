@@ -1,5 +1,6 @@
 /** Displays serialized configuration variables or the defaults. @module */
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { Page as VariablesPage } from '../pages/Variables.js'
 import * as Variables from '../Variables.js'
 
 export const Route = createFileRoute('/vars')({
@@ -24,5 +25,6 @@ export const Route = createFileRoute('/vars')({
 })
 
 function Page() {
-  return <Outlet />
+  const { config, error } = Route.useLoaderData()
+  return <VariablesPage config={config} error={error} />
 }

@@ -163,7 +163,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             const file = Path.join(directory, item.name)
 
             if (item.isDirectory()) await collect(file)
-            else if (item.isFile() && eager(file)) {
+            else if (item.isFile() && eager(file, environment)) {
               host.watch(file)
 
               const source = await Fs.readFile(file, 'utf8')
@@ -185,9 +185,16 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     return pending
   }
 
-  function eager(file: string) {
+  function eager(file: string, environment: Environment) {
     return (
       eligible(file) &&
+      file !== environment.config.configFile &&
+      !environment.config.configFileDependencies.includes(file) &&
+      // Server entrypoints must not contribute to the client stylesheet scan.
+      !(
+        environment.config.consumer === 'client' &&
+        /\.server\.[cm]?[jt]sx?$/.test(file)
+      ) &&
       !Path.relative(root, file)
         .split(Path.sep)
         .some((part) =>
@@ -323,7 +330,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     }
 
     const pending = discoveries.get(environment)
-    if (!pending || !eager(file)) return
+    if (!pending || !eager(file, environment)) return
 
     const sources = await pending
 
@@ -1336,7 +1343,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       const state = entries(this.environment)
       const first = [...state.values()].find(
-        (entry) => entry.files.has(file) || eager(file),
+        (entry) => entry.files.has(file) || eager(file, this.environment),
       )
       if (!first && !removed.get(this.environment)?.has(file)) return modules
 
@@ -1374,7 +1381,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       if (type === 'delete') ids.add(cssId(file))
 
       for (const entry of entries(this.environment).values()) {
-        if (!entry.files.has(file) && !eager(file)) continue
+        if (!entry.files.has(file) && !eager(file, this.environment)) continue
 
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
         if (

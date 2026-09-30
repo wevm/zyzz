@@ -453,6 +453,35 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return data(node.expression, derived)
 
+    if (node.type === 'CallExpression' && !node.optional) {
+      const callee = node.callee
+      if (
+        callee.type === 'MemberExpression' &&
+        !callee.computed &&
+        !callee.optional &&
+        callee.object.type === 'Identifier' &&
+        variableNamespaces.has(callee.object.name) &&
+        derived?.name !== callee.object.name &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'compose'
+      ) {
+        if (node.arguments.length !== 2)
+          return fail(
+            'Vars.compose requires a literal domain and parts array.',
+            node,
+          )
+        const group = data(node.arguments[0]!, derived)
+        const parts = data(node.arguments[1]!, derived)
+        if ((group !== 'color' && group !== 'spacing') || !Array.isArray(parts))
+          return fail(
+            'Vars.compose requires a literal domain and parts array.',
+            node,
+          )
+        factoryReferences.add(callee.start)
+        return Vars.compose(group, parts)
+      }
+    }
+
     if (
       node.type === 'Literal' &&
       (typeof node.value === 'string' || typeof node.value === 'number')
@@ -1336,7 +1365,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (
         parent.type === 'MemberExpression' &&
         grandparent?.type === 'CallExpression' &&
-        factories.has(grandparent.start)
+        (factories.has(grandparent.start) ||
+          factoryReferences.has(parent.start))
       )
         return true
 

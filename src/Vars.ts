@@ -7,6 +7,8 @@ import * as Token from './internal/Token.js'
 import * as VariableSets from './internal/VariableSets.js'
 import type { style } from './styleFunction.js'
 
+export type { Composition } from './internal/Token.js'
+
 /** Portable scalar reference retaining its value domain and optional literal precision. */
 export type Reference<
   group extends Token.Group = Token.Group,
@@ -21,9 +23,10 @@ export type Value =
   | string
   | number
   | Token.Reference
+  | Token.Composition
   | {
-      readonly light: string | Token.Reference
-      readonly dark: string | Token.Reference
+      readonly light: string | Token.Reference | Token.Composition<'color'>
+      readonly dark: string | Token.Reference | Token.Composition<'color'>
     }
   | ({ readonly default: Value } & {
       readonly [query: `@media ${string}`]: Value
@@ -50,30 +53,41 @@ export type References<values, root extends boolean = true> = {
     keyof values,
     root extends true ? 'breakpoint' | 'containerNames' : never
   >]: values[key] extends Value
-    ? Reference<Domain<Scalar<values[key]>>, Scalar<values[key]>>
+    ? Reference<
+        Domain<Scalar<values[key]>>,
+        Literal.Color extends Scalar<values[key]>
+          ? never
+          : Literal.Length extends Scalar<values[key]>
+            ? never
+            : Scalar<values[key]>
+      >
     : References<values[key], false>
 }
 
 /** Resolves the scalar types represented by all conditional branches. */
 export type Scalar<value> = Value extends value
   ? string | number
-  : value extends { readonly [Token.scalar]: infer scalar }
-    ? scalar
-    : value extends readonly string[]
-      ? value
-      : value extends Token.Reference<infer group>
-        ? group extends 'color'
-          ? Literal.Color
-          : group extends 'spacing'
-            ? Literal.Length
-            : group extends 'number'
-              ? number
-              : string
-        : value extends { default: unknown }
-          ? Scalar<value[keyof value]>
-          : value extends { light: infer light; dark: infer dark }
-            ? Scalar<light | dark>
-            : value
+  : value extends Token.Composition<infer group>
+    ? group extends 'color'
+      ? Literal.Color
+      : Literal.Length
+    : value extends { readonly [Token.scalar]: infer scalar }
+      ? scalar
+      : value extends readonly string[]
+        ? value
+        : value extends Token.Reference<infer group>
+          ? group extends 'color'
+            ? Literal.Color
+            : group extends 'spacing'
+              ? Literal.Length
+              : group extends 'number'
+                ? number
+                : string
+          : value extends { default: unknown }
+            ? Scalar<value[keyof value]>
+            : value extends { light: infer light; dark: infer dark }
+              ? Scalar<light | dark>
+              : value
 
 /** Scalar domain shared by compatible set alternatives. */
 export type Domain<value> = [value] extends [Literal.Color]
@@ -83,6 +97,41 @@ export type Domain<value> = [value] extends [Literal.Color]
     : [value] extends [number]
       ? 'number'
       : 'string'
+
+/**
+ * Composes immutable web CSS text and live references in a color or spacing domain.
+ * @throws {InvalidError} If parts are empty, nonfinite, contain declaration markers, or include unsupported values.
+ */
+export function compose<group extends 'color' | 'spacing'>(
+  group: group,
+  parts: readonly (string | number | Reference)[],
+): Token.Composition<group> {
+  if (group !== 'color' && group !== 'spacing')
+    throw new InvalidError(
+      [],
+      'Compositions require a color or spacing domain.',
+    )
+  if (!Array.isArray(parts) || !parts.length)
+    throw new InvalidError([], 'Compositions require nonempty CSS parts.')
+
+  const values = Array.from(parts, (part) => {
+    if (Token.is(part)) return part
+    if (typeof part === 'number' && Number.isFinite(part)) return String(part)
+    if (typeof part === 'string' && !/[;{}!]/.test(part)) return part
+    throw new InvalidError(
+      [],
+      'Composition parts must be CSS text, finite numbers, or variable references.',
+    )
+  })
+  if (!values.some((part) => typeof part !== 'string' || part.trim()))
+    throw new InvalidError([], 'Compositions require nonempty CSS parts.')
+
+  return Object.freeze({
+    [Token.expression]: true as const,
+    group,
+    parts: Object.freeze(values),
+  })
+}
 
 /** Creates typed references without emitting CSS or reading the environment. */
 export function define<const values extends Values>(
@@ -167,12 +216,19 @@ type Compatible<scalar> = [scalar] extends [Literal.Color]
   ?
       | Literal.Color
       | Token.Reference<'color'>
+      | Token.Composition<'color'>
       | {
-          readonly light: Literal.Color | Token.Reference<'color'>
-          readonly dark: Literal.Color | Token.Reference<'color'>
+          readonly light:
+            | Literal.Color
+            | Token.Reference<'color'>
+            | Token.Composition<'color'>
+          readonly dark:
+            | Literal.Color
+            | Token.Reference<'color'>
+            | Token.Composition<'color'>
         }
   : [scalar] extends [Literal.Length]
-    ? Literal.Length | Token.Reference<'spacing'>
+    ? Literal.Length | Token.Reference<'spacing'> | Token.Composition<'spacing'>
     : [scalar] extends [number]
       ? number | Token.Reference<'number'>
       : string | Token.Reference<'string'>
@@ -222,7 +278,7 @@ type Validated<
   ? value
   : value extends readonly string[]
     ? never
-    : value extends Token.Reference
+    : value extends Token.Reference | Token.Composition
       ? value
       : value extends string | number
         ? Literal.Checked<value>

@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28,
+      22, 23, 24, 25, 26, 27, 28, 29,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -69,6 +69,26 @@ export function read(
           decode(value),
         ]),
       )
+    if (Object.hasOwn(fields, '$composition')) {
+      if ((data.version as number) < 29)
+        throw new Error(
+          'Composed variables require contract version 29 or later.',
+        )
+      const composition = record(fields.$composition)
+      if (
+        (composition.group !== 'color' && composition.group !== 'spacing') ||
+        !Array.isArray(composition.parts)
+      )
+        throw new Error('Invalid packed variable composition.')
+      return Vars.compose(
+        composition.group,
+        composition.parts.map(decode) as readonly (
+          | string
+          | number
+          | Vars.Reference
+        )[],
+      )
+    }
     if (Object.hasOwn(fields, '$variable')) {
       const reference = record(fields.$variable)
       const identity = string(reference.identity)
@@ -294,7 +314,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28,
+          27, 28, 29,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -590,7 +610,8 @@ function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
 }
 
 function type(value: unknown): string {
-  if (Token.is(value)) return Configurations.type(value)
+  if (Token.is(value) || Token.isExpression(value))
+    return Configurations.type(value)
   if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
 
@@ -727,6 +748,22 @@ export function write(
       ]),
     ),
     version: (() => {
+      function composed(value: unknown): boolean {
+        if (Token.isExpression(value)) return true
+        if (Token.is(value)) return composed(value.value)
+        return (
+          !!value &&
+          typeof value === 'object' &&
+          Object.values(value).some(composed)
+        )
+      }
+      if (
+        Object.values(themes).some((theme) =>
+          composed(theme[Token.definition].values),
+        )
+      )
+        return 29
+
       if (
         Object.values(themes).some(
           (theme) =>
@@ -1031,6 +1068,10 @@ function extended(signature: NonNullable<Themes.Call['function']>): boolean {
 }
 
 function encode(value: unknown): unknown {
+  if (Token.isExpression(value) && 'group' in value)
+    return {
+      $composition: { group: value.group, parts: value.parts.map(encode) },
+    }
   if (Token.is(value))
     return {
       $variable: {
@@ -1044,7 +1085,9 @@ function encode(value: unknown): unknown {
   const fields = Object.fromEntries(
     Object.entries(value).map(([key, value]) => [key, encode(value)]),
   )
-  return Object.hasOwn(fields, '$variable') || Object.hasOwn(fields, '$object')
+  return Object.hasOwn(fields, '$composition') ||
+    Object.hasOwn(fields, '$variable') ||
+    Object.hasOwn(fields, '$object')
     ? { $object: fields }
     : fields
 }

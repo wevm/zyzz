@@ -27,6 +27,7 @@ catalog:
   '@oxc-project/types': '0.148.0'
   '@oxlint/plugins': '1.68.0'
   '@pandacss/dev': '2.0.0'
+  '@pandacss/preset-base': '2.0.0'
   '@rolldown/plugin-babel': '^0.2.4'
   '@stylexjs/babel-plugin': '^0.19.0'
   '@stylexjs/stylex': '^0.19.0'

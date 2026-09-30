@@ -114,6 +114,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Use API tables with descriptions in entrypoint and module overview pages. Give each parameter and returned property its own subheading, type, description, and small usage snippet; document defaults where applicable. Keep preview type names and unresolved defaults explicitly provisional.
 - Export config helpers directly with `export const { style, variants, theme, ... } = Config.create(...)`, selecting the helpers needed by the application. Consume named imports such as `{ style, variants, theme }`; do not recommend a `zyzz` config instance or `zyzz.*` member access. Config modules need no default export. The Vite and Next.js plugin functions remain named `zyzz`.
 - Group related `style` and `variants` definitions in `namespace styles {}`, with exported `const` members and `styles.card()` or `styles.button(options)` at application sites. Use this convention throughout README, docs, architecture examples, and application fixtures. Use `export namespace styles` in shared style modules. Keep reusable literal declarations inside the namespace and reference earlier declarations directly. Namespaces belong at module scope and require TypeScript lowering. Keep focused API parameter snippets and fixtures testing other supported syntax when that syntax is the subject of the example or test. Overview usage should show two styles applied to nested elements in a component.
+- Separate adjacent `style` definitions with one blank line, including definitions inside `namespace styles`.
 - Select named themes with `themes({ theme: 'mint', colorScheme: 'dark' })`, with inferred catalog keys and an optional scheme; do not recommend `themes.mint()` or `themes[name]()`. Keep preview status explicit until callable selection is implemented. Access shared token and variable references through `theme.tokens` and `theme.vars`.
 - Document the Vite plugin as a named `zyzz` function from `zyzz/vite`, called with `plugins: [zyzz()]`.
 - Document the Next.js integration as `zyzz(nextConfig)` from `zyzz/next`. It wraps existing configuration and owns Webpack/Turbopack wiring without requiring separate Babel or PostCSS setup. Keep preview notes until both bundler paths are verified.
@@ -184,6 +185,12 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## UI Conventions
 
+- Name route page components `Page` and register them with `component: Page`.
+- In the site, implement recognizable design-system elements, such as buttons, as shared components in `site/src/components/` (the site's `src/components/`). Compose pages from these components.
+- Prefer existing `zyzz/default` variables and typography tokens over custom variables or arbitrary values in site styles. Introduce a custom value only when no suitable default token expresses the design.
+- Shared site components must be general-purpose and available across the site. Keep page-specific content, layout, and sections on their page.
+- During every page design round, consult the user about potential shared components before adding them. Propose the components and their general responsibilities, and wait for agreement before implementation.
+
 - Core and public style contracts do not depend on a UI framework or component library.
 - Examples use the platform's normal class/style APIs and accessible native controls. Use an appropriate accessible primitive when an example needs coordinated behavior.
 - Keep interaction, theme, viewport, and accessibility state in target or example adapters. Do not encode DOM selectors as universal native capabilities.
@@ -204,6 +211,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## Tooling
 
+- Declare all package dependencies with `catalog:` or a named catalog reference. Keep dependency versions and workspace references in `pnpm-workspace.yaml`, never inline in package manifests.
 - Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
 - Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
 - Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.

@@ -41,7 +41,7 @@ Non-font token mappings and fallback precedence follow Tailwind. Effect, radius,
 
 Rename category keys `borderRadius`, `breakpoints`, and `containers` to `radius`, `breakpoint`, and `container`. Style declarations still use CSS property names such as `borderRadius`.
 
-Geist colors include light/dark pairs for `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, and `teal`. The palette includes `background.100`, `background.200`, `black`, and `white`. The semantic aliases `foreground` and `surface` match `gray.1000` and `background.100`, respectively.
+Geist colors include light/dark pairs for `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, and `teal`. The palette includes `background.primary`, `background.surface`, `black`, and `white`. The semantic alias `foreground` matches `gray.1000`.
 
 Spacing remains an explicit table. Numeric names resolve only when present; no scalar `DEFAULT` multiplier is used. Fractional names are omitted because dots separate token paths. Use semantic names or literal CSS lengths for additional steps.
 

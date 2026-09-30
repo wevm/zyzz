@@ -212,7 +212,7 @@ Themes supply the tokens available to `style` and `variants`. Use the bundled th
 >
 > namespace styles {
 >   export const card = style({
->     backgroundColor: 'surface',
+>     backgroundColor: 'background.surface',
 >     borderRadius: 'lg',
 >     color: 'foreground',
 >     colorScheme: 'light dark',

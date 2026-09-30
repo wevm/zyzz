@@ -1,0 +1,44 @@
+{
+  "name": "@zyzz/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "check:types": "pnpm generate-routes && tsc --noEmit",
+    "deploy": "pnpm run build && wrangler deploy",
+    "dev": "vite dev --port 3000",
+    "gen:types": "wrangler types",
+    "generate-routes": "tsr generate",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "catalog:",
+    "@fontsource-variable/geist-mono": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "@tanstack/react-start": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zyzz": "catalog:"
+  },
+  "devDependencies": {
+    "@babel/core": "catalog:",
+    "@cloudflare/vite-plugin": "catalog:",
+    "@iconify-json/lucide": "catalog:",
+    "@iconify-json/simple-icons": "catalog:",
+    "@rolldown/plugin-babel": "catalog:",
+    "@svgr/core": "catalog:",
+    "@svgr/plugin-jsx": "catalog:",
+    "@tanstack/router-cli": "catalog:",
+    "@types/babel__core": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "shiki": "catalog:",
+    "typescript": "catalog:",
+    "unplugin-icons": "catalog:",
+    "vite": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

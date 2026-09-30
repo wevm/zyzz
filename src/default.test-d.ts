@@ -51,6 +51,16 @@ describe('default', () => {
       conditions: { wide: { size: null } },
     })
     style({ color: vars.color.blue[700], padding: 4 })
+    style({ backgroundColor: 'background.primary' })
+    style({ backgroundColor: 'background.surface' })
+    expectTypeOf(
+      tokens.color.background.primary.light,
+    ).toEqualTypeOf<'#fafafa'>()
+    expectTypeOf(
+      tokens.color.background.surface.dark,
+    ).toEqualTypeOf<'#0a0a0a'>()
+    // @ts-expect-error Surface belongs to the background group.
+    style({ backgroundColor: 'surface' })
     expectTypeOf(tokens.breakpoint.md).toEqualTypeOf<'48rem'>()
     // @ts-expect-error Unknown bundled token.
     style({ color: 'missing' })

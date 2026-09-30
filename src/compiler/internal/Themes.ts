@@ -144,6 +144,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const imports = new Set<number>()
   const variableImports = new Set<number>()
   const configImports = new Set<number>()
+  const factoryImports = new Map<number, 'create' | 'define' | 'extend'>()
   const configs = new Map<string, Link>()
   const configBindings = new Map<number, Link>()
   const factoryReferences = new Set<number>()
@@ -188,11 +189,31 @@ export function collect(program: Ast.Program, options: collect.Options) {
           : specifier.imported.value) === 'Config'
       )
         configImports.add(specifier.start)
+      else if (
+        specifier.type === 'ImportSpecifier' &&
+        specifier.importKind !== 'type' &&
+        ['defineConfig', 'defineVars', 'extendVars'].includes(
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value,
+        )
+      ) {
+        const name =
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value
+        if (name === 'defineConfig')
+          factoryImports.set(specifier.start, 'create')
+        else if (name === 'defineVars')
+          factoryImports.set(specifier.start, 'define')
+        else factoryImports.set(specifier.start, 'extend')
+      }
   }
 
   if (
     !imports.size &&
     !configImports.size &&
+    !factoryImports.size &&
     !Object.keys(options.links ?? {}).length
   )
     return undefined
@@ -251,6 +272,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
   const namespaces = new Set<string>()
   const configNamespaces = new Set<string>()
+  const factoryFunctions = new Map<string, 'create' | 'define' | 'extend'>()
   const variableNamespaces = new Set<string>()
   for (const node of program.body)
     if (node.type === 'ImportDeclaration')
@@ -264,6 +286,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         if (imports.has(specifier.start)) namespaces.add(specifier.local.name)
         else if (configImports.has(specifier.start))
           configNamespaces.add(specifier.local.name)
+        else if (factoryImports.has(specifier.start))
+          factoryFunctions.set(
+            specifier.local.name,
+            factoryImports.get(specifier.start)!,
+          )
 
   function resolve(node: Ast.Node): Link | undefined {
     if (node.type === 'Identifier') {
@@ -536,37 +563,52 @@ export function collect(program: Ast.Program, options: collect.Options) {
       registerAlias({ declaration, statement, variable })
 
       const expression = variable.init
+      if (expression?.type !== 'CallExpression' || expression.optional) continue
+
+      const member = expression.callee
+      const directFactory =
+        member.type === 'Identifier'
+          ? factoryFunctions.get(member.name)
+          : undefined
       if (
-        expression?.type !== 'CallExpression' ||
-        expression.callee.type !== 'MemberExpression' ||
-        expression.callee.object.type !== 'Identifier' ||
-        (!namespaces.has(expression.callee.object.name) &&
-          !configNamespaces.has(expression.callee.object.name))
+        !directFactory &&
+        (member.type !== 'MemberExpression' ||
+          member.object.type !== 'Identifier' ||
+          (!namespaces.has(member.object.name) &&
+            !configNamespaces.has(member.object.name)) ||
+          member.computed ||
+          member.optional ||
+          member.property.type !== 'Identifier' ||
+          !(
+            configNamespaces.has(member.object.name)
+              ? ['create']
+              : ['define', 'extend']
+          ).includes(member.property.name))
       )
         continue
 
-      const member = expression.callee
-      if (
-        member.computed ||
-        member.optional ||
-        expression.optional ||
-        member.property.type !== 'Identifier' ||
-        !(
-          configNamespaces.has(expression.callee.object.name)
-            ? ['create']
-            : ['define', 'extend']
-        ).includes(member.property.name)
-      )
-        continue
+      const config =
+        directFactory === 'create' ||
+        (member.type === 'MemberExpression' &&
+          member.object.type === 'Identifier' &&
+          configNamespaces.has(member.object.name))
+      const method =
+        member.type === 'MemberExpression' &&
+        member.property.type === 'Identifier'
+          ? member.property.name
+          : directFactory
+      const variableSet =
+        directFactory === 'define' ||
+        directFactory === 'extend' ||
+        (member.type === 'MemberExpression' &&
+          member.object.type === 'Identifier' &&
+          variableNamespaces.has(member.object.name))
 
       if (
         (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
         declaration.kind !== 'const' ||
         (variable.id.type !== 'Identifier' &&
-          !(
-            configNamespaces.has(expression.callee.object.name) &&
-            variable.id.type === 'ObjectPattern'
-          ))
+          !(config && variable.id.type === 'ObjectPattern'))
       )
         fail(
           'Define local themes with a module-level const; exported themes require source linking.',
@@ -601,10 +643,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         fail('Configuration destructuring requires a binding.', variable)
 
       let name = `${options.namespace}-${binding}`
-      if (
-        !configNamespaces.has(expression.callee.object.name) &&
-        member.property.name === 'define'
-      ) {
+      if (!config && method === 'define') {
         const argument = expression.arguments[1]
         const callback = argument && Expression.unwrap(argument)
         const id = Identifiers.explicit(
@@ -617,7 +656,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         if (id !== undefined) name = Identity.requireId(id, 'Vars.define')
       }
 
-      if (configNamespaces.has(expression.callee.object.name)) {
+      if (config) {
         try {
           const link = Configurations.collect({
             data,
@@ -772,7 +811,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       let output: Call['output']
 
       try {
-        if (member.property.name === 'define') {
+        if (method === 'define') {
           if (
             expression.arguments.length < 1 ||
             expression.arguments.length > 3
@@ -786,9 +825,6 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           tokenType = type(expression.arguments[0]!)
 
-          const variableSet = variableNamespaces.has(
-            expression.callee.object.name,
-          )
           const argument = expression.arguments[1]
           const callback = argument && Expression.unwrap(argument)
           if (
@@ -860,7 +896,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             )
 
           factoryReferences.add(base!.start)
-          definition = variableNamespaces.has(expression.callee.object.name)
+          definition = variableSet
             ? VariableSets.theme(
                 Vars.extend(
                   VariableSets.from(themes[parent.name]![Token.definition]),
@@ -892,7 +928,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
 
       const call = Object.freeze({
-        ...(variableNamespaces.has(expression.callee.object.name)
+        ...(variableSet
           ? {
               variableSet: true,
               directVariables: true,
@@ -1286,8 +1322,17 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
     if (
       binding?.type === 'Import' &&
-      (imports.has(binding.node.start) || configImports.has(binding.node.start))
+      (imports.has(binding.node.start) ||
+        configImports.has(binding.node.start) ||
+        factoryImports.has(binding.node.start))
     ) {
+      if (
+        factoryImports.has(binding.node.start) &&
+        parent.type === 'CallExpression' &&
+        factories.has(parent.start)
+      )
+        return true
+
       if (
         parent.type === 'MemberExpression' &&
         grandparent?.type === 'CallExpression' &&

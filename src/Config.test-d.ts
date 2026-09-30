@@ -3,7 +3,7 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config as PublicConfig, Style } from 'zyzz'
+import { Config as PublicConfig, defineConfig, Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
@@ -364,5 +364,18 @@ test('keeps property groups internal', () => {
     vars: { spacing: { small: '4px' } },
     // @ts-expect-error Token fallback groups are not configurable.
     propertyGroups: { width: ['spacing'] },
+  })
+})
+
+describe('defineConfig', () => {
+  test('preserves the config factory and its namespace types', () => {
+    expectTypeOf(defineConfig).toEqualTypeOf(PublicConfig.create)
+    expectTypeOf<defineConfig.Options>().toEqualTypeOf<PublicConfig.create.Options>()
+    const config = defineConfig({ vars: { color: { brand: '#123456' } } })
+    config.style({ color: 'brand' })
+    // @ts-expect-error Configured color names retain their literal domain.
+    config.style({ color: 'missing' })
+    // @ts-expect-error Unknown configuration options remain rejected.
+    defineConfig({ unknown: true })
   })
 })

@@ -1,7 +1,7 @@
 /** Checks variable reference domains and configured token inference. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import * as Zyzz from 'zyzz'
-import { Config, Vars } from 'zyzz'
+import { Config, defineVars, extendVars, Vars } from 'zyzz'
 
 describe('define', () => {
   test('infers deeply merged derived references', () => {
@@ -351,5 +351,28 @@ test('infers numeric and compound token names', () => {
     transitionProperty: 'fade',
     gridTemplateColumns: 'split',
     backgroundPosition: 'offset',
+  })
+})
+
+describe('defineVars', () => {
+  test('preserves overloads, derived reference inference, and literal domains', () => {
+    expectTypeOf(defineVars).toEqualTypeOf(Vars.define)
+    const vars = defineVars({ color: { brand: '#123456' } }, (base) => ({
+      color: { foreground: base.color.brand },
+    }))
+    expectTypeOf(vars.color.foreground.group).toEqualTypeOf<'color'>()
+  })
+})
+
+describe('extendVars', () => {
+  test('preserves compatible paths and value validation', () => {
+    expectTypeOf(extendVars).toEqualTypeOf(Vars.extend)
+    const base = defineVars({ color: { brand: '#123456' } })
+    const extended = extendVars(base, { color: { brand: '#654321' } })
+    expectTypeOf(extended).toEqualTypeOf(base)
+    // @ts-expect-error Overrides must keep the original value domain.
+    extendVars(base, { color: { brand: '8px' } })
+    // @ts-expect-error Overrides cannot introduce new paths.
+    extendVars(base, { color: { missing: '#654321' } })
   })
 })

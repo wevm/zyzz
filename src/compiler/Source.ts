@@ -375,6 +375,9 @@ export function extract(options: extract.Options): extract.ReturnType {
           if (
             name === 'Config' ||
             name === 'cx' ||
+            name === 'defineConfig' ||
+            name === 'defineVars' ||
+            name === 'extendVars' ||
             name === 'style' ||
             name === 'Theme' ||
             name === 'Vars' ||

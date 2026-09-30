@@ -3,13 +3,13 @@
 Define shared values independently of their CSS property mappings. Variable sets support nested categories, light/dark colors, ordered media overrides, and references to other sets.
 
 ```ts
-import { Config, Vars } from 'zyzz'
+import { defineConfig, defineVars, extendVars } from 'zyzz'
 
-const palette = Vars.define({
+const palette = defineVars({
   gray: { 50: '#fafafa', 900: '#171717' },
 })
 
-const base = Vars.define({
+const base = defineVars({
   color: {
     foreground: { light: palette.gray[900], dark: palette.gray[50] },
     accent: '#2563eb',
@@ -19,15 +19,17 @@ const base = Vars.define({
   },
 })
 
-const alternate = Vars.extend(base, {
+const alternate = extendVars(base, {
   color: { accent: '#9333ea' },
 })
 
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: { base, alternate },
   defaultVars: 'base',
 })
 ```
+
+`defineVars` and `extendVars` are root aliases for `Vars.define` and `Vars.extend`. Both namespace methods remain supported with the same types and behavior.
 
 ```tsx
 import { style, vars } from './zyzz.config.js'

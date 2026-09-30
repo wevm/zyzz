@@ -4,7 +4,7 @@ import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
-import { Config, Style, Vars } from 'zyzz'
+import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
 
 import { StyleSheet } from 'zyzz/react-native'
 
@@ -912,4 +912,54 @@ test('keeps extended reference fallbacks distinct in source and packed scopes', 
   } finally {
     await browser.close()
   }
+})
+
+describe('defineVars', () => {
+  test.each([false, true])(
+    'compiles variable aliases and derived references with renamed imports: %s',
+    (renamed) => {
+      const define = renamed ? 'values' : 'defineVars'
+      const extend = renamed ? 'override' : 'extendVars'
+      const config = `import {defineConfig, defineVars${renamed ? ' as values' : ''}, extendVars${renamed ? ' as override' : ''}} from 'zyzz';
+      const base = ${define}({color:{brand:'#123456'}}, (vars) => ({color:{foreground:vars.color.brand}}), {id:'palette'});
+      const alternate = ${extend}(base, {color:{brand:'#654321'}});
+      export const {style,vars} = defineConfig({vars:alternate});`
+      const library = Graph.compile({ modules: { 'config.ts': config } })
+
+      expect(defineVars === Vars.define).toMatchInlineSnapshot(`true`)
+      expect(extendVars === Vars.extend).toMatchInlineSnapshot(`true`)
+
+      for (const packed of [false, true]) {
+        const result = Graph.compile({
+          ...(packed
+            ? { contracts: { 'config.ts': library.contracts['config.ts']! } }
+            : {}),
+          imports: {
+            'app.ts': { './config': 'config.ts' },
+            'config.ts': { zyzz: null },
+          },
+          modules: {
+            ...(!packed ? { 'config.ts': config } : {}),
+            'app.ts': `import {style} from './config'; export const card=style({color:'brand'});`,
+          },
+        })
+
+        if (packed)
+          expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+          ".z_theme-id-70-61-6c-65-74-74-65{--z-tid-70-61-6c-65-74-74-65-color_2e_brand:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-tid-70-61-6c-65-74-74-65-color_2e_brand,#123456);}
+          .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-tid-70-61-6c-65-74-74-65-color_2e_brand:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-tid-70-61-6c-65-74-74-65-color_2e_brand,#654321);}
+          .z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;--z-color-foreground-ee9lfVRgJjs:var(--z-color-brand-bJVleUJpPJY,#654321);}
+          .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
+        `)
+        else
+          expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+          ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;}
+          .z_scheme-dark{color-scheme:dark;}
+          .z_scheme-light{color-scheme:light;}
+          .z_scheme-light-dark{color-scheme:light dark;}
+          .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
+        `)
+      }
+    },
+  )
 })

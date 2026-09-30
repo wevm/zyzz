@@ -92,7 +92,7 @@ describe('/vars', () => {
       html.includes('font-size:40px;font-family:sans-serif;line-height:28px'),
     ).toMatchInlineSnapshot('true')
     expect(
-      html.includes('font-size:40px;font-family:sans-serif;line-height:48px'),
+      html.includes('font-size:24px;font-family:sans-serif;line-height:48px'),
     ).toMatchInlineSnapshot('true')
     expect(
       html.includes('vars.typography.heading[&quot;@media'),
@@ -155,6 +155,102 @@ describe('/vars', () => {
       'true',
     )
     expect(html.includes('border-radius:6px')).toMatchInlineSnapshot('true')
+  })
+
+  test('rejects non-finite JSON numbers and renders finite numeric typography', async () => {
+    const url = new URL('/vars', origin)
+    url.searchParams.set(
+      'v',
+      `lz:${LZString.compressToEncodedURIComponent('{"weight":{"bad":1e309}}')}`,
+    )
+    const html = await (await fetch(url)).text()
+    expect(
+      html.includes('Variable numbers must be finite.'),
+    ).toMatchInlineSnapshot('true')
+
+    const valid = await page({
+      typography: {
+        body: {
+          fontSize: 16,
+          fontWeight: 'bold',
+          lineHeight: 1.5,
+          letterSpacing: 0,
+        },
+      },
+    })
+    expect(
+      valid.includes(
+        'font-size:16px;font-weight:bold;letter-spacing:0;line-height:1.5',
+      ),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      valid.includes('vars.typography.body.fontWeight'),
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('renders inherited category names and uses unique accessible IDs', async () => {
+    const html = await page({
+      toString: { small: '8px' },
+      valueOf: { big: '16px' },
+      'brand colors': { ink: '#123456' },
+      'brand-colors': { ink: '#654321' },
+      'brand colors-heading': { ink: '#abcdef' },
+    })
+    expect(html.includes('vars.toString.small')).toMatchInlineSnapshot('true')
+    expect(html.includes('vars.valueOf.big')).toMatchInlineSnapshot('true')
+    const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((match) => match[1])
+    expect(ids.some((id) => /\s/.test(id!))).toMatchInlineSnapshot('false')
+    expect(new Set(ids).size === ids.length).toMatchInlineSnapshot('true')
+    const labels = [...html.matchAll(/ aria-labelledby="([^"]+)"/g)].map(
+      (match) => match[1],
+    )
+    expect(labels.length).toMatchInlineSnapshot('5')
+    expect(labels.every((label) => ids.includes(label))).toMatchInlineSnapshot(
+      'true',
+    )
+  })
+
+  test('bounds mappings and renders large mapped and conditional groups', async () => {
+    const invalid = await page(
+      {
+        vars: { space: { sm: '8px' } },
+        mappings: { space: Array(257).fill('padding') },
+      },
+      true,
+    )
+    expect(
+      invalid.includes('at most 256 properties each'),
+    ).toMatchInlineSnapshot('true')
+
+    const html = await page(
+      {
+        vars: {
+          space: Object.fromEntries(
+            Array.from({ length: 1000 }, (_, index) => [`s${index}`, '8px']),
+          ),
+          typography: {
+            heading: {
+              fontSize: '24px',
+              ...Object.fromEntries(
+                Array.from({ length: 1000 }, (_, index) => [
+                  `@media (min-width: ${index}px)`,
+                  { lineHeight: 1.5 },
+                ]),
+              ),
+            },
+          },
+        },
+        mappings: { space: ['padding', ...Array(255).fill('unknown')] },
+      },
+      true,
+    )
+    expect(html.includes('vars.space.s999')).toMatchInlineSnapshot('true')
+    expect(html.includes('@media (min-width: 999px)')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(
+      (html.match(/title="vars.typography.heading"/g) ?? []).length,
+    ).toMatchInlineSnapshot('1001')
   })
 
   test('rejects invalid and oversized compressed configurations at the route', async () => {

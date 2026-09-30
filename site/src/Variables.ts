@@ -11,17 +11,16 @@ export type Entry = {
   condition?: string
   dark?: string
   path: readonly string[]
-  raw?: object
   kind: string
   value: string | number | Typography
 }
 
 export type Typography = {
   fontFamily?: string
-  fontSize: string
-  fontWeight?: number
-  letterSpacing?: string
-  lineHeight?: string
+  fontSize: string | number
+  fontWeight?: string | number
+  letterSpacing?: string | number
+  lineHeight?: string | number
 }
 
 /** Reads raw variables or a configuration with vars and optional mappings. */
@@ -51,7 +50,12 @@ export function decode(value: string | undefined): Configuration | undefined {
   function validate(value: unknown, depth: number) {
     if (++count > 20000 || depth > 24)
       throw new Error('The configuration has too many values or nested groups.')
-    if (typeof value === 'string' || typeof value === 'number') return
+    if (typeof value === 'string') return
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value))
+        throw new Error('Variable numbers must be finite.')
+      return
+    }
     if (!record(value))
       throw new Error(
         'Variable values must be strings, numbers, or nested objects.',
@@ -78,11 +82,12 @@ export function decode(value: string | undefined): Configuration | undefined {
       Object.values(mappings).some(
         (value) =>
           !Array.isArray(value) ||
+          value.length > 256 ||
           value.some((property) => typeof property !== 'string'),
       ))
   )
     throw new Error(
-      'Mappings must be false or an object of CSS property arrays.',
+      'Mappings must be false or an object of CSS property arrays with at most 256 properties each.',
     )
   return {
     vars,
@@ -97,7 +102,20 @@ export function collect(
   path: readonly string[] = [],
   mappings?: Configuration['mappings'],
 ): readonly Entry[] {
-  const kind = previewKind(path, value, mappings)
+  const properties =
+    mappings && Object.hasOwn(mappings, path[0] ?? '')
+      ? mappings[path[0] ?? '']
+      : undefined
+  const mapped = properties?.find((property) => Object.hasOwn(kinds, property))
+  return collectValue(value, path, mapped ? kinds[mapped] : undefined)
+}
+
+function collectValue(
+  value: unknown,
+  path: readonly string[],
+  mapped?: string,
+): readonly Entry[] {
+  const kind = previewKind(path, value, mapped)
   if (typeof value === 'string' || typeof value === 'number')
     return [{ path, value, kind }]
   if (!record(value)) return []
@@ -120,22 +138,29 @@ export function collect(
       ]),
     ]
     const entries: Entry[] = []
-    const overrides: Record<string, unknown> = {}
     for (const condition of ['default', ...conditions]) {
       const resolved = Object.fromEntries(
         fields
           .map((key) => {
             const field = value[key]
-            if (record(field) && Object.hasOwn(field, condition))
-              overrides[key] = field[condition]
+            const base = record(field) ? field.default : field
             const block = value[condition]
             if (record(block) && Object.hasOwn(block, key))
-              overrides[key] = block[key]
-            return [key, Object.hasOwn(overrides, key) ? overrides[key] : field]
+              return [key, block[key]]
+            return [
+              key,
+              record(field) && Object.hasOwn(field, condition)
+                ? field[condition]
+                : base,
+            ]
           })
           .filter(([, value]) => value !== undefined),
       )
-      if (typeof resolved.fontSize !== 'string') continue
+      if (
+        typeof resolved.fontSize !== 'string' &&
+        typeof resolved.fontSize !== 'number'
+      )
+        continue
       entries.push({
         path,
         ...(condition === 'default' ? {} : { condition }),
@@ -144,17 +169,19 @@ export function collect(
           ...(typeof resolved.fontFamily === 'string'
             ? { fontFamily: resolved.fontFamily }
             : {}),
-          ...(typeof resolved.fontWeight === 'number'
+          ...(typeof resolved.fontWeight === 'string' ||
+          typeof resolved.fontWeight === 'number'
             ? { fontWeight: resolved.fontWeight }
             : {}),
-          ...(typeof resolved.letterSpacing === 'string'
+          ...(typeof resolved.letterSpacing === 'string' ||
+          typeof resolved.letterSpacing === 'number'
             ? { letterSpacing: resolved.letterSpacing }
             : {}),
-          ...(typeof resolved.lineHeight === 'string'
+          ...(typeof resolved.lineHeight === 'string' ||
+          typeof resolved.lineHeight === 'number'
             ? { lineHeight: resolved.lineHeight }
             : {}),
         },
-        raw: value,
         kind: 'typography',
       })
     }
@@ -163,15 +190,17 @@ export function collect(
         ...entries,
         ...Object.entries(value)
           .filter(([key]) => !fields.includes(key) && !conditional(key))
-          .flatMap(([key, child]) => collect(child, [...path, key], mappings)),
+          .flatMap(([key, child]) =>
+            collectValue(child, [...path, key], mapped),
+          ),
         ...Object.entries(value).flatMap(([condition, child]) => {
           if (!conditional(condition) || !record(child)) return []
-          return collect(
+          return collectValue(
             Object.fromEntries(
               Object.entries(child).filter(([key]) => !fields.includes(key)),
             ),
             path,
-            mappings,
+            mapped,
           ).map((entry) => ({ ...entry, condition }))
         }),
       ]
@@ -180,7 +209,7 @@ export function collect(
     return [
       {
         path,
-        kind: previewKind(path, value.light, mappings),
+        kind: previewKind(path, value.light, mapped),
         value: value.light,
         dark: value.dark,
       },
@@ -190,78 +219,22 @@ export function collect(
     Object.keys(value).every((key) => key === 'default' || conditional(key))
   )
     return Object.entries(value).flatMap(([condition, child]) =>
-      collect(child, path, mappings).map((entry) => ({
+      collectValue(child, path, mapped).map((entry) => ({
         ...entry,
         ...(condition === 'default' ? {} : { condition }),
       })),
     )
   return Object.entries(value)
     .filter(([key]) => path.length !== 0 || key !== 'containerNames')
-    .flatMap(([key, child]) => collect(child, [...path, key], mappings))
+    .flatMap(([key, child]) => collectValue(child, [...path, key], mapped))
 }
 
-/** Maps custom categories to CSS properties before using name/value hints. */
-export function previewKind(
+/** Selects previews from the resolved mapping, property names, and values. */
+function previewKind(
   path: readonly string[],
   value: unknown,
-  mappings?: Configuration['mappings'],
+  mapped?: string,
 ): string {
-  const kinds: Record<string, string> = {
-    backgroundColor: 'color',
-    color: 'color',
-    borderColor: 'color',
-    fill: 'color',
-    stroke: 'color',
-    fontFamily: 'fontFamily',
-    fontSize: 'fontSize',
-    fontWeight: 'fontWeight',
-    letterSpacing: 'letterSpacing',
-    lineHeight: 'lineHeight',
-    borderRadius: 'radius',
-    cornerRadius: 'radius',
-    radius: 'radius',
-    boxShadow: 'shadow',
-    shadow: 'shadow',
-    insetShadow: 'insetShadow',
-    dropShadow: 'dropShadow',
-    textShadow: 'textShadow',
-    width: 'container',
-    maxWidth: 'container',
-    minWidth: 'container',
-    container: 'container',
-    breakpoint: 'breakpoint',
-    gap: 'spacing',
-    padding: 'spacing',
-    margin: 'spacing',
-    spacing: 'spacing',
-    pageMargin: 'spacing',
-    pageGutter: 'spacing',
-    pagePadding: 'spacing',
-    section: 'spacing',
-    pageColumns: 'columns',
-    gridTemplateColumns: 'columns',
-    columns: 'columns',
-    borderWidth: 'borderWidth',
-    size: 'fontSize',
-    headingSize: 'fontSize',
-    labelSize: 'fontSize',
-    descriptionSize: 'fontSize',
-    articleHeadingSize: 'fontSize',
-    aspect: 'aspect',
-    aspectRatio: 'aspect',
-    blur: 'blur',
-    perspective: 'perspective',
-    ease: 'ease',
-    transitionTimingFunction: 'ease',
-    animate: 'animate',
-    animation: 'animate',
-  }
-  const properties = mappings ? mappings[path[0] ?? ''] : undefined
-  const mapped = properties
-    ?.map((property) =>
-      Object.hasOwn(kinds, property) ? kinds[property] : undefined,
-    )
-    .find(Boolean)
   if (mapped) return mapped
   for (const key of [...path].reverse())
     if (Object.hasOwn(kinds, key)) return kinds[key]!
@@ -339,4 +312,55 @@ function decompress(input: string) {
     if (--remaining === 0) remaining = 2 ** size++
   }
   return LZString.decompressFromEncodedURIComponent(encoded)
+}
+
+const kinds: Record<string, string> = {
+  animate: 'animate',
+  animation: 'animate',
+  articleHeadingSize: 'fontSize',
+  aspect: 'aspect',
+  aspectRatio: 'aspect',
+  backgroundColor: 'color',
+  blur: 'blur',
+  borderColor: 'color',
+  borderRadius: 'radius',
+  borderWidth: 'borderWidth',
+  boxShadow: 'shadow',
+  breakpoint: 'breakpoint',
+  color: 'color',
+  columns: 'columns',
+  container: 'container',
+  cornerRadius: 'radius',
+  descriptionSize: 'fontSize',
+  dropShadow: 'dropShadow',
+  ease: 'ease',
+  fill: 'color',
+  fontFamily: 'fontFamily',
+  fontSize: 'fontSize',
+  fontWeight: 'fontWeight',
+  gap: 'spacing',
+  gridTemplateColumns: 'columns',
+  headingSize: 'fontSize',
+  insetShadow: 'insetShadow',
+  labelSize: 'fontSize',
+  letterSpacing: 'letterSpacing',
+  lineHeight: 'lineHeight',
+  margin: 'spacing',
+  maxWidth: 'container',
+  minWidth: 'container',
+  padding: 'spacing',
+  pageColumns: 'columns',
+  pageGutter: 'spacing',
+  pageMargin: 'spacing',
+  pagePadding: 'spacing',
+  perspective: 'perspective',
+  radius: 'radius',
+  section: 'spacing',
+  shadow: 'shadow',
+  size: 'fontSize',
+  spacing: 'spacing',
+  stroke: 'color',
+  textShadow: 'textShadow',
+  transitionTimingFunction: 'ease',
+  width: 'container',
 }

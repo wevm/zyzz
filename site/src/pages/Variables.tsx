@@ -61,10 +61,10 @@ export function Page({
                 .filter(Number.isFinite),
             )
       return {
-        ...(categories[name as keyof typeof categories] ?? {
-          icon: BoxIcon,
-          title: title(name),
-        }),
+        ...(Object.hasOwn(categories, name)
+          ? categories[name as keyof typeof categories]
+          : { icon: BoxIcon, title: title(name) }),
+        id: domId(['category', name]),
         color:
           entries.length > 0 &&
           entries.every((entry) => entry.kind === 'color'),
@@ -74,7 +74,7 @@ export function Page({
       }
     })
 
-  const [category, setCategory] = useState('color')
+  const [category, setCategory] = useState(domId(['category', 'color']))
   const [colorScheme, setColorScheme] = useState<
     'light' | 'dark' | 'light dark'
   >('light dark')
@@ -115,13 +115,14 @@ export function Page({
     .map((group) => ({
       ...group,
       entries: group.entries.filter((entry) => {
+        if (!search) return true
         const fields =
           typeof entry.value === 'object'
             ? Object.keys(entry.value)
                 .map((key) => reference([...entry.path, key]))
                 .join(' ')
             : ''
-        return `${group.title} ${title(entry.path[1] ?? '')} ${entry.path.join('.')} ${reference(entry.path)} ${JSON.stringify(entry.raw ?? entry.value)} ${entry.dark ?? ''} ${entry.condition ?? ''} ${fields}`
+        return `${group.title} ${title(entry.path[1] ?? '')} ${entry.path.join('.')} ${reference(entry.path)} ${JSON.stringify(entry.value)} ${entry.dark ?? ''} ${entry.condition ?? ''} ${fields}`
           .toLowerCase()
           .includes(search)
       }),
@@ -139,7 +140,7 @@ export function Page({
         .sort((a, b) => (a ?? '').localeCompare(b ?? ''))
         .map((name) => ({
           name,
-          id: [group.name, name].filter(Boolean).join('-'),
+          id: domId(['subsection', group.name, name ?? '']),
           entries: group.entries.filter(
             (entry) => (entry.path.length > 2 ? entry.path[1] : '') === name,
           ),
@@ -281,9 +282,9 @@ export function Page({
                   {filtered.map((group) => (
                     <a
                       aria-current={
-                        category === group.name ? 'location' : undefined
+                        category === group.id ? 'location' : undefined
                       }
-                      href={`#${group.name}`}
+                      href={`#${group.id}`}
                       key={group.name}
                       {...styles.category()}
                     >
@@ -303,14 +304,14 @@ export function Page({
                 )}
                 {filtered.map((group) => (
                   <section
-                    aria-labelledby={`${group.name}-heading`}
-                    id={group.name}
+                    aria-labelledby={domId(['heading', group.name])}
+                    id={group.id}
                     key={group.name}
                     {...styles.section()}
                   >
                     <div {...styles.sectionIntro()}>
                       <h2
-                        id={`${group.name}-heading`}
+                        id={domId(['heading', group.name])}
                         {...styles.sectionHeading()}
                       >
                         {group.title}
@@ -319,9 +320,7 @@ export function Page({
                     <div {...styles.sectionContent()}>
                       {group.sections.map((section) => (
                         <div
-                          id={
-                            section.id === group.name ? undefined : section.id
-                          }
+                          id={!section.name ? undefined : section.id}
                           key={section.id}
                           {...styles.subsection()}
                         >
@@ -899,6 +898,16 @@ namespace styles {
   })
 }
 
+function domId(path: readonly string[]) {
+  return path
+    .map((key) =>
+      Array.from(key, (character) =>
+        character.codePointAt(0)!.toString(16),
+      ).join('-'),
+    )
+    .join('_')
+}
+
 function reference(path: readonly string[]) {
   return path.reduce((name, key) => {
     if (/^(0|[1-9]\d*)$/.test(key)) return `${name}[${key}]`
@@ -979,13 +988,13 @@ function Preview({
       case 'fontFamily':
         return { fontFamily: value }
       case 'fontSize':
-        return { fontSize: value, lineHeight: 1.2 }
+        return { fontSize: entry.value, lineHeight: 1.2 }
       case 'fontWeight':
-        return { fontWeight: Number(value) }
+        return { fontWeight: entry.value }
       case 'letterSpacing':
-        return { letterSpacing: value }
+        return { letterSpacing: entry.value }
       case 'lineHeight':
-        return { lineHeight: value, whiteSpace: 'pre-line' }
+        return { lineHeight: entry.value, whiteSpace: 'pre-line' }
       case 'textShadow':
         return { textShadow: value }
       case 'ease':

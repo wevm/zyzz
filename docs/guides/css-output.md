@@ -6,9 +6,9 @@
 Choose the CSS representation on the authoring config:
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, variants } = Config.create({
+export const { style, variants } = defineConfig({
   cssOutput: 'atomic',
 })
 ```
@@ -88,7 +88,7 @@ Global rules, keyframes, property registrations, font descriptors, and theme sco
 
 ## Delivery
 
-The CLI and Vite enable source compilation by default. `zyzz build --css-only`, `zyzz dev --css-only`, and `zyzz({ compiler: false })` retain original source. `Config.create({ cssOutput: 'grouped' })` selects grouped CSS through every path.
+The CLI and Vite enable source compilation by default. `zyzz build --css-only`, `zyzz dev --css-only`, and `zyzz({ compiler: false })` retain original source. `defineConfig({ cssOutput: 'grouped' })` selects grouped CSS through every path.
 
 Without compilation, dynamic styles, variants, variables, named themes, and selector identities require explicit IDs. Static token-free styles derive their identities from authored data. Atomic rules can share a fixed runtime selector while retaining separate declarations. No CSS rules are emitted or inserted at runtime.
 
@@ -98,7 +98,7 @@ Minification and browser-target processing remain separate. Final processing may
 
 Performance comparisons use grouped output across repeated and mostly unique styles, including CSS, JavaScript, class strings, combined transfer, compilation, and rendering. Atomic remains the application default and has correctness coverage; no atomic performance advantage is claimed.
 
-See [Config.create](../api/core/Config/create.md#optionscssoutput) for the option.
+See [defineConfig](../api/core/Config/create.md#optionscssoutput) for the option.
 
 With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.
 

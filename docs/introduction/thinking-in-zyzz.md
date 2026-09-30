@@ -98,9 +98,9 @@ Importing `style` from `zyzz` gives token-free authoring. Importing it from a pr
 In `zyzz.config.ts`, export the configured helpers:
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: {
     color: { surface: '#fff' },
     spacing: { comfortable: '1.5rem' },
@@ -125,7 +125,7 @@ export function Card() {
 }
 ```
 
-Shared colors, spacing, and typography belong in a [theme](../guides/themes.md). Named exports from `Config.create` carry those constraints to consumers. The bundled theme is an opt-in import from `zyzz/default`.
+Shared colors, spacing, and typography belong in a [theme](../guides/themes.md). Named exports from `defineConfig` carry those constraints to consumers. The bundled theme is an opt-in import from `zyzz/default`.
 
 ## Variant styling over class concatenation
 

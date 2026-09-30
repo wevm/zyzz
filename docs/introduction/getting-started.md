@@ -12,9 +12,9 @@ pnpm add zyzz
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },

@@ -1,7 +1,7 @@
 /** Shares tokens, named themes, layers, and HTML attribute output. @module */
-import { Config, Vars } from 'zyzz'
+import { defineConfig, defineVars, extendVars } from 'zyzz'
 
-const base = Vars.define({
+const base = defineVars({
   radius: { card: '1rem' },
   breakpoint: { wide: '48rem' },
   color: {
@@ -20,12 +20,12 @@ const base = Vars.define({
   textColor: { subtle: { dark: '#aaaab8', light: '#626273' } },
 })
 
-const mint = Vars.extend(base, {
+const mint = extendVars(base, {
   color: { accent: { dark: '#6ee7b7', light: '#047857' } },
 })
 
 /** Svelte binds native attributes, so applied styles return `class` and a serialized `style`. */
-export const { appearance, script, style, vars } = Config.create({
+export const { appearance, script, style, vars } = defineConfig({
   defaultVars: 'indigo',
   layers: ['reset', 'base', 'components'],
   output: 'html',

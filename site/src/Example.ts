@@ -24,9 +24,9 @@ namespace styles {
   {
     name: 'zyzz.config.ts',
     lang: 'ts',
-    code: `import { Config } from 'zyzz'
+    code: `import { defineConfig } from 'zyzz'
 
-export const { style } = Config.create({
+export const { style } = defineConfig({
   vars: {
     color: {
       brand: '#0072f5',

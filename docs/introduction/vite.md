@@ -1,7 +1,7 @@
 # Vite Setup
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `defineConfig` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
 
 Add the adapter to the existing Vite configuration. Retain the application's framework plugin.
 
@@ -37,9 +37,9 @@ const { props } = await import('./card')
 element.className = props.className
 
 // card.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 import { theme } from './theme'
-const config = Config.create({ vars: theme })
+const config = defineConfig({ vars: theme })
 export const props = config.style({ color: 'brand' })()
 ```
 
@@ -47,9 +47,9 @@ export const props = config.style({ color: 'brand' })()
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: { color: { brand: '#06c' } },
 })
 ```

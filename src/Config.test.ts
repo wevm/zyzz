@@ -5,7 +5,7 @@
 import * as Path from 'node:path'
 import * as Packed from '../test/fixtures/Packed.js'
 import { Graph } from 'zyzz/compiler'
-import { Config as PublicConfig } from 'zyzz'
+import { Config as PublicConfig, defineConfig } from 'zyzz'
 import * as Ts from 'typescript-api'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
@@ -381,7 +381,10 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
     const read = (contract: unknown) =>
       Graph.compile({
         contracts: { 'config.ts': JSON.stringify(contract) },
-        imports: { 'app.ts': { './config': 'config.ts' } },
+        imports: {
+          'app.ts': { './config': 'config.ts' },
+          'config.ts': { zyzz: null },
+        },
         modules: {
           'app.ts': `import {style} from './config';export const button=style({color:'red'});`,
         },
@@ -970,3 +973,31 @@ function emit(input: unknown) {
     vars: 'themes' in config ? config.themes : {},
   })
 }
+
+describe('defineConfig', () => {
+  test.each(['defineConfig', 'defineConfig as configure'])(
+    'compiles named config imports: %s',
+    (specifier) => {
+      const name = specifier.includes(' as ') ? 'configure' : 'defineConfig'
+      const result = Graph.compile({
+        imports: {
+          'app.ts': { './config': 'config.ts' },
+          'config.ts': { zyzz: null },
+        },
+        modules: {
+          'config.ts': `import { ${specifier} } from 'zyzz'; export const {style,vars}= ${name}({vars:{color:{brand:'#123456'}}});`,
+          'app.ts': `import {style} from './config'; export const card=style({color:'brand'});`,
+        },
+      })
+
+      expect(defineConfig === PublicConfig.create).toMatchInlineSnapshot(`true`)
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+        ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#123456;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-text-I8iA9h{color:var(--z-color-brand-bJVleUJpPJY,#123456);}"
+      `)
+    },
+  )
+})

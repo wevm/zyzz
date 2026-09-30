@@ -213,15 +213,15 @@ namespace styles {
 }
 ```
 
-Extend the default theme with [`Vars.extend`](docs/api/core/Vars/README.md) to override existing tokens while retaining all other values and the same token contract.
+Extend the default theme with [`extendVars`](docs/api/core/Vars/README.md) to override existing tokens while retaining all other values and the same token contract.
 
 ```ts
 // zyzz.config.ts
-import { Config, Vars } from 'zyzz'
+import { defineConfig, extendVars } from 'zyzz'
 import { vars as defaultVars } from 'zyzz/default'
 
-export const { style, vars, variants } = Config.create({
-  vars: Vars.extend(defaultVars, {
+export const { style, vars, variants } = defineConfig({
+  vars: extendVars(defaultVars, {
     color: { blue: { 700: '#175' } },
   }),
 })
@@ -241,9 +241,9 @@ Export named config helpers with an application's own tokens. Colors accept a sh
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars, variants } = Config.create({
+export const { style, vars, variants } = defineConfig({
   vars: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
@@ -259,16 +259,16 @@ namespace styles {
 }
 ```
 
-Use [`Vars.define`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
+Use [`defineVars`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
 ### Token Values
 
 Use configured tokens for consistent styles, or the `!custom` suffix for arbitrary CSS. Properties without configured tokens accept both plain values and values with `!custom`. No extra option is needed.
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-const { style } = Config.create({
+const { style } = defineConfig({
   vars: {
     color: { foreground: '#171717' },
     spacing: { md: '8px' },

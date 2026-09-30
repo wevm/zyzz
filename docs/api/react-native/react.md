@@ -26,9 +26,9 @@ Keep application code unchanged at the style boundary:
 
 ```tsx
 import { Text } from 'react-native'
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-const { style } = Config.create({
+const { style } = defineConfig({
   vars: {
     base: { color: { ink: { light: '#111', dark: '#eee' } } },
     alternate: { color: { ink: { light: '#900', dark: '#fcc' } } },

@@ -13,8 +13,8 @@ export default defineConfig({ plugins: [zyzz(), svelte()] })
 
 ```ts
 // styles.ts
-import { Config } from 'zyzz'
-export const { style } = Config.create({ output: 'html' })
+import { defineConfig } from 'zyzz'
+export const { style } = defineConfig({ output: 'html' })
 export namespace styles {
   export const card = style({ padding: '8px' })
 }

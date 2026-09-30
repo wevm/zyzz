@@ -156,10 +156,10 @@ native: { colorScheme: 'light', set: 'brand', vars: { brand } }
 Supply immutable variable definitions keyed by output label. Select a label with `set`.
 
 ```ts
-import { Vars } from 'zyzz'
+import { defineVars } from 'zyzz'
 import { Host } from 'zyzz/node'
 
-const brand = Vars.define({ color: { ink: '#123456' } })
+const brand = defineVars({ color: { ink: '#123456' } })
 
 await using host = await Host.create({
   native: { colorScheme: 'light', set: 'brand', vars: { brand } },

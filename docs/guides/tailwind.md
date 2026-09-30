@@ -241,9 +241,9 @@ Move the values needed by migrated components into an explicit config. This exam
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars, variants } = Config.create({
+export const { style, vars, variants } = defineConfig({
   vars: {
     breakpoint: { md: '48rem' },
     color: { brand: '#2563eb' },
@@ -630,9 +630,9 @@ After preserving existing behavior, repeated light/dark color pairs can become s
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { appearance, script, style, vars } = Config.create({
+export const { appearance, script, style, vars } = defineConfig({
   vars: {
     color: {
       foreground: { dark: '#fff', light: '#111' },
@@ -684,9 +684,9 @@ Tailwind's [`@theme`](https://tailwindcss.com/docs/theme) defines utility tokens
 ```
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: {
     breakpoint: { md: '48rem' },
     color: { brand: '#2563eb' },
@@ -718,31 +718,31 @@ Tailwind's scalar `--spacing` generates multiples. Zyzz's spacing groups contain
 
 ### Extend Themes
 
-Use `Vars.define` for a reusable base and `Vars.extend` for compatible overrides:
+Use `defineVars` for a reusable base and `extendVars` for compatible overrides:
 
 ```ts
-import { Config, Vars } from 'zyzz'
+import { defineConfig, defineVars, extendVars } from 'zyzz'
 
-const base = Vars.define({
+const base = defineVars({
   color: { brand: '#2563eb' },
   spacing: { gutter: '1.5rem' },
 })
-const roomy = Vars.extend(base, { spacing: { gutter: '2rem' } })
+const roomy = extendVars(base, { spacing: { gutter: '2rem' } })
 
-export const { style, vars } = Config.create({ vars: roomy })
+export const { style, vars } = defineConfig({ vars: roomy })
 ```
 
-`Vars.extend` changes existing paths while retaining their contract. Add new paths to the base definition when designing a shared contract. It is not an unrestricted merge of arbitrary new token groups. See [Vars.extend](../api/core/Vars/README.md).
+`extendVars` changes existing paths while retaining their contract. Add new paths to the base definition when designing a shared contract. It is not an unrestricted merge of arbitrary new token groups. See [extendVars](../api/core/Vars/README.md).
 
 ### Replace Defaults
 
-A custom `Config.create({ theme })` does not implicitly include Zyzz defaults. Define the intended token groups directly. This replaces Tailwind's namespace-reset patterns such as `--color-*: initial` or `--*: initial` without requiring wildcard reset syntax.
+A custom `defineConfig({ theme })` does not implicitly include Zyzz defaults. Define the intended token groups directly. This replaces Tailwind's namespace-reset patterns such as `--color-*: initial` or `--*: initial` without requiring wildcard reset syntax.
 
 Import `style` from `zyzz/default` only when its values are intentional. Importing default helpers elsewhere does not change application-bound helpers.
 
 ### Share Themes
 
-Export a `Vars.define` value from a shared module and import it into application configs. Components import the resulting helpers. Published theme packages need matching compiler metadata; see [Shared Configuration](themes.md#shared-configuration) and [Publish Libraries](compilation.md#publish-libraries).
+Export a `defineVars` value from a shared module and import it into application configs. Components import the resulting helpers. Published theme packages need matching compiler metadata; see [Shared Configuration](themes.md#shared-configuration) and [Publish Libraries](compilation.md#publish-libraries).
 
 ### Inline Themes
 
@@ -841,9 +841,9 @@ Global declarations are collected eagerly from eligible project source, includin
 Declare layer order once and place rules in the intended layer:
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style } = Config.create({
+export const { style } = defineConfig({
   layers: ['reset', 'base', 'components', 'utilities'],
 })
 
@@ -923,7 +923,7 @@ Tailwind plugins do not execute inside Zyzz. Inventory their emitted selectors, 
 
 Tailwind [detects utility strings](https://tailwindcss.com/docs/detecting-classes-in-source-files). Zyzz analyzes supported JavaScript and TypeScript definitions, resolves their imports, and emits matching code and CSS. An import of configuration alone does not compile application source.
 
-The build adapter owns source discovery. Configuration passed to `Config.create` describes styling contracts, not Tailwind-style content globs.
+The build adapter owns source discovery. Configuration passed to `defineConfig` describes styling contracts, not Tailwind-style content globs.
 
 ### Source Roots
 

@@ -79,9 +79,11 @@ Type: `Readonly<Record<themeName, Vars.Definition>>`. Optional.
 Omission creates a `default` table using token fallbacks. Supplied theme labels become output keys. An empty map is invalid. Compatible theme definitions replace token values for each scheme. Unrelated token contracts retain their own fallbacks.
 
 ```ts
+import { extendVars } from 'zyzz'
+
 Variants.compile({
   recipe,
-  vars: { base: theme, alternate: Vars.extend(theme, {}) },
+  vars: { base: theme, alternate: extendVars(theme, {}) },
 })
 ```
 

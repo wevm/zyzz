@@ -3,15 +3,15 @@
 Bind styles and recipes to shared variables, named sets, property mappings, and CSS layers.
 
 ```ts
-import { Config, Vars } from 'zyzz'
+import { defineConfig, defineVars, extendVars } from 'zyzz'
 
-const base = Vars.define({
+const base = defineVars({
   color: { foreground: { light: '#171717', dark: '#fafafa' } },
   spacing: { page: '1rem' },
 })
-const alternate = Vars.extend(base, { spacing: { page: '2rem' } })
+const alternate = extendVars(base, { spacing: { page: '2rem' } })
 
-export const { appearance, script, style, vars, variants } = Config.create({
+export const { appearance, script, style, vars, variants } = defineConfig({
   vars: { base, alternate },
   defaultVars: 'base',
 })
@@ -62,7 +62,7 @@ See [Vars](../Vars/README.md) for derived references, conditional values, query 
 Set `mappings: false` to reference variables by their full path in any compatible CSS property. Short names are disabled; CSS values with `!custom` and explicit references still work. Values must match the property's CSS syntax.
 
 ```ts
-const { style, vars } = Config.create({
+const { style, vars } = defineConfig({
   vars: {
     surface: { foreground: '#123456' },
     spacing: { page: '16px' },
@@ -82,7 +82,7 @@ const card = style({
 Properties with configured tokens require a token name or a compatible variable reference. Append ` !custom` to arbitrary CSS values to bypass token resolution. These rules apply to styles, variants, nested declarations, and each fallback entry.
 
 ```ts
-const { style } = Config.create({
+const { style } = defineConfig({
   vars: {
     color: { foreground: '#171717' },
     spacing: { md: '8px' },
@@ -110,7 +110,7 @@ Configured names take precedence over CSS literals. A color token named `red` re
 `defaultLayer` places ordinary declarations, selectors, media queries, and recipe choices in a named layer. `layers` declares precedence independently. Explicit named or anonymous `@layer` blocks retain their authored placement, including inside selectors or media queries. Invalid layer names throw `Config.InvalidError`.
 
 ```ts
-export const { style, variants } = Config.create({
+export const { style, variants } = defineConfig({
   defaultLayer: 'components',
   layers: ['components', 'overrides'],
 })

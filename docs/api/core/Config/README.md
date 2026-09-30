@@ -6,6 +6,16 @@ Configuration-bound authoring and compatible variable scopes.
 import { Config } from 'zyzz'
 ```
 
+`defineConfig` is a root alias for `Config.create` and preserves its types.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: { color: { brand: '#123456' } },
+})
+```
+
 ## Methods
 
 | API                        | Description                                                                                                                                          |

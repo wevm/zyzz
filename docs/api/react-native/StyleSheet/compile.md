@@ -3,10 +3,10 @@
 Resolve shared definitions into deeply frozen native tables, indexed by theme label, color scheme, and style name.
 
 ```ts
-import { Style, Vars } from 'zyzz'
+import { defineVars, extendVars, Style } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
-const theme = Vars.define({ color: { text: { light: '#111', dark: '#fff' } } })
+const theme = defineVars({ color: { text: { light: '#111', dark: '#fff' } } })
 const styles = Style.define({ text: { color: theme.color.text } })
 const output = StyleSheet.compile({ styles, vars: { base: theme } })
 ```
@@ -42,7 +42,7 @@ Explicit output labels. Omitting themes creates a `default` table using each tok
 ```ts
 StyleSheet.compile({
   styles,
-  vars: { base: theme, alternate: Vars.extend(theme, {}) },
+  vars: { base: theme, alternate: extendVars(theme, {}) },
 })
 ```
 

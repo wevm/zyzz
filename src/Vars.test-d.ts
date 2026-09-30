@@ -28,6 +28,12 @@ describe('compose', () => {
     expectTypeOf(base.spacing.page.group).toEqualTypeOf<'spacing'>()
     const { style } = Config.create({ vars: base })
     style({ color: 'faded', padding: 'page' })
+    const full = Config.create({ vars: base, mappings: false })
+    full.style({
+      borderRadius: 'spacing.page',
+      borderWidth: 'spacing.page',
+      fontSize: 'spacing.page',
+    })
     style({ color: base.color.faded, width: base.spacing.page })
     Vars.extend(base, {
       color: {

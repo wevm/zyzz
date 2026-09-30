@@ -1,10 +1,11 @@
 /** Exercises variable authoring through source compilation and browser scopes. @module */
+import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
-import * as Ts from 'typescript-api'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
@@ -329,6 +330,11 @@ describe('define', () => {
   test('emits inferred cross-domain declarations for installed consumers', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-vars-declarations-'))
     const library = Path.join(root, 'node_modules/variable-fixture')
+    const typography = Array.from(
+      { length: 64 },
+      (_, index) =>
+        `body${index}: { default: '14px', '@media (min-width: 768px)': '16px', '@media (min-width: 1024px)': '18px', '@media (min-width: 1536px)': '20px' }`,
+    ).join(',')
 
     try {
       await Fs.mkdir(library, { recursive: true })
@@ -366,6 +372,7 @@ export const variables = zyzz.Vars.define({
 import { variables as core } from './core.js'
 export const variables = zyzz.Vars.define({
   color: { content: core.color.ink, faded: zyzz.Vars.compose('color', ['color-mix(in srgb, ', core.color.ink, ' 25%, transparent)']) }, dimension: { space: core.dimension.small, full: { default: core.dimension.full, '@media (min-width: 768px)': core.dimension.full } },
+  type: { ${typography} },
 }, { id: 'fixture/platform' })
 `,
       )
@@ -377,41 +384,46 @@ import { variables } from './${domain}.js'
 
 export { variables } from './${domain}.js'
 export const { style, variants, vars } = Config.create({ vars: variables, mappings: false, id: 'fixture/${domain}/config' })
+${domain === 'platform' ? `export const catalogButton = variants({ base: { borderRadius: 'dimension.full', paddingBlock: 'dimension.space' }, variants: { scale: { large: { fontSize: '14px !custom', height: 'dimension.space' }, medium: { fontSize: '14px !custom', height: 'dimension.space' }, small: { fontSize: '12px !custom', height: 'dimension.space' } } } }, { id: 'fixture/button' })` : ''}
 `,
         )
 
-      const options: Ts.CompilerOptions = {
-        declaration: true,
-        emitDeclarationOnly: true,
-        module: Ts.ModuleKind.NodeNext,
-        moduleResolution: Ts.ModuleResolutionKind.NodeNext,
-        outDir: Path.join(library, 'dist'),
-        rootDir: library,
-        skipLibCheck: false,
-        strict: true,
-        target: Ts.ScriptTarget.ESNext,
-        types: [],
-      }
-      const program = Ts.createProgram({
-        options,
-        rootNames: [
-          Path.join(library, 'core.ts'),
-          Path.join(library, 'core.config.ts'),
-          Path.join(library, 'platform.ts'),
-          Path.join(library, 'platform.config.ts'),
+      const project = Path.join(root, 'producer.json')
+      await Fs.writeFile(
+        project,
+        JSON.stringify({
+          compilerOptions: {
+            declaration: true,
+            emitDeclarationOnly: true,
+            module: 'nodenext',
+            moduleResolution: 'nodenext',
+            outDir: Path.join(library, 'dist'),
+            rootDir: library,
+            skipLibCheck: false,
+            strict: true,
+            target: 'esnext',
+            types: [],
+          },
+          files: [
+            'core.ts',
+            'core.config.ts',
+            'platform.ts',
+            'platform.config.ts',
+          ].map((file) => Path.join(library, file)),
+        }),
+      )
+      // Separate compiler processes avoid coverage overhead and keep the test worker responsive.
+      const emitted = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript-api/bin/tsc'),
+          '--project',
+          project,
         ],
-      })
-      const diagnostics = [
-        ...Ts.getPreEmitDiagnostics(program),
-        ...program.emit().diagnostics,
-      ]
+        { timeout: 30_000 },
+      )
 
-      expect(
-        diagnostics.map((diagnostic) => ({
-          code: diagnostic.code,
-          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
-        })),
-      ).toMatchInlineSnapshot('[]')
+      expect(emitted.stdout).toMatchInlineSnapshot('""')
       const declarations = await Fs.readFile(
         Path.join(library, 'dist/platform.d.ts'),
         'utf8',
@@ -424,14 +436,17 @@ export const { style, variants, vars } = Config.create({ vars: variables, mappin
       await Fs.writeFile(
         consumer,
         `import type * as zyzz from 'zyzz'
-import { variables, style, variants, vars } from 'variable-fixture/platform'
+import { catalogButton, variables, style, variants, vars } from 'variable-fixture/platform'
 const color: zyzz.Vars.Scalar<typeof variables.color.content> = '#123456'
 const length: zyzz.Vars.Scalar<typeof variables.dimension.space> = '8px'
 // @ts-expect-error Literal precision survives the Core alias and declaration boundary.
 const wrongLength: zyzz.Vars.Scalar<typeof variables.dimension.space> = '12px'
 style({ color: 'color.content', padding: 'dimension.space' })
 style({ padding: vars.dimension.space })
-style({ height: 'dimension.full' })
+style({ height: 'dimension.full', borderRadius: 'dimension.full', fontSize: 'dimension.full', borderWidth: 'dimension.full' })
+catalogButton({ scale: 'medium' })
+// @ts-expect-error Variant choices remain constrained with a large variable catalog.
+catalogButton({ scale: 'huge' })
 // @ts-expect-error Composed lengths cannot supply colors.
 style({ color: 'dimension.full' })
 style({ color: 'color.faded' })
@@ -447,25 +462,33 @@ button({ size: 'large' })
 void [color, length, wrongLength]
 `,
       )
-      const installed = Ts.createProgram({
-        options: {
-          module: Ts.ModuleKind.NodeNext,
-          moduleResolution: Ts.ModuleResolutionKind.NodeNext,
-          noEmit: true,
-          skipLibCheck: false,
-          strict: true,
-          target: Ts.ScriptTarget.ESNext,
-          types: [],
-        },
-        rootNames: [consumer],
-      })
+      const installedProject = Path.join(root, 'consumer.json')
+      await Fs.writeFile(
+        installedProject,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'nodenext',
+            moduleResolution: 'nodenext',
+            noEmit: true,
+            skipLibCheck: false,
+            strict: true,
+            target: 'esnext',
+            types: [],
+          },
+          files: [consumer],
+        }),
+      )
+      const installed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript-api/bin/tsc'),
+          '--project',
+          installedProject,
+        ],
+        { timeout: 30_000 },
+      )
 
-      expect(
-        Ts.getPreEmitDiagnostics(installed).map((diagnostic) => ({
-          code: diagnostic.code,
-          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
-        })),
-      ).toMatchInlineSnapshot('[]')
+      expect(installed.stdout).toMatchInlineSnapshot('""')
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }

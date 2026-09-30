@@ -60,9 +60,9 @@ HTML compositions retain canonical inputs in a nonenumerable property on generat
 Pass `vars()` alongside applied styles to place a variable scope on the same element. Scope classes and optional `colorScheme` props are preserved, including conditional selections. Scope calls retain their normal runtime validation.
 
 ```tsx
-import { Config, cx } from 'zyzz'
+import { cx, defineConfig } from 'zyzz'
 
-const { style, vars } = Config.create({
+const { style, vars } = defineConfig({
   vars: { color: { brand: '#06c' } },
   mappings: false,
 })

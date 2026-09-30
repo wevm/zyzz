@@ -475,9 +475,9 @@ For a Zyzz design system, group those values by token domain in a config:
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars, variants } = Config.create({
+export const { style, vars, variants } = defineConfig({
   vars: {
     color: { accent: '#2563eb', surface: '#fff', text: '#111' },
     spacing: { gap: '16px' },
@@ -541,16 +541,16 @@ StyleX's [`createTheme`](https://stylexjs.com/docs/learn/theming/creating-themes
 
 ```ts
 // zyzz.config.ts
-import { Config, Vars } from 'zyzz'
+import { defineConfig, defineVars, extendVars } from 'zyzz'
 
-const base = Vars.define({
+const base = defineVars({
   color: { accent: '#2563eb', surface: '#fff', text: '#111' },
   spacing: { gap: '16px' },
 })
 
-const mint = Vars.extend(base, { color: { accent: '#047857' } })
+const mint = extendVars(base, { color: { accent: '#047857' } })
 
-export const { style, varss } = Config.create({
+export const { style, varss } = defineConfig({
   defaultVars: 'base',
   vars: {
     base,
@@ -582,9 +582,9 @@ An extension keeps the base contract and its unchanged values. Independently def
 For StyleX variables driven by `prefers-color-scheme`, preserve the media query or use paired Zyzz color tokens with an explicit scheme:
 
 ```tsx
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-const { style } = Config.create({
+const { style } = defineConfig({
   vars: {
     color: {
       surface: { dark: '#111', light: '#fff' },

@@ -1,16 +1,16 @@
 # Variables & Scopes
 
-Define shared values with `Vars`, bind property mappings with `Config.create`, and select sets on enclosing elements. See [Getting Started](../introduction/getting-started.md) for compilation setup.
+Define shared values with `Vars`, bind property mappings with `defineConfig`, and select sets on enclosing elements. See [Getting Started](../introduction/getting-started.md) for compilation setup.
 
 ## Recipes
 
 ### Define Variables
 
 ```ts
-import { Config, Vars } from 'zyzz'
+import { defineConfig, defineVars, extendVars } from 'zyzz'
 
-const palette = Vars.define({ gray: { 50: '#fafafa', 900: '#171717' } })
-const base = Vars.define({
+const palette = defineVars({ gray: { 50: '#fafafa', 900: '#171717' } })
+const base = defineVars({
   color: {
     foreground: { light: palette.gray[900], dark: palette.gray[50] },
     accent: '#2563eb',
@@ -18,7 +18,7 @@ const base = Vars.define({
   spacing: { page: '1rem' },
 })
 
-export const { style, vars } = Config.create({ vars: base })
+export const { style, vars } = defineConfig({ vars: base })
 const card = style({ color: 'foreground', padding: 'page' })
 const rail = style({ width: vars.spacing.page })
 ```
@@ -38,14 +38,14 @@ namespace styles {
 }
 ```
 
-Each set bundles font family, size, weight, letter spacing, and line height. Sets can include `@media` and `@container` blocks. Explicit typography fields override base and conditional preset fields within the same block. [Custom sets](../api/core/Vars/README.md) use the same nested structure and support field overrides with `Vars.extend`.
+Each set bundles font family, size, weight, letter spacing, and line height. Sets can include `@media` and `@container` blocks. Explicit typography fields override base and conditional preset fields within the same block. [Custom sets](../api/core/Vars/README.md) use the same nested structure and support field overrides with `extendVars`.
 
 ### Property Mappings
 
 Default mappings connect familiar categories to CSS properties. Dedicated categories such as `padding` take precedence over shared `spacing` for the same name. Custom mappings replace one category at a time; `[]` disables shorthand lookup for that category.
 
 ```ts
-const { style, vars } = Config.create({
+const { style, vars } = defineConfig({
   vars: { surface: { panel: '#fff' }, spacing: { page: '1rem' } },
   mappings: { surface: ['backgroundColor'], spacing: ['padding', 'gap'] },
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
@@ -58,8 +58,8 @@ const panel = style({ backgroundColor: 'panel', width: vars.spacing.page })
 ### Selecting Sets
 
 ```ts
-const alternate = Vars.extend(base, { color: { accent: '#9333ea' } })
-export const { appearance, script, style, vars } = Config.create({
+const alternate = extendVars(base, { color: { accent: '#9333ea' } })
+export const { appearance, script, style, vars } = defineConfig({
   vars: { base, alternate },
   defaultVars: 'base',
 })
@@ -72,7 +72,7 @@ export const { appearance, script, style, vars } = Config.create({
 </section>
 ```
 
-Every set has matching paths and compatible domains. `Vars.extend` overrides existing leaves and retains omitted values. `vars()` selects the configured default. The nearest enclosing scope supplies the values, and switching scopes emits no new CSS.
+Every set has matching paths and compatible domains. `extendVars` overrides existing leaves and retains omitted values. `vars()` selects the configured default. The nearest enclosing scope supplies the values, and switching scopes emits no new CSS.
 
 ### Color Schemes
 
@@ -87,7 +87,7 @@ A color can be shared or use a complete `{ light, dark }` pair. Select a scheme 
 ### Media Overrides
 
 ```ts
-const responsive = Vars.define({
+const responsive = defineVars({
   spacing: {
     page: {
       default: '1rem',
@@ -113,7 +113,7 @@ Generate `script()` on the server or at build time and execute its returned Java
 ### Named Queries
 
 ```ts
-const { style } = Config.create({
+const { style } = defineConfig({
   vars: {
     breakpoint: { tablet: '48rem' },
     container: { card: '20rem' },
@@ -131,10 +131,10 @@ Query aliases are compile-time metadata. They do not produce CSS custom properti
 ### Compile In Memory
 
 ```ts
-import { Style, Vars } from 'zyzz'
+import { defineVars, extendVars, Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
-const base = Vars.define({ color: { foreground: '#171717' } })
+const base = defineVars({ color: { foreground: '#171717' } })
 const styles = Style.define({ card: { color: base.color.foreground } })
 const output = Css.compile({ styles, vars: { base } })
 ```

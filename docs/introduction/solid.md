@@ -18,9 +18,9 @@ Select HTML output once in the shared configuration, then spread applied styles 
 
 ```tsx
 import { createSignal } from 'solid-js'
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-const { style } = Config.create({ output: 'html' })
+const { style } = defineConfig({ output: 'html' })
 
 namespace styles {
   export const bar = style((values: { width: `${number}%` }) => ({

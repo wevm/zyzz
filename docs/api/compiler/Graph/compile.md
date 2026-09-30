@@ -8,14 +8,14 @@ import { Graph } from 'zyzz/compiler'
 const output = Graph.compile({
   modules: {
     'app/theme.ts': `
-      import { Vars } from 'zyzz'
-      export const theme = Vars.define({ color: { brand: '#06c' } })
+      import { defineVars } from 'zyzz'
+      export const theme = defineVars({ color: { brand: '#06c' } })
     `,
     'app/card.ts': `
-      import { Config } from 'zyzz'
+      import { defineConfig } from 'zyzz'
       import { theme } from './theme.js'
       export namespace styles {
-        const config = Config.create({ vars: theme })
+        const config = defineConfig({ vars: theme })
         export const card = config.style({ color: 'brand' })
       }
     `,

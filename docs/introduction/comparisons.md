@@ -78,14 +78,14 @@ Each panel has `1rem` padding and displays "Content". Text is `#111` in light mo
 
 ### Zyzz
 
-`Config.create` binds tokens to named authoring helpers. Color pairs compile to `light-dark()`, and property domains constrain token usage. The optional [default theme](../api/default.md) is available from `zyzz/default`. See [Themes & Tokens](../guides/themes.md).
+`defineConfig` binds tokens to named authoring helpers. Color pairs compile to `light-dark()`, and property domains constrain token usage. The optional [default theme](../api/default.md) is available from `zyzz/default`. See [Themes & Tokens](../guides/themes.md).
 
 `zyzz.config.ts`:
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: {
     color: { content: { dark: '#eee', light: '#111' } },
     spacing: { panel: '1rem' },

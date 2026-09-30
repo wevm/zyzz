@@ -98,9 +98,9 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 | `overscrollBehavior`, `overscrollBehaviorX`, `overscrollBehaviorY` | `auto`, `contain`, `none`                         |
 
 ```ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-const { style } = Config.create({ vars: { spacing: { header: '4rem' } } })
+const { style } = defineConfig({ vars: { spacing: { header: '4rem' } } })
 namespace styles {
   export const scroller = style({
     overflow: 'auto',

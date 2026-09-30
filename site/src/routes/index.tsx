@@ -253,7 +253,7 @@ Read the documentation before implementation:
 
 Choose the compilation integration that matches the project. Importing styles alone does not emit CSS. Preserve existing framework plugins.
 
-Define shared variables and bound styling helpers with Config.create in zyzz.config.ts. Import helpers from the authored config, define component styles in a styles namespace, and spread their applied props onto native elements. Use zyzz/default when the default design tokens fit the project.
+Define shared variables and bound styling helpers with defineConfig in zyzz.config.ts. Import helpers from the authored config, define component styles in a styles namespace, and spread their applied props onto native elements. Use zyzz/default when the default design tokens fit the project.
 
 Implement the requested interface with reusable styles, variables, and themes. Run the project's type checks and build, and verify that compiled CSS renders correctly.`)
                 setInstructionsState('copied')

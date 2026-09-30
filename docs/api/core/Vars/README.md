@@ -53,7 +53,7 @@ const example = (
 `Vars.define(values, derive, options?)` adds derived values through a callback receiving typed references to the base values. Categories merge recursively. Duplicate leaves and leaf/category conflicts throw `Vars.InvalidError`. The callback cannot reference derived values. Both forms accept `options.id`.
 
 ```ts
-const base = Vars.define(
+const base = defineVars(
   { color: { palette: { ink: '#171717', paper: '#fafafa' } } },
   (vars) => ({
     color: {
@@ -65,7 +65,7 @@ const base = Vars.define(
   }),
 )
 
-const alternate = Vars.extend(base, {
+const alternate = extendVars(base, {
   color: { palette: { ink: '#2563eb' } },
 })
 ```
@@ -83,7 +83,7 @@ References retain their source identity. Extending a set changes values within i
 A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow Tailwind’s non-font namespaces and fallback order. Font scalar categories keep their matching properties.
 
 ```ts
-export const { style, vars } = Config.create({
+export const { style, vars } = defineConfig({
   vars: base,
   mappings: {
     color: ['color', 'backgroundColor'],
@@ -117,14 +117,14 @@ Source linking and packed-library contracts retain variable definitions, referen
 The `borderWidth` category maps to physical and logical border-width properties, excluding `borderImageWidth`. Named typography sets support ordered `@media` and `@container` blocks:
 
 ```ts
-const base = Vars.define({
+const base = defineVars({
   borderWidth: { regular: '2px' },
   breakpoint: { tablet: '48rem' },
   typography: {
     heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
   },
 })
-const { style } = Config.create({ vars: base })
+const { style } = defineConfig({ vars: base })
 const heading = style({ typography: 'heading', borderWidth: 'regular' })
 ```
 

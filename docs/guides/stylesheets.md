@@ -56,9 +56,9 @@ Declare layer order once in config. Bound styles infer the exact layer names.
 
 ```ts
 // zyzz.config.ts
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-export const { style } = Config.create({
+export const { style } = defineConfig({
   layers: ['reset', 'base', 'components'],
 })
 ```

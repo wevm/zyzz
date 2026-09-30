@@ -8,11 +8,20 @@ export * as Config from './Config.js'
 export { style } from './styleFunction.js'
 /** Ordered composition of applied styling props. */
 export { cx } from './cx.js'
-/** Creates isolated authoring with optional vars and named alternatives. */
+/**
+ * Creates isolated authoring with optional vars and named alternatives.
+ * @alias Config.create
+ */
 export { create as defineConfig } from './Config.js'
-/** Creates immutable typed variable sets without emitting CSS. */
+/**
+ * Creates immutable typed variable sets without emitting CSS.
+ * @alias Vars.define
+ */
 export { define as defineVars } from './Vars.js'
-/** Overrides variable values while preserving their shared contract. */
+/**
+ * Overrides variable values while preserving their shared contract.
+ * @alias Vars.extend
+ */
 export { extend as extendVars } from './Vars.js'
 /** Inferred component inputs from callable style definitions. */
 export type * as Props from './Props.js'

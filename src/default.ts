@@ -80,8 +80,8 @@ export const tokens = {
       1000: { dark: '#fef3dc', light: '#4e2009' },
     },
     background: {
-      100: { dark: '#0a0a0a', light: '#fff' },
-      200: { dark: '#000', light: '#fafafa' },
+      primary: { dark: '#000', light: '#fafafa' },
+      surface: { dark: '#0a0a0a', light: '#fff' },
     },
     black: '#000',
     blue: {
@@ -169,7 +169,6 @@ export const tokens = {
       900: { dark: '#ff6166', light: '#cb2a2f' },
       1000: { dark: '#feecee', light: '#391417' },
     },
-    surface: { dark: '#0a0a0a', light: '#fff' },
     teal: {
       100: { dark: '#04201b', light: '#eefcf9' },
       200: { dark: '#062822', light: '#e5faf6' },
@@ -428,14 +427,14 @@ export const tokens = {
         fontSize: '20px',
         fontWeight: 400,
         letterSpacing: '0px',
-        lineHeight: '36px',
+        lineHeight: '28px',
         strong: {
           fontFamily:
             'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
           fontSize: '20px',
           fontWeight: 550,
           letterSpacing: '0px',
-          lineHeight: '36px',
+          lineHeight: '28px',
         },
       },
       '24': {
@@ -722,8 +721,8 @@ const config = Config.create({
         1000: { dark: '#fef3dc', light: '#4e2009' },
       },
       background: {
-        100: { dark: '#0a0a0a', light: '#fff' },
-        200: { dark: '#000', light: '#fafafa' },
+        primary: { dark: '#000', light: '#fafafa' },
+        surface: { dark: '#0a0a0a', light: '#fff' },
       },
       black: '#000',
       blue: {
@@ -811,7 +810,6 @@ const config = Config.create({
         900: { dark: '#ff6166', light: '#cb2a2f' },
         1000: { dark: '#feecee', light: '#391417' },
       },
-      surface: { dark: '#0a0a0a', light: '#fff' },
       teal: {
         100: { dark: '#04201b', light: '#eefcf9' },
         200: { dark: '#062822', light: '#e5faf6' },
@@ -1070,14 +1068,14 @@ const config = Config.create({
           fontSize: '20px',
           fontWeight: 400,
           letterSpacing: '0px',
-          lineHeight: '36px',
+          lineHeight: '28px',
           strong: {
             fontFamily:
               'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
             fontSize: '20px',
             fontWeight: 550,
             letterSpacing: '0px',
-            lineHeight: '36px',
+            lineHeight: '28px',
           },
         },
         '24': {

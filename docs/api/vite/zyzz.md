@@ -1,7 +1,7 @@
 # zyzz
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root and explicitly included source directories, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
 
 Connect source transformation and CSS delivery to Vite.
 
@@ -18,7 +18,7 @@ export default defineConfig({ plugins: [zyzz()] })
 
 ## Parameters
 
-Optional `compiler`, `native`, `reset`, and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
+Optional `compiler`, `include`, `native`, `reset`, and `script` settings; see [Options](#options). Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
 
 ## Browser Targets
 
@@ -42,7 +42,7 @@ Source/target errors must remain located; failed development builds preserve the
 
 The adapter statically analyzes source; it does not execute theme factories at build time. Each virtual stylesheet includes its reachable source graph so compatible theme scopes are available. Shared rules can repeat before Vite’s final CSS processing.
 
-Raw authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. Packed dependencies can supply adjacent compiler metadata; exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
+Raw authoring inside virtual modules and framework SFCs is unsupported. Dependencies and files outside the Vite root require explicit source-directory inclusion. Packed dependencies can supply adjacent compiler metadata; exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
 
 See [zyzz/vite](README.md) for the entrypoint overview.
 
@@ -60,7 +60,19 @@ Each script reads the localStorage entry named by its configuration's `storageKe
 
 ## Options
 
-`zyzz({ compiler?: boolean, reset?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Vars, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+`zyzz({ compiler?: boolean, include?: readonly string[], reset?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Vars, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+
+### include
+
+Type: `readonly string[]`. Defaults to `[]`.
+
+Compile additional source directories alongside the Vite root. Paths are absolute or relative to the Vite root. Symlinked directories resolve to their physical paths. Included sources participate in CSS delivery, initialization, source maps, asset handling, and hot reload. Nested `node_modules`, build output, tests, and Vite configuration dependencies remain excluded.
+
+```ts
+zyzz({ include: ['../library/src'] })
+```
+
+Directories must exist. Vite still owns resolution and filesystem access. Linked package authoring entrypoints must be excluded from dependency optimization. Vite's `server.fs.allow` must also permit included directories outside its workspace when necessary.
 
 ### reset
 

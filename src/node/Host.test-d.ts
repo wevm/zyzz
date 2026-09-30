@@ -6,6 +6,20 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Host } from 'zyzz/node'
 
 describe('create', () => {
+  test('accepts explicit external import patterns', () => {
+    Host.create({
+      external: ['~icons/*', 'framework-config'],
+      packageId: 'app',
+      root: 'src',
+    })
+    Host.create({
+      // @ts-expect-error External imports are string patterns.
+      external: [/^~icons/],
+      packageId: 'app',
+      root: 'src',
+    })
+  })
+
   test('types host lifecycle and CSS processing options', async () => {
     await using host = await Host.create({
       css: { minify: true, targets: { safari: 12 << 16 } },

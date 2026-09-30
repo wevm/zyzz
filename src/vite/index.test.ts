@@ -11,6 +11,7 @@ import * as Path from 'node:path'
 import * as Os from 'node:os'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import { chromium } from 'playwright'
+import * as Tailwind from 'tailwindcss'
 import * as Vite from 'vite'
 import { describe, expect, test, vi } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
@@ -84,6 +85,285 @@ function message(
 }
 
 describe('zyzz', () => {
+  test('rejects files passed as additional source directories', async () => {
+    const { config, root } = await create()
+    try {
+      await expect(
+        Vite.createServer({
+          ...config,
+          plugins: [zyzz({ include: ['main.ts'] })],
+        }),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        '[Error: Zyzz include paths must be directories: main.ts]',
+      )
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
+  test('builds and hot reloads explicitly included linked library sources', async () => {
+    const { config, root } = await create({
+      'index.html':
+        '<input id="state"><main id="card"></main><script type="module" src="/main.js"></script>',
+      'main.js': `import './utilities.css';import './vocs.css';import {card} from '@fixture/library/card';document.querySelector('main').className=card().className+' vocs:p-4 p-2 vocs:dark:bg-black dark:text-white';if(import.meta.hot)import.meta.hot.accept();`,
+    })
+    const library = await Fs.mkdtemp(Path.resolve('.fixture-vite-included-'))
+    let server: Vite.ViteDevServer | undefined
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+    try {
+      for (const [prefix, layer, candidates, file] of [
+        ['', 'utilities', ['p-2', 'dark:text-white'], 'utilities.css'],
+        [
+          'vocs',
+          'vocs_utilities',
+          ['vocs:p-4', 'vocs:dark:bg-black'],
+          'vocs.css',
+        ],
+      ] as const) {
+        const utilities = await Tailwind.compile(
+          `@layer library, vocs_utilities, utilities;@theme ${prefix ? 'prefix(vocs)' : ''} {--spacing:4px;--color-white:#fff;--color-black:#000;}@custom-variant dark (&:where([style*="color-scheme: dark"], [style*="color-scheme: dark"] *));@layer ${layer} {@tailwind utilities;}`,
+        )
+        await Fs.writeFile(
+          Path.join(root, file),
+          utilities.build([...candidates]),
+        )
+      }
+
+      await Fs.mkdir(Path.join(root, 'node_modules/@fixture'), {
+        recursive: true,
+      })
+      await Fs.symlink(
+        library,
+        Path.join(root, 'node_modules/@fixture/library'),
+      )
+      await Fs.writeFile(
+        Path.join(library, 'package.json'),
+        JSON.stringify({
+          name: '@fixture/library',
+          type: 'module',
+          exports: { './card': './card.ts' },
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(library, 'theme.ts'),
+        `import {Config} from 'zyzz';export const {style}=Config.create({layers:['library'],defaultLayer:'library'});`,
+      )
+      await Fs.writeFile(
+        Path.join(library, 'card.ts'),
+        `import {style} from './theme.js';export const card=style({color:'red',padding:'24px',backgroundImage:'url(./image.svg)'});`,
+      )
+      await Fs.writeFile(
+        Path.join(library, 'image.svg'),
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+      )
+      // Configuration and nested dependencies remain outside source discovery.
+      await Fs.writeFile(
+        Path.join(root, 'vite.config.ts'),
+        `import missing from 'missing-build-plugin';throw missing;`,
+      )
+      await Fs.mkdir(Path.join(library, 'node_modules/unlisted'), {
+        recursive: true,
+      })
+      await Fs.symlink(
+        Path.resolve('.'),
+        Path.join(library, 'node_modules/zyzz'),
+      )
+      await Fs.writeFile(
+        Path.join(library, 'node_modules/unlisted/index.ts'),
+        `import missing from 'missing-transitive-package';throw missing;`,
+      )
+      const unlisted = await Vite.build({ ...config, build: { write: false } })
+      if (Array.isArray(unlisted) || !('output' in unlisted))
+        throw new Error('Expected a Vite build')
+      const unlistedCss = unlisted.output
+        .flatMap((file) =>
+          file.type === 'asset' && file.fileName.endsWith('.css')
+            ? [String(file.source)]
+            : [],
+        )
+        .join('\n')
+      expect(/color:\s*red/.test(unlistedCss)).toMatchInlineSnapshot('false')
+
+      config.plugins = [zyzz({ include: ['node_modules/@fixture/library'] })]
+      config.server = { ...config.server, fs: { allow: [root, library] } }
+
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false, write: false, sourcemap: true },
+      })
+      const output = Array.isArray(result) ? result[0] : result
+      if (!output || !('output' in output))
+        throw new Error('Expected a Vite build')
+      const css = output.output.find(
+        (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+      )
+      if (css?.type !== 'asset') throw new Error('Missing CSS output')
+      expect(/color:\s*red/.test(String(css.source))).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(
+        String(css.source).includes('@layer library'),
+      ).toMatchInlineSnapshot('true')
+      const map = output.output.find(
+        (file) => file.type === 'asset' && file.fileName.endsWith('.js.map'),
+      )
+      if (map?.type !== 'asset') throw new Error('Missing JavaScript map')
+      expect(
+        (JSON.parse(String(map.source)).sources as string[]).some((source) =>
+          source.endsWith('/card.ts'),
+        ),
+      ).toMatchInlineSnapshot('true')
+
+      browser = await chromium.launch()
+      const production = await browser.newPage()
+      const chunk = output.output.find(
+        (file) => file.type === 'chunk' && file.isEntry,
+      )
+      if (chunk?.type !== 'chunk') throw new Error('Missing JavaScript output')
+      await production.setContent('<main id="card"></main>')
+      await production.addStyleTag({ content: String(css.source) })
+      await production.addScriptTag({ type: 'module', content: chunk.code })
+      await production.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).color ===
+          'rgb(255, 0, 0)',
+      )
+      expect(
+        await production
+          .locator('#card')
+          .evaluate((node) =>
+            getComputedStyle(node).backgroundImage.startsWith('url('),
+          ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await production
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"8px"')
+      expect(
+        await production.locator('#card').evaluate((node) => {
+          node.classList.remove('p-2')
+          return getComputedStyle(node).padding
+        }),
+      ).toMatchInlineSnapshot('"16px"')
+      await production.locator('#card').evaluate((node) => {
+        node.classList.add('p-2')
+      })
+      await production.evaluate(() => {
+        document.documentElement.style.colorScheme = 'dark'
+      })
+      expect(
+        await production
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 255, 255)"')
+      expect(
+        await production
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).backgroundColor),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+      await production.close()
+
+      server = await Vite.createServer(config)
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const page = await browser.newPage()
+      await page.goto(`http://127.0.0.1:${address.port}`)
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).color ===
+          'rgb(255, 0, 0)',
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) =>
+            getComputedStyle(node).backgroundImage.startsWith('url('),
+          ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot('"8px"')
+      expect(
+        await page.locator('#card').evaluate((node) => {
+          node.classList.remove('p-2')
+          return getComputedStyle(node).padding
+        }),
+      ).toMatchInlineSnapshot('"16px"')
+      await page.locator('#card').evaluate((node) => {
+        node.classList.add('p-2')
+      })
+      await page.evaluate(() => {
+        document.documentElement.style.colorScheme = 'dark'
+      })
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 255, 255)"')
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).backgroundColor),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+      await page.evaluate(() => {
+        document.documentElement.style.colorScheme = 'light'
+      })
+      await page.locator('#state').fill('retained')
+
+      await Fs.writeFile(
+        Path.join(library, 'card.ts'),
+        `import {style} from './theme.js';export const card=style({color:'blue',padding:'24px'});`,
+      )
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).color ===
+          'rgb(0, 0, 255)',
+      )
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"retained"',
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).backgroundImage),
+      ).toMatchInlineSnapshot('"none"')
+
+      const global = Path.join(library, 'global.ts')
+      await Fs.writeFile(
+        global,
+        `import {global} from 'zyzz/web';global({'#card':{backgroundColor:'lime'}});`,
+      )
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).backgroundColor ===
+          'rgb(0, 255, 0)',
+      )
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"retained"',
+      )
+
+      await Fs.rm(global)
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).backgroundColor ===
+          'rgba(0, 0, 0, 0)',
+      )
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"retained"',
+      )
+    } finally {
+      await browser?.close()
+      await server?.close()
+      await Fs.rm(root, { force: true, recursive: true })
+      await Fs.rm(library, { force: true, recursive: true })
+    }
+  }, 60000)
+
   test('shares responsive defaults in production CSS', async () => {
     const { config, root } = await create(Responsive.modules)
     try {

@@ -56,6 +56,7 @@ Timing boundaries:
 
 - Each sample includes a compiler build and a minified esbuild browser bundle. Modules, filesystem caches, and esbuild are warm.
 - Fixture preparation, browser checks, compression, and report writes are outside timing.
+- Panda applies its official esbuild source transformer, equivalent to `transform: true` in its bundler plugins. Source rewriting is timed, and required runtime helpers remain in measured client output.
 - Tailwind excludes content scanning; StyleX includes Babel parsing; vanilla-extract includes source loading and evaluation; Zyzz excludes definition validation.
 
 All CSS passes through the same Lightning CSS minifier targeting Chrome 120, Firefox 128, and Safari 17, with source maps disabled. These are benchmark settings, not package support requirements. License comments count toward CSS size; no adapter strips them. Reports under `bench/results/{small,repeated,unique}/` record raw, gzip, and Brotli bytes for CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed assets without recounting class strings already in JavaScript.

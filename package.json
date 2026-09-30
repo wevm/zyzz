@@ -31,6 +31,7 @@
     "@mdn/browser-compat-data": "catalog:",
     "@pandacss/dev": "catalog:",
     "@pandacss/preset-base": "catalog:",
+    "@pandacss/transformer": "catalog:",
     "@stylexjs/babel-plugin": "catalog:",
     "@stylexjs/stylex": "catalog:",
     "@types/babel__core": "catalog:",

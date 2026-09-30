@@ -4,6 +4,7 @@
  */
 import * as Babel from '@babel/core'
 import * as Panda from '@pandacss/dev/node'
+import * as PandaTransformer from '@pandacss/transformer'
 import StylexPlugin, {
   type Rule,
   type StyleXTransformObj,
@@ -222,6 +223,7 @@ export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
     }),
     javascript: await Compilation.javascript(
       `export {classes,themes} from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
+      { plugins: [PandaTransformer.esbuild({ compiler: driver.compiler })] },
     ),
   }
 }

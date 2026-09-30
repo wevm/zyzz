@@ -4,6 +4,7 @@
  */
 import * as Babel from '@babel/core'
 import * as Panda from '@pandacss/dev/node'
+import * as PandaTransformer from '@pandacss/transformer'
 import StylexPlugin, {
   type Rule,
   type StyleXTransformObj,
@@ -122,7 +123,10 @@ export type Fixture = {
 }
 
 /** Bundles actual browser exports and their required runtime dependencies. */
-export async function javascript(source: string): Promise<string> {
+export async function javascript(
+  source: string,
+  options: javascript.Options = {},
+): Promise<string> {
   const result = await Esbuild.build({
     bundle: true,
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
@@ -132,6 +136,7 @@ export async function javascript(source: string): Promise<string> {
     legalComments: 'none',
     minify: true,
     platform: 'browser',
+    plugins: options.plugins ?? [],
     resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
     stdin: {
       contents: source,
@@ -143,6 +148,15 @@ export async function javascript(source: string): Promise<string> {
   })
 
   return result.outputFiles[0]!.text
+}
+
+/** Browser bundling options shared by the compiler comparison adapters. */
+export declare namespace javascript {
+  /** Optional source transforms included in compilation timing and client output. */
+  type Options = {
+    /** Official compiler plugins applied before bundling and minification. */
+    plugins?: Esbuild.Plugin[] | undefined
+  }
 }
 
 /** Fixed benchmark processing settings; these are not package support requirements. */
@@ -190,6 +204,7 @@ export async function panda(fixture: Fixture): Promise<Bundle> {
     css: minify(await Fs.readFile(file, 'utf8'), { targets: fixture.targets }),
     javascript: await javascript(
       `export { classes } from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
+      { plugins: [PandaTransformer.esbuild({ compiler: driver.compiler })] },
     ),
   }
 }

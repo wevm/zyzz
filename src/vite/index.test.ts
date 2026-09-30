@@ -1281,10 +1281,11 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       const output = Array.isArray(result) ? result[0]! : result
       if (!('output' in output)) throw new Error('Unexpected watch build')
       const css = output.output
-        .filter(
-          (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+        .flatMap((file) =>
+          file.type === 'asset' && file.fileName.endsWith('.css')
+            ? [file.source]
+            : [],
         )
-        .map((file) => file.source)
         .join('\n')
       expect(css.includes('rebeccapurple')).toMatchInlineSnapshot('false')
     } finally {

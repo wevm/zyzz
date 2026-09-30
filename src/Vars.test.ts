@@ -356,8 +356,8 @@ describe('define', () => {
         Path.join(library, 'core.ts'),
         `import * as zyzz from 'zyzz'
 export const variables = zyzz.Vars.define({
-  color: { ink: '#123456' }, dimension: { small: '8px' },
-}, { id: 'fixture/core' })
+  color: { ink: '#123456' }, dimension: { small: '8px' }, number: { radius: 999 },
+}, (vars) => ({ dimension: { full: zyzz.Vars.compose('spacing', ['calc(', vars.number.radius, ' * 1px)']) } }), { id: 'fixture/core' })
 `,
       )
       await Fs.writeFile(
@@ -365,7 +365,7 @@ export const variables = zyzz.Vars.define({
         `import * as zyzz from 'zyzz'
 import { variables as core } from './core.js'
 export const variables = zyzz.Vars.define({
-  color: { content: core.color.ink, faded: zyzz.Vars.compose('color', ['color-mix(in srgb, ', core.color.ink, ' 25%, transparent)']) }, dimension: { space: core.dimension.small },
+  color: { content: core.color.ink, faded: zyzz.Vars.compose('color', ['color-mix(in srgb, ', core.color.ink, ' 25%, transparent)']) }, dimension: { space: core.dimension.small, full: { default: core.dimension.full, '@media (min-width: 768px)': core.dimension.full } },
 }, { id: 'fixture/platform' })
 `,
       )
@@ -431,6 +431,9 @@ const length: zyzz.Vars.Scalar<typeof variables.dimension.space> = '8px'
 const wrongLength: zyzz.Vars.Scalar<typeof variables.dimension.space> = '12px'
 style({ color: 'color.content', padding: 'dimension.space' })
 style({ padding: vars.dimension.space })
+style({ height: 'dimension.full' })
+// @ts-expect-error Composed lengths cannot supply colors.
+style({ color: 'dimension.full' })
 style({ color: 'color.faded' })
 style({ color: vars.color.faded })
 // @ts-expect-error Composed colors remain incompatible with lengths.

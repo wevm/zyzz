@@ -51,6 +51,11 @@ export default defineConfig({
       reportOnFailure: true,
     },
     globals: true,
-    include: ['scripts/**/*.test.ts', 'src/**/*.test.ts', 'test/**/*.test.ts'],
+    include: [
+      'scripts/**/*.test.ts',
+      'site/src/**/*.test.ts',
+      'src/**/*.test.ts',
+      'test/**/*.test.ts',
+    ],
   },
 })

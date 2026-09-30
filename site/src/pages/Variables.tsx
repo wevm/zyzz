@@ -43,12 +43,23 @@ export function Page({
     })
     .map(([name, value]) => {
       const entries = Variables.collect(value, [name], config?.mappings)
-      const maximum = Math.max(
-        0,
-        ...entries
-          .map((entry) => Number.parseFloat(String(entry.value)))
-          .filter(Number.isFinite),
+      const units = new Set(
+        entries
+          .filter((entry) => ['breakpoint', 'container'].includes(entry.kind))
+          .map((entry) => String(entry.value).replace(/^[\d.]+/, '')),
       )
+      const maximum =
+        units.size > 1
+          ? 0
+          : Math.max(
+              0,
+              ...entries
+                .filter((entry) =>
+                  ['breakpoint', 'container'].includes(entry.kind),
+                )
+                .map((entry) => Number.parseFloat(String(entry.value)))
+                .filter(Number.isFinite),
+            )
       return {
         ...(categories[name as keyof typeof categories] ?? {
           icon: BoxIcon,
@@ -110,7 +121,7 @@ export function Page({
                 .map((key) => reference([...entry.path, key]))
                 .join(' ')
             : ''
-        return `${group.title} ${title(entry.path[1] ?? '')} ${entry.path.join('.')} ${reference(entry.path)} ${JSON.stringify(entry.raw ?? entry.value)} ${entry.dark ?? ''} ${fields}`
+        return `${group.title} ${title(entry.path[1] ?? '')} ${entry.path.join('.')} ${reference(entry.path)} ${JSON.stringify(entry.raw ?? entry.value)} ${entry.dark ?? ''} ${entry.condition ?? ''} ${fields}`
           .toLowerCase()
           .includes(search)
       }),
@@ -346,7 +357,7 @@ export function Page({
                                 : entry.value
                               return (
                                 <div
-                                  key={name}
+                                  key={`${name}:${entry.condition ?? 'default'}`}
                                   {...(group.color
                                     ? styles.colorEntry()
                                     : styles.entry())}
@@ -364,6 +375,11 @@ export function Page({
                                       ? styles.colorValues()
                                       : styles.values())}
                                   >
+                                    {entry.condition && (
+                                      <span {...styles.hint()}>
+                                        {entry.condition}
+                                      </span>
+                                    )}
                                     {typeof entry.value === 'object' ? (
                                       <div {...styles.typography()}>
                                         <div
@@ -380,30 +396,30 @@ export function Page({
                                         <details {...styles.details()}>
                                           <summary>Variables</summary>
                                           <dl>
-                                            {Object.entries(
-                                              entry.raw ?? entry.value,
-                                            ).map(([key, value]) => (
-                                              <div
-                                                key={key}
-                                                {...styles.field()}
-                                              >
-                                                <dt>
-                                                  <code>
-                                                    {reference([
-                                                      ...entry.path,
-                                                      key,
-                                                    ])}
-                                                  </code>
-                                                </dt>
-                                                <dd>
-                                                  <code>
-                                                    {typeof value === 'object'
-                                                      ? JSON.stringify(value)
-                                                      : String(value)}
-                                                  </code>
-                                                </dd>
-                                              </div>
-                                            ))}
+                                            {Object.entries(entry.value).map(
+                                              ([key, value]) => (
+                                                <div
+                                                  key={key}
+                                                  {...styles.field()}
+                                                >
+                                                  <dt>
+                                                    <code>
+                                                      {reference([
+                                                        ...entry.path,
+                                                        key,
+                                                      ])}
+                                                    </code>
+                                                  </dt>
+                                                  <dd>
+                                                    <code>
+                                                      {typeof value === 'object'
+                                                        ? JSON.stringify(value)
+                                                        : String(value)}
+                                                    </code>
+                                                  </dd>
+                                                </div>
+                                              ),
+                                            )}
                                           </dl>
                                         </details>
                                       </div>
@@ -924,6 +940,12 @@ function Preview({
 
   const appearance: CSSProperties | undefined = (() => {
     switch (category) {
+      case 'color':
+        return {
+          backgroundColor: entry.dark
+            ? `light-dark(${value}, ${entry.dark})`
+            : value,
+        }
       case 'aspect':
         return { aspectRatio: value, height: 'auto', width: '128px' }
       case 'blur':

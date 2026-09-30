@@ -7,7 +7,11 @@ export const Route = createFileRoute('/vars')({
   codeSplitGroupings: [],
   component: Page,
   validateSearch: (search: Record<string, unknown>) => ({
-    v: typeof search.v === 'string' ? search.v : undefined,
+    v: Object.hasOwn(search, 'v')
+      ? typeof search.v === 'string'
+        ? search.v
+        : JSON.stringify(search.v)
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({ v: search.v }),
   loader: ({ deps }) => {

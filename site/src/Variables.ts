@@ -8,6 +8,7 @@ export type Configuration = {
 }
 
 export type Entry = {
+  condition?: string
   dark?: string
   path: readonly string[]
   raw?: object
@@ -28,9 +29,7 @@ export function decode(value: string | undefined): Configuration | undefined {
   if (value === undefined) return undefined
   if (!value || value.length > 32000)
     throw new Error('The configuration is empty or too large.')
-  const json = value.startsWith('lz:')
-    ? LZString.decompressFromEncodedURIComponent(value.slice(3))
-    : value
+  const json = value.startsWith('lz:') ? decompress(value.slice(3)) : value
   if (!json || json.length > 1000000)
     throw new Error(
       'The configuration could not be decompressed or is too large.',
@@ -38,9 +37,14 @@ export function decode(value: string | undefined): Configuration | undefined {
   const parsed: unknown = JSON.parse(json)
   if (!record(parsed))
     throw new Error('Expected a JSON object containing variables.')
-  const vars = Object.hasOwn(parsed, 'vars') ? parsed.vars : parsed
+  const envelope =
+    Object.hasOwn(parsed, 'vars') &&
+    Object.keys(parsed).every((key) =>
+      ['vars', 'name', 'mappings'].includes(key),
+    )
+  const vars = envelope ? parsed.vars : parsed
   if (!record(vars)) throw new Error('Expected vars to be a JSON object.')
-  const name = Object.hasOwn(parsed, 'vars') ? parsed.name : undefined
+  const name = envelope ? parsed.name : undefined
   if (name !== undefined && typeof name !== 'string')
     throw new Error('The configuration name must be a string.')
   let count = 0
@@ -55,11 +59,18 @@ export function decode(value: string | undefined): Configuration | undefined {
     for (const [key, child] of Object.entries(value)) {
       if (['__proto__', 'prototype', 'constructor'].includes(key))
         throw new Error('The configuration contains an unsupported key.')
+      if (
+        depth === 0 &&
+        key === 'containerNames' &&
+        Array.isArray(child) &&
+        child.every((name) => typeof name === 'string')
+      )
+        continue
       validate(child, depth + 1)
     }
   }
   validate(vars, 0)
-  const mappings = Object.hasOwn(parsed, 'vars') ? parsed.mappings : undefined
+  const mappings = envelope ? parsed.mappings : undefined
   if (
     mappings !== undefined &&
     mappings !== false &&
@@ -99,13 +110,14 @@ export function collect(
       'lineHeight',
     ]
     const conditions = [
-      ...new Set(
-        fields.flatMap((key) =>
+      ...new Set([
+        ...Object.keys(value).filter(conditional),
+        ...fields.flatMap((key) =>
           record(value[key])
             ? Object.keys(value[key]).filter((key) => key !== 'default')
             : [],
         ),
-      ),
+      ]),
     ]
     const entries: Entry[] = []
     const overrides: Record<string, unknown> = {}
@@ -116,13 +128,17 @@ export function collect(
             const field = value[key]
             if (record(field) && Object.hasOwn(field, condition))
               overrides[key] = field[condition]
-            return [key, record(field) ? overrides[key] : field]
+            const block = value[condition]
+            if (record(block) && Object.hasOwn(block, key))
+              overrides[key] = block[key]
+            return [key, Object.hasOwn(overrides, key) ? overrides[key] : field]
           })
           .filter(([, value]) => value !== undefined),
       )
       if (typeof resolved.fontSize !== 'string') continue
       entries.push({
-        path: condition === 'default' ? path : [...path, condition],
+        path,
+        ...(condition === 'default' ? {} : { condition }),
         value: {
           fontSize: resolved.fontSize,
           ...(typeof resolved.fontFamily === 'string'
@@ -146,8 +162,18 @@ export function collect(
       return [
         ...entries,
         ...Object.entries(value)
-          .filter(([key, child]) => !fields.includes(key) && record(child))
+          .filter(([key]) => !fields.includes(key) && !conditional(key))
           .flatMap(([key, child]) => collect(child, [...path, key], mappings)),
+        ...Object.entries(value).flatMap(([condition, child]) => {
+          if (!conditional(condition) || !record(child)) return []
+          return collect(
+            Object.fromEntries(
+              Object.entries(child).filter(([key]) => !fields.includes(key)),
+            ),
+            path,
+            mappings,
+          ).map((entry) => ({ ...entry, condition }))
+        }),
       ]
   }
   if (typeof value.light === 'string' && typeof value.dark === 'string')
@@ -159,9 +185,19 @@ export function collect(
         dark: value.dark,
       },
     ]
-  return Object.entries(value).flatMap(([key, child]) =>
-    collect(child, [...path, key], mappings),
+  if (
+    Object.hasOwn(value, 'default') &&
+    Object.keys(value).every((key) => key === 'default' || conditional(key))
   )
+    return Object.entries(value).flatMap(([condition, child]) =>
+      collect(child, path, mappings).map((entry) => ({
+        ...entry,
+        ...(condition === 'default' ? {} : { condition }),
+      })),
+    )
+  return Object.entries(value)
+    .filter(([key]) => path.length !== 0 || key !== 'containerNames')
+    .flatMap(([key, child]) => collect(child, [...path, key], mappings))
 }
 
 /** Maps custom categories to CSS properties before using name/value hints. */
@@ -244,4 +280,63 @@ export function previewKind(
 
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function conditional(key: string) {
+  return key.startsWith('@media ') || key.startsWith('@container ')
+}
+
+// Scan LZ code lengths before decoding so oversized output never allocates strings.
+function decompress(input: string) {
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$'
+  const encoded = input.replaceAll(' ', '+')
+  let cursor = 0
+  let position = 32
+  let current = alphabet.indexOf(encoded[0] ?? '')
+  function bits(size: number) {
+    let result = 0
+    for (let power = 1; power < 2 ** size; power *= 2) {
+      if (cursor >= encoded.length || current < 0)
+        throw new Error('Invalid compressed configuration.')
+      if (current & position) result += power
+      position >>= 1
+      if (position === 0) {
+        position = 32
+        current = alphabet.indexOf(encoded[++cursor] ?? '')
+      }
+    }
+    return result
+  }
+  const initial = bits(2)
+  if (initial === 2) return ''
+  if (initial > 1) throw new Error('Invalid compressed configuration.')
+  bits(initial === 0 ? 8 : 16)
+  const lengths = [0, 0, 0, 1]
+  let previous = 1
+  let total = 1
+  let remaining = 4
+  let size = 3
+  for (;;) {
+    let code = bits(size)
+    if (code === 2) break
+    if (code < 2) {
+      bits(code === 0 ? 8 : 16)
+      code = lengths.length
+      lengths.push(1)
+      remaining--
+    }
+    if (remaining === 0) {
+      remaining = 2 ** size++
+    }
+    const length = code === lengths.length ? previous + 1 : lengths[code]
+    if (!length) throw new Error('Invalid compressed configuration.')
+    total += length
+    if (total > 1000000)
+      throw new Error('The decompressed configuration is too large.')
+    lengths.push(previous + 1)
+    previous = length
+    if (--remaining === 0) remaining = 2 ** size++
+  }
+  return LZString.decompressFromEncodedURIComponent(encoded)
 }

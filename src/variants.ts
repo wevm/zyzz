@@ -61,32 +61,54 @@ type CheckedChoice<
           : never)
   : CheckedStyles<style, tokens, layers, mappings>
 
-type SuggestedStyles<tokens extends Theme.Tokens> =
-  Completion.Properties<tokens> & Readonly<Record<string, unknown>>
+type SuggestedStyles<
+  tokens extends Theme.Tokens,
+  styles = Record<string, unknown>,
+> = Completion.Properties<tokens, styles> & Readonly<Record<string, unknown>>
 
 /** Editor hints remain independent of declaration and selection validation. */
-type Suggestions<tokens extends Theme.Tokens> = {
-  readonly base?: SuggestedStyles<tokens> | undefined
+type Suggestions<
+  tokens extends Theme.Tokens,
+  definition = Record<string, unknown>,
+> = {
+  readonly base?:
+    | SuggestedStyles<
+        tokens,
+        definition extends { base: infer styles }
+          ? styles
+          : Record<string, unknown>
+      >
+    | undefined
   readonly compoundVariants?:
     | readonly {
         readonly style: SuggestedStyles<tokens>
         readonly when: unknown
       }[]
     | undefined
-  readonly variants?:
-    | Readonly<
-        Record<
-          string,
-          Readonly<
+  readonly variants?: definition extends { variants: infer axes }
+    ? {
+        readonly [axis in keyof axes]: {
+          readonly [choice in keyof axes[axis]]: axes[axis][choice] extends (
+            ...args: never[]
+          ) => unknown
+            ? (...args: never[]) => SuggestedStyles<tokens>
+            : SuggestedStyles<tokens, axes[axis][choice]>
+        }
+      }
+    :
+        | Readonly<
             Record<
               string,
-              | SuggestedStyles<tokens>
-              | ((...args: never[]) => SuggestedStyles<tokens>)
+              Readonly<
+                Record<
+                  string,
+                  | SuggestedStyles<tokens>
+                  | ((...args: never[]) => SuggestedStyles<tokens>)
+                >
+              >
             >
           >
-        >
-      >
-    | undefined
+        | undefined
 }
 
 type Keys<value> = value extends unknown ? keyof value : never
@@ -201,7 +223,7 @@ type Checked<
 export function variants<const definition extends Record<string, unknown>>(
   definition: definition &
     NoInfer<Checked<definition, {}, never, {}>> &
-    Suggestions<{}>,
+    Suggestions<{}, NoInfer<definition>>,
   options: style.DefinitionOptions = {},
 ): variants.ReturnType<definition> {
   return Authoring.variants(
@@ -221,7 +243,7 @@ export declare namespace variants {
   > = <const definition extends Record<string, unknown>>(
     definition: definition &
       NoInfer<Checked<definition, tokens, layers, mappings>> &
-      Suggestions<tokens>,
+      Suggestions<tokens, NoInfer<definition>>,
     options?: style.DefinitionOptions,
   ) => ReturnType<definition, output>
 

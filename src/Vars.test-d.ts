@@ -3,6 +3,65 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import * as Zyzz from 'zyzz'
 import { Config, defineVars, extendVars, Vars } from 'zyzz'
 
+describe('compose', () => {
+  test('infers composed domains and compatible conditional overrides', () => {
+    const base = Vars.define(
+      { number: { opacity: 25, space: 16 } },
+      (vars) => ({
+        color: {
+          faded: Vars.compose('color', [
+            'rgb(0 0 0 / calc(',
+            vars.number.opacity,
+            ' * 1%))',
+          ]),
+        },
+        spacing: {
+          page: Vars.compose('spacing', [
+            'calc(',
+            vars.number.space,
+            ' * 1px)',
+          ]),
+        },
+      }),
+    )
+    expectTypeOf(base.color.faded.group).toEqualTypeOf<'color'>()
+    expectTypeOf(base.spacing.page.group).toEqualTypeOf<'spacing'>()
+    const { style } = Config.create({ vars: base })
+    style({ color: 'faded', padding: 'page' })
+    const full = Config.create({ vars: base, mappings: false })
+    full.style({
+      borderRadius: 'spacing.page',
+      borderWidth: 'spacing.page',
+      fontSize: 'spacing.page',
+    })
+    style({ color: base.color.faded, width: base.spacing.page })
+    Vars.extend(base, {
+      color: {
+        faded: { light: '#fff', dark: Vars.compose('color', ['#000']) },
+      },
+      spacing: { page: '24px' },
+    })
+    Vars.extend(base, {
+      spacing: {
+        page: {
+          default: Vars.compose('spacing', ['4px']),
+          '@media (min-width: 600px)': '8px',
+        },
+      },
+    })
+    // @ts-expect-error Composed colors cannot supply lengths.
+    style({ width: base.color.faded })
+    // @ts-expect-error Composed lengths cannot supply colors.
+    style({ color: base.spacing.page })
+    // @ts-expect-error Overrides preserve the composed value domain.
+    Vars.extend(base, { spacing: { page: Vars.compose('color', ['red']) } })
+    // @ts-expect-error Only color and spacing compositions are supported.
+    Vars.compose('number', ['1'])
+    // @ts-expect-error Composition parts cannot include arbitrary records.
+    Vars.compose('color', [{ color: '#fff' }])
+  })
+})
+
 describe('define', () => {
   test('infers deeply merged derived references', () => {
     const base = Vars.define(

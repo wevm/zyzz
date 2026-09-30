@@ -294,6 +294,8 @@ export declare namespace collect {
 
 /** Encodes validated literal options as a declaration type, never executable text. */
 export function type(value: unknown): string {
+  if (Token.isExpression(value) && 'group' in value)
+    return `import('zyzz').Vars.Composition<'${value.group}'>`
   if (Token.is(value)) return `import('zyzz').Vars.Reference<'${value.group}'>`
   if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)

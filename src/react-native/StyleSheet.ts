@@ -785,6 +785,12 @@ function resolve(
       resolved = resolved.value
       continue
     }
+    if (Token.isExpression(resolved))
+      fail(
+        'unsupported_feature',
+        'Composed variables require a web target.',
+        path,
+      )
     if ('default' in resolved)
       fail(
         'unsupported_feature',

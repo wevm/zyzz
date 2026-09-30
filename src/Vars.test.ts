@@ -1,20 +1,340 @@
 /** Exercises variable authoring through source compilation and browser scopes. @module */
+import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
-import * as Ts from 'typescript-api'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
 
 import { StyleSheet } from 'zyzz/react-native'
 
+describe('compose', () => {
+  test('retains live colors, opacity, units, and responsive values through packed contracts', async () => {
+    const source = `import { Config, Vars } from 'zyzz'
+      const base = Vars.define({
+        color: { ink: { light: '#ff0000', dark: '#0000ff' } },
+        number: { opacity: 25, space: { default: 16, '@media (min-width: 600px)': 24 } },
+      }, (vars) => ({
+        color: { faded: Vars.compose('color', ['color-mix(in srgb, ', vars.color.ink, ' calc(', vars.number.opacity, ' * 1%), transparent)']) },
+        spacing: { page: Vars.compose('spacing', ['calc(', vars.number.space, ' * 1px)']) },
+      }), { id: 'composed' })
+      const other = Vars.extend(base, {
+        color: { ink: { light: '#00ff00', dark: '#ffffff' } },
+        number: { opacity: 75, space: { default: 32, '@media (min-width: 600px)': 48 } },
+      })
+      export const { style, vars } = Config.create({ vars: { base, other }, defaultVars: 'base' })`
+    const app = `import { style, vars } from 'library'
+      export const base = vars({set: 'base', colorScheme: 'light'})
+      export const other = vars({set: 'other', colorScheme: 'light'})
+      export const dark = vars({set: 'other', colorScheme: 'dark'})
+      export const card = style({color: 'faded', padding: 'page'})`
+    const library = Graph.compile({ modules: { 'index.ts': source } })
+    expect(
+      JSON.parse(library.contracts['index.ts']!).version,
+    ).toMatchInlineSnapshot('29')
+
+    const browser = await chromium.launch()
+    try {
+      for (const packed of [false, true]) {
+        const result = Graph.compile(
+          packed
+            ? {
+                contracts: {
+                  'library/index.js': library.contracts['index.ts']!,
+                },
+                imports: { 'app.ts': { library: 'library/index.js' } },
+                modules: { 'app.ts': app },
+              }
+            : {
+                imports: {
+                  'app.ts': { library: 'index.ts' },
+                  'index.ts': { zyzz: null },
+                },
+                modules: { 'index.ts': source, 'app.ts': app },
+              },
+        )
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: { 'app.ts': result.modules['app.ts']!.code },
+          packages: {
+            library: {
+              'index.ts': (packed ? library : result).modules['index.ts']!.code,
+            },
+          },
+        })
+        const fixture = Vm.runInNewContext(`${code};Fixture;`)
+        const css =
+          (packed
+            ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+            : '') +
+          (result.sharedCss ?? '') +
+          Object.values(result.modules)
+            .map((module) => module.css)
+            .join('')
+        const page = await browser.newPage({
+          viewport: { width: 500, height: 600 },
+        })
+        await page.setContent(
+          `<style>${css}</style>${['base', 'other', 'dark'].map((key) => `<div class="${fixture[key].className}"><div data-card class="${fixture.card().className}"></div></div>`).join('')}`,
+        )
+
+        expect(
+          await page.locator('[data-card]').evaluateAll((nodes) =>
+            nodes.map((node) => ({
+              color: getComputedStyle(node).color,
+              padding: getComputedStyle(node).padding,
+            })),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            {
+              "color": "color(srgb 1 0 0 / 0.25)",
+              "padding": "16px",
+            },
+            {
+              "color": "color(srgb 0 1 0 / 0.75)",
+              "padding": "32px",
+            },
+            {
+              "color": "color(srgb 1 1 1 / 0.75)",
+              "padding": "32px",
+            },
+          ]
+        `)
+        await page.setViewportSize({ width: 600, height: 600 })
+        expect(
+          await page
+            .locator('[data-card]')
+            .evaluateAll((nodes) =>
+              nodes.map((node) => getComputedStyle(node).padding),
+            ),
+        ).toMatchInlineSnapshot(`
+          [
+            "24px",
+            "48px",
+            "48px",
+          ]
+        `)
+        await page.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('inherits independent Core overrides through source and packed modules', async () => {
+    const core = `import {Config, Vars} from 'zyzz'
+      export const variables = Vars.define({color: {ink: '#ff0000'}, number: {opacity: 25, space: 16}}, {id:'core'})
+      const other = Vars.extend(variables, {color:{ink:'#0000ff'}, number:{opacity:75, space:32}})
+      export const {vars: coreScope} = Config.create({vars:{base:variables, other}, defaultVars:'base'})`
+    const source = `import {Config, Vars} from 'zyzz'
+      import {variables as core} from './core.js'
+      export {coreScope} from './core.js'
+      const variables = Vars.define({
+        color: {faded: Vars.compose('color', ['color-mix(in srgb, ', core.color.ink, ' calc(', core.number.opacity, ' * 1%), transparent)'])},
+        spacing: {page: Vars.compose('spacing', ['calc(', core.number.space, ' * 1px)'])},
+      }, {id:'site'})
+      export const {style, vars} = Config.create({vars:variables})`
+    const app = `import {coreScope, style, vars} from 'library'
+      export const base = coreScope({set:'base'})
+      export const other = coreScope({set:'other'})
+      export const site = vars()
+      export const card = style({color:'faded', padding:'page'})`
+    const library = Graph.compile({
+      imports: {
+        'core.ts': { zyzz: null },
+        'index.ts': { './core.js': 'core.ts', zyzz: null },
+      },
+      modules: { 'core.ts': core, 'index.ts': source },
+    })
+    const browser = await chromium.launch()
+    try {
+      for (const packed of [false, true]) {
+        const result = Graph.compile(
+          packed
+            ? {
+                contracts: {
+                  'library/index.js': library.contracts['index.ts']!,
+                  'library/core.js': library.contracts['core.ts']!,
+                },
+                imports: {
+                  'app.ts': { library: 'library/index.js' },
+                  'library/index.js': { './core.js': 'library/core.js' },
+                },
+                modules: { 'app.ts': app },
+              }
+            : {
+                imports: {
+                  'app.ts': { library: 'index.ts' },
+                  'index.ts': { './core.js': 'core.ts', zyzz: null },
+                  'core.ts': { zyzz: null },
+                },
+                modules: { 'core.ts': core, 'index.ts': source, 'app.ts': app },
+              },
+        )
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: { 'app.ts': result.modules['app.ts']!.code },
+          packages: {
+            library: {
+              'index.ts': (packed ? library : result).modules['index.ts']!.code,
+              'core.ts': (packed ? library : result).modules['core.ts']!.code,
+            },
+          },
+        })
+        const fixture = Vm.runInNewContext(`${code};Fixture;`)
+        const css =
+          (packed
+            ? (library.sharedCss ?? '') +
+              Object.values(library.modules)
+                .map((module) => module.css)
+                .join('')
+            : '') +
+          (result.sharedCss ?? '') +
+          Object.values(result.modules)
+            .map((module) => module.css)
+            .join('')
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${css}</style>${['base', 'other'].map((key) => `<div class="${fixture[key].className}"><div class="${fixture.site.className}"><div data-card class="${fixture.card().className}"></div></div></div>`).join('')}`,
+        )
+
+        expect(
+          await page.locator('[data-card]').evaluateAll((nodes) =>
+            nodes.map((node) => ({
+              color: getComputedStyle(node).color,
+              padding: getComputedStyle(node).padding,
+            })),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            {
+              "color": "color(srgb 1 0 0 / 0.25)",
+              "padding": "16px",
+            },
+            {
+              "color": "color(srgb 1 0 0 / 0.25)",
+              "padding": "16px",
+            },
+          ]
+        `)
+        await page.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('rejects obsolete and malformed packed compositions', () => {
+    const library = Graph.compile({
+      modules: {
+        'index.ts': `import {Config, Vars} from 'zyzz';
+      const variables = Vars.define({color:{ink:Vars.compose('color',['red'])}});
+      export const {style}=Config.create({vars:variables});`,
+      },
+    })
+    const contract = JSON.parse(library.contracts['index.ts']!)
+    const modules = {
+      'app.ts': `import {style} from 'library'; export const card=style({color:'ink'});`,
+    }
+    const imports = { 'app.ts': { library: 'library.js' } }
+
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'library.js': JSON.stringify({ ...contract, version: 28 }),
+        },
+        imports,
+        modules,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.js:0: Invalid library contract: Composed variables require contract version 29 or later.]`,
+    )
+
+    const malformed = library.contracts['index.ts']!.replace(
+      '"parts":["red"]',
+      '"parts":[{"invalid":true}]',
+    )
+    expect(() =>
+      Graph.compile({
+        contracts: { 'library.js': malformed },
+        imports,
+        modules,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.js:0: Invalid library contract: []: Composition parts must be CSS text, finite numbers, or variable references.]`,
+    )
+  })
+
+  test('validates composed leaves, overrides, cycles, and native target limits', () => {
+    const base = Vars.define({ number: { space: 16 } }, (vars) => ({
+      spacing: {
+        page: Vars.compose('spacing', ['calc(', vars.number.space, ' * 1px)']),
+      },
+    }))
+    expect(() =>
+      StyleSheet.compile({
+        styles: Style.define({ card: { width: base.spacing.page } }),
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["default","light","card","width"]: Composed variables require a web target.
+      ["default","dark","card","width"]: Composed variables require a web target.]
+    `)
+    expect(() =>
+      Vars.define({ spacing: { page: Vars.compose('spacing', ['   ']) } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: []: Compositions require nonempty CSS parts.]`,
+    )
+    expect(() =>
+      Vars.define({
+        color: { ink: Vars.compose('color', ['red; color: blue']) },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: []: Composition parts must be CSS text, finite numbers, or variable references.]`,
+    )
+    expect(() =>
+      Vars.extend(base, {
+        spacing: { page: Vars.compose('color', ['red']) },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","page"]: Variable overrides must preserve their domain.]`,
+    )
+    expect(() =>
+      Vars.extend(base, {
+        spacing: {
+          page: Vars.compose('spacing', ['calc(', base.spacing.page, ' * 2)']),
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","page"]: Cyclic variables are not supported.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Config, Vars} from 'zyzz';
+      const base = Vars.define({color:{ink:Vars.compose('color',['red; color:blue'])}});
+      export const {style}=Config.create({vars:base});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:54: []: Composition parts must be CSS text, finite numbers, or variable references.]`,
+    )
+  })
+})
+
 describe('define', () => {
   test('emits inferred cross-domain declarations for installed consumers', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-vars-declarations-'))
     const library = Path.join(root, 'node_modules/variable-fixture')
+    const typography = Array.from(
+      { length: 64 },
+      (_, index) =>
+        `body${index}: { default: '14px', '@media (min-width: 768px)': '16px', '@media (min-width: 1024px)': '18px', '@media (min-width: 1536px)': '20px' }`,
+    ).join(',')
 
     try {
       await Fs.mkdir(library, { recursive: true })
@@ -42,8 +362,8 @@ describe('define', () => {
         Path.join(library, 'core.ts'),
         `import * as zyzz from 'zyzz'
 export const variables = zyzz.Vars.define({
-  color: { ink: '#123456' }, dimension: { small: '8px' },
-}, { id: 'fixture/core' })
+  color: { ink: '#123456' }, dimension: { small: '8px' }, number: { radius: 999 },
+}, (vars) => ({ dimension: { full: zyzz.Vars.compose('spacing', ['calc(', vars.number.radius, ' * 1px)']) } }), { id: 'fixture/core' })
 `,
       )
       await Fs.writeFile(
@@ -51,7 +371,8 @@ export const variables = zyzz.Vars.define({
         `import * as zyzz from 'zyzz'
 import { variables as core } from './core.js'
 export const variables = zyzz.Vars.define({
-  color: { content: core.color.ink }, dimension: { space: core.dimension.small },
+  color: { content: core.color.ink, faded: zyzz.Vars.compose('color', ['color-mix(in srgb, ', core.color.ink, ' 25%, transparent)']) }, dimension: { space: core.dimension.small, full: { default: core.dimension.full, '@media (min-width: 768px)': core.dimension.full } },
+  type: { ${typography} },
 }, { id: 'fixture/platform' })
 `,
       )
@@ -63,41 +384,46 @@ import { variables } from './${domain}.js'
 
 export { variables } from './${domain}.js'
 export const { style, variants, vars } = Config.create({ vars: variables, mappings: false, id: 'fixture/${domain}/config' })
+${domain === 'platform' ? `export const catalogButton = variants({ base: { borderRadius: 'dimension.full', paddingBlock: 'dimension.space' }, variants: { scale: { large: { fontSize: '14px !custom', height: 'dimension.space' }, medium: { fontSize: '14px !custom', height: 'dimension.space' }, small: { fontSize: '12px !custom', height: 'dimension.space' } } } }, { id: 'fixture/button' })` : ''}
 `,
         )
 
-      const options: Ts.CompilerOptions = {
-        declaration: true,
-        emitDeclarationOnly: true,
-        module: Ts.ModuleKind.NodeNext,
-        moduleResolution: Ts.ModuleResolutionKind.NodeNext,
-        outDir: Path.join(library, 'dist'),
-        rootDir: library,
-        skipLibCheck: false,
-        strict: true,
-        target: Ts.ScriptTarget.ESNext,
-        types: [],
-      }
-      const program = Ts.createProgram({
-        options,
-        rootNames: [
-          Path.join(library, 'core.ts'),
-          Path.join(library, 'core.config.ts'),
-          Path.join(library, 'platform.ts'),
-          Path.join(library, 'platform.config.ts'),
+      const project = Path.join(root, 'producer.json')
+      await Fs.writeFile(
+        project,
+        JSON.stringify({
+          compilerOptions: {
+            declaration: true,
+            emitDeclarationOnly: true,
+            module: 'nodenext',
+            moduleResolution: 'nodenext',
+            outDir: Path.join(library, 'dist'),
+            rootDir: library,
+            skipLibCheck: false,
+            strict: true,
+            target: 'esnext',
+            types: [],
+          },
+          files: [
+            'core.ts',
+            'core.config.ts',
+            'platform.ts',
+            'platform.config.ts',
+          ].map((file) => Path.join(library, file)),
+        }),
+      )
+      // Separate compiler processes avoid coverage overhead and keep the test worker responsive.
+      const emitted = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript-api/bin/tsc'),
+          '--project',
+          project,
         ],
-      })
-      const diagnostics = [
-        ...Ts.getPreEmitDiagnostics(program),
-        ...program.emit().diagnostics,
-      ]
+        { timeout: 30_000 },
+      )
 
-      expect(
-        diagnostics.map((diagnostic) => ({
-          code: diagnostic.code,
-          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
-        })),
-      ).toMatchInlineSnapshot('[]')
+      expect(emitted.stdout).toMatchInlineSnapshot('""')
       const declarations = await Fs.readFile(
         Path.join(library, 'dist/platform.d.ts'),
         'utf8',
@@ -110,13 +436,23 @@ export const { style, variants, vars } = Config.create({ vars: variables, mappin
       await Fs.writeFile(
         consumer,
         `import type * as zyzz from 'zyzz'
-import { variables, style, variants, vars } from 'variable-fixture/platform'
+import { catalogButton, variables, style, variants, vars } from 'variable-fixture/platform'
 const color: zyzz.Vars.Scalar<typeof variables.color.content> = '#123456'
 const length: zyzz.Vars.Scalar<typeof variables.dimension.space> = '8px'
 // @ts-expect-error Literal precision survives the Core alias and declaration boundary.
 const wrongLength: zyzz.Vars.Scalar<typeof variables.dimension.space> = '12px'
 style({ color: 'color.content', padding: 'dimension.space' })
 style({ padding: vars.dimension.space })
+style({ height: 'dimension.full', borderRadius: 'dimension.full', fontSize: 'dimension.full', borderWidth: 'dimension.full' })
+catalogButton({ scale: 'medium' })
+// @ts-expect-error Variant choices remain constrained with a large variable catalog.
+catalogButton({ scale: 'huge' })
+// @ts-expect-error Composed lengths cannot supply colors.
+style({ color: 'dimension.full' })
+style({ color: 'color.faded' })
+style({ color: vars.color.faded })
+// @ts-expect-error Composed colors remain incompatible with lengths.
+style({ width: vars.color.faded })
 // @ts-expect-error Color aliases remain incompatible with lengths.
 style({ padding: vars.color.content })
 const button = variants({ variants: { size: { small: { height: 'dimension.space' } } } })
@@ -126,25 +462,33 @@ button({ size: 'large' })
 void [color, length, wrongLength]
 `,
       )
-      const installed = Ts.createProgram({
-        options: {
-          module: Ts.ModuleKind.NodeNext,
-          moduleResolution: Ts.ModuleResolutionKind.NodeNext,
-          noEmit: true,
-          skipLibCheck: false,
-          strict: true,
-          target: Ts.ScriptTarget.ESNext,
-          types: [],
-        },
-        rootNames: [consumer],
-      })
+      const installedProject = Path.join(root, 'consumer.json')
+      await Fs.writeFile(
+        installedProject,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'nodenext',
+            moduleResolution: 'nodenext',
+            noEmit: true,
+            skipLibCheck: false,
+            strict: true,
+            target: 'esnext',
+            types: [],
+          },
+          files: [consumer],
+        }),
+      )
+      const installed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript-api/bin/tsc'),
+          '--project',
+          installedProject,
+        ],
+        { timeout: 30_000 },
+      )
 
-      expect(
-        Ts.getPreEmitDiagnostics(installed).map((diagnostic) => ({
-          code: diagnostic.code,
-          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
-        })),
-      ).toMatchInlineSnapshot('[]')
+      expect(installed.stdout).toMatchInlineSnapshot('""')
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }

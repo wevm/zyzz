@@ -220,6 +220,10 @@ export function create() {
     owner?: Token.Contract,
   ): string {
     if (Token.is(value)) return serialize(value)
+    if (Token.isExpression(value))
+      return value.parts
+        .map((part) => (typeof part === 'string' ? part : serialize(part)))
+        .join('')
     if (typeof value !== 'object') return String(value)
     if ('default' in value) {
       // Separate fallback properties preserve extensions and resolve references within each scope.

@@ -11,6 +11,7 @@ export type {
   VariableScope,
 } from './internal/Configuration.js'
 export type {
+  Composition as VariableComposition,
   Definition as VariableDefinition,
   Reference as VariableReference,
 } from './Vars.js'

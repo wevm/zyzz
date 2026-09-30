@@ -75,6 +75,7 @@ export function build(
       typeof input === 'string' ||
       typeof input === 'number' ||
       Token.is(input) ||
+      Token.isExpression(input) ||
       (path.length > 0 &&
         input &&
         typeof input === 'object' &&
@@ -244,6 +245,17 @@ function read(
   active = new Set<object>(),
 ): Token.Value {
   if (Token.is(input)) return input
+  if (Token.isExpression(input)) {
+    if (
+      !('group' in input) ||
+      (input.group !== 'color' && input.group !== 'spacing')
+    )
+      throw new Vars.InvalidError(path, 'Expected a composed variable value.')
+    return Vars.compose(
+      input.group,
+      input.parts as readonly (string | Token.Reference)[],
+    )
+  }
   if (typeof input === 'number' && Number.isFinite(input)) return input
   if (typeof input === 'string' && input.trim() && !/[;{}]/.test(input))
     return input
@@ -307,7 +319,7 @@ function read(
 
 /** Infers the shared declaration domain after following defaults and references. */
 export function domain(value: Token.Value): Token.Group {
-  if (Token.is(value)) return value.group
+  if (Token.is(value) || Token.isExpression(value)) return value.group
   if (typeof value === 'object')
     return 'default' in value ? domain(value.default) : 'color'
   if (
@@ -383,6 +395,7 @@ export function merge(
           typeof entry !== 'object' ||
           Array.isArray(entry) ||
           Token.is(entry) ||
+          Token.isExpression(entry) ||
           'default' in entry ||
           ('light' in entry && 'dark' in entry) ||
           (Object.keys(entry).length <= 2 &&
@@ -424,6 +437,17 @@ export function rebind(
         value: visit(value.path),
       })
     }
+    if (Token.isExpression(value))
+      return Vars.compose(
+        value.group,
+        value.parts.map((part) => {
+          if (typeof part === 'string') return part
+          const reference = resolve(part)
+          if (!Token.is(reference))
+            throw new Vars.InvalidError([], 'Expected a variable reference.')
+          return reference
+        }),
+      )
     if (typeof value !== 'object') return value
 
     return Object.freeze(

@@ -78,6 +78,38 @@ Source compilation accepts an inline synchronous callback with one named paramet
 
 References retain their source identity. Extending a set changes values within its scope without changing the paths used by consumers. Separate definitions retain independent identities.
 
+## Composed values
+
+`Vars.compose(group, parts)` combines CSS text, finite numbers, and variable references without resolving references to fixed values. `group` is `color` or `spacing` and determines the resulting reference domain. The returned `Vars.Composition` is immutable and can supply a leaf, conditional branch, color-scheme branch, or compatible override.
+
+```ts
+import { Vars } from 'zyzz'
+
+const base = Vars.define(
+  { color: { ink: '#171717' }, number: { opacity: 25, space: 16 } },
+  (vars) => ({
+    color: {
+      faded: Vars.compose('color', [
+        'color-mix(in srgb, ',
+        vars.color.ink,
+        ' calc(',
+        vars.number.opacity,
+        ' * 1%), transparent)',
+      ]),
+    },
+    spacing: {
+      page: Vars.compose('spacing', ['calc(', vars.number.space, ' * 1px)']),
+    },
+  }),
+)
+```
+
+References remain live across set scopes, including references to another set. Extensions rebind references within the extended set. CSS is emitted ahead of time, and browsers evaluate the expressions. React Native rejects composed values with an unsupported-feature diagnostic.
+
+Parts must form a nonempty CSS value. Declaration separators, braces, importance markers, nonfinite numbers, and arbitrary objects throw `Vars.InvalidError`. The domain describes the complete expression, so a color composition may contain a numeric opacity reference. The browser determines whether the resulting CSS expression is valid.
+
+Source compilation accepts `Vars.compose` with a literal domain and dense literal parts array inside variable definitions and overrides. Expressions require compiler contract version 29 or later. Other variable sets retain version 28.
+
 ## Mappings
 
 A single set needs only `Config.create({ vars: base })`. Inline variable records are also supported. Default category mappings follow Tailwind’s non-font namespaces and fallback order. Font scalar categories keep their matching properties.

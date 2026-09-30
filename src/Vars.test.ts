@@ -1,10 +1,11 @@
 /** Exercises variable authoring through source compilation and browser scopes. @module */
+import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
-import * as Ts from 'typescript-api'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
@@ -387,38 +388,42 @@ ${domain === 'platform' ? `export const catalogButton = variants({ base: { borde
 `,
         )
 
-      const options: Ts.CompilerOptions = {
-        declaration: true,
-        emitDeclarationOnly: true,
-        module: Ts.ModuleKind.NodeNext,
-        moduleResolution: Ts.ModuleResolutionKind.NodeNext,
-        outDir: Path.join(library, 'dist'),
-        rootDir: library,
-        skipLibCheck: false,
-        strict: true,
-        target: Ts.ScriptTarget.ESNext,
-        types: [],
-      }
-      const program = Ts.createProgram({
-        options,
-        rootNames: [
-          Path.join(library, 'core.ts'),
-          Path.join(library, 'core.config.ts'),
-          Path.join(library, 'platform.ts'),
-          Path.join(library, 'platform.config.ts'),
+      const project = Path.join(root, 'producer.json')
+      await Fs.writeFile(
+        project,
+        JSON.stringify({
+          compilerOptions: {
+            declaration: true,
+            emitDeclarationOnly: true,
+            module: 'nodenext',
+            moduleResolution: 'nodenext',
+            outDir: Path.join(library, 'dist'),
+            rootDir: library,
+            skipLibCheck: false,
+            strict: true,
+            target: 'esnext',
+            types: [],
+          },
+          files: [
+            'core.ts',
+            'core.config.ts',
+            'platform.ts',
+            'platform.config.ts',
+          ].map((file) => Path.join(library, file)),
+        }),
+      )
+      // Separate compiler processes avoid coverage overhead and keep the test worker responsive.
+      const emitted = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript-api/bin/tsc'),
+          '--project',
+          project,
         ],
-      })
-      const diagnostics = [
-        ...Ts.getPreEmitDiagnostics(program),
-        ...program.emit().diagnostics,
-      ]
+        { timeout: 30_000 },
+      )
 
-      expect(
-        diagnostics.map((diagnostic) => ({
-          code: diagnostic.code,
-          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
-        })),
-      ).toMatchInlineSnapshot('[]')
+      expect(emitted.stdout).toMatchInlineSnapshot('""')
       const declarations = await Fs.readFile(
         Path.join(library, 'dist/platform.d.ts'),
         'utf8',
@@ -457,25 +462,33 @@ button({ size: 'large' })
 void [color, length, wrongLength]
 `,
       )
-      const installed = Ts.createProgram({
-        options: {
-          module: Ts.ModuleKind.NodeNext,
-          moduleResolution: Ts.ModuleResolutionKind.NodeNext,
-          noEmit: true,
-          skipLibCheck: false,
-          strict: true,
-          target: Ts.ScriptTarget.ESNext,
-          types: [],
-        },
-        rootNames: [consumer],
-      })
+      const installedProject = Path.join(root, 'consumer.json')
+      await Fs.writeFile(
+        installedProject,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'nodenext',
+            moduleResolution: 'nodenext',
+            noEmit: true,
+            skipLibCheck: false,
+            strict: true,
+            target: 'esnext',
+            types: [],
+          },
+          files: [consumer],
+        }),
+      )
+      const installed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript-api/bin/tsc'),
+          '--project',
+          installedProject,
+        ],
+        { timeout: 30_000 },
+      )
 
-      expect(
-        Ts.getPreEmitDiagnostics(installed).map((diagnostic) => ({
-          code: diagnostic.code,
-          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
-        })),
-      ).toMatchInlineSnapshot('[]')
+      expect(installed.stdout).toMatchInlineSnapshot('""')
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }

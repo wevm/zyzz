@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added `Vars.compose` for CSS variable values containing live color, opacity, and length references.

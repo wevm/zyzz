@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added external import patterns to standalone compilation and additional source directories to the Vite integration.

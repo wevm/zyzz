@@ -582,9 +582,9 @@ type Paths<tree, property extends keyof Literal.Properties = never> = [
               : Literal.Length extends VariableSets.Scalar<
                     NonNullable<tree[key]>
                   >
-                ? property extends Binding.Properties<'length'>
-                  ? PathKey<key>
-                  : never
+                ? Binding.Property<'length', property> extends never
+                  ? never
+                  : PathKey<key>
                 : VariableSets.Scalar<
                       NonNullable<tree[key]>
                     > extends Literal.Properties[property] &

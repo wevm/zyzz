@@ -33,8 +33,8 @@ describe('define', () => {
           name: 'variable-fixture',
           type: 'module',
           exports: {
-            './core': './dist/core.d.ts',
-            './platform': './dist/platform.d.ts',
+            './core': './dist/core.config.d.ts',
+            './platform': './dist/platform.config.d.ts',
           },
         }),
       )
@@ -44,7 +44,6 @@ describe('define', () => {
 export const variables = zyzz.Vars.define({
   color: { ink: '#123456' }, dimension: { small: '8px' },
 }, { id: 'fixture/core' })
-export const { style, variants, vars } = zyzz.Config.create({ vars: variables, mappings: false, id: 'fixture/core/config' })
 `,
       )
       await Fs.writeFile(
@@ -54,9 +53,18 @@ import { variables as core } from './core.js'
 export const variables = zyzz.Vars.define({
   color: { content: core.color.ink }, dimension: { space: core.dimension.small },
 }, { id: 'fixture/platform' })
-export const { style, variants, vars } = zyzz.Config.create({ vars: variables, mappings: false, id: 'fixture/platform/config' })
 `,
       )
+      for (const domain of ['core', 'platform'])
+        await Fs.writeFile(
+          Path.join(library, `${domain}.config.ts`),
+          `import { Config } from 'zyzz'
+import { variables } from './${domain}.js'
+
+export { variables } from './${domain}.js'
+export const { style, variants, vars } = Config.create({ vars: variables, mappings: false, id: 'fixture/${domain}/config' })
+`,
+        )
 
       const options: Ts.CompilerOptions = {
         declaration: true,
@@ -74,7 +82,9 @@ export const { style, variants, vars } = zyzz.Config.create({ vars: variables, m
         options,
         rootNames: [
           Path.join(library, 'core.ts'),
+          Path.join(library, 'core.config.ts'),
           Path.join(library, 'platform.ts'),
+          Path.join(library, 'platform.config.ts'),
         ],
       })
       const diagnostics = [

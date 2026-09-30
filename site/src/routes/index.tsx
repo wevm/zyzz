@@ -124,7 +124,7 @@ function Index() {
         <a href={docsUrl} {...styles.headerLink()}>
           Docs <span aria-hidden="true">↗</span>
         </a>
-        <a href="/vars/default" {...styles.referenceLink()}>
+        <a href="/vars" {...styles.referenceLink()}>
           Variables
         </a>
       </header>

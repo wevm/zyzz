@@ -23,7 +23,7 @@ export const Route = createRootRoute({
         name: 'viewport',
       },
       {
-        title: 'Zyzz · Style with TypeScript',
+        title: 'Zyzz',
       },
       {
         content:

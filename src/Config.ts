@@ -10,6 +10,10 @@ export type {
   VariableOptions,
   VariableScope,
 } from './internal/Configuration.js'
+export type {
+  Definition as VariableDefinition,
+  Reference as VariableReference,
+} from './Vars.js'
 
 /** Creates isolated authoring with optional vars and named alternatives. */
 export function create<const options extends create.Options = {}>(

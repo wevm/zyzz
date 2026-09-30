@@ -1256,6 +1256,44 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('keeps server-only contributions out of client stylesheets', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'entry.server.ts': `import { global } from 'zyzz/web'; global({ body: { color: 'rebeccapurple' } });`,
+    })
+    const server = await Vite.createServer(config)
+    try {
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const origin = `http://127.0.0.1:${address.port}`
+      const code = await (await fetch(`${origin}/main.ts`)).text()
+      const path = code.match(/import\s*["']([^"']*zyzz:shared\.css)["']/)?.[1]
+      if (!path) throw new Error('Missing shared stylesheet')
+      const response = await fetch(`${origin}${path}?direct`)
+      expect(response.status).toMatchInlineSnapshot('200')
+      expect(
+        (await response.text()).includes('rebeccapurple'),
+      ).toMatchInlineSnapshot('false')
+
+      const result = await Vite.build({ ...config, build: { write: false } })
+      const output = Array.isArray(result) ? result[0]! : result
+      if (!('output' in output)) throw new Error('Unexpected watch build')
+      const css = output.output
+        .flatMap((file) =>
+          file.type === 'asset' && file.fileName.endsWith('.css')
+            ? [file.source]
+            : [],
+        )
+        .join('\n')
+      expect(css.includes('rebeccapurple')).toMatchInlineSnapshot('false')
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('serves shared and module stylesheets with Vite CSS queries', async () => {
     const { config, root } = await create({
       ...Fixture.files,

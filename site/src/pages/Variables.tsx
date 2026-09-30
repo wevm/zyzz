@@ -297,10 +297,12 @@ export function Page({
               </aside>
               <div ref={sections} {...styles.sections()}>
                 {filtered.length === 0 && (
-                  <p {...styles.description()}>
-                    No variables match “{query}”. Try a category, such as color
-                    or spacing.
-                  </p>
+                  <div {...styles.sectionContent()}>
+                    <p {...styles.description()}>
+                      No variables match “{query}”. Try a category, such as
+                      color or spacing.
+                    </p>
+                  </div>
                 )}
                 {filtered.map((group) => (
                   <section

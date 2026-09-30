@@ -262,6 +262,11 @@ export function acceptsReference(
   if (property.startsWith('--')) return true
   function check(value: Value): boolean {
     if (is(value)) return acceptsReference(value, property)
+    if (isExpression(value))
+      return Binding.accepts(
+        value.group === 'color' ? 'color' : 'length',
+        property,
+      )
     if (typeof value === 'object') return Object.values(value).every(check)
     if (typeof value === 'number') {
       const rule = Literal.rule(property)
@@ -401,6 +406,18 @@ export type Expression = {
   readonly [expression]: true
   /** Cooked text and live scalar theme references in authored order. */
   readonly parts: readonly (string | Reference | Binding.Reference)[]
+}
+
+/** A composed variable value with an explicit scalar domain. */
+export type Composition<
+  group extends 'color' | 'spacing' = 'color' | 'spacing',
+> = {
+  /** Structured expression discriminator. */
+  readonly [expression]: true
+  /** Domain retained by variable references and compatible overrides. */
+  readonly group: group
+  /** CSS text and references to portable variable values. */
+  readonly parts: readonly (string | Reference)[]
 }
 
 /** Identifies structured web expressions independently of literal CSS text. */
@@ -558,17 +575,27 @@ type Paths<tree, property extends keyof Literal.Properties = never> = [
         > extends Value
           ? [property] extends [never]
             ? PathKey<key>
-            : VariableSets.Scalar<
-                  NonNullable<tree[key]>
-                > extends Literal.Properties[property] &
-                  ValueSyntax.Checked<
-                    Record<
-                      property,
-                      VariableSets.Scalar<NonNullable<tree[key]>>
-                    >
-                  >[property]
-              ? PathKey<key>
-              : never
+            : Literal.Color extends VariableSets.Scalar<NonNullable<tree[key]>>
+              ? property extends Properties<'color'>
+                ? PathKey<key>
+                : never
+              : Literal.Length extends VariableSets.Scalar<
+                    NonNullable<tree[key]>
+                  >
+                ? property extends Properties<'spacing'>
+                  ? PathKey<key>
+                  : never
+                : VariableSets.Scalar<
+                      NonNullable<tree[key]>
+                    > extends Literal.Properties[property] &
+                      ValueSyntax.Checked<
+                        Record<
+                          property,
+                          VariableSets.Scalar<NonNullable<tree[key]>>
+                        >
+                      >[property]
+                  ? PathKey<key>
+                  : never
           : `${key}.${Paths<NonNullable<tree[key]>, property>}`
       }[Extract<keyof tree, number | string>]
 
@@ -794,6 +821,7 @@ export type Value =
   | number
   | string
   | Reference
+  | Composition
   | { readonly dark: Value; readonly light: Value }
   | Conditions
 

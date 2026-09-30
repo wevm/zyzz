@@ -12,6 +12,12 @@ import { Props } from 'zyzz/runtime'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('create', () => {
+  test('omits absent inline styles from returned props', () => {
+    const button = Props.create({ className: 'button' })
+    expect(button()).toEqual({ className: 'button' })
+    expect(button({ style: undefined })).toEqual({ className: 'button' })
+  })
+
   test('merges variable assignments in static, dynamic and HTML calls', async () => {
     const result = Transform.compile({
       moduleId: 'usage.ts',

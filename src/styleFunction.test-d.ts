@@ -11,6 +11,20 @@ import * as Config from './internal/Configuration.js'
 import { counterStyle, fontPaletteValues, positionTry } from 'zyzz/web'
 
 describe('style', () => {
+  test('spreads returned props into components with exact optional styles', () => {
+    const card = style({ padding: '8px' })
+    type ComponentProps = {
+      readonly className?: string
+      readonly style?: CSSProperties | ((state: object) => CSSProperties)
+    }
+
+    expectTypeOf(card()).toExtend<ComponentProps>()
+    expectTypeOf(card({ style: undefined })).toExtend<ComponentProps>()
+    // @ts-expect-error Absent inline styles are omitted from returned props.
+    const props: style.Props = { className: 'card', style: undefined }
+    void props
+  })
+
   test('accepts React inline styles without weakening authored declarations', () => {
     const card = style({ padding: '8px' })
     const dynamic = style((values: { width: `${number}%` }) => ({

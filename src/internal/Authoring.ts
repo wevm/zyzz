@@ -157,7 +157,7 @@ export function variants(
   return (values: Record<string, unknown> & style.Options = {}) => {
     const result = { ...props(values as style.Options) } as {
       className: string
-      style?: style.Props['style']
+      style?: NonNullable<style.Props['style']>
       [key: `data-${string}`]: string | undefined
     }
     const bindings: Record<string, string | number> = {}

@@ -114,9 +114,7 @@ export declare namespace style {
         /** Compiled and supplied class names. */
         readonly className: string
         /** Supplied inline styling overrides when present. */
-        readonly style?:
-          | Readonly<Record<string, string | number | undefined>>
-          | undefined
+        readonly style?: Readonly<Record<string, string | number | undefined>>
       }
 
   /** Callable definition; source rewriting supplies its implementation. */

@@ -36,37 +36,53 @@ namespace styles {
       gap: 3,
       justifyContent: 'center',
       textDecoration: 'none',
+      transition:
+        'background-color 150ms ease-in-out, border-color 150ms ease-in-out, color 150ms ease-in-out, box-shadow 150ms ease-in-out',
+      userSelect: 'none',
       ':focus-visible': {
         outline: '2px solid',
-        outlineColor: 'gray.600',
-        outlineOffset: '4px',
+        outlineColor: 'blue.900',
+        outlineOffset: '2px',
+        transition: 'none',
       },
-      ':disabled': { cursor: 'not-allowed', opacity: 0.5 },
+      ':disabled': {
+        backgroundColor: 'gray.100',
+        borderColor: 'gray.400',
+        color: 'gray.700',
+        cursor: 'not-allowed',
+      },
       '& svg': { flexShrink: 0 },
+      '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
     },
     variants: {
       variant: {
         primary: {
           backgroundColor: 'foreground',
-          borderColor: 'foreground',
-          color: 'background.100',
-          ':hover:not(:disabled)': { backgroundColor: 'gray.900' },
+          color: 'background.primary',
+          ':hover:not(:disabled)': {
+            backgroundColor: 'light-dark(hsl(0 0% 22%), hsl(0 0% 80%)) !custom',
+          },
         },
         secondary: {
-          backgroundColor: 'gray.100',
+          backgroundColor: 'background.primary',
           borderColor: 'gray.400',
           color: 'foreground',
-          ':hover:not(:disabled)': { backgroundColor: 'gray.200' },
+          ':hover:not(:disabled)': {
+            backgroundColor: 'gray.100',
+            '@media (prefers-color-scheme: dark)': {
+              backgroundColor: 'gray.200',
+            },
+          },
         },
-        // The reset clears native button backgrounds, so ghost sets none.
         ghost: {
-          color: 'gray.900',
-          ':hover:not(:disabled)': { color: 'foreground' },
+          backgroundColor: 'transparent !custom',
+          color: 'foreground',
+          ':hover:not(:disabled)': { backgroundColor: 'grayAlpha.200' },
         },
       },
       size: {
         default: { paddingBlock: 4, paddingInline: 6 },
-        icon: { borderRadius: 'sm', height: 8, width: 8 },
+        icon: { borderRadius: 'md', height: 8, width: 8 },
       },
     },
     defaultVariants: { variant: 'primary', size: 'default' },

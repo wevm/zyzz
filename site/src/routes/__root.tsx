@@ -1,6 +1,7 @@
 /** Defines the shared HTML document. @module */
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { script } from 'zyzz/default'
 import reset from 'zyzz/reset.css?url'
 import { vars } from '../zyzz.config.js'
 
@@ -36,8 +37,13 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" {...vars({ colorScheme: 'light dark' })}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      {...vars({ colorScheme: 'light dark' })}
+    >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: script() }} />
         <HeadContent />
       </head>
       <body>

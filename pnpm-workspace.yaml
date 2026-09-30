@@ -9,6 +9,7 @@ allowBuilds:
   workerd: true
 
 catalog:
+  '@iconify-json/lucide': '^1.2.137'
   '@iconify-json/simple-icons': '^1.2.97'
   '@svgr/core': '^8.1.0'
   '@svgr/plugin-jsx': '^8.1.0'
@@ -24,6 +25,7 @@ catalog:
   '@mdn/browser-compat-data': '8.1.2'
   '@oxc-project/types': '0.148.0'
   '@pandacss/node': '^1.12.1'
+  '@rolldown/plugin-babel': '^0.2.4'
   '@stylexjs/babel-plugin': '^0.19.0'
   '@stylexjs/stylex': '^0.19.0'
   '@sveltejs/vite-plugin-svelte': '^7.3.0'
@@ -40,6 +42,7 @@ catalog:
   '@vitejs/plugin-react': '^6.1.1'
   '@vitest/browser-playwright': '4.1.9'
   '@vitest/coverage-v8': '4.1.9'
+  'babel-plugin-react-compiler': '^1.0.0'
   'concurrently': '^10.0.5'
   'css-tree': '3.2.1'
   'esbuild': '^0.28.2'
@@ -62,6 +65,7 @@ catalog:
   'react-native-nitro-modules': '0.37.1'
   'react-native-unistyles': '3.3.0'
   'rollup': '^4.63.3'
+  'shiki': '^4.4.3'
   'solid-js': '1.9.15'
   'svelte': '5.57.0'
   'tailwindcss': '^4.3.3'

@@ -1,7 +1,10 @@
 /** Exercises variable authoring through source compilation and browser scopes. @module */
+import * as Fs from 'node:fs/promises'
+import * as Path from 'node:path'
 import * as Vm from 'node:vm'
 import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
+import * as Ts from 'typescript-api'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
@@ -9,6 +12,133 @@ import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
 describe('define', () => {
+  test('emits inferred cross-domain declarations for installed consumers', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-vars-declarations-'))
+    const library = Path.join(root, 'node_modules/variable-fixture')
+
+    try {
+      await Fs.mkdir(library, { recursive: true })
+      await Fs.symlink(
+        process.cwd(),
+        Path.join(root, 'node_modules/zyzz'),
+        'dir',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'package.json'),
+        JSON.stringify({ type: 'module' }),
+      )
+      await Fs.writeFile(
+        Path.join(library, 'package.json'),
+        JSON.stringify({
+          name: 'variable-fixture',
+          type: 'module',
+          exports: {
+            './core': './dist/core.d.ts',
+            './platform': './dist/platform.d.ts',
+          },
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(library, 'core.ts'),
+        `import * as zyzz from 'zyzz'
+export const variables = zyzz.Vars.define({
+  color: { ink: '#123456' }, dimension: { small: '8px' },
+}, { id: 'fixture/core' })
+export const { style, variants, vars } = zyzz.Config.create({ vars: variables, mappings: false, id: 'fixture/core/config' })
+`,
+      )
+      await Fs.writeFile(
+        Path.join(library, 'platform.ts'),
+        `import * as zyzz from 'zyzz'
+import { variables as core } from './core.js'
+export const variables = zyzz.Vars.define({
+  color: { content: core.color.ink }, dimension: { space: core.dimension.small },
+}, { id: 'fixture/platform' })
+export const { style, variants, vars } = zyzz.Config.create({ vars: variables, mappings: false, id: 'fixture/platform/config' })
+`,
+      )
+
+      const options: Ts.CompilerOptions = {
+        declaration: true,
+        emitDeclarationOnly: true,
+        module: Ts.ModuleKind.NodeNext,
+        moduleResolution: Ts.ModuleResolutionKind.NodeNext,
+        outDir: Path.join(library, 'dist'),
+        rootDir: library,
+        skipLibCheck: false,
+        strict: true,
+        target: Ts.ScriptTarget.ESNext,
+        types: [],
+      }
+      const program = Ts.createProgram({
+        options,
+        rootNames: [
+          Path.join(library, 'core.ts'),
+          Path.join(library, 'platform.ts'),
+        ],
+      })
+      const diagnostics = [
+        ...Ts.getPreEmitDiagnostics(program),
+        ...program.emit().diagnostics,
+      ]
+
+      expect(
+        diagnostics.map((diagnostic) => ({
+          code: diagnostic.code,
+          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
+        })),
+      ).toMatchInlineSnapshot('[]')
+      const declarations = await Fs.readFile(
+        Path.join(library, 'dist/platform.d.ts'),
+        'utf8',
+      )
+      expect(declarations.includes('internal/Token')).toMatchInlineSnapshot(
+        'false',
+      )
+
+      const consumer = Path.join(root, 'consumer.ts')
+      await Fs.writeFile(
+        consumer,
+        `import type * as zyzz from 'zyzz'
+import { variables, style, variants, vars } from 'variable-fixture/platform'
+const color: zyzz.Vars.Scalar<typeof variables.color.content> = '#123456'
+const length: zyzz.Vars.Scalar<typeof variables.dimension.space> = '8px'
+// @ts-expect-error Literal precision survives the Core alias and declaration boundary.
+const wrongLength: zyzz.Vars.Scalar<typeof variables.dimension.space> = '12px'
+style({ color: 'color.content', padding: 'dimension.space' })
+style({ padding: vars.dimension.space })
+// @ts-expect-error Color aliases remain incompatible with lengths.
+style({ padding: vars.color.content })
+const button = variants({ variants: { size: { small: { height: 'dimension.space' } } } })
+button({ size: 'small' })
+// @ts-expect-error Inferred variant selections remain narrow.
+button({ size: 'large' })
+void [color, length, wrongLength]
+`,
+      )
+      const installed = Ts.createProgram({
+        options: {
+          module: Ts.ModuleKind.NodeNext,
+          moduleResolution: Ts.ModuleResolutionKind.NodeNext,
+          noEmit: true,
+          skipLibCheck: false,
+          strict: true,
+          target: Ts.ScriptTarget.ESNext,
+          types: [],
+        },
+        rootNames: [consumer],
+      })
+
+      expect(
+        Ts.getPreEmitDiagnostics(installed).map((diagnostic) => ({
+          code: diagnostic.code,
+          message: Ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
+        })),
+      ).toMatchInlineSnapshot('[]')
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30_000)
   test('resolves breakpoint aliases in responsive variable fallbacks', async () => {
     const result = Graph.compile({
       modules: {

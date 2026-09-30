@@ -7,9 +7,12 @@ import * as Token from './internal/Token.js'
 import * as VariableSets from './internal/VariableSets.js'
 import type { style } from './styleFunction.js'
 
-/** Portable scalar reference with its accepted value domain. */
-export type Reference<group extends Token.Group = Token.Group> =
-  Token.Reference<group>
+/** Portable scalar reference retaining its value domain and optional literal precision. */
+export type Reference<
+  group extends Token.Group = Token.Group,
+  scalar = never,
+> = Token.Reference<group> &
+  ([scalar] extends [never] ? {} : { readonly [Token.scalar]: scalar })
 
 const shape = Symbol('zyzz.variables.shape')
 
@@ -47,9 +50,7 @@ export type References<values, root extends boolean = true> = {
     keyof values,
     root extends true ? 'breakpoint' | 'containerNames' : never
   >]: values[key] extends Value
-    ? Token.Reference<Domain<Scalar<values[key]>>> & {
-        readonly [Token.scalar]: Scalar<values[key]>
-      }
+    ? Reference<Domain<Scalar<values[key]>>, Scalar<values[key]>>
     : References<values[key], false>
 }
 

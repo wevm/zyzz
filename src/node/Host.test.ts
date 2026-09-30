@@ -656,6 +656,106 @@ describe('create', () => {
     }
   })
 
+  test('explicit config scopes deliver unused catalog variables in Chromium', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(project, '.fixture-complete-config-'),
+    )
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
+    try {
+      await Fs.mkdir(Path.join(root, 'src'))
+      const entry = Path.join(root, 'src/config.ts')
+      await Fs.writeFile(
+        entry,
+        `import {Config,Vars} from 'zyzz';
+const base=Vars.define({color:{ink:'#123456',surface:'#abcdef'},dimension:{gutter:{default:'16px','@media (min-width: 768px)':'24px'}}},{id:'catalog'});
+const inverse=Vars.extend(base,{color:{surface:'#000000'}});
+export const {style,vars}=Config.create({id:'complete-config',vars:{base,inverse},defaultVars:'base',mappings:false});
+export const card=style({color:'color.ink'});`,
+      )
+      browser = await chromium.launch({ channel: 'chrome' })
+
+      for (const compiler of [false, true]) {
+        const outDir = Path.join(root, compiler ? 'compiled' : 'original')
+        await using host = await Host.create({
+          root: Path.join(root, 'src'),
+          outDir,
+          packageId: 'catalog',
+          compiler,
+          modules: compiler,
+        })
+        await host.build()
+        const bundle = await Esbuild.build({
+          alias: {
+            zyzz: Path.join(project, 'src/index.ts'),
+            'zyzz/runtime': Path.join(project, 'src/runtime/index.ts'),
+          },
+          bundle: true,
+          entryPoints: [compiler ? Path.join(outDir, 'config.ts') : entry],
+          format: 'iife',
+          globalName: 'Fixture',
+          write: false,
+        })
+        const page = await browser.newPage({
+          viewport: { width: 767, height: 600 },
+        })
+        await page.setContent('<section><div>Catalog</div></section>')
+        await page.addStyleTag({
+          content: await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8'),
+        })
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+        await page.evaluate(() => {
+          const { vars } = (
+            window as unknown as {
+              Fixture: {
+                vars: (options: { set: string }) => { className: string }
+              }
+            }
+          ).Fixture
+          const scope = document.querySelector('section')!
+          scope.className = vars({ set: 'inverse' }).className
+          const properties = Array.from(getComputedStyle(scope))
+          const surface = properties.find((name) =>
+            name.endsWith('-color_2e_surface'),
+          )
+          const gutter = properties.find((name) =>
+            name.endsWith('-dimension_2e_gutter'),
+          )
+          if (!surface || !gutter)
+            throw new Error('Incomplete variable catalog')
+          const element = document.querySelector('div')!
+          element.style.backgroundColor = `var(${surface})`
+          element.style.paddingInline = `var(${gutter})`
+        })
+
+        expect(
+          await page
+            .locator('div')
+            .evaluate((element) => getComputedStyle(element).backgroundColor),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+        expect(
+          await page
+            .locator('div')
+            .evaluate(
+              (element) => getComputedStyle(element).paddingInlineStart,
+            ),
+        ).toMatchInlineSnapshot('"16px"')
+        await page.setViewportSize({ width: 768, height: 600 })
+        expect(
+          await page
+            .locator('div')
+            .evaluate(
+              (element) => getComputedStyle(element).paddingInlineStart,
+            ),
+        ).toMatchInlineSnapshot('"24px"')
+        await page.close()
+      }
+    } finally {
+      await browser?.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30_000)
+
   test('processed themes and props render in Chromium', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-browser-'))
     const outDir = Path.join(root, 'output')

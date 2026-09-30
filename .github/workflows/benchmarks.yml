@@ -98,6 +98,8 @@ jobs:
       - name: Build package
         run: pnpm build
       - name: Check benchmark fixtures and compare Next.js builds
+        env:
+          BENCH_RUNTIME: '1'
         run: pnpm bench:check
       - name: Upload benchmark checks and Next.js comparisons
         if: ${{ !cancelled() }}

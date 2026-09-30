@@ -29,7 +29,7 @@
     "@babel/core": "catalog:",
     "@changesets/cli": "catalog:",
     "@mdn/browser-compat-data": "catalog:",
-    "@pandacss/node": "catalog:",
+    "@pandacss/dev": "catalog:",
     "@stylexjs/babel-plugin": "catalog:",
     "@stylexjs/stylex": "catalog:",
     "@types/babel__core": "catalog:",

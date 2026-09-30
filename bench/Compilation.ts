@@ -3,7 +3,7 @@
  * @module
  */
 import * as Babel from '@babel/core'
-import * as Panda from '@pandacss/node'
+import * as Panda from '@pandacss/dev/node'
 import StylexPlugin, {
   type Rule,
   type StyleXTransformObj,
@@ -175,15 +175,16 @@ export declare namespace minify {
 
 /** Runs Panda's config loading, code generation, extraction, and browser bundling. */
 export async function panda(fixture: Fixture): Promise<Bundle> {
-  const context = await Panda.loadConfigAndCreateContext({
+  const driver = await Panda.createNodeDriver({
     cwd: fixture.directory,
   })
 
-  await Panda.codegen(context)
+  driver.codegen()
+  driver.parseFiles()
 
   const file = Path.join(fixture.directory, 'panda.css')
 
-  await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
+  driver.writeCss({ cwd: fixture.directory, outfile: file })
 
   return {
     css: minify(await Fs.readFile(file, 'utf8'), { targets: fixture.targets }),

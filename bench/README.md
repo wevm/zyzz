@@ -50,7 +50,7 @@ The Verify workflow runs application correctness tests and TypeScript checks sep
 
 `Compilation.bench.ts` compiles eight literal workloads: three components, 1,000 repeated components, 1,000 components with unique padding, and five expanded workloads covering partial sharing, a 16-value palette, independently varying fields, sparse properties, and mixed component shapes. Values use fixed integer mixing. All components stay in the browser bundle; no reset, preset theme, responsive rules, or unused components are included.
 
-Adapters use [StyleX's Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/), Tailwind's `compile(...).build(candidates)` with arbitrary-property utilities, [vanilla-extract's esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/), and Panda's `@pandacss/node` config loading, code generation, extraction, and emission with the base utility preset and preflight disabled. Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
+Adapters use [StyleX's Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/), Tailwind's `compile(...).build(candidates)` with arbitrary-property utilities, [vanilla-extract's esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/), and Panda v2's `@pandacss/dev/node` driver for config loading, code generation, extraction, and emission with the base utility preset and preflight disabled. Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
 
 Timing boundaries:
 

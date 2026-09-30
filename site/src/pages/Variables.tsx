@@ -204,9 +204,9 @@ export function Page({
                 <a aria-label="Zyzz home" href="/" {...styles.brand()}>
                   <svg
                     aria-hidden="true"
-                    width="96"
-                    height="43"
-                    viewBox="0 0 255 114"
+                    width="80"
+                    height="24"
+                    viewBox="12 24 233 64"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -612,7 +612,6 @@ namespace styles {
     paddingInline: 4,
     '@media (max-width: 700px)': {
       paddingInline: 2,
-      '& svg': { width: 20, height: 'auto !custom' },
     },
   })
 

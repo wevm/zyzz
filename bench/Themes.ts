@@ -3,7 +3,8 @@
  * @module
  */
 import * as Babel from '@babel/core'
-import * as Panda from '@pandacss/node'
+import * as Panda from '@pandacss/dev/node'
+import * as PandaTransformer from '@pandacss/transformer'
 import StylexPlugin, {
   type Rule,
   type StyleXTransformObj,
@@ -112,7 +113,7 @@ export const themes={alternate:stylex.props(alternate),base:stylex.props(base)};
 
     await Fs.writeFile(
       Path.join(directory, 'panda.config.ts'),
-      `export default ${JSON.stringify({ include: ['./panda.ts'], outdir: 'styled-system', preflight: false, presets: ['@pandacss/preset-base'], staticCss: { themes: ['*'] }, vars: pandaTheme(base), themes: { alternate: pandaTheme(alternate), base: pandaTheme(base) } })}`,
+      `export default ${JSON.stringify({ include: ['./panda.ts'], outdir: 'styled-system', preflight: false, presets: ['@pandacss/preset-base'], staticCss: { themes: ['*'] }, theme: pandaTheme(base), themes: { alternate: pandaTheme(alternate), base: pandaTheme(base) } })}`,
     )
     await Fs.writeFile(
       Path.join(directory, 'panda.ts'),
@@ -205,15 +206,16 @@ export type Fixture = {
 
 /** Generates Panda semantic-token themes, extracts styles, and bundles exports. */
 export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
-  const context = await Panda.loadConfigAndCreateContext({
+  const driver = await Panda.createNodeDriver({
     cwd: fixture.directory,
   })
 
-  await Panda.codegen(context)
+  driver.codegen()
+  driver.parseFiles()
 
   const file = Path.join(fixture.directory, 'panda.css')
 
-  await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
+  driver.writeCss({ cwd: fixture.directory, outfile: file })
 
   return {
     css: Compilation.minify(await Fs.readFile(file, 'utf8'), {
@@ -221,6 +223,7 @@ export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
     }),
     javascript: await Compilation.javascript(
       `export {classes,themes} from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
+      { plugins: [PandaTransformer.esbuild({ compiler: driver.compiler })] },
     ),
   }
 }

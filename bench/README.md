@@ -50,12 +50,13 @@ The Verify workflow runs application correctness tests and TypeScript checks sep
 
 `Compilation.bench.ts` compiles eight literal workloads: three components, 1,000 repeated components, 1,000 components with unique padding, and five expanded workloads covering partial sharing, a 16-value palette, independently varying fields, sparse properties, and mixed component shapes. Values use fixed integer mixing. All components stay in the browser bundle; no reset, preset theme, responsive rules, or unused components are included.
 
-Adapters use [StyleX's Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/), Tailwind's `compile(...).build(candidates)` with arbitrary-property utilities, [vanilla-extract's esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/), and Panda's `@pandacss/node` config loading, code generation, extraction, and emission with the base utility preset and preflight disabled. Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
+Adapters use [StyleX's Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/), Tailwind's `compile(...).build(candidates)` with arbitrary-property utilities, [vanilla-extract's esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/), and Panda v2's `@pandacss/dev/node` driver for config loading, code generation, extraction, and emission with the base utility preset and preflight disabled. Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
 
 Timing boundaries:
 
 - Each sample includes a compiler build and a minified esbuild browser bundle. Modules, filesystem caches, and esbuild are warm.
 - Fixture preparation, browser checks, compression, and report writes are outside timing.
+- Panda applies its official esbuild source transformer, equivalent to `transform: true` in its bundler plugins. Source rewriting is timed, and required runtime helpers remain in measured client output.
 - Tailwind excludes content scanning; StyleX includes Babel parsing; vanilla-extract includes source loading and evaluation; Zyzz excludes definition validation.
 
 All CSS passes through the same Lightning CSS minifier targeting Chrome 120, Firefox 128, and Safari 17, with source maps disabled. These are benchmark settings, not package support requirements. License comments count toward CSS size; no adapter strips them. Reports under `bench/results/{small,repeated,unique}/` record raw, gzip, and Brotli bytes for CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed assets without recounting class strings already in JavaScript.

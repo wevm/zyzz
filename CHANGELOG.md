@@ -1,5 +1,28 @@
 # zyzz
 
+## 0.0.20
+
+### Patch Changes
+
+- 6a750b0: Fixed explicit configuration scopes to emit their complete variable catalogs during compilation.
+- d3228c1: Added `Vars.compose` for CSS variable values containing live color, opacity, and length references.
+  
+  ```ts
+  Vars.compose('spacing', ['calc(', core.number.space, ' * 1px)'])
+  ```
+- 220407e: Fixed portable inferred declarations for responsive references to composed variables.
+- 29acaf6: Fixed inferred config declarations by exposing variable definition and reference types through `Config`.
+- 725563c: Corrected returned styling props to omit explicitly undefined inline styles under exact optional property checking.
+- 03c2f98: Fixed declaration generation for inferred variable aliases and configuration exports.
+- 583a57c: Excluded Vite build configuration from stylesheet discovery and server-only modules from client scans.
+- 0438675: Fixed composed length token compatibility and variant inference with large variable catalogs.
+- e027a5f: Added external import patterns to standalone compilation and additional source directories to the Vite integration.
+  
+  ```ts
+  await Host.create({ external: ['~icons/*'], packageId: 'vocs', root: 'src' })
+  zyzz({ include: ['../library/src'] })
+  ```
+
 ## 0.0.19
 
 ### Patch Changes

@@ -12,6 +12,41 @@ import { Props } from 'zyzz/runtime'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('create', () => {
+  test('omits absent inline styles from returned props', async () => {
+    const result = Transform.compile({
+      moduleId: 'button.ts',
+      source: `import { style } from 'zyzz';
+export const button = style({ color: '#f00' });`,
+    })
+    const bundle = await Esbuild.build({
+      alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
+      bundle: true,
+      format: 'esm',
+      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
+      write: false,
+    })
+    const consumer = await import(
+      `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0]!.text).toString('base64')}`
+    )
+
+    expect(consumer.button()).toMatchInlineSnapshot(`
+      {
+        "className": "z-text-BA_Tfm z-style-1hu9bfc1mtag60-52",
+      }
+    `)
+    expect(consumer.button({ style: undefined })).toMatchInlineSnapshot(`
+      {
+        "className": "z-text-BA_Tfm z-style-1hu9bfc1mtag60-52",
+      }
+    `)
+    expect(consumer.button({ className: 'external', style: undefined }))
+      .toMatchInlineSnapshot(`
+        {
+          "className": "z-text-BA_Tfm z-style-1hu9bfc1mtag60-52 external",
+        }
+      `)
+  })
+
   test('merges variable assignments in static, dynamic and HTML calls', async () => {
     const result = Transform.compile({
       moduleId: 'usage.ts',

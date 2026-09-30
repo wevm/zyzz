@@ -1,0 +1,34 @@
+/** Displays serialized configuration variables or the defaults. @module */
+import { createFileRoute } from '@tanstack/react-router'
+import { Page as VariablesPage } from '../pages/Variables.js'
+import * as Variables from '../Variables.js'
+
+export const Route = createFileRoute('/vars')({
+  codeSplitGroupings: [],
+  component: Page,
+  validateSearch: (search: Record<string, unknown>) => ({
+    v: Object.hasOwn(search, 'v')
+      ? typeof search.v === 'string'
+        ? search.v
+        : JSON.stringify(search.v)
+      : undefined,
+  }),
+  loaderDeps: ({ search }) => ({ v: search.v }),
+  loader: ({ deps }) => {
+    try {
+      return { config: Variables.decode(deps.v), error: undefined }
+    } catch (error) {
+      return {
+        config: undefined,
+        error:
+          error instanceof Error ? error.message : 'Invalid configuration.',
+      }
+    }
+  },
+  head: () => ({ meta: [{ title: 'Variables · Zyzz' }] }),
+})
+
+function Page() {
+  const { config, error } = Route.useLoaderData()
+  return <VariablesPage config={config} error={error} />
+}

@@ -1,5 +1,4 @@
 /** Previews the default variables and their values. @module */
-import { createFileRoute } from '@tanstack/react-router'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { appearance, tokens } from 'zyzz/default'
 import ALargeSmallIcon from '~icons/lucide/a-large-small'
@@ -24,16 +23,18 @@ import SunIcon from '~icons/lucide/sun'
 import TextIcon from '~icons/lucide/text'
 import TypeIcon from '~icons/lucide/type'
 import { style } from '../zyzz.config.js'
+import * as Variables from '../Variables.js'
+import type { Entry } from '../Variables.js'
 
-/** Renders the variable reference. */
-export const Route = createFileRoute('/vars/default')({
-  codeSplitGroupings: [],
-  component: Page,
-  head: () => ({ meta: [{ title: 'Variables · Zyzz' }] }),
-})
-
-function Page() {
-  const groups = Object.entries(tokens)
+/** Renders default or supplied variables using the site's own theme. */
+export function Page({
+  config,
+  error,
+}: {
+  config?: Variables.Configuration | undefined
+  error?: string | undefined
+}) {
+  const groups = Object.entries(config?.vars ?? tokens)
     .sort(([a], [b]) => {
       if (a === 'color' || b === 'color') return a === 'color' ? -1 : 1
       if (a === 'typography' || b === 'typography')
@@ -41,22 +42,39 @@ function Page() {
       return a.localeCompare(b)
     })
     .map(([name, value]) => {
-      const entries = collect(value, [name])
-      const maximum = Math.max(
-        0,
-        ...entries
-          .map((entry) => Number.parseFloat(String(entry.value)))
-          .filter(Number.isFinite),
+      const entries = Variables.collect(value, [name], config?.mappings)
+      const units = new Set(
+        entries
+          .filter((entry) => ['breakpoint', 'container'].includes(entry.kind))
+          .map((entry) => String(entry.value).replace(/^[\d.]+/, '')),
       )
+      const maximum =
+        units.size > 1
+          ? 0
+          : Math.max(
+              0,
+              ...entries
+                .filter((entry) =>
+                  ['breakpoint', 'container'].includes(entry.kind),
+                )
+                .map((entry) => Number.parseFloat(String(entry.value)))
+                .filter(Number.isFinite),
+            )
       return {
-        ...categories[name as keyof typeof categories],
+        ...(Object.hasOwn(categories, name)
+          ? categories[name as keyof typeof categories]
+          : { icon: BoxIcon, title: title(name) }),
+        id: domId(['category', name]),
+        color:
+          entries.length > 0 &&
+          entries.every((entry) => entry.kind === 'color'),
         entries,
         maximum,
         name,
       }
     })
 
-  const [category, setCategory] = useState('color')
+  const [category, setCategory] = useState(domId(['category', 'color']))
   const [colorScheme, setColorScheme] = useState<
     'light' | 'dark' | 'light dark'
   >('light dark')
@@ -97,13 +115,14 @@ function Page() {
     .map((group) => ({
       ...group,
       entries: group.entries.filter((entry) => {
+        if (!search) return true
         const fields =
           typeof entry.value === 'object'
             ? Object.keys(entry.value)
                 .map((key) => reference([...entry.path, key]))
                 .join(' ')
             : ''
-        return `${group.title} ${title(entry.path[1] ?? '')} ${entry.path.join('.')} ${reference(entry.path)} ${JSON.stringify(entry.raw ?? entry.value)} ${entry.dark ?? ''} ${fields}`
+        return `${group.title} ${title(entry.path[1] ?? '')} ${entry.path.join('.')} ${reference(entry.path)} ${JSON.stringify(entry.value)} ${entry.dark ?? ''} ${entry.condition ?? ''} ${fields}`
           .toLowerCase()
           .includes(search)
       }),
@@ -121,7 +140,7 @@ function Page() {
         .sort((a, b) => (a ?? '').localeCompare(b ?? ''))
         .map((name) => ({
           name,
-          id: [group.name, name].filter(Boolean).join('-'),
+          id: domId(['subsection', group.name, name ?? '']),
           entries: group.entries.filter(
             (entry) => (entry.path.length > 2 ? entry.path[1] : '') === name,
           ),
@@ -167,276 +186,297 @@ function Page() {
 
   return (
     <div {...styles.canvas()}>
-      <div {...styles.page()}>
-        <header ref={header} {...styles.header()}>
-          <div {...styles.headerBrand()}>
-            <a aria-label="Zyzz home" href="/" {...styles.brand()}>
-              <svg
-                aria-hidden="true"
-                width="96"
-                height="43"
-                viewBox="0 0 255 114"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12.7256 88L14.5713 79.0352L54.6494 36.1885V35.9248H24.5908L26.9639 24.5869H73.7217L71.876 33.5078L31.8418 76.3984V76.6621H63.4824L61.1533 88H12.7256ZM101.144 88H87.7842L92.7939 64.4893L79.1709 24.5869H93.0137L101.759 51.7451H102.022L121.974 24.5869H136.607L106.065 65.0166L101.144 88ZM127.687 88L129.532 79.0352L169.61 36.1885V35.9248H139.552L141.925 24.5869H188.683L186.837 33.5078L146.803 76.3984V76.6621H178.443L176.114 88H127.687ZM183.585 88L185.431 79.0352L225.509 36.1885V35.9248H195.45L197.823 24.5869H244.581L242.735 33.5078L202.701 76.3984V76.6621H234.342L232.013 88H183.585Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </a>
-            <span {...styles.variablesLabel()}>VARIABLES</span>
-          </div>
-          <div {...styles.headerTools()}>
-            <div {...styles.searchControl()}>
-              <input
-                aria-label="Find a variable"
-                id="variable-search"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search variables"
-                type="search"
-                ref={searchInput}
-                value={query}
-                {...styles.search()}
-              />
-              <kbd {...styles.shortcut()}>⌘K</kbd>
-            </div>
-            <div
-              role="group"
-              aria-label="Color scheme"
-              {...styles.schemeControl()}
-            >
-              {(
-                [
-                  {
-                    label: 'System',
-                    value: 'light dark',
-                    icon: MonitorIcon,
-                  },
-                  {
-                    label: 'Light',
-                    value: 'light',
-                    icon: SunIcon,
-                  },
-                  {
-                    label: 'Dark',
-                    value: 'dark',
-                    icon: MoonIcon,
-                  },
-                ] as const
-              ).map((scheme) => (
-                <button
-                  aria-label={scheme.label}
-                  aria-pressed={colorScheme === scheme.value}
-                  key={scheme.value}
-                  onClick={() => {
-                    appearance.set({ colorScheme: scheme.value })
-                    setColorScheme(scheme.value)
-                  }}
-                  title={`${scheme.label} color scheme`}
-                  type="button"
-                  {...styles.schemeButton()}
-                >
-                  <scheme.icon aria-hidden="true" height="16" width="16" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </header>
-        <main>
-          <div {...styles.layout()}>
-            <aside {...styles.sidebar()}>
-              <nav aria-label="Variable categories" {...styles.navigation()}>
-                {filtered.map((group) => (
-                  <a
-                    aria-current={
-                      category === group.name ? 'location' : undefined
-                    }
-                    href={`#${group.name}`}
-                    key={group.name}
-                    {...styles.category()}
+      {error ? (
+        <div role="alert" {...styles.sectionContent()}>
+          <h1 {...styles.sectionHeading()}>Could not read variables</h1>
+          <p>{error}</p>
+          <a href="/vars">View default variables</a>
+        </div>
+      ) : (
+        <div {...styles.page()}>
+          <header ref={header} {...styles.header()}>
+            <div {...styles.headerBrand()}>
+              {config?.name ? (
+                <span title={config.name} {...styles.brandName()}>
+                  {config.name}
+                </span>
+              ) : (
+                <a aria-label="Zyzz home" href="/" {...styles.brand()}>
+                  <svg
+                    aria-hidden="true"
+                    width="96"
+                    height="43"
+                    viewBox="0 0 255 114"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    <group.icon aria-hidden="true" width="16" height="16" />
-                    <span>{group.title}</span>
-                    <span {...styles.count()}>{group.entries.length}</span>
-                  </a>
-                ))}
-              </nav>
-            </aside>
-            <div ref={sections} {...styles.sections()}>
-              {filtered.length === 0 && (
-                <p {...styles.description()}>
-                  No variables match “{query}”. Try a category, such as color or
-                  spacing.
-                </p>
+                    <path
+                      d="M12.7256 88L14.5713 79.0352L54.6494 36.1885V35.9248H24.5908L26.9639 24.5869H73.7217L71.876 33.5078L31.8418 76.3984V76.6621H63.4824L61.1533 88H12.7256ZM101.144 88H87.7842L92.7939 64.4893L79.1709 24.5869H93.0137L101.759 51.7451H102.022L121.974 24.5869H136.607L106.065 65.0166L101.144 88ZM127.687 88L129.532 79.0352L169.61 36.1885V35.9248H139.552L141.925 24.5869H188.683L186.837 33.5078L146.803 76.3984V76.6621H178.443L176.114 88H127.687ZM183.585 88L185.431 79.0352L225.509 36.1885V35.9248H195.45L197.823 24.5869H244.581L242.735 33.5078L202.701 76.3984V76.6621H234.342L232.013 88H183.585Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </a>
               )}
-              {filtered.map((group) => (
-                <section
-                  aria-labelledby={`${group.name}-heading`}
-                  id={group.name}
-                  key={group.name}
-                  {...styles.section()}
-                >
-                  <div {...styles.sectionIntro()}>
-                    <h2
-                      id={`${group.name}-heading`}
-                      {...styles.sectionHeading()}
+              <span {...styles.variablesLabel()}>VARIABLES</span>
+            </div>
+            <div {...styles.headerTools()}>
+              <div {...styles.searchControl()}>
+                <input
+                  aria-label="Find a variable"
+                  id="variable-search"
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search variables"
+                  type="search"
+                  ref={searchInput}
+                  value={query}
+                  {...styles.search()}
+                />
+                <kbd {...styles.shortcut()}>⌘K</kbd>
+              </div>
+              <div
+                role="group"
+                aria-label="Color scheme"
+                {...styles.schemeControl()}
+              >
+                {(
+                  [
+                    {
+                      label: 'System',
+                      value: 'light dark',
+                      icon: MonitorIcon,
+                    },
+                    {
+                      label: 'Light',
+                      value: 'light',
+                      icon: SunIcon,
+                    },
+                    {
+                      label: 'Dark',
+                      value: 'dark',
+                      icon: MoonIcon,
+                    },
+                  ] as const
+                ).map((scheme) => (
+                  <button
+                    aria-label={scheme.label}
+                    aria-pressed={colorScheme === scheme.value}
+                    key={scheme.value}
+                    onClick={() => {
+                      appearance.set({ colorScheme: scheme.value })
+                      setColorScheme(scheme.value)
+                    }}
+                    title={`${scheme.label} color scheme`}
+                    type="button"
+                    {...styles.schemeButton()}
+                  >
+                    <scheme.icon aria-hidden="true" height="16" width="16" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+          <main>
+            <div {...styles.layout()}>
+              <aside {...styles.sidebar()}>
+                <nav aria-label="Variable categories" {...styles.navigation()}>
+                  {filtered.map((group) => (
+                    <a
+                      aria-current={
+                        category === group.id ? 'location' : undefined
+                      }
+                      href={`#${group.id}`}
+                      key={group.name}
+                      {...styles.category()}
                     >
-                      {group.title}
-                    </h2>
-                  </div>
-                  <div {...styles.sectionContent()}>
-                    {group.sections.map((section) => (
-                      <div
-                        id={section.id === group.name ? undefined : section.id}
-                        key={section.id}
-                        {...styles.subsection()}
+                      <group.icon aria-hidden="true" width="16" height="16" />
+                      <span>{group.title}</span>
+                      <span {...styles.count()}>{group.entries.length}</span>
+                    </a>
+                  ))}
+                </nav>
+              </aside>
+              <div ref={sections} {...styles.sections()}>
+                {filtered.length === 0 && (
+                  <p {...styles.description()}>
+                    No variables match “{query}”. Try a category, such as color
+                    or spacing.
+                  </p>
+                )}
+                {filtered.map((group) => (
+                  <section
+                    aria-labelledby={domId(['heading', group.name])}
+                    id={group.id}
+                    key={group.name}
+                    {...styles.section()}
+                  >
+                    <div {...styles.sectionIntro()}>
+                      <h2
+                        id={domId(['heading', group.name])}
+                        {...styles.sectionHeading()}
                       >
-                        {(section.name || group.sections.length > 1) && (
-                          <h3 {...styles.subheading()}>
-                            {(() => {
-                              if (section.name) return title(section.name)
-                              if (group.name === 'color')
-                                return 'Standalone Colors'
-                              return `${group.title} Values`
-                            })()}
-                          </h3>
-                        )}
-                        <dl
-                          style={
-                            group.name === 'color' &&
-                            section.entries.some(
-                              (entry) => entry.path.length > 3,
-                            )
-                              ? {
-                                  gridTemplateColumns:
-                                    'repeat(auto-fit, minmax(0, 128px))',
-                                }
-                              : undefined
-                          }
-                          {...(group.name === 'color'
-                            ? styles.palette()
-                            : styles.entries())}
+                        {group.title}
+                      </h2>
+                    </div>
+                    <div {...styles.sectionContent()}>
+                      {group.sections.map((section) => (
+                        <div
+                          id={!section.name ? undefined : section.id}
+                          key={section.id}
+                          {...styles.subsection()}
                         >
-                          {section.entries.map((entry) => {
-                            const name = reference(entry.path)
-                            const value = dark
-                              ? (entry.dark ?? entry.value)
-                              : entry.value
-                            return (
-                              <div
-                                key={name}
-                                {...(group.name === 'color'
-                                  ? styles.colorEntry()
-                                  : styles.entry())}
-                              >
-                                <dt {...styles.name()}>
-                                  <code title={name}>
-                                    {group.name === 'color'
-                                      ? entry.path.slice(2).join('.') ||
-                                        entry.path.at(-1)
-                                      : name}
-                                  </code>
-                                </dt>
-                                <dd
-                                  {...(group.name === 'color'
-                                    ? styles.colorValues()
-                                    : styles.values())}
+                          {(section.name || group.sections.length > 1) && (
+                            <h3 {...styles.subheading()}>
+                              {(() => {
+                                if (section.name) return title(section.name)
+                                if (group.color) return 'Standalone Colors'
+                                return `${group.title} Values`
+                              })()}
+                            </h3>
+                          )}
+                          <dl
+                            style={
+                              group.color &&
+                              section.entries.some(
+                                (entry) => entry.path.length > 3,
+                              )
+                                ? {
+                                    gridTemplateColumns:
+                                      'repeat(auto-fit, minmax(0, 128px))',
+                                  }
+                                : undefined
+                            }
+                            {...(group.color
+                              ? styles.palette()
+                              : styles.entries())}
+                          >
+                            {section.entries.map((entry) => {
+                              const name = reference(entry.path)
+                              const value = dark
+                                ? (entry.dark ?? entry.value)
+                                : entry.value
+                              return (
+                                <div
+                                  key={`${name}:${entry.condition ?? 'default'}`}
+                                  {...(group.color
+                                    ? styles.colorEntry()
+                                    : styles.entry())}
                                 >
-                                  {typeof entry.value === 'object' ? (
-                                    <div {...styles.typography()}>
-                                      <div
-                                        data-typography={entry.path
-                                          .slice(1)
-                                          .join('.')}
-                                        style={entry.value}
-                                        {...styles.sample()}
-                                      >
-                                        {entry.path[1] === 'copy'
-                                          ? 'Write type-safe styles, variables, and themes. Compile to static CSS. Keep your styles close to your code.'
-                                          : entry.path.slice(1).join(' ')}
+                                  <dt {...styles.name()}>
+                                    <code title={name}>
+                                      {group.color
+                                        ? entry.path.slice(2).join('.') ||
+                                          entry.path.at(-1)
+                                        : name}
+                                    </code>
+                                  </dt>
+                                  <dd
+                                    {...(group.color
+                                      ? styles.colorValues()
+                                      : styles.values())}
+                                  >
+                                    {entry.condition && (
+                                      <span {...styles.hint()}>
+                                        {entry.condition}
+                                      </span>
+                                    )}
+                                    {typeof entry.value === 'object' ? (
+                                      <div {...styles.typography()}>
+                                        <div
+                                          data-typography={entry.path
+                                            .slice(1)
+                                            .join('.')}
+                                          style={entry.value}
+                                          {...styles.sample()}
+                                        >
+                                          {entry.path[1] === 'copy'
+                                            ? 'Write type-safe styles, variables, and themes. Compile to static CSS. Keep your styles close to your code.'
+                                            : 'Styles that scale.'}
+                                        </div>
+                                        <details {...styles.details()}>
+                                          <summary>Variables</summary>
+                                          <dl>
+                                            {Object.entries(entry.value).map(
+                                              ([key, value]) => (
+                                                <div
+                                                  key={key}
+                                                  {...styles.field()}
+                                                >
+                                                  <dt>
+                                                    <code>
+                                                      {reference([
+                                                        ...entry.path,
+                                                        key,
+                                                      ])}
+                                                    </code>
+                                                  </dt>
+                                                  <dd>
+                                                    <code>
+                                                      {typeof value === 'object'
+                                                        ? JSON.stringify(value)
+                                                        : String(value)}
+                                                    </code>
+                                                  </dd>
+                                                </div>
+                                              ),
+                                            )}
+                                          </dl>
+                                        </details>
                                       </div>
-                                      <details {...styles.details()}>
-                                        <summary>Variables</summary>
-                                        <dl>
-                                          {Object.entries(
-                                            entry.raw ?? entry.value,
-                                          ).map(([key, value]) => (
-                                            <div key={key} {...styles.field()}>
-                                              <dt>
-                                                <code>
-                                                  {reference([
-                                                    ...entry.path,
-                                                    key,
-                                                  ])}
-                                                </code>
-                                              </dt>
-                                              <dd>
-                                                <code>
-                                                  {typeof value === 'object'
-                                                    ? JSON.stringify(value)
-                                                    : String(value)}
-                                                </code>
-                                              </dd>
-                                            </div>
-                                          ))}
-                                        </dl>
-                                      </details>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      {group.name !== 'color' && (
-                                        <Preview
-                                          category={group.name}
-                                          maximum={group.maximum}
-                                          entry={entry}
-                                        />
-                                      )}
-                                      <div
-                                        {...(group.name === 'color'
-                                          ? styles.colorValue()
-                                          : styles.value())}
-                                      >
-                                        {group.name === 'color' && (
-                                          <span
-                                            aria-hidden="true"
-                                            {...styles.swatch()}
-                                            style={{
-                                              backgroundColor: entry.dark
-                                                ? `light-dark(${String(entry.value)}, ${entry.dark})`
-                                                : String(value),
-                                            }}
+                                    ) : (
+                                      <>
+                                        {!group.color && (
+                                          <Preview
+                                            category={entry.kind}
+                                            maximum={group.maximum}
+                                            entry={entry}
                                           />
                                         )}
                                         <div
-                                          style={
-                                            entry.dark && !schemeReady
-                                              ? { visibility: 'hidden' }
-                                              : undefined
-                                          }
-                                          {...(group.name === 'color'
-                                            ? styles.colorRaw()
-                                            : styles.raw())}
+                                          {...(group.color
+                                            ? styles.colorValue()
+                                            : styles.value())}
                                         >
-                                          <code>{String(value)}</code>
+                                          {group.color && (
+                                            <span
+                                              aria-hidden="true"
+                                              {...styles.swatch()}
+                                              style={{
+                                                backgroundColor: entry.dark
+                                                  ? `light-dark(${String(entry.value)}, ${entry.dark})`
+                                                  : String(value),
+                                              }}
+                                            />
+                                          )}
+                                          <div
+                                            style={
+                                              entry.dark && !schemeReady
+                                                ? { visibility: 'hidden' }
+                                                : undefined
+                                            }
+                                            {...(group.color
+                                              ? styles.colorRaw()
+                                              : styles.raw())}
+                                          >
+                                            <code>{String(value)}</code>
+                                          </div>
                                         </div>
-                                      </div>
-                                    </>
-                                  )}
-                                </dd>
-                              </div>
-                            )
-                          })}
-                        </dl>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
+                                      </>
+                                    )}
+                                  </dd>
+                                </div>
+                              )
+                            })}
+                          </dl>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
             </div>
-          </div>
-        </main>
-      </div>
+          </main>
+        </div>
+      )}
     </div>
   )
 }
@@ -446,6 +486,14 @@ namespace styles {
     color: 'foreground',
     display: 'block',
     textDecoration: 'none',
+  })
+
+  export const brandName = style({
+    typography: 'heading.20',
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   })
 
   export const canvas = style({
@@ -514,11 +562,12 @@ namespace styles {
   })
 
   export const details = style({
-    typography: 'copy.13.mono',
+    typography: 'copy.13',
     color: 'gray.900',
     marginTop: 4,
     '& summary': { cursor: 'pointer' },
     '& dl': { marginTop: 3 },
+    '& code': { fontFamily: 'mono' },
   })
 
   export const entries = style({
@@ -609,6 +658,7 @@ namespace styles {
     borderInline: '1px solid',
     borderColor: 'gray.400',
     color: 'foreground',
+    fontFamily: 'sans',
     marginInline: 'auto !custom',
     maxWidth: '7xl',
     minHeight: '100vh !custom',
@@ -703,7 +753,7 @@ namespace styles {
   })
 
   export const shortcut = style({
-    typography: 'label.12.mono',
+    typography: 'label.12',
     border: '1px solid',
     borderColor: 'gray.400',
     borderRadius: 'sm',
@@ -810,7 +860,7 @@ namespace styles {
   })
 
   export const values = style({
-    typography: 'copy.13.mono',
+    typography: 'copy.13',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 2,
@@ -819,7 +869,7 @@ namespace styles {
   })
 
   export const variablesLabel = style({
-    typography: 'label.12.mono',
+    typography: 'label.12',
     backgroundColor: 'gray.200',
     borderRadius: '9999px !custom',
     color: 'gray.900',
@@ -848,73 +898,14 @@ namespace styles {
   })
 }
 
-type Entry = {
-  dark?: string
-  path: readonly string[]
-  raw?: object
-  value: string | number | Typography
-}
-
-type Typography = {
-  fontFamily?: string
-  fontSize: string
-  fontWeight?: number
-  letterSpacing?: string
-  lineHeight?: string
-}
-
-function collect(
-  value: unknown,
-  path: readonly string[] = [],
-): readonly Entry[] {
-  if (typeof value === 'string' || typeof value === 'number')
-    return [{ path, value }]
-  if (!value || typeof value !== 'object') return []
-  const fields = Object.fromEntries(Object.entries(value))
-  if (path[0] === 'typography' && typeof fields.fontSize === 'string')
-    return [
-      {
-        path,
-        raw: value,
-        value: {
-          fontSize: fields.fontSize,
-          ...(typeof fields.fontFamily === 'string'
-            ? { fontFamily: fields.fontFamily }
-            : {}),
-          ...(typeof fields.fontWeight === 'number'
-            ? { fontWeight: fields.fontWeight }
-            : {}),
-          ...(typeof fields.letterSpacing === 'string'
-            ? { letterSpacing: fields.letterSpacing }
-            : {}),
-          ...(typeof fields.lineHeight === 'string'
-            ? { lineHeight: fields.lineHeight }
-            : {}),
-        },
-      },
-      ...Object.entries(value)
-        .filter(
-          ([key, child]) =>
-            ![
-              'fontSize',
-              'fontFamily',
-              'fontWeight',
-              'letterSpacing',
-              'lineHeight',
-            ].includes(key) && typeof child === 'object',
-        )
-        .flatMap(([key, child]) => collect(child, [...path, key])),
-    ]
-  if (
-    'light' in value &&
-    'dark' in value &&
-    typeof value.light === 'string' &&
-    typeof value.dark === 'string'
-  )
-    return [{ dark: value.dark, path, value: value.light }]
-  return Object.entries(value).flatMap(([key, child]) =>
-    collect(child, [...path, key]),
-  )
+function domId(path: readonly string[]) {
+  return path
+    .map((key) =>
+      Array.from(key, (character) =>
+        character.codePointAt(0)!.toString(16),
+      ).join('-'),
+    )
+    .join('_')
 }
 
 function reference(path: readonly string[]) {
@@ -936,6 +927,11 @@ function Preview({
 }) {
   if (typeof entry.value === 'object') return null
   const value = String(entry.value)
+  if (
+    category === 'columns' &&
+    (!Number.isInteger(Number(value)) || Number(value) < 1)
+  )
+    return null
 
   if (category === 'breakpoint' || category === 'container') {
     if (!Number.isFinite(Number.parseFloat(value)) || maximum <= 0) return null
@@ -953,6 +949,12 @@ function Preview({
 
   const appearance: CSSProperties | undefined = (() => {
     switch (category) {
+      case 'color':
+        return {
+          backgroundColor: entry.dark
+            ? `light-dark(${value}, ${entry.dark})`
+            : value,
+        }
       case 'aspect':
         return { aspectRatio: value, height: 'auto', width: '128px' }
       case 'blur':
@@ -968,16 +970,31 @@ function Preview({
         return { borderRadius: value }
       case 'perspective':
         return { transform: `perspective(${value}) rotateY(30deg)` }
+      case 'columns':
+        return {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${Math.max(1, Math.min(24, Number(value)))}, 1fr)`,
+          gap: '4px',
+          width: '100%',
+          height: '48px',
+          background: 'none',
+        }
+      case 'borderWidth':
+        return {
+          borderWidth: value,
+          borderStyle: 'solid',
+          borderColor: 'currentColor',
+        }
       case 'fontFamily':
         return { fontFamily: value }
       case 'fontSize':
-        return { fontSize: value, lineHeight: 1.2 }
+        return { fontSize: entry.value, lineHeight: 1.2 }
       case 'fontWeight':
-        return { fontWeight: Number(value) }
+        return { fontWeight: entry.value }
       case 'letterSpacing':
-        return { letterSpacing: value }
+        return { letterSpacing: entry.value }
       case 'lineHeight':
-        return { lineHeight: value, whiteSpace: 'pre-line' }
+        return { lineHeight: entry.value, whiteSpace: 'pre-line' }
       case 'textShadow':
         return { textShadow: value }
       case 'ease':
@@ -1011,7 +1028,19 @@ function Preview({
       }
       {...styles.preview()}
     >
-      {text ? (
+      {category === 'columns' ? (
+        <span style={appearance}>
+          {Array.from(
+            { length: Math.max(1, Math.min(24, Number(value))) },
+            (_, index) => (
+              <span
+                key={index}
+                style={{ backgroundColor: 'currentColor', opacity: 0.35 }}
+              />
+            ),
+          )}
+        </span>
+      ) : text ? (
         <span style={appearance} {...styles.sample()}>
           {category === 'lineHeight'
             ? 'Styles for modern interfaces.\nKeep styles close to your code.'

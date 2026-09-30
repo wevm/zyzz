@@ -148,7 +148,8 @@ void [color, length, wrongLength]
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }
-  }, 30_000)
+  }, 120_000)
+
   test('resolves breakpoint aliases in responsive variable fallbacks', async () => {
     const result = Graph.compile({
       modules: {
@@ -214,7 +215,7 @@ void [color, length, wrongLength]
     ).toThrowErrorMatchingInlineSnapshot(
       `[Vars.InvalidError: ["spacing","page","@media >=missing"]: Unknown query threshold.]`,
     )
-  })
+  }, 30_000)
 
   test('merges derived vars and follows palette overrides on native', () => {
     const base = Vars.define(

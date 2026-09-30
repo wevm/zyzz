@@ -673,16 +673,16 @@ const inverse=Vars.extend(base,{color:{surface:'#000000'}});
 export const {style,vars}=Config.create({id:'complete-config',vars:{base,inverse},defaultVars:'base',mappings:false});
 export const card=style({color:'color.ink'});`,
       )
-      browser = await chromium.launch({ channel: 'chrome' })
+      browser = await chromium.launch()
 
       for (const compiler of [false, true]) {
         const outDir = Path.join(root, compiler ? 'compiled' : 'original')
         await using host = await Host.create({
-          root: Path.join(root, 'src'),
-          outDir,
-          packageId: 'catalog',
           compiler,
           modules: compiler,
+          outDir,
+          packageId: 'catalog',
+          root: Path.join(root, 'src'),
         })
         await host.build()
         const bundle = await Esbuild.build({
@@ -740,7 +740,9 @@ export const card=style({color:'color.ink'});`,
               (element) => getComputedStyle(element).paddingInlineStart,
             ),
         ).toMatchInlineSnapshot('"16px"')
+
         await page.setViewportSize({ width: 768, height: 600 })
+
         expect(
           await page
             .locator('div')

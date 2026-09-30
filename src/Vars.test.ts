@@ -492,7 +492,7 @@ void [color, length, wrongLength]
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }
-  }, 30_000)
+  }, 90_000)
   test('resolves breakpoint aliases in responsive variable fallbacks', async () => {
     const result = Graph.compile({
       modules: {

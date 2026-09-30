@@ -14,7 +14,9 @@ export type Reference<
   group extends Token.Group = Token.Group,
   scalar = never,
 > = Token.Reference<group> &
-  ([scalar] extends [never] ? {} : { readonly [Token.scalar]: scalar })
+  ([scalar] extends [never]
+    ? { readonly [Token.scalar]?: unknown }
+    : { readonly [Token.scalar]: scalar })
 
 const shape = Symbol('zyzz.variables.shape')
 

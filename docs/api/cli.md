@@ -16,17 +16,18 @@ npx zyzz dev
 
 ## Defaults and Options
 
-| Argument / Flag | Default                                           | Contract                                                                         |
-| --------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `[src]`         | `src`                                             | Authored JavaScript/TypeScript module tree                                       |
-| `--target` | `web` | Compile for `web` or `native` |
-| `--platform` | Unset | Native `ios` or `android`; required when authoring platform branches |
-| `--color-scheme` | Unset | Explicit `light` or `dark`; required for native output |
-| `--css-only`    | Off                                               | Disable source transformation; emit CSS, CSS maps, and the initialization script |
-| `--minify`      | Off                                               | Minify emitted CSS with Lightning CSS                                            |
-| `--out-dir`     | `dist`                                            | Owned output directory                                                           |
-| `--package-id`  | Working directory's package name, otherwise `app` | Stable identity for compiled modules                                             |
-| `--script`      | `<out-dir>/zyzz.js`                               | Path of the saved-selection initialization script                                |
+| Argument / Flag  | Default                                           | Contract                                                                         |
+| ---------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `[src]`          | `src`                                             | Authored JavaScript/TypeScript module tree                                       |
+| `--target`       | `web`                                             | Compile for `web` or `native`                                                    |
+| `--platform`     | Unset                                             | Native `ios` or `android`; required when authoring platform branches             |
+| `--color-scheme` | Unset                                             | Explicit `light` or `dark`; required for native output                           |
+| `--css-only`     | Off                                               | Disable source transformation; emit CSS, CSS maps, and the initialization script |
+| `--external`     | Unset                                             | Repeatable exact import name or trailing `*` prefix                              |
+| `--minify`       | Off                                               | Minify emitted CSS with Lightning CSS                                            |
+| `--out-dir`      | `dist`                                            | Owned output directory                                                           |
+| `--package-id`   | Working directory's package name, otherwise `app` | Stable identity for compiled modules                                             |
+| `--script`       | `<out-dir>/zyzz.js`                               | Path of the saved-selection initialization script                                |
 
 Paths resolve from the working directory. Both commands share these options. Browser syntax is preserved without compatibility targets. No configuration file is required; normal source imports provide configured authoring helpers.
 
@@ -37,6 +38,16 @@ npx zyzz dev --script public/zyzz.js
 ```
 
 Use `--help` for command help and `--json` for a build result containing `changed` and `files`. `zyzz dev --format jsonl` streams `built` events with those lists and `error` events with a diagnostic message.
+
+## External Imports
+
+Repeat `--external` for imports owned by downstream plugins. Patterns match exact import names or prefixes ending in `*`. Quote prefix patterns to prevent shell expansion. Matching imports remain in emitted modules without file resolution or compiler metadata. They cannot supply statically compiled styles or themes.
+
+```sh
+npx zyzz build --external '~icons/*' --external framework-config
+```
+
+Other unresolved bare imports still produce errors.
 
 ## Output and Watching
 

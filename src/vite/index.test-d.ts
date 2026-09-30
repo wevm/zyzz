@@ -7,6 +7,12 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
 
 describe('zyzz', () => {
+  test('accepts additional source directories', () => {
+    zyzz({ include: ['../library/src', '/workspace/library/src'] })
+    // @ts-expect-error Included sources are directory paths.
+    zyzz({ include: /library/ })
+  })
+
   test('returns a Vite plugin and rejects unsupported options', () => {
     expectTypeOf(zyzz()).toEqualTypeOf<Plugin>()
 

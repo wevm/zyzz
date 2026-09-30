@@ -49,6 +49,14 @@ export async function create(options: create.Options): Promise<Runtime> {
           targets: { ...options.css?.targets },
         }
 
+  const externals = [...(options.external ?? [])]
+  if (
+    externals.some((pattern) => !pattern || pattern.slice(0, -1).includes('*'))
+  )
+    throw new Error(
+      'External imports require exact names or a trailing * prefix.',
+    )
+
   const native = options.native
     ? Object.freeze({
         ...options.native,
@@ -404,6 +412,15 @@ export async function create(options: create.Options): Promise<Runtime> {
           (!specifier.startsWith('#') && specifier.includes('#'))
         )
           continue
+        if (
+          externals.some((pattern) =>
+            pattern.endsWith('*')
+              ? specifier.startsWith(pattern.slice(0, -1))
+              : specifier === pattern,
+          )
+        )
+          continue
+
         try {
           if (specifier.startsWith('.')) {
             const target = Relative.resolve({ moduleId, modules, specifier })
@@ -951,6 +968,8 @@ export declare namespace create {
           readonly targets?: Readonly<LightningCss.Targets> | undefined
         }
       | undefined
+    /** Imports left for downstream tooling. Matches exact names or prefixes ending in *. */
+    readonly external?: readonly string[] | undefined
     /** Native context captured at creation. Emits modules and maps without CSS or web initialization. */
     readonly native?: Graph.compile.Options['native']
     /** Output directory exclusively locked until close; may be nested under root. Defaults to `dist`. */

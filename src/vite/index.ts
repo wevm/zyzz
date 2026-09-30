@@ -69,6 +69,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const sourceEntrypoints = new Set<string>()
   const identities = new Map<string, string>()
   const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
+  let directories: readonly string[]
   let root: string
 
   function snapshot(environment: Environment) {
@@ -94,10 +95,31 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   function sourceId(file: string) {
     let id = identities.get(file)
     if (!id) {
-      id = `app/${Path.relative(root, file).split(Path.sep).join('/')}`
+      const directory = sourceRoot(file) ?? root
+      const namespace =
+        directory === root
+          ? 'app'
+          : `include-${directories.indexOf(directory) - 1}`
+      id = `${namespace}/${Path.relative(directory, file).split(Path.sep).join('/')}`
       identities.set(file, id)
     }
     return id
+  }
+
+  // Included directories have portable namespaces rather than traversal IDs.
+  function sourceFile(id: string) {
+    const offset = id.indexOf('/')
+    const namespace = id.slice(0, offset)
+    const directory = (() => {
+      if (namespace === 'app') return root
+      if (/^include-\d+$/.test(namespace))
+        return directories[Number(namespace.slice(8)) + 1]
+      return undefined
+    })()
+
+    return directory === undefined
+      ? undefined
+      : Path.join(directory, id.slice(offset + 1))
   }
 
   function resource(id: string) {
@@ -119,15 +141,26 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     if (sourceEntrypoints.has(normalize(id))) return true
     // Ids carrying foreign queries are Vite resources such as inline-module proxies, not source.
     if (resource(id)) return false
-    const relative = Path.relative(root, id)
 
     return (
       Path.isAbsolute(id) &&
-      !relative.startsWith('..') &&
-      !relative.split(Path.sep).includes('node_modules') &&
+      sourceRoot(id) !== undefined &&
       /\.[cm]?[jt]sx?$/.test(id) &&
-      !/\.(?:d|test|test-d|bench)\.[cm]?[jt]sx?$/.test(id)
+      !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(id)
     )
+  }
+
+  function sourceRoot(file: string) {
+    return directories.find((directory) => {
+      const relative = Path.relative(directory, file)
+
+      return (
+        relative !== '..' &&
+        !relative.startsWith(`..${Path.sep}`) &&
+        !Path.isAbsolute(relative) &&
+        !relative.split(Path.sep).includes('node_modules')
+      )
+    })
   }
 
   function discover(environment: Environment, host: Host) {
@@ -137,10 +170,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       pending = (async () => {
         const sources = new Map<string, string>()
         const eagerFiles = new Set<string>()
+        const visited = new Set<string>()
 
         contributionFiles.set(environment, eagerFiles)
 
         async function collect(directory: string): Promise<void> {
+          if (visited.has(directory)) return
+          visited.add(directory)
+
           for (const item of await Fs.readdir(directory, {
             withFileTypes: true,
           })) {
@@ -175,7 +212,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           }
         }
 
-        await collect(root)
+        for (const directory of directories) await collect(directory)
 
         return sources
       })()
@@ -195,7 +232,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         environment.config.consumer === 'client' &&
         /\.server\.[cm]?[jt]sx?$/.test(file)
       ) &&
-      !Path.relative(root, file)
+      !Path.relative(sourceRoot(file)!, file)
         .split(Path.sep)
         .some((part) =>
           ['test', 'tests', '__tests__', 'fixtures', '__fixtures__'].includes(
@@ -740,7 +777,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         map: {
           ...output.map,
           sources: output.map.sources.map((source) =>
-            source === null ? null : Path.join(root, source.slice(4)),
+            source === null ? null : (sourceFile(source) ?? source),
           ),
         },
       }
@@ -780,7 +817,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     let line = 0
 
     for (const [id, output] of Object.entries(result.modules)) {
-      if (!connected.has(Path.join(root, id.slice(4)))) continue
+      if (!connected.has(sourceFile(id)!)) continue
       if (!output.css) continue
 
       for (const mapping of Mapping.allMappings(
@@ -795,7 +832,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           const location = {
             generated,
             original: mapping.original,
-            source: Path.join(root, mapping.source.slice(4)),
+            source: sourceFile(mapping.source) ?? mapping.source,
           }
 
           if (mapping.name === undefined) Mapping.addMapping(map, location)
@@ -807,7 +844,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         if (source !== null)
           Mapping.setSourceContent(
             map,
-            Path.join(root, source.slice(4)),
+            sourceFile(source) ?? source,
             output.cssMap.sourcesContent?.[index] ?? null,
           )
 
@@ -815,7 +852,6 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       line += output.css.split('\n').length
     }
 
-    const appRoot = await Fs.realpath(root)
     const owners = new Map<string, string>()
 
     for (const id of new Set(Object.values(result.sharedAssetOwners ?? {}))) {
@@ -846,11 +882,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const raw = target.split(/[?#]/)[0]!
 
       const identity = result.sharedAssetOwners?.[key]
-      const path = target.startsWith('app/')
-        ? Path.join(root, decodeURIComponent(raw.slice(4)))
-        : Path.isAbsolute(raw)
-          ? decodeURIComponent(raw)
-          : undefined
+      const path =
+        sourceFile(decodeURIComponent(raw)) ??
+        (Path.isAbsolute(raw) ? decodeURIComponent(raw) : undefined)
       if (!path) throw new Error('Asset path escapes the Vite graph.')
 
       const asset = await (async () => {
@@ -859,11 +893,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         } catch (error) {
           if (
             (error as NodeJS.ErrnoException).code !== 'ENOENT' ||
-            !identity?.startsWith('app/')
+            !identity ||
+            !sourceFile(identity)
           )
             throw error
 
-          const importer = Path.join(root, identity.slice(4))
+          const importer = sourceFile(identity)!
           const specifier = Path.relative(Path.dirname(importer), path)
             .split(Path.sep)
             .join('/')
@@ -879,11 +914,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       })()
       const file = asset.file
 
-      const owner = identity?.startsWith('app/')
-        ? appRoot
-        : identity
-          ? owners.get(identity)
-          : undefined
+      const owner =
+        identity && sourceFile(identity)
+          ? sourceRoot(sourceFile(identity)!)
+          : identity
+            ? owners.get(identity)
+            : undefined
 
       const relative = owner ? Path.relative(owner, file) : '..'
       if (
@@ -968,7 +1004,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     ) as Mapping.EncodedSourceMap
 
     sharedMap.sources = sharedMap.sources.map((source) =>
-      source?.startsWith('app/') ? Path.join(root, source.slice(4)) : source,
+      source === null ? null : (sourceFile(source) ?? source),
     )
 
     const output = result.modules[sourceId(entry.file)]!
@@ -989,7 +1025,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       map: {
         ...output.map,
         sources: output.map.sources.map((source) =>
-          source === null ? null : Path.join(root, source.slice(4)),
+          source === null ? null : (sourceFile(source) ?? source),
         ),
       },
     }
@@ -1226,6 +1262,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       },
     },
     configureServer(server) {
+      // Directory watches belong to the server, not module import dependencies.
+      server.watcher.add(directories.slice(1))
+
       server.middlewares.use((request, response, next) => {
         const path = new URL(request.url ?? '/', 'http://localhost').pathname
         const file = assets.get(path)
@@ -1243,8 +1282,21 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }, next)
       })
     },
-    configResolved(config) {
-      root = config.root
+    async configResolved(config) {
+      root = await Fs.realpath(config.root)
+      directories = [
+        root,
+        ...(await Promise.all(
+          (options.include ?? []).map(async (directory) => {
+            const file = await Fs.realpath(Path.resolve(root, directory))
+            if (!(await Fs.stat(file)).isDirectory())
+              throw new Error(
+                `Zyzz include paths must be directories: ${directory}`,
+              )
+            return file
+          }),
+        )),
+      ]
       if (native) return
       const lightning = (config.css.lightningcss ??= {})
       lightning.include =
@@ -1642,6 +1694,8 @@ export declare namespace zyzz {
   type Options = {
     /** False retains authored calls and requires explicit identities where needed. */
     readonly compiler?: boolean | undefined
+    /** Additional source directories, absolute or relative to the Vite root. */
+    readonly include?: readonly string[] | undefined
     /** Native context captured at creation. Disables CSS delivery and initialization scripts. */
     readonly native?: Graph.compile.Options['native']
     /** Include the CSS reset. Defaults to false. */

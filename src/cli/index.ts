@@ -25,6 +25,10 @@ const options = z.object({
     .boolean()
     .default(false)
     .describe('Emit only CSS and CSS maps without source transformation'),
+  external: z
+    .array(z.string())
+    .optional()
+    .describe('External import name or trailing * prefix (repeatable)'),
   minify: z.boolean().default(false).describe('Minify emitted CSS'),
   'out-dir': z.string().default('dist').describe('Output directory'),
   'package-id': z
@@ -178,6 +182,7 @@ async function open(context: open.Context) {
       : {}),
     compiler: !context.options['css-only'],
     css: { minify: context.options.minify },
+    external: context.options.external,
     modules: !context.options['css-only'],
     outDir: Path.resolve(context.options['out-dir']),
     packageId,

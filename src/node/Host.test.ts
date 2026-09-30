@@ -30,6 +30,96 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { style } from 'zyzz'; export const button = style({ padding: '8px' });`
 
 describe('create', () => {
+  test('leaves explicit external imports for downstream plugins and compiles local styles', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-external-'))
+    try {
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(root, 'src/theme.ts'),
+        `import {Config} from 'zyzz';export const {style}=Config.create({layers:['components'],defaultLayer:'components'});`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'src/app.ts'),
+        `import Icon from '~icons/lucide/check';import config from 'virtual:config';import plugin from 'framework-config';import {style} from './theme.js';export const card=style({color:'red'});export const view=[Icon,config,plugin,card()];`,
+      )
+      await using host = await Host.create({
+        css: false,
+        external: ['~icons/*', 'framework-config'],
+        outDir: Path.join(root, 'dist'),
+        packageId: 'app',
+        root: Path.join(root, 'src'),
+      })
+
+      await host.build()
+
+      const code = await Fs.readFile(Path.join(root, 'dist/app.ts'), 'utf8')
+      expect(
+        code.includes("import Icon from '~icons/lucide/check'"),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        code.includes("import plugin from 'framework-config'"),
+      ).toMatchInlineSnapshot('true')
+      expect(code.includes("style({color:'red'})")).toMatchInlineSnapshot(
+        'false',
+      )
+      const css = await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8')
+      expect(css.includes('@layer components')).toMatchInlineSnapshot('true')
+      expect(/color:\s*red/.test(css)).toMatchInlineSnapshot('true')
+
+      await Fs.writeFile(
+        Path.join(root, 'src/app.ts'),
+        `import missing from 'framework-config-extra';export const value=missing;`,
+      )
+      const error = await host.build().catch((error: Error) => error)
+      expect(
+        error instanceof Error
+          ? error.message.replaceAll(root, '<root>')
+          : error,
+      ).toMatchInlineSnapshot(
+        '"app/app.ts:0: Unable to resolve "framework-config-extra" from <root>/src/app.ts: Cannot find module \'framework-config-extra\'"',
+      )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects unsupported external import patterns', async () => {
+    await expect(
+      Host.create({
+        external: ['~icons/*/check'],
+        packageId: 'app',
+        root: 'src',
+      }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      '[Error: External imports require exact names or a trailing * prefix.]',
+    )
+  })
+
+  test('rejects external values used in statically compiled styles', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(project, '.fixture-host-external-style-'),
+    )
+    try {
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(root, 'src/app.ts'),
+        `import {accent} from 'plugin-theme';import {style} from 'zyzz';export const card=style({color:accent});`,
+      )
+      await using host = await Host.create({
+        external: ['plugin-theme'],
+        outDir: Path.join(root, 'dist'),
+        packageId: 'app',
+        root: Path.join(root, 'src'),
+      })
+
+      await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app/app.ts:94: Expected a literal string or number; expressions are not evaluated.]`,
+      )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test.each(['@acme/universal', '@acme/universal/button', '#button'])(
     'compiles installed import-condition contracts from %s',
     async (specifier) => {

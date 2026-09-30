@@ -80,6 +80,21 @@ Explicit browser versions control compatibility transforms and prefixing. Versio
 css: { targets: { chrome: 100 << 16, safari: (15 << 16) | (4 << 8) } }
 ```
 
+### options.external
+
+- Type: `readonly string[]`
+- Default: `[]`
+
+Leave matching imports for downstream tooling. Patterns match exact import names or prefixes ending in `*`. The host preserves these imports without resolving files or loading compiler metadata. Other unresolved bare imports still produce errors. External modules cannot supply statically compiled styles or themes.
+
+```ts
+Host.create({
+  external: ['~icons/*', 'framework-config'],
+  packageId: 'vocs',
+  root: 'src',
+})
+```
+
 ### options.native
 
 - Type: `Host.create.Options['native']`

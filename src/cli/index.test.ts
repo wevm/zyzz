@@ -18,6 +18,44 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
+  test('accepts repeatable external imports through the published CLI', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-external-'))
+    try {
+      await Fs.mkdir(Path.join(root, 'src'))
+      await Fs.writeFile(
+        Path.join(root, 'src/app.ts'),
+        `import Icon from '~icons/lucide/check';import config from 'framework-config';import {style} from 'zyzz';export const card=style({color:'red'});export const view=[Icon,config,card()];`,
+      )
+
+      await exec(process.execPath, [
+        Path.resolve('dist/cli/index.js'),
+        'build',
+        Path.join(root, 'src'),
+        '--out-dir',
+        Path.join(root, 'dist'),
+        '--external',
+        '~icons/*',
+        '--external',
+        'framework-config',
+      ])
+
+      const code = await Fs.readFile(Path.join(root, 'dist/app.ts'), 'utf8')
+      expect(
+        code.includes("import Icon from '~icons/lucide/check'"),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        code.includes("import config from 'framework-config'"),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        /color:\s*red/.test(
+          await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'),
+        ),
+      ).toMatchInlineSnapshot('true')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('emits responsive defaults once across CLI module outputs', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-responsive-'))
     try {

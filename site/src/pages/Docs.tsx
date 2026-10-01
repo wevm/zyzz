@@ -1,24 +1,86 @@
 /** Renders authored MDX within the shared documentation layout. @module */
+import { AgentPrompt } from '../components/AgentPrompt.js'
+import { DocumentationShell } from '../components/DocumentationShell.js'
+import { Install } from '../components/Install.js'
+import { Card } from '../components/mdx/Card.js'
+import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
+import { Steps } from '../components/mdx/Steps.js'
+import { SearchField } from '../components/SearchField.js'
+import * as Docs from '../Docs.js'
+import { style, vars } from '../zyzz.config.js'
 import { isValidElement, type ReactNode, useEffect, useState } from 'react'
+import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import BookOpenIcon from '~icons/lucide/book-open'
+import BoxIcon from '~icons/lucide/box'
+import BrainIcon from '~icons/lucide/brain'
 import CheckIcon from '~icons/lucide/check'
+import CircleHelpIcon from '~icons/lucide/circle-help'
+import CodeXmlIcon from '~icons/lucide/code-xml'
 import CopyIcon from '~icons/lucide/copy'
 import FileIcon from '~icons/lucide/file'
+import GaugeIcon from '~icons/lucide/gauge'
+import LayersIcon from '~icons/lucide/layers'
+import LightbulbIcon from '~icons/lucide/lightbulb'
+import MonitorIcon from '~icons/lucide/monitor'
+import PackageIcon from '~icons/lucide/package'
+import PaintbrushIcon from '~icons/lucide/paintbrush'
+import PaletteIcon from '~icons/lucide/palette'
+import PlayIcon from '~icons/lucide/play'
+import PlugIcon from '~icons/lucide/plug'
+import RocketIcon from '~icons/lucide/rocket'
+import ShieldCheckIcon from '~icons/lucide/shield-check'
+import SmartphoneIcon from '~icons/lucide/smartphone'
+import SparklesIcon from '~icons/lucide/sparkles'
+import TerminalIcon from '~icons/lucide/terminal'
+import TestTubeIcon from '~icons/lucide/test-tube'
+import WorkflowIcon from '~icons/lucide/workflow'
+import WrenchIcon from '~icons/lucide/wrench'
+import BabelIcon from '~icons/simple-icons/babel'
 import HtmlIcon from '~icons/simple-icons/html5'
 import NextIcon from '~icons/simple-icons/nextdotjs'
+import NodeIcon from '~icons/simple-icons/nodedotjs'
 import NpmIcon from '~icons/simple-icons/npm'
 import ReactIcon from '~icons/simple-icons/react'
 import TypeScriptIcon from '~icons/simple-icons/typescript'
 import ViteIcon from '~icons/simple-icons/vite'
-import { DocumentationShell } from '../components/DocumentationShell.js'
-import { Install } from '../components/Install.js'
-import { SearchField } from '../components/SearchField.js'
-import { AgentPrompt } from '../components/AgentPrompt.js'
-import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
-import { Card } from '../components/mdx/Card.js'
-import { Steps } from '../components/mdx/Steps.js'
-import * as Docs from '../Docs.js'
-import { style, vars } from '../zyzz.config.js'
+
+const sidebarIcons: Record<string, typeof BookOpenIcon> = {
+  'api/babel': BabelIcon,
+  'api/cli': TerminalIcon,
+  'api/compiler': WrenchIcon,
+  'api/core': BoxIcon,
+  'api/metro': SmartphoneIcon,
+  'api/next': NextIcon,
+  'api/node': NodeIcon,
+  'api/oxlint': ShieldCheckIcon,
+  'api/react-native': ReactIcon,
+  'api/runtime': PlayIcon,
+  'api/unplugin': PlugIcon,
+  'api/vite': ViteIcon,
+  'api/web': MonitorIcon,
+  concepts: BookOpenIcon,
+  'guides/compilation': PackageIcon,
+  'guides/conditions': WorkflowIcon,
+  'guides/css-output': CodeXmlIcon,
+  'guides/native': ReactIcon,
+  'guides/stylesheets': FileIcon,
+  'guides/stylex': ArrowLeftRightIcon,
+  'guides/styling': PaintbrushIcon,
+  'guides/tailwind': ArrowLeftRightIcon,
+  'guides/testing': TestTubeIcon,
+  'guides/themes': PaletteIcon,
+  'guides/variants': LayersIcon,
+  Integrations: PlugIcon,
+  'introduction/benchmarks': GaugeIcon,
+  'introduction/comparisons': ArrowLeftRightIcon,
+  'introduction/compatibility': ShieldCheckIcon,
+  'introduction/editor-agents': SparklesIcon,
+  'introduction/faq': CircleHelpIcon,
+  'introduction/getting-started': RocketIcon,
+  'introduction/installation': PackageIcon,
+  'introduction/thinking-in-zyzz': BrainIcon,
+  'introduction/why-zyzz': LightbulbIcon,
+}
 
 /** Displays a documentation page and grouped navigation. */
 export function Page(props: Page.Props) {
@@ -46,16 +108,8 @@ export function Page(props: Page.Props) {
           {Docs.groups.map((group) => (
             <div key={group.title} {...styles.group()}>
               <h2 {...styles.groupHeading()}>{group.title}</h2>
-              {group.pages.map((page) => (
-                <a
-                  aria-current={page.path === path ? 'page' : undefined}
-                  href={`/docs/${page.path}`}
-                  key={page.path}
-                  {...styles.link()}
-                >
-                  <BookOpenIcon aria-hidden="true" height="16" width="16" />
-                  {page.title}
-                </a>
+              {group.pages.map((item) => (
+                <SidebarItem item={item} key={item.title} path={path} />
               ))}
             </div>
           ))}
@@ -85,6 +139,48 @@ export function Page(props: Page.Props) {
 export declare namespace Page {
   /** Properties for the Page component. */
   type Props = { path: string }
+}
+
+function SidebarItem(props: SidebarItem.Props) {
+  const { item, path } = props
+  const enabled =
+    item.path !== undefined && Object.hasOwn(__DOCS__.pages, item.path)
+  const Icon = sidebarIcons[item.path ?? item.title] ?? BookOpenIcon
+  const content = (
+    <>
+      <Icon aria-hidden="true" height="16" width="16" />
+      {item.title}
+    </>
+  )
+
+  return (
+    <>
+      {enabled ? (
+        <a
+          aria-current={item.path === path ? 'page' : undefined}
+          href={`/docs/${item.path}`}
+          {...styles.link()}
+        >
+          {content}
+        </a>
+      ) : (
+        <span aria-disabled="true" role="link" {...styles.link()}>
+          {content}
+        </span>
+      )}
+      {item.children && (
+        <div {...styles.nestedLinks()}>
+          {item.children.map((child) => (
+            <SidebarItem item={child} key={child.title} path={path} />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+declare namespace SidebarItem {
+  type Props = { item: Docs.Item; path: string }
 }
 
 function Code(input: Code.Props) {
@@ -346,12 +442,18 @@ namespace styles {
     paddingBlock: 2,
     paddingInline: 3,
     textDecoration: 'none',
-    ':hover': { backgroundColor: 'gray.100', color: 'foreground' },
+    ':hover:not([aria-disabled])': {
+      backgroundColor: 'gray.100',
+      color: 'foreground',
+    },
+    '&[aria-disabled]': { color: 'gray.700', cursor: 'default' },
     '&[aria-current="page"]': {
       backgroundColor: 'gray.200',
       color: 'foreground',
     },
   })
+
+  export const nestedLinks = style({ paddingLeft: 6 })
 
   export const variables = style({
     typography: 'label.14',

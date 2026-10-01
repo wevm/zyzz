@@ -96,6 +96,42 @@ describe('/docs', () => {
           .getByRole('link', { name: 'Navigation Fixture' })
           .getAttribute('aria-current'),
       ).toMatchInlineSnapshot('"page"')
+      expect(await navigation.getByRole('heading').allTextContents())
+        .toMatchInlineSnapshot(`
+        [
+          "Introduction",
+          "Guides",
+          "API",
+        ]
+      `)
+      const placeholder = navigation.getByRole('link', {
+        name: 'Installation',
+        exact: true,
+      })
+      expect(
+        await placeholder.getAttribute('aria-disabled'),
+      ).toMatchInlineSnapshot('"true"')
+      expect(await placeholder.getAttribute('href')).toMatchInlineSnapshot(
+        'null',
+      )
+      expect(await placeholder.getAttribute('tabindex')).toMatchInlineSnapshot(
+        'null',
+      )
+      expect(
+        await navigation
+          .getByRole('link', { name: 'Default Variables', exact: true })
+          .count(),
+      ).toMatchInlineSnapshot('0')
+      expect(
+        await navigation
+          .getByRole('link', { name: 'Vite', exact: true })
+          .getAttribute('aria-disabled'),
+      ).toMatchInlineSnapshot('"true"')
+      expect(
+        await navigation
+          .getByRole('link', { name: 'Getting Started', exact: true })
+          .getAttribute('href'),
+      ).toMatchInlineSnapshot('"/docs/introduction/getting-started"')
     } finally {
       await browser.close()
     }

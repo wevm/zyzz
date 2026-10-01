@@ -1422,17 +1422,40 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
               true,
             ).catch(() => undefined)
           : undefined
-      const javascriptChanged =
-        !output ||
-        previous.some(
-          (entry) =>
-            entry.code !== output.modules[sourceId(entry.file)]?.code ||
-            entry.imports !==
-              JSON.stringify(output.imports[sourceId(entry.file)]),
+      const javascriptChanged = await (async () => {
+        if (!output) return true
+
+        // Portable build adapters share this module and do not require Vite.
+        const { transformWithOxc } = await import('vite')
+        const changed = await Promise.all(
+          previous.map(async (entry) => {
+            const code = output.modules[sourceId(entry.file)]?.code
+            if (
+              entry.imports !==
+              JSON.stringify(output.imports[sourceId(entry.file)])
+            )
+              return true
+            if (entry.code === code) return false
+            if (entry.code === undefined || code === undefined) return true
+
+            // Generated type assertions can change without changing runtime bindings.
+            const [before, after] = await Promise.all([
+              transformWithOxc(entry.code, entry.file, { sourcemap: false }),
+              transformWithOxc(code, entry.file, { sourcemap: false }),
+            ])
+            return before.code !== after.code
+          }),
         )
+        return changed.some(Boolean)
+      })()
+      // Compiler-only inputs have watch edges, but their stylesheets update separately.
       const affected = new Set(
         modules.filter(
-          (module) => javascriptChanged || !module.id || !state.has(module.id),
+          (module) =>
+            javascriptChanged ||
+            (module.id
+              ? !output?.modules[sourceId(module.id)]
+              : module.type !== 'asset'),
         ),
       )
       const ids = new Set<string>()

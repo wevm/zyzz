@@ -508,23 +508,43 @@ describe('zyzz', () => {
       await page.goto(server.resolvedUrls!.local[0]!)
       await page.waitForLoadState('networkidle')
       await page.locator('#state').fill('retained')
-      await Watch.write({
-        path: Path.join(root, 'theme.ts'),
-        source: files['theme.ts']!.replace("'red'", "'blue'"),
-      })
-      await page.waitForFunction(
-        () =>
-          getComputedStyle(document.querySelector('#card11')!).color ===
-          'rgb(0, 0, 255)',
-      )
-      expect(
-        await page
-          .locator('#card0')
-          .evaluate((element) => getComputedStyle(element).color),
-      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
-      expect(
-        await page.locator('#scope').getAttribute('data-renders'),
-      ).toMatchInlineSnapshot('"1"')
+      for (let cycle = 0; cycle < 3; cycle++) {
+        await Watch.write({
+          path: Path.join(root, 'theme.ts'),
+          source: files['theme.ts']!.replace("'red'", "'blue'"),
+        })
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#card11')!).color ===
+            'rgb(0, 0, 255)',
+        )
+        expect(
+          await page
+            .locator('#card0')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+        expect(
+          await page.locator('#scope').getAttribute('data-renders'),
+        ).toMatchInlineSnapshot('"1"')
+
+        await Watch.write({
+          path: Path.join(root, 'theme.ts'),
+          source: files['theme.ts']!,
+        })
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#card11')!).color ===
+            'rgb(255, 0, 0)',
+        )
+        expect(
+          await page
+            .locator('#card0')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page.locator('#scope').getAttribute('data-renders'),
+        ).toMatchInlineSnapshot('"1"')
+      }
       await Watch.write({
         path: Path.join(root, 'card0.ts'),
         source: files['card0.ts']!.replace('0.5', '0.75'),

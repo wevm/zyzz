@@ -48,9 +48,11 @@ namespace styles {
   })
 
   export const focusRing = style({
-    ':focus-visible': {
-      outline: '2px solid currentColor',
-      outlineOffset: '2px',
+    selectors: {
+      '&:focus-visible': {
+        outline: '2px solid currentColor',
+        outlineOffset: '2px',
+      },
     },
   })
 }
@@ -145,7 +147,14 @@ Use a typed callback for values that differ per instance. A progress bar can bin
 import { style } from 'zyzz'
 
 export function Bar(props: Bar.Props) {
-  return <div {...styles.bar({ width: props.width })} />
+  return (
+    <progress
+      aria-label="Progress"
+      max={100}
+      value={Number.parseFloat(props.width)}
+      {...styles.bar({ width: props.width })}
+    />
+  )
 }
 
 export declare namespace Bar {
@@ -153,7 +162,7 @@ export declare namespace Bar {
 }
 
 namespace styles {
-  export const bar = style((values: Bar.Props) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     height: '0.5rem',
     width: values.width,
   }))

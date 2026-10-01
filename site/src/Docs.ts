@@ -20,7 +20,7 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       { path: 'concepts', title: 'Concepts & Principles' },
       { path: 'introduction/comparisons', title: 'Comparisons' },
       { path: 'introduction/benchmarks', title: 'Benchmarks' },
-      { path: 'introduction/editor-agents', title: 'Editor & Agents' },
+      { path: 'introduction/agents', title: 'Agents' },
       { path: 'introduction/compatibility', title: 'Compatibility' },
       { path: 'introduction/faq', title: 'FAQ' },
     ],

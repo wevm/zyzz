@@ -1,0 +1,37 @@
+# Agents
+
+Give coding agents the documentation and project conventions they need to build with Zyzz.
+
+## Give agents context
+
+Complete [Getting Started](/docs/introduction/getting-started), then start a coding task with the documentation and the project's existing setup:
+
+<AgentPrompt expanded>Read zyzz.sh and inspect the project.</AgentPrompt>
+
+Include the requested change and ask the agent to read the existing config, build integration, components, and project instructions. Use the configured helpers and tokens, and preserve documented preview and unsupported limitations.
+
+The site serves readable Markdown at documentation URLs ending in `.md`. Fetch a page directly when an agent needs its text:
+
+```sh
+curl https://zyzz.sh/docs/introduction/agents.md
+```
+
+Use the [documentation index](https://raw.githubusercontent.com/wevm/zyzz/main/docs/llms.txt) to find the relevant guide and API contract. Resolve the index's relative links against its GitHub directory. Copy the owning config and build setup alongside examples, since token names and compilation targets are project-specific.
+
+## Add project instructions
+
+Record the project's conventions in its agent instruction file, such as `AGENTS.md`. Adapt the import path and checks to the actual repository:
+
+```md title="AGENTS.md"
+## Zyzz
+
+- Import style and variants from the project's zyzz.config.ts helpers.
+- Reuse configured tokens. Use !custom only for intentional CSS literals.
+- Put module-level style definitions in namespace styles at the file's bottom.
+- Spread applied style props onto the platform's normal elements.
+- Preserve the existing compiler integration and CSS delivery.
+- Run the project's type checks and build after style changes.
+- Verify layout, interaction states, and color schemes in the rendered app.
+```
+
+These instructions apply the project's conventions to future tasks. They do not require a dedicated Zyzz agent server.

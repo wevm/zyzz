@@ -166,6 +166,13 @@ function SidebarItem(props: SidebarItem.Props) {
       ) : (
         <span aria-disabled="true" role="link" {...styles.link()}>
           {content}
+          <span
+            aria-hidden="true"
+            title="Under construction"
+            {...styles.construction()}
+          >
+            🚧
+          </span>
         </span>
       )}
       {item.children && (
@@ -366,6 +373,11 @@ namespace styles {
     paddingBlock: 3,
     paddingInline: 6,
     paddingRight: 12,
+  })
+
+  export const construction = style({
+    flexShrink: 0,
+    marginLeft: 'auto !custom',
   })
 
   export const copy = style({

@@ -151,10 +151,6 @@ function Card() {
     <article data-theme-card="" {...styles.card()}>
       <h2>Account</h2>
       <p>Manage account preferences.</p>
-      <div {...styles.account()}>
-        <p>alex@example.com</p>
-        <span {...styles.status()}>Active</span>
-      </div>
     </article>
   )
 }
@@ -182,13 +178,11 @@ namespace styles {
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
+    borderRadius: '12px',
     maxWidth: '28rem !custom',
     marginInline: 'auto !custom',
-    borderRadius: '12px',
-    border: '1px solid light-dark(#e5e5e5, #333)',
-    '& h2': { margin: '0px !custom', fontSize: '1.25rem' },
-    '& p': { margin: '0px !custom', fontSize: '0.875rem', opacity: 0.65 },
-    '& > div': { marginTop: '1.25rem !custom' },
+    '& h2': { color: 'accent', margin: '0px !custom', fontSize: '1.25rem' },
+    '& p': { margin: '0px !custom', fontSize: '0.875rem' },
   })
 
   export const control = ui({
@@ -283,11 +277,5 @@ namespace styles {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.25rem !custom',
-  })
-
-  export const status = style({
-    color: 'accent',
-    fontSize: '0.75rem',
-    fontWeight: 500,
   })
 }

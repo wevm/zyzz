@@ -54,42 +54,20 @@ export function Card() {
     <article {...styles.card()}>
       <h2>Account</h2>
       <p>Manage account preferences.</p>
-      <div {...styles.account()}>
-        <p>alex@example.com</p>
-        <span {...styles.status()}>Active</span>
-      </div>
     </article>
   )
 }
 
 namespace styles {
-  export const account = style({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '1rem !custom',
-    borderTop: '1px solid light-dark(#e5e5e5, #2a2a2a)',
-    paddingTop: '1rem !custom',
-  })
-
   export const card = style({
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
+    borderRadius: '12px',
     maxWidth: '28rem !custom',
     marginInline: 'auto !custom',
-    borderRadius: '12px',
-    border: '1px solid light-dark(#e5e5e5, #333)',
-    '& h2': { margin: '0px !custom', fontSize: '1.25rem' },
-    '& p': { margin: '0px !custom', fontSize: '0.875rem', opacity: 0.65 },
-    '& > div': { marginTop: '1.25rem !custom' },
-  })
-
-  export const status = style({
-    color: 'accent',
-    fontSize: '0.75rem',
-    fontWeight: 500,
+    '& h2': { color: 'accent', margin: '0px !custom', fontSize: '1.25rem' },
+    '& p': { margin: '0px !custom', fontSize: '0.875rem' },
   })
 }
 ```

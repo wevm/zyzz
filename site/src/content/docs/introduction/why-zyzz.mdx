@@ -1,8 +1,46 @@
 # Why Zyzz
 
-Typed component styles, explicit design decisions, and rules compiled before rendering.
+Type-safe CSS and explicit design variables for developers and agents.
 
-Zyzz expresses styling constraints in small APIs that developers and agents can inspect. Styles live beside components, shared values come from explicit configuration, and compilation produces the platform's styling output.
+Agents need a design system they can follow and rules they can check. Zyzz makes both explicit with standard CSS, strict types, and named design variables.
+
+## Give agents rules they can check
+
+An agent that invents a token or uses a color as spacing should get a diagnostic. Zyzz's authoring types check properties, token paths, and variant choices. The compiler checks static rule structure and selector grammar before styles reach the application.
+
+Design variables describe the project's shared values and their property domains. A configured `style` helper exposes those names through TypeScript inference, so agents can reference the design system when generating components.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+```tsx title="Button.tsx"
+import { style } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    color: 'brand',
+    padding: 'md',
+  })
+}
+```
+
+`brand` is a color variable and `md` is a spacing variable. Unknown token names and incompatible property domains produce type errors. The configuration owns the values, and components reference the names.
+
+Standard CSS gives agents an existing specification to consult. Properties, selectors, and the cascade retain their CSS meaning, and design variables compile to [CSS custom properties](https://www.w3.org/TR/css-variables-1/). The project's configuration and Zyzz's supported contracts define which styles are accepted.
+
+The root `zyzz` import stays token-free. The opt-in `zyzz/default` entrypoint supplies Geist and Tailwind tokens when a bundled starting point is useful. Type inference alone does not prove that an integration or native target supports a style.
 
 ## CSS as the foundation
 
@@ -35,25 +73,6 @@ namespace styles {
 ```
 
 `style` declares the rules. After compilation, calling `styles.card()` returns styling props to spread onto the element. The browser handles the media query through emitted CSS.
-
-## Constraints that stay explicit
-
-The root `zyzz` import is token-free. A configured `style` helper infers the configuration's token paths and property domains. Variant definitions infer their choice names. These constraints stay attached to the imported helper rather than depending on global registration.
-
-```ts title="zyzz.config.ts"
-import { defineConfig } from 'zyzz'
-
-export const { style, vars } = defineConfig({
-  vars: {
-    color: { brand: { dark: '#8cf', light: '#06c' } },
-    spacing: { md: '1rem' },
-  },
-})
-```
-
-Components can import this `style` helper to use `color: 'brand'` and `padding: 'md'`. The declarations name shared values while the configuration owns their definitions. The opt-in `zyzz/default` entrypoint supplies Geist and Tailwind tokens when a bundled starting point is useful.
-
-Types validate properties, values, token paths, and variant inputs. The compiler also validates static rule structure and selector grammar. Type inference alone does not prove that an integration or native target supports a style.
 
 ## Compile rules before rendering
 

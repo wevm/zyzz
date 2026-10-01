@@ -32,6 +32,33 @@ describe('/docs/introduction/compatibility', () => {
       `${directory}/node_modules`,
       'dir',
     )
+    Fs.writeFileSync(
+      `${directory}/src/content/docs/introduction/table-fixture.mdx`,
+      `# Table fixture
+
+A table serialization fixture.
+
+<table><thead><tr><th>
+
+Value
+
+</th><th>
+
+Description
+
+</th></tr></thead><tbody><tr><th>
+
+\`one | two\`
+
+</th><td>
+
+First paragraph with **bold** text.
+
+Second paragraph with a [link](/docs).
+
+</td></tr></tbody></table>
+`,
+    )
     server = ChildProcess.spawn(
       'node',
       [
@@ -70,6 +97,73 @@ describe('/docs/introduction/compatibility', () => {
       await exited
     }
     Fs.rmSync(directory, { recursive: true, force: true })
+  })
+
+  test('preserves row associations through both Markdown endpoints', async () => {
+    const extension = await fetch(
+      `${origin}/docs/introduction/compatibility.md`,
+    )
+    const negotiated = await fetch(
+      `${origin}/docs/introduction/compatibility`,
+      {
+        headers: { Accept: 'text/markdown' },
+      },
+    )
+    expect(extension.status).toMatchInlineSnapshot('200')
+    expect(negotiated.status).toMatchInlineSnapshot('200')
+    const markdown = await extension.text()
+    expect((await negotiated.text()) === markdown).toMatchInlineSnapshot('true')
+    const tables = markdown
+      .split('\n\n')
+      .filter((block) => block.startsWith('| '))
+    expect(tables.map((table) => table.split('\n').length))
+      .toMatchInlineSnapshot(`
+      [
+        8,
+        6,
+        5,
+        6,
+      ]
+    `)
+    expect(tables.map((table) => table.split('\n')[0])).toMatchInlineSnapshot(`
+      [
+        "| Framework | Support and scope |",
+        "| Environment | Support and scope |",
+        "| Browser | Minimum target |",
+        "| Boundary | Support and scope |",
+      ]
+    `)
+    expect(
+      tables.every((table) => table.split('\n')[1] === '| --- | --- |'),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      tables[0]
+        ?.split('\n')[2]
+        ?.includes(
+          '[lazy delivery tests](https://github.com/wevm/zyzz/blob/main/src/vite/index.test.ts)',
+        ),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      tables[2]
+        ?.split('\n')
+        .slice(2)
+        .every((row) => row.includes('Native `light-dark()` support.')),
+    ).toMatchInlineSnapshot('true')
+    expect(markdown.includes('CompatibilityIcon')).toMatchInlineSnapshot(
+      'false',
+    )
+  })
+
+  test('escapes table pipes and retains multiline cell content', async () => {
+    const response = await fetch(`${origin}/docs/introduction/table-fixture.md`)
+    expect(response.status).toMatchInlineSnapshot('200')
+    const markdown = await response.text()
+    expect(markdown.slice(markdown.indexOf('| '))).toMatchInlineSnapshot(`
+      "| Value | Description |
+      | --- | --- |
+      | \`one \\| two\` | First paragraph with **bold** text.<br />Second paragraph with a [link](/docs). |
+      "
+    `)
   })
 
   test('preserves responsive tables without inert keyboard stops', async () => {

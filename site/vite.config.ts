@@ -83,6 +83,34 @@ export default defineConfig(async () => {
                   if (node.name === 'Install')
                     return '```sh\nnpm install zyzz\n```'
 
+                  if (node.name === 'table') {
+                    function rows(parent: typeof node): string[][] {
+                      if (parent.name === 'tr')
+                        return [
+                          parent.children
+                            .filter(
+                              (child: typeof node) =>
+                                child.name === 'th' || child.name === 'td',
+                            )
+                            .map((cell: typeof node) =>
+                              state
+                                .containerFlow(cell, info)
+                                .trim()
+                                .replace(/\|/g, '\\|')
+                                .replace(/\n+/g, '<br />'),
+                            ),
+                        ]
+                      return parent.children.flatMap((child: typeof node) =>
+                        child.type === 'mdxJsxFlowElement' ? rows(child) : [],
+                      )
+                    }
+                    const [header, ...body] = rows(node)
+                    if (!header) return ''
+                    return [header, header.map(() => '---'), ...body]
+                      .map((row) => `| ${row.join(' | ')} |`)
+                      .join('\n')
+                  }
+
                   const content = state.containerFlow(node, info)
                   if (node.name === 'FrameworkSetup.Mode') {
                     const name = node.attributes.find(

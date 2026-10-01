@@ -1,6 +1,7 @@
 /** Previews the default variables and their values. @module */
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { appearance, tokens } from 'zyzz/default'
+import { DocumentationShell } from '../components/DocumentationShell.js'
 import ALargeSmallIcon from '~icons/lucide/a-large-small'
 import BlendIcon from '~icons/lucide/blend'
 import BoldIcon from '~icons/lucide/bold'
@@ -8,7 +9,6 @@ import BoxIcon from '~icons/lucide/box'
 import CaseSensitiveIcon from '~icons/lucide/case-sensitive'
 import LayersIcon from '~icons/lucide/layers'
 import MonitorIcon from '~icons/lucide/monitor'
-import MoonIcon from '~icons/lucide/moon'
 import MoveHorizontalIcon from '~icons/lucide/move-horizontal'
 import MoveVerticalIcon from '~icons/lucide/move-vertical'
 import PaletteIcon from '~icons/lucide/palette'
@@ -19,29 +19,30 @@ import RadiusIcon from '~icons/lucide/radius'
 import RulerIcon from '~icons/lucide/ruler'
 import SplineIcon from '~icons/lucide/spline'
 import SquareDashedIcon from '~icons/lucide/square-dashed'
-import SunIcon from '~icons/lucide/sun'
 import TextIcon from '~icons/lucide/text'
 import TypeIcon from '~icons/lucide/type'
+import { SearchField } from '../components/SearchField.js'
 import { style } from '../zyzz.config.js'
 import * as Variables from '../Variables.js'
 import type { Entry } from '../Variables.js'
 
 /** Renders default or supplied variables using the site's own theme. */
-export function Page({
-  config,
-  error,
-}: {
-  config?: Variables.Configuration | undefined
-  error?: string | undefined
-}) {
+export function Page(props: Page.Props) {
+  const { config, error } = props
+
   const groups = Object.entries(config?.vars ?? tokens)
-    .sort(([a], [b]) => {
+    .sort((entry, input) => {
+      const [a] = entry
+      const [b] = input
+
       if (a === 'color' || b === 'color') return a === 'color' ? -1 : 1
       if (a === 'typography' || b === 'typography')
         return a === 'typography' ? -1 : 1
       return a.localeCompare(b)
     })
-    .map(([name, value]) => {
+    .map((input) => {
+      const [name, value] = input
+
       const entries = Variables.collect(value, [name], config?.mappings)
       const units = new Set(
         entries
@@ -185,7 +186,7 @@ export function Page({
   }, [search])
 
   return (
-    <div {...styles.canvas()}>
+    <>
       {error ? (
         <div role="alert" {...styles.sectionContent()}>
           <h1 {...styles.sectionHeading()}>Could not read variables</h1>
@@ -193,316 +194,234 @@ export function Page({
           <a href="/vars">View default variables</a>
         </div>
       ) : (
-        <div {...styles.page()}>
-          <header ref={header} {...styles.header()}>
-            <div {...styles.headerBrand()}>
-              {config?.name ? (
-                <span title={config.name} {...styles.brandName()}>
-                  {config.name}
-                </span>
-              ) : (
-                <a aria-label="Zyzz home" href="/" {...styles.brand()}>
-                  <svg
-                    aria-hidden="true"
-                    width="80"
-                    height="24"
-                    viewBox="12 24 233 64"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12.7256 88L14.5713 79.0352L54.6494 36.1885V35.9248H24.5908L26.9639 24.5869H73.7217L71.876 33.5078L31.8418 76.3984V76.6621H63.4824L61.1533 88H12.7256ZM101.144 88H87.7842L92.7939 64.4893L79.1709 24.5869H93.0137L101.759 51.7451H102.022L121.974 24.5869H136.607L106.065 65.0166L101.144 88ZM127.687 88L129.532 79.0352L169.61 36.1885V35.9248H139.552L141.925 24.5869H188.683L186.837 33.5078L146.803 76.3984V76.6621H178.443L176.114 88H127.687ZM183.585 88L185.431 79.0352L225.509 36.1885V35.9248H195.45L197.823 24.5869H244.581L242.735 33.5078L202.701 76.3984V76.6621H234.342L232.013 88H183.585Z"
-                      fill="currentColor"
-                    />
-                  </svg>
+        <DocumentationShell
+          headerRef={header}
+          contentRef={sections}
+          label="VARIABLES"
+          name={config?.name}
+          onSchemeChange={setColorScheme}
+          navigation={
+            <a href="/docs/introduction/getting-started" {...styles.docs()}>
+              Docs
+            </a>
+          }
+          search={
+            <SearchField
+              aria-label="Find a variable"
+              id="variable-search"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search variables..."
+              ref={searchInput}
+              value={query}
+            />
+          }
+          sidebar={
+            <nav aria-label="Variable categories" {...styles.navigation()}>
+              {filtered.map((group) => (
+                <a
+                  aria-current={category === group.id ? 'location' : undefined}
+                  href={`#${group.id}`}
+                  key={group.name}
+                  {...styles.category()}
+                >
+                  <group.icon aria-hidden="true" width="16" height="16" />
+                  <span>{group.title}</span>
+                  <span {...styles.count()}>{group.entries.length}</span>
                 </a>
-              )}
-              <span {...styles.variablesLabel()}>VARIABLES</span>
+              ))}
+            </nav>
+          }
+        >
+          {filtered.length === 0 && (
+            <div {...styles.sectionContent()}>
+              <p {...styles.description()}>
+                No variables match “{query}”. Try a category, such as color or
+                spacing.
+              </p>
             </div>
-            <div {...styles.headerTools()}>
-              <div {...styles.searchControl()}>
-                <input
-                  aria-label="Find a variable"
-                  id="variable-search"
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search variables"
-                  type="search"
-                  ref={searchInput}
-                  value={query}
-                  {...styles.search()}
-                />
-                <kbd {...styles.shortcut()}>⌘K</kbd>
+          )}
+          {filtered.map((group) => (
+            <section
+              aria-labelledby={domId(['heading', group.name])}
+              id={group.id}
+              key={group.name}
+              {...styles.section()}
+            >
+              <div {...styles.sectionIntro()}>
+                <h2
+                  id={domId(['heading', group.name])}
+                  {...styles.sectionHeading()}
+                >
+                  {group.title}
+                </h2>
               </div>
-              <div
-                role="group"
-                aria-label="Color scheme"
-                {...styles.schemeControl()}
-              >
-                {(
-                  [
-                    {
-                      label: 'System',
-                      value: 'light dark',
-                      icon: MonitorIcon,
-                    },
-                    {
-                      label: 'Light',
-                      value: 'light',
-                      icon: SunIcon,
-                    },
-                    {
-                      label: 'Dark',
-                      value: 'dark',
-                      icon: MoonIcon,
-                    },
-                  ] as const
-                ).map((scheme) => (
-                  <button
-                    aria-label={scheme.label}
-                    aria-pressed={colorScheme === scheme.value}
-                    key={scheme.value}
-                    onClick={() => {
-                      appearance.set({ colorScheme: scheme.value })
-                      setColorScheme(scheme.value)
-                    }}
-                    title={`${scheme.label} color scheme`}
-                    type="button"
-                    {...styles.schemeButton()}
+              <div {...styles.sectionContent()}>
+                {group.sections.map((section) => (
+                  <div
+                    id={!section.name ? undefined : section.id}
+                    key={section.id}
+                    {...styles.subsection()}
                   >
-                    <scheme.icon aria-hidden="true" height="16" width="16" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </header>
-          <main>
-            <div {...styles.layout()}>
-              <aside {...styles.sidebar()}>
-                <nav aria-label="Variable categories" {...styles.navigation()}>
-                  {filtered.map((group) => (
-                    <a
-                      aria-current={
-                        category === group.id ? 'location' : undefined
-                      }
-                      href={`#${group.id}`}
-                      key={group.name}
-                      {...styles.category()}
-                    >
-                      <group.icon aria-hidden="true" width="16" height="16" />
-                      <span>{group.title}</span>
-                      <span {...styles.count()}>{group.entries.length}</span>
-                    </a>
-                  ))}
-                </nav>
-              </aside>
-              <div ref={sections} {...styles.sections()}>
-                {filtered.length === 0 && (
-                  <div {...styles.sectionContent()}>
-                    <p {...styles.description()}>
-                      No variables match “{query}”. Try a category, such as
-                      color or spacing.
-                    </p>
-                  </div>
-                )}
-                {filtered.map((group) => (
-                  <section
-                    aria-labelledby={domId(['heading', group.name])}
-                    id={group.id}
-                    key={group.name}
-                    {...styles.section()}
-                  >
-                    <div {...styles.sectionIntro()}>
-                      <h2
-                        id={domId(['heading', group.name])}
-                        {...styles.sectionHeading()}
-                      >
-                        {group.title}
-                      </h2>
-                    </div>
-                    <div {...styles.sectionContent()}>
-                      {group.sections.map((section) => (
-                        <div
-                          id={!section.name ? undefined : section.id}
-                          key={section.id}
-                          {...styles.subsection()}
-                        >
-                          {(section.name || group.sections.length > 1) && (
-                            <h3 {...styles.subheading()}>
-                              {(() => {
-                                if (section.name) return title(section.name)
-                                if (group.color) return 'Standalone Colors'
-                                return `${group.title} Values`
-                              })()}
-                            </h3>
-                          )}
-                          <dl
-                            style={
-                              group.color &&
-                              section.entries.some(
-                                (entry) => entry.path.length > 3,
-                              )
-                                ? {
-                                    gridTemplateColumns:
-                                      'repeat(auto-fit, minmax(0, 128px))',
-                                  }
-                                : undefined
+                    {(section.name || group.sections.length > 1) && (
+                      <h3 {...styles.subheading()}>
+                        {(() => {
+                          if (section.name) return title(section.name)
+                          if (group.color) return 'Standalone Colors'
+                          return `${group.title} Values`
+                        })()}
+                      </h3>
+                    )}
+                    <dl
+                      style={
+                        group.color &&
+                        section.entries.some((entry) => entry.path.length > 3)
+                          ? {
+                              gridTemplateColumns:
+                                'repeat(auto-fit, minmax(0, 128px))',
                             }
+                          : undefined
+                      }
+                      {...(group.color ? styles.palette() : styles.entries())}
+                    >
+                      {section.entries.map((entry) => {
+                        const name = reference(entry.path)
+                        const value = dark
+                          ? (entry.dark ?? entry.value)
+                          : entry.value
+                        return (
+                          <div
+                            key={`${name}:${entry.condition ?? 'default'}`}
                             {...(group.color
-                              ? styles.palette()
-                              : styles.entries())}
+                              ? styles.colorEntry()
+                              : styles.entry())}
                           >
-                            {section.entries.map((entry) => {
-                              const name = reference(entry.path)
-                              const value = dark
-                                ? (entry.dark ?? entry.value)
-                                : entry.value
-                              return (
-                                <div
-                                  key={`${name}:${entry.condition ?? 'default'}`}
-                                  {...(group.color
-                                    ? styles.colorEntry()
-                                    : styles.entry())}
-                                >
-                                  <dt {...styles.name()}>
-                                    <code title={name}>
-                                      {group.color
-                                        ? entry.path.slice(2).join('.') ||
-                                          entry.path.at(-1)
-                                        : name}
-                                    </code>
-                                  </dt>
-                                  <dd
-                                    {...(group.color
-                                      ? styles.colorValues()
-                                      : styles.values())}
+                            <dt {...styles.name()}>
+                              <code title={name}>
+                                {group.color
+                                  ? entry.path.slice(2).join('.') ||
+                                    entry.path.at(-1)
+                                  : name}
+                              </code>
+                            </dt>
+                            <dd
+                              {...(group.color
+                                ? styles.colorValues()
+                                : styles.values())}
+                            >
+                              {entry.condition && (
+                                <span {...styles.hint()}>
+                                  {entry.condition}
+                                </span>
+                              )}
+                              {typeof entry.value === 'object' ? (
+                                <div {...styles.typography()}>
+                                  <div
+                                    data-typography={entry.path
+                                      .slice(1)
+                                      .join('.')}
+                                    style={entry.value}
+                                    {...styles.sample()}
                                   >
-                                    {entry.condition && (
-                                      <span {...styles.hint()}>
-                                        {entry.condition}
-                                      </span>
-                                    )}
-                                    {typeof entry.value === 'object' ? (
-                                      <div {...styles.typography()}>
-                                        <div
-                                          data-typography={entry.path
-                                            .slice(1)
-                                            .join('.')}
-                                          style={entry.value}
-                                          {...styles.sample()}
-                                        >
-                                          {entry.path[1] === 'copy'
-                                            ? 'Write type-safe styles, variables, and themes. Compile to static CSS. Keep your styles close to your code.'
-                                            : 'Styles that scale.'}
-                                        </div>
-                                        <details {...styles.details()}>
-                                          <summary>Variables</summary>
-                                          <dl>
-                                            {Object.entries(entry.value).map(
-                                              ([key, value]) => (
-                                                <div
-                                                  key={key}
-                                                  {...styles.field()}
-                                                >
-                                                  <dt>
-                                                    <code>
-                                                      {reference([
-                                                        ...entry.path,
-                                                        key,
-                                                      ])}
-                                                    </code>
-                                                  </dt>
-                                                  <dd>
-                                                    <code>
-                                                      {typeof value === 'object'
-                                                        ? JSON.stringify(value)
-                                                        : String(value)}
-                                                    </code>
-                                                  </dd>
-                                                </div>
-                                              ),
-                                            )}
-                                          </dl>
-                                        </details>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        {!group.color && (
-                                          <Preview
-                                            category={entry.kind}
-                                            maximum={group.maximum}
-                                            entry={entry}
-                                          />
-                                        )}
-                                        <div
-                                          {...(group.color
-                                            ? styles.colorValue()
-                                            : styles.value())}
-                                        >
-                                          {group.color && (
-                                            <span
-                                              aria-hidden="true"
-                                              {...styles.swatch()}
-                                              style={{
-                                                backgroundColor: entry.dark
-                                                  ? `light-dark(${String(entry.value)}, ${entry.dark})`
-                                                  : String(value),
-                                              }}
-                                            />
-                                          )}
-                                          <div
-                                            style={
-                                              entry.dark && !schemeReady
-                                                ? { visibility: 'hidden' }
-                                                : undefined
-                                            }
-                                            {...(group.color
-                                              ? styles.colorRaw()
-                                              : styles.raw())}
-                                          >
-                                            <code>{String(value)}</code>
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                  </dd>
+                                    {entry.path[1] === 'copy'
+                                      ? 'Write type-safe styles, variables, and themes. Compile to static CSS. Keep your styles close to your code.'
+                                      : 'Styles that scale.'}
+                                  </div>
+                                  <details {...styles.details()}>
+                                    <summary>Variables</summary>
+                                    <dl>
+                                      {Object.entries(entry.value).map(
+                                        (input) => {
+                                          const [key, value] = input
+
+                                          return (
+                                            <div key={key} {...styles.field()}>
+                                              <dt>
+                                                <code>
+                                                  {reference([
+                                                    ...entry.path,
+                                                    key,
+                                                  ])}
+                                                </code>
+                                              </dt>
+                                              <dd>
+                                                <code>
+                                                  {typeof value === 'object'
+                                                    ? JSON.stringify(value)
+                                                    : String(value)}
+                                                </code>
+                                              </dd>
+                                            </div>
+                                          )
+                                        },
+                                      )}
+                                    </dl>
+                                  </details>
                                 </div>
-                              )
-                            })}
-                          </dl>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                              ) : (
+                                <>
+                                  {!group.color && (
+                                    <Preview
+                                      category={entry.kind}
+                                      maximum={group.maximum}
+                                      entry={entry}
+                                    />
+                                  )}
+                                  <div
+                                    {...(group.color
+                                      ? styles.colorValue()
+                                      : styles.value())}
+                                  >
+                                    {group.color && (
+                                      <span
+                                        aria-hidden="true"
+                                        {...styles.swatch()}
+                                        style={{
+                                          backgroundColor: entry.dark
+                                            ? `light-dark(${String(entry.value)}, ${entry.dark})`
+                                            : String(value),
+                                        }}
+                                      />
+                                    )}
+                                    <div
+                                      style={
+                                        entry.dark && !schemeReady
+                                          ? { visibility: 'hidden' }
+                                          : undefined
+                                      }
+                                      {...(group.color
+                                        ? styles.colorRaw()
+                                        : styles.raw())}
+                                    >
+                                      <code>{String(value)}</code>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </dd>
+                          </div>
+                        )
+                      })}
+                    </dl>
+                  </div>
                 ))}
               </div>
-            </div>
-          </main>
-        </div>
+            </section>
+          ))}
+        </DocumentationShell>
       )}
-    </div>
+    </>
   )
 }
 
+export declare namespace Page {
+  /** Properties for the Page component. */
+  type Props = {
+    config?: Variables.Configuration | undefined
+    error?: string | undefined
+  }
+}
+
 namespace styles {
-  export const brand = style({
-    color: 'foreground',
-    display: 'block',
-    textDecoration: 'none',
-  })
-
-  export const brandName = style({
-    typography: 'heading.20',
-    minWidth: 0,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  })
-
-  export const canvas = style({
-    backgroundColor: 'background.primary',
-    minHeight: '100vh !custom',
-  })
-
   export const category = style({
     typography: 'label.14',
     alignItems: 'center',
@@ -594,53 +513,10 @@ namespace styles {
     '& dd': { margin: 0 },
   })
 
-  export const header = style({
-    backgroundColor: 'background.surface',
-    borderBottom: '1px solid',
-    borderColor: 'gray.400',
-    display: 'grid',
-    gridTemplateColumns: '252px minmax(0, 1fr)',
-    height: 16,
-    position: 'sticky',
-    top: 0,
-    zIndex: 2,
-    '@media (max-width: 700px)': { gridTemplateColumns: 'auto minmax(0, 1fr)' },
-  })
-
-  export const headerBrand = style({
-    alignItems: 'center',
-    display: 'flex',
-    gap: 2,
-    paddingInline: 4,
-    '@media (max-width: 700px)': {
-      paddingInline: 2,
-    },
-  })
-
-  export const headerTools = style({
-    alignItems: 'center',
-    borderLeft: '1px solid',
-    borderColor: 'gray.400',
-    display: 'flex',
-    gap: 4,
-    justifyContent: 'space-between',
-    paddingInline: 4,
-    '@media (max-width: 700px)': { gap: 2, paddingInline: 2 },
-  })
-
   export const hint = style({
     typography: 'label.12',
     color: 'gray.900',
     marginLeft: 'auto !custom',
-  })
-
-  export const layout = style({
-    alignItems: 'start',
-    display: 'grid',
-    gridTemplateColumns: '252px minmax(0, 1fr)',
-    '@media (max-width: 700px)': {
-      gridTemplateColumns: 'minmax(0, 1fr)',
-    },
   })
 
   export const name = style({
@@ -648,23 +524,19 @@ namespace styles {
     overflowWrap: 'anywhere',
   })
 
+  export const docs = style({
+    typography: 'label.14',
+    fontWeight: 'medium',
+    color: 'gray.900',
+    display: 'block',
+    textDecoration: 'none',
+    ':hover': { color: 'foreground' },
+  })
+
   export const navigation = style({
     display: 'grid',
     gap: 1,
     '@media (max-width: 700px)': { display: 'flex', flexWrap: 'wrap', gap: 4 },
-  })
-
-  export const page = style({
-    backgroundColor: 'background.surface',
-    borderInline: '1px solid',
-    borderColor: 'gray.400',
-    color: 'foreground',
-    fontFamily: 'sans',
-    marginInline: 'auto !custom',
-    maxWidth: '7xl',
-    minHeight: '100vh !custom',
-    width: 'calc(100% - 48px) !custom',
-    '@media (max-width: 600px)': { width: '100% !custom' },
   })
 
   export const palette = style({
@@ -697,77 +569,6 @@ namespace styles {
     overflowWrap: 'anywhere',
   })
 
-  export const schemeButton = style({
-    alignItems: 'center',
-    backgroundColor: 'transparent !custom',
-    border: '1px solid transparent',
-    borderRadius: '9999px !custom',
-    color: 'gray.900',
-    cursor: 'pointer',
-    display: 'flex',
-    height: 7,
-    justifyContent: 'center',
-    width: 7,
-    ':hover': { color: 'foreground' },
-    '&[aria-pressed="true"]': { borderColor: 'gray.400', color: 'foreground' },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'blue.900',
-      outlineOffset: '2px',
-    },
-  })
-
-  export const schemeControl = style({
-    backgroundColor: 'background.surface',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: '9999px !custom',
-    display: 'flex',
-    padding: 1,
-    flexShrink: 0,
-  })
-
-  export const search = style({
-    typography: 'label.14',
-    backgroundColor: 'background.surface',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'md',
-    color: 'foreground',
-    paddingBlock: 2,
-    paddingLeft: 3,
-    paddingRight: 12,
-    width: '100% !custom',
-    '@media (max-width: 700px)': { paddingRight: 3 },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'blue.900',
-      outlineOffset: '2px',
-    },
-  })
-
-  export const searchControl = style({
-    maxWidth: 'xs',
-    minWidth: 0,
-    position: 'relative',
-    width: '100% !custom',
-  })
-
-  export const shortcut = style({
-    typography: 'label.12',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'sm',
-    color: 'gray.900',
-    padding: 1,
-    pointerEvents: 'none',
-    position: 'absolute',
-    right: 2,
-    top: '50% !custom',
-    transform: 'translateY(-50%)',
-    '@media (max-width: 700px)': { display: 'none' },
-  })
-
   export const section = style({
     borderBottom: '1px solid',
     borderColor: 'gray.400',
@@ -788,18 +589,6 @@ namespace styles {
     '@media (max-width: 900px)': { padding: 6 },
   })
 
-  export const sections = style({
-    borderLeft: '1px solid',
-    borderColor: 'gray.400',
-    minHeight: 'calc(100dvh - 64px) !custom',
-    minWidth: 0,
-    '@media (max-width: 700px)': {
-      borderLeft: 'none',
-      borderTop: '1px solid',
-      borderColor: 'gray.400',
-    },
-  })
-
   export const shape = style({
     backgroundColor: 'foreground',
     border: '1px solid',
@@ -812,20 +601,6 @@ namespace styles {
     '&[data-ease="true"]': {
       transitionProperty: 'transform',
       transitionDuration: '1s',
-    },
-  })
-
-  export const sidebar = style({
-    height: 'calc(100dvh - 64px) !custom',
-    overflowY: 'auto',
-    paddingBottom: 6,
-    paddingInline: 4,
-    paddingTop: 6,
-    position: 'sticky',
-    top: 16,
-    '@media (max-width: 700px)': {
-      height: 'auto !custom',
-      position: 'static',
     },
   })
 
@@ -869,17 +644,6 @@ namespace styles {
     overflowWrap: 'anywhere',
   })
 
-  export const variablesLabel = style({
-    typography: 'label.12',
-    backgroundColor: 'gray.200',
-    borderRadius: '9999px !custom',
-    color: 'gray.900',
-    fontSize: '11px !custom',
-    paddingBlock: 1,
-    paddingInline: 2,
-    whiteSpace: 'nowrap',
-  })
-
   export const widthBar = style({
     backgroundColor: 'foreground',
     display: 'block',
@@ -917,15 +681,9 @@ function reference(path: readonly string[]) {
   }, 'vars')
 }
 
-function Preview({
-  category,
-  maximum,
-  entry,
-}: {
-  category: string
-  maximum: number
-  entry: Entry
-}) {
+function Preview(props: Preview.Props) {
+  const { category, maximum, entry } = props
+
   if (typeof entry.value === 'object') return null
   const value = String(entry.value)
   if (
@@ -1057,6 +815,15 @@ function Preview({
       {category === 'ease' && <span {...styles.hint()}>Hover or focus</span>}
     </div>
   )
+}
+
+declare namespace Preview {
+  /** Properties for the Preview component. */
+  type Props = {
+    category: string
+    maximum: number
+    entry: Entry
+  }
 }
 
 const categories = {

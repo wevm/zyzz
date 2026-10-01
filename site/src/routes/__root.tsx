@@ -35,7 +35,9 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
-function RootDocument({ children }: { children: ReactNode }) {
+function RootDocument(props: RootDocument.Props) {
+  const { children } = props
+
   return (
     <html
       lang="en"
@@ -53,4 +55,9 @@ function RootDocument({ children }: { children: ReactNode }) {
       </body>
     </html>
   )
+}
+
+declare namespace RootDocument {
+  /** Properties for the RootDocument component. */
+  type Props = { children: ReactNode }
 }

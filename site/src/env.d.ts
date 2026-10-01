@@ -10,3 +10,15 @@ declare const __EXAMPLE__: {
     }[])[]
   }[]
 }
+
+/** MDX page content and syntax highlighting prepared during the build. */
+declare const __DOCS__: {
+  pages: Record<
+    string,
+    { title: string; description: string; markdown: string }
+  >
+  code: Record<
+    string,
+    readonly (readonly { content: string; color: string }[])[]
+  >
+}

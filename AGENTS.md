@@ -43,7 +43,8 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Return values directly unless a binding is reused or gives a complex expression a useful name.
 - Prefer immediately invoked function expressions (IIFEs) with explicit branches and early returns over nested or complex ternary expressions. Keep simple two-way ternaries when both branches are easy to scan. This applies to executable code, not TypeScript conditional types.
 - For a fallible local derivation, prefer an IIFE expression over a mutable variable assigned across `try` and `catch` blocks.
-- Destructure when reading several properties. When normalizing one field, read `options.field` directly instead of creating a second name.
+- Never destructure parameters in function definitions, including arrow functions, callbacks, and methods. Accept a named parameter and destructure inside the body when reading several properties. When normalizing one field, read `options.field` directly instead of creating a second name.
+- Declare component props as `Component.Props` inside the component's matching namespace, including nested components such as `Card.Group.Props`. Do not use inline props types or standalone component props aliases.
 - Prefer short names whose meaning is clear from local context, such as `options`, `client`, `entry`, and `fn`.
 - Keep wire formats, ordered tuples, protocol fields, and other order-sensitive shapes explicit. Do not alphabetize data whose order has meaning.
 - Avoid new `any`. Use a precise boundary type, validation, narrowing, or the smallest justified assertion.
@@ -115,6 +116,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Export config helpers directly with `export const { style, variants, theme, ... } = Config.create(...)`, selecting the helpers needed by the application. Consume named imports such as `{ style, variants, theme }`; do not recommend a `zyzz` config instance or `zyzz.*` member access. Config modules need no default export. The Vite and Next.js plugin functions remain named `zyzz`.
 - Group related `style` and `variants` definitions in `namespace styles {}`, with exported `const` members and `styles.card()` or `styles.button(options)` at application sites. Use this convention throughout README, docs, architecture examples, and application fixtures. Use `export namespace styles` in shared style modules. Keep reusable literal declarations inside the namespace and reference earlier declarations directly. Namespaces belong at module scope and require TypeScript lowering. Keep focused API parameter snippets and fixtures testing other supported syntax when that syntax is the subject of the example or test. Overview usage should show two styles applied to nested elements in a component.
 - Separate adjacent `style` definitions with one blank line, including definitions inside `namespace styles`.
+- Place module-scope `namespace styles` declarations at the bottom of the file, after components and internal helpers. Follow this order in documentation examples as well.
 - Select named themes with `themes({ theme: 'mint', colorScheme: 'dark' })`, with inferred catalog keys and an optional scheme; do not recommend `themes.mint()` or `themes[name]()`. Keep preview status explicit until callable selection is implemented. Access shared token and variable references through `theme.tokens` and `theme.vars`.
 - Document the Vite plugin as a named `zyzz` function from `zyzz/vite`, called with `plugins: [zyzz()]`.
 - Document the Next.js integration as `zyzz(nextConfig)` from `zyzz/next`. It wraps existing configuration and owns Webpack/Turbopack wiring without requiring separate Babel or PostCSS setup. Keep preview notes until both bundler paths are verified.
@@ -187,6 +189,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 - Name route page components `Page` and register them with `component: Page`.
 - In the site, implement recognizable design-system elements, such as buttons, as shared components in `site/src/components/` (the site's `src/components/`). Compose pages from these components.
+- In documentation pages, every card description must render as exactly two lines. Verify the line count at supported viewport sizes.
 - Prefer existing `zyzz/default` variables and typography tokens over custom variables or arbitrary values in site styles. Introduce a custom value only when no suitable default token expresses the design.
 - Shared site components must be general-purpose and available across the site. Keep page-specific content, layout, and sections on their page.
 - During every page design round, consult the user about potential shared components before adding them. Propose the components and their general responsibilities, and wait for agreement before implementation.

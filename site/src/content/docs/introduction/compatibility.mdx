@@ -1,0 +1,350 @@
+import { CompatibilityMatrix } from '../../../components/mdx/CompatibilityMatrix.js'
+
+# Compatibility
+
+Framework, runtime, browser, and native support, with the limits of each verified path.
+
+Zyzz compiles web styles ahead of time. Applied styles return ordinary class and style props. The core is framework-independent, while source transforms, stylesheet delivery, and native output depend on the selected adapter.
+
+**Verified** means the repository contains integration fixtures for the stated behavior. It does not mean every version, browser, or deployment has been tested. **Unverified** identifies an integration outside that evidence. Native rendering remains a preview boundary.
+
+## Frameworks
+
+Web acceptance fixtures exercise atomic and grouped CSS output. Their pinned versions include React 19.2.4, Next.js 16.3.5, Solid 1.9.9, and Svelte 5.46.4. These versions describe fixture coverage, not minimum supported versions.
+
+<CompatibilityMatrix label="Framework support">
+<table>
+<caption>Framework support</caption>
+<thead>
+<tr>
+<th scope="col">
+
+Framework
+
+</th>
+<th scope="col">
+
+Support and scope
+
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">
+
+**HTML**
+
+</th>
+<td>
+
+**Verified.** Compiled attributes and CSS, lazy delivery, and DOM updates. [HTML tests](https://github.com/wevm/zyzz/blob/main/src/runtime/Html.test.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Next.js**
+
+</th>
+<td>
+
+**Verified.** Webpack and Turbopack, server and client components, streaming, hydration, navigation, and refresh. [Next.js fixtures](https://github.com/wevm/zyzz/blob/main/test/fixtures/Next.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**React**
+
+</th>
+<td>
+
+**Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [React tests](https://github.com/wevm/zyzz/blob/main/src/vite/React.test.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Solid**
+
+</th>
+<td>
+
+**Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [Solid tests](https://github.com/wevm/zyzz/blob/main/src/vite/Solid.test.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Svelte**
+
+</th>
+<td>
+
+**Verified with a boundary.** Style definitions live in TypeScript modules. Inline Svelte authoring is outside the verified scope. [Svelte tests](https://github.com/wevm/zyzz/blob/main/src/vite/Svelte.test.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Vue**
+
+</th>
+<td>
+
+**Unverified.** Vue single-file component integration is outside the verified scope. Framework-independent types do not establish SFC compilation support.
+
+</td>
+</tr>
+</tbody>
+</table>
+</CompatibilityMatrix>
+
+Arbitrary imported object records passed to `style(record)` are outside the verified source-transform scope. Callable authoring types alone do not prove extraction or rendering support. See the [web acceptance record](https://github.com/wevm/zyzz/blob/main/docs/guides/web-acceptance.md) for fixture details.
+
+## Runtimes
+
+Build-time adapters and application runtime helpers have different requirements. Browser portability of the pure compiler does not make a filesystem host portable.
+
+<CompatibilityMatrix label="Runtime evidence">
+<table>
+<caption>Runtime evidence</caption>
+<thead>
+<tr>
+<th scope="col">
+
+Environment
+
+</th>
+<th scope="col">
+
+Support and scope
+
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">
+
+**Node.js**
+
+</th>
+<td>
+
+**Verified.** Compiler hosts, the CLI, bundler adapters, and server-rendering fixtures run in Node.js.
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Browser and workers**
+
+</th>
+<td>
+
+**Verified for the pure pipeline.** Bundled `Style.define` and `Css.compile` execute in Chromium, a browser worker, and a Node worker. [Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**QuickJS**
+
+</th>
+<td>
+
+**Verified for the pure pipeline.** The same portability fixture runs without Node or DOM globals. This is embedded-engine evidence, not device rendering evidence.
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Bun, Deno, and edge hosts**
+
+</th>
+<td>
+
+**Unverified integrations.** Pure core code is environment-independent. Node filesystem adapters and complete application deployments need separate host verification.
+
+</td>
+</tr>
+</tbody>
+</table>
+</CompatibilityMatrix>
+
+## Browsers
+
+Browser support follows the emitted CSS. The Vite adapter preserves native `light-dark()` for theme switching and rejects CSS targets that would lower it. Its default baseline is:
+
+<CompatibilityMatrix label="Vite theme baseline">
+<table>
+<caption>Vite theme baseline</caption>
+<thead>
+<tr>
+<th scope="col">
+
+Browser
+
+</th>
+<th scope="col">
+
+Minimum target
+
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">
+
+**Chrome and Edge**
+
+</th>
+<td>
+
+**123 or newer.** Native `light-dark()` support.
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Firefox**
+
+</th>
+<td>
+
+**120 or newer.** Native `light-dark()` support.
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Safari and iOS Safari**
+
+</th>
+<td>
+
+**17.5 or newer.** Native `light-dark()` support.
+
+</td>
+</tr>
+</tbody>
+</table>
+</CompatibilityMatrix>
+
+This is a theme baseline, not a guarantee for every CSS feature. Chromium has automated rendering coverage. The target checks do not establish equivalent Firefox or Safari rendering coverage.
+
+Explicit Vite CSS targets must retain native `light-dark()` support:
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  build: {
+    cssTarget: ['chrome123', 'edge123', 'firefox120', 'safari17.5'],
+  },
+  plugins: [zyzz()],
+})
+```
+
+[Lightning CSS targets](https://lightningcss.dev/transpilation.html) control compatible transformations. Zyzz excludes `light-dark()` lowering in Vite and Next.js. Other CSS features still need compatible targets and rendering checks. See the [Vite implementation](https://github.com/wevm/zyzz/blob/main/src/vite/index.ts).
+
+## React Native
+
+> [!NOTE]
+> Native compilation and Metro integration are implemented. iOS and Android rendering acceptance remains pending. Shared authoring does not establish universal CSS parity.
+
+<CompatibilityMatrix label="Native support boundaries">
+<table>
+<caption>Native support boundaries</caption>
+<thead>
+<tr>
+<th scope="col">
+
+Boundary
+
+</th>
+<th scope="col">
+
+Support and scope
+
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">
+
+**Static styles and variants**
+
+</th>
+<td>
+
+**Implemented and tested.** Native tables, finite variants, scalar bindings, explicit theme and scheme selection, and source-free packages have compiler and callable coverage.
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Metro and Expo**
+
+</th>
+<td>
+
+**Implemented and tested for bundling.** Fixtures request iOS and Android bundles and verify imported edits and error recovery. [Metro tests](https://github.com/wevm/zyzz/blob/main/src/metro/index.test.ts).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**Native properties**
+
+</th>
+<td>
+
+**Version-pinned.** The conformance inventory uses React Native 0.87.0. Static property and consumer type checks do not guarantee behavior on every React Native version. [Native inventory](https://github.com/wevm/zyzz/blob/main/test/conformance/native/README.md).
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+**iOS and Android rendering**
+
+</th>
+<td>
+
+**Pending acceptance.** Independent device layout and rendering controls remain outstanding. Bundling and type checks do not establish visual parity.
+
+</td>
+</tr>
+</tbody>
+</table>
+</CompatibilityMatrix>
+
+Native components consume style objects rather than browser CSS. [React Native's styling documentation](https://reactnative.dev/docs/style) describes the platform contract. Zyzz converts its supported static subset and reports unsupported target semantics.
+
+DOM selectors, CSS at-rules, and unresolved CSS variables do not become native capabilities. Shared lengths require explicit conversion scales where needed. Platform-specific declarations belong in `targets.native`, `targets.ios`, or `targets.android`. Animated and device-owned values require their documented host paths.
+
+The [native API documentation](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/README.md) and [StyleSheet capabilities](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describe supported values and diagnostics.
+
+## Integration setup
+
+[Getting Started](/docs/introduction/getting-started) covers Vite, Next.js, Metro, other bundlers, and standalone compilation. Rollup, Webpack, and esbuild adapters are implemented through unplugin. Adapter availability does not establish support for every framework that uses those bundlers.
+
+Standalone output must deliver its generated stylesheets and initialization script alongside the compiled modules. Native builds emit native modules instead of browser CSS. Keep generated code and styles from the same build.

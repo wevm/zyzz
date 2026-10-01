@@ -593,10 +593,11 @@ export async function verify(options: verify.Options) {
       source: files['app/responsive-config.ts'].replace("'14px'", "'18px'"),
     })
     await page.waitForFunction(
-      () => {
-        const node = document.querySelector('#responsive-client')
-        return node !== null && getComputedStyle(node).paddingTop === '18px'
-      },
+      () =>
+        ['#responsive-client', '#responsive-server'].every((selector) => {
+          const node = document.querySelector(selector)
+          return node !== null && getComputedStyle(node).paddingTop === '18px'
+        }),
       undefined,
       { timeout: 30_000 },
     )

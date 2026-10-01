@@ -11,6 +11,7 @@ import { Graph } from 'zyzz/compiler'
 import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
 
 import { StyleSheet } from 'zyzz/react-native'
+import { Css } from 'zyzz/web'
 
 describe('compose', () => {
   test('retains live colors, opacity, units, and responsive values through packed contracts', async () => {
@@ -327,6 +328,187 @@ describe('compose', () => {
 })
 
 describe('define', () => {
+  test('keeps explicit variable names readable and distinct across standalone and packed CSS', async () => {
+    const core = Vars.define(
+      { color: { neutral: { '000': '#ffffff', '092': '#141414' } } },
+      { id: 'tds/core/variables' },
+    )
+    const base = Vars.define(
+      {
+        color: {
+          background: {
+            secondary: {
+              light: core.color.neutral['000'],
+              dark: core.color.neutral['092'],
+            },
+          },
+        },
+      },
+      { id: 'tds/platform' },
+    )
+    const alternate = Vars.extend(base, {
+      color: { background: { secondary: '#ff0000' } },
+    })
+    const other = Vars.define(
+      { color: { background: { secondary: '#0000ff' } } },
+      { id: 'tds-platform' },
+    )
+    const unicode = Vars.define(
+      { color: { background: { secondary: '#00ff00' } } },
+      { id: 'tds/plátform' },
+    )
+    const standalone = Css.compile({
+      styles: Style.define({
+        card: {
+          backgroundColor: base.color.background.secondary,
+          borderColor: other.color.background.secondary,
+          color: unicode.color.background.secondary,
+        },
+      }),
+      vars: { alternate, base, other, unicode },
+    })
+    const source = `import { Config, Vars } from 'zyzz';
+      const core=Vars.define({color:{neutral:{'000':'#ffffff','092':'#141414'}}},{id:'tds/core/variables'});
+      const base=Vars.define({color:{background:{secondary:{light:core.color.neutral['000'],dark:core.color.neutral['092']}}}},{id:'tds/platform'});
+      const alternate=Vars.extend(base,{color:{background:{secondary:'#ff0000'}}});
+      const other=Vars.define({color:{background:{secondary:'#0000ff'}}},{id:'tds-platform'});
+      const unicode=Vars.define({color:{background:{secondary:'#00ff00'}}},{id:'tds/plátform'});
+      export const {style,vars}=Config.create({defaultVars:'base',vars:{alternate:alternate,base:base,other:other,unicode:unicode}});
+      export const card=style({backgroundColor:'background.secondary',borderColor:other.color.background.secondary,color:unicode.color.background.secondary});`
+    const library = Graph.compile({ modules: { 'index.ts': source } })
+    const app = `import {card,vars} from 'library'; export {card}; export const scope=vars({set:'alternate'}); export const light=vars({set:'base',colorScheme:'light'}); export const dark=vars({set:'base',colorScheme:'dark'});`
+    const browser = await chromium.launch()
+
+    try {
+      for (const packed of [false, true]) {
+        const result = Graph.compile(
+          packed
+            ? {
+                contracts: {
+                  'library/index.js': library.contracts['index.ts']!,
+                },
+                imports: { 'app.ts': { library: 'library/index.js' } },
+                modules: { 'app.ts': app },
+              }
+            : {
+                imports: {
+                  'app.ts': { library: 'index.ts' },
+                  'index.ts': { zyzz: null },
+                },
+                modules: { 'index.ts': source, 'app.ts': app },
+              },
+        )
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: { 'app.ts': result.modules['app.ts']!.code },
+          packages: {
+            library: {
+              'index.ts': (packed ? library : result).modules['index.ts']!.code,
+            },
+          },
+        })
+        const fixture = Vm.runInNewContext(`${code};Fixture;`)
+        const css =
+          (packed
+            ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+            : '') +
+          (result.sharedCss ?? '') +
+          Object.values(result.modules)
+            .map((module) => module.css)
+            .join('')
+
+        expect([
+          ...new Set(
+            standalone.css.match(/--z-color-background-secondary-[\w-]+/g),
+          ),
+        ]).toMatchInlineSnapshot(`
+          [
+            "--z-color-background-secondary-4HEniLJcTXH",
+            "--z-color-background-secondary-77n2a4ss_uF",
+            "--z-color-background-secondary-bC-ESgkZ_to",
+          ]
+        `)
+        const names = [
+          ...new Set(css.match(/--z-color-background-secondary-[\w-]+/g)),
+        ].sort()
+        if (packed)
+          expect(names).toMatchInlineSnapshot(`
+          [
+            "--z-color-background-secondary-4HEniLJcTXH",
+            "--z-color-background-secondary-77n2a4ss_uF",
+            "--z-color-background-secondary-bC-ESgkZ_to",
+            "--z-color-background-secondary-c3L3w96TxQG",
+          ]
+        `)
+        else
+          expect(names).toMatchInlineSnapshot(`
+          [
+            "--z-color-background-secondary-77n2a4ss_uF",
+            "--z-color-background-secondary-bC-ESgkZ_to",
+            "--z-color-background-secondary-c3L3w96TxQG",
+          ]
+        `)
+
+        const page = await browser.newPage()
+        for (const output of [
+          {
+            css: standalone.css,
+            card: standalone.classes.card,
+            scopes: [
+              standalone.vars.base,
+              standalone.vars.base,
+              standalone.vars.alternate,
+            ],
+          },
+          {
+            css,
+            card: fixture.card().className,
+            scopes: [
+              fixture.light.className,
+              fixture.dark.className,
+              fixture.scope.className,
+            ],
+          },
+        ]) {
+          await page.setContent(
+            `<style>${output.css}</style>${output.scopes.map((scope, index) => `<div class="${scope}" style="color-scheme:${index === 1 ? 'dark' : 'light'}"><div data-card class="${output.card}"></div></div>`).join('')}`,
+          )
+
+          expect(
+            await page.locator('[data-card]').evaluateAll((nodes) =>
+              nodes.map((node) => ({
+                backgroundColor: getComputedStyle(node).backgroundColor,
+                borderColor: getComputedStyle(node).borderColor,
+                color: getComputedStyle(node).color,
+              })),
+            ),
+          ).toMatchInlineSnapshot(`
+            [
+              {
+                "backgroundColor": "rgb(255, 255, 255)",
+                "borderColor": "rgb(0, 0, 255)",
+                "color": "rgb(0, 255, 0)",
+              },
+              {
+                "backgroundColor": "rgb(20, 20, 20)",
+                "borderColor": "rgb(0, 0, 255)",
+                "color": "rgb(0, 255, 0)",
+              },
+              {
+                "backgroundColor": "rgb(255, 0, 0)",
+                "borderColor": "rgb(0, 0, 255)",
+                "color": "rgb(0, 255, 0)",
+              },
+            ]
+          `)
+        }
+        await page.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('emits inferred cross-domain declarations for installed consumers', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-vars-declarations-'))
     const library = Path.join(root, 'node_modules/variable-fixture')
@@ -1431,19 +1613,19 @@ describe('defineVars', () => {
 
         if (packed)
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-          ".z_theme-id-70-61-6c-65-74-74-65{--z-tid-70-61-6c-65-74-74-65-color_2e_brand:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-tid-70-61-6c-65-74-74-65-color_2e_brand,#123456);}
-          .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-tid-70-61-6c-65-74-74-65-color_2e_brand:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-tid-70-61-6c-65-74-74-65-color_2e_brand,#654321);}
-          .z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;--z-color-foreground-ee9lfVRgJjs:var(--z-color-brand-bJVleUJpPJY,#654321);}
-          .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
-        `)
+            ".z_theme-id-70-61-6c-65-74-74-65{--z-color-brand-cxDpf0acNeO:#123456;--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#123456);}
+            .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-color-brand-cxDpf0acNeO:#654321;--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#654321);}
+            .z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;--z-color-foreground-ee9lfVRgJjs:var(--z-color-brand-bJVleUJpPJY,#654321);}
+            .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
+          `)
         else
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-          ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;}
-          .z_scheme-dark{color-scheme:dark;}
-          .z_scheme-light{color-scheme:light;}
-          .z_scheme-light-dark{color-scheme:light dark;}
-          .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
-        `)
+            ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;}
+            .z_scheme-dark{color-scheme:dark;}
+            .z_scheme-light{color-scheme:light;}
+            .z_scheme-light-dark{color-scheme:light dark;}
+            .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
+          `)
       }
     },
   )

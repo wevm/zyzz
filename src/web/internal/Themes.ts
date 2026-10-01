@@ -386,7 +386,10 @@ export const shared = Symbol('shared token rules')
 
 function variable(index: number | string, path: string): string {
   // Packed declarations retain the spelling assigned by their compiler.
-  if (typeof index === 'string' && index.startsWith('src-'))
+  if (
+    typeof index === 'string' &&
+    (index.startsWith('src-') || index.startsWith('id-'))
+  )
     return `--z-${Identity.label(path)}-${Identity.compact(JSON.stringify([index, path]))}`
   return `--z-t${encode(String(index))}-${encode(path)}`
 }

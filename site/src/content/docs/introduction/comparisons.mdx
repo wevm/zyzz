@@ -2,7 +2,7 @@
 
 Compare how Zyzz, Tailwind CSS, StyleX, and vanilla-extract define, compose, and apply styles.
 
-import { Content } from '../../../components/mdx/comparisons/Comparisons.js'
+import { Content } from './comparisons/Content.js'
 
 <Content>
 
@@ -110,7 +110,7 @@ export function Button() {
 }
 ```
 
-Utilities express both declarations directly. For [conflicting utilities](https://tailwindcss.com/docs/styling-with-utility-classes#conflicting-utility-classes), stylesheet order determines precedence. Concatenating class names does not create an ordered override API.
+Utilities express both declarations directly. For [conflicting utilities](https://tailwindcss.com/docs/styling-with-utility-classes#conflicting-styles), stylesheet order determines precedence. Concatenating class names does not create an ordered override API.
 
 ### StyleX
 
@@ -134,7 +134,7 @@ const styles = stylex.create({
 })
 ```
 
-[`stylex.props`](https://stylexjs.com/docs/learn/styling-ui/using-styles/) merges applied styles. Later arguments take priority for conflicting properties. Conditions are nested within each property's value.
+[`stylex.props`](https://stylexjs.com/docs/learn/styling-ui/using-styles/) merges applied styles. Later arguments take priority for conflicts on the same property. By default, overlapping longhands take priority over shorthands regardless of argument order. Conditions are nested within each property's value.
 
 ### vanilla-extract
 
@@ -177,7 +177,7 @@ export declare namespace Bar {
 }
 
 namespace styles {
-  export const bar = style((values: Bar.Props) => ({
+  export const bar = style((values: { width: `${number}%` }) => ({
     backgroundColor: '#06c',
     height: '0.5rem',
     width: values.width,

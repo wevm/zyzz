@@ -1,6 +1,6 @@
 /** Page-specific comparison heading typography. @module */
 import type { ReactNode } from 'react'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 /** Applies heading typography within this comparison page. */
 export function Content(props: Content.Props) {
@@ -17,6 +17,9 @@ export declare namespace Content {
 
 namespace styles {
   export const content = style({
+    '@media (max-width: 1023px)': {
+      '& > h2:first-of-type': { marginTop: 0 },
+    },
     '& h3': {
       typography: 'heading.20',
       marginBlock: 6,

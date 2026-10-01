@@ -39,31 +39,40 @@ describe('compile', () => {
         await page
           .locator('div')
           .evaluate((element) => getComputedStyle(element).display),
-      ).toBe('block')
+      ).toMatchInlineSnapshot(`"block"`)
       expect(
         await page.locator('style').evaluate((element) => {
           return Array.from((element as HTMLStyleElement).sheet!.cssRules)
             .filter((rule) => rule instanceof CSSStyleRule)
-            .every((rule) => rule.style.length > 0)
+            .map((rule) => rule.cssText)
         }),
-      ).toBe(true)
-      expect(output.css).toContain('@media (max-width: 1023px){.z-')
+      ).toMatchInlineSnapshot(`
+        [
+          ".z-block-kqDGp8-0 { display: block; }",
+        ]
+      `)
+      expect(output.css).toMatchInlineSnapshot(`
+        ".z-block-kqDGp8-0{display:block;}
+        @media (max-width: 1023px){.z-display-PaWon1-1{&[data-mobile-menu]{display:grid;}}}
+        @media (max-width: 1023px){.z-min-height-aHLO-f-2{&[data-mobile-menu]{& main{min-height:100px;}}}}
+        @media (max-width: 1023px){@supports (display: grid){.z-border-top-YxfFfq-3{&[data-mobile-menu]{border-top:2px solid red;}}}}"
+      `)
       await page.setViewportSize({ width: 390, height: 900 })
       expect(
         await page
           .locator('div')
           .evaluate((element) => getComputedStyle(element).display),
-      ).toBe('grid')
+      ).toMatchInlineSnapshot(`"grid"`)
       expect(
         await page
           .locator('div')
           .evaluate((element) => getComputedStyle(element).borderTopWidth),
-      ).toBe('2px')
+      ).toMatchInlineSnapshot(`"2px"`)
       expect(
         await page
           .locator('main')
           .evaluate((element) => getComputedStyle(element).minHeight),
-      ).toBe('100px')
+      ).toMatchInlineSnapshot(`"100px"`)
     } finally {
       await browser.close()
     }

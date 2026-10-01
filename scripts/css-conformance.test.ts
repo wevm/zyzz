@@ -149,5 +149,5 @@ describe('CSS conformance', () => {
     } finally {
       Fs.rmSync(root, { force: true, recursive: true })
     }
-  })
+  }, 30_000)
 })

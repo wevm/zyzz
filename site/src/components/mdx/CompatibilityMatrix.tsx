@@ -1,31 +1,44 @@
 /** Styles the Compatibility page's authored support matrices. @module */
 import type { ReactNode } from 'react'
 import CheckIcon from '~icons/lucide/check'
+import TargetIcon from '~icons/lucide/target'
+import WarningIcon from '~icons/lucide/triangle-alert'
+import FirefoxIcon from '~icons/simple-icons/firefoxbrowser'
+import ChromeIcon from '~icons/simple-icons/googlechrome'
 import HtmlIcon from '~icons/simple-icons/html5'
+import EdgeIcon from '~icons/simple-icons/microsoftedge'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import ReactIcon from '~icons/simple-icons/react'
+import SafariIcon from '~icons/simple-icons/safari'
 import SolidIcon from '~icons/simple-icons/solid'
 import SvelteIcon from '~icons/simple-icons/svelte'
 import VueIcon from '~icons/simple-icons/vuedotjs'
 import { style } from '../../zyzz.config.js'
 
 const icons = {
+  chrome: ChromeIcon,
+  edge: EdgeIcon,
+  firefox: FirefoxIcon,
   html: HtmlIcon,
   next: NextIcon,
   react: ReactIcon,
+  safari: SafariIcon,
   solid: SolidIcon,
   svelte: SvelteIcon,
+  target: TargetIcon,
+  unverified: WarningIcon,
   verified: CheckIcon,
   vue: VueIcon,
 }
 
-/** Adds a decorative framework or verification icon beside its text label. */
+/** Adds a decorative compatibility icon beside its text label. */
 export function CompatibilityIcon(props: CompatibilityIcon.Props) {
   const Icon = icons[props.name]
 
   return (
     <span
       aria-hidden="true"
+      data-unverified={props.name === 'unverified' || undefined}
       data-verified={props.name === 'verified' || undefined}
       {...styles.icon()}
     >
@@ -37,8 +50,25 @@ export function CompatibilityIcon(props: CompatibilityIcon.Props) {
 export declare namespace CompatibilityIcon {
   /** Properties for a compatibility icon. */
   type Props = {
-    /** Framework or verification indicator to display. */
+    /** Compatibility indicator to display. */
     name: keyof typeof icons
+  }
+}
+
+/** Sizes inline code relative to the Compatibility page's surrounding text. */
+export function CompatibilityContent(props: CompatibilityContent.Props) {
+  return (
+    <div data-compatibility-content {...styles.content()}>
+      {props.children}
+    </div>
+  )
+}
+
+export declare namespace CompatibilityContent {
+  /** Properties for the page content. */
+  type Props = {
+    /** Authored documentation content. */
+    children: ReactNode
   }
 }
 
@@ -67,10 +97,17 @@ export declare namespace CompatibilityMatrix {
 }
 
 namespace styles {
+  export const content = style({
+    '&[data-compatibility-content] :is(p, aside, li) code': {
+      fontSize: '0.9em !custom',
+    },
+  })
+
   export const icon = style({
     display: 'inline-flex',
     marginRight: 2,
     verticalAlign: 'text-bottom',
+    '&[data-unverified]': { color: 'amber.900' },
     '&[data-verified]': { color: 'green.700' },
   })
 

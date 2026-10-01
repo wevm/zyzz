@@ -123,19 +123,11 @@ describe('/docs', () => {
           "API",
         ]
       `)
-      const placeholder = navigation.getByRole('link', {
-        name: 'Installation',
-        exact: true,
-      })
       expect(
-        await placeholder.getAttribute('aria-disabled'),
-      ).toMatchInlineSnapshot('"true"')
-      expect(await placeholder.getAttribute('href')).toMatchInlineSnapshot(
-        'null',
-      )
-      expect(await placeholder.getAttribute('tabindex')).toMatchInlineSnapshot(
-        'null',
-      )
+        await navigation
+          .getByRole('link', { name: 'Installation', exact: true })
+          .count(),
+      ).toMatchInlineSnapshot('0')
       expect(
         await navigation
           .getByRole('link', { name: 'Default Variables', exact: true })
@@ -716,12 +708,16 @@ describe('/docs', () => {
   test('redirects the docs entry and rejects unpublished pages', async () => {
     const response = await fetch(`${origin}/docs`, { redirect: 'manual' })
     const unknown = await fetch(`${origin}/docs/api/missing`)
+    const installation = await fetch(`${origin}/docs/introduction/installation`)
+    const markdown = await fetch(`${origin}/docs/introduction/installation.md`)
 
     expect(response.status).toMatchInlineSnapshot('307')
     expect(response.headers.get('location')).toMatchInlineSnapshot(
       '"/docs/introduction/getting-started"',
     )
     expect(unknown.status).toMatchInlineSnapshot('404')
+    expect(installation.status).toMatchInlineSnapshot('404')
+    expect(markdown.status).toMatchInlineSnapshot('404')
   })
 
   test('serves Markdown twins and negotiates agent requests', async () => {

@@ -36,7 +36,7 @@ describe('compose', () => {
     const library = Graph.compile({ modules: { 'index.ts': source } })
     expect(
       JSON.parse(library.contracts['index.ts']!).version,
-    ).toMatchInlineSnapshot('29')
+    ).toMatchInlineSnapshot(`30`)
 
     const browser = await chromium.launch()
     try {
@@ -328,6 +328,113 @@ describe('compose', () => {
 })
 
 describe('define', () => {
+  test.each([28, 29])(
+    'retains old producer variable spelling through extension and repacking: v%s',
+    async (version) => {
+      const producer = JSON.parse(
+        await Fs.readFile(
+          new URL(
+            `../test/fixtures/legacy-explicit-variables/v${version}.json`,
+            import.meta.url,
+          ),
+          'utf8',
+        ),
+      ) as { code: string; contract: string; css: string }
+      const app = `import {Config,Vars} from 'zyzz'; import {palette,card} from 'library';
+      export {card}; export const alternate=Vars.extend(palette,{color:{ink:'#0000ff'}});
+      export const {vars}=Config.create({vars:alternate}); export const scope=vars();`
+      const result = Graph.compile({
+        contracts: { 'library/index.js': producer.contract },
+        imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
+        modules: { 'app.ts': app },
+      })
+      expect(
+        JSON.parse(result.contracts['app.ts']!).version,
+      ).toMatchInlineSnapshot(`30`)
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': result.modules['app.ts']!.code },
+        packages: { library: { 'index.ts': producer.code } },
+      })
+      const fixture = Vm.runInNewContext(`${code};Fixture;`)
+      const scope = `z_theme-${JSON.parse(result.contracts['app.ts']!).exports.alternate.theme}`
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${producer.css}${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><div class="${scope}"><div id="card" class="${fixture.card().className}"></div></div>`,
+        )
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((node) => getComputedStyle(node).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+        if (version === 29)
+          expect(
+            await page
+              .locator('#card')
+              .evaluate((node) => getComputedStyle(node).color),
+          ).toMatchInlineSnapshot('"color(srgb 0 0 1 / 0.5)"')
+        const repacked = Graph.compile({
+          contracts: { 'app.ts': result.contracts['app.ts']! },
+          imports: { 'consumer.ts': { './app': 'app.ts' } },
+          modules: {
+            'consumer.ts': `import {card,vars} from './app'; export {card}; export const scope=vars();`,
+          },
+        })
+        await page.setContent(
+          `<style>${producer.css}${repacked.sharedCss ?? ''}${repacked.modules['consumer.ts']!.css}</style><div class="${scope}"><div id="card" class="${fixture.card().className}"></div></div>`,
+        )
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((node) => getComputedStyle(node).backgroundColor),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test('rejects invalid and conflicting packed variable naming schemes', async () => {
+    const producer = JSON.parse(
+      await Fs.readFile(
+        new URL(
+          '../test/fixtures/legacy-explicit-variables/v28.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as { contract: string }
+    const contract = JSON.parse(producer.contract)
+    const identity = contract.exports.palette.theme
+    const current = { ...contract, version: 30 }
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'old.js': producer.contract,
+          'new.js': JSON.stringify(current),
+        },
+        imports: { 'app.ts': { old: 'old.js', current: 'new.js' } },
+        modules: {
+          'app.ts': `import {palette as old} from 'old'; import {palette as current} from 'current'; export {old,current};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: new.js:0: Invalid library contract: Conflicting packed variable naming schemes for one identity.]`,
+    )
+    current.themes[identity].variableNaming = 'unknown'
+    expect(() =>
+      Graph.compile({
+        contracts: { 'library.js': JSON.stringify(current) },
+        imports: { 'app.ts': { library: 'library.js' } },
+        modules: { 'app.ts': `export {palette} from 'library';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.js:0: Invalid library contract: Invalid packed variable naming scheme.]`,
+    )
+  })
+
   test('keeps explicit variable names readable and distinct across standalone and packed CSS', async () => {
     const core = Vars.define(
       { color: { neutral: { '000': '#ffffff', '092': '#141414' } } },

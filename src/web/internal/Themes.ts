@@ -38,7 +38,11 @@ export function create() {
       name =
         contract.identity === undefined
           ? `--z${nextVariable++}`
-          : variable(contract.identity, token.path)
+          : variable(
+              contract.identity,
+              token.path,
+              token.contract.variableNaming,
+            )
       contract.paths.set(token.path, name)
     }
 
@@ -91,7 +95,7 @@ export function create() {
             path,
             contract.identity === undefined
               ? `--z${nextVariable++}`
-              : variable(contract.identity, path),
+              : variable(contract.identity, path, data.contract.variableNaming),
           )
         }
 
@@ -384,11 +388,16 @@ export type Rule = {
 /** Selects independently shareable defaults or all token rules. */
 export const shared = Symbol('shared token rules')
 
-function variable(index: number | string, path: string): string {
+function variable(
+  index: number | string,
+  path: string,
+  naming?: 'legacy',
+): string {
   // Packed declarations retain the spelling assigned by their compiler.
   if (
     typeof index === 'string' &&
-    (index.startsWith('src-') || index.startsWith('id-'))
+    (index.startsWith('src-') ||
+      (index.startsWith('id-') && naming !== 'legacy'))
   )
     return `--z-${Identity.label(path)}-${Identity.compact(JSON.stringify([index, path]))}`
   return `--z-t${encode(String(index))}-${encode(path)}`

@@ -383,6 +383,8 @@ export const complete = Symbol('zyzz.contract.complete')
 export type Contract = {
   /** Whether values belong to independent variables rather than fixed theme categories. */
   readonly variableSet?: boolean | undefined
+  /** Legacy custom-property spelling retained by older packed producers. */
+  readonly variableNaming?: 'legacy' | undefined
   /** Configuration-local category-to-property mappings. */
   readonly mappings?: VariableSets.Mappings | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */

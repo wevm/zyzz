@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { defineConfig, defineVars, extendVars } from 'zyzz'
 import { style as ui, vars as defaultVars } from 'zyzz/default'
-import output from './Compiled.json'
 
 const base = defineVars({
   color: {
@@ -20,54 +19,6 @@ const { style, vars } = defineConfig({
   defaultVars: 'base',
   vars: { base, alternate },
 })
-const palette = defineVars(
-  { color: { palette: { ink: '#171717', paper: '#fafafa' } } },
-  (values) => ({
-    color: {
-      foreground: {
-        light: values.color.palette.ink,
-        dark: values.color.palette.paper,
-      },
-    },
-  }),
-)
-const bluePalette = extendVars(palette, {
-  color: { palette: { ink: '#2563eb' } },
-})
-const { style: semanticStyle, vars: semanticVars } = defineConfig({
-  defaultVars: 'base',
-  vars: { base: palette, alternate: bluePalette },
-})
-const { style: mappedStyle, vars: mappedVars } = defineConfig({
-  mappings: {
-    surface: ['backgroundColor'],
-    spacing: ['gap', 'padding', 'paddingLeft', 'paddingRight'],
-  },
-  shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  vars: {
-    surface: { panel: { light: '#fff', dark: '#171717' } },
-    spacing: { page: '1rem' },
-  },
-})
-const { style: responsiveStyle, vars: responsiveVars } = defineConfig({
-  vars: {
-    spacing: {
-      page: {
-        default: '1rem',
-        '@media (min-width: 48rem)': '2rem',
-        '@media (min-width: 72rem)': '3rem',
-      },
-    },
-  },
-})
-const { style: queryStyle } = defineConfig({
-  vars: {
-    breakpoint: { tablet: '48rem' },
-    container: { card: '20rem' },
-    containerNames: ['preview'],
-  },
-})
-
 /** Displays the bundled surface, typography, and spacing tokens. */
 export function Bundled() {
   return (
@@ -78,36 +29,6 @@ export function Bundled() {
           <p {...styles.defaultBody()}>Manage account preferences.</p>
         </article>
       </section>
-    </div>
-  )
-}
-
-/** Displays output compiled from the guide's compile.ts snippet in an isolated frame. */
-export function Compiled() {
-  return (
-    <div {...styles.example()}>
-      <iframe
-        title="Standalone compiled Account text"
-        {...styles.frame()}
-        srcDoc={`<!doctype html><html><head><style>:root{color-scheme:light dark}body{font-family:system-ui;margin:0;padding:24px;background:light-dark(#fff,#171717)}article{font-size:16px;font-weight:600}${output.css}</style></head><body><section class="${output.vars.base}"><article class="${output.classes.card}">Account</article></section></body></html>`}
-      />
-    </div>
-  )
-}
-
-/** Shows the mapped background, horizontal padding, and explicit width. */
-export function Mappings() {
-  return (
-    <div {...styles.example()}>
-      <section {...mappedVars()}>
-        <div {...styles.mappingTrack()}>
-          <div
-            aria-label="Panel with 1rem width and horizontal padding"
-            {...styles.mappedPanel()}
-          />
-        </div>
-      </section>
-      <span {...styles.caption()}>1rem width + 1rem padding on each side</span>
     </div>
   )
 }
@@ -137,54 +58,6 @@ export function Preferences() {
       <span {...styles.caption()}>
         This preview selects a local scope. The application code saves and
         restores the document root preference.
-      </span>
-    </div>
-  )
-}
-
-/** Changes a named container's width to show its compiled query. */
-export function Queries() {
-  const [wide, setWide] = useState(false)
-
-  return (
-    <div {...styles.example()}>
-      <button
-        type="button"
-        aria-pressed={wide}
-        onClick={() => setWide(!wide)}
-        {...styles.control()}
-      >
-        {wide ? 'Use narrow container' : 'Use wide container'}
-      </button>
-      <section
-        {...styles.queryContainer()}
-        style={{ width: wide ? '24rem' : '16rem', maxWidth: '100%' }}
-      >
-        <div {...styles.queryCard()}>
-          <span>Account</span>
-          <span>Preferences</span>
-        </div>
-      </section>
-      <span {...styles.caption()}>
-        At 20rem, the container query switches the contents to a grid.
-      </span>
-    </div>
-  )
-}
-
-/** Lets media queries change padding as the browser width changes. */
-export function Responsive() {
-  return (
-    <div {...styles.example()}>
-      <div {...responsiveVars()}>
-        <section {...styles.responsivePage()}>
-          <div {...styles.inset()}>
-            Resize the browser to change the surrounding padding.
-          </div>
-        </section>
-      </div>
-      <span {...styles.caption()}>
-        Below 48rem: 1rem · 48rem: 2rem · 72rem: 3rem
       </span>
     </div>
   )
@@ -249,28 +122,6 @@ export function Scopes() {
           </div>
         </section>
       </main>
-    </div>
-  )
-}
-
-/** Shows semantic foreground references following palette overrides. */
-export function Semantic() {
-  return (
-    <div {...styles.example()}>
-      <div {...styles.row()}>
-        {(['base', 'alternate'] as const).map((set) => (
-          <section key={set} {...semanticVars({ set })}>
-            <article {...styles.semanticCard()}>
-              <span {...styles.caption()}>{set}</span>
-              <p>Account</p>
-            </article>
-          </section>
-        ))}
-      </div>
-      <span {...styles.caption()}>
-        The alternate palette changes the light foreground. Both sets share the
-        dark foreground.
-      </span>
     </div>
   )
 }
@@ -383,82 +234,12 @@ namespace styles {
     '@media (max-width: 640px)': { padding: 4 },
   })
 
-  export const frame = ui({
-    backgroundColor: 'background.primary',
-    border: '0px',
-    height: 16,
-    width: '100% !custom',
-  })
-
-  export const inset = ui({
-    backgroundColor: 'background.primary',
-    border: '1px dashed',
-    borderColor: 'blue.700',
-    color: 'foreground',
-    padding: 3,
-  })
-
-  export const mappedPanel = mappedStyle({
-    backgroundColor: 'panel',
-    px: 'page',
-    width: mappedVars.spacing.page,
-    height: '3rem',
-    boxSizing: 'content-box',
-  })
-
-  export const mappingTrack = ui({
-    backgroundColor: 'blue.100',
-    borderRadius: 'md',
-    border: '1px solid',
-    borderColor: 'blue.400',
-    padding: 4,
-  })
-
-  export const queryCard = queryStyle({
-    '@media >=tablet': { padding: '2rem' },
-    '@container preview card': { display: 'grid' },
-    backgroundColor: 'light-dark(#fff, #171717)',
-    color: 'light-dark(#171717, #fafafa)',
-    border: '1px solid light-dark(#e5e5e5, #333)',
-    borderRadius: '10px',
-    padding: '1rem',
-    gap: '0.75rem',
-  })
-
-  export const queryContainer = queryStyle({
-    containerName: 'preview',
-    containerType: 'inline-size',
-  })
-
-  export const responsivePage = responsiveStyle({
-    padding: 'page',
-    backgroundColor: 'light-dark(#eff6ff, #10223d)',
-    borderRadius: '10px',
-    border: '1px solid light-dark(#bfdbfe, #254773)',
-  })
-
-  export const row = ui({
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 3,
-    '@media (max-width: 480px)': { gridTemplateColumns: '1fr' },
-  })
-
   export const scope = ui({
     border: '1px solid',
     borderColor: 'gray.400',
     borderRadius: 'md',
     marginTop: 4,
     padding: 3,
-  })
-
-  export const semanticCard = semanticStyle({
-    color: 'foreground',
-    padding: '1.5rem',
-    backgroundColor: 'light-dark(#fff, #171717) !custom',
-    border: '1px solid light-dark(#e5e5e5, #333)',
-    borderRadius: '10px',
-    '& p': { fontSize: '1.125rem', fontWeight: 600 },
   })
 
   export const title = style({

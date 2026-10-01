@@ -1,9 +1,0 @@
-{
-  "css": ".t_0{--z0:light-dark(#171717,#fafafa);}\n.z-text-gwmWnd{color:var(--z0,light-dark(#171717,#fafafa));}",
-  "classes": {
-    "card": "z-text-gwmWnd"
-  },
-  "vars": {
-    "base": "t_0"
-  }
-}

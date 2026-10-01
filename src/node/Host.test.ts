@@ -671,27 +671,49 @@ describe('create', () => {
 const base=Vars.define({color:{ink:'#123456',surface:'#abcdef'},dimension:{gutter:{default:'16px','@media (min-width: 768px)':'24px'}}},{id:'catalog'});
 const inverse=Vars.extend(base,{color:{surface:'#000000'}});
 export const {style,vars}=Config.create({id:'complete-config',vars:{base,inverse},defaultVars:'base',mappings:false});
-export const card=style({color:'color.ink'});`,
+export const card=style({color:'color.ink'});
+export const dark=vars({set:'inverse',colorScheme:'dark'});`,
       )
       browser = await chromium.launch()
 
-      for (const compiler of [false, true]) {
-        const outDir = Path.join(root, compiler ? 'compiled' : 'original')
+      for (const { compiler, modules } of [
+        { compiler: false, modules: false },
+        { compiler: true, modules: false },
+        { compiler: true, modules: true },
+      ]) {
+        const outDir = Path.join(root, `${compiler}-${modules}`)
         await using host = await Host.create({
           compiler,
-          modules: compiler,
+          modules,
           outDir,
           packageId: 'catalog',
           root: Path.join(root, 'src'),
         })
         await host.build()
+
+        if (!modules) {
+          const css = await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+          await Fs.writeFile(
+            Path.join(root, `src/icons-${compiler}.ts`),
+            'export const icon = "<svg></svg>";',
+          )
+
+          await host.build()
+
+          expect(
+            (
+              await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+            ).trim() === css.trim(),
+          ).toMatchInlineSnapshot('true')
+        }
+
         const bundle = await Esbuild.build({
           alias: {
             zyzz: Path.join(project, 'src/index.ts'),
             'zyzz/runtime': Path.join(project, 'src/runtime/index.ts'),
           },
           bundle: true,
-          entryPoints: [compiler ? Path.join(outDir, 'config.ts') : entry],
+          entryPoints: [modules ? Path.join(outDir, 'config.ts') : entry],
           format: 'iife',
           globalName: 'Fixture',
           write: false,
@@ -708,6 +730,7 @@ export const card=style({color:'color.ink'});`,
           const { vars } = (
             window as unknown as {
               Fixture: {
+                dark: { className: string }
                 vars: (options: { set: string }) => { className: string }
               }
             }
@@ -740,6 +763,19 @@ export const card=style({color:'color.ink'});`,
               (element) => getComputedStyle(element).paddingInlineStart,
             ),
         ).toMatchInlineSnapshot('"16px"')
+
+        await page.evaluate(() => {
+          const fixture = (
+            window as unknown as { Fixture: { dark: { className: string } } }
+          ).Fixture
+          document.querySelector('section')!.className = fixture.dark.className
+        })
+
+        expect(
+          await page
+            .locator('section')
+            .evaluate((element) => getComputedStyle(element).colorScheme),
+        ).toMatchInlineSnapshot('"dark"')
 
         await page.setViewportSize({ width: 768, height: 600 })
 

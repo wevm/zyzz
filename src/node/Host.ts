@@ -17,6 +17,7 @@ import * as Snapshot from './internal/Snapshot.js'
 import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Source from '../compiler/Source.js'
 import * as Transform from '../compiler/Transform.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 
 /** A successful publication; paths are relative to the output directory. */
 export type Build = {
@@ -458,6 +459,8 @@ export async function create(options: create.Options): Promise<Runtime> {
     }
 
     const graph = compiler.compile({
+      [ThemeRules.shared]:
+        options.modules === false && !native ? 'all' : undefined,
       [Syntax.cache]: snapshot.programs(modules),
       compiler: options.compiler,
       native,

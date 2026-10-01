@@ -39,6 +39,8 @@ export declare namespace compile {
 
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** CSS-only hosts publish variable scopes once with shared rules. */
+    readonly [ThemeRules.shared]?: 'all' | 'defaults' | undefined
     /** Host entrypoints emit owned stylesheet effects without packed contracts. */
     readonly [Stylesheets.entry]?: string | undefined
     /** Host syntax from the same immutable source snapshot. */
@@ -156,6 +158,7 @@ type Cache = {
   native: compile.Options['native']
   result: compile.ReturnType
   schemes: boolean
+  shared?: 'all' | 'defaults' | undefined
   sources: Readonly<Record<string, string>>
   themes: Readonly<Record<string, Theme.Definition>>
 }
@@ -193,6 +196,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   if (cache?.reset !== options.reset) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
   if (cache?.composition !== options.composition) cache = undefined
+  if (cache?.shared !== options[ThemeRules.shared]) cache = undefined
   if (
     (cache?.entry === undefined) !==
     (options[Stylesheets.entry] === undefined)
@@ -1570,7 +1574,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
             [ThemeRules.shared]:
-              options[Stylesheets.entry] === undefined ? 'defaults' : 'all',
+              options[Stylesheets.entry] === undefined
+                ? (options[ThemeRules.shared] ?? 'defaults')
+                : 'all',
             compiler: options.compiler,
             development: options.development,
             composition: options.composition,
@@ -1651,20 +1657,32 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
   const defaults = new Set<string>()
   const defaultRules = new Map<string, ThemeRules.Rule[]>()
+  const defaultSections: Stylesheets.Section[] = []
   if (options[Stylesheets.entry] === undefined)
     for (const [source, output] of Object.entries(modules))
       for (const resource of output[ThemeRules.shared] ?? []) {
         if (defaults.has(resource.id)) continue
         defaults.add(resource.id)
 
+        if (!resource.rules) {
+          defaultSections.push({
+            css: resource.css,
+            key: resource.id,
+            layers: [],
+            source,
+          })
+          continue
+        }
+
         const rules = defaultRules.get(source) ?? []
-        rules.push(...(resource.rules ?? []))
+        rules.push(...resource.rules)
         defaultRules.set(source, rules)
       }
 
   const shared = defaults.size
     ? renderShared([
         ...sharedSections,
+        ...defaultSections,
         ...[...defaultRules].map(([source, rules]) => ({
           css: ThemeRules.render(rules),
           key: 'theme-defaults',
@@ -1733,6 +1751,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
   return {
     compiler: options.compiler !== false,
+    shared: options[ThemeRules.shared],
     composition: options.composition,
     cssOutput: options.cssOutput,
     contracts,

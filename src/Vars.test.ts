@@ -396,6 +396,98 @@ describe('define', () => {
     },
   )
 
+  test('preserves old standalone CSS through readable explicit scopes and media overrides', async () => {
+    const producer = JSON.parse(
+      await Fs.readFile(
+        new URL(
+          '../test/fixtures/legacy-explicit-variables/v29.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as { code: string; css: string }
+    const code = await Packed.bundle({
+      entry: 'index.ts',
+      modules: { 'index.ts': producer.code },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const base = Vars.define(
+      { color: { ink: '#ff0000' } },
+      (vars) => ({
+        color: {
+          faded: Vars.compose('color', [
+            'color-mix(in srgb, ',
+            vars.color.ink,
+            ' 50%, transparent)',
+          ]),
+        },
+      }),
+      { id: 'legacy/palette' },
+    )
+    const alternate = Vars.extend(base, {
+      color: {
+        ink: {
+          default: { light: '#0000ff', dark: '#00ff00' },
+          '@media (min-width: 600px)': { light: '#ffffff', dark: '#141414' },
+        },
+      },
+    })
+    const output = Css.compile({
+      styles: Style.define({}),
+      vars: { base, alternate },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 500 },
+      })
+      await page.setContent(
+        `<style>${producer.css}${output.css}</style><div class="${output.vars.base}"><div class="${output.vars.alternate}" style="color-scheme:light"><div data-card class="${fixture.card().className}"></div></div><div class="${output.vars.alternate}" style="color-scheme:dark"><div data-card class="${fixture.card().className}"></div></div></div>`,
+      )
+      expect(
+        await page.locator('[data-card]').evaluateAll((nodes) =>
+          nodes.map((node) => ({
+            backgroundColor: getComputedStyle(node).backgroundColor,
+            color: getComputedStyle(node).color,
+          })),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "backgroundColor": "rgb(0, 0, 255)",
+            "color": "color(srgb 0 0 1 / 0.5)",
+          },
+          {
+            "backgroundColor": "rgb(0, 255, 0)",
+            "color": "color(srgb 0 1 0 / 0.5)",
+          },
+        ]
+      `)
+      await page.setViewportSize({ height: 600, width: 800 })
+      expect(
+        await page.locator('[data-card]').evaluateAll((nodes) =>
+          nodes.map((node) => ({
+            backgroundColor: getComputedStyle(node).backgroundColor,
+            color: getComputedStyle(node).color,
+          })),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "backgroundColor": "rgb(255, 255, 255)",
+            "color": "color(srgb 1 1 1 / 0.5)",
+          },
+          {
+            "backgroundColor": "rgb(20, 20, 20)",
+            "color": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.5)",
+          },
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('rejects invalid and conflicting packed variable naming schemes', async () => {
     const producer = JSON.parse(
       await Fs.readFile(
@@ -1720,8 +1812,8 @@ describe('defineVars', () => {
 
         if (packed)
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-            ".z_theme-id-70-61-6c-65-74-74-65{--z-color-brand-cxDpf0acNeO:#123456;--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#123456);}
-            .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-color-brand-cxDpf0acNeO:#654321;--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#654321);}
+            ".z_theme-id-70-61-6c-65-74-74-65{--z-color-brand-cxDpf0acNeO:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-color-brand-cxDpf0acNeO);--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#123456);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-color-foreground-5EqdfNuWtDi);}
+            .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-color-brand-cxDpf0acNeO:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-color-brand-cxDpf0acNeO);--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#654321);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-color-foreground-5EqdfNuWtDi);}
             .z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;--z-color-foreground-ee9lfVRgJjs:var(--z-color-brand-bJVleUJpPJY,#654321);}
             .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
           `)

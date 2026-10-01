@@ -130,6 +130,17 @@ export function create() {
           selector: `.${className}`,
           value: literal(value, label, data.contract),
         })
+        // Standalone styles have no contract metadata to select their original spelling.
+        if (
+          contract.identity?.startsWith('id-') &&
+          data.contract.variableNaming !== 'legacy'
+        )
+          declarations.push({
+            conditions: [],
+            property: variable(contract.identity, path, 'legacy'),
+            selector: `.${className}`,
+            value: `var(${name})`,
+          })
       }
 
       rules.push(...declarations)

@@ -1,0 +1,171 @@
+import { ThinkingDiagram } from '../../../components/mdx/ThinkingDiagram.js'
+
+# Thinking in Zyzz
+
+Keep styles beside components, share design values through explicit imports, and let TypeScript check the choices between them.
+
+Zyzz separates style definitions from their application. A component calls a named style and spreads the resulting props onto an element. Shared tokens come from the imported config. The compiler turns the definitions into CSS ahead of time.
+
+<ThinkingDiagram />
+
+Tokens define shared values. Config binds those values to typed helpers. Local styles describe elements. Components apply the styles. For setup, start with [Getting Started](/docs/introduction/getting-started).
+
+## Keep styles beside the component
+
+Put component-specific definitions in a module-level `namespace styles` at the bottom of the file. Give each style a name that describes its element or purpose. Markup, behavior, and styling can then change together.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>Account</h2>
+    </article>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    display: 'grid',
+    gap: '1rem',
+    padding: '1.5rem',
+  })
+
+  export const title = style({ fontSize: '1.25rem', margin: 0 })
+}
+```
+
+Extract a [shared style module](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#share-styles) when several components need the same definitions. Keep component-specific styles local until reuse gives them a reason to move.
+
+## Compose named styles
+
+Use `cx` to combine styles at an application site. A focus ring can apply to buttons, links, and other controls without repeating its declarations.
+
+```tsx title="SaveButton.tsx"
+import { cx, style } from 'zyzz'
+
+export function SaveButton() {
+  return <button {...cx(styles.button(), styles.focusRing())}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    borderRadius: '0.5rem',
+    padding: '0.75rem 1rem',
+  })
+
+  export const focusRing = style({
+    ':focus-visible': {
+      outline: '2px solid currentColor',
+      outlineOffset: '2px',
+    },
+  })
+}
+```
+
+`cx` preserves variable bindings and variant attributes. Later conflicting declarations win within matching conditions, subject to importance. Multiple JSX spreads replace props, so use composition when combining generated styles. See [Override Styles](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#override-styles).
+
+## Use CSS names and conditions
+
+Write camelCase CSS properties such as `backgroundColor` and `borderRadius`. Values retain CSS syntax and units. Use selectors and queries for browser states and responsive layout.
+
+```ts
+import { style } from 'zyzz'
+
+namespace styles {
+  export const panel = style({
+    backgroundColor: 'white',
+    padding: '1rem',
+    '@media (min-width: 48rem)': { padding: '2rem' },
+  })
+}
+```
+
+CSS inheritance, specificity, and the cascade still apply. TypeScript checks property names and supported values. The compiler checks selector grammar, extraction constraints, and target capabilities. Neither check proves the rendered layout. See [Conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md) and [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) for supported behavior.
+
+## Share values through config
+
+Import `style` from `zyzz` for token-free authoring. Import it from the project's config to use shared colors, spacing, and other values. The import makes the styling contract explicit.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { surface: '#fff' },
+    spacing: { comfortable: '1.5rem' },
+  },
+})
+```
+
+The configured helper accepts the token names for their mapped properties. Components import that helper directly.
+
+```tsx title="Card.tsx"
+import { style } from './zyzz.config.js'
+
+export function Card() {
+  return <article {...styles.card()}>Account</article>
+}
+
+namespace styles {
+  export const card = style({
+    backgroundColor: 'surface',
+    padding: 'comfortable',
+  })
+}
+```
+
+A removed or renamed token can produce a type error at its callers. Config does not silently change unrelated imports. The bundled Geist and Tailwind tokens are opt-in through `zyzz/default`. See [Themes & Tokens](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for variable scopes and their current limitations.
+
+## Model finite choices as variants
+
+Use `variants` for component choices such as size or tone. The definition owns the choices and defaults. Callers select typed values instead of reconstructing class-name logic.
+
+```tsx title="SaveButton.tsx"
+import { variants } from 'zyzz'
+
+export function SaveButton() {
+  return <button {...styles.button({ size: 'compact' })}>Save</button>
+}
+
+namespace styles {
+  export const button = variants({
+    base: { display: 'inline-flex' },
+    defaultVariants: { size: 'regular' },
+    variants: {
+      size: {
+        compact: { padding: '0.5rem' },
+        regular: { padding: '1rem' },
+      },
+    },
+  })
+}
+```
+
+Hover and focus belong in CSS conditions. Application state stays in component props and ordinary data or ARIA attributes. See [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md) for compound rules and [Style States](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md#style-states) for state selectors.
+
+## Bind values without adding rules
+
+Use a typed callback for values that differ per instance. A progress bar can bind any percentage to a precompiled CSS variable without generating a CSS rule for each width.
+
+```tsx title="Bar.tsx"
+import { style } from 'zyzz'
+
+export function Bar(props: Bar.Props) {
+  return <div {...styles.bar({ width: props.width })} />
+}
+
+export declare namespace Bar {
+  type Props = { width: `${number}%` }
+}
+
+namespace styles {
+  export const bar = style((values: Bar.Props) => ({
+    height: '0.5rem',
+    width: values.width,
+  }))
+}
+```
+
+`<Bar width="40%" />` supplies a percentage. `<Bar width={40} />` produces a type error. Finite choices fit variants, while per-instance values fit typed callbacks or variables. Rule structure must remain statically analyzable. See [Dynamic Values](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#dynamic-values) and [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md).

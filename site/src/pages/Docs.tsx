@@ -307,6 +307,7 @@ namespace styles {
       '& > header + h2': { marginTop: 0 },
     },
     '& p, & aside': { color: 'gray.900', marginBlock: 4, maxWidth: '3xl' },
+    '& [data-step] > div > h3': { marginTop: 0 },
     '& h2': {
       typography: 'heading.24',
       marginTop: 10,
@@ -315,7 +316,7 @@ namespace styles {
     },
     '& h3': {
       typography: 'heading.20',
-      marginTop: 12,
+      marginTop: 8,
       marginBottom: 3,
       scrollMarginTop: 24,
     },

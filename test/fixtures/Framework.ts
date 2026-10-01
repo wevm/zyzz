@@ -420,7 +420,6 @@ export async function verify(options: verify.Options) {
             () =>
               !document.documentElement.hasAttribute('data-zyzz-hmr-pending'),
           )
-          await page.waitForLoadState('networkidle')
         }
 
         await edit(

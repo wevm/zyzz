@@ -1391,9 +1391,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       await updateDiscovery(this.environment, file, change.event)
     },
     async hotUpdate({ file, modules, timestamp, type, server }) {
-      await updateDiscovery(this.environment, file, type)
-
       const state = entries(this.environment)
+      const previous = [...state.values()].map((entry) => ({
+        code: entry.code,
+        file: entry.file,
+        imports: entry.imports,
+      }))
+
+      await updateDiscovery(this.environment, file, type)
       const first = [...state.values()].find(
         (entry) => entry.files.has(file) || eager(file, this.environment),
       )
@@ -1417,17 +1422,18 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
               true,
             ).catch(() => undefined)
           : undefined
-      const affected = new Set(
-        modules.filter((module) => {
-          const entry = module.id && state.get(module.id)
-          return (
-            !output ||
-            !entry ||
+      const javascriptChanged =
+        !output ||
+        previous.some(
+          (entry) =>
             entry.code !== output.modules[sourceId(entry.file)]?.code ||
             entry.imports !==
-              JSON.stringify(output.imports[sourceId(entry.file)])
-          )
-        }),
+              JSON.stringify(output.imports[sourceId(entry.file)]),
+        )
+      const affected = new Set(
+        modules.filter(
+          (module) => javascriptChanged || !module.id || !state.has(module.id),
+        ),
       )
       const ids = new Set<string>()
       if (type === 'delete') ids.add(cssId(file))
@@ -1436,12 +1442,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         if (!entry.files.has(file) && !eager(file, this.environment)) continue
 
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
-        if (
-          !output ||
-          entry.code !== output.modules[sourceId(entry.file)]?.code ||
-          entry.imports !== JSON.stringify(output.imports[sourceId(entry.file)])
-        )
-          ids.add(entry.file)
+        // Rewritten importers can lose a source edge, so changed bindings must update together.
+        if (javascriptChanged) ids.add(entry.file)
         ids.add(cssId(entry.file))
         ids.add(sharedId)
       }

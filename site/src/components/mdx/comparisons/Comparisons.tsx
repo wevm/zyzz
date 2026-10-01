@@ -1,47 +1,18 @@
-/** Page-specific comparison tables and an equivalent-output diagram. @module */
+/** Page-specific comparison table and heading typography. @module */
 import type { ReactNode } from 'react'
 import { style } from '../../../zyzz.config.js'
 
-/** Shows four authoring approaches converging on equivalent CSS declarations. */
-export function EquivalentOutput() {
-  return (
-    <svg
-      aria-label="Zyzz, Tailwind, StyleX, and vanilla-extract can express the same CSS declarations."
-      role="img"
-      viewBox="0 0 360 250"
-      {...styles.diagram()}
-    >
-      <g fill="none" stroke="currentColor" strokeOpacity="0.3">
-        <rect x="12" y="16" width="136" height="42" rx="8" />
-        <rect x="12" y="74" width="136" height="42" rx="8" />
-        <rect x="12" y="132" width="136" height="42" rx="8" />
-        <rect x="12" y="190" width="136" height="42" rx="8" />
-        <path d="M148 37H174V124H202 M148 95H174 M148 153H174 M148 211H174V124" />
-        <path d="m196 119 6 5-6 5" />
-        <rect x="212" y="91" width="136" height="66" rx="8" />
-      </g>
-      <g fill="currentColor" fontSize="14" textAnchor="middle">
-        <text x="80" y="43">
-          Zyzz
-        </text>
-        <text x="80" y="101">
-          Tailwind CSS
-        </text>
-        <text x="80" y="159">
-          StyleX
-        </text>
-        <text x="80" y="217">
-          vanilla-extract
-        </text>
-        <text x="280" y="119">
-          Same declarations
-        </text>
-        <text x="280" y="140" fontSize="12" opacity="0.7">
-          color + padding
-        </text>
-      </g>
-    </svg>
-  )
+/** Applies heading typography within this comparison page. */
+export function Content(props: Content.Props) {
+  return <div {...styles.content()}>{props.children}</div>
+}
+
+export declare namespace Content {
+  /** Comparison table and worked examples. */
+  type Props = {
+    /** Authored page content. */
+    children: ReactNode
+  }
 }
 
 /** Keeps comparison columns readable within a keyboard-scrollable region. */
@@ -69,17 +40,11 @@ export declare namespace Table {
 }
 
 namespace styles {
-  export const diagram = style({
-    backgroundColor: 'light-dark(#f5f5f5, #111) !custom',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'md',
-    color: 'foreground',
-    display: 'block',
-    marginBlock: 6,
-    maxWidth: 'md',
-    padding: 3,
-    width: '100% !custom',
+  export const content = style({
+    '& h3': {
+      typography: 'heading.20',
+      marginBlock: 6,
+    },
   })
 
   export const scroll = style({
@@ -98,7 +63,7 @@ namespace styles {
   export const table = style({
     typography: 'copy.14',
     borderCollapse: 'collapse',
-    minWidth: '600px !custom',
+    minWidth: '800px !custom',
     textAlign: 'left',
     width: '100% !custom',
     '& th, & td': {
@@ -112,6 +77,6 @@ namespace styles {
     '& tbody tr:last-child th, & tbody tr:last-child td': {
       borderBottom: 'none',
     },
-    '& p': { margin: 0 },
+    '& th p, & td p': { margin: 0 },
   })
 }

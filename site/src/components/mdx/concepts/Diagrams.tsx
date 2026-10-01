@@ -7,11 +7,11 @@ export function Compilation() {
     <div
       {...styles.pipeline()}
       role="img"
-      aria-label="Author typed definitions. Compile rules ahead of time. At render time, select classes and bind values without inserting CSS rules."
+      aria-label="Author typed definitions. Compile rules ahead of time. At render time, return styling props for an element without inserting CSS rules."
     >
       <svg viewBox="0 0 240 170" {...styles.stage()} aria-hidden="true">
         <text x="20" y="30" {...styles.label()}>
-          01 / AUTHOR
+          01 / Author
         </text>
         <rect
           x="20"
@@ -22,10 +22,10 @@ export function Compilation() {
           {...styles.panel()}
         />
         <text x="36" y="79" {...styles.code()}>
-          style({'{'} padding… {'}'})
+          <tspan {...styles.functionName()}>style</tspan>({'{'}
         </text>
         <text x="36" y="101" {...styles.code()}>
-          variants({'{'} size… {'}'})
+          padding: <tspan {...styles.string()}>"1rem"</tspan> {'}'})
         </text>
         <text x="20" y="148" {...styles.detail()}>
           Typed, static definitions
@@ -33,16 +33,29 @@ export function Compilation() {
       </svg>
       <svg viewBox="0 0 240 170" {...styles.stage()} aria-hidden="true">
         <text x="20" y="30" {...styles.label()}>
-          02 / COMPILE
+          02 / Compile
         </text>
-        <path d="M20 62h200M20 84h140M20 106h170" {...styles.rules()} />
+        <rect
+          x="20"
+          y="50"
+          width="200"
+          height="68"
+          rx="8"
+          {...styles.panel()}
+        />
+        <text x="36" y="79" {...styles.code()}>
+          <tspan {...styles.functionName()}>.generated</tspan> {'{'}
+        </text>
+        <text x="36" y="101" {...styles.code()}>
+          padding: <tspan {...styles.string()}>1rem</tspan>; {'}'}
+        </text>
         <text x="20" y="148" {...styles.detail()}>
           CSS + executable styles
         </text>
       </svg>
       <svg viewBox="0 0 240 170" {...styles.stage()} aria-hidden="true">
         <text x="20" y="30" {...styles.label()}>
-          03 / APPLY
+          03 / Apply
         </text>
         <rect
           x="20"
@@ -64,7 +77,7 @@ export function Compilation() {
           Save
         </text>
         <text x="20" y="148" {...styles.detail()}>
-          Select styles, bind values
+          Render a styled element
         </text>
       </svg>
     </div>
@@ -82,10 +95,11 @@ export function Scopes() {
     >
       <rect x="1" y="1" width="438" height="318" rx="12" {...styles.panel()} />
       <text x="24" y="34" {...styles.label()}>
-        BASE SCOPE
+        Base scope
       </text>
-      <text x="24" y="60" {...styles.detail()}>
-        accent → blue
+      <text x="24" y="60" {...styles.code()}>
+        <tspan {...styles.functionName()}>vars</tspan>({'{'} set:{' '}
+        <tspan {...styles.string()}>'base'</tspan> {'}'})
       </text>
       <rect
         x="24"
@@ -96,7 +110,7 @@ export function Scopes() {
         {...styles.blueCard()}
       />
       <text x="42" y="112" {...styles.code()}>
-        styles.card()
+        styles.<tspan {...styles.functionName()}>card</tspan>()
       </text>
       <rect
         x="24"
@@ -107,10 +121,11 @@ export function Scopes() {
         {...styles.nested()}
       />
       <text x="42" y="187" {...styles.label()}>
-        ALTERNATE SCOPE
+        Alternate scope
       </text>
-      <text x="42" y="213" {...styles.detail()}>
-        accent → purple
+      <text x="42" y="213" {...styles.code()}>
+        <tspan {...styles.functionName()}>vars</tspan>({'{'} set:{' '}
+        <tspan {...styles.string()}>'alternate'</tspan> {'}'})
       </text>
       <rect
         x="42"
@@ -121,7 +136,7 @@ export function Scopes() {
         {...styles.purpleCard()}
       />
       <text x="60" y="260" {...styles.code()}>
-        styles.card()
+        styles.<tspan {...styles.functionName()}>card</tspan>()
       </text>
     </svg>
   )
@@ -150,11 +165,12 @@ namespace styles {
 
   export const detail = style({ fill: 'gray.900', fontSize: '14px !custom' })
 
+  export const functionName = style({ fill: 'blue.900' })
+
   export const label = style({
     fill: 'gray.900',
     fontSize: '12px !custom',
     fontWeight: 'semibold',
-    letterSpacing: '1px !custom',
   })
 
   export const nested = style({
@@ -188,12 +204,6 @@ namespace styles {
     strokeWidth: 1,
   })
 
-  export const rules = style({
-    stroke: 'blue.700',
-    strokeLinecap: 'round',
-    strokeWidth: 6,
-  })
-
   export const scopes = style({
     display: 'block',
     marginBlock: 6,
@@ -209,4 +219,6 @@ namespace styles {
       marginInline: 'auto !custom',
     },
   })
+
+  export const string = style({ fill: 'green.900' })
 }

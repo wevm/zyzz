@@ -50,8 +50,8 @@ export function Note(props: Note.Props) {
     <aside aria-label="Note" data-concept-note="" {...styles.note()}>
       <InfoIcon
         aria-hidden="true"
-        width="20"
-        height="20"
+        width="14"
+        height="14"
         {...styles.noteIcon()}
       />
       <div>{props.children}</div>
@@ -355,19 +355,28 @@ namespace styles {
 
   export const note = ui({
     alignItems: 'flex-start',
-    backgroundColor: 'gray.200',
+    backgroundColor: 'blue.100',
     border: '1px solid',
-    borderColor: 'gray.400',
+    borderColor: 'blue.400',
     borderRadius: 'md',
-    color: 'gray.900',
+    color: 'blue.900',
     display: 'flex',
     gap: 3,
+    typography: 'copy.14',
     paddingBlock: 4,
     paddingInline: 5,
-    '&[data-concept-note] p': { margin: 0, color: 'gray.900' },
+    '&[data-concept-note] p': {
+      margin: 0,
+      color: 'blue.900',
+      typography: 'copy.14',
+    },
   })
 
-  export const noteIcon = ui({ flexShrink: 0, marginTop: '2px !custom' })
+  export const noteIcon = ui({
+    color: 'blue.900',
+    flexShrink: 0,
+    marginTop: '3px !custom',
+  })
 
   export const recipe = variants({
     base: {

@@ -4,6 +4,8 @@ import { ThinkingDiagram } from '../../../components/mdx/ThinkingDiagram.js'
 
 Keep styles beside components, share design values through explicit imports, and let TypeScript check the choices between them.
 
+## Define styles, then apply them
+
 Zyzz separates style definitions from their application. A component calls a named style and spreads the resulting props onto an element. Shared tokens come from the imported config. The compiler turns the definitions into CSS ahead of time.
 
 <ThinkingDiagram />

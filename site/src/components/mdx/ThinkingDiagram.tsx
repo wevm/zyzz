@@ -23,6 +23,14 @@ export function ThinkingDiagram() {
           <div {...styles.detail()}>Shared colors and spacing</div>
           <code {...styles.code()}>surface · comfortable</code>
         </div>
+        <svg aria-hidden="true" viewBox="0 0 24 32" {...styles.connector()}>
+          <path
+            d="M12 0V28M6 22L12 28L18 22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+        </svg>
         <div role="listitem" {...styles.card()}>
           <div {...styles.label()}>02 · Config</div>
           <svg aria-hidden="true" viewBox="0 0 240 84" {...styles.graphic()}>
@@ -51,6 +59,14 @@ export function ThinkingDiagram() {
           <div {...styles.detail()}>Bind a typed contract</div>
           <code {...styles.code()}>defineConfig({'{ vars }'})</code>
         </div>
+        <svg aria-hidden="true" viewBox="0 0 24 32" {...styles.connector()}>
+          <path
+            d="M12 0V28M6 22L12 28L18 22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+        </svg>
         <div role="listitem" {...styles.card()}>
           <div {...styles.label()}>03 · Local styles</div>
           <svg aria-hidden="true" viewBox="0 0 240 84" {...styles.graphic()}>
@@ -81,6 +97,14 @@ export function ThinkingDiagram() {
           <div {...styles.detail()}>Name each element's rules</div>
           <code {...styles.code()}>styles.card = style(...)</code>
         </div>
+        <svg aria-hidden="true" viewBox="0 0 24 32" {...styles.connector()}>
+          <path
+            d="M12 0V28M6 22L12 28L18 22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+        </svg>
         <div role="listitem" {...styles.card()}>
           <div {...styles.label()}>04 · Components</div>
           <svg aria-hidden="true" viewBox="0 0 240 84" {...styles.graphic()}>
@@ -138,19 +162,40 @@ namespace styles {
     border: '1px solid',
     borderColor: 'gray.400',
     borderRadius: 'md',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) 100px',
+    alignItems: 'center',
+    columnGap: 3,
     minWidth: '0 !custom',
     padding: 5,
+    '@media (min-width: 480px)': {
+      gridTemplateColumns: 'minmax(0, 1fr) 180px',
+    },
   })
 
   export const code = style({
     typography: 'copy.13.mono',
     color: 'gray.900',
     display: 'block',
+    gridColumn: '1',
     marginTop: 1,
     overflowWrap: 'anywhere',
   })
 
-  export const detail = style({ typography: 'label.14', color: 'foreground' })
+  export const connector = style({
+    color: 'blue.900',
+    display: 'block',
+    height: '32px !custom',
+    justifySelf: 'center',
+    width: '24px !custom',
+  })
+
+  export const detail = style({
+    typography: 'label.14',
+    color: 'foreground',
+    gridColumn: '1',
+    marginTop: 2,
+  })
 
   export const figure = style({ marginBlock: 6, marginInline: 0 })
 
@@ -158,20 +203,21 @@ namespace styles {
     color: 'blue.900',
     display: 'block',
     height: '84px !custom',
-    marginBlock: 4,
+    gridColumn: '2',
+    gridRow: '1 / 4',
     width: '100% !custom',
   })
 
   export const grid = style({
     display: 'grid',
-    gap: 3,
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    '@media (max-width: 479px)': { gridTemplateColumns: '1fr' },
+    gap: 0,
+    gridTemplateColumns: '1fr',
   })
 
   export const label = style({
     typography: 'label.14',
     color: 'foreground',
     fontWeight: 'medium',
+    gridColumn: '1',
   })
 }

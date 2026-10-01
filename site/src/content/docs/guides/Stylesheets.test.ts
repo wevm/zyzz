@@ -268,6 +268,35 @@ describe('Stylesheets', () => {
             expect(
               await page.locator('article h1').textContent(),
             ).toMatchInlineSnapshot('"Stylesheets"')
+            expect(
+              await page.locator('article table').evaluateAll((tables) =>
+                tables.every((table) => {
+                  const bounds = table.getBoundingClientRect()
+                  const cells = Array.from(table.querySelectorAll('th, td'))
+                  const bodyCells = Array.from(table.querySelectorAll('td'))
+
+                  return (
+                    bounds.left >= 0 &&
+                    bounds.right <= innerWidth &&
+                    cells.every((cell) => {
+                      const style = getComputedStyle(cell)
+                      return (
+                        parseFloat(style.paddingLeft) > 0 &&
+                        parseFloat(style.paddingTop) > 0
+                      )
+                    }) &&
+                    bodyCells.every(
+                      (cell) =>
+                        parseFloat(getComputedStyle(cell).borderTopWidth) > 0,
+                    ) &&
+                    Array.from(table.querySelectorAll('p')).every(
+                      (paragraph) =>
+                        getComputedStyle(paragraph).margin === '0px',
+                    )
+                  )
+                }),
+              ),
+            ).toMatchInlineSnapshot('true')
           }
           await context.close()
         }

@@ -1,3 +1,5 @@
+import { StylesheetTable } from './StylesheetTable.js'
+
 # Stylesheets
 
 Declare global styles, cascade layers, fonts, and animations alongside your component styles.
@@ -8,46 +10,48 @@ Stylesheet helpers from `zyzz/web` contribute CSS during compilation. Use `globa
 
 Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. Keep helper calls at module scope with direct named imports and statically analyzable definitions. Calling a helper during rendering does not install a stylesheet.
 
-<table>
-  <thead>
-    <tr>
-      <th>Purpose</th>
-      <th>Authoring</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Document selectors and grouping rules</td>
-      <td>
-        <code>global</code>
-      </td>
-    </tr>
-    <tr>
-      <td>Cascade order</td>
-      <td>
-        Config <code>layers</code> or the <code>layers</code> helper
-      </td>
-    </tr>
-    <tr>
-      <td>Font loading declarations</td>
-      <td>
-        <code>fontFace</code>
-      </td>
-    </tr>
-    <tr>
-      <td>Named animations</td>
-      <td>
-        <code>keyframes</code>
-      </td>
-    </tr>
-    <tr>
-      <td>Print pages and navigation transitions</td>
-      <td>
-        <code>page</code> and <code>viewTransition</code>
-      </td>
-    </tr>
-  </tbody>
-</table>
+<StylesheetTable label="Stylesheet helpers">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Purpose</th>
+        <th scope="col">Authoring</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Document selectors and grouping rules</td>
+        <td>
+          <code>global</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Cascade order</td>
+        <td>
+          Config <code>layers</code> or the <code>layers</code> helper
+        </td>
+      </tr>
+      <tr>
+        <td>Font loading declarations</td>
+        <td>
+          <code>fontFace</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Named animations</td>
+        <td>
+          <code>keyframes</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Print pages and navigation transitions</td>
+        <td>
+          <code>page</code> and <code>viewTransition</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</StylesheetTable>
 
 These are web features. Native font loading and animations need platform-specific behavior. Compiler support also does not establish browser support for an at-rule. Check [Compatibility](/docs/introduction/compatibility) before depending on newer CSS features.
 
@@ -113,24 +117,26 @@ layers(['reset', 'base', 'components'])
 
 This helper records order but does not bind layer names to a `style` import. CSS cascade rules still determine precedence. For declarations at the same origin, the example's order behaves as follows.
 
-<table>
-  <thead>
-    <tr>
-      <th>Declarations</th>
-      <th>Layer precedence, highest first</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Normal</td>
-      <td>Unlayered → components → base → reset</td>
-    </tr>
-    <tr>
-      <td>Important</td>
-      <td>reset → base → components → unlayered</td>
-    </tr>
-  </tbody>
-</table>
+<StylesheetTable label="Cascade layer precedence">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Declarations</th>
+        <th scope="col">Layer precedence, highest first</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Normal</td>
+        <td>Unlayered → components → base → reset</td>
+      </tr>
+      <tr>
+        <td>Important</td>
+        <td>reset → base → components → unlayered</td>
+      </tr>
+    </tbody>
+  </table>
+</StylesheetTable>
 
 Within a layer, specificity and source order still matter. Inline styles, animations, and transitions have their own cascade precedence. See MDN's [cascade layer reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer) for the complete ordering rules.
 

@@ -11,6 +11,7 @@ import { Graph } from 'zyzz/compiler'
 import { Config, defineVars, extendVars, Style, Vars } from 'zyzz'
 
 import { StyleSheet } from 'zyzz/react-native'
+import { Css } from 'zyzz/web'
 
 describe('compose', () => {
   test('retains live colors, opacity, units, and responsive values through packed contracts', async () => {
@@ -35,7 +36,7 @@ describe('compose', () => {
     const library = Graph.compile({ modules: { 'index.ts': source } })
     expect(
       JSON.parse(library.contracts['index.ts']!).version,
-    ).toMatchInlineSnapshot(`30`)
+    ).toMatchInlineSnapshot(`31`)
 
     const browser = await chromium.launch()
     try {
@@ -327,6 +328,390 @@ describe('compose', () => {
 })
 
 describe('define', () => {
+  test.each([28, 29, 30])(
+    'retains old producer variable spelling through extension and repacking: v%s',
+    async (version) => {
+      const producer = JSON.parse(
+        await Fs.readFile(
+          new URL(
+            `../test/fixtures/legacy-explicit-variables/v${version}.json`,
+            import.meta.url,
+          ),
+          'utf8',
+        ),
+      ) as { code: string; contract: string; css: string }
+      const app = `import {Config,Vars} from 'zyzz'; import {palette,card} from 'library';
+      export {card}; export const alternate=Vars.extend(palette,{color:{ink:'#0000ff'}});
+      export const {vars}=Config.create({vars:alternate}); export const scope=vars();`
+      const result = Graph.compile({
+        contracts: { 'library/index.js': producer.contract },
+        imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
+        modules: { 'app.ts': app },
+      })
+      expect(
+        JSON.parse(result.contracts['app.ts']!).version,
+      ).toMatchInlineSnapshot(`31`)
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': result.modules['app.ts']!.code },
+        packages: { library: { 'index.ts': producer.code } },
+      })
+      const fixture = Vm.runInNewContext(`${code};Fixture;`)
+      const scope = fixture.scope.className
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${producer.css}${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><div class="${scope}"><div id="card" class="${fixture.card().className}"></div></div>`,
+        )
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((node) => getComputedStyle(node).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        if (version >= 29)
+          expect(
+            await page
+              .locator('#card')
+              .evaluate((node) => getComputedStyle(node).color),
+          ).toMatchInlineSnapshot(`"color(srgb 1 0 0 / 0.5)"`)
+        const repacked = Graph.compile({
+          contracts: { 'app.ts': result.contracts['app.ts']! },
+          imports: { 'consumer.ts': { './app': 'app.ts' } },
+          modules: {
+            'consumer.ts': `import {card,vars} from './app'; export {card}; export const scope=vars();`,
+          },
+        })
+        await page.setContent(
+          `<style>${producer.css}${repacked.sharedCss ?? ''}${repacked.modules['consumer.ts']!.css}</style><div class="${scope}"><div id="card" class="${fixture.card().className}"></div></div>`,
+        )
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((node) => getComputedStyle(node).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test('preserves old standalone CSS through readable explicit scopes and media overrides', async () => {
+    const producer = JSON.parse(
+      await Fs.readFile(
+        new URL(
+          '../test/fixtures/legacy-explicit-variables/v29.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as { code: string; css: string }
+    const code = await Packed.bundle({
+      entry: 'index.ts',
+      modules: { 'index.ts': producer.code },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const base = Vars.define(
+      { color: { ink: '#ff0000' } },
+      (vars) => ({
+        color: {
+          faded: Vars.compose('color', [
+            'color-mix(in srgb, ',
+            vars.color.ink,
+            ' 50%, transparent)',
+          ]),
+        },
+      }),
+      { id: 'legacy/palette' },
+    )
+    const alternate = Vars.extend(base, {
+      color: {
+        ink: {
+          default: { light: '#0000ff', dark: '#00ff00' },
+          '@media (min-width: 600px)': { light: '#ffffff', dark: '#141414' },
+        },
+      },
+    })
+    const output = Css.compile({
+      styles: Style.define({}),
+      vars: { base, alternate },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { height: 600, width: 500 },
+      })
+      await page.setContent(
+        `<style>${producer.css}${output.css}</style><div class="${output.vars.base}"><div class="${output.vars.alternate}" style="color-scheme:light"><div data-card class="${fixture.card().className}"></div></div><div class="${output.vars.alternate}" style="color-scheme:dark"><div data-card class="${fixture.card().className}"></div></div></div>`,
+      )
+      expect(
+        await page.locator('[data-card]').evaluateAll((nodes) =>
+          nodes.map((node) => ({
+            backgroundColor: getComputedStyle(node).backgroundColor,
+            color: getComputedStyle(node).color,
+          })),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "backgroundColor": "rgb(0, 0, 255)",
+            "color": "color(srgb 0 0 1 / 0.5)",
+          },
+          {
+            "backgroundColor": "rgb(0, 255, 0)",
+            "color": "color(srgb 0 1 0 / 0.5)",
+          },
+        ]
+      `)
+      await page.setViewportSize({ height: 600, width: 800 })
+      expect(
+        await page.locator('[data-card]').evaluateAll((nodes) =>
+          nodes.map((node) => ({
+            backgroundColor: getComputedStyle(node).backgroundColor,
+            color: getComputedStyle(node).color,
+          })),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          {
+            "backgroundColor": "rgb(255, 255, 255)",
+            "color": "color(srgb 1 1 1 / 0.5)",
+          },
+          {
+            "backgroundColor": "rgb(20, 20, 20)",
+            "color": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.5)",
+          },
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('rejects invalid and conflicting packed variable naming schemes', async () => {
+    const producer = JSON.parse(
+      await Fs.readFile(
+        new URL(
+          '../test/fixtures/legacy-explicit-variables/v28.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as { contract: string }
+    const contract = JSON.parse(producer.contract)
+    const identity = contract.exports.palette.theme
+    const current = { ...contract, version: 30 }
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'old.js': producer.contract,
+          'new.js': JSON.stringify(current),
+        },
+        imports: { 'app.ts': { old: 'old.js', current: 'new.js' } },
+        modules: {
+          'app.ts': `import {palette as old} from 'old'; import {palette as current} from 'current'; export {old,current};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: new.js:0: Invalid library contract: Conflicting packed variable naming schemes for one identity.]`,
+    )
+    current.themes[identity].variableNaming = 'unknown'
+    expect(() =>
+      Graph.compile({
+        contracts: { 'library.js': JSON.stringify(current) },
+        imports: { 'app.ts': { library: 'library.js' } },
+        modules: { 'app.ts': `export {palette} from 'library';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library.js:0: Invalid library contract: Invalid packed variable naming scheme.]`,
+    )
+  })
+
+  test('keeps explicit variable names readable and distinct across standalone and packed CSS', async () => {
+    const core = Vars.define(
+      { color: { neutral: { '000': '#ffffff', '092': '#141414' } } },
+      { id: 'tds/core/variables' },
+    )
+    const base = Vars.define(
+      {
+        color: {
+          background: {
+            secondary: {
+              light: core.color.neutral['000'],
+              dark: core.color.neutral['092'],
+            },
+          },
+        },
+      },
+      { id: 'tds/platform' },
+    )
+    const alternate = Vars.extend(base, {
+      color: { background: { secondary: '#ff0000' } },
+    })
+    const other = Vars.define(
+      { color: { background: { secondary: '#0000ff' } } },
+      { id: 'tds-platform' },
+    )
+    const unicode = Vars.define(
+      { color: { background: { secondary: '#00ff00' } } },
+      { id: 'tds/plátform' },
+    )
+    const standalone = Css.compile({
+      styles: Style.define({
+        card: {
+          backgroundColor: base.color.background.secondary,
+          borderColor: other.color.background.secondary,
+          color: unicode.color.background.secondary,
+        },
+      }),
+      vars: { alternate, base, other, unicode },
+    })
+    const source = `import { Config, Vars } from 'zyzz';
+      const core=Vars.define({color:{neutral:{'000':'#ffffff','092':'#141414'}}},{id:'tds/core/variables'});
+      const base=Vars.define({color:{background:{secondary:{light:core.color.neutral['000'],dark:core.color.neutral['092']}}}},{id:'tds/platform'});
+      const alternate=Vars.extend(base,{color:{background:{secondary:'#ff0000'}}});
+      const other=Vars.define({color:{background:{secondary:'#0000ff'}}},{id:'tds-platform'});
+      const unicode=Vars.define({color:{background:{secondary:'#00ff00'}}},{id:'tds/plátform'});
+      export const {style,vars}=Config.create({defaultVars:'base',vars:{alternate:alternate,base:base,other:other,unicode:unicode}});
+      export const card=style({backgroundColor:'background.secondary',borderColor:other.color.background.secondary,color:unicode.color.background.secondary});`
+    const library = Graph.compile({ modules: { 'index.ts': source } })
+    const app = `import {card,vars} from 'library'; export {card}; export const scope=vars({set:'alternate'}); export const light=vars({set:'base',colorScheme:'light'}); export const dark=vars({set:'base',colorScheme:'dark'});`
+    const browser = await chromium.launch()
+
+    try {
+      for (const packed of [false, true]) {
+        const result = Graph.compile(
+          packed
+            ? {
+                contracts: {
+                  'library/index.js': library.contracts['index.ts']!,
+                },
+                imports: { 'app.ts': { library: 'library/index.js' } },
+                modules: { 'app.ts': app },
+              }
+            : {
+                imports: {
+                  'app.ts': { library: 'index.ts' },
+                  'index.ts': { zyzz: null },
+                },
+                modules: { 'index.ts': source, 'app.ts': app },
+              },
+        )
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: { 'app.ts': result.modules['app.ts']!.code },
+          packages: {
+            library: {
+              'index.ts': (packed ? library : result).modules['index.ts']!.code,
+            },
+          },
+        })
+        const fixture = Vm.runInNewContext(`${code};Fixture;`)
+        const css =
+          (packed
+            ? (library.sharedCss ?? '') + library.modules['index.ts']!.css
+            : '') +
+          (result.sharedCss ?? '') +
+          Object.values(result.modules)
+            .map((module) => module.css)
+            .join('')
+
+        expect([
+          ...new Set(
+            standalone.css.match(
+              /--z-(?:[\w]+-)?color-background-secondary\b(?=:)/g,
+            ),
+          ),
+        ]).toMatchInlineSnapshot(`
+          [
+            "--z-tds_2f_platform-color-background-secondary",
+            "--z-tds_2d_platform-color-background-secondary",
+            "--z-tds_2f_pl_e1_tform-color-background-secondary",
+          ]
+        `)
+        const names = [
+          ...new Set(
+            css.match(/--z-(?:[\w]+-)?color-background-secondary\b(?=:)/g),
+          ),
+        ].sort()
+        if (packed)
+          expect(names).toMatchInlineSnapshot(`
+            [
+              "--z-color-background-secondary",
+              "--z-tds_2d_platform-color-background-secondary",
+              "--z-tds_2f_pl_e1_tform-color-background-secondary",
+              "--z-tds_2f_platform-color-background-secondary",
+            ]
+          `)
+        else
+          expect(names).toMatchInlineSnapshot(`
+            [
+              "--z-color-background-secondary",
+              "--z-tds_2d_platform-color-background-secondary",
+              "--z-tds_2f_pl_e1_tform-color-background-secondary",
+            ]
+          `)
+
+        const page = await browser.newPage()
+        for (const output of [
+          {
+            css: standalone.css,
+            card: standalone.classes.card,
+            scopes: [
+              standalone.vars.base,
+              standalone.vars.base,
+              standalone.vars.alternate,
+            ],
+          },
+          {
+            css,
+            card: fixture.card().className,
+            scopes: [
+              fixture.light.className,
+              fixture.dark.className,
+              fixture.scope.className,
+            ],
+          },
+        ]) {
+          await page.setContent(
+            `<style>${output.css}</style>${output.scopes.map((scope, index) => `<div class="${scope}" style="color-scheme:${index === 1 ? 'dark' : 'light'}"><div data-card class="${output.card}"></div></div>`).join('')}`,
+          )
+
+          expect(
+            await page.locator('[data-card]').evaluateAll((nodes) =>
+              nodes.map((node) => ({
+                backgroundColor: getComputedStyle(node).backgroundColor,
+                borderColor: getComputedStyle(node).borderColor,
+                color: getComputedStyle(node).color,
+              })),
+            ),
+          ).toMatchInlineSnapshot(`
+            [
+              {
+                "backgroundColor": "rgb(255, 255, 255)",
+                "borderColor": "rgb(0, 0, 255)",
+                "color": "rgb(0, 255, 0)",
+              },
+              {
+                "backgroundColor": "rgb(20, 20, 20)",
+                "borderColor": "rgb(0, 0, 255)",
+                "color": "rgb(0, 255, 0)",
+              },
+              {
+                "backgroundColor": "rgb(255, 0, 0)",
+                "borderColor": "rgb(0, 0, 255)",
+                "color": "rgb(0, 255, 0)",
+              },
+            ]
+          `)
+        }
+        await page.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('emits inferred cross-domain declarations for installed consumers', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-vars-declarations-'))
     const library = Path.join(root, 'node_modules/variable-fixture')
@@ -1431,8 +1816,8 @@ describe('defineVars', () => {
 
         if (packed)
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-            ".z-theme-palette-base{--z-palette-color-brand:#123456;--z-palette-color-foreground:var(--z-palette-color-brand,#123456);}
-            .z-theme-palette-alternate{--z-palette-color-brand:#654321;--z-palette-color-foreground:var(--z-palette-color-brand,#654321);}
+            ".z-theme-palette-base{--z-palette-color-brand:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-palette-color-brand);--z-palette-color-foreground:var(--z-palette-color-brand,#123456);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-palette-color-foreground);}
+            .z-theme-palette-alternate{--z-palette-color-brand:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-palette-color-brand);--z-palette-color-foreground:var(--z-palette-color-brand,#654321);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-palette-color-foreground);}
             .z-theme-theme{--z-color-brand:#654321;--z-color-foreground:var(--z-color-brand,#654321);}
             .z-text-\\5b var\\28 --z-color-brand\\2c \\23 654321\\29 \\5d {color:var(--z-color-brand,#654321);}"
           `)

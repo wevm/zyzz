@@ -262,7 +262,7 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       const library = Graph.compile({ modules: { 'library.js': source } })
       expect(
         JSON.parse(library.contracts['library.js']!).version,
-      ).toMatchInlineSnapshot('30')
+      ).toMatchInlineSnapshot(`31`)
       expect(() =>
         Graph.compile({
           contracts: library.contracts,
@@ -285,8 +285,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
     const output = Graph.compile({ modules })
 
     expect(output.modules['first.js']!.css).toMatchInlineSnapshot(`
-      ".z-theme-first-theme{--z-first-color-brand:red;}
-      .z-theme-second-theme{--z-second-color-brand:blue;}
+      ".z-theme-first-theme{--z-first-color-brand:red;--z-tid-66-69-72-73-74-color_2e_brand:var(--z-first-color-brand);}
+      .z-theme-second-theme{--z-second-color-brand:blue;--z-tid-73-65-63-6f-6e-64-color_2e_brand:var(--z-second-color-brand);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -294,8 +294,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z-first-bugww8-heading-opacity-1{&:hover{opacity:1;}}"
     `)
     expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
-      ".z-theme-first-theme{--z-first-color-brand:red;}
-      .z-theme-second-theme{--z-second-color-brand:blue;}
+      ".z-theme-first-theme{--z-first-color-brand:red;--z-tid-66-69-72-73-74-color_2e_brand:var(--z-first-color-brand);}
+      .z-theme-second-theme{--z-second-color-brand:blue;--z-tid-73-65-63-6f-6e-64-color_2e_brand:var(--z-second-color-brand);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -716,7 +716,7 @@ ns.card({className:'web'});`,
         throw new Error(error.stdout || error.message)
       })
       const contract = JSON.parse(output.contracts['app.ts']!)
-      expect(contract.version).toMatchInlineSnapshot(`30`)
+      expect(contract.version).toMatchInlineSnapshot(`31`)
       expect(() =>
         Graph.compile({
           modules: {},
@@ -1026,7 +1026,7 @@ ${web.modules['app.ts']!.code}`,
         `)
         expect(
           JSON.parse(output.contracts['app/index.ts']!).version,
-        ).toMatchInlineSnapshot(`30`)
+        ).toMatchInlineSnapshot(`31`)
       } finally {
         await Fs.rm(directory, { recursive: true, force: true })
       }
@@ -1047,7 +1047,7 @@ ${web.modules['app.ts']!.code}`,
 
     expect(
       JSON.parse(output.contracts['app.ts']!).version,
-    ).toMatchInlineSnapshot(`30`)
+    ).toMatchInlineSnapshot(`31`)
     expect(
       JSON.parse(output.contracts['app.ts']!).exports.compact.kind,
     ).toMatchInlineSnapshot('"rule-reference"')
@@ -1366,7 +1366,7 @@ ${web.modules['app.ts']!.code}`,
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).opacity),
       ).toMatchInlineSnapshot(`"0.8"`)
-      expect(contract.version).toMatchInlineSnapshot(`30`)
+      expect(contract.version).toMatchInlineSnapshot(`31`)
       expect(
         JSON.stringify(contract).includes('"ios":{"opacity":0.9}'),
       ).toMatchInlineSnapshot('true')
@@ -1415,7 +1415,7 @@ ${web.modules['app.ts']!.code}`,
     })
     const restored = JSON.parse(packed.contracts['app.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot(`30`)
+    expect(contract.version).toMatchInlineSnapshot(`31`)
     expect(restored.exports.card.style.style.targets.native)
       .toMatchInlineSnapshot(`
       {
@@ -1532,7 +1532,7 @@ ${web.modules['app.ts']!.code}`,
 
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;}
-      .z-theme-mint-theme{--z-mint-color-brand:#175;}
+      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -1812,7 +1812,7 @@ ${web.modules['app.ts']!.code}`,
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
       .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;}
-      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;}
+      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);}
       .z-theme-local{--z-color-brand:#f00;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
@@ -1846,7 +1846,7 @@ ${web.modules['app.ts']!.code}`,
     expect(updated.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
       .z-theme-mint{--z-color-brand:#080;--z-spacing-md:8px;}
-      .z-theme-mint-theme{--z-mint-color-brand:#080;--z-mint-spacing-md:8px;}
+      .z-theme-mint-theme{--z-mint-color-brand:#080;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);}
       .z-theme-local{--z-color-brand:#f00;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
@@ -2165,25 +2165,25 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(removed.modules['pkg/alternate.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/index.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/theme.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
@@ -2713,7 +2713,7 @@ describe('create', () => {
       ]
     `)
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#f00;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#f00;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -3003,7 +3003,7 @@ describe('output', () => {
               Path.join(library.installed, 'style.css'),
               'utf8',
             )
-            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`30`)
+            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`31`)
             if (producer === 'atomic')
               expect(
                 JSON.parse(contract).exports.controls.members.button.style.style
@@ -3190,7 +3190,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(legacy.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-theme-theme{--z-color-brand:light-dark(#0066cc,#99ccff);}"`,
+        `".z-theme-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
       )
 
       const conflicting = metadata.replaceAll(
@@ -3263,7 +3263,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         `"import {controls} from './barrel.js';export const props=controls.button();"`,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-theme-theme{--z-color-brand:light-dark(#0066cc,#99ccff);}"`,
+        `".z-theme-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
       )
     })
 
@@ -4728,7 +4728,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('links registered variable references and assignments through packed aliases', async () => {
       expect(
         JSON.parse(compile().library.contracts['vars.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
 
       const { code, css } = await bundle()
 

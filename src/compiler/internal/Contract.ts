@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -56,6 +56,28 @@ export function read(
         collect(member)
     }
     for (const entry of Object.values(record(data.exports))) collect(entry)
+  }
+
+  function variableNaming(
+    entry: Record<string, unknown>,
+    identity: string,
+  ): 'legacy' | 'hashed' | undefined {
+    if (entry.variableNaming !== undefined) {
+      if ((data.version as number) >= 30 && entry.variableNaming === 'legacy')
+        return 'legacy'
+      if ((data.version as number) >= 31 && entry.variableNaming === 'hashed')
+        return 'hashed'
+      throw new Error('Invalid packed variable naming scheme.')
+    }
+    if ((data.version as number) <= 30) {
+      if (
+        identity.startsWith('src-') ||
+        (data.version === 30 && identity.startsWith('id-'))
+      )
+        return 'hashed'
+      return 'legacy'
+    }
+    return undefined
   }
 
   function decode(value: unknown): unknown {
@@ -92,13 +114,19 @@ export function read(
     if (Object.hasOwn(fields, '$variable')) {
       const reference = record(fields.$variable)
       const identity = string(reference.identity)
+      const naming = variableNaming(reference, identity)
       let contract = identities.get(identity)
       if (contract && !contract.variableSet)
         throw new Error(
           'Conflicting packed variable-set modes for one identity.',
         )
+      if (contract && contract.variableNaming !== naming)
+        throw new Error(
+          'Conflicting packed variable naming schemes for one identity.',
+        )
       if (!contract) {
         contract = Object.freeze({
+          ...(naming ? { variableNaming: naming } : {}),
           variableSet: true,
           [Token.identity]: identity,
         })
@@ -122,6 +150,7 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
+    const naming = variableNaming(entry, identity)
     if (entry.variableSet === true && (data.version as number) < 28)
       throw new Error('Vars contracts require contract version 28 or later.')
     const mappings = VariableSets.mappings(entry.mappings)
@@ -180,8 +209,13 @@ export function read(
         'Conflicting packed default layers for one theme identity.',
       )
 
+    if (contract && contract.variableNaming !== naming)
+      throw new Error(
+        'Conflicting packed variable naming schemes for one identity.',
+      )
     if (!contract) {
       contract = Object.freeze({
+        ...(naming ? { variableNaming: naming } : {}),
         ...(entry.variableSet === true
           ? {
               variableSet: true,
@@ -318,7 +352,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29, 30,
+          27, 28, 29, 30, 31,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -766,12 +800,17 @@ export function write(
                 mappings: theme[Token.definition].contract.mappings,
               }
             : {}),
+          ...(theme[Token.definition].contract.variableNaming
+            ? {
+                variableNaming: theme[Token.definition].contract.variableNaming,
+              }
+            : {}),
           identity: theme[Token.definition].contract[Token.identity],
           tokens: encode(input(theme)),
         },
       ]),
     ),
-    version: 30,
+    version: 31,
   })
 }
 
@@ -855,6 +894,9 @@ function encode(value: unknown): unknown {
   if (Token.is(value))
     return {
       $variable: {
+        ...(value.contract.variableNaming
+          ? { variableNaming: value.contract.variableNaming }
+          : {}),
         identity: value.contract[Token.identity],
         path: value.path,
         value: encode(value.value),

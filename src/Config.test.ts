@@ -275,7 +275,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
       const library = Graph.compile({ modules: { 'config.ts': config } })
       expect(
         JSON.parse(library.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
 
       const browser = await chromium.launch()
       try {

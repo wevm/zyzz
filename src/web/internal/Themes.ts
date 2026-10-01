@@ -33,7 +33,11 @@ export function create() {
     let name = contract.paths.get(token.path)
 
     if (!name) {
-      name = variable(contract.identity, token.path)
+      name = variable(
+        contract.identity,
+        token.path,
+        token.contract.variableNaming,
+      )
       contract.paths.set(token.path, name)
     }
 
@@ -87,7 +91,10 @@ export function create() {
         for (const path of Object.keys(data.values)) {
           if (contract.paths.has(path)) continue
 
-          contract.paths.set(path, variable(contract.identity, path))
+          contract.paths.set(
+            path,
+            variable(contract.identity, path, data.contract.variableNaming),
+          )
         }
 
         contracts.set(data.contract, contract)
@@ -118,6 +125,28 @@ export function create() {
           selector: `.${className}`,
           value: literal(value, label, data.contract),
         })
+        // Standalone styles have no contract metadata to select their original spelling.
+        if (
+          contract.identity?.startsWith('id-') &&
+          data.contract.variableNaming === undefined
+        )
+          declarations.push({
+            conditions: [],
+            property: variable(
+              `id-${Array.from(
+                contract.identity
+                  .slice(3)
+                  .replace(/_([0-9a-f]+)_/g, (_, code: string) =>
+                    String.fromCodePoint(Number.parseInt(code, 16)),
+                  ),
+                (character) => character.codePointAt(0)!.toString(16),
+              ).join('-')}`,
+              path,
+              'legacy',
+            ),
+            selector: `.${className}`,
+            value: `var(${name})`,
+          })
       }
 
       rules.push(...declarations)
@@ -395,7 +424,15 @@ export function scope(value: string, identity?: string): string {
   return `z-theme-${namespace}${Identity.name(value)}`
 }
 
-function variable(identity: string | undefined, path: string): string {
+function variable(
+  identity: string | undefined,
+  path: string,
+  naming?: 'legacy' | 'hashed',
+): string {
+  if (naming === 'legacy' && identity)
+    return `--z-t${encode(identity)}-${encode(path)}`
+  if (naming === 'hashed')
+    return `--z-${Identity.label(path)}-${Identity.compact(JSON.stringify([identity, path]))}`
   const namespace = identity?.startsWith('id-') ? `${identity.slice(3)}-` : ''
   return `--z-${namespace}${path.split('.').map(Identity.name).join('-')}`
 }

@@ -112,7 +112,7 @@ describe('create', () => {
 
     const contract = JSON.parse(graph.contracts['config.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot(`30`)
+    expect(contract.version).toMatchInlineSnapshot(`31`)
     expect(
       Object.hasOwn(contract.exports.style, 'script'),
     ).toMatchInlineSnapshot('false')
@@ -126,7 +126,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(keyed.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`30`)
+    ).toMatchInlineSnapshot(`31`)
   })
   test('reads style exports from contracts recorded before version 19', () => {
     const library = Graph.compile({
@@ -137,7 +137,7 @@ describe('create', () => {
     })
     const contract = JSON.parse(library.contracts['config.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot(`30`)
+    expect(contract.version).toMatchInlineSnapshot(`31`)
     expect(contract.exports.style.kind).toMatchInlineSnapshot(`"style"`)
 
     // Readers before this version recorded the same export as `css`.

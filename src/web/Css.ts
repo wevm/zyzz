@@ -419,6 +419,8 @@ export function compile<
 
   const identities = new Map<string, string>()
   const rules = new Map<string, string>()
+  type ConditionalRule = { conditions: readonly string[]; value: string }
+  const conditionalRules = new Map<string, ConditionalRule>()
   const identical = new Map<string, string>()
   const explicitBodies = new Map<string, string>()
   const selectors = new Map<string, string>()
@@ -477,7 +479,13 @@ export function compile<
       labels?.[style.name]?.namespace ??
       (options.scope ? Identity.name(options.scope) : undefined)
 
-    function emit(body: string, label: string, shared: boolean, output = mode) {
+    function emit(
+      body: string,
+      label: string,
+      shared: boolean,
+      output = mode,
+      conditional?: ConditionalRule,
+    ) {
       if (!body) return
 
       const independent =
@@ -528,6 +536,12 @@ export function compile<
 
       if (owner !== undefined) identities.set(identity, owner)
       rules.set(identity, body)
+      if (
+        conditional?.conditions.some((condition) =>
+          /^@(media|supports)\b/.test(condition),
+        )
+      )
+        conditionalRules.set(identity, conditional)
       if (explicit !== undefined) selectors.set(identity, explicit)
       else {
         if (reusable) identical.set(key, identity)
@@ -590,7 +604,7 @@ export function compile<
           !nestedComposition &&
           !conditions.length &&
           groups.get(conflict(property)) !== false
-        emit(body, property, shared)
+        emit(body, property, shared, mode, { conditions, value })
       }
     }
 
@@ -665,10 +679,35 @@ export function compile<
 
   const scopedCss = [
     scopes.css,
-    ...[...rules].map(
-      ([name, body]) =>
-        `.${ClassName.selector(selectors.get(name) ?? name)}{${body}}`,
-    ),
+    ...[...rules].map((entry) => {
+      const [name, body] = entry
+      const selector = `.${ClassName.selector(selectors.get(name) ?? name)}`
+      const conditional = conditionalRules.get(name)
+      if (
+        !conditional ||
+        conditional.conditions.some(
+          (condition) =>
+            condition.startsWith('@') &&
+            !/^@(media|supports)\b/.test(condition),
+        )
+      )
+        return `${selector}{${body}}`
+
+      // Inactive conditions must surround the class rather than leave a matched empty wrapper.
+      const conditions = conditional.conditions.filter((condition) =>
+        condition.startsWith('@'),
+      )
+      const nested = conditional.conditions
+        .filter((condition) => !condition.startsWith('@'))
+        .reduceRight(
+          (body, condition) => `${condition}{${body}}`,
+          conditional.value,
+        )
+      return conditions.reduceRight(
+        (body, condition) => `${condition}{${body}}`,
+        `${selector}{${nested}}`,
+      )
+    }),
   ]
     .filter(Boolean)
     .join('\n')

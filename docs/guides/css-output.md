@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable output is supported by the shared compiler, source config, and version 30 packed contracts. CLI and Vite support both compiler settings. Framework lifecycle tests cover both modes; performance comparisons use grouped output.
+> Configurable output is supported by the shared compiler, source config, and version 31 packed contracts. CLI and Vite support both compiler settings. Framework lifecycle tests cover both modes; performance comparisons use grouped output.
 
 Choose the CSS representation on the authoring config:
 

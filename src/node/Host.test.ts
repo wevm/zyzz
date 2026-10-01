@@ -1080,8 +1080,8 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
           }
         ).version
 
-      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`30`)
-      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`30`)
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`31`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`31`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -1433,7 +1433,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"cssName":"theme","variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#06c"}}},"src-card-12soMKeUUb--config-theme":{"cssName":"theme","cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#06c"}}}},"version":30}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"cssName":"theme","variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#06c"}}},"src-card-12soMKeUUb--config-theme":{"cssName":"theme","cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#06c"}}}},"version":31}"`,
       )
 
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
@@ -1458,7 +1458,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"cssName":"theme","variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#175"}}},"src-card-12soMKeUUb--config-theme":{"cssName":"theme","cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#175"}}}},"version":30}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"cssName":"theme","variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#175"}}},"src-card-12soMKeUUb--config-theme":{"cssName":"theme","cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#175"}}}},"version":31}"`,
       )
 
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')

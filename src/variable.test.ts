@@ -242,7 +242,7 @@ export namespace styles {
 
       expect(
         JSON.parse(publisher.contracts['lib/library.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
         ".z-Zf5JrJ-label---z-variables-accent-0{--z-variables-accent:blue;}

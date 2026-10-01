@@ -597,7 +597,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       ).toMatchInlineSnapshot('true')
       expect(
         JSON.parse(publisher.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: Object.fromEntries(
@@ -1170,8 +1170,8 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version
-          if (output === 'react') expect(version).toMatchInlineSnapshot(`30`)
-          else expect(version).toMatchInlineSnapshot(`30`)
+          if (output === 'react') expect(version).toMatchInlineSnapshot(`31`)
+          else expect(version).toMatchInlineSnapshot(`31`)
         } finally {
           await browser.close()
           if (server)

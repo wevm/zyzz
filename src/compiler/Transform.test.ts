@@ -3893,8 +3893,8 @@ export const fade = keyframes({ '@supports (display: grid)': {'entry 0%, cover 1
       })
       expect(output.css).toMatchInlineSnapshot(
         `
-        ".z-XSk4U0-styles-card-text-0{@media (width >= 48rem){color:red;}}
-        .z-XSk4U0-styles-card-text-1{@media (width >= 48rem){color:blue;}}"
+        "@media (width >= 48rem){.z-XSk4U0-styles-card-text-0{color:red;}}
+        @media (width >= 48rem){.z-XSk4U0-styles-card-text-1{color:blue;}}"
       `,
       )
     })
@@ -5328,8 +5328,8 @@ describe('conditions', () => {
       ).toMatchInlineSnapshot(
         `
         ".z-Osf2pa-style-0-text-0{:where(.dark) &{color:red;}}
-        .z-Osf2pa-style-0-display-1{@media only screen{display:grid;}}
-        .z-Osf2pa-style-0-display-2{@media not print{display:block;}}"
+        @media only screen{.z-Osf2pa-style-0-display-1{display:grid;}}
+        @media not print{.z-Osf2pa-style-0-display-2{display:block;}}"
       `,
       )
     })
@@ -5375,7 +5375,7 @@ describe('conditions', () => {
       expect(output.css).toMatchInlineSnapshot(
         `
         ".z-YB3XzN-style-0-text-0{&:is(:hover,:focus){color:red;}}
-        .z-YB3XzN-style-0-p-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+        @media (width > 1px)  and (hover: hover){.z-YB3XzN-style-0-p-1{padding:2px;}}"
       `,
       )
     })
@@ -5430,7 +5430,7 @@ describe('conditions', () => {
       expect(output.css).toMatchInlineSnapshot(
         `
         ".z-A1zKnx-style-0-text-0{color:red;}
-        .z-A1zKnx-style-0-p-1{@media screen, print{padding:2px;}}"
+        @media screen, print{.z-A1zKnx-style-0-p-1{padding:2px;}}"
       `,
       )
 
@@ -5485,10 +5485,10 @@ describe('conditions', () => {
           ".z-theme-theme{--z-spacing-small:4px;--z-spacing-large:16px;}
           .z-FlkpGI-box-p-0{padding:var(--z-spacing-small,4px);}
           .z-FlkpGI-box-p-1{&:hover{padding:var(--z-spacing-large,16px);}}
-          .z-FlkpGI-box-w-2{@media (48rem <= width < 64rem){width:100px;}}
-          .z-FlkpGI-box-h-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+          @media (48rem <= width < 64rem){.z-FlkpGI-box-w-2{width:100px;}}
+          @media (48rem <= width < 64rem){.z-FlkpGI-box-h-3{&[data-active]{height:20px;}}}
           .z-FlkpGI-box-display-4{@container sidebar (width >= 24rem){display:grid;}}
-          .z-FlkpGI-box-gap-5{@supports (display:grid){gap:var(--z-spacing-small,4px);}}
+          @supports (display:grid){.z-FlkpGI-box-gap-5{gap:var(--z-spacing-small,4px);}}
           .z-FlkpGI-box-opacity-6{@starting-style{opacity:0;}}"
         `)
     })
@@ -5524,7 +5524,7 @@ describe('conditions', () => {
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-theme{}
-        .z-Zf5JrJ-box-w-0{@media (width >= 48rem){width:100px;}}"
+        @media (width >= 48rem){.z-Zf5JrJ-box-w-0{width:100px;}}"
       `)
     })
     test.each([
@@ -7570,7 +7570,7 @@ describe('functionAcceptance', () => {
       const library = Graph.compile({ modules: { 'functions.ts': source } })
       expect(
         JSON.parse(library.contracts['functions.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       const packed = Graph.compile({
         contracts: { 'lib/index.js': library.contracts['functions.ts']! },
         imports: { 'app.ts': { lib: 'lib/index.js', 'zyzz/web': null } },
@@ -7769,7 +7769,7 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
       })
       expect(
         JSON.parse(library.contracts['functions.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       const output = Graph.compile({
         contracts: { 'lib/functions.js': library.contracts['functions.ts']! },
         imports: { 'app.ts': { lib: 'lib/functions.js', zyzz: null } },
@@ -7830,7 +7830,7 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
           })
           expect(
             JSON.parse(library.contracts['fn.ts']!).version,
-          ).toMatchInlineSnapshot(`30`)
+          ).toMatchInlineSnapshot(`31`)
 
           const packed = Graph.compile({
             contracts: { 'lib.js': library.contracts['fn.ts']! },
@@ -7839,7 +7839,7 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
           })
           expect(
             JSON.parse(packed.contracts['app.ts']!).version,
-          ).toMatchInlineSnapshot(`30`)
+          ).toMatchInlineSnapshot(`31`)
         }
       },
     )
@@ -7876,7 +7876,7 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
       const library = Graph.compile({ modules: { 'fn.ts': source } })
       expect(
         JSON.parse(library.contracts['fn.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
 
       const output = Transform.compile({
         moduleId: 'valid.ts',
@@ -9712,7 +9712,7 @@ export namespace styles {
       )
       expect(
         JSON.parse(library.contracts['names.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       const edited = Graph.compile({
         modules: {
           'names.ts': `import {counterStyle} from 'zyzz/web';export const alias=counterStyle({system:'cyclic',symbols:'"■"'});`,
@@ -9770,7 +9770,7 @@ namespace({prefix:'图',uri:'http://www.w3.org/2000/svg'});`
           },
         })
         expect(
-          JSON.parse(library.contracts['names.ts']!).version === 30,
+          JSON.parse(library.contracts['names.ts']!).version === 31,
         ).toMatchInlineSnapshot(`true`)
 
         const contract = JSON.parse(library.contracts['names.ts']!)
@@ -9782,7 +9782,7 @@ namespace({prefix:'图',uri:'http://www.w3.org/2000/svg'});`
           modules: { 'app.ts': `import 'lib';` },
         })
         expect(
-          JSON.parse(packed.contracts['app.ts']!).version === 30,
+          JSON.parse(packed.contracts['app.ts']!).version === 31,
         ).toMatchInlineSnapshot(`true`)
       }
     })
@@ -9807,7 +9807,7 @@ namespace({prefix:'图',uri:'http://www.w3.org/2000/svg'});`
           })
           expect(
             JSON.parse(library.contracts['uri.ts']!).version,
-          ).toMatchInlineSnapshot(`30`)
+          ).toMatchInlineSnapshot(`31`)
           const output = Graph.compile({
             contracts: { 'lib.js': library.contracts['uri.ts']! },
             imports: { 'app.ts': { lib: 'lib.js' } },
@@ -12539,7 +12539,7 @@ describe('statements', () => {
         `"@custom-media --z-custommedia-compact (width < 40rem);"`,
       )
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-Zf5JrJ-styles-box-text-0{@media (--z-custommedia-compact){color:red;}}"`,
+        `"@media (--z-custommedia-compact){.z-Zf5JrJ-styles-box-text-0{color:red;}}"`,
       )
     })
     test('emits native functions and callable fixed expressions', async () => {

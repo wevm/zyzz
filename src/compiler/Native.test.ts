@@ -338,7 +338,7 @@ describe('compile', () => {
       })
       expect(
         JSON.parse(publisher.contracts['library.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       expect((await execute(compiled.modules['app.ts']!.code)).results)
         .toMatchInlineSnapshot(`
         [

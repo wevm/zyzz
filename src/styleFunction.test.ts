@@ -1909,7 +1909,7 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
       )
       expect(
         JSON.parse(publisher.contracts['barrel.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
     })
 
     test('rejects unresolved, called, forward, and unscoped references', () => {

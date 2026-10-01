@@ -293,7 +293,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot(`30`)
+    ).toMatchInlineSnapshot(`31`)
   })
   test('preserves mapped HTML theme handles through source and packed aliases', async () => {
     const library = Graph.compile({
@@ -420,7 +420,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot(`30`)
+    expect(changed.version).toMatchInlineSnapshot(`31`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>
@@ -464,9 +464,9 @@ describe('create', () => {
       consumer.modules['app.ts']!.code.includes('shorthands:'),
     ).toMatchInlineSnapshot('true')
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-library-theme{--z-library-spacing-sm:4px;}
-      .z-theme-library-next{--z-library-spacing-sm:12px;}
-      .z-theme-app-theme{--z-app-spacing-sm:12px;}
+      ".z-theme-library-theme{--z-library-spacing-sm:4px;--z-tid-6c-69-62-72-61-72-79-spacing_2e_sm:var(--z-library-spacing-sm);}
+      .z-theme-library-next{--z-library-spacing-sm:12px;--z-tid-6c-69-62-72-61-72-79-spacing_2e_sm:var(--z-library-spacing-sm);}
+      .z-theme-app-theme{--z-app-spacing-sm:12px;--z-tid-61-70-70-spacing_2e_sm:var(--z-app-spacing-sm);}
       .z-app-Zf5JrJ-card-pl-0{padding-left:var(--z-app-spacing-sm,12px);}
       .z-app-Zf5JrJ-card-pr-1{padding-right:var(--z-app-spacing-sm,12px);}"
     `)

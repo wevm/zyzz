@@ -139,7 +139,9 @@ Types: `style.ErrorType`, `style.Options`, `style.Props`, `style.ReturnType`, an
 
 ## Selectors and conditions
 
-Scoped pseudo keys (`:hover`, `::before`) and explicit `&` selectors retain declaration inference at every depth. `@media`, `@container`, `@supports`, and `@starting-style` compile to native CSS nesting, preserving authored order and specificity. Raw syntax is checked by the source compiler.
+Scoped pseudo keys (`:hover`, `::before`) and explicit `&` selectors retain declaration inference at every depth. Conditions preserve declaration order and selector specificity. Raw syntax is checked by the source compiler.
+
+Atomic output moves `@media` and `@supports` outside class rules when the condition chain contains only selectors and these queries. Inactive queries then leave no matched class wrapper in DevTools. Grouped output and chains containing other at-rules retain native CSS nesting, including `@container` and `@starting-style`.
 
 ```ts
 import { defineConfig, defineVars } from 'zyzz'

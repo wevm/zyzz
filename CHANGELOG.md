@@ -1,5 +1,15 @@
 # zyzz
 
+## 0.0.21
+
+### Patch Changes
+
+- 1b60f79: Moved atomic media and supports conditions outside class rules to reduce inactive wrappers in browser DevTools.
+- ab1da49: Replaced per-declaration CSS hashes with readable names, short module qualifiers, and consumer-owned namespaces.
+- de21e04: Fixed explicit variable IDs to emit readable CSS names while preserving older packed libraries and standalone CSS artifacts.
+- e2db8f6: Fixed repeated variable scopes in CSS-only Host builds.
+- 64c0b72: Fixed Vite hot updates to refresh rewritten importers when style bindings change.
+
 ## 0.0.20
 
 ### Patch Changes

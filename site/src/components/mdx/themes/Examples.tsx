@@ -7,7 +7,7 @@ const base = defineVars({
   color: {
     accent: { light: '#2563eb', dark: '#60a5fa' },
     foreground: { light: '#171717', dark: '#fafafa' },
-    surface: { light: '#ffffff', dark: '#171717' },
+    surface: { light: '#ffffff', dark: '#111111' },
   },
   spacing: { page: '1.5rem' },
 })
@@ -25,8 +25,17 @@ export function Bundled() {
     <div {...styles.example()}>
       <section {...defaultVars()}>
         <article {...styles.defaultCard()}>
-          <h2 {...styles.defaultTitle()}>Account</h2>
-          <p {...styles.defaultBody()}>Manage account preferences.</p>
+          <div {...styles.details()}>
+            <h2 {...styles.defaultTitle()}>Account</h2>
+            <p {...styles.defaultBody()}>Manage account preferences.</p>
+          </div>
+          <div {...styles.account()}>
+            <div {...styles.details()}>
+              <strong>Personal account</strong>
+              <p {...styles.defaultBody()}>alex@example.com</p>
+            </div>
+            <span {...styles.defaultStatus()}>Active</span>
+          </div>
         </article>
       </section>
     </div>
@@ -140,28 +149,33 @@ export function Tokens() {
 function Card() {
   return (
     <article data-theme-card="" {...styles.card()}>
-      <span aria-hidden="true" {...styles.icon()}>
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <circle cx="12" cy="8" r="3" />
-          <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
-        </svg>
-      </span>
       <div {...styles.details()}>
         <h2 {...styles.title()}>Account</h2>
         <p>Manage account preferences.</p>
+      </div>
+      <div {...styles.account()}>
+        <div {...styles.details()}>
+          <strong>Personal account</strong>
+          <p>alex@example.com</p>
+        </div>
+        <span {...styles.status()}>Active</span>
       </div>
     </article>
   )
 }
 
 namespace styles {
+  export const account = ui({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 4,
+    borderTop: '1px solid light-dark(#e5e5e5, #2a2a2a)',
+    paddingTop: 4,
+    '& strong': { typography: 'label.14', fontWeight: 'medium' },
+  })
+
   export const caption = ui({
     color: '#a1a1a1 !custom',
     typography: 'copy.13',
@@ -174,9 +188,9 @@ namespace styles {
     color: 'foreground',
     padding: 'page',
     display: 'flex',
-    alignItems: 'center',
-    gap: '1rem !custom',
-    maxWidth: '24rem !custom',
+    flexDirection: 'column',
+    gap: '1.25rem !custom',
+    maxWidth: '28rem !custom',
     width: '100% !custom',
     boxSizing: 'border-box',
     marginInline: 'auto !custom',
@@ -215,7 +229,7 @@ namespace styles {
 
   export const defaultBody = ui({
     typography: 'copy.14',
-    fontWeight: 'medium',
+    opacity: 0.65,
     margin: 0,
   })
 
@@ -224,19 +238,28 @@ namespace styles {
     borderRadius: 'md',
     color: 'foreground',
     padding: 6,
-    maxWidth: '24rem !custom',
+    maxWidth: '28rem !custom',
     width: '100% !custom',
     boxSizing: 'border-box',
     marginInline: 'auto !custom',
     display: 'flex',
     flexDirection: 'column',
-    gap: 2,
+    gap: 5,
     border: '1px solid',
     borderColor: 'gray.400',
   })
 
+  export const defaultStatus = ui({
+    color: 'blue.900',
+    backgroundColor: 'blue.100',
+    borderRadius: '999px !custom',
+    paddingBlock: 1,
+    paddingInline: '10px !custom',
+    typography: 'label.12',
+  })
+
   export const defaultTitle = ui({
-    typography: 'heading.16',
+    typography: 'heading.20',
     margin: '0px !custom !important',
   })
 
@@ -247,9 +270,9 @@ namespace styles {
     padding: 6,
     backgroundColor: 'transparent !custom',
     '& section, & main': { minWidth: '0px !custom' },
-    '& [data-theme-card] h2': {
-      fontSize: '16px !custom !important',
-      lineHeight: '24px !custom !important',
+    '& h2': {
+      fontSize: '20px !custom !important',
+      lineHeight: '28px !custom !important',
       margin: '0px !custom !important',
     },
 
@@ -275,22 +298,22 @@ namespace styles {
     gap: '0.25rem !custom',
   })
 
-  export const icon = style({
+  export const status = style({
     color: 'accent',
     backgroundColor:
       'color-mix(in srgb, currentColor 12%, transparent) !custom',
-    display: 'grid',
-    placeItems: 'center',
-    width: '3rem !custom',
-    height: '3rem !custom',
-    flexShrink: 0,
-    borderRadius: '12px',
+    borderRadius: '999px',
+    padding: '0.25rem 0.625rem !custom',
+    fontSize: '0.75rem',
+    fontWeight: 500,
+    lineHeight: 1.5,
   })
 
   export const title = style({
     margin: '0px !custom',
-    fontSize: '1rem',
+    fontSize: '1.25rem',
     fontWeight: 600,
-    lineHeight: 1.5,
+    letterSpacing: '-0.025em',
+    lineHeight: 1.4,
   })
 }

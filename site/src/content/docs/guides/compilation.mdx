@@ -1,0 +1,189 @@
+# Build & Delivery
+
+Compile matching code and CSS, publish library artifacts, and deliver styles with server-rendered content.
+
+Zyzz compiles style definitions ahead of time. The build emits executable style functions and a matching stylesheet. During rendering, those functions select classes and bind values to inline variables without generating or inserting CSS rules.
+
+For application setup, follow [Getting Started](/docs/introduction/getting-started). Vite and Next.js integrations handle source transformation and CSS delivery. Use the CLI or compiler APIs for standalone builds and library publishing.
+
+## Recipes
+
+### Build Standalone Output
+
+Run the CLI from a project with Zyzz installed. These commands compile `src` into `dist`.
+
+```sh
+npx zyzz build
+npx zyzz dev
+```
+
+`build` compiles once. `dev` builds immediately and watches for changes. Failed rebuilds retain the last successful artifacts and recover after valid edits.
+
+Keep component imports pointed at authored source. Configure the downstream build to consume the rewritten tree, lower TypeScript and JSX, and bundle the application. Zyzz does not generate declarations or an application bundle.
+
+For a different source directory or output location, set the paths explicitly. Keep the package identity stable between builds.
+
+```sh
+npx zyzz build src --out-dir build/styles --package-id my-library --minify
+```
+
+`--minify` minifies CSS. The CLI preserves browser syntax without compatibility targets. The [Host API](https://github.com/wevm/zyzz/blob/main/docs/api/node/Host/create.md#optionscsstargets) accepts explicit CSS targets for a custom pipeline, which do not polyfill unsupported features.
+
+#### Load Styles
+
+The output includes a complete stylesheet and per-module artifacts.
+
+- `button.ts` is the rewritten module for downstream TypeScript lowering.
+- `button.ts.css` holds styles belonging to that module.
+- `button.ts.zyzz.json` provides compiler metadata for sources that link the module's contracts.
+- `zyzz.shared.css` holds shared contributions and responsive variable defaults.
+- `zyzz.css` combines shared CSS and module styles in dependency order.
+- `zyzz.js` initializes configurations with saved theme and scheme selections. Projects without configuration initialization do not emit this script.
+
+Code and CSS source maps accompany their artifacts. With the default output directory served at `/dist`, load the complete stylesheet once.
+
+For configured projects, load the initialization script as a classic script at the start of the document's `<head>` to restore saved selections before paint.
+
+```html title="Document head"
+<script src="/dist/zyzz.js"></script>
+<link rel="stylesheet" href="/dist/zyzz.css" />
+```
+
+Adjust URLs to the deployed asset locations. `dist` is a compiler output directory, not a required public URL. Use `--script public/zyzz.js` when a bundler serves and copies a public directory.
+
+If loading individual module stylesheets, load `zyzz.shared.css` first and retain dependency order. Load either the complete stylesheet or the split stylesheets to avoid duplicate rules.
+
+See the [CLI reference](https://github.com/wevm/zyzz/blob/main/docs/api/cli.md) for flags, structured output, and output ownership.
+
+### Publish Libraries
+
+Compile the library's source tree before packaging. A filesystem host provides the same build lifecycle programmatically.
+
+```ts title="scripts/build-styles.ts"
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  outDir: 'dist',
+  packageId: 'my-library',
+  root: 'src',
+})
+
+await host.build()
+```
+
+The host returns `build`, `watch`, and `close` operations. `await using` releases the output lock when the scope exits, including after an error. Keep a watching host alive for the intended watch lifetime.
+
+Before publishing:
+
+1. Lower the rewritten TypeScript and JSX with the library's build tools and generate declarations.
+2. Export the compiled modules and stylesheet through the package's export map.
+3. Include matching code, CSS, compiler metadata, and source maps from the same build.
+4. Document the stylesheet import that consumers must load once.
+
+Consumers do not need Zyzz compilation for already-transformed library code. If other Zyzz sources need to link exported styles or themes, retain the generated `<entry>.zyzz.json` contract beside each published entry module. When lowering `button.ts` to `button.js`, keep the adjacent contract at `button.js.zyzz.json`.
+
+The CLI and file host resolve installed package exports and adjacent contracts without executing dependency code. Resolution uses Node import conditions. TypeScript path aliases and browser or native resolver conditions are not inferred. Packed external asset copying remains unsupported.
+
+Keep generated output separate from owned source files. The host locks each output directory to one active writer and rejects output inside the source root. Its cleanup preserves unrelated files and removes only unchanged owned artifacts.
+
+### Transform a Source Module
+
+For an in-memory integration, use `Transform.compile` to rewrite a module and emit its CSS without executing source or reading files.
+
+```ts title="Transform source"
+import { Transform } from 'zyzz/compiler'
+
+const output = Transform.compile({
+  moduleId: 'my-library/button.ts',
+  source: `import { style } from 'zyzz'
+
+export namespace styles {
+  export const button = style({ padding: '1rem' })
+}`,
+})
+```
+
+Bundle `output.code` after TypeScript/JSX lowering and deliver `output.css` with it. Preserve `output.map` and `output.cssMap` through downstream processing. Consumers apply the exported `styles.button()` props to an element.
+
+Use a stable package-relative `moduleId`. Module and binding identities affect generated classes, so independently rebuilding the same source under a different identity can produce mismatched artifacts.
+
+`Source.extract` reads definitions but does not rewrite executable calls. For imports across modules or relative URLs in stylesheet contributions, use the filesystem host or a [graph integration](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Graph/compile.md). A standalone transform rejects relative contribution URLs.
+
+### Compile Literal Data
+
+Use `Css.compile` when a pipeline already has literal style data and needs CSS plus a class map rather than rewritten source modules.
+
+```ts title="Compile literal styles"
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({
+  card: { display: 'flex', padding: '1rem' },
+})
+
+const output = Css.compile({ styles })
+```
+
+Load `output.css` and apply `output.classes.card` as the element's class name. Publish the stylesheet and class map together. The compiler has no filesystem or browser side effects and does not generate executable style functions.
+
+For themes, pass variable definitions in `vars` and apply the returned scope classes from `output.vars`. See [literal styles](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md) and [CSS compilation](https://github.com/wevm/zyzz/blob/main/docs/api/web/Css/compile.md) for the supported inputs and composition rules.
+
+### Keep Authoring Source
+
+CSS-only mode emits stylesheets, CSS maps, and the initialization script while leaving original application modules for the normal build.
+
+```sh
+npx zyzz build --css-only
+```
+
+Without source rewriting, identity-bearing declarations need explicit IDs. This includes independent variables, empty or referenced styles, dynamic styles, variants, themes, and named stylesheet declarations. Ordinary static styles derive classes from ordered declaration data.
+
+```ts title="styles.ts"
+import { style, variable } from 'zyzz'
+
+const accent = variable('color', { id: 'my-library-accent' })
+
+export namespace styles {
+  export const card = style({ color: accent, padding: '8px' })
+}
+```
+
+Apply `styles.card({ vars: accent.set('red') })` to bind a value. Keep IDs within the application or package namespace. Reusing an ID shares an identity, and conflicting definitions are rejected during extraction.
+
+CSS-only output omits rewritten modules and packed module contracts, so use source rewriting for the precompiled library workflow above. In Vite, `zyzz({ compiler: false })` retains automatic CSS delivery with the same explicit-ID requirements. Choose one delivery path for an application.
+
+### Server Rendering
+
+Apply compiled style props during server rendering and deliver the matching CSS before styled content paints. The server and client must use the same compiled identities and agree on initial theme, scheme, and variant selections.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz/default'
+
+export function Card() {
+  return <article {...styles.card()}>Content</article>
+}
+
+namespace styles {
+  export const card = style({ padding: 4 })
+}
+```
+
+A config import binds authoring helpers but does not provide CSS delivery. Include scoped rules and eager global contributions through the integration's output graph. Import global-style modules from an application entry so the bundler can discover them.
+
+The [Next.js integration](https://github.com/wevm/zyzz/blob/main/docs/introduction/next.md) owns Webpack and Turbopack wiring. Packed-consumer tests cover server/client components, styled streaming fallbacks, hydration, and route navigation.
+
+Solid and Svelte fixtures verify server rendering and hydration through Vite. React renderer fixtures use esbuild-compiled output, and plain HTML fixtures cover serialized attributes and updates.
+
+These checks cover specific integrations. A custom renderer or build pipeline still needs its own proof of CSS delivery, hydration, streaming, and route splitting. Check [Compatibility](/docs/introduction/compatibility) before relying on a platform feature.
+
+## Check Delivery
+
+When styles are missing or server and client output differ:
+
+1. Confirm that a bundler integration, CLI build, or compiler API processes the modules that define styles.
+2. Confirm that the browser loads the matching stylesheet at the deployed URL.
+3. Check that code and CSS came from the same build with the same package and module identities.
+4. Check that shared CSS precedes split module stylesheets and that global-style modules are imported.
+5. Compare the server's initial selections with the client's theme, scheme, and variants.
+
+Use [Testing & Troubleshooting](https://github.com/wevm/zyzz/blob/main/docs/guides/testing.md) for further checks and [Linting](https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md) for source diagnostics.

@@ -34,6 +34,8 @@ namespace styles {
     borderWidth: '1px',
     marginBlock: 6,
     overflowX: 'auto',
+    typography: 'copy.14',
+    lineHeight: '22px !custom',
     '&:focus-visible': {
       outlineColor: 'blue.700',
       outlineOffset: '2px',
@@ -47,25 +49,23 @@ namespace styles {
     },
     '& caption': {
       color: 'gray.900',
-      padding: 4,
+      padding: 3,
       textAlign: 'left',
       typography: 'label.14',
     },
-    '& thead': { backgroundColor: 'gray.100' },
     '& th, & td': {
       borderTopColor: 'gray.400',
       borderTopStyle: 'solid !custom',
       borderTopWidth: '1px',
-      padding: 4,
+      padding: 3,
       textAlign: 'left',
       verticalAlign: 'top',
     },
-    '& th': { color: 'foreground', fontWeight: 'medium' },
+    '& th': { color: 'gray.900', fontWeight: 'normal' },
     '& th:first-child': { width: '32% !custom' },
     '& td': { color: 'gray.900' },
     '& table p': { margin: 0 },
     '@media (max-width: 600px)': {
-      '& th, & td': { padding: 3 },
       '& th:first-child': { width: '36% !custom' },
     },
   })

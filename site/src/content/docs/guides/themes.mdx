@@ -47,7 +47,7 @@ Default mappings connect categories to CSS properties. For example, `color` supp
 <Tab title="Card.tsx">
 
 ```tsx title="Card.tsx"
-import { style, vars } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 export function Card() {
   return (
@@ -63,13 +63,17 @@ namespace styles {
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem !custom',
+    '& p': { margin: '0px !custom' },
     borderRadius: '10px',
     border: '1px solid light-dark(#e5e5e5, #333)',
   })
 
   export const title = style({
     color: 'accent',
-    marginBottom: vars.spacing.page,
+    margin: '0px !custom',
     fontSize: '1rem',
     fontWeight: 600,
     lineHeight: 1.5,
@@ -188,16 +192,23 @@ export function DefaultCard() {
 }
 
 namespace styles {
-  export const body = style({ typography: 'copy.14', fontWeight: 'medium' })
+  export const body = style({
+    typography: 'copy.14',
+    fontWeight: 'medium',
+    margin: 0,
+  })
 
   export const card = style({
     backgroundColor: 'background.surface',
     borderRadius: 'md',
     color: 'foreground',
     padding: 6,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
   })
 
-  export const title = style({ typography: 'heading.24' })
+  export const title = style({ typography: 'heading.24', margin: 0 })
 }
 ```
 

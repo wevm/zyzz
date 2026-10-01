@@ -253,7 +253,7 @@ namespace styles {
   })
 
   export const panel = style({
-    '&[data-render]': { backgroundColor: 'background.primary' },
+    '&[data-render]': { backgroundColor: '#000 !custom' },
     ':focus-visible': {
       outline: '2px solid',
       outlineColor: 'blue.700',
@@ -268,7 +268,7 @@ namespace styles {
     marginBlock: 6,
     overflow: 'hidden',
     '&[data-concept-tabs] [data-concept-example]': {
-      backgroundColor: 'background.primary',
+      backgroundColor: '#000 !custom',
       border: 'none',
       borderRadius: '0px !custom',
       margin: 0,

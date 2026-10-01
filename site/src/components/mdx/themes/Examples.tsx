@@ -298,7 +298,7 @@ function Card() {
 
 namespace styles {
   export const caption = ui({
-    color: 'gray.900',
+    color: '#a1a1a1 !custom',
     typography: 'copy.13',
     display: 'block',
     marginBottom: 0,
@@ -308,6 +308,10 @@ namespace styles {
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem !custom',
+    '& p': { margin: '0px !custom' },
     borderRadius: '10px',
     border: '1px solid light-dark(#e5e5e5, #333)',
   })
@@ -335,36 +339,46 @@ namespace styles {
 
   export const controls = ui({ display: 'flex', flexWrap: 'wrap', gap: 2 })
 
-  export const defaultBody = ui({ typography: 'copy.14', fontWeight: 'medium' })
+  export const defaultBody = ui({
+    typography: 'copy.14',
+    fontWeight: 'medium',
+    margin: 0,
+  })
 
   export const defaultCard = ui({
     backgroundColor: 'background.surface',
     borderRadius: 'md',
     color: 'foreground',
     padding: 6,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
     border: '1px solid',
     borderColor: 'gray.400',
   })
 
-  export const defaultTitle = ui({ typography: 'heading.24' })
+  export const defaultTitle = ui({
+    typography: 'heading.24',
+    margin: '0px !custom !important',
+  })
 
   export const example = ui({
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
     padding: 6,
-    backgroundColor: 'gray.100',
+    backgroundColor: 'transparent !custom',
     '& section, & main': { minWidth: '0px !custom' },
     '& [data-theme-card] h2': {
       fontSize: '16px !custom !important',
       lineHeight: '24px !custom !important',
-      marginTop: '0px !custom !important',
+      margin: '0px !custom !important',
     },
 
     '& p': {
       color: 'inherit !custom !important',
       typography: 'copy.14',
-      marginBlock: 0,
+      margin: '0px !custom !important',
     },
     '@media (max-width: 640px)': { padding: 4 },
   })
@@ -449,7 +463,7 @@ namespace styles {
 
   export const title = style({
     color: 'accent',
-    marginBottom: vars.spacing.page,
+    margin: '0px !custom',
     fontSize: '1rem',
     fontWeight: 600,
     lineHeight: 1.5,

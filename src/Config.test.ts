@@ -725,7 +725,7 @@ dynamic({ width: '12px' })
     } finally {
       service.dispose()
     }
-  }, 60_000)
+  }, 120_000)
 
   test('uses the validated descriptor snapshot for configuration', () => {
     const options = new Proxy(

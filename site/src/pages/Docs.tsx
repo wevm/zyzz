@@ -311,6 +311,18 @@ namespace styles {
       marginBottom: 4,
       scrollMarginTop: 24,
     },
+    '& h3': {
+      typography: 'heading.20',
+      marginTop: 12,
+      marginBottom: 3,
+      scrollMarginTop: 24,
+    },
+    '& h4': {
+      typography: 'heading.16',
+      marginTop: 8,
+      marginBottom: 3,
+      scrollMarginTop: 24,
+    },
     '& a:not([data-card])': {
       color: 'foreground',
       textDecoration: 'underline',

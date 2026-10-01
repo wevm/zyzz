@@ -5,6 +5,7 @@ import MonitorIcon from '~icons/lucide/monitor'
 import MoonIcon from '~icons/lucide/moon'
 import SunIcon from '~icons/lucide/sun'
 import { style } from '../zyzz.config.js'
+import { Link } from './Link.js'
 
 /** Renders the common Docs and Variables frame. */
 export function DocumentationShell(props: DocumentationShell.Props) {
@@ -119,7 +120,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
           {name}
         </span>
       ) : (
-        <a aria-label="Zyzz home" href="/" {...styles.brand()}>
+        <Link aria-label="Zyzz home" href="/" {...styles.brand()}>
           <svg
             data-small={mobileMenu || undefined}
             {...styles.logo()}
@@ -135,7 +136,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
               fill="currentColor"
             />
           </svg>
-        </a>
+        </Link>
       )}
       {label && <span {...styles.label()}>{label}</span>}
     </div>

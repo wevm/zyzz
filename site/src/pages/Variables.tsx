@@ -2,6 +2,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { appearance, tokens } from 'zyzz/default'
 import { DocumentationShell } from '../components/DocumentationShell.js'
+import { Link } from '../components/Link.js'
 import ALargeSmallIcon from '~icons/lucide/a-large-small'
 import BlendIcon from '~icons/lucide/blend'
 import BoldIcon from '~icons/lucide/bold'
@@ -191,7 +192,7 @@ export function Page(props: Page.Props) {
         <div role="alert" {...styles.sectionContent()}>
           <h1 {...styles.sectionHeading()}>Could not read variables</h1>
           <p>{error}</p>
-          <a href="/vars">View default variables</a>
+          <Link href="/vars">View default variables</Link>
         </div>
       ) : (
         <DocumentationShell
@@ -201,9 +202,9 @@ export function Page(props: Page.Props) {
           name={config?.name}
           onSchemeChange={setColorScheme}
           navigation={
-            <a href="/docs/introduction/getting-started" {...styles.docs()}>
+            <Link href="/docs/introduction/getting-started" {...styles.docs()}>
               Docs
-            </a>
+            </Link>
           }
           search={
             <SearchField

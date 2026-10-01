@@ -90,7 +90,15 @@ export function read(contract: string): readonly Catalog[] {
   return [...configurations].map(([identity, { entries, storageKey }]) => ({
     entries: [...entries].map(
       ([name, scope]) =>
-        [name, `z_theme-${ThemeValues.encode(scope)}`] as const,
+        [
+          name,
+          ThemeValues.scope(
+            scope.startsWith(`${identity}-`)
+              ? scope.slice(identity.length + 1)
+              : scope,
+            identity,
+          ),
+        ] as const,
     ),
     identity,
     storageKey,

@@ -62,9 +62,7 @@ describe('root', () => {
 
       expect(
         await page.evaluate('document.documentElement.className'),
-      ).toMatchInlineSnapshot(
-        `"external z_theme-src-config-6Q0EnEZaLq6-appearance-base z_scheme-dark"`,
-      )
+      ).toMatchInlineSnapshot(`"external z-theme-base z_scheme-dark"`)
       expect(
         await page.evaluate('document.documentElement.style.colorScheme'),
       ).toMatchInlineSnapshot(`"dark"`)

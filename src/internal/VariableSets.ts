@@ -33,7 +33,7 @@ export function theme(
       get: () => {
         const identity = metadata.contract[Token.identity]
         return identity
-          ? `z_theme-${identity}-${Identity.hash(JSON.stringify(metadata.values))}`
+          ? `z-theme-${identity.startsWith('id-') ? identity.slice(3) : Identity.name(identity)}`
           : original.className
       },
       enumerable: true,

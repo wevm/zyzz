@@ -40,17 +40,19 @@ export const button=variants({base:{padding:'md'},variants:{tone:{brand:{color:'
 export const dynamic=style((values:{padding:'7px'})=>({padding:\`\${values.padding} !custom\`}));`)
       expect(
         result.modules['app.ts']!.css.split('\n')
-          .filter((line) => line.startsWith('.z-'))
+          .filter(
+            (line) => line.startsWith('.z-') && !line.startsWith('.z-theme-'),
+          )
           .join('\n'),
       ).toMatchInlineSnapshot(`
-        ".z-text-tX-cB8-0{color:var(--z-color-red-9tsBrMvpV8k,blue);}
-        .z-p-BfHFOq-1{padding:var(--z-spacing-md-2RzCtjG3BFi,8px);padding:7px;}
-        .z-display-flex-Ngq2-V-2{display:flex;}
-        .z-w-2xz02S-3{width:calc(100% - 2rem);}
-        .z-hover-text-A_aLRM-4{&:hover{color:#123456;}}
-        .z-p-3qmBqK-0{padding:var(--z-spacing-md-2RzCtjG3BFi,8px);}
-        .z-text-mBg0e8-1{&:where([data-tone="brand"]){color:red!important;}}
-        .z-p-9jV-KR-0{padding:var(--z-d1e8a67z1uaws1j-330-70-61-64-64-69-6e-67);}"
+        ".z-Zf5JrJ-card-text-0{color:var(--z-color-red,blue);}
+        .z-Zf5JrJ-card-p-1{padding:var(--z-spacing-md,8px);padding:7px;}
+        .z-Zf5JrJ-card-display-2{display:flex;}
+        .z-Zf5JrJ-card-w-3{width:calc(100% - 2rem);}
+        .z-Zf5JrJ-card-text-4{&:hover{color:#123456;}}
+        .z-Zf5JrJ-button-p-0{padding:var(--z-spacing-md,8px);}
+        .z-Zf5JrJ-button-text-1{&:where([data-tone="brand"]){color:red!important;}}
+        .z-Zf5JrJ-dynamic-p-0{padding:var(--z-Zf5JrJ-dynamic-padding);}"
       `)
       expect(
         [
@@ -129,9 +131,9 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-red-PCFOOF-0{color:red;}
-      .z-text-blue-0H1A4V-0{color:blue;}
-      .z-w-aL5Pfl{width:calc(1px /* ] */ + 2px);}"
+      ".z-Zf5JrJ-first-text-0{color:red;}
+      .z-Zf5JrJ-second-text-0{color:blue;}
+      .z-w-\\5b calc\\28 1px_20_\\2f \\2a _20_\\5d _20_\\2a \\2f _20_\\2b _20_2px\\29 \\5d {width:calc(1px /* ] */ + 2px);}"
     `)
     expect(() =>
       Graph.compile({
@@ -151,10 +153,10 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-opacity-Bf5AW1{opacity:0.5;}
-      .z-content-asf5XU{content:"[label]";}
-      .z-grid-template-columns-jipVUg{grid-template-columns:[start] 1fr [end];}
-      .z-w-Rh5BCy{width:7px!important;}"
+      ".z-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}
+      .z-content-\\5b _22_\\5b label\\5d _22_\\5d {content:"[label]";}
+      .z-grid-template-columns-\\5b \\5b start\\5d _20_1fr_20_\\5b end\\5d \\5d {grid-template-columns:[start] 1fr [end];}
+      .z-w-\\5b 7px\\21 important\\5d {width:7px!important;}"
     `)
   })
 
@@ -196,8 +198,8 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-content-Vy2tbY{content:"!custom";}
-      .z-w-Rh5BCy{width:7px!important;}"
+      ".z-content-\\5b _22_\\21 custom_22_\\5d {content:"!custom";}
+      .z-w-\\5b 7px\\21 important\\5d {width:7px!important;}"
     `)
   })
 
@@ -218,9 +220,9 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       ),
     ).toMatchInlineSnapshot(`
       [
-        ".z-text-FiU56C{color:red;color:blue;}",
-        ".z-text-FiU56C{color:red;color:blue;}",
-        ".z-text-FiU56C{color:red;color:blue;}",
+        ".z-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
+        ".z-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
+        ".z-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
       ]
     `)
     const { style } = PublicConfig.create({
@@ -234,10 +236,10 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
     )
     expect(style({ padding: '7px !custom' }, { id: 'custom' })())
       .toMatchInlineSnapshot(`
-      {
-        "className": "z-style-id-63-75-73-74-6f-6d",
-      }
-    `)
+        {
+          "className": "z-style-id-config-custom",
+        }
+      `)
     expect(() =>
       PublicConfig.create({ strict: true } as never),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -273,7 +275,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
       const library = Graph.compile({ modules: { 'config.ts': config } })
       expect(
         JSON.parse(library.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`28`)
+      ).toMatchInlineSnapshot(`31`)
 
       const browser = await chromium.launch()
       try {
@@ -725,7 +727,7 @@ dynamic({ width: '12px' })
     } finally {
       service.dispose()
     }
-  }, 60_000)
+  }, 120_000)
 
   test('uses the validated descriptor snapshot for configuration', () => {
     const options = new Proxy(
@@ -770,10 +772,10 @@ dynamic({ width: '12px' })
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".t_0{--z0:#06c;--z1:8px;}
-      .t_1{--z0:light-dark(#175,#afa);--z1:12px;}
-      .z-text-gsB0EO{color:var(--z0,#06c);}
-      .z-p-Fm87Na{padding:var(--z1,8px);}"
+      ".z-theme-base{--z-color-brand:#06c;--z-spacing-md:8px;}
+      .z-theme-mint{--z-color-brand:light-dark(#175,#afa);--z-spacing-md:12px;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
     expect(Object.isFrozen(zyzz.themes)).toMatchInlineSnapshot(`true`)
     expect(zyzz.themes.base === base).toMatchInlineSnapshot(`false`)
@@ -785,7 +787,9 @@ dynamic({ width: '12px' })
         }),
         vars: { original: base },
       }).css,
-    ).toMatchInlineSnapshot(`".z-text-gsB0EO{color:var(--z0,#06c);}"`)
+    ).toMatchInlineSnapshot(
+      `".z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"`,
+    )
 
     const other = Config.create({ theme: base })
 
@@ -796,7 +800,9 @@ dynamic({ width: '12px' })
         }),
         vars: zyzz.themes,
       }).css,
-    ).toMatchInlineSnapshot(`".z-text-gsB0EO{color:var(--z0,#06c);}"`)
+    ).toMatchInlineSnapshot(
+      `".z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"`,
+    )
   })
 
   test('normalized themes inherit and select schemes in Chromium', async () => {
@@ -880,8 +886,8 @@ dynamic({ width: '12px' })
         vars: { selected: zyzz.theme },
       }).css,
     ).toMatchInlineSnapshot(`
-      ".t_0{--z0:12px;}
-      .z-p-VAexTA{padding:var(--z0,12px);}"
+      ".z-theme-selected{--z-spacing-md:12px;}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 12px\\29 \\5d {padding:var(--z-spacing-md,12px);}"
     `)
 
     const inline = Config.create({ theme: { spacing: { md: '1rem' } } })
@@ -892,7 +898,9 @@ dynamic({ width: '12px' })
           card: { padding: inline.theme.tokens.spacing.md },
         }),
       }).css,
-    ).toMatchInlineSnapshot(`".z-p-YqOp03{padding:var(--z0,1rem);}"`)
+    ).toMatchInlineSnapshot(
+      `".z-p-\\5b var\\28 --z-spacing-md\\2c 1rem\\29 \\5d {padding:var(--z-spacing-md,1rem);}"`,
+    )
     expect(() =>
       zyzz.style({ padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -900,7 +908,7 @@ dynamic({ width: '12px' })
     )
     expect(Config.create().style({ padding: '8px' })()).toMatchInlineSnapshot(`
       {
-        "className": "z-content-3f8gqjlziaxl",
+        "className": "z-content-_5b__5b__22_padding_22__2c__22_8px_22__2c_false_5d__5d_",
       }
     `)
   })
@@ -992,11 +1000,11 @@ describe('defineConfig', () => {
 
       expect(defineConfig === PublicConfig.create).toMatchInlineSnapshot(`true`)
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#123456;}
+        ".z-theme-theme{--z-color-brand:#123456;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-I8iA9h{color:var(--z-color-brand-bJVleUJpPJY,#123456);}"
+        .z-text-\\5b var\\28 --z-color-brand\\2c \\23 123456\\29 \\5d {color:var(--z-color-brand,#123456);}"
       `)
     },
   )

@@ -45,7 +45,7 @@ Css.compile({ composition: 'independent', styles })
 - Type: `boolean`
 - Default: `false`
 
-Emit compact, value-independent atomic names for CSS-only development updates. Normal output uses readable literal values. Grouped names are unchanged. Vite selects this option automatically during development.
+Retain live definitions for development updates. Both modes use readable names. Value edits can change classnames, so replace the applied class list together with its CSS. Explicit `names` retain fixed identities. Vite selects this option automatically.
 
 ```ts
 Css.compile({ development: true, styles })
@@ -67,10 +67,10 @@ Css.compile({ schemes: true, styles, vars: { base: theme } })
 - Type: `string`
 - Default: `undefined`
 
-Include stylesheet ownership in atomic identities. Source compilation supplies the module identity so separately delivered stylesheets retain independent cascade positions.
+Prefix generated class names with a consumer-owned namespace. Source compilation uses config IDs and authored bindings for naming.
 
 ```ts
-Css.compile({ scope: 'app/card.ts', styles })
+Css.compile({ scope: 'card', styles })
 ```
 
 ### options.styles
@@ -150,7 +150,7 @@ const moduleCss = output.scopedCss ?? output.css
 
 Frozen scope class map retaining theme keys. Empty when no themes are supplied.
 
-Anonymous themes use compact identifiers scoped to this compilation. Source-owned theme contracts retain stable identifiers for separately compiled components. Consume the returned scope map and distribute it with the matching CSS.
+Theme scopes use readable authored names and optional config IDs. Independent configs own their namespaces. Consume the returned scope map and distribute it with the matching CSS.
 
 ```ts
 output.vars

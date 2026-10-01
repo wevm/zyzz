@@ -163,6 +163,9 @@ export function create(
     )
       throw new InvalidError(`Unknown configuration option: ${key}`)
 
+  if (input.id !== undefined && (typeof input.id !== 'string' || !input.id))
+    throw new InvalidError('id must be a nonempty string.')
+
   if (
     input.storageKey !== undefined &&
     (typeof input.storageKey !== 'string' || !input.storageKey)
@@ -291,7 +294,7 @@ export function create(
   function handle(theme: Theme.Definition, name: string) {
     const original = Token.bind(theme, contract)
     const className = () =>
-      `z_theme-${Identity.requireId(typeof input.id === 'string' ? input.id : undefined, 'Config.create')}-${name.replace(/[^a-zA-Z0-9-]/g, (character) => `_${character.charCodeAt(0).toString(16)}_`)}`
+      `z-theme-${Identity.requireId(typeof input.id === 'string' ? input.id : undefined, 'Config.create').slice(3)}-${Identity.name(name)}`
     const select = (options: { colorScheme?: string } = {}) => {
       const scheme = options.colorScheme
       const selection =
@@ -433,7 +436,7 @@ export function create(
   }
 
   const theme =
-    shorthands || input.defaultLayer !== undefined
+    shorthands || input.defaultLayer !== undefined || input.id !== undefined
       ? Token.bind(Theme.define({}), contract)
       : undefined
   return finish({
@@ -452,7 +455,7 @@ export declare namespace create {
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     /** Fallback CSS layer for bound styles and variants; unlayered when omitted. */
     readonly defaultLayer?: string | undefined
-    /** Stable theme identity required without source rewriting. */
+    /** Consumer-owned namespace; required for uncompiled variable configs. */
     readonly id?: string | undefined
     /** Explicit ordered property aliases; none are installed by default. */
     readonly shorthands?: Shorthands.Map | undefined
@@ -839,7 +842,7 @@ export type VariableOptions = {
   readonly defaultLayer?: string | undefined
   /** Required default key when vars contains named sets. */
   readonly defaultVars?: string | undefined
-  /** Stable identity required without source rewriting. */
+  /** Consumer-owned namespace; required for uncompiled variable configs. */
   readonly id?: string | undefined
   /** Ordered CSS layer names. */
   readonly layers?: readonly string[] | undefined

@@ -642,7 +642,7 @@ describe('create', () => {
 
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z-p-8px-z6lkOr {
+          ".z-p-8px {
             padding: 8px;
           }
           "
@@ -671,27 +671,49 @@ describe('create', () => {
 const base=Vars.define({color:{ink:'#123456',surface:'#abcdef'},dimension:{gutter:{default:'16px','@media (min-width: 768px)':'24px'}}},{id:'catalog'});
 const inverse=Vars.extend(base,{color:{surface:'#000000'}});
 export const {style,vars}=Config.create({id:'complete-config',vars:{base,inverse},defaultVars:'base',mappings:false});
-export const card=style({color:'color.ink'});`,
+export const card=style({color:'color.ink'});
+export const dark=vars({set:'inverse',colorScheme:'dark'});`,
       )
       browser = await chromium.launch()
 
-      for (const compiler of [false, true]) {
-        const outDir = Path.join(root, compiler ? 'compiled' : 'original')
+      for (const { compiler, modules } of [
+        { compiler: false, modules: false },
+        { compiler: true, modules: false },
+        { compiler: true, modules: true },
+      ]) {
+        const outDir = Path.join(root, `${compiler}-${modules}`)
         await using host = await Host.create({
           compiler,
-          modules: compiler,
+          modules,
           outDir,
           packageId: 'catalog',
           root: Path.join(root, 'src'),
         })
         await host.build()
+
+        if (!modules) {
+          const css = await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+          await Fs.writeFile(
+            Path.join(root, `src/icons-${compiler}.ts`),
+            'export const icon = "<svg></svg>";',
+          )
+
+          await host.build()
+
+          expect(
+            (
+              await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')
+            ).trim() === css.trim(),
+          ).toMatchInlineSnapshot('true')
+        }
+
         const bundle = await Esbuild.build({
           alias: {
             zyzz: Path.join(project, 'src/index.ts'),
             'zyzz/runtime': Path.join(project, 'src/runtime/index.ts'),
           },
           bundle: true,
-          entryPoints: [compiler ? Path.join(outDir, 'config.ts') : entry],
+          entryPoints: [modules ? Path.join(outDir, 'config.ts') : entry],
           format: 'iife',
           globalName: 'Fixture',
           write: false,
@@ -708,6 +730,7 @@ export const card=style({color:'color.ink'});`,
           const { vars } = (
             window as unknown as {
               Fixture: {
+                dark: { className: string }
                 vars: (options: { set: string }) => { className: string }
               }
             }
@@ -716,10 +739,10 @@ export const card=style({color:'color.ink'});`,
           scope.className = vars({ set: 'inverse' }).className
           const properties = Array.from(getComputedStyle(scope))
           const surface = properties.find((name) =>
-            name.endsWith('-color_2e_surface'),
+            name.endsWith('-color-surface'),
           )
           const gutter = properties.find((name) =>
-            name.endsWith('-dimension_2e_gutter'),
+            name.endsWith('-dimension-gutter'),
           )
           if (!surface || !gutter)
             throw new Error('Incomplete variable catalog')
@@ -740,6 +763,19 @@ export const card=style({color:'color.ink'});`,
               (element) => getComputedStyle(element).paddingInlineStart,
             ),
         ).toMatchInlineSnapshot('"16px"')
+
+        await page.evaluate(() => {
+          const fixture = (
+            window as unknown as { Fixture: { dark: { className: string } } }
+          ).Fixture
+          document.querySelector('section')!.className = fixture.dark.className
+        })
+
+        expect(
+          await page
+            .locator('section')
+            .evaluate((element) => getComputedStyle(element).colorScheme),
+        ).toMatchInlineSnapshot('"dark"')
 
         await page.setViewportSize({ width: 768, height: 600 })
 
@@ -871,14 +907,14 @@ export const widget = style({ color: '#ff0000', padding: '4px' });`,
         "body {
           margin: 0;
         }
-        .z-text-dmFGKD {
+        .z-text-\\[\\#ff0000\\] {
           color: red;
         }
 
-        .z-p-4px-rua7lu {
+        .z-p-4px {
           padding: 4px;
         }
-        .z-text-Pzz8UP {
+        .z-text-\\[\\#0000ff\\] {
           color: #00f;
         }
         "
@@ -1031,7 +1067,7 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
       expect(
         script.includes('localStorage.getItem("kept")'),
       ).toMatchInlineSnapshot(`true`)
-      expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+      expect(script.includes('["base","z-theme-')).toMatchInlineSnapshot(`true`)
       expect(
         script.includes('localStorage.getItem("scheme-only")'),
       ).toMatchInlineSnapshot(`true`)
@@ -1044,8 +1080,8 @@ export function dark() { appearance.set({ colorScheme: 'dark' }) }`,
           }
         ).version
 
-      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`28`)
-      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`28`)
+      expect(await version('local.ts.zyzz.json')).toMatchInlineSnapshot(`31`)
+      expect(await version('toggle.ts.zyzz.json')).toMatchInlineSnapshot(`31`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -1163,7 +1199,7 @@ export const { style, themes } = Config.create({ defaultVars: 'base', storageKey
       expect(
         script.includes('localStorage.getItem("owned")'),
       ).toMatchInlineSnapshot(`true`)
-      expect(script.includes('["base","z_theme-')).toMatchInlineSnapshot(`true`)
+      expect(script.includes('["base","z-theme-')).toMatchInlineSnapshot(`true`)
 
       await owned.close()
 
@@ -1302,7 +1338,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const css = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(css).toMatchInlineSnapshot(
-        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-69Lil3{color:red}"`,
+        `".z-display-flex{display:-webkit-flex;display:flex}.z-text-\\[\\#ff0000\\]{color:red}"`,
       )
 
       const map = new Trace.TraceMap(
@@ -1320,8 +1356,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
         `)
       expect(map.sourcesContent).toMatchInlineSnapshot(`
         [
-          ".z-display-flex-49Nz2U{display:flex;}
-        .z-text-69Lil3{color:#ff0000;}",
+          ".z-display-flex{display:flex;}
+        .z-text-\\5b \\23 ff0000\\5d {color:#ff0000;}",
           "import { style } from 'zyzz';
         export const card = style({ display: 'flex', color: '#ff0000' });",
         ]
@@ -1336,7 +1372,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-69Lil3{color:red}"`,
+        `".z-display-flex{display:-webkit-flex;display:flex}.z-text-\\[\\#ff0000\\]{color:red}"`,
       )
 
       await Fs.writeFile(path, input.replace('#ff0000', '#0000ff'))
@@ -1345,7 +1381,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-E26PRe{color:#00f}"`,
+        `".z-display-flex{display:-webkit-flex;display:flex}.z-text-\\[\\#0000ff\\]{color:#00f}"`,
       )
     } finally {
       await host.close()
@@ -1370,7 +1406,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(
         await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'),
-      ).toMatchInlineSnapshot(`".z-p-8px-z6lkOr{padding:8px;}"`)
+      ).toMatchInlineSnapshot(`".z-p-8px{padding:8px;}"`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -1397,18 +1433,18 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#06c"}}},"src-card-12soMKeUUb--config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#06c"}}}},"version":28}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"cssName":"theme","variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#06c"}}},"src-card-12soMKeUUb--config-theme":{"cssName":"theme","cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#06c"}}}},"version":31}"`,
       )
 
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(before).toMatchInlineSnapshot(`
-        ".z_theme-src-card-12soMKeUUb--config-theme {
-          --z-color-brand-ezGqPtSBzq5: #06c;
+        ".z-theme-theme {
+          --z-color-brand: #06c;
         }
 
-        .z-text-CARYSz {
-          color: var(--z-color-brand-ezGqPtSBzq5, #06c);
+        .z-text-\\[var\\(--z-color-brand\\,\\#06c\\)\\] {
+          color: var(--z-color-brand, #06c);
         }
         "
       `)
@@ -1422,18 +1458,18 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#175"}}},"src-card-12soMKeUUb--config-theme":{"cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#175"}}}},"version":28}"`,
+        `"{"exports":{"theme":{"variableSet":true,"directVariables":true,"binding":"src-theme-bdnuEpXWEgW-theme","kind":"theme","theme":"src-theme-bdnuEpXWEgW-theme"}},"themes":{"src-theme-bdnuEpXWEgW-theme":{"cssName":"theme","variableSet":true,"identity":"src-theme-bdnuEpXWEgW-theme","tokens":{"color":{"brand":"#175"}}},"src-card-12soMKeUUb--config-theme":{"cssName":"theme","cssOutput":"atomic","variableSet":true,"identity":"src-card-12soMKeUUb--config","tokens":{"color":{"brand":"#175"}}}},"version":31}"`,
       )
 
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ".z_theme-src-card-12soMKeUUb--config-theme {
-          --z-color-brand-ezGqPtSBzq5: #175;
+        ".z-theme-theme {
+          --z-color-brand: #175;
         }
 
-        .z-text-RYIN_L {
-          color: var(--z-color-brand-ezGqPtSBzq5, #175);
+        .z-text-\\[var\\(--z-color-brand\\,\\#175\\)\\] {
+          color: var(--z-color-brand, #175);
         }
         "
       `)
@@ -1446,12 +1482,12 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z_theme-src-card-12soMKeUUb--config-theme {
-            --z-color-brand-ezGqPtSBzq5: #175;
+          ".z-theme-theme {
+            --z-color-brand: #175;
           }
 
-          .z-text-RYIN_L {
-            color: var(--z-color-brand-ezGqPtSBzq5, #175);
+          .z-text-\\[var\\(--z-color-brand\\,\\#175\\)\\] {
+            color: var(--z-color-brand, #175);
           }
           "
         `)
@@ -1460,12 +1496,12 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z_theme-src-card-12soMKeUUb--config-theme {
-            --z-color-brand-ezGqPtSBzq5: #06c;
+          ".z-theme-theme {
+            --z-color-brand: #06c;
           }
 
-          .z-text-CARYSz {
-            color: var(--z-color-brand-ezGqPtSBzq5, #06c);
+          .z-text-\\[var\\(--z-color-brand\\,\\#06c\\)\\] {
+            color: var(--z-color-brand, #06c);
           }
           "
         `)
@@ -1492,8 +1528,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       )
 
       expect(before).toMatchInlineSnapshot(`
-        ".z_theme-src-theme-bdnuEpXWEgW-theme {
-          --z-color-brand-63gK3HI9NTW: #000;
+        ".z-theme-theme {
+          --z-color-brand: #000;
         }
 
         .z_scheme-dark {
@@ -1508,8 +1544,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           color-scheme: light dark;
         }
 
-        .z-text-qIdPiU {
-          color: var(--z-color-brand-63gK3HI9NTW, #000);
+        .z-text-\\[var\\(--z-color-brand\\,\\#000\\)\\] {
+          color: var(--z-color-brand, #000);
         }
         "
       `)
@@ -1535,8 +1571,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       const after = await Fs.readFile(Path.join(outDir, 'theme.ts.css'), 'utf8')
 
       expect(after).toMatchInlineSnapshot(`
-        ".z_theme-src-theme-bdnuEpXWEgW-theme {
-          --z-color-brand-63gK3HI9NTW: #fff;
+        ".z-theme-theme {
+          --z-color-brand: #fff;
         }
 
         .z_scheme-dark {
@@ -1551,8 +1587,8 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           color-scheme: light dark;
         }
 
-        .z-text-cQSb5m {
-          color: var(--z-color-brand-63gK3HI9NTW, #fff);
+        .z-text-\\[var\\(--z-color-brand\\,\\#fff\\)\\] {
+          color: var(--z-color-brand, #fff);
         }
         "
       `)
@@ -1605,11 +1641,11 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
         .toMatchInlineSnapshot(`
           "
           import { Props as __zyzzProps } from 'zyzz/runtime';
-           export const button = __zyzzProps.create({className:"z-p-8px-z6lkOr z-style-12ydhop55omeb-52"});"
+           export const button = __zyzzProps.create({className:"z-p-8px z-style-CVE4-Z-button"});"
         `)
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z-p-8px-z6lkOr {
+          ".z-p-8px {
             padding: 8px;
           }
           "
@@ -1635,7 +1671,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z-p-8px-z6lkOr {
+          ".z-p-8px {
             padding: 8px;
           }
           "
@@ -1667,7 +1703,6 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           "renamed.ts.css.map",
           "renamed.ts.map",
           "renamed.ts.zyzz.json",
-          "zyzz.css",
           "zyzz.css.map",
         ]
       `)
@@ -1864,7 +1899,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'nested/button.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(`
-        ".z-p-2px-Tb8xrt {
+        ".z-p-2px {
           padding: 2px;
         }
         "
@@ -1958,7 +1993,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           'utf8',
         ),
       ).toMatchInlineSnapshot(`
-        ".z-p-8px-ZNpYUb {
+        ".z-p-8px {
           padding: 8px;
         }
         "

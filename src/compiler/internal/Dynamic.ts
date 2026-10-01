@@ -1,6 +1,7 @@
 /** Extracts typed callback slots and static object bodies without invoking callbacks. @module */
 import type * as Ast from '@oxc-project/types'
-import type * as Binding from '../../internal/Binding.js'
+import * as Binding from '../../internal/Binding.js'
+import * as Identity from '../../internal/Identity.js'
 import * as Expression from './Expression.js'
 import * as Literal from '../../internal/Literal.js'
 import * as Themes from './Themes.js'
@@ -82,14 +83,18 @@ export function read(
         member,
       )
 
-    const slot = (slots[key] = Object.freeze({
-      name: `--z-d${identity}-${Array.from(key)
-        .map((character) => character.codePointAt(0)!.toString(16))
-        .join('-')}`,
-      type: kind === 'number' ? 'number' : 'length',
-      ...(kind === 'zero-string' ? { zero: true } : {}),
-      variable: true,
-    }))
+    const slot = (slots[key] = Object.freeze(
+      Object.defineProperty(
+        {
+          name: Identity.slot(identity, key),
+          type: kind === 'number' ? ('number' as const) : ('length' as const),
+          ...(kind === 'zero-string' ? { zero: true } : {}),
+          variable: true as const,
+        },
+        Binding.dynamic,
+        { value: true },
+      ),
+    ))
 
     const values = numbers(type)
 

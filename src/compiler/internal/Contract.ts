@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -56,6 +56,28 @@ export function read(
         collect(member)
     }
     for (const entry of Object.values(record(data.exports))) collect(entry)
+  }
+
+  function variableNaming(
+    entry: Record<string, unknown>,
+    identity: string,
+  ): 'legacy' | 'hashed' | undefined {
+    if (entry.variableNaming !== undefined) {
+      if ((data.version as number) >= 30 && entry.variableNaming === 'legacy')
+        return 'legacy'
+      if ((data.version as number) >= 31 && entry.variableNaming === 'hashed')
+        return 'hashed'
+      throw new Error('Invalid packed variable naming scheme.')
+    }
+    if ((data.version as number) <= 30) {
+      if (
+        identity.startsWith('src-') ||
+        (data.version === 30 && identity.startsWith('id-'))
+      )
+        return 'hashed'
+      return 'legacy'
+    }
+    return undefined
   }
 
   function decode(value: unknown): unknown {
@@ -92,13 +114,19 @@ export function read(
     if (Object.hasOwn(fields, '$variable')) {
       const reference = record(fields.$variable)
       const identity = string(reference.identity)
+      const naming = variableNaming(reference, identity)
       let contract = identities.get(identity)
       if (contract && !contract.variableSet)
         throw new Error(
           'Conflicting packed variable-set modes for one identity.',
         )
+      if (contract && contract.variableNaming !== naming)
+        throw new Error(
+          'Conflicting packed variable naming schemes for one identity.',
+        )
       if (!contract) {
         contract = Object.freeze({
+          ...(naming ? { variableNaming: naming } : {}),
           variableSet: true,
           [Token.identity]: identity,
         })
@@ -122,6 +150,7 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
+    const naming = variableNaming(entry, identity)
     if (entry.variableSet === true && (data.version as number) < 28)
       throw new Error('Vars contracts require contract version 28 or later.')
     const mappings = VariableSets.mappings(entry.mappings)
@@ -180,8 +209,13 @@ export function read(
         'Conflicting packed default layers for one theme identity.',
       )
 
+    if (contract && contract.variableNaming !== naming)
+      throw new Error(
+        'Conflicting packed variable naming schemes for one identity.',
+      )
     if (!contract) {
       contract = Object.freeze({
+        ...(naming ? { variableNaming: naming } : {}),
         ...(entry.variableSet === true
           ? {
               variableSet: true,
@@ -223,7 +257,11 @@ export function read(
         'Packed responsive typography and border widths require contract version 25 or later.',
       )
 
-    themes[name] = Token.bind(definition, contract)
+    themes[name] = Token.bind(
+      definition,
+      contract,
+      entry.cssName === undefined ? undefined : string(entry.cssName),
+    )
     types[name] = type(input(definition))
   }
 
@@ -249,7 +287,7 @@ export function read(
             key === 'set' ||
             key === '__proto__' ||
             names.has(string(slot.name)) ||
-            !/^--z-v[a-z0-9-]+$/.test(string(slot.name)) ||
+            !/^--z-[a-zA-Z0-9_-]+$/.test(string(slot.name)) ||
             ![
               '*',
               'color',
@@ -314,7 +352,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29,
+          27, 28, 29, 30, 31,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -324,7 +362,7 @@ export function read(
           'fontPaletteValues',
           'positionTry',
         ].includes(reference) ||
-        !/^(?:--)?z-[a-z0-9-]+$/.test(name) ||
+        !/^(?:--)?z-[a-zA-Z0-9_-]+$/.test(name) ||
         !name.startsWith(
           `${reference === 'counterStyle' ? '' : '--'}z-${reference.toLowerCase()}`,
         ) ||
@@ -350,7 +388,7 @@ export function read(
 
     if (entry.kind === 'animation') {
       const name = string(entry.name)
-      if (!/^z-k[a-z0-9-]+$/.test(name))
+      if (!/^z-k[a-zA-Z0-9_-]+$/.test(name))
         throw new Error('Invalid animation identity.')
 
       return {
@@ -367,7 +405,7 @@ export function read(
           'Packed callable styles require contract version 16 or later.',
         )
       const binding = string(entry.binding)
-      if (!/^z-style-[a-z0-9_-]+$/.test(binding))
+      if (!/^z-style-[a-zA-Z0-9_-]+$/.test(binding))
         throw new Error('Invalid style reference identity.')
       const members =
         entry.members === undefined
@@ -577,7 +615,22 @@ export function read(
     ]),
   )
 
-  return { links, themes, stylesheets: Stylesheets.read(data.stylesheets) }
+  const classRules = Object.fromEntries(
+    Object.entries(
+      data.classRules === undefined ? {} : record(data.classRules),
+    ).map(([name, body]) => {
+      if (!name || /\s/.test(name))
+        throw new Error('Invalid packed class name.')
+      return [name, string(body)]
+    }),
+  )
+
+  return {
+    classRules,
+    links,
+    themes,
+    stylesheets: Stylesheets.read(data.stylesheets),
+  }
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -627,6 +680,7 @@ export function write(
   stylesheets: readonly Stylesheets.Section[] = [],
   moduleId = '',
   configurations: readonly write.Configuration[] = [],
+  classRules: Readonly<Record<string, string>> = {},
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     if (link.kind === 'variables')
@@ -714,6 +768,7 @@ export function write(
   }
 
   return JSON.stringify({
+    ...(Object.keys(classRules).length ? { classRules } : {}),
     ...(stylesheets.length
       ? { stylesheets: Stylesheets.write(stylesheets) }
       : {}),
@@ -727,6 +782,9 @@ export function write(
       Object.entries(themes).map(([name, theme]) => [
         name,
         {
+          ...(theme[Token.definition].cssName !== undefined
+            ? { cssName: theme[Token.definition].cssName }
+            : {}),
           ...(theme[Token.definition].contract.shorthands
             ? { shorthands: theme[Token.definition].contract.shorthands }
             : {}),
@@ -742,247 +800,17 @@ export function write(
                 mappings: theme[Token.definition].contract.mappings,
               }
             : {}),
+          ...(theme[Token.definition].contract.variableNaming
+            ? {
+                variableNaming: theme[Token.definition].contract.variableNaming,
+              }
+            : {}),
           identity: theme[Token.definition].contract[Token.identity],
           tokens: encode(input(theme)),
         },
       ]),
     ),
-    version: (() => {
-      function composed(value: unknown): boolean {
-        if (Token.isExpression(value)) return true
-        if (Token.is(value)) return composed(value.value)
-        return (
-          !!value &&
-          typeof value === 'object' &&
-          Object.values(value).some(composed)
-        )
-      }
-      if (
-        Object.values(themes).some((theme) =>
-          composed(theme[Token.definition].values),
-        )
-      )
-        return 29
-
-      if (
-        Object.values(themes).some(
-          (theme) =>
-            theme[Token.definition].contract.variableSet ||
-            theme[Token.definition].queries,
-        )
-      )
-        return 28
-
-      if (
-        Object.values(themes).some(
-          (theme) =>
-            theme[Token.definition].contract.defaultLayer !== undefined,
-        )
-      )
-        return 27
-      if (
-        Object.values(themes).some(
-          (theme) =>
-            theme[Token.definition].paths ||
-            Object.hasOwn(theme.tokens, 'borderWidth'),
-        )
-      )
-        return 25
-
-      if (
-        Object.values(themes).some((theme) =>
-          Object.hasOwn(theme.tokens, 'typography'),
-        )
-      )
-        return 24
-
-      function callable(link: Themes.Link): boolean {
-        return !!link.style || Object.values(link.members ?? {}).some(callable)
-      }
-      function styled(link: Themes.Link): boolean {
-        return (
-          link.kind === 'style' ||
-          Object.values(link.members ?? {}).some(styled)
-        )
-      }
-      function branches(style: import('../../Style.js').NamedStyle): boolean {
-        return (
-          !!style.targets || !!style.rules?.some((rule) => branches(rule.style))
-        )
-      }
-      function targeted(link: Themes.Link): boolean {
-        return (
-          (link.style && branches(link.style.style)) ||
-          Object.values(link.members ?? {}).some(targeted)
-        )
-      }
-      function staticRecipe(link: Themes.Link): boolean {
-        return (
-          !!link.style?.staticRecipe ||
-          Object.values(link.members ?? {}).some(staticRecipe)
-        )
-      }
-      function nested(link: Themes.Link): boolean {
-        return Object.values(link.members ?? {}).some(
-          (member) =>
-            (link.kind === 'style-reference' && !!member.members) ||
-            nested(member),
-        )
-      }
-      function dynamic(link: Themes.Link): boolean {
-        return (
-          !!link.style?.dynamic ||
-          Object.values(link.members ?? {}).some(dynamic)
-        )
-      }
-      if (Object.values(links).some(dynamic)) return 23
-      if (Object.values(links).some(nested)) return 22
-      if (Object.values(links).some(staticRecipe)) return 21
-      if (Object.values(links).some(targeted)) return 20
-      // Style authoring exports serialize as `style`; older readers only know `css`.
-      if (Object.values(links).some(styled)) return 19
-      // Root controls call a runtime helper older releases lack, and older
-      // readers reject the storageKey option, so both require readers to opt in.
-      // Local configurations emit the same helper without an exported binding.
-      if (
-        configurations.length ||
-        Object.values(links).some(
-          (link) =>
-            (link.call.appearance &&
-              (link.kind === 'config' || link.call.root)) ||
-            link.call.options?.storageKey !== undefined,
-        )
-      )
-        return 18
-      if (
-        Object.values(links).some(callable) ||
-        Object.values(themes).some(
-          (theme) => theme[Token.definition].contract.cssOutput,
-        )
-      )
-        return 17
-      if (Object.values(links).some((link) => link.call.recipe)) return 15
-      if (Object.values(links).some((link) => link.kind === 'variables'))
-        return 14
-      if (Object.values(links).some((link) => link.kind === 'style-reference'))
-        return 13
-
-      if (
-        Object.values(links).some(
-          (link) => link.call.function && extended(link.call.function),
-        )
-      )
-        return 12
-
-      if (
-        stylesheets.some((section) => section.namespaces?.length) ||
-        Object.values(links).some(
-          (link) =>
-            link.call.function &&
-            [
-              link.call.function.returns,
-              ...link.call.function.parameters.map(
-                (parameter) => parameter.syntax ?? '*',
-              ),
-            ].some(
-              (syntax) =>
-                // Version 10 readers accepted this fixed scalar subset.
-                !(
-                  [
-                    '*',
-                    '<angle>',
-                    '<color>',
-                    '<integer>',
-                    '<length>',
-                    '<length-percentage>',
-                    '<number>',
-                    '<percentage>',
-                    '<time>',
-                  ] as readonly string[]
-                ).includes(syntax),
-            ),
-        )
-      )
-        return 11
-
-      if (
-        Object.values(links).some(
-          (link) =>
-            link.call.reference === 'cssFunction' ||
-            link.call.reference === 'customMedia',
-        )
-      )
-        return 10
-
-      if (Object.values(links).some((link) => link.kind === 'rule-reference'))
-        return 9
-
-      if (Object.values(links).some((link) => link.kind === 'variables'))
-        return 8
-
-      if (
-        stylesheets.length ||
-        Object.values(links).some((link) => link.kind === 'animation')
-      )
-        return 7
-
-      if (
-        Object.values(themes).some(
-          (theme) =>
-            theme[Token.definition].contract.shorthands ||
-            Object.hasOwn(theme.tokens, 'margin') ||
-            Object.hasOwn(theme.tokens, 'padding'),
-        ) ||
-        Object.values(links).some(
-          (link) =>
-            link.call.output === 'html' ||
-            Object.values(link.members ?? {}).some(
-              (member) => member.call.output === 'html',
-            ),
-        )
-      )
-        return 5
-
-      if (
-        stylesheets.length ||
-        Object.values(links).some(
-          (link) =>
-            link.call.selection ||
-            (link.kind === 'config' && !!link.call.options?.themes) ||
-            link.call.initialization ||
-            (link.kind === 'config' && link.call.script) ||
-            link.kind === 'animation' ||
-            link.kind === 'variables',
-        )
-      )
-        return 4
-
-      if (
-        Object.values(themes).some(
-          (theme) =>
-            theme[Token.definition].queries ||
-            Object.keys(theme.tokens).some((group) =>
-              [
-                'fontFamily',
-                'fontSize',
-                'fontWeight',
-                'lineHeight',
-                'letterSpacing',
-              ].includes(group),
-            ),
-        )
-      )
-        return 3
-
-      if (
-        Object.values(links).some(
-          (link) => link.kind === 'config' || link.call.type,
-        )
-      )
-        return 2
-
-      return 1
-    })(),
+    version: 31,
   })
 }
 
@@ -1058,15 +886,6 @@ function signature(
   }
 }
 
-function extended(signature: NonNullable<Themes.Call['function']>): boolean {
-  return (
-    /[\\\u0080-\uffff]/.test(signature.returns) ||
-    signature.parameters.some((parameter) =>
-      /[\\\u0080-\uffff]/.test(parameter.name + (parameter.syntax ?? '*')),
-    )
-  )
-}
-
 function encode(value: unknown): unknown {
   if (Token.isExpression(value) && 'group' in value)
     return {
@@ -1075,6 +894,9 @@ function encode(value: unknown): unknown {
   if (Token.is(value))
     return {
       $variable: {
+        ...(value.contract.variableNaming
+          ? { variableNaming: value.contract.variableNaming }
+          : {}),
         identity: value.contract[Token.identity],
         path: value.path,
         value: encode(value.value),

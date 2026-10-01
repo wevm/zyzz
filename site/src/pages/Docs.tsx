@@ -2,6 +2,7 @@
 import { AgentPrompt } from '../components/AgentPrompt.js'
 import { DocumentationShell } from '../components/DocumentationShell.js'
 import { Install } from '../components/Install.js'
+import { Link } from '../components/Link.js'
 import { Card } from '../components/mdx/Card.js'
 import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
 import { Steps } from '../components/mdx/Steps.js'
@@ -71,13 +72,12 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/themes': PaletteIcon,
   'guides/variants': LayersIcon,
   Integrations: PlugIcon,
+  'introduction/agents': SparklesIcon,
   'introduction/benchmarks': GaugeIcon,
   'introduction/comparisons': ArrowLeftRightIcon,
   'introduction/compatibility': ShieldCheckIcon,
-  'introduction/editor-agents': SparklesIcon,
   'introduction/faq': CircleHelpIcon,
   'introduction/getting-started': RocketIcon,
-  'introduction/installation': PackageIcon,
   'introduction/thinking-in-zyzz': BrainIcon,
   'introduction/why-zyzz': LightbulbIcon,
 }
@@ -99,9 +99,9 @@ export function Page(props: Page.Props) {
         />
       }
       navigation={
-        <a href="/vars" {...styles.variables()}>
+        <Link href="/vars" {...styles.variables()}>
           Variables
-        </a>
+        </Link>
       }
       sidebar={
         <nav aria-label="Documentation">
@@ -128,6 +128,7 @@ export function Page(props: Page.Props) {
             FrameworkSetup,
             Install,
             Steps,
+            a: Link,
             pre: Code,
           }}
         />
@@ -156,16 +157,23 @@ function SidebarItem(props: SidebarItem.Props) {
   return (
     <>
       {enabled ? (
-        <a
+        <Link
           aria-current={item.path === path ? 'page' : undefined}
           href={`/docs/${item.path}`}
           {...styles.link()}
         >
           {content}
-        </a>
+        </Link>
       ) : (
         <span aria-disabled="true" role="link" {...styles.link()}>
           {content}
+          <span
+            aria-hidden="true"
+            title="Under construction"
+            {...styles.construction()}
+          >
+            🚧
+          </span>
         </span>
       )}
       {item.children && (
@@ -299,10 +307,23 @@ namespace styles {
       '& > header + h2': { marginTop: 0 },
     },
     '& p, & aside': { color: 'gray.900', marginBlock: 4, maxWidth: '3xl' },
+    '& [data-step] > div > h3': { marginTop: 0 },
     '& h2': {
       typography: 'heading.24',
       marginTop: 10,
       marginBottom: 4,
+      scrollMarginTop: 24,
+    },
+    '& h3': {
+      typography: 'heading.20',
+      marginTop: 8,
+      marginBottom: 3,
+      scrollMarginTop: 24,
+    },
+    '& h4': {
+      typography: 'heading.16',
+      marginTop: 8,
+      marginBottom: 3,
       scrollMarginTop: 24,
     },
     '& a:not([data-card])': {
@@ -366,6 +387,11 @@ namespace styles {
     paddingBlock: 3,
     paddingInline: 6,
     paddingRight: 12,
+  })
+
+  export const construction = style({
+    flexShrink: 0,
+    marginLeft: 'auto !custom',
   })
 
   export const copy = style({

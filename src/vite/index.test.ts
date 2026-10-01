@@ -997,7 +997,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           )![1]!
           const css = await (await fetch(origin + cssPath)).text()
 
-          expect(css.includes('--z-color-brand-')).toMatchInlineSnapshot(`true`)
+          expect(css.includes('--z-color-brand')).toMatchInlineSnapshot(`true`)
         } finally {
           await server.close()
         }
@@ -1021,7 +1021,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         await Fs.writeFile(
           Path.join(root, 'app.ts'),
           source(
-            "import {Config} from 'zyzz';\nimport { mint, props, style, theme } from '@acme/theme'; import { Vars } from 'zyzz'; import '@acme/theme/style.css';\nconst extended = Vars.extend(theme, {spacing:{md:'16px'}}); const extendedConfig=Config.create({vars:extended});const extendedProps=extendedConfig.style({color:'brand',padding:'md'})();\nconst app = style({color:'brand'})();\ndocument.body.innerHTML = '<main class=\"' + mint.className + '\"><div id=\"library\" class=\"' + props.className + '\"></div><div id=\"app\" class=\"' + app.className + '\"></div><section class=\"' + theme.className + '\"><div id=\"nested\" class=\"' + app.className + '\"></div></section><section class=\"' + extendedConfig.vars().className + '\"><div id=\"extended\" class=\"' + extendedProps.className + '\"></div></section></main>';",
+            "import {Config} from 'zyzz';\nimport { mint, props, style, theme } from '@acme/theme'; import { Vars } from 'zyzz'; import '@acme/theme/style.css';\nconst extended = Vars.extend(theme, {spacing:{md:'16px'}}); const extendedConfig=Config.create({id:'extended',vars:extended});const extendedProps=extendedConfig.style({color:'brand',padding:'md'})();\nconst app = style({color:'brand'})();\ndocument.body.innerHTML = '<main class=\"' + mint.className + '\"><div id=\"library\" class=\"' + props.className + '\"></div><div id=\"app\" class=\"' + app.className + '\"></div><section class=\"' + theme.className + '\"><div id=\"nested\" class=\"' + app.className + '\"></div></section><section class=\"' + extendedConfig.vars().className + '\"><div id=\"extended\" class=\"' + extendedProps.className + '\"></div></section></main>';",
           ),
         )
 
@@ -1171,7 +1171,9 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           .join('')
 
         expect(entryCss.trim()).toMatchInlineSnapshot(`
-          ".z_scheme-dark{color-scheme:dark;}
+          ".z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+          .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+          .z_scheme-dark{color-scheme:dark;}
           .z_scheme-light{color-scheme:light;}
           .z_scheme-light-dark{color-scheme:light dark;}"
         `)
@@ -1250,7 +1252,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       }
 
       expect((await module.load()).props.className).toMatchInlineSnapshot(
-        `"z-text-ju2ueN-0 z-p-ju2ueN-0"`,
+        `"z-app-text-[var(--z-app-color-brand,#06c)] z-app-p-8px"`,
       )
     } finally {
       await server.close()
@@ -1372,7 +1374,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
               [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules])
                 .length,
           ),
-        ).toMatchInlineSnapshot(`3`)
+        ).toMatchInlineSnapshot(`5`)
         expect(
           await page.locator('#card').getAttribute('class'),
         ).toMatchInlineSnapshot('null')
@@ -1455,45 +1457,65 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         throw new Error('No stylesheet emitted')
 
       expect(String(sheet.source)).toMatchInlineSnapshot(`
-        ".z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
-        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
+        ".z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
-        .z-p-8px-rxmkdJ{padding:8px;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}.z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z_theme-src-config-2rP5yrYs9RE-style-base{--z-color-brand-dAOVdAuffS-:#06c;}
-        .z_theme-src-config-2rP5yrYs9RE-style-mint{--z-color-brand-dAOVdAuffS-:#175;}
+        .z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
+        .z-app-p-8px{padding:8px;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-_yjaYM{color:var(--z-color-brand-dAOVdAuffS-,#06c);}
-        .z-p-8px-rxmkdJ{padding:8px;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}.z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}.z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
+        .z-app-p-8px{padding:8px;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}"
@@ -1673,7 +1695,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       }
 
       expect(rendered.props.className).toMatchInlineSnapshot(
-        `"z-text-ju2ueN-0 z-p-ju2ueN-0"`,
+        `"z-app-text-[var(--z-app-color-brand,#06c)] z-app-p-8px"`,
       )
 
       expect((await stylesheet()).includes('#175')).toMatchInlineSnapshot(
@@ -1913,14 +1935,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       // Each configuration keeps its own catalog, dotted keys use the compiled
       // escaping, and a script-only export derives its catalog from the options.
       expect(scripts(development)).toMatchInlineSnapshot('3')
+      expect(/z-theme-brand_2e_dark/.test(development)).toMatchInlineSnapshot(
+        `true`,
+      )
       expect(
-        /z_theme-src-config-[\w-]+-other-brand_2e_dark/.test(development),
-      ).toMatchInlineSnapshot('true')
-      expect(
-        /\["solo","z_theme-src-config-[\w-]+-onlyScript-solo"\]/.test(
-          development,
-        ),
-      ).toMatchInlineSnapshot('true')
+        /\["solo","z-theme-solo"\]/.test(development),
+      ).toMatchInlineSnapshot(`true`)
 
       // A source error stays with its module; the document still initializes
       // from the catalogs collected before the edit.

@@ -26,6 +26,14 @@ function Label() {
 }
 ```
 
+The compiler derives names from authored bindings. `vars.accent` above becomes `--z-vars-accent`. Supply an explicit ID when independent declarations need distinct names:
+
+```ts
+const accent = variable('color', { id: 'acme-accent' })
+```
+
+This declaration emits `--z-acme_2d_accent`. Explicit IDs are required without the compiler plugin. Consumers combining separately compiled declarations own collision avoidance.
+
 ## Signature
 
 `variable()`, `variable(kind)`, or `variable(kind, options)`

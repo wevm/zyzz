@@ -9,7 +9,10 @@ export function SearchField(props: SearchField.Props) {
       <input
         {...props}
         type="search"
-        {...styles.input({ className: props.className, style: props.style })}
+        {...styles.input({
+          className: props.className,
+          style: props.style,
+        })}
       />
       <kbd {...styles.shortcut()}>⌘K</kbd>
     </div>

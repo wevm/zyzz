@@ -1,0 +1,363 @@
+import * as Examples from './variants/Examples.js'
+import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
+import { SelectionTable } from './SelectionTable.js'
+
+# Variants
+
+Define typed component choices, apply defaults, and combine matching selections without writing class-name logic.
+
+Use `variants` for finite choices such as size, tone, or emphasis. Each definition returns styling props for one element. Start with [Getting Started](/docs/introduction/getting-started) to connect the compiler before using these examples.
+
+## Define choices and defaults
+
+Put declarations shared by every choice in `base`. Group alternatives under a named axis in `variants`, then choose the initial values with `defaultVariants`.
+
+<Tabs label="Choices and defaults">
+<Tab title="SaveButton.tsx">
+
+```tsx
+import { variants } from 'zyzz'
+
+export function SaveButton() {
+  return <button {...styles.button({ size: 'compact' })}>Save</button>
+}
+
+namespace styles {
+  export const button = variants({
+    base: {
+      border: '1px solid currentColor',
+      borderRadius: '6px',
+      display: 'inline-flex',
+    },
+    defaultVariants: { size: 'regular', tone: 'primary' },
+    variants: {
+      size: {
+        compact: { padding: '4px 8px' },
+        regular: { padding: '8px 16px' },
+      },
+      tone: {
+        primary: { backgroundColor: '#06c', color: 'white' },
+        quiet: { backgroundColor: 'transparent', color: '#06c' },
+      },
+    },
+  })
+}
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Choices />
+
+</Tab>
+</Tabs>
+
+This button selects `compact` and keeps the default `primary` tone. Calling `styles.button()` applies both defaults. Import `variants` from `zyzz` for literal CSS values, or from your [theme config](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for project tokens.
+
+The compiler emits the finite choices ahead of time. Calls return a stable class and selection attributes such as `data-size`. Spread the full result onto the element so those attributes reach the DOM.
+
+## Expose typed component props
+
+Use `Props.Variants` to derive the allowed selections from the definition. Keep component behavior, such as `disabled`, on the element rather than passing it into the styling call.
+
+<Tabs label="Typed component props">
+<Tab title="Button.tsx">
+
+```tsx
+import type { ReactNode } from 'react'
+import { type Props, variants } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  return (
+    <button disabled={props.disabled} {...styles.button({ size: props.size })}>
+      {props.children}
+    </button>
+  )
+}
+
+export declare namespace Button {
+  type Props = Pick<Props.Variants<typeof styles.button>, 'size'> & {
+    children: ReactNode
+    disabled?: boolean | undefined
+  }
+}
+
+namespace styles {
+  export const button = variants({
+    defaultVariants: { size: 'regular' },
+    variants: {
+      size: {
+        compact: { padding: '4px 8px' },
+        regular: { padding: '8px 16px' },
+      },
+    },
+  })
+}
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Props />
+
+</Tab>
+</Tabs>
+
+`<Button size="compact">Save</Button>` is valid. An undeclared value such as `size="huge"` is a type error. `Props.Variants` also includes styling overrides, conditional selections, and dynamic payloads. Use `Pick` when the component should expose only particular choices.
+
+## Suppress a default
+
+An omitted or `undefined` selection uses the default. Pass `null` to suppress an axis and its default. Boolean choices use actual booleans, and `false` selects the `false` choice.
+
+<Tabs label="Suppress a default">
+<Tab title="Label.ts">
+
+```ts
+import { variants } from 'zyzz'
+
+namespace styles {
+  export const label = variants({
+    base: { opacity: 1 },
+    defaultVariants: { muted: true },
+    variants: {
+      muted: {
+        true: { opacity: 0.5 },
+        false: { opacity: 1 },
+      },
+    },
+  })
+}
+
+styles.label()
+styles.label({ muted: undefined })
+styles.label({ muted: false })
+styles.label({ muted: null })
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Defaults />
+
+</Tab>
+</Tabs>
+
+<SelectionTable>
+  <table>
+    <thead>
+      <tr>
+        <th>Selection</th>
+        <th>Applied choice</th>
+        <th>Attribute</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Omitted or undefined</td>
+        <td>Default true choice</td>
+        <td>data-muted="true"</td>
+      </tr>
+      <tr>
+        <td>false</td>
+        <td>false choice</td>
+        <td>data-muted="false"</td>
+      </tr>
+      <tr>
+        <td>null</td>
+        <td>No choice; base still applies</td>
+        <td>No data-muted attribute</td>
+      </tr>
+    </tbody>
+  </table>
+</SelectionTable>
+
+## Combine matching choices
+
+Use `compoundVariants` when styling depends on more than one axis. Every axis in `when` must match. An array matches any listed choice for that axis.
+
+<Tabs label="Compound choices">
+<Tab title="QuietButton.ts">
+
+```ts
+import { variants } from 'zyzz'
+
+namespace styles {
+  export const button = variants({
+    base: { border: '1px solid transparent' },
+    compoundVariants: [
+      {
+        when: { size: ['compact', 'regular'], tone: 'quiet' },
+        style: { borderColor: 'currentColor' },
+      },
+    ],
+    defaultVariants: { size: 'regular', tone: 'primary' },
+    variants: {
+      size: {
+        compact: { padding: '4px 8px' },
+        regular: { padding: '8px 16px' },
+      },
+      tone: {
+        primary: { backgroundColor: '#06c', color: 'white' },
+        quiet: { backgroundColor: 'transparent', color: '#06c' },
+      },
+    },
+  })
+}
+
+styles.button({ tone: 'quiet' })
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Compounds />
+
+</Tab>
+</Tabs>
+
+The quiet button receives a visible border at either size. Compounds also match defaults. For conflicting declarations, precedence is `base`, then axes in declaration order, then compounds in array order, within matching contexts and importance. Selection attributes add no selector specificity.
+
+## Select choices with CSS conditions
+
+Declare named conditions when a query should switch the selected choice. Pass overrides under `conditions` at the application site. CSS evaluates the queries; the call does not read the viewport or install listeners.
+
+<Tabs label="Responsive choices">
+<Tab title="ResponsiveButton.tsx">
+
+```tsx
+import { variants } from 'zyzz'
+
+export function ResponsiveButton() {
+  return (
+    <button {...styles.button({ conditions: { wide: { size: 'regular' } } })}>
+      Save
+    </button>
+  )
+}
+
+namespace styles {
+  export const button = variants({
+    base: { borderRadius: '6px' },
+    conditions: { wide: '@media (width >= 768px)' },
+    defaultVariants: { size: 'compact' },
+    variants: {
+      size: {
+        compact: { padding: '4px 8px' },
+        regular: { padding: '8px 16px' },
+      },
+    },
+  })
+}
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Conditions />
+
+</Tab>
+</Tabs>
+
+This button uses `compact` below 768px and `regular` when `wide` matches. Switching choices removes declarations unique to the previous choice. Compounds match the effective selections.
+
+Later matching conditions win for each axis in recipe declaration order. Missing or `undefined` overrides inherit the earlier selection. A conditional `null` suppresses that axis, including its default, while the condition matches.
+
+Selection conditions support `@media` and `@supports`, with up to eight named conditions per recipe. Container and selector queries cannot switch choices through this API. Use ordinary [CSS conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md) inside a choice when only its declarations need to change.
+
+## Bind a value to a dynamic choice
+
+When one choice needs a per-instance value, define that choice with a typed callback. Select it with an object containing the choice name and its payload.
+
+<Tabs label="Dynamic choice payload">
+<Tab title="CustomButton.tsx">
+
+```tsx
+import { variants } from 'zyzz'
+
+export function CustomButton() {
+  return (
+    <button {...styles.button({ size: { custom: { padding: '20px' } } })}>
+      Save
+    </button>
+  )
+}
+
+namespace styles {
+  export const button = variants({
+    compoundVariants: [
+      { when: { size: 'custom' }, style: { fontWeight: 600 } },
+    ],
+    defaultVariants: { size: { custom: { padding: '12px' } } },
+    variants: {
+      size: {
+        compact: { padding: '4px' },
+        custom: (values: {
+          padding: `${number}px`
+        }): { padding: `${number}px` } => ({
+          padding: values.padding,
+        }),
+      },
+    },
+  })
+}
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Dynamic />
+
+</Tab>
+</Tabs>
+
+The compiler creates fixed CSS-variable slots for the callback's fields. Applying the choice binds `20px` to its slot without adding CSS rules. Compounds match the name `custom`, independently of the padding value.
+
+Payload fields must be required scalars with explicit types. Defaults need complete static payloads. A bare `size: 'custom'` is invalid. Conditional selections accept the same payload shape, with separate slots for each condition. Keep the callback's rule structure static and analyzable.
+
+## Compose and split element styles
+
+Use `cx` when combining a recipe with another generated style. Separate JSX spreads replace props and can lose the recipe's class, attributes, or variable bindings.
+
+<Tabs label="Composed focus ring">
+<Tab title="FocusedButton.tsx">
+
+```tsx
+import { cx, style, variants } from 'zyzz'
+
+export function FocusedButton() {
+  return (
+    <button {...cx(styles.button({ size: 'compact' }), styles.focusRing())}>
+      Save
+    </button>
+  )
+}
+
+namespace styles {
+  export const button = variants({
+    variants: { size: { compact: { padding: '4px 8px' } } },
+  })
+
+  export const focusRing = style({
+    selectors: {
+      '&:focus-visible': {
+        outline: '2px solid currentColor',
+        outlineOffset: '2px',
+      },
+    },
+  })
+}
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Composition />
+
+</Tab>
+</Tabs>
+
+Styling calls also accept `className`, `style`, and `vars` overrides. For example, `styles.button({ size: 'compact', style: { opacity: 0.5 } })` adds an inline opacity override. Pass only declared selections and styling inputs. TypeScript checks application inputs; runtime selection does not validate them.
+
+Each recipe styles one element. For a component with a root, label, and icon, give those elements separate definitions and pass the relevant component inputs to each. There is no multipart `slots` option.
+
+See the [variants API](https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md) for the full contract. For published components, [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries) explains how to ship transformed modules, stylesheets, and `.zyzz.json` contracts together.

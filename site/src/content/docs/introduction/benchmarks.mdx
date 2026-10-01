@@ -1,0 +1,173 @@
+# Benchmarks
+
+Measured compilation and delivery costs, with the workloads and boundaries behind each result.
+
+import {
+  BenchmarkContent,
+  LiteralDelivery,
+  Results,
+  ThemeDelivery,
+} from './Benchmarks.js'
+
+<BenchmarkContent>
+
+## Snapshot
+
+Recorded **2026-09-08** from [benchmark run 34204628141](https://github.com/wevm/zyzz/actions/runs/34204628141), commit [9f9d42c](https://github.com/wevm/zyzz/commit/9f9d42c384bcd887fff8956e70b078ee75501bc2). These are historical measurements, not live results.
+
+The GitHub-hosted `ubuntu-latest` runner exposed two logical CPUs on an AMD EPYC 7763. The artifact records Node 24.20.0, pnpm 11.19.0, and the dependency lockfile hash.
+
+The charts use the committed snapshot, verified against its downloaded `benchmarks` artifact. [Later main results](https://github.com/wevm/zyzz/actions/runs/35323568876) use a newer harness and remain a separate report. That run completed compiler measurements but failed a type-instantiation job.
+
+### Literal Compilation
+
+Timings include compilation, common CSS minification, and browser JavaScript bundling. Zyzz starts from validated in-memory definitions using independent composition; source parsing and runtime composition are excluded. Other libraries have different source-processing costs.
+
+<LiteralDelivery />
+
+Hover or focus a library to inspect CSS, client JavaScript, and total gzip bytes. Each library shows CSS above JavaScript on the same scale.
+
+For 1,000 repeated components, Zyzz delivered 473 gzip bytes: 111 bytes of CSS and 362 bytes of JavaScript. With unique padding, the total grew to 7,275 bytes. These charts show compressed fixture delivery, including required helpers. They do not measure application load time.
+
+Each literal chart has its own linear byte scale. The tables retain all eight workloads and every library, including the results that are not charted.
+
+#### Mean Build Time
+
+Milliseconds; lower is better. Zyzz recorded the lowest observed mean in all eight literal workloads. The shaded cells compare each measurement with Zyzz, and the labels show ratios rounded to two decimals.
+
+<Results>
+
+| Workload                           | Panda CSS |  StyleX | Tailwind | vanilla-extract |  Zyzz |
+| ---------------------------------- | --------: | ------: | -------: | --------------: | ----: |
+| 3 Components                       |    40.991 |   6.205 |    3.646 |          10.183 |  1.18 |
+| 1,000 Components: Repeated Styles  |     257.7 | 291.716 |    7.464 |          68.711 | 5.861 |
+| 1,000 Components: Unique Padding   |   300.617 | 551.217 |   32.213 |          70.139 | 9.819 |
+| 100 Components: Partial Sharing    |     74.03 |  28.327 |    5.924 |          11.959 | 2.148 |
+| 100 Components: Reused Palette     |    59.632 |   26.47 |    3.864 |          11.393 | 1.687 |
+| 100 Components: Independent Values |   144.626 |  28.183 |    7.253 |          14.414 | 2.908 |
+| 100 Components: Sparse Properties  |    46.409 |  21.705 |    4.031 |          12.211 | 2.106 |
+| 60 Components: Mixed Shapes        |    39.992 |  20.353 |    3.166 |          10.431 | 1.645 |
+
+</Results>
+
+Literal timing samples ranged from 3 to 85 per case, with reported relative margins of error from 5.6% to 110.8%. Treat timings as a noisy snapshot, not a guaranteed ranking. Compare repeated runs on the same machine before drawing speed conclusions.
+
+#### CSS Size
+
+Gzip bytes; lower is better.
+
+<Results>
+
+| Workload                           | Panda CSS | StyleX | Tailwind | vanilla-extract | Zyzz |
+| ---------------------------------- | --------: | -----: | -------: | --------------: | ---: |
+| 3 Components                       |       436 |    181 |      219 |             121 |  111 |
+| 1,000 Components: Repeated Styles  |       436 |    181 |      219 |            2094 |  111 |
+| 1,000 Components: Unique Padding   |      5287 |   7806 |     5026 |            5640 | 4669 |
+| 100 Components: Partial Sharing    |      1769 |   2119 |     1555 |            1218 | 1141 |
+| 100 Components: Reused Palette     |       628 |    451 |      410 |             647 |  242 |
+| 100 Components: Independent Values |      3545 |   4375 |     3315 |            2281 | 2229 |
+| 100 Components: Sparse Properties  |      1216 |   1278 |      984 |             964 |  849 |
+| 60 Components: Mixed Shapes        |       626 |    407 |      406 |             449 |  287 |
+
+</Results>
+
+#### Total Delivery
+
+Gzip bytes for CSS plus required client JavaScript, compressed separately. Class strings already contained in JavaScript are not counted twice.
+
+<Results>
+
+| Workload                           | Panda CSS | StyleX | Tailwind | vanilla-extract | Zyzz |
+| ---------------------------------- | --------: | -----: | -------: | --------------: | ---: |
+| 3 Components                       |      5945 |    556 |      623 |             456 |  431 |
+| 1,000 Components: Repeated Styles  |      6914 |    844 |     1276 |            4543 |  473 |
+| 1,000 Components: Unique Padding   |     14607 |  14010 |     8534 |            8089 | 7275 |
+| 100 Components: Partial Sharing    |      8407 |   3891 |     2871 |            1776 | 1703 |
+| 100 Components: Reused Palette     |      6427 |   1079 |     1039 |            1205 |  625 |
+| 100 Components: Independent Values |     11670 |   7236 |     5936 |            2840 | 2791 |
+| 100 Components: Sparse Properties  |      7524 |   2396 |     2051 |            1523 | 1409 |
+| 60 Components: Mixed Shapes        |      6357 |    949 |     1017 |             917 |  650 |
+
+</Results>
+
+### Theme Compilation
+
+Two compatible scopes with light/dark values. All lanes include CSS and component/scope JavaScript delivery. `zyzz` starts from validated references; `zyzz-tokens` additionally validates and resolves shorthand tokens. Neither Zyzz lane includes source parsing.
+
+<ThemeDelivery />
+
+The theme charts share a scale and show CSS and JavaScript separately. At 10 components, vanilla-extract delivered 592 gzip bytes versus Zyzz's 645. At 100 components, Zyzz delivered 1,218 versus 1,236. The `zyzz-tokens` lane has identical delivery and adds token resolution to build timing. Output size depends on the workload.
+
+#### 10 Components
+
+<Results>
+
+| Library         | Build (ms) | CSS gzip | JS gzip | Total gzip |
+| --------------- | ---------: | -------: | ------: | ---------: |
+| panda           |     46.943 |      545 |    5564 |       6109 |
+| stylex          |      26.93 |      319 |     461 |        780 |
+| tailwind        |       3.64 |      298 |     413 |        711 |
+| vanilla-extract |      9.617 |      203 |     389 |        592 |
+| zyzz            |      1.397 |      256 |     389 |        645 |
+| zyzz-tokens     |       1.83 |      256 |     389 |        645 |
+
+</Results>
+
+#### 100 Components
+
+<Results>
+
+| Library         | Build (ms) | CSS gzip | JS gzip | Total gzip |
+| --------------- | ---------: | -------: | ------: | ---------: |
+| panda           |     64.656 |      945 |    5928 |       6873 |
+| stylex          |    139.274 |     1064 |    1007 |       2071 |
+| tailwind        |      4.564 |      686 |     661 |       1347 |
+| vanilla-extract |     15.154 |      640 |     596 |       1236 |
+| zyzz            |      3.096 |      615 |     603 |       1218 |
+| zyzz-tokens     |      4.086 |      615 |     603 |       1218 |
+
+</Results>
+
+Theme timings used 3 to 72 samples per case; reported relative margins of error ranged from 7.14% to 68.8%.
+
+## Measurement boundaries
+
+<Results>
+
+| Suite                | Measures                                                         | Excludes                                                |
+| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------- |
+| Literal compilation  | Compiler build, common CSS minification, minified browser bundle | Compression, browser checks, source extraction for Zyzz |
+| Source pipeline      | Parsing, validation, rewriting, source maps, host rebuilds       | Cross-library rankings                                  |
+| Runtime applications | Warm class/props calls and scalar bindings                       | Compilation, module initialization, React rendering     |
+| React renders        | Commit, forced layout, or two animation frames                   | Cold navigation, hydration, exact paint CPU time        |
+| Native               | Matched compiler and release-mode iOS/Android workloads          | Browser performance                                     |
+| Type instantiations  | Public type cost after contract warmup                           | Runtime behavior and cold type startup                  |
+
+</Results>
+
+Literal adapters perform different work. Tailwind excludes content scanning. StyleX includes Babel parsing. vanilla-extract includes loading and evaluation. Panda includes source rewriting. Zyzz starts with validated definitions and independent composition. The in-memory compiler results do not establish end-to-end bundler performance.
+
+Current comparisons use grouped CSS output. Atomic output remains the application default. Browser correctness checks are separate from timing samples. See the [current methodology](https://github.com/wevm/zyzz/blob/main/bench/README.md), [adapter workloads](https://github.com/wevm/zyzz/blob/main/bench/adapters/README.md), and [native benchmarks](https://github.com/wevm/zyzz/blob/main/bench/native/README.md) for those suites.
+
+## Reproduce
+
+Install the locked dependencies in the chosen revision before measuring.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
+```
+
+For a baseline comparison, run both revisions sequentially on the same idle machine with the same harness and sample settings. Save the baseline outside the checkout, then append `--compare <baseline.json>` to the candidate run. Keep means, relative error, sample counts, commit IDs, and environment metadata together.
+
+- **Artifacts:** the run contains raw, gzip, Brotli, timing, and environment reports.
+- **Corpus:** eight literal workloads and two theme comparisons are retained above.
+- **Processing:** literal CSS targets Chrome 120, Firefox 128, Safari 17; theme CSS targets Chrome 123, Firefox 128, Safari 17.5.
+- **Scope:** source extraction, module rewriting, props binding, and host edits have separate measurements in the run report.
+
+See the [methodology at this commit](https://github.com/wevm/zyzz/blob/9f9d42c384bcd887fff8956e70b078ee75501bc2/bench/README.md) for compiler boundaries and sample configuration. Generated reports stay ignored; this curated snapshot is intentionally committed. Update all comparison lanes from one identified run.
+
+> [!NOTE]
+> The literal results above do not measure application rendering, dynamic variants, SSR, or native rendering. See the [variant measurements](https://github.com/wevm/zyzz/blob/main/bench/Web-variants.md) for the separate web workloads.
+
+</BenchmarkContent>

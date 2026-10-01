@@ -1,0 +1,261 @@
+# Comparisons
+
+Compare how Zyzz, Tailwind CSS, StyleX, and vanilla-extract define, compose, and apply styles.
+
+import { Content } from './comparisons/Content.js'
+
+<Content>
+
+The examples below compare the same declarations and inputs in React and TypeScript. Each library needs its build integration. Tailwind examples target v4 and omit its optional [Preflight reset](https://tailwindcss.com/docs/preflight#disabling-preflight) so browser defaults can match.
+
+Zyzz's native adapters reject unsupported web semantics, including DOM relationships and global CSS. Other native integrations require separate evaluation. These API differences do not establish performance rankings. The [benchmark snapshot](https://github.com/wevm/zyzz/blob/main/docs/introduction/benchmarks.md) records measured workloads and their limits.
+
+## Defining and applying styles
+
+Each example renders a button labeled "Continue" with `#06c` text and `1rem` padding. Zyzz and StyleX apply style objects through props. Tailwind applies utilities, while vanilla-extract exports a class from a stylesheet module.
+
+### Zyzz
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz'
+
+export function Button() {
+  return <button {...styles.button()}>Continue</button>
+}
+
+namespace styles {
+  export const button = style({ color: '#06c', padding: '1rem' })
+}
+```
+
+The compiler emits CSS ahead of time. Applying the definition returns styling props, without inserting CSS rules. See the [style contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/style.md).
+
+### Tailwind CSS
+
+```tsx title="Button.tsx"
+export function Button() {
+  return <button className="text-[#06c] p-[1rem]">Continue</button>
+}
+```
+
+The compiler detects the complete utility names in source. It does not parse TypeScript expressions, so dynamically constructed names need a different approach. The [source detection guide](https://tailwindcss.com/docs/detecting-classes-in-source-files) explains those constraints.
+
+### StyleX
+
+```tsx title="Button.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Button() {
+  return <button {...stylex.props(styles.button)}>Continue</button>
+}
+
+const styles = stylex.create({
+  button: { color: '#06c', padding: '1rem' },
+})
+```
+
+StyleX compiles objects into atomic CSS. Definitions must follow its [supported expression rules](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#constraints). Its [static types](https://stylexjs.com/docs/learn/static-types/) constrain style contracts.
+
+### vanilla-extract
+
+```ts title="button.css.ts"
+import { style } from '@vanilla-extract/css'
+
+export const button = style({ color: '#06c', padding: '1rem' })
+```
+
+```tsx title="Button.tsx"
+import { button } from './button.css.js'
+
+export function Button() {
+  return <button className={button}>Continue</button>
+}
+```
+
+The build integration evaluates `.css.ts` files and emits scoped CSS. The component imports a class name. See [styling](https://vanilla-extract.style/documentation/styling/).
+
+## Composing styles
+
+Each example adds a focus outline to a button with `1rem` padding. Composition combines independently defined declarations. Conflicts need the library's documented merge behavior or normal CSS precedence, rather than relying on class order in HTML.
+
+### Zyzz
+
+```tsx title="Button.tsx"
+import { cx, style } from 'zyzz'
+
+export function Button() {
+  return <button {...cx(styles.button(), styles.focusRing())}>Continue</button>
+}
+
+namespace styles {
+  export const button = style({ padding: '1rem' })
+
+  export const focusRing = style({
+    ':focus-visible': { outline: '2px solid #06c', outlineOffset: '2px' },
+  })
+}
+```
+
+[`cx`](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) merges applied styles in argument order. Later declarations win in matching contexts at equal specificity and importance. Escaping or mutated props bindings and ternary style selections remain unsupported and produce compiler diagnostics.
+
+### Tailwind CSS
+
+```tsx title="Button.tsx"
+export function Button() {
+  return (
+    <button className="p-[1rem] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-[#06c] focus-visible:outline-offset-2">
+      Continue
+    </button>
+  )
+}
+```
+
+Utilities express both declarations directly. For [conflicting utilities](https://tailwindcss.com/docs/styling-with-utility-classes#conflicting-styles), stylesheet order determines precedence. Concatenating class names does not create an ordered override API.
+
+### StyleX
+
+```tsx title="Button.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Button() {
+  return (
+    <button {...stylex.props(styles.button, styles.focusRing)}>Continue</button>
+  )
+}
+
+const styles = stylex.create({
+  button: { padding: '1rem' },
+  focusRing: {
+    outlineColor: { default: null, ':focus-visible': '#06c' },
+    outlineOffset: { default: null, ':focus-visible': '2px' },
+    outlineStyle: { default: null, ':focus-visible': 'solid' },
+    outlineWidth: { default: null, ':focus-visible': '2px' },
+  },
+})
+```
+
+[`stylex.props`](https://stylexjs.com/docs/learn/styling-ui/using-styles/) merges applied styles. Later arguments take priority for conflicts on the same property. By default, overlapping longhands take priority over shorthands regardless of argument order. Conditions are nested within each property's value.
+
+### vanilla-extract
+
+```ts title="button.css.ts"
+import { style } from '@vanilla-extract/css'
+
+const base = style({ padding: '1rem' })
+const focusRing = style({
+  ':focus-visible': { outline: '2px solid #06c', outlineOffset: '2px' },
+})
+
+export const button = style([base, focusRing])
+```
+
+```tsx title="Button.tsx"
+import { button } from './button.css.js'
+
+export function Button() {
+  return <button className={button}>Continue</button>
+}
+```
+
+The style array performs [build-time composition](https://vanilla-extract.style/documentation/style-composition/). Concatenating unrelated classes at runtime retains normal CSS cascade behavior.
+
+## Binding runtime values
+
+Each bar accepts a percentage width and renders a `0.5rem`-high blue div. The declarations remain static, while a per-instance value supplies the width.
+
+### Zyzz
+
+```tsx title="Bar.tsx"
+import { style } from 'zyzz'
+
+export function Bar(props: Bar.Props) {
+  return <div {...styles.bar({ width: props.width })} />
+}
+
+export declare namespace Bar {
+  type Props = { width: `${number}%` }
+}
+
+namespace styles {
+  export const bar = style((values: { width: `${number}%` }) => ({
+    backgroundColor: '#06c',
+    height: '0.5rem',
+    width: values.width,
+  }))
+}
+```
+
+The typed callback binds its input to a precompiled CSS variable. Runtime applications set the value without generating CSS rules.
+
+### Tailwind CSS
+
+```tsx title="Bar.tsx"
+export function Bar(props: Bar.Props) {
+  return <div className="h-[0.5rem] bg-[#06c]" style={{ width: props.width }} />
+}
+
+export declare namespace Bar {
+  type Props = { width: `${number}%` }
+}
+```
+
+An [inline style](https://tailwindcss.com/docs/styling-with-utility-classes#when-to-use-inline-styles) supplies the width. Dynamic values must not construct utility names that the source scanner cannot detect.
+
+### StyleX
+
+```tsx title="Bar.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Bar(props: Bar.Props) {
+  return <div {...stylex.props(styles.bar(props.width))} />
+}
+
+export declare namespace Bar {
+  type Props = { width: `${number}%` }
+}
+
+const styles = stylex.create({
+  bar: (width: `${number}%`) => ({
+    backgroundColor: '#06c',
+    height: '0.5rem',
+    width,
+  }),
+})
+```
+
+A [dynamic style function](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#dynamic-styles) binds the width to a compiled CSS variable.
+
+### vanilla-extract
+
+```ts title="bar.css.ts"
+import { createVar, style } from '@vanilla-extract/css'
+
+export const widthVar = createVar()
+export const bar = style({
+  backgroundColor: '#06c',
+  height: '0.5rem',
+  width: widthVar,
+})
+```
+
+```tsx title="Bar.tsx"
+import { assignInlineVars } from '@vanilla-extract/dynamic'
+import { bar, widthVar } from './bar.css.js'
+
+export function Bar(props: Bar.Props) {
+  return (
+    <div
+      className={bar}
+      style={assignInlineVars({ [widthVar]: props.width })}
+    />
+  )
+}
+
+export declare namespace Bar {
+  type Props = { width: `${number}%` }
+}
+```
+
+`createVar` declares the variable. The optional [Dynamic package](https://vanilla-extract.style/documentation/packages/dynamic/) sets its value through inline styles.
+
+</Content>

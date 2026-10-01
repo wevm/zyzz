@@ -15,13 +15,14 @@ import ReactIcon from '~icons/simple-icons/react'
 import RollupIcon from '~icons/simple-icons/rollupdotjs'
 import ViteIcon from '~icons/simple-icons/vite'
 import { style } from '../../zyzz.config.js'
+import { Link } from '../Link.js'
 
 /** Links to a related guide with a title and description. */
 export function Card(props: Card.Props) {
   const { children, disabled, href, icon, onClick, selected, title } = props
 
   const Icon = icon && icons[icon]
-  const Element = onClick ? 'button' : 'a'
+  const Element = onClick ? 'button' : Link
   return (
     <Element
       data-card=""

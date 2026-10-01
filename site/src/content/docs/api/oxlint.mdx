@@ -1,0 +1,268 @@
+# Linting
+
+Catch invalid web styles, conflicting JSX props, and unused definitions with Zyzz's Oxlint plugin.
+
+The `zyzz/oxlint` plugin checks source without evaluating application code or loading imported configuration modules. Enable the rules that fit your project. Keep compilation and TypeScript checking in your workflow, since linting cannot validate every style or token contract.
+
+## Set up Oxlint
+
+<Steps>
+
+### Install the linter
+
+With [Zyzz set up](/docs/introduction/getting-started), add Oxlint as a development dependency:
+
+```sh
+npm install --save-dev oxlint
+```
+
+If your project already uses Vite Plus, use the [Vite Plus configuration](#use-vite-plus) below instead.
+
+### Register the plugin
+
+Add `jsPlugins` and enable individual rules in your existing configuration:
+
+```json title=".oxlintrc.json"
+{
+  "jsPlugins": [{ "name": "zyzz", "specifier": "zyzz/oxlint" }],
+  "rules": {
+    "zyzz/no-conflicting-props": "error",
+    "zyzz/no-unused": "warn",
+    "zyzz/valid-styles": "error"
+  }
+}
+```
+
+Registration alone enables no Zyzz rules. This configuration treats invalid styles and competing JSX props as errors, and unused namespace definitions as warnings. Logical properties and project restrictions remain opt-in.
+
+### Run linting
+
+Run the linter from the project directory:
+
+```sh
+npx oxlint .
+```
+
+Errors produce a failing exit status. To fail on warnings too, run `npx oxlint --deny-warnings .`. Add the command to your project's checks alongside its type check and build.
+
+</Steps>
+
+> <span hidden>[!NOTE]</span>
+> Oxlint's [JavaScript plugin
+> API](https://oxc.rs/docs/guide/usage/linter/js-plugins.html) is alpha. Zyzz's
+> integration fixtures use Oxlint 1.72.0 and Vite Plus 0.2.2. These are tested
+> versions, not minimum supported versions.
+
+<span id="use-vite-plus" />
+
+## Use Vite Plus
+
+Put the same plugin registration and rules under `lint` in your existing `vite.config.ts`. Preserve your build plugins and other configuration.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite-plus'
+
+export default defineConfig({
+  lint: {
+    jsPlugins: [{ name: 'zyzz', specifier: 'zyzz/oxlint' }],
+    rules: {
+      'zyzz/no-conflicting-props': 'error',
+      'zyzz/no-unused': 'warn',
+      'zyzz/valid-styles': 'error',
+    },
+  },
+})
+```
+
+Run `vp lint`. The Zyzz rules do not require type-aware linting. See [Vite Plus lint configuration](https://viteplus.dev/guide/lint) for the surrounding workflow.
+
+## Fix common diagnostics
+
+All five rules report diagnostics without automatic fixes. Linting preserves declaration order. Review each change before removing a definition or merging expressions that could change evaluation order.
+
+### Invalid styles
+
+`zyzz/valid-styles` reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, and known nonscalar declaration values. For example, `display: []` has no fallback value, and `color: 'red!important'` lacks the required space before `!important`.
+
+Use a nonempty fallback array and the ` !important` suffix:
+
+```ts title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const card = style({
+    color: 'red !important',
+    display: ['block', 'flex'],
+  })
+}
+```
+
+Unknown-property checks apply to token-free imports from `zyzz`. Configured helpers can define shorthand properties, so the rule leaves their property names to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction. Unresolved expressions also remain the compiler's responsibility.
+
+### Conflicting JSX props
+
+`zyzz/no-conflicting-props` reports explicit `className` or `style` attributes beside a known Zyzz application spread, in either order. Multiple known application spreads also conflict, since JSX can overwrite the props from an earlier spread.
+
+Pass overrides into the style call, and use `cx` to compose applications:
+
+```tsx title="Card.tsx"
+import { cx, style } from 'zyzz'
+
+export function Card() {
+  return (
+    <section {...styles.card({ className: 'external' })}>
+      <span {...cx(styles.label(), styles.selected())}>Selected</span>
+    </section>
+  )
+}
+
+namespace styles {
+  export const card = style({ padding: '16px' })
+
+  export const label = style({ fontWeight: 500 })
+
+  export const selected = style({ opacity: 0.8 })
+}
+```
+
+Replace `<section {...styles.card()} className="external">` with the override call above. For inline overrides, pass `style` into the same call. Detection targets React-style web props and locally resolved definitions or `cx` applications. Unknown spreads and style definitions imported from another module are skipped.
+
+### Unused definitions
+
+`zyzz/no-unused` reports unused style and variant definitions in local, top-level TypeScript namespaces. Oxlint's built-in `no-unused-vars` remains responsible for ordinary local bindings.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return <section {...styles.card()}>Content</section>
+}
+
+namespace styles {
+  export const card = style({ padding: '16px' })
+
+  export const unused = style({ color: 'red' })
+}
+```
+
+This example reports only `styles.unused`. Remove that definition if it is no longer needed. Exported, merged, or nested namespaces, computed member access, and namespaces passed as values are retained conservatively. Direct references between namespace members count as uses.
+
+## Add project policies
+
+### Prefer logical properties
+
+Enable `zyzz/use-logical-properties` to report covered horizontal physical properties and corner radii:
+
+```json title=".oxlintrc.json"
+{
+  "rules": {
+    "zyzz/use-logical-properties": "warn"
+  }
+}
+```
+
+Merge this rule into the registered plugin configuration. For example, replace `marginLeft` with `marginInlineStart` and `paddingRight` with `paddingInlineEnd` when those properties match the intended direction and writing mode.
+
+```ts title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const card = style({
+    marginInlineStart: '16px',
+    paddingInlineEnd: '8px',
+  })
+
+  export const overlay = style({
+    position: 'absolute',
+    // allow-physical-property
+    left: '0px',
+  })
+}
+```
+
+The `allow-physical-property` comment permits an intentional physical edge. Suggestions assume horizontal left-to-right layouts. The rule does not cover vertical properties, physical keyword values, or shorthand values. Check direction and writing mode before changing a property.
+
+### Restrict properties and values
+
+`zyzz/restricted-properties` accepts one object keyed by exact authored property names. Merge this rule into your plugin configuration:
+
+```json title=".oxlintrc.json"
+{
+  "rules": {
+    "zyzz/restricted-properties": [
+      "error",
+      {
+        "color": { "reason": "Use color tokens.", "values": [] },
+        "padding": {
+          "reason": "Use the spacing scale.",
+          "values": [0, "4px", "8px"]
+        },
+        "zIndex": { "reason": "Use a stacking context." }
+      }
+    ]
+  }
+}
+```
+
+Under this policy, `padding: '4px'` passes and `padding: '7px'` fails. Every statically resolved fallback value must be allowed. Omitting `values` bans the property, including dynamic values, so any `zIndex` declaration fails.
+
+An empty `values` array rejects known literals. Unresolved expressions, such as imported token references, pass a value allowlist check. This does not prove that an expression is a token. Each restriction can include a `reason` to explain the project policy in the diagnostic.
+
+## Recognize configured helpers
+
+The rules recognize imports from `zyzz`, `zyzz/default`, and modules whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts` or `@/zyzz.config.js`. These config filenames need no extra settings.
+
+For a config module with another name, add its exact import specifier:
+
+```json title=".oxlintrc.json"
+{
+  "settings": {
+    "zyzz": {
+      "imports": ["@/styles.js"]
+    }
+  }
+}
+```
+
+These entries supplement automatic recognition. Matching uses the import text without filesystem resolution. Config modules are assumed to expose `style` and `variants`. Only imports from `zyzz` expose recognized `cx` and `Config` helpers.
+
+Named import aliases, namespace imports, immutable local aliases, and helpers destructured from local `Config.create()` calls are supported. Lexical shadowing is respected. The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
+
+## Scope web rules
+
+Declaration rules inspect `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. They exclude variant selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches.
+
+In a mixed web and native project, enable these rules only for web authoring files through [Oxlint overrides](https://oxc.rs/docs/guide/usage/linter/config.html). Adapt the file pattern to your project:
+
+```json title=".oxlintrc.json"
+{
+  "jsPlugins": [{ "name": "zyzz", "specifier": "zyzz/oxlint" }],
+  "overrides": [
+    {
+      "files": ["src/web/**/*.{ts,tsx}"],
+      "rules": {
+        "zyzz/no-conflicting-props": "error",
+        "zyzz/no-unused": "warn",
+        "zyzz/valid-styles": "error"
+      }
+    }
+  ]
+}
+```
+
+All rules support standard Oxlint suppression comments. Keep exceptions narrow and explain why the declaration is intentional:
+
+```ts title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const overlay = style({
+    position: 'absolute',
+    // Keep this overlay aligned to the physical left edge.
+    // oxlint-disable-next-line zyzz/use-logical-properties
+    left: '0px',
+  })
+}
+```
+
+For the complete contract, see the [Oxlint API documentation](https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md) and [plugin integration tests](https://github.com/wevm/zyzz/blob/main/src/oxlint/index.test.ts).

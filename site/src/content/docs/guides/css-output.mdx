@@ -1,0 +1,155 @@
+import { CssOutputTable } from './CssOutputTable.js'
+
+# CSS Output
+
+Choose how Zyzz groups declarations in the generated CSS.
+
+## Choose an output mode
+
+`cssOutput` selects atomic or grouped CSS. Both compile ahead of time. Connect a compiler through [Getting Started](/docs/introduction/getting-started).
+
+<CssOutputTable>
+  <table aria-label="CSS output modes">
+    <thead>
+      <tr>
+        <th scope="col">Mode</th>
+        <th scope="col">CSS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <code>atomic</code> (default)
+        </td>
+        <td>
+          Classes for individual declarations, shared when the cascade permits.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <code>grouped</code>
+        </td>
+        <td>
+          Scoped blocks containing each style's declarations and conditions.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</CssOutputTable>
+
+Start with atomic. Neither mode guarantees smaller or faster output. Compare CSS, JavaScript, and markup sizes for your application. The [benchmarks](/docs/introduction/benchmarks) use grouped output.
+
+Set the mode in your config, then import its helpers into components.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, variants } = defineConfig({
+  cssOutput: 'grouped',
+})
+```
+
+The setting applies to config-bound helpers. Imports from `zyzz` still use atomic output. There is no per-style override.
+
+`output` controls React or HTML props independently of `cssOutput`. See the [config reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md).
+
+## Compare the generated CSS
+
+The same component works in either mode.
+
+```tsx title="Card.tsx"
+import { style } from './zyzz.config.js'
+
+export function Card() {
+  return (
+    <article {...styles.card()}>
+      <span {...styles.label()}>Account</span>
+    </article>
+  )
+}
+
+namespace styles {
+  export const card = style({ color: 'red', padding: '8px' })
+  export const label = style({ color: 'red' })
+}
+```
+
+Atomic output can share the color class between the card and label.
+
+```css title="Atomic output, illustrative"
+.z-text-red {
+  color: red;
+}
+.z-p-8px {
+  padding: 8px;
+}
+```
+
+Grouped output gives each style its own block.
+
+```css title="Grouped output, illustrative"
+.z-X8T0-w-styles-card {
+  color: red;
+  padding: 8px;
+}
+.z-X8T0-w-styles-label {
+  color: red;
+}
+```
+
+Generated names contain no hashes. Common declarations use readable utilities; contextual declarations use authored names and ordered slots. Variables follow authored paths, such as `--z-color-brand`. Apply returned props rather than copying class names.
+
+When combining independent configs, supply distinct `defineConfig({ id })` values. The ID prefixes classes, variables, and theme scopes. The compiler reports incompatible generated names when it can detect them; consumers own collision avoidance across separate stylesheets.
+
+Contextual classes and inferred selector identities include a stable six-character hash of the module path. Modules can share a config and use the same `namespace styles` member names without collisions. Explicit style IDs remain consumer-owned.
+
+Development and production use the same naming rules. Rebuild generated code and CSS together after edits.
+
+## Preserve cascade and composition
+
+Both modes preserve CSS cascade behavior. Declarations share classes only when reuse preserves precedence.
+
+Use `cx` to combine styles. Multiple JSX spreads can replace styling props.
+
+```tsx title="CompactCard.tsx"
+import { cx } from 'zyzz'
+import { style } from './zyzz.config.js'
+
+export function CompactCard() {
+  return <article {...cx(styles.card(), styles.compact())}>Account</article>
+}
+
+namespace styles {
+  export const card = style({ color: 'red', padding: '8px' })
+  export const compact = style({ padding: '4px' })
+}
+```
+
+Here, the later padding wins. `cx` also preserves variable bindings and variant attributes. Class-string order does not determine precedence. See [Override Styles](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#override-styles).
+
+Global rules, keyframes, and variable scopes keep their CSS structures. Dynamic values bind to precompiled custom properties. Applying styles never inserts CSS rules.
+
+## Deliver matching artifacts
+
+Rebuild CSS and generated code together when changing modes. A config alone does not compile or load styles.
+
+CSS-only builds retain source and require explicit IDs for dynamic styles and other identity-dependent definitions. See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md) for setup.
+
+For custom pipelines, select the mode when compiling CSS.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({
+  card: { color: 'red', padding: '8px' },
+})
+
+const output = Css.compile({ cssOutput: 'grouped', styles })
+```
+
+Load `output.css` and apply `output.classes.card`. `Css.compile` has no filesystem or browser side effects. See [Css.compile](https://github.com/wevm/zyzz/blob/main/docs/api/web/Css/compile.md).
+
+Precompiled libraries retain their output mode. Publish code, declarations, CSS, and compiler metadata from the same build. Consumer config does not change published classes.
+
+See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md) for publishing and [Linting](https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md) for authoring checks.

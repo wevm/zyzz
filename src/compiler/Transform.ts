@@ -7,6 +7,7 @@ import * as Token from '../internal/Token.js'
 import * as Applications from './internal/Applications.js'
 import type * as Ast from '@oxc-project/types'
 import * as Css from '../web/Css.js'
+import * as ClassName from '../web/internal/ClassName.js'
 import * as Expression from './internal/Expression.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
@@ -71,11 +72,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           'CSS-only named stylesheet declarations require an explicit id.',
         )
     for (const call of extracted.variableCalls ?? [])
-      if (
-        Object.values(call.slots).some(
-          (slot) => !slot.name.startsWith('--z-vid-'),
-        )
-      )
+      if (!call.explicit)
         throw new Error('CSS-only output requires an explicit variable id.')
   }
 
@@ -198,7 +195,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   const emitted = Css.compile({
     [ThemeRules.shared]: options[ThemeRules.shared],
     development: options.development,
-    scope: options.moduleId,
+    [ClassName.labels]: extracted.styles[ClassName.labels],
     composition: options.composition,
     cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
@@ -291,45 +288,11 @@ export function compile(options: compile.Options): compile.ReturnType {
       `${variables}.create(${JSON.stringify(call.slots.value)})`,
     )
 
-  const first = extracted.calls[0]
-  const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const identities = new Map(
     extracted.calls
       .filter((call) => call.identity)
       .map((call) => [call.name, call.identity!]),
   )
-
-  const modes = new Map(
-    extracted.styles.styles.map((style) => [style.name, style.cssOutput]),
-  )
-  const ownersByClass = new Map<string, string | false>()
-  for (const [style, value] of Object.entries(emitted.classes))
-    for (const name of value.split(' ').filter(Boolean))
-      ownersByClass.set(name, ownersByClass.has(name) ? false : style)
-
-  const names = new Map<string, string>()
-
-  for (const classes of Object.values(emitted.classes))
-    for (const name of classes.split(' ').filter(Boolean))
-      names.set(
-        name,
-        (() => {
-          const owner = ownersByClass.get(name)
-          const identity = owner && identities.get(owner)
-          if (
-            (modes.get(owner || '') ?? options.cssOutput) === 'grouped' &&
-            options.composition === 'independent' &&
-            name.startsWith('g_') &&
-            identity &&
-            !identity.includes(' ')
-          )
-            return identity
-          if (name.startsWith('g_')) return `g_${scope}_${name.slice(2)}`
-          return name.startsWith('z_base')
-            ? `z-${scope}-${name.slice(2)}`
-            : name
-        })(),
-      )
 
   const classes = Object.freeze(
     Object.fromEntries(
@@ -337,10 +300,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         [
           ...new Set([
-            ...value
-              .split(' ')
-              .filter(Boolean)
-              .map((part) => names.get(part)!),
+            ...value.split(' ').filter(Boolean),
             ...(identities.has(name) &&
             (!portable || portableNames[name]?.startsWith('z-compose-'))
               ? [
@@ -930,8 +890,16 @@ export function compile(options: compile.Options): compile.ReturnType {
     (scoped ? scoped.split('\n') : [])
       .map((rule, index) => {
         const line = index + 1 + (prefix ? prefix.split('\n').length : 0)
-        const brace = rule.indexOf('{')
-        const name = rule.slice(1, brace)
+        const openers = new Map<number, number>()
+        const conditionStarts = declarationStarts(rule, true, openers)
+        const selectorStart =
+          conditionStarts.find((start) => rule[start] === '.') ?? 0
+        const brace = openers.get(selectorStart) ?? rule.indexOf('{')
+        const name = rule
+          .slice(selectorStart + 1, brace)
+          .replace(/\\([0-9a-f]+) ?/gi, (_, code: string) =>
+            String.fromCodePoint(Number.parseInt(code, 16)),
+          )
         const linkedOwner = linkedOwners.get(name)
 
         if (linkedOwner) {
@@ -995,11 +963,11 @@ export function compile(options: compile.Options): compile.ReturnType {
           return rule
         }
 
-        const selector = `.${names.get(name)!}`
+        const selector = `.${ClassName.selector(name)}`
         const call = owners.get(name)!
 
         Mapping.addMapping(cssMap, {
-          generated: { column: 0, line },
+          generated: { column: selectorStart, line },
           name: call.name,
           original: position(call.start),
           source: options.moduleId,
@@ -1071,8 +1039,6 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const ordered = declarations(style)
         const authored = locations(call.body ?? definitions.get(call.start)!)
-        const openers = new Map<number, number>()
-        const conditionStarts = declarationStarts(body, true, openers)
         const conditions: string[] = []
 
         function collectConditions(style: Style.NamedStyle) {
@@ -1084,17 +1050,25 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         collectConditions(style)
-        let conditionCursor = 0
+        const mappedConditions = new Set<number>()
 
         for (const start of conditionStarts) {
-          const condition = body.slice(start, openers.get(start))
-          const index = conditions.indexOf(condition, conditionCursor)
+          const condition = rule.slice(start, openers.get(start))
+          const index = conditions.findIndex(
+            (value, index) =>
+              value === condition && !mappedConditions.has(index),
+          )
           const node = conditionNodes[index]
           if (!node) continue
 
-          conditionCursor = index + 1
+          mappedConditions.add(index)
           Mapping.addMapping(cssMap, {
-            generated: { column: selector.length + start, line },
+            generated: {
+              column:
+                start +
+                (start > brace ? selector.length - (brace - selectorStart) : 0),
+              line,
+            },
             name: options.source.slice(node.key.start, node.key.end),
             original: position(node.key.start),
             source: options.moduleId,
@@ -1124,7 +1098,10 @@ export function compile(options: compile.Options): compile.ReturnType {
           used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {
-            generated: { column: selector.length + start, line },
+            generated: {
+              column: selectorStart + selector.length + start,
+              line,
+            },
             name: declaration.property,
             original: position(location.start),
             source: options.moduleId,
@@ -1132,7 +1109,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           cursor = start + text.length
         }
 
-        return selector + body
+        return rule.slice(0, selectorStart) + selector + body
       })
       .join('\n'),
   ]
@@ -1153,10 +1130,11 @@ export function compile(options: compile.Options): compile.ReturnType {
     Mapping.toEncodedMap(cssMap),
     true,
   )
-  return Object.freeze({
+  const result = {
     ...(emitted[ThemeRules.shared]
       ? { [ThemeRules.shared]: emitted[ThemeRules.shared] }
       : {}),
+    [ClassName.rules]: emitted[ClassName.rules],
     classes,
     code: portable ? options.source : module.toString(),
     css: namespaced.css,
@@ -1170,7 +1148,9 @@ export function compile(options: compile.Options): compile.ReturnType {
       version: 3 as const,
     },
     vars: emitted.vars,
-  })
+  }
+  Object.defineProperty(result, ClassName.rules, { enumerable: false })
+  return Object.freeze(result)
 }
 
 /** Source transform contracts. */
@@ -1187,7 +1167,7 @@ export declare namespace compile {
     readonly composition?: Css.compile.Options['composition']
     /** Default CSS representation for definitions without an explicit mode. */
     readonly cssOutput?: Css.compile.Options['cssOutput']
-    /** Stable declaration names for CSS-only development updates. */
+    /** Retains live definitions for development updates. */
     readonly development?: boolean | undefined
     /**
      * Emit the `color-scheme` selection classes beside the theme scopes.
@@ -1206,6 +1186,8 @@ export declare namespace compile {
     readonly classes: Readonly<Record<string, string>>
     /** Rewritten source with imports for surviving props callables. */
     readonly code: string
+    /** Exact emitted rules retained for collision diagnostics. */
+    readonly [ClassName.rules]: Readonly<Record<string, string>>
     /** Ordered, unminified stylesheet text. */
     readonly css: string
     /** Standard stylesheet map with authored selector/declaration locations. */

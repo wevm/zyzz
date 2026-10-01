@@ -1,0 +1,139 @@
+# Why Zyzz
+
+Type-safe CSS and explicit design variables for developers and agents.
+
+Agents need a design system they can follow and rules they can check. Zyzz makes both explicit with standard CSS, strict types, and named design variables.
+
+## Give agents rules they can check
+
+An agent that invents a token or uses a color as spacing should get a diagnostic. Zyzz's authoring types check properties, token paths, and variant choices. The compiler checks static rule structure and selector grammar before styles reach the application.
+
+Design variables describe the project's shared values and their property domains. A configured `style` helper exposes those names through TypeScript inference, so agents can reference the design system when generating components.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+```tsx title="Button.tsx"
+import { style } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    color: 'brand',
+    padding: 'md',
+  })
+}
+```
+
+`brand` is a color variable and `md` is a spacing variable. Unknown token names and incompatible property domains produce type errors. The configuration owns the values, and components reference the names.
+
+Standard CSS gives agents an existing specification to consult. Properties, selectors, and the cascade retain their CSS meaning, and design variables compile to [CSS custom properties](https://www.w3.org/TR/css-variables-1/). The project's configuration and Zyzz's supported contracts define which styles are accepted.
+
+The root `zyzz` import stays token-free. The opt-in `zyzz/default` entrypoint supplies Geist and Tailwind tokens when a bundled starting point is useful. Type inference alone does not prove that an integration or native target supports a style.
+
+## CSS as the foundation
+
+Properties, selectors, custom properties, inheritance, and the cascade keep their CSS meaning. Pseudo-classes and queries belong in the style definition. Component state stays in ordinary props, data attributes, and ARIA attributes.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <section {...styles.card()}>
+      <h2 {...styles.title()}>Account details</h2>
+    </section>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    border: '1px solid currentColor',
+    borderRadius: '0.75rem',
+    padding: '1rem',
+    '@media (min-width: 48rem)': { padding: '1.5rem' },
+  })
+
+  export const title = style({
+    fontSize: '1.25rem',
+    margin: '0px',
+  })
+}
+```
+
+`style` declares the rules. After compilation, calling `styles.card()` returns styling props to spread onto the element. The browser handles the media query through emitted CSS.
+
+## Compile rules before rendering
+
+Zyzz emits rules ahead of time. Runtime work can select a variant or bind a value to an existing rule. Dynamic values do not require generating a new rule for each component instance.
+
+```tsx title="Bar.tsx"
+import { style } from 'zyzz'
+
+export function Bar() {
+  return <div {...styles.bar({ width: '50%' })} aria-hidden="true" />
+}
+
+namespace styles {
+  export const bar = style((values: { width: `${number}%` }) => ({
+    backgroundColor: 'currentColor',
+    height: '0.5rem',
+    width: values.width,
+  }))
+}
+```
+
+The callback declares a value binding. Compilation emits the rule with a custom property, and `styles.bar({ width: '50%' })` supplies the per-instance value without inserting CSS rules.
+
+This requires a source transform through a bundler adapter, the CLI, or the compiler API. Rule structure must remain statically analyzable. Arbitrary runtime code cannot create new selectors or queries. [Getting Started](/docs/introduction/getting-started) connects authoring to compilation.
+
+Compilation is a delivery model, not a speed guarantee. The [Benchmarks](https://github.com/wevm/zyzz/blob/main/docs/introduction/benchmarks.md) document measured workloads, artifact sizes, and comparison limits.
+
+## Keep platform boundaries visible
+
+The pure core is independent of frameworks and build tools. Adapters handle source files, bundlers, and platform output. Web components use normal class and style props without a mandatory provider, wrapper component, or custom JSX runtime.
+
+Shared definitions can target the web and React Native, within each platform's capabilities. Native compilation produces precompiled tables. Web layers, globals, and DOM relationships are rejected on native targets.
+
+```ts title="native-styles.ts"
+import { defineVars, Style } from 'zyzz'
+import { StyleSheet } from 'zyzz/react-native'
+
+const vars = defineVars({
+  color: { text: { dark: '#eee', light: '#111' } },
+})
+
+export function compileText() {
+  const output = StyleSheet.compile({
+    styles: styles.text,
+    vars: { base: vars },
+  })
+
+  return StyleSheet.select(output.styles, {
+    colorScheme: 'dark',
+    set: 'base',
+  }).text
+}
+
+namespace styles {
+  export const text = Style.define({ text: { color: vars.color.text } })
+}
+```
+
+Call `compileText()` outside rendering and apply the returned text style through React Native's normal `style` prop. Native selection reads a precompiled table. Device preference handling remains in the application.
+
+> [!NOTE]
+> Universal native parity remains outside the verified web scope. Arbitrary imported object records passed to `style(record)`, inline Svelte authoring, and Vue SFC integration also remain outside that scope. The [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) page records implemented boundaries and remaining limits.
+
+Zyzz fits component codebases that need explicit styling contracts and a compilation step. The [Concepts & Principles](https://github.com/wevm/zyzz/blob/main/docs/concepts.md) explain the contracts in more detail, including composition, variables, and target behavior.

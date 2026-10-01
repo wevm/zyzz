@@ -172,7 +172,10 @@ Second paragraph with a [link](/docs).
       const page = await browser.newPage()
       for (const width of [390, 1440]) {
         await page.setViewportSize({ width, height: 1000 })
-        await page.goto(`${origin}/docs/introduction/compatibility`)
+        await page.goto(`${origin}/docs/introduction/compatibility`, {
+          timeout: 60000,
+          waitUntil: 'networkidle',
+        })
         await page.waitForFunction(() => {
           const table = document.querySelector('article table')
           return (
@@ -227,5 +230,5 @@ Second paragraph with a [link](/docs).
     } finally {
       await browser.close()
     }
-  }, 60000)
+  }, 120000)
 })

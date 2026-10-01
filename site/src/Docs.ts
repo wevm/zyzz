@@ -9,7 +9,7 @@ export const pages = import.meta.glob<
 >('./content/docs/**/*.mdx', { eager: true, import: 'default' })
 
 /** Sidebar groups containing published pages. */
-export const groups = ['Introduction', 'Guide', 'API']
+export const groups = ['Introduction', 'Guides', 'API']
   .map((title) => ({
     title,
     pages: Object.entries(__DOCS__.pages)

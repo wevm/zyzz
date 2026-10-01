@@ -161,6 +161,11 @@ function Code(input: Code.Props) {
         </div>
       )}
       {!filename && copyButton}
+      {copyState === 'failed' && (
+        <p role="alert" {...styles.copyFailure()}>
+          Could not copy code. Select and copy it manually.
+        </p>
+      )}
       <pre {...styles.code()}>
         <code>
           {lines
@@ -287,6 +292,11 @@ namespace styles {
       outlineColor: 'blue.900',
       outlineOffset: '2px',
     },
+  })
+
+  export const copyFailure = style({
+    typography: 'copy.14',
+    paddingInline: 6,
   })
 
   export const copySuccess = style({ color: '#3be0af !custom' })

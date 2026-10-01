@@ -107,7 +107,12 @@ namespace styles {
     },
   })
 
-  export const description = style({ typography: 'copy.14', color: 'gray.900' })
+  export const description = style({
+    typography: 'copy.14',
+    color: 'gray.900',
+    height: '2lh !custom',
+    overflow: 'hidden',
+  })
 
   export const group = style({
     display: 'grid',

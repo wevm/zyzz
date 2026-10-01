@@ -103,7 +103,7 @@ overrides:
   '@sveltejs/vite-plugin-svelte': 'catalog:'
   '@tanstack/react-router': 'catalog:'
   '@tanstack/react-start': 'catalog:'
-  '@types/mdast': '^4.0.4'
+  '@types/mdast': 'catalog:'
   '@types/node': 'catalog:'
   '@types/react': 'catalog:'
   '@types/react-dom': 'catalog:'

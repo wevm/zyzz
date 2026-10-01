@@ -67,15 +67,45 @@ export default {
       'MistralAI-User',
       'GoogleAgent-Mariner',
     ].some((value) => agent.includes(value))
+    const acceptsMarkdown = (() => {
+      const ranges = (request.headers.get('accept') ?? '')
+        .split(',')
+        .map((range) => {
+          const [type, ...parameters] = range.trim().toLowerCase().split(';')
+          const parameter = parameters.find((value) =>
+            value.trim().startsWith('q='),
+          )
+          const q = parameter?.trim().slice(2).trim()
+          return {
+            type: type?.trim(),
+            quality: (() => {
+              if (q === undefined) return 1
+              if (/^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(q))
+                return Number(q)
+              return 0
+            })(),
+          }
+        })
+      const quality = (type: string) => {
+        for (const candidate of [type, 'text/*', '*/*']) {
+          const matches = ranges.filter((range) => range.type === candidate)
+          if (matches.length)
+            return Math.max(...matches.map((range) => range.quality))
+        }
+        return 0
+      }
+      const markdown = quality('text/markdown')
+      return (
+        ranges.some((range) => range.type === 'text/markdown') &&
+        markdown > 0 &&
+        markdown >= quality('text/html')
+      )
+    })()
     const explicit = url.pathname.endsWith('.md')
     if (
       ['GET', 'HEAD'].includes(request.method) &&
       !preview &&
-      (explicit ||
-        (!search &&
-          (ai ||
-            terminal ||
-            request.headers.get('accept')?.includes('text/markdown'))))
+      (explicit || (!search && (ai || terminal || acceptsMarkdown)))
     ) {
       return new Response(request.method === 'HEAD' ? null : page.markdown, {
         headers: {
@@ -85,7 +115,7 @@ export default {
       })
     }
 
-    if (preview || search) {
+    if (preview || search || ['GET', 'HEAD'].includes(request.method)) {
       const headers = new Headers(request.headers)
       headers.set('accept', 'text/html')
       request = new Request(request, { headers })

@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useEffect,
   useId,
+  useRef,
   useState,
 } from 'react'
 import CheckIcon from '~icons/lucide/check'
@@ -19,6 +20,7 @@ import { style } from 'zyzz/default'
 export function Tabs(props: Tabs.Props) {
   const id = useId()
   const [selected, setSelected] = useState(0)
+  const copyRequest = useRef(0)
   const [copyState, setCopyState] = useState<'copied' | 'failed' | 'idle'>(
     'idle',
   )
@@ -70,6 +72,7 @@ export function Tabs(props: Tabs.Props) {
               id={`${id}-tab-${index}`}
               key={tab.key}
               onClick={() => {
+                copyRequest.current += 1
                 setSelected(index)
                 setCopyState('idle')
               }}
@@ -86,6 +89,7 @@ export function Tabs(props: Tabs.Props) {
                 if (next === undefined) return
 
                 event.preventDefault()
+                copyRequest.current += 1
                 setSelected(next)
                 setCopyState('idle')
                 document.getElementById(`${id}-tab-${next}`)?.focus()
@@ -108,12 +112,13 @@ export function Tabs(props: Tabs.Props) {
                 : `Copy ${active.title}`
             }
             onClick={async () => {
+              const request = ++copyRequest.current
               try {
                 if (active.source === undefined) return
                 await navigator.clipboard.writeText(active.source)
-                setCopyState('copied')
+                if (request === copyRequest.current) setCopyState('copied')
               } catch {
-                setCopyState('failed')
+                if (request === copyRequest.current) setCopyState('failed')
               }
             }}
             title={

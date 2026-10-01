@@ -27,23 +27,6 @@ global({
   '@layer concept-base': { '[data-concept-layer]': { borderRadius: '8px' } },
 })
 
-/** Styles semantic tables authored on the concepts page. */
-export function Table(props: Table.Props) {
-  return (
-    <div data-concept-table="" {...styles.table()}>
-      {props.children}
-    </div>
-  )
-}
-
-export declare namespace Table {
-  /** Properties for a concepts table. */
-  type Props = {
-    /** Semantic table content. */
-    children: ReactNode
-  }
-}
-
 /** Renders a documented capability limit as an accessible note. */
 export function Note(props: Note.Props) {
   return (
@@ -365,6 +348,8 @@ namespace styles {
     typography: 'copy.14',
     paddingBlock: 4,
     paddingInline: 5,
+    '&[data-concept-note] blockquote': { margin: 0 },
+    '&[data-concept-note] blockquote > p:first-child': { display: 'none' },
     '&[data-concept-note] p': {
       margin: 0,
       color: 'blue.900',
@@ -430,38 +415,6 @@ namespace styles {
     typography: 'copy.14',
     width: '100% !custom',
     '& input': { accentColor: 'blue.700' },
-  })
-
-  export const table = ui({
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'md',
-    marginBlock: 6,
-    overflowX: 'auto',
-    '&[data-concept-table] table': {
-      borderCollapse: 'collapse',
-      textAlign: 'left',
-      width: '100% !custom',
-    },
-    '&[data-concept-table] th p': { margin: 0, color: 'foreground' },
-    '&[data-concept-table] th': {
-      backgroundColor: 'gray.100',
-      color: 'foreground',
-      fontWeight: 'medium',
-    },
-    '&[data-concept-table] th, &[data-concept-table] td': {
-      padding: 4,
-      verticalAlign: 'top',
-    },
-    '&[data-concept-table] td': {
-      borderTop: '1px solid',
-      borderColor: 'gray.400',
-      color: 'gray.900',
-    },
-    '&[data-concept-table] td:first-child': {
-      color: 'foreground',
-      fontWeight: 'medium',
-    },
   })
 
   export const title = ui({ typography: 'heading.20', color: 'foreground' })

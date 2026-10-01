@@ -159,23 +159,21 @@ namespace styles {
 
   export const buttonText = style({
     fill: 'background.primary',
-    fontSize: '14px !custom',
-    fontWeight: 'medium',
+    typography: 'button.14',
   })
 
   export const code = style({
     fill: 'foreground',
-    fontFamily: 'mono',
-    fontSize: '14px !custom',
+    typography: 'label.14.mono',
   })
 
-  export const detail = style({ fill: 'gray.900', fontSize: '12px !custom' })
+  export const detail = style({ fill: 'gray.900', fontSize: 'xs' })
 
   export const functionName = style({ fill: 'blue.900' })
 
   export const label = style({
     fill: 'gray.900',
-    fontSize: '12px !custom',
+    fontSize: 'xs',
     fontWeight: 'semibold',
   })
 

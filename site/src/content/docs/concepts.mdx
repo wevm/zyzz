@@ -282,7 +282,9 @@ For values that vary per instance, a typed callback binds inputs to precompiled 
 
 <Examples.Note>
 
-Finite local scalar callback types are supported. Native callbacks also support scalar payloads. Arbitrary imported type definitions and dynamic fallback groups remain unsupported.
+> **Note**
+>
+> Finite local scalar callback types are supported. Native callbacks also support scalar payloads. Arbitrary imported type definitions and dynamic fallback groups remain unsupported.
 
 </Examples.Note>
 
@@ -408,44 +410,18 @@ Source collection scans configured sources, including unimported modules, and ex
 
 ## Compilation and platforms
 
-<Examples.Table>
-  <table>
-    <thead>
-      <tr>
-        <th>
-          <p>Boundary</p>
-        </th>
-        <th>
-          <p>Responsibility</p>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Core</td>
-        <td>Pure data, types, validation, and identity</td>
-      </tr>
-      <tr>
-        <td>Source adapters</td>
-        <td>Parse and rewrite modules</td>
-      </tr>
-      <tr>
-        <td>Target emitters</td>
-        <td>Produce CSS or native style tables</td>
-      </tr>
-      <tr>
-        <td>Hosts</td>
-        <td>Manage files, source discovery, watching, and delivery</td>
-      </tr>
-    </tbody>
-  </table>
-</Examples.Table>
+- **Core:** Pure data, types, validation, and identity.
+- **Source adapters:** Parse and rewrite modules.
+- **Target emitters:** Produce CSS or native style tables.
+- **Hosts:** Manage files, source discovery, watching, and delivery.
 
 CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Downstream tooling handles minification. [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md) covers the full pipeline.
 
 <Examples.Note>
 
-Shared authoring does not imply identical platform capabilities. Unsupported native semantics must produce errors. Arbitrary imported style records, inline Svelte authoring, Vue SFC integration, and universal native parity remain outside the verified web scope.
+> **Note**
+>
+> Shared authoring does not imply identical platform capabilities. Unsupported native semantics must produce errors. Arbitrary imported style records, inline Svelte authoring, Vue SFC integration, and universal native parity remain outside the verified web scope.
 
 </Examples.Note>
 

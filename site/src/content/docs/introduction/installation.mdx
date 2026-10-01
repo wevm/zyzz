@@ -1,0 +1,25 @@
+# Installation
+
+Add Zyzz to an existing project with your package manager.
+
+## Prerequisites
+
+- A JavaScript or TypeScript project.
+- Node.js for the build tooling, with npm, pnpm, or Bun to install packages.
+- A compilation step to transform authored styles and emit CSS or native styles.
+
+Zyzz includes its TypeScript types. Framework integrations are included in the `zyzz` package and use the project's existing framework dependencies.
+
+## Install Zyzz
+
+Run the installation command from the project directory.
+
+<Install expanded />
+
+## Configure Compilation
+
+Continue with [Getting Started](/docs/introduction/getting-started) to configure Vite, Next.js, Metro, another bundler, or the standalone CLI.
+
+Installing the package alone does not compile styles or emit CSS. The integration connects compilation to the project's build.
+
+Other bundler adapters require their own verified setup. Web integration support does not establish native rendering parity. See the [compatibility documentation](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) for current boundaries.

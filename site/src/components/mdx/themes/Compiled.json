@@ -1,0 +1,9 @@
+{
+  "css": ".t_0{--z0:#171717;}\n.z-text-YUOkma{color:var(--z0,#171717);}",
+  "classes": {
+    "card": "z-text-YUOkma"
+  },
+  "vars": {
+    "base": "t_0"
+  }
+}

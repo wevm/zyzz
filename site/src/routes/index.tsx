@@ -1,14 +1,10 @@
 /** Renders the landing page and introductory styling example. @module */
 import { createFileRoute } from '@tanstack/react-router'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import CheckIcon from '~icons/lucide/check'
-import CopyIcon from '~icons/lucide/copy'
-import SparklesIcon from '~icons/lucide/sparkles'
-import BunIcon from '~icons/simple-icons/bun'
-import NpmIcon from '~icons/simple-icons/npm'
 import GitHubIcon from '~icons/simple-icons/github'
-import PnpmIcon from '~icons/simple-icons/pnpm'
+import { AgentPrompt } from '../components/AgentPrompt.js'
 import { Button } from '../components/Button.js'
+import { Install } from '../components/Install.js'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -20,8 +16,7 @@ export const Route = createFileRoute('/')({
 
 const examples = __EXAMPLE__
 
-const docsUrl =
-  'https://github.com/wevm/zyzz/blob/main/docs/introduction/getting-started.md'
+const docsUrl = '/docs/introduction/getting-started'
 
 const headingWords = [
   'Universal',
@@ -33,14 +28,6 @@ const headingWords = [
   'Light',
   'Self-describing',
 ] as const
-
-const managerIcons = { npm: NpmIcon, pnpm: PnpmIcon, bun: BunIcon } as const
-
-const installCommands = {
-  npm: 'npm install zyzz',
-  pnpm: 'pnpm add zyzz',
-  bun: 'bun add zyzz',
-} as const
 
 function Index() {
   const [word, setWord] = useState(0)
@@ -79,26 +66,7 @@ function Index() {
   }, [])
 
   const [file, setFile] = useState('example.tsx')
-  const [manager, setManager] = useState<keyof typeof installCommands>('npm')
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
-    'idle',
-  )
-
-  const [instructionsState, setInstructionsState] = useState<
-    'idle' | 'copied' | 'failed'
-  >('idle')
-
-  useEffect(() => {
-    if (instructionsState !== 'copied') return
-    const timeout = window.setTimeout(() => setInstructionsState('idle'), 2000)
-    return () => window.clearTimeout(timeout)
-  }, [instructionsState])
-
-  useEffect(() => {
-    if (copyState !== 'copied') return
-    const timeout = window.setTimeout(() => setCopyState('idle'), 2000)
-    return () => window.clearTimeout(timeout)
-  }, [copyState])
+  const [manager, setManager] = useState<Install.Manager>('npm')
 
   return (
     <div {...styles.page()}>
@@ -122,7 +90,7 @@ function Index() {
           By <a href="https://wevm.dev">Wevm</a>
         </span>
         <a href={docsUrl} {...styles.headerLink()}>
-          Docs <span aria-hidden="true">↗</span>
+          Docs
         </a>
         <a href="/vars" {...styles.referenceLink()}>
           Variables
@@ -166,83 +134,17 @@ function Index() {
           </p>
           <div {...styles.actions()}>
             <Button href={docsUrl}>
-              Read the docs <span aria-hidden="true">↗</span>
+              Read the docs <span aria-hidden="true">→</span>
             </Button>
             <Button href="https://github.com/wevm/zyzz" variant="secondary">
               <GitHubIcon aria-hidden="true" width="20" height="20" />
               GitHub
             </Button>
           </div>
-          <div {...styles.install()}>
-            <div
-              aria-label="Package manager"
-              role="group"
-              {...styles.installHeader()}
-            >
-              {(
-                Object.keys(installCommands) as (keyof typeof installCommands)[]
-              ).map((value) => {
-                const Icon = managerIcons[value]
-                return (
-                  <button
-                    aria-pressed={manager === value}
-                    key={value}
-                    onClick={() => {
-                      setManager(value)
-                      setCopyState('idle')
-                    }}
-                    type="button"
-                    {...styles.manager()}
-                  >
-                    <Icon aria-hidden="true" width="12" height="12" />
-                    {value}
-                  </button>
-                )
-              })}
-            </div>
-            <button
-              aria-label={
-                copyState === 'copied'
-                  ? 'Copied install command'
-                  : 'Copy install command'
-              }
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(installCommands[manager])
-                  setCopyState('copied')
-                } catch {
-                  setCopyState('failed')
-                }
-              }}
-              type="button"
-              {...styles.commandRow()}
-            >
-              <code {...styles.command()}>
-                {installCommands[manager].slice(
-                  0,
-                  installCommands[manager].lastIndexOf(' '),
-                )}{' '}
-                <span {...styles.commandPackage()}>zyzz</span>
-              </code>
-              {copyState === 'copied' ? (
-                <CheckIcon
-                  aria-hidden="true"
-                  width="18"
-                  height="18"
-                  {...styles.copySuccess()}
-                />
-              ) : (
-                <CopyIcon aria-hidden="true" width="18" height="18" />
-              )}
-            </button>
-          </div>
-          <button
-            onClick={async () => {
-              try {
-                await navigator.clipboard
-                  .writeText(`Use Zyzz to style this project. Inspect its framework, build setup, and existing styling before making changes. Preserve unrelated code and conventions.
+          <Install manager={manager} onManagerChange={setManager} />
+          <AgentPrompt>{`Use Zyzz to style this project. Inspect its framework, build setup, and existing styling before making changes. Preserve unrelated code and conventions.
 
-Install with: ${installCommands[manager]}
+Install with: ${Install.commands[manager]}
 
 Read the documentation before implementation:
 - Getting started: https://raw.githubusercontent.com/wevm/zyzz/main/docs/introduction/getting-started.md
@@ -255,37 +157,7 @@ Choose the compilation integration that matches the project. Importing styles al
 
 Define shared variables and bound styling helpers with defineConfig in zyzz.config.ts. Import helpers from the authored config, define component styles in a styles namespace, and spread their applied props onto native elements. Use zyzz/default when the default design tokens fit the project.
 
-Implement the requested interface with reusable styles, variables, and themes. Run the project's type checks and build, and verify that compiled CSS renders correctly.`)
-                setInstructionsState('copied')
-              } catch {
-                setInstructionsState('failed')
-              }
-            }}
-            type="button"
-            {...styles.agentInstructions()}
-          >
-            <SparklesIcon
-              aria-hidden="true"
-              width="14"
-              height="14"
-              {...(instructionsState === 'copied' ? styles.copySuccess() : {})}
-            />
-            <span aria-live="polite">
-              {instructionsState === 'copied'
-                ? 'Copied instructions'
-                : 'Copy instructions for agent'}
-            </span>
-          </button>
-          {instructionsState === 'failed' && (
-            <p role="alert" {...styles.copyStatus()}>
-              Could not copy instructions. Try again.
-            </p>
-          )}
-          {copyState === 'failed' && (
-            <p aria-live="polite" {...styles.copyStatus()}>
-              Could not copy. Select the command to copy it manually.
-            </p>
-          )}
+Implement the requested interface with reusable styles, variables, and themes. Run the project's type checks and build, and verify that compiled CSS renders correctly.`}</AgentPrompt>
         </section>
         <section
           aria-label="Zyzz code example"
@@ -370,33 +242,6 @@ namespace styles {
     marginTop: 9,
   })
 
-  export const agentInstructions = style({
-    typography: 'label.14',
-    alignItems: 'center',
-    backgroundColor: 'light-dark(#fff, #000) !custom',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'md',
-    color: 'gray.900',
-    cursor: 'pointer',
-    display: 'flex',
-    gap: 3,
-    marginTop: 4,
-    maxWidth: 'md',
-    minHeight: 11,
-    paddingBlock: 2,
-    paddingInline: 4,
-    textAlign: 'left',
-    width: '100% !custom',
-    ':hover': { backgroundColor: 'light-dark(#f5f5f5, #111) !custom' },
-    '& svg': { flexShrink: 0 },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'blue.600',
-      outlineOffset: '2px',
-    },
-  })
-
   export const brand = style({
     color: 'foreground',
     display: 'flex',
@@ -469,45 +314,6 @@ namespace styles {
     gap: 2,
     overflowX: 'auto',
     paddingInline: 3,
-  })
-
-  export const command = style({
-    typography: 'label.14.mono',
-    color: 'gray.900',
-  })
-
-  export const commandPackage = style({
-    color: 'light-dark(#171717, #fff) !custom',
-  })
-
-  export const commandRow = style({
-    alignItems: 'center',
-    color: 'gray.900',
-    cursor: 'pointer',
-    display: 'flex',
-    gap: 3,
-    justifyContent: 'space-between',
-    minHeight: 14,
-    paddingBlock: 3,
-    paddingInline: 4,
-    textAlign: 'left',
-    width: '100% !custom',
-    ':hover': { backgroundColor: 'light-dark(#f5f5f5, #111) !custom' },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'blue.600',
-      outlineOffset: '-4px',
-    },
-  })
-
-  export const copyStatus = style({
-    typography: 'copy.13',
-    color: 'gray.900',
-    paddingTop: 2,
-  })
-
-  export const copySuccess = style({
-    color: '#3be0af !custom',
   })
 
   export const description = style({
@@ -588,24 +394,6 @@ namespace styles {
     display: 'inline-grid',
   })
 
-  export const install = style({
-    backgroundColor: 'light-dark(#fff, #000) !custom',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'md',
-    marginTop: 10,
-    maxWidth: 'md',
-    overflow: 'hidden',
-  })
-
-  export const installHeader = style({
-    borderBottom: '1px solid',
-    borderBottomColor: 'gray.400',
-    display: 'flex',
-    gap: 2,
-    paddingInline: 3,
-  })
-
   export const intro = style({
     alignSelf: 'center',
     minWidth: 0,
@@ -631,28 +419,6 @@ namespace styles {
       paddingBottom: 10,
       paddingInline: 6,
       paddingTop: 3,
-    },
-  })
-
-  export const manager = style({
-    typography: 'button.14',
-    alignItems: 'center',
-    borderBottom: '2px solid transparent',
-    color: 'gray.900',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    gap: 2,
-    paddingBlock: 2,
-    paddingInline: 3,
-    '&[aria-pressed="true"]': {
-      borderBottomColor: 'light-dark(#171717, #fff) !custom',
-      color: 'foreground',
-    },
-    ':hover': { color: 'foreground' },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'gray.600',
-      outlineOffset: '-4px',
     },
   })
 

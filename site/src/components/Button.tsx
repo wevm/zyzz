@@ -4,13 +4,9 @@ import type { Props } from 'zyzz'
 import { variants } from '../zyzz.config.js'
 
 /** Renders an action as a native button or a link when `href` is supplied. */
-export function Button({
-  variant,
-  size,
-  className,
-  style,
-  ...props
-}: Button.Props) {
+export function Button(input: Button.Props) {
+  const { variant, size, className, style, ...props } = input
+
   const appearance = styles.button({ variant, size, className, style })
   if (typeof props.href === 'string') return <a {...props} {...appearance} />
   return <button type="button" {...props} {...appearance} />

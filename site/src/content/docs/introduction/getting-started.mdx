@@ -1,0 +1,622 @@
+# Getting Started
+
+Get up and running with Zyzz, from config to compiled styles.
+
+## Overview
+
+Build consistent interfaces as your product grows. Zyzz brings typed styles and shared design tokens to web and React Native.
+
+Make design decisions explicit for developers and AI agents. Write familiar CSS next to your components and compile it for your platform.
+
+## Agent Prompt
+
+Paste this prompt into your coding agent:
+
+<AgentPrompt expanded>Read zyzz.sh and help me build my project with Zyzz.</AgentPrompt>
+
+## Setup
+
+<FrameworkSetup>
+
+<Steps>
+
+### Install Zyzz
+
+Install Zyzz with your package manager.
+
+<Install expanded />
+
+</Steps>
+
+### Choose Framework
+
+Choose a compilation target and variable mode. Default Variables (Quick) uses the bundled design system. Custom Variables (Advanced) defines project-specific tokens. Metro currently requires custom variables.
+
+<FrameworkSetup.Target value="vite" title="Vite" icon="vite" description="Compile styles with the Vite plugin and deliver CSS during development and builds.">
+
+<Steps start={2}>
+
+### Add the Vite Plugin
+
+Add Zyzz alongside the existing framework plugin in `vite.config.ts`.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  plugins: [zyzz()],
+})
+```
+
+Run the project's existing dev or build command. Vite transforms source imports and delivers CSS automatically.
+
+<FrameworkSetup.Mode name="custom">
+
+### Define Config
+
+Define the variables your components share and export the bound styling helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+### Style a Component
+
+Import the bound `style` helper and spread the applied props onto an element.
+
+```tsx title="Button.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'brand',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 'md',
+    width: `calc(100% - ${vars.spacing.md})`,
+  })
+}
+```
+
+Import `Button` normally. The named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `style` directly from `zyzz`.
+
+</FrameworkSetup.Mode>
+
+<FrameworkSetup.Mode name="default">
+
+### Style a Component
+
+Mix bundled tokens with ordinary CSS values. Append `!custom` to use a literal on a property constrained by variables.
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz/default'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'blue.700',
+    borderRadius: 'md',
+    color: 'white',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 4,
+  })
+}
+```
+
+</FrameworkSetup.Mode>
+
+</Steps>
+
+</FrameworkSetup.Target>
+
+<FrameworkSetup.Target value="nextjs" title="Next.js" icon="next" description="Add Zyzz to your Next.js configuration and compile with Webpack or Turbopack.">
+
+<Steps start={2}>
+
+### Configure Next.js
+
+Wrap the existing Next.js configuration with Zyzz.
+
+```ts title="next.config.ts"
+import { zyzz } from 'zyzz/next'
+
+export default zyzz({
+  reactStrictMode: true,
+})
+```
+
+Run the existing Next.js dev or build command. The integration handles compilation and CSS delivery for Webpack and Turbopack.
+
+<FrameworkSetup.Mode name="custom">
+
+### Define Config
+
+Define the variables your components share and export the bound styling helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+### Style a Component
+
+Import the bound `style` helper and spread the applied props onto an element.
+
+```tsx title="Button.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'brand',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 'md',
+    width: `calc(100% - ${vars.spacing.md})`,
+  })
+}
+```
+
+Import `Button` normally. The named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `style` directly from `zyzz`.
+
+</FrameworkSetup.Mode>
+
+<FrameworkSetup.Mode name="default">
+
+### Style a Component
+
+Mix bundled tokens with ordinary CSS values. Append `!custom` to use a literal on a property constrained by variables.
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz/default'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'blue.700',
+    borderRadius: 'md',
+    color: 'white',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 4,
+  })
+}
+```
+
+</FrameworkSetup.Mode>
+
+</Steps>
+
+</FrameworkSetup.Target>
+
+<FrameworkSetup.Target value="react-native" title="React Native" icon="react" description="Compile native styles with Metro and build for iOS and Android with Expo.">
+
+<Steps start={2}>
+
+### Configure Metro
+
+Wrap the Expo Metro configuration with Zyzz. Preserve the existing transformer and Expo settings.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+export default zyzz(getDefaultConfig(import.meta.dirname), {
+  units: { px: 1 },
+})
+```
+
+Connect the appearance provider above the application and run the existing Expo command.
+
+```tsx title="Root.tsx"
+import { useColorScheme } from 'react-native'
+import { Provider } from 'zyzz/react-native/react'
+
+export function Root() {
+  const scheme = useColorScheme()
+  return (
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'}>
+      <App />
+    </Provider>
+  )
+}
+```
+
+Metro compiles native styles during iOS and Android bundling.
+
+<FrameworkSetup.Mode name="custom">
+
+### Define Config
+
+Define the variables your components share and export the bound styling helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '16px' },
+  },
+})
+```
+
+### Style a Native Component
+
+Import native elements and spread the bound style props onto them.
+
+```tsx title="Button.tsx"
+import { Pressable, Text } from 'react-native'
+import { style } from './zyzz.config.js'
+
+export function Button() {
+  return (
+    <Pressable {...styles.button()}>
+      <Text>Save</Text>
+    </Pressable>
+  )
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'brand',
+    opacity: 0.9,
+    padding: 'md',
+  })
+}
+```
+
+</FrameworkSetup.Mode>
+
+</Steps>
+
+</FrameworkSetup.Target>
+
+<FrameworkSetup.Target value="other-bundlers" title="Other Bundlers" icon="rollup" description="Use Rollup, Webpack, or esbuild adapters to emit CSS alongside JavaScript.">
+
+<Steps start={2}>
+
+### Add a Bundler Adapter
+
+Add the matching unplugin adapter to the existing bundler configuration. Retain the project's TypeScript and JSX transforms.
+
+```ts title="rollup.config.ts"
+import { zyzz } from 'zyzz/unplugin'
+
+const plugins = [zyzz.rollup()]
+// Use zyzz.webpack() or zyzz.esbuild() for those bundlers.
+```
+
+Load the emitted stylesheet and initialization script from the application document. Adjust paths to the deployment base.
+
+```html title="index.html"
+<link rel="stylesheet" href="/zyzz.css" />
+<script src="/zyzz.js"></script>
+```
+
+Run the existing build command. See [Bundler Setup](https://github.com/wevm/zyzz/blob/main/docs/api/unplugin/README.md) for each bundler's configuration.
+
+<FrameworkSetup.Mode name="custom">
+
+### Define Config
+
+Define the variables your components share and export the bound styling helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+### Style a Component
+
+Import the bound `style` helper and spread the applied props onto an element.
+
+```tsx title="Button.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'brand',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 'md',
+    width: `calc(100% - ${vars.spacing.md})`,
+  })
+}
+```
+
+Import `Button` normally. The named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `style` directly from `zyzz`.
+
+</FrameworkSetup.Mode>
+
+<FrameworkSetup.Mode name="default">
+
+### Style a Component
+
+Mix bundled tokens with ordinary CSS values. Append `!custom` to use a literal on a property constrained by variables.
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz/default'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'blue.700',
+    borderRadius: 'md',
+    color: 'white',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 4,
+  })
+}
+```
+
+</FrameworkSetup.Mode>
+
+</Steps>
+
+</FrameworkSetup.Target>
+
+<FrameworkSetup.Target value="cli" title="CLI" icon="terminal" description="Build or watch styles from the command line and emit compiled modules and CSS.">
+
+<Steps start={2}>
+
+### Compile with the CLI
+
+Build once or watch source files for changes.
+
+```sh
+npx zyzz build
+npx zyzz dev
+```
+
+Both commands read `src` and write compiled modules and CSS to `dist`. Downstream tooling lowers TypeScript and JSX and bundles the compiled modules.
+
+Load the stylesheet and the saved-theme initialization script from the application document.
+
+```html title="index.html"
+<script src="/dist/zyzz.js"></script>
+<link rel="stylesheet" href="/dist/zyzz.css" />
+```
+
+<FrameworkSetup.Mode name="custom">
+
+### Define Config
+
+Define the variables your components share and export the bound styling helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+### Style a Component
+
+Import the bound `style` helper and spread the applied props onto an element.
+
+```tsx title="Button.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'brand',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 'md',
+    width: `calc(100% - ${vars.spacing.md})`,
+  })
+}
+```
+
+Import `Button` normally. The named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `style` directly from `zyzz`.
+
+</FrameworkSetup.Mode>
+
+<FrameworkSetup.Mode name="default">
+
+### Style a Component
+
+Mix bundled tokens with ordinary CSS values. Append `!custom` to use a literal on a property constrained by variables.
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz/default'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'blue.700',
+    borderRadius: 'md',
+    color: 'white',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 4,
+  })
+}
+```
+
+</FrameworkSetup.Mode>
+
+</Steps>
+
+</FrameworkSetup.Target>
+
+<FrameworkSetup.Target value="compiler-api" title="Compiler API" icon="code" description="Compile source files with Host from zyzz/node and integrate it into your build tools.">
+
+<Steps start={2}>
+
+### Compile Programmatically
+
+Create a filesystem compiler host for the project's source directory.
+
+```ts title="scripts/build-styles.ts"
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  outDir: 'dist',
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+Bundle the compiled modules with the project's build tools, then load `dist/zyzz.css` and `dist/zyzz.js` from the application document. Keep emitted code and styles from the same build.
+
+<FrameworkSetup.Mode name="custom">
+
+### Define Config
+
+Define the variables your components share and export the bound styling helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+### Style a Component
+
+Import the bound `style` helper and spread the applied props onto an element.
+
+```tsx title="Button.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'brand',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 'md',
+    width: `calc(100% - ${vars.spacing.md})`,
+  })
+}
+```
+
+Import `Button` normally. The named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `style` directly from `zyzz`.
+
+</FrameworkSetup.Mode>
+
+<FrameworkSetup.Mode name="default">
+
+### Style a Component
+
+Mix bundled tokens with ordinary CSS values. Append `!custom` to use a literal on a property constrained by variables.
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz/default'
+
+export function Button() {
+  return <button {...styles.button()}>Save</button>
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: 'blue.700',
+    borderRadius: 'md',
+    color: 'white',
+    display: 'inline-flex',
+    maxWidth: '280px !custom',
+    padding: 4,
+  })
+}
+```
+
+</FrameworkSetup.Mode>
+
+</Steps>
+
+</FrameworkSetup.Target>
+
+</FrameworkSetup>
+
+## Next Steps
+
+<Card.Group>
+  <Card
+    title="Style Components"
+    icon="paintbrush"
+    href="https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#style-components"
+  >
+    Define reusable styles and apply them to your components.
+  </Card>
+  <Card
+    title="Use Themes"
+    icon="palette"
+    href="https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md#define-variables"
+  >
+    Share variables and switch between themes.
+  </Card>
+  <Card
+    title="Define Variants"
+    icon="layers"
+    href="https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md#define-variants"
+  >
+    Express component choices with typed variants.
+  </Card>
+  <Card title="Explore Variables" icon="sliders" href="/vars">
+    Preview the colors, typography, and spacing in your config.
+  </Card>
+</Card.Group>

@@ -13,8 +13,14 @@ export const Route = createFileRoute('/vars')({
         : JSON.stringify(search.v)
       : undefined,
   }),
-  loaderDeps: ({ search }) => ({ v: search.v }),
-  loader: ({ deps }) => {
+  loaderDeps: (entry) => {
+    const { search } = entry
+
+    return { v: search.v }
+  },
+  loader: (entry) => {
+    const { deps } = entry
+
     try {
       return { config: Variables.decode(deps.v), error: undefined }
     } catch (error) {

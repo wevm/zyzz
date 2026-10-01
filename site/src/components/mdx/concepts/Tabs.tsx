@@ -253,7 +253,7 @@ namespace styles {
   })
 
   export const panel = style({
-    '&[data-render]': { backgroundColor: '#000 !custom', colorScheme: 'dark' },
+    '&[data-render]': { backgroundColor: '#000 !custom' },
     ':focus-visible': {
       outline: '2px solid',
       outlineColor: 'blue.700',

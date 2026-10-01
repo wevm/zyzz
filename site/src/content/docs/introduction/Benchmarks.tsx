@@ -310,7 +310,13 @@ function Delivery(props: Delivery.Props) {
                   fill="currentColor"
                   opacity="0.4"
                 />
-                <text x="320" y="43" textAnchor="end" {...styles.value()}>
+                <text
+                  data-javascript=""
+                  x="320"
+                  y="43"
+                  textAnchor="end"
+                  {...styles.value()}
+                >
                   {entry.javascript.toLocaleString('en-US')} B
                 </text>
               </g>
@@ -632,6 +638,7 @@ namespace styles {
   export const unit = style({ typography: 'copy.13', color: 'gray.900' })
 
   export const value = style({
+    '&[data-javascript]': { fontSize: '10px !custom' },
     fill: 'currentColor !custom',
     fontFamily: 'Geist Mono !custom',
     fontSize: '12px !custom',

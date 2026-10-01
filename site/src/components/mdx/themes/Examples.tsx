@@ -133,7 +133,6 @@ export function Tokens() {
       <section {...vars()}>
         <Card />
       </section>
-      <span {...styles.caption()}>Base · blue accent · 1.5rem padding</span>
     </div>
   )
 }
@@ -141,8 +140,23 @@ export function Tokens() {
 function Card() {
   return (
     <article data-theme-card="" {...styles.card()}>
-      <h2 {...styles.title()}>Account</h2>
-      <p>Manage account preferences.</p>
+      <span aria-hidden="true" {...styles.icon()}>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <circle cx="12" cy="8" r="3" />
+          <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+        </svg>
+      </span>
+      <div {...styles.details()}>
+        <h2 {...styles.title()}>Account</h2>
+        <p>Manage account preferences.</p>
+      </div>
     </article>
   )
 }
@@ -160,10 +174,19 @@ namespace styles {
     color: 'foreground',
     padding: 'page',
     display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem !custom',
-    '& p': { margin: '0px !custom' },
-    borderRadius: '10px',
+    alignItems: 'center',
+    gap: '1rem !custom',
+    maxWidth: '24rem !custom',
+    width: '100% !custom',
+    boxSizing: 'border-box',
+    marginInline: 'auto !custom',
+    '& p': {
+      margin: '0px !custom',
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
+      opacity: 0.65,
+    },
+    borderRadius: '12px',
     border: '1px solid light-dark(#e5e5e5, #333)',
   })
 
@@ -201,6 +224,10 @@ namespace styles {
     borderRadius: 'md',
     color: 'foreground',
     padding: 6,
+    maxWidth: '24rem !custom',
+    width: '100% !custom',
+    boxSizing: 'border-box',
+    marginInline: 'auto !custom',
     display: 'flex',
     flexDirection: 'column',
     gap: 2,
@@ -209,7 +236,7 @@ namespace styles {
   })
 
   export const defaultTitle = ui({
-    typography: 'heading.24',
+    typography: 'heading.16',
     margin: '0px !custom !important',
   })
 
@@ -242,8 +269,25 @@ namespace styles {
     padding: 3,
   })
 
-  export const title = style({
+  export const details = style({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem !custom',
+  })
+
+  export const icon = style({
     color: 'accent',
+    backgroundColor:
+      'color-mix(in srgb, currentColor 12%, transparent) !custom',
+    display: 'grid',
+    placeItems: 'center',
+    width: '3rem !custom',
+    height: '3rem !custom',
+    flexShrink: 0,
+    borderRadius: '12px',
+  })
+
+  export const title = style({
     margin: '0px !custom',
     fontSize: '1rem',
     fontWeight: 600,

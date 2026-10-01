@@ -14,6 +14,61 @@ import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('keeps inactive atomic conditions outside matched class rules', async () => {
+    const output = Transform.compile({
+      moduleId: 'mobile-menu.ts',
+      source: `import {style} from 'zyzz'; export const shell = style({
+        display: 'block',
+        selectors: {'&[data-mobile-menu]': {
+          '@media (max-width: 1023px)': {
+            display: 'grid',
+            selectors: {'& main': {minHeight: '100px'}},
+            '@supports (display: grid)': {borderTop: '2px solid red'},
+          },
+        }},
+      })`,
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await page.setContent(
+        `<style>${output.css}</style><div data-mobile-menu class="${Object.values(output.classes)[0]}"><main></main></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).display),
+      ).toBe('block')
+      expect(
+        await page.locator('style').evaluate((element) => {
+          return Array.from((element as HTMLStyleElement).sheet!.cssRules)
+            .filter((rule) => rule instanceof CSSStyleRule)
+            .every((rule) => rule.style.length > 0)
+        }),
+      ).toBe(true)
+      expect(output.css).toContain('@media (max-width: 1023px){.z-')
+      await page.setViewportSize({ width: 390, height: 900 })
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).display),
+      ).toBe('grid')
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).borderTopWidth),
+      ).toBe('2px')
+      expect(
+        await page
+          .locator('main')
+          .evaluate((element) => getComputedStyle(element).minHeight),
+      ).toBe('100px')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('serializes compatibility properties with their authored spellings', () => {
     const styles = Style.define({
       text: {

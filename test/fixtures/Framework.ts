@@ -498,39 +498,41 @@ export async function verify(options: verify.Options) {
           ).toMatchInlineSnapshot('0')
         }
 
-        const relocated = Path.join(root, 'relocated.ts')
-        await Watch.write({
-          path: relocated,
-          source: files['styles.ts'].replace('#0066cc', '#553377'),
-        })
-        await edit("export * from './relocated'")
-        await page.waitForFunction(
-          'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(85, 51, 119)"',
-        )
-        await page.waitForFunction(() =>
-          [...document.styleSheets].every((sheet) =>
-            [...sheet.cssRules].every(
-              (rule) =>
-                !(rule instanceof CSSStyleRule) ||
-                rule.style.backgroundColor !== 'rgb(17, 119, 85)',
+        for (let cycle = 0; cycle < 3; cycle++) {
+          const relocated = Path.join(root, `relocated-${cycle}.ts`)
+          await Watch.write({
+            path: relocated,
+            source: files['styles.ts'].replace('#0066cc', '#553377'),
+          })
+          await edit(`export * from './relocated-${cycle}'`)
+          await page.waitForFunction(
+            'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(85, 51, 119)"',
+          )
+          await page.waitForFunction(() =>
+            [...document.styleSheets].every((sheet) =>
+              [...sheet.cssRules].every(
+                (rule) =>
+                  !(rule instanceof CSSStyleRule) ||
+                  rule.style.backgroundColor !== 'rgb(17, 119, 85)',
+              ),
             ),
-          ),
-        )
+          )
 
-        await edit(files['styles.ts'].replace('#0066cc', '#117755'))
-        await page.waitForFunction(
-          'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
-        )
-        await Fs.rm(relocated)
-        await page.waitForFunction(() =>
-          [...document.styleSheets].every((sheet) =>
-            [...sheet.cssRules].every(
-              (rule) =>
-                !(rule instanceof CSSStyleRule) ||
-                rule.style.backgroundColor !== 'rgb(85, 51, 119)',
+          await edit(files['styles.ts'].replace('#0066cc', '#117755'))
+          await page.waitForFunction(
+            'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
+          )
+          await Fs.rm(relocated)
+          await page.waitForFunction(() =>
+            [...document.styleSheets].every((sheet) =>
+              [...sheet.cssRules].every(
+                (rule) =>
+                  !(rule instanceof CSSStyleRule) ||
+                  rule.style.backgroundColor !== 'rgb(85, 51, 119)',
+              ),
             ),
-          ),
-        )
+          )
+        }
       }
 
       await page.waitForFunction(

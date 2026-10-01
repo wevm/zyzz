@@ -201,7 +201,9 @@ describe('Tailwind migration page', () => {
     try {
       const page = await browser.newPage()
       const response = await page.goto(`${origin}${route}`)
-      await page.waitForLoadState('networkidle')
+      await page
+        .getByRole('heading', { level: 1, name: 'Migrating from Tailwind' })
+        .waitFor()
       const markdownResponse = await fetch(`${origin}${route}.md`)
       const markdown = await markdownResponse.text()
 

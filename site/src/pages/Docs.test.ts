@@ -36,7 +36,7 @@ describe('/docs', () => {
     Fs.mkdirSync(`${directory}/src/content/docs/guides`, { recursive: true })
     Fs.writeFileSync(
       fixture,
-      '# Navigation Fixture\n\nA guide used to verify published navigation.\n',
+      'export const example = true\n\n# Navigation **Fixture**\n\nA [guide](/docs) used to verify `published` navigation.\n',
     )
     server = ChildProcess.spawn(
       'node',
@@ -85,6 +85,25 @@ describe('/docs', () => {
         viewport: { width: 1400, height: 900 },
       })
       await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      expect(await page.getByRole('heading', { level: 1 }).allTextContents())
+        .toMatchInlineSnapshot(`
+        [
+          "Navigation Fixture",
+        ]
+      `)
+      expect(await page.title()).toMatchInlineSnapshot(
+        '"Navigation Fixture · Zyzz"',
+      )
+      expect(
+        await page.locator('meta[name="description"]').getAttribute('content'),
+      ).toMatchInlineSnapshot('"A guide used to verify published navigation."')
+      expect(
+        await page
+          .getByText('A guide used to verify published navigation.', {
+            exact: true,
+          })
+          .count(),
+      ).toMatchInlineSnapshot('1')
       const navigation = page.getByRole('navigation', { name: 'Documentation' })
       expect(
         await navigation
@@ -169,7 +188,7 @@ describe('/docs', () => {
     } finally {
       await browser.close()
     }
-  })
+  }, 15000)
 
   test('announces a denied code-copy request', async () => {
     const browser = await chromium.launch({ headless: true })
@@ -198,7 +217,7 @@ describe('/docs', () => {
     } finally {
       await browser.close()
     }
-  })
+  }, 15000)
 
   test('honors Markdown quality values while preserving agent and suffix precedence', async () => {
     for (const [accept, markdown] of [
@@ -284,8 +303,8 @@ describe('/docs', () => {
       'true',
     )
     expect(html.includes('Introduction')).toMatchInlineSnapshot('true')
-    expect(html.includes('>Guide</h2>')).toMatchInlineSnapshot('false')
-    expect(html.includes('>API</h2>')).toMatchInlineSnapshot('false')
+    expect(html.includes('>Guides</h2>')).toMatchInlineSnapshot('true')
+    expect(html.includes('>API</h2>')).toMatchInlineSnapshot('true')
     const navbar = html.match(/<header\b[^>]*>([\s\S]*?)<\/header>/)?.[1] ?? ''
     expect(navbar.includes('href="/vars"')).toMatchInlineSnapshot('true')
     const article =

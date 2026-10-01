@@ -55,12 +55,13 @@ export default defineConfig(async () => {
           const paragraph = tree.children.find(
             (node) => node.type === 'paragraph',
           )
-          const text = (node: typeof heading | typeof paragraph) =>
-            node && 'children' in node
-              ? node.children
-                  .map((child) => ('value' in child ? child.value : ''))
-                  .join('')
-              : ''
+          function text(node: Nodes | undefined): string {
+            if (!node) return ''
+            if ('children' in node) return node.children.map(text).join('')
+            if ('value' in node) return node.value
+            if (node.type === 'image') return node.alt ?? ''
+            return ''
+          }
           if (!text(heading) || !text(paragraph))
             throw new Error(
               `Documentation page ${path} requires a title and subtitle.`,
@@ -204,12 +205,15 @@ export default defineConfig(async () => {
             annotate(tree)
 
             // The shared page header renders the authored title and opening paragraph.
-            if (
-              tree.children[0]?.type === 'heading' &&
-              tree.children[0].depth === 1 &&
-              tree.children[1]?.type === 'paragraph'
+            const heading = tree.children.find(
+              (node) => node.type === 'heading' && node.depth === 1,
             )
-              tree.children.splice(0, 2)
+            const paragraph = tree.children.find(
+              (node) => node.type === 'paragraph',
+            )
+            tree.children = tree.children.filter(
+              (node) => node !== heading && node !== paragraph,
+            )
           },
         ],
       }),

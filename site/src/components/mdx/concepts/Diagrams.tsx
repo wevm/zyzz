@@ -9,7 +9,7 @@ export function Compilation() {
       role="img"
       aria-label="Author typed definitions. Compile rules ahead of time. At render time, return styling props for an element without inserting CSS rules."
     >
-      <svg viewBox="0 0 240 170" {...styles.stage()} aria-hidden="true">
+      <svg viewBox="0 0 240 190" {...styles.stage()} aria-hidden="true">
         <text x="20" y="30" {...styles.label()}>
           01 / Author
         </text>
@@ -17,21 +17,24 @@ export function Compilation() {
           x="20"
           y="50"
           width="200"
-          height="68"
+          height="92"
           rx="8"
           {...styles.panel()}
         />
-        <text x="36" y="79" {...styles.code()}>
+        <text x="36" y="75" {...styles.code()}>
           <tspan {...styles.functionName()}>style</tspan>({'{'}
         </text>
-        <text x="36" y="101" {...styles.code()}>
-          padding: <tspan {...styles.string()}>"1rem"</tspan> {'}'})
+        <text x="48" y="96" {...styles.code()}>
+          padding: <tspan {...styles.string()}>"1rem"</tspan>
         </text>
-        <text x="20" y="148" {...styles.detail()}>
+        <text x="36" y="117" {...styles.code()}>
+          {'}'})
+        </text>
+        <text x="20" y="174" {...styles.detail()}>
           Typed, static definitions
         </text>
       </svg>
-      <svg viewBox="0 0 240 170" {...styles.stage()} aria-hidden="true">
+      <svg viewBox="0 0 240 190" {...styles.stage()} aria-hidden="true">
         <text x="20" y="30" {...styles.label()}>
           02 / Compile
         </text>
@@ -39,21 +42,24 @@ export function Compilation() {
           x="20"
           y="50"
           width="200"
-          height="68"
+          height="92"
           rx="8"
           {...styles.panel()}
         />
-        <text x="36" y="79" {...styles.code()}>
+        <text x="36" y="75" {...styles.code()}>
           <tspan {...styles.functionName()}>.generated</tspan> {'{'}
         </text>
-        <text x="36" y="101" {...styles.code()}>
-          padding: <tspan {...styles.string()}>1rem</tspan>; {'}'}
+        <text x="48" y="96" {...styles.code()}>
+          padding: <tspan {...styles.string()}>1rem</tspan>;
         </text>
-        <text x="20" y="148" {...styles.detail()}>
+        <text x="36" y="117" {...styles.code()}>
+          {'}'}
+        </text>
+        <text x="20" y="174" {...styles.detail()}>
           CSS + executable styles
         </text>
       </svg>
-      <svg viewBox="0 0 240 170" {...styles.stage()} aria-hidden="true">
+      <svg viewBox="0 0 240 190" {...styles.stage()} aria-hidden="true">
         <text x="20" y="30" {...styles.label()}>
           03 / Apply
         </text>
@@ -61,22 +67,22 @@ export function Compilation() {
           x="20"
           y="50"
           width="200"
-          height="68"
+          height="92"
           rx="8"
           {...styles.panel()}
         />
         <rect
           x="36"
-          y="67"
+          y="79"
           width="82"
           height="34"
           rx="6"
           {...styles.button()}
         />
-        <text x="77" y="89" textAnchor="middle" {...styles.buttonText()}>
+        <text x="77" y="101" textAnchor="middle" {...styles.buttonText()}>
           Save
         </text>
-        <text x="20" y="148" {...styles.detail()}>
+        <text x="20" y="174" {...styles.detail()}>
           Render a styled element
         </text>
       </svg>
@@ -103,7 +109,7 @@ export function Scopes() {
       </text>
       <rect
         x="24"
-        y="79"
+        y="75"
         width="392"
         height="54"
         rx="8"
@@ -163,7 +169,7 @@ namespace styles {
     fontSize: '14px !custom',
   })
 
-  export const detail = style({ fill: 'gray.900', fontSize: '14px !custom' })
+  export const detail = style({ fill: 'gray.900', fontSize: '12px !custom' })
 
   export const functionName = style({ fill: 'blue.900' })
 

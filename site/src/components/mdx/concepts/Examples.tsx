@@ -72,20 +72,6 @@ export function Card() {
   )
 }
 
-/** A native HTML button needs no Zyzz wrapper or provider on the web. */
-export function Principles() {
-  return (
-    <div data-concept-example="principles" {...styles.example()}>
-      <button type="button" {...styles.button()}>
-        Save
-      </button>
-      <span {...styles.muted()}>
-        An ordinary HTML button, with compiled CSS.
-      </span>
-    </div>
-  )
-}
-
 /** Shows configured token names resolving to shared color and spacing values. */
 export function Tokens() {
   return (

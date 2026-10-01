@@ -5,6 +5,7 @@ import GitHubIcon from '~icons/simple-icons/github'
 import { AgentPrompt } from '../components/AgentPrompt.js'
 import { Button } from '../components/Button.js'
 import { Install } from '../components/Install.js'
+import { Link } from '../components/Link.js'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -71,7 +72,7 @@ function Index() {
   return (
     <div {...styles.page()}>
       <header {...styles.header()}>
-        <a aria-label="Zyzz home" href="/" {...styles.brand()}>
+        <Link aria-label="Zyzz home" href="/" {...styles.brand()}>
           <svg
             aria-hidden="true"
             width="80"
@@ -85,16 +86,16 @@ function Index() {
               fill="currentColor"
             />
           </svg>
-        </a>
+        </Link>
         <span {...styles.byline()}>
           By <a href="https://wevm.dev">Wevm</a>
         </span>
-        <a href={docsUrl} {...styles.headerLink()}>
+        <Link href={docsUrl} {...styles.headerLink()}>
           Docs
-        </a>
-        <a href="/vars" {...styles.referenceLink()}>
+        </Link>
+        <Link href="/vars" {...styles.referenceLink()}>
           Variables
-        </a>
+        </Link>
       </header>
       <main {...styles.main()}>
         <section aria-labelledby="heading" {...styles.intro()}>

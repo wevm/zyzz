@@ -2,6 +2,7 @@
 import { AgentPrompt } from '../components/AgentPrompt.js'
 import { DocumentationShell } from '../components/DocumentationShell.js'
 import { Install } from '../components/Install.js'
+import { Link } from '../components/Link.js'
 import { Card } from '../components/mdx/Card.js'
 import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
 import { Steps } from '../components/mdx/Steps.js'
@@ -98,9 +99,9 @@ export function Page(props: Page.Props) {
         />
       }
       navigation={
-        <a href="/vars" {...styles.variables()}>
+        <Link href="/vars" {...styles.variables()}>
           Variables
-        </a>
+        </Link>
       }
       sidebar={
         <nav aria-label="Documentation">
@@ -127,6 +128,7 @@ export function Page(props: Page.Props) {
             FrameworkSetup,
             Install,
             Steps,
+            a: Link,
             pre: Code,
           }}
         />
@@ -155,13 +157,13 @@ function SidebarItem(props: SidebarItem.Props) {
   return (
     <>
       {enabled ? (
-        <a
+        <Link
           aria-current={item.path === path ? 'page' : undefined}
           href={`/docs/${item.path}`}
           {...styles.link()}
         >
           {content}
-        </a>
+        </Link>
       ) : (
         <span aria-disabled="true" role="link" {...styles.link()}>
           {content}

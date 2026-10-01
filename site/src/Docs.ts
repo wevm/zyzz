@@ -14,7 +14,6 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
     title: 'Introduction',
     pages: [
       { path: 'introduction/getting-started', title: 'Getting Started' },
-      { path: 'introduction/installation', title: 'Installation' },
       { path: 'introduction/why-zyzz', title: 'Why Zyzz' },
       { path: 'introduction/thinking-in-zyzz', title: 'Thinking in Zyzz' },
       { path: 'concepts', title: 'Concepts & Principles' },

@@ -77,7 +77,6 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'introduction/compatibility': ShieldCheckIcon,
   'introduction/faq': CircleHelpIcon,
   'introduction/getting-started': RocketIcon,
-  'introduction/installation': PackageIcon,
   'introduction/thinking-in-zyzz': BrainIcon,
   'introduction/why-zyzz': LightbulbIcon,
 }

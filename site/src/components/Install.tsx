@@ -23,11 +23,14 @@ export function Install(props: Install.Props) {
   }, [copyState])
 
   return (
-    <div data-expanded={props.expanded || undefined} {...styles.install()}>
+    <div
+      data-expanded={props.expanded || undefined}
+      {...installStyles.install()}
+    >
       <div
         aria-label="Package manager"
         role="group"
-        {...styles.installHeader()}
+        {...installStyles.installHeader()}
       >
         {(
           Object.keys(Install.commands) as (keyof typeof Install.commands)[]
@@ -43,7 +46,7 @@ export function Install(props: Install.Props) {
                 setCopyState('idle')
               }}
               type="button"
-              {...styles.manager()}
+              {...installStyles.manager()}
             >
               <Icon aria-hidden="true" width="12" height="12" />
               {value}
@@ -66,28 +69,28 @@ export function Install(props: Install.Props) {
           }
         }}
         type="button"
-        {...styles.commandRow()}
+        {...installStyles.commandRow()}
       >
-        <code {...styles.command()}>
+        <code {...installStyles.command()}>
           {Install.commands[manager].slice(
             0,
             Install.commands[manager].lastIndexOf(' '),
           )}{' '}
-          <span {...styles.commandPackage()}>zyzz</span>
+          <span {...installStyles.commandPackage()}>zyzz</span>
         </code>
         {copyState === 'copied' ? (
           <CheckIcon
             aria-hidden="true"
             width="18"
             height="18"
-            {...styles.copySuccess()}
+            {...installStyles.copySuccess()}
           />
         ) : (
           <CopyIcon aria-hidden="true" width="18" height="18" />
         )}
       </button>
       {copyState === 'failed' && (
-        <p role="alert" {...styles.copyStatus()}>
+        <p role="alert" {...installStyles.copyStatus()}>
           Could not copy. Select the command to copy it manually.
         </p>
       )}
@@ -117,7 +120,7 @@ export namespace Install {
   }
 }
 
-namespace styles {
+namespace installStyles {
   export const command = style({
     typography: 'label.14.mono',
     color: 'gray.900',

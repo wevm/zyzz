@@ -23,7 +23,7 @@ const output = Transform.compile({
 - Type: `boolean`
 - Default: `false`
 
-Use stable atomic declaration names for CSS-only development updates. Production output uses readable literal values with module ownership hashes. Vite selects development naming automatically.
+Retain live definitions for development updates. Development and production use the same readable naming rules. Value edits can update both class references and CSS. Vite selects this option automatically.
 
 ```ts
 Transform.compile({ development: true, moduleId: 'app/card.ts', source })
@@ -115,7 +115,7 @@ output.map
 
 Local theme factories and scope reads become constants. Bound style calls compile through the token resolver; retained callables use the small props runtime, while direct no-argument applications can fold into props constants. Generated JavaScript neither imports theme authoring code nor generates CSS rules. TypeScript retains literal theme types for type queries; JavaScript inputs receive no TypeScript syntax.
 
-Theme variable and scope identities derive from the stable package/module ID and defining binding. Token-value edits and unrelated source insertions preserve those identities; renaming the binding or module changes them. Scope rules trace to their factory and element declarations to their authored properties. The file host uses this transform and rebuilds CSS after edits.
+Theme variables use authored token paths. Scope classes use authored bindings and an optional config ID. Token-value edits and unrelated source insertions preserve these names; renaming a binding or config ID changes them. Scope rules trace to their factory and element declarations to their authored properties. The file host uses this transform and rebuilds CSS after edits.
 
 Untransformed `config.style` calls and `config.vars()` selections throw the missing-transform error. In-memory compilation reads scope classes from `Css.compile(...).vars` instead.
 

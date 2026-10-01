@@ -32,13 +32,13 @@ export function AgentPrompt(props: AgentPrompt.Props) {
         }}
         type="button"
         data-expanded={expanded || undefined}
-        {...styles.prompt()}
+        {...agentPromptStyles.prompt()}
       >
         <SparklesIcon
           aria-hidden="true"
           width="14"
           height="14"
-          {...(state === 'copied' ? styles.success() : {})}
+          {...(state === 'copied' ? agentPromptStyles.success() : {})}
         />
         <span aria-live="polite">
           {state === 'copied'
@@ -47,7 +47,7 @@ export function AgentPrompt(props: AgentPrompt.Props) {
         </span>
       </button>
       {state === 'failed' && (
-        <p role="alert" {...styles.status()}>
+        <p role="alert" {...agentPromptStyles.status()}>
           Could not copy instructions. Try again.
         </p>
       )}
@@ -63,7 +63,7 @@ export declare namespace AgentPrompt {
   }
 }
 
-namespace styles {
+namespace agentPromptStyles {
   export const prompt = style({
     typography: 'label.14',
     alignItems: 'center',

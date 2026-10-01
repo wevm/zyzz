@@ -105,6 +105,19 @@ Properties without configured values accept either spelling: `'7px'` or `'7px !c
 
 Configured names take precedence over CSS literals. A color token named `red` resolves to that variable, while `'red !custom'` always means the CSS color. Property mappings and `mappings: false` retain their normal name and domain rules. Native-only target branches keep their separate platform value contracts.
 
+## Namespaces
+
+Generated classnames and variables use readable names without hashes. When combining independent configs, give each config a distinct `id`. The ID namespaces emitted classes, theme scopes, and variables. Without the compiler plugin, variable configs require an ID.
+
+```ts
+export const { style, vars } = defineConfig({
+  id: 'acme',
+  vars: { color: { brand: '#06c' } },
+})
+```
+
+The brand variable becomes `--z-acme-color-brand`. The compiler reports detectable incompatible names. Consumers must avoid collisions between separately compiled stylesheets. Standalone variables retain their own authored names or explicit IDs.
+
 ## Default layer
 
 `defaultLayer` places ordinary declarations, selectors, media queries, and recipe choices in a named layer. `layers` declares precedence independently. Explicit named or anonymous `@layer` blocks retain their authored placement, including inside selectors or media queries. Invalid layer names throw `Config.InvalidError`.

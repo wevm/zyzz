@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29,
+      22, 23, 24, 25, 26, 27, 28, 29, 30,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -223,7 +223,11 @@ export function read(
         'Packed responsive typography and border widths require contract version 25 or later.',
       )
 
-    themes[name] = Token.bind(definition, contract)
+    themes[name] = Token.bind(
+      definition,
+      contract,
+      entry.cssName === undefined ? undefined : string(entry.cssName),
+    )
     types[name] = type(input(definition))
   }
 
@@ -249,7 +253,7 @@ export function read(
             key === 'set' ||
             key === '__proto__' ||
             names.has(string(slot.name)) ||
-            !/^--z-v[a-z0-9-]+$/.test(string(slot.name)) ||
+            !/^--z-[a-zA-Z0-9_-]+$/.test(string(slot.name)) ||
             ![
               '*',
               'color',
@@ -314,7 +318,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29,
+          27, 28, 29, 30,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -324,7 +328,7 @@ export function read(
           'fontPaletteValues',
           'positionTry',
         ].includes(reference) ||
-        !/^(?:--)?z-[a-z0-9-]+$/.test(name) ||
+        !/^(?:--)?z-[a-zA-Z0-9_-]+$/.test(name) ||
         !name.startsWith(
           `${reference === 'counterStyle' ? '' : '--'}z-${reference.toLowerCase()}`,
         ) ||
@@ -350,7 +354,7 @@ export function read(
 
     if (entry.kind === 'animation') {
       const name = string(entry.name)
-      if (!/^z-k[a-z0-9-]+$/.test(name))
+      if (!/^z-k[a-zA-Z0-9_-]+$/.test(name))
         throw new Error('Invalid animation identity.')
 
       return {
@@ -367,7 +371,7 @@ export function read(
           'Packed callable styles require contract version 16 or later.',
         )
       const binding = string(entry.binding)
-      if (!/^z-style-[a-z0-9_-]+$/.test(binding))
+      if (!/^z-style-[a-zA-Z0-9_-]+$/.test(binding))
         throw new Error('Invalid style reference identity.')
       const members =
         entry.members === undefined
@@ -577,7 +581,22 @@ export function read(
     ]),
   )
 
-  return { links, themes, stylesheets: Stylesheets.read(data.stylesheets) }
+  const classRules = Object.fromEntries(
+    Object.entries(
+      data.classRules === undefined ? {} : record(data.classRules),
+    ).map(([name, body]) => {
+      if (!name || /\s/.test(name))
+        throw new Error('Invalid packed class name.')
+      return [name, string(body)]
+    }),
+  )
+
+  return {
+    classRules,
+    links,
+    themes,
+    stylesheets: Stylesheets.read(data.stylesheets),
+  }
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -627,6 +646,7 @@ export function write(
   stylesheets: readonly Stylesheets.Section[] = [],
   moduleId = '',
   configurations: readonly write.Configuration[] = [],
+  classRules: Readonly<Record<string, string>> = {},
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     if (link.kind === 'variables')
@@ -714,6 +734,7 @@ export function write(
   }
 
   return JSON.stringify({
+    ...(Object.keys(classRules).length ? { classRules } : {}),
     ...(stylesheets.length
       ? { stylesheets: Stylesheets.write(stylesheets) }
       : {}),
@@ -727,6 +748,9 @@ export function write(
       Object.entries(themes).map(([name, theme]) => [
         name,
         {
+          ...(theme[Token.definition].cssName !== undefined
+            ? { cssName: theme[Token.definition].cssName }
+            : {}),
           ...(theme[Token.definition].contract.shorthands
             ? { shorthands: theme[Token.definition].contract.shorthands }
             : {}),
@@ -748,6 +772,14 @@ export function write(
       ]),
     ),
     version: (() => {
+      if (
+        Object.keys(classRules).length ||
+        Object.values(themes).some(
+          (theme) => theme[Token.definition].cssName !== undefined,
+        )
+      )
+        return 30
+
       function composed(value: unknown): boolean {
         if (Token.isExpression(value)) return true
         if (Token.is(value)) return composed(value.value)

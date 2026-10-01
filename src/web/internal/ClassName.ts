@@ -17,22 +17,19 @@ export function create(options: create.Options): string {
       ? body.slice(prefix.length, -1)
       : ''
   const simple = /^[a-zA-Z0-9-]{1,24}$/.test(literal)
-  const label =
+  const namespace = options.namespace ? `${options.namespace}-` : ''
+  if (options.context !== undefined)
+    return `z-${namespace}${options.context}-${encode(property)}${options.slot === undefined ? '' : `-${options.slot}`}`
+
+  const value = simple ? literal : `[${literal || body}]`
+  const readable =
     options.property === 'display' && displays.has(literal)
       ? literal
-      : `${property.startsWith('--') ? encode(property).replaceAll('-', '_2d_') : property}${simple ? `-${literal}` : ''}`
-
-  const suffix = (() => {
-    if (options.context !== undefined)
-      return `-${hash(options.stable || simple ? options.context : JSON.stringify([options.context, options.body]))}${options.slot === undefined ? '' : `-${options.slot}`}`
-    if (!simple) return `-${hash(options.body)}`
-    return ''
-  })()
-
-  if (options.stable) return `z-${encode(property)}${suffix}`
-
-  // Custom properties and vendor spellings can contain identifier punctuation.
-  return `z-${condition ? `${condition[1]}-` : ''}${encode(label)}${suffix}`
+      : property.startsWith('--')
+        ? `[${property}:${literal || body}]`
+        : `${property}-${value}`
+  // DOM class tokens cannot contain whitespace; preserve its spelling reversibly.
+  return `z-${namespace}${condition ? `${condition[1]}-` : ''}${readable.replace(/[\s_"'<>]/gu, (character) => `_${character.codePointAt(0)!.toString(16)}_`)}`
 }
 
 /** Atomic naming inputs; context retains declaration ordering and module ownership. */
@@ -43,12 +40,12 @@ export declare namespace create {
     readonly body: string
     /** Identity required when the declaration cannot share a global rule. */
     readonly context?: string | undefined
+    /** Optional consumer-owned configuration namespace. */
+    readonly namespace?: string | undefined
     /** Authoring property spelling. */
     readonly property: string
     /** Ordered declaration slot inside a contextual style. */
     readonly slot?: number | undefined
-    /** Keep names independent of values for CSS-only development updates. */
-    readonly stable?: boolean | undefined
   }
 }
 
@@ -87,26 +84,24 @@ function encode(value: string): string {
   )
 }
 
-// Six CSS identifier characters retain 36 bits from two deterministic streams.
-function hash(value: string): string {
-  let first = 2166136261
-  let second = 5381
-
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index)
-    first = Math.imul(first ^ code, 16777619)
-    second = Math.imul(second, 33) ^ code
-  }
-
-  const alphabet =
-    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-'
-  let bits = (first >>> 0) * 16 + (second >>> 28)
-  let result = ''
-
-  for (let index = 0; index < 6; index++) {
-    result = alphabet[bits % 64]! + result
-    bits = Math.floor(bits / 64)
-  }
-
-  return result
+/** Escapes a generated class token for use as a CSS selector. */
+export function selector(value: string): string {
+  return value.replace(
+    /[^a-zA-Z0-9_-]/gu,
+    (character) => `\\${character.codePointAt(0)!.toString(16)} `,
+  )
 }
+
+/** Carries exact emitted rule bodies for graph-wide collision checks. */
+export const rules = Symbol('zyzz.css.rules')
+
+/** Carries authored names between source extraction and CSS emission. */
+export const labels = Symbol('zyzz.css.labels')
+
+/** Authored names retained on extracted style data. */
+export type Labels = Readonly<
+  Record<
+    string,
+    { readonly name: string; readonly namespace?: string | undefined }
+  >
+>

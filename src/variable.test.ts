@@ -52,14 +52,14 @@ export namespace styles {
 
       expect(publisher.modules['group.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-p-d5WZKG{padding:var(--z-v1n60vkvri6abp-65);}
-        .z-opacity-8blqpV{opacity:var(--z-d1n60vkvri6abp-103-6f-70-61-63-69-74-79);}"
+        ".z-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
+        .z-opacity-\\5b var\\28 --z-box-opacity\\29 \\5d {opacity:var(--z-box-opacity);}"
       `,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-p-uwXt4J{padding:var(--z-v1n60vkvri6abp-65);}
-        .z-opacity-UD0X-_{opacity:var(--z-d1e8a67z1uaws1j-82-6f-70-61-63-69-74-79);}"
+        ".z-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
+        .z-opacity-\\5b var\\28 --z-box-opacity\\29 \\5d {opacity:var(--z-box-opacity);}"
       `,
       )
     })
@@ -108,9 +108,9 @@ export namespace styles {
       })
 
       expect(result.css).toMatchInlineSnapshot(`
-      "@property --z-v132xrt2pjcnoa-48{syntax:"<length>";inherits:false;initial-value:-1px;}
-      @property --z-v132xrt2pjcnoa-130{syntax:"<percentage>";inherits:false;initial-value:-1%;}"
-    `)
+        "@property --z-gap{syntax:"<length>";inherits:false;initial-value:-1px;}
+        @property --z-amount{syntax:"<percentage>";inherits:false;initial-value:-1%;}"
+      `)
     })
 
     test.each([
@@ -170,9 +170,9 @@ export namespace styles {
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ndkzo68ghlgm_5f_2d_5f_52-inline-flex-k_pR6F-0{--z-v1ndkzo68ghlgm-52:inline-flex;}
-        .z-display-n7nIDe-1{display:var(--z-v1ndkzo68ghlgm-52);}
-        .z-hover-display-d0Bsvz-2{&:hover{display:var(--z-v1ndkzo68ghlgm-52);}}"
+        ".z-card---z-value-0{--z-value:inline-flex;}
+        .z-card-display-1{display:var(--z-value);}
+        .z-card-display-2{&:hover{display:var(--z-value);}}"
       `,
       )
 
@@ -242,18 +242,18 @@ export namespace styles {
 
       expect(
         JSON.parse(publisher.contracts['lib/library.ts']!).version,
-      ).toMatchInlineSnapshot(`21`)
+      ).toMatchInlineSnapshot(`30`)
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-blue-bcEsHV-0{--z-v1ym5zhz14a14rh-92:blue;}
-        .z-text-u-9kjW-1{color:var(--z-v1ym5zhz14a14rh-92);}
-        .z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-kgkfgb-2{.z-style-1ym5zhz14a14rh-239:hover &{--z-v1ym5zhz14a14rh-92:green;}}"
+        ".z-label---z-variables-accent-0{--z-variables-accent:blue;}
+        .z-label-text-1{color:var(--z-variables-accent);}
+        .z-label---z-variables-accent-2{.z-style-styles-card:hover &{--z-variables-accent:green;}}"
       `,
       )
       expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-blue-bcEsHV-0 z-text-u-9kjW-1 z-_5f_2d_5f__5f_2d_5f_z_5f_2d_5f_v1ym5zhz14a14rh_5f_2d_5f_92-kgkfgb-2 z-style-1e8a67z1uaws1j-125"}); export const inline=accent.set('red')"
+         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-label---z-variables-accent-0 z-label-text-1 z-label---z-variables-accent-2 z-style-label"}); export const inline=accent.set('red')"
       `)
     })
 

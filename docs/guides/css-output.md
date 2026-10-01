@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. CLI and Vite support both compiler settings. Framework lifecycle tests cover both modes; performance comparisons use grouped output.
+> Configurable output is supported by the shared compiler, source config, and version 30 packed contracts. CLI and Vite support both compiler settings. Framework lifecycle tests cover both modes; performance comparisons use grouped output.
 
 Choose the CSS representation on the authoring config:
 
@@ -44,10 +44,10 @@ function Card() {
 Illustrative atomic output shares the color declaration:
 
 ```css
-.z-text-red-HASH {
+.z-text-red {
   color: red;
 }
-.z-p-8px-HASH {
+.z-p-8px {
   padding: 8px;
 }
 ```
@@ -55,11 +55,11 @@ Illustrative atomic output shares the color declaration:
 The card receives both classes; the label receives the color class. Grouped output keeps the card's declarations together:
 
 ```css
-.card-c3 {
+.z-styles-card {
   color: red;
   padding: 8px;
 }
-.label-d4 {
+.z-styles-label {
   color: red;
 }
 ```
@@ -68,15 +68,19 @@ These names illustrate the representation, not a class-name API. Applications co
 
 ## Class Names
 
-Common declarations use readable labels such as `z-display-flex`, `z-p-8px`, and `z-text-red`. Simple pseudo-classes add a prefix, such as `z-hover-text-blue`. Complex values and fallback sequences use a deterministic six-character hash instead of embedding CSS syntax. Hash characters are letters, digits, underscores, or hyphens.
+Common declarations use readable labels such as `z-display-flex`, `z-p-8px`, and `z-text-red`. Arbitrary values appear in brackets, such as `z-filter-[blur(4px)]`. CSS selectors escape punctuation; class tokens encode whitespace reversibly. Generated names contain no hashes.
 
-Source compilation appends an ownership hash so independently delivered modules preserve their cascade order. Conflicting declarations receive distinct hashes even when their values match. Theme and variable references participate in the hashed identity. Names remain compiler output; application code consumes returned props.
+Rules that cannot share a class use their authored style name and ordered declaration slots. Grouped output also uses authored names. Consume returned props rather than constructing classnames yourself.
 
-Source token variables use readable paths followed by an eleven-character hash, such as `--z-editorial-labelSize-0a1b2c3d4e5`. Responsive defaults include `-fallback-` before the suffix. The suffix retains 64 bits to distinguish matching labels across source modules and packages. Theme scope classes also include the source filename.
+Variable names follow their authored paths, such as `--z-color-brand`. Standalone declarations use their binding or an explicit `variable({ id })`. Conditional fallbacks encode their complete CSS meaning rather than hashing it. These names can be longer for complex values.
+
+When combining independent configs, supply distinct `Config.create({ id })` values. The ID prefixes the config's classes and variables. Independent standalone variables and styles can supply their own IDs. The compiler reports detectable incompatible names; consumers own collision avoidance across separately compiled stylesheets.
+
+Contextual styles with the same binding in different modules also need distinct names or explicit style IDs. For example, use `cardStyles.title` and `dialogStyles.title` when both modules share one config.
 
 The bundler plugins, CLI, and `Graph.compile` share responsive token defaults across module stylesheets. Next.js also shares scope definitions and the reset across components. Responsive defaults use `:where(*)` so references resolve within each theme scope. Standalone `Transform.compile` and `Css.compile` output includes the defaults needed by that compilation.
 
-Vite development uses compact, value-independent names and keeps each style’s declarations separate so CSS-only edits continue styling mounted elements. Production names include readable literal values. Low-level `Css.compile`, `Transform.compile`, and `Graph.compile` callers can select stable development naming with `development: true`.
+Development and production use the same naming rules. Value edits can change utility classnames. Vite updates the affected module and stylesheet together; CSS-only output with explicit style IDs retains those fixed identities.
 
 ## Semantics
 
@@ -92,7 +96,7 @@ The CLI and Vite enable source compilation by default. `zyzz build --css-only`, 
 
 Without compilation, dynamic styles, variants, variables, named themes, and selector identities require explicit IDs. Static token-free styles derive their identities from authored data. Atomic rules can share a fixed runtime selector while retaining separate declarations. No CSS rules are emitted or inserted at runtime.
 
-Version 17 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. React, Solid, Svelte, HTML, and both Next.js bundlers verify matching rendering and updates.
+Version 30 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. React, Solid, Svelte, HTML, and both Next.js bundlers verify matching rendering and updates.
 
 Minification and browser-target processing remain separate. Final processing may shorten or merge equivalent syntax while preserving class identity and behavior; it does not change the selected authoring mode.
 

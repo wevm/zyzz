@@ -89,8 +89,7 @@ export function read(contract: string): readonly Catalog[] {
   // Scope keys become classes through the same escaping the emitted stylesheet used.
   return [...configurations].map(([identity, { entries, storageKey }]) => ({
     entries: [...entries].map(
-      ([name, scope]) =>
-        [name, `z_theme-${ThemeValues.encode(scope)}`] as const,
+      ([name, scope]) => [name, ThemeValues.scope(scope, identity)] as const,
     ),
     identity,
     storageKey,

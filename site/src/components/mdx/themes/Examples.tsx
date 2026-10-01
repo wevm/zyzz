@@ -16,25 +16,28 @@ const alternate = extendVars(base, {
   spacing: { page: '2rem' },
 })
 const { style, vars } = defineConfig({
+  id: 'themes-example',
   defaultVars: 'base',
   vars: { base, alternate },
 })
 /** Displays the bundled surface, typography, and spacing tokens. */
 export function Bundled() {
   return (
-    <div {...styles.example()}>
+    <div {...themesExamplesStyles.example()}>
       <section {...defaultVars()}>
-        <article {...styles.defaultCard()}>
-          <div {...styles.details()}>
-            <h2 {...styles.defaultTitle()}>Account</h2>
-            <p {...styles.defaultBody()}>Manage account preferences.</p>
+        <article {...themesExamplesStyles.defaultCard()}>
+          <div {...themesExamplesStyles.details()}>
+            <h2 {...themesExamplesStyles.defaultTitle()}>Account</h2>
+            <p {...themesExamplesStyles.defaultBody()}>
+              Manage account preferences.
+            </p>
           </div>
-          <div {...styles.account()}>
-            <div {...styles.details()}>
+          <div {...themesExamplesStyles.account()}>
+            <div {...themesExamplesStyles.details()}>
               <strong>Personal account</strong>
-              <p {...styles.defaultBody()}>alex@example.com</p>
+              <p {...themesExamplesStyles.defaultBody()}>alex@example.com</p>
             </div>
-            <span {...styles.defaultStatus()}>Active</span>
+            <span {...themesExamplesStyles.defaultStatus()}>Active</span>
           </div>
         </article>
       </section>
@@ -47,12 +50,12 @@ export function Preferences() {
   const [dark, setDark] = useState(false)
 
   return (
-    <div {...styles.example()}>
+    <div {...themesExamplesStyles.example()}>
       <button
         type="button"
         aria-pressed={dark}
         onClick={() => setDark(!dark)}
-        {...styles.control()}
+        {...themesExamplesStyles.control()}
       >
         {dark ? 'Use page colors' : 'Use alternate dark colors'}
       </button>
@@ -64,7 +67,7 @@ export function Preferences() {
       >
         <Card />
       </section>
-      <span {...styles.caption()}>
+      <span {...themesExamplesStyles.caption()}>
         This preview selects a local scope. The application code saves and
         restores the document root preference.
       </span>
@@ -77,11 +80,11 @@ export function Schemes() {
   const [scheme, setScheme] = useState<'page' | 'light' | 'dark'>('page')
 
   return (
-    <div {...styles.example()}>
+    <div {...themesExamplesStyles.example()}>
       <div
         role="group"
         aria-label="Preview color scheme"
-        {...styles.controls()}
+        {...themesExamplesStyles.controls()}
       >
         {(['page', 'light', 'dark'] as const).map((value) => (
           <button
@@ -89,7 +92,7 @@ export function Schemes() {
             key={value}
             aria-pressed={scheme === value}
             onClick={() => setScheme(value)}
-            {...styles.control()}
+            {...themesExamplesStyles.control()}
           >
             {value === 'page'
               ? 'Page scheme'
@@ -114,17 +117,17 @@ export function Schemes() {
 /** Shows the same card inside default, alternate, and nested base scopes. */
 export function Scopes() {
   return (
-    <div {...styles.example()}>
+    <div {...themesExamplesStyles.example()}>
       <main {...vars()}>
-        <span {...styles.caption()}>Base</span>
+        <span {...themesExamplesStyles.caption()}>Base</span>
         <Card />
-        <section {...styles.scope()}>
+        <section {...themesExamplesStyles.scope()}>
           <div {...vars({ set: 'alternate' })}>
-            <span {...styles.caption()}>Alternate</span>
+            <span {...themesExamplesStyles.caption()}>Alternate</span>
             <Card />
-            <section {...styles.scope()}>
+            <section {...themesExamplesStyles.scope()}>
               <div {...vars({ set: 'base' })}>
-                <span {...styles.caption()}>Nested base</span>
+                <span {...themesExamplesStyles.caption()}>Nested base</span>
                 <Card />
               </div>
             </section>
@@ -138,7 +141,7 @@ export function Scopes() {
 /** Shows the shared card in the default scope. */
 export function Tokens() {
   return (
-    <div {...styles.example()}>
+    <div {...themesExamplesStyles.example()}>
       <section {...vars()}>
         <Card />
       </section>
@@ -148,14 +151,14 @@ export function Tokens() {
 
 function Card() {
   return (
-    <article data-theme-card="" {...styles.card()}>
+    <article data-theme-card="" {...themesExamplesStyles.card()}>
       <h2>Account</h2>
       <p>Manage account preferences.</p>
     </article>
   )
 }
 
-namespace styles {
+namespace themesExamplesStyles {
   export const account = ui({
     display: 'flex',
     alignItems: 'center',

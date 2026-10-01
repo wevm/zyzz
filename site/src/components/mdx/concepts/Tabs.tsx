@@ -62,9 +62,13 @@ export function Tabs(props: Tabs.Props) {
   }, [copyState])
 
   return (
-    <div data-concept-tabs="" {...styles.root()}>
-      <div {...styles.header()}>
-        <div role="tablist" aria-label={props.label} {...styles.list()}>
+    <div data-concept-tabs="" {...conceptsTabsStyles.root()}>
+      <div {...conceptsTabsStyles.header()}>
+        <div
+          role="tablist"
+          aria-label={props.label}
+          {...conceptsTabsStyles.list()}
+        >
           {tabs.map((tab, index) => (
             <button
               aria-controls={`${id}-panel-${index}`}
@@ -97,7 +101,7 @@ export function Tabs(props: Tabs.Props) {
               role="tab"
               tabIndex={selected === index ? 0 : -1}
               type="button"
-              {...styles.tab()}
+              {...conceptsTabsStyles.tab()}
             >
               <tab.Icon aria-hidden="true" height="14" width="14" />
               {tab.title}
@@ -125,7 +129,7 @@ export function Tabs(props: Tabs.Props) {
               copyState === 'failed' ? 'Copy failed. Try again.' : 'Copy code'
             }
             type="button"
-            {...styles.copy()}
+            {...conceptsTabsStyles.copy()}
           >
             {copyState === 'copied' ? (
               <CheckIcon aria-hidden="true" height="16" width="16" />
@@ -147,12 +151,12 @@ export function Tabs(props: Tabs.Props) {
           role="tabpanel"
           data-render={tab.title === 'Rendered' ? '' : undefined}
           tabIndex={0}
-          {...styles.panel()}
+          {...conceptsTabsStyles.panel()}
         >
           {tab.source === undefined ? (
             tab.content
           ) : (
-            <pre {...styles.code()}>
+            <pre {...conceptsTabsStyles.code()}>
               <code>
                 {__DOCS__.code[tab.source]?.map((line, lineIndex) => (
                   <span key={lineIndex}>
@@ -198,7 +202,7 @@ export declare namespace Tab {
   }
 }
 
-namespace styles {
+namespace conceptsTabsStyles {
   export const code = style({
     typography: 'copy.13.mono',
     fontSize: '15px !custom',

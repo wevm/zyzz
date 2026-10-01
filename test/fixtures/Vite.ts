@@ -6,7 +6,7 @@
 export const files = {
   'alternate.ts':
     "import { Vars } from 'zyzz'; import { theme } from '@theme'; export const mint = Vars.extend(theme, { color: { brand: '#175' } });",
-  'config.ts': `import {Config} from 'zyzz';import {theme} from '@theme';import {mint} from './alternate';export const {style,vars}=Config.create({vars:{base:theme,mint},defaultVars:'base'});`,
+  'config.ts': `import {Config} from 'zyzz';import {theme} from '@theme';import {mint} from './alternate';export const {style,vars}=Config.create({id:'app',vars:{base:theme,mint},defaultVars:'base'});`,
   'card.ts': `import { style } from './config'; export const props = style({ color: 'brand', padding: '8px' })();`,
   'index.html': `<main id="scope"><div id="card">Card</div></main><script type="module" src="/main.ts"></script>`,
   'main.ts': `import { props } from './card'; import { vars } from './config'; document.querySelector('#scope')!.className = vars({set:'mint'}).className; document.querySelector('#card')!.className = props.className; if (import.meta.hot) import.meta.hot.accept();`,

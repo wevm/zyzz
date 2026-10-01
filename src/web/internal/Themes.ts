@@ -10,8 +10,6 @@ import type * as Theme from '../../internal/Theme.js'
 
 /** Collects live token references within one in-memory compilation graph. */
 export function create() {
-  let nextScope = 0
-  let nextVariable = 0
   const contracts = new Map<
     Token.Contract,
     { identity: string | undefined; paths: Map<string, string> }
@@ -35,14 +33,11 @@ export function create() {
     let name = contract.paths.get(token.path)
 
     if (!name) {
-      name =
-        contract.identity === undefined
-          ? `--z${nextVariable++}`
-          : variable(contract.identity, token.path)
+      name = variable(contract.identity, token.path)
       contract.paths.set(token.path, name)
     }
 
-    const label = contract.identity?.startsWith('src-') ? token.path : undefined
+    const label = token.path
     return `var(${name},${literal(value, label, token.contract)})`
   }
 
@@ -52,6 +47,7 @@ export function create() {
     separate?: 'all' | 'defaults',
   ) {
     const classes: Record<string, string> = Object.create(null)
+    const scopeBodies = new Map<string, string>()
     const completeDefaults = new Set<Token.Contract>()
     const empty: string[] = []
     const rules: Rule[] = []
@@ -68,10 +64,10 @@ export function create() {
 
       // Anonymous contracts are graph-local. Source-owned contracts retain stable
       // identities across separately compiled components and theme scopes.
-      const className =
-        data.contract[Token.identity] === undefined
-          ? `t_${nextScope++}`
-          : `z_theme-${encode(name)}`
+      const className = scope(
+        data.cssName ?? name,
+        data.contract[Token.identity],
+      )
 
       classes[name] = className
 
@@ -87,27 +83,19 @@ export function create() {
         for (const path of Object.keys(data.values)) {
           if (contract.paths.has(path)) continue
 
-          contract.paths.set(
-            path,
-            contract.identity === undefined
-              ? `--z${nextVariable++}`
-              : variable(contract.identity, path),
-          )
+          contract.paths.set(path, variable(contract.identity, path))
         }
 
         contracts.set(data.contract, contract)
       }
 
       if (!contract) continue
+
       // Independently compiled consumers must import identical fallback contents.
       if (separate === 'all' && contract.identity) {
         completeDefaults.add(data.contract)
         for (const [path, value] of Object.entries(data.values))
-          literal(
-            value,
-            contract.identity.startsWith('src-') ? path : undefined,
-            data.contract,
-          )
+          literal(value, path, data.contract)
       }
       if (!contract.paths.size) empty.push(`.${className}{}`)
 
@@ -119,7 +107,7 @@ export function create() {
         if (value === undefined)
           throw new Error('Theme scope is missing a live token.')
 
-        const label = contract.identity?.startsWith('src-') ? path : undefined
+        const label = path
         declarations.push({
           conditions: [],
           property: name,
@@ -135,10 +123,24 @@ export function create() {
           name,
           `.${className}`,
           rules,
-          contract.identity?.startsWith('src-') ? path : undefined,
+          path,
           [],
           data.contract,
         )
+    }
+
+    for (const rule of rules) {
+      const key = JSON.stringify([
+        rule.selector,
+        rule.conditions,
+        rule.property,
+      ])
+      const previous = scopeBodies.get(key)
+      if (previous !== undefined && previous !== rule.value)
+        throw new Error(
+          `Generated scope ${rule.selector.slice(1)} conflicts. Supply distinct config ids.`,
+        )
+      scopeBodies.set(key, rule.value)
     }
 
     const scopes = new Map<string, Rule[]>()
@@ -188,6 +190,7 @@ export function create() {
             ]
               .filter(Boolean)
               .join('\n'),
+      rules,
       resources: separate
         ? [
             ...resources,
@@ -230,9 +233,7 @@ export function create() {
       const base = literal(value.default, label, owner)
       // Rule consolidation must not change existing variable identities.
       const css = `:where(*){--fallback:${base};}${conditionalCss(value, '--fallback', ':where(*)', label, owner)}`
-      const name = label
-        ? `--z-${Identity.label(label)}-fallback-${Identity.compact(css)}`
-        : `--z-f${Identity.hash(css)}`
+      const name = `${variable(owner?.[Token.identity], label ?? 'value')}-fallback-${Identity.name(css)}`
       const emitted: Rule[] = [
         { conditions: [], property: name, selector: ':where(*)', value: base },
       ]
@@ -384,9 +385,20 @@ export type Rule = {
 /** Selects independently shareable defaults or all token rules. */
 export const shared = Symbol('shared token rules')
 
-function variable(index: number | string, path: string): string {
-  // Packed declarations retain the spelling assigned by their compiler.
-  if (typeof index === 'string' && index.startsWith('src-'))
-    return `--z-${Identity.label(path)}-${Identity.compact(JSON.stringify([index, path]))}`
-  return `--z-t${encode(String(index))}-${encode(path)}`
+/** Names an authored scope without its private source identity. */
+export function scope(value: string, identity?: string): string {
+  const suffix =
+    identity && value.startsWith(`${identity}-`)
+      ? value.slice(identity.length + 1)
+      : value
+  const namespace = identity?.startsWith('id-') ? `${identity.slice(3)}-` : ''
+  return `z-theme-${namespace}${Identity.name(suffix)}`
+}
+
+function variable(identity: string | undefined, path: string): string {
+  const namespace = identity?.startsWith('id-') ? `${identity.slice(3)}-` : ''
+  return `--z-${namespace}${path
+    .split('.')
+    .map((part) => Identity.name(part).replaceAll('-', '_2d_'))
+    .join('-')}`
 }

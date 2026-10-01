@@ -15,10 +15,15 @@ export type Kind =
   | 'signedLength'
   | 'signedPercentage'
 
+/** Marks callback inputs that require an explicit custom token escape. */
+export const dynamic = Symbol('zyzz.binding.dynamic')
+
 /** A compiler-assigned web custom property with its scalar domain. */
 export type Reference<kind extends Domain = Domain> = {
   /** Fixed CSS custom-property name. */
   readonly name: `--${string}`
+  /** Internal callback provenance, independent of the emitted variable name. */
+  readonly [dynamic]?: true | undefined
   /** Scalar domain used by authoring types and runtime primitive checks. */
   readonly type: kind
   /** Distinguishes slots from theme references. */

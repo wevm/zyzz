@@ -50,7 +50,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
       width="22"
       height="22"
       data-expanded={menuOpen}
-      {...styles.menuIcon()}
+      {...documentationShellStyles.menuIcon()}
     >
       <line x1="4" x2="20" y1="12" y2="12" />
       <line x1="4" x2="20" y1="12" y2="12" />
@@ -83,7 +83,11 @@ export function DocumentationShell(props: DocumentationShell.Props) {
   }, [])
 
   const schemeControl = (
-    <div role="group" aria-label="Color scheme" {...styles.schemeControl()}>
+    <div
+      role="group"
+      aria-label="Color scheme"
+      {...documentationShellStyles.schemeControl()}
+    >
       {(
         [
           {
@@ -106,7 +110,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
           }}
           title={`${scheme.label} color scheme`}
           type="button"
-          {...styles.schemeButton()}
+          {...documentationShellStyles.schemeButton()}
         >
           <scheme.icon aria-hidden="true" height="14" width="14" />
         </button>
@@ -114,16 +118,20 @@ export function DocumentationShell(props: DocumentationShell.Props) {
     </div>
   )
   const brand = (
-    <div {...styles.headerBrand()}>
+    <div {...documentationShellStyles.headerBrand()}>
       {name ? (
-        <span title={name} {...styles.brandName()}>
+        <span title={name} {...documentationShellStyles.brandName()}>
           {name}
         </span>
       ) : (
-        <Link aria-label="Zyzz home" href="/" {...styles.brand()}>
+        <Link
+          aria-label="Zyzz home"
+          href="/"
+          {...documentationShellStyles.brand()}
+        >
           <svg
             data-small={mobileMenu || undefined}
-            {...styles.logo()}
+            {...documentationShellStyles.logo()}
             aria-hidden="true"
             width="80"
             height="24"
@@ -138,18 +146,23 @@ export function DocumentationShell(props: DocumentationShell.Props) {
           </svg>
         </Link>
       )}
-      {label && <span {...styles.label()}>{label}</span>}
+      {label && <span {...documentationShellStyles.label()}>{label}</span>}
     </div>
   )
 
   return (
-    <div {...styles.canvas()}>
-      <div data-mobile-menu={mobileMenu || undefined} {...styles.page()}>
-        <header ref={headerRef} {...styles.header()}>
+    <div {...documentationShellStyles.canvas()}>
+      <div
+        data-mobile-menu={mobileMenu || undefined}
+        {...documentationShellStyles.page()}
+      >
+        <header ref={headerRef} {...documentationShellStyles.header()}>
           {brand}
-          <div {...styles.headerTools()}>
+          <div {...documentationShellStyles.headerTools()}>
             {search ?? <span />}
-            <div {...styles.headerActions()}>{navigation}</div>
+            <div {...documentationShellStyles.headerActions()}>
+              {navigation}
+            </div>
           </div>
           {mobileMenu && (
             <button
@@ -162,7 +175,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
                 setMenuOpen(true)
               }}
               type="button"
-              {...styles.menuToggle()}
+              {...documentationShellStyles.menuToggle()}
             >
               {menuIcon}
             </button>
@@ -177,20 +190,20 @@ export function DocumentationShell(props: DocumentationShell.Props) {
               clearTimeout(closeTimer.current)
               setMenuOpen(false)
             }}
-            {...styles.menu()}
+            {...documentationShellStyles.menu()}
           >
-            <div {...styles.menuHeader()}>
+            <div {...documentationShellStyles.menuHeader()}>
               {brand}
               <button
                 aria-label="Close menu"
                 onClick={closeMenu}
                 type="button"
-                {...styles.menuClose()}
+                {...documentationShellStyles.menuClose()}
               >
                 {menuIcon}
               </button>
             </div>
-            <div {...styles.menuContent()}>
+            <div {...documentationShellStyles.menuContent()}>
               {search}
               <div
                 onClick={(event) => {
@@ -208,12 +221,16 @@ export function DocumentationShell(props: DocumentationShell.Props) {
           </dialog>
         )}
         <main>
-          <div {...styles.layout()}>
-            <aside {...styles.sidebar()}>
-              <div {...styles.sidebarNavigation()}>{sidebar}</div>
-              <div {...styles.sidebarFooter()}>{schemeControl}</div>
+          <div {...documentationShellStyles.layout()}>
+            <aside {...documentationShellStyles.sidebar()}>
+              <div {...documentationShellStyles.sidebarNavigation()}>
+                {sidebar}
+              </div>
+              <div {...documentationShellStyles.sidebarFooter()}>
+                {schemeControl}
+              </div>
             </aside>
-            <div ref={contentRef} {...styles.sections()}>
+            <div ref={contentRef} {...documentationShellStyles.sections()}>
               {children}
             </div>
           </div>
@@ -242,7 +259,7 @@ export declare namespace DocumentationShell {
   }
 }
 
-namespace styles {
+namespace documentationShellStyles {
   export const brand = style({
     color: 'foreground',
     display: 'block',

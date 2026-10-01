@@ -2,6 +2,7 @@
  * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
+import type * as ClassName from './web/internal/ClassName.js'
 import * as VariableSets from './internal/VariableSets.js'
 import type * as Vars from './Vars.js'
 import * as Condition from './internal/Condition.js'
@@ -671,7 +672,7 @@ export function define(
           !custom &&
           !reference &&
           Token.mapped(theme, key) &&
-          !(Binding.is(resolved) && !resolved.name.startsWith('--z-d')) &&
+          !(Binding.is(resolved) && !resolved[Binding.dynamic]) &&
           !(
             Token.isExpression(resolved) &&
             resolved.parts.every((part) => Token.is(part) || part === '')
@@ -778,6 +779,8 @@ export declare namespace define {
 export type Definition<name extends string = string, input = unknown> = {
   /** Type-only declarations used to retain native component compatibility. */
   readonly [Targets.authored]?: input
+  /** Internal source naming metadata retained through target compilation. */
+  readonly [ClassName.labels]?: ClassName.Labels | undefined
   /** Named styles in own enumerable property order. */
   readonly styles: readonly NamedStyle<name>[]
 }

@@ -3,6 +3,7 @@ import type { style } from '../styleFunction.js'
 import * as Html from '../runtime/CompositionHtml.js'
 import * as Identity from './Identity.js'
 import * as Props from '../runtime/Props.js'
+import * as Token from './Token.js'
 import * as Style from '../Style.js'
 import type * as Theme from './Theme.js'
 
@@ -66,10 +67,12 @@ export function create(
   options: Options = {},
 ): style.ReturnType {
   const dynamic = typeof input === 'function'
+  const identity = options.theme?.[Token.definition].contract[Token.identity]
+  const namespace = identity?.startsWith('id-') ? identity.slice(3) : undefined
   const id =
     options.id === undefined
       ? undefined
-      : Identity.requireId(options.id, 'style')
+      : `id-${namespace ? `${namespace}-` : ''}${Identity.requireId(options.id, 'style').slice(3)}`
   if (dynamic && !id) Identity.requireId(undefined, 'Dynamic style')
   if (!dynamic && !id && Object.keys(input as object).length === 0)
     Identity.requireId(undefined, 'Empty style')
@@ -90,6 +93,7 @@ export function create(
           { style: body(input as Record<string, unknown>) },
           { vars: options.theme },
         ).styles[0]!,
+        namespace,
       )
   const props = Props.create({ className })
   const apply = (values?: style.Options & Record<string, unknown>) => {
@@ -128,7 +132,9 @@ export function variants(
   input: Record<string, unknown>,
   options: Options = {},
 ): unknown {
-  const id = Identity.requireId(options.id, 'variants')
+  const identity = options.theme?.[Token.definition].contract[Token.identity]
+  const namespace = identity?.startsWith('id-') ? identity.slice(3) : undefined
+  const id = `id-${namespace ? `${namespace}-` : ''}${Identity.requireId(options.id, 'variants').slice(3)}`
   if (options.theme) {
     const styles = [
       input.base,

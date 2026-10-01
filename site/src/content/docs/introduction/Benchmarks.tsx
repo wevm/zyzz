@@ -10,7 +10,7 @@ import { style } from '../../../zyzz.config.js'
 
 /** Scopes typography for this page's nested benchmark sections. */
 export function BenchmarkContent(props: BenchmarkContent.Props) {
-  return <section {...styles.content()}>{props.children}</section>
+  return <section {...benchmarksStyles.content()}>{props.children}</section>
 }
 
 export declare namespace BenchmarkContent {
@@ -24,7 +24,7 @@ export declare namespace BenchmarkContent {
 /** Charts CSS and JavaScript gzip bytes for the two literal workloads. */
 export function LiteralDelivery() {
   return (
-    <div {...styles.grid()}>
+    <div {...benchmarksStyles.grid()}>
       {charts.slice(0, 2).map((chart) => (
         <Delivery key={chart.subtitle + chart.title} chart={chart} />
       ))}
@@ -54,12 +54,12 @@ export function Results(props: Results.Props) {
   const comparison = referenceColumn >= 0 || referenceRow !== undefined
 
   return (
-    <div {...styles.results()}>
+    <div {...benchmarksStyles.results()}>
       <div
         tabIndex={0}
         role="region"
         aria-label="Benchmark measurements"
-        {...styles.tableScroll()}
+        {...benchmarksStyles.tableScroll()}
       >
         <table>
           <thead>
@@ -137,18 +137,23 @@ export function Results(props: Results.Props) {
                         <span
                           aria-hidden="true"
                           data-tint=""
-                          {...styles.tint()}
+                          {...benchmarksStyles.tint()}
                           style={{ opacity: baseline ? 1 : intensity }}
                         />
                       )}
-                      <span {...(measured ? styles.measurement() : {})}>
+                      <span
+                        {...(measured ? benchmarksStyles.measurement() : {})}
+                      >
                         {cell}
                       </span>
                       {measured && (
-                        <span {...styles.ratio()}>
+                        <span {...benchmarksStyles.ratio()}>
                           {baseline ? 'reference' : `${ratio.toFixed(2)}× Zyzz`}
                           {lowest && (
-                            <span {...styles.lowest()}> · lowest</span>
+                            <span {...benchmarksStyles.lowest()}>
+                              {' '}
+                              · lowest
+                            </span>
                           )}
                         </span>
                       )}
@@ -161,20 +166,22 @@ export function Results(props: Results.Props) {
         </table>
       </div>
       {comparison && (
-        <footer {...styles.legend()}>
+        <footer {...benchmarksStyles.legend()}>
           <span>
-            <i data-smaller="" {...styles.swatch()} />
+            <i data-smaller="" {...benchmarksStyles.swatch()} />
             Lower
           </span>
           <span>
-            <i data-baseline="" {...styles.swatch()} />
+            <i data-baseline="" {...benchmarksStyles.swatch()} />
             Zyzz reference
           </span>
           <span>
-            <i data-larger="" {...styles.swatch()} />
+            <i data-larger="" {...benchmarksStyles.swatch()} />
             Higher
           </span>
-          <span {...styles.legendNote()}>Ratios use the displayed values.</span>
+          <span {...benchmarksStyles.legendNote()}>
+            Ratios use the displayed values.
+          </span>
         </footer>
       )}
     </div>
@@ -192,7 +199,7 @@ export declare namespace Results {
 /** Charts both theme workloads on the same byte scale. */
 export function ThemeDelivery() {
   return (
-    <div {...styles.grid()}>
+    <div {...benchmarksStyles.grid()}>
       {charts.slice(2).map((chart) => (
         <Delivery key={chart.subtitle} chart={chart} />
       ))}
@@ -208,18 +215,18 @@ function Delivery(props: Delivery.Props) {
   const scale = 205 / chart.maximum
 
   return (
-    <figure {...styles.figure()}>
-      <figcaption {...styles.caption()}>
-        <span {...styles.eyebrow()}>{chart.subtitle}</span>
-        <span {...styles.title()}>{chart.title}</span>
-        <span {...styles.unit()}>Gzip bytes · lower is better</span>
+    <figure {...benchmarksStyles.figure()}>
+      <figcaption {...benchmarksStyles.caption()}>
+        <span {...benchmarksStyles.eyebrow()}>{chart.subtitle}</span>
+        <span {...benchmarksStyles.title()}>{chart.title}</span>
+        <span {...benchmarksStyles.unit()}>Gzip bytes · lower is better</span>
       </figcaption>
-      <div {...styles.plot()}>
+      <div {...benchmarksStyles.plot()}>
         <svg
           aria-label={`${chart.subtitle}, ${chart.title}. CSS and client JavaScript gzip bytes.`}
           role="group"
           viewBox="0 0 360 450"
-          {...styles.chart()}
+          {...benchmarksStyles.chart()}
         >
           <title>{`${chart.subtitle}: ${chart.title}`}</title>
           <desc>
@@ -235,7 +242,7 @@ function Delivery(props: Delivery.Props) {
                 x2={62 + value * scale}
                 y1="30"
                 y2="416"
-                {...styles.line()}
+                {...benchmarksStyles.line()}
               />
               <text
                 x={62 + value * scale}
@@ -247,7 +254,7 @@ function Delivery(props: Delivery.Props) {
                       ? 'end'
                       : 'middle'
                 }
-                {...styles.tick()}
+                {...benchmarksStyles.tick()}
               >
                 {value.toLocaleString('en-US')}
               </text>
@@ -269,7 +276,7 @@ function Delivery(props: Delivery.Props) {
               onKeyDown={(event) => {
                 if (event.key === 'Escape') setActive(null)
               }}
-              {...styles.chartRow()}
+              {...benchmarksStyles.chartRow()}
             >
               <rect
                 x="-8"
@@ -278,15 +285,15 @@ function Delivery(props: Delivery.Props) {
                 height="70"
                 rx="5"
                 data-highlight=""
-                {...styles.rowHighlight()}
+                {...benchmarksStyles.rowHighlight()}
               />
               <g
                 {...(entry.name === 'Zyzz'
-                  ? styles.zyzz()
-                  : styles.competitor())}
+                  ? benchmarksStyles.zyzz()
+                  : benchmarksStyles.competitor())}
               >
-                <text {...styles.label()}>{entry.name}</text>
-                <text y="21" {...styles.assetLabel()}>
+                <text {...benchmarksStyles.label()}>{entry.name}</text>
+                <text y="21" {...benchmarksStyles.assetLabel()}>
                   CSS
                 </text>
                 <rect
@@ -296,10 +303,15 @@ function Delivery(props: Delivery.Props) {
                   width={entry.css * scale}
                   fill="currentColor"
                 />
-                <text x="320" y="21" textAnchor="end" {...styles.value()}>
+                <text
+                  x="320"
+                  y="21"
+                  textAnchor="end"
+                  {...benchmarksStyles.value()}
+                >
                   {entry.css.toLocaleString('en-US')} B
                 </text>
-                <text y="43" {...styles.assetLabel()}>
+                <text y="43" {...benchmarksStyles.assetLabel()}>
                   JS
                 </text>
                 <rect
@@ -315,14 +327,14 @@ function Delivery(props: Delivery.Props) {
                   x="320"
                   y="43"
                   textAnchor="end"
-                  {...styles.value()}
+                  {...benchmarksStyles.value()}
                 >
                   {entry.javascript.toLocaleString('en-US')} B
                 </text>
               </g>
             </g>
           ))}
-          <text x="20" y="439" {...styles.tick()}>
+          <text x="20" y="439" {...benchmarksStyles.tick()}>
             CSS above · client JavaScript below
           </text>
         </svg>
@@ -331,7 +343,7 @@ function Delivery(props: Delivery.Props) {
             id={tooltipId}
             role="tooltip"
             style={{ top: `${((104 + (active ?? 0) * 76) / 450) * 100}%` }}
-            {...styles.tooltip()}
+            {...benchmarksStyles.tooltip()}
           >
             <strong>{row.name}</strong>
             <span>
@@ -340,7 +352,7 @@ function Delivery(props: Delivery.Props) {
             <span>
               JavaScript <b>{row.javascript.toLocaleString('en-US')} B</b>
             </span>
-            <span {...styles.tooltipTotal()}>
+            <span {...benchmarksStyles.tooltipTotal()}>
               Total gzip{' '}
               <b>{(row.css + row.javascript).toLocaleString('en-US')} B</b>
             </span>
@@ -417,7 +429,7 @@ const charts = [
   },
 ] as const
 
-namespace styles {
+namespace benchmarksStyles {
   export const assetLabel = style({
     fill: 'currentColor !custom',
     fontSize: '9px !custom',

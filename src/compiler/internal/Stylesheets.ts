@@ -214,7 +214,7 @@ export function render(sections: readonly Section[]) {
             )
               throw new ConflictError(
                 section.owner ?? section.source,
-                `Conflicting stylesheet identity: ${identity.name}; compile libraries with package-qualified module IDs.`,
+                `Conflicting stylesheet identity: ${identity.name}; supply distinct declaration ids.`,
               )
             identities.set(key, { source: section.source, signature })
             return
@@ -230,7 +230,7 @@ export function render(sections: readonly Section[]) {
           )
             throw new ConflictError(
               section.owner ?? section.source,
-              `Conflicting animation identity: ${name}; compile libraries with package-qualified module IDs.`,
+              `Conflicting animation identity: ${name}; supply distinct declaration ids.`,
             )
 
           animations.set(name, { source: section.source, signature })

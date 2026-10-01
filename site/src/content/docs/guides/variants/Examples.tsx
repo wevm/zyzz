@@ -7,7 +7,10 @@ import { style as ui } from 'zyzz/default'
 export function Choices() {
   return (
     <Preview name="choices">
-      <button type="button" {...styles.choices({ size: 'compact' })}>
+      <button
+        type="button"
+        {...variantsExamplesStyles.choices({ size: 'compact' })}
+      >
         Save
       </button>
     </Preview>
@@ -28,10 +31,12 @@ export function Props() {
 export function Defaults() {
   return (
     <Preview name="defaults">
-      <span {...styles.defaults()}>Omitted</span>
-      <span {...styles.defaults({ muted: undefined })}>undefined</span>
-      <span {...styles.defaults({ muted: false })}>false</span>
-      <span {...styles.defaults({ muted: null })}>null</span>
+      <span {...variantsExamplesStyles.defaults()}>Omitted</span>
+      <span {...variantsExamplesStyles.defaults({ muted: undefined })}>
+        undefined
+      </span>
+      <span {...variantsExamplesStyles.defaults({ muted: false })}>false</span>
+      <span {...variantsExamplesStyles.defaults({ muted: null })}>null</span>
     </Preview>
   )
 }
@@ -40,7 +45,10 @@ export function Defaults() {
 export function Compounds() {
   return (
     <Preview name="compounds">
-      <button type="button" {...styles.compounds({ tone: 'quiet' })}>
+      <button
+        type="button"
+        {...variantsExamplesStyles.compounds({ tone: 'quiet' })}
+      >
         Save
       </button>
     </Preview>
@@ -53,7 +61,9 @@ export function Conditions() {
     <Preview name="conditions">
       <button
         type="button"
-        {...styles.conditions({ conditions: { wide: { size: 'regular' } } })}
+        {...variantsExamplesStyles.conditions({
+          conditions: { wide: { size: 'regular' } },
+        })}
       >
         Save
       </button>
@@ -67,7 +77,9 @@ export function Dynamic() {
     <Preview name="dynamic">
       <button
         type="button"
-        {...styles.dynamic({ size: { custom: { padding: '20px' } } })}
+        {...variantsExamplesStyles.dynamic({
+          size: { custom: { padding: '20px' } },
+        })}
       >
         Save
       </button>
@@ -81,7 +93,10 @@ export function Composition() {
     <Preview name="composition">
       <button
         type="button"
-        {...cx(styles.composition({ size: 'compact' }), styles.focusRing())}
+        {...cx(
+          variantsExamplesStyles.composition({ size: 'compact' }),
+          variantsExamplesStyles.focusRing(),
+        )}
       >
         Save
       </button>
@@ -94,7 +109,7 @@ function Button(props: Button.Props) {
     <button
       type="button"
       disabled={props.disabled}
-      {...styles.props({ size: props.size })}
+      {...variantsExamplesStyles.props({ size: props.size })}
     >
       {props.children}
     </button>
@@ -102,7 +117,10 @@ function Button(props: Button.Props) {
 }
 
 declare namespace Button {
-  type Props = Pick<VariantProps.Variants<typeof styles.props>, 'size'> & {
+  type Props = Pick<
+    VariantProps.Variants<typeof variantsExamplesStyles.props>,
+    'size'
+  > & {
     children: ReactNode
     disabled?: boolean | undefined
   }
@@ -113,7 +131,7 @@ function Preview(props: Preview.Props) {
     <div
       data-concept-example=""
       data-variant-example={props.name}
-      {...styles.preview()}
+      {...variantsExamplesStyles.preview()}
     >
       {props.children}
     </div>
@@ -127,7 +145,7 @@ declare namespace Preview {
   }
 }
 
-namespace styles {
+namespace variantsExamplesStyles {
   export const choices = variants({
     base: {
       border: '1px solid currentColor',

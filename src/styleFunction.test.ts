@@ -1801,7 +1801,7 @@ dynamic({ width: '12px' })
     )
     expect(style({ padding: 0 })()).toMatchInlineSnapshot(`
       {
-        "className": "z-content-1b24kzfsiva6x",
+        "className": "z-content-_5b__5b__22_padding_22__2c_0_2c_false_5d__5d_",
       }
     `)
   })
@@ -1833,14 +1833,14 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
       })
 
       expect(result.modules['shared.ts']!.css).toMatchInlineSnapshot(`
-        ".z-hover-text-red-0Jq0sU-0{&:hover{color:red;}}
-        .z-text-1D81Zs-1{.z-style-1stl7if1lvmpx3-54 > &{color:blue;}}
-        .z-hover-text-red-7cRIyE-0{&:hover{color:red;}}
-        .z-text-DOHDSJ-1{.z-style-1stl7if1lvmpx3-54 > &{color:blue;}}
-        .z-focus-text-green-7cRIyE-2{&:focus{color:green;}}
-        .z-hover-text-red-T0s3jE-0{&:hover{color:red;}}
-        .z-text-wk-1Dw-1{.z-style-1stl7if1lvmpx3-54 > &{color:blue;}}
-        .z-opacity-juXi1t-2{opacity:var(--z-d1stl7if1lvmpx3-305-6f-70-61-63-69-74-79);}"
+        ".z-direct-text-0{&:hover{color:red;}}
+        .z-direct-text-1{.z-style-parent > &{color:blue;}}
+        .z-spread-text-0{&:hover{color:red;}}
+        .z-spread-text-1{.z-style-parent > &{color:blue;}}
+        .z-spread-text-2{&:focus{color:green;}}
+        .z-dynamic-text-0{&:hover{color:red;}}
+        .z-dynamic-text-1{.z-style-parent > &{color:blue;}}
+        .z-dynamic-opacity-2{opacity:var(--z-dynamic-opacity);}"
       `)
     })
 
@@ -1858,36 +1858,36 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
 
         const theme = ({} as import('zyzz').Vars.Definition<{}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{}}>);
         const config = ({} as import('zyzz').Config.VariableConfig<{readonly "output":"html";readonly "vars":{}}>);
-        export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-204"});
-        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-urrzb11meswl3-251"})) as import('zyzz').style.ReturnType<'html'>);
+        export const themed = __zyzzProps.create({className:"z-style-themed"});
+        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-configured"})) as import('zyzz').style.ReturnType<'html'>);
         export const bare = ({className:""});
-        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-dMTSE6-0 z-style-urrzb11meswl3-319"})) as import('zyzz').style.ReturnType<'html'>);"
+        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-child-text-0 z-style-child"})) as import('zyzz').style.ReturnType<'html'>);"
       `)
       expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
-        `".z-text-dMTSE6-0{.z-style-urrzb11meswl3-204 > &, .z-style-urrzb11meswl3-251 + &{color:red;}}"`,
+        `".z-child-text-0{.z-style-themed > &, .z-style-configured + &{color:red;}}"`,
       )
     })
 
     test('compiles namespace definitions and scoped selectors', () => {
       const result = Graph.compile({ modules: { 'app.ts': source } })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-p-16px-NXxdb9-0{padding:16px;}
-        .z-text-black-mlKEVF-0{color:black;}
-        .z-text-bzJ65j-1{.z-style-1e8a67z1uaws1j-76:hover &{color:blue;}}
-        .z-opacity-jO25_5-2{.z-style-1e8a67z1uaws1j-76 > &:nth-child(even){opacity:0.5;}}
-        .z-font-weight-lFhQWE-3{.z-style-1e8a67z1uaws1j-126 + &{font-weight:700;}}
-        .z-m-kMGq6d-0{.z-style-1e8a67z1uaws1j-76 > &{margin:0;}}"
+        ".z-styles-card-p-0{padding:16px;}
+        .z-styles-label-text-0{color:black;}
+        .z-styles-label-text-1{.z-style-styles-card:hover &{color:blue;}}
+        .z-styles-label-opacity-2{.z-style-styles-card > &:nth-child(even){opacity:0.5;}}
+        .z-styles-label-font-weight-3{.z-style-styles-empty + &{font-weight:700;}}
+        .z-outside-m-0{.z-style-styles-card > &{margin:0;}}"
       `)
       expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         export namespace styles {
-          export const card = __zyzzProps.create({className:"z-p-16px-NXxdb9-0 z-style-1e8a67z1uaws1j-76"})
-          export const empty = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-126"})
-          export const label = __zyzzProps.create({className:"z-text-black-mlKEVF-0 z-text-bzJ65j-1 z-opacity-jO25_5-2 z-font-weight-lFhQWE-3 z-style-1e8a67z1uaws1j-157"})
+          export const card = __zyzzProps.create({className:"z-styles-card-p-0 z-style-styles-card"})
+          export const empty = __zyzzProps.create({className:"z-style-styles-empty"})
+          export const label = __zyzzProps.create({className:"z-styles-label-text-0 z-styles-label-text-1 z-styles-label-opacity-2 z-styles-label-font-weight-3 z-style-styles-label"})
         }
-        export const outside = __zyzzProps.create({className:"z-m-kMGq6d-0 z-style-1e8a67z1uaws1j-342"})"
+        export const outside = __zyzzProps.create({className:"z-outside-m-0 z-style-outside"})"
       `)
     })
 
@@ -1905,11 +1905,11 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
         imports: { 'app.ts': { zyzz: null, './barrel.js': 'barrel.ts' } },
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-text-cGq-9x-0{.z-style-ggnaaj17b3mnh-50 > &, .z-style-ggnaaj17b3mnh-107 + &{color:blue;}}"`,
+        `".z-label-text-0{.z-style-card > &, .z-style-styles-button + &{color:blue;}}"`,
       )
       expect(
         JSON.parse(publisher.contracts['barrel.ts']!).version,
-      ).toMatchInlineSnapshot(`21`)
+      ).toMatchInlineSnapshot(`30`)
     })
 
     test('rejects unresolved, called, forward, and unscoped references', () => {
@@ -1961,15 +1961,15 @@ export {card,other,nested};`,
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-text-red-JVDBqH-0 z-style-1kmi93w1julwr4-39"}); const alias=card;
-        const other=__zyzzProps.create({className:"z-text-red-8fFQWb-0 z-style-1kmi93w1julwr4-91"});
-        function nested(){ const card=other; return __zyzzProps.create({className:"z-text-p1JECT-0"}) }
+        const card=__zyzzProps.create({className:"z-card-text-0 z-style-card"}); const alias=card;
+        const other=__zyzzProps.create({className:"z-other-text-0 z-style-other"});
+        function nested(){ const card=other; return __zyzzProps.create({className:"z-nested-text-0"}) }
         export {card,other,nested};"
       `)
       expect(result.modules['scoped.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-red-JVDBqH-0{color:red;}
-        .z-text-red-8fFQWb-0{color:red;}
-        .z-text-p1JECT-0{.z-style-1kmi93w1julwr4-39:hover &{color:blue;}}"
+        ".z-card-text-0{color:red;}
+        .z-other-text-0{color:red;}
+        .z-nested-text-0{.z-style-card:hover &{color:blue;}}"
       `)
     })
 
@@ -1984,7 +1984,7 @@ const card=style({}); export const label=style((values:{opacity:number})=>({sele
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-39"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-opacity-rAgY3A-0 z-style-1h5dayl7tfv4v-69"+" "+external:"z-opacity-rAgY3A-0 z-style-1h5dayl7tfv4v-69",style:{...input.vars,...style,"--z-d1h5dayl7tfv4v-69-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
+        const card=__zyzzProps.create({className:"z-style-card"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-label-opacity-0 z-style-label"+" "+external:"z-label-opacity-0 z-style-label",style:{...input.vars,...style,"--z-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
       `)
       expect(() =>
         Source.extract({
@@ -2037,7 +2037,7 @@ namespace styles {
         },
       })
       expect(output.modules['static.ts']!.css).toMatchInlineSnapshot(
-        `".z-text-rR8AAE-0{.z-style-15wl7di1emu9we-119:hover &{color:red;}}"`,
+        `".z-styles-child-text-0{.z-style-styles-parent:hover &{color:red;}}"`,
       )
     })
 

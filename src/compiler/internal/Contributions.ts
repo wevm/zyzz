@@ -286,11 +286,7 @@ export function scan(
           explicit !== undefined
             ? Identity.contribution(type, explicit)
             : variable?.id.type === 'Identifier'
-              ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
-                  variable.id.name,
-                )
-                  .map((value) => value.codePointAt(0)!.toString(16))
-                  .join('-')}`
+              ? `${type === 'keyframes' ? 'z-k-' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}-`}${Identity.name(variable.id.name)}`
               : undefined
 
         const call: Call = {

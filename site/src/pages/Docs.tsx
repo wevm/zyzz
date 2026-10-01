@@ -99,15 +99,15 @@ export function Page(props: Page.Props) {
         />
       }
       navigation={
-        <Link href="/vars" {...styles.variables()}>
+        <Link href="/vars" {...docsStyles.variables()}>
           Variables
         </Link>
       }
       sidebar={
         <nav aria-label="Documentation">
           {Docs.groups.map((group) => (
-            <div key={group.title} {...styles.group()}>
-              <h2 {...styles.groupHeading()}>{group.title}</h2>
+            <div key={group.title} {...docsStyles.group()}>
+              <h2 {...docsStyles.groupHeading()}>{group.title}</h2>
               {group.pages.map((item) => (
                 <SidebarItem item={item} key={item.title} path={path} />
               ))}
@@ -116,8 +116,8 @@ export function Page(props: Page.Props) {
         </nav>
       }
     >
-      <article {...styles.article()}>
-        <header {...styles.heading()}>
+      <article {...docsStyles.article()}>
+        <header {...docsStyles.heading()}>
           <h1>{page.title}</h1>
           <p>{page.description}</p>
         </header>
@@ -160,24 +160,24 @@ function SidebarItem(props: SidebarItem.Props) {
         <Link
           aria-current={item.path === path ? 'page' : undefined}
           href={`/docs/${item.path}`}
-          {...styles.link()}
+          {...docsStyles.link()}
         >
           {content}
         </Link>
       ) : (
-        <span aria-disabled="true" role="link" {...styles.link()}>
+        <span aria-disabled="true" role="link" {...docsStyles.link()}>
           {content}
           <span
             aria-hidden="true"
             title="Under construction"
-            {...styles.construction()}
+            {...docsStyles.construction()}
           >
             🚧
           </span>
         </span>
       )}
       {item.children && (
-        <div {...styles.nestedLinks()}>
+        <div {...docsStyles.nestedLinks()}>
           {item.children.map((child) => (
             <SidebarItem item={child} key={child.title} path={path} />
           ))}
@@ -206,7 +206,7 @@ function Code(input: Code.Props) {
   if (
     !isValidElement<{ children?: string; 'data-filename'?: string }>(children)
   )
-    return <pre {...styles.code()}>{children}</pre>
+    return <pre {...docsStyles.code()}>{children}</pre>
   const filename = children.props['data-filename']
   const Icon = (() => {
     if (filename?.startsWith('vite.config.')) return ViteIcon
@@ -240,14 +240,14 @@ function Code(input: Code.Props) {
         }
       }}
       type="button"
-      {...styles.copy()}
+      {...docsStyles.copy()}
     >
       {copyState === 'copied' ? (
         <CheckIcon
           aria-hidden="true"
           width="16"
           height="16"
-          {...styles.copySuccess()}
+          {...docsStyles.copySuccess()}
         />
       ) : (
         <CopyIcon aria-hidden="true" width="16" height="16" />
@@ -256,9 +256,9 @@ function Code(input: Code.Props) {
   )
 
   return (
-    <div {...styles.codeBlock()}>
+    <div {...docsStyles.codeBlock()}>
       {filename && (
-        <div {...styles.codeHeader()}>
+        <div {...docsStyles.codeHeader()}>
           <Icon aria-hidden="true" height="14" width="14" />
           {filename}
           {copyButton}
@@ -266,11 +266,11 @@ function Code(input: Code.Props) {
       )}
       {!filename && copyButton}
       {copyState === 'failed' && (
-        <p role="alert" {...styles.copyFailure()}>
+        <p role="alert" {...docsStyles.copyFailure()}>
           Could not copy code. Select and copy it manually.
         </p>
       )}
-      <pre {...styles.code()}>
+      <pre {...docsStyles.code()}>
         <code>
           {lines
             ? lines.map((line, index) => (
@@ -295,7 +295,7 @@ declare namespace Code {
   type Props = { children?: ReactNode }
 }
 
-namespace styles {
+namespace docsStyles {
   export const article = style({
     typography: 'copy.16',
     padding: 12,

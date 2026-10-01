@@ -6,6 +6,7 @@ import * as Theme from '../../internal/Theme.js'
 import * as AtRules from './AtRules.js'
 import * as Identity from '../../internal/Identity.js'
 import * as Identifiers from './Identifiers.js'
+import * as Names from './Names.js'
 import * as Expression from './Expression.js'
 import type * as Scope from './Scope.js'
 import * as Themes from './Themes.js'
@@ -18,7 +19,9 @@ export function scan(
   calls: readonly Ast.CallExpression[],
   links: Readonly<Record<string, Themes.Link>> = {},
   selectorKeys: ReadonlySet<number> = new Set(),
+  cssNamespaces: ReadonlyMap<number, string> = new Map(),
 ) {
+  const authoredNames = Names.collect(program)
   const conditions = new Map<number, string>()
   const localConditions = new Set<string>()
   const identities = new Map<number, string>()
@@ -163,7 +166,8 @@ export function scan(
 
   function link(call: Ast.CallExpression): Themes.Link {
     const id = Identifiers.explicit(call)
-    const name = `z-style-${id === undefined ? `${namespace}-${call.start}` : Identity.requireId(id, 'style')}`
+    const prefix = cssNamespaces.get(call.start)
+    const name = `z-style-${id === undefined ? `${prefix ? `${prefix}-` : ''}${authoredNames.get(call.start)!}` : `id-${prefix ? `${prefix}-` : ''}${Identity.requireId(id, 'style').slice(3)}`}`
     identities.set(call.start, name)
 
     return {

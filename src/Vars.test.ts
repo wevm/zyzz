@@ -35,7 +35,7 @@ describe('compose', () => {
     const library = Graph.compile({ modules: { 'index.ts': source } })
     expect(
       JSON.parse(library.contracts['index.ts']!).version,
-    ).toMatchInlineSnapshot('29')
+    ).toMatchInlineSnapshot(`30`)
 
     const browser = await chromium.launch()
     try {
@@ -823,17 +823,17 @@ void [color, length, wrongLength]
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-app-bk8jvZf5JrJ-config-base{--z-color-accent-b07u5jufhwM:#2563eb;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
-      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-base{--z-spacing-page-b0L4IfEjMux:32px;}}
-      .z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-color-accent-b07u5jufhwM:#9333ea;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
-      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-spacing-page-b0L4IfEjMux:32px;}}
+      ".z-theme-base{--z-color-accent:#2563eb;--z-spacing-page:var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b_--fallback_3a_16px_3b__7d__40_media_20__28_min-width_3a__20_768px_29__7b__3a_where_28__2a__29__7b_--fallback_3a_32px_3b__7d__7d_);--z-surface-panel:#fff;}
+      @media (min-width: 768px){.z-theme-base{--z-spacing-page:32px;}}
+      .z-theme-alternate{--z-color-accent:#9333ea;--z-spacing-page:var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b_--fallback_3a_16px_3b__7d__40_media_20__28_min-width_3a__20_768px_29__7b__3a_where_28__2a__29__7b_--fallback_3a_32px_3b__7d__7d_);--z-surface-panel:#fff;}
+      @media (min-width: 768px){.z-theme-alternate{--z-spacing-page:32px;}}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-HedmoP{color:var(--z-color-accent-b07u5jufhwM,#2563eb);}
-      .z-p-IQ2rhY{padding:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
-      .z-w-rDGSnw{width:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
-      .z-bg-b6sB8n{background-color:var(--z-surface-panel-f9kdJUYqBjM,#fff);}"
+      .z-text-\\5b var\\28 --z-color-accent\\2c \\23 2563eb\\29 \\5d {color:var(--z-color-accent,#2563eb);}
+      .z-p-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f_--fallback_5f_3a_5f_16px_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_min-width_5f_3a_5f__5f_20_5f_768px_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f_--fallback_5f_3a_5f_32px_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\29 \\29 \\5d {padding:var(--z-spacing-page,var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b_--fallback_3a_16px_3b__7d__40_media_20__28_min-width_3a__20_768px_29__7b__3a_where_28__2a__29__7b_--fallback_3a_32px_3b__7d__7d_));}
+      .z-w-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f_--fallback_5f_3a_5f_16px_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_min-width_5f_3a_5f__5f_20_5f_768px_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f_--fallback_5f_3a_5f_32px_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\29 \\29 \\5d {width:var(--z-spacing-page,var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b_--fallback_3a_16px_3b__7d__40_media_20__28_min-width_3a__20_768px_29__7b__3a_where_28__2a__29__7b_--fallback_3a_32px_3b__7d__7d_));}
+      .z-bg-\\5b var\\28 --z-surface-panel\\2c \\23 fff\\29 \\5d {background-color:var(--z-surface-panel,#fff);}"
     `)
     const code = await Packed.bundle({
       entry: 'app.ts',
@@ -1195,7 +1195,7 @@ test('keeps reference paths that collide with function properties', () => {
   expect(config.vars.name.value).toBe('red')
   expect(config.vars.length.value).toBe('8px')
   expect(typeof config.vars).toBe('function')
-  expect(config.vars().className).toContain('z_theme-')
+  expect(config.vars().className).toContain('z-theme-')
 })
 
 test('rejects missing responsive typography thresholds', () => {
@@ -1431,19 +1431,19 @@ describe('defineVars', () => {
 
         if (packed)
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-          ".z_theme-id-70-61-6c-65-74-74-65{--z-tid-70-61-6c-65-74-74-65-color_2e_brand:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-tid-70-61-6c-65-74-74-65-color_2e_brand,#123456);}
-          .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-tid-70-61-6c-65-74-74-65-color_2e_brand:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-tid-70-61-6c-65-74-74-65-color_2e_brand,#654321);}
-          .z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;--z-color-foreground-ee9lfVRgJjs:var(--z-color-brand-bJVleUJpPJY,#654321);}
-          .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
-        `)
+            ".z-theme-palette-base{--z-palette-color-brand:#123456;--z-palette-color-foreground:var(--z-palette-color-brand,#123456);}
+            .z-theme-palette-alternate{--z-palette-color-brand:#654321;--z-palette-color-foreground:var(--z-palette-color-brand,#654321);}
+            .z-theme-theme{--z-color-brand:#654321;--z-color-foreground:var(--z-color-brand,#654321);}
+            .z-text-\\5b var\\28 --z-color-brand\\2c \\23 654321\\29 \\5d {color:var(--z-color-brand,#654321);}"
+          `)
         else
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-          ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;}
-          .z_scheme-dark{color-scheme:dark;}
-          .z_scheme-light{color-scheme:light;}
-          .z_scheme-light-dark{color-scheme:light dark;}
-          .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
-        `)
+            ".z-theme-theme{--z-color-brand:#654321;}
+            .z_scheme-dark{color-scheme:dark;}
+            .z_scheme-light{color-scheme:light;}
+            .z_scheme-light-dark{color-scheme:light dark;}
+            .z-text-\\5b var\\28 --z-color-brand\\2c \\23 654321\\29 \\5d {color:var(--z-color-brand,#654321);}"
+          `)
       }
     },
   )

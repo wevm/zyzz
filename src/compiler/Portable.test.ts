@@ -128,9 +128,9 @@ describe('compile', () => {
     )
     expect(card({ vars: accent.set('red') })).toMatchInlineSnapshot(`
       {
-        "className": "z-content-1wyeijq1ll9w4",
+        "className": "z-content-_5b__5b__22__22__2c__5b__5b__22_color_22__2c__5b__22_variable_22__2c__22_--z-accent_22__5d__2c_false_5d__5d__5d__2c__5b__22__22__2c__5b__5b__22_padding_22__2c__22_8px_22__2c_false_5d__5d__5d__2c__5b__22__26__3a_hover_22__2c__5b__5b__22_opacity_22__2c_0_2e_5_2c_false_5d__5d__5d__5d_",
         "style": {
-          "--z-vid-61-63-63-65-6e-74": "red",
+          "--z-accent": "red",
         },
       }
     `)
@@ -164,13 +164,13 @@ describe('compile', () => {
     ).toMatchInlineSnapshot('true')
     expect(
       output.css.includes(Object.keys(bar({ width: '20px' }).style!)[0]!),
-    ).toMatchInlineSnapshot('true')
+    ).toMatchInlineSnapshot(`true`)
     expect(
       output.css.includes(`.${button().className}{`),
     ).toMatchInlineSnapshot('true')
     expect(button({ size: 'large' })).toMatchInlineSnapshot(`
       {
-        "className": "z-style-id-62-75-74-74-6f-6e",
+        "className": "z-style-id-button",
         "data-size": "large",
       }
     `)
@@ -344,7 +344,7 @@ describe('Transform.compile', () => {
         source: `import {style} from 'zyzz'; style({content:'"z-style-banner"'})`,
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-content-1iip0sa1qla8lk{content:"z-style-banner";}"`,
+      `".z-content-_5b__5b__22_content_22__2c__22__5c__22_z-style-banner_5c__22__22__2c_false_5d__5d_{content:"z-style-banner";}"`,
     )
   })
   test('rejects missing ids on selectable empty scopes and locates invalid selector ids', () => {
@@ -382,10 +382,10 @@ describe('cx', () => {
     expect(
       cx(config.vars({ set: 'dark' }), config.style({ color: 'primary' })()),
     ).toMatchInlineSnapshot(`
-    {
-      "class": "z-compose-1wfpeq21v73xyw z_theme-id-68-74-6d-6c-dark",
-    }
-  `)
+      {
+        "class": "z-compose-_5b__22_z-html-content-_5f_5b_5f__5f_5b_5f__5f_22_5f_color_5f_22_5f__5f_2c_5f__5f_5b_5f__5f_22_5f_token_5f_22_5f__5f_2c_5f__5f_22_5f_id-html_5f_22_5f__5f_2c_5f__5f_22_5f_color_5f_2e_5f_primary_5f_22_5f__5f_2c_5f__5f_22_5f_red_5f_22_5f__5f_5d_5f__5f_2c_5f_false_5f_5d_5f__5f_5d_5f__22__5d_ z-theme-html-dark",
+      }
+    `)
   })
 })
 
@@ -415,7 +415,7 @@ describe('Graph.compile', () => {
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: b.ts:0: Conflicting animation identity: z-kid-73-61-6d-65; compile libraries with package-qualified module IDs.]`,
+      `[Source.ExtractError: b.ts:0: Conflicting animation identity: z-kid-same; supply distinct declaration ids.]`,
     )
   })
 

@@ -225,7 +225,7 @@ function afterType(other = style({ color: '#f00' })) { var style; }
           "style({ color: '#f00' })",
           "style({ color: '#f00' })",
         ],
-        "css": ".z-text-oLANea{color:#f00;}",
+        "css": ".z-text-\\5b \\23 f00\\5d {color:#f00;}",
       }
     `)
   })
@@ -353,12 +353,16 @@ type Definition = ReturnType<typeof define>;
         "repeated": {
           "calls": [
             {
+              "cssName": "card",
+              "cssNamespace": undefined,
               "end": 160,
-              "identity": "z-style-16i62vd1bo8k8l-118",
+              "identity": "z-style-card",
               "name": "style-16i62vd1bo8k8l-118",
               "start": 118,
             },
             {
+              "cssName": "view",
+              "cssNamespace": undefined,
               "end": 363,
               "name": "style-16i62vd1bo8k8l-323",
               "start": 323,
@@ -400,10 +404,10 @@ type Definition = ReturnType<typeof define>;
           "themeReferences": [],
           "vars": {},
         },
-        "rules": ".z-p-8px-MJI7ZV-0{padding:8px;}
-      .z-pl-0-MJI7ZV-1{padding-left:0;}
-      .z-text-kJGhCa{color:#fff;}
-      .z-opacity-O99JRy{opacity:0.5;}",
+        "rules": ".z-card-p-0{padding:8px;}
+      .z-card-pl-1{padding-left:0;}
+      .z-text-\\5b \\23 fff\\5d {color:#fff;}
+      .z-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}",
       }
     `)
   })

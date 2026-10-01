@@ -4,6 +4,7 @@
  */
 import * as Targets from '../internal/Targets.js'
 import * as ClassName from './internal/ClassName.js'
+import * as Identity from '../internal/Identity.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
@@ -33,6 +34,7 @@ export function compile<
 >(
   options: compile.Options<name, themeName>,
 ): compile.ReturnType<name, themeName> {
+  const labels = options[ClassName.labels] ?? options.styles[ClassName.labels]
   options = {
     ...options,
     styles: { styles: options.styles.styles.map(Targets.web) },
@@ -470,10 +472,10 @@ export function compile<
 
     const names: string[] = explicit === undefined ? [] : [explicit]
     let ordinal = 0
-    const slots = new Map<string, number>()
-    const developmentName = options.scope
-      ? `definition-${styleIndex}`
-      : style.name
+    const cssName = labels?.[style.name]?.name ?? encode(style.name)
+    const cssNamespace =
+      labels?.[style.name]?.namespace ??
+      (options.scope ? encode(options.scope) : undefined)
 
     function emit(body: string, label: string, shared: boolean, output = mode) {
       if (!body) return
@@ -483,12 +485,8 @@ export function compile<
         !options.development &&
         output === mode &&
         options.composition === 'independent'
-      const key = `${output}:${body}`
-      // Development slots belong to each style even when their initial values match.
-      const reusable =
-        explicit === undefined &&
-        !options.development &&
-        (shared || independent)
+      const key = JSON.stringify([cssNamespace, output, body])
+      const reusable = explicit === undefined && (shared || independent)
       const previous = reusable ? identical.get(key) : undefined
       if (previous && !names.includes(previous)) {
         names.push(previous)
@@ -498,43 +496,23 @@ export function compile<
       if (previous) shared = false
 
       // Contextual slots preserve authored ordering; development names survive value edits.
-      const ordinalSlot = ordinal++
-      const slot = options.development ? (slots.get(label) ?? 0) : ordinalSlot
-      slots.set(label, slot + 1)
+      const slot = ordinal++
       const identity = (() => {
         if (explicit !== undefined)
           return `${explicit}-${mode}-${encode(label)}-${slot}`
-        if (
-          output === 'grouped' &&
-          mode === 'grouped' &&
-          !options.development &&
-          options.composition === 'independent'
-        )
-          return `g_${rules.size.toString(36)}`
         if (output === 'grouped' && mode === 'grouped') {
-          const name = options.development ? developmentName : style.name
-          const scope =
-            options.development && options.scope
-              ? `_m${encode(options.scope)}`
-              : ''
-          return `g-${encode(name)}${scope}${slot ? `_s${slot}` : ''}`
+          return `z-${cssNamespace ? `${cssNamespace}-` : ''}${cssName}${slot ? `__${slot}` : ''}`
         }
         return ClassName.create({
           body,
-          context:
-            !shared || options.development
-              ? JSON.stringify([
-                  options.scope,
-                  mode,
-                  options.development ? developmentName : style.name,
-                ])
-              : options.scope,
+          context: !shared ? cssName : undefined,
+          namespace: cssNamespace,
           property: label,
-          slot: !shared || options.development ? slot : undefined,
-          stable: options.development,
+          slot: !shared ? slot : undefined,
         })
       })()
-      const owner = mode === 'atomic' ? `${style.name}:${slot}` : undefined
+      const owner =
+        mode === 'atomic' && !shared ? `${style.name}:${slot}` : undefined
       if (
         (rules.has(identity) && rules.get(identity) !== body) ||
         (owner !== undefined &&
@@ -543,7 +521,8 @@ export function compile<
       )
         diagnostics.push({
           code: 'identity_collision',
-          message: 'Distinct rules produced the same class identifier.',
+          message:
+            'Generated class names conflict. Supply distinct config or style ids.',
           path: [style.name],
         })
 
@@ -673,7 +652,7 @@ export function compile<
             options.schemes ?? false,
             options[Themes.shared],
           )
-        : { classes: Object.freeze({}), css: '', resources: [] }
+        : { classes: Object.freeze({}), css: '', resources: [], rules: [] }
   } catch (error) {
     throw new CompileError([
       {
@@ -687,19 +666,31 @@ export function compile<
   const scopedCss = [
     scopes.css,
     ...[...rules].map(
-      ([name, body]) => `.${selectors.get(name) ?? name}{${body}}`,
+      ([name, body]) =>
+        `.${ClassName.selector(selectors.get(name) ?? name)}{${body}}`,
     ),
   ]
     .filter(Boolean)
     .join('\n')
 
-  return Object.freeze({
+  const result = {
     ...(scopes.resources.length ? { [Themes.shared]: scopes.resources } : {}),
     ...(contributionCss ? { contributionCss, scopedCss } : {}),
+    [ClassName.rules]: Object.freeze({
+      ...Object.fromEntries(rules),
+      ...Object.fromEntries(
+        scopes.rules.map((rule) => [
+          `@scope:${rule.selector.slice(1)}:${Identity.name(rule.property)}:${Identity.name(JSON.stringify(rule.conditions))}`,
+          rule.value,
+        ]),
+      ),
+    }),
     classes: Object.freeze(classes),
     css: [contributionCss, scopedCss].filter(Boolean).join('\n'),
     vars: scopes.classes as Readonly<Record<themeName, string>>,
-  })
+  }
+  Object.defineProperty(result, ClassName.rules, { enumerable: false })
+  return Object.freeze(result)
 }
 
 /** Input and output contracts for literal compilation. */
@@ -714,6 +705,8 @@ export declare namespace compile {
   > = {
     /** Separates generated token rules for hosts with independent CSS resources. */
     readonly [Themes.shared]?: 'all' | 'defaults' | undefined
+    /** Readable source bindings and consumer-owned configuration namespaces. */
+    readonly [ClassName.labels]?: ClassName.Labels | undefined
     /** Fixed class identities used by CSS-only consumers. */
     readonly names?: Readonly<Record<string, string>> | undefined
     /**
@@ -726,14 +719,14 @@ export declare namespace compile {
     /** CSS representation; atomic declarations are the default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
-    /** Stable declaration names for CSS-only development updates. */
+    /** Retains live definitions for development updates. */
     readonly development?: boolean | undefined
     /**
      * Emit the `color-scheme` selection classes. Set by modules whose runtime
      * helpers can apply a scheme, so lowered `light-dark()` resolves there.
      */
     readonly schemes?: boolean | undefined
-    /** Optional module scope for independently delivered stylesheets. */
+    /** Explicit consumer-owned namespace for independently delivered stylesheets. */
     readonly scope?: string | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
@@ -748,6 +741,8 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Exact emitted rule bodies retained for graph-wide collision diagnostics. */
+    readonly [ClassName.rules]: Readonly<Record<string, string>>
     /** Shared token resources omitted from this module's stylesheet. */
     readonly [Themes.shared]?: readonly Themes.Resource[] | undefined
     /** Contribution text separated for graph-wide hoisting. */

@@ -8,20 +8,20 @@ import { Link } from './Link.js'
 export function Button(input: Button.Props) {
   const { variant, size, className, style, ...props } = input
 
-  const appearance = styles.button({ variant, size, className, style })
+  const appearance = buttonStyles.button({ variant, size, className, style })
   if (typeof props.href === 'string') return <Link {...props} {...appearance} />
   return <button type="button" {...props} {...appearance} />
 }
 
 export declare namespace Button {
-  type Props = Props.Variants<typeof styles.button> &
+  type Props = Props.Variants<typeof buttonStyles.button> &
     (
       | (ComponentProps<'button'> & { href?: never })
       | (ComponentProps<'a'> & { href: string })
     )
 }
 
-namespace styles {
+namespace buttonStyles {
   export const button = variants({
     base: {
       typography: 'button.16',

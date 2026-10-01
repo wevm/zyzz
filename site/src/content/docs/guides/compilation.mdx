@@ -105,7 +105,7 @@ export namespace styles {
 
 Bundle `output.code` after TypeScript/JSX lowering and deliver `output.css` with it. Preserve `output.map` and `output.cssMap` through downstream processing. Consumers apply the exported `styles.button()` props to an element.
 
-Use a stable package-relative `moduleId`. Module and binding identities affect generated classes, so independently rebuilding the same source under a different identity can produce mismatched artifacts.
+Use a stable package-relative `moduleId` for linking and source maps. Generated classes use authored bindings and optional config IDs. Distribute generated code and CSS from the same build.
 
 `Source.extract` reads definitions but does not rewrite executable calls. For imports across modules or relative URLs in stylesheet contributions, use the filesystem host or a [graph integration](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Graph/compile.md). A standalone transform rejects relative contribution URLs.
 

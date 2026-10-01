@@ -5,7 +5,11 @@ import { style } from 'zyzz/default'
 /** Displays a guide table with cell spacing and row separators. */
 export function StylesheetTable(props: StylesheetTable.Props) {
   return (
-    <div aria-label={props.label} role="region" {...styles.table()}>
+    <div
+      aria-label={props.label}
+      role="region"
+      {...stylesheetTableStyles.table()}
+    >
       {props.children}
     </div>
   )
@@ -21,7 +25,7 @@ export declare namespace StylesheetTable {
   }
 }
 
-namespace styles {
+namespace stylesheetTableStyles {
   export const table = style({
     border: '1px solid',
     borderColor: 'gray.400',

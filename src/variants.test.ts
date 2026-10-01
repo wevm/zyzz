@@ -582,14 +582,14 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z_theme-src-config-6Q0EnEZaLq6-variants-theme{--z-color-brand-0624-nva-wL:#06c;}
+        ".z-theme-theme{--z-color-brand:#06c;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-pl-8px-XE91MF-0{padding-left:8px;}
-        .z-pr-8px-XE91MF-1{padding-right:8px;}
-        .z-text-x3mkas-2{&:where([data-intent="primary"]){color:var(--z-color-brand-0624-nva-wL,#06c);}}
-        .z-text-d5fLEX-3{&:where([data-intent="quiet"]){color:black;}}"
+        .z-button-pl-0{padding-left:8px;}
+        .z-button-pr-1{padding-right:8px;}
+        .z-button-text-2{&:where([data-intent="primary"]){color:var(--z-color-brand,#06c);}}
+        .z-button-text-3{&:where([data-intent="quiet"]){color:black;}}"
       `,
       )
       expect(
@@ -597,7 +597,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       ).toMatchInlineSnapshot('true')
       expect(
         JSON.parse(publisher.contracts['config.ts']!).version,
-      ).toMatchInlineSnapshot(`28`)
+      ).toMatchInlineSnapshot(`30`)
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: Object.fromEntries(
@@ -674,12 +674,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       )
       expect(module.exports.a()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-NhZ80o z-style-1e8a67z1uaws1j-197",
+          "className": "z-text-[var(--z-color-brand,#06c)] z-style-a",
         }
       `)
       expect(module.exports.b()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-NhZ80o z-style-1e8a67z1uaws1j-258",
+          "className": "z-text-[var(--z-color-brand,#06c)] z-style-b",
         }
       `)
     })
@@ -1170,8 +1170,8 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version
-          if (output === 'react') expect(version).toMatchInlineSnapshot(`28`)
-          else expect(version).toMatchInlineSnapshot(`28`)
+          if (output === 'react') expect(version).toMatchInlineSnapshot(`30`)
+          else expect(version).toMatchInlineSnapshot(`30`)
         } finally {
           await browser.close()
           if (server)

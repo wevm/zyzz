@@ -4,7 +4,7 @@ import { style } from '../../../zyzz.config.js'
 
 /** Applies page-specific heading typography. */
 export function TailwindContent(props: TailwindContent.Props) {
-  return <div {...styles.content()}>{props.children}</div>
+  return <div {...tailwindContentStyles.content()}>{props.children}</div>
 }
 
 export declare namespace TailwindContent {
@@ -22,7 +22,7 @@ export function TailwindTable(props: TailwindTable.Props) {
       aria-label={props.label}
       role="region"
       tabIndex={0}
-      {...styles.table()}
+      {...tailwindContentStyles.table()}
     >
       {props.children}
     </div>
@@ -39,7 +39,7 @@ export declare namespace TailwindTable {
   }
 }
 
-namespace styles {
+namespace tailwindContentStyles {
   export const content = style({
     minWidth: 0,
     selectors: {

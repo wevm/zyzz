@@ -135,9 +135,7 @@ describe('cx', () => {
       expect(
         fixture.props[key].split(' ').includes(fixture.scope[key]),
       ).toMatchInlineSnapshot(`true`)
-      expect(fixture.only[key]).toMatchInlineSnapshot(
-        `"z_theme-src-index-fqAVCr-SNdO-config-theme"`,
-      )
+      expect(fixture.only[key]).toMatchInlineSnapshot(`"z-theme-theme"`)
       expect(Object.keys(fixture.props).includes(key)).toMatchInlineSnapshot(
         `true`,
       )
@@ -638,12 +636,12 @@ describe('bindings', () => {
       )
       expect(module.exports.apply(false)).toMatchInlineSnapshot(`
         {
-          "className": "z-p-4px-uI0-ps-0",
+          "className": "z-apply-1-b-a-0-p-0",
         }
       `)
       expect(module.exports.apply(true)).toMatchInlineSnapshot(`
         {
-          "className": "z-p-4px-h8SFH5-0 z-text-red-h8SFH5-1",
+          "className": "z-apply-1-b-a-p-0 z-apply-1-b-a-text-1",
         }
       `)
     })

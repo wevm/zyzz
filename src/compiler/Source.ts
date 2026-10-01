@@ -32,6 +32,8 @@ import * as Themes from './internal/Themes.js'
 import * as ThemeValues from '../web/internal/Themes.js'
 import * as Token from '../internal/Token.js'
 import * as Literal from '../internal/Literal.js'
+import * as Names from './internal/Names.js'
+import * as ClassName from '../web/internal/ClassName.js'
 import * as Typography from '../internal/Typography.js'
 import * as Value from '../internal/Value.js'
 import * as Vars from './internal/Vars.js'
@@ -57,6 +59,10 @@ export type Call = {
     | undefined
   /** Class identity available without source rewriting. */
   readonly portable?: string | undefined
+  /** Readable authored binding used for contextual CSS names. */
+  readonly cssName?: string | undefined
+  /** Explicit configuration namespace for emitted CSS. */
+  readonly cssNamespace?: string | undefined
   /** Flattened definition identities for nested compositions. */
   readonly portableInputs?: readonly string[] | undefined
   /** Ownership retained by a separately compiled callable. */
@@ -214,6 +220,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   }
 
   const program = parsed.program
+  const authoredNames = Names.collect(program)
   const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
 
   Walker.walk(program, { scopeTracker })
@@ -540,6 +547,13 @@ export function extract(options: extract.Options): extract.ReturnType {
         pending,
         options[Themes.context]?.links,
         selectorKeys,
+        new Map(
+          [...(themes?.styles ?? [])].flatMap(([start, context]) => {
+            const id = context.theme[Token.definition].contract[Token.identity]
+            return id?.startsWith('id-') ? [[start, id.slice(3)] as const] : []
+          }),
+        ),
+        options.moduleId,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -549,7 +563,13 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
   })()
 
+  const cssNameCounts = new Map<string, number>()
   for (const call of pending) {
+    const name = authoredNames.get(call.start)!
+    cssNameCounts.set(name, (cssNameCounts.get(name) ?? 0) + 1)
+  }
+  const cssNameIndices = new Map<string, number>()
+  for (const [callIndex, call] of pending.entries()) {
     const explicitId = (() => {
       try {
         return Identifiers.explicit(call)
@@ -558,10 +578,29 @@ export function extract(options: extract.Options): extract.ReturnType {
         return undefined
       }
     })()
+    const contractIdentity = themes?.styles.get(call.start)?.theme[
+      Token.definition
+    ].contract[Token.identity]
+    const cssNamespace = contractIdentity?.startsWith('id-')
+      ? contractIdentity.slice(3)
+      : undefined
+    const authoredName = authoredNames.get(call.start)!
+    const nameIndex = cssNameIndices.get(authoredName) ?? 0
+    cssNameIndices.set(authoredName, nameIndex + 1)
+    const cssName =
+      explicitId !== undefined
+        ? Identity.name(explicitId)
+        : `${Identity.compact(options.moduleId).slice(-6)}-${
+            authoredName === 'style'
+              ? `style-${callIndex}`
+              : cssNameCounts.get(authoredName)! > 1
+                ? `${authoredName}-${nameIndex}`
+                : authoredName
+          }`
     const definitionId =
       explicitId === undefined
-        ? `${namespace}-${call.start}`
-        : Identity.requireId(explicitId, 'style')
+        ? `${cssNamespace ? `${cssNamespace}-` : ''}${cssName}`
+        : `id-${cssNamespace ? `${cssNamespace}-` : ''}${Identity.requireId(explicitId, 'style').slice(3)}`
     let argument = call.arguments[0]
 
     if (call.arguments.length === 0)
@@ -1305,10 +1344,12 @@ export function extract(options: extract.Options): extract.ReturnType {
                     !definition.styles[0]!.targets)
                 )
                   return undefined
-                return Identity.style(definition.styles[0]!)
+                return Identity.style(definition.styles[0]!, cssNamespace)
               })(),
             }
           : {}),
+        cssName,
+        cssNamespace,
         end: call.end,
         name,
         start: call.start,
@@ -1328,6 +1369,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   }
 
   try {
+    let compositionIndex = 0
     for (const entry of options.target === 'native'
       ? []
       : Compositions.collect({
@@ -1339,7 +1381,16 @@ export function extract(options: extract.Options): extract.ReturnType {
           source: options.source,
           styles,
         })) {
-      calls.push(...(entry.cases ?? []).map((entry) => entry.call), entry.call)
+      const authored = authoredNames.get(entry.call.start)
+      const name = authored && authored !== 'style' ? authored : 'composition'
+      const cssName = `${name}-${compositionIndex++}-${entry.call.cssName ?? 'style'}`
+      calls.push(
+        ...(entry.cases ?? []).map((value, index) => ({
+          ...value.call,
+          cssName: `${cssName}-${index}`,
+        })),
+        { ...entry.call, cssName },
+      )
       styles.push(
         ...(entry.cases ?? []).map((entry) => entry.style),
         entry.style,
@@ -1483,6 +1534,33 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
   }
 
+  const callsByName = new Map(calls.map((call) => [call.name, call]))
+  const definition = {
+    styles: Object.freeze(styles),
+    [ClassName.labels]: Object.freeze(
+      Object.fromEntries(
+        styles.map((style) => {
+          let name = style.name
+          let call = callsByName.get(name)
+          while (!call && name.includes('-')) {
+            name = name.slice(0, name.lastIndexOf('-'))
+            call = callsByName.get(name)
+          }
+          return [
+            style.name,
+            {
+              name: call?.cssName
+                ? call.cssName + style.name.slice(call.name.length)
+                : style.name,
+              namespace: call?.cssNamespace,
+            },
+          ]
+        }),
+      ),
+    ),
+  }
+  Object.defineProperty(definition, ClassName.labels, { enumerable: false })
+
   return Object.freeze({
     namespaces: contributionData.filter(
       (value): value is Extract<Css.Contribution, { kind: 'namespace' }> =>
@@ -1522,7 +1600,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           )
         }),
     ),
-    styles: Object.freeze({ styles: Object.freeze(styles) }),
+    styles: Object.freeze(definition),
     ...(variables.calls.length
       ? { variableCalls: Object.freeze(variables.calls) }
       : {}),

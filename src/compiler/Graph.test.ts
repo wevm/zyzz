@@ -20,13 +20,366 @@ import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Transform } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
+import { Css } from 'zyzz/web'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('emits readable utilities and authored identities independent of module paths', async () => {
+    const source = `import {style} from 'zyzz';export const heading=style({display:'inline-grid',opacity:0,filter:'blur(4px)'})();`
+    const first = Transform.compile({ moduleId: 'one.ts', source })
+    const second = Transform.compile({ moduleId: 'nested/two.ts', source })
+
+    expect(Object.values(first.classes)).toMatchInlineSnapshot(`
+      [
+        "z-inline-grid z-opacity-0 z-filter-[blur(4px)]",
+      ]
+    `)
+    expect(first.css).toMatchInlineSnapshot(`
+      ".z-inline-grid{display:inline-grid;}
+      .z-opacity-0{opacity:0;}
+      .z-filter-\\5b blur\\28 4px\\29 \\5d {filter:blur(4px);}"
+    `)
+    expect(first.css === second.css).toMatchInlineSnapshot('true')
+    expect(
+      Object.values(first.classes).join(' ') ===
+        Object.values(second.classes).join(' '),
+    ).toMatchInlineSnapshot('true')
+
+    const contextual = Source.extract({
+      moduleId: 'named.ts',
+      source:
+        "import {style} from 'zyzz';export const heading=style({opacity:0,selectors:{'&:hover':{opacity:1}}})();",
+    })
+    expect(Object.values(Css.compile({ styles: contextual.styles }).classes))
+      .toMatchInlineSnapshot(`
+        [
+          "z-mRVEHL-heading-opacity-0 z-mRVEHL-heading-opacity-1",
+        ]
+      `)
+
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${first.css}</style><h1 class="${Object.values(first.classes)[0]}">Heading</h1>`,
+      )
+
+      expect(
+        await page
+          .locator('h1')
+          .evaluate((node) => getComputedStyle(node).display),
+      ).toMatchInlineSnapshot('"inline-grid"')
+      expect(
+        await page
+          .locator('h1')
+          .evaluate((node) => getComputedStyle(node).filter),
+      ).toMatchInlineSnapshot('"blur(4px)"')
+      expect(
+        await page
+          .locator('h1')
+          .evaluate((node) => getComputedStyle(node).opacity),
+      ).toMatchInlineSnapshot('"0"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('preserves variable path boundaries in browser assignments', async () => {
+    const source = `import {style,variable} from 'zyzz';
+export const fields={'foo-bar':variable('color'),foo:{bar:variable('color')}};
+export const flat=style({color:fields['foo-bar'],vars:{[fields['foo-bar']]:'red',[fields.foo.bar]:'blue'}})();
+export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',[fields.foo.bar]:'blue'}})();`
+    const output = Transform.compile({ moduleId: 'paths.js', source })
+    const code = await Packed.bundle({
+      entry: 'paths.js',
+      modules: { 'paths.js': output.code },
+    })
+    const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
+      fields: { 'foo-bar': { name: string }; foo: { bar: { name: string } } }
+      flat: { className: string }
+      nested: { className: string }
+    }
+
+    expect(fixture.fields['foo-bar'].name).toMatchInlineSnapshot(
+      '"--z-fields-foo_2d_bar"',
+    )
+    expect(fixture.fields.foo.bar.name).toMatchInlineSnapshot(
+      '"--z-fields-foo-bar"',
+    )
+
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div id="flat" class="${fixture.flat.className}">Flat</div><div id="nested" class="${fixture.nested.className}">Nested</div>`,
+      )
+      expect(
+        await page
+          .locator('#flat')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#nested')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('isolates repeated namespace members across modules in both CSS modes', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      for (const cssOutput of ['atomic', 'grouped'] as const) {
+        const output = Graph.compile({
+          modules: {
+            'config.js': `import {Config} from 'zyzz';export const {style}=Config.create({cssOutput:'${cssOutput}'});`,
+            'button.ts': `import {style} from './config.js';namespace styles{export const card=style({color:'red',selectors:{'&:hover':{color:'green'}}})}export const props=styles.card();`,
+            'button.tsx': `import {style} from './config.js';namespace styles{export const card=style({color:'blue',selectors:{'&:hover':{color:'purple'}}})}export const props=styles.card();`,
+            'entry.js': `export {props as left} from './button.ts';export {props as right} from './button.tsx';`,
+          },
+        })
+        const code = await Packed.bundle({
+          entry: 'entry.js',
+          modules: {
+            'config.js': output.modules['config.js']!.code,
+            'left.js': output.modules['button.ts']!.code,
+            'right.js': output.modules['button.tsx']!.code,
+            'entry.js':
+              "export {props as left} from './left.js';export {props as right} from './right.js';",
+          },
+        })
+        const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
+          left: { className: string }
+          right: { className: string }
+        }
+        expect(
+          fixture.left.className === fixture.right.className,
+        ).toMatchInlineSnapshot('false')
+        await page.setContent(
+          `<style>${Object.values(output.modules)
+            .map((module) => module.css)
+            .join(
+              '',
+            )}</style><div id="left" class="${fixture.left.className}">Left</div><div id="right" class="${fixture.right.className}">Right</div>`,
+        )
+        expect(
+          await page
+            .locator('#left')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('#right')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+        await page.locator('#left').hover()
+        expect(
+          await page
+            .locator('#left')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(0, 128, 0)"')
+        await page.locator('#right').hover()
+        expect(
+          await page
+            .locator('#right')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(128, 0, 128)"')
+        await page.mouse.move(0, 0)
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('separates config IDs from explicit style IDs', async () => {
+    const output = Graph.compile({
+      modules: {
+        'left.js':
+          "import {Config} from 'zyzz';const {style}=Config.create({id:'a-b'});export const props=style({color:'red',selectors:{'&:hover':{color:'green'}}},{id:'card'})();",
+        'right.js':
+          "import {Config} from 'zyzz';const {style}=Config.create({id:'a'});export const props=style({color:'blue',selectors:{'&:hover':{color:'purple'}}},{id:'b-card'})();",
+        'entry.js':
+          "export {props as left} from './left.js';export {props as right} from './right.js';",
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'entry.js',
+      modules: Object.fromEntries(
+        Object.entries(output.modules).map(([name, module]) => [
+          name,
+          module.code,
+        ]),
+      ),
+    })
+    const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
+      left: { className: string }
+      right: { className: string }
+    }
+    expect(fixture.left.className).toMatchInlineSnapshot(
+      '"z-a_2d_b-card-text-0 z-a_2d_b-card-text-1"',
+    )
+    expect(fixture.right.className).toMatchInlineSnapshot(
+      '"z-a-b_2d_card-text-0 z-a-b_2d_card-text-1"',
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${Object.values(output.modules)
+          .map((module) => module.css)
+          .join(
+            '',
+          )}</style><div id="left" class="${fixture.left.className}">Left</div><div id="right" class="${fixture.right.className}">Right</div>`,
+      )
+      expect(
+        await page
+          .locator('#left')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#right')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('versions standalone readable identifier contracts consistently', () => {
+    for (const source of [
+      "import {variable} from 'zyzz';export const gap=variable('length');",
+      "import {keyframes} from 'zyzz/web';export const spin=keyframes({to:{transform:'rotate(1turn)'}});",
+      "import {customMedia} from 'zyzz/web';export const narrow=customMedia('(width < 40rem)');",
+    ]) {
+      const library = Graph.compile({ modules: { 'library.js': source } })
+      expect(
+        JSON.parse(library.contracts['library.js']!).version,
+      ).toMatchInlineSnapshot(`31`)
+      expect(() =>
+        Graph.compile({
+          contracts: library.contracts,
+          modules: {
+            'app.js': "import * as values from 'library.js';export {values};",
+          },
+        }),
+      ).not.toThrow()
+    }
+  })
+
+  test('namespaces independently authored configs using consumer ids', async () => {
+    const source = (id: string, color: string) =>
+      `import {Config} from 'zyzz';export const {style,vars}=Config.create({id:'${id}',vars:{color:{brand:'${color}'}}});export const heading=style({color:'brand',selectors:{'&:hover':{opacity:1}}})();export const scope=vars().className;`
+    const modules = {
+      'first.js': source('first', 'red'),
+      'second.js': source('second', 'blue'),
+      'entry.js': `export {heading as firstHeading,scope as firstScope} from './first.js';export {heading as secondHeading,scope as secondScope} from './second.js';`,
+    }
+    const output = Graph.compile({ modules })
+
+    expect(output.modules['first.js']!.css).toMatchInlineSnapshot(`
+      ".z-theme-first-theme{--z-first-color-brand:red;--z-tid-66-69-72-73-74-color_2e_brand:var(--z-first-color-brand);}
+      .z-theme-second-theme{--z-second-color-brand:blue;--z-tid-73-65-63-6f-6e-64-color_2e_brand:var(--z-second-color-brand);}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-first-bugww8-heading-text-0{color:var(--z-first-color-brand,red);}
+      .z-first-bugww8-heading-opacity-1{&:hover{opacity:1;}}"
+    `)
+    expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
+      ".z-theme-first-theme{--z-first-color-brand:red;--z-tid-66-69-72-73-74-color_2e_brand:var(--z-first-color-brand);}
+      .z-theme-second-theme{--z-second-color-brand:blue;--z-tid-73-65-63-6f-6e-64-color_2e_brand:var(--z-second-color-brand);}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-second-XWlTb2-heading-text-0{color:var(--z-second-color-brand,blue);}
+      .z-second-XWlTb2-heading-opacity-1{&:hover{opacity:1;}}"
+    `)
+    const code = await Packed.bundle({
+      entry: 'entry.js',
+      modules: Object.fromEntries(
+        Object.entries(output.modules).map(([name, module]) => [
+          name,
+          module.code,
+        ]),
+      ),
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${Object.values(output.modules)
+          .map((module) => module.css)
+          .join('')}</style>`,
+      )
+      await page.addScriptTag({ content: code })
+      await page.evaluate(() => {
+        const fixture = (
+          window as typeof window & {
+            Fixture: {
+              firstHeading: { className: string }
+              firstScope: string
+              secondHeading: { className: string }
+              secondScope: string
+            }
+          }
+        ).Fixture
+        document.body.innerHTML = `<div class="${fixture.firstScope}"><p id="first" class="${fixture.firstHeading.className}"></p></div><div class="${fixture.secondScope}"><p id="second" class="${fixture.secondHeading.className}"></p></div>`
+      })
+
+      expect(
+        await page
+          .locator('#first')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#second')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('rejects incompatible config scope names without consumer ids', () => {
+    const source = (color: string) =>
+      `import {Config} from 'zyzz';export const {style,vars}=Config.create({vars:{color:{brand:'${color}'}}});export const heading=style({color:'brand'})();export const scope=vars().className;`
+
+    expect(() =>
+      Graph.compile({
+        modules: { 'first.js': source('red'), 'second.js': source('blue') },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Css.CompileError: ["second.js"]: Generated scope z-theme-theme conflicts with module first.js. Supply distinct config or style ids.]`,
+    )
+  })
+
+  test('derives standalone variable names from bindings and preserves explicit ids', () => {
+    const output = Transform.compile({
+      moduleId: 'variables.ts',
+      source: `import {style,variable} from 'zyzz';namespace variables{export const offset=variable('length');export const explicit=variable('length',{id:'heading-offset'});}export const heading=style({width:variables.offset,height:variables.explicit})();`,
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-w-\\5b var\\28 --z-variables-offset\\29 \\5d {width:var(--z-variables-offset);}
+      .z-h-\\5b var\\28 --z-heading_5f_2d_5f_offset\\29 \\5d {height:var(--z-heading_2d_offset);}"
+    `)
+    expect(output.code.includes('--z-variables-offset')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(output.code.includes('--z-heading_2d_offset')).toMatchInlineSnapshot(
+      `true`,
+    )
+  })
+
   test('shares responsive defaults across modules and replaces obsolete defaults on edits', async () => {
     const compiler = Graph.create()
     const output = compiler.compile({ modules: Responsive.modules })
@@ -80,8 +433,8 @@ describe('compile', () => {
 
   test('keeps readable variable labels distinct across modules and token paths', async () => {
     const modules = {
-      'first/config.ts': `import {Config} from 'zyzz';export const {style,vars}=Config.create({mappings:false,vars:{'label-size':'14px',label:{size:'20px'}}});export const first=style({fontSize:'label-size'})();export const nested=style({fontSize:'label.size'})();`,
-      'second/config.ts': `import {Config} from 'zyzz';export const {style,vars}=Config.create({mappings:false,vars:{'label-size':'24px'}});export const second=style({fontSize:'label-size'})();`,
+      'first/config.ts': `import {Config} from 'zyzz';export const {style,vars}=Config.create({id:'first',mappings:false,vars:{'label-size':'14px',label:{size:'20px'}}});export const first=style({fontSize:'label-size'})();export const nested=style({fontSize:'label.size'})();`,
+      'second/config.ts': `import {Config} from 'zyzz';export const {style,vars}=Config.create({id:'second',mappings:false,vars:{'label-size':'24px'}});export const second=style({fontSize:'label-size'})();`,
       'entry.ts': `export {first,nested,vars as firstVars} from './first/config.js';export {second,vars as secondVars} from './second/config.js';`,
     }
     const result = Graph.compile({ modules })
@@ -89,8 +442,8 @@ describe('compile', () => {
       .map((module) => module.css)
       .join('\n')
     expect(
-      new Set(css.match(/--z-label-size-[\w-]+(?=:)/g)).size,
-    ).toMatchInlineSnapshot('3')
+      new Set(css.match(/--z-(?:first|second)-label[\w-]*(?=:)/g)).size,
+    ).toMatchInlineSnapshot(`3`)
     const reversed = Graph.compile({
       modules: Object.fromEntries(Object.entries(modules).reverse()),
     })
@@ -225,8 +578,8 @@ describe('compile', () => {
     const result = Graph.compile({
       modules: {
         'shared.ts': `import {style} from 'zyzz'; export const paragraph = style({margin: 0});`,
-        'first.ts': `import {cx,style} from 'zyzz'; import {paragraph} from './shared.js'; const detail = style({marginBlockStart: '24px'}); export const first = cx(paragraph(), detail());`,
-        'second.ts': `import {cx,style} from 'zyzz'; import {paragraph} from './shared.js'; const detail = style({marginBlockStart: '72px'}); export const second = cx(paragraph(), detail());`,
+        'first.ts': `import {cx,style} from 'zyzz'; import {paragraph} from './shared.js'; const detail = style({marginBlockStart: '24px'},{id:'first-detail'}); export const first = cx(paragraph(), detail());`,
+        'second.ts': `import {cx,style} from 'zyzz'; import {paragraph} from './shared.js'; const detail = style({marginBlockStart: '72px'},{id:'second-detail'}); export const second = cx(paragraph(), detail());`,
         'entry.ts': `export {first} from './first.js'; export {second} from './second.js';`,
       },
       imports: {
@@ -363,7 +716,7 @@ ns.card({className:'web'});`,
         throw new Error(error.stdout || error.message)
       })
       const contract = JSON.parse(output.contracts['app.ts']!)
-      expect(contract.version).toMatchInlineSnapshot('22')
+      expect(contract.version).toMatchInlineSnapshot(`31`)
       expect(() =>
         Graph.compile({
           modules: {},
@@ -673,7 +1026,7 @@ ${web.modules['app.ts']!.code}`,
         `)
         expect(
           JSON.parse(output.contracts['app/index.ts']!).version,
-        ).toMatchInlineSnapshot(`28`)
+        ).toMatchInlineSnapshot(`31`)
       } finally {
         await Fs.rm(directory, { recursive: true, force: true })
       }
@@ -694,7 +1047,7 @@ ${web.modules['app.ts']!.code}`,
 
     expect(
       JSON.parse(output.contracts['app.ts']!).version,
-    ).toMatchInlineSnapshot('21')
+    ).toMatchInlineSnapshot(`31`)
     expect(
       JSON.parse(output.contracts['app.ts']!).exports.compact.kind,
     ).toMatchInlineSnapshot('"rule-reference"')
@@ -1013,7 +1366,7 @@ ${web.modules['app.ts']!.code}`,
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).opacity),
       ).toMatchInlineSnapshot(`"0.8"`)
-      expect(contract.version).toMatchInlineSnapshot(`21`)
+      expect(contract.version).toMatchInlineSnapshot(`31`)
       expect(
         JSON.stringify(contract).includes('"ios":{"opacity":0.9}'),
       ).toMatchInlineSnapshot('true')
@@ -1062,7 +1415,7 @@ ${web.modules['app.ts']!.code}`,
     })
     const restored = JSON.parse(packed.contracts['app.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot(`21`)
+    expect(contract.version).toMatchInlineSnapshot(`31`)
     expect(restored.exports.card.style.style.targets.native)
       .toMatchInlineSnapshot(`
       {
@@ -1116,20 +1469,20 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-config-bKlN2vqLXml-style-theme{--z-spacing-md-ds0NKNepmqg:8px;--z-color-brand-d0ojCqtyiZ_:#06c;}
+      ".z-theme-theme{--z-spacing-md:8px;--z-color-brand:#06c;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-p-kXGdoA{padding:var(--z-spacing-md-ds0NKNepmqg,8px);}
-      .z-text-jZYUkB{color:var(--z-color-brand-d0ojCqtyiZ_,#06c);}"
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"
     `)
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-p-kXGdoA z-style-5ngs574r5xr9-91"})
+        export const card = __zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-LMAxOH-styles-card"})
 
-        export const label = __zyzzProps.create({className:"z-text-jZYUkB z-style-5ngs574r5xr9-137"})
+        export const label = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-LMAxOH-styles-label"})
       } export const props = styles.card(); export const scope = theme().className;"
     `)
 
@@ -1144,11 +1497,11 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(packed.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-config-bKlN2vqLXml-style-theme{--z-color-brand-d0ojCqtyiZ_:#06c;--z-spacing-md-ds0NKNepmqg:8px;}
+      ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-iG0etn{color:var(--z-color-brand-d0ojCqtyiZ_,#06c);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"
     `)
   })
 
@@ -1161,11 +1514,11 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-card-6UlB3rnRBDm-styled-theme{--z-color-brand-aObi69H26ak:#06c;}
+      ".z-theme-theme{--z-color-brand:#06c;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-3Qtap-{color:var(--z-color-brand-aObi69H26ak,#06c);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"
     `)
   })
 
@@ -1173,18 +1526,17 @@ ${web.modules['app.ts']!.code}`,
     const output = Graph.compile({
       modules: {
         'pkg/config.ts':
-          "import { Config, Vars } from 'zyzz';\nconst zyzz = Config.create({vars:{color:{brand:'#06c'}}});\nconst instance = zyzz;\nconst theme = instance.vars, alias = theme;\nconst mint = Vars.extend(alias,{color:{brand:'#175'}}); const mintConfig=Config.create({vars:mint});\nconst other = Config.create({vars:alias});\nexport const original = zyzz.style({color:'brand'})();\nexport const props = other.style({color:'brand'})();\nexport const scope = mintConfig.vars().className;",
+          "import { Config, Vars } from 'zyzz';\nconst zyzz = Config.create({vars:{color:{brand:'#06c'}}});\nconst instance = zyzz;\nconst theme = instance.vars, alias = theme;\nconst mint = Vars.extend(alias,{color:{brand:'#175'}}); const mintConfig=Config.create({id:'mint',vars:mint});\nconst other = Config.create({vars:alias});\nexport const original = zyzz.style({color:'brand'})();\nexport const props = other.style({color:'brand'})();\nexport const scope = mintConfig.vars().className;",
       },
     })
 
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-config-bKlN2vqLXml-zyzz-theme{--z-color-brand-1knfo9JDOLa:#06c;}
-      .z_theme-src-config-bKlN2vqLXml-other-theme{--z-color-brand-6xZwEkhCgDd:#06c;}
+      ".z-theme-theme{--z-color-brand:#06c;}
+      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-rsrnIF-0{color:var(--z-color-brand-1knfo9JDOLa,#06c);}
-      .z-text-96Yj57-0{color:var(--z-color-brand-6xZwEkhCgDd,#06c);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"
     `)
     expect(
       output.modules['pkg/config.ts']!.code.includes('Config.create('),
@@ -1200,9 +1552,9 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-config-bKlN2vqLXml-zyzz-theme{--z-color-brand-500-eq4mPJ4zgOh:#06c;--z-spacing-2-0uGlP-pVGR-:8px;}
-      .z-text-klTujo{color:var(--z-color-brand-500-eq4mPJ4zgOh,#06c);}
-      .z-p-U8NwYC{padding:var(--z-spacing-2-0uGlP-pVGR-,8px);}"
+      ".z-theme-theme{--z-color-brand-500:#06c;--z-spacing-2:8px;}
+      .z-text-\\5b var\\28 --z-color-brand-500\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand-500,#06c);}
+      .z-p-\\5b var\\28 --z-spacing-2\\2c 8px\\29 \\5d {padding:var(--z-spacing-2,8px);}"
     `)
     expect(() =>
       Graph.compile({
@@ -1228,7 +1580,7 @@ ${web.modules['app.ts']!.code}`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       export const zyzz = ({appearance:__zyzzAppearance.root([["brand.dark","z_theme-src-config-bJvGyTqLXxb-zyzz-brand_2e_dark"]],{"defaultVars":"brand.dark"}),script:__zyzzAppearance.create([["brand.dark","z_theme-src-config-bJvGyTqLXxb-zyzz-brand_2e_dark"]]),vars:__zyzzSelection.create([["brand.dark","z_theme-src-config-bJvGyTqLXxb-zyzz-brand_2e_dark"]],false,'set',"brand.dark")}); export const props = ({className:"z-text-Z5yGcf"}); export const scope = zyzz.vars({set:'brand.dark'}).className;"
+       export const zyzz = ({appearance:__zyzzAppearance.root([["brand.dark","z-theme-brand_2e_dark"]],{"defaultVars":"brand.dark"}),script:__zyzzAppearance.create([["brand.dark","z-theme-brand_2e_dark"]]),vars:__zyzzSelection.create([["brand.dark","z-theme-brand_2e_dark"]],false,'set',"brand.dark")}); export const props = ({className:"z-text-[var(--z-color-brand,#06c)]"}); export const scope = zyzz.vars({set:'brand.dark'}).className;"
     `,
     )
 
@@ -1242,11 +1594,11 @@ ${web.modules['app.ts']!.code}`,
 
     expect(Graph.compile(options).modules['app/card.js']!.css)
       .toMatchInlineSnapshot(`
-        ".z_theme-src-config-bJvGyTqLXxb-zyzz-brand_2e_dark{--z-color-brand-3UU4lNJWgDa:#06c;}
+        ".z-theme-brand_2e_dark{--z-color-brand:#06c;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-Sk8LjX{color:var(--z-color-brand-3UU4lNJWgDa,#06c);}"
+        .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"
       `)
     expect(() =>
       Graph.compile({
@@ -1268,23 +1620,23 @@ ${web.modules['app.ts']!.code}`,
     const output = compiler.compile({ modules: ConfigFixture.modules })
 
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-mint{--z-color-brand-4VsVHLBhfGd:light-dark(#175,#afa);--z-spacing-md-5QFqSIlfVv3:12px;}
-      .z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-base{--z-color-brand-4VsVHLBhfGd:light-dark(#06c,#9cf);--z-spacing-md-5QFqSIlfVv3:8px;}
+      ".z-theme-mint{--z-color-brand:light-dark(#175,#afa);--z-spacing-md:12px;}
+      .z-theme-base{--z-color-brand:light-dark(#06c,#9cf);--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-ZGHVYs{color:var(--z-color-brand-4VsVHLBhfGd,light-dark(#06c,#9cf));}
-      .z-p-8P_PIJ{padding:var(--z-spacing-md-5QFqSIlfVv3,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c light-dark\\28 \\23 06c\\2c \\23 9cf\\29 \\29 \\5d {color:var(--z-color-brand,light-dark(#06c,#9cf));}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
     expect(output.modules['pkg/zyzz.config.ts']!.code).toMatchInlineSnapshot(
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       import { base } from './base.js'; export const zyzz = ({appearance:__zyzzAppearance.root([["mint","z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-mint"],["base","z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-base"]],{"defaultVars":"base"}),script:__zyzzAppearance.create([["mint","z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-mint"],["base","z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-base"]]),vars:__zyzzSelection.create([["mint","z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-mint"],["base","z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-base"]],false,'set',"base")} as import('zyzz').Config.VariableConfig<{readonly "layers":readonly ["reset","components"];readonly "vars":{readonly "mint":{readonly "color":{readonly "brand":{readonly "light":"#175";readonly "dark":"#afa"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "light":"#06c";readonly "dark":"#9cf"}};readonly "spacing":{readonly "md":"8px"}}};readonly "defaultVars":"base"}>);"
+       import { base } from './base.js'; export const zyzz = ({appearance:__zyzzAppearance.root([["mint","z-theme-mint"],["base","z-theme-base"]],{"defaultVars":"base"}),script:__zyzzAppearance.create([["mint","z-theme-mint"],["base","z-theme-base"]]),vars:__zyzzSelection.create([["mint","z-theme-mint"],["base","z-theme-base"]],false,'set',"base")} as import('zyzz').Config.VariableConfig<{readonly "layers":readonly ["reset","components"];readonly "vars":{readonly "mint":{readonly "color":{readonly "brand":{readonly "light":"#175";readonly "dark":"#afa"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "light":"#06c";readonly "dark":"#9cf"}};readonly "spacing":{readonly "md":"8px"}}};readonly "defaultVars":"base"}>);"
     `,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.VariableConfig<{readonly "layers":readonly ["reset","components"];readonly "vars":{readonly "mint":{readonly "color":{readonly "brand":{readonly "light":"#175";readonly "dark":"#afa"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "light":"#06c";readonly "dark":"#9cf"}};readonly "spacing":{readonly "md":"8px"}}};readonly "defaultVars":"base"}>); const { style } = (zyzz as import('zyzz').Config.VariableConfig<{readonly "layers":readonly ["reset","components"];readonly "vars":{readonly "mint":{readonly "color":{readonly "brand":{readonly "light":"#175";readonly "dark":"#afa"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "light":"#06c";readonly "dark":"#9cf"}};readonly "spacing":{readonly "md":"8px"}}};readonly "defaultVars":"base"}>); export const props = ({className:"z-text-ZGHVYs z-p-8P_PIJ"}); export const scope = zyzz.vars({set:'mint'}).className;"`,
+      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.VariableConfig<{readonly "layers":readonly ["reset","components"];readonly "vars":{readonly "mint":{readonly "color":{readonly "brand":{readonly "light":"#175";readonly "dark":"#afa"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "light":"#06c";readonly "dark":"#9cf"}};readonly "spacing":{readonly "md":"8px"}}};readonly "defaultVars":"base"}>); const { style } = (zyzz as import('zyzz').Config.VariableConfig<{readonly "layers":readonly ["reset","components"];readonly "vars":{readonly "mint":{readonly "color":{readonly "brand":{readonly "light":"#175";readonly "dark":"#afa"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "light":"#06c";readonly "dark":"#9cf"}};readonly "spacing":{readonly "md":"8px"}}};readonly "defaultVars":"base"}>); export const props = ({className:"z-text-[var(--z-color-brand,light-dark(#06c,#9cf))] z-p-[var(--z-spacing-md,8px)]"}); export const scope = zyzz.vars({set:'mint'}).className;"`,
     )
 
     const updated = compiler.compile({
@@ -1297,13 +1649,13 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(updated.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-mint{--z-color-brand-4VsVHLBhfGd:light-dark(#f00,#afa);--z-spacing-md-5QFqSIlfVv3:12px;}
-      .z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-base{--z-color-brand-4VsVHLBhfGd:light-dark(#06c,#9cf);--z-spacing-md-5QFqSIlfVv3:8px;}
+      ".z-theme-mint{--z-color-brand:light-dark(#f00,#afa);--z-spacing-md:12px;}
+      .z-theme-base{--z-color-brand:light-dark(#06c,#9cf);--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-ZGHVYs{color:var(--z-color-brand-4VsVHLBhfGd,light-dark(#06c,#9cf));}
-      .z-p-8P_PIJ{padding:var(--z-spacing-md-5QFqSIlfVv3,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c light-dark\\28 \\23 06c\\2c \\23 9cf\\29 \\29 \\5d {color:var(--z-color-brand,light-dark(#06c,#9cf));}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
 
     const mapping = new Trace.TraceMap(output.modules['pkg/card.ts']!.cssMap)
@@ -1321,17 +1673,17 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(packed.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-base-b-550EQ9PLa-base{--z-color-brand-7QCALJ-GfND:light-dark(#06c,#9cf);--z-spacing-md-b9sMaLlunWF:8px;}
-      .z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-mint{--z-color-brand-4VsVHLBhfGd:light-dark(#175,#afa);--z-spacing-md-5QFqSIlfVv3:12px;}
-      .z_theme-src-zyzz-config-1qdV0MDn_5f_mU-zyzz-base{--z-color-brand-4VsVHLBhfGd:light-dark(#06c,#9cf);--z-spacing-md-5QFqSIlfVv3:8px;}
+      ".z-theme-base{--z-color-brand:light-dark(#06c,#9cf);--z-spacing-md:8px;}
+      .z-theme-mint{--z-color-brand:light-dark(#175,#afa);--z-spacing-md:12px;}
+      .z-theme-base{--z-color-brand:light-dark(#06c,#9cf);--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-VsISbf{color:var(--z-color-brand-4VsVHLBhfGd,light-dark(#06c,#9cf));}
-      .z-p-7wAUvv{padding:var(--z-spacing-md-5QFqSIlfVv3,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c light-dark\\28 \\23 06c\\2c \\23 9cf\\29 \\29 \\5d {color:var(--z-color-brand,light-dark(#06c,#9cf));}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
     expect(packed.modules['app/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { design as zyzz } from '@acme/theme'; export const props = ({className:"z-text-VsISbf z-p-7wAUvv"}); export const scope = zyzz.vars({set:'mint'}).className;"`,
+      `"import { design as zyzz } from '@acme/theme'; export const props = ({className:"z-text-[var(--z-color-brand,light-dark(#06c,#9cf))] z-p-[var(--z-spacing-md,8px)]"}); export const scope = zyzz.vars({set:'mint'}).className;"`,
     )
   })
 
@@ -1347,16 +1699,16 @@ ${web.modules['app.ts']!.code}`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       export const empty = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([]),vars:__zyzzSelection.create([["default","z_theme-src-config-bKlN2vqLXml-zyzz-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.vars as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"}}}>['vars']); export const mint = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-text-lsLH52"}); export const plain = ({className:"z-p-8px-KVn49Z"});"
+       export const empty = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([]),vars:__zyzzSelection.create([["default","z-theme-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.vars as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#06c"}}}>['vars']); export const mint = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-text-[var(--z-color-brand,#06c)]"}); export const plain = ({className:"z-p-8px"});"
     `,
     )
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-config-bKlN2vqLXml-zyzz-theme{--z-color-brand-1knfo9JDOLa:#06c;}
+      ".z-theme-theme{--z-color-brand:#06c;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-lsLH52{color:var(--z-color-brand-1knfo9JDOLa,#06c);}
-      .z-p-8px-KVn49Z{padding:8px;}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-8px{padding:8px;}"
     `)
   })
 
@@ -1437,7 +1789,7 @@ ${web.modules['app.ts']!.code}`,
     const library = Graph.compile({
       modules: {
         'library/theme.ts':
-          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#06c'},spacing:{md:'8px'}}); const themeConfig=Config.create({vars:theme}); export const mint = Vars.extend(theme,{color:{brand:'#175'}}); const mintConfig=Config.create({vars:mint}); export const style = themeConfig.style;",
+          "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#06c'},spacing:{md:'8px'}}); const themeConfig=Config.create({vars:theme}); export const mint = Vars.extend(theme,{color:{brand:'#175'}}); const mintConfig=Config.create({id:'mint',vars:mint}); export const style = themeConfig.style;",
         'library/index.ts': `export * from './theme.js';`,
       },
     })
@@ -1451,29 +1803,28 @@ ${web.modules['app.ts']!.code}`,
       },
       modules: {
         'app/card.ts':
-          "import {Config} from 'zyzz';import { mint, style, theme } from '@acme/theme'; import { Vars } from 'zyzz'; export const local = Vars.extend(theme,{color:{brand:'#f00'}}); export const props = style({color:theme.color.brand,padding:'md'})(); const scopeConfig=Config.create({vars:mint});export const scope=scopeConfig.vars().className;",
+          "import {Config} from 'zyzz';import { mint, style, theme } from '@acme/theme'; import { Vars } from 'zyzz'; export const local = Vars.extend(theme,{color:{brand:'#f00'}}); export const props = style({color:theme.color.brand,padding:'md'})(); const scopeConfig=Config.create({id:'mint',vars:mint});export const scope=scopeConfig.vars().className;",
       },
     }
 
     const output = compiler.compile(options)
 
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-theme-a4FAI612wkd-theme{--z-color-brand-9CF940LKG7u:#06c;--z-spacing-md-5sIAaXaVxGM:8px;}
-      .z_theme-src-theme-a4FAI612wkd-themeConfig-theme{--z-spacing-md-bdtWdiaZJ3q:8px;--z-color-brand-ai3IuVVwIzQ:#06c;}
-      .z_theme-src-theme-a4FAI612wkd-mint{--z-color-brand-9CF940LKG7u:#175;--z-spacing-md-5sIAaXaVxGM:8px;}
-      .z_theme-src-theme-a4FAI612wkd-mintConfig-theme{--z-color-brand-6iSU2sIOyor:#175;--z-spacing-md-2YMQzt6jbcl:8px;}
-      .z_theme-src-card-6UlB3rnRBDm-local{--z-color-brand-9CF940LKG7u:#f00;--z-spacing-md-5sIAaXaVxGM:8px;}
+      ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;}
+      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);}
+      .z-theme-local{--z-color-brand:#f00;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-LinVG6{color:var(--z-color-brand-9CF940LKG7u,#06c);}
-      .z-p-94oGWa{padding:var(--z-spacing-md-bdtWdiaZJ3q,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
     expect(output.modules['app/card.ts']!.code).toMatchInlineSnapshot(
       `
       "
       import { Selection as __zyzzSelection } from 'zyzz/runtime';
-      import { mint, style, theme } from '@acme/theme';  export const local = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-text-LinVG6 z-p-94oGWa"}); const scopeConfig=({vars:__zyzzSelection.create([["default","z_theme-src-card-6UlB3rnRBDm-scopeConfig-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"#175"};readonly "spacing":{readonly "md":"8px"}}}>);export const scope=scopeConfig.vars().className;"
+      import { mint, style, theme } from '@acme/theme';  export const local = ({} as import('zyzz').Vars.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-text-[var(--z-color-brand,#06c)] z-p-[var(--z-spacing-md,8px)]"}); const scopeConfig=({vars:__zyzzSelection.create([["default","z-theme-mint-theme"]],false,'set',"default")} as import('zyzz').Config.VariableConfig<{readonly "id":"mint";readonly "vars":{readonly "color":{readonly "brand":"#175"};readonly "spacing":{readonly "md":"8px"}}}>);export const scope=scopeConfig.vars().className;"
     `,
     )
 
@@ -1489,20 +1840,19 @@ ${web.modules['app.ts']!.code}`,
 
     expect(updated.modules['app/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-ujlnau19561g8-192": "z-text-LinVG6 z-p-94oGWa",
+        "style-ujlnau19561g8-192": "z-text-[var(--z-color-brand,#06c)] z-p-[var(--z-spacing-md,8px)]",
       }
     `)
     expect(updated.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-theme-a4FAI612wkd-theme{--z-color-brand-9CF940LKG7u:#06c;--z-spacing-md-5sIAaXaVxGM:8px;}
-      .z_theme-src-theme-a4FAI612wkd-themeConfig-theme{--z-spacing-md-bdtWdiaZJ3q:8px;--z-color-brand-ai3IuVVwIzQ:#06c;}
-      .z_theme-src-theme-a4FAI612wkd-mint{--z-color-brand-9CF940LKG7u:#080;--z-spacing-md-5sIAaXaVxGM:8px;}
-      .z_theme-src-theme-a4FAI612wkd-mintConfig-theme{--z-color-brand-6iSU2sIOyor:#080;--z-spacing-md-2YMQzt6jbcl:8px;}
-      .z_theme-src-card-6UlB3rnRBDm-local{--z-color-brand-9CF940LKG7u:#f00;--z-spacing-md-5sIAaXaVxGM:8px;}
+      ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
+      .z-theme-mint{--z-color-brand:#080;--z-spacing-md:8px;}
+      .z-theme-mint-theme{--z-mint-color-brand:#080;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);}
+      .z-theme-local{--z-color-brand:#f00;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-LinVG6{color:var(--z-color-brand-9CF940LKG7u,#06c);}
-      .z-p-94oGWa{padding:var(--z-spacing-md-bdtWdiaZJ3q,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
     expect(() =>
       compiler.compile({
@@ -1550,16 +1900,16 @@ ${web.modules['app.ts']!.code}`,
     const output = compiler.compile(next)
 
     expect(output.modules['app/a.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-theme-dOJPxq0YtPK-theme{--z-color-brand-dUznR8U4qkm:#06c;--z-spacing-md-0oRYnzOsP9U:8px;--z-spacing-unused-6pC4ifGcFIJ:99px;}
-      .z_theme-src-alternate-0hQC3ZHQfTf-mint{--z-color-brand-dUznR8U4qkm:#175;--z-spacing-md-0oRYnzOsP9U:8px;--z-spacing-unused-6pC4ifGcFIJ:99px;}
-      .z_theme-src-index-3SribQXHRu1-style-base{--z-color-brand-eVZL47a87DL:#06c;--z-spacing-md-0WBjw5LrHcx:8px;--z-spacing-unused-1w5KGWc6V1Q:99px;}
-      .z_theme-src-index-3SribQXHRu1-style-mint{--z-color-brand-eVZL47a87DL:#175;--z-spacing-md-0WBjw5LrHcx:8px;--z-spacing-unused-1w5KGWc6V1Q:99px;}"
+      ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;--z-spacing-unused:99px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;--z-spacing-unused:99px;}
+      .z-theme-base{--z-color-brand:#06c;--z-spacing-md:8px;--z-spacing-unused:99px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;--z-spacing-unused:99px;}"
     `)
     expect(output.modules['app/b.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-theme-dOJPxq0YtPK-theme{--z-color-brand-dUznR8U4qkm:#06c;--z-spacing-md-0oRYnzOsP9U:8px;--z-spacing-unused-6pC4ifGcFIJ:99px;}
-      .z_theme-src-alternate-0hQC3ZHQfTf-mint{--z-color-brand-dUznR8U4qkm:#175;--z-spacing-md-0oRYnzOsP9U:8px;--z-spacing-unused-6pC4ifGcFIJ:99px;}
-      .z_theme-src-index-3SribQXHRu1-style-base{--z-color-brand-eVZL47a87DL:#06c;--z-spacing-md-0WBjw5LrHcx:8px;--z-spacing-unused-1w5KGWc6V1Q:99px;}
-      .z_theme-src-index-3SribQXHRu1-style-mint{--z-color-brand-eVZL47a87DL:#175;--z-spacing-md-0WBjw5LrHcx:8px;--z-spacing-unused-1w5KGWc6V1Q:99px;}"
+      ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;--z-spacing-unused:99px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;--z-spacing-unused:99px;}
+      .z-theme-base{--z-color-brand:#06c;--z-spacing-md:8px;--z-spacing-unused:99px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;--z-spacing-unused:99px;}"
     `)
     expect(
       JSON.stringify(output) === JSON.stringify(Graph.compile(next)),
@@ -1689,16 +2039,16 @@ ${web.modules['app.ts']!.code}`,
       }
     `)
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { vars, style } from './index.js'; export const props = ({className:"z-text-fdNoLG z-p-LZdNtJ"}); export const scope = vars({set:'mint'}).className;"`,
+      `"import { vars, style } from './index.js'; export const props = ({className:"z-text-[var(--z-color-brand,#06c)] z-p-[var(--z-spacing-md,8px)]"}); export const scope = vars({set:'mint'}).className;"`,
     )
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-index-3SribQXHRu1-style-base{--z-color-brand-eVZL47a87DL:#06c;--z-spacing-md-0WBjw5LrHcx:8px;}
-      .z_theme-src-index-3SribQXHRu1-style-mint{--z-color-brand-eVZL47a87DL:#175;--z-spacing-md-0WBjw5LrHcx:8px;}
+      ".z-theme-base{--z-color-brand:#06c;--z-spacing-md:8px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-fdNoLG{color:var(--z-color-brand-eVZL47a87DL,#06c);}
-      .z-p-LZdNtJ{padding:var(--z-spacing-md-0WBjw5LrHcx,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
     expect(
       Trace.originalPositionFor(
@@ -1748,7 +2098,7 @@ ${web.modules['app.ts']!.code}`,
       )
 
       expect(executed.stdout).toMatchInlineSnapshot(`
-        "{"props":{"className":"z-text-fdNoLG z-p-LZdNtJ"},"scope":"z_theme-src-index-3SribQXHRu1-style-mint"}
+        "{"props":{"className":"z-text-[var(--z-color-brand,#06c)] z-p-[var(--z-spacing-md,8px)]"},"scope":"z-theme-mint"}
         "
       `)
 
@@ -1789,20 +2139,20 @@ ${web.modules['app.ts']!.code}`,
 
     expect(after.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-5ngs574r5xr9-63": "z-text-VC1_KT z-p-LZdNtJ",
+        "style-5ngs574r5xr9-63": "z-text-[var(--z-color-brand,#f00)] z-p-[var(--z-spacing-md,8px)]",
       }
     `)
     expect(after.modules['pkg/card.ts']!.vars).toMatchInlineSnapshot(`
       {
-        "src-alternate-0hQC3ZHQfTf-mint": "z_theme-src-alternate-0hQC3ZHQfTf-mint",
-        "src-index-3SribQXHRu1-style-base": "z_theme-src-index-3SribQXHRu1-style-base",
-        "src-index-3SribQXHRu1-style-mint": "z_theme-src-index-3SribQXHRu1-style-mint",
-        "src-theme-dOJPxq0YtPK-theme": "z_theme-src-theme-dOJPxq0YtPK-theme",
+        "src-alternate-0hQC3ZHQfTf-mint": "z-theme-mint",
+        "src-index-3SribQXHRu1-style-base": "z-theme-base",
+        "src-index-3SribQXHRu1-style-mint": "z-theme-mint",
+        "src-theme-dOJPxq0YtPK-theme": "z-theme-theme",
       }
     `)
     expect(before.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-5ngs574r5xr9-63": "z-text-fdNoLG z-p-LZdNtJ",
+        "style-5ngs574r5xr9-63": "z-text-[var(--z-color-brand,#06c)] z-p-[var(--z-spacing-md,8px)]",
       }
     `)
 
@@ -1810,27 +2160,31 @@ ${web.modules['app.ts']!.code}`,
       modules: {
         ...modules,
         'pkg/card.ts':
-          "import {Config} from 'zyzz';import { mint } from './alternate.js'; const scopeConfig=Config.create({vars:mint});export const scope=scopeConfig.vars().className;",
+          "import {Config} from 'zyzz';import { mint } from './alternate.js'; const scopeConfig=Config.create({id:'mint',vars:mint});export const scope=scopeConfig.vars().className;",
       },
     })
 
     expect(removed.modules['pkg/alternate.ts']!.css).toMatchInlineSnapshot(`
-      ".z_scheme-dark{color-scheme:dark;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_scheme-dark{color-scheme:dark;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/index.ts']!.css).toMatchInlineSnapshot(`
-      ".z_scheme-dark{color-scheme:dark;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/theme.ts']!.css).toMatchInlineSnapshot(`
-      ".z_scheme-dark{color-scheme:dark;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
@@ -1931,54 +2285,54 @@ ${web.modules['app.ts']!.code}`,
     }
     expect(stylesheets).toMatchInlineSnapshot(`
       {
-        "pkg/theme.cjs": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.cjsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.cts": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.ctsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.js": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.jsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.mjs": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.mjsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.mts": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.mtsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.ts": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme.tsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.cjs": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.cjsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.cts": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.ctsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.js": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.jsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.mjs": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.mjsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.mts": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.mtsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.ts": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
-        "pkg/theme/index.tsx": ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#06c;}
-      .z-text-PAwJLi{color:var(--z-color-brand-64EyKWILlMu,#06c);}",
+        "pkg/theme.cjs": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.cjsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.cts": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.ctsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.js": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.jsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.mjs": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.mjsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.mts": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.mtsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.ts": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme.tsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.cjs": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.cjsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.cts": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.ctsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.js": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.jsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.mjs": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.mjsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.mts": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.mtsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.ts": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
+        "pkg/theme/index.tsx": ".z-theme-theme{--z-color-brand:#06c;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}",
       }
     `)
   })
@@ -2201,22 +2555,22 @@ describe('create', () => {
       after.modules['pkg/card0.ts'] === before.modules['pkg/card0.ts'],
     ).toMatchInlineSnapshot(`false`)
     expect(after.modules['pkg/card0.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-index-3SribQXHRu1-style-base{--z-color-brand-eVZL47a87DL:#06c;}
-      .z_theme-src-index-3SribQXHRu1-style-mint{--z-color-brand-eVZL47a87DL:#175;}
+      ".z-theme-base{--z-color-brand:#06c;}
+      .z-theme-mint{--z-color-brand:#175;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-MNcUI0{color:var(--z-color-brand-eVZL47a87DL,#06c);}
-      .z-p-20px-OvtTGM{padding:20px;}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-20px{padding:20px;}"
     `)
     expect(before.modules['pkg/card0.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-index-3SribQXHRu1-style-base{--z-color-brand-eVZL47a87DL:#06c;}
-      .z_theme-src-index-3SribQXHRu1-style-mint{--z-color-brand-eVZL47a87DL:#175;}
+      ".z-theme-base{--z-color-brand:#06c;}
+      .z-theme-mint{--z-color-brand:#175;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-MNcUI0{color:var(--z-color-brand-eVZL47a87DL,#06c);}
-      .z-p-0px-OvtTGM{padding:0px;}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
+      .z-p-0px{padding:0px;}"
     `)
   })
 
@@ -2234,13 +2588,13 @@ describe('create', () => {
     })
 
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-index-3SribQXHRu1-style-base{--z-color-brand-eVZL47a87DL:#f00;--z-spacing-md-0WBjw5LrHcx:8px;}
-      .z_theme-src-index-3SribQXHRu1-style-mint{--z-color-brand-eVZL47a87DL:#175;--z-spacing-md-0WBjw5LrHcx:8px;}
+      ".z-theme-base{--z-color-brand:#f00;--z-spacing-md:8px;}
+      .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-VC1_KT{color:var(--z-color-brand-eVZL47a87DL,#f00);}
-      .z-p-LZdNtJ{padding:var(--z-spacing-md-0WBjw5LrHcx,8px);}"
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 f00\\29 \\5d {color:var(--z-color-brand,#f00);}
+      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
     `)
 
     const map = new Trace.TraceMap(after.modules['pkg/card.ts']!.cssMap)
@@ -2302,9 +2656,9 @@ describe('create', () => {
     const sources = {
       'pkg/a.ts': `export const value = 1;`,
       'pkg/b.ts':
-        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#000'}});",
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#000'}},{id:'dark'});",
       'pkg/c.ts':
-        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#fff'}});",
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#fff'}},{id:'light'});",
       'pkg/styles.ts':
         "const themeConfig=Config.create({vars:theme});import {Config} from 'zyzz';\nimport { theme } from './b.js'; export const props = themeConfig.style({color:'brand'})();",
     }
@@ -2324,8 +2678,8 @@ describe('create', () => {
     expect(Object.keys(after.modules['pkg/styles.ts']!.vars))
       .toMatchInlineSnapshot(`
         [
-          "src-c-36oJ-paPMDs-theme",
-          "src-b-2JFpTdaPUTZ-theme",
+          "id-light",
+          "id-dark",
           "src-styles-3e054v0_jNX-themeConfig-theme",
         ]
       `)
@@ -2338,7 +2692,7 @@ describe('create', () => {
 
     const sources = {
       ...modules,
-      'pkg/card.ts': `import {Config} from 'zyzz'; import { mint } from './alternate.js'; const config=Config.create({vars:mint}); export const props = config.style({color:'brand'})();`,
+      'pkg/card.ts': `import {Config} from 'zyzz'; import { mint } from './alternate.js'; const config=Config.create({id:'mint',vars:mint}); export const props = config.style({color:'brand'})();`,
     }
 
     compiler.compile({ modules: sources })
@@ -2359,11 +2713,11 @@ describe('create', () => {
       ]
     `)
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-card-1huDnLMAxOH-config-theme{--z-color-brand-4uzsvsrDXYL:#f00;}
+      ".z-theme-mint-theme{--z-mint-color-brand:#f00;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-3SCLSM{color:var(--z-color-brand-4uzsvsrDXYL,#f00);}"
+      .z-mint-text-\\5b var\\28 --z-mint-color-brand\\2c \\23 f00\\29 \\5d {color:var(--z-mint-color-brand,#f00);}"
     `)
   })
 
@@ -2581,9 +2935,9 @@ describe('create', () => {
 
     const modules = {
       'pkg/a.ts':
-        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#000'}});",
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#000'}},{id:'dark'});",
       'pkg/b.ts':
-        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#fff'}});",
+        "import { Vars } from 'zyzz'; export const theme = Vars.define({color:{brand:'#fff'}},{id:'light'});",
       'pkg/card.ts':
         "const themeConfig=Config.create({vars:theme});import {Config} from 'zyzz';\nimport { theme } from '@theme'; export const props = themeConfig.style({color:'brand'})();",
     }
@@ -2606,8 +2960,8 @@ describe('create', () => {
       ]
     `)
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-card-1huDnLMAxOH-themeConfig-theme{--z-color-brand-64EyKWILlMu:#fff;}
-      .z-text-FNrLC5{color:var(--z-color-brand-64EyKWILlMu,#fff);}"
+      ".z-theme-theme{--z-color-brand:#fff;}
+      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 fff\\29 \\5d {color:var(--z-color-brand,#fff);}"
     `)
     expect(after === before).toMatchInlineSnapshot(`false`)
     expect(() =>
@@ -2649,7 +3003,7 @@ describe('output', () => {
               Path.join(library.installed, 'style.css'),
               'utf8',
             )
-            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`28`)
+            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`31`)
             if (producer === 'atomic')
               expect(
                 JSON.parse(contract).exports.controls.members.button.style.style
@@ -2836,7 +3190,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(legacy.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z_theme-src-config-90cQ4Xr_5f_5gE-style-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
+        `".z-theme-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
       )
 
       const conflicting = metadata.replaceAll(
@@ -2909,7 +3263,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         `"import {controls} from './barrel.js';export const props=controls.button();"`,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z_theme-src-config-90cQ4Xr_5f_5gE-style-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
+        `".z-theme-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
       )
     })
 
@@ -2942,22 +3296,22 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
         modules: {
           'a.ts':
-            "import {cx,style} from 'zyzz'; import {base} from './second.js'; const local=style({opacity:0.5}); export const props=cx(base(),local())",
+            "import {cx,style} from 'zyzz'; import {base} from './second.js'; const local=style({opacity:0.5},{id:'first-local'}); export const props=cx(base(),local())",
           'b.ts':
-            "import {cx,style} from 'zyzz'; import {base} from './second.js'; const local=style({opacity:1}); export const props=cx(base(),local())",
+            "import {cx,style} from 'zyzz'; import {base} from './second.js'; const local=style({opacity:1},{id:'second-local'}); export const props=cx(base(),local())",
         },
       })
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-src-first-dcTfYzugwnm-style{}
-        .z-opacity-JtsrxR-0{opacity:0.5;}
-        .z-style-hqKJ6I-0{color:red;padding:8px;}
-        .z-opacity-qd65pw-1{opacity:0.5;}"
+        ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
+        .z-first_2d_local-opacity-0{opacity:0.5;}
+        .z-props-0-z-style-zugwnm-base-first_2d_local-style-0{color:red;padding:8px;}
+        .z-props-0-z-style-zugwnm-base-first_2d_local-opacity-1{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-src-first-dcTfYzugwnm-style{}
-        .z-opacity-1-jODrRV-0{opacity:1;}
-        .z-style-6E-0SO-0{color:red;padding:8px;}
-        .z-opacity-1-VDMo92-1{opacity:1;}"
+        ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
+        .z-second_2d_local-opacity-0{opacity:1;}
+        .z-props-0-z-style-zugwnm-base-second_2d_local-style-0{color:red;padding:8px;}
+        .z-props-0-z-style-zugwnm-base-second_2d_local-opacity-1{opacity:1;}"
       `)
     })
 
@@ -3001,12 +3355,12 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
         modules: {
           'app.ts':
-            "import {style} from './barrel.js'; export const card=style({color:'blue',padding:'2px'})",
+            "import {style} from './barrel.js'; export const card=style({color:'blue',padding:'2px'},{id:'consumer-card'})",
         },
       })
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-src-config-6Q0EnEZaLq6-config{}
-        .g-style-1e8a67z1uaws1j-53{color:blue;padding:2px;}"
+        ".z-theme-src_2d_config_2d_6Q0EnEZaLq6_2d_config{}
+        .z-consumer_2d_card{color:blue;padding:2px;}"
       `)
     })
 
@@ -3234,7 +3588,7 @@ describe('stylesheets', () => {
           modules: { 'app.ts': `import 'a';import 'b';` },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: b/index.js:0: Conflicting animation identity: z-k1wfnqsmu0q6os-66-61-64-65; compile libraries with package-qualified module IDs.]`,
+        `[Source.ExtractError: b/index.js:0: Conflicting animation identity: z-k-fade; supply distinct declaration ids.]`,
       )
 
       const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
@@ -3377,10 +3731,10 @@ describe('stylesheets', () => {
       })
 
       expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-animation-name-F7QXU7{animation-name:z-k185tc9w526bf2-66-61-64-65;}"`,
+        `".z-animation-name-z-k-fade{animation-name:z-k-fade;}"`,
       )
       expect(app.sharedCss).toMatchInlineSnapshot(
-        `"@keyframes z-k185tc9w526bf2-66-61-64-65{from{opacity:0;}to{opacity:1;}}"`,
+        `"@keyframes z-k-fade{from{opacity:0;}to{opacity:1;}}"`,
       )
     })
 
@@ -3485,7 +3839,7 @@ describe('stylesheets', () => {
       })
 
       expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-animation-name-wV2udT{animation-name:z-k1wfnqsmu0q6os-66-61-64-65;}"`,
+        `".z-animation-name-z-k-fade{animation-name:z-k-fade;}"`,
       )
       expect(new Trace.TraceMap(app.sharedCssMap!).sourcesContent)
         .toMatchInlineSnapshot(`
@@ -3899,9 +4253,9 @@ describe('variables', () => {
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-w-10px-_Z2Zm9-0{width:10px;}
-        .z-w-30px-HfgmE9-0{width:30px;}
-        .z-w-40px-2Xrlpp-0{width:40px;}"
+        ".z-Zf5JrJ-styles-a-w-0{width:10px;}
+        .z-Zf5JrJ-styles-b-w-0{width:30px;}
+        .z-Zf5JrJ-styles-c-w-0{width:40px;}"
       `)
     })
 
@@ -3934,7 +4288,7 @@ describe('variables', () => {
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: vars.ts:54: Conflicting variable identity: --z-v4t4nbe1og4cic-54; compile libraries with package-qualified module IDs.]`,
+        `[Source.ExtractError: vars.ts:54: Conflicting variable identity: --z-vars-gap; supply distinct declaration ids.]`,
       )
       expect(() =>
         Graph.compile({
@@ -3955,7 +4309,7 @@ describe('variables', () => {
 
       expect(
         Graph.compile({ modules: { 'app.ts': source } }).modules['app.ts']!.css,
-      ).toMatchInlineSnapshot(`".z-w-10px-Jgxd-Q{width:10px;}"`)
+      ).toMatchInlineSnapshot(`".z-w-10px{width:10px;}"`)
 
       const errors = [
         "for(base.width of ['20px']){}",
@@ -4036,9 +4390,9 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-red-Jgxd-Q{color:red;}
-        .z-w-x2ilKd{width:var(--z-d1e8a67z1uaws1j-225-77-69-64-74-68);}
-        .z-z-index-ROqnX4{z-index:var(--z-d1e8a67z1uaws1j-225-7a-49-6e-64-65-78);}"
+        ".z-text-red{color:red;}
+        .z-w-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-width\\29 \\5d {width:var(--z-Zf5JrJ-styles-dynamic-width);}
+        .z-z-index-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-zIndex\\29 \\5d {z-index:var(--z-Zf5JrJ-styles-dynamic-zIndex);}"
       `)
     })
 
@@ -4067,9 +4421,9 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
       expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-      ".z-w-_Z4cQB{width:var(--z-v4t4nbe1og4cic-54);}
-      .z-p-46CIxU{padding:var(--z-v4t4nbe1og4cic-54);}"
-    `,
+        ".z-w-\\5b var\\28 --z-vars-gap\\29 \\5d {width:var(--z-vars-gap);}
+        .z-p-\\5b var\\28 --z-vars-gap\\29 \\5d {padding:var(--z-vars-gap);}"
+      `,
       )
     })
     test('allows scalar copies and asserted static token bindings', () => {
@@ -4081,12 +4435,12 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z_theme-src-app-bk8jvZf5JrJ-theme-theme{--z-color-ink-7JXt3sv3F2V:#123;}
+        ".z-theme-theme{--z-color-ink:#123;}
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-w-10px-Jgxd-Q{width:10px;}
-        .z-text-dADj2f{color:var(--z-color-ink-7JXt3sv3F2V,#123);}"
+        .z-w-10px{width:10px;}
+        .z-text-\\5b var\\28 --z-color-ink\\2c \\23 123\\29 \\5d {color:var(--z-color-ink,#123);}"
       `)
     })
     test('links default variable exports through packed contracts', () => {
@@ -4107,7 +4461,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-w-QiD0VB{width:var(--z-v4t4nbe1og4cic-47);}"`,
+        `".z-w-\\5b var\\28 --z-vars-gap\\29 \\5d {width:var(--z-vars-gap);}"`,
       )
     })
     test('rejects static records returned to runtime code', () => {
@@ -4217,7 +4571,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
           modules: { 'app.ts': 'export {}' },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-57; compile libraries with package-qualified module IDs.]`,
+        `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed variable identity: --z-vars-amount; supply distinct declaration ids.]`,
       )
     })
     test('renders statically expanded theme records in a browser', async () => {
@@ -4326,7 +4680,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
           },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: lib.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-57; compile libraries with package-qualified module IDs.]`,
+        `[Source.ExtractError: lib.js:0: Invalid library contract: Conflicting packed variable identity: --z-vars-amount; supply distinct declaration ids.]`,
       )
     })
     test('merges finite interface declarations and rejects unsafe static records', () => {
@@ -4374,7 +4728,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('links registered variable references and assignments through packed aliases', async () => {
       expect(
         JSON.parse(compile().library.contracts['vars.ts']!).version,
-      ).toMatchInlineSnapshot(`14`)
+      ).toMatchInlineSnapshot(`31`)
 
       const { code, css } = await bundle()
 
@@ -4408,11 +4762,11 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       ]
     `)
       expect(css).toMatchInlineSnapshot(`
-        "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
-        @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px-Jgxd-Q{height:20px;}
-        .z-p-0YuuzC{padding:var(--z-v4t4nbe1og4cic-121);}
-        .z-w-Dt1VTw-2{width:var(--z-v4t4nbe1og4cic-57);}
-        .z-w-VPbBSM-0{width:var(--z-d1e8a67z1uaws1j-297-77-69-64-74-68);}"
+        "@property --z-vars-amount{syntax:"<percentage>";inherits:false;initial-value:25%;}
+        @property --z-vars-gap{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px{height:20px;}
+        .z-p-\\5b var\\28 --z-vars-gap\\29 \\5d {padding:var(--z-vars-gap);}
+        .z-Zf5JrJ-styles-registered-w-2{width:var(--z-vars-amount);}
+        .z-Zf5JrJ-styles-dynamic-w-0{width:var(--z-Zf5JrJ-styles-dynamic-width);}"
       `)
     })
     test('expands immutable members and shorthand while retaining dynamic intersections', () => {
@@ -4427,13 +4781,13 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
-        ".z-w-12px-SQoKgr-0{width:12px;}
-        .z-p-8px-BMtYBI{padding:8px;}
-        .z-w-lZdSoA-0{width:var(--z-d15wl7di1emu9we-417-77-69-64-74-68);}
-        .z-opacity-ZXgQg3{opacity:var(--z-d15wl7di1emu9we-417-6f-70-61-63-69-74-79);}"
+        ".z-r9-r0Q-styles-card-w-0{width:12px;}
+        .z-p-8px{padding:8px;}
+        .z-r9-r0Q-styles-dynamic-w-0{width:var(--z-r9-r0Q-styles-dynamic-width);}
+        .z-opacity-\\5b var\\28 --z-r9-r0Q-styles-dynamic-opacity\\29 \\5d {opacity:var(--z-r9-r0Q-styles-dynamic-opacity);}"
       `)
       expect(graph.sharedCss).toMatchInlineSnapshot(
-        `"@property --z-v15wl7di1emu9we-257{syntax:"<number>";inherits:false;initial-value:-1;}"`,
+        `"@property --z-count-n{syntax:"<number>";inherits:false;initial-value:-1;}"`,
       )
       expect(
         graph.modules['static.ts']!.code.includes('values:Values'),

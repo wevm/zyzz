@@ -162,7 +162,7 @@ export function collect(options: collect.Options): Themes.Link {
 
   for (const [key, original] of Object.entries(catalog)) {
     const name = `${identity}-${key}`
-    const definition = Token.bind(original, contract)
+    const definition = Token.bind(original, contract, key)
     const tokenType = type({
       ...values(original.tokens),
       ...original[Token.definition].queries,
@@ -242,6 +242,7 @@ export function collect(options: collect.Options): Themes.Link {
 
       return {}
     })(),
+    ...(input.id !== undefined ? { id: input.id } : {}),
     ...(input.cssOutput ? { cssOutput: input.cssOutput } : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer }

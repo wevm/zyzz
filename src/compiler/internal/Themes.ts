@@ -941,7 +941,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
               'id-',
             )
           )
-            name = definition.className.slice('z_theme-'.length)
+            name = definition.className.slice('z-theme-'.length)
           tokenType = parent.tokenType
           output = parent.output
         }
@@ -977,6 +977,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
           : {}),
       })
 
+      definition = Token.bind(
+        definition,
+        definition[Token.definition].contract,
+        binding,
+      )
       calls.push(call)
       definitions.set(variable.id.start, call)
       factories.add(expression.start)

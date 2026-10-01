@@ -32,7 +32,7 @@ For repeated edits, [Graph.create](create.md) retains an isolated incremental ca
 - Type: `boolean`
 - Default: `false`
 
-Use stable atomic declaration names for CSS-only development updates. Production output uses readable literal values with module ownership hashes. Vite selects development naming automatically.
+Retain live definitions for development updates. Development and production use the same readable naming rules. Value edits can update both class references and CSS. Vite selects this option automatically.
 
 ```ts
 Graph.compile({ development: true, modules })

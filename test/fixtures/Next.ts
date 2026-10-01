@@ -76,9 +76,9 @@ export async function verify(options: verify.Options) {
       Path.join(app, 'app/probe.ttf'),
       Buffer.from(Font.url.split(',')[1]!, 'base64'),
     )
-    const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {style,vars}=Config.create({cssOutput:'${cssOutput}',vars:library});`
+    const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {style,vars}=Config.create({id:'app',cssOutput:'${cssOutput}',vars:library});`
     const files = {
-      'app/responsive-config.ts': `import {Config,Vars} from 'zyzz';const base=Vars.define({measure:{a:{default:'14px','@media (width >= 1024px)':'16px'},b:{default:'8px','@media (width >= 1024px)':'12px'}}});export const {style}=Config.create({vars:base,mappings:false});`,
+      'app/responsive-config.ts': `import {Config,Vars} from 'zyzz';const base=Vars.define({measure:{a:{default:'14px','@media (width >= 1024px)':'16px'},b:{default:'8px','@media (width >= 1024px)':'12px'}}});export const {style}=Config.create({id:'responsive',vars:base,mappings:false});`,
       'app/responsive.tsx': `import {style} from './responsive-config';const props=style({paddingTop:'measure.a',paddingBottom:'measure.b'});export default function Responsive(){return <div id="responsive-server" {...props()}/>}`,
       'app/unimported.ts': `import {global} from 'zyzz/web';declare function unknownColor(): 'red';global({body:{color:unknownColor()}});`,
       'app/fonts.ts': `import {fontFace,global,layers} from 'zyzz/web';layers(['reset','base']);fontFace({ '@layer base': {fontFamily:'NextEvidence',src:'url(./probe.ttf)'} });global({'@layer base':{body:{position:'relative'}}});`,
@@ -286,7 +286,7 @@ export async function verify(options: verify.Options) {
                 total +
                 Number(
                   rule.selectorText === ':where(*)' &&
-                    rule.style.cssText.includes('--z-measure-'),
+                    rule.style.cssText.includes('--z-responsive-measure-'),
                 )
               )
             return (
@@ -677,7 +677,7 @@ export async function verify(options: verify.Options) {
         .evaluate((element) => getComputedStyle(element).backgroundColor),
     ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
     const changedConfig = (color: string, mode = cssOutput) =>
-      `import {Config,Vars} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Vars.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {style,vars}=Config.create({cssOutput:'${mode}',vars:changed});`
+      `import {Config,Vars} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Vars.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {style,vars}=Config.create({id:'app',cssOutput:'${mode}',vars:changed});`
     await Fs.writeFile(Path.join(app, 'app/config.ts'), changedConfig('#c00'))
     await page
       .waitForFunction(

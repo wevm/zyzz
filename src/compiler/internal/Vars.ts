@@ -6,6 +6,7 @@ import * as Theme from '../../internal/Theme.js'
 import type * as Css from '../../web/Css.js'
 import * as Identity from '../../internal/Identity.js'
 import * as Expression from './Expression.js'
+import * as Names from './Names.js'
 import type * as Scope from './Scope.js'
 import type * as Themes from './Themes.js'
 import { InvalidError } from './Themes.js'
@@ -14,6 +15,8 @@ import { InvalidError } from './Themes.js'
 export type Call = {
   /** Exclusive source offset. */
   readonly end: number
+  /** Whether the consumer supplied a portable variable identity. */
+  readonly explicit?: boolean | undefined
   /** Fixed scalar reference retained in portable metadata. */
   readonly slots: Readonly<Record<string, Binding.Reference>>
   /** Inclusive source offset. */
@@ -28,6 +31,7 @@ export function collect(
   links: Readonly<Record<string, Themes.Link>> = {},
   moduleId = namespace,
 ) {
+  const authoredNames = Names.collect(program)
   const imports = new Set<number>()
   const external = new Map<number, Themes.Link>()
   for (const statement of program.body) {
@@ -187,6 +191,7 @@ export function collect(
   })
 
   const calls: Call[] = []
+  const explicit = new Set<number>()
   const definitions = new Map<number, Themes.Link>()
   const registrations: Css.Contribution[] = []
   const registrationStarts: number[] = []
@@ -275,8 +280,10 @@ export function collect(
         descriptor[key] = literal as string | number | boolean
       }
 
+    if (descriptor.id !== undefined) explicit.add(call.start)
+
     const name =
-      `--z-v${descriptor.id === undefined ? `${namespace}-${call.start}` : Identity.requireId(typeof descriptor.id === 'string' ? descriptor.id : undefined, 'variable')}` as const
+      `--z-${descriptor.id === undefined ? authoredNames.get(call.start)! : Identity.requireId(typeof descriptor.id === 'string' ? descriptor.id : undefined, 'variable').slice(3)}` as const
     if (value && Object.keys(descriptor).some((key) => key !== 'id')) {
       const syntax =
         kind === 'signedLength'
@@ -325,6 +332,7 @@ export function collect(
       variable: true as const,
     })
     const entry = Object.freeze({
+      explicit: explicit.has(call.start),
       start: call.start,
       end: call.end,
       slots: Object.freeze({ value: slot }),

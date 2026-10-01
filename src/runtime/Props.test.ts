@@ -31,18 +31,18 @@ export const button = style({ color: '#f00' });`,
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-BA_Tfm z-style-1hu9bfc1mtag60-52",
+        "className": "z-text-[#f00] z-style-zaclPW-button",
       }
     `)
     expect(consumer.button({ style: undefined })).toMatchInlineSnapshot(`
       {
-        "className": "z-text-BA_Tfm z-style-1hu9bfc1mtag60-52",
+        "className": "z-text-[#f00] z-style-zaclPW-button",
       }
     `)
     expect(consumer.button({ className: 'external', style: undefined }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-text-BA_Tfm z-style-1hu9bfc1mtag60-52 external",
+          "className": "z-text-[#f00] z-style-zaclPW-button external",
         }
       `)
   })
@@ -81,52 +81,52 @@ export const button = style({ color: '#f00' });`,
 
     expect(consumer.staticProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-Ppd1-S external",
+        "className": "z-text-[var(--z-accent)] external",
         "style": {
-          "--z-v1g4rm6r9aa2cb-74": "blue",
+          "--z-accent": "blue",
           "padding": "2px",
         },
       }
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-Ppd1-S z-opacity-NQNW0k-0",
+        "className": "z-text-[var(--z-accent)] z-e2Ey6F-dynamic-opacity-0",
         "style": {
-          "--z-d1g4rm6r9aa2cb-210-6f-70-61-63-69-74-79": 0.5,
-          "--z-v1g4rm6r9aa2cb-74": "blue",
+          "--z-accent": "blue",
+          "--z-e2Ey6F-dynamic-opacity": 0.5,
           "padding": "2px",
         },
       }
     `)
     expect(consumer.htmlProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-Ppd1-S",
-        "style": "--z-v1g4rm6r9aa2cb-74:red",
+        "class": "z-text-[var(--z-accent)]",
+        "style": "--z-accent:red",
       }
     `)
     expect(consumer.variablesOnly).toMatchInlineSnapshot(`
       {
-        "className": "z-text-Ppd1-S z-opacity-NQNW0k-0",
+        "className": "z-text-[var(--z-accent)] z-e2Ey6F-dynamic-opacity-0",
         "style": {
-          "--z-d1g4rm6r9aa2cb-210-6f-70-61-63-69-74-79": 0.5,
-          "--z-v1g4rm6r9aa2cb-74": "red",
+          "--z-accent": "red",
+          "--z-e2Ey6F-dynamic-opacity": 0.5,
         },
       }
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-Ppd1-S z-opacity-km9Zdo-0",
-        "style": "--z-v1g4rm6r9aa2cb-74:red;--z-d1g4rm6r9aa2cb-777-6f-70-61-63-69-74-79:0.25",
+        "class": "z-text-[var(--z-accent)] z-e2Ey6F-htmlDynamic-opacity-0",
+        "style": "--z-accent:red;--z-e2Ey6F-htmlDynamic-opacity:0.25",
       }
     `)
     expect(consumer.originals).toMatchInlineSnapshot(`
       {
         "style": {
-          "--z-v1g4rm6r9aa2cb-74": "blue",
+          "--z-accent": "blue",
           "padding": "2px",
         },
         "vars": {
-          "--z-v1g4rm6r9aa2cb-74": "red",
+          "--z-accent": "red",
         },
       }
     `)
@@ -157,13 +157,13 @@ export const text = '🎉';`
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-LDML8V-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-52",
+        "className": "z-CVE4-Z-button-text-0 z-p-8px z-style-CVE4-Z-button",
       }
     `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
       {
-        "className": "z-text-4RcTT1-0",
+        "className": "z-CVE4-Z-inline-text-0",
       }
     `)
 
@@ -176,7 +176,7 @@ export const text = '🎉';`
     expect(consumer.button({ className: 'external', style }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-text-LDML8V-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-52 external",
+          "className": "z-CVE4-Z-button-text-0 z-p-8px z-style-CVE4-Z-button external",
           "style": {
             "color": "#000",
             "paddingLeft": "2px",

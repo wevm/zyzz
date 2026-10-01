@@ -53,7 +53,9 @@ export function Conditions() {
     <Preview name="conditions">
       <button
         type="button"
-        {...styles.conditions({ conditions: { wide: { size: 'regular' } } })}
+        {...styles.conditions({
+          conditions: { wide: { size: 'regular' } },
+        })}
       >
         Save
       </button>
@@ -67,7 +69,9 @@ export function Dynamic() {
     <Preview name="dynamic">
       <button
         type="button"
-        {...styles.dynamic({ size: { custom: { padding: '20px' } } })}
+        {...styles.dynamic({
+          size: { custom: { padding: '20px' } },
+        })}
       >
         Save
       </button>

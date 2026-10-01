@@ -502,7 +502,9 @@ export async function verify(options: verify.Options) {
           const relocated = Path.join(root, `relocated-${cycle}.ts`)
           await Watch.write({
             path: relocated,
-            source: files['styles.ts'].replace('#0066cc', '#553377'),
+            source: files['styles.ts']
+              .replace('#0066cc', '#553377')
+              .replace("id: 'app'", `id: 'relocated-${cycle}'`),
           })
           await edit(`export * from './relocated-${cycle}'`)
           await page.waitForFunction(

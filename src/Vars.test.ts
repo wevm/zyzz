@@ -36,7 +36,7 @@ describe('compose', () => {
     const library = Graph.compile({ modules: { 'index.ts': source } })
     expect(
       JSON.parse(library.contracts['index.ts']!).version,
-    ).toMatchInlineSnapshot(`30`)
+    ).toMatchInlineSnapshot(`31`)
 
     const browser = await chromium.launch()
     try {
@@ -328,7 +328,7 @@ describe('compose', () => {
 })
 
 describe('define', () => {
-  test.each([28, 29])(
+  test.each([28, 29, 30])(
     'retains old producer variable spelling through extension and repacking: v%s',
     async (version) => {
       const producer = JSON.parse(
@@ -350,14 +350,14 @@ describe('define', () => {
       })
       expect(
         JSON.parse(result.contracts['app.ts']!).version,
-      ).toMatchInlineSnapshot(`30`)
+      ).toMatchInlineSnapshot(`31`)
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: { 'app.ts': result.modules['app.ts']!.code },
         packages: { library: { 'index.ts': producer.code } },
       })
       const fixture = Vm.runInNewContext(`${code};Fixture;`)
-      const scope = `z_theme-${JSON.parse(result.contracts['app.ts']!).exports.alternate.theme}`
+      const scope = fixture.scope.className
       const browser = await chromium.launch()
       try {
         const page = await browser.newPage()
@@ -368,13 +368,13 @@ describe('define', () => {
           await page
             .locator('#card')
             .evaluate((node) => getComputedStyle(node).backgroundColor),
-        ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
-        if (version === 29)
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        if (version >= 29)
           expect(
             await page
               .locator('#card')
               .evaluate((node) => getComputedStyle(node).color),
-          ).toMatchInlineSnapshot('"color(srgb 0 0 1 / 0.5)"')
+          ).toMatchInlineSnapshot(`"color(srgb 1 0 0 / 0.5)"`)
         const repacked = Graph.compile({
           contracts: { 'app.ts': result.contracts['app.ts']! },
           imports: { 'consumer.ts': { './app': 'app.ts' } },
@@ -389,7 +389,7 @@ describe('define', () => {
           await page
             .locator('#card')
             .evaluate((node) => getComputedStyle(node).backgroundColor),
-        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
       } finally {
         await browser.close()
       }
@@ -618,35 +618,39 @@ describe('define', () => {
 
         expect([
           ...new Set(
-            standalone.css.match(/--z-color-background-secondary-[\w-]+/g),
+            standalone.css.match(
+              /--z-(?:[\w]+-)?color-background-secondary\b(?=:)/g,
+            ),
           ),
         ]).toMatchInlineSnapshot(`
           [
-            "--z-color-background-secondary-4HEniLJcTXH",
-            "--z-color-background-secondary-77n2a4ss_uF",
-            "--z-color-background-secondary-bC-ESgkZ_to",
+            "--z-tds_2f_platform-color-background-secondary",
+            "--z-tds_2d_platform-color-background-secondary",
+            "--z-tds_2f_pl_e1_tform-color-background-secondary",
           ]
         `)
         const names = [
-          ...new Set(css.match(/--z-color-background-secondary-[\w-]+/g)),
+          ...new Set(
+            css.match(/--z-(?:[\w]+-)?color-background-secondary\b(?=:)/g),
+          ),
         ].sort()
         if (packed)
           expect(names).toMatchInlineSnapshot(`
-          [
-            "--z-color-background-secondary-4HEniLJcTXH",
-            "--z-color-background-secondary-77n2a4ss_uF",
-            "--z-color-background-secondary-bC-ESgkZ_to",
-            "--z-color-background-secondary-c3L3w96TxQG",
-          ]
-        `)
+            [
+              "--z-color-background-secondary",
+              "--z-tds_2d_platform-color-background-secondary",
+              "--z-tds_2f_pl_e1_tform-color-background-secondary",
+              "--z-tds_2f_platform-color-background-secondary",
+            ]
+          `)
         else
           expect(names).toMatchInlineSnapshot(`
-          [
-            "--z-color-background-secondary-77n2a4ss_uF",
-            "--z-color-background-secondary-bC-ESgkZ_to",
-            "--z-color-background-secondary-c3L3w96TxQG",
-          ]
-        `)
+            [
+              "--z-color-background-secondary",
+              "--z-tds_2d_platform-color-background-secondary",
+              "--z-tds_2f_pl_e1_tform-color-background-secondary",
+            ]
+          `)
 
         const page = await browser.newPage()
         for (const output of [
@@ -1204,17 +1208,17 @@ void [color, length, wrongLength]
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-src-app-bk8jvZf5JrJ-config-base{--z-color-accent-b07u5jufhwM:#2563eb;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
-      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-base{--z-spacing-page-b0L4IfEjMux:32px;}}
-      .z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-color-accent-b07u5jufhwM:#9333ea;--z-spacing-page-b0L4IfEjMux:var(--z-spacing-page-fallback-ce0Mew4yPha);--z-surface-panel-f9kdJUYqBjM:#fff;}
-      @media (min-width: 768px){.z_theme-src-app-bk8jvZf5JrJ-config-alternate{--z-spacing-page-b0L4IfEjMux:32px;}}
+      ".z-theme-base{--z-color-accent:#2563eb;--z-spacing-page:var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_);--z-surface-panel:#fff;}
+      @media (min-width: 768px){.z-theme-base{--z-spacing-page:32px;}}
+      .z-theme-alternate{--z-color-accent:#9333ea;--z-spacing-page:var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_);--z-surface-panel:#fff;}
+      @media (min-width: 768px){.z-theme-alternate{--z-spacing-page:32px;}}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-text-HedmoP{color:var(--z-color-accent-b07u5jufhwM,#2563eb);}
-      .z-p-IQ2rhY{padding:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
-      .z-w-rDGSnw{width:var(--z-spacing-page-b0L4IfEjMux,var(--z-spacing-page-fallback-ce0Mew4yPha));}
-      .z-bg-b6sB8n{background-color:var(--z-surface-panel-f9kdJUYqBjM,#fff);}"
+      .z-text-\\5b var\\28 --z-color-accent\\2c \\23 2563eb\\29 \\5d {color:var(--z-color-accent,#2563eb);}
+      .z-p-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_16px_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_min_5f_2d_5f_width_5f_3a_5f__5f_20_5f_768px_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_32px_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\29 \\29 \\5d {padding:var(--z-spacing-page,var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_));}
+      .z-w-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_16px_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_min_5f_2d_5f_width_5f_3a_5f__5f_20_5f_768px_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_32px_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\29 \\29 \\5d {width:var(--z-spacing-page,var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_));}
+      .z-bg-\\5b var\\28 --z-surface-panel\\2c \\23 fff\\29 \\5d {background-color:var(--z-surface-panel,#fff);}"
     `)
     const code = await Packed.bundle({
       entry: 'app.ts',
@@ -1576,7 +1580,7 @@ test('keeps reference paths that collide with function properties', () => {
   expect(config.vars.name.value).toBe('red')
   expect(config.vars.length.value).toBe('8px')
   expect(typeof config.vars).toBe('function')
-  expect(config.vars().className).toContain('z_theme-')
+  expect(config.vars().className).toContain('z-theme-')
 })
 
 test('rejects missing responsive typography thresholds', () => {
@@ -1812,18 +1816,18 @@ describe('defineVars', () => {
 
         if (packed)
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-            ".z_theme-id-70-61-6c-65-74-74-65{--z-color-brand-cxDpf0acNeO:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-color-brand-cxDpf0acNeO);--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#123456);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-color-foreground-5EqdfNuWtDi);}
-            .z_theme-id-70-61-6c-65-74-74-65-nx61htkyeuol{--z-color-brand-cxDpf0acNeO:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-color-brand-cxDpf0acNeO);--z-color-foreground-5EqdfNuWtDi:var(--z-color-brand-cxDpf0acNeO,#654321);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-color-foreground-5EqdfNuWtDi);}
-            .z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;--z-color-foreground-ee9lfVRgJjs:var(--z-color-brand-bJVleUJpPJY,#654321);}
-            .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
+            ".z-theme-palette-base{--z-palette-color-brand:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-palette-color-brand);--z-palette-color-foreground:var(--z-palette-color-brand,#123456);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-palette-color-foreground);}
+            .z-theme-palette-alternate{--z-palette-color-brand:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-palette-color-brand);--z-palette-color-foreground:var(--z-palette-color-brand,#654321);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-palette-color-foreground);}
+            .z-theme-theme{--z-color-brand:#654321;--z-color-foreground:var(--z-color-brand,#654321);}
+            .z-text-\\5b var\\28 --z-color-brand\\2c \\23 654321\\29 \\5d {color:var(--z-color-brand,#654321);}"
           `)
         else
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-            ".z_theme-src-config-6Q0EnEZaLq6-style-theme{--z-color-brand-bJVleUJpPJY:#654321;}
+            ".z-theme-theme{--z-color-brand:#654321;}
             .z_scheme-dark{color-scheme:dark;}
             .z_scheme-light{color-scheme:light;}
             .z_scheme-light-dark{color-scheme:light dark;}
-            .z-text-Gi4fOZ{color:var(--z-color-brand-bJVleUJpPJY,#654321);}"
+            .z-text-\\5b var\\28 --z-color-brand\\2c \\23 654321\\29 \\5d {color:var(--z-color-brand,#654321);}"
           `)
       }
     },

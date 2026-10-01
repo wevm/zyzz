@@ -333,6 +333,7 @@ export function acceptsReference(
 export function bind<tokens extends Theme.Tokens>(
   original: Theme.Definition<tokens>,
   contract: Contract,
+  cssName?: string,
 ): Theme.Definition<tokens> {
   type Tree = { [key: string]: Reference | Tree }
 
@@ -371,7 +372,14 @@ export function bind<tokens extends Theme.Tokens>(
         vars: variables(tokens),
       },
       definition,
-      { value: Object.freeze({ ...metadata, contract, values }) },
+      {
+        value: Object.freeze({
+          ...metadata,
+          ...(cssName !== undefined ? { cssName } : {}),
+          contract,
+          values,
+        }),
+      },
     ),
   ) as Theme.Definition<tokens>
 }
@@ -383,8 +391,8 @@ export const complete = Symbol('zyzz.contract.complete')
 export type Contract = {
   /** Whether values belong to independent variables rather than fixed theme categories. */
   readonly variableSet?: boolean | undefined
-  /** Legacy custom-property spelling retained by older packed producers. */
-  readonly variableNaming?: 'legacy' | undefined
+  /** Custom-property spelling retained by older packed producers. */
+  readonly variableNaming?: 'legacy' | 'hashed' | undefined
   /** Configuration-local category-to-property mappings. */
   readonly mappings?: VariableSets.Mappings | false | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
@@ -522,6 +530,8 @@ export function is(value: unknown): value is Reference {
 
 /** Immutable theme data carried directly by each definition. */
 export type Metadata = {
+  /** Authored scope name, independent of private graph ownership. */
+  readonly cssName?: string | undefined
   /** Original segments for typography paths containing query punctuation. */
   readonly paths?: Readonly<Record<string, readonly string[]>> | undefined
   readonly queries?: Query.Metadata | undefined

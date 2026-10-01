@@ -6,6 +6,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Stylesheets from './internal/Stylesheets.js'
 import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
+import * as ClassName from '../web/internal/ClassName.js'
 import * as Native from './Native.js'
 import * as Edits from './internal/Edits.js'
 import * as Identity from '../internal/Identity.js'
@@ -299,7 +300,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
           previous.type !== slot.type)
       )
         throw new Error(
-          `Conflicting packed variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
+          `Conflicting packed variable identity: ${slot.name}; supply distinct declaration ids.`,
         )
 
       variableSlots.set(slot.name, {
@@ -1018,7 +1019,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         )
           fail(
             moduleId,
-            `Conflicting variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
+            `Conflicting variable identity: ${slot.name}; supply distinct declaration ids.`,
             call,
           )
 
@@ -1459,23 +1460,26 @@ function build(options: compile.Options, cache?: Cache): Cache {
   for (const library of Object.values(libraries))
     for (const link of Object.values(library.links)) published(link)
 
-  const atomicOwners = new Map<string, string>()
-  function packedOwners(link: Themes.Link, moduleId: string) {
-    for (const name of link.style?.className?.split(' ') ?? []) {
-      if (
-        !name.startsWith('z-') ||
-        name.startsWith('z-style-') ||
-        name.startsWith('z-content-')
-      )
-        continue
-      if (!atomicOwners.has(name)) atomicOwners.set(name, moduleId)
+  const emittedRules = new Map<string, { body: string; moduleId: string }>()
+  function registerRules(
+    classRules: Readonly<Record<string, string>>,
+    moduleId: string,
+  ) {
+    for (const [name, body] of Object.entries(classRules)) {
+      const previous = emittedRules.get(name)
+      if (previous && previous.body !== body)
+        throw new Css.CompileError([
+          {
+            code: 'identity_collision',
+            message: `Generated ${name.startsWith('@scope:') ? `scope ${name.split(':')[1]}` : `class ${name}`} conflicts with module ${previous.moduleId}. Supply distinct config or style ids.`,
+            path: [moduleId],
+          },
+        ])
+      emittedRules.set(name, { body, moduleId })
     }
-    for (const member of Object.values(link.members ?? {}))
-      packedOwners(member, moduleId)
   }
   for (const [moduleId, library] of Object.entries(libraries))
-    for (const link of Object.values(library.links))
-      packedOwners(link, moduleId)
+    registerRules(library.classRules, moduleId)
   if (options.compiler === false) {
     const identities = new Map<string, string>()
     for (const [moduleId, library] of Object.entries(libraries)) {
@@ -1616,34 +1620,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     })
     if (transformed.size > 256)
       transformed.delete(transformed.keys().next().value!)
-    // Module-local checks cannot detect truncated ownership hashes colliding across files.
-    const emitted = new Set(
-      Array.from(
-        modules[moduleId]!.css.matchAll(/\.(z-[\w-]+)\{/g),
-        (match) => match[1],
-      ),
-    )
-    for (const value of Object.values(modules[moduleId]!.classes))
-      for (const name of value.split(' ')) {
-        if (
-          options.compiler === false ||
-          !name.startsWith('z-') ||
-          !emitted.has(name)
-        )
-          continue
-
-        const owner = atomicOwners.get(name)
-        if (owner !== undefined && owner !== moduleId)
-          throw new Css.CompileError([
-            {
-              code: 'invalid_name',
-              message: `Atomic class ${name} is also owned by module ${owner}.`,
-              path: [moduleId],
-            },
-          ])
-
-        atomicOwners.set(name, moduleId)
-      }
+    registerRules(modules[moduleId]![ClassName.rules], moduleId)
 
     for (const call of extracted.get(moduleId)!.calls)
       if (
@@ -1692,6 +1669,22 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ])
     : contributions
   const sharedCss = shared.css
+
+  function publishedRules(
+    id: string,
+    visited = new Set<string>(),
+  ): Readonly<Record<string, string>> {
+    if (visited.has(id)) return {}
+    visited.add(id)
+    return Object.assign(
+      {},
+      ...(dependencies[id] ?? []).map((dependency) =>
+        publishedRules(dependency, visited),
+      ),
+      libraries[id]?.classRules,
+      modules[id]?.[ClassName.rules],
+    )
+  }
 
   function publishedStyle(link: Themes.Link): Themes.Link {
     return {
@@ -1822,6 +1815,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                 })),
                 id,
                 configurations(id),
+                publishedRules(id),
               ),
             ]),
         ),
@@ -1844,6 +1838,7 @@ function nativeOutput(
   let sourceMap: Mapping.EncodedSourceMap | undefined
 
   return Object.freeze({
+    [ClassName.rules]: Object.freeze({}),
     classes: Object.freeze({}),
     [Edits.key]: output[Edits.key],
     code: output.code,

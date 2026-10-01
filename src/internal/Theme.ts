@@ -599,10 +599,10 @@ function build(
     Object.defineProperty(
       {
         get className(): string {
-          if (scope) return `z_theme-${scope}`
+          if (scope) return `z-theme-${scope}`
           const id = contract[Token.identity]
           if (!id?.startsWith('id-')) throw new MissingTransformError()
-          return `z_theme-${id}-${Identity.hash(JSON.stringify(values))}`
+          return `z-theme-${id.slice(3)}`
         },
         style: (styles?: unknown, options: style.DefinitionOptions = {}) => {
           if (!contract[Token.identity])

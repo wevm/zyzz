@@ -73,12 +73,11 @@ test.each([false, true])(
       ).toMatchInlineSnapshot('1')
 
       expect(
-        css.match(/--z-editorial-labelSize-(?!fallback)[\w-]+:\s*var\(/g)
-          ?.length,
-      ).toMatchInlineSnapshot('2')
+        css.match(/--z-editorial-labelSize:\s*var\(/g)?.length,
+      ).toMatchInlineSnapshot(`2`)
       expect(
-        css.match(/--z-editorial-space-(?!fallback)[\w-]+:\s*var\(/g)?.length,
-      ).toMatchInlineSnapshot('2')
+        css.match(/--z-editorial-space:\s*var\(/g)?.length,
+      ).toMatchInlineSnapshot(`2`)
       const page = await browser.newPage({
         viewport: { width: 800, height: 600 },
       })

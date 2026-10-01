@@ -47,7 +47,7 @@ describe('zyzz', () => {
       const development = await server.ssrLoadModule('/app.ts')
 
       expect(development.vars().className).toMatchInlineSnapshot(
-        `"z_theme-src-app-c4wWbemHxp3-style-theme"`,
+        `"z-theme-theme"`,
       )
 
       const result = await Vite.build({
@@ -77,11 +77,11 @@ describe('zyzz', () => {
       )
 
       expect(production.vars().className).toMatchInlineSnapshot(
-        `"z_theme-src-app-c4wWbemHxp3-style-theme"`,
+        `"z-theme-theme"`,
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-_Pp8Rg z-style-1hl3v031oo9bot-175",
+          "className": "z-text-[var(--z-color-brand,red)] z-style-emHxp3-styles-card",
         }
       `)
     } finally {
@@ -313,7 +313,7 @@ describe('zyzz', () => {
       expect(css).toMatchInlineSnapshot(`
         "@layer reset,app;
         body{margin:0;}@layer app { body { color: blue } }
-        .z-text-blue-0rQK9y{color:blue;}"
+        .z-text-blue{color:blue;}"
       `)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })

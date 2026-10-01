@@ -38,7 +38,7 @@ export function variable(
 ): unknown {
   const id = typeof kind === 'object' ? kind.id : options?.id
   return Variable.create({
-    name: `--z-v${Identity.requireId(id, 'variable')}`,
+    name: `--z-${Identity.requireId(id, 'variable').slice(3)}`,
     type: typeof kind === 'string' ? kind : '*',
     variable: true,
   })

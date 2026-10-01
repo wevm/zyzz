@@ -41,11 +41,10 @@ void [spin, ping, pulse, bounce]
  */
 export const tokens = {
   animate: {
-    spin: 'z-kid-7a-79-7a-7a-2d-73-70-69-6e 1s linear infinite',
-    ping: 'z-kid-7a-79-7a-7a-2d-70-69-6e-67 1s cubic-bezier(0, 0, 0.2, 1) infinite',
-    pulse:
-      'z-kid-7a-79-7a-7a-2d-70-75-6c-73-65 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-    bounce: 'z-kid-7a-79-7a-7a-2d-62-6f-75-6e-63-65 1s infinite',
+    spin: 'z-kid-zyzz_2d_spin 1s linear infinite',
+    ping: 'z-kid-zyzz_2d_ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+    pulse: 'z-kid-zyzz_2d_pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+    bounce: 'z-kid-zyzz_2d_bounce 1s infinite',
   },
   aspect: {
     video: '16 / 9',
@@ -680,13 +679,13 @@ export const tokens = {
 /** Default appearance, restoration script, and authoring helpers with bundled light/dark tokens. */
 // Generated from tokens by scripts/default-theme.ts; edit tokens and regenerate.
 const config = Config.create({
+  id: 'default',
   vars: {
     animate: {
-      spin: 'z-kid-7a-79-7a-7a-2d-73-70-69-6e 1s linear infinite',
-      ping: 'z-kid-7a-79-7a-7a-2d-70-69-6e-67 1s cubic-bezier(0, 0, 0.2, 1) infinite',
-      pulse:
-        'z-kid-7a-79-7a-7a-2d-70-75-6c-73-65 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      bounce: 'z-kid-7a-79-7a-7a-2d-62-6f-75-6e-63-65 1s infinite',
+      spin: 'z-kid-zyzz_2d_spin 1s linear infinite',
+      ping: 'z-kid-zyzz_2d_ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+      pulse: 'z-kid-zyzz_2d_pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      bounce: 'z-kid-zyzz_2d_bounce 1s infinite',
     },
     aspect: {
       video: '16 / 9',

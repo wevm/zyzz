@@ -16,6 +16,7 @@ const alternate = extendVars(base, {
   color: { accent: { dark: '#d8b4fe', light: '#9333ea' } },
 })
 const { style: scopedStyle, vars } = defineConfig({
+  id: 'concepts-example',
   defaultVars: 'base',
   vars: { base, alternate },
 })

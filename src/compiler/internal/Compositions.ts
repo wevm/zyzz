@@ -503,6 +503,13 @@ export function collect(options: collect.Options) {
           )
         : undefined
     const call: Source.Call = {
+      cssName: selected
+        .map((call) =>
+          [call.cssNamespace, call.cssName ?? call.identity ?? 'style']
+            .filter(Boolean)
+            .join('-'),
+        )
+        .join('-'),
       ...(portable(selected)
         ? {
             portable: portable(selected),

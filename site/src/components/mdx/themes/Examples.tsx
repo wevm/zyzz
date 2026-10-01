@@ -16,6 +16,7 @@ const alternate = extendVars(base, {
   spacing: { page: '2rem' },
 })
 const { style, vars } = defineConfig({
+  id: 'themes-example',
   defaultVars: 'base',
   vars: { base, alternate },
 })

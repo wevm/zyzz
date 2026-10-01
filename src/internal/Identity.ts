@@ -25,13 +25,6 @@ export function compact(value: string): string {
   return result
 }
 
-/** Encodes an explicit identity without losing punctuation or Unicode distinctions. */
-export function encode(value: string): string {
-  return Array.from(value, (character) =>
-    character.codePointAt(0)!.toString(16),
-  ).join('-')
-}
-
 /** Keeps an authored label readable while its separate hash disambiguates spelling. */
 export function label(value: string): string {
   return (
@@ -42,18 +35,27 @@ export function label(value: string): string {
   )
 }
 
+/** Encodes one name segment, reserving hyphens for path boundaries. */
+export function name(value: string): string {
+  return Array.from(value, (character) =>
+    /^[a-zA-Z0-9]$/.test(character)
+      ? character
+      : `_${character.codePointAt(0)!.toString(16)}_`,
+  ).join('')
+}
+
 /** Requires an explicit identity at an uncompiled authoring boundary. */
 export function requireId(id: string | undefined, kind: string): string {
   if (!id)
     throw new Error(
       `${kind} requires an explicit id without the compiler plugin.`,
     )
-  return `id-${encode(id)}`
+  return `id-${name(id)}`
 }
 
 /** Names one callback input independently of its declaration order. */
 export function slot(id: string, field: string): `--${string}` {
-  return `--z-d${id}-${encode(field)}`
+  return `--z-${id.startsWith('id-') ? id.slice(3) : id}-${name(field)}`
 }
 
 /** Hashes a canonical value using two independent 32-bit accumulators. */
@@ -69,7 +71,7 @@ export function hash(value: string): string {
 }
 
 /** Names ordered style data consistently in runtime and extraction. */
-export function style(input: Style.NamedStyle): string {
+export function style(input: Style.NamedStyle, namespace?: string): string {
   function value(input: Style.Declaration['value']): unknown {
     if (Binding.is(input)) return ['variable', input.name]
     if (Token.is(input))
@@ -105,12 +107,12 @@ export function style(input: Style.NamedStyle): string {
       !!declaration.important,
     ])
   }
-  return `z-content-${hash(JSON.stringify(shape(input)))}`
+  return `z-${namespace ? `${namespace}-` : ''}content-${name(JSON.stringify(shape(input)))}`
 }
 
 /** Names a complete ordered composition, including repeated definitions. */
 export function composition(names: readonly string[]): string {
-  return `z-compose-${hash(JSON.stringify(names))}`
+  return `z-compose-${name(JSON.stringify(names))}`
 }
 
 /** Names a stylesheet declaration with a caller-owned identity. */

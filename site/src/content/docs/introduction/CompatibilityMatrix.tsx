@@ -13,7 +13,7 @@ import SafariIcon from '~icons/simple-icons/safari'
 import SolidIcon from '~icons/simple-icons/solid'
 import SvelteIcon from '~icons/simple-icons/svelte'
 import VueIcon from '~icons/simple-icons/vuedotjs'
-import { style } from '../../zyzz.config.js'
+import { style } from '../../../zyzz.config.js'
 
 const icons = {
   chrome: ChromeIcon,
@@ -73,15 +73,10 @@ export declare namespace CompatibilityContent {
   }
 }
 
-/** Keeps support tables readable and keyboard-scrollable on narrow screens. */
+/** Keeps support tables readable on narrow screens. */
 export function CompatibilityMatrix(props: CompatibilityMatrix.Props) {
   return (
-    <div
-      aria-label={props.label}
-      role="region"
-      tabIndex={0}
-      {...styles.matrix()}
-    >
+    <div aria-label={props.label} role="region" {...styles.matrix()}>
       {props.children}
     </div>
   )
@@ -99,19 +94,22 @@ export declare namespace CompatibilityMatrix {
 
 namespace styles {
   export const content = style({
-    '&[data-compatibility-content] :is(p, aside, li) code': {
-      fontSize: '0.9em !custom',
+    selectors: {
+      '&[data-compatibility-content] :is(p, aside, li) code': {
+        fontSize: '0.9em !custom',
+      },
     },
   })
 
   export const icon = style({
-    color: 'foreground',
     display: 'inline-flex',
     marginRight: 2,
     verticalAlign: 'text-bottom',
-    '&[data-target]': { marginRight: 1 },
-    '&[data-unverified]': { color: 'amber.900' },
-    '&[data-verified]': { color: 'green.700' },
+    selectors: {
+      '&[data-unverified]': { color: 'amber.900' },
+      '&[data-verified]': { color: 'green.700' },
+      '&[data-target]': { color: 'green.700' },
+    },
   })
 
   export const matrix = style({
@@ -123,33 +121,30 @@ namespace styles {
     overflowX: 'auto',
     typography: 'copy.14',
     lineHeight: '22px !custom',
-    '&:focus-visible': {
-      outlineColor: 'blue.700',
-      outlineOffset: '2px',
-      outlineStyle: 'solid',
-      outlineWidth: '2px',
+    selectors: {
+      '& table': {
+        borderCollapse: 'collapse',
+        tableLayout: 'fixed',
+        width: '100% !custom',
+      },
+      '& thead th': { borderTopWidth: 0 },
+      '& th, & td': {
+        borderTopColor: 'gray.400',
+        borderTopStyle: 'solid !custom',
+        borderTopWidth: '1px',
+        padding: 3,
+        textAlign: 'left',
+        verticalAlign: 'top',
+      },
+      '& th': { color: 'gray.900', fontWeight: 'normal' },
+      '& th:first-child': { width: '32% !custom' },
+      '& td': { color: 'gray.900' },
+      '& table p': { margin: 0 },
     },
-    '& table': {
-      borderCollapse: 'collapse',
-      tableLayout: 'fixed',
-      width: '100% !custom',
-    },
-    '& thead th': { borderTopWidth: 0 },
-    '& th, & td': {
-      borderTopColor: 'gray.400',
-      borderTopStyle: 'solid !custom',
-      borderTopWidth: '1px',
-      padding: 3,
-      textAlign: 'left',
-      verticalAlign: 'top',
-    },
-    '& th': { color: 'gray.900', fontWeight: 'normal' },
-    '& th:first-child': { width: '32% !custom' },
-    '& td': { color: 'gray.900' },
-    '& table p': { margin: 0 },
-    '& td strong': { color: 'foreground' },
     '@media (max-width: 600px)': {
-      '& th:first-child': { width: '36% !custom' },
+      selectors: {
+        '& th:first-child': { width: '36% !custom' },
+      },
     },
   })
 }

@@ -3,6 +3,7 @@ import { type ReactNode, useState } from 'react'
 import { cx, defineConfig, defineVars, extendVars, style, variants } from 'zyzz'
 import { style as ui } from 'zyzz/default'
 import { global } from 'zyzz/web'
+import InfoIcon from '~icons/lucide/info'
 
 const base = defineVars({
   color: {
@@ -47,7 +48,13 @@ export declare namespace Table {
 export function Note(props: Note.Props) {
   return (
     <aside aria-label="Note" data-concept-note="" {...styles.note()}>
-      {props.children}
+      <InfoIcon
+        aria-hidden="true"
+        width="20"
+        height="20"
+        {...styles.noteIcon()}
+      />
+      <div>{props.children}</div>
     </aside>
   )
 }
@@ -347,14 +354,20 @@ namespace styles {
   export const muted = ui({ color: 'gray.900', typography: 'copy.14' })
 
   export const note = ui({
-    backgroundColor: 'blue.100',
+    alignItems: 'flex-start',
+    backgroundColor: 'gray.200',
     border: '1px solid',
-    borderColor: 'blue.400',
+    borderColor: 'gray.400',
     borderRadius: 'md',
+    color: 'gray.900',
+    display: 'flex',
+    gap: 3,
     paddingBlock: 4,
     paddingInline: 5,
-    '&[data-concept-note] p': { margin: 0, color: 'foreground' },
+    '&[data-concept-note] p': { margin: 0, color: 'gray.900' },
   })
+
+  export const noteIcon = ui({ flexShrink: 0, marginTop: '2px !custom' })
 
   export const recipe = variants({
     base: {

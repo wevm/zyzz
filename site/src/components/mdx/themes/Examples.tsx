@@ -149,15 +149,10 @@ export function Tokens() {
 function Card() {
   return (
     <article data-theme-card="" {...styles.card()}>
-      <div {...styles.details()}>
-        <h2 {...styles.title()}>Account</h2>
-        <p>Manage account preferences.</p>
-      </div>
+      <h2>Account</h2>
+      <p>Manage account preferences.</p>
       <div {...styles.account()}>
-        <div {...styles.details()}>
-          <strong>Personal account</strong>
-          <p>alex@example.com</p>
-        </div>
+        <p>alex@example.com</p>
         <span {...styles.status()}>Active</span>
       </div>
     </article>
@@ -187,21 +182,13 @@ namespace styles {
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem !custom',
     maxWidth: '28rem !custom',
-    width: '100% !custom',
-    boxSizing: 'border-box',
     marginInline: 'auto !custom',
-    '& p': {
-      margin: '0px !custom',
-      fontSize: '0.875rem',
-      lineHeight: 1.5,
-      opacity: 0.65,
-    },
     borderRadius: '12px',
     border: '1px solid light-dark(#e5e5e5, #333)',
+    '& h2': { margin: '0px !custom', fontSize: '1.25rem' },
+    '& p': { margin: '0px !custom', fontSize: '0.875rem', opacity: 0.65 },
+    '& > div': { marginTop: '1.25rem !custom' },
   })
 
   export const control = ui({
@@ -300,20 +287,7 @@ namespace styles {
 
   export const status = style({
     color: 'accent',
-    backgroundColor:
-      'color-mix(in srgb, currentColor 12%, transparent) !custom',
-    borderRadius: '999px',
-    padding: '0.25rem 0.625rem !custom',
     fontSize: '0.75rem',
     fontWeight: 500,
-    lineHeight: 1.5,
-  })
-
-  export const title = style({
-    margin: '0px !custom',
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    letterSpacing: '-0.025em',
-    lineHeight: 1.4,
   })
 }

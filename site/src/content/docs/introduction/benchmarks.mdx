@@ -25,13 +25,15 @@ Timings include compilation, common CSS minification, and browser JavaScript bun
 
 <LiteralDelivery />
 
+Hover or focus a library to inspect CSS, client JavaScript, and total gzip bytes. Each library shows CSS above JavaScript on the same scale.
+
 For 1,000 repeated components, Zyzz delivered 473 gzip bytes: 111 bytes of CSS and 362 bytes of JavaScript. With unique padding, the total grew to 7,275 bytes. These charts show compressed fixture delivery, including required helpers. They do not measure application load time.
 
 Each literal chart has its own linear byte scale. The tables retain all eight workloads and every library, including the results that are not charted.
 
 #### Mean Build Time
 
-Milliseconds; lower is better.
+Milliseconds; lower is better. Zyzz recorded the lowest observed mean in all eight literal workloads. The shaded cells compare each measurement with Zyzz, and the labels show ratios rounded to two decimals.
 
 <Results>
 
@@ -94,7 +96,7 @@ Two compatible scopes with light/dark values. All lanes include CSS and componen
 
 <ThemeDelivery />
 
-Both theme charts use the same scale. At 10 components, vanilla-extract delivered 592 gzip bytes versus Zyzz's 645. At 100 components, Zyzz delivered 1,218 versus 1,236. The `zyzz-tokens` lane has identical delivery and adds token resolution to build timing. Output size depends on the workload.
+The theme charts share a scale and show CSS and JavaScript separately. At 10 components, vanilla-extract delivered 592 gzip bytes versus Zyzz's 645. At 100 components, Zyzz delivered 1,218 versus 1,236. The `zyzz-tokens` lane has identical delivery and adds token resolution to build timing. Output size depends on the workload.
 
 #### 10 Components
 

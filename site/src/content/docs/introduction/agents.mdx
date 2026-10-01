@@ -13,7 +13,7 @@ Include the requested change and ask the agent to read the existing config, buil
 The site serves readable Markdown at documentation URLs ending in `.md`. Fetch a page directly when an agent needs its text:
 
 ```sh
-curl https://zyzz.sh/docs/introduction/editor-agents.md
+curl https://zyzz.sh/docs/introduction/agents.md
 ```
 
 Use the [documentation index](https://raw.githubusercontent.com/wevm/zyzz/main/docs/llms.txt) to find the relevant guide and API contract. Resolve the index's relative links against its GitHub directory. Copy the owning config and build setup alongside examples, since token names and compilation targets are project-specific.
@@ -35,15 +35,3 @@ Record the project's conventions in its agent instruction file, such as `AGENTS.
 ```
 
 These instructions apply the project's conventions to future tasks. They do not require a dedicated Zyzz agent server.
-
-## Check the result
-
-TypeScript feedback checks authoring types. The compiler checks source and target constraints. The rendered application confirms that the compiled styles load and behave as intended.
-
-1. Ask the agent to run the project's type checks and resolve errors, including unknown tokens and invalid variant choices.
-2. Run the project's build or development command. Fix compiler diagnostics at their reported source locations before consuming new output.
-3. Inspect the affected component at relevant widths, interaction states, and color schemes. Keep generated code and styles from the same build.
-
-Inferred types do not establish platform support. Check [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) before using preview or unsupported behavior. Web compilation does not establish native rendering parity.
-
-For a missing transform, missing CSS, or unexpected overrides, see [Testing & Troubleshooting](https://github.com/wevm/zyzz/blob/main/docs/guides/testing.md#troubleshooting).

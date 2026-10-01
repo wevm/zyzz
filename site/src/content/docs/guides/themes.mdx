@@ -12,16 +12,12 @@ A token is a named design value, such as `foreground` or `page`. Zyzz stores tok
 
 The examples below require the compiler setup in [Getting Started](/docs/introduction/getting-started). A variable definition alone does not load its CSS or apply its scope.
 
-<Tabs label="zyzz.config.ts">
-
-<Tab title="zyzz.config.ts">
-
 ```ts title="zyzz.config.ts"
 import { defineConfig, defineVars, extendVars } from 'zyzz'
 
 const base = defineVars({
   color: {
-    accent: '#2563eb',
+    accent: { light: '#2563eb', dark: '#60a5fa' },
     foreground: { light: '#171717', dark: '#fafafa' },
     surface: { light: '#ffffff', dark: '#171717' },
   },
@@ -29,7 +25,7 @@ const base = defineVars({
 })
 
 const alternate = extendVars(base, {
-  color: { accent: '#9333ea' },
+  color: { accent: { light: '#9333ea', dark: '#c084fc' } },
   spacing: { page: '2rem' },
 })
 
@@ -39,16 +35,6 @@ export const { appearance, script, style, vars } = defineConfig({
   vars: { base, alternate },
 })
 ```
-
-</Tab>
-
-<Tab title="Rendered">
-
-<Examples.Tokens />
-
-</Tab>
-
-</Tabs>
 
 `defineVars` creates a typed reference tree. `extendVars` replaces existing leaves and retains omitted values. All named sets must have matching paths and compatible value domains. New paths or incompatible overrides fail validation. To use one set, pass `vars: base` and omit `defaultVars`.
 
@@ -77,11 +63,16 @@ namespace styles {
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
+    borderRadius: '10px',
+    border: '1px solid light-dark(#e5e5e5, #333)',
   })
 
   export const title = style({
     color: 'accent',
     marginBottom: vars.spacing.page,
+    fontSize: '1rem',
+    fontWeight: 600,
+    lineHeight: 1.5,
   })
 }
 ```
@@ -114,7 +105,7 @@ import { vars } from './zyzz.config.js'
 
 export function ThemePreview() {
   return (
-    <main {...vars({ colorScheme: 'light' })}>
+    <main {...vars()}>
       <Card />
       <section {...vars({ set: 'alternate' })}>
         <Card />
@@ -143,7 +134,7 @@ Omitting `colorScheme` inherits the surrounding scheme. A single-set configurati
 
 ## Select a color scheme
 
-Define scheme-dependent colors as complete `{ light, dark }` pairs. A plain color, such as the accent above, stays the same in both schemes. Select the scheme independently of the variable set.
+Define scheme-dependent colors as complete `{ light, dark }` pairs. A plain color value stays the same in both schemes. Select the scheme independently of the variable set.
 
 <Tabs label="DarkPreview.tsx">
 
@@ -187,7 +178,7 @@ import { style, vars } from 'zyzz/default'
 
 export function DefaultCard() {
   return (
-    <section {...vars({ colorScheme: 'light dark' })}>
+    <section {...vars()}>
       <article {...styles.card()}>
         <h2 {...styles.title()}>Account</h2>
         <p {...styles.body()}>Manage account preferences.</p>
@@ -288,7 +279,10 @@ export const { style, vars } = defineConfig({
     spacing: ['gap', 'padding', 'paddingLeft', 'paddingRight'],
   },
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  vars: { surface: { panel: '#fff' }, spacing: { page: '1rem' } },
+  vars: {
+    surface: { panel: { light: '#fff', dark: '#171717' } },
+    spacing: { page: '1rem' },
+  },
 })
 
 namespace styles {
@@ -494,7 +488,9 @@ For an in-memory stylesheet, compile explicit definitions through `Css.compile`.
 import { defineVars, Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
-const base = defineVars({ color: { foreground: '#171717' } })
+const base = defineVars({
+  color: { foreground: { light: '#171717', dark: '#fafafa' } },
+})
 const styles = Style.define({ card: { color: base.color.foreground } })
 const output = Css.compile({ styles, vars: { base } })
 

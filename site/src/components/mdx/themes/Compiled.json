@@ -1,7 +1,7 @@
 {
-  "css": ".t_0{--z0:#171717;}\n.z-text-YUOkma{color:var(--z0,#171717);}",
+  "css": ".t_0{--z0:light-dark(#171717,#fafafa);}\n.z-text-gwmWnd{color:var(--z0,light-dark(#171717,#fafafa));}",
   "classes": {
-    "card": "z-text-YUOkma"
+    "card": "z-text-gwmWnd"
   },
   "vars": {
     "base": "t_0"

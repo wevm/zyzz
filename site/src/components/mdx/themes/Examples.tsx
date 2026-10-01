@@ -6,14 +6,14 @@ import output from './Compiled.json'
 
 const base = defineVars({
   color: {
-    accent: '#2563eb',
+    accent: { light: '#2563eb', dark: '#60a5fa' },
     foreground: { light: '#171717', dark: '#fafafa' },
     surface: { light: '#ffffff', dark: '#171717' },
   },
   spacing: { page: '1.5rem' },
 })
 const alternate = extendVars(base, {
-  color: { accent: '#9333ea' },
+  color: { accent: { light: '#9333ea', dark: '#c084fc' } },
   spacing: { page: '2rem' },
 })
 const { style, vars } = defineConfig({
@@ -44,7 +44,10 @@ const { style: mappedStyle, vars: mappedVars } = defineConfig({
     spacing: ['gap', 'padding', 'paddingLeft', 'paddingRight'],
   },
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  vars: { surface: { panel: '#fff' }, spacing: { page: '1rem' } },
+  vars: {
+    surface: { panel: { light: '#fff', dark: '#171717' } },
+    spacing: { page: '1rem' },
+  },
 })
 const { style: responsiveStyle, vars: responsiveVars } = defineConfig({
   vars: {
@@ -69,7 +72,7 @@ const { style: queryStyle } = defineConfig({
 export function Bundled() {
   return (
     <div {...styles.example()}>
-      <section {...defaultVars({ colorScheme: 'light dark' })}>
+      <section {...defaultVars()}>
         <article {...styles.defaultCard()}>
           <h2 {...styles.defaultTitle()}>Account</h2>
           <p {...styles.defaultBody()}>Manage account preferences.</p>
@@ -86,7 +89,7 @@ export function Compiled() {
       <iframe
         title="Standalone compiled Account text"
         {...styles.frame()}
-        srcDoc={`<!doctype html><html><head><style>${output.css}</style></head><body><section class="${output.vars.base}"><article class="${output.classes.card}">Account</article></section></body></html>`}
+        srcDoc={`<!doctype html><html><head><style>:root{color-scheme:light dark}body{font-family:system-ui;margin:0;padding:24px;background:light-dark(#fff,#171717)}article{font-size:16px;font-weight:600}${output.css}</style></head><body><section class="${output.vars.base}"><article class="${output.classes.card}">Account</article></section></body></html>`}
       />
     </div>
   )
@@ -121,12 +124,12 @@ export function Preferences() {
         onClick={() => setDark(!dark)}
         {...styles.control()}
       >
-        {dark ? 'Use base light colors' : 'Use alternate dark colors'}
+        {dark ? 'Use page colors' : 'Use alternate dark colors'}
       </button>
       <section
         {...vars({
           set: dark ? 'alternate' : 'base',
-          colorScheme: dark ? 'dark' : 'light',
+          colorScheme: dark ? 'dark' : undefined,
         })}
       >
         <Card />
@@ -189,14 +192,39 @@ export function Responsive() {
 
 /** Compares the alternate card's light and dark scheme values. */
 export function Schemes() {
+  const [scheme, setScheme] = useState<'page' | 'light' | 'dark'>('page')
+
   return (
     <div {...styles.example()}>
-      {(['light', 'dark'] as const).map((colorScheme) => (
-        <section key={colorScheme} {...vars({ set: 'alternate', colorScheme })}>
-          <span {...styles.caption()}>Alternate · {colorScheme}</span>
-          <Card />
-        </section>
-      ))}
+      <div
+        role="group"
+        aria-label="Preview color scheme"
+        {...styles.controls()}
+      >
+        {(['page', 'light', 'dark'] as const).map((value) => (
+          <button
+            type="button"
+            key={value}
+            aria-pressed={scheme === value}
+            onClick={() => setScheme(value)}
+            {...styles.control()}
+          >
+            {value === 'page'
+              ? 'Page scheme'
+              : value === 'light'
+                ? 'Light'
+                : 'Dark'}
+          </button>
+        ))}
+      </div>
+      <section
+        {...vars({
+          set: 'alternate',
+          colorScheme: scheme === 'page' ? undefined : scheme,
+        })}
+      >
+        <Card />
+      </section>
     </div>
   )
 }
@@ -205,7 +233,7 @@ export function Schemes() {
 export function Scopes() {
   return (
     <div {...styles.example()}>
-      <main {...vars({ colorScheme: 'light' })}>
+      <main {...vars()}>
         <span {...styles.caption()}>Base</span>
         <Card />
         <section {...styles.scope()}>
@@ -229,34 +257,29 @@ export function Scopes() {
 export function Semantic() {
   return (
     <div {...styles.example()}>
-      {(['light', 'dark'] as const).map((colorScheme) => (
-        <div key={colorScheme} {...styles.row()}>
-          {(['base', 'alternate'] as const).map((set) => (
-            <section key={set} {...semanticVars({ set, colorScheme })}>
-              <article
-                {...styles.semanticCard()}
-                style={{
-                  backgroundColor: colorScheme === 'light' ? '#fff' : '#171717',
-                }}
-              >
-                <span>
-                  {set} · {colorScheme}
-                </span>
-                <p>Account</p>
-              </article>
-            </section>
-          ))}
-        </div>
-      ))}
+      <div {...styles.row()}>
+        {(['base', 'alternate'] as const).map((set) => (
+          <section key={set} {...semanticVars({ set })}>
+            <article {...styles.semanticCard()}>
+              <span {...styles.caption()}>{set}</span>
+              <p>Account</p>
+            </article>
+          </section>
+        ))}
+      </div>
+      <span {...styles.caption()}>
+        The alternate palette changes the light foreground. Both sets share the
+        dark foreground.
+      </span>
     </div>
   )
 }
 
-/** Shows the shared card in the default light scope. */
+/** Shows the shared card in the default scope. */
 export function Tokens() {
   return (
     <div {...styles.example()}>
-      <section {...vars({ colorScheme: 'light' })}>
+      <section {...vars()}>
         <Card />
       </section>
       <span {...styles.caption()}>Base · blue accent · 1.5rem padding</span>
@@ -266,7 +289,7 @@ export function Tokens() {
 
 function Card() {
   return (
-    <article {...styles.card()}>
+    <article data-theme-card="" {...styles.card()}>
       <h2 {...styles.title()}>Account</h2>
       <p>Manage account preferences.</p>
     </article>
@@ -278,13 +301,15 @@ namespace styles {
     color: 'gray.900',
     typography: 'copy.13',
     display: 'block',
-    marginBottom: 2,
+    marginBottom: 0,
   })
 
   export const card = style({
     backgroundColor: 'surface',
     color: 'foreground',
     padding: 'page',
+    borderRadius: '10px',
+    border: '1px solid light-dark(#e5e5e5, #333)',
   })
 
   export const control = ui({
@@ -294,6 +319,11 @@ namespace styles {
     borderRadius: 'sm',
     color: 'foreground',
     cursor: 'pointer',
+    typography: 'label.13',
+    '&[aria-pressed="true"]': {
+      backgroundColor: 'gray.200',
+      borderColor: 'gray.700',
+    },
     paddingBlock: 2,
     paddingInline: 3,
     ':focus-visible': {
@@ -303,6 +333,8 @@ namespace styles {
     },
   })
 
+  export const controls = ui({ display: 'flex', flexWrap: 'wrap', gap: 2 })
+
   export const defaultBody = ui({ typography: 'copy.14', fontWeight: 'medium' })
 
   export const defaultCard = ui({
@@ -310,6 +342,8 @@ namespace styles {
     borderRadius: 'md',
     color: 'foreground',
     padding: 6,
+    border: '1px solid',
+    borderColor: 'gray.400',
   })
 
   export const defaultTitle = ui({ typography: 'heading.24' })
@@ -319,13 +353,24 @@ namespace styles {
     flexDirection: 'column',
     gap: 4,
     padding: 6,
-    '& h2': { marginTop: 0 },
-    '& p': { color: 'inherit !custom !important', marginBlock: 0 },
+    backgroundColor: 'gray.100',
+    '& section, & main': { minWidth: '0px !custom' },
+    '& [data-theme-card] h2': {
+      fontSize: '16px !custom !important',
+      lineHeight: '24px !custom !important',
+      marginTop: '0px !custom !important',
+    },
+
+    '& p': {
+      color: 'inherit !custom !important',
+      typography: 'copy.14',
+      marginBlock: 0,
+    },
     '@media (max-width: 640px)': { padding: 4 },
   })
 
   export const frame = ui({
-    backgroundColor: 'white !custom',
+    backgroundColor: 'background.primary',
     border: '0px',
     height: 16,
     width: '100% !custom',
@@ -347,13 +392,23 @@ namespace styles {
     boxSizing: 'content-box',
   })
 
-  export const mappingTrack = ui({ backgroundColor: 'blue.700', padding: 3 })
+  export const mappingTrack = ui({
+    backgroundColor: 'blue.100',
+    borderRadius: 'md',
+    border: '1px solid',
+    borderColor: 'blue.400',
+    padding: 4,
+  })
 
   export const queryCard = queryStyle({
     '@media >=tablet': { padding: '2rem' },
     '@container preview card': { display: 'grid' },
-    backgroundColor: '#eaf4ff',
-    color: '#171717',
+    backgroundColor: 'light-dark(#fff, #171717)',
+    color: 'light-dark(#171717, #fafafa)',
+    border: '1px solid light-dark(#e5e5e5, #333)',
+    borderRadius: '10px',
+    padding: '1rem',
+    gap: '0.75rem',
   })
 
   export const queryContainer = queryStyle({
@@ -363,7 +418,9 @@ namespace styles {
 
   export const responsivePage = responsiveStyle({
     padding: 'page',
-    backgroundColor: '#dbeafe',
+    backgroundColor: 'light-dark(#eff6ff, #10223d)',
+    borderRadius: '10px',
+    border: '1px solid light-dark(#bfdbfe, #254773)',
   })
 
   export const row = ui({
@@ -374,21 +431,27 @@ namespace styles {
   })
 
   export const scope = ui({
-    border: '1px dashed',
-    borderColor: 'gray.500',
+    border: '1px solid',
+    borderColor: 'gray.400',
+    borderRadius: 'md',
     marginTop: 4,
     padding: 3,
   })
 
   export const semanticCard = semanticStyle({
     color: 'foreground',
-    padding: '1rem',
+    padding: '1.5rem',
+    backgroundColor: 'light-dark(#fff, #171717) !custom',
+    border: '1px solid light-dark(#e5e5e5, #333)',
+    borderRadius: '10px',
+    '& p': { fontSize: '1.125rem', fontWeight: 600 },
   })
 
   export const title = style({
     color: 'accent',
     marginBottom: vars.spacing.page,
+    fontSize: '1rem',
+    fontWeight: 600,
+    lineHeight: 1.5,
   })
-
-  export const wide = ui({ width: '24rem !custom', maxWidth: '100% !custom' })
 }

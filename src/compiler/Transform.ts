@@ -930,8 +930,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     (scoped ? scoped.split('\n') : [])
       .map((rule, index) => {
         const line = index + 1 + (prefix ? prefix.split('\n').length : 0)
-        const brace = rule.indexOf('{')
-        const name = rule.slice(1, brace)
+        const openers = new Map<number, number>()
+        const conditionStarts = declarationStarts(rule, true, openers)
+        const selectorStart =
+          conditionStarts.find((start) => rule[start] === '.') ?? 0
+        const brace = openers.get(selectorStart) ?? rule.indexOf('{')
+        const name = rule.slice(selectorStart + 1, brace)
         const linkedOwner = linkedOwners.get(name)
 
         if (linkedOwner) {
@@ -999,7 +1003,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         const call = owners.get(name)!
 
         Mapping.addMapping(cssMap, {
-          generated: { column: 0, line },
+          generated: { column: selectorStart, line },
           name: call.name,
           original: position(call.start),
           source: options.moduleId,
@@ -1071,8 +1075,6 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const ordered = declarations(style)
         const authored = locations(call.body ?? definitions.get(call.start)!)
-        const openers = new Map<number, number>()
-        const conditionStarts = declarationStarts(body, true, openers)
         const conditions: string[] = []
 
         function collectConditions(style: Style.NamedStyle) {
@@ -1084,17 +1086,25 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         collectConditions(style)
-        let conditionCursor = 0
+        const mappedConditions = new Set<number>()
 
         for (const start of conditionStarts) {
-          const condition = body.slice(start, openers.get(start))
-          const index = conditions.indexOf(condition, conditionCursor)
+          const condition = rule.slice(start, openers.get(start))
+          const index = conditions.findIndex(
+            (value, index) =>
+              value === condition && !mappedConditions.has(index),
+          )
           const node = conditionNodes[index]
           if (!node) continue
 
-          conditionCursor = index + 1
+          mappedConditions.add(index)
           Mapping.addMapping(cssMap, {
-            generated: { column: selector.length + start, line },
+            generated: {
+              column:
+                start +
+                (start > brace ? selector.length - (brace - selectorStart) : 0),
+              line,
+            },
             name: options.source.slice(node.key.start, node.key.end),
             original: position(node.key.start),
             source: options.moduleId,
@@ -1124,7 +1134,10 @@ export function compile(options: compile.Options): compile.ReturnType {
           used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {
-            generated: { column: selector.length + start, line },
+            generated: {
+              column: selectorStart + selector.length + start,
+              line,
+            },
             name: declaration.property,
             original: position(location.start),
             source: options.moduleId,
@@ -1132,7 +1145,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           cursor = start + text.length
         }
 
-        return selector + body
+        return rule.slice(0, selectorStart) + selector + body
       })
       .join('\n'),
   ]

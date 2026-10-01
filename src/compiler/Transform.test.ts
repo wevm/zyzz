@@ -3892,8 +3892,8 @@ export const fade = keyframes({ '@supports (display: grid)': {'entry 0%, cover 1
       })
       expect(output.css).toMatchInlineSnapshot(
         `
-        ".z-text-7z2S1a-0{@media (width >= 48rem){color:red;}}
-        .z-text-wDYOdY-1{@media (width >= 48rem){color:blue;}}"
+        "@media (width >= 48rem){.z-text-7z2S1a-0{color:red;}}
+        @media (width >= 48rem){.z-text-wDYOdY-1{color:blue;}}"
       `,
       )
     })
@@ -5320,8 +5320,8 @@ describe('conditions', () => {
       ).toMatchInlineSnapshot(
         `
         ".z-text-Ej1-qy-0{:where(.dark) &{color:red;}}
-        .z-display-9deXf3-1{@media only screen{display:grid;}}
-        .z-display-HqRCbU-2{@media not print{display:block;}}"
+        @media only screen{.z-display-9deXf3-1{display:grid;}}
+        @media not print{.z-display-HqRCbU-2{display:block;}}"
       `,
       )
     })
@@ -5367,7 +5367,7 @@ describe('conditions', () => {
       expect(output.css).toMatchInlineSnapshot(
         `
         ".z-text-QYzvfa-0{&:is(:hover,:focus){color:red;}}
-        .z-p-3q6TaG-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+        @media (width > 1px)  and (hover: hover){.z-p-3q6TaG-1{padding:2px;}}"
       `,
       )
     })
@@ -5422,7 +5422,7 @@ describe('conditions', () => {
       expect(output.css).toMatchInlineSnapshot(
         `
         ".z-text-red-OAJevU-0{color:red;}
-        .z-p-xANo17-1{@media screen, print{padding:2px;}}"
+        @media screen, print{.z-p-xANo17-1{padding:2px;}}"
       `,
       )
 
@@ -5477,10 +5477,10 @@ describe('conditions', () => {
           ".z_theme-src-conditions-7f0nMFlkpGI-themeConfig-theme{--z-spacing-small-7xnQ-pEBfTm:4px;--z-spacing-large-46UsPVFFToQ:16px;}
           .z-p-T_ZbE8-0{padding:var(--z-spacing-small-7xnQ-pEBfTm,4px);}
           .z-hover-p-FIW4kw-1{&:hover{padding:var(--z-spacing-large-46UsPVFFToQ,16px);}}
-          .z-w-DZ0CPD-2{@media (48rem <= width < 64rem){width:100px;}}
-          .z-h-ImwflV-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+          @media (48rem <= width < 64rem){.z-w-DZ0CPD-2{width:100px;}}
+          @media (48rem <= width < 64rem){.z-h-ImwflV-3{&[data-active]{height:20px;}}}
           .z-display-CPrnAz-4{@container sidebar (width >= 24rem){display:grid;}}
-          .z-gap-IsA4ja-5{@supports (display:grid){gap:var(--z-spacing-small-7xnQ-pEBfTm,4px);}}
+          @supports (display:grid){.z-gap-IsA4ja-5{gap:var(--z-spacing-small-7xnQ-pEBfTm,4px);}}
           .z-opacity-dHkap9-6{@starting-style{opacity:0;}}"
         `)
     })
@@ -5516,7 +5516,7 @@ describe('conditions', () => {
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z_theme-src-theme-fH_5f_CKDLyhct-theme{}
-        .z-w-nvOmb7-0{@media (width >= 48rem){width:100px;}}"
+        @media (width >= 48rem){.z-w-nvOmb7-0{width:100px;}}"
       `)
     })
     test.each([
@@ -12531,7 +12531,7 @@ describe('statements', () => {
         `"@custom-media --z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74 (width < 40rem);"`,
       )
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-text-8K9YMq-0{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
+        `"@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){.z-text-8K9YMq-0{color:red;}}"`,
       )
     })
     test('emits native functions and callable fixed expressions', async () => {

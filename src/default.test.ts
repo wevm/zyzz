@@ -275,7 +275,7 @@ variants({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot(`30`)
+        ).toMatchInlineSnapshot(`31`)
         expect(
           (
             await Fs.readFile(

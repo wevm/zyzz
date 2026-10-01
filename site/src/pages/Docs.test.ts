@@ -36,7 +36,7 @@ describe('/docs', () => {
     Fs.mkdirSync(`${directory}/src/content/docs/guides`, { recursive: true })
     Fs.writeFileSync(
       fixture,
-      'export const example = true\n\n# Navigation **Fixture**\n\nA [guide](/docs) used to verify `published` navigation.\n\n[Shared setup](/docs/introduction/getting-started?framework=nextjs&mode=custom)\n\n[Markdown](/docs/introduction/getting-started.md)\n\n<Card href="/docs/introduction/why-zyzz" title="Why Zyzz card">Read about Zyzz.</Card>\n',
+      'import { useEffect, useState } from "react"\n\nexport const example = true\n\nexport function Readiness() { const [ready, setReady] = useState(false); useEffect(() => setReady(true), []); return <span data-navigation-ready={ready} /> }\n\n# Navigation **Fixture**\n\nA [guide](/docs) used to verify `published` navigation.\n\n<Readiness />\n\n[Shared setup](/docs/introduction/getting-started?framework=nextjs&mode=custom)\n\n[Markdown](/docs/introduction/getting-started.md)\n\n<Card href="/docs/introduction/why-zyzz" title="Why Zyzz card">Read about Zyzz.</Card>\n',
     )
     server = ChildProcess.spawn(
       'node',
@@ -155,7 +155,9 @@ describe('/docs', () => {
         viewport: { width: 1400, height: 900 },
       })
       await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
-      await page.waitForLoadState('networkidle')
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
       const timeOrigin = await page.evaluate(() => performance.timeOrigin)
       const documents: string[] = []
       page.on('request', (request) => {
@@ -254,7 +256,9 @@ describe('/docs', () => {
       await page
         .getByRole('heading', { level: 1, name: 'Getting Started' })
         .waitFor()
+      await menu.waitFor({ state: 'hidden' })
       expect(await menu.isVisible()).toMatchInlineSnapshot('false')
+      await page.waitForFunction(() => document.body.style.overflow === '')
       expect(
         await page.evaluate(() => document.body.style.overflow),
       ).toMatchInlineSnapshot('""')

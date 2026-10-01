@@ -38,6 +38,7 @@ export function CompatibilityIcon(props: CompatibilityIcon.Props) {
   return (
     <span
       aria-hidden="true"
+      data-target={props.name === 'target' || undefined}
       data-unverified={props.name === 'unverified' || undefined}
       data-verified={props.name === 'verified' || undefined}
       {...styles.icon()}
@@ -104,9 +105,11 @@ namespace styles {
   })
 
   export const icon = style({
+    color: 'foreground',
     display: 'inline-flex',
     marginRight: 2,
     verticalAlign: 'text-bottom',
+    '&[data-target]': { marginRight: 1 },
     '&[data-unverified]': { color: 'amber.900' },
     '&[data-verified]': { color: 'green.700' },
   })
@@ -144,6 +147,7 @@ namespace styles {
     '& th:first-child': { width: '32% !custom' },
     '& td': { color: 'gray.900' },
     '& table p': { margin: 0 },
+    '& td strong': { color: 'foreground' },
     '@media (max-width: 600px)': {
       '& th:first-child': { width: '36% !custom' },
     },

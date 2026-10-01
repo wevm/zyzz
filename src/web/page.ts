@@ -35,6 +35,8 @@ export declare namespace page {
       | 'crop cross'
       | 'cross crop'
       | undefined
+    /** Handling of page margins that exceed the printer's printable area. */
+    readonly pageMarginSafety?: 'none' | 'clamp' | 'add' | undefined
     /** Rotation applied to a laid-out page. */
     readonly pageOrientation?:
       | 'upright'

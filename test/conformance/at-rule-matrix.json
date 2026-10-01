@@ -252,6 +252,10 @@
       "file": "src/node/Host.test.ts",
       "test": "namespace create rebuilds Unicode namespace bindings and preserves unrelated module scopes"
     },
+    "page.margin-safety": {
+      "file": "src/compiler/Transform.test.ts",
+      "test": "finalAcceptance compile compiles page margin safety and validates packed descriptors"
+    },
     "page.margins": {
       "file": "src/compiler/Transform.test.ts",
       "test": "page compile retains every margin box and its source call through a packed library dependency"
@@ -2827,12 +2831,13 @@
           "status": "partial",
           "cases": ["page.pagination", "page.rendering", "targets.retention"],
           "limitations": [
-            "Chromium 153 verifies named/pseudo-pages, margin boxes, all three orientations, and a packed break-inside: avoid control. Bleed, printer marks, broader fragmentation, and complete page length rendering remain unverified."
+            "Chromium 153 verifies named/pseudo-pages, margin boxes, all three orientations, and a packed break-inside: avoid control. Bleed, printer marks, broader fragmentation, and complete page length rendering remain unverified.",
+            "Page margin safety rendering remains unverified."
           ],
           "compatibility": "partial"
         }
       },
-      "grammar": "b4b26ca90beda50527050bc521cfbdf1e8b27a5f60deec0b710c6d8772ba4008"
+      "grammar": "67237b1b70e5ddd7d7ee6ba08af091b110a4fb67b71431f1830f458a6f5e46b0"
     },
     "@page/@bottom-center": {
       "compiler": {
@@ -3561,6 +3566,48 @@
         }
       },
       "grammar": "ea1e5a6082c997f54d06126571c73ef479e06bcb38922e8147ef99c929161c26"
+    },
+    "@page/page-margin-safety": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.margin-safety"]
+        },
+        "grammar": {
+          "cases": ["page.margin-safety"]
+        },
+        "maps": {
+          "cases": ["final.page.source"]
+        },
+        "output": {
+          "cases": ["page.margin-safety"]
+        },
+        "packed": {
+          "cases": ["page.margin-safety"]
+        },
+        "references": {
+          "notApplicable": "Page margin safety creates no opaque reference identity."
+        },
+        "source": {
+          "cases": ["page.margin-safety"]
+        },
+        "types": {
+          "cases": ["final.page.types"]
+        },
+        "watch": {
+          "cases": ["final.page.watch"]
+        }
+      },
+      "grammar": "e0c8b66c6006b3315554428ebe437f8769546b52052691d88ac9962eec4698ff",
+      "rendering": {
+        "chromium": {
+          "compatibility": "partial",
+          "cases": ["page.margin-safety"],
+          "limitations": [
+            "Chromium retains all three descriptor values in CSSOM. Printed page margin safety remains unverified."
+          ],
+          "status": "partial"
+        }
+      }
     },
     "@page/page-orientation": {
       "compiler": {

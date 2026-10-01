@@ -4810,7 +4810,7 @@
         "status": "supported"
       },
       "window-drag": {
-        "grammar": "f7b3aa200088cc64aea60632cc75b52cea5020e2575a032a1155b06d94f47b66",
+        "grammar": "b43b562e364f28510a153726b9617e12f2caa7b6fad715c896e5fbfe44d937b6",
         "status": "supported",
         "evidence": ["src/compiler/Transform.test.ts"]
       },
@@ -7313,5 +7313,5 @@
       }
     }
   },
-  "version": "2.36.0"
+  "version": "2.37.0"
 }

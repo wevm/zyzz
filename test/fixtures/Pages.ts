@@ -29,7 +29,7 @@ export function source(after = false): string {
     descriptors
       .map(
         (value, i) =>
-          `sheet({'@layer print':{'@media print':${JSON.stringify({ selector: ['book:first', ':left', ':right', ':blank', 'book:left, appendix:right'][i], descriptors: { ...value, ...(after ? { bleed: '3px', marks: 'none', pageOrientation: 'rotate-right', size: 'B5' } : {}), color: after ? 'blue' : 'red', '@top-center': { content: after ? '"After"' : '"Before"' } } })}}});`,
+          `sheet({'@layer print':{'@media print':${JSON.stringify({ selector: ['book:first', ':left', ':right', ':blank', 'book:left, appendix:right'][i], descriptors: { ...value, pageMarginSafety: after ? 'add' : 'none', ...(after ? { bleed: '3px', marks: 'none', pageOrientation: 'rotate-right', size: 'B5' } : {}), color: after ? 'blue' : 'red', '@top-center': { content: after ? '"After"' : '"Before"' } } })}}});`,
       )
       .join('\n')
   )

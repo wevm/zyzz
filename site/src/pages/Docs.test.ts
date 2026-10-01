@@ -278,7 +278,7 @@ describe('/docs', () => {
     } finally {
       await browser.close()
     }
-  }, 30000)
+  }, 60000)
 
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })

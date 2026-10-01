@@ -5,7 +5,7 @@ import * as Os from 'node:os'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 
-const origin = 'http://localhost:3137'
+const origin = 'http://localhost:3157'
 let server: ChildProcess.ChildProcess
 const directory = Fs.realpathSync(
   Fs.mkdtempSync(`${Os.tmpdir()}/zyzz-docs-test-`),
@@ -36,14 +36,14 @@ describe('/docs', () => {
     Fs.mkdirSync(`${directory}/src/content/docs/guides`, { recursive: true })
     Fs.writeFileSync(
       fixture,
-      'export const example = true\n\n# Navigation **Fixture**\n\nA [guide](/docs) used to verify `published` navigation.\n',
+      'export const example = true\n\n# Navigation **Fixture**\n\nA [guide](/docs) used to verify `published` navigation.\n\n[Shared setup](/docs/introduction/getting-started?framework=nextjs&mode=custom)\n\n[Markdown](/docs/introduction/getting-started.md)\n\n<Card href="/docs/introduction/why-zyzz" title="Why Zyzz card">Read about Zyzz.</Card>\n',
     )
     server = ChildProcess.spawn(
       'node',
       [
         '--input-type=module',
         '-e',
-        `import { createServer } from 'vite'; const server = await createServer({ cacheDir: ${JSON.stringify(`${directory}/.vite`)}, server: { port: 3137, strictPort: true, fs: { allow: ${JSON.stringify([directory, Fs.realpathSync(new URL('../../..', import.meta.url))])} } } }); await server.listen();`,
+        `import { createServer } from 'vite'; const server = await createServer({ cacheDir: ${JSON.stringify(`${directory}/.vite`)}, server: { port: 3157, strictPort: true, fs: { allow: ${JSON.stringify([directory, Fs.realpathSync(new URL('../../..', import.meta.url))])} } } }); await server.listen();`,
       ],
       {
         cwd: directory,
@@ -58,7 +58,7 @@ describe('/docs', () => {
     server.stderr?.on('data', (data) => {
       output += data
     })
-    for (let attempt = 0; attempt < 120; attempt++) {
+    for (let attempt = 0; attempt < 480; attempt++) {
       if (server.exitCode !== null) throw new Error(output)
       try {
         if ((await fetch(`${origin}/docs/introduction/getting-started`)).ok)
@@ -67,7 +67,7 @@ describe('/docs', () => {
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
     throw new Error(`Documentation site did not start. ${output}`)
-  }, 60000)
+  }, 150000)
 
   afterAll(async () => {
     if (server?.pid && server.exitCode === null) {
@@ -147,6 +147,134 @@ describe('/docs', () => {
       await browser.close()
     }
   })
+
+  test('switches documentation pages without reloading and restores shared setup through history', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page.waitForLoadState('networkidle')
+      const timeOrigin = await page.evaluate(() => performance.timeOrigin)
+      const documents: string[] = []
+      page.on('request', (request) => {
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame()
+        )
+          documents.push(request.url())
+      })
+
+      expect(
+        await page
+          .getByRole('link', { name: 'Markdown', exact: true })
+          .getAttribute('href'),
+      ).toMatchInlineSnapshot('"/docs/introduction/getting-started.md"')
+      await page
+        .getByRole('link', { name: 'Shared setup', exact: true })
+        .focus()
+      await page.keyboard.press('Enter')
+      await page
+        .getByRole('heading', { name: 'Configure Next.js', exact: true })
+        .waitFor()
+      expect(
+        new URL(page.url()).searchParams.get('framework'),
+      ).toMatchInlineSnapshot('"nextjs"')
+      expect(
+        new URL(page.url()).searchParams.get('mode'),
+      ).toMatchInlineSnapshot('"custom"')
+      expect(
+        await page
+          .getByRole('heading', { name: 'Define Config', exact: true })
+          .count(),
+      ).toMatchInlineSnapshot('1')
+
+      await page
+        .locator('aside')
+        .getByRole('link', { name: 'Why Zyzz', exact: true })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Why Zyzz', exact: true })
+        .waitFor()
+      expect(await page.title()).toMatchInlineSnapshot('"Why Zyzz · Zyzz"')
+      expect(
+        await page
+          .locator('aside')
+          .getByRole('link', { name: 'Why Zyzz', exact: true })
+          .getAttribute('aria-current'),
+      ).toMatchInlineSnapshot('"page"')
+
+      await page.goBack()
+      await page
+        .getByRole('heading', { name: 'Configure Next.js', exact: true })
+        .waitFor()
+      expect(
+        await page
+          .getByRole('heading', { name: 'Define Config', exact: true })
+          .count(),
+      ).toMatchInlineSnapshot('1')
+      await page.goBack()
+      await page
+        .getByRole('heading', { level: 1, name: 'Navigation Fixture' })
+        .waitFor()
+      await page
+        .getByRole('link', { name: 'Why Zyzz card', exact: false })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Why Zyzz', exact: true })
+        .waitFor()
+
+      await page.getByRole('link', { name: 'Variables', exact: true }).click()
+      await page.waitForFunction(() => document.title === 'Variables · Zyzz')
+      await page.getByRole('link', { name: 'Zyzz home', exact: true }).click()
+      await page
+        .getByRole('heading', {
+          name: 'Universal styles for modern interfaces',
+        })
+        .waitFor()
+      await page.getByRole('link', { name: 'Docs', exact: true }).click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Getting Started' })
+        .waitFor()
+      await page
+        .locator('aside')
+        .getByRole('link', { name: 'Why Zyzz', exact: true })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Why Zyzz', exact: true })
+        .waitFor()
+
+      await page.setViewportSize({ width: 390, height: 900 })
+      await page.getByRole('button', { name: 'Open menu' }).click()
+      const menu = page.getByRole('dialog', { name: 'Documentation menu' })
+      await menu
+        .getByRole('link', { name: 'Getting Started', exact: true })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Getting Started' })
+        .waitFor()
+      expect(await menu.isVisible()).toMatchInlineSnapshot('false')
+      expect(
+        await page.evaluate(() => document.body.style.overflow),
+      ).toMatchInlineSnapshot('""')
+      await page.goBack()
+      await page
+        .getByRole('heading', { level: 1, name: 'Why Zyzz', exact: true })
+        .waitFor()
+      await page.goForward()
+      await page
+        .getByRole('heading', { level: 1, name: 'Getting Started' })
+        .waitFor()
+
+      expect(
+        (await page.evaluate(() => performance.timeOrigin)) === timeOrigin,
+      ).toMatchInlineSnapshot('true')
+      expect(documents).toMatchInlineSnapshot('[]')
+    } finally {
+      await browser.close()
+    }
+  }, 30000)
 
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })

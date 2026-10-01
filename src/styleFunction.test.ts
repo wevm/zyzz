@@ -1833,14 +1833,14 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
       })
 
       expect(result.modules['shared.ts']!.css).toMatchInlineSnapshot(`
-        ".z-direct-text-0{&:hover{color:red;}}
-        .z-direct-text-1{.z-style-parent > &{color:blue;}}
-        .z-spread-text-0{&:hover{color:red;}}
-        .z-spread-text-1{.z-style-parent > &{color:blue;}}
-        .z-spread-text-2{&:focus{color:green;}}
-        .z-dynamic-text-0{&:hover{color:red;}}
-        .z-dynamic-text-1{.z-style-parent > &{color:blue;}}
-        .z-dynamic-opacity-2{opacity:var(--z-dynamic-opacity);}"
+        ".z-shared_2e_ts-direct-text-0{&:hover{color:red;}}
+        .z-shared_2e_ts-direct-text-1{.z-style-shared_2e_ts-parent > &{color:blue;}}
+        .z-shared_2e_ts-spread-text-0{&:hover{color:red;}}
+        .z-shared_2e_ts-spread-text-1{.z-style-shared_2e_ts-parent > &{color:blue;}}
+        .z-shared_2e_ts-spread-text-2{&:focus{color:green;}}
+        .z-shared_2e_ts-dynamic-text-0{&:hover{color:red;}}
+        .z-shared_2e_ts-dynamic-text-1{.z-style-shared_2e_ts-parent > &{color:blue;}}
+        .z-shared_2e_ts-dynamic-opacity-2{opacity:var(--z-shared_2e_ts-dynamic-opacity);}"
       `)
     })
 
@@ -1858,36 +1858,36 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
 
         const theme = ({} as import('zyzz').Vars.Definition<{}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{}}>);
         const config = ({} as import('zyzz').Config.VariableConfig<{readonly "output":"html";readonly "vars":{}}>);
-        export const themed = __zyzzProps.create({className:"z-style-themed"});
-        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-configured"})) as import('zyzz').style.ReturnType<'html'>);
+        export const themed = __zyzzProps.create({className:"z-style-empty_2e_ts-themed"});
+        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-empty_2e_ts-configured"})) as import('zyzz').style.ReturnType<'html'>);
         export const bare = ({className:""});
-        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-child-text-0 z-style-child"})) as import('zyzz').style.ReturnType<'html'>);"
+        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-empty_2e_ts-child-text-0 z-style-empty_2e_ts-child"})) as import('zyzz').style.ReturnType<'html'>);"
       `)
       expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
-        `".z-child-text-0{.z-style-themed > &, .z-style-configured + &{color:red;}}"`,
+        `".z-empty_2e_ts-child-text-0{.z-style-empty_2e_ts-themed > &, .z-style-empty_2e_ts-configured + &{color:red;}}"`,
       )
     })
 
     test('compiles namespace definitions and scoped selectors', () => {
       const result = Graph.compile({ modules: { 'app.ts': source } })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-styles-card-p-0{padding:16px;}
-        .z-styles-label-text-0{color:black;}
-        .z-styles-label-text-1{.z-style-styles-card:hover &{color:blue;}}
-        .z-styles-label-opacity-2{.z-style-styles-card > &:nth-child(even){opacity:0.5;}}
-        .z-styles-label-font-weight-3{.z-style-styles-empty + &{font-weight:700;}}
-        .z-outside-m-0{.z-style-styles-card > &{margin:0;}}"
+        ".z-app_2e_ts-styles-card-p-0{padding:16px;}
+        .z-app_2e_ts-styles-label-text-0{color:black;}
+        .z-app_2e_ts-styles-label-text-1{.z-style-app_2e_ts-styles-card:hover &{color:blue;}}
+        .z-app_2e_ts-styles-label-opacity-2{.z-style-app_2e_ts-styles-card > &:nth-child(even){opacity:0.5;}}
+        .z-app_2e_ts-styles-label-font-weight-3{.z-style-app_2e_ts-styles-empty + &{font-weight:700;}}
+        .z-app_2e_ts-outside-m-0{.z-style-app_2e_ts-styles-card > &{margin:0;}}"
       `)
       expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         export namespace styles {
-          export const card = __zyzzProps.create({className:"z-styles-card-p-0 z-style-styles-card"})
-          export const empty = __zyzzProps.create({className:"z-style-styles-empty"})
-          export const label = __zyzzProps.create({className:"z-styles-label-text-0 z-styles-label-text-1 z-styles-label-opacity-2 z-styles-label-font-weight-3 z-style-styles-label"})
+          export const card = __zyzzProps.create({className:"z-app_2e_ts-styles-card-p-0 z-style-app_2e_ts-styles-card"})
+          export const empty = __zyzzProps.create({className:"z-style-app_2e_ts-styles-empty"})
+          export const label = __zyzzProps.create({className:"z-app_2e_ts-styles-label-text-0 z-app_2e_ts-styles-label-text-1 z-app_2e_ts-styles-label-opacity-2 z-app_2e_ts-styles-label-font-weight-3 z-style-app_2e_ts-styles-label"})
         }
-        export const outside = __zyzzProps.create({className:"z-outside-m-0 z-style-outside"})"
+        export const outside = __zyzzProps.create({className:"z-app_2e_ts-outside-m-0 z-style-app_2e_ts-outside"})"
       `)
     })
 
@@ -1905,7 +1905,7 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
         imports: { 'app.ts': { zyzz: null, './barrel.js': 'barrel.ts' } },
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-label-text-0{.z-style-card > &, .z-style-styles-button + &{color:blue;}}"`,
+        `".z-app_2e_ts-label-text-0{.z-style-library_2e_ts-card > &, .z-style-library_2e_ts-styles-button + &{color:blue;}}"`,
       )
       expect(
         JSON.parse(publisher.contracts['barrel.ts']!).version,
@@ -1961,15 +1961,15 @@ export {card,other,nested};`,
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-card-text-0 z-style-card"}); const alias=card;
-        const other=__zyzzProps.create({className:"z-other-text-0 z-style-other"});
-        function nested(){ const card=other; return __zyzzProps.create({className:"z-nested-text-0"}) }
+        const card=__zyzzProps.create({className:"z-scoped_2e_ts-card-text-0 z-style-scoped_2e_ts-card"}); const alias=card;
+        const other=__zyzzProps.create({className:"z-scoped_2e_ts-other-text-0 z-style-scoped_2e_ts-other"});
+        function nested(){ const card=other; return __zyzzProps.create({className:"z-scoped_2e_ts-nested-text-0"}) }
         export {card,other,nested};"
       `)
       expect(result.modules['scoped.ts']!.css).toMatchInlineSnapshot(`
-        ".z-card-text-0{color:red;}
-        .z-other-text-0{color:red;}
-        .z-nested-text-0{.z-style-card:hover &{color:blue;}}"
+        ".z-scoped_2e_ts-card-text-0{color:red;}
+        .z-scoped_2e_ts-other-text-0{color:red;}
+        .z-scoped_2e_ts-nested-text-0{.z-style-scoped_2e_ts-card:hover &{color:blue;}}"
       `)
     })
 
@@ -1984,7 +1984,7 @@ const card=style({}); export const label=style((values:{opacity:number})=>({sele
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-style-card"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-label-opacity-0 z-style-label"+" "+external:"z-label-opacity-0 z-style-label",style:{...input.vars,...style,"--z-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
+        const card=__zyzzProps.create({className:"z-style-dynamic_2e_ts-card"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-dynamic_2e_ts-label-opacity-0 z-style-dynamic_2e_ts-label"+" "+external:"z-dynamic_2e_ts-label-opacity-0 z-style-dynamic_2e_ts-label",style:{...input.vars,...style,"--z-dynamic_2e_ts-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
       `)
       expect(() =>
         Source.extract({
@@ -2037,7 +2037,7 @@ namespace styles {
         },
       })
       expect(output.modules['static.ts']!.css).toMatchInlineSnapshot(
-        `".z-styles-child-text-0{.z-style-styles-parent:hover &{color:red;}}"`,
+        `".z-static_2e_ts-styles-child-text-0{.z-style-static_2e_ts-styles-parent:hover &{color:red;}}"`,
       )
     })
 

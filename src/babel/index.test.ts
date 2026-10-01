@@ -431,6 +431,6 @@ describe('web', () => {
       const otherRuntime = await execute(other.code!)
       expect(
         runtime.results[0].className === otherRuntime.results[0].className,
-      ).toMatchInlineSnapshot(`true`)
+      ).toMatchInlineSnapshot(`false`)
     })
 })

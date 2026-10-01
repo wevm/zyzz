@@ -475,7 +475,7 @@ export function compile<
     const cssName = labels?.[style.name]?.name ?? encode(style.name)
     const cssNamespace =
       labels?.[style.name]?.namespace ??
-      (options.scope ? encode(options.scope) : undefined)
+      (options.scope ? Identity.name(options.scope) : undefined)
 
     function emit(body: string, label: string, shared: boolean, output = mode) {
       if (!body) return

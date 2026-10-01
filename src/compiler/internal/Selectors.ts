@@ -20,6 +20,7 @@ export function scan(
   links: Readonly<Record<string, Themes.Link>> = {},
   selectorKeys: ReadonlySet<number> = new Set(),
   cssNamespaces: ReadonlyMap<number, string> = new Map(),
+  moduleId = namespace,
 ) {
   const authoredNames = Names.collect(program)
   const conditions = new Map<number, string>()
@@ -167,7 +168,7 @@ export function scan(
   function link(call: Ast.CallExpression): Themes.Link {
     const id = Identifiers.explicit(call)
     const prefix = cssNamespaces.get(call.start)
-    const name = `z-style-${id === undefined ? `${prefix ? `${prefix}-` : ''}${authoredNames.get(call.start)!}` : `id-${prefix ? `${prefix}-` : ''}${Identity.requireId(id, 'style').slice(3)}`}`
+    const name = `z-style-${id === undefined ? `${prefix ? `${prefix}-` : ''}${Identity.name(moduleId)}-${authoredNames.get(call.start)!}` : `id-${prefix ? `${prefix}-` : ''}${Identity.requireId(id, 'style').slice(3)}`}`
     identities.set(call.start, name)
 
     return {

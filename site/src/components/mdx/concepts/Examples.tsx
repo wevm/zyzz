@@ -31,16 +31,12 @@ global({
 /** Renders a documented capability limit as an accessible note. */
 export function Note(props: Note.Props) {
   return (
-    <aside
-      aria-label="Note"
-      data-concept-note=""
-      {...conceptsExamplesStyles.note()}
-    >
+    <aside aria-label="Note" data-concept-note="" {...styles.note()}>
       <InfoIcon
         aria-hidden="true"
         width="14"
         height="14"
-        {...conceptsExamplesStyles.noteIcon()}
+        {...styles.noteIcon()}
       />
       <div>{props.children}</div>
     </aside>
@@ -58,12 +54,10 @@ export declare namespace Note {
 /** A static card applies two compiled style definitions to ordinary elements. */
 export function Card() {
   return (
-    <div data-concept-example="card" {...conceptsExamplesStyles.example()}>
-      <section {...conceptsExamplesStyles.card()}>
-        <h3 {...conceptsExamplesStyles.title()}>Account</h3>
-        <span {...conceptsExamplesStyles.muted()}>
-          A styled section and heading.
-        </span>
+    <div data-concept-example="card" {...styles.example()}>
+      <section {...styles.card()}>
+        <h3 {...styles.title()}>Account</h3>
+        <span {...styles.muted()}>A styled section and heading.</span>
       </section>
     </div>
   )
@@ -72,19 +66,12 @@ export function Card() {
 /** Shows configured token names resolving to shared color and spacing values. */
 export function Tokens() {
   return (
-    <div data-concept-example="tokens" {...conceptsExamplesStyles.example()}>
-      <section
-        {...cx(
-          conceptsExamplesStyles.card(),
-          conceptsExamplesStyles.scopedCard(),
-        )}
-      >
-        <h3 {...conceptsExamplesStyles.title()}>Account</h3>
+    <div data-concept-example="tokens" {...styles.example()}>
+      <section {...cx(styles.card(), styles.scopedCard())}>
+        <h3 {...styles.title()}>Account</h3>
         <span>Accent color and 1rem padding from the config.</span>
       </section>
-      <code {...conceptsExamplesStyles.annotation()}>
-        color: 'accent' · padding: 'md'
-      </code>
+      <code {...styles.annotation()}>color: 'accent' · padding: 'md'</code>
     </div>
   )
 }
@@ -94,45 +81,29 @@ export function Scopes() {
   const [set, setSet] = useState<'alternate' | 'base'>('base')
 
   return (
-    <div data-concept-example="scopes" {...conceptsExamplesStyles.example()}>
-      <div
-        role="group"
-        aria-label="Variable set"
-        {...conceptsExamplesStyles.controls()}
-      >
+    <div data-concept-example="scopes" {...styles.example()}>
+      <div role="group" aria-label="Variable set" {...styles.controls()}>
         {(['base', 'alternate'] as const).map((value) => (
           <button
             type="button"
             key={value}
             aria-pressed={set === value}
             onClick={() => setSet(value)}
-            {...conceptsExamplesStyles.control()}
+            {...styles.control()}
           >
             {value}
           </button>
         ))}
       </div>
-      <section {...cx(conceptsExamplesStyles.scope(), vars({ set }))}>
-        <div
-          {...cx(
-            conceptsExamplesStyles.card(),
-            conceptsExamplesStyles.scopedCard(),
-          )}
-        >
-          Outer card
-        </div>
-        <section {...cx(conceptsExamplesStyles.scope(), vars({ set: 'base' }))}>
-          <div
-            {...cx(
-              conceptsExamplesStyles.card(),
-              conceptsExamplesStyles.scopedCard(),
-            )}
-          >
+      <section {...cx(styles.scope(), vars({ set }))}>
+        <div {...cx(styles.card(), styles.scopedCard())}>Outer card</div>
+        <section {...cx(styles.scope(), vars({ set: 'base' }))}>
+          <div {...cx(styles.card(), styles.scopedCard())}>
             Nested base card
           </div>
         </section>
       </section>
-      <code {...conceptsExamplesStyles.annotation()}>
+      <code {...styles.annotation()}>
         vars({'{'} set: '{set}' {'}'})
       </code>
     </div>
@@ -142,25 +113,16 @@ export function Scopes() {
 /** Compares a base style with a composed padding override. */
 export function Composition() {
   return (
-    <div
-      data-concept-example="composition"
-      {...conceptsExamplesStyles.example()}
-    >
-      <div {...conceptsExamplesStyles.controls()}>
-        <button type="button" {...conceptsExamplesStyles.button()}>
+    <div data-concept-example="composition" {...styles.example()}>
+      <div {...styles.controls()}>
+        <button type="button" {...styles.button()}>
           Base
         </button>
-        <button
-          type="button"
-          {...cx(
-            conceptsExamplesStyles.button(),
-            conceptsExamplesStyles.compact(),
-          )}
-        >
+        <button type="button" {...cx(styles.button(), styles.compact())}>
           Compact
         </button>
       </div>
-      <span {...conceptsExamplesStyles.muted()}>
+      <span {...styles.muted()}>
         The second button replaces 1rem padding with 0.5rem.
       </span>
     </div>
@@ -173,28 +135,24 @@ export function Values() {
   const [width, setWidth] = useState(50)
 
   return (
-    <div data-concept-example="values" {...conceptsExamplesStyles.example()}>
-      <div
-        role="group"
-        aria-label="Button size"
-        {...conceptsExamplesStyles.controls()}
-      >
+    <div data-concept-example="values" {...styles.example()}>
+      <div role="group" aria-label="Button size" {...styles.controls()}>
         {(['sm', 'md'] as const).map((value) => (
           <button
             type="button"
             key={value}
             aria-pressed={size === value}
             onClick={() => setSize(value)}
-            {...conceptsExamplesStyles.control()}
+            {...styles.control()}
           >
             {value}
           </button>
         ))}
       </div>
-      <button type="button" {...conceptsExamplesStyles.recipe({ size })}>
+      <button type="button" {...styles.recipe({ size })}>
         Save
       </button>
-      <label {...conceptsExamplesStyles.slider()}>
+      <label {...styles.slider()}>
         Bar width: {width}%
         <input
           type="range"
@@ -204,8 +162,8 @@ export function Values() {
           onChange={(event) => setWidth(Number(event.currentTarget.value))}
         />
       </label>
-      <div {...conceptsExamplesStyles.track()}>
-        <div {...conceptsExamplesStyles.bar({ width: `${width}%` })} />
+      <div {...styles.track()}>
+        <div {...styles.bar({ width: `${width}%` })} />
       </div>
     </div>
   )
@@ -214,19 +172,14 @@ export function Values() {
 /** Lets the browser apply hover conditions and an ancestor relationship. */
 export function Conditions() {
   return (
-    <div
-      data-concept-example="conditions"
-      {...conceptsExamplesStyles.example()}
-    >
-      <button type="button" {...conceptsExamplesStyles.hoverButton()}>
+    <div data-concept-example="conditions" {...styles.example()}>
+      <button type="button" {...styles.hoverButton()}>
         Hover or focus this button
       </button>
-      <section tabIndex={0} {...conceptsExamplesStyles.relationship()}>
-        <span {...conceptsExamplesStyles.label()}>
-          Hover or focus this card
-        </span>
+      <section tabIndex={0} {...styles.relationship()}>
+        <span {...styles.label()}>Hover or focus this card</span>
       </section>
-      <span {...conceptsExamplesStyles.muted()}>
+      <span {...styles.muted()}>
         The button dims. The card's label turns blue.
       </span>
     </div>
@@ -236,19 +189,19 @@ export function Conditions() {
 /** Shows a global base layer and a later component layer styling one element. */
 export function Layers() {
   return (
-    <div data-concept-example="layers" {...conceptsExamplesStyles.example()}>
-      <div {...conceptsExamplesStyles.layerRow()}>
+    <div data-concept-example="layers" {...styles.example()}>
+      <div {...styles.layerRow()}>
         <code>concept-base</code>
         <span>color: gray</span>
       </div>
-      <div {...conceptsExamplesStyles.layerRow()}>
+      <div {...styles.layerRow()}>
         <code>concept-components</code>
         <span>color: blue</span>
       </div>
-      <section data-concept-layer="" {...conceptsExamplesStyles.layeredCard()}>
+      <section data-concept-layer="" {...styles.layeredCard()}>
         The component layer wins.
       </section>
-      <span {...conceptsExamplesStyles.muted()}>
+      <span {...styles.muted()}>
         The base stylesheet still supplies the rounded corners.
       </span>
     </div>
@@ -258,25 +211,25 @@ export function Layers() {
 /** Shows the browser result and native output as distinct compilation targets. */
 export function Platforms() {
   return (
-    <div data-concept-example="platforms" {...conceptsExamplesStyles.example()}>
-      <span {...conceptsExamplesStyles.muted()}>
+    <div data-concept-example="platforms" {...styles.example()}>
+      <span {...styles.muted()}>
         Web output: CSS applied to an HTML element
       </span>
-      <button type="button" {...conceptsExamplesStyles.button()}>
+      <button type="button" {...styles.button()}>
         Save
       </button>
-      <span {...conceptsExamplesStyles.muted()}>
+      <span {...styles.muted()}>
         Native output: style tables applied to native elements
       </span>
-      <code {...conceptsExamplesStyles.annotation()}>Pressable + Text</code>
-      <span {...conceptsExamplesStyles.muted()}>
+      <code {...styles.annotation()}>Pressable + Text</code>
+      <span {...styles.muted()}>
         Native output is described here, not rendered in this browser.
       </span>
     </div>
   )
 }
 
-namespace conceptsExamplesStyles {
+namespace styles {
   export const annotation = ui({
     typography: 'copy.13.mono',
     color: 'gray.900',

@@ -56,10 +56,10 @@ describe('compile', () => {
     })
     expect(Object.values(Css.compile({ styles: contextual.styles }).classes))
       .toMatchInlineSnapshot(`
-      [
-        "z-heading-opacity-0 z-heading-opacity-1",
-      ]
-    `)
+        [
+          "z-named_2e_ts-heading-opacity-0 z-named_2e_ts-heading-opacity-1",
+        ]
+      `)
 
     const browser = await chromium.launch()
     try {
@@ -88,6 +88,191 @@ describe('compile', () => {
     }
   })
 
+  test('preserves variable path boundaries in browser assignments', async () => {
+    const source = `import {style,variable} from 'zyzz';
+export const fields={'foo-bar':variable('color'),foo:{bar:variable('color')}};
+export const flat=style({color:fields['foo-bar'],vars:{[fields['foo-bar']]:'red',[fields.foo.bar]:'blue'}})();
+export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',[fields.foo.bar]:'blue'}})();`
+    const output = Transform.compile({ moduleId: 'paths.js', source })
+    const code = await Packed.bundle({
+      entry: 'paths.js',
+      modules: { 'paths.js': output.code },
+    })
+    const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
+      fields: { 'foo-bar': { name: string }; foo: { bar: { name: string } } }
+      flat: { className: string }
+      nested: { className: string }
+    }
+
+    expect(fixture.fields['foo-bar'].name).toMatchInlineSnapshot(
+      '"--z-fields-foo_2d_bar"',
+    )
+    expect(fixture.fields.foo.bar.name).toMatchInlineSnapshot(
+      '"--z-fields-foo-bar"',
+    )
+
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div id="flat" class="${fixture.flat.className}">Flat</div><div id="nested" class="${fixture.nested.className}">Nested</div>`,
+      )
+      expect(
+        await page
+          .locator('#flat')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#nested')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('isolates repeated namespace members across modules in both CSS modes', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      for (const cssOutput of ['atomic', 'grouped'] as const) {
+        const output = Graph.compile({
+          modules: {
+            'config.js': `import {Config} from 'zyzz';export const {style}=Config.create({cssOutput:'${cssOutput}'});`,
+            'left.js': `import {style} from './config.js';namespace styles{export const card=style({color:'red',selectors:{'&:hover':{color:'green'}}})}export const props=styles.card();`,
+            'right.js': `import {style} from './config.js';namespace styles{export const card=style({color:'blue',selectors:{'&:hover':{color:'purple'}}})}export const props=styles.card();`,
+            'entry.js': `export {props as left} from './left.js';export {props as right} from './right.js';`,
+          },
+        })
+        const code = await Packed.bundle({
+          entry: 'entry.js',
+          modules: Object.fromEntries(
+            Object.entries(output.modules).map(([name, module]) => [
+              name,
+              module.code,
+            ]),
+          ),
+        })
+        const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
+          left: { className: string }
+          right: { className: string }
+        }
+        expect(
+          fixture.left.className === fixture.right.className,
+        ).toMatchInlineSnapshot('false')
+        await page.setContent(
+          `<style>${Object.values(output.modules)
+            .map((module) => module.css)
+            .join(
+              '',
+            )}</style><div id="left" class="${fixture.left.className}">Left</div><div id="right" class="${fixture.right.className}">Right</div>`,
+        )
+        expect(
+          await page
+            .locator('#left')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('#right')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+        await page.locator('#left').hover()
+        expect(
+          await page
+            .locator('#left')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(0, 128, 0)"')
+        await page.locator('#right').hover()
+        expect(
+          await page
+            .locator('#right')
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(128, 0, 128)"')
+        await page.mouse.move(0, 0)
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('separates config IDs from explicit style IDs', async () => {
+    const output = Graph.compile({
+      modules: {
+        'left.js':
+          "import {Config} from 'zyzz';const {style}=Config.create({id:'a-b'});export const props=style({color:'red',selectors:{'&:hover':{color:'green'}}},{id:'card'})();",
+        'right.js':
+          "import {Config} from 'zyzz';const {style}=Config.create({id:'a'});export const props=style({color:'blue',selectors:{'&:hover':{color:'purple'}}},{id:'b-card'})();",
+        'entry.js':
+          "export {props as left} from './left.js';export {props as right} from './right.js';",
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'entry.js',
+      modules: Object.fromEntries(
+        Object.entries(output.modules).map(([name, module]) => [
+          name,
+          module.code,
+        ]),
+      ),
+    })
+    const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
+      left: { className: string }
+      right: { className: string }
+    }
+    expect(fixture.left.className).toMatchInlineSnapshot(
+      '"z-a_2d_b-card-text-0 z-a_2d_b-card-text-1"',
+    )
+    expect(fixture.right.className).toMatchInlineSnapshot(
+      '"z-a-b_2d_card-text-0 z-a-b_2d_card-text-1"',
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${Object.values(output.modules)
+          .map((module) => module.css)
+          .join(
+            '',
+          )}</style><div id="left" class="${fixture.left.className}">Left</div><div id="right" class="${fixture.right.className}">Right</div>`,
+      )
+      expect(
+        await page
+          .locator('#left')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#right')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('versions standalone readable identifier contracts consistently', () => {
+    for (const source of [
+      "import {variable} from 'zyzz';export const gap=variable('length');",
+      "import {keyframes} from 'zyzz/web';export const spin=keyframes({to:{transform:'rotate(1turn)'}});",
+      "import {customMedia} from 'zyzz/web';export const narrow=customMedia('(width < 40rem)');",
+    ]) {
+      const library = Graph.compile({ modules: { 'library.js': source } })
+      expect(
+        JSON.parse(library.contracts['library.js']!).version,
+      ).toMatchInlineSnapshot('30')
+      expect(() =>
+        Graph.compile({
+          contracts: library.contracts,
+          modules: {
+            'app.js': "import * as values from 'library.js';export {values};",
+          },
+        }),
+      ).not.toThrow()
+    }
+  })
+
   test('namespaces independently authored configs using consumer ids', async () => {
     const source = (id: string, color: string) =>
       `import {Config} from 'zyzz';export const {style,vars}=Config.create({id:'${id}',vars:{color:{brand:'${color}'}}});export const heading=style({color:'brand',selectors:{'&:hover':{opacity:1}}})();export const scope=vars().className;`
@@ -104,8 +289,8 @@ describe('compile', () => {
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-first-heading-text-0{color:var(--z-first-color-brand,red);}
-      .z-first-heading-opacity-1{&:hover{opacity:1;}}"
+      .z-first-first_2e_js-heading-text-0{color:var(--z-first-color-brand,red);}
+      .z-first-first_2e_js-heading-opacity-1{&:hover{opacity:1;}}"
     `)
     expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
       ".z-theme-first-theme{--z-first-color-brand:red;}
@@ -113,8 +298,8 @@ describe('compile', () => {
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-second-heading-text-0{color:var(--z-second-color-brand,blue);}
-      .z-second-heading-opacity-1{&:hover{opacity:1;}}"
+      .z-second-second_2e_js-heading-text-0{color:var(--z-second-color-brand,blue);}
+      .z-second-second_2e_js-heading-opacity-1{&:hover{opacity:1;}}"
     `)
     const code = await Packed.bundle({
       entry: 'entry.js',
@@ -184,13 +369,13 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z-w-\\5b var\\28 --z-variables-offset\\29 \\5d {width:var(--z-variables-offset);}
-      .z-h-\\5b var\\28 --z-heading-offset\\29 \\5d {height:var(--z-heading-offset);}"
+      .z-h-\\5b var\\28 --z-heading_5f_2d_5f_offset\\29 \\5d {height:var(--z-heading_2d_offset);}"
     `)
     expect(output.code.includes('--z-variables-offset')).toMatchInlineSnapshot(
       'true',
     )
-    expect(output.code.includes('--z-heading-offset')).toMatchInlineSnapshot(
-      'true',
+    expect(output.code.includes('--z-heading_2d_offset')).toMatchInlineSnapshot(
+      `true`,
     )
   })
 
@@ -530,7 +715,7 @@ ns.card({className:'web'});`,
         throw new Error(error.stdout || error.message)
       })
       const contract = JSON.parse(output.contracts['app.ts']!)
-      expect(contract.version).toMatchInlineSnapshot('22')
+      expect(contract.version).toMatchInlineSnapshot(`30`)
       expect(() =>
         Graph.compile({
           modules: {},
@@ -1294,9 +1479,9 @@ ${web.modules['app.ts']!.code}`,
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-styles-card"})
+        export const card = __zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-pkg_2f_card_2e_ts-styles-card"})
 
-        export const label = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-styles-label"})
+        export const label = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-pkg_2f_card_2e_ts-styles-label"})
       } export const props = styles.card(); export const scope = theme().className;"
     `)
 
@@ -3116,16 +3301,16 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
-        ".z-theme-src-first-dcTfYzugwnm-style{}
-        .z-first-local-opacity-0{opacity:0.5;}
-        .z-props-0-z-style-base-first-local-style-0{color:red;padding:8px;}
-        .z-props-0-z-style-base-first-local-opacity-1{opacity:0.5;}"
+        ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
+        .z-first_2d_local-opacity-0{opacity:0.5;}
+        .z-props-0-z-style-first_2e_ts-base-first_2d_local-style-0{color:red;padding:8px;}
+        .z-props-0-z-style-first_2e_ts-base-first_2d_local-opacity-1{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
-        ".z-theme-src-first-dcTfYzugwnm-style{}
-        .z-second-local-opacity-0{opacity:1;}
-        .z-props-0-z-style-base-second-local-style-0{color:red;padding:8px;}
-        .z-props-0-z-style-base-second-local-opacity-1{opacity:1;}"
+        ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
+        .z-second_2d_local-opacity-0{opacity:1;}
+        .z-props-0-z-style-first_2e_ts-base-second_2d_local-style-0{color:red;padding:8px;}
+        .z-props-0-z-style-first_2e_ts-base-second_2d_local-opacity-1{opacity:1;}"
       `)
     })
 
@@ -3173,8 +3358,8 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         },
       })
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-theme-src-config-6Q0EnEZaLq6-config{}
-        .z-consumer-card{color:blue;padding:2px;}"
+        ".z-theme-src_2d_config_2d_6Q0EnEZaLq6_2d_config{}
+        .z-consumer_2d_card{color:blue;padding:2px;}"
       `)
     })
 
@@ -4067,9 +4252,9 @@ describe('variables', () => {
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-styles-a-w-0{width:10px;}
-        .z-styles-b-w-0{width:30px;}
-        .z-styles-c-w-0{width:40px;}"
+        ".z-app_2e_ts-styles-a-w-0{width:10px;}
+        .z-app_2e_ts-styles-b-w-0{width:30px;}
+        .z-app_2e_ts-styles-c-w-0{width:40px;}"
       `)
     })
 
@@ -4205,8 +4390,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z-text-red{color:red;}
-        .z-w-\\5b var\\28 --z-styles-dynamic-width\\29 \\5d {width:var(--z-styles-dynamic-width);}
-        .z-z-index-\\5b var\\28 --z-styles-dynamic-zIndex\\29 \\5d {z-index:var(--z-styles-dynamic-zIndex);}"
+        .z-w-\\5b var\\28 --z-app_5f_2e_5f_ts-styles-dynamic-width\\29 \\5d {width:var(--z-app_2e_ts-styles-dynamic-width);}
+        .z-z-index-\\5b var\\28 --z-app_5f_2e_5f_ts-styles-dynamic-zIndex\\29 \\5d {z-index:var(--z-app_2e_ts-styles-dynamic-zIndex);}"
       `)
     })
 
@@ -4542,7 +4727,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     test('links registered variable references and assignments through packed aliases', async () => {
       expect(
         JSON.parse(compile().library.contracts['vars.ts']!).version,
-      ).toMatchInlineSnapshot(`14`)
+      ).toMatchInlineSnapshot(`30`)
 
       const { code, css } = await bundle()
 
@@ -4579,8 +4764,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
         "@property --z-vars-amount{syntax:"<percentage>";inherits:false;initial-value:25%;}
         @property --z-vars-gap{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px{height:20px;}
         .z-p-\\5b var\\28 --z-vars-gap\\29 \\5d {padding:var(--z-vars-gap);}
-        .z-styles-registered-w-2{width:var(--z-vars-amount);}
-        .z-styles-dynamic-w-0{width:var(--z-styles-dynamic-width);}"
+        .z-app_2e_ts-styles-registered-w-2{width:var(--z-vars-amount);}
+        .z-app_2e_ts-styles-dynamic-w-0{width:var(--z-app_2e_ts-styles-dynamic-width);}"
       `)
     })
     test('expands immutable members and shorthand while retaining dynamic intersections', () => {
@@ -4595,10 +4780,10 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
-        ".z-styles-card-w-0{width:12px;}
+        ".z-static_2e_ts-styles-card-w-0{width:12px;}
         .z-p-8px{padding:8px;}
-        .z-styles-dynamic-w-0{width:var(--z-styles-dynamic-width);}
-        .z-opacity-\\5b var\\28 --z-styles-dynamic-opacity\\29 \\5d {opacity:var(--z-styles-dynamic-opacity);}"
+        .z-static_2e_ts-styles-dynamic-w-0{width:var(--z-static_2e_ts-styles-dynamic-width);}
+        .z-opacity-\\5b var\\28 --z-static_5f_2e_5f_ts-styles-dynamic-opacity\\29 \\5d {opacity:var(--z-static_2e_ts-styles-dynamic-opacity);}"
       `)
       expect(graph.sharedCss).toMatchInlineSnapshot(
         `"@property --z-count-n{syntax:"<number>";inherits:false;initial-value:-1;}"`,

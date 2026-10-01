@@ -5,16 +5,12 @@ import { style } from 'zyzz/default'
 export function Compilation() {
   return (
     <div
-      {...conceptsDiagramsStyles.pipeline()}
+      {...styles.pipeline()}
       role="img"
       aria-label="Author typed definitions. Compile rules ahead of time. At render time, return styling props for an element without inserting CSS rules."
     >
-      <svg
-        viewBox="0 0 240 174"
-        {...conceptsDiagramsStyles.stage()}
-        aria-hidden="true"
-      >
-        <text x="20" y="30" {...conceptsDiagramsStyles.label()}>
+      <svg viewBox="0 0 240 174" {...styles.stage()} aria-hidden="true">
+        <text x="20" y="30" {...styles.label()}>
           01 / Author
         </text>
         <rect
@@ -23,27 +19,23 @@ export function Compilation() {
           width="200"
           height="92"
           rx="8"
-          {...conceptsDiagramsStyles.panel()}
+          {...styles.panel()}
         />
-        <text x="36" y="81" {...conceptsDiagramsStyles.code()}>
-          <tspan {...conceptsDiagramsStyles.functionName()}>style</tspan>({'{'}
+        <text x="36" y="81" {...styles.code()}>
+          <tspan {...styles.functionName()}>style</tspan>({'{'}
         </text>
-        <text x="48" y="102" {...conceptsDiagramsStyles.code()}>
-          padding: <tspan {...conceptsDiagramsStyles.string()}>"1rem"</tspan>
+        <text x="48" y="102" {...styles.code()}>
+          padding: <tspan {...styles.string()}>"1rem"</tspan>
         </text>
-        <text x="36" y="123" {...conceptsDiagramsStyles.code()}>
+        <text x="36" y="123" {...styles.code()}>
           {'}'})
         </text>
-        <text x="20" y="162" {...conceptsDiagramsStyles.detail()}>
+        <text x="20" y="162" {...styles.detail()}>
           Typed, static definitions
         </text>
       </svg>
-      <svg
-        viewBox="0 0 240 174"
-        {...conceptsDiagramsStyles.stage()}
-        aria-hidden="true"
-      >
-        <text x="20" y="30" {...conceptsDiagramsStyles.label()}>
+      <svg viewBox="0 0 240 174" {...styles.stage()} aria-hidden="true">
+        <text x="20" y="30" {...styles.label()}>
           02 / Compile
         </text>
         <rect
@@ -52,28 +44,23 @@ export function Compilation() {
           width="200"
           height="92"
           rx="8"
-          {...conceptsDiagramsStyles.panel()}
+          {...styles.panel()}
         />
-        <text x="36" y="81" {...conceptsDiagramsStyles.code()}>
-          <tspan {...conceptsDiagramsStyles.functionName()}>.generated</tspan>{' '}
-          {'{'}
+        <text x="36" y="81" {...styles.code()}>
+          <tspan {...styles.functionName()}>.generated</tspan> {'{'}
         </text>
-        <text x="48" y="102" {...conceptsDiagramsStyles.code()}>
-          padding: <tspan {...conceptsDiagramsStyles.string()}>1rem</tspan>;
+        <text x="48" y="102" {...styles.code()}>
+          padding: <tspan {...styles.string()}>1rem</tspan>;
         </text>
-        <text x="36" y="123" {...conceptsDiagramsStyles.code()}>
+        <text x="36" y="123" {...styles.code()}>
           {'}'}
         </text>
-        <text x="20" y="162" {...conceptsDiagramsStyles.detail()}>
+        <text x="20" y="162" {...styles.detail()}>
           CSS + executable styles
         </text>
       </svg>
-      <svg
-        viewBox="0 0 240 174"
-        {...conceptsDiagramsStyles.stage()}
-        aria-hidden="true"
-      >
-        <text x="20" y="30" {...conceptsDiagramsStyles.label()}>
+      <svg viewBox="0 0 240 174" {...styles.stage()} aria-hidden="true">
+        <text x="20" y="30" {...styles.label()}>
           03 / Apply
         </text>
         <rect
@@ -82,7 +69,7 @@ export function Compilation() {
           width="200"
           height="92"
           rx="8"
-          {...conceptsDiagramsStyles.panel()}
+          {...styles.panel()}
         />
         <rect
           x="79"
@@ -90,17 +77,12 @@ export function Compilation() {
           width="82"
           height="34"
           rx="6"
-          {...conceptsDiagramsStyles.button()}
+          {...styles.button()}
         />
-        <text
-          x="120"
-          y="101"
-          textAnchor="middle"
-          {...conceptsDiagramsStyles.buttonText()}
-        >
+        <text x="120" y="101" textAnchor="middle" {...styles.buttonText()}>
           Save
         </text>
-        <text x="20" y="162" {...conceptsDiagramsStyles.detail()}>
+        <text x="20" y="162" {...styles.detail()}>
           Render a styled element
         </text>
       </svg>
@@ -115,22 +97,15 @@ export function Scopes() {
       viewBox="0 0 440 320"
       role="img"
       aria-label="A base variable scope contains a card. An alternate scope nested inside it contains the same card style with a different accent value."
-      {...conceptsDiagramsStyles.scopes()}
+      {...styles.scopes()}
     >
-      <rect
-        x="1"
-        y="1"
-        width="438"
-        height="318"
-        rx="12"
-        {...conceptsDiagramsStyles.panel()}
-      />
-      <text x="24" y="34" {...conceptsDiagramsStyles.label()}>
+      <rect x="1" y="1" width="438" height="318" rx="12" {...styles.panel()} />
+      <text x="24" y="34" {...styles.label()}>
         Base scope
       </text>
-      <text x="24" y="60" {...conceptsDiagramsStyles.code()}>
-        <tspan {...conceptsDiagramsStyles.functionName()}>vars</tspan>({'{'}{' '}
-        set: <tspan {...conceptsDiagramsStyles.string()}>'base'</tspan> {'}'})
+      <text x="24" y="60" {...styles.code()}>
+        <tspan {...styles.functionName()}>vars</tspan>({'{'} set:{' '}
+        <tspan {...styles.string()}>'base'</tspan> {'}'})
       </text>
       <rect
         x="24"
@@ -138,15 +113,10 @@ export function Scopes() {
         width="392"
         height="54"
         rx="8"
-        {...conceptsDiagramsStyles.blueCard()}
+        {...styles.blueCard()}
       />
-      <text
-        x="42"
-        y="108"
-        dominantBaseline="central"
-        {...conceptsDiagramsStyles.code()}
-      >
-        styles.<tspan {...conceptsDiagramsStyles.functionName()}>card</tspan>()
+      <text x="42" y="108" dominantBaseline="central" {...styles.code()}>
+        styles.<tspan {...styles.functionName()}>card</tspan>()
       </text>
       <rect
         x="24"
@@ -154,15 +124,14 @@ export function Scopes() {
         width="392"
         height="140"
         rx="10"
-        {...conceptsDiagramsStyles.nested()}
+        {...styles.nested()}
       />
-      <text x="42" y="187" {...conceptsDiagramsStyles.label()}>
+      <text x="42" y="187" {...styles.label()}>
         Alternate scope
       </text>
-      <text x="42" y="213" {...conceptsDiagramsStyles.code()}>
-        <tspan {...conceptsDiagramsStyles.functionName()}>vars</tspan>({'{'}{' '}
-        set: <tspan {...conceptsDiagramsStyles.string()}>'alternate'</tspan>{' '}
-        {'}'})
+      <text x="42" y="213" {...styles.code()}>
+        <tspan {...styles.functionName()}>vars</tspan>({'{'} set:{' '}
+        <tspan {...styles.string()}>'alternate'</tspan> {'}'})
       </text>
       <rect
         x="42"
@@ -170,21 +139,16 @@ export function Scopes() {
         width="356"
         height="45"
         rx="8"
-        {...conceptsDiagramsStyles.purpleCard()}
+        {...styles.purpleCard()}
       />
-      <text
-        x="60"
-        y="253.5"
-        dominantBaseline="central"
-        {...conceptsDiagramsStyles.code()}
-      >
-        styles.<tspan {...conceptsDiagramsStyles.functionName()}>card</tspan>()
+      <text x="60" y="253.5" dominantBaseline="central" {...styles.code()}>
+        styles.<tspan {...styles.functionName()}>card</tspan>()
       </text>
     </svg>
   )
 }
 
-namespace conceptsDiagramsStyles {
+namespace styles {
   export const blueCard = style({
     fill: 'blue.100',
     stroke: 'blue.700',

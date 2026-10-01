@@ -553,6 +553,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             return id?.startsWith('id-') ? [[start, id.slice(3)] as const] : []
           }),
         ),
+        options.moduleId,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -589,11 +590,13 @@ export function extract(options: extract.Options): extract.ReturnType {
     const cssName =
       explicitId !== undefined
         ? Identity.name(explicitId)
-        : authoredName === 'style'
-          ? `style-${callIndex}`
-          : cssNameCounts.get(authoredName)! > 1
-            ? `${authoredName}-${nameIndex}`
-            : authoredName
+        : `${Identity.name(options.moduleId)}-${
+            authoredName === 'style'
+              ? `style-${callIndex}`
+              : cssNameCounts.get(authoredName)! > 1
+                ? `${authoredName}-${nameIndex}`
+                : authoredName
+          }`
     const definitionId =
       explicitId === undefined
         ? `${cssNamespace ? `${cssNamespace}-` : ''}${cssName}`

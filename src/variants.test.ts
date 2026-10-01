@@ -586,10 +586,10 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-button-pl-0{padding-left:8px;}
-        .z-button-pr-1{padding-right:8px;}
-        .z-button-text-2{&:where([data-intent="primary"]){color:var(--z-color-brand,#06c);}}
-        .z-button-text-3{&:where([data-intent="quiet"]){color:black;}}"
+        .z-app_2e_ts-button-pl-0{padding-left:8px;}
+        .z-app_2e_ts-button-pr-1{padding-right:8px;}
+        .z-app_2e_ts-button-text-2{&:where([data-intent="primary"]){color:var(--z-color-brand,#06c);}}
+        .z-app_2e_ts-button-text-3{&:where([data-intent="quiet"]){color:black;}}"
       `,
       )
       expect(
@@ -674,12 +674,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       )
       expect(module.exports.a()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-[var(--z-color-brand,#06c)] z-style-a",
+          "className": "z-text-[var(--z-color-brand,#06c)] z-style-app_2e_ts-a",
         }
       `)
       expect(module.exports.b()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-[var(--z-color-brand,#06c)] z-style-b",
+          "className": "z-text-[var(--z-color-brand,#06c)] z-style-app_2e_ts-b",
         }
       `)
     })

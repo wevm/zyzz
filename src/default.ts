@@ -41,10 +41,10 @@ void [spin, ping, pulse, bounce]
  */
 export const tokens = {
   animate: {
-    spin: 'z-kid-zyzz-spin 1s linear infinite',
-    ping: 'z-kid-zyzz-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
-    pulse: 'z-kid-zyzz-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-    bounce: 'z-kid-zyzz-bounce 1s infinite',
+    spin: 'z-kid-zyzz_2d_spin 1s linear infinite',
+    ping: 'z-kid-zyzz_2d_ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+    pulse: 'z-kid-zyzz_2d_pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+    bounce: 'z-kid-zyzz_2d_bounce 1s infinite',
   },
   aspect: {
     video: '16 / 9',
@@ -682,10 +682,10 @@ const config = Config.create({
   id: 'default',
   vars: {
     animate: {
-      spin: 'z-kid-zyzz-spin 1s linear infinite',
-      ping: 'z-kid-zyzz-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
-      pulse: 'z-kid-zyzz-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      bounce: 'z-kid-zyzz-bounce 1s infinite',
+      spin: 'z-kid-zyzz_2d_spin 1s linear infinite',
+      ping: 'z-kid-zyzz_2d_ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+      pulse: 'z-kid-zyzz_2d_pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      bounce: 'z-kid-zyzz_2d_bounce 1s infinite',
     },
     aspect: {
       video: '16 / 9',

@@ -5,16 +5,16 @@ import { style } from '../zyzz.config.js'
 /** Renders a search input with the shared keyboard shortcut hint. */
 export function SearchField(props: SearchField.Props) {
   return (
-    <div {...searchFieldStyles.control()}>
+    <div {...styles.control()}>
       <input
         {...props}
         type="search"
-        {...searchFieldStyles.input({
+        {...styles.input({
           className: props.className,
           style: props.style,
         })}
       />
-      <kbd {...searchFieldStyles.shortcut()}>⌘K</kbd>
+      <kbd {...styles.shortcut()}>⌘K</kbd>
     </div>
   )
 }
@@ -24,7 +24,7 @@ export declare namespace SearchField {
   type Props = Omit<ComponentProps<'input'>, 'type'>
 }
 
-namespace searchFieldStyles {
+namespace styles {
   export const control = style({
     maxWidth: 'xs',
     minWidth: 0,

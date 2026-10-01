@@ -189,10 +189,8 @@ export function Page(props: Page.Props) {
   return (
     <>
       {error ? (
-        <div role="alert" {...variablesStyles.sectionContent()}>
-          <h1 {...variablesStyles.sectionHeading()}>
-            Could not read variables
-          </h1>
+        <div role="alert" {...styles.sectionContent()}>
+          <h1 {...styles.sectionHeading()}>Could not read variables</h1>
           <p>{error}</p>
           <Link href="/vars">View default variables</Link>
         </div>
@@ -204,10 +202,7 @@ export function Page(props: Page.Props) {
           name={config?.name}
           onSchemeChange={setColorScheme}
           navigation={
-            <Link
-              href="/docs/introduction/getting-started"
-              {...variablesStyles.docs()}
-            >
+            <Link href="/docs/introduction/getting-started" {...styles.docs()}>
               Docs
             </Link>
           }
@@ -222,30 +217,25 @@ export function Page(props: Page.Props) {
             />
           }
           sidebar={
-            <nav
-              aria-label="Variable categories"
-              {...variablesStyles.navigation()}
-            >
+            <nav aria-label="Variable categories" {...styles.navigation()}>
               {filtered.map((group) => (
                 <a
                   aria-current={category === group.id ? 'location' : undefined}
                   href={`#${group.id}`}
                   key={group.name}
-                  {...variablesStyles.category()}
+                  {...styles.category()}
                 >
                   <group.icon aria-hidden="true" width="16" height="16" />
                   <span>{group.title}</span>
-                  <span {...variablesStyles.count()}>
-                    {group.entries.length}
-                  </span>
+                  <span {...styles.count()}>{group.entries.length}</span>
                 </a>
               ))}
             </nav>
           }
         >
           {filtered.length === 0 && (
-            <div {...variablesStyles.sectionContent()}>
-              <p {...variablesStyles.description()}>
+            <div {...styles.sectionContent()}>
+              <p {...styles.description()}>
                 No variables match “{query}”. Try a category, such as color or
                 spacing.
               </p>
@@ -256,25 +246,25 @@ export function Page(props: Page.Props) {
               aria-labelledby={domId(['heading', group.name])}
               id={group.id}
               key={group.name}
-              {...variablesStyles.section()}
+              {...styles.section()}
             >
-              <div {...variablesStyles.sectionIntro()}>
+              <div {...styles.sectionIntro()}>
                 <h2
                   id={domId(['heading', group.name])}
-                  {...variablesStyles.sectionHeading()}
+                  {...styles.sectionHeading()}
                 >
                   {group.title}
                 </h2>
               </div>
-              <div {...variablesStyles.sectionContent()}>
+              <div {...styles.sectionContent()}>
                 {group.sections.map((section) => (
                   <div
                     id={!section.name ? undefined : section.id}
                     key={section.id}
-                    {...variablesStyles.subsection()}
+                    {...styles.subsection()}
                   >
                     {(section.name || group.sections.length > 1) && (
-                      <h3 {...variablesStyles.subheading()}>
+                      <h3 {...styles.subheading()}>
                         {(() => {
                           if (section.name) return title(section.name)
                           if (group.color) return 'Standalone Colors'
@@ -292,9 +282,7 @@ export function Page(props: Page.Props) {
                             }
                           : undefined
                       }
-                      {...(group.color
-                        ? variablesStyles.palette()
-                        : variablesStyles.entries())}
+                      {...(group.color ? styles.palette() : styles.entries())}
                     >
                       {section.entries.map((entry) => {
                         const name = reference(entry.path)
@@ -305,10 +293,10 @@ export function Page(props: Page.Props) {
                           <div
                             key={`${name}:${entry.condition ?? 'default'}`}
                             {...(group.color
-                              ? variablesStyles.colorEntry()
-                              : variablesStyles.entry())}
+                              ? styles.colorEntry()
+                              : styles.entry())}
                           >
-                            <dt {...variablesStyles.name()}>
+                            <dt {...styles.name()}>
                               <code title={name}>
                                 {group.color
                                   ? entry.path.slice(2).join('.') ||
@@ -318,28 +306,28 @@ export function Page(props: Page.Props) {
                             </dt>
                             <dd
                               {...(group.color
-                                ? variablesStyles.colorValues()
-                                : variablesStyles.values())}
+                                ? styles.colorValues()
+                                : styles.values())}
                             >
                               {entry.condition && (
-                                <span {...variablesStyles.hint()}>
+                                <span {...styles.hint()}>
                                   {entry.condition}
                                 </span>
                               )}
                               {typeof entry.value === 'object' ? (
-                                <div {...variablesStyles.typography()}>
+                                <div {...styles.typography()}>
                                   <div
                                     data-typography={entry.path
                                       .slice(1)
                                       .join('.')}
                                     style={entry.value}
-                                    {...variablesStyles.sample()}
+                                    {...styles.sample()}
                                   >
                                     {entry.path[1] === 'copy'
                                       ? 'Write type-safe styles, variables, and themes. Compile to static CSS. Keep your styles close to your code.'
                                       : 'Styles that scale.'}
                                   </div>
-                                  <details {...variablesStyles.details()}>
+                                  <details {...styles.details()}>
                                     <summary>Variables</summary>
                                     <dl>
                                       {Object.entries(entry.value).map(
@@ -347,10 +335,7 @@ export function Page(props: Page.Props) {
                                           const [key, value] = input
 
                                           return (
-                                            <div
-                                              key={key}
-                                              {...variablesStyles.field()}
-                                            >
+                                            <div key={key} {...styles.field()}>
                                               <dt>
                                                 <code>
                                                   {reference([
@@ -384,13 +369,13 @@ export function Page(props: Page.Props) {
                                   )}
                                   <div
                                     {...(group.color
-                                      ? variablesStyles.colorValue()
-                                      : variablesStyles.value())}
+                                      ? styles.colorValue()
+                                      : styles.value())}
                                   >
                                     {group.color && (
                                       <span
                                         aria-hidden="true"
-                                        {...variablesStyles.swatch()}
+                                        {...styles.swatch()}
                                         style={{
                                           backgroundColor: entry.dark
                                             ? `light-dark(${String(entry.value)}, ${entry.dark})`
@@ -405,8 +390,8 @@ export function Page(props: Page.Props) {
                                           : undefined
                                       }
                                       {...(group.color
-                                        ? variablesStyles.colorRaw()
-                                        : variablesStyles.raw())}
+                                        ? styles.colorRaw()
+                                        : styles.raw())}
                                     >
                                       <code>{String(value)}</code>
                                     </div>
@@ -437,7 +422,7 @@ export declare namespace Page {
   }
 }
 
-namespace variablesStyles {
+namespace styles {
   export const category = style({
     typography: 'label.14',
     alignItems: 'center',
@@ -711,11 +696,11 @@ function Preview(props: Preview.Props) {
   if (category === 'breakpoint' || category === 'container') {
     if (!Number.isFinite(Number.parseFloat(value)) || maximum <= 0) return null
     return (
-      <div aria-hidden="true" {...variablesStyles.widthPreview()}>
-        <div {...variablesStyles.widthTrack()}>
+      <div aria-hidden="true" {...styles.widthPreview()}>
+        <div {...styles.widthTrack()}>
           <span
             style={{ width: `${(Number.parseFloat(value) / maximum) * 100}%` }}
-            {...variablesStyles.widthBar()}
+            {...styles.widthBar()}
           />
         </div>
       </div>
@@ -801,7 +786,7 @@ function Preview(props: Preview.Props) {
           ? { overflow: 'visible', padding: `calc(${value} * 2)` }
           : undefined
       }
-      {...variablesStyles.preview()}
+      {...styles.preview()}
     >
       {category === 'columns' ? (
         <span style={appearance}>
@@ -816,7 +801,7 @@ function Preview(props: Preview.Props) {
           )}
         </span>
       ) : text ? (
-        <span style={appearance} {...variablesStyles.sample()}>
+        <span style={appearance} {...styles.sample()}>
           {category === 'lineHeight'
             ? 'Styles for modern interfaces.\nKeep styles close to your code.'
             : 'Styles for modern interfaces'}
@@ -825,12 +810,10 @@ function Preview(props: Preview.Props) {
         <span
           data-ease={category === 'ease'}
           style={appearance}
-          {...variablesStyles.shape()}
+          {...styles.shape()}
         />
       )}
-      {category === 'ease' && (
-        <span {...variablesStyles.hint()}>Hover or focus</span>
-      )}
+      {category === 'ease' && <span {...styles.hint()}>Hover or focus</span>}
     </div>
   )
 }

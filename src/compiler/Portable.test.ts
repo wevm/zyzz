@@ -43,6 +43,40 @@ describe('compile', () => {
     expect(output.css).toContain('width:var(')
   })
 
+  test('preserves authored theme keys resembling private identities in CSS-only output', async () => {
+    const config = Config.create({
+      id: 'app',
+      vars: { 'id-app-dark': { color: { brand: 'red' } } },
+      defaultVars: 'id-app-dark',
+    })
+    const source =
+      "import {Config} from 'zyzz';const config=Config.create({id:'app',vars:{'id-app-dark':{color:{brand:'red'}}},defaultVars:'id-app-dark'});export const card=config.style({color:'brand'},{id:'card'});"
+    const output = Transform.compile({
+      compiler: false,
+      moduleId: 'app.ts',
+      source,
+    })
+    const scope = config.vars({ set: 'id-app-dark' }).className
+    const props = config.style({ color: 'brand' }, { id: 'card' })()
+
+    expect(scope).toMatchInlineSnapshot('"z-theme-app-id_2d_app_2d_dark"')
+    expect(output.css.includes(`.${scope}{`)).toMatchInlineSnapshot('true')
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><section class="${scope}"><div id="card" class="${props.className}">Card</div></section>`,
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('keeps extended theme scopes stable without a source transform', () => {
     const base = Vars.define({ color: { primary: 'red' } }, { id: 'palette' })
     const alternate = Vars.extend(base, { color: { primary: 'blue' } })
@@ -128,7 +162,7 @@ describe('compile', () => {
     )
     expect(card({ vars: accent.set('red') })).toMatchInlineSnapshot(`
       {
-        "className": "z-content-_5b__5b__22__22__2c__5b__5b__22_color_22__2c__5b__22_variable_22__2c__22_--z-accent_22__5d__2c_false_5d__5d__5d__2c__5b__22__22__2c__5b__5b__22_padding_22__2c__22_8px_22__2c_false_5d__5d__5d__2c__5b__22__26__3a_hover_22__2c__5b__5b__22_opacity_22__2c_0_2e_5_2c_false_5d__5d__5d__5d_",
+        "className": "z-content-_5b__5b__22__22__2c__5b__5b__22_color_22__2c__5b__22_variable_22__2c__22__2d__2d_z_2d_accent_22__5d__2c_false_5d__5d__5d__2c__5b__22__22__2c__5b__5b__22_padding_22__2c__22_8px_22__2c_false_5d__5d__5d__2c__5b__22__26__3a_hover_22__2c__5b__5b__22_opacity_22__2c_0_2e_5_2c_false_5d__5d__5d__5d_",
         "style": {
           "--z-accent": "red",
         },
@@ -344,7 +378,7 @@ describe('Transform.compile', () => {
         source: `import {style} from 'zyzz'; style({content:'"z-style-banner"'})`,
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-content-_5b__5b__22_content_22__2c__22__5c__22_z-style-banner_5c__22__22__2c_false_5d__5d_{content:"z-style-banner";}"`,
+      `".z-content-_5b__5b__22_content_22__2c__22__5c__22_z_2d_style_2d_banner_5c__22__22__2c_false_5d__5d_{content:"z-style-banner";}"`,
     )
   })
   test('rejects missing ids on selectable empty scopes and locates invalid selector ids', () => {
@@ -383,7 +417,7 @@ describe('cx', () => {
       cx(config.vars({ set: 'dark' }), config.style({ color: 'primary' })()),
     ).toMatchInlineSnapshot(`
       {
-        "class": "z-compose-_5b__22_z-html-content-_5f_5b_5f__5f_5b_5f__5f_22_5f_color_5f_22_5f__5f_2c_5f__5f_5b_5f__5f_22_5f_token_5f_22_5f__5f_2c_5f__5f_22_5f_id-html_5f_22_5f__5f_2c_5f__5f_22_5f_color_5f_2e_5f_primary_5f_22_5f__5f_2c_5f__5f_22_5f_red_5f_22_5f__5f_5d_5f__5f_2c_5f_false_5f_5d_5f__5f_5d_5f__22__5d_ z-theme-html-dark",
+        "class": "z-compose-_5b__22_z_2d_html_2d_content_2d__5f_5b_5f__5f_5b_5f__5f_22_5f_color_5f_22_5f__5f_2c_5f__5f_5b_5f__5f_22_5f_token_5f_22_5f__5f_2c_5f__5f_22_5f_id_5f_2d_5f_html_5f_22_5f__5f_2c_5f__5f_22_5f_color_5f_2e_5f_primary_5f_22_5f__5f_2c_5f__5f_22_5f_red_5f_22_5f__5f_5d_5f__5f_2c_5f_false_5f_5d_5f__5f_5d_5f__22__5d_ z-theme-html-dark",
       }
     `)
   })

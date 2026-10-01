@@ -4,7 +4,7 @@ import { style } from '../../../zyzz.config.js'
 
 /** Renders the guide's comparison with aligned, readable cells. */
 export function SelectionTable(props: SelectionTable.Props) {
-  return <div {...selectionTableStyles.table()}>{props.children}</div>
+  return <div {...styles.table()}>{props.children}</div>
 }
 
 export declare namespace SelectionTable {
@@ -12,7 +12,7 @@ export declare namespace SelectionTable {
   type Props = { children: ReactNode }
 }
 
-namespace selectionTableStyles {
+namespace styles {
   export const table = style({
     selectors: {
       '& table': { borderCollapse: 'collapse', width: '100% !custom' },

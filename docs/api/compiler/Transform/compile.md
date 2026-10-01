@@ -34,7 +34,7 @@ Transform.compile({ development: true, moduleId: 'app/card.ts', source })
 - Type: `string`
 - Required: Yes.
 
-Stable portable package-relative module identity.
+Stable portable package-relative module identity. Contextual classes and inferred selector identities include its readable path.
 
 ```ts
 Transform.compile({

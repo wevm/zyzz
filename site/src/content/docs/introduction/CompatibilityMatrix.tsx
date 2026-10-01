@@ -41,7 +41,7 @@ export function CompatibilityIcon(props: CompatibilityIcon.Props) {
       data-target={props.name === 'target' || undefined}
       data-unverified={props.name === 'unverified' || undefined}
       data-verified={props.name === 'verified' || undefined}
-      {...compatibilityMatrixStyles.icon()}
+      {...styles.icon()}
     >
       <Icon height="16" width="16" />
     </span>
@@ -59,7 +59,7 @@ export declare namespace CompatibilityIcon {
 /** Sizes inline code relative to the Compatibility page's surrounding text. */
 export function CompatibilityContent(props: CompatibilityContent.Props) {
   return (
-    <div data-compatibility-content {...compatibilityMatrixStyles.content()}>
+    <div data-compatibility-content {...styles.content()}>
       {props.children}
     </div>
   )
@@ -76,11 +76,7 @@ export declare namespace CompatibilityContent {
 /** Keeps support tables readable on narrow screens. */
 export function CompatibilityMatrix(props: CompatibilityMatrix.Props) {
   return (
-    <div
-      aria-label={props.label}
-      role="region"
-      {...compatibilityMatrixStyles.matrix()}
-    >
+    <div aria-label={props.label} role="region" {...styles.matrix()}>
       {props.children}
     </div>
   )
@@ -96,7 +92,7 @@ export declare namespace CompatibilityMatrix {
   }
 }
 
-namespace compatibilityMatrixStyles {
+namespace styles {
   export const content = style({
     selectors: {
       '&[data-compatibility-content] :is(p, aside, li) code': {

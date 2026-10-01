@@ -35,10 +35,10 @@ export function label(value: string): string {
   )
 }
 
-/** Encodes punctuation reversibly while retaining readable identifier words. */
+/** Encodes one name segment, reserving hyphens for path boundaries. */
 export function name(value: string): string {
   return Array.from(value, (character) =>
-    /^[a-zA-Z0-9-]$/.test(character)
+    /^[a-zA-Z0-9]$/.test(character)
       ? character
       : `_${character.codePointAt(0)!.toString(16)}_`,
   ).join('')

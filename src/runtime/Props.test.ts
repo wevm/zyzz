@@ -31,18 +31,18 @@ export const button = style({ color: '#f00' });`,
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-[#f00] z-style-button",
+        "className": "z-text-[#f00] z-style-button_2e_ts-button",
       }
     `)
     expect(consumer.button({ style: undefined })).toMatchInlineSnapshot(`
       {
-        "className": "z-text-[#f00] z-style-button",
+        "className": "z-text-[#f00] z-style-button_2e_ts-button",
       }
     `)
     expect(consumer.button({ className: 'external', style: undefined }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-text-[#f00] z-style-button external",
+          "className": "z-text-[#f00] z-style-button_2e_ts-button external",
         }
       `)
   })
@@ -90,10 +90,10 @@ export const button = style({ color: '#f00' });`,
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-[var(--z-accent)] z-dynamic-opacity-0",
+        "className": "z-text-[var(--z-accent)] z-usage_2e_ts-dynamic-opacity-0",
         "style": {
           "--z-accent": "blue",
-          "--z-dynamic-opacity": 0.5,
+          "--z-usage_2e_ts-dynamic-opacity": 0.5,
           "padding": "2px",
         },
       }
@@ -106,17 +106,17 @@ export const button = style({ color: '#f00' });`,
     `)
     expect(consumer.variablesOnly).toMatchInlineSnapshot(`
       {
-        "className": "z-text-[var(--z-accent)] z-dynamic-opacity-0",
+        "className": "z-text-[var(--z-accent)] z-usage_2e_ts-dynamic-opacity-0",
         "style": {
           "--z-accent": "red",
-          "--z-dynamic-opacity": 0.5,
+          "--z-usage_2e_ts-dynamic-opacity": 0.5,
         },
       }
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-[var(--z-accent)] z-htmlDynamic-opacity-0",
-        "style": "--z-accent:red;--z-htmlDynamic-opacity:0.25",
+        "class": "z-text-[var(--z-accent)] z-usage_2e_ts-htmlDynamic-opacity-0",
+        "style": "--z-accent:red;--z-usage_2e_ts-htmlDynamic-opacity:0.25",
       }
     `)
     expect(consumer.originals).toMatchInlineSnapshot(`
@@ -157,13 +157,13 @@ export const text = '🎉';`
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-button-text-0 z-p-8px z-style-button",
+        "className": "z-example_2f_button_2e_ts-button-text-0 z-p-8px z-style-example_2f_button_2e_ts-button",
       }
     `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
       {
-        "className": "z-inline-text-0",
+        "className": "z-example_2f_button_2e_ts-inline-text-0",
       }
     `)
 
@@ -176,7 +176,7 @@ export const text = '🎉';`
     expect(consumer.button({ className: 'external', style }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-button-text-0 z-p-8px z-style-button external",
+          "className": "z-example_2f_button_2e_ts-button-text-0 z-p-8px z-style-example_2f_button_2e_ts-button external",
           "style": {
             "color": "#000",
             "paddingLeft": "2px",

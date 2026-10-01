@@ -15,14 +15,14 @@ export function Steps(input: Steps.Props) {
   }
 
   return (
-    <ol start={start} data-steps="" {...stepsStyles.steps()}>
+    <ol start={start} data-steps="" {...styles.steps()}>
       {steps.map((step, index) => (
-        <li data-step="" key={index} {...stepsStyles.step()}>
-          <span aria-hidden="true" {...stepsStyles.number()}>
+        <li data-step="" key={index} {...styles.step()}>
+          <span aria-hidden="true" {...styles.number()}>
             {index + start}
           </span>
-          <div {...stepsStyles.content()}>
-            <h3 {...stepsStyles.title()}>{step.title}</h3>
+          <div {...styles.content()}>
+            <h3 {...styles.title()}>{step.title}</h3>
             {step.content}
           </div>
         </li>
@@ -39,7 +39,7 @@ export declare namespace Steps {
   }
 }
 
-namespace stepsStyles {
+namespace styles {
   export const content = style({ minWidth: 0, paddingBottom: 6 })
 
   export const number = style({

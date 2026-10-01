@@ -32,10 +32,10 @@ export function Card(props: Card.Props) {
       onClick={onClick}
       aria-pressed={selected}
       aria-controls={onClick ? 'framework-setup' : undefined}
-      {...cardStyles.card()}
+      {...styles.card()}
     >
       {Icon && (
-        <span {...cardStyles.icon()}>
+        <span {...styles.icon()}>
           <Icon
             aria-hidden="true"
             width={icon === 'vite' ? 12 : 18}
@@ -44,8 +44,8 @@ export function Card(props: Card.Props) {
           />
         </span>
       )}
-      <span {...cardStyles.title()}>{title}</span>
-      <div {...cardStyles.description()}>{children}</div>
+      <span {...styles.title()}>{title}</span>
+      <div {...styles.description()}>{children}</div>
     </Element>
   )
 }
@@ -69,7 +69,7 @@ export namespace Card {
   export function Group(props: Group.Props) {
     const { children } = props
 
-    return <div {...cardStyles.group()}>{children}</div>
+    return <div {...styles.group()}>{children}</div>
   }
 
   export declare namespace Group {
@@ -78,7 +78,7 @@ export namespace Card {
   }
 }
 
-namespace cardStyles {
+namespace styles {
   export const card = style({
     backgroundColor: 'light-dark(#f5f5f5, #111) !custom',
     border: '1px solid',

@@ -32,7 +32,7 @@ The compiler derives names from authored bindings. `vars.accent` above becomes `
 const accent = variable('color', { id: 'acme-accent' })
 ```
 
-This declaration emits `--z-acme-accent`. Explicit IDs are required without the compiler plugin. Consumers combining separately compiled declarations own collision avoidance.
+This declaration emits `--z-acme_2d_accent`. Explicit IDs are required without the compiler plugin. Consumers combining separately compiled declarations own collision avoidance.
 
 ## Signature
 

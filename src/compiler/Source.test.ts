@@ -353,15 +353,15 @@ type Definition = ReturnType<typeof define>;
         "repeated": {
           "calls": [
             {
-              "cssName": "card",
+              "cssName": "example_2f_card_2e_tsx-card",
               "cssNamespace": undefined,
               "end": 160,
-              "identity": "z-style-card",
+              "identity": "z-style-example_2f_card_2e_tsx-card",
               "name": "style-16i62vd1bo8k8l-118",
               "start": 118,
             },
             {
-              "cssName": "view",
+              "cssName": "example_2f_card_2e_tsx-view",
               "cssNamespace": undefined,
               "end": 363,
               "name": "style-16i62vd1bo8k8l-323",
@@ -404,8 +404,8 @@ type Definition = ReturnType<typeof define>;
           "themeReferences": [],
           "vars": {},
         },
-        "rules": ".z-card-p-0{padding:8px;}
-      .z-card-pl-1{padding-left:0;}
+        "rules": ".z-example_2f_card_2e_tsx-card-p-0{padding:8px;}
+      .z-example_2f_card_2e_tsx-card-pl-1{padding-left:0;}
       .z-text-\\5b \\23 fff\\5d {color:#fff;}
       .z-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}",
       }

@@ -4,7 +4,7 @@ import { style } from '../../../../zyzz.config.js'
 
 /** Applies heading typography within this comparison page. */
 export function Content(props: Content.Props) {
-  return <div {...comparisonsContentStyles.content()}>{props.children}</div>
+  return <div {...styles.content()}>{props.children}</div>
 }
 
 export declare namespace Content {
@@ -15,7 +15,7 @@ export declare namespace Content {
   }
 }
 
-namespace comparisonsContentStyles {
+namespace styles {
   export const content = style({
     '@media (max-width: 1023px)': {
       '& > h2:first-of-type': { marginTop: 0 },

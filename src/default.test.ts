@@ -39,7 +39,7 @@ describe('default', () => {
         'utf8',
       )
       expect(
-        generated.includes('z-kid-zyzz-spin 1s linear infinite'),
+        generated.includes('z-kid-zyzz_2d_spin 1s linear infinite'),
       ).toMatchInlineSnapshot(`true`)
       expect((await Fs.readdir(root)).includes('dist')).toMatchInlineSnapshot(
         `false`,

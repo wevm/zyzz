@@ -70,9 +70,9 @@ function Index() {
   const [manager, setManager] = useState<Install.Manager>('npm')
 
   return (
-    <div {...homeStyles.page()}>
-      <header {...homeStyles.header()}>
-        <Link aria-label="Zyzz home" href="/" {...homeStyles.brand()}>
+    <div {...styles.page()}>
+      <header {...styles.header()}>
+        <Link aria-label="Zyzz home" href="/" {...styles.brand()}>
           <svg
             aria-hidden="true"
             width="80"
@@ -87,38 +87,38 @@ function Index() {
             />
           </svg>
         </Link>
-        <span {...homeStyles.byline()}>
+        <span {...styles.byline()}>
           By <a href="https://wevm.dev">Wevm</a>
         </span>
-        <Link href={docsUrl} {...homeStyles.headerLink()}>
+        <Link href={docsUrl} {...styles.headerLink()}>
           Docs
         </Link>
-        <Link href="/vars" {...homeStyles.referenceLink()}>
+        <Link href="/vars" {...styles.referenceLink()}>
           Variables
         </Link>
       </header>
-      <main {...homeStyles.main()}>
-        <section aria-labelledby="heading" {...homeStyles.intro()}>
+      <main {...styles.main()}>
+        <section aria-labelledby="heading" {...styles.intro()}>
           <h1
             aria-label="Universal styles for modern interfaces"
             id="heading"
-            {...homeStyles.heading()}
+            {...styles.heading()}
           >
             <span aria-hidden="true">
-              <span {...homeStyles.headingLine()}>
-                <span ref={wordsRef} {...homeStyles.headingWords()}>
+              <span {...styles.headingLine()}>
+                <span ref={wordsRef} {...styles.headingWords()}>
                   {headingWords.map((text, index) => (
                     <span
                       data-active={index === word}
                       key={text}
-                      {...homeStyles.headingWord()}
+                      {...styles.headingWord()}
                     >
                       {text}
                     </span>
                   ))}
                 </span>
                 <span
-                  {...homeStyles.headingSuffix()}
+                  {...styles.headingSuffix()}
                   style={{ transform: `translateX(${offset}px)` }}
                 >
                   {' '}
@@ -129,11 +129,11 @@ function Index() {
               for modern interfaces
             </span>
           </h1>
-          <p {...homeStyles.description()}>
+          <p {...styles.description()}>
             Bring structure to your styles and consistency to your interfaces.
             Write type-safe styles in TypeScript, compiled to static CSS.
           </p>
-          <div {...homeStyles.actions()}>
+          <div {...styles.actions()}>
             <Button href={docsUrl}>
               Read the docs <span aria-hidden="true">→</span>
             </Button>
@@ -163,13 +163,9 @@ Implement the requested interface with reusable styles, variables, and themes. R
         <section
           aria-label="Zyzz code example"
           style={{ backgroundColor: examples.bg, color: examples.fg }}
-          {...homeStyles.example()}
+          {...styles.example()}
         >
-          <div
-            aria-label="Example files"
-            role="tablist"
-            {...homeStyles.codeTabs()}
-          >
+          <div aria-label="Example files" role="tablist" {...styles.codeTabs()}>
             {examples.files.map((example, index) => (
               <button
                 aria-controls={`example-panel-${example.name}`}
@@ -199,13 +195,13 @@ Implement the requested interface with reusable styles, variables, and themes. R
                 role="tab"
                 tabIndex={file === example.name ? 0 : -1}
                 type="button"
-                {...homeStyles.codeTab()}
+                {...styles.codeTab()}
               >
                 {example.name}
               </button>
             ))}
           </div>
-          <div {...homeStyles.codePanels()}>
+          <div {...styles.codePanels()}>
             {examples.files.map((example) => (
               <pre
                 aria-labelledby={`example-tab-${example.name}`}
@@ -216,7 +212,7 @@ Implement the requested interface with reusable styles, variables, and themes. R
                 key={example.name}
                 role="tabpanel"
                 tabIndex={file === example.name ? 0 : -1}
-                {...homeStyles.code()}
+                {...styles.code()}
               >
                 <code>
                   {example.tokens.map((line, lineIndex) => (
@@ -239,7 +235,7 @@ Implement the requested interface with reusable styles, variables, and themes. R
   )
 }
 
-namespace homeStyles {
+namespace styles {
   export const actions = style({
     display: 'flex',
     flexWrap: 'wrap',

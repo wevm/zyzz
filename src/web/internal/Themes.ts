@@ -65,7 +65,11 @@ export function create() {
       // Anonymous contracts are graph-local. Source-owned contracts retain stable
       // identities across separately compiled components and theme scopes.
       const className = scope(
-        data.cssName ?? name,
+        data.cssName ??
+          (data.contract[Token.identity] &&
+          name.startsWith(`${data.contract[Token.identity]}-`)
+            ? name.slice(data.contract[Token.identity]!.length + 1)
+            : name),
         data.contract[Token.identity],
       )
 
@@ -387,18 +391,11 @@ export const shared = Symbol('shared token rules')
 
 /** Names an authored scope without its private source identity. */
 export function scope(value: string, identity?: string): string {
-  const suffix =
-    identity && value.startsWith(`${identity}-`)
-      ? value.slice(identity.length + 1)
-      : value
   const namespace = identity?.startsWith('id-') ? `${identity.slice(3)}-` : ''
-  return `z-theme-${namespace}${Identity.name(suffix)}`
+  return `z-theme-${namespace}${Identity.name(value)}`
 }
 
 function variable(identity: string | undefined, path: string): string {
   const namespace = identity?.startsWith('id-') ? `${identity.slice(3)}-` : ''
-  return `--z-${namespace}${path
-    .split('.')
-    .map((part) => Identity.name(part).replaceAll('-', '_2d_'))
-    .join('-')}`
+  return `--z-${namespace}${path.split('.').map(Identity.name).join('-')}`
 }

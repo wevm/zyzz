@@ -4,7 +4,7 @@ import { style } from '../../../zyzz.config.js'
 
 /** Keeps output mode descriptions readable on narrow screens. */
 export function CssOutputTable(props: CssOutputTable.Props) {
-  return <div {...cssOutputTableStyles.table()}>{props.children}</div>
+  return <div {...styles.table()}>{props.children}</div>
 }
 
 export declare namespace CssOutputTable {
@@ -12,7 +12,7 @@ export declare namespace CssOutputTable {
   type Props = { children: ReactNode }
 }
 
-namespace cssOutputTableStyles {
+namespace styles {
   export const table = style({
     borderColor: 'gray.400',
     borderRadius: 'lg',

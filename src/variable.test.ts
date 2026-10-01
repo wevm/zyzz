@@ -53,13 +53,13 @@ export namespace styles {
       expect(publisher.modules['group.ts']!.css).toMatchInlineSnapshot(
         `
         ".z-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
-        .z-opacity-\\5b var\\28 --z-group_5f_2e_5f_ts-box-opacity\\29 \\5d {opacity:var(--z-group_2e_ts-box-opacity);}"
+        .z-opacity-\\5b var\\28 --z-_5f_drwpj-box-opacity\\29 \\5d {opacity:var(--z-_drwpj-box-opacity);}"
       `,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
         ".z-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
-        .z-opacity-\\5b var\\28 --z-app_5f_2e_5f_ts-box-opacity\\29 \\5d {opacity:var(--z-app_2e_ts-box-opacity);}"
+        .z-opacity-\\5b var\\28 --z-Zf5JrJ-box-opacity\\29 \\5d {opacity:var(--z-Zf5JrJ-box-opacity);}"
       `,
       )
     })
@@ -170,9 +170,9 @@ export namespace styles {
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-app_2e_ts-card---z-value-0{--z-value:inline-flex;}
-        .z-app_2e_ts-card-display-1{display:var(--z-value);}
-        .z-app_2e_ts-card-display-2{&:hover{display:var(--z-value);}}"
+        ".z-Zf5JrJ-card---z-value-0{--z-value:inline-flex;}
+        .z-Zf5JrJ-card-display-1{display:var(--z-value);}
+        .z-Zf5JrJ-card-display-2{&:hover{display:var(--z-value);}}"
       `,
       )
 
@@ -245,15 +245,15 @@ export namespace styles {
       ).toMatchInlineSnapshot(`30`)
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-app_2e_ts-label---z-variables-accent-0{--z-variables-accent:blue;}
-        .z-app_2e_ts-label-text-1{color:var(--z-variables-accent);}
-        .z-app_2e_ts-label---z-variables-accent-2{.z-style-lib_2f_library_2e_ts-styles-card:hover &{--z-variables-accent:green;}}"
+        ".z-Zf5JrJ-label---z-variables-accent-0{--z-variables-accent:blue;}
+        .z-Zf5JrJ-label-text-1{color:var(--z-variables-accent);}
+        .z-Zf5JrJ-label---z-variables-accent-2{.z-style-tIp5Cr-styles-card:hover &{--z-variables-accent:green;}}"
       `,
       )
       expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-app_2e_ts-label---z-variables-accent-0 z-app_2e_ts-label-text-1 z-app_2e_ts-label---z-variables-accent-2 z-style-app_2e_ts-label"}); export const inline=accent.set('red')"
+         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-Zf5JrJ-label---z-variables-accent-0 z-Zf5JrJ-label-text-1 z-Zf5JrJ-label---z-variables-accent-2 z-style-Zf5JrJ-label"}); export const inline=accent.set('red')"
       `)
     })
 

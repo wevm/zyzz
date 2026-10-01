@@ -1833,14 +1833,14 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
       })
 
       expect(result.modules['shared.ts']!.css).toMatchInlineSnapshot(`
-        ".z-shared_2e_ts-direct-text-0{&:hover{color:red;}}
-        .z-shared_2e_ts-direct-text-1{.z-style-shared_2e_ts-parent > &{color:blue;}}
-        .z-shared_2e_ts-spread-text-0{&:hover{color:red;}}
-        .z-shared_2e_ts-spread-text-1{.z-style-shared_2e_ts-parent > &{color:blue;}}
-        .z-shared_2e_ts-spread-text-2{&:focus{color:green;}}
-        .z-shared_2e_ts-dynamic-text-0{&:hover{color:red;}}
-        .z-shared_2e_ts-dynamic-text-1{.z-style-shared_2e_ts-parent > &{color:blue;}}
-        .z-shared_2e_ts-dynamic-opacity-2{opacity:var(--z-shared_2e_ts-dynamic-opacity);}"
+        ".z-s_GjN5-direct-text-0{&:hover{color:red;}}
+        .z-s_GjN5-direct-text-1{.z-style-s_GjN5-parent > &{color:blue;}}
+        .z-s_GjN5-spread-text-0{&:hover{color:red;}}
+        .z-s_GjN5-spread-text-1{.z-style-s_GjN5-parent > &{color:blue;}}
+        .z-s_GjN5-spread-text-2{&:focus{color:green;}}
+        .z-s_GjN5-dynamic-text-0{&:hover{color:red;}}
+        .z-s_GjN5-dynamic-text-1{.z-style-s_GjN5-parent > &{color:blue;}}
+        .z-s_GjN5-dynamic-opacity-2{opacity:var(--z-s_GjN5-dynamic-opacity);}"
       `)
     })
 
@@ -1858,36 +1858,36 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
 
         const theme = ({} as import('zyzz').Vars.Definition<{}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{}}>);
         const config = ({} as import('zyzz').Config.VariableConfig<{readonly "output":"html";readonly "vars":{}}>);
-        export const themed = __zyzzProps.create({className:"z-style-empty_2e_ts-themed"});
-        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-empty_2e_ts-configured"})) as import('zyzz').style.ReturnType<'html'>);
+        export const themed = __zyzzProps.create({className:"z-style-S71aUp-themed"});
+        export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-S71aUp-configured"})) as import('zyzz').style.ReturnType<'html'>);
         export const bare = ({className:""});
-        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-empty_2e_ts-child-text-0 z-style-empty_2e_ts-child"})) as import('zyzz').style.ReturnType<'html'>);"
+        export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-S71aUp-child-text-0 z-style-S71aUp-child"})) as import('zyzz').style.ReturnType<'html'>);"
       `)
       expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
-        `".z-empty_2e_ts-child-text-0{.z-style-empty_2e_ts-themed > &, .z-style-empty_2e_ts-configured + &{color:red;}}"`,
+        `".z-S71aUp-child-text-0{.z-style-S71aUp-themed > &, .z-style-S71aUp-configured + &{color:red;}}"`,
       )
     })
 
     test('compiles namespace definitions and scoped selectors', () => {
       const result = Graph.compile({ modules: { 'app.ts': source } })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-app_2e_ts-styles-card-p-0{padding:16px;}
-        .z-app_2e_ts-styles-label-text-0{color:black;}
-        .z-app_2e_ts-styles-label-text-1{.z-style-app_2e_ts-styles-card:hover &{color:blue;}}
-        .z-app_2e_ts-styles-label-opacity-2{.z-style-app_2e_ts-styles-card > &:nth-child(even){opacity:0.5;}}
-        .z-app_2e_ts-styles-label-font-weight-3{.z-style-app_2e_ts-styles-empty + &{font-weight:700;}}
-        .z-app_2e_ts-outside-m-0{.z-style-app_2e_ts-styles-card > &{margin:0;}}"
+        ".z-Zf5JrJ-styles-card-p-0{padding:16px;}
+        .z-Zf5JrJ-styles-label-text-0{color:black;}
+        .z-Zf5JrJ-styles-label-text-1{.z-style-Zf5JrJ-styles-card:hover &{color:blue;}}
+        .z-Zf5JrJ-styles-label-opacity-2{.z-style-Zf5JrJ-styles-card > &:nth-child(even){opacity:0.5;}}
+        .z-Zf5JrJ-styles-label-font-weight-3{.z-style-Zf5JrJ-styles-empty + &{font-weight:700;}}
+        .z-Zf5JrJ-outside-m-0{.z-style-Zf5JrJ-styles-card > &{margin:0;}}"
       `)
       expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         export namespace styles {
-          export const card = __zyzzProps.create({className:"z-app_2e_ts-styles-card-p-0 z-style-app_2e_ts-styles-card"})
-          export const empty = __zyzzProps.create({className:"z-style-app_2e_ts-styles-empty"})
-          export const label = __zyzzProps.create({className:"z-app_2e_ts-styles-label-text-0 z-app_2e_ts-styles-label-text-1 z-app_2e_ts-styles-label-opacity-2 z-app_2e_ts-styles-label-font-weight-3 z-style-app_2e_ts-styles-label"})
+          export const card = __zyzzProps.create({className:"z-Zf5JrJ-styles-card-p-0 z-style-Zf5JrJ-styles-card"})
+          export const empty = __zyzzProps.create({className:"z-style-Zf5JrJ-styles-empty"})
+          export const label = __zyzzProps.create({className:"z-Zf5JrJ-styles-label-text-0 z-Zf5JrJ-styles-label-text-1 z-Zf5JrJ-styles-label-opacity-2 z-Zf5JrJ-styles-label-font-weight-3 z-style-Zf5JrJ-styles-label"})
         }
-        export const outside = __zyzzProps.create({className:"z-app_2e_ts-outside-m-0 z-style-app_2e_ts-outside"})"
+        export const outside = __zyzzProps.create({className:"z-Zf5JrJ-outside-m-0 z-style-Zf5JrJ-outside"})"
       `)
     })
 
@@ -1905,7 +1905,7 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
         imports: { 'app.ts': { zyzz: null, './barrel.js': 'barrel.ts' } },
       })
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-app_2e_ts-label-text-0{.z-style-library_2e_ts-card > &, .z-style-library_2e_ts-styles-button + &{color:blue;}}"`,
+        `".z-Zf5JrJ-label-text-0{.z-style-LW_GSj-card > &, .z-style-LW_GSj-styles-button + &{color:blue;}}"`,
       )
       expect(
         JSON.parse(publisher.contracts['barrel.ts']!).version,
@@ -1961,15 +1961,15 @@ export {card,other,nested};`,
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-scoped_2e_ts-card-text-0 z-style-scoped_2e_ts-card"}); const alias=card;
-        const other=__zyzzProps.create({className:"z-scoped_2e_ts-other-text-0 z-style-scoped_2e_ts-other"});
-        function nested(){ const card=other; return __zyzzProps.create({className:"z-scoped_2e_ts-nested-text-0"}) }
+        const card=__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-card"}); const alias=card;
+        const other=__zyzzProps.create({className:"z-NRugqy-other-text-0 z-style-NRugqy-other"});
+        function nested(){ const card=other; return __zyzzProps.create({className:"z-NRugqy-nested-text-0"}) }
         export {card,other,nested};"
       `)
       expect(result.modules['scoped.ts']!.css).toMatchInlineSnapshot(`
-        ".z-scoped_2e_ts-card-text-0{color:red;}
-        .z-scoped_2e_ts-other-text-0{color:red;}
-        .z-scoped_2e_ts-nested-text-0{.z-style-scoped_2e_ts-card:hover &{color:blue;}}"
+        ".z-NRugqy-card-text-0{color:red;}
+        .z-NRugqy-other-text-0{color:red;}
+        .z-NRugqy-nested-text-0{.z-style-NRugqy-card:hover &{color:blue;}}"
       `)
     })
 
@@ -1984,7 +1984,7 @@ const card=style({}); export const label=style((values:{opacity:number})=>({sele
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-style-dynamic_2e_ts-card"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-dynamic_2e_ts-label-opacity-0 z-style-dynamic_2e_ts-label"+" "+external:"z-dynamic_2e_ts-label-opacity-0 z-style-dynamic_2e_ts-label",style:{...input.vars,...style,"--z-dynamic_2e_ts-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
+        const card=__zyzzProps.create({className:"z-style-RPENcp-card"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-RPENcp-label-opacity-0 z-style-RPENcp-label"+" "+external:"z-RPENcp-label-opacity-0 z-style-RPENcp-label",style:{...input.vars,...style,"--z-RPENcp-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
       `)
       expect(() =>
         Source.extract({
@@ -2037,7 +2037,7 @@ namespace styles {
         },
       })
       expect(output.modules['static.ts']!.css).toMatchInlineSnapshot(
-        `".z-static_2e_ts-styles-child-text-0{.z-style-static_2e_ts-styles-parent:hover &{color:red;}}"`,
+        `".z-r9-r0Q-styles-child-text-0{.z-style-r9-r0Q-styles-parent:hover &{color:red;}}"`,
       )
     })
 

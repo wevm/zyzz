@@ -1641,7 +1641,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
         .toMatchInlineSnapshot(`
           "
           import { Props as __zyzzProps } from 'zyzz/runtime';
-           export const button = __zyzzProps.create({className:"z-p-8px z-style-example_2f_button_2e_ts-button"});"
+           export const button = __zyzzProps.create({className:"z-p-8px z-style-CVE4-Z-button"});"
         `)
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`

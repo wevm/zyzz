@@ -88,11 +88,11 @@ Atomic output can share the color class between the card and label.
 Grouped output gives each style its own block.
 
 ```css title="Grouped output, illustrative"
-.z-Card_2e_tsx-styles-card {
+.z-X8T0-w-styles-card {
   color: red;
   padding: 8px;
 }
-.z-Card_2e_tsx-styles-label {
+.z-X8T0-w-styles-label {
   color: red;
 }
 ```
@@ -101,7 +101,7 @@ Generated names contain no hashes. Common declarations use readable utilities; c
 
 When combining independent configs, supply distinct `defineConfig({ id })` values. The ID prefixes classes, variables, and theme scopes. The compiler reports incompatible generated names when it can detect them; consumers own collision avoidance across separate stylesheets.
 
-Contextual classes and inferred selector identities include the readable module path. Modules can share a config and use the same `namespace styles` member names without collisions. Explicit style IDs remain consumer-owned.
+Contextual classes and inferred selector identities include a stable six-character hash of the module path. Modules can share a config and use the same `namespace styles` member names without collisions. Explicit style IDs remain consumer-owned.
 
 Development and production use the same naming rules. Rebuild generated code and CSS together after edits.
 

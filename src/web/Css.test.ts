@@ -1480,7 +1480,7 @@ describe('names', () => {
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex z-text-[var(--z-color-brand,red)] z-style-first_2e_ts-card"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex z-text-[var(--z-color-brand,red)] z-style-zugwnm-card"});"
       `)
     })
 
@@ -1650,7 +1650,7 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       `)
       expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
         {
-          "style-1slxe42dbli7u-45": "z-text-tan z-p-8px z-style-card_2e_ts-card",
+          "style-1slxe42dbli7u-45": "z-text-tan z-p-8px z-style-bgXhTU-card",
         }
       `)
       expect(compiler.compile({ modules }).modules['card.ts']!.css)

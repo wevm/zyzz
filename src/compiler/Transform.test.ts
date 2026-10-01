@@ -587,21 +587,21 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-example_2f_interaction_2e_ts-disabled-cursor-0{cursor:not-allowed;}
-      .z-example_2f_interaction_2e_ts-disabled-pointer-events-1{pointer-events:auto;pointer-events:none!important;pointer-events:auto;}
-      .z-example_2f_interaction_2e_ts-disabled-resize-2{resize:none;}
-      .z-example_2f_interaction_2e_ts-disabled-user-select-3{user-select:none;}
-      .z-example_2f_interaction_2e_ts-disabled-visibility-4{visibility:visible;}
-      .z-example_2f_interaction_2e_ts-editable-cursor-0{cursor:text;}
-      .z-example_2f_interaction_2e_ts-editable-pointer-events-1{pointer-events:auto;}
-      .z-example_2f_interaction_2e_ts-editable-resize-2{resize:both;}
-      .z-example_2f_interaction_2e_ts-editable-user-select-3{user-select:text;}
-      .z-example_2f_interaction_2e_ts-editable-visibility-4{visibility:visible;}
-      .z-example_2f_interaction_2e_ts-hidden-cursor-0{cursor:default;}
-      .z-example_2f_interaction_2e_ts-hidden-pointer-events-1{pointer-events:auto;}
-      .z-example_2f_interaction_2e_ts-hidden-resize-2{resize:none;}
-      .z-example_2f_interaction_2e_ts-hidden-user-select-3{user-select:auto;}
-      .z-example_2f_interaction_2e_ts-hidden-visibility-4{visibility:hidden;}"
+      ".z-7sxPYh-disabled-cursor-0{cursor:not-allowed;}
+      .z-7sxPYh-disabled-pointer-events-1{pointer-events:auto;pointer-events:none!important;pointer-events:auto;}
+      .z-7sxPYh-disabled-resize-2{resize:none;}
+      .z-7sxPYh-disabled-user-select-3{user-select:none;}
+      .z-7sxPYh-disabled-visibility-4{visibility:visible;}
+      .z-7sxPYh-editable-cursor-0{cursor:text;}
+      .z-7sxPYh-editable-pointer-events-1{pointer-events:auto;}
+      .z-7sxPYh-editable-resize-2{resize:both;}
+      .z-7sxPYh-editable-user-select-3{user-select:text;}
+      .z-7sxPYh-editable-visibility-4{visibility:visible;}
+      .z-7sxPYh-hidden-cursor-0{cursor:default;}
+      .z-7sxPYh-hidden-pointer-events-1{pointer-events:auto;}
+      .z-7sxPYh-hidden-resize-2{resize:none;}
+      .z-7sxPYh-hidden-user-select-3{user-select:auto;}
+      .z-7sxPYh-hidden-visibility-4{visibility:hidden;}"
     `)
 
     const lines = output.css.split('\n')
@@ -755,21 +755,21 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-example_2f_tables_2e_ts-collapsed-border-collapse-0{border-collapse:collapse;}
-      .z-example_2f_tables_2e_ts-collapsed-border-spacing-1{border-spacing:12px;}
-      .z-example_2f_tables_2e_ts-collapsed-caption-side-2{caption-side:top;}
-      .z-example_2f_tables_2e_ts-collapsed-empty-cells-3{empty-cells:show;}
-      .z-example_2f_tables_2e_ts-collapsed-table-layout-4{table-layout:auto;}
-      .z-example_2f_tables_2e_ts-separated-border-collapse-0{border-collapse:separate;}
-      .z-example_2f_tables_2e_ts-separated-border-spacing-1{border-spacing:2px;border-spacing:8px!important;border-spacing:4px;}
-      .z-example_2f_tables_2e_ts-separated-caption-side-2{caption-side:bottom;}
-      .z-example_2f_tables_2e_ts-separated-empty-cells-3{empty-cells:hide;}
-      .z-example_2f_tables_2e_ts-separated-table-layout-4{table-layout:fixed;}
-      .z-example_2f_tables_2e_ts-zero-border-collapse-0{border-collapse:separate;}
-      .z-example_2f_tables_2e_ts-zero-border-spacing-1{border-spacing:0;}
-      .z-example_2f_tables_2e_ts-zero-caption-side-2{caption-side:top;}
-      .z-example_2f_tables_2e_ts-zero-empty-cells-3{empty-cells:show;}
-      .z-example_2f_tables_2e_ts-zero-table-layout-4{table-layout:fixed;}"
+      ".z-FG6gl6-collapsed-border-collapse-0{border-collapse:collapse;}
+      .z-FG6gl6-collapsed-border-spacing-1{border-spacing:12px;}
+      .z-FG6gl6-collapsed-caption-side-2{caption-side:top;}
+      .z-FG6gl6-collapsed-empty-cells-3{empty-cells:show;}
+      .z-FG6gl6-collapsed-table-layout-4{table-layout:auto;}
+      .z-FG6gl6-separated-border-collapse-0{border-collapse:separate;}
+      .z-FG6gl6-separated-border-spacing-1{border-spacing:2px;border-spacing:8px!important;border-spacing:4px;}
+      .z-FG6gl6-separated-caption-side-2{caption-side:bottom;}
+      .z-FG6gl6-separated-empty-cells-3{empty-cells:hide;}
+      .z-FG6gl6-separated-table-layout-4{table-layout:fixed;}
+      .z-FG6gl6-zero-border-collapse-0{border-collapse:separate;}
+      .z-FG6gl6-zero-border-spacing-1{border-spacing:0;}
+      .z-FG6gl6-zero-caption-side-2{caption-side:top;}
+      .z-FG6gl6-zero-empty-cells-3{empty-cells:show;}
+      .z-FG6gl6-zero-table-layout-4{table-layout:fixed;}"
     `)
 
     const lines = output.css.split('\n')
@@ -917,19 +917,19 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;--z-spacing-stroke:2px;--z-textUnderlineOffset-offset:4px;}
-      .z-example_2f_decoration_2e_ts-automatic-text-decoration-line-0{text-decoration-line:underline;}
-      .z-example_2f_decoration_2e_ts-automatic-text-decoration-thickness-1{text-decoration-thickness:from-font;}
-      .z-example_2f_decoration_2e_ts-automatic-text-underline-offset-2{text-underline-offset:auto;}
-      .z-example_2f_decoration_2e_ts-automatic-text-decoration-skip-ink-3{text-decoration-skip-ink:auto;}
-      .z-example_2f_decoration_2e_ts-decorated-text-decoration-line-0{text-decoration-line:underline;text-decoration-line:underline overline!important;}
+      .z-Y21ZU9-automatic-text-decoration-line-0{text-decoration-line:underline;}
+      .z-Y21ZU9-automatic-text-decoration-thickness-1{text-decoration-thickness:from-font;}
+      .z-Y21ZU9-automatic-text-underline-offset-2{text-underline-offset:auto;}
+      .z-Y21ZU9-automatic-text-decoration-skip-ink-3{text-decoration-skip-ink:auto;}
+      .z-Y21ZU9-decorated-text-decoration-line-0{text-decoration-line:underline;text-decoration-line:underline overline!important;}
       .z-text-decoration-color-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {text-decoration-color:var(--z-color-brand,#06c);}
       .z-text-decoration-style-wavy{text-decoration-style:wavy;}
-      .z-example_2f_decoration_2e_ts-decorated-text-decoration-thickness-3{text-decoration-thickness:var(--z-spacing-stroke,2px);}
-      .z-example_2f_decoration_2e_ts-decorated-text-underline-offset-4{text-underline-offset:var(--z-textUnderlineOffset-offset,4px);}
-      .z-example_2f_decoration_2e_ts-decorated-text-decoration-skip-ink-5{text-decoration-skip-ink:none;}
-      .z-example_2f_decoration_2e_ts-percentage-text-decoration-line-0{text-decoration-line:line-through;}
-      .z-example_2f_decoration_2e_ts-percentage-text-decoration-thickness-1{text-decoration-thickness:10%;}
-      .z-example_2f_decoration_2e_ts-percentage-text-underline-offset-2{text-underline-offset:-10%;}"
+      .z-Y21ZU9-decorated-text-decoration-thickness-3{text-decoration-thickness:var(--z-spacing-stroke,2px);}
+      .z-Y21ZU9-decorated-text-underline-offset-4{text-underline-offset:var(--z-textUnderlineOffset-offset,4px);}
+      .z-Y21ZU9-decorated-text-decoration-skip-ink-5{text-decoration-skip-ink:none;}
+      .z-Y21ZU9-percentage-text-decoration-line-0{text-decoration-line:line-through;}
+      .z-Y21ZU9-percentage-text-decoration-thickness-1{text-decoration-thickness:10%;}
+      .z-Y21ZU9-percentage-text-underline-offset-2{text-underline-offset:-10%;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1056,22 +1056,22 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-spacing-indent:12px;}
-      .z-example_2f_text_2e_ts-breaks-w-0{width:65px;}
+      .z-xcRSGS-breaks-w-0{width:65px;}
       .z-word-break-break-all{word-break:break-all;}
       .z-letter-spacing-\\5b normal\\3b letter-spacing\\3a 2px\\5d {letter-spacing:normal;letter-spacing:2px;}
-      .z-example_2f_text_2e_ts-paragraph-w-0{width:200px;}
+      .z-xcRSGS-paragraph-w-0{width:200px;}
       .z-text-indent-\\5b var\\28 --z-spacing-indent\\2c 12px\\29 \\5d {text-indent:var(--z-spacing-indent,12px);}
       .z-text-align-last-start{text-align-last:start;}
       .z-hyphens-manual{hyphens:manual;}
       .z-text-transform-uppercase{text-transform:uppercase;}
-      .z-example_2f_text_2e_ts-truncate-w-0{width:65px;}
+      .z-xcRSGS-truncate-w-0{width:65px;}
       .z-overflow-hidden{overflow:hidden;}
-      .z-example_2f_text_2e_ts-truncate-white-space-2{white-space:pre;white-space:nowrap!important;}
+      .z-xcRSGS-truncate-white-space-2{white-space:pre;white-space:nowrap!important;}
       .z-text-overflow-ellipsis{text-overflow:ellipsis;}
       .z-word-spacing-3px{word-spacing:3px;}
-      .z-example_2f_text_2e_ts-wrap-w-0{width:65px;}
+      .z-xcRSGS-wrap-w-0{width:65px;}
       .z-overflow-wrap-anywhere{overflow-wrap:anywhere;}
-      .z-example_2f_text_2e_ts-wrap-white-space-2{white-space:normal;}"
+      .z-xcRSGS-wrap-white-space-2{white-space:normal;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1210,23 +1210,23 @@ describe('compile', () => {
       .z-display-flex{display:flex;}
       .z-gap-40px{gap:40px;}
       .z-overflow-auto{overflow:auto;}
-      .z-example_2f_snapping_2e_ts-horizontal-w-3{width:100px;}
-      .z-example_2f_snapping_2e_ts-horizontal-h-4{height:100px;}
-      .z-example_2f_snapping_2e_ts-horizontal-scroll-padding-5{scroll-padding:var(--z-spacing-edge,10px);}
-      .z-example_2f_snapping_2e_ts-horizontal-scroll-snap-type-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
+      .z-lahY7n-horizontal-w-3{width:100px;}
+      .z-lahY7n-horizontal-h-4{height:100px;}
+      .z-lahY7n-horizontal-scroll-padding-5{scroll-padding:var(--z-spacing-edge,10px);}
+      .z-lahY7n-horizontal-scroll-snap-type-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
       .z-flex-direction-column{flex-direction:column;}
-      .z-example_2f_snapping_2e_ts-vertical-w-1{width:100px;}
-      .z-example_2f_snapping_2e_ts-vertical-h-2{height:100px;}
-      .z-example_2f_snapping_2e_ts-vertical-scroll-padding-3{scroll-padding:10px;}
-      .z-example_2f_snapping_2e_ts-vertical-scroll-snap-type-4{scroll-snap-type:y mandatory;}
-      .z-example_2f_snapping_2e_ts-item-w-0{width:60px;}
-      .z-example_2f_snapping_2e_ts-item-h-1{height:60px;}
+      .z-lahY7n-vertical-w-1{width:100px;}
+      .z-lahY7n-vertical-h-2{height:100px;}
+      .z-lahY7n-vertical-scroll-padding-3{scroll-padding:10px;}
+      .z-lahY7n-vertical-scroll-snap-type-4{scroll-snap-type:y mandatory;}
+      .z-lahY7n-item-w-0{width:60px;}
+      .z-lahY7n-item-h-1{height:60px;}
       .z-flex-shrink-0{flex-shrink:0;}
       .z-scroll-margin-5px{scroll-margin:5px;}
-      .z-example_2f_snapping_2e_ts-item-scroll-snap-align-4{scroll-snap-align:start;}
+      .z-lahY7n-item-scroll-snap-align-4{scroll-snap-align:start;}
       .z-scroll-snap-stop-\\5b normal\\3b scroll-snap-stop\\3a always\\21 important\\5d {scroll-snap-stop:normal;scroll-snap-stop:always!important;}
-      .z-example_2f_snapping_2e_ts-pair-scroll-snap-align-0{scroll-snap-align:none center;}
-      .z-example_2f_snapping_2e_ts-pair-scroll-snap-type-1{scroll-snap-type:both proximity;}"
+      .z-lahY7n-pair-scroll-snap-align-0{scroll-snap-align:none center;}
+      .z-lahY7n-pair-scroll-snap-type-1{scroll-snap-type:both proximity;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1346,18 +1346,18 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-spacing-offset:20px;--z-spacing-auto:24px;}
       .z-overflow-auto{overflow:auto;}
-      .z-example_2f_scrolling_2e_ts-container-h-1{height:100px;}
+      .z-it1fs6-container-h-1{height:100px;}
       .z-w-100px{width:100px;}
-      .z-example_2f_scrolling_2e_ts-container-scroll-behavior-3{scroll-behavior:auto;}
-      .z-example_2f_scrolling_2e_ts-container-scroll-padding-top-4{scroll-padding-top:10px;scroll-padding-top:var(--z-spacing-offset,20px);}
-      .z-example_2f_scrolling_2e_ts-container-scroll-padding-inline-5{scroll-padding-inline:auto;}
-      .z-example_2f_scrolling_2e_ts-container-overscroll-behavior-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
-      .z-example_2f_scrolling_2e_ts-container-overscroll-behavior-x-7{overscroll-behavior-x:none;}
+      .z-it1fs6-container-scroll-behavior-3{scroll-behavior:auto;}
+      .z-it1fs6-container-scroll-padding-top-4{scroll-padding-top:10px;scroll-padding-top:var(--z-spacing-offset,20px);}
+      .z-it1fs6-container-scroll-padding-inline-5{scroll-padding-inline:auto;}
+      .z-it1fs6-container-overscroll-behavior-6{overscroll-behavior:auto;overscroll-behavior:contain!important;}
+      .z-it1fs6-container-overscroll-behavior-x-7{overscroll-behavior-x:none;}
       .z-scroll-margin-top-10px{scroll-margin-top:10px;}
-      .z-example_2f_scrolling_2e_ts-target-h-1{height:20px;}
-      .z-example_2f_scrolling_2e_ts-explicit-scroll-padding-top-0{scroll-padding-top:var(--z-spacing-auto,24px);}
-      .z-example_2f_scrolling_2e_ts-named-scroll-padding-block-start-0{scroll-padding-block-start:var(--z-spacing-offset,20px)!important;}
-      .z-example_2f_scrolling_2e_ts-smooth-scroll-behavior-0{scroll-behavior:smooth;}"
+      .z-it1fs6-target-h-1{height:20px;}
+      .z-it1fs6-explicit-scroll-padding-top-0{scroll-padding-top:var(--z-spacing-auto,24px);}
+      .z-it1fs6-named-scroll-padding-block-start-0{scroll-padding-block-start:var(--z-spacing-offset,20px)!important;}
+      .z-it1fs6-smooth-scroll-behavior-0{scroll-behavior:smooth;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1467,24 +1467,24 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-spacing-min_2d_content:24px;--z-spacing-narrow:40px;}
-      .z-example_2f_sizing_2e_ts-minimum-inline-size-0{inline-size:min-content;}
-      .z-example_2f_sizing_2e_ts-maximum-inline-size-0{inline-size:max-content;}
-      .z-example_2f_sizing_2e_ts-fit-inline-size-0{inline-size:100%;inline-size:fit-content!important;}
-      .z-example_2f_sizing_2e_ts-fit-min-width-1{min-width:auto;}
-      .z-example_2f_sizing_2e_ts-fit-max-width-2{max-width:none;}
-      .z-example_2f_sizing_2e_ts-explicit-w-0{width:var(--z-spacing-min_2d_content,24px);}
-      .z-example_2f_sizing_2e_ts-constrained-min-inline-size-0{min-inline-size:var(--z-spacing-narrow,40px);}
-      .z-example_2f_sizing_2e_ts-constrained-max-inline-size-1{max-inline-size:max-content;}
-      .z-example_2f_sizing_2e_ts-constrained-block-size-2{block-size:fit-content;}
-      .z-example_2f_sizing_2e_ts-constrained-min-block-size-3{min-block-size:auto;}
-      .z-example_2f_sizing_2e_ts-constrained-max-block-size-4{max-block-size:none;}
-      .z-example_2f_sizing_2e_ts-content-flex-basis-0{flex-basis:content;}
-      .z-example_2f_sizing_2e_ts-content-w-1{width:5px;}
+      .z-tWUOQH-minimum-inline-size-0{inline-size:min-content;}
+      .z-tWUOQH-maximum-inline-size-0{inline-size:max-content;}
+      .z-tWUOQH-fit-inline-size-0{inline-size:100%;inline-size:fit-content!important;}
+      .z-tWUOQH-fit-min-width-1{min-width:auto;}
+      .z-tWUOQH-fit-max-width-2{max-width:none;}
+      .z-tWUOQH-explicit-w-0{width:var(--z-spacing-min_2d_content,24px);}
+      .z-tWUOQH-constrained-min-inline-size-0{min-inline-size:var(--z-spacing-narrow,40px);}
+      .z-tWUOQH-constrained-max-inline-size-1{max-inline-size:max-content;}
+      .z-tWUOQH-constrained-block-size-2{block-size:fit-content;}
+      .z-tWUOQH-constrained-min-block-size-3{min-block-size:auto;}
+      .z-tWUOQH-constrained-max-block-size-4{max-block-size:none;}
+      .z-tWUOQH-content-flex-basis-0{flex-basis:content;}
+      .z-tWUOQH-content-w-1{width:5px;}
       .z-flex-shrink-0{flex-shrink:0;}
-      .z-example_2f_sizing_2e_ts-content-min-width-3{min-width:0;}
-      .z-example_2f_sizing_2e_ts-automatic-flex-basis-0{flex-basis:auto;}
-      .z-example_2f_sizing_2e_ts-automatic-w-1{width:5px;}
-      .z-example_2f_sizing_2e_ts-automatic-min-width-2{min-width:0;}"
+      .z-tWUOQH-content-min-width-3{min-width:0;}
+      .z-tWUOQH-automatic-flex-basis-0{flex-basis:auto;}
+      .z-tWUOQH-automatic-w-1{width:5px;}
+      .z-tWUOQH-automatic-min-width-2{min-width:0;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1644,20 +1644,20 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-borderColor-brand:#06c;--z-color-brand:#fff;--z-radius-round:8px;}
       .z-border-style-solid{border-style:solid;}
-      .z-example_2f_borders_2e_ts-box-border-width-1{border-width:2px;}
-      .z-example_2f_borders_2e_ts-box-border-left-width-2{border-left-width:3px;}
-      .z-example_2f_borders_2e_ts-box-border-inline-start-width-3{border-inline-start-width:4px;border-inline-start-width:5px!important;}
-      .z-example_2f_borders_2e_ts-box-border-color-4{border-color:var(--z-borderColor-brand,#06c);}
-      .z-example_2f_borders_2e_ts-box-border-inline-end-color-5{border-inline-end-color:var(--z-color-brand,#fff);}
-      .z-example_2f_borders_2e_ts-box-border-radius-6{border-radius:var(--z-radius-round,8px);}
-      .z-example_2f_borders_2e_ts-box-border-start-start-radius-7{border-start-start-radius:10px;}
+      .z-2em1cQ-box-border-width-1{border-width:2px;}
+      .z-2em1cQ-box-border-left-width-2{border-left-width:3px;}
+      .z-2em1cQ-box-border-inline-start-width-3{border-inline-start-width:4px;border-inline-start-width:5px!important;}
+      .z-2em1cQ-box-border-color-4{border-color:var(--z-borderColor-brand,#06c);}
+      .z-2em1cQ-box-border-inline-end-color-5{border-inline-end-color:var(--z-color-brand,#fff);}
+      .z-2em1cQ-box-border-radius-6{border-radius:var(--z-radius-round,8px);}
+      .z-2em1cQ-box-border-start-start-radius-7{border-start-start-radius:10px;}
       .z-outline-color-\\5b var\\28 --z-color-brand\\2c \\23 fff\\29 \\5d {outline-color:var(--z-color-brand,#fff);}
       .z-outline-style-dashed{outline-style:dashed;}
       .z-outline-width-2px{outline-width:2px;}
       .z-outline-offset--1px{outline-offset:-1px;}
-      .z-example_2f_borders_2e_ts-physical-border-width-0{border-width:2px;}
-      .z-example_2f_borders_2e_ts-physical-border-inline-start-width-1{border-inline-start-width:5px;}
-      .z-example_2f_borders_2e_ts-physical-border-left-width-2{border-left-width:3px;}"
+      .z-2em1cQ-physical-border-width-0{border-width:2px;}
+      .z-2em1cQ-physical-border-inline-start-width-1{border-inline-start-width:5px;}
+      .z-2em1cQ-physical-border-left-width-2{border-left-width:3px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1690,25 +1690,25 @@ describe('compile', () => {
       ".z-theme-theme{--z-spacing-item:60px;}
       .z-display-flex{display:flex;}
       .z-flex-wrap-wrap{flex-wrap:wrap;}
-      .z-example_2f_flex_2e_ts-container-w-2{width:180px;}
-      .z-example_2f_flex_2e_ts-container-h-3{height:100px;}
+      .z-MhD43s-container-w-2{width:180px;}
+      .z-MhD43s-container-h-3{height:100px;}
       .z-align-content-space-between{align-content:space-between;}
       .z-align-items-flex-start{align-items:flex-start;}
       .z-flex-basis-\\5b 40px\\3b flex-basis\\3a var\\28 --z-spacing-item\\2c 60px\\29 \\5d {flex-basis:40px;flex-basis:var(--z-spacing-item,60px);}
       .z-flex-grow-0{flex-grow:0;}
       .z-flex-shrink-0{flex-shrink:0;}
-      .z-example_2f_flex_2e_ts-item-h-3{height:20px;}
+      .z-MhD43s-item-h-3{height:20px;}
       .z-align-self-flex-end{align-self:flex-end;}
       .z-order-\\5b -1\\21 important\\5d {order:-1!important;}
-      .z-example_2f_flex_2e_ts-clip-w-0{width:40px;}
-      .z-example_2f_flex_2e_ts-clip-h-1{height:40px;}
-      .z-example_2f_flex_2e_ts-clip-overflow-2{overflow:hidden;overflow:clip!important;}
-      .z-example_2f_flex_2e_ts-clip-overflow-x-3{overflow-x:visible;}
-      .z-example_2f_flex_2e_ts-scroll-w-0{width:40px;}
-      .z-example_2f_flex_2e_ts-scroll-h-1{height:40px;}
-      .z-example_2f_flex_2e_ts-scroll-overflow-x-2{overflow-x:clip;}
-      .z-example_2f_flex_2e_ts-scroll-overflow-3{overflow:hidden;}
-      .z-example_2f_flex_2e_ts-scroll-overflow-y-4{overflow-y:scroll;}"
+      .z-MhD43s-clip-w-0{width:40px;}
+      .z-MhD43s-clip-h-1{height:40px;}
+      .z-MhD43s-clip-overflow-2{overflow:hidden;overflow:clip!important;}
+      .z-MhD43s-clip-overflow-x-3{overflow-x:visible;}
+      .z-MhD43s-scroll-w-0{width:40px;}
+      .z-MhD43s-scroll-h-1{height:40px;}
+      .z-MhD43s-scroll-overflow-x-2{overflow-x:clip;}
+      .z-MhD43s-scroll-overflow-3{overflow:hidden;}
+      .z-MhD43s-scroll-overflow-y-4{overflow-y:scroll;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1854,18 +1854,18 @@ describe('compile', () => {
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-example_2f_logical_2e_ts-logical-w-0{width:60px;}
-      .z-example_2f_logical_2e_ts-logical-inline-size-1{inline-size:70px;inline-size:80px!important;}
-      .z-example_2f_logical_2e_ts-logical-block-size-2{block-size:40px;}
-      .z-example_2f_logical_2e_ts-logical-pl-3{padding-left:2px;}
-      .z-example_2f_logical_2e_ts-logical-padding-inline-start-4{padding-inline-start:4px;padding-inline-start:var(--z-spacing-space,12px);}
+      .z-i9aFWE-logical-w-0{width:60px;}
+      .z-i9aFWE-logical-inline-size-1{inline-size:70px;inline-size:80px!important;}
+      .z-i9aFWE-logical-block-size-2{block-size:40px;}
+      .z-i9aFWE-logical-pl-3{padding-left:2px;}
+      .z-i9aFWE-logical-padding-inline-start-4{padding-inline-start:4px;padding-inline-start:var(--z-spacing-space,12px);}
       .z-margin-inline-end-\\5b var\\28 --z-spacing-space\\2c 12px\\29 \\21 important\\5d {margin-inline-end:var(--z-spacing-space,12px)!important;}
       .z-position-relative{position:relative;}
       .z-inset-inline-start--3px{inset-inline-start:-3px;}
-      .z-example_2f_logical_2e_ts-physical-inline-size-0{inline-size:30px;}
-      .z-example_2f_logical_2e_ts-physical-w-1{width:50px;}
-      .z-example_2f_logical_2e_ts-physical-padding-inline-start-2{padding-inline-start:6px;}
-      .z-example_2f_logical_2e_ts-physical-pl-3{padding-left:8px;}"
+      .z-i9aFWE-physical-inline-size-0{inline-size:30px;}
+      .z-i9aFWE-physical-w-1{width:50px;}
+      .z-i9aFWE-physical-padding-inline-start-2{padding-inline-start:6px;}
+      .z-i9aFWE-physical-pl-3{padding-left:8px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2004,9 +2004,9 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-spacing-0:8px;}
-      .z-zero_2e_ts-token-p-0{padding:var(--z-spacing-0,8px)!important;}
-      .z-zero_2e_ts-literal-p-0{padding:0!important;}
-      .z-zero_2e_ts-plain-p-0{padding:var(--z-spacing-0,8px);}"
+      .z-WUKCte-token-p-0{padding:var(--z-spacing-0,8px)!important;}
+      .z-WUKCte-literal-p-0{padding:0!important;}
+      .z-WUKCte-plain-p-0{padding:var(--z-spacing-0,8px);}"
     `)
   })
 
@@ -2051,11 +2051,11 @@ describe('compile', () => {
       ".z-theme-theme{--z-spacing-space:1lh;}
       .z-w-\\5b 50vw\\3b width\\3a 50cqi\\21 important\\5d {width:50vw;width:50cqi!important;}
       .z-h-10dvh{height:10dvh;}
-      .z-example_2f_lengths_2e_ts-root-ml-2{margin-left:-1in;}
+      .z-GgEBF4-root-ml-2{margin-left:-1in;}
       .z-border-width-1pc{border-width:1pc;}
       .z-border-style-solid{border-style:solid;}
       .z-p-\\5b 1rem\\3b padding\\3a var\\28 --z-spacing-space\\2c 1lh\\29 \\5d {padding:1rem;padding:var(--z-spacing-space,1lh);}
-      .z-example_2f_lengths_2e_ts-themed-mt-1{margin-top:2rlh!important;}"
+      .z-GgEBF4-themed-mt-1{margin-top:2rlh!important;}"
     `)
 
     const lines = output.css.split('\n')
@@ -2170,13 +2170,13 @@ describe('compile', () => {
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-example_2f_fallbacks_2e_ts-props-text-0{color:#000;color:var(--z-color-brand,#06c);color:var(--z-color-brand,#06c)!important;}
+      .z-wjwnAQ-props-text-0{color:#000;color:var(--z-color-brand,#06c);color:var(--z-color-brand,#06c)!important;}
       .z-display-\\5b block\\3b display\\3a flex\\5d {display:block;display:flex;}
       .z-opacity-\\5b 0\\2e 25\\21 important\\3b opacity\\3a 0\\2e 75\\5d {opacity:0.25!important;opacity:0.75;}
-      .z-example_2f_fallbacks_2e_ts-props-p-3{padding:4px!important;padding:8px;}
-      .z-example_2f_fallbacks_2e_ts-props-pl-4{padding-left:12px;}
-      .z-example_2f_fallbacks_2e_ts-later-text-0{color:#fff;}
-      .z-example_2f_fallbacks_2e_ts-later-p-1{padding:20px;}"
+      .z-wjwnAQ-props-p-3{padding:4px!important;padding:8px;}
+      .z-wjwnAQ-props-pl-4{padding-left:12px;}
+      .z-wjwnAQ-later-text-0{color:#fff;}
+      .z-wjwnAQ-later-p-1{padding:20px;}"
     `)
 
     const lines = output.css.split('\n')
@@ -3252,19 +3252,19 @@ style({ color: 'md' });
         "import other from 'zyzz'; export const props = ({className:""}); export { other };",
         ""use client";
       import { Props as __zyzzProps } from 'zyzz/runtime';
-        export const button = __zyzzProps.create({className:"z-style-example_2f_syntax_2e_tsx-button"});",
+        export const button = __zyzzProps.create({className:"z-style-illRZq-button"});",
         "#!/usr/bin/env node
 
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-example_2f_syntax_2e_tsx-button"}); export { Style };",
+      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-illRZq-button"}); export { Style };",
         "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { style } from 'zyzz'; export type Signature = typeof style; export const button = __zyzzProps.create({className:"z-style-example_2f_syntax_2e_tsx-button"});",
+      import { style } from 'zyzz'; export type Signature = typeof style; export const button = __zyzzProps.create({className:"z-style-illRZq-button"});",
         "
       import { Props as __zyzzProps_ } from 'zyzz/runtime';
-       const __zyzzProps = 1; export const el = <button {...({className:"z-text-[#f00]"})} />; export const button = __zyzzProps_.create({className:"z-style-example_2f_syntax_2e_tsx-button"});",
+       const __zyzzProps = 1; export const el = <button {...({className:"z-text-[#f00]"})} />; export const button = __zyzzProps_.create({className:"z-style-illRZq-button"});",
         "import { style } from 'zyzz'; export function f(value = ({className:""})) { var style; return value; }",
         "export const untouched = '🎉';",
       ]
@@ -3424,7 +3424,7 @@ style({ color: 'md' });
 
       expect(JSON.parse(consumer.stdout)).toMatchInlineSnapshot(`
         {
-          "className": "z-text-[#f00] z-style-library_2f_button_2e_ts-button external",
+          "className": "z-text-[#f00] z-style-3DNxjG-button external",
         }
       `)
 
@@ -3893,8 +3893,8 @@ export const fade = keyframes({ '@supports (display: grid)': {'entry 0%, cover 1
       })
       expect(output.css).toMatchInlineSnapshot(
         `
-        ".z-queries_2e_ts-styles-card-text-0{@media (width >= 48rem){color:red;}}
-        .z-queries_2e_ts-styles-card-text-1{@media (width >= 48rem){color:blue;}}"
+        ".z-XSk4U0-styles-card-text-0{@media (width >= 48rem){color:red;}}
+        .z-XSk4U0-styles-card-text-1{@media (width >= 48rem){color:blue;}}"
       `,
       )
     })
@@ -3907,8 +3907,8 @@ export const fade = keyframes({ '@supports (display: grid)': {'entry 0%, cover 1
       })
       expect(output.css).toMatchInlineSnapshot(
         `
-        ".z-scope_2e_ts-styles-box-text-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
-        .z-scope_2e_ts-styles-box-text-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
+        ".z-oO6_9C-styles-box-text-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
+        .z-oO6_9C-styles-box-text-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
       `,
       )
     })
@@ -4023,15 +4023,15 @@ describe('atomicReview', () => {
         modules,
       })
       expect(grouped.modules['styles.ts']!.css).toMatchInlineSnapshot(`
-        ".z-styles_2e_ts-a{color:red;}
-        .z-styles_2e_ts-a__1{padding:2px;}
-        .z-styles_2e_ts-b{padding:4px;}"
+        ".z-b8Bx0E-a{color:red;}
+        .z-b8Bx0E-a__1{padding:2px;}
+        .z-b8Bx0E-b{padding:4px;}"
       `)
       expect(Object.values(grouped.modules['styles.ts']!.classes))
         .toMatchInlineSnapshot(`
           [
-            "z-styles_2e_ts-a z-styles_2e_ts-a__1 z-style-styles_2e_ts-a",
-            "z-styles_2e_ts-a z-styles_2e_ts-b z-style-styles_2e_ts-b",
+            "z-b8Bx0E-a z-b8Bx0E-a__1 z-style-b8Bx0E-a",
+            "z-b8Bx0E-a z-b8Bx0E-b z-style-b8Bx0E-b",
           ]
         `)
       expect(grouped.modules['styles.ts']!.css).not.toBe(
@@ -4128,16 +4128,16 @@ describe('atomicReview', () => {
         source: source('rebeccapurple', "display:'block',"),
       })
       expect(Object.values(before.classes)[0]).toMatchInlineSnapshot(
-        `"z-dev_2e_ts-first-text-0"`,
+        `"z-Z2S8Qr-first-text-0"`,
       )
       expect(Object.values(after.classes)[0]).toMatchInlineSnapshot(
-        `"z-dev_2e_ts-first-text-0"`,
+        `"z-Z2S8Qr-first-text-0"`,
       )
       expect(Object.values(before.classes)[1]).toMatchInlineSnapshot(
-        `"z-dev_2e_ts-second-text-0 z-p-8px"`,
+        `"z-Z2S8Qr-second-text-0 z-p-8px"`,
       )
       expect(Object.values(after.classes)[1]).toMatchInlineSnapshot(
-        `"z-block z-dev_2e_ts-second-text-1 z-p-8px"`,
+        `"z-block z-Z2S8Qr-second-text-1 z-p-8px"`,
       )
     })
   })
@@ -4438,8 +4438,8 @@ describe('bindings', () => {
           source: `import { style, variable } from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); style({opacity:a.x})(); style({opacity:b.x})()`,
         }).css,
       ).toMatchInlineSnapshot(`
-        ".z-isolated_2e_ts-style-0-opacity-0{opacity:var(--z-a-x);}
-        .z-isolated_2e_ts-style-1-opacity-0{opacity:var(--z-b-x);}"
+        ".z-B0G1Ix-style-0-opacity-0{opacity:var(--z-a-x);}
+        .z-B0G1Ix-style-1-opacity-0{opacity:var(--z-b-x);}"
       `)
     })
 
@@ -5327,9 +5327,9 @@ describe('conditions', () => {
         }).css,
       ).toMatchInlineSnapshot(
         `
-        ".z-selectors_2e_ts-style-0-text-0{:where(.dark) &{color:red;}}
-        .z-selectors_2e_ts-style-0-display-1{@media only screen{display:grid;}}
-        .z-selectors_2e_ts-style-0-display-2{@media not print{display:block;}}"
+        ".z-Osf2pa-style-0-text-0{:where(.dark) &{color:red;}}
+        .z-Osf2pa-style-0-display-1{@media only screen{display:grid;}}
+        .z-Osf2pa-style-0-display-2{@media not print{display:block;}}"
       `,
       )
     })
@@ -5374,8 +5374,8 @@ describe('conditions', () => {
 
       expect(output.css).toMatchInlineSnapshot(
         `
-        ".z-lines_2e_ts-style-0-text-0{&:is(:hover,:focus){color:red;}}
-        .z-lines_2e_ts-style-0-p-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+        ".z-YB3XzN-style-0-text-0{&:is(:hover,:focus){color:red;}}
+        .z-YB3XzN-style-0-p-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
       `,
       )
     })
@@ -5429,8 +5429,8 @@ describe('conditions', () => {
 
       expect(output.css).toMatchInlineSnapshot(
         `
-        ".z-mapped_2e_ts-style-0-text-0{color:red;}
-        .z-mapped_2e_ts-style-0-p-1{@media screen, print{padding:2px;}}"
+        ".z-A1zKnx-style-0-text-0{color:red;}
+        .z-A1zKnx-style-0-p-1{@media screen, print{padding:2px;}}"
       `,
       )
 
@@ -5483,13 +5483,13 @@ describe('conditions', () => {
       expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
         .toMatchInlineSnapshot(`
           ".z-theme-theme{--z-spacing-small:4px;--z-spacing-large:16px;}
-          .z-conditions_2e_ts-box-p-0{padding:var(--z-spacing-small,4px);}
-          .z-conditions_2e_ts-box-p-1{&:hover{padding:var(--z-spacing-large,16px);}}
-          .z-conditions_2e_ts-box-w-2{@media (48rem <= width < 64rem){width:100px;}}
-          .z-conditions_2e_ts-box-h-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
-          .z-conditions_2e_ts-box-display-4{@container sidebar (width >= 24rem){display:grid;}}
-          .z-conditions_2e_ts-box-gap-5{@supports (display:grid){gap:var(--z-spacing-small,4px);}}
-          .z-conditions_2e_ts-box-opacity-6{@starting-style{opacity:0;}}"
+          .z-FlkpGI-box-p-0{padding:var(--z-spacing-small,4px);}
+          .z-FlkpGI-box-p-1{&:hover{padding:var(--z-spacing-large,16px);}}
+          .z-FlkpGI-box-w-2{@media (48rem <= width < 64rem){width:100px;}}
+          .z-FlkpGI-box-h-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+          .z-FlkpGI-box-display-4{@container sidebar (width >= 24rem){display:grid;}}
+          .z-FlkpGI-box-gap-5{@supports (display:grid){gap:var(--z-spacing-small,4px);}}
+          .z-FlkpGI-box-opacity-6{@starting-style{opacity:0;}}"
         `)
     })
     test('retains dynamic and theme variables inside nested contexts', () => {
@@ -5501,8 +5501,8 @@ describe('conditions', () => {
         }).css,
       ).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-spacing-gap:4px;}
-        .z-dynamic_2e_ts-box-opacity-0{&:hover{opacity:var(--z-dynamic_2e_ts-box-alpha);}}
-        .z-dynamic_2e_ts-box-ml-1{&:hover{margin-left:calc(var(--z-spacing-gap,4px) + 2px);}}"
+        .z-RPENcp-box-opacity-0{&:hover{opacity:var(--z-RPENcp-box-alpha);}}
+        .z-RPENcp-box-ml-1{&:hover{margin-left:calc(var(--z-spacing-gap,4px) + 2px);}}"
       `)
     })
     test('resolves imported thresholds through the packed contract', () => {
@@ -5524,7 +5524,7 @@ describe('conditions', () => {
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-theme{}
-        .z-app_2e_ts-box-w-0{@media (width >= 48rem){width:100px;}}"
+        .z-Zf5JrJ-box-w-0{@media (width >= 48rem){width:100px;}}"
       `)
     })
     test.each([
@@ -6262,9 +6262,9 @@ export const child = style({all:'initial', color:'var(--Accent)', backgroundColo
         .z-\\5b --accent\\3a blue\\5d {--accent:blue;}
         .z-\\5b --data\\3a _22_a\\3b b\\3a c_22_\\5d {--data:"a;b:c";}
         .z-\\5b --count\\3a 2\\5d {--count:2;}
-        .z-custom_2e_ts-child-all-0{all:initial;}
-        .z-custom_2e_ts-child-text-1{color:var(--Accent);}
-        .z-custom_2e_ts-child-bg-2{background-color:var(--accent);}
+        .z-SM3vav-child-all-0{all:initial;}
+        .z-SM3vav-child-text-1{color:var(--Accent);}
+        .z-SM3vav-child-bg-2{background-color:var(--accent);}
         .z-\\5b --choice\\3a red\\3b --choice\\3a blue\\21 important\\5d {--choice:red;--choice:blue!important;}"
       `)
     })
@@ -6801,7 +6801,7 @@ describe('dynamic', () => {
       ).toMatchInlineSnapshot(`
         ".z-theme-t{--z-color-ink:red;}
         .z-text-\\5b var\\28 --z-color-ink\\2c red\\29 \\5d {color:var(--z-color-ink,red);}
-        .z-opacity-\\5b var\\28 --z-body_5f_2e_5f_ts-style-0-alpha\\29 \\5d {opacity:var(--z-body_2e_ts-style-0-alpha);}"
+        .z-opacity-\\5b var\\28 --z-i84kRs-style-0-alpha\\29 \\5d {opacity:var(--z-i84kRs-style-0-alpha);}"
       `)
     })
     test('rejects imported names in callback template annotations', () => {
@@ -6868,7 +6868,7 @@ describe('dynamic', () => {
         }).css,
       ).toMatchInlineSnapshot(`
         ".z-theme-t{--z-color-ink:red;}
-        .z-opacity-\\5b var\\28 --z-fallback_5f_2e_5f_ts-style-0-alpha\\29 \\5d {opacity:var(--z-fallback_2e_ts-style-0-alpha);}
+        .z-opacity-\\5b var\\28 --z-oc2law-style-0-alpha\\29 \\5d {opacity:var(--z-oc2law-style-0-alpha);}
         .z-text-\\5b blue\\3b color\\3a var\\28 --z-color-ink\\2c red\\29 \\5d {color:blue;color:var(--z-color-ink,red);}"
       `)
     })
@@ -6878,9 +6878,9 @@ describe('dynamic', () => {
       expect(output.css).toMatchInlineSnapshot(
         `
         ".z-block{display:block;}
-        .z-w-\\5b var\\28 --z-dynamic_5f_2e_5f_ts-bar-amount\\29 \\5d {width:var(--z-dynamic_2e_ts-bar-amount);}
-        .z-ml-\\5b calc\\28 var\\28 --z-dynamic_5f_2e_5f_ts-bar-gap\\29 _20_\\2b _20_2px\\29 \\5d {margin-left:calc(var(--z-dynamic_2e_ts-bar-gap) + 2px);}
-        .z-opacity-\\5b var\\28 --z-dynamic_5f_2e_5f_ts-bar-alpha\\29 \\5d {opacity:var(--z-dynamic_2e_ts-bar-alpha);}"
+        .z-w-\\5b var\\28 --z-RPENcp-bar-amount\\29 \\5d {width:var(--z-RPENcp-bar-amount);}
+        .z-ml-\\5b calc\\28 var\\28 --z-RPENcp-bar-gap\\29 _20_\\2b _20_2px\\29 \\5d {margin-left:calc(var(--z-RPENcp-bar-gap) + 2px);}
+        .z-opacity-\\5b var\\28 --z-RPENcp-bar-alpha\\29 \\5d {opacity:var(--z-RPENcp-bar-alpha);}"
       `,
       )
       expect(output.code.includes('values.amount')).toMatchInlineSnapshot(
@@ -6909,11 +6909,11 @@ describe('dynamic', () => {
 
       expect(module.first).toMatchInlineSnapshot(`
         {
-          "className": "z-block z-w-[var(--z-dynamic_5f_2e_5f_ts-bar-amount)] z-ml-[calc(var(--z-dynamic_5f_2e_5f_ts-bar-gap)_20_+_20_2px)] z-opacity-[var(--z-dynamic_5f_2e_5f_ts-bar-alpha)] z-style-dynamic_2e_ts-bar",
+          "className": "z-block z-w-[var(--z-RPENcp-bar-amount)] z-ml-[calc(var(--z-RPENcp-bar-gap)_20_+_20_2px)] z-opacity-[var(--z-RPENcp-bar-alpha)] z-style-RPENcp-bar",
           "style": {
-            "--z-dynamic_2e_ts-bar-alpha": 0.5,
-            "--z-dynamic_2e_ts-bar-amount": "25%",
-            "--z-dynamic_2e_ts-bar-gap": "4px",
+            "--z-RPENcp-bar-alpha": 0.5,
+            "--z-RPENcp-bar-amount": "25%",
+            "--z-RPENcp-bar-gap": "4px",
           },
         }
       `)
@@ -6927,11 +6927,11 @@ describe('dynamic', () => {
         }),
       ).toMatchInlineSnapshot(`
         {
-          "className": "z-block z-w-[var(--z-dynamic_5f_2e_5f_ts-bar-amount)] z-ml-[calc(var(--z-dynamic_5f_2e_5f_ts-bar-gap)_20_+_20_2px)] z-opacity-[var(--z-dynamic_5f_2e_5f_ts-bar-alpha)] z-style-dynamic_2e_ts-bar external",
+          "className": "z-block z-w-[var(--z-RPENcp-bar-amount)] z-ml-[calc(var(--z-RPENcp-bar-gap)_20_+_20_2px)] z-opacity-[var(--z-RPENcp-bar-alpha)] z-style-RPENcp-bar external",
           "style": {
-            "--z-dynamic_2e_ts-bar-alpha": 1,
-            "--z-dynamic_2e_ts-bar-amount": "75%",
-            "--z-dynamic_2e_ts-bar-gap": "8px",
+            "--z-RPENcp-bar-alpha": 1,
+            "--z-RPENcp-bar-amount": "75%",
+            "--z-RPENcp-bar-gap": "8px",
             "color": "red",
           },
         }
@@ -7018,7 +7018,7 @@ describe('dynamic', () => {
       ).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-color-brand:red;}
         .z-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}
-        .z-opacity-\\5b var\\28 --z-theme_5f_2d_5f_dynamic_5f_2e_5f_ts-bar-alpha\\29 \\5d {opacity:var(--z-theme_2d_dynamic_2e_ts-bar-alpha);}"
+        .z-opacity-\\5b var\\28 --z-mSk-e5-bar-alpha\\29 \\5d {opacity:var(--z-mSk-e5-bar-alpha);}"
       `)
     })
 
@@ -7030,7 +7030,7 @@ describe('dynamic', () => {
             'import { style } from "zyzz"; style((values:{$alpha:number})=>({opacity:values.$alpha}))',
         }).css,
       ).toMatchInlineSnapshot(
-        `".z-opacity-\\5b var\\28 --z-dollar_5f_2e_5f_ts-style-0-_5f_24_5f_alpha\\29 \\5d {opacity:var(--z-dollar_2e_ts-style-0-_24_alpha);}"`,
+        `".z-opacity-\\5b var\\28 --z-8ludUQ-style-0-_5f_24_5f_alpha\\29 \\5d {opacity:var(--z-8ludUQ-style-0-_24_alpha);}"`,
       )
     })
 
@@ -7782,8 +7782,8 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
         `"@function --z-cssfunction-size(--size type(<length> | <percentage>): 25%) returns type(<length> | <percentage>){result:var(--size);}"`,
       )
       expect(output.modules['app.ts']?.css).toMatchInlineSnapshot(`
-        ".z-app_2e_ts-styles-default-w-0{width:--z-cssfunction-size();}
-        .z-app_2e_ts-styles-fixed-w-0{width:--z-cssfunction-size(20px);}"
+        ".z-Zf5JrJ-styles-default-w-0{width:--z-cssfunction-size();}
+        .z-Zf5JrJ-styles-fixed-w-0{width:--z-cssfunction-size(20px);}"
       `)
     })
 
@@ -9683,7 +9683,7 @@ export namespace styles {
         export const below="--z-positiontry-below" as import('zyzz/web').positionTry.Reference;
         export const profile="--z-colorprofile-profile" as import('zyzz/web').colorProfile.Reference;
         export namespace styles {
-          export const list = __zyzzProps.create({className:"z-list-style-type-z-counterstyle-dots z-font-palette-[--z-fontpalettevalues-palette] z-position-try-fallbacks---z-positiontry-below z-style-names_2e_ts-styles-list"})
+          export const list = __zyzzProps.create({className:"z-list-style-type-z-counterstyle-dots z-font-palette-[--z-fontpalettevalues-palette] z-position-try-fallbacks---z-positiontry-below z-style-aRWX0o-styles-list"})
         }"
       `)
     })
@@ -10097,10 +10097,10 @@ export const dynamic = styles.dynamic({ width: '20px' });`
 
       expect(output.css).toMatchInlineSnapshot(`
         ".z-p-8px{padding:8px;}
-        .z-namespace_2e_ts-styles-card-text-1{color:red;}
-        .z-namespace_2e_ts-styles-button-text-0{color:blue;}
-        .z-namespace_2e_ts-styles-dynamic-text-0{color:red;}
-        .z-w-\\5b var\\28 --z-namespace_5f_2e_5f_ts-styles-dynamic-width\\29 \\5d {width:var(--z-namespace_2e_ts-styles-dynamic-width);}"
+        .z-Kokhlf-styles-card-text-1{color:red;}
+        .z-Kokhlf-styles-button-text-0{color:blue;}
+        .z-Kokhlf-styles-dynamic-text-0{color:red;}
+        .z-w-\\5b var\\28 --z-Kokhlf-styles-dynamic-width\\29 \\5d {width:var(--z-Kokhlf-styles-dynamic-width);}"
       `)
 
       const built = await Esbuild.build({
@@ -10121,19 +10121,19 @@ export const dynamic = styles.dynamic({ width: '20px' });`
 
       expect(result.card).toMatchInlineSnapshot(`
         {
-          "className": "z-p-8px z-namespace_2e_ts-styles-card-text-1 z-style-namespace_2e_ts-styles-card",
+          "className": "z-p-8px z-Kokhlf-styles-card-text-1 z-style-Kokhlf-styles-card",
         }
       `)
       expect(result.button).toMatchInlineSnapshot(`
         {
-          "className": "z-p-8px z-namespace_2e_ts-styles-button-text-0 z-style-namespace_2e_ts-styles-button",
+          "className": "z-p-8px z-Kokhlf-styles-button-text-0 z-style-Kokhlf-styles-button",
         }
       `)
       expect(result.dynamic).toMatchInlineSnapshot(`
         {
-          "className": "z-p-8px z-namespace_2e_ts-styles-dynamic-text-0 z-w-[var(--z-namespace_5f_2e_5f_ts-styles-dynamic-width)] z-style-namespace_2e_ts-styles-dynamic",
+          "className": "z-p-8px z-Kokhlf-styles-dynamic-text-0 z-w-[var(--z-Kokhlf-styles-dynamic-width)] z-style-Kokhlf-styles-dynamic",
           "style": {
-            "--z-namespace_2e_ts-styles-dynamic-width": "20px",
+            "--z-Kokhlf-styles-dynamic-width": "20px",
           },
         }
       `)
@@ -10151,8 +10151,8 @@ export const dynamic = styles.dynamic({ width: '20px' });`
       })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-scopes_2e_ts-first-card-text-0{color:red;}
-        .z-scopes_2e_ts-second-card-text-0{color:blue;}"
+        ".z-dRwjil-first-card-text-0{color:red;}
+        .z-dRwjil-second-card-text-0{color:blue;}"
       `)
     })
 
@@ -10190,9 +10190,9 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
 
             import { styled, variants, theme } from './pkg/index.js';
-            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-app_2e_ts-card-text-0 z-app_2e_ts-card-p-1 z-style-app_2e_ts-card"})) as import('zyzz').style.ReturnType<'html'>);
-            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-app_2e_ts-other-text-0 z-app_2e_ts-other-p-1 z-style-app_2e_ts-other"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-app_2e_ts-button-text-0 z-app_2e_ts-button-p-1 z-app_2e_ts-button-p-2 z-style-app_2e_ts-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-card-text-0 z-Zf5JrJ-card-p-1 z-style-Zf5JrJ-card"})) as import('zyzz').style.ReturnType<'html'>);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-other-text-0 z-Zf5JrJ-other-p-1 z-style-Zf5JrJ-other"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-Zf5JrJ-button-text-0 z-Zf5JrJ-button-p-1 z-Zf5JrJ-button-p-2 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`
@@ -10200,13 +10200,13 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             .z_scheme-dark{color-scheme:dark;}
             .z_scheme-light{color-scheme:light;}
             .z_scheme-light-dark{color-scheme:light dark;}
-            .z-app_2e_ts-card-text-0{color:var(--z-color-brand,red);}
-            .z-app_2e_ts-card-p-1{padding:8px;}
-            .z-app_2e_ts-other-text-0{color:var(--z-color-brand,red);}
-            .z-app_2e_ts-other-p-1{padding:8px;}
-            .z-app_2e_ts-button-text-0{color:var(--z-color-brand,red);}
-            .z-app_2e_ts-button-p-1{padding:8px;}
-            .z-app_2e_ts-button-p-2{&:where([data-size="large"]){padding:12px;}}"
+            .z-Zf5JrJ-card-text-0{color:var(--z-color-brand,red);}
+            .z-Zf5JrJ-card-p-1{padding:8px;}
+            .z-Zf5JrJ-other-text-0{color:var(--z-color-brand,red);}
+            .z-Zf5JrJ-other-p-1{padding:8px;}
+            .z-Zf5JrJ-button-text-0{color:var(--z-color-brand,red);}
+            .z-Zf5JrJ-button-p-1{padding:8px;}
+            .z-Zf5JrJ-button-p-2{&:where([data-size="large"]){padding:12px;}}"
           `)
         } else {
           expect(app.code).toMatchInlineSnapshot(`
@@ -10214,9 +10214,9 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
 
             import { styled, variants, theme } from './pkg/index.js';
-            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-app_2e_ts-card z-style-app_2e_ts-card"})) as import('zyzz').style.ReturnType<'html'>);
-            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-app_2e_ts-other z-style-app_2e_ts-other"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-app_2e_ts-button z-style-app_2e_ts-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-card z-style-Zf5JrJ-card"})) as import('zyzz').style.ReturnType<'html'>);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-other z-style-Zf5JrJ-other"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-Zf5JrJ-button z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`
@@ -10224,9 +10224,9 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             .z_scheme-dark{color-scheme:dark;}
             .z_scheme-light{color-scheme:light;}
             .z_scheme-light-dark{color-scheme:light dark;}
-            .z-app_2e_ts-card{color:var(--z-color-brand,red);padding:8px;}
-            .z-app_2e_ts-other{color:var(--z-color-brand,red);padding:8px;}
-            .z-app_2e_ts-button{color:var(--z-color-brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
+            .z-Zf5JrJ-card{color:var(--z-color-brand,red);padding:8px;}
+            .z-Zf5JrJ-other{color:var(--z-color-brand,red);padding:8px;}
+            .z-Zf5JrJ-button{color:var(--z-color-brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
           `)
         }
       }
@@ -10246,12 +10246,12 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
 
       expect(atomic.classes).toMatchInlineSnapshot(`
         {
-          "style-1e8a67z1uaws1j-96": "z-text-red z-p-8px z-style-app_2e_ts-card",
+          "style-1e8a67z1uaws1j-96": "z-text-red z-p-8px z-style-Zf5JrJ-card",
         }
       `)
       expect(grouped.classes).toMatchInlineSnapshot(`
         {
-          "style-1e8a67z1uaws1j-97": "z-app_2e_ts-card z-style-app_2e_ts-card",
+          "style-1e8a67z1uaws1j-97": "z-Zf5JrJ-card z-style-Zf5JrJ-card",
         }
       `)
       for (const [mode, output] of [
@@ -10335,33 +10335,33 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
         })
         if (cssOutput === 'atomic') {
           expect(output.css).toMatchInlineSnapshot(`
-            ".z-config_2e_ts-a-text-0{color:red;}
-            .z-config_2e_ts-a-p-1{padding:8px;}
-            .z-config_2e_ts-b-pl-0{padding-left:2px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-text-0{color:red;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-p-1{padding:8px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-pl-2{padding-left:2px;}"
+            ".z-EZaLq6-a-text-0{color:red;}
+            .z-EZaLq6-a-p-1{padding:8px;}
+            .z-EZaLq6-b-pl-0{padding-left:2px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-text-0{color:red;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-p-1{padding:8px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-pl-2{padding-left:2px;}"
           `)
           expect(emitted.css).toMatchInlineSnapshot(`
-            ".z-config_2e_ts-a-text-0{color:red;}
-            .z-config_2e_ts-a-p-1{padding:8px;}
-            .z-config_2e_ts-b-pl-0{padding-left:2px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-text-0{color:red;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-p-1{padding:8px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-pl-2{padding-left:2px;}"
+            ".z-EZaLq6-a-text-0{color:red;}
+            .z-EZaLq6-a-p-1{padding:8px;}
+            .z-EZaLq6-b-pl-0{padding-left:2px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-text-0{color:red;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-p-1{padding:8px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-pl-2{padding-left:2px;}"
           `)
         } else {
           expect(output.css).toMatchInlineSnapshot(`
-            ".z-config_2e_ts-a{color:red;padding:8px;}
-            .z-config_2e_ts-b{padding-left:2px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-style-0{color:red;padding:8px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-style-1{padding-left:2px;}"
+            ".z-EZaLq6-a{color:red;padding:8px;}
+            .z-EZaLq6-b{padding-left:2px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-style-0{color:red;padding:8px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-style-1{padding-left:2px;}"
           `)
           expect(emitted.css).toMatchInlineSnapshot(`
-            ".z-config_2e_ts-a{color:red;padding:8px;}
-            .z-config_2e_ts-b{padding-left:2px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-style-0{color:red;padding:8px;}
-            .z-props-0-config_2e_ts-a-config_2e_ts-b-style-1{padding-left:2px;}"
+            ".z-EZaLq6-a{color:red;padding:8px;}
+            .z-EZaLq6-b{padding-left:2px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-style-0{color:red;padding:8px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-style-1{padding-left:2px;}"
           `)
         }
       }
@@ -12539,7 +12539,7 @@ describe('statements', () => {
         `"@custom-media --z-custommedia-compact (width < 40rem);"`,
       )
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-app_2e_ts-styles-box-text-0{@media (--z-custommedia-compact){color:red;}}"`,
+        `".z-Zf5JrJ-styles-box-text-0{@media (--z-custommedia-compact){color:red;}}"`,
       )
     })
     test('emits native functions and callable fixed expressions', async () => {

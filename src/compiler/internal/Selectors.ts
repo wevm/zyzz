@@ -168,7 +168,7 @@ export function scan(
   function link(call: Ast.CallExpression): Themes.Link {
     const id = Identifiers.explicit(call)
     const prefix = cssNamespaces.get(call.start)
-    const name = `z-style-${id === undefined ? `${prefix ? `${prefix}-` : ''}${Identity.name(moduleId)}-${authoredNames.get(call.start)!}` : `id-${prefix ? `${prefix}-` : ''}${Identity.requireId(id, 'style').slice(3)}`}`
+    const name = `z-style-${id === undefined ? `${prefix ? `${prefix}-` : ''}${Identity.compact(moduleId).slice(-6)}-${authoredNames.get(call.start)!}` : `id-${prefix ? `${prefix}-` : ''}${Identity.requireId(id, 'style').slice(3)}`}`
     identities.set(call.start, name)
 
     return {

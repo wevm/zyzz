@@ -55,11 +55,11 @@ Illustrative atomic output shares the color declaration:
 The card receives both classes; the label receives the color class. Grouped output keeps the card's declarations together:
 
 ```css
-.z-Card_2e_tsx-styles-card {
+.z-X8T0-w-styles-card {
   color: red;
   padding: 8px;
 }
-.z-Card_2e_tsx-styles-label {
+.z-X8T0-w-styles-label {
   color: red;
 }
 ```
@@ -76,7 +76,7 @@ Variable names follow their authored paths, such as `--z-color-brand`. Standalon
 
 When combining independent configs, supply distinct `Config.create({ id })` values. The ID prefixes the config's classes and variables. Independent standalone variables and styles can supply their own IDs. The compiler reports detectable incompatible names; consumers own collision avoidance across separately compiled stylesheets.
 
-Contextual classes and inferred selector identities include the readable module path. Modules can share a config and use the same `namespace styles` member names without collisions. Explicit style IDs remain consumer-owned.
+Contextual classes and inferred selector identities include a stable six-character hash of the module path. Modules can share a config and use the same `namespace styles` member names without collisions. Explicit style IDs remain consumer-owned.
 
 The bundler plugins, CLI, and `Graph.compile` share responsive token defaults across module stylesheets. Next.js also shares scope definitions and the reset across components. Responsive defaults use `:where(*)` so references resolve within each theme scope. Standalone `Transform.compile` and `Css.compile` output includes the defaults needed by that compilation.
 

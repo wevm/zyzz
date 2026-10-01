@@ -57,7 +57,7 @@ describe('compile', () => {
     expect(Object.values(Css.compile({ styles: contextual.styles }).classes))
       .toMatchInlineSnapshot(`
         [
-          "z-named_2e_ts-heading-opacity-0 z-named_2e_ts-heading-opacity-1",
+          "z-mRVEHL-heading-opacity-0 z-mRVEHL-heading-opacity-1",
         ]
       `)
 
@@ -140,19 +140,20 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
         const output = Graph.compile({
           modules: {
             'config.js': `import {Config} from 'zyzz';export const {style}=Config.create({cssOutput:'${cssOutput}'});`,
-            'left.js': `import {style} from './config.js';namespace styles{export const card=style({color:'red',selectors:{'&:hover':{color:'green'}}})}export const props=styles.card();`,
-            'right.js': `import {style} from './config.js';namespace styles{export const card=style({color:'blue',selectors:{'&:hover':{color:'purple'}}})}export const props=styles.card();`,
-            'entry.js': `export {props as left} from './left.js';export {props as right} from './right.js';`,
+            'button.ts': `import {style} from './config.js';namespace styles{export const card=style({color:'red',selectors:{'&:hover':{color:'green'}}})}export const props=styles.card();`,
+            'button.tsx': `import {style} from './config.js';namespace styles{export const card=style({color:'blue',selectors:{'&:hover':{color:'purple'}}})}export const props=styles.card();`,
+            'entry.js': `export {props as left} from './button.ts';export {props as right} from './button.tsx';`,
           },
         })
         const code = await Packed.bundle({
           entry: 'entry.js',
-          modules: Object.fromEntries(
-            Object.entries(output.modules).map(([name, module]) => [
-              name,
-              module.code,
-            ]),
-          ),
+          modules: {
+            'config.js': output.modules['config.js']!.code,
+            'left.js': output.modules['button.ts']!.code,
+            'right.js': output.modules['button.tsx']!.code,
+            'entry.js':
+              "export {props as left} from './left.js';export {props as right} from './right.js';",
+          },
         })
         const fixture = Vm.runInNewContext(`${code}\nFixture`) as {
           left: { className: string }
@@ -289,8 +290,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-first-first_2e_js-heading-text-0{color:var(--z-first-color-brand,red);}
-      .z-first-first_2e_js-heading-opacity-1{&:hover{opacity:1;}}"
+      .z-first-bugww8-heading-text-0{color:var(--z-first-color-brand,red);}
+      .z-first-bugww8-heading-opacity-1{&:hover{opacity:1;}}"
     `)
     expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
       ".z-theme-first-theme{--z-first-color-brand:red;}
@@ -298,8 +299,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-second-second_2e_js-heading-text-0{color:var(--z-second-color-brand,blue);}
-      .z-second-second_2e_js-heading-opacity-1{&:hover{opacity:1;}}"
+      .z-second-XWlTb2-heading-text-0{color:var(--z-second-color-brand,blue);}
+      .z-second-XWlTb2-heading-opacity-1{&:hover{opacity:1;}}"
     `)
     const code = await Packed.bundle({
       entry: 'entry.js',
@@ -1479,9 +1480,9 @@ ${web.modules['app.ts']!.code}`,
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-pkg_2f_card_2e_ts-styles-card"})
+        export const card = __zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-LMAxOH-styles-card"})
 
-        export const label = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-pkg_2f_card_2e_ts-styles-label"})
+        export const label = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-LMAxOH-styles-label"})
       } export const props = styles.card(); export const scope = theme().className;"
     `)
 
@@ -3303,14 +3304,14 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
         .z-first_2d_local-opacity-0{opacity:0.5;}
-        .z-props-0-z-style-first_2e_ts-base-first_2d_local-style-0{color:red;padding:8px;}
-        .z-props-0-z-style-first_2e_ts-base-first_2d_local-opacity-1{opacity:0.5;}"
+        .z-props-0-z-style-zugwnm-base-first_2d_local-style-0{color:red;padding:8px;}
+        .z-props-0-z-style-zugwnm-base-first_2d_local-opacity-1{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
         .z-second_2d_local-opacity-0{opacity:1;}
-        .z-props-0-z-style-first_2e_ts-base-second_2d_local-style-0{color:red;padding:8px;}
-        .z-props-0-z-style-first_2e_ts-base-second_2d_local-opacity-1{opacity:1;}"
+        .z-props-0-z-style-zugwnm-base-second_2d_local-style-0{color:red;padding:8px;}
+        .z-props-0-z-style-zugwnm-base-second_2d_local-opacity-1{opacity:1;}"
       `)
     })
 
@@ -4252,9 +4253,9 @@ describe('variables', () => {
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-app_2e_ts-styles-a-w-0{width:10px;}
-        .z-app_2e_ts-styles-b-w-0{width:30px;}
-        .z-app_2e_ts-styles-c-w-0{width:40px;}"
+        ".z-Zf5JrJ-styles-a-w-0{width:10px;}
+        .z-Zf5JrJ-styles-b-w-0{width:30px;}
+        .z-Zf5JrJ-styles-c-w-0{width:40px;}"
       `)
     })
 
@@ -4390,8 +4391,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z-text-red{color:red;}
-        .z-w-\\5b var\\28 --z-app_5f_2e_5f_ts-styles-dynamic-width\\29 \\5d {width:var(--z-app_2e_ts-styles-dynamic-width);}
-        .z-z-index-\\5b var\\28 --z-app_5f_2e_5f_ts-styles-dynamic-zIndex\\29 \\5d {z-index:var(--z-app_2e_ts-styles-dynamic-zIndex);}"
+        .z-w-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-width\\29 \\5d {width:var(--z-Zf5JrJ-styles-dynamic-width);}
+        .z-z-index-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-zIndex\\29 \\5d {z-index:var(--z-Zf5JrJ-styles-dynamic-zIndex);}"
       `)
     })
 
@@ -4764,8 +4765,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
         "@property --z-vars-amount{syntax:"<percentage>";inherits:false;initial-value:25%;}
         @property --z-vars-gap{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px{height:20px;}
         .z-p-\\5b var\\28 --z-vars-gap\\29 \\5d {padding:var(--z-vars-gap);}
-        .z-app_2e_ts-styles-registered-w-2{width:var(--z-vars-amount);}
-        .z-app_2e_ts-styles-dynamic-w-0{width:var(--z-app_2e_ts-styles-dynamic-width);}"
+        .z-Zf5JrJ-styles-registered-w-2{width:var(--z-vars-amount);}
+        .z-Zf5JrJ-styles-dynamic-w-0{width:var(--z-Zf5JrJ-styles-dynamic-width);}"
       `)
     })
     test('expands immutable members and shorthand while retaining dynamic intersections', () => {
@@ -4780,10 +4781,10 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
-        ".z-static_2e_ts-styles-card-w-0{width:12px;}
+        ".z-r9-r0Q-styles-card-w-0{width:12px;}
         .z-p-8px{padding:8px;}
-        .z-static_2e_ts-styles-dynamic-w-0{width:var(--z-static_2e_ts-styles-dynamic-width);}
-        .z-opacity-\\5b var\\28 --z-static_5f_2e_5f_ts-styles-dynamic-opacity\\29 \\5d {opacity:var(--z-static_2e_ts-styles-dynamic-opacity);}"
+        .z-r9-r0Q-styles-dynamic-w-0{width:var(--z-r9-r0Q-styles-dynamic-width);}
+        .z-opacity-\\5b var\\28 --z-r9-r0Q-styles-dynamic-opacity\\29 \\5d {opacity:var(--z-r9-r0Q-styles-dynamic-opacity);}"
       `)
       expect(graph.sharedCss).toMatchInlineSnapshot(
         `"@property --z-count-n{syntax:"<number>";inherits:false;initial-value:-1;}"`,

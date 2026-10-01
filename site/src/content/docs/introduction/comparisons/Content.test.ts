@@ -21,7 +21,7 @@ describe('comparison examples', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".z-bg-\\5b \\23 06c\\5d {background-color:#06c;}
       .z-h-\\5b 0\\2e 5rem\\5d {height:0.5rem;}
-      .z-w-\\5b var\\28 --z-Bar_5f_2e_5f_tsx-styles-bar-width\\29 \\5d {width:var(--z-Bar_2e_tsx-styles-bar-width);}"
+      .z-w-\\5b var\\28 --z-K9A3CB-styles-bar-width\\29 \\5d {width:var(--z-K9A3CB-styles-bar-width);}"
     `)
   })
 })

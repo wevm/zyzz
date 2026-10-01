@@ -627,14 +627,14 @@ export const body=style({
 
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-typography-copy-14-fontSize:14px;--z-typography-copy-14-fontWeight:400;--z-typography-copy-14-lineHeight:20px;}
-      .z-app_2e_ts-body-font-size-0{font-size:var(--z-typography-copy-14-fontSize,14px);}
-      .z-app_2e_ts-body-font-weight-1{font-weight:var(--z-typography-copy-14-fontWeight,400);}
-      .z-app_2e_ts-body-line-height-2{line-height:var(--z-typography-copy-14-lineHeight,20px);}
-      .z-app_2e_ts-strong-font-weight-0{font-weight:var(--z-typography-copy-14-fontWeight,400);}
-      .z-app_2e_ts-text-font-size-0{font-size:var(--z-typography-copy-14-fontSize,14px);}
-      .z-app_2e_ts-text-font-weight-1{font-weight:var(--z-typography-copy-14-fontWeight,400);}
-      .z-app_2e_ts-text-line-height-2{line-height:var(--z-typography-copy-14-lineHeight,20px);}
-      .z-app_2e_ts-text-font-weight-3{&:where([data-strong="true"]){font-weight:550;}}"
+      .z-Zf5JrJ-body-font-size-0{font-size:var(--z-typography-copy-14-fontSize,14px);}
+      .z-Zf5JrJ-body-font-weight-1{font-weight:var(--z-typography-copy-14-fontWeight,400);}
+      .z-Zf5JrJ-body-line-height-2{line-height:var(--z-typography-copy-14-lineHeight,20px);}
+      .z-Zf5JrJ-strong-font-weight-0{font-weight:var(--z-typography-copy-14-fontWeight,400);}
+      .z-Zf5JrJ-text-font-size-0{font-size:var(--z-typography-copy-14-fontSize,14px);}
+      .z-Zf5JrJ-text-font-weight-1{font-weight:var(--z-typography-copy-14-fontWeight,400);}
+      .z-Zf5JrJ-text-line-height-2{line-height:var(--z-typography-copy-14-lineHeight,20px);}
+      .z-Zf5JrJ-text-font-weight-3{&:where([data-strong="true"]){font-weight:550;}}"
     `)
   })
 

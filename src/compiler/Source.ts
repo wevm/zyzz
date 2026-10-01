@@ -590,7 +590,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     const cssName =
       explicitId !== undefined
         ? Identity.name(explicitId)
-        : `${Identity.name(options.moduleId)}-${
+        : `${Identity.compact(options.moduleId).slice(-6)}-${
             authoredName === 'style'
               ? `style-${callIndex}`
               : cssNameCounts.get(authoredName)! > 1

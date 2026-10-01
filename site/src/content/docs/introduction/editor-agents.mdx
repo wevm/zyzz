@@ -1,0 +1,93 @@
+# Editor & Agents
+
+Use typed styles, project context, and compiler feedback in your editor and coding agent.
+
+## Editor setup
+
+Complete [Getting Started](/docs/introduction/getting-started) and open the project in a TypeScript-aware editor. Zyzz's public types provide property and token completions. No dedicated Zyzz editor extension is required.
+
+In [VS Code](https://code.visualstudio.com/docs/languages/typescript), TypeScript support includes completions, hover information, and inline diagnostics. Keep style definitions in `.ts` or `.tsx` files so the editor can check them against your project's configuration.
+
+Import `style` from the project's config to retain its inferred token names. Use `zyzz/default` for the bundled variables, or `zyzz` for token-free CSS values.
+
+```tsx title="Card.tsx"
+import { style } from './zyzz.config.js'
+
+export function Card() {
+  return (
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>Project settings</h2>
+    </article>
+  )
+}
+
+namespace styles {
+  export const card = style({ padding: 'md' })
+
+  export const title = style({ color: 'foreground' })
+}
+```
+
+This example expects `spacing.md` and `color.foreground` in `zyzz.config.ts`. Keep configuration values literal so TypeScript preserves the names. Properties constrained by configured tokens require a valid token, a compatible variable reference, or a CSS value with ` !custom`.
+
+## Give agents context
+
+Start a coding task with the documentation and the project's existing setup:
+
+<AgentPrompt expanded>Read zyzz.sh and inspect the project.</AgentPrompt>
+
+Include the requested change and ask the agent to read the existing config, build integration, components, and project instructions. Use the configured helpers and tokens, and preserve documented preview and unsupported limitations.
+
+The site serves readable Markdown at documentation URLs ending in `.md`. Fetch a page directly when an agent needs its text:
+
+```sh
+curl https://zyzz.sh/docs/introduction/editor-agents.md
+```
+
+Use the [documentation index](https://raw.githubusercontent.com/wevm/zyzz/main/docs/llms.txt) to find the relevant guide and API contract. Resolve the index's relative links against its GitHub directory. Copy the owning config and build setup alongside examples, since token names and compilation targets are project-specific.
+
+## Add project instructions
+
+Record the project's conventions in its agent instruction file, such as `AGENTS.md`. Adapt the import path and checks to the actual repository:
+
+```md title="AGENTS.md"
+## Zyzz
+
+- Import style and variants from the project's zyzz.config.ts helpers.
+- Reuse configured tokens. Use !custom only for intentional CSS literals.
+- Put module-level style definitions in namespace styles at the file's bottom.
+- Spread applied style props onto the platform's normal elements.
+- Preserve the existing compiler integration and CSS delivery.
+- Run the project's type checks and build after style changes.
+- Verify layout, interaction states, and color schemes in the rendered app.
+```
+
+These instructions apply the project's conventions to future tasks. They do not require a dedicated Zyzz agent server.
+
+## Check the result
+
+TypeScript feedback checks authoring types. The compiler checks source and target constraints. The rendered application confirms that the compiled styles load and behave as intended.
+
+1. Resolve editor and type-check errors, including unknown tokens and invalid variant choices.
+2. Run the project's build or development command. Fix compiler diagnostics at their reported source locations before consuming new output.
+3. Inspect the affected component at relevant widths, interaction states, and color schemes. Keep generated code and styles from the same build.
+
+Inferred types do not establish platform support. Check [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) before using preview or unsupported behavior. Web compilation does not establish native rendering parity.
+
+For a missing transform, missing CSS, or unexpected overrides, see [Testing & Troubleshooting](https://github.com/wevm/zyzz/blob/main/docs/guides/testing.md#troubleshooting).
+
+## Optional linting
+
+For web authoring, `zyzz/oxlint` can report invalid style structures and conflicting JSX styling props. Install Oxlint alongside Zyzz and merge these entries into the project's configuration:
+
+```json title=".oxlintrc.json"
+{
+  "jsPlugins": [{ "name": "zyzz", "specifier": "zyzz/oxlint" }],
+  "rules": {
+    "zyzz/no-conflicting-props": "error",
+    "zyzz/valid-styles": "error"
+  }
+}
+```
+
+Run `oxlint .` through the project's package manager. Apply these rules to web authoring files. The linter does not resolve imported token contracts or replace type checking and compilation. Oxlint's JavaScript plugin API is currently alpha. See [Linting](https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md) for rule coverage and Vite Plus setup.

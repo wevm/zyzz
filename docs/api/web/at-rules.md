@@ -251,3 +251,5 @@ property({ name: '--payload', syntax: '*', inherits: true })
 Nested `@layer defaults` and `@media screen` keys enclose the registration. Registration changes CSS computed-value behavior; it does not evaluate values in JavaScript. Compiler diagnostics reject invalid syntax, mismatched initial values, computational dependencies, and injected declarations.
 
 Page `bleed` accepts relative lengths and dimensional calculations. Page `size` accepts one or two lengths or calculations, as well as named paper sizes and orientation. Percentages and dimensionally incompatible calculations are rejected.
+
+Page `pageMarginSafety` accepts `none`, `clamp`, or `add` and emits the `page-margin-safety` descriptor. It belongs in page descriptors, outside page-margin boxes. Rendering depends on browser support and remains unverified.

@@ -2310,6 +2310,17 @@ describe('finalAcceptance', () => {
             'utf8',
           )
           expect(updated === initial).toMatchInlineSnapshot('false')
+          if (family === 'page') {
+            expect(
+              initial.includes('page-margin-safety: none'),
+            ).toMatchInlineSnapshot('true')
+            expect(
+              updated.includes('page-margin-safety: add'),
+            ).toMatchInlineSnapshot('true')
+            expect(
+              updated.includes('page-margin-safety: none'),
+            ).toMatchInlineSnapshot('false')
+          }
           expect(updated.includes('before')).toMatchInlineSnapshot('false')
           expect(
             updated.includes(

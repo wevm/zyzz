@@ -7143,6 +7143,89 @@ describe('finalAcceptance', () => {
         ).toMatchInlineSnapshot('2')
       })
     }
+    test('compiles page margin safety and validates packed descriptors', async () => {
+      const source = `import {page} from 'zyzz/web';page({descriptors:{pageMarginSafety:'none'}});page({selector:':left',descriptors:{pageMarginSafety:'clamp'}});page({selector:':right',descriptors:{pageMarginSafety:'ADD'}});`
+      const direct = Transform.compile({ moduleId: 'library.ts', source })
+      const library = Graph.compile({ modules: { 'library.ts': source } })
+      const packed = Graph.compile({
+        contracts: { 'lib.js': library.contracts['library.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+
+      expect(direct.css).toMatchInlineSnapshot(`
+        "@page{page-margin-safety:none;}
+        @page :left{page-margin-safety:clamp;}
+        @page :right{page-margin-safety:ADD;}"
+      `)
+      expect(packed.sharedCss).toMatchInlineSnapshot(`
+        "@page{page-margin-safety:none;}
+        @page :left{page-margin-safety:clamp;}
+        @page :right{page-margin-safety:ADD;}"
+      `)
+
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.addStyleTag({ content: direct.css })
+
+        expect(
+          await page.evaluate(() =>
+            Array.from(document.styleSheets[0]!.cssRules, (rule) =>
+              (rule as CSSPageRule).style.getPropertyValue(
+                'page-margin-safety',
+              ),
+            ),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            "none",
+            "clamp",
+            "add",
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+
+      const value = 'auto'
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {page} from 'zyzz/web';page({descriptors:{pageMarginSafety:${JSON.stringify(value)}}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+          [Source.ExtractError: invalid.ts:30: Invalid @page page-margin-safety: Mismatch
+            syntax: none | clamp | add
+             value: auto
+            --------^]
+        `)
+
+      const contract = JSON.parse(library.contracts['library.ts']!)
+      contract.stylesheets[0].css = `@page{page-margin-safety:${value}}`
+
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+          [Source.ExtractError: lib.js:0: Invalid library contract: Invalid @page page-margin-safety: Mismatch
+            syntax: none | clamp | add
+             value: auto
+            --------^]
+        `)
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {page} from 'zyzz/web';page({descriptors:{'@top-center':{pageMarginSafety:'clamp'}}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:30: Unsupported page or page-margin declaration.]`,
+      )
+    })
+
     test('rejects invalid page lengths descriptors and selectors', () => {
       for (const options of [
         { descriptors: { bleed: '10%' } },

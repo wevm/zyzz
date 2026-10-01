@@ -1029,7 +1029,13 @@ export function extract(
                   ]
                 if (
                   !margin &&
-                  ['bleed', 'marks', 'pageOrientation', 'size'].includes(key)
+                  [
+                    'bleed',
+                    'marks',
+                    'pageMarginSafety',
+                    'pageOrientation',
+                    'size',
+                  ].includes(key)
                 ) {
                   if (typeof value !== 'string' && typeof value !== 'number')
                     throw new Error('Expected a scalar page descriptor.')

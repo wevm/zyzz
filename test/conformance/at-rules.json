@@ -665,10 +665,11 @@
         "src/compiler/Transform.test.ts",
         "src/web/page.test-d.ts"
       ],
-      "grammar": "b4b26ca90beda50527050bc521cfbdf1e8b27a5f60deec0b710c6d8772ba4008",
+      "grammar": "67237b1b70e5ddd7d7ee6ba08af091b110a4fb67b71431f1830f458a6f5e46b0",
       "status": "partial",
       "gaps": [
-        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar.",
+        "Page margin safety rendering remains unverified."
       ]
     },
     "@page/@bottom-center": {
@@ -905,6 +906,12 @@
         "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
       ]
     },
+    "@page/page-margin-safety": {
+      "evidence": ["src/compiler/Transform.test.ts", "src/web/page.test-d.ts"],
+      "gaps": ["Page margin safety rendering remains unverified."],
+      "grammar": "e0c8b66c6006b3315554428ebe437f8769546b52052691d88ac9962eec4698ff",
+      "status": "partial"
+    },
     "@page/page-orientation": {
       "evidence": [
         "src/compiler/Transform.test.ts",
@@ -1066,5 +1073,5 @@
       ]
     }
   },
-  "version": "2.36.0"
+  "version": "2.37.0"
 }

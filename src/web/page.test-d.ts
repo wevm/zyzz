@@ -2,6 +2,16 @@
 import { describe, test } from 'vite-plus/test'
 import { page } from 'zyzz/web'
 describe('page', () => {
+  test('accepts page margin safety and rejects invalid values and contexts', () => {
+    page({ descriptors: { pageMarginSafety: 'none' } })
+    page({ descriptors: { pageMarginSafety: 'clamp' } })
+    page({ descriptors: { pageMarginSafety: 'ADD' } })
+    // @ts-expect-error page margin safety requires one keyword
+    page({ descriptors: { pageMarginSafety: 'none clamp' } })
+    // @ts-expect-error page margin safety is a page descriptor
+    page({ descriptors: { '@top-center': { pageMarginSafety: 'clamp' } } })
+  })
+
   test('accepts relative lengths and dimensional calculations', () => {
     page({ descriptors: { bleed: '1em', size: 'calc(10cm + 2mm) 20cm' } })
     page({ descriptors: { bleed: 'calc(1em + 2px)', size: 'max(10cm, 20cm)' } })

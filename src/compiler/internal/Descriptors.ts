@@ -8,11 +8,11 @@ export function check(options: check.Options): void {
     /[A-Z]/g,
     (letter) => `-${letter.toLowerCase()}`,
   )
-  const result = Tree.lexer.matchAtruleDescriptor(
-    options.rule,
-    name,
-    options.value,
-  )
+  // The pinned parser predates this page descriptor.
+  const result =
+    options.rule === 'page' && name === 'page-margin-safety'
+      ? Tree.lexer.match('none | clamp | add', options.value)
+      : Tree.lexer.matchAtruleDescriptor(options.rule, name, options.value)
   if (result.error)
     throw new Error(`Invalid @${options.rule} ${name}: ${result.error.message}`)
   if (
@@ -102,9 +102,13 @@ export function validate(source: string): void {
         rule.block.children.forEach((declaration) => {
           if (declaration.type !== 'Declaration') return
           if (
-            ['bleed', 'marks', 'page-orientation', 'size'].includes(
-              declaration.property,
-            )
+            [
+              'bleed',
+              'marks',
+              'page-margin-safety',
+              'page-orientation',
+              'size',
+            ].includes(declaration.property)
           )
             check({
               rule: 'page',

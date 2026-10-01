@@ -1,6 +1,46 @@
 /** Styles the Compatibility page's authored support matrices. @module */
 import type { ReactNode } from 'react'
+import CheckIcon from '~icons/lucide/check'
+import HtmlIcon from '~icons/simple-icons/html5'
+import NextIcon from '~icons/simple-icons/nextdotjs'
+import ReactIcon from '~icons/simple-icons/react'
+import SolidIcon from '~icons/simple-icons/solid'
+import SvelteIcon from '~icons/simple-icons/svelte'
+import VueIcon from '~icons/simple-icons/vuedotjs'
 import { style } from '../../zyzz.config.js'
+
+const icons = {
+  html: HtmlIcon,
+  next: NextIcon,
+  react: ReactIcon,
+  solid: SolidIcon,
+  svelte: SvelteIcon,
+  verified: CheckIcon,
+  vue: VueIcon,
+}
+
+/** Adds a decorative framework or verification icon beside its text label. */
+export function CompatibilityIcon(props: CompatibilityIcon.Props) {
+  const Icon = icons[props.name]
+
+  return (
+    <span
+      aria-hidden="true"
+      data-verified={props.name === 'verified' || undefined}
+      {...styles.icon()}
+    >
+      <Icon height="16" width="16" />
+    </span>
+  )
+}
+
+export declare namespace CompatibilityIcon {
+  /** Properties for a compatibility icon. */
+  type Props = {
+    /** Framework or verification indicator to display. */
+    name: keyof typeof icons
+  }
+}
 
 /** Keeps support tables readable and keyboard-scrollable on narrow screens. */
 export function CompatibilityMatrix(props: CompatibilityMatrix.Props) {
@@ -27,6 +67,13 @@ export declare namespace CompatibilityMatrix {
 }
 
 namespace styles {
+  export const icon = style({
+    display: 'inline-flex',
+    marginRight: 2,
+    verticalAlign: 'text-bottom',
+    '&[data-verified]': { color: 'green.700' },
+  })
+
   export const matrix = style({
     borderColor: 'gray.400',
     borderRadius: 'lg',
@@ -47,12 +94,7 @@ namespace styles {
       tableLayout: 'fixed',
       width: '100% !custom',
     },
-    '& caption': {
-      color: 'gray.900',
-      padding: 3,
-      textAlign: 'left',
-      typography: 'label.14',
-    },
+    '& thead th': { borderTopWidth: 0 },
     '& th, & td': {
       borderTopColor: 'gray.400',
       borderTopStyle: 'solid !custom',

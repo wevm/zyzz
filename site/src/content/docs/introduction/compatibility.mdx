@@ -1,4 +1,4 @@
-import { CompatibilityMatrix } from '../../../components/mdx/CompatibilityMatrix.js'
+import { CompatibilityIcon, CompatibilityMatrix } from '../../../components/mdx/CompatibilityMatrix.js'
 
 # Compatibility
 
@@ -13,8 +13,7 @@ Zyzz compiles web styles ahead of time. Applied styles return ordinary class and
 Web acceptance fixtures exercise atomic and grouped CSS output. Their pinned versions include React 19.2.4, Next.js 16.3.5, Solid 1.9.9, and Svelte 5.46.4. These versions describe fixture coverage, not minimum supported versions.
 
 <CompatibilityMatrix label="Framework support">
-<table>
-<caption>Framework support</caption>
+<table aria-label="Framework support">
 <thead>
 <tr>
 <th scope="col">
@@ -33,67 +32,67 @@ Support and scope
 <tr>
 <th scope="row">
 
-**HTML**
+<CompatibilityIcon name="html" /> **HTML**
 
 </th>
 <td>
 
-**Verified.** Compiled attributes and CSS, lazy delivery, and DOM updates. [HTML tests](https://github.com/wevm/zyzz/blob/main/src/runtime/Html.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Compiled attributes and CSS, lazy delivery, and DOM updates. [HTML tests](https://github.com/wevm/zyzz/blob/main/src/runtime/Html.test.ts).
 
 </td>
 </tr>
 <tr>
 <th scope="row">
 
-**Next.js**
+<CompatibilityIcon name="next" /> **Next.js**
 
 </th>
 <td>
 
-**Verified.** Webpack and Turbopack, server and client components, streaming, hydration, navigation, and refresh. [Next.js fixtures](https://github.com/wevm/zyzz/blob/main/test/fixtures/Next.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Webpack and Turbopack, server and client components, streaming, hydration, navigation, and refresh. [Next.js fixtures](https://github.com/wevm/zyzz/blob/main/test/fixtures/Next.ts).
 
 </td>
 </tr>
 <tr>
 <th scope="row">
 
-**React**
+<CompatibilityIcon name="react" /> **React**
 
 </th>
 <td>
 
-**Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [React tests](https://github.com/wevm/zyzz/blob/main/src/vite/React.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [React tests](https://github.com/wevm/zyzz/blob/main/src/vite/React.test.ts).
 
 </td>
 </tr>
 <tr>
 <th scope="row">
 
-**Solid**
+<CompatibilityIcon name="solid" /> **Solid**
 
 </th>
 <td>
 
-**Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [Solid tests](https://github.com/wevm/zyzz/blob/main/src/vite/Solid.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [Solid tests](https://github.com/wevm/zyzz/blob/main/src/vite/Solid.test.ts).
 
 </td>
 </tr>
 <tr>
 <th scope="row">
 
-**Svelte**
+<CompatibilityIcon name="svelte" /> **Svelte**
 
 </th>
 <td>
 
-**Verified with a boundary.** Style definitions live in TypeScript modules. Inline Svelte authoring is outside the verified scope. [Svelte tests](https://github.com/wevm/zyzz/blob/main/src/vite/Svelte.test.ts).
+<CompatibilityIcon name="verified" /> **Verified with a boundary.** Style definitions live in TypeScript modules. Inline Svelte authoring is outside the verified scope. [Svelte tests](https://github.com/wevm/zyzz/blob/main/src/vite/Svelte.test.ts).
 
 </td>
 </tr>
 <tr>
 <th scope="row">
 
-**Vue**
+<CompatibilityIcon name="vue" /> **Vue**
 
 </th>
 <td>
@@ -113,8 +112,7 @@ Arbitrary imported object records passed to `style(record)` are outside the veri
 Build-time adapters and application runtime helpers have different requirements. Browser portability of the pure compiler does not make a filesystem host portable.
 
 <CompatibilityMatrix label="Runtime evidence">
-<table>
-<caption>Runtime evidence</caption>
+<table aria-label="Runtime evidence">
 <thead>
 <tr>
 <th scope="col">
@@ -138,7 +136,7 @@ Support and scope
 </th>
 <td>
 
-**Verified.** Compiler hosts, the CLI, bundler adapters, and server-rendering fixtures run in Node.js.
+<CompatibilityIcon name="verified" /> **Verified.** Compiler hosts, the CLI, bundler adapters, and server-rendering fixtures run in Node.js.
 
 </td>
 </tr>
@@ -150,7 +148,7 @@ Support and scope
 </th>
 <td>
 
-**Verified for the pure pipeline.** Bundled `Style.define` and `Css.compile` execute in Chromium, a browser worker, and a Node worker. [Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
+<CompatibilityIcon name="verified" /> **Verified for the pure pipeline.** Bundled `Style.define` and `Css.compile` execute in Chromium, a browser worker, and a Node worker. [Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
 
 </td>
 </tr>
@@ -162,7 +160,7 @@ Support and scope
 </th>
 <td>
 
-**Verified for the pure pipeline.** The same portability fixture runs without Node or DOM globals. This is embedded-engine evidence, not device rendering evidence.
+<CompatibilityIcon name="verified" /> **Verified for the pure pipeline.** The same portability fixture runs without Node or DOM globals. This is embedded-engine evidence, not device rendering evidence.
 
 </td>
 </tr>
@@ -187,8 +185,7 @@ Support and scope
 Browser support follows the emitted CSS. The Vite adapter preserves native `light-dark()` for theme switching and rejects CSS targets that would lower it. Its default baseline is:
 
 <CompatibilityMatrix label="Vite theme baseline">
-<table>
-<caption>Vite theme baseline</caption>
+<table aria-label="Vite theme baseline">
 <thead>
 <tr>
 <th scope="col">
@@ -268,8 +265,7 @@ export default defineConfig({
 > Native compilation and Metro integration are implemented. iOS and Android rendering acceptance remains pending. Shared authoring does not establish universal CSS parity.
 
 <CompatibilityMatrix label="Native support boundaries">
-<table>
-<caption>Native support boundaries</caption>
+<table aria-label="Native support boundaries">
 <thead>
 <tr>
 <th scope="col">
@@ -293,7 +289,7 @@ Support and scope
 </th>
 <td>
 
-**Implemented and tested.** Native tables, finite variants, scalar bindings, explicit theme and scheme selection, and source-free packages have compiler and callable coverage.
+<CompatibilityIcon name="verified" /> **Implemented and tested.** Native tables, finite variants, scalar bindings, explicit theme and scheme selection, and source-free packages have compiler and callable coverage.
 
 </td>
 </tr>
@@ -305,7 +301,7 @@ Support and scope
 </th>
 <td>
 
-**Implemented and tested for bundling.** Fixtures request iOS and Android bundles and verify imported edits and error recovery. [Metro tests](https://github.com/wevm/zyzz/blob/main/src/metro/index.test.ts).
+<CompatibilityIcon name="verified" /> **Implemented and tested for bundling.** Fixtures request iOS and Android bundles and verify imported edits and error recovery. [Metro tests](https://github.com/wevm/zyzz/blob/main/src/metro/index.test.ts).
 
 </td>
 </tr>

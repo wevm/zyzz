@@ -1,0 +1,81 @@
+# Why Zyzz
+
+Typed component styles, explicit design decisions, and rules compiled before rendering.
+
+import { CompilationFlow } from './WhyZyzz.js'
+
+Zyzz expresses styling constraints in small APIs that developers and agents can inspect. Styles live beside components, shared values come from explicit configuration, and compilation produces the platform's styling output.
+
+<CompilationFlow />
+
+Design values feed typed style definitions. Compilation emits CSS for the web or tables for supported native styles. Rendering applies those styles, selects compiled alternatives, or binds per-instance values. It never inserts new CSS rules.
+
+## CSS as the foundation
+
+Properties, selectors, custom properties, inheritance, and the cascade keep their CSS meaning. Pseudo-classes and queries belong in the style definition. Component state stays in ordinary props, data attributes, and ARIA attributes.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <section {...styles.card()}>
+      <h2 {...styles.title()}>Account details</h2>
+    </section>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    border: '1px solid currentColor',
+    borderRadius: '0.75rem',
+    padding: '1rem',
+    '@media (min-width: 48rem)': { padding: '1.5rem' },
+  })
+
+  export const title = style({
+    fontSize: '1.25rem',
+    margin: '0px',
+  })
+}
+```
+
+`style` declares the rules. After compilation, calling `styles.card()` returns styling props to spread onto the element. The browser handles the media query through emitted CSS.
+
+## Constraints that stay explicit
+
+The root `zyzz` import is token-free. A configured `style` helper infers the configuration's token paths and property domains. Variant definitions infer their choice names. These constraints stay attached to the imported helper rather than depending on global registration.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+Components can import this `style` helper to use `color: 'brand'` and `padding: 'md'`. The declarations name shared values while the configuration owns their definitions. The opt-in `zyzz/default` entrypoint supplies Geist and Tailwind tokens when a bundled starting point is useful.
+
+Types validate properties, values, token paths, and variant inputs. The compiler also validates static rule structure and selector grammar. Type inference alone does not prove that an integration or native target supports a style.
+
+## Compile rules before rendering
+
+Zyzz emits rules ahead of time. Runtime work can select a variant or bind a value to an existing rule. Dynamic values do not require generating a new rule for each component instance.
+
+This requires a source transform through a bundler adapter, the CLI, or the compiler API. Rule structure must remain statically analyzable. Arbitrary runtime code cannot create new selectors or queries. [Getting Started](/docs/introduction/getting-started) connects authoring to compilation.
+
+Compilation is a delivery model, not a speed guarantee. The [Benchmarks](https://github.com/wevm/zyzz/blob/main/docs/introduction/benchmarks.md) document measured workloads, artifact sizes, and comparison limits.
+
+## Keep platform boundaries visible
+
+The pure core is independent of frameworks and build tools. Adapters handle source files, bundlers, and platform output. Web components use normal class and style props without a mandatory provider, wrapper component, or custom JSX runtime.
+
+Shared definitions can target the web and React Native, within each platform's capabilities. Native compilation produces precompiled tables. Web layers, globals, and DOM relationships are rejected on native targets.
+
+> [!NOTE]
+> Universal native parity remains outside the verified web scope. Arbitrary imported object records passed to `style(record)`, inline Svelte authoring, and Vue SFC integration also remain outside that scope. The [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) page records implemented boundaries and remaining limits.
+
+Zyzz fits component codebases that need explicit styling contracts and a compilation step. The [Concepts & Principles](https://github.com/wevm/zyzz/blob/main/docs/concepts.md) explain the contracts in more detail, including composition, variables, and target behavior.

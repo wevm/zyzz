@@ -1,0 +1,289 @@
+# Comparisons
+
+Compare how Zyzz, Tailwind CSS, StyleX, and vanilla-extract author styles, compose them, and deliver CSS.
+
+import {
+  EquivalentOutput,
+  Table,
+} from '../../../components/mdx/comparisons/Comparisons.js'
+
+## At a glance
+
+All four libraries generate web CSS during a build. The main differences are where declarations live, how styles are applied, and which compiler constraints the source must satisfy.
+
+<Table label="Authoring approaches">
+<thead><tr><th scope="col">
+
+Library
+
+</th><th scope="col">
+
+Authoring
+
+</th><th scope="col">
+
+Application
+
+</th></tr></thead>
+<tbody>
+<tr><th scope="row">
+
+Zyzz
+
+</th><td>
+
+Typed CSS objects, beside components or in shared modules.
+
+</td><td>
+
+Call a style definition and spread its props.
+
+</td></tr>
+<tr><th scope="row">
+
+Tailwind CSS
+
+</th><td>
+
+Utility classes in markup, with CSS theme variables and custom utilities.
+
+</td><td>
+
+Apply complete class names through `className`.
+
+</td></tr>
+<tr><th scope="row">
+
+StyleX
+
+</th><td>
+
+Statically analyzable objects passed to `stylex.create`.
+
+</td><td>
+
+Spread the result of `stylex.props`.
+
+</td></tr>
+<tr><th scope="row">
+
+vanilla-extract
+
+</th><td>
+
+TypeScript declarations in build-evaluated `.css.ts` files.
+
+</td><td>
+
+Apply exported class names through `className`.
+
+</td></tr>
+</tbody>
+</Table>
+
+Zyzz's root helpers use literal CSS without bundled tokens. Its config-bound helpers add typed variables. Tailwind's [utilities](https://tailwindcss.com/docs/styling-with-utility-classes), StyleX's [style objects](https://stylexjs.com/docs/learn/styling-ui/defining-styles/), and vanilla-extract's [TypeScript stylesheets](https://vanilla-extract.style/documentation/styling/) offer different authoring conventions for the same browser properties.
+
+## The same button
+
+These React and TypeScript examples all declare `color: #06c` and `padding: 1rem` on a button labeled "Continue".
+
+Each library needs its build integration. Browser defaults and resets must match for equivalent rendering. Tailwind examples target v4 and omit its optional [Preflight reset](https://tailwindcss.com/docs/preflight#disabling-preflight).
+
+<EquivalentOutput />
+
+Four authoring approaches, the same two CSS declarations. The diagram describes equivalent output, not build speed or bundle size.
+
+### Zyzz
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz'
+
+export function Button() {
+  return <button {...styles.button()}>Continue</button>
+}
+
+namespace styles {
+  export const button = style({ color: '#06c', padding: '1rem' })
+}
+```
+
+The compiler emits CSS ahead of time. Applying the definition returns styling props, without inserting CSS rules. See the [style contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/style.md).
+
+### Tailwind CSS
+
+```tsx title="Button.tsx"
+export function Button() {
+  return <button className="text-[#06c] p-[1rem]">Continue</button>
+}
+```
+
+The compiler detects the complete utility names in source. It does not parse TypeScript expressions, so dynamically constructed names need a different approach. The [source detection guide](https://tailwindcss.com/docs/detecting-classes-in-source-files) explains those constraints.
+
+### StyleX
+
+```tsx title="Button.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Button() {
+  return <button {...stylex.props(styles.button)}>Continue</button>
+}
+
+const styles = stylex.create({
+  button: { color: '#06c', padding: '1rem' },
+})
+```
+
+StyleX compiles objects into atomic CSS. Definitions must follow its [supported expression rules](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#constraints). Its [static types](https://stylexjs.com/docs/learn/static-types/) constrain style contracts.
+
+### vanilla-extract
+
+```ts title="button.css.ts"
+import { style } from '@vanilla-extract/css'
+
+export const button = style({ color: '#06c', padding: '1rem' })
+```
+
+```tsx title="Button.tsx"
+import { button } from './button.css.js'
+
+export function Button() {
+  return <button className={button}>Continue</button>
+}
+```
+
+The build integration evaluates `.css.ts` files and emits scoped CSS. The component imports a class name. See [styling](https://vanilla-extract.style/documentation/styling/).
+
+## Composition and conditions
+
+Class order in HTML does not determine CSS precedence. The composition API and generated stylesheet determine which declaration wins, together with specificity, importance, and cascade layers.
+
+<Table label="Composition and conditional styles">
+<thead><tr><th scope="col">
+
+Library
+
+</th><th scope="col">
+
+Composition
+
+</th><th scope="col">
+
+Conditions
+
+</th></tr></thead>
+<tbody>
+<tr><th scope="row">
+
+Zyzz
+
+</th><td>
+
+`cx` combines applied styles in argument order. Later declarations win in matching contexts at equal specificity and importance.
+
+</td><td>
+
+Nested selectors and at-rules, plus typed variant choices and compound matches.
+
+</td></tr>
+<tr><th scope="row">
+
+Tailwind CSS
+
+</th><td>
+
+The generated stylesheet determines utility precedence. Class string order does not resolve conflicting utilities.
+
+</td><td>
+
+Prefixes for states and breakpoints. Component logic selects complete class strings.
+
+</td></tr>
+<tr><th scope="row">
+
+StyleX
+
+</th><td>
+
+`stylex.props` merges styles, with the last applied style taking priority for conflicts.
+
+</td><td>
+
+Property-level conditions and media queries. Component logic selects style objects.
+
+</td></tr>
+<tr><th scope="row">
+
+vanilla-extract
+
+</th><td>
+
+`style` accepts an array for build-time composition. Unrelated classes follow the normal CSS cascade.
+
+</td><td>
+
+Selectors and at-rules. Optional Recipes provides variants and compound variants.
+
+</td></tr>
+</tbody>
+</Table>
+
+Sources: [Zyzz composition](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md), [Tailwind conflicts](https://tailwindcss.com/docs/styling-with-utility-classes#conflicting-utility-classes), [StyleX merging](https://stylexjs.com/docs/learn/styling-ui/using-styles/), and [vanilla-extract composition](https://vanilla-extract.style/documentation/style-composition/) and [Recipes](https://vanilla-extract.style/documentation/packages/recipes/).
+
+Zyzz composition supports proven local applications, immutable props bindings, and `enabled && style()` arguments. Escaping or mutated bindings and ternary style selections remain unsupported. Unsupported applications produce compiler diagnostics. These source constraints matter when adapting an existing component.
+
+## Runtime values
+
+A value that arrives from an API cannot always become a static utility or declaration. All four approaches can combine static CSS with per-instance values.
+
+Zyzz binds callback inputs to precompiled CSS variables:
+
+```tsx title="Bar.tsx"
+import { style } from 'zyzz'
+
+export function Bar(props: Bar.Props) {
+  return <div {...styles.bar({ width: props.width })} />
+}
+
+export declare namespace Bar {
+  type Props = { width: `${number}%` }
+}
+
+namespace styles {
+  export const bar = style((values: Bar.Props) => ({
+    backgroundColor: '#06c',
+    height: '0.5rem',
+    width: values.width,
+  }))
+}
+```
+
+Tailwind uses [inline styles or CSS variables](https://tailwindcss.com/docs/styling-with-utility-classes#when-to-use-inline-styles) for values that cannot be known during source scanning.
+
+StyleX's [dynamic style functions](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#dynamic-styles) bind values to compiled CSS variables. vanilla-extract declares variables with `createVar`, and its optional [Dynamic package](https://vanilla-extract.style/documentation/packages/dynamic/) assigns inline values.
+
+## Build and platform boundaries
+
+Zyzz supports [atomic and grouped CSS output](https://github.com/wevm/zyzz/blob/main/docs/guides/css-output.md). Atomic output is the default. Source optimization can fold static applications into props, while dynamic selections and compositions can retain helpers.
+
+Native compilation uses separate adapters and rejects unsupported web semantics, including DOM relationships and global CSS.
+
+Tailwind generates web CSS from utilities and needs no styling JavaScript runtime. StyleX generates atomic web CSS and can retain mappings and helpers for dynamic applications. vanilla-extract extracts scoped web CSS, with optional packages such as Sprinkles, Recipes, and Dynamic for additional behavior.
+
+The standard web outputs do not establish React Native compatibility. Zyzz's [native guide](https://github.com/wevm/zyzz/blob/main/docs/guides/native.md) documents its supported boundary. Third-party native integrations for other libraries need their own evaluation.
+
+Library distribution also differs. Zyzz publishes matching code, CSS, declarations, and compiler contracts. Tailwind consumers need distributed CSS or explicit source scanning.
+
+StyleX and vanilla-extract build integrations produce JavaScript and CSS artifacts. Consult each library's [installation documentation](https://stylexjs.com/docs/learn/installation/) and [build integrations](https://vanilla-extract.style/documentation/integrations/vite/) before changing the delivery path.
+
+## Performance comparisons
+
+Equivalent snippets establish API differences, not a performance winner. The [benchmark snapshot](https://github.com/wevm/zyzz/blob/main/docs/introduction/benchmarks.md) records specific workloads, versions, and measurement limits. It also retains workloads where another library emits smaller output.
+
+A fair application comparison measures:
+
+- Cold builds, warm builds, and incremental edits separately.
+- CSS, JavaScript, markup, and required helpers together, without double-counting class strings.
+- Raw, gzip, and Brotli sizes, with package download size reported separately.
+- The same browser states and computed styles before measuring rendering.
+
+No timing or size ranking is implied by this page. The benchmark snapshot's literal workloads do not measure application rendering, dynamic variants, SSR, or native rendering.

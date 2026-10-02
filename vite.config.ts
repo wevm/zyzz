@@ -97,6 +97,7 @@ export default defineConfig({
       'test/**/*.test.ts',
     ],
     maxConcurrency: 2,
+    ...(process.env.CI ? { maxWorkers: 2 } : {}),
     name: process.env.ZYZZ_TEST_PROJECT ?? 'integration',
     ...(process.env.ZYZZ_TEST_PROJECT === 'merge'
       ? {

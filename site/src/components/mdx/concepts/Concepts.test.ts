@@ -52,10 +52,18 @@ describe('/docs/concepts', () => {
     server.stderr?.on('data', (data) => {
       output += data
     })
-    for (let attempt = 0; attempt < 120; attempt++) {
+    const deadline = Date.now() + 50_000
+    while (Date.now() < deadline) {
       if (server.exitCode !== null) throw new Error(output)
       try {
-        if ((await fetch(`${origin}/docs/concepts?mode=default`)).ok) return
+        if (
+          (
+            await fetch(`${origin}/docs/concepts?mode=default`, {
+              signal: AbortSignal.timeout(2000),
+            })
+          ).ok
+        )
+          return
       } catch {}
       await new Promise((resolve) => setTimeout(resolve, 250))
     }

@@ -280,13 +280,8 @@ namespace styles {
 
 For values that vary per instance, a typed callback binds inputs to precompiled custom properties. The rule structure stays static.
 
-<Examples.Note>
-
-> **Note**
->
+> [!NOTE]
 > Finite local scalar callback types are supported. Native callbacks also support scalar payloads. Arbitrary imported type definitions and dynamic fallback groups remain unsupported.
-
-</Examples.Note>
 
 Style calls accept their declared inputs and styling overrides. Other component props stay on the element. [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md) covers defaults, compounds, conditional choices, and dynamic payloads.
 
@@ -417,13 +412,8 @@ Source collection scans configured sources, including unimported modules, and ex
 
 CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Downstream tooling handles minification. [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md) covers the full pipeline.
 
-<Examples.Note>
-
-> **Note**
->
+> [!NOTE]
 > Shared authoring does not imply identical platform capabilities. Unsupported native semantics must produce errors. Arbitrary imported style records, inline Svelte authoring, Vue SFC integration, and universal native parity remain outside the verified web scope.
-
-</Examples.Note>
 
 [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) records implemented boundaries and acceptance limits. [Thinking in Zyzz](https://github.com/wevm/zyzz/blob/main/docs/introduction/thinking-in-zyzz.md) applies these concepts to component organization.
 

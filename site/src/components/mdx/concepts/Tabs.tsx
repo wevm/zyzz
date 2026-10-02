@@ -153,18 +153,15 @@ export function Tabs(props: Tabs.Props) {
             tab.content
           ) : (
             <pre {...styles.code()}>
-              <code>
-                {__DOCS__.code[tab.source]?.map((line, lineIndex) => (
-                  <span key={lineIndex}>
-                    {line.map((token, tokenIndex) => (
-                      <span key={tokenIndex} style={{ color: token.color }}>
-                        {token.content}
-                      </span>
-                    ))}
-                    {'\n'}
-                  </span>
-                )) ?? tab.source}
-              </code>
+              {Object.hasOwn(__DOCS__.code, tab.source) ? (
+                <code
+                  dangerouslySetInnerHTML={{
+                    __html: __DOCS__.code[tab.source]!.html,
+                  }}
+                />
+              ) : (
+                <code>{tab.source}</code>
+              )}
             </pre>
           )}
         </div>

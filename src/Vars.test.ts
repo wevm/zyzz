@@ -253,7 +253,7 @@ describe('compose', () => {
         modules,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Composed variables require contract version 29 or later.]`,
+      `[Source.ExtractError: library.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
     )
 
     const malformed = library.contracts['index.ts']!.replace(
@@ -329,7 +329,7 @@ describe('compose', () => {
 
 describe('define', () => {
   test.each([28, 29, 30])(
-    'retains old producer variable spelling through extension and repacking: v%s',
+    'rejects old producer variable names with a rebuild diagnostic: v%s',
     async (version) => {
       const producer = JSON.parse(
         await Fs.readFile(
@@ -339,78 +339,25 @@ describe('define', () => {
           ),
           'utf8',
         ),
-      ) as { code: string; contract: string; css: string }
-      const app = `import {Config,Vars} from 'zyzz'; import {palette,card} from 'library';
-      export {card}; export const alternate=Vars.extend(palette,{color:{ink:'#0000ff'}});
-      export const {vars}=Config.create({vars:alternate}); export const scope=vars();`
-      const result = Graph.compile({
-        contracts: { 'library/index.js': producer.contract },
-        imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
-        modules: { 'app.ts': app },
-      })
-      expect(
-        JSON.parse(result.contracts['app.ts']!).version,
-      ).toMatchInlineSnapshot(`31`)
-      const code = await Packed.bundle({
-        entry: 'app.ts',
-        modules: { 'app.ts': result.modules['app.ts']!.code },
-        packages: { library: { 'index.ts': producer.code } },
-      })
-      const fixture = Vm.runInNewContext(`${code};Fixture;`)
-      const scope = fixture.scope.className
-      const browser = await chromium.launch()
-      try {
-        const page = await browser.newPage()
-        await page.setContent(
-          `<style>${producer.css}${result.sharedCss ?? ''}${result.modules['app.ts']!.css}</style><div class="${scope}"><div id="card" class="${fixture.card().className}"></div></div>`,
-        )
-        expect(
-          await page
-            .locator('#card')
-            .evaluate((node) => getComputedStyle(node).backgroundColor),
-        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
-        if (version >= 29)
-          expect(
-            await page
-              .locator('#card')
-              .evaluate((node) => getComputedStyle(node).color),
-          ).toMatchInlineSnapshot(`"color(srgb 1 0 0 / 0.5)"`)
-        const repacked = Graph.compile({
-          contracts: { 'app.ts': result.contracts['app.ts']! },
-          imports: { 'consumer.ts': { './app': 'app.ts' } },
+      ) as { contract: string }
+
+      expect(() =>
+        Graph.compile({
+          contracts: { 'library/index.js': producer.contract },
+          imports: { 'app.ts': { library: 'library/index.js' } },
           modules: {
-            'consumer.ts': `import {card,vars} from './app'; export {card}; export const scope=vars();`,
+            'app.ts': `import {Config,Vars} from 'zyzz'; import {palette} from 'library';
+              const alternate=Vars.extend(palette,{color:{ink:'#0000ff'}});
+              export const {style,vars}=Config.create({vars:alternate});`,
           },
-        })
-        await page.setContent(
-          `<style>${producer.css}${repacked.sharedCss ?? ''}${repacked.modules['consumer.ts']!.css}</style><div class="${scope}"><div id="card" class="${fixture.card().className}"></div></div>`,
-        )
-        expect(
-          await page
-            .locator('#card')
-            .evaluate((node) => getComputedStyle(node).backgroundColor),
-        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
-      } finally {
-        await browser.close()
-      }
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: library/index.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
+      )
     },
   )
 
-  test('preserves old standalone CSS through readable explicit scopes and media overrides', async () => {
-    const producer = JSON.parse(
-      await Fs.readFile(
-        new URL(
-          '../test/fixtures/legacy-explicit-variables/v29.json',
-          import.meta.url,
-        ),
-        'utf8',
-      ),
-    ) as { code: string; css: string }
-    const code = await Packed.bundle({
-      entry: 'index.ts',
-      modules: { 'index.ts': producer.code },
-    })
-    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+  test('uses readable standalone variables across scopes and media overrides without legacy aliases', async () => {
     const base = Vars.define(
       { color: { ink: '#ff0000' } },
       (vars) => ({
@@ -422,7 +369,7 @@ describe('define', () => {
           ]),
         },
       }),
-      { id: 'legacy/palette' },
+      { id: 'palette' },
     )
     const alternate = Vars.extend(base, {
       color: {
@@ -433,16 +380,23 @@ describe('define', () => {
       },
     })
     const output = Css.compile({
-      styles: Style.define({}),
+      styles: Style.define({
+        card: {
+          backgroundColor: base.color.ink,
+          color: base.color.faded,
+        },
+      }),
       vars: { base, alternate },
     })
+    expect(output.css.includes('--z-tid-')).toMatchInlineSnapshot('false')
+
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage({
         viewport: { height: 600, width: 500 },
       })
       await page.setContent(
-        `<style>${producer.css}${output.css}</style><div class="${output.vars.base}"><div class="${output.vars.alternate}" style="color-scheme:light"><div data-card class="${fixture.card().className}"></div></div><div class="${output.vars.alternate}" style="color-scheme:dark"><div data-card class="${fixture.card().className}"></div></div></div>`,
+        `<style>${output.css}</style><div class="${output.vars.base}"><div class="${output.vars.alternate}" style="color-scheme:light"><div data-card class="${output.classes.card}"></div></div><div class="${output.vars.alternate}" style="color-scheme:dark"><div data-card class="${output.classes.card}"></div></div></div>`,
       )
       expect(
         await page.locator('[data-card]').evaluateAll((nodes) =>
@@ -488,44 +442,37 @@ describe('define', () => {
     }
   })
 
-  test('rejects invalid and conflicting packed variable naming schemes', async () => {
-    const producer = JSON.parse(
-      await Fs.readFile(
-        new URL(
-          '../test/fixtures/legacy-explicit-variables/v28.json',
-          import.meta.url,
-        ),
-        'utf8',
-      ),
-    ) as { contract: string }
-    const contract = JSON.parse(producer.contract)
-    const identity = contract.exports.palette.theme
-    const current = { ...contract, version: 30 }
-    expect(() =>
-      Graph.compile({
-        contracts: {
-          'old.js': producer.contract,
-          'new.js': JSON.stringify(current),
-        },
-        imports: { 'app.ts': { old: 'old.js', current: 'new.js' } },
+  test.each(['legacy', 'hashed', 'unknown'])(
+    'rejects packed variable naming metadata on themes and references: %s',
+    (naming) => {
+      const library = Graph.compile({
         modules: {
-          'app.ts': `import {palette as old} from 'old'; import {palette as current} from 'current'; export {old,current};`,
+          'index.ts': `import {Vars} from 'zyzz';
+            export const palette=Vars.define({color:{ink:'#ff0000'}},{id:'palette'});
+            export const derived=Vars.define({color:{ink:palette.color.ink}},{id:'derived'});`,
         },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: new.js:0: Invalid library contract: Conflicting packed variable naming schemes for one identity.]`,
-    )
-    current.themes[identity].variableNaming = 'unknown'
-    expect(() =>
-      Graph.compile({
-        contracts: { 'library.js': JSON.stringify(current) },
-        imports: { 'app.ts': { library: 'library.js' } },
-        modules: { 'app.ts': `export {palette} from 'library';` },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library.js:0: Invalid library contract: Invalid packed variable naming scheme.]`,
-    )
-  })
+      })
+
+      for (const location of ['theme', 'reference']) {
+        const contract = JSON.parse(library.contracts['index.ts']!)
+        const entry =
+          location === 'theme'
+            ? contract.themes['id-palette']
+            : contract.themes['id-derived'].tokens.color.ink.$variable
+        entry.variableNaming = naming
+
+        expect(() =>
+          Graph.compile({
+            contracts: { 'library.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { library: 'library.js' } },
+            modules: { 'app.ts': `export {derived} from 'library';` },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: library.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
+        )
+      }
+    },
+  )
 
   test('keeps explicit variable names readable and distinct across standalone and packed CSS', async () => {
     const core = Vars.define(
@@ -616,6 +563,7 @@ describe('define', () => {
             .map((module) => module.css)
             .join('')
 
+        expect(css.includes('--z-tid-')).toMatchInlineSnapshot('false')
         expect([
           ...new Set(
             standalone.css.match(
@@ -1446,7 +1394,7 @@ void [color, length, wrongLength]
           modules: { 'app.ts': `export {style} from 'library'` },
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: library.js:0: Invalid library contract: Vars contracts require contract version 28 or later.]`,
+        `[Source.ExtractError: library.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
       )
     },
   )
@@ -1816,8 +1764,8 @@ describe('defineVars', () => {
 
         if (packed)
           expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-            ".z-theme-palette-base{--z-palette-color-brand:#123456;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-palette-color-brand);--z-palette-color-foreground:var(--z-palette-color-brand,#123456);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-palette-color-foreground);}
-            .z-theme-palette-alternate{--z-palette-color-brand:#654321;--z-tid-70-61-6c-65-74-74-65-color_2e_brand:var(--z-palette-color-brand);--z-palette-color-foreground:var(--z-palette-color-brand,#654321);--z-tid-70-61-6c-65-74-74-65-color_2e_foreground:var(--z-palette-color-foreground);}
+            ".z-theme-palette-base{--z-palette-color-brand:#123456;--z-palette-color-foreground:var(--z-palette-color-brand,#123456);}
+            .z-theme-palette-alternate{--z-palette-color-brand:#654321;--z-palette-color-foreground:var(--z-palette-color-brand,#654321);}
             .z-theme-theme{--z-color-brand:#654321;--z-color-foreground:var(--z-color-brand,#654321);}
             .z-text-\\5b var\\28 --z-color-brand\\2c \\23 654321\\29 \\5d {color:var(--z-color-brand,#654321);}"
           `)

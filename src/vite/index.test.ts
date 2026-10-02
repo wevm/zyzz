@@ -1174,8 +1174,8 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           ".z_scheme-dark{color-scheme:dark;}
           .z_scheme-light{color-scheme:light;}
           .z_scheme-light-dark{color-scheme:light dark;}
-          .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-          .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}"
+          .z-theme-app-base{--z-app-color-brand:#06c;}
+          .z-theme-app-mint{--z-app-color-brand:#175;}"
         `)
         expect(entries['lazy.ts']?.isDynamicEntry).toMatchInlineSnapshot('true')
         expect(entries['lazy.ts']?.css?.length).toMatchInlineSnapshot('1')
@@ -1460,8 +1460,8 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         ".z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}.z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
+        .z-theme-app-base{--z-app-color-brand:#06c;}
+        .z-theme-app-mint{--z-app-color-brand:#175;}.z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
         .z-app-p-8px{padding:8px;}"
       `)
 

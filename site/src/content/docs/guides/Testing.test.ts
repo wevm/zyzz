@@ -121,23 +121,36 @@ describe('/docs/guides/testing', () => {
   })
 
   test('renders without page overflow in both schemes at each viewport', async () => {
+    console.info('Responsive guide: launching browser')
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage({
         colorScheme: 'light',
         viewport: { height: 1000, width: 390 },
       })
+      console.info('Responsive guide: navigating')
       await page.goto(`${origin}/docs/guides/testing`)
+      console.info(
+        'Responsive guide: loaded',
+        await page.evaluate(() => ({
+          overflow: getComputedStyle(document.querySelector('article pre')!)
+            .overflowX,
+          fonts: document.fonts.status,
+          styles: document.styleSheets.length,
+        })),
+      )
       await page.waitForFunction(() => {
         const pre = document.querySelector('article pre')
         return pre && getComputedStyle(pre).overflowX === 'auto'
       })
+      console.info('Responsive guide: styles ready')
 
       for (const width of [390, 768, 1440]) {
         for (const colorScheme of ['light', 'dark'] as const) {
           await page.setViewportSize({ width, height: 1000 })
           await page.emulateMedia({ colorScheme })
           await page.evaluate(() => document.fonts.ready)
+          console.info('Responsive guide: fonts ready', width, colorScheme)
 
           expect(
             await page.getByRole('heading', { level: 1 }).textContent(),

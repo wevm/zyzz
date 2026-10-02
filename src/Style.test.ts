@@ -926,20 +926,26 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
 describe('consumer types', () => {
   const root = Path.resolve(import.meta.dirname, '..')
   let cases: readonly Conformance.Case[]
-  let directory: string
 
-  beforeAll(async () => {
+  beforeAll(() => {
     cases = Conformance.cases()
-    directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
   }, 30_000)
 
-  afterAll(async () => {
-    await Fs.rm(directory, { force: true, recursive: true })
-  })
+  // Programs within each group share one incremental cache and cannot overlap.
+  describe.concurrent.each([0, 1])('group %i', (group) => {
+    let directory: string
 
-  test.each(Array.from({ length: 10 }, (_, index) => index))(
-    'partition %i',
-    async (partition) => {
+    beforeAll(async () => {
+      directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
+    }, 30_000)
+
+    afterAll(async () => {
+      await Fs.rm(directory, { force: true, recursive: true })
+    })
+
+    test.sequential.for(
+      Array.from({ length: 5 }, (_, index) => group * 5 + index),
+    )('partition %i', { timeout: 310_000 }, async (partition, { expect }) => {
       const groups = new Map<string, string>()
       // Separate programs bound checker work without reducing the property or value corpus.
       const properties = Conformance.properties().filter(
@@ -1034,7 +1040,6 @@ describe('consumer types', () => {
 
       expect(stderr).toMatchInlineSnapshot(`""`)
       expect(stdout).toMatchInlineSnapshot(`""`)
-    },
-    310_000,
-  )
+    })
+  })
 })

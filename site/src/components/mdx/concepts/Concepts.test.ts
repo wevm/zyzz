@@ -78,7 +78,7 @@ describe('/docs/concepts', () => {
       })
       expect(response.status).toBe(200)
       const markdown = await response.text()
-      expect(markdown.match(/^> \*\*Note\*\*$/gm)).toHaveLength(2)
+      expect(markdown.match(/^> \[!NOTE\]$/gm)).toHaveLength(2)
       expect(markdown).toContain(
         '> Finite local scalar callback types are supported.',
       )

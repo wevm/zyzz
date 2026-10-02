@@ -1,9 +1,8 @@
 /** Renders working UI examples for each concept using compiled Zyzz styles. @module */
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import { cx, defineConfig, defineVars, extendVars, style, variants } from 'zyzz'
 import { style as ui } from 'zyzz/default'
 import { global } from 'zyzz/web'
-import InfoIcon from '~icons/lucide/info'
 
 const base = defineVars({
   color: {
@@ -27,29 +26,6 @@ const { style: layeredStyle } = defineConfig({
 global({
   '@layer concept-base': { '[data-concept-layer]': { borderRadius: '8px' } },
 })
-
-/** Renders a documented capability limit as an accessible note. */
-export function Note(props: Note.Props) {
-  return (
-    <aside aria-label="Note" data-concept-note="" {...styles.note()}>
-      <InfoIcon
-        aria-hidden="true"
-        width="14"
-        height="14"
-        {...styles.noteIcon()}
-      />
-      <div>{props.children}</div>
-    </aside>
-  )
-}
-
-export declare namespace Note {
-  /** Properties for a concepts note. */
-  type Props = {
-    /** The capability limit and any supporting links. */
-    children: ReactNode
-  }
-}
 
 /** A static card applies two compiled style definitions to ordinary elements. */
 export function Card() {
@@ -336,33 +312,6 @@ namespace styles {
   })
 
   export const muted = ui({ color: 'gray.900', typography: 'copy.14' })
-
-  export const note = ui({
-    alignItems: 'flex-start',
-    backgroundColor: 'blue.100',
-    border: '1px solid',
-    borderColor: 'blue.400',
-    borderRadius: 'md',
-    color: 'blue.900',
-    display: 'flex',
-    gap: 3,
-    typography: 'copy.14',
-    paddingBlock: 4,
-    paddingInline: 5,
-    '&[data-concept-note] blockquote': { margin: 0 },
-    '&[data-concept-note] blockquote > p:first-child': { display: 'none' },
-    '&[data-concept-note] p': {
-      margin: 0,
-      color: 'blue.900',
-      typography: 'copy.14',
-    },
-  })
-
-  export const noteIcon = ui({
-    color: 'blue.900',
-    flexShrink: 0,
-    marginTop: '3px !custom',
-  })
 
   export const recipe = variants({
     base: {

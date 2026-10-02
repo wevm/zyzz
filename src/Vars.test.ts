@@ -271,20 +271,27 @@ describe('compose', () => {
     )
   })
 
-  test('validates composed leaves, overrides, cycles, and native target limits', () => {
+  test('validates composed leaves, overrides, cycles, and native values', () => {
     const base = Vars.define({ number: { space: 16 } }, (vars) => ({
       spacing: {
         page: Vars.compose('spacing', ['calc(', vars.number.space, ' * 1px)']),
       },
     }))
-    expect(() =>
-      StyleSheet.compile({
-        styles: Style.define({ card: { width: base.spacing.page } }),
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [StyleSheet.CompileError: ["default","light","card","width"]: Composed variables require a web target.
-      ["default","dark","card","width"]: Composed variables require a web target.]
+    const native = StyleSheet.compile({
+      styles: Style.define({ card: { width: base.spacing.page } }),
+    })
+
+    expect(native.styles.default.light.card).toMatchInlineSnapshot(`
+      {
+        "width": 16,
+      }
     `)
+    expect(native.styles.default.dark.card).toMatchInlineSnapshot(`
+      {
+        "width": 16,
+      }
+    `)
+
     expect(() =>
       Vars.define({ spacing: { page: Vars.compose('spacing', ['   ']) } }),
     ).toThrowErrorMatchingInlineSnapshot(

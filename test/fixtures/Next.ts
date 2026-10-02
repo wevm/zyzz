@@ -24,14 +24,34 @@ export async function create(root: string) {
     { timeout: 30_000 },
   )
   const tarball = JSON.parse(pack.stdout) as { filename: string }
+  const manifest = Path.join(app, 'package.json')
+  const consumer = JSON.parse(await Fs.readFile(manifest, 'utf8')) as Record<
+    string,
+    unknown
+  >
+  const repository = JSON.parse(await Fs.readFile('package.json', 'utf8')) as {
+    packageManager: string
+  }
+  await Fs.writeFile(
+    manifest,
+    JSON.stringify({ ...consumer, packageManager: repository.packageManager }),
+  )
+  await Fs.writeFile(
+    Path.join(app, 'pnpm-workspace.yaml'),
+    'nodeLinker: hoisted\n',
+  )
+
+  // Replace the development link before installing the packed runtime.
+  await Fs.rm(Path.join(app, 'node_modules'), { recursive: true })
+
   await exec(
-    'npm',
+    'pnpm',
     [
-      'install',
+      'add',
       '--ignore-scripts',
-      '--no-audit',
-      '--no-fund',
-      '--package-lock=false',
+      '--no-lockfile',
+      '--prefer-offline',
+      '--workspace-root',
       tarball.filename,
       'next@16.3.5',
       '@next/mdx@16.3.5',

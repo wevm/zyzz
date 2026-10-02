@@ -107,12 +107,25 @@ function Samples({
           testID="zyzz-payload"
           {...styles.meter({ width: `${width}px` })}
         />
+        <Text accessibilityRole="header" {...styles.label()}>
+          Calculated size · ratio {expanded ? 4 : 2}
+        </Text>
+        <View
+          testID="zyzz-calculation"
+          {...styles.artwork({ aspectRatio: expanded ? 4 : 2 })}
+        />
       </View>
     </ScrollView>
   )
 }
 
 namespace styles {
+  export const artwork = style((input: { aspectRatio: number }) => ({
+    backgroundColor: 'accent',
+    height: `calc((${vars.dimension.artwork} * 2 + ${vars.dimension.gutter}) / ${input.aspectRatio}) !custom`,
+    width: `calc(${vars.dimension.artwork} * 2 + ${vars.dimension.gutter}) !custom`,
+  }))
+
   export const box = style({
     backgroundColor: 'accent',
     height: '64px',

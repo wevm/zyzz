@@ -5,9 +5,27 @@ import * as Token from '../../internal/Token.js'
 import type * as Style from '../../Style.js'
 import * as StyleSheet from '../../react-native/StyleSheet.js'
 import * as Scalar from '../../react-native/internal/Scalar.js'
+import * as Tokens from '../../react-native/internal/Tokens.js'
 import type * as Runtime from '../../runtime/NativeDynamic.js'
 import type * as Native from '../Native.js'
 import type * as Source from '../Source.js'
+
+type Step = Runtime.Program['rules'][number]['steps'][number]
+type PreparedStep =
+  | Extract<Step, { readonly style: string }>
+  | {
+      readonly property: keyof typeof Scalar.properties
+      readonly parts: readonly (
+        | string
+        | number
+        | Token.Reference
+        | { readonly slot: string; readonly number?: true }
+      )[]
+    }
+type PreparedRule = {
+  readonly matches: Runtime.Program['rules'][number]['matches']
+  readonly steps: readonly PreparedStep[]
+}
 
 /** Compiles static fragments and retains scalar assignments in authored order. */
 export function compile(
@@ -16,8 +34,36 @@ export function compile(
   options: Native.compile.Options,
   prepared = prepare(recipe, call, options),
 ): Runtime.create.Options {
+  const selected = options.vars?.[options.set ?? 'default']
+  const metadata =
+    selected &&
+    (Object.getOwnPropertyDescriptor(selected, Token.definition)?.value as
+      | Token.Metadata
+      | undefined)
   return {
     ...prepared,
+    program: {
+      slots: prepared.program.slots,
+      rules: prepared.program.rules.map((rule) => ({
+        ...rule,
+        steps: rule.steps.map((step) =>
+          'style' in step
+            ? step
+            : {
+                ...step,
+                parts: step.parts.map((part) =>
+                  Token.is(part)
+                    ? Tokens.resolve(part, {
+                        ...options,
+                        metadata,
+                        resolution: { schemeIndependent: true },
+                      })
+                    : part,
+                ),
+              },
+        ),
+      })),
+    },
     styles: StyleSheet.select(prepared.styles, {
       set: options.set ?? 'default',
       colorScheme: options.colorScheme,
@@ -41,7 +87,7 @@ export function prepare(
     ),
   ])
   const fragments: Style.NamedStyle[] = []
-  const rules: Runtime.Program['rules'][number][] = []
+  const rules: PreparedRule[] = []
   let count = 1
   for (const choices of Object.values(recipe.axes)) count *= choices.length + 1
   if (count > 256)
@@ -49,7 +95,7 @@ export function prepare(
       'Native recipes support at most 256 selections, including null choices.',
     )
   for (const rule of recipe.rules) {
-    const steps: Runtime.Program['rules'][number]['steps'][number][] = []
+    const steps: PreparedStep[] = []
     function fragment(style: Style.NamedStyle) {
       const name = String(fragments.length)
       fragments.push({ ...style, name })
@@ -94,14 +140,22 @@ export function prepare(
           )
         const values = parts.map((part) => {
           if (typeof part === 'string' || typeof part === 'number') return part
+          if (Token.is(part)) return part
           if (!Binding.is(part) || !available.has(part.name))
             throw new Error(
               'Native bindings require declared runtime scalar fields.',
             )
-          return { slot: part.name }
+          return {
+            slot: part.name,
+            ...(part.type === 'number' ? { number: true as const } : {}),
+          }
         })
+        const calculation =
+          typeof values[0] === 'string' &&
+          values[0].trimStart().startsWith('calc(')
         if (
           values.length > 1 &&
+          !calculation &&
           !(
             values.length === 2 &&
             typeof values[0] === 'object' &&

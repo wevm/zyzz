@@ -1,5 +1,6 @@
 /** Converts portable scalar values without source parsing or device state. @module */
 import * as Color from './Color.js'
+import * as Calculation from './Calculation.js'
 
 /** Portable property domains shared by static and dynamic native conversion. */
 export const properties = {
@@ -207,7 +208,7 @@ export function convert(
   }
   if (kind === 'box' || kind === 'boxSigned') {
     const values =
-      typeof value === 'string' ? value.trim().split(/\s+/) : [value]
+      typeof value === 'string' ? Calculation.parts(value) : [value]
     if (!values.length || values.length > 4)
       fail('unsupported_value', 'Use one to four scalar lengths.', path)
     for (const value of values)
@@ -225,6 +226,16 @@ export function length(
   path: readonly string[],
 ): number {
   if (value === 0 || value === '0') return 0
+  if (typeof value === 'string' && value.trimStart().startsWith('calc(')) {
+    const result = Calculation.length(value.trim(), options)
+    if (!signed && result < 0)
+      fail(
+        'unsupported_value',
+        'Converted length is outside the native property domain.',
+        path,
+      )
+    return result
+  }
   const match =
     typeof value === 'string' &&
     /^([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?)(px|rem)$/.exec(value)

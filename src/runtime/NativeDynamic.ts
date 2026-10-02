@@ -1,5 +1,6 @@
 /** Applies compiled native binding instructions to runtime scalar payloads. @module */
 import * as Scalar from '../react-native/internal/Scalar.js'
+import * as Calculation from '../react-native/internal/Calculation.js'
 import type * as StyleSheet from '../react-native/StyleSheet.js'
 import * as Native from './Native.js'
 import type * as Recipe from './Recipe.js'
@@ -45,7 +46,7 @@ export type Program = {
           readonly parts: readonly (
             | string
             | number
-            | { readonly slot: string }
+            | { readonly slot: string; readonly number?: true }
           )[]
         }
     )[]
@@ -155,9 +156,15 @@ export function create(
           if (style.lineHeight !== undefined) lineHeight = undefined
           continue
         }
-        const values = step.parts.map((part) =>
-          typeof part === 'object' ? bindings[part.slot] : part,
-        )
+        const values = step.parts.map((part) => {
+          if (typeof part !== 'object') return part
+          const value = bindings[part.slot]
+          if (value !== undefined && part.number && typeof value !== 'number')
+            throw new Native.SelectionError(
+              'Native numeric bindings require numbers.',
+            )
+          return value
+        })
         if (values.some((value) => value === undefined))
           throw new Native.SelectionError(
             'Native binding program references an unbound slot.',
@@ -176,7 +183,7 @@ export function create(
         )
         if (property === 'padding' || property === 'margin') {
           const parts =
-            typeof value === 'string' ? value.trim().split(/\s+/) : [value]
+            typeof value === 'string' ? Calculation.parts(value) : [value]
           const [top, right = top, bottom = top, left = right] = parts.map(
             (part) =>
               Scalar.length(part, options, property === 'margin', [property]),

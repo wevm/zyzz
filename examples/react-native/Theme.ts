@@ -4,6 +4,7 @@ import { defineConfig } from 'zyzz/react-native'
 export const { Provider, style, variants, vars } = defineConfig({
   vars: {
     blue: {
+      dimension: { artwork: '80px', gutter: '20px' },
       color: {
         accent: { light: '#2563eb', dark: '#93c5fd' },
         ink: { light: '#0f172a', dark: '#f1f5f9' },
@@ -13,6 +14,7 @@ export const { Provider, style, variants, vars } = defineConfig({
       },
     },
     green: {
+      dimension: { artwork: '100px', gutter: '20px' },
       color: {
         accent: { light: '#15803d', dark: '#86efac' },
         ink: { light: '#0f172a', dark: '#f1f5f9' },

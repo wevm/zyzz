@@ -4,11 +4,9 @@ import * as NativeContext from '../runtime/NativeContext.js'
 import * as NativeVars from '../runtime/NativeVars.js'
 import * as React from 'react'
 import type * as Vars from '../Vars.js'
+import * as Store from './internal/Store.js'
 import * as Viewport from './internal/Viewport.js'
 
-const context = React.createContext<ReturnType<typeof create> | undefined>(
-  undefined,
-)
 const unbound = {
   getSnapshot: () => undefined,
   subscribe: () => () => {},
@@ -78,13 +76,17 @@ export function Provider(props: Provider.Props) {
 
   const viewport = React.useContext(Viewport.context)
   const [store] = React.useState(() =>
-    create({ colorScheme: props.colorScheme, set: props.vars, viewport }),
+    Store.create({ colorScheme: props.colorScheme, set: props.vars, viewport }),
   )
   React.useLayoutEffect(() => {
     store.update({ colorScheme: props.colorScheme, set: props.vars, viewport })
   }, [props.colorScheme, props.vars, store, viewport])
 
-  return React.createElement(context.Provider, { value: store }, props.children)
+  return React.createElement(
+    Store.context.Provider,
+    { value: store },
+    props.children,
+  )
 }
 
 /** Application boundary for native variable selection. */
@@ -102,13 +104,19 @@ export declare namespace Provider {
 
 /** Compiler-inserted subscription for resolving native style applications. */
 export function useStyles() {
-  const store = React.useContext(context) ?? unbound
+  const store = React.useContext(Store.context) ?? unbound
   const value = React.useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
     store.getSnapshot,
   )
   return React.useMemo(() => styles(value), [value])
+}
+
+/** Compiler fallback for native view bindings when no native adapter is installed. */
+export function useNativeStyles() {
+  const selected = useStyles()
+  return { ...selected, view: selected.props }
 }
 
 /**
@@ -131,7 +139,7 @@ export function useVars(
   variables: Vars.Definition,
   select: (values: never) => unknown = (values) => values,
 ) {
-  const store = React.useContext(context)
+  const store = React.useContext(Store.context)
   if (!store) throw new Error('useVars requires a Zyzz Provider.')
 
   const read = React.useMemo(() => {
@@ -149,35 +157,6 @@ export function useVars(
   }, [select, store, variables])
 
   return React.useSyncExternalStore(store.subscribe, read, read)
-}
-
-function create(initial: NativeContext.Context) {
-  let snapshot = Object.freeze(initial)
-  const listeners = new Set<() => void>()
-
-  return {
-    getSnapshot: () => snapshot,
-    subscribe(listener: () => void) {
-      const entry = () => listener()
-      listeners.add(entry)
-      return () => {
-        listeners.delete(entry)
-      }
-    },
-    update(value: NativeContext.Context) {
-      if (
-        snapshot.colorScheme === value.colorScheme &&
-        snapshot.set === value.set &&
-        snapshot.viewport?.height === value.viewport?.height &&
-        snapshot.viewport?.width === value.viewport?.width
-      )
-        return
-      snapshot = Object.freeze(value)
-      // Subscriptions added during notification wait for the next change.
-      const current = Array.from(listeners)
-      for (const listener of current) if (listeners.has(listener)) listener()
-    },
-  }
 }
 
 function styles(value: NativeContext.Context | undefined) {

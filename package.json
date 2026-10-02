@@ -82,6 +82,9 @@
   "files": [
     "dist",
     "src",
+    "native",
+    "react-native.config.ts",
+    "Zyzz.podspec",
     "!src/**/*.bench-d.ts",
     "!src/**/*.bench.ts",
     "!src/**/*.test-d.ts",
@@ -91,6 +94,20 @@
     "./src/reset.css",
     "./dist/reset.css"
   ],
+  "codegenConfig": {
+    "name": "ZyzzSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/react-native/internal",
+    "android": {
+      "javaPackageName": "xyz.wevm.zyzz"
+    },
+    "ios": {
+      "modulesProvider": {
+        "NativeZyzz": "ZyzzModuleProvider"
+      }
+    },
+    "includesGeneratedCode": true
+  },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

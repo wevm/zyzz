@@ -1,12 +1,45 @@
 /** Emits native entrypoints selected by React Native's package condition. @module */
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
+import * as Module from 'node:module'
 import * as Path from 'node:path'
 
 const root = Path.resolve(import.meta.dirname, '..')
+const require = Module.createRequire(import.meta.url)
+const native = Module.createRequire(
+  require.resolve('react-native/package.json'),
+)
+type Parser = {
+  readonly TypeScriptParser: new () => { parseFile(path: string): unknown }
+}
+type Generator = {
+  generate(name: string, schema: unknown): ReadonlyMap<string, string>
+}
+const parser = native(
+  '@react-native/codegen/lib/parsers/typescript/parser.js',
+) as Parser
+const schema = new parser.TypeScriptParser().parseFile(
+  Path.join(root, 'src/react-native/internal/NativeZyzz.ts'),
+)
+for (const module of [
+  'GenerateModuleH',
+  'GenerateModuleJniCpp',
+  'GenerateModuleJniH',
+]) {
+  const generator = native(
+    `@react-native/codegen/lib/generators/modules/${module}.js`,
+  ) as Generator
+  for (const [name, content] of generator.generate('ZyzzSpec', schema)) {
+    if (name.endsWith('CMakeLists.txt')) continue
+    const path = Path.join(root, 'native', name.replace('jni/', 'android/'))
+    await Fs.writeFile(path, content.replace(/[\t ]+$/gm, ''))
+  }
+}
+
 for (const file of [
   'react-native/index.native',
   'react-native/internal/Device',
+  'react-native/internal/NativeZyzz',
 ]) {
   const output = Path.join(root, 'dist', `${file}.js`)
   const sourcePath = Path.join(root, 'src', `${file}.ts`)

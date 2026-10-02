@@ -46,7 +46,7 @@ The former `set` prop was renamed to `vars`. Passing `set`, an unresolved scheme
 
 ## useVars
 
-`useVars(vars)` returns a readonly tree of native values selected by the nearest Provider. The argument is the `vars` helper from `Config.create`, or a standalone `Vars.define` definition. Catalog names and color scheme pairs resolve through the same Provider selection as compiled styles.
+`useVars(vars)` returns a readonly tree of native values selected by the nearest Provider. The argument is the `vars` helper from `defineConfig`, or a standalone `Vars.define` definition. Catalog names and color scheme pairs resolve through the same Provider selection as compiled styles.
 
 ```tsx
 import { useVars } from 'zyzz/react-native/react'
@@ -77,26 +77,15 @@ const typography = useVars(vars, (values) => values.typography.body)
 
 Selected results use `Object.is` equality. Equal compiled branches retain their identity across profiles, so selecting a branch can skip unchanged subscription updates. A selector that allocates a new object produces a different result on each selection change. Parent, local state, and other hook updates can still render the component.
 
-The equivalent Unistyles theme read is:
-
-```tsx
-import { useUnistyles } from 'react-native-unistyles'
-
-const { theme } = useUnistyles()
-const background = theme.color.background.primary
-```
-
-Unistyles registers themes globally. Zyzz receives the existing variable definition and selects values from the nearest Provider.
-
 ## Style applications
 
 Keep application code unchanged at the style boundary:
 
 ```tsx
 import { Text } from 'react-native'
-import { Config } from 'zyzz'
+import { defineConfig } from 'zyzz'
 
-const { style } = Config.create({
+const { style } = defineConfig({
   vars: {
     base: { color: { ink: { light: '#111', dark: '#eee' } } },
     alternate: { color: { ink: { light: '#900', dark: '#fcc' } } },

@@ -1,24 +1,30 @@
 # Concepts & Principles
 
-How typed definitions become compiled styles, and how variables, composition, and conditions work together.
+How styles, tokens, and compilation behave.
 
 import * as Examples from '../../components/mdx/concepts/Examples.js'
 
-import { Compilation, Scopes } from '../../components/mdx/concepts/Diagrams.js'
+import { Scopes } from '../../components/mdx/concepts/Diagrams.js'
 
 import { Tab, Tabs } from '../../components/mdx/concepts/Tabs.js'
 
-## Define, compile, apply
+Guides such as [Styling](/docs/guides/styling) cover complete tasks. [Thinking in Zyzz](/docs/introduction/thinking-in-zyzz) applies these principles to component organization and everyday styling decisions.
 
-Zyzz separates style definitions from their application. Definitions describe static rules. The compiler emits those rules ahead of time and transforms authoring calls into executable styles. Applying a style returns styling props without creating or inserting CSS rules.
+## Principles
 
-<Compilation />
+- **Agnostic:** Core data and types do not depend on a framework, host, or bundler.
+- **Compiled:** Rules exist before rendering. Calls return props that apply those rules to elements.
+- **Minimal:** Core imports include no bundled theme, reset, or provider.
+- **Modular:** Explicit configuration and narrow adapters separate responsibilities.
+- **Standard:** CSS properties, custom properties, selectors, and the cascade retain their meaning.
+- **Typed:** Values retain constraints through definitions, imports, and applications.
+- **Universal:** Shared authoring targets explicit web and native capabilities.
 
-The web pipeline produces CSS and executable styles before rendering. Calling a compiled style returns props such as `className` and, for dynamic values, inline custom properties. The element uses those props to display the compiled CSS.
+## Typed Styles
 
-The build integration handles source discovery, compilation, and stylesheet delivery.
+Definitions describe static rules. Calling a definition returns styling props and never creates CSS rules. Authoring calls require compilation, even for literal styles.
 
-<Tabs label="Define, compile, apply">
+<Tabs label="Typed styles">
 
 <Tab title="Card.tsx">
 
@@ -50,25 +56,85 @@ namespace styles {
 
 </Tabs>
 
-A definition is callable. The web result can be spread onto an element using the framework's normal props. Authoring requires compilation, even for literal styles. [Getting Started](/docs/introduction/getting-started) covers setup.
+Compiling `Card.tsx` emits each rule before rendering. With the default atomic output, every declaration becomes one class, and `styles.card()` returns `{ className: 'z-p-1rem' }`:
 
-## Principles
+```css
+.z-p-1rem {
+  padding: 1rem;
+}
 
-- **Agnostic:** Core data and types do not depend on a framework, host, or bundler.
-- **Compiled:** Rules exist before rendering. Calls return props that apply those rules to elements.
-- **Minimal:** Core imports include no bundled theme, reset, or provider.
-- **Modular:** Explicit configuration and narrow adapters separate responsibilities.
-- **Standard:** CSS properties, custom properties, selectors, and the cascade retain their meaning.
-- **Typed:** Values retain constraints through definitions, imports, and applications.
-- **Universal:** Shared authoring targets explicit web and native capabilities.
+.z-font-weight-600 {
+  font-weight: 600;
+}
+```
 
-## Share design decisions
+Definitions sit at module scope, and the compiler reads their values statically. Literals, local constant records, and typed callbacks qualify, while arbitrary application code is never evaluated.
+
+Values are typed from CSS data. Editors complete the keywords that a property accepts:
+
+```ts twoslash
+// @noErrors
+import { style } from 'zyzz'
+
+style({ position: '' })
+//                 ^|
+```
+
+[Getting Started](/docs/introduction/getting-started) covers compiler setup for each build tool.
+
+## Configuration
+
+`defineConfig` binds authoring functions to explicit tokens and layers. `zyzz.config.ts` exports the bound helpers, and components import them by name. Integrations follow each binding to its config without a default export. The compiler reads static data without executing application code.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  layers: ['base', 'components'],
+  vars: { spacing: { md: '1rem' } },
+})
+```
+
+- **Layers:** Keys such as `@layer components` come from the config, and unknown names fail.
+- **No variables:** Authoring stays token-free.
+- **One variable set:** Inline tokens or a reusable `defineVars` value.
+- **Several sets:** Named sets under `vars`, with a required `defaultVars`.
+
+Named sets share the default's token paths and value domains. Imports outside the config receive no ambient tokens or layer types.
+
+Each category supplies specific properties. `color` supplies `color` and `backgroundColor`, and `spacing` supplies padding and gap. [Property mappings](/docs/guides/themes#customize-property-mappings) replace those defaults one category at a time.
+
+```tsx title="Card.tsx"
+import { style } from './zyzz.config.js'
+
+export function Card() {
+  return <section {...styles.card()}>Account</section>
+}
+
+namespace styles {
+  export const card = style({ padding: 'md' }) // [!code hl]
+}
+```
+
+A value outside the configured tokens fails at the declaration, and the ` !custom` suffix opts into a literal:
+
+```ts twoslash
+// @errors: 2322
+import { defineConfig } from 'zyzz'
+
+const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })
+
+style({ padding: '12px' })
+style({ padding: '12px !custom' })
+```
+
+Named exports preserve the config's inferred contract. `vars` exposes CSS variable references rather than runtime setters, and compatible scopes change their inherited values.
+
+## Themes & Tokens
 
 A token gives a repeated design decision a name. Instead of each component choosing its own blue or padding, `accent` and `md` point to shared values. Changing those values changes every component that uses them.
 
-A config connects token categories to CSS properties and exports typed helpers. Components import those helpers to use names such as `color: 'accent'` and `padding: 'md'`.
-
-<Tabs label="Share design decisions">
+<Tabs label="Themes and tokens">
 
 <Tab title="Card.tsx">
 
@@ -81,8 +147,8 @@ export function Card() {
 
 namespace styles {
   export const card = style({
-    color: 'accent',
-    padding: 'md',
+    color: 'accent', // [!code hl]
+    padding: 'md', // [!code hl]
     width: `calc(100% - ${vars.spacing.md}) !custom`,
   })
 }
@@ -114,19 +180,22 @@ export const { style, vars } = defineConfig({
 
 </Tabs>
 
-Root helpers from `zyzz` use literal values. `zyzz/default` supplies bundled tokens. A custom config makes the project’s own design decisions explicit.
+A variable set holds token data and the property domains it implies, without a name or color scheme wrapper.
 
-Token names infer by property. A color name is not a spacing value. `vars.spacing.md` is a typed CSS variable reference for declarations and expressions. Config helpers preserve the inferred contract through imports, without ambient configuration or a required default export.
+- **Contracts:** Explicit references such as `vars.spacing.md` keep their defining identity and value domain.
+- **Extensions:** `extendVars` changes existing paths while keeping the set compatible.
+- **Names:** Token names infer only for properties whose domain they fit, so a color name is not a spacing value.
+- **Schemes:** Color leaves accept one shared value or a complete light and dark pair.
 
-On a property constrained by configured tokens, the `!custom` suffix opts into a literal, such as `padding: '12px !custom'`. [Variables & Scopes](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) covers definitions, mappings, and typography sets.
+`vars.spacing.md` compiles to a CSS variable reference, `var(--z-spacing-md, 1rem)`, so expressions such as `calc()` read the value of the nearest scope.
 
-## Variable scopes
+Root helpers from `zyzz` use literal values, and `zyzz/default` supplies bundled tokens. [Themes & Tokens](/docs/guides/themes) covers definitions, mappings, and typography sets.
 
-Compatible variable sets share paths and value domains. `extendVars` overrides existing values while preserving that contract. Applying `vars({ set: 'alternate' })` to an ancestor changes the inherited values for its subtree.
+### Theme Scopes
+
+Compatible variable sets share paths and value domains. Applying `vars({ set: 'alternate' })` to an ancestor changes the values that its subtree inherits. Components keep the same classes in every scope, and defaults supply values outside an explicit scope.
 
 <Scopes />
-
-Both cards use the same style definition and generated classes. The nearest variable scope supplies the accent value. A nested scope can select another set without compiling new rules.
 
 The named config defines a base set and extends its accent color. Both sets keep the same token paths.
 
@@ -183,15 +252,18 @@ export const { style, vars } = defineConfig({
 
 </Tabs>
 
-Switch the set in the Rendered tab. The outer card changes color, while the nested base scope keeps its original accent. Set selection and color scheme are independent.
+Switch the set in the Rendered tab. The outer card changes color, while the nested base scope keeps its original accent.
 
-Color pairs compile to `light-dark()`. An omitted scheme inherits, while `light dark` follows the browser preference. Defaults supply values outside an explicit scope.
+- **Color pairs:** `{ dark, light }` compiles to `light-dark()`.
+- **Color scheme:** `light` or `dark` selects a scheme explicitly, while `light dark` follows the browser preference.
+- **Set selection:** Changes tokens independently of the color scheme.
+- **Query thresholds:** Compile to literal conditions and do not change with the selected set.
 
-[Selecting Sets](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md#selecting-sets) shows the complete config. Query thresholds compile to literal conditions and do not change with the selected variable set.
+[Themes & Tokens](/docs/guides/themes) shows the complete config for selecting sets and restoring a saved set before the first paint.
 
-## Composition and overrides
+## Composition and Overrides
 
-`cx` combines generated styling props. Later generated conflicts win within matching conditions, subject to importance. Composition retains owned variable bindings and recipe attributes.
+`cx` combines generated styling props. Later generated conflicts win within matching conditions, subject to importance. Composition keeps owned variable bindings and recipe attributes attached.
 
 <Tabs label="Composition and overrides">
 
@@ -201,6 +273,7 @@ Color pairs compile to `light-dark()`. An omitted scheme inherits, while `light 
 import { cx, style } from 'zyzz'
 
 export function SaveButton() {
+  // [!code hl]
   return <button {...cx(styles.button(), styles.compact())}>Save</button>
 }
 
@@ -221,13 +294,15 @@ namespace styles {
 
 </Tabs>
 
-Multiple JSX spreads replace fields rather than compose them. External classes follow the CSS cascade, and their order in a class string does not establish precedence. [Override Styles](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#override-styles) explains the composition rules.
+Swapping the arguments swaps the result. `cx(styles.compact(), styles.button())` applies `1rem` of padding, because `button` comes last.
 
-## Variants and dynamic values
+Multiple JSX spreads replace fields rather than compose them. External classes follow the CSS cascade, and their order in a class string does not establish precedence. [Styling](/docs/guides/styling) explains the override rules.
 
-Variants select finite, precompiled alternatives. A recipe styles one element and returns one props object. Axes, defaults, and ordered compounds describe its choices. Multipart components use separate definitions with shared inputs.
+## Variants
 
-<Tabs label="Variants and dynamic values">
+Root and config-bound recipes support static choices, defaults, ordered compounds, conditional selections, and dynamic payloads. A recipe styles one element and returns one props object. Multipart components use separate definitions with shared inputs, so there is no slots option.
+
+<Tabs label="Variants">
 
 <Tab title="Button.tsx">
 
@@ -242,8 +317,8 @@ namespace styles {
   export const button = variants({
     variants: {
       size: {
-        md: { padding: '1rem' },
-        sm: { padding: '0.5rem' },
+        md: { padding: '1rem' }, // [!code hl]
+        sm: { padding: '0.5rem' }, // [!code hl]
       },
     },
   })
@@ -252,44 +327,23 @@ namespace styles {
 
 </Tab>
 
-<Tab title="Bar.tsx">
-
-```tsx title="Bar.tsx"
-import { style } from 'zyzz'
-
-export function Bar() {
-  return <div {...styles.bar({ width: '50%' })} aria-hidden="true" />
-}
-
-namespace styles {
-  export const bar = style((values: { width: `${number}%` }) => ({
-    width: values.width,
-  }))
-}
-```
-
-</Tab>
-
 <Tab title="Rendered">
 
-<Examples.Values />
+<Examples.Variants />
 
 </Tab>
 
 </Tabs>
 
-For values that vary per instance, a typed callback binds inputs to precompiled custom properties. The rule structure stays static.
+Axes, defaults, and compounds select precompiled alternatives, so choosing `sm` applies existing rules. A variant here is a component choice such as size, not a condition prefix such as `hover:`.
 
-> [!NOTE]
-> Finite local scalar callback types are supported. Native callbacks also support scalar payloads. Arbitrary imported type definitions and dynamic fallback groups remain unsupported.
+[Variants](/docs/guides/variants) covers defaults, compounds, conditional choices, and dynamic payloads.
 
-Style calls accept their declared inputs and styling overrides. Other component props stay on the element. [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md) covers defaults, compounds, conditional choices, and dynamic payloads.
+## Conditions
 
-## Conditions and relationships
+Pseudo-classes, media queries, container queries, and feature queries keep their CSS meaning. Nested conditions combine with AND while preserving property and token inference. The browser evaluates emitted conditions without runtime viewport listeners from Zyzz.
 
-Pseudo-classes, media queries, container queries, and feature queries keep their CSS meaning. Nested conditions combine with AND. The browser evaluates emitted conditions without runtime viewport listeners from Zyzz.
-
-<Tabs label="Conditions and relationships">
+<Tabs label="Conditions">
 
 <Tab title="Button.tsx">
 
@@ -303,13 +357,31 @@ export function Button() {
 namespace styles {
   export const button = style({
     ':hover': {
-      '@media (hover: hover)': { opacity: 0.8 },
+      '@media (hover: hover)': { opacity: 0.8 }, // [!code hl]
     },
   })
 }
 ```
 
 </Tab>
+
+<Tab title="Rendered">
+
+<Examples.Conditions />
+
+</Tab>
+
+</Tabs>
+
+Conditional rules keep their authored order in the stylesheet. A query written before a base declaration does not override it, because the base rule follows it.
+
+Query aliases resolve from config metadata to literal conditions, so a scope change does not move a query threshold. Container queries select the nearest eligible container, and raw queries still require compiler validation.
+
+## Relationships
+
+`selectors` objects interpolate `style()` definitions without calling them. `&` selects the styled element, while combinators, pseudo-classes, attributes, and `:has()` keep ordinary CSS semantics. An empty `style()` supplies a stable identity for an ancestor or sibling.
+
+<Tabs label="Relationships">
 
 <Tab title="Card.tsx">
 
@@ -329,7 +401,7 @@ namespace styles {
 
   export const label = style({
     selectors: {
-      [`${card}:hover &`]: { color: 'blue' },
+      [`${card}:hover &`]: { color: 'blue' }, // [!code hl]
     },
   })
 }
@@ -339,19 +411,62 @@ namespace styles {
 
 <Tab title="Rendered">
 
-<Examples.Conditions />
+<Examples.Relationships />
 
 </Tab>
 
 </Tabs>
 
-Relationship selectors interpolate a definition without calling it. `&` refers to the styled element. An empty `style()` supplies a stable identity for an ancestor or sibling.
+References keep their identity through local aliases, namespace members, named imports, re-exports, and packed libraries. The compiler checks selector grammar and interpolated identities. TypeScript checks the nested declaration values but cannot prove the DOM relationship.
 
-The relationship requires an element with `styles.card()` applied above the label. The compiler validates selector grammar and referenced identities. TypeScript checks declaration values, but does not prove the DOM relationship. Authored specificity remains intact. `:where(...)` can lower condition specificity.
+Every selector branch needs `&`. A selector such as `'body'` fails compilation because it has no `&` target. Document rules belong in `global` from `zyzz/web`.
 
-Application state stays in ordinary data or ARIA attributes. [Conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md) covers responsive styles, states, and relationships.
+Specificity follows the authored selector, and `:where(...)` lowers it explicitly. Application state stays in ordinary data or ARIA attributes. Relationships need no runtime selector parsing, DOM lookup, or CSS generation.
 
-## Layers and stylesheets
+## Dynamic Values
+
+> [!NOTE]
+> Finite local scalar callback types are supported. Native callbacks also support scalar payloads. Arbitrary imported type definitions and dynamic fallback groups remain unsupported.
+
+Callbacks bind per-instance values to precompiled custom properties, and their rule structure stays static. Other values that look dynamic are compiled references:
+
+- **`vars.spacing.md`:** A typed reference for declarations and web expressions.
+- **Query thresholds:** Compiled literals that scope changes do not affect.
+
+Choosing between fixed values belongs in variants. Callbacks handle values computed for each instance.
+
+<Tabs label="Dynamic values">
+
+<Tab title="Bar.tsx">
+
+```tsx title="Bar.tsx"
+import { style } from 'zyzz'
+
+export function Bar() {
+  return <div {...styles.bar({ width: '50%' })} aria-hidden="true" />
+}
+
+namespace styles {
+  // [!code hl]
+  export const bar = style((values: { width: `${number}%` }) => ({
+    width: values.width,
+  }))
+}
+```
+
+</Tab>
+
+<Tab title="Rendered">
+
+<Examples.Values />
+
+</Tab>
+
+</Tabs>
+
+Calls accept their declared inputs plus `className` and `style` overrides. Other component props stay on the element.
+
+## Layers and Stylesheets
 
 Layers establish an explicit order for styles from different sources. In this example, the base stylesheet supplies rounded corners and gray text. The later component layer changes the text to blue.
 
@@ -380,7 +495,7 @@ export function LayeredCard() {
 namespace styles {
   export const card = style({
     '@layer base': { color: 'gray', padding: '1rem' },
-    '@layer components': { color: '#0066cc' },
+    '@layer components': { color: '#0066cc' }, // [!code hl]
   })
 }
 ```
@@ -395,71 +510,10 @@ namespace styles {
 
 </Tabs>
 
-The global stylesheet supplies the border radius. The generated style applies both layers, and the later component layer determines the text color.
+- **Collection:** Scans configured sources, including unimported modules, and excludes tests and generated output. Packed library contributions come from package metadata.
+- **Delivery:** Globals are eager, including declarations beside lazy components. The initial stylesheet includes the shared layer prelude.
+- **Helpers:** `global`, `fontFace`, and `keyframes` come from `zyzz/web`. Keyframes have separate reachability rules.
+- **Ordering:** Layer constraints merge deterministically, and conflicts produce located errors. Authored order, unlayered rules, and the reversed order for important declarations are preserved.
+- **Watching:** Edits and deletions replace or remove contributions.
 
-Layer names come from config or explicit layer declarations. Their order follows CSS cascade semantics, including the reversed order for important declarations. Authored ordering is preserved, and conflicting layer-order constraints produce located errors.
-
-Stylesheet helpers such as `global`, `fontFace`, and `keyframes` come from `zyzz/web`. Globals are eager, including declarations beside lazy components. Keyframes have separate reachability rules. The initial stylesheet includes the shared layer prelude.
-
-Source collection scans configured sources, including unimported modules, and excludes tests and generated output. Packed library contributions use package metadata. Watching replaces or removes contributions when files change. [Stylesheets](https://github.com/wevm/zyzz/blob/main/docs/guides/stylesheets.md) covers globals, fonts, and motion.
-
-## Compilation and platforms
-
-- **Core:** Pure data, types, validation, and identity.
-- **Source adapters:** Parse and rewrite modules.
-- **Target emitters:** Produce CSS or native style tables.
-- **Hosts:** Manage files, source discovery, watching, and delivery.
-
-CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Downstream tooling handles minification. [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md) covers the full pipeline.
-
-> [!NOTE]
-> Shared authoring does not imply identical platform capabilities. Unsupported native semantics must produce errors. Arbitrary imported style records, inline Svelte authoring, Vue SFC integration, and universal native parity remain outside the verified web scope.
-
-[Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) records implemented boundaries and acceptance limits. [Thinking in Zyzz](https://github.com/wevm/zyzz/blob/main/docs/introduction/thinking-in-zyzz.md) applies these concepts to component organization.
-
-<Tabs label="Compilation and platforms">
-
-<Tab title="WebButton.tsx">
-
-```tsx title="WebButton.tsx"
-import { style } from 'zyzz'
-
-export function WebButton() {
-  return <button {...styles.button()}>Save</button>
-}
-
-namespace styles {
-  export const button = style({ opacity: 0.9 })
-}
-```
-
-</Tab>
-
-<Tab title="NativeButton.tsx">
-
-```tsx title="NativeButton.tsx"
-import { Pressable, Text } from 'react-native'
-import { style } from 'zyzz'
-
-export function NativeButton() {
-  return (
-    <Pressable {...styles.button()}>
-      <Text>Save</Text>
-    </Pressable>
-  )
-}
-
-namespace styles {
-  export const button = style({ opacity: 0.9 })
-}
-```
-
-</Tab>
-
-<Tab title="Rendered">
-
-<Examples.Platforms />
-
-</Tab>
-
-</Tabs>
+[Stylesheets](/docs/guides/stylesheets) covers globals, fonts, and motion.

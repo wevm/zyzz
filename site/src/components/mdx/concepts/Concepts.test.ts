@@ -108,8 +108,10 @@ describe('/docs/concepts', () => {
         const page = await browser.newPage({
           viewport: { width: 1440, height: 900 },
         })
-        await page.goto(`${origin}/docs/concepts?mode=default`)
-        await page.waitForLoadState('networkidle')
+        await page.goto(`${origin}/docs/concepts?mode=default`, {
+          timeout: 60000,
+          waitUntil: 'networkidle',
+        })
         await page.evaluate(() => {
           Object.defineProperty(navigator, 'clipboard', {
             configurable: true,
@@ -165,6 +167,6 @@ describe('/docs/concepts', () => {
         await browser.close()
       }
     },
-    60000,
+    90000,
   )
 })

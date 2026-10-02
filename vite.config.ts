@@ -4,6 +4,45 @@
  */
 import * as Path from 'node:path'
 import { defineConfig } from 'vite-plus'
+import { BaseSequencer, type TestSpecification } from 'vite-plus/test/node'
+import durations from './test/durations.json' with { type: 'json' }
+
+type Shard = {
+  duration: number
+  files: TestSpecification[]
+}
+
+class Sequencer extends BaseSequencer {
+  override async shard(files: readonly TestSpecification[]) {
+    const { count, index } = this.ctx.config.shard!
+    const shards = Array.from(
+      { length: count },
+      (): Shard => ({ duration: 0, files: [] }),
+    )
+    const timings: Readonly<Record<string, number>> = durations.files
+    const sorted = files
+      .map((file) => ({
+        duration:
+          timings[Path.relative(this.ctx.config.root, file.moduleId)] ?? 1,
+        file,
+      }))
+      .toSorted(
+        (a, b) =>
+          b.duration - a.duration ||
+          a.file.moduleId.localeCompare(b.file.moduleId),
+      )
+
+    for (const entry of sorted) {
+      const shard = shards.reduce((shortest, current) =>
+        current.duration < shortest.duration ? current : shortest,
+      )
+      shard.files.push(entry.file)
+      shard.duration += entry.duration
+    }
+
+    return shards[index - 1]!.files
+  }
+}
 
 export default defineConfig({
   fmt: {
@@ -57,6 +96,19 @@ export default defineConfig({
       'src/**/*.test.ts',
       'test/**/*.test.ts',
     ],
+    maxConcurrency: 2,
+    name: process.env.ZYZZ_TEST_PROJECT ?? 'integration',
+    ...(process.env.ZYZZ_TEST_PROJECT === 'merge'
+      ? {
+          projects: ['integration', 'css-types-7', 'css-types-8'].map(
+            (name) => ({
+              extends: true as const,
+              test: { name },
+            }),
+          ),
+        }
+      : {}),
+    sequence: { sequencer: Sequencer },
     testTimeout: 30_000,
   },
 })

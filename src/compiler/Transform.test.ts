@@ -76,7 +76,7 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
-import { beforeAll, describe, expect, test } from 'vite-plus/test'
+import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Config, Style } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Dynamic, Props } from 'zyzz/runtime'
@@ -475,13 +475,22 @@ describe('compile', () => {
     )
   })
 
-  test.each(Array.from({ length: 10 }, (_, index) => index))(
-    'CSS conformance preserves consumer types for every accepted probe (partition %i)',
-    async (partition) => {
-      const directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
+  describe('CSS conformance preserves consumer types for every accepted probe', () => {
+    let cases: readonly Conformance.Case[]
+    let directory: string
 
-      try {
-        const cases = Conformance.cases()
+    beforeAll(async () => {
+      cases = Conformance.cases()
+      directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
+    }, 30_000)
+
+    afterAll(async () => {
+      await Fs.rm(directory, { force: true, recursive: true })
+    })
+
+    test.each(Array.from({ length: 10 }, (_, index) => index))(
+      'partition %i',
+      async (partition) => {
         const groups = new Map<string, string>()
         // Separate programs bound checker work without reducing the property or value corpus.
         const properties = Conformance.properties().filter(
@@ -551,8 +560,11 @@ describe('compile', () => {
               Path.dirname(require.resolve('typescript/package.json')),
               'bin/tsc',
             ),
+            '--incremental',
             '--project',
             Path.join(directory, 'tsconfig.json'),
+            '--tsBuildInfoFile',
+            Path.join(directory, 'consumer.tsbuildinfo'),
           ],
           { cwd: root, maxBuffer: 1024 * 1024, timeout: 300_000 },
         ).catch(async (error: unknown) => {
@@ -573,12 +585,10 @@ describe('compile', () => {
 
         expect(stderr).toMatchInlineSnapshot(`""`)
         expect(stdout).toMatchInlineSnapshot(`""`)
-      } finally {
-        await Fs.rm(directory, { force: true, recursive: true })
-      }
-    },
-    310_000,
-  )
+      },
+      310_000,
+    )
+  })
 
   test('interaction declarations preserve importance and source maps', () => {
     const output = Transform.compile({

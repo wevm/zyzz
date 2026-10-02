@@ -343,7 +343,7 @@ export async function verify(options: verify.Options) {
     ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
     await Fs.mkdir('test-results', { recursive: true })
     await Fs.writeFile(
-      `test-results/next-${bundler}-styles.json`,
+      `test-results/next-${bundler}-${cssOutput}-styles.json`,
       JSON.stringify(
         await page.evaluate(() => ({
           html: document.documentElement.outerHTML,

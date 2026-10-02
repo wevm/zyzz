@@ -68,11 +68,7 @@ export async function verify(options: verify.Options) {
       ? Path.join(root, 'consumer')
       : await create(root)
     if (options.fixture)
-      await Fs.cp(options.fixture, app, {
-        mode: Fs.constants.COPYFILE_FICLONE,
-        recursive: true,
-        verbatimSymlinks: true,
-      })
+      await exec('cp', ['-R', options.fixture, app], { timeout: 30_000 })
 
     // A dependency symlink back to an ancestor, as a package linked from its
     // own repository, must not break root discovery. Atomic builds keep a plain

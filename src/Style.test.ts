@@ -945,7 +945,7 @@ describe('consumer types', () => {
 
     test.sequential.for(
       Array.from({ length: 5 }, (_, index) => group * 5 + index),
-    )('partition %i', { timeout: 310_000 }, async (partition, { expect }) => {
+    )('partition %i', { timeout: 310_000 }, async (partition, context) => {
       const groups = new Map<string, string>()
       // Separate programs bound checker work without reducing the property or value corpus.
       const properties = Conformance.properties().filter(
@@ -1038,8 +1038,8 @@ describe('consumer types', () => {
         throw error
       })
 
-      expect(stderr).toMatchInlineSnapshot(`""`)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      context.expect(stderr).toMatchInlineSnapshot(`""`)
+      context.expect(stdout).toMatchInlineSnapshot(`""`)
     })
   })
 })

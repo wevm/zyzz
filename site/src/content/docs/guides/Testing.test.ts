@@ -129,13 +129,11 @@ describe('/docs/guides/testing', () => {
           await page.setViewportSize({ width, height: 1000 })
           await page.emulateMedia({ colorScheme })
           await page.goto(`${origin}/docs/guides/testing`)
-          await expect
-            .poll(() =>
-              page
-                .locator('article')
-                .evaluate((article) => getComputedStyle(article).fontSize),
-            )
-            .toBe('16px')
+          await page.waitForFunction(() => {
+            const pre = document.querySelector('article pre')
+            return pre && getComputedStyle(pre).overflowX === 'auto'
+          })
+          await page.evaluate(() => document.fonts.ready)
 
           expect(
             await page.getByRole('heading', { level: 1 }).textContent(),

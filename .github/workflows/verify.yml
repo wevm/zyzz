@@ -53,19 +53,19 @@ jobs:
           path: css-conformance.md
           retention-days: 30
   test-shards:
-    name: Test (${{ matrix.shard }}/10)
+    name: Test (${{ matrix.shard }}/12)
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
         include:
-          - shard: 7
-            types: '0|1|2|3|4'
-          - shard: 8
-            types: '5|6|7|8|9'
           - shard: 9
-            next: atomic
+            types: '0|1|2|3|4'
           - shard: 10
+            types: '5|6|7|8|9'
+          - shard: 11
+            next: atomic
+          - shard: 12
             next: grouped
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +98,7 @@ jobs:
           elif [ -n '${{ matrix.next }}' ]; then
             pnpm run test run src/next/index.test.ts --testNamePattern='builds and updates a packed Next.js .* ${{ matrix.next }} application$' --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
           else
-            pnpm run test run --shard=${{ matrix.shard }}/6 --testNamePattern='^(?!.*(CSS conformance preserves consumer types|builds and updates a packed Next[.]js))' --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
+            pnpm run test run --shard=${{ matrix.shard }}/8 --testNamePattern='^(?!.*(CSS conformance preserves consumer types|builds and updates a packed Next[.]js))' --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
           fi
         timeout-minutes: 3
       - name: Upload shard results
@@ -138,7 +138,7 @@ jobs:
         run: |
           test "$SHARDS_RESULT" = success
           test "$TYPES_RESULT" = success
-          for shard in 1 2 3 4 5 6 7 8 9 10; do test -f "test-results/blob-$shard.json"; done
+          for shard in 1 2 3 4 5 6 7 8 9 10 11 12; do test -f "test-results/blob-$shard.json"; done
       - name: Merge test results and coverage
         if: ${{ !cancelled() }}
         env:

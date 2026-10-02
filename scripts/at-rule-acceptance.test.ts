@@ -37,7 +37,7 @@ describe('evidence', () => {
         ],
         {
           encoding: 'utf8',
-          env: { ...process.env, ZYZZ_TEST_PROJECT: 'css-types-7' },
+          env: { ...process.env, ZYZZ_TEST_PROJECT: 'css-types-9' },
           timeout: 20_000,
         },
       )

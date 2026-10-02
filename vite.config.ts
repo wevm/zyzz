@@ -101,8 +101,8 @@ export default defineConfig({
     ...(process.env.ZYZZ_TEST_PROJECT === 'merge'
       ? {
           projects: [
-            'css-types-7',
-            'css-types-8',
+            'css-types-10',
+            'css-types-9',
             'integration',
             'next-atomic',
             'next-grouped',

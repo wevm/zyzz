@@ -137,6 +137,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     { end: number; output: 'html' | undefined }
   >()
   const selections = new Set<string>()
+  const selectionUses = new Set<string>()
   const calls: Call[] = []
   const scripts = new Set<string>()
   const definitions = new Map<number, Call>()
@@ -1459,6 +1460,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
         if (config.call.selection) {
           selections.add(config.call.name)
+          selectionUses.add(config.call.name)
           scopeApplications.set(parent.start, {
             end: parent.end,
             output: config.call.options?.output === 'html' ? 'html' : undefined,
@@ -1562,6 +1564,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           if (path[0] === 'themes' || path[0] === 'vars') {
             selections.add(config.call.name)
+            selectionUses.add(config.call.name)
             const application = ancestors[index - 1]!
             scopeApplications.set(application.start, {
               end: application.end,
@@ -1623,6 +1626,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       // A compiled selector is an ordinary runtime function, so passing or storing it is safe.
       if (config.call.selection && !config.call.catalogOnly && !path.length) {
         selections.add(config.call.name)
+        selectionUses.add(config.call.name)
 
         return true
       }
@@ -2045,6 +2049,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     scopeApplications,
     scripts,
     selections,
+    selectionUses,
     staticTokens,
     styles,
     themes: Object.freeze(themes),

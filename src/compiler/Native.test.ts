@@ -6,6 +6,9 @@ import * as Util from 'node:util'
 import * as Esbuild from 'esbuild'
 import * as Parser from 'oxc-parser'
 import * as Trace from '@jridgewell/trace-mapping'
+import * as Ds from '../../test/fixtures/native/Ds.js'
+import * as Packed from '../../test/fixtures/Packed.js'
+import * as Vm from 'node:vm'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Native, Transform } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
@@ -49,6 +52,206 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('rejects applied web scopes after allowing exported config references', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'config.ts': `import {Config} from 'zyzz';export const {style,vars}=Config.create({vars:{base:{color:{ink:'#000'}},inverse:{color:{ink:'#fff'}}},defaultVars:'base'});`,
+          'app.ts': `import {style,vars} from './config.js';export const label=style({color:'ink'});export const scope=vars({set:'inverse'});`,
+        },
+        native: { colorScheme: 'light', platform: 'ios' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Native static modules do not support CSS contributions, variables, or web set controls.]`,
+    )
+  })
+
+  test.each(['ios', 'android'] as const)(
+    'executes the pinned DS graph and source-free config on %s',
+    async (platform) => {
+      const modules = await Ds.read()
+      const source = `import {style} from './platform/zyzz.config.js';import {NativeContext} from 'zyzz/runtime';
+      const surface=style({backgroundColor:'background.primary',padding:'24',borderRadius:'full'});
+      const label=style({color:'content.primary',typography:'body.b2'});
+      export const result=(set,colorScheme)=>({surface:NativeContext.resolve(surface().style,{set,colorScheme}),label:NativeContext.resolve(label().style,{set,colorScheme})});`
+      const native = {
+        colorScheme: 'light',
+        contextual: true,
+        fonts: { 'Pilat, Arial, sans-serif': 'Pilat' },
+        platform,
+        units: { px: 1, rem: 16 },
+      } as const
+      const compiled = Graph.compile({
+        modules: { ...modules, 'app.ts': source },
+        native,
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: Object.fromEntries(
+          Object.entries(compiled.modules).map(([name, value]) => [
+            name,
+            value.code,
+          ]),
+        ),
+      })
+      const app = Vm.runInNewContext(`${code}\nFixture`) as {
+        result(set: string, scheme: string): unknown
+      }
+
+      expect(app.result('base', 'light')).toMatchInlineSnapshot(`
+        {
+          "label": {
+            "color": "#000000ff",
+            "fontFamily": "Pilat",
+            "fontSize": 14,
+            "fontWeight": 500,
+            "letterSpacing": 0.14000000059604645,
+            "lineHeight": 20,
+          },
+          "surface": {
+            "backgroundColor": "#f5f5f5ff",
+            "borderBottomLeftRadius": 999,
+            "borderBottomRightRadius": 999,
+            "borderTopLeftRadius": 999,
+            "borderTopRightRadius": 999,
+            "paddingBottom": 24,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 24,
+          },
+        }
+      `)
+      expect(app.result('base', 'dark')).toMatchInlineSnapshot(`
+        {
+          "label": {
+            "color": "#ffffffff",
+            "fontFamily": "Pilat",
+            "fontSize": 14,
+            "fontWeight": 500,
+            "letterSpacing": 0.14000000059604645,
+            "lineHeight": 20,
+          },
+          "surface": {
+            "backgroundColor": "#000000ff",
+            "borderBottomLeftRadius": 999,
+            "borderBottomRightRadius": 999,
+            "borderTopLeftRadius": 999,
+            "borderTopRightRadius": 999,
+            "paddingBottom": 24,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 24,
+          },
+        }
+      `)
+      expect(app.result('inverse', 'light')).toMatchInlineSnapshot(`
+        {
+          "label": {
+            "color": "#ffffffff",
+            "fontFamily": "Pilat",
+            "fontSize": 14,
+            "fontWeight": 500,
+            "letterSpacing": 0.14000000059604645,
+            "lineHeight": 20,
+          },
+          "surface": {
+            "backgroundColor": "#000000ff",
+            "borderBottomLeftRadius": 999,
+            "borderBottomRightRadius": 999,
+            "borderTopLeftRadius": 999,
+            "borderTopRightRadius": 999,
+            "paddingBottom": 24,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 24,
+          },
+        }
+      `)
+      expect(app.result('inverse', 'dark')).toMatchInlineSnapshot(`
+        {
+          "label": {
+            "color": "#000000ff",
+            "fontFamily": "Pilat",
+            "fontSize": 14,
+            "fontWeight": 500,
+            "letterSpacing": 0.14000000059604645,
+            "lineHeight": 20,
+          },
+          "surface": {
+            "backgroundColor": "#f5f5f5ff",
+            "borderBottomLeftRadius": 999,
+            "borderBottomRightRadius": 999,
+            "borderTopLeftRadius": 999,
+            "borderTopRightRadius": 999,
+            "paddingBottom": 24,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 24,
+          },
+        }
+      `)
+
+      const packed = Graph.compile({ modules })
+      const consumer = Graph.compile({
+        contracts: {
+          'package/config.js': packed.contracts['platform/zyzz.config.ts']!,
+        },
+        imports: {
+          'app.ts': {
+            '@fixture/ds': 'package/config.js',
+            'zyzz/runtime': null,
+          },
+        },
+        modules: {
+          'app.ts': source.replace(
+            "'./platform/zyzz.config.js'",
+            "'@fixture/ds'",
+          ),
+        },
+        native,
+      })
+      const delivery = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': consumer.modules['app.ts']!.code },
+        packages: {
+          '@fixture/ds': {
+            'index.ts': `export {style,variants,vars} from './platform/zyzz.config.js';`,
+            ...Object.fromEntries(
+              Object.entries(packed.modules).map(([name, value]) => [
+                name,
+                value.code,
+              ]),
+            ),
+          },
+        },
+      })
+      const installed = Vm.runInNewContext(`${delivery}\nFixture`) as typeof app
+      expect(installed.result('inverse', 'dark')).toMatchInlineSnapshot(`
+        {
+          "label": {
+            "color": "#000000ff",
+            "fontFamily": "Pilat",
+            "fontSize": 14,
+            "fontWeight": 500,
+            "letterSpacing": 0.14000000059604645,
+            "lineHeight": 20,
+          },
+          "surface": {
+            "backgroundColor": "#f5f5f5ff",
+            "borderBottomLeftRadius": 999,
+            "borderBottomRightRadius": 999,
+            "borderTopLeftRadius": 999,
+            "borderTopRightRadius": 999,
+            "paddingBottom": 24,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 24,
+          },
+        }
+      `)
+    },
+  )
+
   test('executes static batches across independent theme contracts', async () => {
     const output = Graph.compile({
       modules: {

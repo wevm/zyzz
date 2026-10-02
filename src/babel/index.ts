@@ -17,12 +17,16 @@ import * as Transform from '../compiler/Transform.js'
 export type NativeOptions = {
   /** Fixed build-time scheme. Omit for runtime selection through React. */
   readonly colorScheme?: 'dark' | 'light' | undefined
-  /** Closed source graph supplied by the bundler for imported authoring. */
-  readonly modules?: Readonly<Record<string, string>> | undefined
+  /** Packed authoring contracts supplied by the bundler. */
+  readonly contracts?: Graph.compile.Options['contracts']
+  /** Authored font-family text mapped to registered native families. */
+  readonly fonts?: Native.compile.Options['fonts']
   /** Host-resolved graph imports. */
   readonly imports?: Graph.compile.Options['imports']
   /** Portable source identity. Defaults to a native module-local identity. */
   readonly moduleId?: string | undefined
+  /** Closed source graph supplied by the bundler for imported authoring. */
+  readonly modules?: Readonly<Record<string, string>> | undefined
   /** Native destination selected by the bundler. */
   readonly platform: 'android' | 'ios'
   /** Native compiler selection. Omission preserves existing native configurations. */
@@ -188,9 +192,11 @@ export function zyzz(
             options[Compilation.key]?.programs ??
             (parsed ? new Map([[moduleId, parsed]]) : undefined),
           modules: { ...options.modules, [moduleId]: file.code },
+          contracts: options.contracts,
           imports: options.imports,
           native: {
             [Edits.runtime]: true,
+            fonts: options.fonts,
             platform: options.platform,
             units: options.units,
             colorScheme: options.colorScheme ?? 'light',
@@ -201,6 +207,7 @@ export function zyzz(
       return Native.compile({
         [Themes.context]: parsed ? { parsed, links: {} } : undefined,
         [Edits.runtime]: true,
+        fonts: options.fonts,
         platform: options.platform,
         units: options.units,
         colorScheme: options.colorScheme ?? 'light',

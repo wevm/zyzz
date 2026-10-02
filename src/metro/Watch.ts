@@ -2,15 +2,32 @@
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
+import * as Snapshot from '../node/internal/Snapshot.js'
 import type { EventEmitter } from 'node:events'
 import * as Graph from './Graph.js'
 
 type Options = {
-  readonly platform?: string
   readonly customTransformOptions?: Readonly<Record<string, unknown>>
+  readonly platform?: string
 }
 type Bundler = {
-  getDependencyGraph(): Promise<{ getWatcher(): EventEmitter }>
+  getDependencyGraph(): Promise<{
+    getWatcher(): EventEmitter
+    resolveDependency(
+      filename: string,
+      dependency: {
+        data: {
+          asyncType: null
+          isESMImport: boolean
+          key: string
+          locs: readonly never[]
+        }
+        name: string
+      },
+      platform: string,
+      options: { customResolverOptions: Readonly<Record<string, unknown>> },
+    ): { type: string; filePath?: string }
+  }>
   transformFile(
     filename: string,
     options: Options,
@@ -31,19 +48,47 @@ type Changes = {
 /** Includes imported source contents in transform keys and invalidates their consumers on edits. */
 export async function attach(server: Server, root: string) {
   const bundler = server.getBundler().getBundler()
-  const graph = await bundler.getDependencyGraph()
+  const ready = bundler.getDependencyGraph()
   const dependencies = new Map<string, Map<string, Set<string>>>()
+  const snapshot = Snapshot.create()
   const transform = bundler.transformFile.bind(bundler)
-  bundler.transformFile = (filename, options, buffer) => {
+  bundler.transformFile = async (filename, options, buffer) => {
     if (
       (options.platform !== 'ios' && options.platform !== 'android') ||
       !/\.[cm]?[jt]sx?$/.test(filename) ||
-      Path.relative(root, filename).startsWith(`..${Path.sep}`) ||
-      filename.split(Path.sep).includes('node_modules')
+      filename.startsWith(
+        `${Path.resolve(import.meta.dirname, '..')}${Path.sep}`,
+      )
     )
       return transform(filename, options, buffer)
     const source = buffer?.toString('utf8') ?? Fs.readFileSync(filename, 'utf8')
-    const input = Graph.read(filename, source, options.platform, root)
+    const graph = await ready
+    const input = Graph.read(
+      filename,
+      source,
+      options.platform,
+      root,
+      snapshot,
+      (filename, specifier) => {
+        const resolved = graph.resolveDependency(
+          filename,
+          {
+            data: {
+              asyncType: null,
+              isESMImport: true,
+              key: specifier,
+              locs: [],
+            },
+            name: specifier,
+          },
+          options.platform!,
+          { customResolverOptions: {} },
+        )
+        return resolved.type === 'sourceFile' ? resolved.filePath : undefined
+      },
+    )
+    if (!input) return transform(filename, options, buffer)
+
     const platforms =
       dependencies.get(filename) ?? new Map<string, Set<string>>()
     platforms.set(options.platform, new Set(input.files))
@@ -56,11 +101,13 @@ export async function attach(server: Server, root: string) {
         customTransformOptions: {
           ...options.customTransformOptions,
           zyzzGraph: hash,
+          zyzzSources: input,
         },
       },
       buffer,
     )
   }
+  const graph = await ready
   graph.getWatcher().prependListener('change', (event: Changes) => {
     const entries = [
       ...event.changes.addedFiles,

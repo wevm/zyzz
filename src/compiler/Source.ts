@@ -1560,6 +1560,8 @@ export function extract(options: extract.Options): extract.ReturnType {
     ),
   }
   Object.defineProperty(definition, ClassName.labels, { enumerable: false })
+  const selections =
+    options.target === 'native' ? themes?.selectionUses : themes?.selections
 
   return Object.freeze({
     namespaces: contributionData.filter(
@@ -1611,8 +1613,8 @@ export function extract(options: extract.Options): extract.ReturnType {
     ...(themes?.scripts.size
       ? { themeScripts: Object.freeze([...themes.scripts]) }
       : {}),
-    ...(themes?.selections.size
-      ? { themeSelections: Object.freeze([...themes.selections]) }
+    ...(selections?.size
+      ? { themeSelections: Object.freeze([...selections]) }
       : {}),
     themeCalls: Object.freeze(themes?.calls ?? []),
     ...(themes?.staticTokens.length

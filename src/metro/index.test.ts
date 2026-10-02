@@ -6,6 +6,10 @@ import * as Module from 'node:module'
 import * as Net from 'node:net'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
+import * as Util from 'node:util'
+import * as Vm from 'node:vm'
+import * as Ds from '../../test/fixtures/native/Ds.js'
+import { Graph } from 'zyzz/compiler'
 import { describe, expect, test } from 'vite-plus/test'
 
 const require = Module.createRequire(
@@ -58,11 +62,16 @@ describe('zyzz', () => {
     }
   })
 
-  test('bundles each platform and recompiles imported styles after edits and errors', async () => {
-    const root = await Fs.mkdtemp(Path.resolve('.fixture-metro-'))
+  test('bundles shared packages and recompiles imported styles after edits and errors', async () => {
+    const directory = await Fs.mkdtemp(Path.resolve('.fixture-metro-'))
+    const root = Path.join(directory, 'app')
+    const packages = Path.join(directory, 'packages/node_modules')
+    const library = Path.join(packages, '@fixture/shared')
     let child: ChildProcess.ChildProcess | undefined
     let logs = ''
     try {
+      await Fs.mkdir(root)
+      await Fs.mkdir(library, { recursive: true })
       await Fs.symlink(
         Path.resolve('examples/react-native/node_modules'),
         Path.join(root, 'node_modules'),
@@ -80,23 +89,122 @@ describe('zyzz', () => {
       await Fs.writeFile(
         Path.join(root, 'app.json'),
         JSON.stringify({
-          expo: { name: 'Metro fixture', slug: 'metro-fixture' },
+          expo: {
+            name: 'Metro fixture',
+            platforms: ['ios', 'android'],
+            slug: 'metro-fixture',
+          },
+        }),
+      )
+      const configuration = (px: number) =>
+        `import * as Path from 'node:path';import { getDefaultConfig } from 'expo/metro-config.js';import { zyzz } from 'zyzz/metro';
+        const config=getDefaultConfig(import.meta.dirname);config.watchFolders.push(Path.resolve(import.meta.dirname,'../packages'));config.resolver.nodeModulesPaths.push(Path.resolve(import.meta.dirname,'node_modules'),Path.resolve(import.meta.dirname,'../packages/node_modules'));
+        config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='@shared-theme'?'@fixture/shared/theme':name,platform);
+        export default zyzz(config, { fonts: {'Pilat, Arial, sans-serif':'Pilat'}, units: { px: ${px}, rem:16 } });`
+      await Fs.writeFile(Path.join(root, 'metro.config.ts'), configuration(1))
+      await Fs.writeFile(
+        Path.join(root, 'index.ts'),
+        `import {NativeContext} from 'zyzz/runtime';import {box} from './Style';import {surface} from './DsStyles';import {card} from '@fixture/packed/card';import {platformStyle} from './Theme';import {nested} from '@fixture/shared/nested';console.log(...[box(),surface(),card(),platformStyle(),nested()].map(props=>NativeContext.resolve(props.style,{colorScheme:'light'})));`,
+      )
+      const source = (width: number) =>
+        `import {style} from './Theme';export const box=style({color:'ink',width:'${width}px'});`
+      const theme = (color: string) =>
+        `import {Config} from 'zyzz';export {platformStyle} from './Opacity';export const {style}=Config.create({vars:{base:{color:{ink:{light:'${color}',dark:'#abcdef'}}},alternate:{color:{ink:{light:'#123abc',dark:'#456def'}}}},defaultVars:'base'});`
+      await Fs.writeFile(
+        Path.join(library, 'package.json'),
+        JSON.stringify({
+          name: '@fixture/shared',
+          exports: { './nested': './Style.ts', './theme': './index.ts' },
+          peerDependencies: { zyzz: '*' },
         }),
       )
       await Fs.writeFile(
-        Path.join(root, 'metro.config.ts'),
-        `import { getDefaultConfig } from 'expo/metro-config.js'; import { zyzz } from 'zyzz/metro'; export default zyzz(getDefaultConfig(import.meta.dirname), { units: { px: 1 } });`,
+        Path.join(library, 'Opacity.ios.ts'),
+        `import {style} from 'zyzz';export const platformStyle=style({opacity:0.123});`,
       )
       await Fs.writeFile(
-        Path.join(root, 'index.ts'),
-        `import { box } from './Style'; console.log(box());`,
+        Path.join(library, 'Opacity.android.ts'),
+        `import {style} from 'zyzz';export const platformStyle=style({opacity:0.456});`,
       )
-      const source = (width: number) =>
-        `import { style } from './Theme'; export const box = style({ color: 'ink', width: '${width}px', targets: { ios: { opacity: 0.123 }, android: { opacity: 0.456 } } });`
-      const theme = (color: string) =>
-        `import {Config} from 'zyzz'; export const {style} = Config.create({vars:{base:{color:{ink:{light:'${color}',dark:'#abcdef'}}},alternate:{color:{ink:{light:'#123abc',dark:'#456def'}}}},defaultVars:'base'});`
-      await Fs.writeFile(Path.join(root, 'Theme.ts'), theme('#112233'))
+      await Fs.writeFile(
+        Path.join(library, 'Opacity.native.ts'),
+        `import {style} from 'zyzz';export const platformStyle=style({opacity:0.789});`,
+      )
+      await Fs.writeFile(Path.join(library, 'Theme.ts'), theme('#112233'))
+      await Fs.writeFile(
+        Path.join(library, 'Style.ts'),
+        `import {style} from './Theme.js';export const nested=style({width:'19px'});`,
+      )
+      await Fs.writeFile(
+        Path.join(library, 'index.ts'),
+        `export {platformStyle,style} from './Theme.js';`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'Theme.ts'),
+        `export {platformStyle,style} from '@shared-theme';`,
+      )
       await Fs.writeFile(Path.join(root, 'Style.ts'), source(123))
+
+      const ds = Path.join(packages, '@fixture/ds')
+      for (const [name, content] of Object.entries(await Ds.read())) {
+        await Fs.mkdir(Path.dirname(Path.join(ds, name)), { recursive: true })
+        await Fs.writeFile(Path.join(ds, name), content)
+      }
+      await Fs.writeFile(
+        Path.join(ds, 'package.json'),
+        JSON.stringify({
+          name: '@fixture/ds',
+          exports: { './config': './platform/zyzz.config.ts' },
+          devDependencies: { zyzz: '0.0.21' },
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(root, 'DsStyles.ts'),
+        `import {style} from '@fixture/ds/config';export const surface=style({backgroundColor:'background.primary',padding:'24',borderRadius:'full',typography:'body.b2'});`,
+      )
+
+      const publisher = Path.join(directory, 'publisher')
+      await Fs.mkdir(Path.join(publisher, 'dist'), { recursive: true })
+      const published = Graph.compile({
+        modules: {
+          'index.ts': `import {style} from 'zyzz';export const card=style({width:'77px'});`,
+        },
+      })
+      const javascript = await Esbuild.transform(
+        published.modules['index.ts']!.code,
+        { loader: 'ts', format: 'esm' },
+      )
+      await Fs.writeFile(Path.join(publisher, 'dist/index.js'), javascript.code)
+      await Fs.writeFile(
+        Path.join(publisher, 'dist/index.js.zyzz.json'),
+        published.contracts['index.ts']!,
+      )
+      await Fs.writeFile(
+        Path.join(publisher, 'package.json'),
+        JSON.stringify({
+          name: '@fixture/packed',
+          version: '1.0.0',
+          type: 'module',
+          files: ['dist'],
+          exports: { './card': './dist/index.js' },
+        }),
+      )
+      const { stdout } = await Util.promisify(ChildProcess.execFile)(
+        'npm',
+        ['pack', '--ignore-scripts', '--json'],
+        { cwd: publisher },
+      )
+      const archive = (JSON.parse(stdout) as { filename: string }[])[0]!
+        .filename
+      const installed = Path.join(packages, '@fixture/packed')
+      await Fs.mkdir(installed, { recursive: true })
+      await Util.promisify(ChildProcess.execFile)('tar', [
+        '-xzf',
+        Path.join(publisher, archive),
+        '--strip-components=1',
+        '-C',
+        installed,
+      ])
 
       const socket = Net.createServer()
       socket.listen(0, '127.0.0.1')
@@ -177,6 +285,58 @@ describe('zyzz', () => {
       ])
       if (!ios.ok || !android.ok)
         throw new Error(`${ios.text}\n${android.text}`)
+      function execute(bundle: string) {
+        let values: readonly unknown[] = []
+        const context = Vm.createContext({
+          console: {
+            ...console,
+            log: (...args: readonly unknown[]) => {
+              values = args
+            },
+          },
+        })
+        Vm.runInContext('globalThis.global=globalThis', context)
+        Vm.runInContext(bundle, context)
+        return values
+      }
+      expect(execute(ios.text)).toMatchInlineSnapshot(`
+        [
+          {
+            "color": "#112233",
+            "width": 123,
+          },
+          {
+            "backgroundColor": "#f5f5f5ff",
+            "borderBottomLeftRadius": 999,
+            "borderBottomRightRadius": 999,
+            "borderTopLeftRadius": 999,
+            "borderTopRightRadius": 999,
+            "fontFamily": "Pilat",
+            "fontSize": 14,
+            "fontWeight": 500,
+            "letterSpacing": 0.14000000059604645,
+            "lineHeight": 20,
+            "paddingBottom": 24,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 24,
+          },
+          {
+            "width": 77,
+          },
+          {
+            "opacity": 0.123,
+          },
+          {
+            "width": 19,
+          },
+        ]
+      `)
+      expect(execute(android.text)[3]).toMatchInlineSnapshot(`
+        {
+          "opacity": 0.456,
+        }
+      `)
       expect(ios.text.includes('"width": 123')).toMatchInlineSnapshot(`true`)
       expect(ios.text.includes('"opacity": 0.123')).toMatchInlineSnapshot(
         `true`,
@@ -184,10 +344,57 @@ describe('zyzz', () => {
       expect(android.text.includes('"opacity": 0.456')).toMatchInlineSnapshot(
         `true`,
       )
+      expect(ios.text.includes('"paddingTop": 24')).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(ios.text.includes('"fontFamily": "Pilat"')).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(ios.text.includes('"width": 77')).toMatchInlineSnapshot(`true`)
+
+      const contract = Path.join(installed, 'dist/index.js.zyzz.json')
+      const changedContract = Graph.compile({
+        modules: {
+          'index.ts': `import {style} from 'zyzz';export const card=style({width:'88px'});`,
+        },
+      })
+      await Fs.writeFile(contract, changedContract.contracts['index.ts']!)
+      const repacked = await bundle('ios', (result) =>
+        result.text.includes('"width": 88'),
+      )
+      expect(repacked.ok).toMatchInlineSnapshot(`true`)
+      expect(execute(repacked.text)[2]).toMatchInlineSnapshot(`
+        {
+          "width": 88,
+        }
+      `)
+
+      const tokens = Path.join(ds, 'core/vars.ts')
+      const original = await Fs.readFile(tokens, 'utf8')
+      await Fs.writeFile(tokens, original.replace("'24': 24,", "'24': 26,"))
+      const updated = await bundle('ios', (result) =>
+        result.text.includes('"paddingTop": 26'),
+      )
+      expect(updated.ok).toMatchInlineSnapshot(`true`)
+      expect(updated.text.includes('"paddingTop": 26')).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(updated.text.includes('"paddingTop": 24')).toMatchInlineSnapshot(
+        `false`,
+      )
+
+      await Fs.writeFile(tokens, original)
+      const restored = await bundle('ios', (result) =>
+        result.text.includes('"paddingTop": 24'),
+      )
+      expect(restored.ok).toMatchInlineSnapshot(`true`)
+      expect(restored.text.includes('"paddingTop": 24')).toMatchInlineSnapshot(
+        `true`,
+      )
 
       expect(ios.text.includes('#112233')).toBe(true)
       expect(ios.text.includes('#456def')).toBe(true)
-      await Fs.writeFile(Path.join(root, 'Theme.ts'), theme('#332211'))
+      await Fs.writeFile(Path.join(library, 'Theme.ts'), theme('#332211'))
       const themed = await bundle('ios', (result) =>
         result.text.includes('"color": "#332211"'),
       )
@@ -229,10 +436,7 @@ describe('zyzz', () => {
 
       child.kill('SIGTERM')
       await new Promise<void>((resolve) => child!.once('exit', () => resolve()))
-      await Fs.writeFile(
-        Path.join(root, 'metro.config.ts'),
-        `import { getDefaultConfig } from 'expo/metro-config.js'; import { zyzz } from 'zyzz/metro'; export default zyzz(getDefaultConfig(import.meta.dirname), { units: { px: 2 } });`,
-      )
+      await Fs.writeFile(Path.join(root, 'metro.config.ts'), configuration(2))
       child = await start()
       const reconfigured = await bundle('ios')
       expect(reconfigured.ok).toMatchInlineSnapshot(`true`)
@@ -242,6 +446,57 @@ describe('zyzz', () => {
       expect(reconfigured.text.includes('"width": 456')).toMatchInlineSnapshot(
         `false`,
       )
+
+      child.kill('SIGTERM')
+      await new Promise<void>((resolve) => child!.once('exit', () => resolve()))
+      child = undefined
+      await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          expo,
+          'export',
+          '--platform',
+          'all',
+          '--no-minify',
+          '--no-bytecode',
+          '--max-workers',
+          '1',
+          '--output-dir',
+          'output',
+        ],
+        {
+          cwd: root,
+          env: {
+            ...process.env,
+            CI: '1',
+            EXPO_NO_TELEMETRY: '1',
+            EXPO_OFFLINE: '1',
+            NODE_ENV: 'production',
+          },
+          timeout: 60_000,
+        },
+      )
+      const files = await Fs.readdir(Path.join(root, 'output'), {
+        recursive: true,
+      })
+      for (const platform of ['ios', 'android']) {
+        const file = files.find(
+          (file) =>
+            file.includes(`${Path.sep}${platform}${Path.sep}`) &&
+            file.endsWith('.js'),
+        )!
+        const exported = await Fs.readFile(
+          Path.join(root, 'output', file),
+          'utf8',
+        )
+        expect(exported.includes('"width": 912')).toMatchInlineSnapshot(`true`)
+        expect(exported.includes('"paddingTop": 48')).toMatchInlineSnapshot(
+          `true`,
+        )
+        expect(
+          exported.includes('"fontFamily": "Pilat"'),
+        ).toMatchInlineSnapshot(`true`)
+      }
     } finally {
       if (child && child.exitCode === null && child.signalCode === null) {
         child.kill('SIGTERM')
@@ -249,7 +504,7 @@ describe('zyzz', () => {
           child!.once('exit', () => resolve()),
         )
       }
-      await Fs.rm(root, { force: true, recursive: true })
+      await Fs.rm(directory, { force: true, recursive: true })
     }
   }, 180_000)
 })

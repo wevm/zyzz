@@ -7,16 +7,21 @@ describe('zyzz', () => {
     const config = zyzz(
       {
         projectRoot: '/application',
+        resolver: { nodeModulesPaths: ['/packages'], custom: true },
         serializer: { custom: true },
         transformer: {
           babelTransformerPath: '/transformer',
           minifierPath: '/minifier',
         },
       },
-      { units: { px: 1 } },
+      { fonts: { 'Pilat, sans-serif': 'Pilat' }, units: { px: 1, rem: 16 } },
     )
 
     expectTypeOf(config.serializer.custom).toEqualTypeOf<true>()
+    expectTypeOf(config.resolver.custom).toEqualTypeOf<true>()
+    expectTypeOf(config.resolver.nodeModulesPaths).toEqualTypeOf<
+      readonly ['/packages']
+    >()
     expectTypeOf(config.transformer.minifierPath).toEqualTypeOf<'/minifier'>()
     expectTypeOf(
       config.transformer.babelTransformerPath,
@@ -24,5 +29,9 @@ describe('zyzz', () => {
 
     // @ts-expect-error Appearance is selected by the React provider.
     zyzz({}, { colorScheme: 'system' })
+    // @ts-expect-error Font mappings require native family names.
+    zyzz({}, { fonts: { Pilat: 1 } })
+    // @ts-expect-error Packed contracts are supplied by Metro resolution.
+    zyzz({}, { contracts: {} })
   })
 })

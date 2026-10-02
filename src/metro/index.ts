@@ -8,10 +8,12 @@ import * as Watch from './Watch.js'
 
 /** Minimum Metro configuration consumed by the adapter. */
 export type Config = {
-  /** Existing development middleware settings. */
-  readonly server?: object | undefined
   /** Application root used for the adapter cache. */
   readonly projectRoot?: string | undefined
+  /** Existing package, alias, and platform resolution settings. */
+  readonly resolver?: object | undefined
+  /** Existing development middleware settings. */
+  readonly server?: object | undefined
   /** Existing transformer configuration, including Expo's Babel transformer. */
   readonly transformer?:
     | {
@@ -29,7 +31,13 @@ export function zyzz<const config extends Config>(
   config: config,
   options: Omit<
     NativeOptions,
-    'platform' | 'target' | 'moduleId' | 'modules' | 'imports' | 'colorScheme'
+    | 'platform'
+    | 'target'
+    | 'moduleId'
+    | 'modules'
+    | 'imports'
+    | 'contracts'
+    | 'colorScheme'
   > = {},
 ): zyzz.ReturnType<config> {
   if (Object.hasOwn(options, 'colorScheme'))
@@ -62,8 +70,50 @@ export function zyzz<const config extends Config>(
       | ((middleware: Middleware, server: Watch.Server) => Middleware)
       | undefined)
   type Middleware = (...args: unknown[]) => unknown
+  type Context = {
+    readonly resolveRequest: Resolve
+  }
+  type Resolve = (
+    context: Context,
+    name: string,
+    platform: string | null,
+  ) => unknown
+  const resolve =
+    config.resolver &&
+    (Reflect.get(config.resolver, 'resolveRequest') as Resolve | undefined)
+
   return {
     ...config,
+    resolver: {
+      ...config.resolver,
+      resolveRequest(context: Context, name: string, platform: string | null) {
+        const next = resolve ?? context.resolveRequest
+        try {
+          return next(context, name, platform)
+        } catch (error) {
+          if (
+            (platform !== 'ios' && platform !== 'android') ||
+            !name.startsWith('.') ||
+            !name.endsWith('.js') ||
+            !(error instanceof Error && 'candidates' in error)
+          )
+            throw error
+
+          // NodeNext imports name emitted JavaScript; source packages retain TypeScript files.
+          const source = next(context, name.slice(0, -3), platform)
+          if (
+            source &&
+            typeof source === 'object' &&
+            'filePath' in source &&
+            typeof source.filePath === 'string' &&
+            /\.tsx?$/.test(source.filePath)
+          )
+            return source
+
+          throw error
+        }
+      },
+    },
     server: {
       ...config.server,
       enhanceMiddleware(middleware: Middleware, server: Watch.Server) {

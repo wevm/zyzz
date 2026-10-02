@@ -1,7 +1,9 @@
 /** Exercises packed Next.js applications through both production bundlers and real browser updates. @module */
 import * as ChildProcess from 'node:child_process'
+import * as Fs from 'node:fs/promises'
+import * as Path from 'node:path'
 import * as Util from 'node:util'
-import { describe, expect, test } from 'vite-plus/test'
+import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import * as Next from '../../test/fixtures/Next.js'
 
 describe('zyzz', () => {
@@ -81,9 +83,28 @@ describe('zyzz', () => {
     `)
   })
 
-  for (const cssOutput of ['atomic', 'grouped'] as const)
-    for (const bundler of ['webpack', 'turbopack'] as const)
-      test.concurrent(`builds and updates a packed Next.js ${bundler} ${cssOutput} application`, async (context) => {
-        await Next.verify({ bundler, cssOutput, expect: context.expect })
-      }, 300_000)
+  describe('packed applications', () => {
+    let directory: string
+    let fixture: string
+
+    beforeAll(async () => {
+      directory = await Fs.mkdtemp(Path.resolve('.fixture-next-dependencies-'))
+      fixture = await Next.create(directory)
+    }, 120_000)
+
+    afterAll(async () => {
+      await Fs.rm(directory, { force: true, recursive: true })
+    })
+
+    for (const cssOutput of ['atomic', 'grouped'] as const)
+      for (const bundler of ['webpack', 'turbopack'] as const)
+        test.concurrent(`builds and updates a packed Next.js ${bundler} ${cssOutput} application`, async (context) => {
+          await Next.verify({
+            bundler,
+            cssOutput,
+            expect: context.expect,
+            fixture,
+          })
+        }, 300_000)
+  })
 })

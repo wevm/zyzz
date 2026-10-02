@@ -15,6 +15,41 @@ import * as Watch from './Watch.js'
 
 const exec = Util.promisify(ChildProcess.execFile)
 
+/** Installs the packed package and framework dependencies into an isolated consumer. */
+export async function create(root: string) {
+  const app = await Library.create(root)
+  const pack = await exec(
+    'pnpm',
+    ['pack', '--json', '--pack-destination', root],
+    { timeout: 30_000 },
+  )
+  const tarball = JSON.parse(pack.stdout) as { filename: string }
+  await exec(
+    'npm',
+    [
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--package-lock=false',
+      tarball.filename,
+      'next@16.3.5',
+      '@next/mdx@16.3.5',
+      '@mdx-js/loader@3.1.1',
+      '@mdx-js/react@3.1.1',
+      '@types/mdx@2.0.14',
+      'react@19.2.4',
+      'react-dom@19.2.4',
+      'typescript@7.0.2',
+      '@types/react@19.2.18',
+      '@types/react-dom@19.2.7',
+    ],
+    { cwd: app, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 },
+  )
+
+  return app
+}
+
 /** Verifies production and development behavior; comparison runs also measure native CSS builds. */
 export async function verify(options: verify.Options) {
   const { bundler, cssOutput, expect } = options
@@ -29,35 +64,15 @@ export async function verify(options: verify.Options) {
     executablePath ? { executablePath } : {},
   )
   try {
-    const app = await Library.create(root)
-    const pack = await exec(
-      'pnpm',
-      ['pack', '--json', '--pack-destination', root],
-      { timeout: 30_000 },
-    )
-    const tarball = JSON.parse(pack.stdout) as { filename: string }
-    await exec(
-      'npm',
-      [
-        'install',
-        '--ignore-scripts',
-        '--no-audit',
-        '--no-fund',
-        '--package-lock=false',
-        tarball.filename,
-        'next@16.3.5',
-        '@next/mdx@16.3.5',
-        '@mdx-js/loader@3.1.1',
-        '@mdx-js/react@3.1.1',
-        '@types/mdx@2.0.14',
-        'react@19.2.4',
-        'react-dom@19.2.4',
-        'typescript@7.0.2',
-        '@types/react@19.2.18',
-        '@types/react-dom@19.2.7',
-      ],
-      { cwd: app, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 },
-    )
+    const app = options.fixture
+      ? Path.join(root, 'consumer')
+      : await create(root)
+    if (options.fixture)
+      await Fs.cp(options.fixture, app, {
+        mode: Fs.constants.COPYFILE_FICLONE,
+        recursive: true,
+        verbatimSymlinks: true,
+      })
 
     // A dependency symlink back to an ancestor, as a package linked from its
     // own repository, must not break root discovery. Atomic builds keep a plain
@@ -556,10 +571,11 @@ export async function verify(options: verify.Options) {
 
     const development = await start('dev')
     await page.goto(development.url)
-    await Fs.writeFile(
-      Path.join(app, 'app/content.mdx'),
-      files['app/content.mdx'].replace('>MDX<', '>Updated MDX<'),
-    )
+    await page.locator('button[data-ready=true]').waitFor()
+    await Watch.write({
+      path: Path.join(app, 'app/content.mdx'),
+      source: files['app/content.mdx'].replace('>MDX<', '>Updated MDX<'),
+    })
     await page.waitForFunction(
       () => document.querySelector('#mdx')?.textContent === 'Updated MDX',
       undefined,
@@ -612,13 +628,13 @@ export async function verify(options: verify.Options) {
         .evaluate((node) => getComputedStyle(node).opacity),
     ).toMatchInlineSnapshot('"0.5"')
     await page.setViewportSize({ height: 720, width: 1280 })
-    await Fs.writeFile(
-      Path.join(app, 'app/page.tsx'),
-      files['app/page.tsx'].replace(
+    await Watch.write({
+      path: Path.join(app, 'app/page.tsx'),
+      source: files['app/page.tsx'].replace(
         "padding:'md'",
         "padding:'md',backgroundColor:'red !custom'",
       ),
-    )
+    })
     await page.waitForFunction(
       () => {
         const element = document.querySelector('h1')
@@ -678,7 +694,10 @@ export async function verify(options: verify.Options) {
     ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
     const changedConfig = (color: string, mode = cssOutput) =>
       `import {Config,Vars} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Vars.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {style,vars}=Config.create({id:'app',cssOutput:'${mode}',vars:changed});`
-    await Fs.writeFile(Path.join(app, 'app/config.ts'), changedConfig('#c00'))
+    await Watch.write({
+      path: Path.join(app, 'app/config.ts'),
+      source: changedConfig('#c00'),
+    })
     await page
       .waitForFunction(
         () =>
@@ -1041,6 +1060,8 @@ export declare namespace verify {
     cssOutput: 'atomic' | 'grouped'
     /** Assertions bound to the calling test's context. */
     expect: ExpectStatic
+    /** Installed consumer copied into a separate application before each run. */
+    fixture?: string | undefined
   }
 }
 

@@ -76,7 +76,7 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
-import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
+import { beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Config, Style } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Dynamic, Props } from 'zyzz/runtime'
@@ -472,121 +472,6 @@ describe('compile', () => {
         expect(failures).toMatchInlineSnapshot(`[]`)
       },
       30_000,
-    )
-  })
-
-  describe('CSS conformance preserves consumer types for every accepted probe', () => {
-    let cases: readonly Conformance.Case[]
-    let directory: string
-
-    beforeAll(async () => {
-      cases = Conformance.cases()
-      directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
-    }, 30_000)
-
-    afterAll(async () => {
-      await Fs.rm(directory, { force: true, recursive: true })
-    })
-
-    test.each(Array.from({ length: 10 }, (_, index) => index))(
-      'partition %i',
-      async (partition) => {
-        const groups = new Map<string, string>()
-        // Separate programs bound checker work without reducing the property or value corpus.
-        const properties = Conformance.properties().filter(
-          (_, index) => index % 10 === partition,
-        )
-
-        const declarations = properties.map((property) => {
-          const values = [
-            ...cases
-              .filter((entry) => entry.property === property)
-              .map(({ value }) => value),
-            'var(--probe)',
-            'var(--probe,)',
-            'calc(1px + var(--probe))',
-          ].flatMap((value) => [value, `${value} !important`])
-
-          const checks: string[] = []
-
-          // Check scalars individually to avoid native compiler tuple-comparison limits.
-          for (const value of values) {
-            const key = JSON.stringify(value)
-            let group = groups.get(key)
-
-            if (!group) {
-              group = `values${groups.size}`
-              groups.set(key, group)
-            }
-
-            checks.push(`${group} satisfies Style.Properties['${property}'];`)
-          }
-
-          return `${checks.join('\n')}\nstyle({${JSON.stringify(property)}: [${values
-            .slice(0, 16)
-            .map((value) => JSON.stringify(value))
-            .join(',')}]});`
-        })
-
-        const rejections = Conformance.rejected
-          .filter((_, index) => index % 10 === partition)
-          .map(
-            ({ property, value }) =>
-              `// @ts-expect-error Invalid or deliberately unsupported scalar.\nstyle({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\nstyle({${property}: ${JSON.stringify(`${value} !important`)}});`,
-          )
-        const booleans = properties.map(
-          (property) =>
-            `style({${JSON.stringify(property)}: [' InHeRiT !important', ${JSON.stringify(String.raw`\69 nherit/**/ !important`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\nstyle({${JSON.stringify(property)}: true});`,
-        )
-        const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { style, type Style } from 'zyzz';\ndescribe('style', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
-
-        await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
-        await Fs.writeFile(
-          Path.join(directory, 'tsconfig.json'),
-          JSON.stringify({
-            exclude: [],
-            extends: '../tsconfig.json',
-            include: ['./consumer.test-d.ts'],
-          }),
-        )
-
-        const require = Module.createRequire(import.meta.url)
-
-        const { stderr, stdout } = await Util.promisify(ChildProcess.execFile)(
-          process.execPath,
-          [
-            '--max-old-space-size=6144',
-            Path.join(
-              Path.dirname(require.resolve('typescript/package.json')),
-              'bin/tsc',
-            ),
-            '--incremental',
-            '--project',
-            Path.join(directory, 'tsconfig.json'),
-            '--tsBuildInfoFile',
-            Path.join(directory, 'consumer.tsbuildinfo'),
-          ],
-          { cwd: root, maxBuffer: 1024 * 1024, timeout: 300_000 },
-        ).catch(async (error: unknown) => {
-          await Fs.mkdir(Path.join(root, 'test-results'), { recursive: true })
-          await Fs.writeFile(
-            Path.join(root, `test-results/css-consumer-${partition}.test-d.ts`),
-            source,
-          )
-
-          if (error && typeof error === 'object' && 'stdout' in error)
-            throw new Error(
-              String(error.stdout) ||
-                String('stderr' in error ? error.stderr : error),
-            )
-
-          throw error
-        })
-
-        expect(stderr).toMatchInlineSnapshot(`""`)
-        expect(stdout).toMatchInlineSnapshot(`""`)
-      },
-      310_000,
     )
   })
 

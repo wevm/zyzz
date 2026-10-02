@@ -57,16 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
-        include:
-          - shard: 9
-            types: '0|1|2|3|4'
-          - shard: 10
-            types: '5|6|7|8|9'
-          - shard: 11
-            next: atomic
-          - shard: 12
-            next: grouped
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -90,16 +81,9 @@ jobs:
         run: pnpm build
       - env:
           CI: true
-          ZYZZ_TEST_PROJECT: ${{ matrix.types && format('css-types-{0}', matrix.shard) || matrix.next && format('next-{0}', matrix.next) || 'integration' }}
         name: Run tests
         run: |
-          if [ -n '${{ matrix.types }}' ]; then
-            pnpm run test run src/compiler/Transform.test.ts --testNamePattern='CSS conformance preserves consumer types.*partition (${{ matrix.types }})$' --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
-          elif [ -n '${{ matrix.next }}' ]; then
-            pnpm run test run src/next/index.test.ts --testNamePattern='builds and updates a packed Next.js .* ${{ matrix.next }} application$' --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
-          else
-            pnpm run test run --shard=${{ matrix.shard }}/8 --testNamePattern='^(?!.*(CSS conformance preserves consumer types|builds and updates a packed Next[.]js))' --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
-          fi
+          pnpm run test run --shard=${{ matrix.shard }}/12 --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
         timeout-minutes: 3
       - name: Upload shard results
         if: ${{ !cancelled() }}
@@ -141,8 +125,6 @@ jobs:
           for shard in 1 2 3 4 5 6 7 8 9 10 11 12; do test -f "test-results/blob-$shard.json"; done
       - name: Merge test results and coverage
         if: ${{ !cancelled() }}
-        env:
-          ZYZZ_TEST_PROJECT: merge
         run: |
           mkdir -p test-results/blobs
           mv test-results/blob-*.json test-results/blobs/
@@ -193,12 +175,12 @@ jobs:
           name: css-browser-capabilities
           path: test-results/css-browser-capabilities.json
           retention-days: 30
-      - if: ${{ failure() && hashFiles('test-results/css-consumer.test-d.ts') != '' }}
+      - if: ${{ failure() && hashFiles('test-results/css-consumer-*.test-d.ts') != '' }}
         name: Upload failing CSS consumer
         uses: actions/upload-artifact@v4
         with:
           name: css-consumer
-          path: test-results/css-consumer.test-d.ts
+          path: test-results/css-consumer-*.test-d.ts
           retention-days: 30
       - if: ${{ !cancelled() && hashFiles('test-results/at-rule-browser-capabilities.json') != '' }}
         name: Upload at-rule browser capabilities

@@ -5,7 +5,7 @@ import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
 
 describe('at-rule acceptance', () => {
-  test('reuses executed evidence across project reports without rerunning commands', () => {
+  test('reuses executed shard evidence without rerunning commands', () => {
     const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const fixture = Path.join(root, 'Evidence.test.ts')
@@ -23,42 +23,34 @@ describe('evidence', () => {
 })
 `,
       )
+      const unrelated = Path.join(root, 'Unrelated.test.ts')
+      Fs.writeFileSync(
+        unrelated,
+        `/** Exercises a separate real shard input. @module */
+import { describe, expect, test } from 'vite-plus/test'
+describe('unrelated', () => {
+  test('passes', () => expect(1).toMatchInlineSnapshot('1'))
+})
+`,
+      )
       const blobs = Path.join(root, 'blobs')
       Fs.mkdirSync(blobs)
-      const skipped = ChildProcess.spawnSync(
-        Path.resolve('node_modules/.bin/vp'),
-        [
-          'test',
-          'run',
-          fixture,
-          '--testNamePattern=unrelated',
-          '--reporter=blob',
-          `--outputFile=${Path.join(blobs, 'skipped.json')}`,
-        ],
-        {
-          encoding: 'utf8',
-          env: { ...process.env, ZYZZ_TEST_PROJECT: 'css-types-9' },
-          timeout: 20_000,
-        },
-      )
-      expect(skipped.status).toMatchInlineSnapshot('0')
-
-      const execution = ChildProcess.spawnSync(
-        Path.resolve('node_modules/.bin/vp'),
-        [
-          'test',
-          'run',
-          fixture,
-          '--reporter=blob',
-          `--outputFile=${Path.join(blobs, 'executed.json')}`,
-        ],
-        {
-          encoding: 'utf8',
-          env: { ...process.env, ZYZZ_TEST_PROJECT: 'integration' },
-          timeout: 20_000,
-        },
-      )
-      expect(execution.status).toMatchInlineSnapshot('0')
+      for (const shard of [1, 2]) {
+        const execution = ChildProcess.spawnSync(
+          Path.resolve('node_modules/.bin/vp'),
+          [
+            'test',
+            'run',
+            fixture,
+            unrelated,
+            `--shard=${shard}/2`,
+            '--reporter=blob',
+            `--outputFile=${Path.join(blobs, `${shard}.json`)}`,
+          ],
+          { encoding: 'utf8', timeout: 20_000 },
+        )
+        expect(execution.status).toMatchInlineSnapshot('0')
+      }
 
       const report = Path.join(root, 'results.json')
       const merge = ChildProcess.spawnSync(
@@ -72,7 +64,6 @@ describe('evidence', () => {
         ],
         {
           encoding: 'utf8',
-          env: { ...process.env, ZYZZ_TEST_PROJECT: 'merge' },
           timeout: 20_000,
         },
       )

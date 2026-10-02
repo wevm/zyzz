@@ -473,7 +473,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
     let source = `import { Config } from 'zyzz'
 import { tokens } from 'zyzz/default'
 const { style } = Config.create({ vars: tokens })
-const pane = style({ alignItems: 'center', fontFamily: 'sans', typography: 'copy.18' })
+const pane = style({ alignItems: 'center', color: 'foreground', fontFamily: 'sans', typography: 'copy.18' })
 const dynamic = style((values: { width: \`\${number}px\` }) => ({
   width: \`\${values.width} !custom\`,
   alignItems: 'center',
@@ -703,6 +703,28 @@ dynamic({ width: '12px' })
           "serif",
         ]
       `)
+      expect(
+        complete('color', 'foreground', '')?.filter(
+          (name) => !name.includes('.'),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "black",
+          "foreground",
+          "white",
+        ]
+      `)
+      expect(diagnose("fontFamily: 'sans'", "fontFamily: 'comic'"))
+        .toMatchInlineSnapshot(`
+          [
+            {
+              "code": 2322,
+              "message": "Type '"comic"' is not assignable to type '"comic" & Expected<"mono" | "sans" | "serif" | \`\${string} !custom\`>'.
+            Type 'string' is not assignable to type 'Expected<"mono" | "sans" | "serif" | \`\${string} !custom\`>'.",
+              "span": "fontFamily",
+            },
+          ]
+        `)
       expect(
         diagnose("alignItems: 'center'", "alignItems: 'invalid-alignment'"),
       ).toMatchInlineSnapshot(`

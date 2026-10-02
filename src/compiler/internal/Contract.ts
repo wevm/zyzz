@@ -523,9 +523,11 @@ export function read(
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
-      ? entry.variableConfig === true
-        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
-        : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
+      ? entry.nativeProvider === true
+        ? `import('zyzz/react-native').defineConfig.ReturnType<${Configurations.type(entry.variableConfig === true ? variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined) : options)}>`
+        : entry.variableConfig === true
+          ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
+          : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
     const hidden = [
@@ -544,6 +546,7 @@ export function read(
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.nativeProvider === true ? { nativeProvider: true } : {}),
         ...(entry.variableSet === true
           ? {
               variableSet: true,
@@ -733,6 +736,7 @@ export function write(
 
     return {
       ...(link.call.variableSet ? { variableSet: true } : {}),
+      ...(link.call.nativeProvider ? { nativeProvider: true } : {}),
       ...(link.call.directVariables ? { directVariables: true } : {}),
       ...(link.call.variableConfig
         ? { variableConfig: true, variableMappings: link.call.variableMappings }

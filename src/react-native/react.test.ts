@@ -16,6 +16,136 @@ const native = {
   units: { px: 1, rem: 16 },
 } as const
 
+describe('defineConfig', () => {
+  test.each([false, true])(
+    'selects returned providers and authoring helpers with packed=%s',
+    async (packed) => {
+      const modules = {
+        'config.ts': `import {Vars} from 'zyzz';import {defineConfig as create} from 'zyzz/react-native';
+        const base=Vars.define({color:{ink:{light:'#123456',dark:'#abcdef'}},spacing:{gap:'4px'}});
+        const alternate=Vars.extend(base,{spacing:{gap:'8px'}});
+        export const config=create({defaultVars:'alternate',vars:{base,alternate}});
+        export const {Provider,style,vars}=config;`,
+        'index.ts': `export {config,Provider,style,vars} from './config.js';`,
+      }
+      const publisher = packed ? Graph.compile({ modules, native }) : undefined
+      const consumer = Graph.compile({
+        ...(publisher ? { contracts: publisher.contracts } : {}),
+        imports: {
+          'app.ts': {
+            './index.js': 'index.ts',
+            react: null,
+            'react-dom/client': null,
+            'zyzz/react-native': null,
+          },
+          'config.ts': { zyzz: null, 'zyzz/react-native': null },
+          'index.ts': { './config.js': 'config.ts' },
+        },
+        modules: {
+          ...(!packed ? modules : {}),
+          'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+          import {useStyles,useVars} from 'zyzz/react-native';import {config,Provider,style,vars} from './index.js';
+          const {Provider:OtherProvider}=config;const label=style({color:'ink',paddingTop:'gap'});
+          function Value(props){const values=useVars(vars);const member=useVars(config.vars,values=>values.spacing.gap);const selected=useStyles().props(label());return React.createElement('pre',{id:props.id},JSON.stringify({ink:values.color.ink,gap:values.spacing.gap,member,style:selected.style}))}
+          function App(){const [name,setName]=React.useState(undefined);const [scheme,setScheme]=React.useState('light');return React.createElement(Provider,{colorScheme:scheme,vars:name},
+            React.createElement('button',{id:'vars',onClick:()=>setName('base')},'vars'),
+            React.createElement('button',{id:'scheme',onClick:()=>setScheme('dark')},'scheme'),
+            React.createElement(Value,{id:'values'}),
+            React.createElement(OtherProvider,{colorScheme:'dark',vars:'alternate'},React.createElement(Value,{id:'nested'})))}
+          createRoot(document.getElementById('app')).render(React.createElement(App));
+          createRoot(document.getElementById('second')).render(React.createElement(config.Provider,{colorScheme:'light',vars:'base'},React.createElement(Value,{id:'independent'})));
+          createRoot(document.getElementById('invalid'),{onUncaughtError:error=>{document.getElementById('invalid').textContent=error.message}}).render(React.createElement(Provider,{colorScheme:'light',vars:'missing'}));`,
+        },
+        native,
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          ...Object.fromEntries(
+            Object.entries(publisher?.modules ?? {}).map((entry) => [
+              entry[0],
+              entry[1].code,
+            ]),
+          ),
+          ...Object.fromEntries(
+            Object.entries(consumer.modules).map((entry) => [
+              entry[0],
+              entry[1].code,
+            ]),
+          ),
+        },
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          '<div id="app"></div><div id="second"></div><div id="invalid"></div>',
+        )
+        await page.addScriptTag({ content: code })
+        await expect
+          .poll(() => page.locator('#values').textContent())
+          .toBeTruthy()
+        expect(
+          JSON.parse((await page.locator('#values').textContent())!),
+        ).toEqual({
+          gap: 8,
+          ink: '#123456',
+          member: 8,
+          style: { color: '#123456', paddingTop: 8 },
+        })
+        await expect
+          .poll(() => page.locator('#invalid').textContent())
+          .toBe('Unknown native vars: missing.')
+
+        await page.locator('#vars').click()
+        await expect
+          .poll(() => page.locator('#values').textContent())
+          .toContain('"gap":4')
+        await page.locator('#scheme').click()
+        await expect
+          .poll(() => page.locator('#values').textContent())
+          .toContain('#abcdef')
+        expect(
+          JSON.parse((await page.locator('#values').textContent())!),
+        ).toEqual({
+          gap: 4,
+          ink: '#abcdef',
+          member: 4,
+          style: { color: '#abcdef', paddingTop: 4 },
+        })
+        expect(
+          JSON.parse((await page.locator('#nested').textContent())!),
+        ).toEqual({
+          gap: 8,
+          ink: '#abcdef',
+          member: 8,
+          style: { color: '#abcdef', paddingTop: 8 },
+        })
+        expect(
+          JSON.parse((await page.locator('#independent').textContent())!),
+        ).toEqual({
+          gap: 4,
+          ink: '#123456',
+          member: 4,
+          style: { color: '#123456', paddingTop: 4 },
+        })
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
+  test('requires native compilation for native configuration authoring', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'config.ts': `import {defineConfig} from 'zyzz/react-native';export const {Provider}=defineConfig()`,
+        },
+      }),
+    ).toThrow('Native defineConfig requires a native compilation target.')
+  })
+})
+
 describe('useVars', () => {
   test('resolves namespace imports, aliased hooks, config members, and standalone definitions', async () => {
     const compiled = Graph.compile({
@@ -25,8 +155,9 @@ describe('useVars', () => {
           import * as React from 'react'
           import {createRoot} from 'react-dom/client'
           import {Config, Vars} from 'zyzz'
-          import * as Adapter from 'zyzz/react-native/react'
-          import {useVars as read} from 'zyzz/react-native/react'
+          import * as Adapter from 'zyzz/react-native'
+          import {useVars as read} from 'zyzz/react-native'
+          import {Provider} from 'zyzz/react-native/react'
 
           const config = Config.create({defaultVars:'base',vars:{base:{spacing:{gap:'4px'}},alternate:{spacing:{gap:'8px'}}}})
           const standalone = Vars.define({spacing:{gap:'2px'}})
@@ -39,7 +170,7 @@ describe('useVars', () => {
             return React.createElement('button', {id:'values', onClick:() => setProperty('double')}, JSON.stringify({gap:values.spacing.gap,fixed:fixed.spacing.gap,selected}))
           }
 
-          createRoot(document.getElementById('app')).render(React.createElement(Adapter.Provider,{colorScheme:'light',vars:'alternate'},React.createElement(Sample)))
+          createRoot(document.getElementById('app')).render(React.createElement(Provider,{colorScheme:'light',vars:'alternate'},React.createElement(Sample)))
         `,
       },
     })

@@ -1,8 +1,56 @@
 /** Checks native variable inference and Provider selection props. @module */
 import { Config, Vars } from 'zyzz'
-import { Provider, useVars } from 'zyzz/react-native/react'
+import { defineConfig, useVars } from 'zyzz/react-native'
+import { Provider } from 'zyzz/react-native/react'
+import type * as React from 'react'
 import type { StyleSheet } from 'zyzz/react-native'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
+
+describe('defineConfig', () => {
+  test('returns a Provider with inferred catalog names and existing authoring helpers', () => {
+    const { Provider, style, vars } = defineConfig({
+      defaultVars: 'blue',
+      vars: {
+        blue: { color: { ink: '#123456' } },
+        green: { color: { ink: '#abcdef' } },
+      },
+    })
+    expectTypeOf<React.ComponentProps<typeof Provider>['vars']>().toEqualTypeOf<
+      'blue' | 'green' | undefined
+    >()
+    Provider({ colorScheme: 'light' })
+    Provider({ colorScheme: 'dark', vars: 'green' })
+    // @ts-expect-error Provider names belong to its configuration.
+    Provider({ colorScheme: 'light', vars: 'missing' })
+    // @ts-expect-error The scheme must be resolved.
+    Provider({ colorScheme: 'system' })
+    style({ color: 'ink' })
+    // @ts-expect-error Native configuration retains the shared style contract.
+    style({ color: 'missing' })
+    expectTypeOf(useVars(vars).color.ink).toEqualTypeOf<string>()
+  })
+
+  test('preserves unnamed and token-free configuration validation', () => {
+    const { Provider } = defineConfig({ vars: { spacing: { gap: '8px' } } })
+    expectTypeOf<
+      React.ComponentProps<typeof Provider>['vars']
+    >().toEqualTypeOf<undefined>()
+    Provider({ colorScheme: 'light' })
+    // @ts-expect-error An unnamed configuration has no selectable names.
+    Provider({ colorScheme: 'light', vars: 'base' })
+    defineConfig().Provider({ colorScheme: 'light' })
+    // @ts-expect-error Native configuration validates defaults like shared configuration.
+    defineConfig({
+      defaultVars: 'missing',
+      vars: { base: { spacing: { gap: '8px' } } },
+    })
+    // @ts-expect-error Configuration options are validated.
+    defineConfig({ unknown: true })
+    const standalone = Vars.define({ spacing: { gap: '4px' } })
+    const { vars } = defineConfig({ vars: standalone })
+    expectTypeOf(useVars(vars).spacing.gap).toEqualTypeOf<number>()
+  })
+})
 
 describe('Provider', () => {
   test('accepts vars and resolved schemes', () => {

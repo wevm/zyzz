@@ -10,8 +10,8 @@ import {
   View,
   useColorScheme,
 } from 'react-native'
-import { Provider, useVars } from 'zyzz/react-native/react'
-import { style, variants, vars } from './Theme.js'
+import { useVars } from 'zyzz/react-native'
+import { Provider, style, variants, vars } from './Theme.js'
 
 /** Renders the native example with theme and appearance controls. */
 export default function App() {

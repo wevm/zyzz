@@ -1,4 +1,5 @@
 /** React subscriptions for compiled native styles and variable values. @module */
+import * as Config from '../Config.js'
 import * as NativeContext from '../runtime/NativeContext.js'
 import * as NativeVars from '../runtime/NativeVars.js'
 import * as React from 'react'
@@ -10,6 +11,55 @@ const context = React.createContext<ReturnType<typeof create> | undefined>(
 const unbound = {
   getSnapshot: () => undefined,
   subscribe: () => () => {},
+}
+
+/** Creates native authoring helpers and a Provider typed to the configured variables. */
+export function defineConfig<const options extends Config.create.Options = {}>(
+  options: options & Parameters<typeof Config.create<options>>[0] = {} as never,
+): defineConfig.ReturnType<options> {
+  const config = Config.create<options>(options)
+  const defaultVars = (options as Config.VariableOptions).defaultVars
+  const names =
+    defaultVars === undefined
+      ? undefined
+      : new Set(Object.keys((options as Config.VariableOptions).vars))
+
+  function BoundProvider(props: defineConfig.ProviderProps<options>) {
+    if (props.vars !== undefined && !names?.has(props.vars))
+      throw new Error(`Unknown native vars: ${props.vars}.`)
+
+    return React.createElement(Provider, {
+      ...props,
+      vars: props.vars ?? defaultVars,
+    })
+  }
+
+  return Object.freeze({
+    ...config,
+    Provider: BoundProvider,
+  }) as defineConfig.ReturnType<options>
+}
+
+/** Native configuration helpers and inferred Provider props. */
+export declare namespace defineConfig {
+  /** Resolved scheme and variable names from the owning configuration. */
+  type ProviderProps<options extends Config.create.Options> = Omit<
+    Provider.Props,
+    'vars'
+  > & {
+    /** Selected variables. Omission uses the owning configuration's default. */
+    readonly vars?:
+      | (options extends { defaultVars: string; vars: infer catalog }
+          ? Extract<keyof catalog, string>
+          : never)
+      | undefined
+  }
+  /** Existing authoring helpers plus a configuration-scoped Provider. */
+  type ReturnType<options extends Config.create.Options = {}> =
+    Config.create.ReturnType<options> & {
+      /** Provides this configuration's typed selection to native consumers. */
+      readonly Provider: React.FunctionComponent<ProviderProps<options>>
+    }
 }
 
 /** Supplies a variable name and resolved color scheme to this React subtree. */

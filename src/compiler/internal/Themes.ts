@@ -32,6 +32,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Whether native defineConfig retains a typed React Provider. */
+  readonly nativeProvider?: boolean | undefined
   readonly variableSet?: boolean | undefined
   readonly directVariables?: boolean | undefined
   readonly variableConfig?: boolean | undefined
@@ -158,6 +160,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const variableImports = new Set<number>()
   const configImports = new Set<number>()
   const factoryImports = new Map<number, 'create' | 'define' | 'extend'>()
+  const nativeFactories = new Set<string>()
   const configs = new Map<string, Link>()
   const configBindings = new Map<number, Link>()
   const factoryReferences = new Set<number>()
@@ -180,12 +183,28 @@ export function collect(program: Ast.Program, options: collect.Options) {
   for (const node of program.body) {
     if (
       node.type !== 'ImportDeclaration' ||
-      node.source.value !== 'zyzz' ||
+      !['zyzz', 'zyzz/react-native', 'zyzz/react-native/react'].includes(
+        node.source.value,
+      ) ||
       node.importKind === 'type'
     )
       continue
 
-    for (const specifier of node.specifiers)
+    for (const specifier of node.specifiers) {
+      if (node.source.value !== 'zyzz') {
+        if (
+          specifier.type === 'ImportSpecifier' &&
+          specifier.importKind !== 'type' &&
+          (specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value) === 'defineConfig'
+        ) {
+          factoryImports.set(specifier.start, 'create')
+          nativeFactories.add(specifier.local.name)
+        }
+        continue
+      }
+
       if (
         specifier.type === 'ImportSpecifier' &&
         specifier.importKind !== 'type' &&
@@ -222,6 +241,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           factoryImports.set(specifier.start, 'define')
         else factoryImports.set(specifier.start, 'extend')
       }
+    }
   }
 
   if (
@@ -700,11 +720,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
 
       if (config) {
+        const nativeProvider =
+          member.type === 'Identifier' && nativeFactories.has(member.name)
+        if (nativeProvider && !options.native)
+          fail(
+            'Native defineConfig requires a native compilation target.',
+            expression,
+          )
+
         try {
           const link = Configurations.collect({
             data,
             expression,
             name,
+            nativeProvider,
             resolve: (node) => {
               const link = resolve(node)
 
@@ -731,6 +760,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
           themes[link.call.name] = link.definition
 
           for (const { key, id } of bindings) {
+            if (key === 'Provider' && link.call.nativeProvider) continue
+
             if (
               (key === 'style' || key === 'variants') &&
               !link.call.selection &&
@@ -1060,6 +1091,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
       })
 
       for (const { key, id } of bindings) {
+        if (
+          key === 'Provider' &&
+          link.call.nativeProvider &&
+          !link.call.initialization &&
+          !link.call.root &&
+          !link.call.selection
+        )
+          continue
+
         if (
           (key === 'style' || key === 'variants') &&
           !link.call.selection &&
@@ -1528,6 +1568,16 @@ export function collect(program: Ast.Program, options: collect.Options) {
         target = member
 
         if (
+          path.length === 1 &&
+          path[0] === 'Provider' &&
+          config.call.nativeProvider &&
+          !config.call.initialization &&
+          !config.call.root &&
+          !config.call.selection
+        )
+          return true
+
+        if (
           config.call.variableConfig &&
           path.length === 1 &&
           path[0] === 'vars' &&
@@ -1719,7 +1769,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
     const binding = name === undefined ? undefined : lookup(name)
     if (
       binding?.type !== 'Import' ||
-      binding.importNode.source.value !== 'zyzz/react-native/react' ||
+      !['zyzz/react-native', 'zyzz/react-native/react'].includes(
+        binding.importNode.source.value,
+      ) ||
       binding.importNode.importKind === 'type'
     )
       return false

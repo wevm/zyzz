@@ -1,18 +1,43 @@
 # React integration
 
-Select compiled native styles and readonly variable values through `Provider`. Import the React adapter from `zyzz/react-native/react` and compile application modules with `zyzz/metro`.
+Select compiled native styles and readonly variable values through the `Provider` returned by `defineConfig`. Import native authoring and hooks from `zyzz/react-native` and compile application modules with `zyzz/metro`.
 
-| API                        | Purpose                                                         |
-| -------------------------- | --------------------------------------------------------------- |
-| `Provider`                 | Select a variable name and resolved color scheme for a subtree. |
-| `useStyles()`              | Resolve compiled bindings for explicit style consumers.         |
-| `useVars(vars, selector?)` | Read native values from the nearest Provider.                   |
+| API                        | Purpose                                                          |
+| -------------------------- | ---------------------------------------------------------------- |
+| `defineConfig(options)`    | Return existing authoring helpers and a typed `Provider`.        |
+| `Provider`                 | Select configured variables and a resolved scheme for a subtree. |
+| `useStyles()`              | Resolve compiled bindings for explicit style consumers.          |
+| `useVars(vars, selector?)` | Read native values from the nearest Provider.                    |
 
-Connect React Native appearance once above the application:
+Export the native configuration's helpers:
+
+```ts
+import { defineConfig } from 'zyzz/react-native'
+
+export const { Provider, style, variants, vars } = defineConfig({
+  defaultVars: 'base',
+  vars: {
+    base: {
+      color: {
+        background: { primary: { light: '#fff', dark: '#111' } },
+        ink: { light: '#111', dark: '#eee' },
+      },
+    },
+    alternate: {
+      color: {
+        background: { primary: { light: '#fff7f7', dark: '#311' } },
+        ink: { light: '#900', dark: '#fcc' },
+      },
+    },
+  },
+})
+```
+
+Connect React Native appearance above the application:
 
 ```tsx
 import { useColorScheme } from 'react-native'
-import { Provider } from 'zyzz/react-native/react'
+import { Provider } from './zyzz.config.js'
 
 export function Root() {
   const system = useColorScheme()
@@ -24,9 +49,19 @@ export function Root() {
 }
 ```
 
+## defineConfig
+
+The native `defineConfig` accepts the same [configuration options](../core/Config/create.md) as shared `defineConfig` from `zyzz`. It returns the same `style`, `variants`, and `vars` helpers, plus a `Provider` whose variable names are inferred from the configuration. Define configurations at module scope.
+
+Native configuration modules require a native compilation target, including when publishing packed packages. `zyzz/metro` supplies this target and enables Provider selection. Explicit graph builds supply `Graph.compile({ native: { contextual: true, colorScheme: 'light', platform: 'ios' }, modules })`. Shared configuration from `zyzz` remains independent of React and usable across targets.
+
 ## Provider
 
 `Provider` accepts `children`, a resolved `colorScheme`, and an optional `vars` name. Nested providers and separate React roots have independent selections. Application state supplies scheme and variable overrides. React Native's `useColorScheme` owns the device subscription.
+
+### children
+
+Type: `React.ReactNode`. Optional. Descendants consume the nearest Provider's selection.
 
 ### colorScheme
 
@@ -34,22 +69,22 @@ Type: `'dark' | 'light'`. Required. Resolve an absent device preference to an ap
 
 ### vars
 
-Type: `string | undefined`. Omission uses each configuration's `defaultVars`. A single unnamed definition keeps its fixed values inside a named Provider. An unknown name in a named catalog fails when its styles or variables are read.
+Type: the configuration's catalog keys, or `undefined`. The example configuration accepts `'base' | 'alternate'`. Omission uses that configuration's `defaultVars`. A configuration with one unnamed definition accepts omission only. A single unnamed definition keeps its fixed values inside another config's named Provider.
 
 ```tsx
-<Provider colorScheme="dark" vars="blue">
+<Provider colorScheme="dark" vars="alternate">
   <App />
 </Provider>
 ```
 
-The former `set` prop was renamed to `vars`. Passing `set`, an unresolved scheme, or an empty variable name throws.
+Unknown names fail in TypeScript and throw when the config-returned Provider mounts, even without a style or variable consumer. The former `set` prop was renamed to `vars`. Passing `set` or an unresolved scheme also throws.
 
 ## useVars
 
 `useVars(vars)` returns a readonly tree of native values selected by the nearest Provider. The argument is the `vars` helper from `defineConfig`, or a standalone `Vars.define` definition. Catalog names and color scheme pairs resolve through the same Provider selection as compiled styles.
 
 ```tsx
-import { useVars } from 'zyzz/react-native/react'
+import { useVars } from 'zyzz/react-native'
 import { vars } from './zyzz.config.js'
 
 export function useSheetOptions() {
@@ -72,7 +107,7 @@ Type: `(values) => selected`. Optional. The result retains its inferred type. Wi
 
 ```tsx
 const values = useVars(vars)
-const typography = useVars(vars, (values) => values.typography.body)
+const background = useVars(vars, (values) => values.color.background)
 ```
 
 Selected results use `Object.is` equality. Equal compiled branches retain their identity across profiles, so selecting a branch can skip unchanged subscription updates. A selector that allocates a new object produces a different result on each selection change. Parent, local state, and other hook updates can still render the component.
@@ -83,7 +118,7 @@ Keep application code unchanged at the style boundary:
 
 ```tsx
 import { Text } from 'react-native'
-import { defineConfig } from 'zyzz'
+import { defineConfig } from 'zyzz/react-native'
 
 const { style } = defineConfig({
   vars: {
@@ -115,4 +150,4 @@ const current = useStyles()
 const selected = current.style(styles.label().style)
 ```
 
-The React adapter is a separate optional entrypoint requiring React 19. The pure `Host`, `StyleSheet`, and `Variants` APIs remain available from `zyzz/react-native` without importing React or React Native.
+`zyzz/react-native` requires React 19. It does not import React Native or subscribe to device state. The existing `zyzz/react-native/react` entrypoint remains available for `useStyles`, `useVars`, and the standalone `Provider`. That Provider accepts a generic string name and uses each consumed configuration's default when `vars` is omitted.

@@ -4,6 +4,8 @@
 
 Native compilation also rewrites linked `useVars(vars, selector?)` arguments into readonly native profiles using the same font and unit mappings. The [React adapter](../react-native/react.md) selects those profiles through the nearest Provider.
 
+`defineConfig` from `zyzz/react-native` retains an ordinary React `Provider` export alongside the linked authoring helpers. Configuration modules require a native target. Packed publishers supply the native context with `contextual: true` to `Graph.compile` for Provider selection, and consumers retain the Provider through normal package imports.
+
 ```ts
 import { Native } from 'zyzz/compiler'
 

@@ -33,14 +33,13 @@ Keep existing resolver and transformer customizations inside the configuration p
 
 ### Connect Appearance
 
-Place `Provider` above the components that consume compiled styles. React Native's [`useColorScheme`](https://reactnative.dev/docs/usecolorscheme) subscribes to device appearance changes. Resolve an absent device preference to `light`.
+Return `Provider` from native `defineConfig` and place it above the components that consume compiled styles. React Native's [`useColorScheme`](https://reactnative.dev/docs/usecolorscheme) subscribes to device appearance changes. Resolve an absent device preference to `light`.
 
 ```tsx title="App.tsx"
 import { Text, useColorScheme } from 'react-native'
-import { defineConfig } from 'zyzz'
-import { Provider } from 'zyzz/react-native/react'
+import { defineConfig } from 'zyzz/react-native'
 
-const { style } = defineConfig({
+const { Provider, style } = defineConfig({
   vars: {
     color: { ink: { dark: '#eeeeee', light: '#111111' } },
   },

@@ -252,10 +252,28 @@ export function collect(options: collect.Options): Themes.Link {
     ...(input.layers ? { layers: input.layers } : {}),
     ...(input.storageKey ? { storageKey: input.storageKey } : {}),
   }
+  const authoredType = type(
+    variableMode
+      ? {
+          ...normalized,
+          theme: undefined,
+          themes: undefined,
+          defaultTheme: undefined,
+          vars: 'themes' in normalized ? normalized.themes : normalized.theme,
+          ...('themes' in normalized
+            ? { defaultVars: normalized.defaultTheme }
+            : {}),
+          ...(authored.mappings !== undefined
+            ? { mappings: VariableSets.mappings(authored.mappings) }
+            : {}),
+        }
+      : normalized,
+  )
 
   return {
     binding: options.name,
     call: {
+      ...(options.nativeProvider ? { nativeProvider: true } : {}),
       ...(variableMode
         ? { variableConfig: true, variableMappings: authored.mappings }
         : {}),
@@ -269,9 +287,11 @@ export function collect(options: collect.Options): Themes.Link {
       options: normalized,
       start: options.expression.start,
       tokenType: selected?.call.tokenType ?? '{}',
-      type: variableMode
-        ? `import('zyzz').Config.VariableConfig<${type({ ...normalized, theme: undefined, themes: undefined, defaultTheme: undefined, vars: 'themes' in normalized ? normalized.themes : normalized.theme, ...('themes' in normalized ? { defaultVars: normalized.defaultTheme } : {}), ...(authored.mappings !== undefined ? { mappings: VariableSets.mappings(authored.mappings) } : {}) })}>`
-        : `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
+      type: options.nativeProvider
+        ? `import('zyzz/react-native').defineConfig.ReturnType<${authoredType}>`
+        : variableMode
+          ? `import('zyzz').Config.VariableConfig<${authoredType}>`
+          : `import('zyzz').Config.create.ReturnType<${authoredType}>`,
     },
     definition,
     kind: 'config',
@@ -289,6 +309,8 @@ export declare namespace collect {
     readonly expression: Ast.CallExpression
     /** Stable module/binding identity. */
     readonly name: string
+    /** Native factory supplies an ordinary React Provider export. */
+    readonly nativeProvider?: boolean | undefined
     /** Looks up preceding immutable theme definitions. */
     readonly resolve: (node: Ast.Node) => Themes.Link | undefined
   }

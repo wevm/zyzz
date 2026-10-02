@@ -88,12 +88,7 @@ export function prepare(
   ])
   const fragments: Style.NamedStyle[] = []
   const rules: PreparedRule[] = []
-  let count = 1
-  for (const choices of Object.values(recipe.axes)) count *= choices.length + 1
-  if (count > 256)
-    throw new Error(
-      'Native recipes support at most 256 selections, including null choices.',
-    )
+
   for (const rule of recipe.rules) {
     const steps: PreparedStep[] = []
     function fragment(style: Style.NamedStyle) {

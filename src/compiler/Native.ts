@@ -270,6 +270,11 @@ export function compile(options: compile.Options): compile.ReturnType {
     compiled?: Variants.Definition,
     bindings?: ReturnType<typeof NativeBindings.prepare>,
   ): string {
+    const program =
+      Object.keys(recipe.axes).length > 0 ||
+      call?.slots ||
+      call?.recipe?.payloads?.length
+
     if (contextOptions.contextual) {
       const vars = call?.nativeContext?.vars ?? contextOptions.vars
       const media = (() => {
@@ -313,7 +318,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         })
         return `${helper}Context.responsive(${JSON.stringify(media.queries)},{${profiles.join(',')}})`
       }
-      if (!call?.slots && !call?.recipe?.payloads?.length)
+      if (!program)
         compiled ??= Variants.compile({
           recipe,
           fonts: contextOptions.fonts,
@@ -323,7 +328,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         })
       else {
         try {
-          bindings = NativeBindings.prepare(recipe, call!, {
+          bindings = NativeBindings.prepare(recipe, call ?? {}, {
             ...contextOptions,
             vars,
           })
@@ -393,11 +398,23 @@ export function compile(options: compile.Options): compile.ReturnType {
       }
       return `${context}(${[...tables.keys()].join(',')})`
     }
-    if (call?.slots || call?.recipe?.payloads?.length) {
+    const axes = Object.entries(recipe.axes)
+      .map(
+        ([axis, choices]) =>
+          `${JSON.stringify(axis)}:readonly ${JSON.stringify(choices)}`,
+      )
+      .join(';')
+
+    if (program) {
       dynamic = true
       const compiled = (() => {
         try {
-          return NativeBindings.compile(recipe, call, contextOptions, bindings)
+          return NativeBindings.compile(
+            recipe,
+            call ?? {},
+            contextOptions,
+            bindings,
+          )
         } catch (error) {
           if (error instanceof StyleSheet.CompileError) throw error
           throw new CompileError((error as Error).message)
@@ -405,6 +422,9 @@ export function compile(options: compile.Options): compile.ReturnType {
       })()
       const value = create(dynamicHelper, compiled)
       if (!typed) return value
+      if (!call?.slots && !call?.recipe?.payloads?.length)
+        return `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
+
       let input = call.valuesType ?? '{}'
       if (call.recipe) {
         input = `{${Object.entries(recipe.axes)
@@ -449,12 +469,6 @@ export function compile(options: compile.Options): compile.ReturnType {
           })
     if (options.contextual) compiledCalls.set(compiled, { styles, value })
     if (!typed) return value
-    const axes = Object.entries(compiled.axes)
-      .map(
-        ([axis, choices]) =>
-          `${JSON.stringify(axis)}:readonly ${JSON.stringify(choices)}`,
-      )
-      .join(';')
     return `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
   }
 
@@ -834,7 +848,7 @@ export declare namespace compile {
     /** Label selected from supplied vars. Defaults to the token-fallback default table. */
     readonly set?: string | undefined
   }
-  /** Executable source with immutable recipe tables and authored source mappings. */
+  /** Executable source with immutable native data and authored source mappings. */
   type ReturnType = {
     /** Internal node replacements for syntax-tree adapters. */
     readonly [Edits.key]: readonly Edits.Edit[]
@@ -842,7 +856,7 @@ export declare namespace compile {
     readonly code: string
     /** Version-three source map encoded as JSON. */
     readonly map: string
-    /** All set/scheme tables for each extracted definition. */
+    /** Set/scheme tables for definitions without variant or scalar programs. */
     readonly recipes: Readonly<Record<string, Variants.Definition>>
   }
 }

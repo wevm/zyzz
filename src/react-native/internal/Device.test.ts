@@ -8,7 +8,8 @@ import * as Path from 'node:path'
 import * as Timers from 'node:timers'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
-import type { Report } from '../../../test/fixtures/native/Updates.js'
+import type { Report as UpdatesReport } from '../../../test/fixtures/native/Updates.js'
+import type { Report as VariantsReport } from '../../../test/fixtures/native/VariantUpdates.js'
 import { describe, expect, test } from 'vite-plus/test'
 
 const exec = Util.promisify(ChildProcess.execFile)
@@ -16,14 +17,15 @@ const require = Module.createRequire(
   Path.resolve('examples/react-native/package.json'),
 )
 const application = 'xyz.wevm.zyzz.updates'
+type Report = UpdatesReport | VariantsReport
 
 describe('defineConfig', () => {
   for (const platform of ['ios', 'android'] as const) {
     const device = process.env[`ZYZZ_NATIVE_${platform.toUpperCase()}_DEVICE`]
     const app = process.env[`ZYZZ_NATIVE_${platform.toUpperCase()}_APP`]
-    test.runIf(!!device && !!app)(
-      `${platform}: updates native views without rendering styled consumers`,
-      async () => {
+    test.runIf(!!device && !!app).each(['Updates', 'VariantUpdates'])(
+      `${platform}: updates native views for %s`,
+      async (fixture) => {
         const root = await Fs.mkdtemp(Path.resolve('.fixture-native-render-'))
         const browser = await chromium.launch()
         const page = await browser.newPage()
@@ -94,7 +96,8 @@ describe('defineConfig', () => {
               ),
             )
             response.end('ok')
-            if (report.name === 'remount') complete.resolve()
+            if (report.name === (fixture === 'Updates' ? 'remount' : 'commit'))
+              complete.resolve()
           } catch (error) {
             response.writeHead(500).end(String(error))
             complete.reject(error)
@@ -112,7 +115,7 @@ describe('defineConfig', () => {
             })
           })
           const source = await Fs.readFile(
-            'test/fixtures/native/Updates.tsx',
+            `test/fixtures/native/${fixture}.tsx`,
             'utf8',
           )
           await Fs.writeFile(
@@ -274,6 +277,163 @@ describe('defineConfig', () => {
               )
             }),
           ])
+          if (fixture === 'VariantUpdates') {
+            expect(frames.map((frame) => frame.name)).toMatchInlineSnapshot(`
+              [
+                "initial",
+                "choice",
+                "scheme",
+                "nulls",
+                "vars",
+                "defaults",
+                "commit",
+              ]
+            `)
+            expect(
+              frames.map((frame) =>
+                frame.geometry.map((view) => ({
+                  height: Math.round(view.height),
+                  width: Math.round(view.width),
+                })),
+              ),
+            ).toMatchInlineSnapshot(`
+              [
+                [
+                  {
+                    "height": 40,
+                    "width": 100,
+                  },
+                ],
+                [
+                  {
+                    "height": 120,
+                    "width": 240,
+                  },
+                ],
+                [
+                  {
+                    "height": 120,
+                    "width": 240,
+                  },
+                ],
+                [
+                  {
+                    "height": 20,
+                    "width": 100,
+                  },
+                ],
+                [
+                  {
+                    "height": 20,
+                    "width": 160,
+                  },
+                ],
+                [
+                  {
+                    "height": 40,
+                    "width": 160,
+                  },
+                ],
+                [
+                  {
+                    "height": 40,
+                    "width": 160,
+                  },
+                ],
+              ]
+            `)
+            expect(frames.map((frame) => frame.renders)).toMatchInlineSnapshot(`
+              [
+                {
+                  "button": 1,
+                },
+                {
+                  "button": 2,
+                },
+                {
+                  "button": 2,
+                },
+                {
+                  "button": 3,
+                },
+                {
+                  "button": 3,
+                },
+                {
+                  "button": 4,
+                },
+                {
+                  "button": 4,
+                },
+              ]
+            `)
+            expect(frames.map((frame) => frame.native)).toMatchInlineSnapshot(`
+              [
+                {
+                  "batches": 0,
+                  "bindings": 1,
+                  "writes": 0,
+                },
+                {
+                  "batches": 0,
+                  "bindings": 1,
+                  "writes": 0,
+                },
+                {
+                  "batches": 1,
+                  "bindings": 1,
+                  "writes": 1,
+                },
+                {
+                  "batches": 1,
+                  "bindings": 1,
+                  "writes": 1,
+                },
+                {
+                  "batches": 2,
+                  "bindings": 1,
+                  "writes": 2,
+                },
+                {
+                  "batches": 2,
+                  "bindings": 1,
+                  "writes": 2,
+                },
+                {
+                  "batches": 2,
+                  "bindings": 1,
+                  "writes": 2,
+                },
+              ]
+            `)
+            expect(colors).toMatchInlineSnapshot(`
+              [
+                {
+                  "button": "#ff0000ff",
+                },
+                {
+                  "button": "#ff0000ff",
+                },
+                {
+                  "button": "#00ff00ff",
+                },
+                {
+                  "button": "#00ff00ff",
+                },
+                {
+                  "button": "#ffff00ff",
+                },
+                {
+                  "button": "#ffff00ff",
+                },
+                {
+                  "button": "#ffff00ff",
+                },
+              ]
+            `)
+            return
+          }
+
           expect(frames.map((frame) => frame.name)).toMatchInlineSnapshot(`
             [
               "initial",

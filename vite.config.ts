@@ -57,7 +57,7 @@ export default defineConfig({
       'src/**/*.test.ts',
       'test/**/*.test.ts',
     ],
-    maxConcurrency: 4,
+    maxConcurrency: 2,
     ...(process.env.CI ? { maxWorkers: 2 } : {}),
     testTimeout: 30_000,
   },

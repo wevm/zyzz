@@ -74,13 +74,6 @@ export async function create(root: string) {
 export async function verify(options: verify.Options) {
   const { bundler, cssOutput, expect } = options
 
-  // Concurrent applications share the runner's cores.
-  const env = {
-    ...process.env,
-    NEXT_TELEMETRY_DISABLED: '1',
-    ...(!options.compare ? { RAYON_NUM_THREADS: '1' } : {}),
-  }
-
   await Fs.access(Path.resolve('dist/default.js.zyzz.json'))
 
   const root = await Fs.mkdtemp(Path.resolve('.fixture-next-'))
@@ -133,7 +126,7 @@ export async function verify(options: verify.Options) {
       'app/page.tsx': `import Responsive from './responsive';import {runtime} from './runtime';import Content from './content.mdx';import Navigation from './navigation';import {style} from '@config';import {Client} from './components';import {variants,vars as defaults} from 'zyzz/default';namespace styles{export const heading=style({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><Responsive/><p id="runtime" {...runtime()}>Runtime</p><Content/><aside id="default-theme" className={defaults().className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
       'app/stream/page.tsx': `import {Suspense} from 'react';import {style} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=style({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
       'instrumentation-client.ts': `performance.mark('client-instrumentation');`,
-      'next.config.ts': `import createMDX from '@next/mdx';import {zyzz} from 'zyzz/next';import * as Path from 'node:path';const withMDX=createMDX({});export default zyzz(async()=>withMDX({pageExtensions:['ts','tsx','mdx'],productionBrowserSourceMaps:true,experimental:{cpus:${options.compare ? 2 : 1}},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}), {reset:true});`,
+      'next.config.ts': `import createMDX from '@next/mdx';import {zyzz} from 'zyzz/next';import * as Path from 'node:path';const withMDX=createMDX({});export default zyzz(async()=>withMDX({pageExtensions:['ts','tsx','mdx'],productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}), {reset:true});`,
       'mdx-components.tsx': `export function useMDXComponents(){return {}}`,
       'mdx.d.ts': `declare module '*.mdx' {const Content: import('react').ComponentType;export default Content}`,
       'tsconfig.json': JSON.stringify({
@@ -163,7 +156,8 @@ export async function verify(options: verify.Options) {
       {
         cwd: app,
         env: {
-          ...env,
+          ...process.env,
+          NEXT_TELEMETRY_DISABLED: '1',
           NODE_ENV: 'production',
         },
         timeout: 120_000,
@@ -182,7 +176,8 @@ export async function verify(options: verify.Options) {
       await exec(process.execPath, [next, 'build', '--turbopack'], {
         cwd: app,
         env: {
-          ...env,
+          ...process.env,
+          NEXT_TELEMETRY_DISABLED: '1',
           NODE_ENV: 'production',
         },
         timeout: 120_000,
@@ -251,7 +246,8 @@ export async function verify(options: verify.Options) {
         {
           cwd: app,
           env: {
-            ...env,
+            ...process.env,
+            NEXT_TELEMETRY_DISABLED: '1',
             NODE_ENV: mode === 'dev' ? 'development' : 'production',
           },
           stdio: ['ignore', 'pipe', 'pipe'],

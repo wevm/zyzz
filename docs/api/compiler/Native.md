@@ -2,6 +2,8 @@
 
 `Native.compile` from `zyzz/compiler` rewrites local shared `style`, `variants`, and `cx` authoring into native callables. Runtime calls select precompiled objects, bind dynamic scalar values, and compose ordinary native style props. They do not parse authoring source, generate CSS, or inspect the device.
 
+Native compilation also rewrites linked `useVars(vars, selector?)` arguments into readonly native profiles using the same font and unit mappings. The [React adapter](../react-native/react.md) selects those profiles through the nearest Provider.
+
 ```ts
 import { Native } from 'zyzz/compiler'
 

@@ -1,7 +1,7 @@
 /** Defines themes for the native example. @module */
 import { defineConfig } from 'zyzz'
 
-export const { style, variants } = defineConfig({
+export const { style, variants, vars } = defineConfig({
   vars: {
     blue: {
       color: {

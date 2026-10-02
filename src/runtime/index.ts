@@ -29,6 +29,9 @@ export * as NativeContext from './NativeContext.js'
 /** Ordered native scalar bindings for generated dynamic callables. */
 export * as NativeDynamic from './NativeDynamic.js'
 
+/** Readonly native variable selection for compiled hooks. */
+export * as NativeVars from './NativeVars.js'
+
 /** Scoped recipe inputs bound to fixed variable slots. */
 export * as PayloadRecipe from './PayloadRecipe.js'
 

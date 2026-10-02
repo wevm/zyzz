@@ -17,4 +17,4 @@ See the planned [universal styling contract](universal.md) and the version-pinne
 
 [Native.compile](../compiler/Native.md) emits callable native modules from local shared authoring.
 
-See [React integration](react.md) for automatic runtime theme and scheme selection with Metro.
+See [React integration](react.md) for `Provider`, `useStyles`, and `useVars` from the separate `zyzz/react-native/react` entrypoint.

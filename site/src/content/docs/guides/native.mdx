@@ -211,7 +211,7 @@ Put web-only declarations inside `targets.web`. An unsupported shared declaratio
 
 ### Select a Theme
 
-For named themes, define a catalog with `defaultVars` and pass its name through `Provider.set`. Omit `set` to use each configuration's default.
+For named themes, define a catalog with `defaultVars` and pass its name through `Provider.vars`. Omit `vars` to use each configuration's default.
 
 ```tsx title="App.tsx"
 import { Text, useColorScheme } from 'react-native'
@@ -230,7 +230,7 @@ export default function App() {
   const scheme = useColorScheme()
 
   return (
-    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'} set="mint">
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'} vars="mint">
       <Greeting />
     </Provider>
   )

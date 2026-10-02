@@ -123,16 +123,20 @@ describe('/docs/guides/testing', () => {
   test('renders without page overflow in both schemes at each viewport', async () => {
     const browser = await chromium.launch()
     try {
-      const page = await browser.newPage()
+      const page = await browser.newPage({
+        colorScheme: 'light',
+        viewport: { height: 1000, width: 390 },
+      })
+      await page.goto(`${origin}/docs/guides/testing`)
+      await page.waitForFunction(() => {
+        const pre = document.querySelector('article pre')
+        return pre && getComputedStyle(pre).overflowX === 'auto'
+      })
+
       for (const width of [390, 768, 1440]) {
         for (const colorScheme of ['light', 'dark'] as const) {
           await page.setViewportSize({ width, height: 1000 })
           await page.emulateMedia({ colorScheme })
-          await page.goto(`${origin}/docs/guides/testing`)
-          await page.waitForFunction(() => {
-            const pre = document.querySelector('article pre')
-            return pre && getComputedStyle(pre).overflowX === 'auto'
-          })
           await page.evaluate(() => document.fonts.ready)
 
           expect(

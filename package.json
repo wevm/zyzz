@@ -4,8 +4,8 @@
     "bench:check": "vp test run --config bench/Check.config.ts --no-file-parallelism",
     "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
-    "build": "zile && node scripts/build-default-theme.ts",
-    "changeset:publish": "zile publish:prepare && node scripts/build-default-theme.ts && changeset publish && zile publish:post",
+    "build": "zile && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts",
+    "changeset:publish": "zile publish:prepare && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "check": "vp check --fix",
     "check:at-rules": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts",
@@ -53,6 +53,7 @@
     "quickjs-emscripten": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-native": "catalog:",
     "rollup": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
@@ -149,11 +150,19 @@
       "default": "./dist/oxlint/index.js"
     },
     "./react-native": {
+      "react-native": {
+        "types": "./dist/react-native/index.d.ts",
+        "default": "./dist/react-native/index.native.js"
+      },
       "src": "./src/react-native/index.ts",
       "types": "./dist/react-native/index.d.ts",
       "default": "./dist/react-native/index.js"
     },
     "./react-native/react": {
+      "react-native": {
+        "types": "./dist/react-native/react.d.ts",
+        "default": "./dist/react-native/internal/Device.js"
+      },
       "src": "./src/react-native/react.ts",
       "types": "./dist/react-native/react.d.ts",
       "default": "./dist/react-native/react.js"
@@ -211,6 +220,7 @@
     "@babel/core": "catalog:peers",
     "next": "catalog:peers",
     "react": "catalog:peers",
+    "react-native": "catalog:peers",
     "vite": "catalog:peers"
   },
   "peerDependenciesMeta": {
@@ -221,6 +231,9 @@
       "optional": true
     },
     "react": {
+      "optional": true
+    },
+    "react-native": {
       "optional": true
     },
     "vite": {

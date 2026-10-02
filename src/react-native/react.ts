@@ -4,6 +4,7 @@ import * as NativeContext from '../runtime/NativeContext.js'
 import * as NativeVars from '../runtime/NativeVars.js'
 import * as React from 'react'
 import type * as Vars from '../Vars.js'
+import * as Viewport from './internal/Viewport.js'
 
 const context = React.createContext<ReturnType<typeof create> | undefined>(
   undefined,
@@ -62,7 +63,7 @@ export declare namespace defineConfig {
     }
 }
 
-/** Supplies a variable name and resolved color scheme to this React subtree. */
+/** Supplies selected variables, appearance, and adapter measurements to this subtree. */
 export function Provider(props: Provider.Props) {
   if (Object.hasOwn(props, 'set'))
     throw new Error('Provider uses vars instead of set.')
@@ -75,12 +76,13 @@ export function Provider(props: Provider.Props) {
       'Native appearance requires a resolved light/dark scheme and a nonempty vars name.',
     )
 
+  const viewport = React.useContext(Viewport.context)
   const [store] = React.useState(() =>
-    create({ colorScheme: props.colorScheme, set: props.vars }),
+    create({ colorScheme: props.colorScheme, set: props.vars, viewport }),
   )
   React.useLayoutEffect(() => {
-    store.update({ colorScheme: props.colorScheme, set: props.vars })
-  }, [props.colorScheme, props.vars, store])
+    store.update({ colorScheme: props.colorScheme, set: props.vars, viewport })
+  }, [props.colorScheme, props.vars, store, viewport])
 
   return React.createElement(context.Provider, { value: store }, props.children)
 }
@@ -165,7 +167,9 @@ function create(initial: NativeContext.Context) {
     update(value: NativeContext.Context) {
       if (
         snapshot.colorScheme === value.colorScheme &&
-        snapshot.set === value.set
+        snapshot.set === value.set &&
+        snapshot.viewport?.height === value.viewport?.height &&
+        snapshot.viewport?.width === value.viewport?.width
       )
         return
       snapshot = Object.freeze(value)

@@ -1,5 +1,6 @@
 /** Converts authored variables to static native value profiles. @module */
 import * as Calculation from '../../react-native/internal/Calculation.js'
+import * as Media from './NativeMedia.js'
 import type * as Runtime from '../../runtime/NativeVars.js'
 import * as Scalar from '../../react-native/internal/Scalar.js'
 import type * as Theme from '../../internal/Theme.js'
@@ -8,8 +9,23 @@ import * as VariableSets from '../../internal/VariableSets.js'
 
 /** Resolves native domains using the style compiler's unit and font mappings. */
 export function compile(options: compile.Options): Runtime.create.Options {
+  const media = Media.prepare(undefined, options.vars, options)
   return {
     defaultVars: options.defaultVars,
+    ...(media
+      ? {
+          media: {
+            profiles: Object.fromEntries(
+              media.selections.map((selection) => [
+                selection,
+                compile({ ...options, vars: media.select(selection).vars! })
+                  .profiles,
+              ]),
+            ),
+            queries: media.queries,
+          },
+        }
+      : {}),
     profiles: Object.fromEntries(
       Object.entries(options.vars).map((entry) => {
         const [name, theme] = entry
@@ -56,7 +72,11 @@ export function compile(options: compile.Options): Runtime.create.Options {
           : text
       }
       if ('light' in value && 'dark' in value) return resolve(value[scheme])
-      throw new Error('Media-conditioned variables require a web target.')
+      throw new Error(
+        media
+          ? 'Native media-conditioned variables require the native Provider window dimensions.'
+          : 'Media-conditioned variables require a web target.',
+      )
     }
 
     for (const [path, source] of Object.entries(metadata.values)) {

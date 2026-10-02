@@ -4,6 +4,7 @@ import { defineConfig } from 'zyzz/react-native'
 export const { Provider, style, variants, vars } = defineConfig({
   vars: {
     blue: {
+      breakpoint: { md: '768px' },
       dimension: { artwork: '80px', gutter: '20px' },
       color: {
         accent: { light: '#2563eb', dark: '#93c5fd' },
@@ -12,8 +13,10 @@ export const { Provider, style, variants, vars } = defineConfig({
         page: { light: '#ffffff', dark: '#0f172a' },
         surface: { light: '#dbeafe', dark: '#1e3a8a' },
       },
+      spacing: { gutter: { default: '12px', '@media md': '24px' } },
     },
     green: {
+      breakpoint: { md: '768px' },
       dimension: { artwork: '100px', gutter: '20px' },
       color: {
         accent: { light: '#15803d', dark: '#86efac' },
@@ -22,6 +25,7 @@ export const { Provider, style, variants, vars } = defineConfig({
         page: { light: '#ffffff', dark: '#0f172a' },
         surface: { light: '#dcfce7', dark: '#14532d' },
       },
+      spacing: { gutter: { default: '8px', '@media md': '16px' } },
     },
   },
   defaultVars: 'blue',

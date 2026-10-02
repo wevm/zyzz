@@ -53,6 +53,353 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('preserves native media endpoints, boolean conditions, and authored precedence', async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'ranges.ts',
+      source: `import {style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+        const range=style({opacity:0.1,'@media (400px <= width < 768px)':{opacity:0.2},'@media (min-width: 768px) and (max-height: 600px)':{opacity:0.3},'@media not (width > 800px)':{paddingTop:'1px'},'@media (orientation: landscape)':{flexDirection:'row'},'@media screen and (width >= 48rem), (height > 1000px)':{marginTop:'2px'}});
+        export const results=viewport=>NativeContext.resolve(range,{colorScheme:'light',viewport});`,
+      units: { px: 1, rem: 16 },
+    })
+    const apply = (await execute(output.code)).results as (viewport: {
+      height: number
+      width: number
+    }) => unknown
+    expect(apply({ height: 800, width: 399.5 })).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.1,
+        "paddingTop": 1,
+      }
+    `)
+    expect(apply({ height: 800, width: 400 })).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.2,
+        "paddingTop": 1,
+      }
+    `)
+    expect(apply({ height: 800, width: 767.5 })).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.2,
+        "paddingTop": 1,
+      }
+    `)
+    expect(apply({ height: 600, width: 768 })).toMatchInlineSnapshot(`
+      {
+        "flexDirection": "row",
+        "marginTop": 2,
+        "opacity": 0.3,
+        "paddingTop": 1,
+      }
+    `)
+    expect(apply({ height: 600.5, width: 800 })).toMatchInlineSnapshot(`
+      {
+        "flexDirection": "row",
+        "marginTop": 2,
+        "opacity": 0.1,
+        "paddingTop": 1,
+      }
+    `)
+    expect(apply({ height: 601, width: 800.5 })).toMatchInlineSnapshot(`
+      {
+        "flexDirection": "row",
+        "marginTop": 2,
+        "opacity": 0.1,
+      }
+    `)
+    expect(apply({ height: 1000.5, width: 300 })).toMatchInlineSnapshot(`
+      {
+        "marginTop": 2,
+        "opacity": 0.1,
+        "paddingTop": 1,
+      }
+    `)
+  })
+
+  test.each(['ios', 'android'] as const)(
+    'executes source and packed responsive variants and calculations on %s',
+    async (platform) => {
+      const source = await Fs.readFile(
+        'test/fixtures/native/responsive/Styles.ts',
+        'utf8',
+      )
+      const publisher = Graph.compile({ modules: { 'library.ts': source } })
+      for (const packed of [false, true]) {
+        const output = Graph.compile({
+          ...(packed ? { contracts: publisher.contracts } : {}),
+          imports: {
+            'app.ts': {
+              './library.js': 'library.ts',
+              zyzz: null,
+              'zyzz/runtime': null,
+            },
+            'library.ts': { zyzz: null },
+          },
+          modules: {
+            ...(!packed ? { 'library.ts': source } : {}),
+            'app.ts': `import {card,meter,panel} from './library.js';import {cx} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+              const composed=cx(card({expanded:true}),meter({ratio:2}));
+              export const results=(wide)=>NativeContext.resolve(wide?composed.style:panel,{colorScheme:'light',viewport:{height:800,width:wide?768:767.5}});`,
+          },
+          native: { colorScheme: 'light', contextual: true, platform },
+        })
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: {
+            ...Object.fromEntries(
+              Object.entries(publisher.modules).map(([id, value]) => [
+                id,
+                value.code,
+              ]),
+            ),
+            ...Object.fromEntries(
+              Object.entries(output.modules).map(([id, value]) => [
+                id,
+                value.code,
+              ]),
+            ),
+          },
+        })
+        const context = Vm.createContext()
+        Vm.runInContext(code, context)
+        const apply = Vm.runInContext('Fixture.results', context) as (
+          wide: boolean,
+        ) => unknown
+        expect(apply(false)).toMatchInlineSnapshot(`
+          {
+            "flexDirection": "column",
+            "paddingBottom": 16,
+            "paddingLeft": 16,
+            "paddingRight": 16,
+            "paddingTop": 16,
+          }
+        `)
+        expect(apply(true)).toMatchInlineSnapshot(`
+          [
+            {
+              "opacity": 0.5,
+              "paddingBottom": 12,
+              "paddingTop": 24,
+            },
+            {
+              "height": 12,
+              "width": 48,
+            },
+          ]
+        `)
+      }
+    },
+  )
+
+  test('selects native breakpoints, conditional variables, and scoped callback values together', async () => {
+    const source = `import {defineConfig,Vars} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+      const base=Vars.define({breakpoint:{md:'768px'},color:{ink:{light:'#112233',dark:'#334455'}},spacing:{gutter:{default:'16px','@media md':'24px'}}});
+      const compact=Vars.extend(base,{spacing:{gutter:{default:'8px','@media md':'12px'}}});
+      const {style,vars}=defineConfig({defaultVars:'base',vars:{base,compact}});
+      const panel=style((input:{ratio:number})=>({color:'ink',padding:'gutter',width:\`calc(\${vars.spacing.gutter} * \${input.ratio}) !custom\`,flexDirection:'column','@media md':{flexDirection:'row'},'@media (height < 600px)':{display:'none'}}));
+      export const results=(viewport,set='base',colorScheme='light')=>NativeContext.resolve(panel,{viewport,set,colorScheme},{ratio:2});`
+    const output = Native.compile({
+      source,
+      moduleId: 'responsive.ts',
+      colorScheme: 'light',
+      contextual: true,
+    })
+    const apply = (await execute(output.code)).results as (
+      viewport: { height: number; width: number } | undefined,
+      set?: string,
+      scheme?: string,
+    ) => unknown
+    expect(apply({ height: 800, width: 767.5 })).toMatchInlineSnapshot(`
+      {
+        "color": "#112233",
+        "flexDirection": "column",
+        "paddingBottom": 16,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "paddingTop": 16,
+        "width": 32,
+      }
+    `)
+    expect(apply({ height: 800, width: 768 })).toMatchInlineSnapshot(`
+      {
+        "color": "#112233",
+        "flexDirection": "row",
+        "paddingBottom": 24,
+        "paddingLeft": 24,
+        "paddingRight": 24,
+        "paddingTop": 24,
+        "width": 48,
+      }
+    `)
+    expect(apply({ height: 599.5, width: 768.5 }, 'compact', 'dark'))
+      .toMatchInlineSnapshot(`
+      {
+        "color": "#334455",
+        "display": "none",
+        "flexDirection": "row",
+        "paddingBottom": 12,
+        "paddingLeft": 12,
+        "paddingRight": 12,
+        "paddingTop": 12,
+        "width": 24,
+      }
+    `)
+    expect(() => apply(undefined)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native media queries require the native Provider window dimensions.]`,
+    )
+    expect(() =>
+      apply({ height: 800, width: NaN }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native window dimensions must be finite and nonnegative.]`,
+    )
+  })
+
+  test('keeps unrelated responsive variables out of empty and static style selections', async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'independent.ts',
+      source: `import {defineConfig} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+        const {style}=defineConfig({vars:{spacing:{gutter:{default:'8px',${Array.from(
+          { length: 9 },
+          (_entry, index) => `'@media (width >= ${index}px)':'16px'`,
+        ).join(',')}}}}});
+        const empty=style();const plain=style({opacity:0.5});
+        export const results={empty:NativeContext.resolve(empty,{colorScheme:'light'}),plain:NativeContext.resolve(plain,{colorScheme:'light'})};`,
+    })
+    const results = (await execute(output.code)).results
+
+    expect(results).toMatchInlineSnapshot(`
+      {
+        "empty": {},
+        "plain": {
+          "opacity": 0.5,
+        },
+      }
+    `)
+  })
+
+  test('retains ahead-of-time responsive CSS in a real browser', async () => {
+    const output = Graph.compile({
+      modules: {
+        'Styles.ts': await Fs.readFile(
+          'test/fixtures/native/responsive/Styles.ts',
+          'utf8',
+        ),
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'Styles.ts',
+      modules: { 'Styles.ts': output.modules['Styles.ts']!.code },
+    })
+    const browser = await Playwright.chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 767, height: 800 },
+      })
+      await page.setContent(
+        `<style>${output.sharedCss ?? ''}${output.modules['Styles.ts']!.css}</style><div id="panel"></div>`,
+      )
+      await page.addScriptTag({
+        content: `${code};document.documentElement.className=Fixture.vars().className;document.getElementById('panel').className=Fixture.panel().className;`,
+      })
+      const read = () =>
+        page.locator('#panel').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            display: style.display,
+            flexDirection: style.flexDirection,
+            paddingTop: style.paddingTop,
+          }
+        })
+      expect(await read()).toMatchInlineSnapshot(`
+        {
+          "display": "block",
+          "flexDirection": "column",
+          "paddingTop": "16px",
+        }
+      `)
+      await page.setViewportSize({ width: 768, height: 600 })
+      expect(await read()).toMatchInlineSnapshot(`
+        {
+          "display": "block",
+          "flexDirection": "row",
+          "paddingTop": "24px",
+        }
+      `)
+      await page.setViewportSize({ width: 768, height: 599 })
+      expect(await read()).toMatchInlineSnapshot(`
+        {
+          "display": "none",
+          "flexDirection": "row",
+          "paddingTop": "24px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('rejects unsupported native media instead of selecting defaults', () => {
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'unsupported.ts',
+        source: `import {style} from 'zyzz';export const panel=style({'@media (hover: hover)':{opacity:0.5}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Unsupported native media feature.]`,
+    )
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'unsupported.ts',
+        source: `import {style} from 'zyzz';export const panel=style({'@media (width > 10em)':{opacity:0.5}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Use zero, px, or rem with an explicit rem conversion.]`,
+    )
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'unsupported.ts',
+        source: `import {style} from 'zyzz';export const panel=style({'@media NOT SCREEN':{opacity:0.5}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Native media types support all or screen without negation.]`,
+    )
+  })
+
+  test('bounds native media definitions and retains unsupported selector errors', () => {
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'bounded.ts',
+        source: `import {style} from 'zyzz';export const panel=style({${Array.from(
+          { length: 9 },
+          (_entry, index) => `'@media (width >= ${index}px)':{opacity:0.5}`,
+        ).join(',')}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Native media supports at most eight distinct conditions per definition.]`,
+    )
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'selector.ts',
+        source: `import {style} from 'zyzz';export const panel=style({'@media (width >= 768px)':{':hover':{opacity:0.5}}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["style-tgv5db1vvnnmj-46"]: Selectors, queries, and nested rules are not supported on native.]`,
+    )
+  })
+
   test('selects live theme calculations for each native scope and scheme', async () => {
     const source = `import {defineConfig} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
       const {style,vars}=defineConfig({vars:{base:{color:{surface:{light:'#112233',dark:'#334455'}},spacing:{panel:'180px',gutter:'80px'}},compact:{color:{surface:{light:'#445566',dark:'#556677'}},spacing:{panel:'120px',gutter:'40px'}}},defaultVars:'base'});

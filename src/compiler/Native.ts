@@ -5,6 +5,7 @@ import type * as Recipe from '../internal/Recipe.js'
 import * as Source from './Source.js'
 import * as Edits from './internal/Edits.js'
 import * as NativeBindings from './internal/NativeBindings.js'
+import * as NativeMedia from './internal/NativeMedia.js'
 import * as NativeVars from './internal/NativeVars.js'
 import * as Themes from './internal/Themes.js'
 import * as StyleSheet from '../react-native/StyleSheet.js'
@@ -131,6 +132,15 @@ export function compile(options: compile.Options): compile.ReturnType {
       )
         continue
       const vars = call.nativeContext?.vars ?? options.vars
+      try {
+        if (
+          NativeMedia.prepare(stylesByName.get(call.name) ?? [], vars, options)
+        )
+          continue
+      } catch (error) {
+        throw new CompileError((error as Error).message)
+      }
+
       const group = groups.get(vars)
       if (group) group.push(call)
       else groups.set(vars, [call])
@@ -262,6 +272,47 @@ export function compile(options: compile.Options): compile.ReturnType {
   ): string {
     if (contextOptions.contextual) {
       const vars = call?.nativeContext?.vars ?? contextOptions.vars
+      const media = (() => {
+        try {
+          return NativeMedia.prepare(
+            recipe.rules.flatMap((rule) => rule.value.styles),
+            vars,
+            contextOptions,
+          )
+        } catch (error) {
+          throw new CompileError((error as Error).message)
+        }
+      })()
+      if (media) {
+        const profiles = media.selections.map((selection) => {
+          const selected = media.select(selection)
+          const next = {
+            ...recipe,
+            rules: recipe.rules.map((rule) => ({
+              ...rule,
+              value: {
+                ...rule.value,
+                styles: rule.value.styles.map(selected.style),
+              },
+            })),
+          }
+          const source = call?.nativeContext
+            ? {
+                ...call,
+                nativeContext: {
+                  ...call.nativeContext,
+                  vars: selected.vars as typeof call.nativeContext.vars,
+                },
+              }
+            : call
+          const value = callable(next, name, source, {
+            ...contextOptions,
+            vars: selected.vars,
+          })
+          return `${JSON.stringify(selection)}:${value}`
+        })
+        return `${helper}Context.responsive(${JSON.stringify(media.queries)},{${profiles.join(',')}})`
+      }
       if (!call?.slots && !call?.recipe?.payloads?.length)
         compiled ??= Variants.compile({
           recipe,

@@ -3,7 +3,7 @@ import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs'
 import * as Os from 'node:os'
 import { buildSync } from 'esbuild'
-import { chromium } from 'playwright'
+import { type Browser, chromium, type Page } from 'playwright'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 
@@ -15,6 +15,9 @@ const directory = Fs.realpathSync(
 const site = new URL('../../../..', import.meta.url)
 
 describe('/docs/guides/testing', () => {
+  let browser: Browser
+  let page: Page
+
   beforeAll(async () => {
     if (process.env.ZYZZ_TEST_ORIGIN) return
 
@@ -73,7 +76,26 @@ describe('/docs/guides/testing', () => {
     throw new Error(`Documentation site did not start. ${output}`)
   }, 120000)
 
+  beforeAll(async () => {
+    browser = await chromium.launch()
+    page = await browser.newPage({
+      colorScheme: 'light',
+      viewport: { height: 1000, width: 390 },
+    })
+    await page.goto(`${origin}/docs/guides/testing`)
+    await page.waitForFunction(
+      () => {
+        const pre = document.querySelector('article pre')
+        return pre && getComputedStyle(pre).overflowX === 'auto'
+      },
+      undefined,
+      { timeout: 60_000 },
+    )
+    await page.evaluate(() => document.fonts.ready)
+  }, 120000)
+
   afterAll(async () => {
+    await browser?.close()
     if (server?.pid && server.exitCode === null) {
       const exited = new Promise((resolve) => server.once('exit', resolve))
       process.kill(-server.pid, 'SIGTERM')
@@ -92,85 +114,50 @@ describe('/docs/guides/testing', () => {
     const markdown = await response.text()
     expect(await negotiated.text()).toBe(markdown)
 
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage()
-      await page.goto(`${origin}/docs/guides/testing`)
-      const headings = await page
-        .locator('article h2, article h3')
-        .allTextContents()
-      for (const heading of headings) expect(markdown).toContain(heading)
-      const blocks = await page.locator('article pre code').allTextContents()
-      expect(blocks).toHaveLength(5)
-      for (const block of blocks) expect(markdown).toContain(block.trim())
-      const paragraphs = await page
-        .locator('article p, article li')
-        .allTextContents()
-      const prose = markdown
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-        .replace(/[`*]/g, '')
-      for (const paragraph of paragraphs) expect(prose).toContain(paragraph)
-      const links = await page
-        .locator('article a[href]')
-        .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
-      for (const link of links) expect(markdown).toContain(`(${link})`)
-      expect(markdown).toContain('](/docs/api/oxlint)')
-    } finally {
-      await browser.close()
-    }
+    const headings = await page
+      .locator('article h2, article h3')
+      .allTextContents()
+    for (const heading of headings) expect(markdown).toContain(heading)
+    const blocks = await page.locator('article pre code').allTextContents()
+    expect(blocks).toHaveLength(5)
+    for (const block of blocks) expect(markdown).toContain(block.trim())
+    const paragraphs = await page
+      .locator('article p, article li')
+      .allTextContents()
+    const prose = markdown
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/[`*]/g, '')
+    for (const paragraph of paragraphs) expect(prose).toContain(paragraph)
+    const links = await page
+      .locator('article a[href]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+    for (const link of links) expect(markdown).toContain(`(${link})`)
+    expect(markdown).toContain('](/docs/api/oxlint)')
   })
 
   test('renders without page overflow in both schemes at each viewport', async () => {
-    console.info('Responsive guide: launching browser')
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage({
-        colorScheme: 'light',
-        viewport: { height: 1000, width: 390 },
-      })
-      console.info('Responsive guide: navigating')
-      await page.goto(`${origin}/docs/guides/testing`)
-      console.info(
-        'Responsive guide: loaded',
-        await page.evaluate(() => ({
-          overflow: getComputedStyle(document.querySelector('article pre')!)
-            .overflowX,
-          fonts: document.fonts.status,
-          styles: document.styleSheets.length,
-        })),
-      )
-      await page.waitForFunction(() => {
-        const pre = document.querySelector('article pre')
-        return pre && getComputedStyle(pre).overflowX === 'auto'
-      })
-      console.info('Responsive guide: styles ready')
+    for (const width of [390, 768, 1440]) {
+      for (const colorScheme of ['light', 'dark'] as const) {
+        await page.setViewportSize({ width, height: 1000 })
+        await page.emulateMedia({ colorScheme })
+        await page.evaluate(() => document.fonts.ready)
 
-      for (const width of [390, 768, 1440]) {
-        for (const colorScheme of ['light', 'dark'] as const) {
-          await page.setViewportSize({ width, height: 1000 })
-          await page.emulateMedia({ colorScheme })
-          await page.evaluate(() => document.fonts.ready)
-          console.info('Responsive guide: fonts ready', width, colorScheme)
-
-          expect(
-            await page.getByRole('heading', { level: 1 }).textContent(),
-          ).toBe('Testing & Troubleshooting')
-          expect(
-            await page.evaluate(
-              () => document.documentElement.scrollWidth <= innerWidth,
-            ),
-          ).toBe(true)
-          if (process.env.ZYZZ_TEST_SCREENSHOTS) {
-            Fs.mkdirSync(process.env.ZYZZ_TEST_SCREENSHOTS, { recursive: true })
-            await page.screenshot({
-              fullPage: true,
-              path: `${process.env.ZYZZ_TEST_SCREENSHOTS}/${width}-${colorScheme}.png`,
-            })
-          }
+        expect(
+          await page.getByRole('heading', { level: 1 }).textContent(),
+        ).toBe('Testing & Troubleshooting')
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true)
+        if (process.env.ZYZZ_TEST_SCREENSHOTS) {
+          Fs.mkdirSync(process.env.ZYZZ_TEST_SCREENSHOTS, { recursive: true })
+          await page.screenshot({
+            fullPage: true,
+            path: `${process.env.ZYZZ_TEST_SCREENSHOTS}/${width}-${colorScheme}.png`,
+          })
         }
       }
-    } finally {
-      await browser.close()
     }
   })
 })

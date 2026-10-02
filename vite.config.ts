@@ -100,12 +100,16 @@ export default defineConfig({
     name: process.env.ZYZZ_TEST_PROJECT ?? 'integration',
     ...(process.env.ZYZZ_TEST_PROJECT === 'merge'
       ? {
-          projects: ['integration', 'css-types-7', 'css-types-8'].map(
-            (name) => ({
-              extends: true as const,
-              test: { name },
-            }),
-          ),
+          projects: [
+            'css-types-7',
+            'css-types-8',
+            'integration',
+            'next-atomic',
+            'next-grouped',
+          ].map((name) => ({
+            extends: true as const,
+            test: { name },
+          })),
         }
       : {}),
     sequence: { sequencer: Sequencer },

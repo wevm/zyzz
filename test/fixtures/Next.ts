@@ -7,7 +7,7 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Zlib from 'node:zlib'
 import { chromium } from 'playwright'
-import { expect, vi } from 'vite-plus/test'
+import { type ExpectStatic, vi } from 'vite-plus/test'
 import * as Font from './AtRuleFont.js'
 import * as Library from './Library.js'
 import * as VariantLibrary from './VariantLibrary.js'
@@ -17,7 +17,7 @@ const exec = Util.promisify(ChildProcess.execFile)
 
 /** Verifies production and development behavior; comparison runs also measure native CSS builds. */
 export async function verify(options: verify.Options) {
-  const { bundler, cssOutput } = options
+  const { bundler, cssOutput, expect } = options
 
   await Fs.access(Path.resolve('dist/default.js.zyzz.json'))
 
@@ -1039,6 +1039,8 @@ export declare namespace verify {
     compare?: boolean
     /** CSS emitter used by the application and packed library. */
     cssOutput: 'atomic' | 'grouped'
+    /** Assertions bound to the calling test's context. */
+    expect: ExpectStatic
   }
 }
 

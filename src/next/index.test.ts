@@ -83,7 +83,7 @@ describe('zyzz', () => {
 
   for (const cssOutput of ['atomic', 'grouped'] as const)
     for (const bundler of ['webpack', 'turbopack'] as const)
-      test.concurrent(`builds and updates a packed Next.js ${bundler} ${cssOutput} application`, async () => {
-        await Next.verify({ bundler, cssOutput })
+      test.concurrent(`builds and updates a packed Next.js ${bundler} ${cssOutput} application`, async (context) => {
+        await Next.verify({ bundler, cssOutput, expect: context.expect })
       }, 300_000)
 })

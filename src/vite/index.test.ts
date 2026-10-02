@@ -1171,11 +1171,11 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           .join('')
 
         expect(entryCss.trim()).toMatchInlineSnapshot(`
-          ".z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-          .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-          .z_scheme-dark{color-scheme:dark;}
+          ".z_scheme-dark{color-scheme:dark;}
           .z_scheme-light{color-scheme:light;}
-          .z_scheme-light-dark{color-scheme:light dark;}"
+          .z_scheme-light-dark{color-scheme:light dark;}
+          .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
+          .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}"
         `)
         expect(entries['lazy.ts']?.isDynamicEntry).toMatchInlineSnapshot('true')
         expect(entries['lazy.ts']?.css?.length).toMatchInlineSnapshot('1')
@@ -1187,7 +1187,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
           throw new Error('Missing lazy stylesheet')
 
         expect(String(sheet.source).includes('#175')).toMatchInlineSnapshot(
-          'true',
+          'false',
         )
         expect(
           String(sheet.source).includes('padding:8px'),
@@ -1234,9 +1234,9 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       expect(lazy.status).toMatchInlineSnapshot('200')
 
       const cssPath = (await lazy.text()).match(
-        /import\s*["']([^"']*zyzz:(?!shared\.css)[^"']+\.css)["']/,
+        /import\s*["']([^"']*zyzz:shared\.css)["']/,
       )?.[1]
-      if (!cssPath) throw new Error('Missing lazy CSS import')
+      if (!cssPath) throw new Error('Missing shared CSS import')
 
       expect(
         (await (await fetch(origin + cssPath)).text()).includes('#175'),
@@ -1457,68 +1457,12 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         throw new Error('No stylesheet emitted')
 
       expect(String(sheet.source)).toMatchInlineSnapshot(`
-        ".z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
+        ".z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
         .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
-        .z-app-p-8px{padding:8px;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}.z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}.z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
-        .z-app-p-8px{padding:8px;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
-        .z-theme-app-base{--z-app-color-brand:#06c;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}"
+        .z-theme-app-mint{--z-app-color-brand:#175;--z-tid-61-70-70-color_2e_brand:var(--z-app-color-brand);}.z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
+        .z-app-p-8px{padding:8px;}"
       `)
 
       const javascript = result.output
@@ -1632,6 +1576,135 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test.each([
+    [true, 'atomic'],
+    [true, 'grouped'],
+    [false, 'atomic'],
+    [false, 'grouped'],
+  ] as const)(
+    'emits theme scopes and dependency CSS once with compiler %s and %s output',
+    async (compiler, cssOutput) => {
+      const { config, root } = await create({
+        ...Fixture.files,
+        'barrel.ts': "export { props } from './card';",
+        'config.ts': Fixture.files['config.ts'].replace(
+          "id:'app'",
+          `cssOutput:'${cssOutput}',id:'app'`,
+        ),
+        'main.ts':
+          Fixture.files['main.ts'].replace('./card', './barrel') +
+          "import { style } from './config'; const box = style({ margin: '2px' })(); document.querySelector('#card')!.className += ' ' + box.className;",
+        'theme.ts':
+          "import { Vars } from 'zyzz'; export const theme = Vars.define({ color: { brand: '#06c' } }, { id: 'app' });",
+      })
+      const options = {
+        ...config,
+        optimizeDeps: { ...config.optimizeDeps, include: ['zyzz'] },
+        plugins: [zyzz({ compiler })],
+      }
+      const server = await Vite.createServer(options)
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
+      try {
+        browser = await chromium.launch()
+        await server.listen()
+
+        const origin = server.resolvedUrls!.local[0]!
+        const page = await browser.newPage()
+
+        const response = await fetch(new URL('main.ts', origin))
+
+        expect(response.status).toMatchInlineSnapshot('200')
+
+        const main = await response.text()
+
+        await page.goto(origin)
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#card')!).color ===
+            'rgb(17, 119, 85)',
+        )
+
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((element) => getComputedStyle(element).padding),
+        ).toMatchInlineSnapshot('"8px"')
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((element) => getComputedStyle(element).margin),
+        ).toMatchInlineSnapshot('"2px"')
+
+        const css = await page.evaluate(() =>
+          [...document.querySelectorAll('style[data-vite-dev-id]')]
+            .map((element) => element.textContent)
+            .join('\n'),
+        )
+
+        expect(
+          css.match(/--z-app-color-brand:\s*#175/g)?.length,
+        ).toMatchInlineSnapshot('1')
+        expect(css.match(/padding:\s*8px/g)?.length).toMatchInlineSnapshot('1')
+        expect(css.match(/margin:\s*2px/g)?.length).toMatchInlineSnapshot('1')
+
+        const path = main.match(
+          /import\s*["']([^"']*zyzz:(?!shared\.css)[^"']+\.css)["']/,
+        )?.[1]
+        if (!path) throw new Error('Missing main stylesheet')
+
+        const own = await (
+          await fetch(new URL(`${path}?direct`, origin))
+        ).text()
+
+        expect(own.includes('padding')).toMatchInlineSnapshot('false')
+        expect(own.includes('margin')).toMatchInlineSnapshot('true')
+
+        const barrel = await (await fetch(new URL('barrel.ts', origin))).text()
+        const barrelPath = barrel.match(
+          /import\s*["']([^"']*zyzz:(?!shared\.css)[^"']+\.css)["']/,
+        )?.[1]
+        if (!barrelPath) throw new Error('Missing barrel stylesheet')
+
+        const barrelCss = await (
+          await fetch(new URL(`${barrelPath}?direct`, origin))
+        ).text()
+
+        expect(barrelCss.trim()).toMatchInlineSnapshot('""')
+
+        const result = await Vite.build({
+          ...options,
+          build: { cssMinify: false, minify: false, write: false },
+        })
+        const output = Array.isArray(result) ? result[0]! : result
+        if (!('output' in output)) throw new Error('Unexpected watch build')
+
+        const production = output.output
+          .flatMap((file) =>
+            file.type === 'asset' && file.fileName.endsWith('.css')
+              ? [file.source]
+              : [],
+          )
+          .join('\n')
+
+        expect(
+          production.match(/--z-app-color-brand:\s*#175/g)?.length,
+        ).toMatchInlineSnapshot('1')
+        expect(
+          production.match(/padding:\s*8px/g)?.length,
+        ).toMatchInlineSnapshot('1')
+        expect(
+          production.match(/margin:\s*2px/g)?.length,
+        ).toMatchInlineSnapshot('1')
+      } finally {
+        await browser?.close()
+        await server.close()
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+    30000,
+  )
+
   test('development invalidates virtual CSS after theme edits and recovers from deletion', async () => {
     const { config, root } = await create()
     const server = await Vite.createServer(config)
@@ -1645,7 +1718,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         throw new Error('Missing server port')
 
       const origin = `http://127.0.0.1:${address.port}`
-      const response = await fetch(`${origin}/main.ts`)
+      const response = await fetch(`${origin}/card.ts`)
       const code = await response.text()
 
       expect(response.status).toMatchInlineSnapshot(`200`)
@@ -1654,9 +1727,14 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         /import\s*["']([^"']*zyzz:(?!shared\.css)[^"']+\.css)["']/,
       )?.[1]
       if (!cssPath) throw new Error(`Missing CSS import in ${code}`)
+      const sharedPath = code.match(
+        /import\s*["']([^"']*zyzz:shared\.css)["']/,
+      )?.[1]
+      if (!sharedPath) throw new Error('Missing shared CSS import')
 
-      const stylesheet = async () => (await fetch(origin + cssPath)).text()
+      const stylesheet = async () => (await fetch(origin + sharedPath)).text()
 
+      await fetch(origin + cssPath)
       await stylesheet()
 
       const cssModule = [

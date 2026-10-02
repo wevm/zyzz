@@ -203,13 +203,14 @@ function verifyResults(report: string): void {
   const results: Results = JSON.parse(Fs.readFileSync(report, 'utf8'))
   if (!results.success) errors.push('Acceptance integration run failed.')
   for (const item of Object.values(matrix.cases).filter((item) => item.test)) {
-    const result = results.testResults.find(
-      (result) => Path.resolve(result.name) === Path.join(root, item.file),
-    )
     if (
-      !result?.assertionResults.some(
-        (assertion) =>
-          assertion.fullName === item.test && assertion.status === 'passed',
+      !results.testResults.some(
+        (result) =>
+          Path.resolve(result.name) === Path.join(root, item.file) &&
+          result.assertionResults.some(
+            (assertion) =>
+              assertion.fullName === item.test && assertion.status === 'passed',
+          ),
       )
     )
       errors.push(

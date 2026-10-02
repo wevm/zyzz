@@ -20,6 +20,7 @@ import * as Scope from '../compiler/internal/Scope.js'
 import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 
 /**
  * Compiles physical project source without executing authoring code.
@@ -749,6 +750,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       )
 
     const result = entry.compiler.compile({
+      [ThemeRules.shared]: native ? undefined : 'all',
       [Syntax.cache]: snapshot(entry.environment).programs(modules),
       compiler: options.compiler,
       reset: options.reset ? Reset.read() : undefined,
@@ -811,46 +813,6 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         catalogs.set(key, configuration)
         configurations.set(key, configuration)
       }
-
-    const map = new Mapping.GenMapping()
-    const styles: string[] = []
-    let line = 0
-
-    for (const [id, output] of Object.entries(result.modules)) {
-      if (!connected.has(sourceFile(id)!)) continue
-      if (!output.css) continue
-
-      for (const mapping of Mapping.allMappings(
-        Mapping.fromMap(JSON.stringify(output.cssMap)),
-      )) {
-        const generated = {
-          column: mapping.generated.column,
-          line: mapping.generated.line + line,
-        }
-
-        if (mapping.source !== undefined && mapping.original !== undefined) {
-          const location = {
-            generated,
-            original: mapping.original,
-            source: sourceFile(mapping.source) ?? mapping.source,
-          }
-
-          if (mapping.name === undefined) Mapping.addMapping(map, location)
-          else Mapping.addMapping(map, { ...location, name: mapping.name })
-        } else Mapping.addMapping(map, { generated })
-      }
-
-      for (const [index, source] of output.cssMap.sources.entries())
-        if (source !== null)
-          Mapping.setSourceContent(
-            map,
-            sourceFile(source) ?? source,
-            output.cssMap.sourcesContent?.[index] ?? null,
-          )
-
-      styles.push(output.css)
-      line += output.css.split('\n').length
-    }
 
     const owners = new Map<string, string>()
 
@@ -1018,10 +980,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       contractIds: Object.keys(compiled),
       configurations,
       connections: staged,
-      css: styles.join('\n'),
+      css: output.css,
       sharedCss: new TextDecoder().decode(shared.code),
       sharedCssMap: sharedMap,
-      cssMap: Mapping.toEncodedMap(map),
+      cssMap: {
+        ...output.cssMap,
+        sources: output.cssMap.sources.map((source) =>
+          source === null ? null : (sourceFile(source) ?? source),
+        ),
+      },
       map: {
         ...output.map,
         sources: output.map.sources.map((source) =>

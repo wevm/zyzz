@@ -1,5 +1,7 @@
 # Static native variants
 
+`Variants.compile` builds explicit numeric selection tables with a 256-selection limit. Ordinary `variants(...)` definitions processed by the native compiler use ordered fragments and have no combination-count limit. This table utility retains its existing format for manual compilation.
+
 `Variants.compile` from `zyzz/react-native` compiles `Source.extract(...).calls[index].staticRecipe` into native tables. The same root `variants` authoring supplies web and native declarations.
 
 ```ts

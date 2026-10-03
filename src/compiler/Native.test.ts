@@ -11,7 +11,7 @@ import * as Packed from '../../test/fixtures/Packed.js'
 import * as Playwright from 'playwright'
 import * as Vm from 'node:vm'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Native, Transform } from 'zyzz/compiler'
+import { Graph, Native, Source, Transform } from 'zyzz/compiler'
 import { StyleSheet } from 'zyzz/react-native'
 import { Native as Runtime } from 'zyzz/runtime'
 
@@ -53,6 +53,373 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('selects absolute line heights and final-size multipliers', async () => {
+    const output = Graph.compile({
+      modules: {
+        'library.ts': `import {variants} from 'zyzz';
+        export const card=variants({base:{fontSize:'10px',lineHeight:1.5},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}},active:{true:{lineHeight:'CaLc(4px + 1rem)'},false:{}}},defaultVariants:{size:'small',active:false}});`,
+      },
+      native: { colorScheme: 'light', platform: 'ios', units: { rem: 16 } },
+    })
+    const module = await execute(output.modules['library.ts']!.code)
+    expect(module.card()).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 12,
+          "lineHeight": 18,
+        },
+      }
+    `)
+    expect(module.card({ active: true })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 12,
+          "lineHeight": 20,
+        },
+      }
+    `)
+    expect(module.card({ size: 'large' })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 20,
+          "lineHeight": 30,
+        },
+      }
+    `)
+  })
+
+  test.each([false, true])(
+    'omits inherited constructor defaults in native recipes (packed: %s)',
+    async (packed) => {
+      const source = `import {variants} from 'zyzz';
+        export const card=variants({base:{opacity:0.2},variants:{constructor:{selected:{opacity:0.8}}}});`
+      const publisher = Graph.compile({ modules: { 'library.ts': source } })
+      const output = Graph.compile({
+        ...(packed ? { contracts: publisher.contracts } : {}),
+        imports: {
+          'app.ts': { './library.js': 'library.ts' },
+          'library.ts': { zyzz: null },
+        },
+        modules: {
+          ...(!packed ? { 'library.ts': source } : {}),
+          'app.ts': `import {card} from './library.js';
+            export const results=[card(),card({constructor:undefined}),card({constructor:null}),card({constructor:'selected'})];`,
+        },
+        native: { colorScheme: 'light', platform: 'ios' },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          ...Object.fromEntries(
+            Object.entries(publisher.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+          ...Object.fromEntries(
+            Object.entries(output.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+        },
+      })
+
+      expect(Vm.runInNewContext(`${code}; Fixture.results`))
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "style": {
+              "opacity": 0.2,
+            },
+          },
+          {
+            "style": {
+              "opacity": 0.2,
+            },
+          },
+          {
+            "style": {
+              "opacity": 0.2,
+            },
+          },
+          {
+            "style": {
+              "opacity": 0.8,
+            },
+          },
+        ]
+      `)
+    },
+  )
+
+  test.each(['ios', 'android'] as const)(
+    'selects large source and packed recipes on %s',
+    async (platform) => {
+      const source = await Fs.readFile(
+        'test/fixtures/native/Variants.ts',
+        'utf8',
+      )
+      const publisher = Graph.compile({ modules: { 'library.ts': source } })
+      const vars = Source.extract({
+        moduleId: 'library.ts',
+        source,
+        target: 'native',
+      }).calls[0]!.nativeContext!.vars
+      for (const packed of [false, true]) {
+        const output = Graph.compile({
+          ...(packed ? { contracts: publisher.contracts } : {}),
+          imports: {
+            'app.ts': {
+              './library.js': 'library.ts',
+              zyzz: null,
+              'zyzz/runtime': null,
+            },
+            'library.ts': { zyzz: null },
+          },
+          modules: {
+            ...(!packed ? { 'library.ts': source } : {}),
+            'app.ts': `import {styles} from './library.js';import {cx} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+              export const results=(input={},set='base',colorScheme='light',width=400)=>NativeContext.resolve(styles.button(input).style,{colorScheme,set,viewport:{height:800,width}});
+              export const compose=()=>NativeContext.resolve(cx(styles.button({scale:'large'}),styles.overlay()).style,{colorScheme:'light',viewport:{height:800,width:400}});`,
+          },
+          native: {
+            colorScheme: 'light',
+            contextual: true,
+            platform,
+            set: 'base',
+            vars,
+          },
+        })
+        const code = await Packed.bundle({
+          entry: 'app.ts',
+          modules: {
+            ...Object.fromEntries(
+              Object.entries(publisher.modules).map(([id, value]) => [
+                id,
+                value.code,
+              ]),
+            ),
+            ...Object.fromEntries(
+              Object.entries(output.modules).map(([id, value]) => [
+                id,
+                value.code,
+              ]),
+            ),
+          },
+        })
+        const module = Vm.runInNewContext(`${code}\nFixture`) as {
+          compose: () => unknown
+          results: (
+            input?: object,
+            set?: string,
+            scheme?: string,
+            width?: number,
+          ) => StyleSheet.NativeStyle
+        }
+        const defaults = module.results()
+
+        expect(defaults).toMatchInlineSnapshot(`
+          {
+            "backgroundColor": "#ff0000",
+            "fontSize": 16,
+            "height": 40,
+            "lineHeight": 24,
+            "opacity": 0.2,
+            "paddingBottom": 6,
+            "paddingLeft": 6,
+            "paddingRight": 6,
+            "paddingTop": 6,
+            "transform": [
+              {
+                "scale": 1,
+              },
+            ],
+            "width": 100,
+          }
+        `)
+        expect(
+          module.results({ scale: undefined }) === defaults,
+        ).toMatchInlineSnapshot('true')
+        expect(Object.isFrozen(defaults)).toMatchInlineSnapshot('true')
+        expect(
+          module.results({
+            appearance: null,
+            disabled: null,
+            loading: null,
+            scale: null,
+            variant: null,
+          }),
+        ).toMatchInlineSnapshot(`
+          {
+            "backgroundColor": "#ff0000",
+            "fontSize": 10,
+            "height": 24,
+            "lineHeight": 15,
+            "opacity": 0.2,
+            "paddingBottom": 2,
+            "paddingLeft": 2,
+            "paddingRight": 2,
+            "paddingTop": 2,
+            "transform": [
+              {
+                "scale": 1,
+              },
+            ],
+            "width": 100,
+          }
+        `)
+        const opacity = module.results({
+          appearance: 'inverse',
+          scale: 'large',
+        }).opacity
+        if (platform === 'ios') expect(opacity).toMatchInlineSnapshot('0.75')
+        else expect(opacity).toMatchInlineSnapshot('0.65')
+        expect(
+          module.results(
+            {
+              appearance: 'overlay',
+              disabled: true,
+              loading: true,
+              scale: 'large',
+            },
+            'alternate',
+            'dark',
+            768,
+          ),
+        ).toMatchInlineSnapshot(`
+          {
+            "backgroundColor": "#ffff00",
+            "color": "#334455",
+            "fontSize": 20,
+            "height": 64,
+            "lineHeight": 30,
+            "opacity": 0.1,
+            "paddingBottom": 8,
+            "paddingLeft": 9,
+            "paddingRight": 8,
+            "paddingTop": 8,
+            "transform": [
+              {
+                "scale": 2,
+              },
+            ],
+            "width": 160,
+          }
+        `)
+        expect(
+          module.results({ variant: 'secondary' }, 'base', 'dark')
+            .backgroundColor,
+        ).toMatchInlineSnapshot('"#00ff00"')
+        expect(module.compose()).toMatchInlineSnapshot(`
+          [
+            {
+              "backgroundColor": "#ff0000",
+              "fontSize": 20,
+              "height": 48,
+              "lineHeight": 30,
+              "opacity": 0.2,
+              "paddingBottom": 8,
+              "paddingLeft": 8,
+              "paddingRight": 8,
+              "paddingTop": 8,
+              "transform": [
+                {
+                  "scale": 1,
+                },
+              ],
+              "width": 100,
+            },
+            {
+              "opacity": 0.9,
+            },
+          ]
+        `)
+        expect(() =>
+          module.results({ scale: 'missing' }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          '[Native.SelectionError: Unknown native recipe choice for scale.]',
+        )
+        expect(() =>
+          module.results({ extra: true }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          '[Native.SelectionError: Unknown native recipe input: extra.]',
+        )
+        expect(() =>
+          module.results({ scale: { medium: undefined } }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          '[Native.SelectionError: Static native choice does not accept a payload: scale.]',
+        )
+
+        for (const appearance of ['base', 'inverse', 'overlay', null])
+          for (const scale of ['small', 'medium', 'large', null])
+            for (const variant of ['primary', 'secondary', 'tertiary', null])
+              for (const disabled of [false, true, null])
+                for (const loading of [false, true, null])
+                  module.results({
+                    appearance,
+                    disabled,
+                    loading,
+                    scale,
+                    variant,
+                  })
+
+        expect(module.results()).toMatchInlineSnapshot(`
+          {
+            "backgroundColor": "#ff0000",
+            "fontSize": 16,
+            "height": 40,
+            "lineHeight": 24,
+            "opacity": 0.2,
+            "paddingBottom": 6,
+            "paddingLeft": 6,
+            "paddingRight": 6,
+            "paddingTop": 6,
+            "transform": [
+              {
+                "scale": 1,
+              },
+            ],
+            "width": 100,
+          }
+        `)
+        expect(module.results() === defaults).toMatchInlineSnapshot('false')
+      }
+    },
+  )
+
+  test('selects dynamic payloads beyond the static combination limit', async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      moduleId: 'payloads.ts',
+      source: `import {variants} from 'zyzz';
+        const button=variants({base:{fontSize:'10px',lineHeight:1.5},variants:{appearance:{base:{},inverse:{},overlay:{}},scale:{small:{fontSize:'12px'},medium:{fontSize:'16px'},large:{fontSize:'20px'}},variant:{primary:{},secondary:{},tertiary:{}},disabled:{true:{opacity:0.4},false:{}},loading:{true:(input:{alpha:number})=>({opacity:input.alpha}),false:{}}},defaultVariants:{scale:'medium'},compoundVariants:[{when:{disabled:true,loading:true},style:{padding:'8px'}}]});
+        export const results=[button({loading:{true:{alpha:0.6}},disabled:true}),button({loading:null,scale:'large'})];`,
+    })
+
+    expect((await execute(output.code)).results).toMatchInlineSnapshot(`
+      [
+        {
+          "style": {
+            "fontSize": 16,
+            "lineHeight": 24,
+            "opacity": 0.6,
+            "paddingBottom": 8,
+            "paddingLeft": 8,
+            "paddingRight": 8,
+            "paddingTop": 8,
+          },
+        },
+        {
+          "style": {
+            "fontSize": 20,
+            "lineHeight": 30,
+          },
+        },
+      ]
+    `)
+  })
+
   test('retains deferred errors for mixed supported and unsupported variable conditions', () => {
     const output = Native.compile({
       colorScheme: 'light',
@@ -1448,6 +1815,13 @@ describe('compile', () => {
       platform: 'ios',
       colorScheme: 'light',
     })
+    expect(Object.values(result.recipes).map((recipe) => recipe.axes))
+      .toMatchInlineSnapshot(`
+      [
+        {},
+      ]
+    `)
+
     const module = await execute(result.code)
     expect(StyleSheet.flatten(module.card().style)).toMatchInlineSnapshot(`
       {

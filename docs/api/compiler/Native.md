@@ -1,6 +1,6 @@
 # Native source compilation
 
-`Native.compile` from `zyzz/compiler` rewrites local shared `style`, `variants`, and `cx` authoring into native callables. Runtime calls select precompiled objects, bind dynamic scalar values, and compose ordinary native style props. They do not parse authoring source, generate CSS, or inspect the device.
+`Native.compile` from `zyzz/compiler` rewrites local shared `style`, `variants`, and `cx` authoring into native callables. Runtime calls combine selected precompiled fragments, bind dynamic scalar values, and compose ordinary native style props. They do not parse authoring source, generate CSS, or inspect the device.
 
 Native compilation also rewrites linked `useVars(vars, selector?)` arguments into readonly native profiles using the same font and unit mappings. The [React adapter](../react-native/react.md) selects those profiles through the nearest Provider.
 
@@ -28,9 +28,11 @@ The emitted module exports `button`. `button({ tone: 'loud' })` returns `{ style
 
 `colorScheme` is required. `platform` is required when platform branches exist. `vars`, `units`, and `fonts` follow `StyleSheet.compile`; `set` selects a supplied variable-set label and otherwise defaults to `default`. Local configured tokens retain their fallback values. Compile the required contexts ahead of time and select prepared callables with [Host.bind](../react-native/Host.md). Platform changes require compatible compiled output and another host.
 
-The result includes rewritten `code`, a version-three `map` with original source content, and theme/scheme `recipes` tables for static definitions. The generated module imports `Native` or `NativeDynamic` from `zyzz/runtime`. The runtime helper can also bind a table selected with `StyleSheet.select`, without loading the compiler.
+The result includes rewritten `code`, a version-three `map` with original source content, and theme/scheme `recipes` tables for definitions without variant or scalar programs. Variant and scalar definitions retain their compiled data in `code`. The generated module imports `Native` or `NativeDynamic` from `zyzz/runtime`.
 
-Recipes have at most 256 selections per theme and scheme, including null choices. Compilation rejects named conditions, CSS selectors, standalone variables, contributions, and web theme controls. CLI/bundler routing and device acceptance remain outside this source path.
+Compiled recipes have no combination-count limit. Compilation retains base, variant, and compound fragments rather than expanding every combination. Static results are immutable, with at most 256 cached selections per compiled context. Evicted selections are recomputed. Scalar payloads produce fresh results, and caller overrides remain outside the cache.
+
+The separate low-level [`Variants.compile`](../react-native/Variants.md) API retains its bounded numeric table format. Source compilation rejects named conditions, CSS selectors, standalone variables, contributions, and web theme controls. CLI/bundler routing and device acceptance remain outside this source path.
 
 ## Dynamic values
 
@@ -99,7 +101,7 @@ Native graph output uses the existing `modules` and `dependencies` shape. Module
 
 ## Packed Callables
 
-Both web and native graph builds publish static recipes in `<entry>.zyzz.json` contracts. Native consumers supply those contracts and host-resolved `imports` edges. Compilation restores token references, applies the consumer's platform and scheme, and replaces imported callables with typed native table selectors.
+Both web and native graph builds publish static recipes in `<entry>.zyzz.json` contracts. Native consumers supply those contracts, host-resolved `imports` edges, and any selected variable catalogs. Compilation restores token references, applies the consumer's context, and replaces imported callables with typed native selectors. Packed recipes also avoid combination expansion.
 
 ```ts
 const native = Graph.compile({

@@ -52,9 +52,13 @@ export function compile(options: compile.Options): compile.ReturnType {
     })
   let helper = '__zyzzNative'
   while (
-    [helper, `${helper}Context`, `${helper}Dynamic`, `${helper}Vars`].some(
-      (name) => names.has(name),
-    )
+    [
+      helper,
+      `${helper}Context`,
+      `${helper}Dynamic`,
+      `${helper}Static`,
+      `${helper}Vars`,
+    ].some((name) => names.has(name))
   )
     helper += '_'
   let dynamicHelper = `${helper}Dynamic`
@@ -72,6 +76,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
   const recipes: Record<string, Variants.Definition> = Object.create(null)
   let dynamic = false
+  let finite = false
   const contexts = new Map<string, string>()
   const compiledCalls = new WeakMap<
     Variants.Definition,
@@ -292,6 +297,11 @@ export function compile(options: compile.Options): compile.ReturnType {
     compiled?: Variants.Definition,
     bindings?: ReturnType<typeof NativeBindings.prepare>,
   ): string {
+    const program =
+      Object.keys(recipe.axes).length > 0 ||
+      call?.slots ||
+      call?.recipe?.payloads?.length
+
     if (contextOptions.contextual) {
       const vars = call?.nativeContext?.vars ?? contextOptions.vars
       const media = (() => {
@@ -338,7 +348,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         return `${helper}Context.responsive(${JSON.stringify(media.queries)},{${profiles.join(',')}})`
       }
-      if (!call?.slots && !call?.recipe?.payloads?.length)
+      if (!program)
         compiled ??= Variants.compile({
           recipe,
           fonts: contextOptions.fonts,
@@ -348,7 +358,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         })
       else {
         try {
-          bindings = NativeBindings.prepare(recipe, call!, {
+          bindings = NativeBindings.prepare(recipe, call ?? {}, {
             ...contextOptions,
             vars,
           })
@@ -418,18 +428,36 @@ export function compile(options: compile.Options): compile.ReturnType {
       }
       return `${context}(${[...tables.keys()].join(',')})`
     }
-    if (call?.slots || call?.recipe?.payloads?.length) {
-      dynamic = true
+    const axes = Object.entries(recipe.axes)
+      .map(
+        ([axis, choices]) =>
+          `${JSON.stringify(axis)}:readonly ${JSON.stringify(choices)}`,
+      )
+      .join(';')
+
+    if (program) {
+      const scalar = !!(call?.slots || call?.recipe?.payloads?.length)
+      dynamic ||= scalar
+      finite ||= !scalar
       const compiled = (() => {
         try {
-          return NativeBindings.compile(recipe, call, contextOptions, bindings)
+          const compiled = NativeBindings.compile(
+            recipe,
+            call ?? {},
+            contextOptions,
+            bindings,
+          )
+          return scalar ? compiled : NativeBindings.finite(compiled)
         } catch (error) {
           if (error instanceof StyleSheet.CompileError) throw error
           throw new CompileError((error as Error).message)
         }
       })()
-      const value = create(dynamicHelper, compiled)
+      const value = create(scalar ? dynamicHelper : `${helper}Static`, compiled)
       if (!typed) return value
+      if (!call?.slots && !call?.recipe?.payloads?.length)
+        return `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
+
       let input = call.valuesType ?? '{}'
       if (call.recipe) {
         input = `{${Object.entries(recipe.axes)
@@ -474,12 +502,6 @@ export function compile(options: compile.Options): compile.ReturnType {
           })
     if (options.contextual) compiledCalls.set(compiled, { styles, value })
     if (!typed) return value
-    const axes = Object.entries(compiled.axes)
-      .map(
-        ([axis, choices]) =>
-          `${JSON.stringify(axis)}:readonly ${JSON.stringify(choices)}`,
-      )
-      .join(';')
     return `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
   }
 
@@ -822,7 +844,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       offset = node.end
     }
 
-    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `${shared?.definitions.has(value) ? 'export ' : ''}const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...imports, ...compositions, ...packed].join('\n')}\n`
+    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${finite ? `,NativeStatic as ${helper}Static` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `${shared?.definitions.has(value) ? 'export ' : ''}const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...imports, ...compositions, ...packed].join('\n')}\n`
     module.appendLeft(offset, prelude)
     edits.push({ start: offset, end: offset, code: prelude, expression: false })
   }
@@ -862,7 +884,7 @@ export declare namespace compile {
     /** Label selected from supplied vars. Defaults to the token-fallback default table. */
     readonly set?: string | undefined
   }
-  /** Executable source with immutable recipe tables and authored source mappings. */
+  /** Executable source with immutable native data and authored source mappings. */
   type ReturnType = {
     /** Internal node replacements for syntax-tree adapters. */
     readonly [Edits.key]: readonly Edits.Edit[]
@@ -870,7 +892,7 @@ export declare namespace compile {
     readonly code: string
     /** Version-three source map encoded as JSON. */
     readonly map: string
-    /** All set/scheme tables for each extracted definition. */
+    /** Set/scheme tables for definitions without variant or scalar programs. */
     readonly recipes: Readonly<Record<string, Variants.Definition>>
   }
 }

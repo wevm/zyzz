@@ -1,4 +1,4 @@
-/** Applies compiled native binding instructions to runtime scalar payloads. @module */
+/** Selects ordered native fragments and applies runtime scalar payloads. @module */
 import * as Scalar from '../react-native/internal/Scalar.js'
 import * as Calculation from '../react-native/internal/Calculation.js'
 import type * as StyleSheet from '../react-native/StyleSheet.js'
@@ -53,7 +53,7 @@ export type Program = {
   }[]
 }
 
-/** Binds generated instructions without running authoring callbacks or generating CSS. */
+/** Applies generated rules with bounded static caching and fresh scalar results. */
 export function create(
   options: create.Options,
 ): Callable<Record<string, unknown>> {
@@ -64,6 +64,10 @@ export function create(
     Object.freeze(value)
   }
   for (const style of Object.values(options.styles)) freeze(style)
+  const cache =
+    Object.keys(options.program.slots).length || options.payloads?.length
+      ? undefined
+      : new Map<string, StyleSheet.NativeStyle>()
 
   return (input = {}) => {
     const bindings: Record<string, string | number> = Object.create(null)
@@ -99,7 +103,9 @@ export function create(
     for (const [axis, choices] of Object.entries(options.axes)) {
       let value = Object.hasOwn(input, axis) ? input[axis] : undefined
       if (value === undefined) {
-        value = options.defaults[axis]
+        value = Object.hasOwn(options.defaults, axis)
+          ? options.defaults[axis]
+          : undefined
         if (value != null && Object.hasOwn(options.defaultPayloads ?? {}, axis))
           value = { [String(value)]: options.defaultPayloads![axis] }
       }
@@ -108,7 +114,8 @@ export function create(
         continue
       }
       let payload: unknown
-      if (typeof value === 'object' && !Array.isArray(value)) {
+      const scoped = typeof value === 'object' && !Array.isArray(value)
+      if (scoped) {
         const entries = Object.entries(value)
         if (entries.length !== 1)
           throw new Native.SelectionError(
@@ -129,11 +136,15 @@ export function create(
         (entry) => entry.axis === axis && entry.choice === choice,
       )
       if (definition) bind(definition.slots[0]!, payload)
-      else if (payload !== undefined)
+      else if (scoped)
         throw new Native.SelectionError(
           `Static native choice does not accept a payload: ${axis}.`,
         )
     }
+
+    const key = cache ? JSON.stringify(Object.values(selected)) : undefined
+    const cached = key === undefined ? undefined : cache?.get(key)
+    if (cached) return { style: input.style ? [cached, input.style] : cached }
 
     const output: Record<string, unknown> = {}
     let lineHeight: string | number | undefined
@@ -234,6 +245,13 @@ export function create(
         ])
     }
     const style = output as StyleSheet.NativeStyle
+    if (cache && key !== undefined) {
+      Object.freeze(style)
+      // Bound retained selections without limiting the recipe's choice space.
+      if (cache.size >= 256) cache.delete(cache.keys().next().value!)
+      cache.set(key, style)
+    }
+
     return { style: input.style ? [style, input.style] : style }
   }
 }

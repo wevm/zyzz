@@ -6,7 +6,7 @@ type Value = { amount: number; length: boolean }
 /** Resolves number/length arithmetic, rejecting relative units and incompatible dimensions. */
 export function length(input: string, options: Scalar.Options): number {
   const pattern =
-    /\s*(?:(\d+(?:\.\d*)?|\.\d+)(?:[eE]([+-]?\d+))?(px|rem)?|(calc)|([()+*/-]))/gy
+    /\s*(?:(\d+(?:\.\d*)?|\.\d+)(?:[eE]([+-]?\d+))?(px|rem)?|(calc)|([()+*/-]))/giy
   const positions: number[] = []
   const tokens: (string | Value)[] = []
   let offset = 0
@@ -20,11 +20,11 @@ export function length(input: string, options: Scalar.Options): number {
     if (positions.length > 512)
       throw new Error('Native calc exceeds 512 tokens.')
     if (match[1] === undefined) {
-      tokens.push(match[4] ?? match[5]!)
+      tokens.push(match[4]?.toLowerCase() ?? match[5]!)
       continue
     }
 
-    const unit = match[3]
+    const unit = match[3]?.toLowerCase()
     const scale =
       unit === 'rem'
         ? options.units?.rem

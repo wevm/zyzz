@@ -63,28 +63,72 @@ function useBindings() {
   )
   const store = owner ?? fallback
   const [, render] = React.useReducer((count: number) => count + 1, 0)
+  const [refs] = React.useState(
+    () =>
+      new Map<
+        Instance,
+        {
+          active: boolean
+          ref: React.Ref<Instance> | undefined
+          release: () => void
+        }
+      >(),
+  )
+  React.useLayoutEffect(() => {
+    for (const [instance, entry] of refs) {
+      if (entry.active) continue
+      entry.release()
+      refs.delete(instance)
+    }
+  })
+  React.useLayoutEffect(
+    () => () => {
+      for (const entry of refs.values()) entry.release()
+      refs.clear()
+    },
+    [refs],
+  )
   return {
     style: NativeContext.application,
     view: (props: Record<string, unknown>) => {
-      if (!Object.hasOwn(props, 'style')) return props
       const snapshot = store.getSnapshot()
       const selected = NativeContext.resolve(props.style, snapshot)
       const initial = NativeContext.key(props.style, snapshot)
-      if (!initial.length && typeof selected !== 'function')
-        return { ...props, style: selected }
 
       return {
         ...props,
         ref: (value: Instance | null) => {
           const ref = props.ref as React.Ref<Instance> | undefined
-          const release = typeof ref === 'function' ? ref(value) : undefined
-          if (ref && typeof ref !== 'function') ref.current = value
           if (!value) return
+          let entry = refs.get(value)
+          if (entry && entry.ref !== ref) {
+            entry.release()
+            refs.delete(value)
+            entry = undefined
+          }
+          if (!entry) {
+            const release = typeof ref === 'function' ? ref(value) : undefined
+            if (ref && typeof ref !== 'function') ref.current = value
+            entry = {
+              active: true,
+              ref,
+              release: () => {
+                if (typeof release === 'function') release()
+                else if (typeof ref === 'function') ref(null)
+                else if (ref) ref.current = null
+              },
+            }
+            refs.set(value, entry)
+          }
+          entry.active = true
+          const attached = entry
 
           const instance = value.getNativeScrollRef?.() ?? value
           const node = instance.__internalInstanceHandle?.stateNode?.node
           const detach = (() => {
-            if (!NativeZyzz || !node || typeof selected === 'function') {
+            if (!initial.length && typeof selected !== 'function')
+              return () => {}
+            if (!NativeZyzz || !node || !selective(selected)) {
               const unsubscribe = store.subscribe(render)
               if (store.getSnapshot() !== snapshot) render()
               return unsubscribe
@@ -98,15 +142,15 @@ function useBindings() {
                 keys.every((key, index) => Object.is(key, previous[index]))
               )
                 return { commit: () => {} }
+              const selected = NativeContext.resolve(props.style, context)
+              if (!selective(selected)) return { commit: render }
               return {
                 commit: () => {
                   previous = keys
                 },
                 patch: {
                   id,
-                  props: nativeProps(
-                    NativeContext.resolve(props.style, context),
-                  ),
+                  props: nativeProps(selected),
                 },
               }
             }
@@ -132,15 +176,26 @@ function useBindings() {
           return () => {
             detach()
             subscription?.remove()
-            if (typeof release === 'function') release()
-            else if (typeof ref === 'function') ref(null)
-            else if (ref) ref.current = null
+            attached.active = false
           }
         },
         style: selected,
       }
     },
   }
+}
+
+function selective(style: unknown): boolean {
+  if (typeof style === 'function') return false
+  const value = ReactNative.StyleSheet.flatten(
+    style as ReactNative.StyleProp<ReactNative.ViewStyle>,
+  )
+  return (
+    !value ||
+    (!('filter' in value) &&
+      !('backgroundImage' in value) &&
+      !('experimental_backgroundImage' in value))
+  )
 }
 
 function nativeProps(style: unknown): Record<string, unknown> {

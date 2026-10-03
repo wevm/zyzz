@@ -22,7 +22,7 @@ describe('defineConfig', () => {
     'selects returned providers and authoring helpers with packed=%s',
     async (packed) => {
       const modules = {
-        'config.ts': `import {Vars} from 'zyzz';import {defineConfig as create} from 'zyzz/react-native';
+        'config.ts': `import {Vars} from 'zyzz';import {defineConfig as create} from 'zyzz/react-native/react';
         const base=Vars.define({color:{ink:{light:'#123456',dark:'#abcdef'}},spacing:{gap:'4px'}});
         const alternate=Vars.extend(base,{spacing:{gap:'8px'}});
         export const config=create({defaultVars:'alternate',vars:{base,alternate}});
@@ -37,15 +37,15 @@ describe('defineConfig', () => {
             './index.js': 'index.ts',
             react: null,
             'react-dom/client': null,
-            'zyzz/react-native': null,
+            'zyzz/react-native/react': null,
           },
-          'config.ts': { zyzz: null, 'zyzz/react-native': null },
+          'config.ts': { zyzz: null, 'zyzz/react-native/react': null },
           'index.ts': { './config.js': 'config.ts' },
         },
         modules: {
           ...(!packed ? modules : {}),
           'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
-          import {useStyles,useVars} from 'zyzz/react-native';import {config,Provider,style,vars} from './index.js';
+          import {useStyles,useVars} from 'zyzz/react-native/react';import {config,Provider,style,vars} from './index.js';
           const {Provider:OtherProvider}=config;const label=style({color:'ink',paddingTop:'gap'});
           function Value(props){const values=useVars(vars);const member=useVars(config.vars,values=>values.spacing.gap);const selected=useStyles().props(label());return React.createElement('pre',{id:props.id},JSON.stringify({ink:values.color.ink,gap:values.spacing.gap,member,style:selected.style}))}
           function App(){const [name,setName]=React.useState(undefined);const [scheme,setScheme]=React.useState('light');return React.createElement(Provider,{colorScheme:scheme,vars:name},
@@ -140,7 +140,7 @@ describe('defineConfig', () => {
     expect(() =>
       Graph.compile({
         modules: {
-          'config.ts': `import {defineConfig} from 'zyzz/react-native';export const {Provider}=defineConfig()`,
+          'config.ts': `import {defineConfig} from 'zyzz/react-native/react';export const {Provider}=defineConfig()`,
         },
       }),
     ).toThrow('Native defineConfig requires a native compilation target.')
@@ -152,7 +152,7 @@ describe('useVars', () => {
     'selects responsive native variables with adapter measurements and packed=%s',
     async (packed) => {
       const modules = {
-        'config.ts': `import {Vars} from 'zyzz';import {defineConfig} from 'zyzz/react-native';
+        'config.ts': `import {Vars} from 'zyzz';import {defineConfig} from 'zyzz/react-native/react';
           const base=Vars.define({breakpoint:{md:'768px'},color:{ink:{light:'#112233',dark:'#334455'}},spacing:{gap:{default:'16px','@media md':'24px'}},typography:{body:{fontSize:{default:'16px','@media md':'20px'},lineHeight:1.5}}});
           const compact=Vars.extend(base,{spacing:{gap:{default:'8px','@media md':'12px'}}});
           export const {Provider,style,vars}=defineConfig({defaultVars:'base',vars:{base,compact}});`,
@@ -165,15 +165,15 @@ describe('useVars', () => {
             './config.js': 'config.ts',
             react: null,
             'react-dom/client': null,
-            'zyzz/react-native': null,
+            'zyzz/react-native/react': null,
             [Path.resolve('src/react-native/internal/Viewport.ts')]: null,
           },
-          'config.ts': { zyzz: null, 'zyzz/react-native': null },
+          'config.ts': { zyzz: null, 'zyzz/react-native/react': null },
         },
         modules: {
           ...(!packed ? modules : {}),
           'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
-            import {useStyles,useVars} from 'zyzz/react-native';import {Provider,style,vars} from './config.js';
+            import {useStyles,useVars} from 'zyzz/react-native/react';import {Provider,style,vars} from './config.js';
             import {context as WindowContext} from ${JSON.stringify(Path.resolve('src/react-native/internal/Viewport.ts'))};
             const label=style({paddingTop:'gap',typography:'body'});
             let selectedRenders=0;
@@ -305,6 +305,33 @@ describe('useVars', () => {
       }
     },
   )
+  test('reads catalogs named theme and vars with absolute typography lengths', async () => {
+    const compiled = Graph.compile({
+      native,
+      modules: {
+        'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+        import {Config} from 'zyzz';import {Provider,useVars} from 'zyzz/react-native/react';
+        const {vars}=Config.create({defaultVars:'theme',vars:{theme:{spacing:{gap:'4px'},typography:{body:{fontSize:'10px',lineHeight:'20px'}}},vars:{spacing:{gap:'8px'},typography:{body:{fontSize:'10px',lineHeight:'2rem'}}}}});
+        function Value(){const value=useVars(vars);return React.createElement('pre',null,JSON.stringify({gap:value.spacing.gap,lineHeight:value.typography.body.lineHeight}))}
+        createRoot(document.getElementById('app')).render(React.createElement(React.Fragment,null,...['theme','vars'].map(name=>React.createElement(Provider,{key:name,colorScheme:'light',vars:name},React.createElement(Value)))));`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': compiled.modules['app.ts']!.code },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div>')
+      await page.addScriptTag({ content: code })
+      await expect
+        .poll(() => page.locator('pre').allTextContents())
+        .toEqual(['{"gap":4,"lineHeight":20}', '{"gap":8,"lineHeight":32}'])
+    } finally {
+      await browser.close()
+    }
+  })
 
   test('resolves namespace imports, aliased hooks, config members, and standalone definitions', async () => {
     const compiled = Graph.compile({
@@ -314,8 +341,8 @@ describe('useVars', () => {
           import * as React from 'react'
           import {createRoot} from 'react-dom/client'
           import {Config, Vars} from 'zyzz'
-          import * as Adapter from 'zyzz/react-native'
-          import {useVars as read} from 'zyzz/react-native'
+          import * as Adapter from 'zyzz/react-native/react'
+          import {useVars as read} from 'zyzz/react-native/react'
           import {Provider} from 'zyzz/react-native/react'
 
           const config = Config.create({defaultVars:'base',vars:{base:{spacing:{gap:'4px'}},alternate:{spacing:{gap:'8px'}}}})
@@ -473,6 +500,83 @@ describe('useVars', () => {
       ).toMatchInlineSnapshot(
         '"Native variable typography.body.@media (min-width: 768px).fontSize: Media-conditioned variables require a web target."',
       )
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('shares an imported catalog across consumer modules', async () => {
+    const modules = {
+      'config.ts': `import {Config} from 'zyzz';export const {vars}=Config.create({vars:{spacing:{gap:'4px'}}});`,
+      'left.ts': `import {useVars} from 'zyzz/react-native/react';import {vars} from './config.js';export function useLeft(){return useVars(vars).spacing}`,
+      'nested/right.ts': `import {useVars} from 'zyzz/react-native/react';import {vars} from '../config.js';export function useRight(){return useVars(vars).spacing}`,
+      'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';import {Provider} from 'zyzz/react-native/react';import {useLeft} from './left.js';import {useRight} from './nested/right.js';function App(){const left=useLeft();const right=useRight();return React.createElement('pre',null,JSON.stringify({gap:left.gap,shared:left===right}))}createRoot(document.getElementById('app')).render(React.createElement(Provider,{colorScheme:'light'},React.createElement(App)));`,
+    }
+    const compiled = Graph.compile({ modules, native })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: Object.fromEntries(
+        Object.entries(compiled.modules).map(([id, output]) => [
+          id,
+          output.code,
+        ]),
+      ),
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div>')
+      await page.addScriptTag({ content: code })
+      await expect
+        .poll(() => page.locator('pre').textContent())
+        .toBe('{"gap":4,"shared":true}')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('commits matching application props and variable selections', async () => {
+    const compiled = Graph.compile({
+      native,
+      modules: {
+        'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+        import {Config} from 'zyzz';import {Provider,useStyles,useVars} from 'zyzz/react-native/react';
+        const {vars,style}=Config.create({defaultVars:'base',vars:{base:{spacing:{gap:'4px'}},alternate:{spacing:{gap:'8px'}}}});
+        const card=style({paddingTop:'gap'});const commits=[];
+        function Child(props){const gap=useVars(vars).spacing.gap;const padding=useStyles().props(card()).style.paddingTop;
+          React.useLayoutEffect(()=>{commits.push([props.gap,gap,padding])});
+          return React.createElement('pre',{id:'values'},JSON.stringify([props.gap,gap,padding]))}
+        function App(){const [name,setName]=React.useState('base');return React.createElement(React.Fragment,null,
+          React.createElement('button',{onClick:()=>React.startTransition(()=>setName(name==='base'?'alternate':'base'))},'change'),
+          React.createElement(Provider,{colorScheme:'light',vars:name},React.createElement(Child,{gap:name==='base'?4:8})))}
+        createRoot(document.getElementById('app')).render(React.createElement(React.StrictMode,null,React.createElement(App)));export {commits};`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': compiled.modules['app.ts']!.code },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div>')
+      await page.addScriptTag({ content: code })
+      await expect
+        .poll(() => page.locator('#values').textContent())
+        .toBe('[4,4,4]')
+      await page.locator('button').click()
+      await expect
+        .poll(() => page.locator('#values').textContent())
+        .toBe('[8,8,8]')
+      await page.locator('button').click()
+      await expect
+        .poll(() => page.locator('#values').textContent())
+        .toBe('[4,4,4]')
+      expect(
+        await page.evaluate(
+          'Fixture.commits.every(([expected,vars,style])=>expected===vars&&expected===style)',
+        ),
+      ).toBe(true)
     } finally {
       await browser.close()
     }

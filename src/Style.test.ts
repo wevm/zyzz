@@ -3,16 +3,21 @@
  * @module
  */
 import * as Esbuild from 'esbuild'
+import * as ChildProcess from 'node:child_process'
+import * as Fs from 'node:fs/promises'
+import * as Module from 'node:module'
 import * as Path from 'node:path'
+import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import * as Worker from 'node:worker_threads'
 import { chromium } from 'playwright'
 import { getQuickJS } from 'quickjs-emscripten'
-import { describe, expect, test } from 'vite-plus/test'
+import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import { Css } from 'zyzz/web'
 import { components } from '../test/fixtures/components.js'
+import * as Conformance from '../test/fixtures/Conformance.js'
 
 function diagnose(input: unknown, options: Style.define.Options = {}) {
   try {
@@ -915,5 +920,126 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     } finally {
       await browser.close()
     }
+  })
+})
+
+describe('consumer types', () => {
+  const root = Path.resolve(import.meta.dirname, '..')
+  let cases: readonly Conformance.Case[]
+
+  beforeAll(() => {
+    cases = Conformance.cases()
+  }, 30_000)
+
+  // Programs within each group share one incremental cache and cannot overlap.
+  describe.concurrent.each([0, 1])('group %i', (group) => {
+    let directory: string
+
+    beforeAll(async () => {
+      directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
+    }, 30_000)
+
+    afterAll(async () => {
+      await Fs.rm(directory, { force: true, recursive: true })
+    })
+
+    test.sequential.for(
+      Array.from({ length: 5 }, (_, index) => group * 5 + index),
+    )('partition %i', { timeout: 310_000 }, async (partition, context) => {
+      const groups = new Map<string, string>()
+      // Separate programs bound checker work without reducing the property or value corpus.
+      const properties = Conformance.properties().filter(
+        (_, index) => index % 10 === partition,
+      )
+
+      const declarations = properties.map((property) => {
+        const values = [
+          ...cases
+            .filter((entry) => entry.property === property)
+            .map(({ value }) => value),
+          'var(--probe)',
+          'var(--probe,)',
+          'calc(1px + var(--probe))',
+        ].flatMap((value) => [value, `${value} !important`])
+
+        const checks: string[] = []
+
+        // Check scalars individually to avoid native compiler tuple-comparison limits.
+        for (const value of values) {
+          const key = JSON.stringify(value)
+          let group = groups.get(key)
+
+          if (!group) {
+            group = `values${groups.size}`
+            groups.set(key, group)
+          }
+
+          checks.push(`${group} satisfies Style.Properties['${property}'];`)
+        }
+
+        return `${checks.join('\n')}\nstyle({${JSON.stringify(property)}: [${values
+          .slice(0, 16)
+          .map((value) => JSON.stringify(value))
+          .join(',')}]});`
+      })
+
+      const rejections = Conformance.rejected
+        .filter((_, index) => index % 10 === partition)
+        .map(
+          ({ property, value }) =>
+            `// @ts-expect-error Invalid or deliberately unsupported scalar.\nstyle({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\nstyle({${property}: ${JSON.stringify(`${value} !important`)}});`,
+        )
+      const booleans = properties.map(
+        (property) =>
+          `style({${JSON.stringify(property)}: [' InHeRiT !important', ${JSON.stringify(String.raw`\69 nherit/**/ !important`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\nstyle({${JSON.stringify(property)}: true});`,
+      )
+      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { style, type Style } from 'zyzz';\ndescribe('style', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
+
+      await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
+      await Fs.writeFile(
+        Path.join(directory, 'tsconfig.json'),
+        JSON.stringify({
+          exclude: [],
+          extends: '../tsconfig.json',
+          include: ['./consumer.test-d.ts'],
+        }),
+      )
+
+      const require = Module.createRequire(import.meta.url)
+
+      const { stderr, stdout } = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          '--max-old-space-size=6144',
+          Path.join(
+            Path.dirname(require.resolve('typescript/package.json')),
+            'bin/tsc',
+          ),
+          '--incremental',
+          '--project',
+          Path.join(directory, 'tsconfig.json'),
+          '--tsBuildInfoFile',
+          Path.join(directory, 'consumer.tsbuildinfo'),
+        ],
+        { cwd: root, maxBuffer: 1024 * 1024, timeout: 300_000 },
+      ).catch(async (error: unknown) => {
+        await Fs.mkdir(Path.join(root, 'test-results'), { recursive: true })
+        await Fs.writeFile(
+          Path.join(root, `test-results/css-consumer-${partition}.test-d.ts`),
+          source,
+        )
+
+        if (error && typeof error === 'object' && 'stdout' in error)
+          throw new Error(
+            String(error.stdout) ||
+              String('stderr' in error ? error.stderr : error),
+          )
+
+        throw error
+      })
+
+      context.expect(stderr).toMatchInlineSnapshot(`""`)
+      context.expect(stdout).toMatchInlineSnapshot(`""`)
+    })
   })
 })

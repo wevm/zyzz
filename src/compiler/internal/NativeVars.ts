@@ -67,7 +67,7 @@ export function compile(options: compile.Options): Runtime.create.Options {
       }
       if (Token.isExpression(value) && 'group' in value) {
         const text = value.parts.map(resolve).join('')
-        return value.group === 'spacing' && text.startsWith('calc(')
+        return value.group === 'spacing' && /^\s*calc\(/i.test(text)
           ? `${Calculation.length(text, options) / (options.units?.px ?? 1)}px`
           : text
       }
@@ -92,6 +92,16 @@ export function compile(options: compile.Options): Runtime.create.Options {
             throw new Error('Media-conditioned variables require a web target.')
           const value = resolve(source)
           if (parts[0] === 'typography' && property === 'lineHeight') {
+            if (
+              typeof value === 'string' &&
+              /^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?(?:px|rem)\s*$/i.test(
+                value,
+              )
+            )
+              return Scalar.length(value.trim().toLowerCase(), options, false, [
+                path,
+              ])
+
             const multiplier = typeof value === 'number' ? value : Number(value)
             if (
               !Number.isFinite(multiplier) ||
@@ -154,4 +164,16 @@ export declare namespace compile {
     /** Compatible authored definitions. */
     readonly vars: Readonly<Record<string, Theme.Definition>>
   }
+}
+
+/** Graph-owned profile exports and imports, excluded from public adapter options. */
+export const shared = Symbol('zyzz.compiler.native.vars')
+
+/** Static profile artifacts belonging to one source module. */
+export type Shared = {
+  readonly definitions: ReadonlyMap<string, string>
+  readonly reads: ReadonlyMap<
+    number,
+    { readonly name: string; readonly source?: string | undefined }
+  >
 }

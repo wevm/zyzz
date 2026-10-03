@@ -96,7 +96,7 @@ describe('defineConfig', () => {
               ),
             )
             response.end('ok')
-            if (report.name === (fixture === 'Updates' ? 'remount' : 'commit'))
+            if (report.name === (fixture === 'Updates' ? 'rebound' : 'commit'))
               complete.resolve()
           } catch (error) {
             response.writeHead(500).end(String(error))
@@ -434,6 +434,30 @@ describe('defineConfig', () => {
             return
           }
 
+          const transitions = frames.splice(7)
+          const transitionColors = colors.splice(7)
+          expect(transitions.map((frame) => frame.name)).toEqual([
+            'static',
+            'unstyled',
+            'rebound',
+          ])
+          expect(transitions.map((frame) => frame.native.bindings)).toEqual([
+            2, 2, 3,
+          ])
+          expect(transitions.map((frame) => frame.releases)).toEqual([2, 2, 2])
+          expect(transitionColors.map((frame) => frame.themed)).toEqual([
+            '#0000ffff',
+            '#ffffffff',
+            '#ffff00ff',
+          ])
+          expect(
+            transitions[0]!.geometry.find((view) => view.id === 'themed')!
+              .width,
+          ).toBe(60)
+          expect(
+            transitions[2]!.geometry.find((view) => view.id === 'themed')!
+              .width,
+          ).toBe(160)
           expect(frames.map((frame) => frame.name)).toMatchInlineSnapshot(`
             [
               "initial",
@@ -542,10 +566,10 @@ describe('defineConfig', () => {
               0,
               0,
               0,
-              1,
-              1,
-              3,
-              3,
+              0,
+              0,
+              2,
+              2,
             ]
           `)
           expect(

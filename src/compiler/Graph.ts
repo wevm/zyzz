@@ -8,6 +8,8 @@ import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Native from './Native.js'
+import * as NativeVars from './internal/NativeVars.js'
+import * as NativeStyleSheet from '../react-native/StyleSheet.js'
 import * as Edits from './internal/Edits.js'
 import * as Identity from '../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
@@ -1086,10 +1088,76 @@ function build(options: compile.Options, cache?: Cache): Cache {
           : {}),
       }
     }
+    const profiles = new Map<
+      string,
+      {
+        definitions: Map<string, string>
+        reads: Map<number, { name: string; source?: string }>
+      }
+    >()
+    const reserved = new Set(
+      [...identifiers.values()].flatMap((names) => [...names]),
+    )
+    function profile(moduleId: string) {
+      let value = profiles.get(moduleId)
+      if (!value) {
+        value = { definitions: new Map(), reads: new Map() }
+        profiles.set(moduleId, value)
+      }
+      return value
+    }
+    if (ids.some((id) => extracted.get(id)!.nativeVars?.length))
+      NativeStyleSheet.compile({
+        fonts: native.fonts,
+        platform: native.platform,
+        units: native.units,
+        styles: { styles: [] },
+      })
+    for (const moduleId of ids) {
+      for (const read of extracted.get(moduleId)!.nativeVars ?? []) {
+        const owner = owners[read.owner]?.moduleId
+        // Packed catalogs without source retain their local profile fallback.
+        if (!owner || !Object.hasOwn(options.modules, owner)) continue
+        let value: string
+        try {
+          value = JSON.stringify(
+            NativeVars.compile({
+              ...read,
+              fonts: native.fonts,
+              units: native.units,
+            }),
+          )
+        } catch (error) {
+          throw new Native.CompileError((error as Error).message)
+        }
+        const definitions = profile(owner).definitions
+        let name = definitions.get(value)
+        if (!name) {
+          name = `__zyzzProfile${Identity.hash(value)}`
+          while (reserved.has(name)) name += '_'
+          reserved.add(name)
+          definitions.set(value, name)
+        }
+        const from = moduleId.split('/').slice(0, -1)
+        const to = owner.split('/')
+        while (from.length && from[0] === to[0]) {
+          from.shift()
+          to.shift()
+        }
+        const source =
+          (from.length ? '../'.repeat(from.length) : './') +
+          to.join('/').replace(/\.([cm]?)tsx?$/, '.$1js')
+        profile(moduleId).reads.set(read.start, {
+          name,
+          ...(owner !== moduleId ? { source } : {}),
+        })
+      }
+    }
     const modules = Object.fromEntries(
       ids.map((moduleId) => {
         if (
           previous &&
+          !profiles.size &&
           extracted.get(moduleId) === previous.extracted.get(moduleId)
         )
           return [moduleId, previous.result.modules[moduleId]!]
@@ -1133,6 +1201,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         }
         const output = Native.compile({
           ...native,
+          [NativeVars.shared]: profiles.get(moduleId),
           moduleId,
           source: options.modules[moduleId]!,
           [Themes.context]: {

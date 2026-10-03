@@ -6,7 +6,7 @@ type Value = { amount: number; length: boolean }
 /** Resolves number/length arithmetic, rejecting relative units and incompatible dimensions. */
 export function length(input: string, options: Scalar.Options): number {
   const pattern =
-    /\s*(?:(\d+(?:\.\d*)?|\.\d+)(?:[eE]([+-]?\d+))?(px|rem)?|(calc)|([()+*/-]))/giy
+    /\s*(?:(\d+(?:\.\d+)?|\.\d+)(?:[eE]([+-]?\d+))?(px|rem)?|(calc)|([()+*/-]))/giy
   const positions: number[] = []
   const tokens: (string | Value)[] = []
   let offset = 0

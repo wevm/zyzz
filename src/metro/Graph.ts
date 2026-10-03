@@ -65,9 +65,13 @@ export function read(
     }
   }
 
-  function target(filename: string, specifier: string): string | undefined {
+  function target(
+    filename: string,
+    specifier: string,
+    isESMImport = true,
+  ): string | undefined {
     if (resolve) {
-      const next = resolve(filename, specifier)
+      const next = resolve(filename, specifier, isESMImport)
       if (next && !specifier.startsWith('.')) manifest(next)
       return next
     }
@@ -112,7 +116,7 @@ export function read(
     return node.source.value
   }
 
-  function requires(node: unknown, names: Set<string>): void {
+  function requires(node: unknown, names: Map<string, boolean>): void {
     if (!node || typeof node !== 'object') return
     if (Array.isArray(node)) {
       for (const child of node) requires(child, names)
@@ -128,7 +132,7 @@ export function read(
     ) {
       const argument = entry.arguments[0]!
       if (argument.type === 'Literal' && typeof argument.value === 'string')
-        names.add(argument.value)
+        names.set(argument.value, false)
     }
 
     for (const child of Object.values(node)) requires(child, names)
@@ -193,14 +197,14 @@ export function read(
     const resolved: Record<string, string | null> = Object.create(null)
     imports[id] = resolved
     const program = snapshot.parse({ moduleId: id, source }).program
-    const names = new Set<string>()
+    const names = new Map<string, boolean>()
     for (const statement of program.body) {
       const name = specifier(statement)
-      if (name) names.add(name)
+      if (name) names.set(name, true)
     }
     if (packed) requires(program, names)
 
-    for (const name of names) {
+    for (const [name, isESMImport] of names) {
       resolved[name] = null
       if (
         name === 'zyzz' ||
@@ -208,7 +212,7 @@ export function read(
         ['react', 'react-native'].includes(name)
       )
         continue
-      const next = target(filename, name)
+      const next = target(filename, name, isESMImport)
       if (!next || !/\.[cm]?[jt]sx?$/.test(next)) continue
       const packed = `${next}.zyzz.json`
       files.add(packed)
@@ -257,4 +261,5 @@ export declare namespace read {
 export type Resolver = (
   filename: string,
   specifier: string,
+  isESMImport: boolean,
 ) => string | undefined

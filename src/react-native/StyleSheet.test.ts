@@ -137,6 +137,143 @@ describe('flatten', () => {
 })
 
 describe('compile', () => {
+  test('resolves composed aliases with live set overrides and explicit unit scales', () => {
+    const base = Vars.define(
+      { number: { cell: 12 }, color: { ink: { light: '#000', dark: '#fff' } } },
+      (vars) => ({
+        spacing: {
+          cell: Vars.compose('spacing', [
+            'calc(',
+            vars.number.cell,
+            ' * 1px + 0.5rem)',
+          ]),
+        },
+      }),
+    )
+    const alternate = Vars.extend(base, { number: { cell: 24 } })
+    const styles = Style.define({
+      card: { color: base.color.ink, width: base.spacing.cell },
+    })
+    const output = StyleSheet.compile({
+      styles,
+      vars: { base, alternate },
+      units: { px: 2, rem: 20 },
+    })
+
+    expect(output.styles.base.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#000",
+        "width": 34,
+      }
+    `)
+    expect(output.styles.alternate.dark.card).toMatchInlineSnapshot(`
+      {
+        "color": "#fff",
+        "width": 58,
+      }
+    `)
+  })
+
+  test.each(['calc(1px / 0)', 'calc(1px * 2px)', 'calc(1px + 2)'])(
+    'rejects unsupported composed native calculations: %s',
+    (text) => {
+      const vars = Vars.define({
+        spacing: { bad: Vars.compose('spacing', [text]) },
+      })
+      expect(() =>
+        StyleSheet.compile({
+          styles: Style.define({ card: { width: vars.spacing.bad } }),
+          vars: { base: vars },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["base","light","card","width"]: Native calc requires compatible number and length operands.
+      ["base","dark","card","width"]: Native calc requires compatible number and length operands.]
+    `)
+    },
+  )
+
+  test('resolves nested length calculations, negative margins, and composed colors', () => {
+    const base = Vars.define({ number: { alpha: 0.5 } }, (vars) => ({
+      color: {
+        ink: Vars.compose('color', ['rgb(12 34 56 / ', vars.number.alpha, ')']),
+      },
+      spacing: {
+        nested: Vars.compose('spacing', [
+          'calc((2px + 1rem) * 0.5 + calc(1px / 2))',
+        ]),
+        negative: Vars.compose('spacing', ['calc(-2px + -0.5rem)']),
+      },
+    }))
+    const styles = Style.define({
+      card: {
+        color: base.color.ink,
+        margin: base.spacing.negative,
+        width: base.spacing.nested,
+      },
+    })
+    const output = StyleSheet.compile({
+      styles,
+      units: { px: 2, rem: 20 },
+      vars: { base },
+    })
+
+    expect(output.styles.base.light.card).toMatchInlineSnapshot(`
+      {
+        "color": "#0c223880",
+        "marginBottom": -14,
+        "marginLeft": -14,
+        "marginRight": -14,
+        "marginTop": -14,
+        "width": 13,
+      }
+    `)
+  })
+
+  test('retains finite scientific notation in calculated length results', () => {
+    const vars = Vars.define({
+      spacing: {
+        large: Vars.compose('spacing', ['  Calc(1E21 * 1PX)  ']),
+        tiny: Vars.compose('spacing', ['calc(1e-7 * 1px)']),
+      },
+    })
+    const styles = Style.define({
+      card: { height: vars.spacing.large, width: vars.spacing.tiny },
+    })
+    const output = StyleSheet.compile({
+      styles,
+      units: { px: 2 },
+      vars: { base: vars },
+    })
+
+    expect(output.styles.base.light.card).toMatchInlineSnapshot(`
+      {
+        "height": 2e+21,
+        "width": 2e-7,
+      }
+    `)
+  })
+
+  test.each([
+    'calc(100% - 1px)',
+    'calc(1. * 2px)',
+    'calc(1.px * 2)',
+    'calc(1px) trailing',
+    'calc(1px+2px)',
+  ])('rejects unresolved native calculation syntax: %s', (text) => {
+    const vars = Vars.define({
+      spacing: { bad: Vars.compose('spacing', [text]) },
+    })
+    expect(() =>
+      StyleSheet.compile({
+        styles: Style.define({ card: { width: vars.spacing.bad } }),
+        vars: { base: vars },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["base","light","card","width"]: Unsupported native calc expression.
+      ["base","dark","card","width"]: Unsupported native calc expression.]
+    `)
+  })
+
   test('retains every pinned static native property through source compilation', async () => {
     const inventory = JSON.parse(
       await Fs.readFile(

@@ -43,6 +43,41 @@ async function execute(code: string) {
 }
 
 describe('zyzz', () => {
+  test('maps authored typography to registered native families through Babel', async () => {
+    const output = Babel.transformSync(
+      `import {style} from 'zyzz';
+       export const result=style({fontFamily:'Pilat, Arial, sans-serif',fontSize:'1rem',lineHeight:1.5})();`,
+      {
+        babelrc: false,
+        configFile: false,
+        filename: '/Fonts.ts',
+        plugins: [
+          [
+            zyzz,
+            {
+              colorScheme: 'light',
+              fonts: { 'Pilat, Arial, sans-serif': 'Pilat' },
+              platform: 'ios',
+              units: { rem: 16 },
+            },
+          ],
+        ],
+        presets: [preset],
+      },
+    )!
+    const module = await execute(output.code!)
+
+    expect(module.result).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontFamily": "Pilat",
+          "fontSize": 16,
+          "lineHeight": 24,
+        },
+      }
+    `)
+  })
+
   test('executes platform styles, variants, and changing payloads without authoring callbacks', async () => {
     const source = `import { style, variants } from 'zyzz'
       const box = style({ width: '10px', targets: { ios: { opacity: 0.5 }, android: { opacity: 0.8 } } })

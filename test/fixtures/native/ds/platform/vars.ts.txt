@@ -1,0 +1,464 @@
+import { Vars } from 'zyzz'
+import { variables as core } from '../core/vars.js'
+
+export const variables = Vars.define(
+  {
+    borderWidth: {
+      none: core.spacing['0'],
+      regular: core.spacing['1'],
+      thick: core.spacing['2'],
+      thin: core.spacing['0-5'],
+    },
+    color: {
+      background: {
+        elevated: { light: core.color.neutral['000'], dark: core.color.neutral['092'] },
+        primary: { light: core.color.neutral['004'], dark: core.color.neutral['100'] },
+        secondary: { light: core.color.neutral['000'], dark: core.color.neutral['092'] },
+      },
+      border: {
+        focus: { light: core.color.neutral.shade['040'], dark: core.color.neutral.tint['052'] },
+        negative: {
+          light: core.color.accent.alpha.strong.red['100'],
+          dark: core.color.accent.alpha.strong.red['200'],
+        },
+        positive: {
+          light: core.color.accent.alpha.strong.green['100'],
+          dark: core.color.accent.alpha.strong.green['200'],
+        },
+        warning: {
+          light: core.color.accent.alpha.strong.orange['100'],
+          dark: core.color.accent.alpha.strong.orange['200'],
+        },
+      },
+      component: {
+        button: {
+          primary: {
+            border: {
+              light: core.color.neutral.shade['000'],
+              dark: core.color.neutral.tint['000'],
+            },
+            fill: { light: core.color.neutral['100'], dark: core.color.neutral['000'] },
+          },
+          tertiary: {
+            border: {
+              light: core.color.neutral.shade['000'],
+              dark: core.color.neutral.tint['000'],
+            },
+            fill: { light: core.color.neutral.shade['000'], dark: core.color.neutral.tint['000'] },
+          },
+        },
+        input: {
+          overlay: {
+            border: {
+              light: core.color.neutral.shade['000'],
+              dark: core.color.neutral.tint['000'],
+            },
+          },
+          primary: {
+            border: {
+              light: core.color.neutral.shade['000'],
+              dark: core.color.neutral.tint['000'],
+            },
+          },
+          secondary: {
+            fill: { light: core.color.neutral.shade['000'], dark: core.color.neutral.tint['000'] },
+          },
+        },
+        pullTab: { light: core.color.neutral.shade['012'], dark: core.color.neutral.tint['024'] },
+      },
+      container: {
+        negative: {
+          light: core.color.accent.alpha.regular.red['100'],
+          dark: core.color.accent.alpha.regular.red['200'],
+        },
+        positive: {
+          light: core.color.accent.alpha.regular.green['100'],
+          dark: core.color.accent.alpha.regular.green['200'],
+        },
+        regular: { light: core.color.neutral.shade['004'], dark: core.color.neutral.tint['012'] },
+        strong: { light: core.color.neutral.shade['008'], dark: core.color.neutral.tint['016'] },
+        subtle: { light: core.color.neutral.shade['003'], dark: core.color.neutral.tint['008'] },
+        warning: {
+          light: core.color.accent.alpha.regular.orange['100'],
+          dark: core.color.accent.alpha.regular.orange['200'],
+        },
+      },
+      content: {
+        negative: { light: core.color.accent.redLight, dark: core.color.accent.redDark },
+        positive: { light: core.color.accent.greenLight, dark: core.color.accent.greenDark },
+        primary: { light: core.color.neutral['100'], dark: core.color.neutral['000'] },
+        secondary: { light: core.color.neutral.shade['056'], dark: core.color.neutral.tint['056'] },
+        subtle: { light: core.color.neutral.shade['020'], dark: core.color.neutral.tint['020'] },
+        tertiary: { light: core.color.neutral.shade['040'], dark: core.color.neutral.tint['040'] },
+        warning: { light: core.color.accent.orangeLight, dark: core.color.accent.orangeDark },
+      },
+      line: {
+        primary: { light: core.color.neutral.shade['016'], dark: core.color.neutral.tint['024'] },
+        secondary: { light: core.color.neutral.shade['008'], dark: core.color.neutral.tint['016'] },
+      },
+      material: {
+        regular: { light: core.color.neutral.shade['040'], dark: core.color.neutral.tint['048'] },
+        thick: { light: core.color.neutral.shade['060'], dark: core.color.neutral.tint['064'] },
+        thin: { light: core.color.neutral.shade['020'], dark: core.color.neutral.tint['024'] },
+        ultrathick: {
+          light: core.color.neutral.shade['080'],
+          dark: core.color.neutral.tint['080'],
+        },
+        ultrathin: { light: core.color.neutral.shade['008'], dark: core.color.neutral.tint['016'] },
+      },
+      scrim: {
+        regular: { light: core.color.neutral.shade['016'], dark: core.color.neutral.shade['016'] },
+        strong: { light: core.color.neutral.shade['032'], dark: core.color.neutral.shade['032'] },
+      },
+      shadow: {
+        primary: { light: core.color.neutral.shade['008'], dark: core.color.neutral.shade['032'] },
+        secondary: {
+          light: core.color.neutral.shade['004'],
+          dark: core.color.neutral.shade['016'],
+        },
+      },
+    },
+    radius: {
+      '2xl': core.spacing['64'],
+      '2xs': core.spacing['8'],
+      '3xs': '4px',
+      full: core.spacing['999'],
+      lg: core.spacing['32'],
+      md: core.spacing['24'],
+      none: core.spacing['0'],
+      sm: core.spacing['16'],
+      xl: core.spacing['40'],
+      xs: core.spacing['12'],
+    },
+    responsive: {
+      '2Tier': {
+        default: 'Mobile',
+        '@media (min-width: 768px)': 'Mobile',
+        '@media (min-width: 1024px)': 'Desktop',
+        '@media (min-width: 1536px)': 'Desktop',
+      },
+      '3Tier': {
+        default: 'Mobile',
+        '@media (min-width: 768px)': 'Tablet',
+        '@media (min-width: 1024px)': 'Desktop',
+        '@media (min-width: 1536px)': 'Desktop',
+      },
+      '4Tier': {
+        default: 'Mobile',
+        '@media (min-width: 768px)': 'Tablet',
+        '@media (min-width: 1024px)': 'Desktop',
+        '@media (min-width: 1536px)': 'Display',
+      },
+    },
+    spacing: {
+      '12': core.spacing['12'],
+      '16': core.spacing['16'],
+      '2': core.spacing['2'],
+      '20': core.spacing['20'],
+      '24': core.spacing['24'],
+      '32': core.spacing['32'],
+      '4': core.spacing['4'],
+      '40': core.spacing['40'],
+      '48': core.spacing['48'],
+      '64': core.spacing['64'],
+      '8': core.spacing['8'],
+      none: core.spacing['0'],
+      page: {
+        gutter: {
+          default: core.spacing['12'],
+          '@media (min-width: 768px)': core.spacing['24'],
+          '@media (min-width: 1024px)': core.spacing['24'],
+          '@media (min-width: 1536px)': core.spacing['24'],
+        },
+        margin: {
+          default: core.spacing['24'],
+          '@media (min-width: 768px)': core.spacing['48'],
+          '@media (min-width: 1024px)': core.spacing['64'],
+          '@media (min-width: 1536px)': core.spacing['80'],
+        },
+      },
+      section: {
+        lg: {
+          default: core.spacing['120'],
+          '@media (min-width: 768px)': core.spacing['120'],
+          '@media (min-width: 1024px)': core.spacing['160'],
+          '@media (min-width: 1536px)': core.spacing['160'],
+        },
+        md: {
+          default: core.spacing['80'],
+          '@media (min-width: 768px)': core.spacing['80'],
+          '@media (min-width: 1024px)': core.spacing['100'],
+          '@media (min-width: 1536px)': core.spacing['100'],
+        },
+        none: core.spacing['0'],
+        sm: {
+          default: core.spacing['40'],
+          '@media (min-width: 768px)': core.spacing['40'],
+          '@media (min-width: 1024px)': core.spacing['64'],
+          '@media (min-width: 1536px)': core.spacing['64'],
+        },
+        xl: {
+          default: core.spacing['180'],
+          '@media (min-width: 768px)': core.spacing['180'],
+          '@media (min-width: 1024px)': core.spacing['240'],
+          '@media (min-width: 1536px)': core.spacing['240'],
+        },
+        xs: {
+          default: core.spacing['24'],
+          '@media (min-width: 768px)': core.spacing['24'],
+          '@media (min-width: 1024px)': core.spacing['32'],
+          '@media (min-width: 1536px)': core.spacing['32'],
+        },
+      },
+    },
+    type: {
+      body: {
+        b1: {
+          lineHeight: '22px',
+          paragraphSpacing: '8px',
+          size: '16px',
+          tracking: '0.11999999731779099px',
+        },
+        b2: {
+          lineHeight: '20px',
+          paragraphSpacing: '8px',
+          size: '14px',
+          tracking: '0.14000000059604645px',
+        },
+        b3: {
+          lineHeight: '16px',
+          paragraphSpacing: '8px',
+          size: '12px',
+          tracking: '0.15000000596046448px',
+        },
+      },
+      display: {
+        d1: {
+          lineHeight: '41.79999923706055px',
+          paragraphSpacing: '22px',
+          size: '44px',
+          tracking: '-1.7599999904632568px',
+        },
+        d2: {
+          lineHeight: '34.20000076293945px',
+          paragraphSpacing: '18px',
+          size: '36px',
+          tracking: '-1.440000057220459px',
+        },
+      },
+      heading: {
+        h1: {
+          lineHeight: '36.79999923706055px',
+          paragraphSpacing: '16px',
+          size: '32px',
+          tracking: '-0.47999998927116394px',
+        },
+        h2: {
+          lineHeight: '27.600000381469727px',
+          paragraphSpacing: '12px',
+          size: '24px',
+          tracking: '-0.36000001430511475px',
+        },
+        h3: {
+          lineHeight: '23px',
+          paragraphSpacing: '10px',
+          size: '20px',
+          tracking: '-0.30000001192092896px',
+        },
+        h4: {
+          lineHeight: '20.700000762939453px',
+          paragraphSpacing: '8px',
+          size: '18px',
+          tracking: '-0.27000001072883606px',
+        },
+      },
+      mono: {
+        m1: {
+          lineHeight: '16px',
+          paragraphSpacing: '6px',
+          size: '12px',
+          tracking: '0.7200000286102295px',
+        },
+        m2: {
+          lineHeight: '12px',
+          paragraphSpacing: '6px',
+          size: '10px',
+          tracking: '0.6000000238418579px',
+        },
+      },
+      typeface: {
+        fonts: { body: 'Pilat', display: 'HB Set v0.96', heading: 'Pilat', mono: 'JetBrains Mono' },
+        weight: {
+          body: 'Book',
+          bodyStrong: 'Demi',
+          display: 'Light',
+          heading: 'Book',
+          mono: 'Regular',
+        },
+      },
+    },
+  },
+  (vars) => ({
+    color: {
+      component: {
+        button: {
+          secondary: {
+            border: { light: vars.color.line.secondary, dark: vars.color.line.secondary },
+            fill: { light: vars.color.container.regular, dark: vars.color.container.regular },
+          },
+        },
+        input: {
+          overlay: { fill: { light: vars.color.material.thin, dark: vars.color.material.thin } },
+          primary: {
+            fill: { light: vars.color.container.regular, dark: vars.color.container.regular },
+          },
+          secondary: { border: { light: vars.color.line.primary, dark: vars.color.line.primary } },
+        },
+      },
+    },
+    typography: {
+      body: {
+        b1: {
+          fontSize: vars.type.body.b1.size,
+          letterSpacing: vars.type.body.b1.tracking,
+          lineHeight: vars.type.body.b1.lineHeight,
+        },
+        b2: {
+          fontFamily: 'Pilat, Arial, sans-serif',
+          fontSize: vars.type.body.b2.size,
+          fontWeight: 500,
+          letterSpacing: vars.type.body.b2.tracking,
+          lineHeight: vars.type.body.b2.lineHeight,
+        },
+        b2Strong: {
+          fontFamily: 'Pilat, Arial, sans-serif',
+          fontSize: vars.type.body.b2.size,
+          fontWeight: 600,
+          letterSpacing: vars.type.body.b2.tracking,
+          lineHeight: vars.type.body.b2.lineHeight,
+        },
+        b3: {
+          fontFamily: 'Pilat, Arial, sans-serif',
+          fontSize: vars.type.body.b3.size,
+          fontWeight: 500,
+          letterSpacing: vars.type.body.b3.tracking,
+          lineHeight: vars.type.body.b3.lineHeight,
+        },
+        b3Strong: {
+          fontFamily: 'Pilat, Arial, sans-serif',
+          fontSize: vars.type.body.b3.size,
+          fontWeight: 600,
+          letterSpacing: vars.type.body.b3.tracking,
+          lineHeight: vars.type.body.b3.lineHeight,
+        },
+      },
+      display: {
+        d1: {
+          fontSize: vars.type.display.d1.size,
+          letterSpacing: vars.type.display.d1.tracking,
+          lineHeight: vars.type.display.d1.lineHeight,
+        },
+        d2: {
+          fontSize: vars.type.display.d2.size,
+          letterSpacing: vars.type.display.d2.tracking,
+          lineHeight: vars.type.display.d2.lineHeight,
+        },
+      },
+      heading: {
+        h1: {
+          fontSize: vars.type.heading.h1.size,
+          letterSpacing: vars.type.heading.h1.tracking,
+          lineHeight: vars.type.heading.h1.lineHeight,
+        },
+        h2: {
+          fontSize: vars.type.heading.h2.size,
+          letterSpacing: vars.type.heading.h2.tracking,
+          lineHeight: vars.type.heading.h2.lineHeight,
+        },
+        h3: {
+          fontSize: vars.type.heading.h3.size,
+          letterSpacing: vars.type.heading.h3.tracking,
+          lineHeight: vars.type.heading.h3.lineHeight,
+        },
+        h4: {
+          fontSize: vars.type.heading.h4.size,
+          letterSpacing: vars.type.heading.h4.tracking,
+          lineHeight: vars.type.heading.h4.lineHeight,
+        },
+      },
+      mono: {
+        inline: {
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: vars.type.mono.m1.size,
+          fontWeight: 400,
+          letterSpacing: '0px',
+          lineHeight: vars.type.mono.m1.lineHeight,
+        },
+        m1: {
+          fontSize: vars.type.mono.m1.size,
+          letterSpacing: vars.type.mono.m1.tracking,
+          lineHeight: vars.type.mono.m1.lineHeight,
+        },
+        m2: {
+          fontSize: vars.type.mono.m2.size,
+          letterSpacing: vars.type.mono.m2.tracking,
+          lineHeight: vars.type.mono.m2.lineHeight,
+        },
+      },
+    },
+  }),
+  { id: 'tds/platform/variables' },
+)
+
+export const inverse = Vars.extend(variables, {
+  color: {
+    background: {
+      elevated: { light: core.color.neutral['092'], dark: core.color.neutral['092'] },
+      primary: { light: core.color.neutral['100'], dark: core.color.neutral['004'] },
+      secondary: { light: core.color.neutral['092'], dark: core.color.neutral['092'] },
+    },
+    component: {
+      pullTab: { light: core.color.neutral.tint['024'], dark: core.color.neutral.shade['012'] },
+    },
+    container: {
+      negative: {
+        light: core.color.accent.alpha.regular.red['200'],
+        dark: core.color.accent.alpha.regular.red['100'],
+      },
+      positive: {
+        light: core.color.accent.alpha.regular.green['200'],
+        dark: core.color.accent.alpha.regular.green['100'],
+      },
+      regular: { light: core.color.neutral.tint['012'], dark: core.color.neutral.shade['004'] },
+      strong: { light: core.color.neutral.tint['016'], dark: core.color.neutral.shade['008'] },
+      subtle: { light: core.color.neutral.tint['008'], dark: core.color.neutral.shade['003'] },
+      warning: {
+        light: core.color.accent.alpha.regular.orange['200'],
+        dark: core.color.accent.alpha.regular.orange['100'],
+      },
+    },
+    content: {
+      negative: { light: core.color.accent.redDark, dark: core.color.accent.redLight },
+      positive: { light: core.color.accent.greenDark, dark: core.color.accent.greenLight },
+      primary: { light: core.color.neutral['000'], dark: core.color.neutral['100'] },
+      secondary: { light: core.color.neutral.tint['056'], dark: core.color.neutral.shade['056'] },
+      tertiary: { light: core.color.neutral.tint['040'], dark: core.color.neutral.shade['040'] },
+      warning: { light: core.color.accent.orangeDark, dark: core.color.accent.orangeLight },
+    },
+    line: {
+      primary: { light: core.color.neutral.tint['024'], dark: core.color.neutral.tint['024'] },
+      secondary: { light: core.color.neutral.tint['012'], dark: core.color.neutral.tint['016'] },
+    },
+    material: {
+      regular: { light: core.color.neutral.tint['048'], dark: core.color.neutral.shade['040'] },
+      thick: { light: core.color.neutral.tint['064'], dark: core.color.neutral.shade['060'] },
+      thin: { light: core.color.neutral.tint['024'], dark: core.color.neutral.shade['020'] },
+      ultrathick: { light: core.color.neutral.tint['080'], dark: core.color.neutral.shade['080'] },
+      ultrathin: { light: core.color.neutral.tint['016'], dark: core.color.neutral.shade['008'] },
+    },
+    shadow: {
+      primary: { light: core.color.neutral.shade['032'], dark: core.color.neutral.shade['008'] },
+      secondary: { light: core.color.neutral.shade['016'], dark: core.color.neutral.shade['004'] },
+    },
+  },
+})

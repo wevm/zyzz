@@ -1,0 +1,9 @@
+import { Config } from 'zyzz'
+import { inverse, variables } from './vars.js'
+
+export const { style, variants, vars } = Config.create({
+  cssOutput: 'atomic',
+  defaultVars: 'base',
+  id: 'tds/platform',
+  vars: { base: variables, inverse },
+})

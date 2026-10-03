@@ -11,6 +11,8 @@ describe('zyzz', () => {
       target: 'native',
       platform: 'ios',
       colorScheme: 'light',
+      contracts: { 'library.js': '{}' },
+      fonts: { 'Pilat, sans-serif': 'Pilat' },
     } satisfies Options
     expectTypeOf(web.target).toEqualTypeOf<'web'>()
     expectTypeOf(native.platform).toEqualTypeOf<'ios'>()
@@ -21,6 +23,19 @@ describe('zyzz', () => {
     // @ts-expect-error Web compilation does not accept a native platform.
     const invalid = { target: 'web', platform: 'ios' } satisfies Options
     void invalid
+    const invalidFont = {
+      target: 'native',
+      platform: 'ios',
+      // @ts-expect-error Font mappings require native family names.
+      fonts: { Pilat: 1 },
+    } satisfies Options
+    void invalidFont
+    const webFont = {
+      target: 'web',
+      // @ts-expect-error Font conversion is a native compiler option.
+      fonts: { Pilat: 'Pilat' },
+    } satisfies Options
+    void webFont
     const unresolved = { target: 'native', platform: 'ios' } satisfies Options
     void unresolved
     const prepared = Native.create({

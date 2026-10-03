@@ -13,7 +13,12 @@ import { type NativeOptions, zyzz } from '../babel/index.js'
 /** Babel transformer inputs passed through without removing upstream fields. */
 type Input = {
   readonly filename: string
-  readonly options: { readonly platform?: string | undefined }
+  readonly options: {
+    readonly platform?: string | undefined
+    readonly customTransformOptions?:
+      | { readonly zyzzSources?: Graph.Input | undefined }
+      | undefined
+  }
   readonly plugins?: readonly Babel.PluginItem[] | undefined
   readonly src: string
 }
@@ -28,7 +33,13 @@ export function create(
   upstreamPath: string,
   options: Omit<
     NativeOptions,
-    'platform' | 'target' | 'moduleId' | 'modules' | 'imports' | 'colorScheme'
+    | 'platform'
+    | 'target'
+    | 'moduleId'
+    | 'modules'
+    | 'imports'
+    | 'contracts'
+    | 'colorScheme'
   > & { readonly root: string },
 ) {
   const compilers = new Map<string, ReturnType<typeof Compiler.create>>()
@@ -78,18 +89,17 @@ export function create(
       if (
         (platform !== 'ios' && platform !== 'android') ||
         !/\.[cm]?[jt]sx?$/.test(input.filename) ||
-        input.filename.split(/[\\/]/).includes('node_modules') ||
-        Path.relative(options.root, filename).startsWith(`..${Path.sep}`)
+        filename.startsWith(
+          `${Path.resolve(import.meta.dirname, '..')}${Path.sep}`,
+        )
       )
         return upstream.transform(input)
 
-      const graph = Graph.read(
-        filename,
-        input.src,
-        platform,
-        options.root,
-        snapshot,
-      )
+      const graph =
+        input.options.customTransformOptions?.zyzzSources ??
+        Graph.read(filename, input.src, platform, options.root, snapshot).input
+      if (!graph) return upstream.transform(input)
+
       const key = `${platform}:${filename}`
       let compiler = compilers.get(key)
       if (!compiler) {

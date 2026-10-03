@@ -227,7 +227,7 @@ export function length(
   if (value === 0 || value === '0') return 0
   const match =
     typeof value === 'string' &&
-    /^([+-]?(?:\d+(?:\.\d+)?|\.\d+))(px|rem)$/.exec(value)
+    /^([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?)(px|rem)$/.exec(value)
   if (!match)
     fail(
       'unsupported_value',

@@ -56,7 +56,18 @@ export function compile<
     return result
   }
 
+  const bodies = new Map<Style.NamedStyle, string>()
+  const declarations = new Map<Style.Declaration, string>()
+  type Property = {
+    readonly important: Map<Style.Declaration['value'], string>
+    readonly name: string
+    readonly normal: Map<Style.Declaration['value'], string>
+  }
+  const declarationProperties = new Map<string, Property>()
+  const serialized = new Map<object, string>()
+
   // Only primitive declaration lists can be interned without erasing token identity.
+  // Reuse their emitted bodies throughout analysis and output.
   const repeated = new Map<string, Style.NamedStyle>()
 
   const canonicalStyles = options.styles.styles.map((style) => {
@@ -68,13 +79,7 @@ export function compile<
     )
       return style
 
-    const key = JSON.stringify(
-      style.declarations.map(({ important, property, value }) => [
-        property,
-        value,
-        important,
-      ]),
-    )
+    const key = nested(style)
     const previous = repeated.get(key)
     if (previous) return previous
 
@@ -269,8 +274,6 @@ export function compile<
     if (Object.hasOwn(Cascade.shorthands, property))
       join(property, domain(property))
 
-  const serialized = new Map<object, string>()
-
   function serialize(input: Style.Declaration['value']): number | string {
     if (typeof input !== 'object' || input === null) return input
 
@@ -298,21 +301,31 @@ export function compile<
     return input as number | string
   }
 
-  const declarations = new Map<Style.Declaration, string>()
-  const propertyNames = new Map<string, string>()
-
   function declarationBody(declaration: Style.Declaration): string {
     const previous = declarations.get(declaration)
     if (previous !== undefined) return previous
+
     const { important, property, value } = declaration
-    const name = propertyNames.get(property) ?? Literal.name(property)
-    propertyNames.set(property, name)
-    const body = `${name}:${serialize(value)}${important ? '!important' : ''};`
+    let entry = declarationProperties.get(property)
+    if (!entry) {
+      entry = {
+        important: new Map(),
+        name: Literal.name(property),
+        normal: new Map(),
+      }
+      declarationProperties.set(property, entry)
+    }
+
+    const values = important ? entry.important : entry.normal
+    let body = values.get(value)
+    if (body === undefined) {
+      body = `${entry.name}:${serialize(value)}${important ? '!important' : ''};`
+      values.set(value, body)
+    }
+
     declarations.set(declaration, body)
     return body
   }
-
-  const bodies = new Map<Style.NamedStyle, string>()
 
   function nested(style: Style.NamedStyle): string {
     const previous = bodies.get(style)
@@ -401,11 +414,8 @@ export function compile<
   }
 
   function validate(style: Style.NamedStyle) {
-    if (
-      outputMode(style) !== undefined &&
-      outputMode(style) !== 'atomic' &&
-      outputMode(style) !== 'grouped'
-    )
+    const mode = outputMode(style)
+    if (mode !== undefined && mode !== 'atomic' && mode !== 'grouped')
       throw new CompileError([
         {
           code: 'invalid_output',
@@ -421,7 +431,8 @@ export function compile<
   const rules = new Map<string, string>()
   type ConditionalRule = { conditions: readonly string[]; value: string }
   const conditionalRules = new Map<string, ConditionalRule>()
-  const identical = new Map<string, string>()
+  type SharedRules = Record<'atomic' | 'grouped', Map<string, string>>
+  const identical = new Map<string | undefined, SharedRules>()
   const explicitBodies = new Map<string, string>()
   const selectors = new Map<string, string>()
   const explicitModes = new Set<string>()
@@ -465,7 +476,7 @@ export function compile<
       explicit === undefined &&
       options.composition === 'independent' &&
       !options.development
-        ? `${mode}:${JSON.stringify(representation(style))}:${nested(canonicalStyles[styleIndex]!)}`
+        ? `${mode}:${style.rules ? JSON.stringify(representation(style)) : ''}:${nested(canonicalStyles[styleIndex]!)}`
         : undefined
     if (application !== undefined && applications.has(application)) {
       classes[style.name] = applications.get(application)!
@@ -478,6 +489,11 @@ export function compile<
     const cssNamespace =
       labels?.[style.name]?.namespace ??
       (options.scope ? Identity.name(options.scope) : undefined)
+    let sharedRules = identical.get(cssNamespace)
+    if (!sharedRules) {
+      sharedRules = { atomic: new Map(), grouped: new Map() }
+      identical.set(cssNamespace, sharedRules)
+    }
 
     function emit(
       body: string,
@@ -493,9 +509,8 @@ export function compile<
         !options.development &&
         output === mode &&
         options.composition === 'independent'
-      const key = JSON.stringify([cssNamespace, output, body])
       const reusable = explicit === undefined && (shared || independent)
-      const previous = reusable ? identical.get(key) : undefined
+      const previous = reusable ? sharedRules![output].get(body) : undefined
       if (previous && !names.includes(previous)) {
         names.push(previous)
         return
@@ -544,7 +559,7 @@ export function compile<
         conditionalRules.set(identity, conditional)
       if (explicit !== undefined) selectors.set(identity, explicit)
       else {
-        if (reusable) identical.set(key, identity)
+        if (reusable) sharedRules![output].set(body, identity)
         names.push(identity)
       }
     }

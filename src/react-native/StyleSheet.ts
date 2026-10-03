@@ -7,6 +7,7 @@ import type * as Native from '../internal/NativeProperties.js'
 import * as Values from './internal/Values.js'
 import * as Color from './internal/Color.js'
 import * as Scalar from './internal/Scalar.js'
+import * as Calculation from './internal/Calculation.js'
 
 const properties = Scalar.properties
 
@@ -207,6 +208,7 @@ export function compile<
                 scheme,
                 path,
                 resolution,
+                options,
               )
               if (property === 'lineHeight') {
                 lineHeight = value
@@ -757,50 +759,73 @@ function resolve(
   scheme: ColorScheme,
   path: readonly string[],
   resolution: { schemeIndependent: boolean },
+  options: compile.Options,
 ): number | string {
   if (typeof value === 'number' || typeof value === 'string') return value
-  if (
-    !Token.is(value) ||
-    Object.getOwnPropertyDescriptor(value, Token.web)?.value
-  )
-    fail(
-      'unsupported_feature',
-      'Web variables, expressions, and dynamic bindings are not native scalar tokens.',
-      path,
-    )
-  const shared =
-    metadata &&
-    (metadata.contract === value.contract ||
-      (metadata.contract[Token.identity] !== undefined &&
-        metadata.contract[Token.identity] === value.contract[Token.identity]))
-  let resolved = shared
-    ? Object.hasOwn(metadata.values, value.path)
-      ? metadata.values[value.path]
-      : undefined
-    : value.value
-  if (resolved === undefined)
-    fail('unsupported_value', 'Theme is missing a live token.', path)
-  while (typeof resolved === 'object') {
-    if (Token.is(resolved)) {
-      resolved = resolved.value
-      continue
+  const active = new Set<Token.Reference>()
+  function scalar(
+    value: Token.Value | Style.Declaration['value'],
+  ): number | string {
+    if (typeof value === 'number' || typeof value === 'string') return value
+    if (
+      Token.is(value) &&
+      !Object.getOwnPropertyDescriptor(value, Token.web)?.value
+    ) {
+      if (active.has(value))
+        fail(
+          'unsupported_value',
+          'Native token aliases must not form a cycle.',
+          path,
+        )
+      const shared =
+        metadata &&
+        (metadata.contract === value.contract ||
+          (metadata.contract[Token.identity] !== undefined &&
+            metadata.contract[Token.identity] ===
+              value.contract[Token.identity]))
+      const resolved = shared
+        ? Object.hasOwn(metadata.values, value.path)
+          ? metadata.values[value.path]
+          : undefined
+        : value.value
+      if (resolved === undefined)
+        fail('unsupported_value', 'Theme is missing a live token.', path)
+      active.add(value)
+      const result = scalar(resolved)
+      active.delete(value)
+      return result
     }
-    if (Token.isExpression(resolved))
-      fail(
-        'unsupported_feature',
-        'Composed variables require a web target.',
-        path,
-      )
-    if ('default' in resolved)
+    if (Token.isExpression(value) && 'group' in value) {
+      const text = value.parts.map((part) => scalar(part)).join('')
+      if (value.group !== 'spacing' || !/^\s*calc\(/i.test(text)) return text
+      try {
+        return `${Calculation.length(text, options) / (options.units?.px ?? 1)}px`
+      } catch (error) {
+        fail('unsupported_value', (error as Error).message, path)
+      }
+    }
+    if (
+      value &&
+      typeof value === 'object' &&
+      'light' in value &&
+      'dark' in value
+    ) {
+      if (value.light !== value.dark) resolution.schemeIndependent = false
+      return scalar(value[scheme])
+    }
+    if (value && typeof value === 'object' && 'default' in value)
       fail(
         'unsupported_feature',
         'Media-conditioned variables require a web target.',
         path,
       )
-    if (resolved.light !== resolved.dark) resolution.schemeIndependent = false
-    resolved = resolved[scheme]
+    fail(
+      'unsupported_feature',
+      'Web variables, expressions, and dynamic bindings are not native scalar tokens.',
+      path,
+    )
   }
-  return resolved
+  return scalar(value)
 }
 
 type TransformValues = {

@@ -15,6 +15,24 @@ export function create() {
     { identity: string | undefined; paths: Map<string, string> }
   >()
 
+  const anonymous = new Map<Token.Contract, Map<string, string>>()
+  let nextVariable = 0
+  function property(contract: Token.Contract, path: string): string {
+    const identity = contract[Token.identity]
+    if (identity) return variable(identity, path)
+    let paths = anonymous.get(contract)
+    if (!paths) {
+      paths = new Map()
+      anonymous.set(contract, paths)
+    }
+    let name = paths.get(path)
+    if (!name) {
+      name = `--z${(nextVariable++).toString(36)}`
+      paths.set(path, name)
+    }
+    return name
+  }
+
   const defaults = new Map<string, readonly Rule[]>()
   const defaultGroups = new Map<Token.Contract, Set<string>>()
 
@@ -33,7 +51,7 @@ export function create() {
     let name = contract.paths.get(token.path)
 
     if (!name) {
-      name = variable(contract.identity, token.path)
+      name = property(token.contract, token.path)
       contract.paths.set(token.path, name)
     }
 
@@ -47,6 +65,7 @@ export function create() {
     separate?: 'all' | 'defaults',
   ) {
     const classes: Record<string, string> = Object.create(null)
+    let nextScope = 0
     const scopeBodies = new Map<string, string>()
     const completeDefaults = new Set<Token.Contract>()
     const empty: string[] = []
@@ -64,14 +83,17 @@ export function create() {
 
       // Anonymous contracts are graph-local. Source-owned contracts retain stable
       // identities across separately compiled components and theme scopes.
-      const className = scope(
-        data.cssName ??
-          (data.contract[Token.identity] &&
-          name.startsWith(`${data.contract[Token.identity]}-`)
-            ? name.slice(data.contract[Token.identity]!.length + 1)
-            : name),
-        data.contract[Token.identity],
-      )
+      const className =
+        data.contract[Token.identity] || data.cssName
+          ? scope(
+              data.cssName ??
+                (data.contract[Token.identity] &&
+                name.startsWith(`${data.contract[Token.identity]}-`)
+                  ? name.slice(data.contract[Token.identity]!.length + 1)
+                  : name),
+              data.contract[Token.identity],
+            )
+          : `z${(nextScope++).toString(36)}`
 
       classes[name] = className
 
@@ -87,7 +109,7 @@ export function create() {
         for (const path of Object.keys(data.values)) {
           if (contract.paths.has(path)) continue
 
-          contract.paths.set(path, variable(contract.identity, path))
+          contract.paths.set(path, property(data.contract, path))
         }
 
         contracts.set(data.contract, contract)
@@ -237,7 +259,7 @@ export function create() {
       const base = literal(value.default, label, owner)
       // Rule consolidation must not change existing variable identities.
       const css = `:where(*){--fallback:${base};}${conditionalCss(value, '--fallback', ':where(*)', label, owner)}`
-      const name = `${variable(owner?.[Token.identity], label ?? 'value')}-fallback-${Identity.name(css)}`
+      const name = `${owner ? property(owner, label ?? 'value') : variable(undefined, label ?? 'value')}-fallback-${Identity.name(css)}`
       const emitted: Rule[] = [
         { conditions: [], property: name, selector: ':where(*)', value: base },
       ]

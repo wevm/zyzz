@@ -98,7 +98,7 @@ export async function attach(server: Server, root: string) {
       return transform(filename, options, buffer)
     const source = buffer?.toString('utf8') ?? Fs.readFileSync(filename, 'utf8')
     const graph = await ready
-    const input = Graph.read(
+    const read = Graph.read(
       filename,
       source,
       options.platform,
@@ -122,15 +122,15 @@ export async function attach(server: Server, root: string) {
         return resolved.type === 'sourceFile' ? resolved.filePath : undefined
       },
     )
-    if (!input) return transform(filename, options, buffer)
-
     const platforms =
       dependencies.get(filename) ?? new Map<string, Set<string>>()
     platforms.set(
       JSON.stringify([options.platform, requests.getStore()]),
-      new Set(input.files),
+      new Set(read.files),
     )
     dependencies.set(filename, platforms)
+    const input = read.input
+    if (!input) return transform(filename, options, buffer)
     const hash = Crypto.hash('sha256', JSON.stringify(input))
     return transform(
       filename,

@@ -675,7 +675,7 @@ describe('useVars', () => {
     'reads composed values and typography with packed=%s',
     async (packed) => {
       const modules = {
-        'config.ts': `import {Config,Vars} from 'zyzz';const base=Vars.define({color:{ink:{light:'#123456',dark:'#abcdef'}},spacing:{gap:'1.5rem'},typography:{body:{fontFamily:'Pilat, Arial, sans-serif',fontSize:'1rem',fontWeight:500,lineHeight:1.25,letterSpacing:'0.01rem'}}},vars=>({spacing:{double:Vars.compose('spacing',['calc(',vars.spacing.gap,' * 2)'])}}));const alternate=Vars.extend(base,{spacing:{gap:'2rem'}});export const {vars}=Config.create({defaultVars:'base',vars:{base,alternate}});`,
+        'config.ts': `import {Config,Vars} from 'zyzz';const base=Vars.define({color:{ink:{light:'#123456',dark:'#abcdef'}},spacing:{gap:'1.5rem'},typography:{body:{fontFamily:'Pilat, Arial, sans-serif',fontSize:'1rem',fontWeight:500,lineHeight:'1.25',letterSpacing:'0.01rem'}}},vars=>({spacing:{double:Vars.compose('spacing',['calc(',vars.spacing.gap,' * 2)'])}}));const alternate=Vars.extend(base,{spacing:{gap:'2rem'}});export const {vars}=Config.create({defaultVars:'base',vars:{base,alternate}});`,
         'index.ts': `export {vars} from './config.js';`,
       }
       const publisher = packed ? Graph.compile({ modules }) : undefined

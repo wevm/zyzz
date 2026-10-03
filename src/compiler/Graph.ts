@@ -1116,8 +1116,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
     for (const moduleId of ids) {
       for (const read of extracted.get(moduleId)!.nativeVars ?? []) {
         const owner = owners[read.owner]?.moduleId
-        // Packed catalogs without source retain their local profile fallback.
-        if (!owner || !Object.hasOwn(options.modules, owner)) continue
+        // Single-file adapters cannot publish changes to dependency modules.
+        // Packed catalogs without source also retain their local fallback.
+        if (
+          native[Edits.runtime] ||
+          !owner ||
+          !Object.hasOwn(options.modules, owner)
+        )
+          continue
         let value: string
         try {
           value = JSON.stringify(

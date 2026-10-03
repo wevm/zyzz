@@ -190,11 +190,23 @@ function selective(style: unknown): boolean {
   const value = ReactNative.StyleSheet.flatten(
     style as ReactNative.StyleProp<ReactNative.ViewStyle>,
   )
+  // Let React Native apply its processors to caller-owned representations.
+  // Only color properties are processed by the selective writer below.
   return (
     !value ||
-    (!('filter' in value) &&
-      !('backgroundImage' in value) &&
-      !('experimental_backgroundImage' in value))
+    ![
+      'aspectRatio',
+      'backgroundImage',
+      'backgroundPosition',
+      'backgroundRepeat',
+      'backgroundSize',
+      'boxShadow',
+      'experimental_backgroundImage',
+      'filter',
+      'fontVariant',
+      'transform',
+      'transformOrigin',
+    ].some((property) => property in value)
   )
 }
 
@@ -207,11 +219,6 @@ function nativeProps(style: unknown): Record<string, unknown> {
   for (const [name, value] of Object.entries(result)) {
     if (name === 'color' || name.endsWith('Color'))
       result[name] = ReactNative.processColor(value as ReactNative.ColorValue)
-    else if (name === 'boxShadow' && Array.isArray(value))
-      result[name] = value.map((shadow) => ({
-        ...shadow,
-        color: ReactNative.processColor(shadow.color),
-      }))
   }
   return result
 }

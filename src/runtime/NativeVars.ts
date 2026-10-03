@@ -47,6 +47,7 @@ type Definition = {
   readonly profiles: Readonly<
     Record<string, Readonly<Record<'dark' | 'light', Tree>>>
   >
+  readonly unnamed: boolean
 }
 
 /** Copies and shares equal branches across the compiled profiles. */
@@ -118,6 +119,7 @@ export function create(options: create.Options): object {
           }
         : {}),
       profiles: profiles(options.profiles),
+      unnamed: options.unnamed,
     }),
   })
 }
@@ -139,6 +141,8 @@ export declare namespace create {
     readonly profiles: Readonly<
       Record<string, Readonly<Record<'dark' | 'light', EncodedTree>>>
     >
+    /** A standalone definition whose values do not depend on the selected name. */
+    readonly unnamed: boolean
   }
 }
 
@@ -163,9 +167,7 @@ export function read(value: object, selection: read.Options): Tree {
   const name = selection.set ?? definition.defaultVars
   const profile =
     (Object.hasOwn(profiles, name) ? profiles[name] : undefined) ??
-    (definition.defaultVars === 'default' && Object.keys(profiles).length === 1
-      ? profiles.default
-      : undefined)
+    (definition.unnamed ? profiles.default : undefined)
   if (!profile) throw new Error(`Unknown native vars: ${name}.`)
 
   return profile[selection.colorScheme]

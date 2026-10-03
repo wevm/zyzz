@@ -7,7 +7,7 @@ Added native `defineConfig` with a typed `Provider` and `useVars(vars, selector?
 ```diff
 -import { defineConfig } from 'zyzz'
 -import { Provider } from 'zyzz/react-native/react'
-+import { defineConfig } from 'zyzz/react-native'
++import { defineConfig } from 'zyzz/react-native/react'
 
 -const { style, variants, vars } = defineConfig(options)
 +const { Provider, style, variants, vars } = defineConfig(options)

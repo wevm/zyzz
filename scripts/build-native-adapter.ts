@@ -27,6 +27,20 @@ for (const file of [
   await Fs.writeFile(`${output}.map`, result.map)
 }
 
+// Device helpers preserve the portable React signatures. Keep the declaration
+// entrypoint separate so Node's framework-free exports do not load React.
+const declaration = Path.join(root, 'dist/react-native/index.native.d.ts')
+await Fs.rm(declaration, { force: true })
+await Fs.writeFile(
+  declaration,
+  `/** Native public exports and portable React contracts. @module */
+export * as Host from './Host.js'
+export * as StyleSheet from './StyleSheet.js'
+export * as Variants from './Variants.js'
+export { defineConfig, useStyles, useVars } from './react.js'
+`,
+)
+
 const path = Path.join(root, 'package.json')
 type Package = { exports: Record<string, Record<string, unknown>> }
 const pkg = JSON.parse(await Fs.readFile(path, 'utf8')) as Package

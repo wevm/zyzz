@@ -151,6 +151,80 @@ describe('defineConfig', () => {
 })
 
 describe('useVars', () => {
+  test.each([false, true])(
+    'distinguishes unnamed definitions from a catalog named default (packed: %s)',
+    async (packed) => {
+      const modules = {
+        'config.ts': `import {Config,Vars} from 'zyzz';
+          export const {vars:named}=Config.create({defaultVars:'default',vars:{default:{color:{ink:'#123456'}}}});
+          export const unnamed=Vars.define({color:{ink:'#abcdef'}});`,
+      }
+      const publisher = Graph.compile({ modules })
+      const compiled = Graph.compile({
+        ...(packed ? { contracts: publisher.contracts } : {}),
+        imports: {
+          'app.ts': {
+            './config.js': 'config.ts',
+            react: null,
+            'react-dom/client': null,
+            'zyzz/react-native/react': null,
+          },
+          'config.ts': { zyzz: null },
+        },
+        modules: {
+          ...(!packed ? modules : {}),
+          'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+            import {defineConfig,Provider,useVars} from 'zyzz/react-native/react';import {named,unnamed} from './config.js';
+            const {Provider:Foreign}=defineConfig({defaultVars:'other',vars:{other:{color:{ink:'#000000'}}}});
+            function Named(){return useVars(named).color.ink}
+            function Unnamed(){return useVars(unnamed).color.ink}
+            for(const [id,component,provider,vars] of [['selected',Named,Provider,'default'],['unknown',Named,Provider,'missing'],['foreign',Named,Foreign,undefined],['unnamed',Unnamed,Provider,'missing']]){
+              const element=document.createElement('div');element.id=id;document.body.appendChild(element);
+              createRoot(element,{onUncaughtError:error=>{element.textContent=error.message}}).render(React.createElement(provider,{colorScheme:'light',vars},React.createElement(component)));
+            }`,
+        },
+        native,
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          ...Object.fromEntries(
+            Object.entries(publisher.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+          ...Object.fromEntries(
+            Object.entries(compiled.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+        },
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.addScriptTag({ content: code })
+        await expect
+          .poll(() => page.locator('#unnamed').textContent())
+          .toBe('#abcdef')
+
+        expect(
+          await page.locator('#selected').textContent(),
+        ).toMatchInlineSnapshot('"#123456"')
+        expect(
+          await page.locator('#unknown').textContent(),
+        ).toMatchInlineSnapshot('"Unknown native vars: missing."')
+        expect(
+          await page.locator('#foreign').textContent(),
+        ).toMatchInlineSnapshot('"Unknown native vars: other."')
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
   test('reads catalogs named theme and vars with absolute typography lengths', async () => {
     const compiled = Graph.compile({
       native,
@@ -261,7 +335,18 @@ describe('useVars', () => {
           const {vars:invalidLine}=Config.create({vars:{typography:{body:{fontSize:'16px',lineHeight:-1}}}})
           const {vars:responsive}=Config.create({vars:{typography:{body:{fontSize:'16px','@media (min-width: 768px)':{fontSize:'20px'}}}}})
 
+          const {vars:mapped}=Config.create({vars:{alpha:{bad:2,good:0.5},fontSize:{bad:'-1px'},leading:{absolute:'20px',multiplier:1.25,normal:'normal'},lengths:{signed:'-2px'},mixed:{fraction:0.5},motion:{small:'2px'},ratios:{wide:'16/9'}},mappings:{alpha:['opacity'],leading:['lineHeight'],lengths:['letterSpacing','fontSize'],mixed:['opacity','zIndex'],motion:['transform'],ratios:['aspectRatio']}})
+
           function Sample(props) {
+            if(props.kind==='alpha') return String(useVars(mapped).alpha.bad)
+            if(props.kind==='fontSize') return String(useVars(mapped).fontSize.bad)
+            if(props.kind==='leading') return String(useVars(mapped).leading.multiplier)
+            if(props.kind==='normal') return String(useVars(mapped).leading.normal)
+            if(props.kind==='lengths') return String(useVars(mapped).lengths.signed)
+            if(props.kind==='mixed') return String(useVars(mapped).mixed.fraction)
+            if(props.kind==='motion') return String(useVars(mapped).motion.small)
+            if(props.kind==='ratio') return String(useVars(mapped).ratios.wide)
+            if(props.kind==='mapped') {const values=useVars(mapped);return JSON.stringify({opacity:values.alpha.good,lineHeight:values.leading.absolute})}
             if(props.kind==='supported') return useVars(web).color.ink
             if(props.kind==='condition') return String(useVars(web).spacing.gap)
             if(props.kind==='font') return useVars(font).typography.body.fontFamily
@@ -286,6 +371,15 @@ describe('useVars', () => {
             ['line', {colorScheme:'light'}],
             ['responsive', {colorScheme:'light'}],
             ['supported', {colorScheme:'light'}],
+            ['alpha', {colorScheme:'light'}],
+            ['fontSize', {colorScheme:'light'}],
+            ['leading', {colorScheme:'light'}],
+            ['normal', {colorScheme:'light'}],
+            ['lengths', {colorScheme:'light'}],
+            ['mixed', {colorScheme:'light'}],
+            ['motion', {colorScheme:'light'}],
+            ['ratio', {colorScheme:'light'}],
+            ['mapped', {colorScheme:'light'}],
           ]
 
           for(const [kind,props] of scenarios) {
@@ -310,6 +404,46 @@ describe('useVars', () => {
         .poll(() => page.locator('#supported').textContent())
         .toBe('#123456')
       await expect.poll(() => page.locator('#line').textContent()).toBeTruthy()
+      await expect
+        .poll(() => page.locator('#mapped').textContent())
+        .toBeTruthy()
+      expect(await page.locator('#alpha').textContent()).toMatchInlineSnapshot(
+        '"Native variable alpha.bad: Unsupported native numeric value."',
+      )
+      expect(
+        await page.locator('#fontSize').textContent(),
+      ).toMatchInlineSnapshot(
+        '"Native variable fontSize.bad: Converted length is outside the native property domain."',
+      )
+      expect(
+        await page.locator('#leading').textContent(),
+      ).toMatchInlineSnapshot(
+        '"Native variable leading.multiplier: Native line height requires fontSize: leading.multiplier."',
+      )
+      expect(await page.locator('#normal').textContent()).toMatchInlineSnapshot(
+        '"Native variable leading.normal: Unsupported native line height: normal."',
+      )
+      expect(
+        await page.locator('#lengths').textContent(),
+      ).toMatchInlineSnapshot(
+        '"Native variable lengths.signed: Converted length is outside the native property domain."',
+      )
+      expect(await page.locator('#mixed').textContent()).toMatchInlineSnapshot(
+        '"Native variable mixed.fraction: Unsupported native numeric value."',
+      )
+      expect(await page.locator('#motion').textContent()).toMatchInlineSnapshot(
+        '"Native variable motion.small: Native property transform does not have a scalar variable value."',
+      )
+      expect(await page.locator('#ratio').textContent()).toMatchInlineSnapshot(
+        '"Native variable ratios.wide: Native aspect ratios require numeric variable values."',
+      )
+      expect(JSON.parse((await page.locator('#mapped').textContent())!))
+        .toMatchInlineSnapshot(`
+        {
+          "lineHeight": 20,
+          "opacity": 0.5,
+        }
+      `)
       expect(
         await page.locator('#missing').textContent(),
       ).toMatchInlineSnapshot('"useVars requires a Zyzz Provider."')

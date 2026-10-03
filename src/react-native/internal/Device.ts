@@ -169,10 +169,13 @@ function useBindings() {
               colorScheme: 'light',
               viewport: ReactNative.Dimensions.get('window'),
             })
-          const subscription = owner
-            ? undefined
-            : ReactNative.Dimensions.addEventListener('change', update)
-          if (!owner) update()
+          const contextual =
+            initial.length > 0 || typeof selected === 'function'
+          const subscription =
+            owner || !contextual
+              ? undefined
+              : ReactNative.Dimensions.addEventListener('change', update)
+          if (!owner && contextual) update()
           return () => {
             detach()
             subscription?.remove()

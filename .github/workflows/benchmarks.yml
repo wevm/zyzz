@@ -137,11 +137,11 @@ jobs:
         run: |
           # Use the same migrated fixtures with both compiler revisions.
           git fetch origin "$BENCH_HEAD_SHA"
-          git restore --source=FETCH_HEAD -- src/compiler/Transform.bench.ts src/compiler/Transform.queries.bench.ts src/vite/index.bench.ts
+          git restore --source=FETCH_HEAD -- src/compiler/Native.bench.ts src/compiler/Transform.bench.ts src/compiler/Transform.queries.bench.ts src/vite/index.bench.ts
           if test -f bench/Runtime.bench.ts; then pnpm exec playwright install --with-deps chromium; fi
           mkdir -p bench/results
           git rev-parse HEAD > bench/results/commit.txt
-          git diff -- src/compiler/Transform.bench.ts src/compiler/Transform.queries.bench.ts src/vite/index.bench.ts > bench/results/fixtures.patch
+          git diff -- src/compiler/Native.bench.ts src/compiler/Transform.bench.ts src/compiler/Transform.queries.bench.ts src/vite/index.bench.ts > bench/results/fixtures.patch
           sha256sum pnpm-lock.yaml > bench/results/lockfile.txt
           lscpu > bench/results/cpu.txt
           free -b > bench/results/memory.txt
@@ -198,6 +198,21 @@ jobs:
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/transform/*.json >> bench/results/report.md
           done
+          printf '\n## Native Finite Recipes\n\nFour three-value axes plus omitted selections (256 combinations). Cold measurements include isolated bundled module evaluation and the first selection. Warm measurements reuse the initialized callable. Both revisions use identical source and packed fixtures on this runner.\n\n| Workflow | Baseline JS gzip | Candidate JS gzip | Delta |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
+          for kind in source packed; do
+            jq -rs '
+              .[0] as $base | .[1] as $head |
+              "| " + $head.kind + " | " + ($base.gzip | tostring) + " | " + ($head.gzip | tostring) + " | " + (($head.gzip - $base.gzip) | tostring) + " |"
+            ' "$RUNNER_TEMP/benchmark-baseline/native-programs/$kind.json" "bench/results/native-programs/$kind.json" >> bench/results/report.md
+          done
+          printf '\n| Workflow | Measurement | Baseline ms | Candidate ms |\n| --- | --- | ---: | ---: |\n' >> bench/results/report.md
+          jq -rs '
+            [.[0].files[].groups[] | select(.fullName | contains("native finite recipe /")) | . as $group | .benchmarks[] | {key: ($group.fullName + "/" + .name), value: .mean}] | from_entries
+          ' "$RUNNER_TEMP/benchmark-baseline/timings.json" > bench/results/native-programs/baseline-times.json
+          jq -r --slurpfile baseline bench/results/native-programs/baseline-times.json '
+            .files[].groups[] | select(.fullName | contains("native finite recipe /")) | . as $group | .benchmarks[] |
+            "| " + $group.fullName + " | " + .name + " | " + ($baseline[0][$group.fullName + "/" + .name] | tostring) + " | " + (.mean | tostring) + " |"
+          ' bench/results/timings-measured.json >> bench/results/report.md
           printf '\n## Static Props Binding\n\n| Application | Time (ns) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
           jq -r '
             .files[].groups[] | select(.fullName | contains("static props binding")) | .benchmarks[] |

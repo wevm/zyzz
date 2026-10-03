@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -246,6 +246,8 @@ export function read(
 
   function link(value: unknown): Themes.Link {
     const raw = record(value)
+    if (raw.nativeProvider !== undefined && (data.version as number) < 32)
+      throw new Error('Native providers require contract version 32 or later.')
     // Contracts before version 19 record style authoring exports as `css`.
     const entry =
       raw.kind === 'css' && (data.version as number) < 19
@@ -331,7 +333,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29, 30, 31,
+          27, 28, 29, 30, 31, 32,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -502,9 +504,11 @@ export function read(
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
-      ? entry.variableConfig === true
-        ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
-        : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
+      ? entry.nativeProvider === true
+        ? `import('zyzz/react-native/react').defineConfig.ReturnType<${Configurations.type(entry.variableConfig === true ? variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined) : options)}>`
+        : entry.variableConfig === true
+          ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
+          : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
     // Helpers a legacy library did not compile are hidden from its consumers' types.
     const hidden = [
@@ -523,6 +527,7 @@ export function read(
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.nativeProvider === true ? { nativeProvider: true } : {}),
         ...(entry.variableSet === true
           ? {
               variableSet: true,
@@ -712,6 +717,7 @@ export function write(
 
     return {
       ...(link.call.variableSet ? { variableSet: true } : {}),
+      ...(link.call.nativeProvider ? { nativeProvider: true } : {}),
       ...(link.call.directVariables ? { directVariables: true } : {}),
       ...(link.call.variableConfig
         ? { variableConfig: true, variableMappings: link.call.variableMappings }
@@ -784,8 +790,15 @@ export function write(
         },
       ]),
     ),
-    version: 31,
+    version: Object.values(links).some(nativeProvider) ? 32 : 31,
   })
+
+  function nativeProvider(link: Themes.Link): boolean {
+    return (
+      link.call.nativeProvider === true ||
+      Object.values(link.members ?? {}).some(nativeProvider)
+    )
+  }
 }
 
 /** Contract writer contracts. */

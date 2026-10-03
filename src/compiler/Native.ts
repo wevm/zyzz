@@ -5,6 +5,7 @@ import type * as Recipe from '../internal/Recipe.js'
 import * as Source from './Source.js'
 import * as Edits from './internal/Edits.js'
 import * as NativeBindings from './internal/NativeBindings.js'
+import * as NativeVars from './internal/NativeVars.js'
 import * as Themes from './internal/Themes.js'
 import * as StyleSheet from '../react-native/StyleSheet.js'
 import * as Syntax from './internal/Syntax.js'
@@ -12,7 +13,7 @@ import * as Variants from '../react-native/Variants.js'
 import * as Walker from 'oxc-walker'
 
 /**
- * Compiles local style and variants calls for an explicit native context.
+ * Compiles local styles, variants, and variable reads for an explicit native target.
  * @param options - Shared source, destination mappings, and selected set/scheme.
  * @returns Native callables, source map, and static recipe tables.
  * @throws {Source.ExtractError} For invalid source authoring.
@@ -50,8 +51,8 @@ export function compile(options: compile.Options): compile.ReturnType {
     })
   let helper = '__zyzzNative'
   while (
-    [helper, `${helper}Context`, `${helper}Dynamic`].some((name) =>
-      names.has(name),
+    [helper, `${helper}Context`, `${helper}Dynamic`, `${helper}Vars`].some(
+      (name) => names.has(name),
     )
   )
     helper += '_'
@@ -92,6 +93,54 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const staticTables = new Map<Source.Call, Variants.Definition>()
+  if (extracted.nativeVars?.length)
+    StyleSheet.compile({
+      fonts: options.fonts,
+      platform: options.platform,
+      styles: { styles: [] },
+      units: options.units,
+    })
+
+  const shared = options[NativeVars.shared]
+  const variables = new Map(shared?.definitions)
+  const imports = new Set<string>()
+  for (const read of extracted.nativeVars ?? []) {
+    const imported = shared?.reads.get(read.start)
+    if (imported) {
+      if (imported.source)
+        imports.add(
+          `import {${imported.name}} from ${JSON.stringify(imported.source)};`,
+        )
+      const type = typed
+        ? ` as typeof ${options.source.slice(read.start, read.end)}`
+        : ''
+      overwrite(read.start, read.end, `(${imported.name}${type})`, true)
+      continue
+    }
+    const definition = (() => {
+      try {
+        return NativeVars.compile({
+          ...read,
+          fonts: options.fonts,
+          units: options.units,
+        })
+      } catch (error) {
+        throw new CompileError((error as Error).message)
+      }
+    })()
+    const key = JSON.stringify(definition)
+    let name = variables.get(key)
+    if (!name) {
+      name = `${helper}Vars${variables.size}`
+      while (names.has(name)) name += '_'
+      names.add(name)
+      variables.set(key, name)
+    }
+    const type = typed
+      ? ` as typeof ${options.source.slice(read.start, read.end)}`
+      : ''
+    overwrite(read.start, read.end, `(${name}${type})`, true)
+  }
   if (options.contextual) {
     const groups = new Map<StyleSheet.compile.Options['vars'], Source.Call[]>()
     for (const call of extracted.calls) {
@@ -698,7 +747,13 @@ export function compile(options: compile.Options): compile.ReturnType {
       imports.length ? `import ${imports.join(',')} from 'zyzz';` : '',
     )
   }
-  if (extracted.calls.length || compositions.length || packed.length) {
+  if (
+    extracted.calls.length ||
+    compositions.length ||
+    packed.length ||
+    variables.size ||
+    imports.size
+  ) {
     let offset = 0
     if (options.source.startsWith('#!')) {
       const newline = /\r\n|[\n\r\u2028\u2029]/.exec(options.source)
@@ -713,7 +768,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       offset = node.end
     }
 
-    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...compositions, ...packed].join('\n')}\n`
+    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `${shared?.definitions.has(value) ? 'export ' : ''}const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...imports, ...compositions, ...packed].join('\n')}\n`
     module.appendLeft(offset, prelude)
     edits.push({ start: offset, end: offset, code: prelude, expression: false })
   }
@@ -738,6 +793,8 @@ export declare namespace compile {
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
     /** Internal Babel emission mode; authoring types are still validated. */
     readonly [Edits.runtime]?: boolean | undefined
+    /** Compiler-owned shared native variable profiles. */
+    readonly [NativeVars.shared]?: NativeVars.Shared | undefined
     /** Compiler-owned graph context. */
     readonly [Themes.context]?: Themes.Context | undefined
     /** Retain every set and scheme for render-local selection. */

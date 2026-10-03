@@ -10,8 +10,8 @@ import {
   View,
   useColorScheme,
 } from 'react-native'
-import { Provider } from 'zyzz/react-native/react'
-import { style, variants } from './Theme.js'
+import { useVars } from 'zyzz/react-native/react'
+import { Provider, style, variants, vars } from './Theme.js'
 
 /** Renders the native example with theme and appearance controls. */
 export default function App() {
@@ -21,7 +21,7 @@ export default function App() {
   const [theme, setTheme] = useState<'blue' | 'green'>('blue')
   const resolved = scheme === 'system' ? system : scheme
   return (
-    <Provider colorScheme={resolved} set={theme}>
+    <Provider colorScheme={resolved} vars={theme}>
       <Samples
         scheme={scheme}
         colorScheme={resolved}
@@ -56,14 +56,7 @@ function Samples({
 }) {
   const [expanded, setExpanded] = useState(false)
   const width = expanded ? 120 : 60
-  const accent =
-    theme === 'blue'
-      ? colorScheme === 'light'
-        ? '#2563eb'
-        : '#93c5fd'
-      : colorScheme === 'light'
-        ? '#15803d'
-        : '#86efac'
+  const accent = useVars(vars, (values) => values.color.accent)
 
   return (
     <ScrollView

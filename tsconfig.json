@@ -22,6 +22,7 @@
       "zyzz/node": ["./src/node/index.ts"],
       "zyzz/oxlint": ["./src/oxlint/index.ts"],
       "zyzz/react-native": ["./src/react-native/index.ts"],
+      "zyzz/react-native/react": ["./src/react-native/react.ts"],
       "zyzz/rollup": ["./src/rollup/index.ts"],
       "zyzz/runtime": ["./src/runtime/index.ts"],
       "zyzz/unplugin": ["./src/unplugin/index.ts"],

@@ -32,6 +32,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Whether native defineConfig retains a typed React Provider. */
+  readonly nativeProvider?: boolean | undefined
   readonly variableSet?: boolean | undefined
   readonly directVariables?: boolean | undefined
   readonly variableConfig?: boolean | undefined
@@ -102,6 +104,22 @@ export type Link = {
   readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
+/** A readonly variable argument consumed by a native React hook. */
+export type VarsRead = {
+  /** Owning configuration fallback. */
+  readonly defaultVars: string
+  /** Exclusive source offset. */
+  readonly end: number
+  /** Stable configuration identity for graph-owned native profiles. */
+  readonly owner: string
+  /** Inclusive source offset. */
+  readonly start: number
+  /** A standalone definition that does not select a named catalog entry. */
+  readonly unnamed: boolean
+  /** Complete compatible variable alternatives. */
+  readonly vars: Readonly<Record<string, Theme.Definition>>
+}
+
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
   /** Canonical identifier names collected during graph validation. */
@@ -146,10 +164,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const variableImports = new Set<number>()
   const configImports = new Set<number>()
   const factoryImports = new Map<number, 'create' | 'define' | 'extend'>()
+  const nativeFactories = new Set<string>()
   const configs = new Map<string, Link>()
   const configBindings = new Map<number, Link>()
   const factoryReferences = new Set<number>()
   const references: Reference[] = []
+  const varsReads: VarsRead[] = []
 
   const styles = new Map<
     number,
@@ -167,12 +187,28 @@ export function collect(program: Ast.Program, options: collect.Options) {
   for (const node of program.body) {
     if (
       node.type !== 'ImportDeclaration' ||
-      node.source.value !== 'zyzz' ||
+      !['zyzz', 'zyzz/react-native', 'zyzz/react-native/react'].includes(
+        node.source.value,
+      ) ||
       node.importKind === 'type'
     )
       continue
 
-    for (const specifier of node.specifiers)
+    for (const specifier of node.specifiers) {
+      if (node.source.value !== 'zyzz') {
+        if (
+          specifier.type === 'ImportSpecifier' &&
+          specifier.importKind !== 'type' &&
+          (specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value) === 'defineConfig'
+        ) {
+          factoryImports.set(specifier.start, 'create')
+          nativeFactories.add(specifier.local.name)
+        }
+        continue
+      }
+
       if (
         specifier.type === 'ImportSpecifier' &&
         specifier.importKind !== 'type' &&
@@ -209,6 +245,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           factoryImports.set(specifier.start, 'define')
         else factoryImports.set(specifier.start, 'extend')
       }
+    }
   }
 
   if (
@@ -687,11 +724,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
 
       if (config) {
+        const nativeProvider =
+          member.type === 'Identifier' && nativeFactories.has(member.name)
+        if (nativeProvider && !options.native)
+          fail(
+            'Native defineConfig requires a native compilation target.',
+            expression,
+          )
+
         try {
           const link = Configurations.collect({
             data,
             expression,
             name,
+            nativeProvider,
             resolve: (node) => {
               const link = resolve(node)
 
@@ -718,6 +764,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
           themes[link.call.name] = link.definition
 
           for (const { key, id } of bindings) {
+            if (key === 'Provider' && link.call.nativeProvider) continue
+
             if (
               (key === 'style' || key === 'variants') &&
               !link.call.selection &&
@@ -1048,6 +1096,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
       for (const { key, id } of bindings) {
         if (
+          key === 'Provider' &&
+          link.call.nativeProvider &&
+          !link.call.initialization &&
+          !link.call.root &&
+          !link.call.selection
+        )
+          continue
+
+        if (
           (key === 'style' || key === 'variants') &&
           !link.call.selection &&
           !link.call.initialization
@@ -1352,6 +1409,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     parent: Ast.Node,
     ancestors: readonly Ast.Node[],
     binding: Walker.ScopeTrackerNode | null,
+    lookup: (name: string) => Walker.ScopeTrackerNode | null,
   ): boolean {
     const grandparent = ancestors.at(-3)
 
@@ -1439,6 +1497,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         fail('Configuration references must follow their definition.', node)
 
+      if (
+        config.call.variableConfig &&
+        config.call.selection &&
+        readVars(node, parent, config, lookup)
+      )
+        return true
+
       // Root controls are an ordinary runtime object; any read or call is valid.
       if (config.call.root) {
         appearances.add(config.call.name)
@@ -1505,6 +1570,24 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
         path.push(key)
         target = member
+
+        if (
+          path.length === 1 &&
+          path[0] === 'Provider' &&
+          config.call.nativeProvider &&
+          !config.call.initialization &&
+          !config.call.root &&
+          !config.call.selection
+        )
+          return true
+
+        if (
+          config.call.variableConfig &&
+          path.length === 1 &&
+          path[0] === 'vars' &&
+          readVars(target, ancestors[index - 1]!, config, lookup)
+        )
+          return true
 
         if (
           aliasReferences.has(target.start) ||
@@ -1644,7 +1727,95 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (!theme) return false
     if (node.start === binding!.node.start) return true
 
+    if (
+      theme.variableSet &&
+      readVars(
+        node,
+        parent,
+        {
+          call: theme,
+          definition: themes[theme.name]!,
+        },
+        lookup,
+      )
+    )
+      return true
+
     return themeReference(node, parent, ancestors, theme)
+  }
+
+  function readVars(
+    node: Ast.Node,
+    parent: Ast.Node,
+    link: Pick<Link, 'call' | 'definition' | 'members'>,
+    lookup: (name: string) => Walker.ScopeTrackerNode | null,
+  ): boolean {
+    if (
+      !options.native ||
+      parent.type !== 'CallExpression' ||
+      parent.optional ||
+      parent.arguments[0] !== node
+    )
+      return false
+
+    const callee = parent.callee
+    const name =
+      callee.type === 'Identifier'
+        ? callee.name
+        : callee.type === 'MemberExpression' &&
+            !callee.computed &&
+            !callee.optional &&
+            callee.object.type === 'Identifier' &&
+            callee.property.type === 'Identifier' &&
+            callee.property.name === 'useVars'
+          ? callee.object.name
+          : undefined
+    const binding = name === undefined ? undefined : lookup(name)
+    if (
+      binding?.type !== 'Import' ||
+      !['zyzz/react-native', 'zyzz/react-native/react'].includes(
+        binding.importNode.source.value,
+      ) ||
+      binding.importNode.importKind === 'type'
+    )
+      return false
+
+    const specifier = binding.node
+    if (
+      callee.type === 'Identifier'
+        ? specifier.type !== 'ImportSpecifier' ||
+          specifier.importKind === 'type' ||
+          (specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value) !== 'useVars'
+        : specifier.type !== 'ImportNamespaceSpecifier'
+    )
+      return false
+
+    const named = link.call.options?.themes !== undefined
+    const vars = (() => {
+      if (!named) return { default: link.definition }
+      return Object.fromEntries(
+        Object.entries(link.members ?? {}).flatMap((entry) => {
+          const [key, member] = entry
+          const path = JSON.parse(key) as string[]
+          if (path.length === 1 && link.call.selection)
+            return [[path[0]!, member.definition]]
+          if (path.length === 2 && path[0] === 'themes')
+            return [[path[1]!, member.definition]]
+          return []
+        }),
+      )
+    })()
+    varsReads.push({
+      defaultVars: named ? String(link.call.options!.defaultTheme) : 'default',
+      end: node.end,
+      owner: link.call.name,
+      start: node.start,
+      unnamed: !named,
+      vars,
+    })
+    return true
   }
 
   function themeReference(
@@ -2027,6 +2198,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
       const entries = Object.entries(config.members ?? {}).flatMap(
         ([key, value]) => {
           const path = JSON.parse(key) as string[]
+          if (config.call.selection && path.length === 1)
+            return [[path[0]!, value.definition] as const]
           return (path[0] === 'themes' || path[0] === 'vars') &&
             path.length === 2
             ? [[path[1]!, value.definition] as const]
@@ -2054,6 +2227,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     styles,
     themes: Object.freeze(themes),
     tokens,
+    varsReads,
   }
 }
 
@@ -2061,6 +2235,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
 export declare namespace collect {
   /** Stable module namespace, independent of token values and call offsets. */
   type Options = {
+    /** Captures readonly variable arguments for native React hooks. */
+    readonly native?: boolean | undefined
     /** Encoded package/module identity from the source adapter. */
     readonly staticBindings?: ReadonlySet<number> | undefined
     readonly contributionCalls?: ReadonlySet<number> | undefined

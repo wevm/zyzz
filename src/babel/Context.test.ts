@@ -20,8 +20,8 @@ test('switches schemes and themes through imported styles in memoized consumers 
     'Theme.ts':
       "import { Config } from 'zyzz'; export const config = Config.create({ vars: { base: { color: { ink: { light: '#112233', dark: '#ddeeff' } } }, alternate: { color: { ink: { light: '#ff0000', dark: '#0000ff' } } } }, defaultVars: 'base' }); export const { style, variants } = config;",
     'Styles.ts': `import { style, variants, config } from './Theme.js'; import {style as rawStyle} from 'zyzz'; export const plain = rawStyle({color:config.vars.color.ink}); export const ink = style({ color: 'ink' }); export const meter = style((v: { opacity: number }) => ({ color: 'ink', opacity: v.opacity })); export const cached = ink(); export const card = variants({ base: { color: 'ink' }, variants: { selected: { true: { opacity: 0.5 } } } });`,
-    'App.tsx': `import * as React from 'react'; import {createRoot} from 'react-dom/client'; import {Provider} from 'zyzz/react-native/react'; import {ink, meter, card, cached, plain} from './Styles.js';
-      import {style as localStyle, variants as localVariants} from './Theme.js'; const local = localStyle({color:'ink'});
+    'App.tsx': `import * as React from 'react'; import {createRoot} from 'react-dom/client'; import {Provider,useVars} from 'zyzz/react-native/react'; import {ink, meter, card, cached, plain} from './Styles.js';
+      import {config,style as localStyle, variants as localVariants} from './Theme.js'; const local = localStyle({color:'ink'});
       const localMeter = localStyle((values:{opacity:number}) => ({color:'ink',opacity:values.opacity}));
       const localCard = localVariants({base:{color:'ink'},variants:{active:{true:{opacity:0.8},false:{opacity:0.3}}}});
       let evaluations = 0; function input() { evaluations++; return {opacity:0.6} }
@@ -29,8 +29,9 @@ test('switches schemes and themes through imported styles in memoized consumers 
       function Shadow({local}) { return <span id="shadow" style={local().style}>shadow</span> }
       function Callback({style}) { const before = evaluations; const result = <><span id="local" style={local().style}>local</span><span id="local-meter" style={localMeter(input()).style}>meter</span><span id="local-card" style={localCard({active:true}).style}>card</span><span id="replaced" style={replaced().style}>replaced</span><Shadow local={() => ({style:{color:'#778899'}})} /><span id="callback" style={Object.assign({}, ...style({pressed:true}))}>callback</span></>; if (evaluations !== before + 1) throw new Error('Native input must evaluate once'); return result }
       const Sample = React.memo(() => { const [count, setCount] = React.useState(0); return <div><button id="count" onClick={() => setCount(count + 1)}>{count}</button><span id="ink" {...ink()}>ink</span><span id="cached" {...cached}>cached</span><span id="plain" {...plain()}>plain</span><span id="meter" style={meter({opacity:0.7}).style}>meter</span><span id="card" {...card({selected:true})}>card</span><Callback style={({pressed}) => [ink().style, {opacity: pressed ? 0.4 : 1}]} /></div> });
-      function App() { const [scheme, setScheme] = React.useState('light'); const [theme,setTheme] = React.useState('base'); return <Provider colorScheme={scheme} set={theme}><button id="scheme" onClick={() => setScheme(scheme === 'light' ? 'dark' : 'light')}>scheme</button><button id="theme" onClick={() => setTheme(theme === 'base' ? 'alternate' : 'base')}>theme</button><Sample /></Provider> }
-      function Independent() { return <span id="independent" {...ink()}>independent</span> } createRoot(document.getElementById('root')!).render(<App />); createRoot(document.getElementById('second')!).render(<Provider colorScheme="light" set="base"><Independent /></Provider>);`,
+      function Values() { const values=useVars(config.vars); return <span id="values">{values.color.ink}</span> }
+      function App() { const [scheme, setScheme] = React.useState('light'); const [theme,setTheme] = React.useState('base'); return <Provider colorScheme={scheme} vars={theme}><button id="scheme" onClick={() => setScheme(scheme === 'light' ? 'dark' : 'light')}>scheme</button><button id="theme" onClick={() => setTheme(theme === 'base' ? 'alternate' : 'base')}>theme</button><Sample /><Values /></Provider> }
+      function Independent() { return <span id="independent" {...ink()}>independent</span> } createRoot(document.getElementById('root')!).render(<App />); createRoot(document.getElementById('second')!).render(<Provider colorScheme="light" vars="base"><Independent /></Provider>);`,
   }
   const root = await Fs.mkdtemp(Path.resolve('.fixture-native-context-'))
   const browser = await chromium.launch()
@@ -42,7 +43,18 @@ test('switches schemes and themes through imported styles in memoized consumers 
         caller: { name: 'test', supportsStaticESM: true },
         filename: Path.join(root, moduleId),
         plugins: [
-          [zyzz, { target: 'native', platform: 'ios', modules, moduleId }],
+          [
+            zyzz,
+            {
+              target: 'native',
+              platform: 'ios',
+              modules:
+                moduleId === 'Theme.ts'
+                  ? { 'Theme.ts': modules['Theme.ts'] }
+                  : modules,
+              moduleId,
+            },
+          ],
         ],
         presets: [
           [preset, { jsxRuntime: 'classic', enableBabelRuntime: false }],
@@ -76,7 +88,13 @@ test('switches schemes and themes through imported styles in memoized consumers 
         .evaluate((element) => getComputedStyle(element).color),
     ).toMatchInlineSnapshot('"rgb(17, 34, 51)"')
     await page.locator('#count').click()
+    expect(await page.locator('#values').textContent()).toMatchInlineSnapshot(
+      `"#112233"`,
+    )
     await page.locator('#scheme').click()
+    expect(await page.locator('#values').textContent()).toMatchInlineSnapshot(
+      `"#ddeeff"`,
+    )
     expect(await color()).toBe('rgb(221, 238, 255)')
     expect(
       await page

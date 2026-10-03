@@ -269,6 +269,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const themes = (() => {
     try {
       return Themes.collect(program, {
+        native: options.target === 'native',
         staticBindings: staticData.bindings,
         namespace: `src-${Identity.label(
           options.moduleId
@@ -347,7 +348,16 @@ export function extract(options: extract.Options): extract.ReturnType {
 
       if (themes)
         try {
-          if (themes.reference(node, parent, ancestors, binding)) return
+          if (
+            themes.reference(
+              node,
+              parent,
+              ancestors,
+              binding,
+              (name) => scopeTracker.getDeclaration(name) ?? null,
+            )
+          )
+            return
         } catch (error) {
           if (!(error instanceof Themes.InvalidError)) throw error
 
@@ -1632,6 +1642,9 @@ export function extract(options: extract.Options): extract.ReturnType {
       : {}),
     themeReferences: Object.freeze(themes?.references ?? []),
     vars: themes?.themes ?? Object.freeze({}),
+    ...(themes?.varsReads.length
+      ? { nativeVars: Object.freeze(themes.varsReads) }
+      : {}),
   })
 }
 
@@ -1656,6 +1669,8 @@ export declare namespace extract {
 
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Readonly native variable arguments and their complete catalogs. */
+    readonly nativeVars?: readonly Themes.VarsRead[] | undefined
     /** Module-owned namespace bindings retained when contributions are shared. */
     readonly namespaces?: readonly Namespace.Definition[] | undefined
     /** Static stylesheet effects and their source replacements. */

@@ -33,14 +33,13 @@ Keep existing resolver and transformer customizations inside the configuration p
 
 ### Connect Appearance
 
-Place `Provider` above the components that consume compiled styles. React Native's [`useColorScheme`](https://reactnative.dev/docs/usecolorscheme) subscribes to device appearance changes. Resolve an absent device preference to `light`.
+Return `Provider` from native `defineConfig` and place it above the components that consume compiled styles. React Native's [`useColorScheme`](https://reactnative.dev/docs/usecolorscheme) subscribes to device appearance changes. Resolve an absent device preference to `light`.
 
 ```tsx title="App.tsx"
 import { Text, useColorScheme } from 'react-native'
-import { defineConfig } from 'zyzz'
-import { Provider } from 'zyzz/react-native/react'
+import { defineConfig } from 'zyzz/react-native'
 
-const { style } = defineConfig({
+const { Provider, style } = defineConfig({
   vars: {
     color: { ink: { dark: '#eeeeee', light: '#111111' } },
   },
@@ -211,7 +210,7 @@ Put web-only declarations inside `targets.web`. An unsupported shared declaratio
 
 ### Select a Theme
 
-For named themes, define a catalog with `defaultVars` and pass its name through `Provider.set`. Omit `set` to use each configuration's default.
+For named themes, define a catalog with `defaultVars` and pass its name through `Provider.vars`. Omit `vars` to use each configuration's default.
 
 ```tsx title="App.tsx"
 import { Text, useColorScheme } from 'react-native'
@@ -230,7 +229,7 @@ export default function App() {
   const scheme = useColorScheme()
 
   return (
-    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'} set="mint">
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'} vars="mint">
       <Greeting />
     </Provider>
   )
@@ -245,7 +244,7 @@ namespace styles {
 }
 ```
 
-Pass application state to `set` for a theme picker. Every themed definition under that provider must recognize the chosen name. Unknown names fail selection. Nested providers and separate React roots have isolated selections.
+Pass application state to `vars` for a theme picker. Every themed definition under that provider must recognize the chosen name. Unknown names fail selection. Nested providers and separate React roots have isolated selections.
 
 ### Resolve Styles Explicitly
 

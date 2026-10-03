@@ -12,6 +12,7 @@ const directory = Fs.realpathSync(
 )
 const site = new URL('../..', import.meta.url)
 const fixture = `${directory}/src/content/docs/guides/navigation-review-fixture.mdx`
+const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fixture.mdx`
 
 describe('/docs', () => {
   beforeAll(async () => {
@@ -37,6 +38,56 @@ describe('/docs', () => {
     Fs.writeFileSync(
       fixture,
       'import { useEffect, useState } from "react"\n\nexport const example = true\n\nexport function Readiness() { const [ready, setReady] = useState(false); useEffect(() => setReady(true), []); return <span data-navigation-ready={ready} /> }\n\n# Navigation **Fixture**\n\nA [guide](/docs) used to verify `published` navigation.\n\n<Readiness />\n\n[Shared setup](/docs/introduction/getting-started?framework=nextjs&mode=custom)\n\n[Markdown](/docs/introduction/getting-started.md)\n\n<Card href="/docs/introduction/why-zyzz" title="Why Zyzz card">Read about Zyzz.</Card>\n',
+    )
+    Fs.writeFileSync(
+      twoslashFixture,
+      [
+        '# Twoslash Fixture',
+        '',
+        'Code checked against the published Zyzz types.',
+        '',
+        '```ts twoslash title="errors.ts"',
+        '// @errors: 2322',
+        "import { defineConfig } from 'zyzz'",
+        '',
+        "const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })",
+        '',
+        "style({ padding: 'lg' })",
+        '```',
+        '',
+        '```ts twoslash title="completions.ts" /padding/',
+        '// @noErrors',
+        "import { defineConfig } from 'zyzz'",
+        '',
+        "const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })",
+        '',
+        "style({ padding: '' })",
+        '//                ^|',
+        '```',
+        '',
+        '```ts twoslash title="lint.ts"',
+        'export const zIndex = 9999',
+        "  // @error: zyzz(restricted-properties): Property 'zIndex' is restricted.",
+        '```',
+        '',
+        '```ts title="diff.ts"',
+        "const size = 'sm' // [!code --]",
+        "const size = 'md' // [!code ++]",
+        "const tone = 'brand' // [!code hl]",
+        '```',
+        '',
+        '```ts title="src/app/word.ts" /\'md\'/',
+        "const size = 'md'",
+        '```',
+        '',
+        '> [!TIP]',
+        '> Fixture tip.',
+        '>',
+        '> ```ts',
+        '> const tip = true',
+        '> ```',
+        '',
+      ].join('\n'),
     )
     server = ChildProcess.spawn(
       'node',
@@ -338,6 +389,185 @@ describe('/docs', () => {
       expect(await alert.textContent()).toMatchInlineSnapshot(
         '"Could not copy code. Select and copy it manually."',
       )
+    } finally {
+      await browser.close()
+    }
+  }, 15000)
+
+  test('renders Twoslash diagnostics, completions, notations, and callouts', async () => {
+    const markdown = await (
+      await fetch(`${origin}/docs/guides/twoslash-review-fixture.md`)
+    ).text()
+    expect(markdown).toMatchInlineSnapshot(`
+      "# Twoslash Fixture
+
+      Code checked against the published Zyzz types.
+
+      \`\`\`ts title="errors.ts"
+      import { defineConfig } from 'zyzz'
+
+      const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })
+
+      style({ padding: 'lg' })
+      // error: Type '"lg"' is not assignable to type '"lg" & Expected<"md" | \`\${string} !custom\`>'.
+      // Type 'string' is not assignable to type 'Expected<"md" | \`\${string} !custom\`>'.
+      \`\`\`
+
+      \`\`\`ts title="completions.ts"
+      import { defineConfig } from 'zyzz'
+
+      const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })
+
+      style({ padding: '' })
+      // completions: md
+      \`\`\`
+
+      \`\`\`ts title="lint.ts"
+      export const zIndex = 9999
+      // zyzz(restricted-properties): Property 'zIndex' is restricted.
+      \`\`\`
+
+      \`\`\`diff title="diff.ts"
+      -const size = 'sm'
+      +const size = 'md'
+       const tone = 'brand'
+      \`\`\`
+
+      \`\`\`ts title="src/app/word.ts"
+      const size = 'md'
+      \`\`\`
+
+      > [!TIP]
+      > Fixture tip.
+      >
+      > \`\`\`ts
+      > const tip = true
+      > \`\`\`
+      "
+    `)
+
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const context = await browser.newContext({
+        permissions: ['clipboard-read', 'clipboard-write'],
+        reducedMotion: 'reduce',
+      })
+      const page = await context.newPage()
+      await page.goto(`${origin}/docs/guides/twoslash-review-fixture`)
+      await page.waitForLoadState('networkidle')
+
+      expect(
+        (
+          await page.locator('.twoslash-error-line').first().textContent()
+        )?.split('\n')[0],
+      ).toMatchInlineSnapshot(
+        `"Type '"lg"' is not assignable to type '"lg" & Expected<"md" | \`\${string} !custom\`>'."`,
+      )
+      expect(
+        await page
+          .locator('.twoslash-error')
+          .first()
+          .evaluate((node) => [
+            node.textContent,
+            getComputedStyle(node).textDecorationStyle,
+          ]),
+      ).toMatchInlineSnapshot(`
+        [
+          "padding",
+          "wavy",
+        ]
+      `)
+
+      expect(
+        await page
+          .getByRole('list', { name: 'Completions' })
+          .getByRole('listitem')
+          .allTextContents(),
+      ).toMatchInlineSnapshot(`
+        [
+          "md",
+        ]
+      `)
+      expect(
+        await page
+          .locator('.twoslash-completion-cursor')
+          .evaluate((node) => getComputedStyle(node, '::before').animationName),
+      ).toMatchInlineSnapshot('"none"')
+
+      expect(
+        await page.locator('.twoslash-tag-line').textContent(),
+      ).toMatchInlineSnapshot(
+        `"zyzz(restricted-properties): Property 'zIndex' is restricted."`,
+      )
+
+      expect(
+        await page
+          .locator('pre:has(.diff) .line')
+          .evaluateAll((lines) =>
+            lines.map((line) => [
+              line.textContent,
+              getComputedStyle(line, '::before').content,
+              getComputedStyle(line).backgroundColor !== 'rgba(0, 0, 0, 0)',
+            ]),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          [
+            "const size = 'sm'",
+            ""-"",
+            true,
+          ],
+          [
+            "const size = 'md'",
+            ""+"",
+            true,
+          ],
+          [
+            "const tone = 'brand'",
+            "none",
+            true,
+          ],
+        ]
+      `)
+
+      expect(await page.locator('.highlighted-word').allTextContents())
+        .toMatchInlineSnapshot(`
+        [
+          "padding",
+          "'md'",
+        ]
+      `)
+
+      await page
+        .getByRole('button', { name: 'Copy errors.ts', exact: true })
+        .click()
+      expect(await page.evaluate(() => navigator.clipboard.readText()))
+        .toMatchInlineSnapshot(`
+        "import { defineConfig } from 'zyzz'
+
+        const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })
+
+        style({ padding: 'lg' })"
+      `)
+
+      const note = page.getByRole('complementary', { name: 'Tip' })
+      expect(
+        (await note.locator('pre').textContent())?.trim(),
+      ).toMatchInlineSnapshot('"const tip = true"')
+      // A one-line block centers its copy button vertically.
+      expect(
+        await note.locator('pre').evaluate((node) => {
+          const block = node.parentElement!.getBoundingClientRect()
+          const button = node
+            .parentElement!.querySelector('button')!
+            .getBoundingClientRect()
+          return (
+            Math.abs(
+              block.top + block.height / 2 - (button.top + button.height / 2),
+            ) < 1
+          )
+        }),
+      ).toMatchInlineSnapshot('true')
     } finally {
       await browser.close()
     }

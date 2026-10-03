@@ -5,7 +5,7 @@ import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
 
 describe('at-rule acceptance', () => {
-  test('reuses executed evidence for full acceptance without rerunning commands', () => {
+  test('reuses executed shard evidence without rerunning commands', () => {
     const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const fixture = Path.join(root, 'Evidence.test.ts')
@@ -23,13 +23,51 @@ describe('evidence', () => {
 })
 `,
       )
-      const report = Path.join(root, 'results.json')
-      const execution = ChildProcess.spawnSync(
-        Path.resolve('node_modules/.bin/vp'),
-        ['test', 'run', fixture, '--reporter=json', `--outputFile=${report}`],
-        { encoding: 'utf8', timeout: 20_000 },
+      const unrelated = Path.join(root, 'Unrelated.test.ts')
+      Fs.writeFileSync(
+        unrelated,
+        `/** Exercises a separate real shard input. @module */
+import { describe, expect, test } from 'vite-plus/test'
+describe('unrelated', () => {
+  test('passes', () => expect(1).toMatchInlineSnapshot('1'))
+})
+`,
       )
-      expect(execution.status).toMatchInlineSnapshot('0')
+      const blobs = Path.join(root, 'blobs')
+      Fs.mkdirSync(blobs)
+      for (const shard of [1, 2]) {
+        const execution = ChildProcess.spawnSync(
+          Path.resolve('node_modules/.bin/vp'),
+          [
+            'test',
+            'run',
+            fixture,
+            unrelated,
+            `--shard=${shard}/2`,
+            '--reporter=blob',
+            `--outputFile=${Path.join(blobs, `${shard}.json`)}`,
+          ],
+          { encoding: 'utf8', timeout: 20_000 },
+        )
+        expect(execution.status).toMatchInlineSnapshot('0')
+      }
+
+      const report = Path.join(root, 'results.json')
+      const merge = ChildProcess.spawnSync(
+        Path.resolve('node_modules/.bin/vp'),
+        [
+          'test',
+          'run',
+          `--merge-reports=${blobs}`,
+          '--reporter=json',
+          `--outputFile=${report}`,
+        ],
+        {
+          encoding: 'utf8',
+          timeout: 20_000,
+        },
+      )
+      expect(merge.status).toMatchInlineSnapshot('0')
 
       const matrix = JSON.parse(
         Fs.readFileSync('test/conformance/at-rule-matrix.json', 'utf8'),

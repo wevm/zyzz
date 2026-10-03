@@ -797,7 +797,7 @@ function resolve(
     }
     if (Token.isExpression(value) && 'group' in value) {
       const text = value.parts.map((part) => scalar(part)).join('')
-      if (value.group !== 'spacing' || !text.startsWith('calc(')) return text
+      if (value.group !== 'spacing' || !/^\s*calc\(/i.test(text)) return text
       try {
         return `${Calculation.length(text, options) / (options.units?.px ?? 1)}px`
       } catch (error) {

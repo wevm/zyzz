@@ -3,12 +3,13 @@ import { AgentPrompt } from '../components/AgentPrompt.js'
 import { DocumentationShell } from '../components/DocumentationShell.js'
 import { Install } from '../components/Install.js'
 import { Link } from '../components/Link.js'
+import { Callout } from '../components/mdx/Callout.js'
 import { Card } from '../components/mdx/Card.js'
 import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
 import { Steps } from '../components/mdx/Steps.js'
 import { SearchField } from '../components/SearchField.js'
 import * as Docs from '../Docs.js'
-import { style, vars } from '../zyzz.config.js'
+import { style, variants, vars } from '../zyzz.config.js'
 import { isValidElement, type ReactNode, useEffect, useState } from 'react'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import BookOpenIcon from '~icons/lucide/book-open'
@@ -44,6 +45,9 @@ import NpmIcon from '~icons/simple-icons/npm'
 import ReactIcon from '~icons/simple-icons/react'
 import TypeScriptIcon from '~icons/simple-icons/typescript'
 import ViteIcon from '~icons/simple-icons/vite'
+import { keyframes } from 'zyzz/web'
+
+const blink = keyframes({ '50%': { opacity: 0 } })
 
 const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/babel': BabelIcon,
@@ -129,6 +133,7 @@ export function Page(props: Page.Props) {
             Install,
             Steps,
             a: Link,
+            blockquote: Callout,
             pre: Code,
           }}
         />
@@ -220,9 +225,10 @@ function Code(input: Code.Props) {
   })()
 
   const source = children.props.children?.replace(/\n$/, '') ?? ''
-  const lines = Object.hasOwn(__DOCS__.code, source)
+  const code = Object.hasOwn(__DOCS__.code, source)
     ? __DOCS__.code[source]
     : undefined
+  const text = code?.text ?? source
   const copyButton = (
     <button
       aria-label={
@@ -233,14 +239,16 @@ function Code(input: Code.Props) {
       title={copyState === 'failed' ? 'Copy failed. Try again.' : 'Copy code'}
       onClick={async () => {
         try {
-          await navigator.clipboard.writeText(source)
+          await navigator.clipboard.writeText(text)
           setCopyState('copied')
         } catch {
           setCopyState('failed')
         }
       }}
       type="button"
-      {...styles.copy()}
+      {...styles.copy({
+        placement: !filename && !text.includes('\n') ? 'center' : 'top',
+      })}
     >
       {copyState === 'copied' ? (
         <CheckIcon
@@ -271,20 +279,12 @@ function Code(input: Code.Props) {
         </p>
       )}
       <pre {...styles.code()}>
-        <code>
-          {lines
-            ? lines.map((line, index) => (
-                <span key={index}>
-                  {line.map((token, index) => (
-                    <span key={index} style={{ color: token.color }}>
-                      {token.content}
-                    </span>
-                  ))}
-                  {'\n'}
-                </span>
-              ))
-            : source}
-        </code>
+        {code ? (
+          // Shiki renders highlighted lines, notations, and Twoslash annotations during the build.
+          <code dangerouslySetInnerHTML={{ __html: code.html }} />
+        ) : (
+          <code>{source}</code>
+        )}
       </pre>
     </div>
   )
@@ -340,7 +340,7 @@ namespace styles {
     '& ul': { listStyleType: 'disc' },
     '& ol:not([data-steps])': { listStyleType: 'decimal' },
     '& li:not([data-step])': { marginBlock: 2 },
-    '& p code, & aside code, & li > code': {
+    '& p code, & aside :not(pre) > code, & li > code': {
       typography: 'label.14.mono',
       fontSize: '15px !custom',
       color: 'foreground',
@@ -363,6 +363,92 @@ namespace styles {
       font: 'inherit',
       display: 'block',
       minWidth: 'max-content !custom',
+    },
+    // Marked lines and Twoslash rows extend into the block's padding.
+    '& .highlighted, & .diff, & .twoslash-meta-line, & .twoslash-tag-line': {
+      boxSizing: 'border-box',
+      marginLeft: `calc(${vars.spacing[6]} * -1) !custom`,
+      minWidth: `calc(100% + ${vars.spacing[6]} + ${vars.spacing[12]}) !custom`,
+      paddingLeft: 6,
+      paddingRight: 12,
+      position: 'relative',
+    },
+    '& .highlighted, & .diff': { display: 'inline-block' },
+    '& .highlighted': { backgroundColor: 'grayAlpha.200' },
+    '& .highlighted-word': {
+      backgroundColor: 'blue.200',
+      borderRadius: 'sm',
+      marginInline: '-2px !custom',
+      outline: '1px solid',
+      outlineColor: 'blue.500',
+      paddingInline: '2px !custom',
+    },
+    '& .diff::before': { left: 2, position: 'absolute' },
+    '& .diff.add': { backgroundColor: 'green.100' },
+    '& .diff.add::before': { color: 'green.900', content: '"+"' },
+    '& .diff.remove': { backgroundColor: 'red.100' },
+    '& .diff.remove::before': { color: 'red.900', content: '"-"' },
+    '& .twoslash-error': {
+      textDecorationColor: 'red.700',
+      textDecorationLine: 'underline',
+      textDecorationStyle: 'wavy',
+      textUnderlineOffset: '4px',
+    },
+    // A zero width keeps messages out of the code's max-content width, so they wrap instead of scrolling.
+    '& .twoslash-meta-line, & .twoslash-tag-line': {
+      backgroundColor: 'red.100',
+      borderLeft: '2px solid',
+      borderColor: 'red.700',
+      color: 'red.900',
+      display: 'block',
+      userSelect: 'none',
+      whiteSpace: 'pre-wrap',
+      width: 0,
+    },
+    // A one-line-tall, zero-width cursor places the list under the line and pushes later lines down.
+    '& .twoslash-completion-cursor': {
+      display: 'inline-block',
+      paddingTop: '1lh !custom',
+      position: 'relative',
+      verticalAlign: 'top',
+      width: 0,
+      userSelect: 'none',
+    },
+    '& .twoslash-completion-cursor::before': {
+      animationDuration: '1s',
+      animationIterationCount: 'infinite',
+      animationName: blink,
+      animationTimingFunction: 'step-end',
+      backgroundColor: 'foreground',
+      content: '""',
+      height: '1.2em !custom',
+      left: '-1px !custom',
+      position: 'absolute',
+      top: '0.15em !custom',
+      width: '2px !custom',
+    },
+    '& .twoslash-completion-list': {
+      backgroundColor: 'background.surface',
+      border: '1px solid',
+      borderColor: 'gray.400',
+      borderRadius: 'md',
+      boxShadow: 'md',
+      color: 'gray.900',
+      display: 'flex',
+      flexDirection: 'column',
+      listStyle: 'none',
+      marginBlock: 1,
+      paddingBlock: 1,
+      paddingInline: 0,
+      width: 'max-content !custom',
+    },
+    '& ul.twoslash-completion-list > li': { margin: 0, paddingInline: 2 },
+    '& ul.twoslash-completion-list > li:first-child': {
+      backgroundColor: 'gray.200',
+      color: 'foreground',
+    },
+    '@media (prefers-reduced-motion: reduce)': {
+      '& .twoslash-completion-cursor::before': { animationName: 'none' },
     },
   })
 
@@ -394,25 +480,33 @@ namespace styles {
     marginLeft: 'auto !custom',
   })
 
-  export const copy = style({
-    alignItems: 'center',
-    backgroundColor: 'transparent !custom',
-    border: 'none',
-    borderRadius: 'sm',
-    color: 'gray.900',
-    cursor: 'pointer',
-    display: 'flex',
-    height: 7,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 2,
-    top: 2,
-    width: 7,
-    ':hover': { backgroundColor: 'gray.200', color: 'foreground' },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'blue.900',
-      outlineOffset: '2px',
+  export const copy = variants({
+    base: {
+      alignItems: 'center',
+      backgroundColor: 'transparent !custom',
+      border: 'none',
+      borderRadius: 'sm',
+      color: 'gray.900',
+      cursor: 'pointer',
+      display: 'flex',
+      height: 7,
+      justifyContent: 'center',
+      position: 'absolute',
+      right: 2,
+      width: 7,
+      ':hover': { backgroundColor: 'gray.200', color: 'foreground' },
+      ':focus-visible': {
+        outline: '2px solid',
+        outlineColor: 'blue.900',
+        outlineOffset: '2px',
+      },
+    },
+    defaultVariants: { placement: 'top' },
+    variants: {
+      placement: {
+        center: { top: '50% !custom', transform: 'translateY(-50%)' },
+        top: { top: 2 },
+      },
     },
   })
 

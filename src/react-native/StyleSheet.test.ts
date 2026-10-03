@@ -232,7 +232,7 @@ describe('compile', () => {
   test('retains finite scientific notation in calculated length results', () => {
     const vars = Vars.define({
       spacing: {
-        large: Vars.compose('spacing', ['calc(1E21 * 1px)']),
+        large: Vars.compose('spacing', ['  Calc(1E21 * 1PX)  ']),
         tiny: Vars.compose('spacing', ['calc(1e-7 * 1px)']),
       },
     })

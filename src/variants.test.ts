@@ -47,7 +47,7 @@ describe('variants', () => {
       "const { variants } = Config.create({ vars: { color: { brand: '#123456' } }, mappings: false, layers: ['base'] })",
       'color.brand',
     ],
-    ["import { variants } from 'zyzz/default'", '', 'red'],
+    ["import { variants } from 'zyzz/default'", '', 'red.700'],
   ])(
     'suggests recipe declarations through %s',
     (imports, setup, color) => {

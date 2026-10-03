@@ -61,6 +61,10 @@ Native configuration modules require a native compilation target, including when
 
 On native, Provider reads window width and height automatically with React Native's `useWindowDimensions`. Resizing or rotating the window updates responsive styles and variable reads. No dimension prop or separate device hook is required. Measurements use native logical units; safe-area insets remain application-owned.
 
+In custom native builds, compiled styles on supported native components update directly when their selected alternatives change. `useVars` and explicit `useStyles` calls remain reactive. Static styles do not subscribe. Expo Go and callback styles use React subscriptions.
+
+Compiled styles outside a Provider use their configuration's default variables, the light scheme, and automatic window dimensions. Use a Provider to select another scheme or catalog. `useVars` and explicit `useStyles` still require a Provider for context-dependent reads.
+
 ### children
 
 Type: `React.ReactNode`. Optional. Descendants consume the nearest Provider's selection.
@@ -106,7 +110,7 @@ Web-only conditions and unsupported conversions throw when the affected field is
 Supported media-conditioned values select their matching branch using Provider's window dimensions. The default applies when no condition matches. Conditions retain authored order, including overlapping branches.
 
 ```ts
-import { defineConfig, useVars } from 'zyzz/react-native'
+import { defineConfig, useVars } from 'zyzz/react-native/react'
 
 const { Provider, vars } = defineConfig({
   vars: {

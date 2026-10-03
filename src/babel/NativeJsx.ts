@@ -112,9 +112,11 @@ export function visitor(
   callables: WeakSet<Babel.types.Node>,
 ): Babel.Visitor<Babel.PluginPass> {
   const t = api.types
-  type Bindings = Map<'props' | 'style', Babel.types.Identifier>
+  type Method = 'nativeStyle' | 'props' | 'style' | 'view'
+  type Bindings = Map<Method, Babel.types.Identifier>
   type Owners = Map<Babel.NodePath<Babel.types.Function>, Bindings>
   const files = new WeakMap<Babel.BabelFile, Owners>()
+  const native = new WeakSet<Babel.types.JSXOpeningElement>()
   return {
     Program: {
       enter(_, state) {
@@ -123,40 +125,193 @@ export function visitor(
       exit(path, state) {
         const owners = files.get(state.file)!
         if (!owners.size) return
-        const hook = path.scope.generateUidIdentifier('useZyzzStyles')
-        path.unshiftContainer(
-          'body',
-          t.importDeclaration(
-            [t.importSpecifier(hook, t.identifier('useStyles'))],
-            t.stringLiteral('zyzz/react-native/react'),
-          ),
-        )
+        const hooks = new Map<boolean, Babel.types.Identifier>()
+        for (const native of [false, true]) {
+          if (
+            ![...owners.values()].some((bindings) =>
+              [...bindings.keys()].some(
+                (method) =>
+                  (method === 'nativeStyle' || method === 'view') === native,
+              ),
+            )
+          )
+            continue
+          const hook = path.scope.generateUidIdentifier(
+            native ? 'useZyzzNativeStyles' : 'useZyzzStyles',
+          )
+          hooks.set(native, hook)
+          path.unshiftContainer(
+            'body',
+            t.importDeclaration(
+              [
+                t.importSpecifier(
+                  t.cloneNode(hook),
+                  t.identifier(native ? 'useNativeStyles' : 'useStyles'),
+                ),
+              ],
+              t.stringLiteral('zyzz/react-native/react'),
+            ),
+          )
+        }
         for (const [owner, bindings] of owners) {
           if (!t.isBlockStatement(owner.node.body))
             owner.node.body = t.blockStatement([
               t.returnStatement(owner.node.body),
             ])
-          const context =
-            bindings.size > 1
-              ? owner.scope.generateUidIdentifier('zyzzStyles')
-              : undefined
-          const declarations = context
-            ? [t.variableDeclarator(context, t.callExpression(hook, []))]
-            : []
-          for (const [method, binding] of bindings)
-            declarations.push(
-              t.variableDeclarator(
-                binding,
-                t.memberExpression(
-                  context ?? t.callExpression(hook, []),
-                  t.identifier(method),
-                ),
-              ),
+          const declarations: Babel.types.VariableDeclarator[] = []
+          for (const [native, hook] of hooks) {
+            const entries = [...bindings].filter(
+              ([method]) =>
+                (method === 'nativeStyle' || method === 'view') === native,
             )
+            const context =
+              entries.length > 1
+                ? owner.scope.generateUidIdentifier('zyzzStyles')
+                : undefined
+            if (context)
+              declarations.push(
+                t.variableDeclarator(
+                  t.cloneNode(context),
+                  t.callExpression(t.cloneNode(hook), []),
+                ),
+              )
+            for (const [method, binding] of entries)
+              declarations.push(
+                t.variableDeclarator(
+                  t.cloneNode(binding),
+                  t.memberExpression(
+                    context
+                      ? t.cloneNode(context)
+                      : t.callExpression(t.cloneNode(hook), []),
+                    t.identifier(method === 'nativeStyle' ? 'style' : method),
+                  ),
+                ),
+              )
+          }
           owner.node.body.body.unshift(
             t.variableDeclaration('var', declarations),
           )
         }
+      },
+    },
+    JSXOpeningElement: {
+      enter(path, state) {
+        const name = path.node.name
+        const root = (() => {
+          if (t.isJSXIdentifier(name)) return name
+          if (t.isJSXMemberExpression(name) && t.isJSXIdentifier(name.object))
+            return name.object
+          return undefined
+        })()
+        if (!root) return
+        const binding = path.scope.getBinding(root.name)
+        if (
+          !binding?.path.parentPath?.isImportDeclaration() ||
+          binding.path.parentPath.node.source.value !== 'react-native'
+        )
+          return
+        const imported = (() => {
+          if (
+            binding.path.isImportSpecifier() &&
+            t.isIdentifier(binding.path.node.imported)
+          )
+            return binding.path.node.imported.name
+          if (
+            t.isJSXMemberExpression(name) &&
+            binding.path.isImportNamespaceSpecifier()
+          )
+            return name.property.name
+          return undefined
+        })()
+        if (
+          !imported ||
+          !['Image', 'Pressable', 'Text', 'TextInput', 'View'].includes(
+            imported,
+          )
+        )
+          return
+        if (
+          !path.node.attributes.some(
+            (attribute) =>
+              t.isJSXSpreadAttribute(attribute) ||
+              (t.isJSXAttribute(attribute) &&
+                t.isJSXIdentifier(attribute.name, { name: 'style' })),
+          )
+        )
+          return
+        native.add(path.node)
+        owner(path, files.get(state.file)!, 'view')
+      },
+      exit(path, state) {
+        if (!native.has(path.node)) return
+        const properties: (
+          | Babel.types.ObjectProperty
+          | Babel.types.SpreadElement
+        )[] = []
+        for (const attribute of path.node.attributes) {
+          if (t.isJSXSpreadAttribute(attribute))
+            properties.push(t.spreadElement(attribute.argument))
+          else if (t.isJSXIdentifier(attribute.name)) {
+            const value = attribute.value
+            const expression = (() => {
+              if (value === null) return t.booleanLiteral(true)
+              if (
+                t.isJSXExpressionContainer(value) &&
+                !t.isJSXEmptyExpression(value.expression)
+              )
+                return value.expression
+              if (t.isStringLiteral(value))
+                return t.stringLiteral(value.value.replace(/\n\s+/g, ' '))
+              if (t.isJSXElement(value) || t.isJSXFragment(value)) return value
+              return undefined
+            })()
+            if (!expression)
+              throw path.buildCodeFrameError(
+                'Unsupported native JSX attribute.',
+              )
+            properties.push(
+              t.objectProperty(
+                t.stringLiteral(attribute.name.name),
+                expression,
+              ),
+            )
+          } else
+            throw path.buildCodeFrameError('Unsupported native JSX attribute.')
+        }
+        const binding = owner(path, files.get(state.file)!, 'view')
+        const props = t.objectExpression(properties)
+        const key = path.node.attributes.some(
+          (attribute) =>
+            t.isJSXAttribute(attribute) &&
+            t.isJSXIdentifier(attribute.name, { name: 'key' }),
+        )
+        const temporary = key
+          ? path.scope.generateUidIdentifier('zyzzProps')
+          : undefined
+        if (temporary)
+          path.scope.push({ id: t.cloneNode(temporary), kind: 'var' })
+        path.node.attributes = [
+          t.jsxSpreadAttribute(
+            t.callExpression(binding, [
+              temporary
+                ? t.assignmentExpression('=', t.cloneNode(temporary), props)
+                : props,
+            ]),
+          ),
+          ...(temporary
+            ? [
+                t.jsxAttribute(
+                  t.jsxIdentifier('key'),
+                  t.jsxExpressionContainer(
+                    t.memberExpression(
+                      t.cloneNode(temporary),
+                      t.identifier('key'),
+                    ),
+                  ),
+                ),
+              ]
+            : []),
+        ]
       },
     },
     JSXAttribute(path, state) {
@@ -166,7 +321,13 @@ export function visitor(
         t.isJSXEmptyExpression(path.node.value.expression)
       )
         return
-      const binding = owner(path, files.get(state.file)!, 'style')
+      const binding = owner(
+        path,
+        files.get(state.file)!,
+        native.has(path.parentPath.node as Babel.types.JSXOpeningElement)
+          ? 'nativeStyle'
+          : 'style',
+      )
       let inputs = [path.node.value.expression]
       let value = path.node.value.expression
       while (
@@ -216,6 +377,8 @@ export function visitor(
       path.node.value.expression = t.callExpression(binding, inputs)
     },
     JSXSpreadAttribute(path, state) {
+      if (native.has(path.parentPath.node as Babel.types.JSXOpeningElement))
+        return
       const binding = owner(path, files.get(state.file)!, 'props')
       path.node.argument = t.callExpression(binding, [path.node.argument])
     },
@@ -223,7 +386,7 @@ export function visitor(
   function owner(
     path: Babel.NodePath,
     owners: Owners,
-    method: 'props' | 'style',
+    method: Method,
   ): Babel.types.Identifier {
     const parent = path.findParent((candidate) => {
       if (!candidate.isFunction()) return false
@@ -255,6 +418,6 @@ export function visitor(
       binding = parent.scope.generateUidIdentifier(`zyzz${method}`)
       bindings.set(method, binding)
     }
-    return binding
+    return t.cloneNode(binding)
   }
 }

@@ -1,9 +1,9 @@
 # zyzz/react-native
 
-Create typed native authoring with React subscriptions and compile shared definitions into native style objects. This entrypoint requires React 19. The native Provider subscribes to window dimensions for responsive styles. Applications select the color scheme and variable set.
+Create typed native authoring and compile shared definitions into native style objects. This entrypoint requires React 19. Application state selects appearance and variables. Provider reads window dimensions automatically.
 
 > [!NOTE]
-> Static tables, variants, dynamic scalar bindings, graph/CLI integration, and explicit host lifecycle are supported within their documented limits. iOS/Android rendering acceptance remains pending.
+> Custom native builds apply theme changes directly to supported native views. Expo Go retains React subscriptions. Renderer checks cover RN 0.86.3 and Expo 57. The full native conformance gate and wider version matrix remain open.
 
 | API                                   | Description                                                     |
 | ------------------------------------- | --------------------------------------------------------------- |
@@ -21,3 +21,5 @@ See the planned [universal styling contract](universal.md) and the version-pinne
 [Native.compile](../compiler/Native.md) emits callable native modules from local shared authoring.
 
 See [React integration](react.md) for configuration-returned `Provider`, `useStyles`, and `useVars` usage.
+
+Ordinary `Image`, `Pressable`, `Text`, `TextInput`, and `View` imports receive compiler-managed bindings. Existing style props and refs remain on the native components. Static styles have no update subscription. Callback styles and other components retain React subscriptions.

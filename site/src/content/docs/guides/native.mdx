@@ -73,6 +73,10 @@ Run the app's existing Expo command, such as `npx expo start`, and open its iOS 
 
 Provider also reads window dimensions automatically. Responsive styles and variable reads follow window changes without an additional prop or application subscription.
 
+Custom native builds apply theme changes directly to supported native views without rerendering their style consumers. Rebuild the app after installing Zyzz to include its native module. Expo Go retains React subscriptions. Callback styles and other components also retain React subscriptions.
+
+Compiled styles outside a Provider use the light scheme, their configuration's default variables, and automatic window dimensions. A Provider selects other schemes or catalogs. Explicit variable reads still require a Provider.
+
 </Steps>
 
 ## Recipes
@@ -353,6 +357,6 @@ With Metro, use an installed native family name in `targets.native.fontFamily`. 
 
 Native compilation rejects DOM selectors, container queries, unsupported media features, web globals, CSS layers, and unresolved CSS expressions. Use explicit `flexGrow`, `flexShrink`, and `flexBasis` rather than the shared CSS `flex` shorthand. Compilation diagnostics identify the unsupported declaration.
 
-The [StyleSheet reference](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describes conversions and target branches. Static tables, variants, scalar bindings, and host updates have automated coverage. Independent iOS and Android rendering acceptance remains pending, so this guide does not establish full platform parity.
+The [StyleSheet reference](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describes conversions and target branches. Static tables, variants, scalar bindings, and host updates have automated coverage. Selective updates have iOS and Android renderer coverage on RN 0.86.3 and Expo 57. The full native conformance gate and wider version matrix remain open.
 
 For authoring diagnostics, configure [Linting](/docs/api/oxlint). For an app with theme and appearance controls, see the [React Native example](https://github.com/wevm/zyzz/tree/main/examples/react-native).

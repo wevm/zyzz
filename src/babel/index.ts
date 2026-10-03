@@ -340,7 +340,18 @@ export function zyzz(
     },
     visitor:
       options.target !== 'web' && options.colorScheme === undefined
-        ? NativeJsx.visitor(api, callables)
+        ? {
+            Program(path, state) {
+              // Bind before framework transforms clone components or rewrite imports.
+              api.traverse(
+                state.file.ast,
+                NativeJsx.visitor(api, callables),
+                path.scope,
+                state,
+              )
+              path.scope.crawl()
+            },
+          }
         : {
             Program(path) {
               if (options.target !== 'web' || !options.reset) return

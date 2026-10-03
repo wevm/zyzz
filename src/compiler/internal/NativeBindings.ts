@@ -150,8 +150,9 @@ export function prepare(
             ...(part.type === 'number' ? { number: true as const } : {}),
           }
         })
-        const calculation =
-          typeof values[0] === 'string' && /^\s*calc\(/i.test(values[0])
+        const calculation = values.some(
+          (value) => typeof value === 'string' && /(?:^|\s)calc\(/i.test(value),
+        )
         if (
           values.length > 1 &&
           !calculation &&

@@ -93,8 +93,8 @@ describe('compile', () => {
 
   test('converts nested callback calculations, shorthand lengths, and typography together', async () => {
     const source = `import {style} from 'zyzz';
-      const box=style((input:{gap:string;ratio:number})=>({width:\`calc(\${input.gap} / \${input.ratio})\`,padding:\`calc(\${input.gap} * 2) 1rem\`,marginLeft:\`calc(\${input.gap} - 10px)\`,fontSize:\`calc(1rem + \${input.gap})\`,lineHeight:1.5}));
-      export const results=box({gap:'calc(2px + 2px)',ratio:2});`
+      const box=style((input:{gap:string;ratio:number})=>({width:\`CaLc(\${input.gap} / \${input.ratio})\`,padding:\`calc(\${input.gap} * 2) 1rem\`,marginLeft:\`calc(\${input.gap} - 10px)\`,fontSize:\`calc(1rem + \${input.gap})\`,lineHeight:1.5}));
+      export const results=box({gap:'  CALC(2PX + 2px)',ratio:2});`
     const output = Native.compile({
       source,
       moduleId: 'nested-calculations.ts',

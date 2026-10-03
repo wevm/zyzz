@@ -2,6 +2,7 @@
  * Provides bounded completion notifications for real filesystem watch workflows.
  * @module
  */
+import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import type { Host } from 'zyzz/node'
 
@@ -75,10 +76,10 @@ export declare namespace create {
 
 /**
  * Publishes one complete source edit by renaming a sibling temporary file.
- * Calls for the same path must be serialized; temporary files are not source modules.
+ * Each edit owns its temporary path until cleanup completes. Temporary files are not source modules.
  */
 export async function write(options: write.Options) {
-  const temporary = `${options.path}.tmp`
+  const temporary = `${options.path}.${Crypto.randomUUID()}.tmp`
 
   try {
     await Fs.writeFile(temporary, options.source)

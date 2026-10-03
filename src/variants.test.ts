@@ -1555,12 +1555,14 @@ export function apply(){return cx(button({size:'lg'}),override())}`
             notifications.onResult(event)
           },
         })
-        await notifications.next(() =>
-          Watch.write({
-            path: Path.join(root, 'styles.ts'),
-            source: source.replace("'3px'", "'7px'"),
-          }),
-        )
+        const edit = {
+          path: Path.join(root, 'styles.ts'),
+          source: source.replace("'3px'", "'7px'"),
+        }
+        await notifications.next(async () => {
+          // A build may complete while another atomic edit still owns its temporary file.
+          await Promise.all([Watch.write(edit), Watch.write(edit)])
+        })
         expect(await render()).toMatchInlineSnapshot('"7px"')
         const changed = JSON.parse(
           await Fs.readFile(Path.join(outDir, 'styles.ts.zyzz.json'), 'utf8'),

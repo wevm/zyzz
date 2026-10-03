@@ -107,7 +107,8 @@ export function compile(options: compile.Options): Runtime.create.Options {
             return Scalar.convert('font', value, options, [path])
           if (
             (parts[0] === 'typography' && property === 'fontWeight') ||
-            parts[0] === 'fontWeight'
+            parts[0] === 'fontWeight' ||
+            properties?.includes('fontWeight')
           )
             return Scalar.convert('weight', value, options, [path])
           if (domain === 'spacing')

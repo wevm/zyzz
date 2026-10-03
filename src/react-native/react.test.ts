@@ -58,6 +58,10 @@ describe('defineConfig', () => {
         },
         native,
       })
+      if (packed)
+        expect(consumer.modules['app.ts']!.code).not.toContain(
+          "import('zyzz/react-native').defineConfig",
+        )
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: {
@@ -253,6 +257,7 @@ describe('useVars', () => {
           const {vars}=Config.create({defaultVars:'base',vars:{base:{color:{ink:'#123456'}},alternate:{color:{ink:'#abcdef'}}}})
           const {vars:web}=Config.create({vars:{color:{ink:'#123456'},spacing:{gap:{default:'8px','@media (min-width: 768px)':'16px'}}}})
           const {vars:font}=Config.create({vars:{typography:{body:{fontFamily:'Unmapped'}}}})
+          const {vars:weight}=Config.create({vars:{weight:{body:550}},mappings:{weight:['fontWeight']}})
           const {vars:invalidLine}=Config.create({vars:{typography:{body:{fontSize:'16px',lineHeight:-1}}}})
           const {vars:responsive}=Config.create({vars:{typography:{body:{fontSize:'16px','@media (min-width: 768px)':{fontSize:'20px'}}}}})
 
@@ -260,6 +265,7 @@ describe('useVars', () => {
             if(props.kind==='supported') return useVars(web).color.ink
             if(props.kind==='condition') return String(useVars(web).spacing.gap)
             if(props.kind==='font') return useVars(font).typography.body.fontFamily
+            if(props.kind==='weight') return String(useVars(weight).weight.body)
             if(props.kind==='line') return String(useVars(invalidLine).typography.body.lineHeight)
             if(props.kind==='responsive') return String(useVars(responsive).typography.body['@media (min-width: 768px)'].fontSize)
             if(props.kind==='uncompiled') return useVars({}).color.ink
@@ -276,6 +282,7 @@ describe('useVars', () => {
             ['uncompiled', {colorScheme:'light'}],
             ['condition', {colorScheme:'light'}],
             ['font', {colorScheme:'light'}],
+            ['weight', {colorScheme:'light'}],
             ['line', {colorScheme:'light'}],
             ['responsive', {colorScheme:'light'}],
             ['supported', {colorScheme:'light'}],
@@ -330,6 +337,9 @@ describe('useVars', () => {
         await page.locator('#condition').textContent(),
       ).toMatchInlineSnapshot(
         '"Native variable spacing.gap: Media-conditioned variables require a web target."',
+      )
+      expect(await page.locator('#weight').textContent()).toContain(
+        'Use normal, bold, or numeric weights 100 through 900 in steps of 100.',
       )
       expect(await page.locator('#font').textContent()).toMatchInlineSnapshot(
         '"Native variable typography.body.fontFamily: Provide an explicit fonts mapping for this family."',

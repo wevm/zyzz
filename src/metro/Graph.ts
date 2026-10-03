@@ -5,12 +5,6 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 import * as Snapshot from '../node/internal/Snapshot.js'
 
-/** Source resolution supplied by Metro's live dependency graph. */
-export type Resolver = (
-  filename: string,
-  specifier: string,
-) => string | undefined
-
 /** Serializable source snapshot delivered to a Metro transformer worker. */
 export type Input = Pick<
   Compiler.compile.Options,
@@ -30,7 +24,7 @@ export function read(
   root: string,
   snapshot = Snapshot.create(),
   resolve?: Resolver,
-): Input | undefined {
+): read.ReturnType {
   const contracts: Record<string, string> = Object.create(null)
   const files = new Set<string>()
   const imports: Record<string, Record<string, string | null>> = Object.create(
@@ -46,6 +40,16 @@ export function read(
       parts.shift()
     }
     return `${parents ? `external/${parents}` : 'project'}/${parts.map(encodeURIComponent).join('/')}`
+  }
+
+  function local(filename: string): boolean {
+    const relative = Path.relative(root, filename)
+    return (
+      relative !== '..' &&
+      !relative.startsWith(`..${Path.sep}`) &&
+      !Path.isAbsolute(relative) &&
+      !relative.split(Path.sep).includes('node_modules')
+    )
   }
 
   function manifest(filename: string): string | undefined {
@@ -215,25 +219,42 @@ export function read(
         visit(next, snapshot.readSync(next), true)
         continue
       }
-      if (!name.startsWith('.') && !authoring(next)) continue
+      if (!name.startsWith('.') && !local(next) && !authoring(next)) continue
       resolved[name] = identity(next)
       visit(next, snapshot.readSync(next))
     }
   }
-  if (
-    (filename.split(Path.sep).includes('node_modules') ||
-      Path.relative(root, filename).startsWith(`..${Path.sep}`)) &&
-    !authoring(filename)
-  )
-    return undefined
+  if (!local(filename) && !authoring(filename))
+    return { files: [...files], input: undefined }
 
   visit(filename, source)
 
+  const watched = [...files]
   return {
-    contracts,
-    files: [...files],
-    imports,
-    moduleId: identity(filename),
-    modules,
+    files: watched,
+    input: {
+      contracts,
+      files: watched,
+      imports,
+      moduleId: identity(filename),
+      modules,
+    },
   }
 }
+
+/** Source classification and all paths that can change its result. */
+export declare namespace read {
+  /** Candidate files remain watchable even when the module currently needs no compilation. */
+  type ReturnType = {
+    /** Sources, manifests, and sidecar candidates that affect classification. */
+    readonly files: readonly string[]
+    /** Compiler input when the module belongs to the authoring graph. */
+    readonly input: Input | undefined
+  }
+}
+
+/** Source resolution supplied by Metro's live dependency graph. */
+export type Resolver = (
+  filename: string,
+  specifier: string,
+) => string | undefined

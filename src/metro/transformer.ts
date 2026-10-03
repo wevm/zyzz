@@ -97,7 +97,7 @@ export function create(
 
       const graph =
         input.options.customTransformOptions?.zyzzSources ??
-        Graph.read(filename, input.src, platform, options.root, snapshot)
+        Graph.read(filename, input.src, platform, options.root, snapshot).input
       if (!graph) return upstream.transform(input)
 
       const key = `${platform}:${filename}`

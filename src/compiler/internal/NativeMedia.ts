@@ -112,7 +112,11 @@ export function prepare<variables extends StyleSheet.compile.Options['vars']>(
             if (
               branches.some(([name]) => name !== 'default' && !names.has(name))
             )
-              return entry
+              return Object.fromEntries(
+                branches
+                  .filter(([name]) => name === 'default' || !names.has(name))
+                  .map(([name, branch]) => [name, value(branch)]),
+              ) as entry
 
             let selected = entry.default
             for (const [name, branch] of branches)

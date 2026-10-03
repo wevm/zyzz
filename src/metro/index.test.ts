@@ -99,14 +99,14 @@ describe('zyzz', () => {
           }),
         )
         const configuration = (px: number) =>
-          `import * as Path from 'node:path';import { getDefaultConfig } from 'expo/metro-config.js';import { zyzz } from 'zyzz/metro';
+          `import * as Fs from 'node:fs';import * as Path from 'node:path';import { getDefaultConfig } from 'expo/metro-config.js';import { zyzz } from 'zyzz/metro';
         const config=getDefaultConfig(import.meta.dirname);config.watchFolders.push(Path.resolve(import.meta.dirname,'../packages'));config.resolver.nodeModulesPaths.push(Path.resolve(import.meta.dirname,'node_modules'),Path.resolve(import.meta.dirname,'../packages/node_modules'));
-        config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='@/tokens'?Path.resolve(import.meta.dirname,'Tokens.ts'):name==='@shared-theme'?(context.customResolverOptions.alternate?'@fixture/shared/alternate':'@fixture/shared/theme'):name,platform);
+        config.resolver.resolveRequest=(context,name,platform)=>{const resolved=context.resolveRequest(context,name==='@/tokens'?Path.resolve(import.meta.dirname,'Tokens.ts'):name==='@shared-theme'?(context.customResolverOptions.alternate?'@fixture/shared/alternate':'@fixture/shared/theme'):name,platform);if(name==='@fixture/packed/base')Fs.appendFileSync(Path.join(import.meta.dirname,'resolved.txt'),Path.basename(resolved.filePath)+'\\n');return resolved};
         export default zyzz(config, { fonts: {'Pilat, Arial, sans-serif':'Pilat'}, units: { px: ${px}, rem:16 } });`
         await Fs.writeFile(Path.join(root, 'metro.config.ts'), configuration(1))
         await Fs.writeFile(
           Path.join(root, 'index.ts'),
-          `import {NativeContext} from 'zyzz/runtime';import {box} from './Style';import {surface} from './DsStyles';import {card} from '@fixture/packed/card';import {platformStyle} from './Theme';import {nested} from '@fixture/shared/nested';import {late} from '@fixture/late';console.log(...[box(),surface(),card(),platformStyle(),nested(),late()].map(props=>NativeContext.resolve(props.style,{colorScheme:'light'})));`,
+          `import {NativeContext} from 'zyzz/runtime';import {box} from './Style';import {surface} from './DsStyles';import {card,value} from '@fixture/packed/card';import {platformStyle} from './Theme';import {nested} from '@fixture/shared/nested';import {late} from '@fixture/late';console.log(...[box(),surface(),card(),platformStyle(),nested(),late()].map(props=>NativeContext.resolve(props.style,{colorScheme:'light'})),value);`,
         )
         const source = (width: number) =>
           `import {style} from './Theme';import {spacing} from '@/tokens';export const box=style({color:'ink',paddingTop:spacing.md,width:'${width}px'});`
@@ -199,9 +199,13 @@ describe('zyzz', () => {
         const publisher = Path.join(directory, 'publisher')
         await Fs.mkdir(Path.join(publisher, 'dist'), { recursive: true })
         const published = Graph.compile({
+          imports: {
+            'base.ts': { zyzz: null },
+            'index.ts': { '@fixture/packed/base': 'base.ts' },
+          },
           modules: {
-            'base.ts': `import {Config} from 'zyzz';export const {style}=Config.create({vars:{spacing:{cell:'77px'}}});`,
-            'index.ts': `import {style} from './base.js';export const card=style({width:'cell'});`,
+            'base.ts': `import {Config} from 'zyzz';export const {style}=Config.create({vars:{spacing:{cell:'77px'}}});export const value=77;`,
+            'index.ts': `import {style} from '@fixture/packed/base';export {value} from '@fixture/packed/base';export const card=style({width:'cell'});`,
           },
         })
         const javascript = await Esbuild.transform(
@@ -216,18 +220,24 @@ describe('zyzz', () => {
           Path.join(publisher, 'dist/index.js.zyzz.json'),
           published.contracts['index.ts']!,
         )
-        const base = await Esbuild.transform(
-          published.modules['base.ts']!.code,
-          {
-            loader: 'ts',
-            format,
+        const alternate = Graph.compile({
+          modules: {
+            'base.ts': `import {Config} from 'zyzz';export const {style}=Config.create({vars:{spacing:{cell:'91px'}}});export const value=91;`,
           },
-        )
-        await Fs.writeFile(Path.join(publisher, 'dist/base.js'), base.code)
-        await Fs.writeFile(
-          Path.join(publisher, 'dist/base.js.zyzz.json'),
-          published.contracts['base.ts']!,
-        )
+        })
+        for (const condition of ['cjs', 'esm'] as const) {
+          const selected = condition === format ? published : alternate
+          const base = await Esbuild.transform(
+            selected.modules['base.ts']!.code,
+            { format: condition, loader: 'ts' },
+          )
+          const file = `base.${condition === 'cjs' ? 'cjs' : 'mjs'}`
+          await Fs.writeFile(Path.join(publisher, 'dist', file), base.code)
+          await Fs.writeFile(
+            Path.join(publisher, 'dist', `${file}.zyzz.json`),
+            selected.contracts['base.ts']!,
+          )
+        }
 
         await Fs.writeFile(
           Path.join(publisher, 'package.json'),
@@ -236,7 +246,13 @@ describe('zyzz', () => {
             version: '1.0.0',
             type: format === 'cjs' ? 'commonjs' : 'module',
             files: ['dist'],
-            exports: { './card': './dist/index.js' },
+            exports: {
+              './base': {
+                import: './dist/base.mjs',
+                require: './dist/base.cjs',
+              },
+              './card': './dist/index.js',
+            },
           }),
         )
         const { stdout } = await Util.promisify(ChildProcess.execFile)(
@@ -395,6 +411,7 @@ describe('zyzz', () => {
             "width": 19,
           },
           undefined,
+          77,
         ]
       `)
         expect(execute(android.text)[3]).toMatchInlineSnapshot(`
@@ -416,6 +433,26 @@ describe('zyzz', () => {
           ios.text.includes('"fontFamily": "Pilat"'),
         ).toMatchInlineSnapshot(`true`)
         expect(ios.text.includes('"width": 77')).toMatchInlineSnapshot(`true`)
+
+        const resolved = [
+          ...new Set(
+            (await Fs.readFile(Path.join(root, 'resolved.txt'), 'utf8'))
+              .trim()
+              .split('\n'),
+          ),
+        ].sort()
+        if (format === 'cjs')
+          expect(resolved).toMatchInlineSnapshot(`
+            [
+              "base.cjs",
+            ]
+          `)
+        else
+          expect(resolved).toMatchInlineSnapshot(`
+            [
+              "base.mjs",
+            ]
+          `)
 
         await Fs.writeFile(
           Path.join(root, 'Tokens.ts'),

@@ -253,23 +253,26 @@ describe('compile', () => {
     `)
   })
 
-  test.each(['calc(100% - 1px)', 'calc(1px) trailing', 'calc(1px+2px)'])(
-    'rejects unresolved native calculation syntax: %s',
-    (text) => {
-      const vars = Vars.define({
-        spacing: { bad: Vars.compose('spacing', [text]) },
-      })
-      expect(() =>
-        StyleSheet.compile({
-          styles: Style.define({ card: { width: vars.spacing.bad } }),
-          vars: { base: vars },
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(`
+  test.each([
+    'calc(100% - 1px)',
+    'calc(1. * 2px)',
+    'calc(1.px * 2)',
+    'calc(1px) trailing',
+    'calc(1px+2px)',
+  ])('rejects unresolved native calculation syntax: %s', (text) => {
+    const vars = Vars.define({
+      spacing: { bad: Vars.compose('spacing', [text]) },
+    })
+    expect(() =>
+      StyleSheet.compile({
+        styles: Style.define({ card: { width: vars.spacing.bad } }),
+        vars: { base: vars },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
       [StyleSheet.CompileError: ["base","light","card","width"]: Unsupported native calc expression.
       ["base","dark","card","width"]: Unsupported native calc expression.]
     `)
-    },
-  )
+  })
 
   test('retains every pinned static native property through source compilation', async () => {
     const inventory = JSON.parse(

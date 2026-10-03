@@ -150,7 +150,7 @@ const moduleCss = output.scopedCss ?? output.css
 
 Frozen scope class map retaining theme keys. Empty when no themes are supplied.
 
-Theme scopes use readable authored names and optional config IDs. Independent configs own their namespaces. Consume the returned scope map and distribute it with the matching CSS.
+Source-owned scopes and explicit config IDs retain their names across separately compiled modules. Anonymous in-memory catalogs use compact identifiers local to the compilation graph, with separate variable namespaces for independent catalogs. Consume the returned scope map and distribute it with the matching CSS.
 
 ```ts
 output.vars

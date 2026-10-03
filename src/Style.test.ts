@@ -165,14 +165,14 @@ describe('define', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_t0{--z-0:#fff;--z-1:#000;--z-2:4px;--z-3:light-dark(#111,#fff);--z-4:2rem;--z-5:#06c;}
-      .z_t1{--z-0:#fff;--z-1:#000;--z-2:4px;--z-3:light-dark(#111,#fff);--z-4:1rem;--z-5:#06c;}
-      .z-bg-\\5b var\\28 --z-0\\2c \\23 fff\\29 \\5d {background-color:var(--z-0,#fff);}
-      .z-border-color-\\5b var\\28 --z-1\\2c \\23 000\\29 \\5d {border-color:var(--z-1,#000);}
-      .z-border-radius-\\5b var\\28 --z-2\\2c 4px\\29 \\5d {border-radius:var(--z-2,4px);}
-      .z-card-text-3{color:var(--z-3,light-dark(#111,#fff));}
-      .z-p-\\5b var\\28 --z-4\\2c 1rem\\29 \\5d {padding:var(--z-4,1rem);}
-      .z-link-text-0{color:var(--z-5,#06c);}"
+      ".z0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
+      .z1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
+      .z-bg-\\5b var\\28 --z0\\2c \\23 fff\\29 \\5d {background-color:var(--z0,#fff);}
+      .z-border-color-\\5b var\\28 --z1\\2c \\23 000\\29 \\5d {border-color:var(--z1,#000);}
+      .z-border-radius-\\5b var\\28 --z2\\2c 4px\\29 \\5d {border-radius:var(--z2,4px);}
+      .z-card-text-3{color:var(--z3,light-dark(#111,#fff));}
+      .z-p-\\5b var\\28 --z4\\2c 1rem\\29 \\5d {padding:var(--z4,1rem);}
+      .z-link-text-0{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===
@@ -230,9 +230,9 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-\\5b var\\28 --z-0\\2c \\23 000\\29 \\5d {color:var(--z-0,#000);}
-      .z-p-\\5b var\\28 --z-1\\2c 8px\\29 \\5d {padding:var(--z-1,8px);}
-      .z-w-\\5b var\\28 --z-2\\2c 2rem\\29 \\5d {width:var(--z-2,2rem);}"
+      ".z-text-\\5b var\\28 --z0\\2c \\23 000\\29 \\5d {color:var(--z0,#000);}
+      .z-p-\\5b var\\28 --z1\\2c 8px\\29 \\5d {padding:var(--z1,8px);}
+      .z-w-\\5b var\\28 --z2\\2c 2rem\\29 \\5d {width:var(--z2,2rem);}"
     `)
   })
 

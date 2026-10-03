@@ -27,7 +27,7 @@ export function create() {
     }
     let name = paths.get(path)
     if (!name) {
-      name = `--z-${(nextVariable++).toString(36)}`
+      name = `--z${(nextVariable++).toString(36)}`
       paths.set(path, name)
     }
     return name
@@ -93,7 +93,7 @@ export function create() {
                   : name),
               data.contract[Token.identity],
             )
-          : `z_t${(nextScope++).toString(36)}`
+          : `z${(nextScope++).toString(36)}`
 
       classes[name] = className
 

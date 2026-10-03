@@ -143,12 +143,7 @@ export function read(
         authored.add(filename)
         return true
       }
-      if (
-        !name ||
-        name.startsWith('zyzz/') ||
-        (!name.startsWith('.') && !node.type.startsWith('Export'))
-      )
-        continue
+      if (!name || name.startsWith('zyzz/')) continue
       const next = target(filename, name)
       if (next && /\.[cm]?[jt]sx?$/.test(next) && authoring(next, seen)) {
         authored.add(filename)
@@ -157,11 +152,13 @@ export function read(
     }
     return false
   }
-  function visit(filename: string, source: string) {
+  const visited = new Set<string>()
+  function visit(filename: string, source: string, packed = false) {
     files.add(filename)
     const id = identity(filename)
-    if (Object.hasOwn(modules, id)) return
-    modules[id] = source
+    if (visited.has(id)) return
+    visited.add(id)
+    if (!packed) modules[id] = source
     const resolved: Record<string, string | null> = Object.create(null)
     imports[id] = resolved
     for (const statement of snapshot.parse({ moduleId: id, source }).program
@@ -183,6 +180,7 @@ export function read(
         files.add(next)
         contracts[identity(next)] = snapshot.readSync(packed)
         resolved[name] = identity(next)
+        visit(next, snapshot.readSync(next), true)
         continue
       }
       if (!name.startsWith('.') && !authoring(next)) continue

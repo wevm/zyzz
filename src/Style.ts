@@ -75,14 +75,17 @@ export type Accepted<
                         ? LiteralDeclarations
                         : DeclarationProperties<tokens>)[key] extends style[key]
                     ? style[key]
-                    : Value.Accepted<
-                        Pick<style, key>,
-                        literal extends true
-                          ? LiteralDeclarations
-                          : DeclarationProperties<tokens>
-                      >[key] &
-                        Value.Checked<Pick<style, key>, tokens>[key] &
-                        Value.Tokens<style[key], tokens, key>
+                    : // Naming the expected tokens avoids a `never` diagnostic and keeps completions to accepted values.
+                      [Value.Tokens<style[key], tokens, key>] extends [never]
+                      ? Value.Mismatch<tokens, key>
+                      : Value.Accepted<
+                          Pick<style, key>,
+                          literal extends true
+                            ? LiteralDeclarations
+                            : DeclarationProperties<tokens>
+                        >[key] &
+                          Value.Checked<Pick<style, key>, tokens>[key] &
+                          Value.Tokens<style[key], tokens, key>
                   : key extends Condition.Keys<tokens, key>
                     ? [style[key]] extends [undefined]
                       ? never

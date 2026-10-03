@@ -110,6 +110,8 @@ export type VarsRead = {
   readonly defaultVars: string
   /** Exclusive source offset. */
   readonly end: number
+  /** Stable configuration identity for graph-owned native profiles. */
+  readonly owner: string
   /** Inclusive source offset. */
   readonly start: number
   /** Complete compatible variable alternatives. */
@@ -1795,7 +1797,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         Object.entries(link.members ?? {}).flatMap((entry) => {
           const [key, member] = entry
           const path = JSON.parse(key) as string[]
-          if (path.length === 1) return [[path[0]!, member.definition]]
+          if (path.length === 1 && link.call.selection)
+            return [[path[0]!, member.definition]]
           if (path.length === 2 && path[0] === 'themes')
             return [[path[1]!, member.definition]]
           return []
@@ -1805,6 +1808,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     varsReads.push({
       defaultVars: named ? String(link.call.options!.defaultTheme) : 'default',
       end: node.end,
+      owner: link.call.name,
       start: node.start,
       vars,
     })

@@ -4,7 +4,12 @@ import * as Next from '../test/fixtures/Next.js'
 
 describe('build', () => {
   for (const bundler of ['webpack', 'turbopack'] as const)
-    test(`compares grouped and native Next.js ${bundler} builds`, async () => {
-      await Next.verify({ bundler, compare: true, cssOutput: 'grouped' })
+    test(`compares grouped and native Next.js ${bundler} builds`, async (context) => {
+      await Next.verify({
+        bundler,
+        compare: true,
+        cssOutput: 'grouped',
+        expect: context.expect,
+      })
     }, 300_000)
 })

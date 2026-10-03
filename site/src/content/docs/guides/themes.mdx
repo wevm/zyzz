@@ -294,6 +294,8 @@ The alternate foreground is blue in light mode and retains the paper color in da
 
 References to separately defined palettes retain those palettes' identities. Scope those definitions too when they need to change. Use derivation within one set when palette overrides should follow the selected set. [Vars](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md) also documents composed CSS values and cycle validation.
 
+<span id="customize-property-mappings" />
+
 ## Customize property mappings
 
 Use `mappings` to connect a custom category to CSS properties. Each supplied category replaces its default mapping. Other category mappings stay intact. Shorthands expand local aliases into CSS properties, and each expanded property checks the value.

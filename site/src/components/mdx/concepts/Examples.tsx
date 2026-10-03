@@ -1,9 +1,8 @@
 /** Renders working UI examples for each concept using compiled Zyzz styles. @module */
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import { cx, defineConfig, defineVars, extendVars, style, variants } from 'zyzz'
 import { style as ui } from 'zyzz/default'
 import { global } from 'zyzz/web'
-import InfoIcon from '~icons/lucide/info'
 
 const base = defineVars({
   color: {
@@ -27,29 +26,6 @@ const { style: layeredStyle } = defineConfig({
 global({
   '@layer concept-base': { '[data-concept-layer]': { borderRadius: '8px' } },
 })
-
-/** Renders a documented capability limit as an accessible note. */
-export function Note(props: Note.Props) {
-  return (
-    <aside aria-label="Note" data-concept-note="" {...styles.note()}>
-      <InfoIcon
-        aria-hidden="true"
-        width="14"
-        height="14"
-        {...styles.noteIcon()}
-      />
-      <div>{props.children}</div>
-    </aside>
-  )
-}
-
-export declare namespace Note {
-  /** Properties for a concepts note. */
-  type Props = {
-    /** The capability limit and any supporting links. */
-    children: ReactNode
-  }
-}
 
 /** A static card applies two compiled style definitions to ordinary elements. */
 export function Card() {
@@ -129,13 +105,12 @@ export function Composition() {
   )
 }
 
-/** Selects finite recipe choices and binds a slider value to a compiled rule. */
-export function Values() {
+/** Selects finite recipe choices that compiled ahead of time. */
+export function Variants() {
   const [size, setSize] = useState<'md' | 'sm'>('sm')
-  const [width, setWidth] = useState(50)
 
   return (
-    <div data-concept-example="values" {...styles.example()}>
+    <div data-concept-example="variants" {...styles.example()}>
       <div role="group" aria-label="Button size" {...styles.controls()}>
         {(['sm', 'md'] as const).map((value) => (
           <button
@@ -152,6 +127,16 @@ export function Values() {
       <button type="button" {...styles.recipe({ size })}>
         Save
       </button>
+    </div>
+  )
+}
+
+/** Binds a slider value to a compiled rule through a CSS variable. */
+export function Values() {
+  const [width, setWidth] = useState(50)
+
+  return (
+    <div data-concept-example="values" {...styles.example()}>
       <label {...styles.slider()}>
         Bar width: {width}%
         <input
@@ -169,19 +154,28 @@ export function Values() {
   )
 }
 
-/** Lets the browser apply hover conditions and an ancestor relationship. */
+/** Lets the browser apply hover and focus conditions. */
 export function Conditions() {
   return (
     <div data-concept-example="conditions" {...styles.example()}>
       <button type="button" {...styles.hoverButton()}>
         Hover or focus this button
       </button>
+      <span {...styles.muted()}>
+        The button dims while a condition matches.
+      </span>
+    </div>
+  )
+}
+
+/** Styles a label from its ancestor card's hover and focus state. */
+export function Relationships() {
+  return (
+    <div data-concept-example="relationships" {...styles.example()}>
       <section tabIndex={0} {...styles.relationship()}>
         <span {...styles.label()}>Hover or focus this card</span>
       </section>
-      <span {...styles.muted()}>
-        The button dims. The card's label turns blue.
-      </span>
+      <span {...styles.muted()}>The card's label turns blue.</span>
     </div>
   )
 }
@@ -203,27 +197,6 @@ export function Layers() {
       </section>
       <span {...styles.muted()}>
         The base stylesheet still supplies the rounded corners.
-      </span>
-    </div>
-  )
-}
-
-/** Shows the browser result and native output as distinct compilation targets. */
-export function Platforms() {
-  return (
-    <div data-concept-example="platforms" {...styles.example()}>
-      <span {...styles.muted()}>
-        Web output: CSS applied to an HTML element
-      </span>
-      <button type="button" {...styles.button()}>
-        Save
-      </button>
-      <span {...styles.muted()}>
-        Native output: style tables applied to native elements
-      </span>
-      <code {...styles.annotation()}>Pressable + Text</code>
-      <span {...styles.muted()}>
-        Native output is described here, not rendered in this browser.
       </span>
     </div>
   )
@@ -336,33 +309,6 @@ namespace styles {
   })
 
   export const muted = ui({ color: 'gray.900', typography: 'copy.14' })
-
-  export const note = ui({
-    alignItems: 'flex-start',
-    backgroundColor: 'blue.100',
-    border: '1px solid',
-    borderColor: 'blue.400',
-    borderRadius: 'md',
-    color: 'blue.900',
-    display: 'flex',
-    gap: 3,
-    typography: 'copy.14',
-    paddingBlock: 4,
-    paddingInline: 5,
-    '&[data-concept-note] blockquote': { margin: 0 },
-    '&[data-concept-note] blockquote > p:first-child': { display: 'none' },
-    '&[data-concept-note] p': {
-      margin: 0,
-      color: 'blue.900',
-      typography: 'copy.14',
-    },
-  })
-
-  export const noteIcon = ui({
-    color: 'blue.900',
-    flexShrink: 0,
-    marginTop: '3px !custom',
-  })
 
   export const recipe = variants({
     base: {

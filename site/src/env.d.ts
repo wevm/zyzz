@@ -17,8 +17,14 @@ declare const __DOCS__: {
     string,
     { title: string; description: string; markdown: string }
   >
+  /** Highlighted code fences, keyed by authored source. */
   code: Record<
     string,
-    readonly (readonly { content: string; color: string }[])[]
+    {
+      /** Shiki markup for the lines inside `<code>`, including notation and Twoslash annotations. */
+      html: string
+      /** Displayed source without notation, used for copying. */
+      text: string
+    }
   >
 }

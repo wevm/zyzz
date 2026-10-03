@@ -11,9 +11,12 @@ export type Properties<
   styles = Record<string, unknown>,
 > = {
   readonly [property in keyof Literal.Properties & keyof styles]?:
-    | (string extends Literal.Properties[property]
-        ? never
-        : Literal.Properties[property])
+    // Configured tokens replace literal CSS values, so only token names are suggested.
+    | ([Token.Names<tokens, property>] extends [never]
+        ? string extends Literal.Properties[property]
+          ? never
+          : Literal.Properties[property]
+        : never)
     | Token.Names<tokens, property>
     | (string & {})
     | number

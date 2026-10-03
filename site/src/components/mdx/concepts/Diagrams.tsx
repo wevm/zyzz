@@ -1,94 +1,5 @@
-/** Illustrates compilation and variable inheritance for the concepts page. @module */
+/** Illustrates variable inheritance for the concepts page. @module */
 import { style } from 'zyzz/default'
-
-/** Shows which work happens during compilation and rendering. */
-export function Compilation() {
-  return (
-    <div
-      {...styles.pipeline()}
-      role="img"
-      aria-label="Author typed definitions. Compile rules ahead of time. At render time, return styling props for an element without inserting CSS rules."
-    >
-      <svg viewBox="0 0 240 174" {...styles.stage()} aria-hidden="true">
-        <text x="20" y="30" {...styles.label()}>
-          01 / Author
-        </text>
-        <rect
-          x="20"
-          y="50"
-          width="200"
-          height="92"
-          rx="8"
-          {...styles.panel()}
-        />
-        <text x="36" y="81" {...styles.code()}>
-          <tspan {...styles.functionName()}>style</tspan>({'{'}
-        </text>
-        <text x="48" y="102" {...styles.code()}>
-          padding: <tspan {...styles.string()}>"1rem"</tspan>
-        </text>
-        <text x="36" y="123" {...styles.code()}>
-          {'}'})
-        </text>
-        <text x="20" y="162" {...styles.detail()}>
-          Typed, static definitions
-        </text>
-      </svg>
-      <svg viewBox="0 0 240 174" {...styles.stage()} aria-hidden="true">
-        <text x="20" y="30" {...styles.label()}>
-          02 / Compile
-        </text>
-        <rect
-          x="20"
-          y="50"
-          width="200"
-          height="92"
-          rx="8"
-          {...styles.panel()}
-        />
-        <text x="36" y="81" {...styles.code()}>
-          <tspan {...styles.functionName()}>.generated</tspan> {'{'}
-        </text>
-        <text x="48" y="102" {...styles.code()}>
-          padding: <tspan {...styles.string()}>1rem</tspan>;
-        </text>
-        <text x="36" y="123" {...styles.code()}>
-          {'}'}
-        </text>
-        <text x="20" y="162" {...styles.detail()}>
-          CSS + executable styles
-        </text>
-      </svg>
-      <svg viewBox="0 0 240 174" {...styles.stage()} aria-hidden="true">
-        <text x="20" y="30" {...styles.label()}>
-          03 / Apply
-        </text>
-        <rect
-          x="20"
-          y="50"
-          width="200"
-          height="92"
-          rx="8"
-          {...styles.panel()}
-        />
-        <rect
-          x="79"
-          y="79"
-          width="82"
-          height="34"
-          rx="6"
-          {...styles.button()}
-        />
-        <text x="120" y="101" textAnchor="middle" {...styles.buttonText()}>
-          Save
-        </text>
-        <text x="20" y="162" {...styles.detail()}>
-          Render a styled element
-        </text>
-      </svg>
-    </div>
-  )
-}
 
 /** Shows nested scopes changing values while component classes stay stable. */
 export function Scopes() {
@@ -155,19 +66,10 @@ namespace styles {
     strokeWidth: 1,
   })
 
-  export const button = style({ fill: 'foreground' })
-
-  export const buttonText = style({
-    fill: 'background.primary',
-    typography: 'button.14',
-  })
-
   export const code = style({
     fill: 'foreground',
     typography: 'label.14.mono',
   })
-
-  export const detail = style({ fill: 'gray.900', fontSize: 'xs' })
 
   export const functionName = style({ fill: 'blue.900' })
 
@@ -190,18 +92,6 @@ namespace styles {
     strokeWidth: 1,
   })
 
-  export const pipeline = style({
-    backgroundColor: 'gray.100',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'md',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    marginBlock: 6,
-    padding: 3,
-    '@media (max-width: 640px)': { gridTemplateColumns: '1fr', padding: 2 },
-  })
-
   export const purpleCard = style({
     fill: 'purple.100',
     stroke: 'purple.700',
@@ -213,15 +103,6 @@ namespace styles {
     marginBlock: 6,
     maxWidth: 'lg',
     width: '100% !custom',
-  })
-
-  export const stage = style({
-    display: 'block',
-    width: '100% !custom',
-    '@media (max-width: 640px)': {
-      maxWidth: 'xs',
-      marginInline: 'auto !custom',
-    },
   })
 
   export const string = style({ fill: 'green.900' })

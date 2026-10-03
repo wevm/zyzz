@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native'
 import type { TurboModule } from 'react-native'
-import { defineConfig, useVars } from 'zyzz/react-native'
+import { defineConfig, useVars } from 'zyzz/react-native/react'
 
 const { Provider, style, vars } = defineConfig({
   defaultVars: 'base',
@@ -31,6 +31,9 @@ const refs = new Map<string, View>()
 const renders = { fixed: 0, free: 0, nested: 0, themed: 0, values: 0 }
 let releases = 0
 let resize: React.Dispatch<React.SetStateAction<number>>
+let restyle: React.Dispatch<
+  React.SetStateAction<'bound' | 'static' | 'unstyled'>
+>
 
 /** Native measurements and lifecycle counters returned by the actual app. */
 export type Report = {
@@ -55,7 +58,13 @@ export type Report = {
 const Box = React.memo(function Box(props: Box.Props) {
   renders[props.id]++
   const [height, setHeight] = React.useState(40)
-  if (props.id === 'themed') resize = setHeight
+  const [mode, setMode] = React.useState<'bound' | 'static' | 'unstyled'>(
+    'bound',
+  )
+  if (props.id === 'themed') {
+    resize = setHeight
+    restyle = setMode
+  }
   React.useLayoutEffect(() => pending.get(props.id)?.())
   const ref = React.useCallback(
     (node: View | null) => {
@@ -73,7 +82,14 @@ const Box = React.memo(function Box(props: Box.Props) {
       key={props.id}
       ref={ref}
       testID={props.id}
-      style={[styles.box().style, { height }]}
+      style={[
+        mode === 'bound'
+          ? styles.box().style
+          : mode === 'static'
+            ? { backgroundColor: '#0000ff', width: 60 }
+            : undefined,
+        { height },
+      ]}
     />
   )
 })
@@ -164,7 +180,14 @@ function App() {
       await change('app', () => setMounted(false))
       await record('unmount')
       await change('app', () => setMounted(true))
-      if (!canceled) await record('remount')
+      if (canceled) return
+      await record('remount')
+      await change('themed', () => restyle('static'))
+      await record('static')
+      await change('themed', () => restyle('unstyled'))
+      await record('unstyled')
+      await change('themed', () => restyle('bound'))
+      await record('rebound')
     }
     run().catch((error: unknown) =>
       fetch('__REPORT_URL__', {
@@ -179,7 +202,7 @@ function App() {
     }
   }, [])
   return (
-    <View style={{ flex: 1, paddingTop: 100 }}>
+    <View style={{ backgroundColor: '#ffffff', flex: 1, paddingTop: 100 }}>
       <Text>commit {tick}</Text>
       <Provider colorScheme={colorScheme} vars={selection}>
         {mounted && content}

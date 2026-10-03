@@ -6,7 +6,7 @@ export const hooks = {
     peerDependencies?: Record<string, string>
   }) {
     // A peer would replace the package extension with the workspace's native compiler.
-    if (['@ark/attest', 'ts-evaluator', 'zile'].includes(pkg.name))
+    if (['@ark/attest', 'ts-evaluator', 'twoslash', 'zile'].includes(pkg.name))
       delete pkg.peerDependencies?.typescript
 
     return pkg

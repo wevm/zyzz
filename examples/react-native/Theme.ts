@@ -1,5 +1,5 @@
 /** Defines themes for the native example. @module */
-import { defineConfig } from 'zyzz/react-native'
+import { defineConfig } from 'zyzz/react-native/react'
 
 export const { Provider, style, variants, vars } = defineConfig({
   vars: {

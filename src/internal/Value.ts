@@ -190,6 +190,26 @@ type CheckedArray<values, property extends PropertyKey, tokens> = {
   >[property]
 }
 
+/** Lists the values a token-constrained property accepts, so mismatch diagnostics name them. */
+export type Mismatch<tokens, property extends keyof Literal.Properties> =
+  // Resolving through a conditional prints the expected values instead of this alias's arguments.
+  tokens extends unknown
+    ? Expected<
+        | Extract<Token.Names<tokens, property>, string>
+        | NumericNames<Token.Names<tokens, property>>
+        | `${string} !custom`
+      >
+    : never
+
+// An object brand never reduces with a string literal, so the diagnostic keeps the expected values.
+type Expected<values> = { readonly [expected]: values }
+
+declare const expected: unique symbol
+
+type NumericNames<names> = names extends `${infer value extends number}`
+  ? value
+  : never
+
 /** Requires tokens for properties with configured values. */
 export type Tokens<
   value,

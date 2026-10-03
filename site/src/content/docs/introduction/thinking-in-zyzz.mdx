@@ -1,43 +1,50 @@
 # Thinking in Zyzz
 
-Keep styles beside components, share design values through explicit imports, and let TypeScript check the choices between them.
+Keep styles beside components, compose them by name, and let TypeScript check the choices between them.
 
-## Keep styles beside the component
+These conventions guide how components, shared styles, and configuration fit together. Each section names a preference and the alternative it replaces.
 
-Put component-specific definitions in a module-level `namespace styles` at the bottom of the file. Give each style a name that describes its element or purpose. Markup, behavior, and styling can then change together.
+## Co-location over separate modules
 
-```tsx title="Card.tsx"
+Component-specific styles belong beside the component, in a module-level `namespace styles` at the bottom of the file. Markup, behavior, and styling change together, without a separate stylesheet or style module for every component.
+
+```tsx title="PasswordField.tsx"
 import { style } from 'zyzz'
 
-export function Card() {
+export function PasswordField() {
   return (
-    <article {...styles.card()}>
-      <h2 {...styles.title()}>Account</h2>
-    </article>
+    <label {...styles.field()}>
+      <span {...styles.label()}>Password</span>
+      <input type="password" {...styles.input()} />
+    </label>
   )
 }
 
 namespace styles {
-  export const card = style({
-    display: 'grid',
-    gap: '1rem',
-    padding: '1.5rem',
+  export const field = style({ display: 'grid', gap: '0.375rem' })
+
+  export const input = style({
+    border: '1px solid',
+    borderColor: '#d4d4d4',
+    borderRadius: '0.5rem',
+    padding: '0.375rem 0.75rem',
   })
 
-  export const title = style({ fontSize: '1.25rem', margin: 0 })
+  export const label = style({ fontWeight: 500 })
 }
 ```
 
-Extract a [shared style module](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#share-styles) when several components need the same definitions. Keep component-specific styles local until reuse gives them a reason to move.
+A [shared style module](/docs/guides/styling) comes later, once a second component needs the same definition. Co-location is the starting point, and reuse supplies the reason to move a definition. Some repetition across components costs less than a shared definition that couples them.
 
-## Compose named styles
+## Composition over inline declarations
 
-Use `cx` to combine styles at an application site. A focus ring can apply to buttons, links, and other controls without repeating its declarations.
+Named definitions keep styling decisions out of markup. Names such as `button` and `focusRing` describe the element or treatment, while the declarations stay in the namespace. Definition and application remain separate within the same file.
 
 ```tsx title="SaveButton.tsx"
 import { cx, style } from 'zyzz'
 
 export function SaveButton() {
+  // [!code hl]
   return <button {...cx(styles.button(), styles.focusRing())}>Save</button>
 }
 
@@ -58,115 +65,339 @@ namespace styles {
 }
 ```
 
-`cx` preserves variable bindings and variant attributes. Later conflicting declarations win within matching conditions, subject to importance. Multiple JSX spreads replace props, so use composition when combining generated styles. See [Override Styles](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#override-styles).
+The focus ring composes with buttons, links, and other controls. `cx` preserves variable bindings and variant attributes. Later conflicting declarations win within matching conditions, subject to importance.
 
-## Use CSS names and conditions
+Two spreads on one element replace each other's `className` and `style`, so they cannot substitute for composition. [Styling](/docs/guides/styling) covers overrides and the inputs `cx` accepts.
 
-Write camelCase CSS properties such as `backgroundColor` and `borderRadius`. Values retain CSS syntax and units. Use selectors and queries for browser states and responsive layout.
+## Feedback while authoring over CLI-only checks
 
-```ts
+Types put feedback where styles are defined and applied. Property names, supported values, configured tokens, variant choices, and callback inputs reach the editor as completions and diagnostics. A renamed variant or removed token fails at its callers before a build runs.
+
+```ts twoslash title="stack.ts"
+// @errors: 2322
 import { style } from 'zyzz'
 
 namespace styles {
-  export const panel = style({
-    backgroundColor: 'white',
-    padding: '1rem',
-    '@media (min-width: 48rem)': { padding: '2rem' },
-  })
+  export const stack = style((values: { gap: `${number}px` }) => ({
+    display: 'flex',
+    gap: values.gap,
+  }))
 }
+
+styles.stack({ gap: '8px' })
+styles.stack({ gap: 8 })
 ```
 
-CSS inheritance, specificity, and the cascade still apply. TypeScript checks property names and supported values. The compiler checks selector grammar, extraction constraints, and target capabilities. Neither check proves the rendered layout. See [Conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md) and [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) for supported behavior.
+Type checking is static analysis, and it complements compilation. Selector grammar, extraction constraints, and target capabilities still need the compiler. Types cannot prove DOM structure or rendered appearance either. [Agents](/docs/introduction/agents) covers editor and agent setup.
 
-## Share values through config
+## Standard names over shorthand conventions
 
-Import `style` from `zyzz` for token-free authoring. Import it from the project's config to use shared colors, spacing, and other values. The import makes the styling contract explicit.
+Styles use CSS property names in camelCase, such as `borderColor` and `outlineOffset`. Values keep CSS units and syntax. Conditions use CSS names too, such as `:focus-visible`, `[aria-invalid="true"]`, and `@media (min-width: 48rem)`, so there is no separate utility vocabulary to learn.
 
-```ts title="zyzz.config.ts"
-import { defineConfig } from 'zyzz'
+```tsx title="PasswordField.tsx"
+import { style } from 'zyzz'
 
-export const { style, vars } = defineConfig({
-  vars: {
-    color: { surface: '#fff' },
-    spacing: { comfortable: '1.5rem' },
-  },
-})
-```
+export function PasswordField(props: PasswordField.Props) {
+  return (
+    <label {...styles.field()}>
+      <span {...styles.label()}>Password</span>
+      <input aria-invalid={props.invalid} type="password" {...styles.input()} />
+    </label>
+  )
+}
 
-The configured helper accepts the token names for their mapped properties. Components import that helper directly.
-
-```tsx title="Card.tsx"
-import { style } from './zyzz.config.js'
-
-export function Card() {
-  return <article {...styles.card()}>Account</article>
+export declare namespace PasswordField {
+  type Props = { invalid?: boolean | undefined }
 }
 
 namespace styles {
-  export const card = style({
-    backgroundColor: 'surface',
-    padding: 'comfortable',
+  export const field = style({ display: 'grid', gap: '0.375rem' })
+
+  export const input = style({
+    border: '1px solid',
+    borderColor: '#d4d4d4',
+    borderRadius: '0.5rem',
+    padding: '0.375rem 0.75rem',
+    selectors: {
+      '&:focus-visible': { outline: '2px solid #06c' }, // [!code hl]
+      '&[aria-invalid="true"]': { borderColor: '#c00' }, // [!code hl]
+    },
   })
-}
-```
 
-A removed or renamed token can produce a type error at its callers. Config does not silently change unrelated imports. The bundled Geist and Tailwind tokens are opt-in through `zyzz/default`. See [Themes & Tokens](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for variable scopes and their current limitations.
-
-## Model finite choices as variants
-
-Use `variants` for component choices such as size or tone. The definition owns the choices and defaults. Callers select typed values instead of reconstructing class-name logic.
-
-```tsx title="SaveButton.tsx"
-import { variants } from 'zyzz'
-
-export function SaveButton() {
-  return <button {...styles.button({ size: 'compact' })}>Save</button>
-}
-
-namespace styles {
-  export const button = variants({
-    base: { display: 'inline-flex' },
-    defaultVariants: { size: 'regular' },
-    variants: {
-      size: {
-        compact: { padding: '0.5rem' },
-        regular: { padding: '1rem' },
-      },
+  export const label = style({
+    fontWeight: 500,
+    selectors: {
+      [`${field}:focus-within &`]: { color: '#06c' }, // [!code hl]
     },
   })
 }
 ```
 
-Hover and focus belong in CSS conditions. Application state stays in component props and ordinary data or ARIA attributes. See [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md) for compound rules and [Style States](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md#style-states) for state selectors.
+Keyboard focus and validity are states the element already exposes, so selectors style them directly. The label reacts to focus inside the field from its own definition, with `&` as the target. Each element's rules stay in its own definition rather than in descendant selectors elsewhere.
 
-## Bind values without adding rules
+CSS knowledge still applies to selectors, inheritance, specificity, and the cascade. Configured token names add a project's own vocabulary on top.
 
-Use a typed callback for values that differ per instance. A progress bar can bind any percentage to a precompiled CSS variable without generating a CSS rule for each width.
+## Explicit configuration over ambient settings
 
-```tsx title="Bar.tsx"
-import { style } from 'zyzz'
+Importing `style` from `zyzz` gives token-free authoring. Importing it from a project's `zyzz.config.ts` gives the tokens and layers that config declares. The import identifies the contract, and another config does not silently change it.
 
-export function Bar(props: Bar.Props) {
-  return (
-    <progress
-      aria-label="Progress"
-      max={100}
-      value={Number.parseFloat(props.width)}
-      {...styles.bar({ width: props.width })}
-    />
-  )
-}
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
 
-export declare namespace Bar {
-  type Props = { width: `${number}%` }
-}
+export const { style, variants } = defineConfig({
+  vars: {
+    color: { border: '#d4d4d4', danger: '#c00', focus: '#06c' },
+    radius: { md: '0.5rem' },
+    spacing: { md: '0.75rem', sm: '0.375rem', xs: '0.25rem' },
+  },
+})
+```
+
+The field switches its import, and its literals become token names:
+
+```tsx title="PasswordField.tsx"
+import { style } from 'zyzz' // [!code --]
+import { style } from './zyzz.config.js' // [!code ++]
+
+// ...
 
 namespace styles {
-  export const bar = style((values: { width: `${number}%` }) => ({
-    height: '0.5rem',
-    width: values.width,
-  }))
+  export const field = style({ display: 'grid', gap: '0.375rem' }) // [!code --]
+  export const field = style({ display: 'grid', gap: 'sm' }) // [!code ++]
+
+  export const input = style({
+    border: '1px solid',
+    borderColor: '#d4d4d4', // [!code --]
+    borderRadius: '0.5rem', // [!code --]
+    padding: '0.375rem 0.75rem', // [!code --]
+    borderColor: 'border', // [!code ++]
+    borderRadius: 'md', // [!code ++]
+    paddingBlock: 'sm', // [!code ++]
+    paddingInline: 'md', // [!code ++]
+    selectors: {
+      '&:focus-visible': { outline: '2px solid #06c' }, // [!code --]
+      '&[aria-invalid="true"]': { borderColor: '#c00' }, // [!code --]
+      '&:focus-visible': { outline: '2px solid', outlineColor: 'focus' }, // [!code ++]
+      '&[aria-invalid="true"]': { borderColor: 'danger' }, // [!code ++]
+    },
+  })
+
+  export const label = style({
+    fontWeight: 500,
+    selectors: {
+      [`${field}:focus-within &`]: { color: '#06c' }, // [!code --]
+      [`${field}:focus-within &`]: { color: 'focus' }, // [!code ++]
+    },
+  })
 }
 ```
 
-`<Bar width="40%" />` supplies a percentage. `<Bar width={40} />` produces a type error. Finite choices fit variants, while per-instance values fit typed callbacks or variables. Rule structure must remain statically analyzable. See [Dynamic Values](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#dynamic-values) and [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md).
+`fontWeight` keeps its literal because the config defines no font weights. Renaming or removing a token produces a type error at every definition that uses it.
+
+Shared colors, spacing, and typography belong in a [theme](/docs/guides/themes). The bundled Geist and Tailwind tokens are an opt-in import from `zyzz/default`.
+
+## Variant styling over class concatenation
+
+Component choices such as size or tone belong in `variants`. Callers select typed values such as `{ size: 'compact' }` instead of concatenating class names. The definition owns the choices, defaults, and compound rules, so call sites do not rebuild that logic.
+
+```tsx title="PasswordField.tsx"
+import type { Props } from 'zyzz'
+import { style, variants } from './zyzz.config.js'
+
+export function PasswordField(props: PasswordField.Props) {
+  return (
+    <label {...styles.field()}>
+      <span {...styles.label()}>Password</span>
+      <input
+        aria-invalid={props.invalid}
+        type="password"
+        // [!code hl]
+        {...styles.input({ size: props.size })}
+      />
+    </label>
+  )
+}
+
+export declare namespace PasswordField {
+  // [!code hl]
+  type Props = Pick<Props.Variants<typeof styles.input>, 'size'> & {
+    invalid?: boolean | undefined
+  }
+}
+
+namespace styles {
+  export const field = style({ display: 'grid', gap: 'sm' })
+
+  // [!code hl]
+  export const input = variants({
+    base: {
+      border: '1px solid',
+      borderColor: 'border',
+      borderRadius: 'md',
+      selectors: {
+        '&:focus-visible': { outline: '2px solid', outlineColor: 'focus' },
+        '&[aria-invalid="true"]': { borderColor: 'danger' },
+      },
+    },
+    defaultVariants: { size: 'regular' }, // [!code hl]
+    variants: {
+      size: {
+        compact: { paddingBlock: 'xs', paddingInline: 'sm' }, // [!code hl]
+        regular: { paddingBlock: 'sm', paddingInline: 'md' }, // [!code hl]
+      },
+    },
+  })
+
+  export const label = style({
+    fontWeight: 500,
+    selectors: {
+      [`${field}:focus-within &`]: { color: 'focus' },
+    },
+  })
+}
+```
+
+Call sites see the choices that the definition declares. Editors and agents complete `compact` and `regular`, and any other value fails the type check:
+
+```tsx twoslash title="SignIn.tsx"
+// @noErrors
+// @filename: zyzz.config.ts
+import { defineConfig } from 'zyzz'
+
+export const { style, variants } = defineConfig({
+  vars: {
+    color: { border: '#d4d4d4', danger: '#c00', focus: '#06c' },
+    radius: { md: '0.5rem' },
+    spacing: { md: '0.75rem', sm: '0.375rem', xs: '0.25rem' },
+  },
+})
+
+// @filename: PasswordField.tsx
+import type { Props } from 'zyzz'
+import { style, variants } from './zyzz.config.js'
+
+export function PasswordField(props: PasswordField.Props) {
+  return (
+    <label {...styles.field()}>
+      <span {...styles.label()}>Password</span>
+      <input
+        aria-invalid={props.invalid}
+        type="password"
+        {...styles.input({ size: props.size })}
+      />
+    </label>
+  )
+}
+
+export declare namespace PasswordField {
+  type Props = Pick<Props.Variants<typeof styles.input>, 'size'> & {
+    invalid?: boolean | undefined
+  }
+}
+
+namespace styles {
+  export const field = style({ display: 'grid', gap: 'sm' })
+
+  export const input = variants({
+    base: {
+      border: '1px solid',
+      borderColor: 'border',
+      borderRadius: 'md',
+      selectors: {
+        '&:focus-visible': { outline: '2px solid', outlineColor: 'focus' },
+        '&[aria-invalid="true"]': { borderColor: 'danger' },
+      },
+    },
+    defaultVariants: { size: 'regular' },
+    variants: {
+      size: {
+        compact: { paddingBlock: 'xs', paddingInline: 'sm' },
+        regular: { paddingBlock: 'sm', paddingInline: 'md' },
+      },
+    },
+  })
+
+  export const label = style({
+    fontWeight: 500,
+    selectors: {
+      [`${field}:focus-within &`]: { color: 'focus' },
+    },
+  })
+}
+
+// @filename: SignIn.tsx
+// ---cut---
+import { PasswordField } from './PasswordField.js'
+
+export function SignIn() {
+  return <PasswordField size="" />
+  //                          ^|
+}
+```
+
+Browser states such as focus belong in CSS conditions, and application state stays in props and ordinary data or ARIA attributes. [Variants](/docs/guides/variants) covers compound rules and choices selected by CSS conditions.
+
+## Static rules with runtime values
+
+Rules compile ahead of time. Runtime calls select existing styles or bind values to precompiled CSS variables. A strength meter accepts a different width for every instance without generating a CSS rule for each width.
+
+```tsx title="StrengthMeter.tsx"
+import { style } from './zyzz.config.js'
+
+export function StrengthMeter(props: StrengthMeter.Props) {
+  return (
+    <div
+      aria-label="Password strength"
+      aria-valuemax={100}
+      aria-valuemin={0}
+      aria-valuenow={props.value}
+      role="meter"
+      {...styles.track()}
+    >
+      <div {...styles.fill({ width: `${props.value}%` })} /> {/* [!code hl] */}
+    </div>
+  )
+}
+
+export declare namespace StrengthMeter {
+  /** Strength from 0 to 100. */
+  type Props = { value: number }
+}
+
+namespace styles {
+  // [!code hl]
+  export const fill = style((values: { width: `${number}%` }) => ({
+    backgroundColor: 'focus',
+    width: `${values.width} !custom`,
+  }))
+
+  export const track = style({
+    backgroundColor: 'border',
+    borderRadius: 'md',
+    display: 'flex',
+    height: 'xs',
+    overflow: 'hidden',
+  })
+}
+```
+
+Spacing tokens constrain `width`, so the ` !custom` suffix marks the bound percentage as a literal CSS value. Finite visual choices fit variants, while per-instance values fit typed callbacks or variables. Rule structure stays statically analyzable.
+
+[Styling](/docs/guides/styling) covers the supported callback forms, and [Build & Delivery](/docs/guides/compilation) covers compilation.
+
+## Next Steps
+
+<Card.Group>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Compose overrides, bind dynamic values, and share CSS variables.
+  </Card>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Combine matching choices and select them with CSS conditions.
+  </Card>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Define shared values, color schemes, and scoped variable sets.
+  </Card>
+  <Card title="Concepts & Principles" icon="boxes" href="/docs/concepts">
+    Follow definitions from authoring through compilation to applied props.
+  </Card>
+</Card.Group>

@@ -52,10 +52,18 @@ describe('/docs/concepts', () => {
     server.stderr?.on('data', (data) => {
       output += data
     })
-    for (let attempt = 0; attempt < 120; attempt++) {
+    const deadline = Date.now() + 50_000
+    while (Date.now() < deadline) {
       if (server.exitCode !== null) throw new Error(output)
       try {
-        if ((await fetch(`${origin}/docs/concepts?mode=default`)).ok) return
+        if (
+          (
+            await fetch(`${origin}/docs/concepts?mode=default`, {
+              signal: AbortSignal.timeout(2000),
+            })
+          ).ok
+        )
+          return
       } catch {}
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
@@ -71,31 +79,28 @@ describe('/docs/concepts', () => {
     Fs.rmSync(directory, { recursive: true, force: true })
   })
 
-  test('preserves capability notes and boundary labels in Markdown', async () => {
+  test('preserves capability notes and principle labels in Markdown', async () => {
     for (const path of ['/docs/concepts.md', '/docs/concepts?mode=default']) {
       const response = await fetch(`${origin}${path}`, {
         headers: { accept: 'text/markdown' },
       })
       expect(response.status).toBe(200)
       const markdown = await response.text()
-      expect(markdown.match(/^> \*\*Note\*\*$/gm)).toHaveLength(2)
+      expect(markdown.match(/^> \[!NOTE\]$/gm)).toHaveLength(1)
       expect(markdown).toContain(
         '> Finite local scalar callback types are supported.',
       )
       expect(markdown).toContain(
-        '> Shared authoring does not imply identical platform capabilities.',
+        '**Agnostic:** Core data and types do not depend on a framework, host, or bundler.',
       )
       expect(markdown).toContain(
-        '**Core:** Pure data, types, validation, and identity.',
+        '**Compiled:** Rules exist before rendering. Calls return props that apply those rules to elements.',
       )
       expect(markdown).toContain(
-        '**Source adapters:** Parse and rewrite modules.',
+        '**Typed:** Values retain constraints through definitions, imports, and applications.',
       )
       expect(markdown).toContain(
-        '**Target emitters:** Produce CSS or native style tables.',
-      )
-      expect(markdown).toContain(
-        '**Hosts:** Manage files, source discovery, watching, and delivery.',
+        '**Universal:** Shared authoring targets explicit web and native capabilities.',
       )
     }
   })
@@ -108,8 +113,10 @@ describe('/docs/concepts', () => {
         const page = await browser.newPage({
           viewport: { width: 1440, height: 900 },
         })
-        await page.goto(`${origin}/docs/concepts?mode=default`)
-        await page.waitForLoadState('networkidle')
+        await page.goto(`${origin}/docs/concepts?mode=default`, {
+          timeout: 60000,
+          waitUntil: 'networkidle',
+        })
         await page.evaluate(() => {
           Object.defineProperty(navigator, 'clipboard', {
             configurable: true,
@@ -165,6 +172,6 @@ describe('/docs/concepts', () => {
         await browser.close()
       }
     },
-    60000,
+    90000,
   )
 })

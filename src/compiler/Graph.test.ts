@@ -285,8 +285,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
     const output = Graph.compile({ modules })
 
     expect(output.modules['first.js']!.css).toMatchInlineSnapshot(`
-      ".z-theme-first-theme{--z-first-color-brand:red;--z-tid-66-69-72-73-74-color_2e_brand:var(--z-first-color-brand);}
-      .z-theme-second-theme{--z-second-color-brand:blue;--z-tid-73-65-63-6f-6e-64-color_2e_brand:var(--z-second-color-brand);}
+      ".z-theme-first-theme{--z-first-color-brand:red;}
+      .z-theme-second-theme{--z-second-color-brand:blue;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -294,8 +294,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z-first-bugww8-heading-opacity-1{&:hover{opacity:1;}}"
     `)
     expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
-      ".z-theme-first-theme{--z-first-color-brand:red;--z-tid-66-69-72-73-74-color_2e_brand:var(--z-first-color-brand);}
-      .z-theme-second-theme{--z-second-color-brand:blue;--z-tid-73-65-63-6f-6e-64-color_2e_brand:var(--z-second-color-brand);}
+      ".z-theme-first-theme{--z-first-color-brand:red;}
+      .z-theme-second-theme{--z-second-color-brand:blue;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -1532,7 +1532,7 @@ ${web.modules['app.ts']!.code}`,
 
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;}
-      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);}
+      .z-theme-mint-theme{--z-mint-color-brand:#175;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -1812,7 +1812,7 @@ ${web.modules['app.ts']!.code}`,
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
       .z-theme-mint{--z-color-brand:#175;--z-spacing-md:8px;}
-      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);}
+      .z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;}
       .z-theme-local{--z-color-brand:#f00;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
@@ -1846,7 +1846,7 @@ ${web.modules['app.ts']!.code}`,
     expect(updated.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;--z-spacing-md:8px;}
       .z-theme-mint{--z-color-brand:#080;--z-spacing-md:8px;}
-      .z-theme-mint-theme{--z-mint-color-brand:#080;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);}
+      .z-theme-mint-theme{--z-mint-color-brand:#080;--z-mint-spacing-md:8px;}
       .z-theme-local{--z-color-brand:#f00;--z-spacing-md:8px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
@@ -2165,25 +2165,25 @@ ${web.modules['app.ts']!.code}`,
     })
 
     expect(removed.modules['pkg/alternate.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/index.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
     `)
     expect(removed.modules['pkg/theme.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      ".z-theme-mint-theme{--z-mint-color-brand:#175;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}"
@@ -2713,7 +2713,7 @@ describe('create', () => {
       ]
     `)
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-mint-theme{--z-mint-color-brand:#f00;--z-tid-6d-69-6e-74-color_2e_brand:var(--z-mint-color-brand);--z-mint-spacing-md:8px;--z-tid-6d-69-6e-74-spacing_2e_md:var(--z-mint-spacing-md);--z-mint-spacing-unused:99px;--z-tid-6d-69-6e-74-spacing_2e_unused:var(--z-mint-spacing-unused);}
+      ".z-theme-mint-theme{--z-mint-color-brand:#f00;--z-mint-spacing-md:8px;--z-mint-spacing-unused:99px;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
@@ -3182,15 +3182,16 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         unknown
       >[])
         delete entry.variableSet
-      const legacy = Graph.compile({
-        contracts: { 'library/index.js': JSON.stringify(old) },
-        imports: { 'app.ts': { './library/index.js': 'library/index.js' } },
-        modules: {
-          'app.ts': `import {controls} from './library/index.js';export const props=controls.button();`,
-        },
-      })
-      expect(legacy.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-theme-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
+      expect(() =>
+        Graph.compile({
+          contracts: { 'library/index.js': JSON.stringify(old) },
+          imports: { 'app.ts': { './library/index.js': 'library/index.js' } },
+          modules: {
+            'app.ts': `import {controls} from './library/index.js';export const props=controls.button();`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: library/index.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
       )
 
       const conflicting = metadata.replaceAll(
@@ -3206,64 +3207,21 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         `[Source.ExtractError: second.js:0: Invalid library contract: Conflicting packed CSS output modes for one theme identity.]`,
       )
     })
-    test('upgrades missing legacy output modes through a source barrel', () => {
+    test('rejects legacy variable names through a source barrel', () => {
       const compiled = Graph.compile({
         modules: Library.sources({ cssOutput: 'atomic' }),
       })
-      const data = JSON.parse(
-        compiled.contracts['@acme/variants/index.ts']!,
-        (key, value) =>
-          key === 'cssOutput' || key === 'staticRecipe' ? undefined : value,
-      )
-      data.version = 16
-      const stripdata = (value: unknown): void => {
-        if (!value || typeof value !== 'object') return
-        const entry = value as Record<string, unknown>
-        if (entry.kind === 'token') delete entry.value
-        for (const child of Object.values(entry)) stripdata(child)
-      }
-      stripdata(data)
-      for (const entry of Object.values(data.themes) as Record<
-        string,
-        unknown
-      >[])
-        delete entry.variableSet
-      const contract = JSON.stringify(data)
-      const current = JSON.parse(contract)
-      current.version = 19
-      const modes = (value: unknown): void => {
-        if (!value || typeof value !== 'object') return
-        const entry = value as Record<string, unknown>
-        if ('declarations' in entry && 'name' in entry)
-          entry.cssOutput = 'atomic'
-        for (const child of Object.values(entry)) modes(child)
-      }
-      modes(current)
-      for (const entry of Object.values(current.themes) as Record<
-        string,
-        unknown
-      >[])
-        entry.cssOutput = 'atomic'
-      const barrel = Graph.compile({
-        contracts: {
-          'legacy.js': contract,
-          'current.js': JSON.stringify(current),
-        },
-        imports: { 'barrel.ts': { './legacy.js': 'legacy.js' } },
-        modules: { 'barrel.ts': `export {controls} from './legacy.js';` },
-      })
-      const consumer = Graph.compile({
-        contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
-        imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
-        modules: {
-          'app.ts': `import {controls} from './barrel.js';export const props=controls.button();`,
-        },
-      })
-      expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(
-        `"import {controls} from './barrel.js';export const props=controls.button();"`,
-      )
-      expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-        `".z-theme-theme{--z-color-brand-cKlIaoe8e1o:light-dark(#0066cc,#99ccff);}"`,
+      const data = JSON.parse(compiled.contracts['@acme/variants/index.ts']!)
+      data.version = 30
+
+      expect(() =>
+        Graph.compile({
+          contracts: { 'legacy.js': JSON.stringify(data) },
+          imports: { 'barrel.ts': { './legacy.js': 'legacy.js' } },
+          modules: { 'barrel.ts': `export {controls} from './legacy.js';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: legacy.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
       )
     })
 

@@ -2,17 +2,17 @@
 
 Compare how Zyzz, Tailwind CSS, StyleX, and vanilla-extract define, compose, and apply styles.
 
-import { Content } from './comparisons/Content.js'
+import { Content, Table } from './comparisons/Content.js'
 
 <Content>
 
-The examples below compare the same declarations and inputs in React and TypeScript. Each library needs its build integration. Tailwind examples target v4 and omit its optional [Preflight reset](https://tailwindcss.com/docs/preflight#disabling-preflight) so browser defaults can match.
+Each example group below specifies one behavior and uses the same elements, values, inputs, and states across all four libraries. Generated class names and implementation details can differ.
 
-Zyzz's native adapters reject unsupported web semantics, including DOM relationships and global CSS. Other native integrations require separate evaluation. These API differences do not establish performance rankings. The [benchmark snapshot](https://github.com/wevm/zyzz/blob/main/docs/introduction/benchmarks.md) records measured workloads and their limits.
+The examples use React and TypeScript with each library's build integration configured. Code block titles name the files in each example. Tailwind examples target v4 and omit its optional [Preflight reset](https://tailwindcss.com/docs/preflight#disabling-preflight) so browser defaults can match.
 
-## Defining and applying styles
+## Authoring, Types, and DX/AX
 
-Each example renders a button labeled "Continue" with `#06c` text and `1rem` padding. Zyzz and StyleX apply style objects through props. Tailwind applies utilities, while vanilla-extract exports a class from a stylesheet module.
+All four examples render a button labeled "Continue" with `#06c` text and `1rem` padding. DX means developer experience, and AX means agent experience.
 
 ### Zyzz
 
@@ -24,21 +24,22 @@ export function Button() {
 }
 
 namespace styles {
-  export const button = style({ color: '#06c', padding: '1rem' })
+  export const button = style({ color: '#06c', padding: '1rem' }) // [!code hl]
 }
 ```
 
-The compiler emits CSS ahead of time. Applying the definition returns styling props, without inserting CSS rules. See the [style contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/style.md).
+Definitions stay beside the component in a `namespace styles`. Calling a definition returns styling props, and the compiler emits CSS ahead of time without inserting rules at runtime. Types constrain property names, supported values, tokens, and variant selections. Root imports contain no design tokens. See [Thinking in Zyzz](/docs/introduction/thinking-in-zyzz).
 
 ### Tailwind CSS
 
 ```tsx title="Button.tsx"
 export function Button() {
+  // [!code hl]
   return <button className="text-[#06c] p-[1rem]">Continue</button>
 }
 ```
 
-The compiler detects the complete utility names in source. It does not parse TypeScript expressions, so dynamically constructed names need a different approach. The [source detection guide](https://tailwindcss.com/docs/detecting-classes-in-source-files) explains those constraints.
+Utilities keep declarations in markup. Class strings do not carry TypeScript property contracts, and the official [editor extension](https://tailwindcss.com/docs/editor-setup) supplies completions and diagnostics. Developers and agents must keep [complete class names](https://tailwindcss.com/docs/detecting-classes-in-source-files) in source, including inside conditional mappings.
 
 ### StyleX
 
@@ -50,18 +51,18 @@ export function Button() {
 }
 
 const styles = stylex.create({
-  button: { color: '#06c', padding: '1rem' },
+  button: { color: '#06c', padding: '1rem' }, // [!code hl]
 })
 ```
 
-StyleX compiles objects into atomic CSS. Definitions must follow its [supported expression rules](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#constraints). Its [static types](https://stylexjs.com/docs/learn/static-types/) constrain style contracts.
+Typed objects use `create`, and `props` applies them. StyleX compiles the objects into atomic CSS. Definitions must follow its [supported expression rules](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#constraints), and its [static types](https://stylexjs.com/docs/learn/static-types/) constrain style contracts. StyleX also publishes [LLM resources](https://stylexjs.com/docs/llm-resources).
 
 ### vanilla-extract
 
 ```ts title="button.css.ts"
 import { style } from '@vanilla-extract/css'
 
-export const button = style({ color: '#06c', padding: '1rem' })
+export const button = style({ color: '#06c', padding: '1rem' }) // [!code hl]
 ```
 
 ```tsx title="Button.tsx"
@@ -72,11 +73,458 @@ export function Button() {
 }
 ```
 
-The build integration evaluates `.css.ts` files and emits scoped CSS. The component imports a class name. See [styling](https://vanilla-extract.style/documentation/styling/).
+Typed styles live in `.css.ts` modules that the build integration evaluates, and components import the exported class names. [Sprinkles](https://vanilla-extract.style/documentation/packages/sprinkles/) optionally adds typed utilities and token mappings. This example uses the core [style API](https://vanilla-extract.style/documentation/api/style/).
 
-## Composing styles
+## Themes and Color Schemes
 
-Each example adds a focus outline to a button with `1rem` padding. Composition combines independently defined declarations. Conflicts need the library's documented merge behavior or normal CSS precedence, rather than relying on class order in HTML.
+Each panel has `1rem` padding and displays "Content". Text is `#111` in light mode and `#eee` in dark mode. All four examples use `light-dark()` with `color-scheme: light dark`, so selection follows the browser preference without application state.
+
+### Zyzz
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: { content: { dark: '#eee', light: '#111' } }, // [!code hl]
+    spacing: { panel: '1rem' },
+  },
+})
+```
+
+```tsx title="Panel.tsx"
+import { style } from './zyzz.config.js'
+
+export function Panel() {
+  return <section {...styles.panel()}>Content</section>
+}
+
+namespace styles {
+  export const panel = style({
+    color: 'content', // [!code hl]
+    colorScheme: 'light dark', // [!code hl]
+    padding: 'panel',
+  })
+}
+```
+
+`defineConfig` binds tokens to named authoring helpers. Color pairs compile to `light-dark()`, and property domains constrain where each token applies. The optional default theme is available from `zyzz/default`. See [Themes & Tokens](/docs/guides/themes).
+
+### Tailwind CSS
+
+```css title="app.css"
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+  --color-content: light-dark(#111, #eee); /* [!code hl] */
+  --spacing-panel: 1rem;
+}
+```
+
+```tsx title="Panel.tsx"
+export function Panel() {
+  return (
+    // [!code hl]
+    <section className="text-content p-panel [color-scheme:light_dark]">
+      Content
+    </section>
+  )
+}
+```
+
+`@theme` defines variables and the utilities that use them. The standard import also includes default tokens. These imports keep the default theme and utilities while omitting Preflight. See [theme variables](https://tailwindcss.com/docs/theme).
+
+### StyleX
+
+```ts title="tokens.stylex.ts"
+import * as stylex from '@stylexjs/stylex'
+
+export const tokens = stylex.defineVars({
+  content: 'light-dark(#111, #eee)', // [!code hl]
+  panel: '1rem',
+})
+```
+
+```tsx title="Panel.tsx"
+import * as stylex from '@stylexjs/stylex'
+import { tokens } from './tokens.stylex.js'
+
+export function Panel() {
+  return <section {...stylex.props(styles.panel)}>Content</section>
+}
+
+const styles = stylex.create({
+  panel: {
+    color: tokens.content, // [!code hl]
+    colorScheme: 'light dark', // [!code hl]
+    padding: tokens.panel,
+  },
+})
+```
+
+`defineVars` exports a variable contract from a `.stylex.ts` module, and the consuming style references those variables. [Theming](https://stylexjs.com/docs/learn/theming/defining-variables/) requires the documented module-resolution option.
+
+### vanilla-extract
+
+```ts title="panel.css.ts"
+import { createTheme, style } from '@vanilla-extract/css'
+
+export const [theme, tokens] = createTheme({
+  color: { content: 'light-dark(#111, #eee)' }, // [!code hl]
+  spacing: { panel: '1rem' },
+})
+
+export const panel = style({
+  color: tokens.color.content, // [!code hl]
+  colorScheme: 'light dark', // [!code hl]
+  padding: tokens.spacing.panel,
+})
+```
+
+```tsx title="Panel.tsx"
+import { panel, theme } from './panel.css.js'
+
+export function Panel() {
+  return <section className={`${theme} ${panel}`}>Content</section>
+}
+```
+
+`createTheme` returns a theme class and a variable contract. Applying the theme class supplies the variables that the panel consumes. See [createTheme](https://vanilla-extract.style/documentation/api/create-theme/).
+
+## Selectors, Queries, and Value Helpers
+
+Each panel is a grid inside an inline-size container. Padding changes from `0.5rem` to `1rem` at a `48rem` viewport, and gap changes from `0` to `1rem` at a `24rem` container width. Hover sets opacity to `0.8` on devices that support hover.
+
+### Zyzz
+
+```tsx title="Panel.tsx"
+import { style } from 'zyzz'
+
+export function Panel() {
+  return (
+    <div {...styles.container()}>
+      <section {...styles.panel()}>
+        <span>First</span>
+        <span>Second</span>
+      </section>
+    </div>
+  )
+}
+
+namespace styles {
+  export const container = style({ containerType: 'inline-size' })
+
+  export const panel = style({
+    display: 'grid',
+    gap: '0',
+    opacity: 1,
+    padding: '0.5rem',
+    '@container (min-width: 24rem)': { gap: '1rem' }, // [!code hl]
+    '@media (min-width: 48rem)': { padding: '1rem' }, // [!code hl]
+    '@media (hover: hover)': { ':hover': { opacity: 0.8 } }, // [!code hl]
+  })
+}
+```
+
+Conditions nest beside declarations, with literal thresholds in this example. Configured breakpoint and container aliases can name the same conditions. See [Styling](/docs/guides/styling).
+
+### Tailwind CSS
+
+```tsx title="Panel.tsx"
+export function Panel() {
+  return (
+    <div className="@container">
+      <section
+        // [!code hl]
+        className="grid gap-0 opacity-100 p-[0.5rem] min-[48rem]:p-[1rem] @min-[24rem]:gap-[1rem] hover:opacity-80"
+      >
+        <span>First</span>
+        <span>Second</span>
+      </section>
+    </div>
+  )
+}
+```
+
+Prefixes express conditions. Explicit thresholds avoid depending on a project's breakpoint overrides, and the `hover:` variant includes the hover-capability query. See [responsive design](https://tailwindcss.com/docs/responsive-design) and [states](https://tailwindcss.com/docs/hover-focus-and-other-states).
+
+### StyleX
+
+```tsx title="Panel.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Panel() {
+  return (
+    <div {...stylex.props(styles.container)}>
+      <section {...stylex.props(styles.panel)}>
+        <span>First</span>
+        <span>Second</span>
+      </section>
+    </div>
+  )
+}
+
+const styles = stylex.create({
+  container: { containerType: 'inline-size' },
+  panel: {
+    display: 'grid',
+    gap: { default: '0', '@container (min-width: 24rem)': '1rem' }, // [!code hl]
+    opacity: {
+      default: 1,
+      '@media (hover: hover)': { default: 1, ':hover': 0.8 }, // [!code hl]
+    },
+    padding: { default: '0.5rem', '@media (min-width: 48rem)': '1rem' }, // [!code hl]
+  },
+})
+```
+
+Conditions belong inside property values, and `default` supplies the value outside each condition. [Style definitions](https://stylexjs.com/docs/learn/styling-ui/defining-styles/#media-queries-and-other--rules) support nested conditions, including media and container queries.
+
+### vanilla-extract
+
+```ts title="panel.css.ts"
+import { style } from '@vanilla-extract/css'
+
+export const container = style({ containerType: 'inline-size' })
+
+export const panel = style({
+  display: 'grid',
+  gap: '0',
+  opacity: 1,
+  padding: '0.5rem',
+  '@container': { '(min-width: 24rem)': { gap: '1rem' } }, // [!code hl]
+  '@media': {
+    '(min-width: 48rem)': { padding: '1rem' }, // [!code hl]
+    '(hover: hover)': { ':hover': { opacity: 0.8 } }, // [!code hl]
+  },
+})
+```
+
+```tsx title="Panel.tsx"
+import { container, panel } from './panel.css.js'
+
+export function Panel() {
+  return (
+    <div className={container}>
+      <section className={panel}>
+        <span>First</span>
+        <span>Second</span>
+      </section>
+    </div>
+  )
+}
+```
+
+Style objects group media and container conditions under their respective keys. See [conditional styles](https://vanilla-extract.style/documentation/styling/).
+
+Fallback values are a separate concern. Zyzz and vanilla-extract accept declaration arrays in authored order, while StyleX's `firstThatWorks` takes the preferred value first. Tailwind expresses feature-dependent alternatives with `supports-*` variants. These forms should not be compared by argument order alone.
+
+## Variants and Overrides
+
+Every `Button` accepts the same optional `size` and `tone` choices, with `regular` and `neutral` as defaults. All buttons use `inline-flex`, `400` font weight, and `0.5rem` or `1rem` padding. Text is `#111` or `#06c`, and the `regular` and `accent` combination uses `600` font weight.
+
+### Zyzz
+
+```tsx title="Button.tsx"
+import { type Props, variants } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  return <button {...styles.button(props)}>Continue</button>
+}
+
+export declare namespace Button {
+  type Props = Props.Variants<typeof styles.button> // [!code hl]
+}
+
+namespace styles {
+  export const button = variants({
+    base: { display: 'inline-flex', fontWeight: 400 },
+    compoundVariants: [
+      { when: { size: 'regular', tone: 'accent' }, style: { fontWeight: 600 } }, // [!code hl]
+    ],
+    defaultVariants: { size: 'regular', tone: 'neutral' }, // [!code hl]
+    variants: {
+      size: {
+        compact: { padding: '0.5rem' },
+        regular: { padding: '1rem' },
+      },
+      tone: { accent: { color: '#06c' }, neutral: { color: '#111' } },
+    },
+  })
+}
+```
+
+`variants` owns choices, defaults, and compound rules. `Props.Variants` infers the component's props from the definition, including styling overrides, so call sites complete the declared choices:
+
+```tsx twoslash title="Toolbar.tsx"
+// @noErrors
+// @filename: Button.tsx
+import { type Props, variants } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  return <button {...styles.button(props)}>Continue</button>
+}
+
+export declare namespace Button {
+  type Props = Props.Variants<typeof styles.button>
+}
+
+namespace styles {
+  export const button = variants({
+    base: { display: 'inline-flex', fontWeight: 400 },
+    compoundVariants: [
+      { when: { size: 'regular', tone: 'accent' }, style: { fontWeight: 600 } },
+    ],
+    defaultVariants: { size: 'regular', tone: 'neutral' },
+    variants: {
+      size: {
+        compact: { padding: '0.5rem' },
+        regular: { padding: '1rem' },
+      },
+      tone: { accent: { color: '#06c' }, neutral: { color: '#111' } },
+    },
+  })
+}
+
+// @filename: Toolbar.tsx
+// ---cut---
+import { Button } from './Button.js'
+
+export function Toolbar() {
+  return <Button size="compact" tone="" />
+  //                                  ^|
+}
+```
+
+See the [variants contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md).
+
+### Tailwind CSS
+
+```tsx title="Button.tsx"
+export function Button(props: Button.Props) {
+  const size = props.size ?? 'regular'
+  const tone = props.tone ?? 'neutral'
+  const weight =
+    size === 'regular' && tone === 'accent' ? 'font-[600]' : 'font-[400]' // [!code hl]
+
+  return (
+    <button className={`inline-flex ${sizes[size]} ${tones[tone]} ${weight}`}>
+      Continue
+    </button>
+  )
+}
+
+export declare namespace Button {
+  type Props = {
+    size?: 'compact' | 'regular' | undefined
+    tone?: 'accent' | 'neutral' | undefined
+  }
+}
+
+const sizes = { compact: 'p-[0.5rem]', regular: 'p-[1rem]' } as const // [!code hl]
+const tones = { accent: 'text-[#06c]', neutral: 'text-[#111]' } as const // [!code hl]
+```
+
+Maps preserve complete utility strings, while defaults and the compound condition are ordinary component logic. Each property selects one utility, so the result does not depend on class-string order. See [conditional styling](https://tailwindcss.com/docs/styling-with-utility-classes).
+
+### StyleX
+
+```tsx title="Button.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Button(props: Button.Props) {
+  const size = props.size ?? 'regular'
+  const tone = props.tone ?? 'neutral'
+
+  return (
+    <button
+      {...stylex.props(
+        styles.base,
+        sizes[size],
+        tones[tone],
+        size === 'regular' && tone === 'accent' && styles.emphasized, // [!code hl]
+      )}
+    >
+      Continue
+    </button>
+  )
+}
+
+export declare namespace Button {
+  type Props = {
+    size?: 'compact' | 'regular' | undefined
+    tone?: 'accent' | 'neutral' | undefined
+  }
+}
+
+const styles = stylex.create({
+  base: { display: 'inline-flex', fontWeight: 400 },
+  emphasized: { fontWeight: 600 },
+})
+
+const sizes = stylex.create({
+  compact: { padding: '0.5rem' },
+  regular: { padding: '1rem' },
+})
+
+const tones = stylex.create({
+  accent: { color: '#06c' },
+  neutral: { color: '#111' },
+})
+```
+
+Style maps and conditional `props` arguments implement the [variant pattern](https://stylexjs.com/docs/learn/recipes/variants/). Later arguments resolve conflicts for the same property.
+
+### vanilla-extract
+
+```ts title="button.css.ts"
+import { recipe } from '@vanilla-extract/recipes'
+
+export const button = recipe({
+  base: { display: 'inline-flex', fontWeight: 400 },
+  compoundVariants: [
+    {
+      variants: { size: 'regular', tone: 'accent' }, // [!code hl]
+      style: { fontWeight: 600 }, // [!code hl]
+    },
+  ],
+  defaultVariants: { size: 'regular', tone: 'neutral' }, // [!code hl]
+  variants: {
+    size: {
+      compact: { padding: '0.5rem' },
+      regular: { padding: '1rem' },
+    },
+    tone: { accent: { color: '#06c' }, neutral: { color: '#111' } },
+  },
+})
+```
+
+```tsx title="Button.tsx"
+import { button } from './button.css.js'
+
+export function Button(props: Button.Props) {
+  return (
+    <button className={button({ size: props.size, tone: props.tone })}>
+      Continue
+    </button>
+  )
+}
+
+export declare namespace Button {
+  type Props = {
+    size?: 'compact' | 'regular' | undefined
+    tone?: 'accent' | 'neutral' | undefined
+  }
+}
+```
+
+The optional [Recipes package](https://vanilla-extract.style/documentation/packages/recipes/) owns typed choices, defaults, and compound rules. `RecipeVariants` can infer the recipe contract, and its callable returns a class string.
+
+## Composition
+
+Each example combines a button's `1rem` padding with an independent focus ring. Keyboard focus produces a `2px solid #06c` outline with a `2px` offset. Size and tone choices belong in variants, as above.
 
 ### Zyzz
 
@@ -84,6 +532,7 @@ Each example adds a focus outline to a button with `1rem` padding. Composition c
 import { cx, style } from 'zyzz'
 
 export function Button() {
+  // [!code hl]
   return <button {...cx(styles.button(), styles.focusRing())}>Continue</button>
 }
 
@@ -96,21 +545,24 @@ namespace styles {
 }
 ```
 
-[`cx`](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) merges applied styles in argument order. Later declarations win in matching contexts at equal specificity and importance. Escaping or mutated props bindings and ternary style selections remain unsupported and produce compiler diagnostics.
+`cx` merges applied styles in argument order, including variable bindings and recipe attributes. Later declarations win in matching contexts at equal specificity and importance. Multiple JSX spreads would replace overlapping props instead. See [Styling](/docs/guides/styling).
 
 ### Tailwind CSS
 
 ```tsx title="Button.tsx"
 export function Button() {
   return (
-    <button className="p-[1rem] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-[#06c] focus-visible:outline-offset-2">
+    <button
+      // [!code hl]
+      className="p-[1rem] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-[#06c] focus-visible:outline-offset-2"
+    >
       Continue
     </button>
   )
 }
 ```
 
-Utilities express both declarations directly. For [conflicting utilities](https://tailwindcss.com/docs/styling-with-utility-classes#conflicting-styles), stylesheet order determines precedence. Concatenating class names does not create an ordered override API.
+Utilities express both declarations directly. For [conflicting utilities](https://tailwindcss.com/docs/styling-with-utility-classes#conflicting-utility-classes), stylesheet order determines precedence, so concatenating class names does not create an ordered override API.
 
 ### StyleX
 
@@ -119,6 +571,7 @@ import * as stylex from '@stylexjs/stylex'
 
 export function Button() {
   return (
+    // [!code hl]
     <button {...stylex.props(styles.button, styles.focusRing)}>Continue</button>
   )
 }
@@ -134,7 +587,7 @@ const styles = stylex.create({
 })
 ```
 
-[`stylex.props`](https://stylexjs.com/docs/learn/styling-ui/using-styles/) merges applied styles. Later arguments take priority for conflicts on the same property. By default, overlapping longhands take priority over shorthands regardless of argument order. Conditions are nested within each property's value.
+[`stylex.props`](https://stylexjs.com/docs/learn/styling-ui/using-styles/) merges applied styles, and later arguments take priority for conflicts on the same property. By default, overlapping longhands take priority over shorthands regardless of argument order.
 
 ### vanilla-extract
 
@@ -142,11 +595,12 @@ const styles = stylex.create({
 import { style } from '@vanilla-extract/css'
 
 const base = style({ padding: '1rem' })
+
 const focusRing = style({
   ':focus-visible': { outline: '2px solid #06c', outlineOffset: '2px' },
 })
 
-export const button = style([base, focusRing])
+export const button = style([base, focusRing]) // [!code hl]
 ```
 
 ```tsx title="Button.tsx"
@@ -157,11 +611,130 @@ export function Button() {
 }
 ```
 
-The style array performs [build-time composition](https://vanilla-extract.style/documentation/style-composition/). Concatenating unrelated classes at runtime retains normal CSS cascade behavior.
+The style array performs [build-time composition](https://vanilla-extract.style/documentation/style-composition/). Concatenating unrelated classes at runtime keeps normal CSS cascade behavior.
 
-## Binding runtime values
+## Element Relationships
 
-Each bar accepts a percentage width and renders a `0.5rem`-high blue div. The declarations remain static, while a per-instance value supplies the width.
+Each `Card` receives `open`, writes `data-state="open"` or `"closed"` on a section, and renders a "Details" span inside it. The span has opacity `1` when open and `0.5` when closed. Each example observes the ancestor attribute through CSS.
+
+### Zyzz
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card(props: Card.Props) {
+  return (
+    <section {...styles.card()} data-state={props.open ? 'open' : 'closed'}>
+      <span {...styles.label()}>Details</span>
+    </section>
+  )
+}
+
+export declare namespace Card {
+  type Props = { open: boolean }
+}
+
+namespace styles {
+  export const card = style()
+
+  export const label = style({
+    opacity: 0.5,
+    selectors: { [`${card}[data-state="open"] &`]: { opacity: 1 } }, // [!code hl]
+  })
+}
+```
+
+An empty `style()` supplies the card's selector identity, and the label references that definition inside `selectors`. See the [selectors contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/selectors.md).
+
+### Tailwind CSS
+
+```tsx title="Card.tsx"
+export function Card(props: Card.Props) {
+  return (
+    <section className="group/card" data-state={props.open ? 'open' : 'closed'}>
+      <span
+        // [!code hl]
+        className="opacity-50 group-data-[state=open]/card:opacity-100"
+      >
+        Details
+      </span>
+    </section>
+  )
+}
+
+export declare namespace Card {
+  type Props = { open: boolean }
+}
+```
+
+A named group marks the ancestor, and a data variant selects its state. See [parent state](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-parent-state).
+
+### StyleX
+
+```tsx title="Card.tsx"
+import * as stylex from '@stylexjs/stylex'
+
+export function Card(props: Card.Props) {
+  return (
+    <section
+      {...stylex.props(stylex.defaultMarker())}
+      data-state={props.open ? 'open' : 'closed'}
+    >
+      <span {...stylex.props(styles.label)}>Details</span>
+    </section>
+  )
+}
+
+export declare namespace Card {
+  type Props = { open: boolean }
+}
+
+const styles = stylex.create({
+  label: {
+    opacity: {
+      default: 0.5,
+      [stylex.when.ancestor('[data-state="open"]')]: 1, // [!code hl]
+    },
+  },
+})
+```
+
+A marker identifies the ancestor, and `when.ancestor` observes its attribute. These APIs support [element relationships](https://stylexjs.com/docs/api/javascript/when/) within StyleX's selector model.
+
+### vanilla-extract
+
+```ts title="card.css.ts"
+import { style } from '@vanilla-extract/css'
+
+export const card = style({})
+
+export const label = style({
+  opacity: 0.5,
+  selectors: { [`${card}[data-state="open"] &`]: { opacity: 1 } }, // [!code hl]
+})
+```
+
+```tsx title="Card.tsx"
+import { card, label } from './card.css.js'
+
+export function Card(props: Card.Props) {
+  return (
+    <section className={card} data-state={props.open ? 'open' : 'closed'}>
+      <span className={label}>Details</span>
+    </section>
+  )
+}
+
+export declare namespace Card {
+  type Props = { open: boolean }
+}
+```
+
+An exported class can be interpolated into another style's selector. See [complex selectors](https://vanilla-extract.style/documentation/styling/#complex-selectors).
+
+## Runtime Values
+
+Each `Bar` accepts a `width` percentage and renders a div with that width, `0.5rem` height, and a `#06c` background. All four approaches reuse static CSS while changing a per-instance value.
 
 ### Zyzz
 
@@ -185,7 +758,7 @@ namespace styles {
 }
 ```
 
-The typed callback binds its input to a precompiled CSS variable. Runtime applications set the value without generating CSS rules.
+The typed callback binds its input to a precompiled CSS variable. Runtime applications set the value without generating CSS rules. See [Styling](/docs/guides/styling).
 
 ### Tailwind CSS
 
@@ -199,7 +772,7 @@ export declare namespace Bar {
 }
 ```
 
-An [inline style](https://tailwindcss.com/docs/styling-with-utility-classes#when-to-use-inline-styles) supplies the width. Dynamic values must not construct utility names that the source scanner cannot detect.
+An [inline style](https://tailwindcss.com/docs/styling-with-utility-classes#when-to-use-inline-styles) supplies the width without constructing a dynamic utility name that the source scanner cannot detect.
 
 ### StyleX
 
@@ -231,6 +804,7 @@ A [dynamic style function](https://stylexjs.com/docs/learn/styling-ui/defining-s
 import { createVar, style } from '@vanilla-extract/css'
 
 export const widthVar = createVar()
+
 export const bar = style({
   backgroundColor: '#06c',
   height: '0.5rem',
@@ -256,6 +830,186 @@ export declare namespace Bar {
 }
 ```
 
-`createVar` declares the variable. The optional [Dynamic package](https://vanilla-extract.style/documentation/packages/dynamic/) sets its value through inline styles.
+`createVar` declares the variable, and the optional [Dynamic package](https://vanilla-extract.style/documentation/packages/dynamic/) sets its value through inline styles.
+
+## Additional Zyzz APIs
+
+The paired examples cover common tasks. These documented APIs cover further requirements, without implying that another library lacks an equivalent.
+
+<Table label="Additional Zyzz APIs">
+<table>
+<thead>
+<tr>
+<th scope="col">API</th>
+<th scope="col">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">
+
+[Appearance](/docs/guides/themes)
+
+</th>
+<td>Select named variable sets and color schemes, with initialization scripts for saved preferences.</td>
+</tr>
+<tr>
+<th scope="row">
+
+[CSS output](/docs/guides/css-output)
+
+</th>
+<td>Choose atomic or grouped output without changing authoring or composition semantics.</td>
+</tr>
+<tr>
+<th scope="row">
+
+[Property mappings](/docs/guides/themes#customize-property-mappings)
+
+</th>
+<td>Configure optional aliases and property-specific token scales.</td>
+</tr>
+<tr>
+<th scope="row">
+
+[Stylesheets](/docs/guides/stylesheets)
+
+</th>
+<td>Declare globals, cascade layers, fonts, keyframes, and supported CSS at-rules.</td>
+</tr>
+<tr>
+<th scope="row">
+
+[Typography sets](/docs/guides/themes)
+
+</th>
+<td>Apply a named set of font properties, with explicit field overrides.</td>
+</tr>
+<tr>
+<th scope="row">
+
+[Typed variables](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md)
+
+</th>
+<td>
+
+Declare independent variables, constrain assignments with `.set`, and optionally emit `@property` registration.
+
+</td>
+</tr>
+<tr>
+<th scope="row">
+
+[Variant conditions and payloads](/docs/guides/variants)
+
+</th>
+<td>Select choices through media or supports conditions, or bind typed payloads to a dynamic choice.</td>
+</tr>
+</tbody>
+</table>
+</Table>
+
+## Compilation, Libraries, and Platforms
+
+Build commands perform different jobs, so they are not interchangeable examples. The useful comparison is which artifacts each library produces and what a consuming application must load.
+
+<Table label="Compilation, libraries, and platforms">
+<table>
+<thead>
+<tr>
+<th scope="col">Library</th>
+<th scope="col">Build and delivery</th>
+<th scope="col">Platforms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Zyzz</th>
+<td>
+
+The CLI's `zyzz build` and `zyzz dev` emit transformed modules, CSS, maps, and metadata. Bundler integrations deliver styles automatically, and [published libraries](/docs/guides/compilation) include matching code, CSS, declarations, and contracts.
+
+</td>
+<td>
+
+Web CSS and [React Native](/docs/guides/native) through separate adapters. Unsupported native semantics produce errors.
+
+</td>
+</tr>
+<tr>
+<th scope="row">Tailwind CSS</th>
+<td>
+
+The [CLI](https://tailwindcss.com/docs/installation/tailwind-cli) emits CSS from detected utilities. Libraries distribute CSS or arrange [consumer source scanning](https://tailwindcss.com/docs/detecting-classes-in-source-files).
+
+</td>
+<td>Web CSS. Native use requires a separate integration.</td>
+</tr>
+<tr>
+<th scope="row">StyleX</th>
+<td>
+
+The [CLI](https://stylexjs.com/docs/learn/installation/cli/) transforms modules, emits CSS, and can add CSS imports. Precompiled libraries ship generated artifacts.
+
+</td>
+<td>Web CSS.</td>
+</tr>
+<tr>
+<th scope="row">vanilla-extract</th>
+<td>
+
+[Build integrations](https://vanilla-extract.style/documentation/integrations/vite/) evaluate `.css.ts` modules and extract CSS. Libraries publish compiled JavaScript and CSS.
+
+</td>
+<td>Web CSS.</td>
+</tr>
+</tbody>
+</table>
+</Table>
+
+Zyzz's `Css` namespace compiles style data in memory. Stylesheet helpers such as `global`, `fontFace`, and `keyframes` are direct exports from `zyzz/web`. Source optimization and native output use separate compiler and host entrypoints.
+
+## Performance and Bundle Size
+
+Equivalent examples do not establish a performance winner. Compare generated CSS, JavaScript, and markup together, and account for selection helpers, variable bindings, metadata, and delivery conventions. [Benchmarks](/docs/introduction/benchmarks) records the measured workloads and their limits.
+
+<Table label="Performance and bundle size">
+<table>
+<thead>
+<tr>
+<th scope="col">Library</th>
+<th scope="col">Output considerations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Zyzz</th>
+<td>Atomic or grouped CSS. Static applications can fold into props, while dynamic selection and composition can retain helpers.</td>
+</tr>
+<tr>
+<th scope="row">Tailwind CSS</th>
+<td>Shared utilities and class strings. Styling needs no JavaScript runtime, but component variant logic still contributes code.</td>
+</tr>
+<tr>
+<th scope="row">StyleX</th>
+<td>
+
+Shared atomic declarations. Cross-module and dynamic applications can retain mappings and runtime work. See [Thinking in StyleX](https://stylexjs.com/docs/learn/thinking-in-stylex/).
+
+</td>
+</tr>
+<tr>
+<th scope="row">vanilla-extract</th>
+<td>
+
+Scoped CSS. Optional [Sprinkles](https://vanilla-extract.style/documentation/packages/sprinkles/) produces atomic utilities, while Recipes and dynamic bindings can retain helpers.
+
+</td>
+</tr>
+</tbody>
+</table>
+</Table>
+
+Measure cold builds, warm builds, and incremental edits separately. For browser comparisons, test the same states and computed styles before recording timing. Report raw, gzip, and Brotli sizes with versions and workload details, count class strings once, and report package download size separately from delivered application assets.
 
 </Content>

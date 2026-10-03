@@ -386,6 +386,51 @@ describe('compile', () => {
     }
   })
 
+  test('converts custom native font mappings and reports unsupported line heights', async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'values.ts',
+      fonts: { 'Web Font': 'NativeFont' },
+      units: { px: 2 },
+      source: `import {Config} from 'zyzz';import {useVars} from 'zyzz/react-native/react';
+        const {vars}=Config.create({vars:{font:{body:'Web Font'},typography:{body:{fontSize:'10px',lineHeight:'normal'}}},mappings:{font:['fontFamily']}});
+        export function read(){return useVars(vars)}`,
+    })
+    expect(output.code.includes('NativeFont')).toMatchInlineSnapshot(`true`)
+    expect(
+      output.code.includes('Unsupported native line height: normal.'),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('validates units for modules containing only variable reads', () => {
+    expect(() =>
+      Native.compile({
+        units: { px: 0 },
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'values.ts',
+        source: `import {Vars} from 'zyzz';import {useVars} from 'zyzz/react-native/react';const vars=Vars.define({spacing:{gap:'2px'}});export function read(){return useVars(vars)}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["units","px"]: Unit scales must be positive finite px or rem conversions.]`,
+    )
+  })
+
+  test('validates fonts for modules containing only variable reads', () => {
+    expect(() =>
+      Native.compile({
+        fonts: { web: '' },
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'values.ts',
+        source: `import {Vars} from 'zyzz';import {useVars} from 'zyzz/react-native/react';const vars=Vars.define({spacing:{gap:'2px'}});export function read(){return useVars(vars)}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["fonts","web"]: Font mappings require nonempty family names.]`,
+    )
+  })
+
   test('rejects applied web scopes after allowing exported config references', () => {
     expect(() =>
       Graph.compile({

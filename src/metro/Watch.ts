@@ -1,4 +1,5 @@
 /** Keeps Metro's transform cache and delta graph aligned with imported authoring. @module */
+import * as AsyncHooks from 'node:async_hooks'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
@@ -34,8 +35,23 @@ type Bundler = {
     buffer?: Buffer,
   ): Promise<unknown>
 }
+type ResolverOptions = {
+  readonly customResolverOptions: Readonly<Record<string, unknown>>
+}
+type IncrementalBundler = {
+  buildGraphForEntries: Build
+  getBundler(): Bundler
+  getDependencies: Build
+  updateGraph(revision: { graph: object }, reset: boolean): Promise<unknown>
+}
+type Build = (
+  entries: readonly string[],
+  transform: unknown,
+  resolver: ResolverOptions,
+  options?: unknown,
+) => Promise<object>
 /** Metro server methods used by its own serializers and development middleware. */
-export type Server = { getBundler(): { getBundler(): Bundler } }
+export type Server = { getBundler(): IncrementalBundler }
 type Changes = {
   rootDir: string
   changes: {
@@ -47,7 +63,26 @@ type Changes = {
 
 /** Includes imported source contents in transform keys and invalidates their consumers on edits. */
 export async function attach(server: Server, root: string) {
-  const bundler = server.getBundler().getBundler()
+  const incremental = server.getBundler()
+  const bundler = incremental.getBundler()
+  const requests = new AsyncHooks.AsyncLocalStorage<ResolverOptions>()
+  const selections = new WeakMap<object, ResolverOptions>()
+  for (const name of ['buildGraphForEntries', 'getDependencies'] as const) {
+    const build = incremental[name].bind(incremental)
+    incremental[name] = (entries, transform, resolver, options) =>
+      requests.run(resolver, async () => {
+        const graph = await build(entries, transform, resolver, options)
+        selections.set(graph, resolver)
+        return graph
+      })
+  }
+  const update = incremental.updateGraph.bind(incremental)
+  incremental.updateGraph = (revision, reset) =>
+    requests.run(
+      selections.get(revision.graph) ?? { customResolverOptions: {} },
+      () => update(revision, reset),
+    )
+
   const ready = bundler.getDependencyGraph()
   const dependencies = new Map<string, Map<string, Set<string>>>()
   const snapshot = Snapshot.create()
@@ -82,7 +117,7 @@ export async function attach(server: Server, root: string) {
             name: specifier,
           },
           options.platform!,
-          { customResolverOptions: {} },
+          requests.getStore() ?? { customResolverOptions: {} },
         )
         return resolved.type === 'sourceFile' ? resolved.filePath : undefined
       },
@@ -91,7 +126,10 @@ export async function attach(server: Server, root: string) {
 
     const platforms =
       dependencies.get(filename) ?? new Map<string, Set<string>>()
-    platforms.set(options.platform, new Set(input.files))
+    platforms.set(
+      JSON.stringify([options.platform, requests.getStore()]),
+      new Set(input.files),
+    )
     dependencies.set(filename, platforms)
     const hash = Crypto.hash('sha256', JSON.stringify(input))
     return transform(

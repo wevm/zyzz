@@ -1,4 +1,5 @@
 /** Groups concepts source files and rendered examples in accessible tabs. @module */
+import { vars } from '../../../zyzz.config.js'
 import {
   Children,
   isValidElement,
@@ -115,7 +116,10 @@ export function Tabs(props: Tabs.Props) {
               const request = ++copyRequest.current
               try {
                 if (active.source === undefined) return
-                await navigator.clipboard.writeText(active.source)
+                // The highlighted text omits notation comments such as `// [!code hl]`.
+                await navigator.clipboard.writeText(
+                  __DOCS__.code[active.source]?.text ?? active.source,
+                )
                 if (request === copyRequest.current) setCopyState('copied')
               } catch {
                 if (request === copyRequest.current) setCopyState('failed')
@@ -153,18 +157,15 @@ export function Tabs(props: Tabs.Props) {
             tab.content
           ) : (
             <pre {...styles.code()}>
-              <code>
-                {__DOCS__.code[tab.source]?.map((line, lineIndex) => (
-                  <span key={lineIndex}>
-                    {line.map((token, tokenIndex) => (
-                      <span key={tokenIndex} style={{ color: token.color }}>
-                        {token.content}
-                      </span>
-                    ))}
-                    {'\n'}
-                  </span>
-                )) ?? tab.source}
-              </code>
+              {Object.hasOwn(__DOCS__.code, tab.source) ? (
+                <code
+                  dangerouslySetInnerHTML={{
+                    __html: __DOCS__.code[tab.source]!.html,
+                  }}
+                />
+              ) : (
+                <code>{tab.source}</code>
+              )}
             </pre>
           )}
         </div>
@@ -211,6 +212,15 @@ namespace styles {
       font: 'inherit',
       display: 'block',
       minWidth: 'max-content !custom',
+    },
+    // Highlighted lines extend into the panel's padding.
+    '& .highlighted': {
+      backgroundColor: 'grayAlpha.200',
+      boxSizing: 'border-box',
+      display: 'inline-block',
+      marginLeft: `calc(${vars.spacing[6]} * -1) !custom`,
+      minWidth: `calc(100% + ${vars.spacing[6]} * 2) !custom`,
+      paddingInline: 6,
     },
   })
 

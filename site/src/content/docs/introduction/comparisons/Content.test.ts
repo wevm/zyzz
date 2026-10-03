@@ -11,7 +11,7 @@ describe('comparison examples', () => {
       'utf8',
     )
     const section = document
-      .split('## Binding runtime values')[1]!
+      .split('## Runtime Values')[1]!
       .split('### Tailwind CSS')[0]!
     const source = section.match(/```tsx[^\n]*\n([\s\S]*?)```/)![1]!
 

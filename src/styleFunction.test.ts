@@ -13,16 +13,19 @@ import { Graph, Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('style', () => {
+  // Configured tokens replace CSS keywords that the declaration would reject.
   test.each([
-    ["import { style } from 'zyzz'", ''],
+    ["import { style } from 'zyzz'", '', 'medium', 'auto'],
     [
       "import { Config } from 'zyzz'",
       "const { style } = Config.create({ vars: { fontSize: { hero: '72px' }, breakpoint: { tablet: '48rem' } } })",
+      'hero',
+      'auto',
     ],
-    ["import { style } from 'zyzz/default'", ''],
+    ["import { style } from 'zyzz/default'", '', 'lg', 'md'],
   ])(
     'suggests nested declarations and structural keys through %s',
-    (imports, setup) => {
+    (imports, setup, font, width) => {
       const root = Path.resolve(import.meta.dirname, '..')
       const file = Path.join(root, '.fixture-nested-editor.ts')
       const source = `${imports}
@@ -115,8 +118,8 @@ const card = style({
         `)
         }
         for (const [marker, expected] of [
-          ['font', 'medium'],
-          ['width', 'auto'],
+          ['font', font],
+          ['width', width],
           ['display', 'flex'],
         ]) {
           const names =
@@ -129,12 +132,12 @@ const card = style({
               ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
           expect(names.includes(expected!)).toMatchInlineSnapshot(`true`)
         }
-        if (setup) {
+        if (font !== 'medium') {
           const names =
             service
               .getCompletionsAtPosition(file, source.indexOf('/* font */'), {})
               ?.entries.map((entry) => entry.name.replace(/^"|"$/g, '')) ?? []
-          expect(names.includes('hero')).toMatchInlineSnapshot(`true`)
+          expect(names.includes('medium')).toMatchInlineSnapshot(`false`)
         }
       } finally {
         service.dispose()

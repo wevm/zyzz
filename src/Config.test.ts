@@ -703,6 +703,17 @@ dynamic({ width: '12px' })
           "serif",
         ]
       `)
+      expect(diagnose("fontFamily: 'sans'", "fontFamily: 'comic'"))
+        .toMatchInlineSnapshot(`
+          [
+            {
+              "code": 2322,
+              "message": "Type '"comic"' is not assignable to type '"comic" & Expected<"mono" | "sans" | "serif" | \`\${string} !custom\`>'.
+            Type 'string' is not assignable to type 'Expected<"mono" | "sans" | "serif" | \`\${string} !custom\`>'.",
+              "span": "fontFamily",
+            },
+          ]
+        `)
       expect(
         diagnose("alignItems: 'center'", "alignItems: 'invalid-alignment'"),
       ).toMatchInlineSnapshot(`

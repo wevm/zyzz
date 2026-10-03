@@ -32,7 +32,7 @@ Native interoperability also exports [compose](compose.md), [flatten](flatten.md
 
 Decimal px/rem lengths convert to native logical units. Only zero is accepted as a unitless length. Dimensions, flex basis, and physical offsets also accept percentages. Width, height, and flex basis accept auto. Negative lengths are limited to margins, offsets, and letter spacing.
 
-`Vars.compose` resolves live aliases against the selected set and scheme. Composed spacing supports finite `calc` arithmetic over numbers, px/rem lengths, and parentheses. Addition and subtraction require matching dimensions; multiplication and division require a numeric operand or divisor. Relative units, percentages in calculations, zero divisors, and incompatible dimensions produce diagnostics.
+Theme references and portable template expressions resolve against the selected set and scheme. Literal lengths and composed spacing support finite `calc` arithmetic over numbers, px/rem lengths, and parentheses. Addition and subtraction require matching dimensions; multiplication and division require a numeric operand or divisor. Relative units, percentages in calculations, zero divisors, and incompatible dimensions produce diagnostics.
 
 Authored shorthand order is preserved by expanding to physical longhands. No browser defaults or inherited font size are synthesized. Numeric CSS line height multiplies the explicit fontSize in the same style. Native text inheritance and layout defaults still belong to the consuming renderer.
 

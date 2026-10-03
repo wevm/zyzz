@@ -56,6 +56,36 @@ describe('compose', () => {
 })
 
 describe('compile', () => {
+  test('accepts calculation lengths and preserves native props and callback inputs', () => {
+    const declarations = {
+      artwork: {
+        height: 'calc((180px * 2 + 80px) / 2)',
+        margin: 'cAlC(4px + 2px) Calc(1px) CALC(2px) caLC(3px)',
+        maxHeight: 'CALC(180px * 2 + 80px)',
+        maxWidth: 'Calc(180px * 2 + 80px)',
+        padding: 'calc(4px + 2px) 1rem',
+        width: 'calc(180px * 2 + 80px)',
+      } satisfies StyleSheet.Properties,
+    }
+    const output = StyleSheet.compile({
+      styles: Style.define(declarations),
+      units: { rem: 16 },
+    })
+    expectTypeOf(output.styles.default.light.artwork.width).toEqualTypeOf<
+      number | string | null | undefined
+    >()
+    const artwork = style((input: { aspectRatio: number }) => ({
+      height: `calc(440px / ${input.aspectRatio})`,
+    }))
+    expectTypeOf(artwork({ aspectRatio: 2 })).not.toBeAny()
+    // @ts-expect-error Calculation callbacks retain their required numeric input.
+    artwork({ aspectRatio: '2' })
+    // @ts-expect-error Calculation inputs are required.
+    artwork({})
+    // @ts-expect-error Callback calculations do not accept additional component props.
+    artwork({ aspectRatio: 2, title: 'artwork' })
+  })
+
   test('retains Image-compatible overflow through target selection and table lookup', () => {
     const styles = Style.define({
       image: {

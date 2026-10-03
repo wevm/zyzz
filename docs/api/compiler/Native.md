@@ -54,7 +54,30 @@ bar({ alpha: 0.5 })
 card({ spacing: { custom: { gap: '8px' } } })
 ```
 
-Callbacks are extracted without execution. Bindings consume declared inputs and return only native style props. Runtime payloads never multiply the finite selection space. Dynamic transforms, shadows, font variants, token expressions, and CSS calculations remain unsupported. Native target branches still require static literal data.
+Callbacks are extracted without execution. Bindings consume declared inputs and return only native style props. Runtime payloads never multiply the finite selection space. Dynamic transforms, shadows, and font variants remain unsupported. Native target branches still require static literal data.
+
+### Calculated lengths
+
+Use portable `calc(...)` expressions for lengths that combine theme variables and runtime scalar inputs. Native compilation resolves theme references for every configured selection and scheme. Application evaluates the calculation with the supplied input. The same definition emits CSS ahead of time for web consumers.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+const { style, vars } = defineConfig({
+  vars: { spacing: { artwork: '180px', gutter: '80px' } },
+})
+
+const artwork = style((input: { aspectRatio: number }) => ({
+  width: `calc(${vars.spacing.artwork} * 2 + ${vars.spacing.gutter}) !custom`,
+  height: `calc((${vars.spacing.artwork} * 2 + ${vars.spacing.gutter}) / ${input.aspectRatio}) !custom`,
+}))
+
+artwork({ aspectRatio: 2 }) // Native width: 440, height: 220.
+```
+
+Calculations support finite numbers, px/rem lengths, parentheses, unary signs, addition, subtraction, multiplication, and division. Addition and subtraction require matching dimensions; multiplication permits one length operand, and division requires a nonzero number. `units.rem` is required for rem lengths. Calculated padding and margin shorthands preserve spaces within each expression.
+
+Native application rejects percentages and relative units within calculations, unresolved CSS variables, nonfinite results, and negative lengths on unsigned properties. Expressions are limited to 512 tokens and 64 nested operations. Use variants for finite conditional choices; JavaScript arithmetic and conditional callback expressions remain unsupported.
 
 ## Imported Definitions
 

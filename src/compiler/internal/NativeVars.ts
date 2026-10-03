@@ -92,9 +92,10 @@ export function compile(options: compile.Options): Runtime.create.Options {
             if (property === 'lineHeight') {
               if (
                 typeof value === 'string' &&
-                /^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?(?:px|rem)\s*$/i.test(
-                  value,
-                )
+                (/^\s*calc\(/i.test(value) ||
+                  /^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?(?:px|rem)\s*$/i.test(
+                    value,
+                  ))
               )
                 return Scalar.length(
                   value.trim().toLowerCase(),

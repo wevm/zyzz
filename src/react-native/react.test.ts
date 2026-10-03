@@ -335,7 +335,7 @@ describe('useVars', () => {
           const {vars:invalidLine}=Config.create({vars:{typography:{body:{fontSize:'16px',lineHeight:-1}}}})
           const {vars:responsive}=Config.create({vars:{typography:{body:{fontSize:'16px','@media (min-width: 768px)':{fontSize:'20px'}}}}})
 
-          const {vars:mapped}=Config.create({vars:{alpha:{bad:2,good:0.5},fontSize:{bad:'-1px'},leading:{absolute:'20px',multiplier:1.25,normal:'normal'},lengths:{signed:'-2px'},mixed:{fraction:0.5},motion:{small:'2px'},ratios:{wide:'16/9'}},mappings:{alpha:['opacity'],leading:['lineHeight'],lengths:['letterSpacing','fontSize'],mixed:['opacity','zIndex'],motion:['transform'],ratios:['aspectRatio']}})
+          const {vars:mapped}=Config.create({vars:{alpha:{bad:2,good:0.5},fontSize:{bad:'-1px'},leading:{absolute:'20px',calculated:'CaLc(1rem + 4px)',multiplier:1.25,normal:'normal'},lengths:{signed:'-2px'},mixed:{fraction:0.5},motion:{small:'2px'},ratios:{wide:'16/9'}},mappings:{alpha:['opacity'],leading:['lineHeight'],lengths:['letterSpacing','fontSize'],mixed:['opacity','zIndex'],motion:['transform'],ratios:['aspectRatio']}})
 
           function Sample(props) {
             if(props.kind==='alpha') return String(useVars(mapped).alpha.bad)
@@ -346,7 +346,7 @@ describe('useVars', () => {
             if(props.kind==='mixed') return String(useVars(mapped).mixed.fraction)
             if(props.kind==='motion') return String(useVars(mapped).motion.small)
             if(props.kind==='ratio') return String(useVars(mapped).ratios.wide)
-            if(props.kind==='mapped') {const values=useVars(mapped);return JSON.stringify({opacity:values.alpha.good,lineHeight:values.leading.absolute})}
+            if(props.kind==='mapped') {const values=useVars(mapped);return JSON.stringify({opacity:values.alpha.good,lineHeight:values.leading.absolute,calculated:values.leading.calculated})}
             if(props.kind==='supported') return useVars(web).color.ink
             if(props.kind==='condition') return String(useVars(web).spacing.gap)
             if(props.kind==='font') return useVars(font).typography.body.fontFamily
@@ -440,6 +440,7 @@ describe('useVars', () => {
       expect(JSON.parse((await page.locator('#mapped').textContent())!))
         .toMatchInlineSnapshot(`
         {
+          "calculated": 20,
           "lineHeight": 20,
           "opacity": 0.5,
         }

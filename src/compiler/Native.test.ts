@@ -8,6 +8,7 @@ import * as Parser from 'oxc-parser'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Ds from '../../test/fixtures/native/Ds.js'
 import * as Packed from '../../test/fixtures/Packed.js'
+import * as Playwright from 'playwright'
 import * as Vm from 'node:vm'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Native, Transform } from 'zyzz/compiler'
@@ -52,6 +53,339 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('selects live theme calculations for each native scope and scheme', async () => {
+    const source = `import {defineConfig} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+      const {style,vars}=defineConfig({vars:{base:{color:{surface:{light:'#112233',dark:'#334455'}},spacing:{panel:'180px',gutter:'80px'}},compact:{color:{surface:{light:'#445566',dark:'#556677'}},spacing:{panel:'120px',gutter:'40px'}}},defaultVars:'base'});
+      const artwork=style((input:{ratio:number})=>({backgroundColor:'surface',width:\`calc(\${vars.spacing.panel} * 2 + \${vars.spacing.gutter}) !custom\`,height:\`calc((\${vars.spacing.panel} * 2 + \${vars.spacing.gutter}) / \${input.ratio}) !custom\`}));
+      export const results=(set,colorScheme)=>NativeContext.resolve(artwork,{set,colorScheme},{ratio:2});`
+    const output = Native.compile({
+      source,
+      moduleId: 'scoped-calculations.ts',
+      colorScheme: 'light',
+      contextual: true,
+    })
+    const apply = (await execute(output.code)).results as (
+      set: string,
+      scheme: string,
+    ) => unknown
+    expect(apply('base', 'light')).toMatchInlineSnapshot(`
+      {
+        "backgroundColor": "#112233",
+        "height": 220,
+        "width": 440,
+      }
+    `)
+    expect(apply('base', 'dark')).toMatchInlineSnapshot(`
+      {
+        "backgroundColor": "#334455",
+        "height": 220,
+        "width": 440,
+      }
+    `)
+    expect(apply('compact', 'dark')).toMatchInlineSnapshot(`
+      {
+        "backgroundColor": "#556677",
+        "height": 140,
+        "width": 280,
+      }
+    `)
+  })
+
+  test('converts nested callback calculations, shorthand lengths, and typography together', async () => {
+    const source = `import {style} from 'zyzz';
+      const box=style((input:{gap:string;ratio:number})=>({width:\`CaLc(\${input.gap} / \${input.ratio})\`,padding:\`1rem calc(\${input.gap} * 2)\`,marginLeft:\`calc(\${input.gap} - 10px)\`,fontSize:\`calc(1rem + \${input.gap})\`,lineHeight:1.5}));
+      export const results=box({gap:'  CALC(2PX + 2px)',ratio:2});`
+    const output = Native.compile({
+      source,
+      moduleId: 'nested-calculations.ts',
+      colorScheme: 'light',
+      units: { px: 2, rem: 20 },
+    })
+    expect((await execute(output.code)).results).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 28,
+          "lineHeight": 42,
+          "marginLeft": -12,
+          "paddingBottom": 20,
+          "paddingLeft": 16,
+          "paddingRight": 16,
+          "paddingTop": 20,
+          "width": 4,
+        },
+      }
+    `)
+  })
+
+  test('rejects invalid calculated payloads before returning native props', async () => {
+    const source = `import {style} from 'zyzz';
+      const box=style((input:{gap:string;ratio:number})=>({width:\`calc(\${input.gap} / \${input.ratio})\`}));
+      export const results=(gap,ratio)=>box({gap,ratio});`
+    const output = Native.compile({
+      source,
+      moduleId: 'invalid-calculations.ts',
+      colorScheme: 'light',
+    })
+    const apply = (await execute(output.code)).results as (
+      gap: string,
+      ratio: number,
+    ) => unknown
+    expect(() => apply('8px', 0)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native calc requires compatible number and length operands.]`,
+    )
+    expect(() => apply('8px', -1)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Converted length is outside the native property domain.]`,
+    )
+    expect(() => apply('calc(8px + 2%)', 1)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Unsupported native calc expression.]`,
+    )
+    expect(() =>
+      apply('calc(8px * 2px)', 1),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native calc requires compatible number and length operands.]`,
+    )
+    expect(() => apply('8px', NaN)).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Missing or invalid native payload: ratio.]`,
+    )
+    expect(() => apply('8px', Infinity)).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Missing or invalid native payload: ratio.]`,
+    )
+    expect(() =>
+      Reflect.apply(apply, undefined, ['8px', '2']),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Native numeric bindings require numbers.]`,
+    )
+    expect(() => apply('1rem', 1)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Provide units.rem for rem lengths.]`,
+    )
+    expect(() => apply('var(--width)', 1)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Unsupported native calc expression.]`,
+    )
+    expect(() =>
+      apply(`calc(${'('.repeat(65)}1px${')'.repeat(65)})`, 1),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native calc exceeds 64 nested operations.]`,
+    )
+    expect(() =>
+      apply(`calc(${Array.from({ length: 260 }, () => '1px').join(' + ')})`, 1),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native calc exceeds 512 tokens.]`,
+    )
+  })
+
+  test.each(['ios', 'android'] as const)(
+    'migrates all six Tempro dynamic geometries through source and packed imports on %s',
+    async (platform) => {
+      const modules = {
+        'Dimensions.ts': await Fs.readFile(
+          'test/fixtures/native/tempro/Dimensions.ts',
+          'utf8',
+        ),
+        'Styles.ts': await Fs.readFile(
+          'test/fixtures/native/tempro/Styles.ts',
+          'utf8',
+        ),
+      }
+      const publisher = Graph.compile({ modules })
+      const imported = Graph.compile({
+        modules,
+        native: { colorScheme: 'light', platform },
+      })
+      const packed = Graph.compile({
+        contracts: { 'components/index.js': publisher.contracts['Styles.ts']! },
+        imports: { 'app.ts': { components: 'components/index.js' } },
+        modules: { 'app.ts': "export * from 'components';" },
+        native: { colorScheme: 'light', platform },
+      })
+      for (const output of [imported, packed]) {
+        const code = await Packed.bundle({
+          entry: output === packed ? 'app.ts' : 'Styles.ts',
+          modules: Object.fromEntries(
+            Object.entries(output.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+          packages: {
+            components: {
+              'index.js': publisher.modules['Styles.ts']!.code,
+              'Dimensions.js': modules['Dimensions.ts'],
+            },
+          },
+        })
+        const styles = Vm.runInNewContext(`${code}\nFixture`) as Record<
+          string,
+          (input: object) => { style: StyleSheet.NativeStyle }
+        >
+        expect(styles.headerArtwork!({ aspectRatio: 2 }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "height": 220,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+              "width": 440,
+            },
+          }
+        `)
+        expect(styles.avatarContainer!({ size: 'small' }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "alignItems": "center",
+              "borderBottomLeftRadius": 999,
+              "borderBottomRightRadius": 999,
+              "borderTopLeftRadius": 999,
+              "borderTopRightRadius": 999,
+              "height": 40,
+              "justifyContent": "center",
+              "overflow": "hidden",
+              "width": 40,
+            },
+          }
+        `)
+        expect(styles.avatarContainer!({ size: 'large' }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "alignItems": "center",
+              "borderBottomLeftRadius": 999,
+              "borderBottomRightRadius": 999,
+              "borderTopLeftRadius": 999,
+              "borderTopRightRadius": 999,
+              "height": 68,
+              "justifyContent": "center",
+              "overflow": "hidden",
+              "width": 68,
+            },
+          }
+        `)
+        expect(styles.statusContent!({ variant: 'send' }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "alignItems": "center",
+              "flexGrow": 1,
+              "justifyContent": "flex-start",
+              "paddingTop": 136,
+            },
+          }
+        `)
+        expect(styles.statusContent!({ variant: 'default' }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "alignItems": "center",
+              "flexGrow": 1,
+              "justifyContent": "flex-start",
+              "paddingTop": 16,
+            },
+          }
+        `)
+        expect(styles.statusCopy!({ variant: 'send' })).toMatchInlineSnapshot(`
+          {
+            "style": {
+              "alignItems": "center",
+              "columnGap": 8,
+              "marginTop": 24,
+              "paddingLeft": 48,
+              "paddingRight": 48,
+              "rowGap": 8,
+            },
+          }
+        `)
+        expect(styles.statusGraphic!({ variant: 'default' }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "alignItems": "center",
+              "height": 160,
+              "justifyContent": "center",
+            },
+          }
+        `)
+        expect(styles.statusSymbol!({ variant: 'send' }))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "height": 64,
+              "position": "relative",
+              "width": 128,
+            },
+          }
+        `)
+        expect(
+          styles.statusCopy!({ variant: 'default' }).style.columnGap,
+        ).toMatchInlineSnapshot(`16`)
+        expect(
+          styles.statusGraphic!({ variant: 'send' }).style.height,
+        ).toMatchInlineSnapshot(`64`)
+        expect(
+          styles.statusSymbol!({ variant: 'default' }).style.height,
+        ).toMatchInlineSnapshot(`120`)
+      }
+    },
+  )
+
+  test('preserves calculated artwork dimensions in a real browser', async () => {
+    const output = Graph.compile({
+      modules: {
+        'Dimensions.ts': await Fs.readFile(
+          'test/fixtures/native/tempro/Dimensions.ts',
+          'utf8',
+        ),
+        'Styles.ts': await Fs.readFile(
+          'test/fixtures/native/tempro/Styles.ts',
+          'utf8',
+        ),
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'Styles.ts',
+      modules: Object.fromEntries(
+        Object.entries(output.modules).map(([id, value]) => [id, value.code]),
+      ),
+    })
+    const browser = await Playwright.chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${Object.values(output.modules)
+          .map((module) => module.css)
+          .join('\n')}</style><div id="artwork"></div>`,
+      )
+      await page.addScriptTag({
+        content: `${code};window.applyArtwork = Fixture.headerArtwork;`,
+      })
+      const dimensions = await page.evaluate(() => {
+        const apply = (
+          window as unknown as {
+            applyArtwork: (input: { aspectRatio: number }) => {
+              className: string
+              style: Record<string, string>
+            }
+          }
+        ).applyArtwork
+        const element = document.getElementById('artwork')!
+        const props = apply({ aspectRatio: 2 })
+        element.className = props.className
+        for (const [name, value] of Object.entries(props.style))
+          element.style.setProperty(name, String(value))
+        const style = getComputedStyle(element)
+        return { width: style.width, height: style.height }
+      })
+      expect(dimensions).toMatchInlineSnapshot(`
+        {
+          "height": "220px",
+          "width": "440px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('converts custom native font mappings and reports unsupported line heights', async () => {
     const output = Native.compile({
       colorScheme: 'light',
@@ -623,7 +957,7 @@ describe('compile', () => {
       const bar=style((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha,targets:{native:{transform:[{scale:2}]}}}));
       const card=variants({variants:{size:{custom:(values:{gap:string})=>({padding:values.gap})}}});
       const errors=[];
-      for(const input of [{width:'4px'},{width:'4px',alpha:2},{width:'4px',alpha:0.5,unknown:1},{width:'calc(1px + 2px)',alpha:0.5}]){try{bar(input)}catch(error){errors.push(error.message)}}
+      for(const input of [{width:'4px'},{width:'4px',alpha:2},{width:'4px',alpha:0.5,unknown:1},{width:'calc(1px + 2%)',alpha:0.5}]){try{bar(input)}catch(error){errors.push(error.message)}}
       try{card({size:'custom'})}catch(error){errors.push(error.message)}
       const override={opacity:0.9};const output=bar({width:'8px',alpha:0.5,style:override});
       export const results={errors,identity:output.style[1]===override,callerFrozen:Object.isFrozen(override),staticFrozen:Object.isFrozen(output.style[0].transform)};`
@@ -639,7 +973,7 @@ describe('compile', () => {
           "Missing or invalid native payload: alpha.",
           "Unsupported native numeric value.",
           "Unknown native recipe input: unknown.",
-          "Use zero, px, or rem with an explicit rem conversion.",
+          "Unsupported native calc expression.",
           "Native payloads require scalar fields.",
         ],
         "identity": true,

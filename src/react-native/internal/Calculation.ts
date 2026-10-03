@@ -17,6 +17,8 @@ export function length(input: string, options: Scalar.Options): number {
 
     offset = pattern.lastIndex
     positions.push(match.index + match[0].search(/\S/))
+    if (positions.length > 512)
+      throw new Error('Native calc exceeds 512 tokens.')
     if (match[1] === undefined) {
       tokens.push(match[4]?.toLowerCase() ?? match[5]!)
       continue
@@ -41,7 +43,17 @@ export function length(input: string, options: Scalar.Options): number {
   }
 
   let cursor = 0
+  let depth = 0
   function atom(): Value {
+    if (++depth > 64)
+      throw new Error('Native calc exceeds 64 nested operations.')
+    try {
+      return readAtom()
+    } finally {
+      depth--
+    }
+  }
+  function readAtom(): Value {
     const token = tokens[cursor++]
     if (token === '+' || token === '-') {
       const value = atom()
@@ -122,4 +134,26 @@ export function length(input: string, options: Scalar.Options): number {
     throw new Error('Native calc must resolve to one finite px or rem length.')
 
   return value.amount
+}
+
+/** Splits shorthand lengths while preserving spaces within calculations. */
+export function parts(input: string): readonly string[] {
+  const result: string[] = []
+  let depth = 0
+  let start = 0
+  const text = input.trim()
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index]
+    if (character === '(') depth++
+    if (character === ')' && --depth < 0)
+      throw new Error('Unbalanced native calculation.')
+    if (depth > 64) throw new Error('Native calc exceeds 64 nested operations.')
+    if (depth === 0 && /\s/.test(character!)) {
+      if (index > start) result.push(text.slice(start, index))
+      start = index + 1
+    }
+  }
+  if (depth !== 0) throw new Error('Unbalanced native calculation.')
+  if (start < text.length) result.push(text.slice(start))
+  return result
 }

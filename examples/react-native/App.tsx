@@ -57,6 +57,7 @@ function Samples({
   const [expanded, setExpanded] = useState(false)
   const width = expanded ? 120 : 60
   const accent = useVars(vars, (values) => values.color.accent)
+  const gutter = useVars(vars, (values) => values.spacing.gutter)
 
   return (
     <ScrollView
@@ -89,6 +90,13 @@ function Samples({
             value={expanded}
             onValueChange={setExpanded}
           />
+        </View>
+        <Text accessibilityRole="header" {...styles.label()}>
+          Responsive layout · padding {gutter}
+        </Text>
+        <View testID="zyzz-responsive" {...styles.responsive()}>
+          <Text {...styles.foreground()}>First item</Text>
+          <Text {...styles.foreground()}>Second item</Text>
         </View>
         <Text accessibilityRole="header" {...styles.label()}>
           Static style and platform override
@@ -128,23 +136,30 @@ namespace styles {
 
   export const box = style({
     backgroundColor: 'accent',
-    height: '64px',
-    width: '96px',
+    height: '64px !custom',
+    width: '96px !custom',
     targets: { android: { borderRadius: 4 }, ios: { borderRadius: 16 } },
   })
 
   export const card = variants({
-    base: { backgroundColor: 'surface', borderRadius: '8px', padding: '8px' },
+    base: {
+      backgroundColor: 'surface',
+      borderRadius: '8px',
+      padding: '8px !custom',
+    },
     variants: {
-      spacious: { false: { padding: '8px' }, true: { padding: '20px' } },
+      spacious: {
+        false: { padding: '8px !custom' },
+        true: { padding: '20px !custom' },
+      },
     },
     defaultVariants: { spacious: false },
   })
 
   export const content = style({
-    gap: '20px',
-    padding: '24px',
-    paddingTop: '72px',
+    gap: '20px !custom',
+    padding: '24px !custom',
+    paddingTop: '72px !custom',
   })
 
   export const description = style({
@@ -163,11 +178,19 @@ namespace styles {
 
   export const meter = style((values: { width: `${number}px` }) => ({
     backgroundColor: 'accent',
-    height: '16px',
+    height: '16px !custom',
     width: `${values.width} !custom`,
   }))
 
   export const page = style({ backgroundColor: 'page' })
+
+  export const responsive = style({
+    backgroundColor: 'surface',
+    flexDirection: 'column',
+    gap: 'gutter',
+    padding: 'gutter',
+    '@media md': { flexDirection: 'row' },
+  })
 
   export const title = style({
     color: 'ink',
@@ -179,7 +202,7 @@ namespace styles {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: '12px',
+    gap: '12px !custom',
     justifyContent: 'space-between',
   })
 }

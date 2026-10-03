@@ -5,6 +5,7 @@ import * as Fs from 'node:fs/promises'
 import * as Http from 'node:http'
 import * as Os from 'node:os'
 import * as Path from 'node:path'
+import * as Timers from 'node:timers'
 
 const platform = process.argv[2]
 if (platform !== 'ios' && platform !== 'android')
@@ -73,8 +74,8 @@ const server = Http.createServer(async (request, response) => {
       )
     }
     response.writeHead(200).end('saved')
-    clearTimeout(idle)
-    clearTimeout(timeout)
+    Timers.clearTimeout(idle)
+    Timers.clearTimeout(timeout)
     server.close(() => {
       process.exitCode = failed ? 1 : 0
     })
@@ -82,21 +83,22 @@ const server = Http.createServer(async (request, response) => {
     failed = true
     await Fs.writeFile(Path.join(directory, 'error.txt'), String(error))
     response.writeHead(400).end(String(error))
-    clearTimeout(idle)
-    clearTimeout(timeout)
+    Timers.clearTimeout(idle)
+    Timers.clearTimeout(timeout)
     server.close(() => {
       process.exitCode = 1
     })
   }
 })
-const idle = setTimeout(() => {
+// Native ambient overloads also change the declared return type of Node timers.
+const idle = Timers.setTimeout(() => {
   console.error('Native app sent no progress for two minutes')
-  clearTimeout(timeout)
+  Timers.clearTimeout(timeout)
   server.close()
   process.exitCode = 1
-}, 120_000)
-const timeout = setTimeout(() => {
-  clearTimeout(idle)
+}, 120_000) as unknown as NodeJS.Timeout
+const timeout = Timers.setTimeout(() => {
+  Timers.clearTimeout(idle)
   console.error('Native benchmark collector timed out')
   server.close()
   process.exitCode = 1

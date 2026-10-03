@@ -1,6 +1,7 @@
 /** Exercises compiled variable reads and subscriptions through real React rendering. @module */
 import * as Ds from '../../test/fixtures/native/Ds.js'
 import { Graph } from 'zyzz/compiler'
+import * as Path from 'node:path'
 import * as Packed from '../../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
@@ -151,6 +152,163 @@ describe('defineConfig', () => {
 })
 
 describe('useVars', () => {
+  test.each([false, true])(
+    'selects responsive native variables with adapter measurements and packed=%s',
+    async (packed) => {
+      const modules = {
+        'config.ts': `import {Vars} from 'zyzz';import {defineConfig} from 'zyzz/react-native/react';
+          const base=Vars.define({breakpoint:{md:'768px'},color:{ink:{light:'#112233',dark:'#334455'}},spacing:{gap:{default:'16px','@media md':'24px'}},typography:{body:{fontSize:{default:'16px','@media md':'20px'},lineHeight:1.5}}});
+          const compact=Vars.extend(base,{spacing:{gap:{default:'8px','@media md':'12px'}}});
+          export const {Provider,style,vars}=defineConfig({defaultVars:'base',vars:{base,compact}});`,
+      }
+      const publisher = packed ? Graph.compile({ modules, native }) : undefined
+      const compiled = Graph.compile({
+        ...(publisher ? { contracts: publisher.contracts } : {}),
+        imports: {
+          'app.ts': {
+            './config.js': 'config.ts',
+            react: null,
+            'react-dom/client': null,
+            'zyzz/react-native/react': null,
+            [Path.resolve('src/react-native/internal/Viewport.ts')]: null,
+          },
+          'config.ts': { zyzz: null, 'zyzz/react-native/react': null },
+        },
+        modules: {
+          ...(!packed ? modules : {}),
+          'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+            import {useStyles,useVars} from 'zyzz/react-native/react';import {Provider,style,vars} from './config.js';
+            import {context as WindowContext} from ${JSON.stringify(Path.resolve('src/react-native/internal/Viewport.ts'))};
+            const label=style({paddingTop:'gap',typography:'body'});
+            let selectedRenders=0;
+            const Selected=React.memo(function Selected(){const gap=useVars(vars,values=>values.spacing.gap);selectedRenders++;return React.createElement('pre',{id:'selected'},JSON.stringify({gap,renders:selectedRenders}))});
+            const Value=React.memo(function Value(props){const values=useVars(vars);const selected=useStyles().props(label());return React.createElement('pre',{id:props.id},JSON.stringify({gap:values.spacing.gap,ink:values.color.ink,lineHeight:values.typography.body.lineHeight,style:selected.style}))});
+            function App(){const [width,setWidth]=React.useState(767.5);const [scheme,setScheme]=React.useState('light');return React.createElement(WindowContext.Provider,{value:{width,height:800}},React.createElement(Provider,{colorScheme:scheme},
+              React.createElement('button',{id:'within',onClick:()=>setWidth(767.75)},'within'),
+              React.createElement('button',{id:'cross',onClick:()=>setWidth(768)},'cross'),
+              React.createElement('button',{id:'scheme',onClick:()=>setScheme('dark')},'scheme'),
+              React.createElement(Selected),React.createElement(Value,{id:'values'}),
+              React.createElement(Provider,{colorScheme:'dark',vars:'compact'},React.createElement(Value,{id:'nested'}))))}
+            createRoot(document.getElementById('app')).render(React.createElement(App));
+            createRoot(document.getElementById('independent')).render(React.createElement(WindowContext.Provider,{value:{width:768,height:800}},React.createElement(Provider,{colorScheme:'light',vars:'compact'},React.createElement(Value,{id:'other'}))));`,
+        },
+        native,
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          ...Object.fromEntries(
+            Object.entries(publisher?.modules ?? {}).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+          ...Object.fromEntries(
+            Object.entries(compiled.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+        },
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          '<div id="app"></div><div id="independent"></div>',
+        )
+        await page.addScriptTag({ content: code })
+        await expect
+          .poll(() => page.locator('#values').textContent())
+          .toBeTruthy()
+        expect(JSON.parse((await page.locator('#values').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 16,
+              "ink": "#112233",
+              "lineHeight": 24,
+              "style": {
+                "fontSize": 16,
+                "lineHeight": 24,
+                "paddingTop": 16,
+              },
+            }
+          `)
+
+        await page.locator('#within').click()
+        expect(JSON.parse((await page.locator('#selected').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 16,
+              "renders": 1,
+            }
+          `)
+        await page.locator('#cross').click()
+        await expect
+          .poll(() => page.locator('#selected').textContent())
+          .toContain('"gap":24')
+        expect(JSON.parse((await page.locator('#selected').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 24,
+              "renders": 2,
+            }
+          `)
+        await page.locator('#scheme').click()
+        await expect
+          .poll(() => page.locator('#values').textContent())
+          .toContain('#334455')
+        expect(JSON.parse((await page.locator('#values').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 24,
+              "ink": "#334455",
+              "lineHeight": 30,
+              "style": {
+                "fontSize": 20,
+                "lineHeight": 30,
+                "paddingTop": 24,
+              },
+            }
+          `)
+        expect(JSON.parse((await page.locator('#selected').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 24,
+              "renders": 2,
+            }
+          `)
+        expect(JSON.parse((await page.locator('#nested').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 12,
+              "ink": "#334455",
+              "lineHeight": 30,
+              "style": {
+                "fontSize": 20,
+                "lineHeight": 30,
+                "paddingTop": 12,
+              },
+            }
+          `)
+        expect(JSON.parse((await page.locator('#other').textContent())!))
+          .toMatchInlineSnapshot(`
+            {
+              "gap": 12,
+              "ink": "#112233",
+              "lineHeight": 30,
+              "style": {
+                "fontSize": 20,
+                "lineHeight": 30,
+                "paddingTop": 12,
+              },
+            }
+          `)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
   test.each([false, true])(
     'distinguishes unnamed definitions from a catalog named default (packed: %s)',
     async (packed) => {
@@ -471,7 +629,7 @@ describe('useVars', () => {
       expect(
         await page.locator('#condition').textContent(),
       ).toMatchInlineSnapshot(
-        '"Native variable spacing.gap: Media-conditioned variables require a web target."',
+        '"Native variable spacing.gap: Native media-conditioned variables require the native Provider window dimensions."',
       )
       expect(await page.locator('#weight').textContent()).toContain(
         'Use normal, bold, or numeric weights 100 through 900 in steps of 100.',

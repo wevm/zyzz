@@ -57,7 +57,9 @@ Native configuration modules require a native compilation target, including when
 
 ## Provider
 
-`Provider` accepts `children`, a resolved `colorScheme`, and an optional `vars` name. Nested providers and separate React roots have independent selections. Application state supplies scheme and variable overrides. React Native's `useColorScheme` owns the device subscription.
+`Provider` accepts `children`, a resolved `colorScheme`, and an optional `vars` name. Nested providers and separate React roots have independent selections. Application state supplies scheme and variable overrides. React Native's `useColorScheme` owns the appearance subscription.
+
+On native, Provider reads window width and height automatically with React Native's `useWindowDimensions`. Resizing or rotating the window updates responsive styles and variable reads. No dimension prop or separate device hook is required. Measurements use native logical units; safe-area insets remain application-owned.
 
 ### children
 
@@ -100,6 +102,25 @@ Pass a statically linked definition directly. Named imports, re-exports, packed 
 The returned paths follow the authored variable tree. Native lengths are numbers in logical units, colors are native color strings, and font families use the compiler's `fonts` mapping. Numeric typography line heights become absolute lengths by multiplying the corresponding font size. Font assets still require application registration.
 
 Web-only conditions and unsupported conversions throw when the affected field is read. Other native fields remain readable. Spreading or serializing a branch reads every field in that branch and can trigger the same error.
+
+Supported media-conditioned values select their matching branch using Provider's window dimensions. The default applies when no condition matches. Conditions retain authored order, including overlapping branches.
+
+```ts
+import { defineConfig, useVars } from 'zyzz/react-native'
+
+const { Provider, vars } = defineConfig({
+  vars: {
+    breakpoint: { md: '768px' },
+    spacing: { gutter: { default: '16px', '@media md': '24px' } },
+  },
+})
+
+function useGutter() {
+  return useVars(vars, (values) => values.spacing.gutter)
+}
+```
+
+Inside `Provider`, `useGutter()` returns 16 below width 768 and 24 at or above it. An affected variable field throws when native window measurements are unavailable.
 
 ### selector
 
@@ -150,4 +171,22 @@ const current = useStyles()
 const selected = current.style(styles.label().style)
 ```
 
-`zyzz/react-native` requires React 19. It does not import React Native or subscribe to device state. The existing `zyzz/react-native/react` entrypoint remains available for `useStyles`, `useVars`, and the standalone `Provider`. That Provider accepts a generic string name and uses each consumed configuration's default when `vars` is omitted.
+With Metro, `zyzz/react-native` requires React 19 and React Native 0.86 or later. The native package condition loads automatic window subscriptions. Portable compiler and web entrypoints keep device APIs outside their imports. The existing `zyzz/react-native/react` entrypoint remains available for `useStyles`, `useVars`, and the standalone `Provider`, which also reads native dimensions automatically.
+
+## Responsive styles
+
+Use existing breakpoint aliases or raw media queries inside `style` and `variants`. Metro compiles the alternatives ahead of time. Provider selects them when the style is consumed.
+
+```ts
+const panel = style({
+  flexDirection: 'column',
+  '@media md': { flexDirection: 'row' },
+  '@media (height < 600px)': { display: 'none' },
+})
+```
+
+Native supports width and height comparisons, two-sided ranges, inclusive `min-`/`max-` features, orientation, and boolean `and`, `or`, and `not` conditions. Use `px` or an explicitly configured `units.rem`. Named thresholds are inclusive; named ranges have exclusive upper bounds. A square window matches portrait orientation.
+
+Each style or compiled variable catalog supports at most eight distinct conditions. The compiler rejects larger definitions, unsupported media features, container queries, and DOM selectors. Manual static `StyleSheet.compile` remains separate from Provider-driven media selection.
+
+Every compiled alternative must satisfy native value constraints. For shared numeric `lineHeight`, define a base `fontSize` that remains available when queries do not match. Named variant conditions remain unsupported.

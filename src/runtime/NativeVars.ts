@@ -1,5 +1,6 @@
 /** Selects immutable native variable tables emitted by the compiler. @module */
 import type * as Literal from '../internal/Literal.js'
+import * as Media from './internal/NativeMedia.js'
 import type * as StyleSheet from '../react-native/StyleSheet.js'
 import type * as Vars from '../Vars.js'
 
@@ -39,6 +40,12 @@ type Scalar<value> = value extends number | Literal.Length ? number : string
 
 type Definition = {
   readonly defaultVars: string
+  readonly media?:
+    | {
+        readonly profiles: Readonly<Record<string, Definition['profiles']>>
+        readonly queries: readonly Media.Query[]
+      }
+    | undefined
   readonly profiles: Readonly<
     Record<string, Readonly<Record<'dark' | 'light', Tree>>>
   >
@@ -81,23 +88,39 @@ export function create(options: create.Options): object {
     return value
   }
 
+  function profiles(value: create.Options['profiles']): Definition['profiles'] {
+    return Object.freeze(
+      Object.fromEntries(
+        Object.entries(value).map(([name, schemes]) => [
+          name,
+          Object.freeze({
+            dark: freeze(schemes.dark),
+            light: freeze(schemes.light),
+          }),
+        ]),
+      ),
+    )
+  }
+
   return Object.freeze({
     [binding]: Object.freeze({
       defaultVars: options.defaultVars,
-      profiles: Object.freeze(
-        Object.fromEntries(
-          Object.entries(options.profiles).map((entry) => {
-            const [name, schemes] = entry
-            return [
-              name,
-              Object.freeze({
-                dark: freeze(schemes.dark),
-                light: freeze(schemes.light),
-              }),
-            ]
-          }),
-        ),
-      ),
+      ...(options.media
+        ? {
+            media: Object.freeze({
+              profiles: Object.freeze(
+                Object.fromEntries(
+                  Object.entries(options.media.profiles).map(([key, value]) => [
+                    key,
+                    profiles(value),
+                  ]),
+                ),
+              ),
+              queries: options.media.queries,
+            }),
+          }
+        : {}),
+      profiles: profiles(options.profiles),
       unnamed: options.unnamed,
     }),
   })
@@ -109,6 +132,13 @@ export declare namespace create {
   type Options = {
     /** Fallback when the Provider omits its selection. */
     readonly defaultVars: string
+    /** Precompiled alternatives for supported window queries. */
+    readonly media?:
+      | {
+          readonly profiles: Readonly<Record<string, Options['profiles']>>
+          readonly queries: readonly Media.Query[]
+        }
+      | undefined
     /** Native values for every configured name and scheme. */
     readonly profiles: Readonly<
       Record<string, Readonly<Record<'dark' | 'light', EncodedTree>>>
@@ -130,12 +160,16 @@ export function read(value: object, selection: read.Options): Tree {
     )
 
   const definition = (value as { readonly [binding]: Definition })[binding]
+  const profiles =
+    definition.media && selection.viewport
+      ? definition.media.profiles[
+          Media.select(definition.media.queries, selection.viewport)
+        ]!
+      : definition.profiles
   const name = selection.set ?? definition.defaultVars
   const profile =
-    (Object.hasOwn(definition.profiles, name)
-      ? definition.profiles[name]
-      : undefined) ??
-    (definition.unnamed ? definition.profiles.default : undefined)
+    (Object.hasOwn(profiles, name) ? profiles[name] : undefined) ??
+    (definition.unnamed ? profiles.default : undefined)
   if (!profile) throw new Error(`Unknown native vars: ${name}.`)
 
   return profile[selection.colorScheme]
@@ -149,5 +183,7 @@ export declare namespace read {
     readonly colorScheme: 'dark' | 'light'
     /** Selected name, or the configuration default when omitted. */
     readonly set?: string | undefined
+    /** Native window dimensions; unsupported leaves remain lazy when absent. */
+    readonly viewport?: Media.Viewport | undefined
   }
 }

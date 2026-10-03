@@ -23,7 +23,7 @@ test('compiles every callable example for iOS and Android', () => {
     'utf8',
   )
   const snippets = [...authored.matchAll(/```tsx[^\n]*\n([\s\S]*?)```/g)]
-  expect(snippets).toHaveLength(7)
+  expect(snippets).toHaveLength(8)
   for (const platform of ['ios', 'android'] as const) {
     for (const [index, match] of snippets.entries()) {
       const moduleId = 'Example' + index + '.tsx'

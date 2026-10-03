@@ -71,6 +71,8 @@ namespace styles {
 
 Run the app's existing Expo command, such as `npx expo start`, and open its iOS or Android target. The text uses the configured `ink` color for the selected scheme. Changing appearance selects compiled styles without recompilation.
 
+Provider also reads window dimensions automatically. Responsive styles and variable reads follow window changes without an additional prop or application subscription.
+
 </Steps>
 
 ## Recipes
@@ -214,10 +216,9 @@ For named themes, define a catalog with `defaultVars` and pass its name through 
 
 ```tsx title="App.tsx"
 import { Text, useColorScheme } from 'react-native'
-import { defineConfig } from 'zyzz'
-import { Provider } from 'zyzz/react-native/react'
+import { defineConfig } from 'zyzz/react-native'
 
-const { style } = defineConfig({
+const { Provider, style } = defineConfig({
   defaultVars: 'base',
   vars: {
     base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
@@ -246,6 +247,55 @@ namespace styles {
 
 Pass application state to `vars` for a theme picker. Every themed definition under that provider must recognize the chosen name. Unknown names fail selection. Nested providers and separate React roots have isolated selections.
 
+### Respond to Window Size
+
+Use breakpoint aliases and media conditions inside existing styles. Conditional variables update through the same Provider, including numeric values read with `useVars`.
+
+```tsx title="ResponsiveCard.tsx"
+import { Text, View } from 'react-native'
+import { defineConfig, useVars } from 'zyzz/react-native'
+
+const { Provider, style, vars } = defineConfig({
+  vars: {
+    breakpoint: { md: '768px' },
+    spacing: { gutter: { default: '16px', '@media md': '24px' } },
+  },
+})
+
+export default function Example() {
+  return (
+    <Provider colorScheme="light">
+      <Card />
+    </Provider>
+  )
+}
+
+function Card() {
+  const gutter = useVars(vars, (values) => values.spacing.gutter)
+  return (
+    <View {...styles.card()}>
+      <Text>First item</Text>
+      <Text>Padding: {gutter}</Text>
+    </View>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    flexDirection: 'column',
+    gap: 'gutter',
+    padding: 'gutter',
+    '@media md': { flexDirection: 'row' },
+  })
+}
+```
+
+Below width 768, the card uses a column and padding 16. At width 768 or above, the card uses a row and padding 24. Provider reads native window dimensions automatically. Safe-area insets and application geometry calculations remain in your components and hooks.
+
+Native media supports width, height, orientation, and boolean conditions with `px` or a configured `units.rem`. Comparison operators retain CSS endpoints. Each style or compiled variable catalog supports up to eight distinct conditions; larger definitions and unsupported features fail compilation.
+
+Every compiled alternative must satisfy native value constraints. Shared numeric `lineHeight` needs a base `fontSize` even when queries do not match. Named variant conditions and manual static `StyleSheet.compile` media selection remain unsupported.
+
 ### Resolve Styles Explicitly
 
 Metro resolves bindings in JSX style expressions and prop spreads inside function components. For `React.createElement` or consumers that inspect style values before rendering, resolve the binding with `useStyles` inside a function component.
@@ -254,7 +304,7 @@ Metro resolves bindings in JSX style expressions and prop spreads inside functio
 import { createElement } from 'react'
 import { Text } from 'react-native'
 import { style } from 'zyzz'
-import { useStyles } from 'zyzz/react-native/react'
+import { useStyles } from 'zyzz/react-native'
 
 export function Label() {
   const current = useStyles()
@@ -301,7 +351,7 @@ Shared declarations keep CSS value semantics. `px` defaults to one native logica
 
 With Metro, use an installed native family name in `targets.native.fontFamily`. For manual `StyleSheet.compile`, supply `fonts` mappings when using shared CSS font families.
 
-Native compilation rejects unsupported selectors, queries, web globals, CSS layers, and unresolved CSS expressions. Use explicit `flexGrow`, `flexShrink`, and `flexBasis` rather than the shared CSS `flex` shorthand. Compilation diagnostics identify the unsupported declaration.
+Native compilation rejects DOM selectors, container queries, unsupported media features, web globals, CSS layers, and unresolved CSS expressions. Use explicit `flexGrow`, `flexShrink`, and `flexBasis` rather than the shared CSS `flex` shorthand. Compilation diagnostics identify the unsupported declaration.
 
 The [StyleSheet reference](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describes conversions and target branches. Static tables, variants, scalar bindings, and host updates have automated coverage. Independent iOS and Android rendering acceptance remains pending, so this guide does not establish full platform parity.
 

@@ -1,5 +1,6 @@
 /** Defers precompiled native selection until a React render supplies its context. @module */
 import type * as Native from './Native.js'
+import * as Media from './internal/NativeMedia.js'
 
 const binding = Symbol('zyzz.native.context')
 
@@ -9,6 +10,8 @@ export type Context = {
   readonly colorScheme: 'dark' | 'light'
   /** Named compiled set; omission uses each configuration default. */
   readonly set?: string | undefined
+  /** Logical window dimensions supplied by the native adapter. */
+  readonly viewport?: Media.Viewport | undefined
 }
 
 type Callable = (input: never) => Native.Props<object>
@@ -32,22 +35,7 @@ export function create<const tables extends Tables>(
     if (!table) throw new Error(`Unknown native set: ${set}.`)
     return table[context.colorScheme](input!).style
   }
-  function props(input?: never) {
-    return {
-      style: {
-        [binding]: (context: Context) => select(context, input),
-      },
-    }
-  }
-  const defaults = props()
-  Object.freeze(defaults.style)
-  Object.freeze(defaults)
-  const callable = (input?: never) =>
-    input === undefined ? defaults : props(input)
-  Object.defineProperty(callable, binding, {
-    value: select,
-  })
-  return callable as tables[keyof tables]['light']
+  return bind(select) as tables[keyof tables]['light']
 }
 
 /** Resolves generated bindings and arrays while preserving caller-owned native objects. */
@@ -71,4 +59,37 @@ export function resolve(
   if (typeof value === 'function')
     return (...args: unknown[]) => resolve(value(...args), context)
   return value
+}
+
+/** Selects a precompiled media alternative before applying its scoped styling. */
+export function responsive<
+  const profiles extends Readonly<Record<string, Callable>>,
+>(
+  queries: readonly Media.Query[],
+  profiles: profiles,
+): profiles[keyof profiles] {
+  return bind((context, input) => {
+    const profile = profiles[Media.select(queries, context.viewport)]
+    if (!profile) throw new Error('Native media alternative is missing.')
+    return resolve(profile, context, input)
+  }) as unknown as profiles[keyof profiles]
+}
+
+function bind(select: (context: Context, input?: never) => unknown) {
+  function props(input?: never) {
+    return {
+      style: {
+        [binding]: (context: Context) => select(context, input),
+      },
+    }
+  }
+  const defaults = props()
+  Object.freeze(defaults.style)
+  Object.freeze(defaults)
+  const callable = (input?: never) =>
+    input === undefined ? defaults : props(input)
+  Object.defineProperty(callable, binding, {
+    value: select,
+  })
+  return callable
 }

@@ -1,6 +1,6 @@
 # zyzz/react-native
 
-Create typed native authoring with React subscriptions and compile shared definitions into native style objects. This entrypoint requires React 19. Device state stays in the application.
+Create typed native authoring with React subscriptions and compile shared definitions into native style objects. This entrypoint requires React 19. The native Provider subscribes to window dimensions for responsive styles. Applications select the color scheme and variable set.
 
 > [!NOTE]
 > Static tables, variants, dynamic scalar bindings, graph/CLI integration, and explicit host lifecycle are supported within their documented limits. iOS/Android rendering acceptance remains pending.

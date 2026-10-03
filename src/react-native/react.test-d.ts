@@ -65,6 +65,24 @@ describe('Provider', () => {
 })
 
 describe('useVars', () => {
+  test('infers responsive scalar values and retains Provider props', () => {
+    const { Provider, style, vars } = defineConfig({
+      vars: {
+        breakpoint: { md: '768px' },
+        spacing: { gutter: { default: '16px', '@media md': '24px' } },
+      },
+    })
+    expectTypeOf(useVars(vars).spacing.gutter).toEqualTypeOf<number>()
+    expectTypeOf(useVars(vars, (values) => values.spacing)).toEqualTypeOf<{
+      readonly gutter: number
+    }>()
+    style({ flexDirection: 'column', '@media md': { flexDirection: 'row' } })
+    // @ts-expect-error Provider reads native window dimensions automatically.
+    Provider({ colorScheme: 'light', viewport: { height: 800, width: 768 } })
+    // @ts-expect-error Breakpoints are compiler metadata.
+    expectTypeOf(useVars(vars).breakpoint)
+  })
+
   test('infers unitless string typography line heights as native numbers', () => {
     const { vars } = Config.create({
       vars: {

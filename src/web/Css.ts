@@ -56,7 +56,13 @@ export function compile<
     return result
   }
 
+  const bodies = new Map<Style.NamedStyle, string>()
+  const declarations = new Map<Style.Declaration, string>()
+  const propertyNames = new Map<string, string>()
+  const serialized = new Map<object, string>()
+
   // Only primitive declaration lists can be interned without erasing token identity.
+  // Reuse their emitted bodies throughout analysis and output.
   const repeated = new Map<string, Style.NamedStyle>()
 
   const canonicalStyles = options.styles.styles.map((style) => {
@@ -68,13 +74,7 @@ export function compile<
     )
       return style
 
-    const key = JSON.stringify(
-      style.declarations.map(({ important, property, value }) => [
-        property,
-        value,
-        important,
-      ]),
-    )
+    const key = nested(style)
     const previous = repeated.get(key)
     if (previous) return previous
 
@@ -269,8 +269,6 @@ export function compile<
     if (Object.hasOwn(Cascade.shorthands, property))
       join(property, domain(property))
 
-  const serialized = new Map<object, string>()
-
   function serialize(input: Style.Declaration['value']): number | string {
     if (typeof input !== 'object' || input === null) return input
 
@@ -298,9 +296,6 @@ export function compile<
     return input as number | string
   }
 
-  const declarations = new Map<Style.Declaration, string>()
-  const propertyNames = new Map<string, string>()
-
   function declarationBody(declaration: Style.Declaration): string {
     const previous = declarations.get(declaration)
     if (previous !== undefined) return previous
@@ -311,8 +306,6 @@ export function compile<
     declarations.set(declaration, body)
     return body
   }
-
-  const bodies = new Map<Style.NamedStyle, string>()
 
   function nested(style: Style.NamedStyle): string {
     const previous = bodies.get(style)
@@ -401,11 +394,8 @@ export function compile<
   }
 
   function validate(style: Style.NamedStyle) {
-    if (
-      outputMode(style) !== undefined &&
-      outputMode(style) !== 'atomic' &&
-      outputMode(style) !== 'grouped'
-    )
+    const mode = outputMode(style)
+    if (mode !== undefined && mode !== 'atomic' && mode !== 'grouped')
       throw new CompileError([
         {
           code: 'invalid_output',
@@ -465,7 +455,7 @@ export function compile<
       explicit === undefined &&
       options.composition === 'independent' &&
       !options.development
-        ? `${mode}:${JSON.stringify(representation(style))}:${nested(canonicalStyles[styleIndex]!)}`
+        ? `${mode}:${style.rules ? JSON.stringify(representation(style)) : ''}:${nested(canonicalStyles[styleIndex]!)}`
         : undefined
     if (application !== undefined && applications.has(application)) {
       classes[style.name] = applications.get(application)!

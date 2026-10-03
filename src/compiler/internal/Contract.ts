@@ -503,7 +503,7 @@ export function read(
       ((data.version as number) < 4 || entry.catalogOnly === true)
     const fullConfigType = options
       ? entry.nativeProvider === true
-        ? `import('zyzz/react-native').defineConfig.ReturnType<${Configurations.type(entry.variableConfig === true ? variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined) : options)}>`
+        ? `import('zyzz/react-native/react').defineConfig.ReturnType<${Configurations.type(entry.variableConfig === true ? variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined) : options)}>`
         : entry.variableConfig === true
           ? `import('zyzz').Config.VariableConfig<${Configurations.type(variableOptions(options, entry.variableMappings as Vars.Mappings | false | undefined))}>`
           : `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`

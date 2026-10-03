@@ -607,12 +607,21 @@ type Merged<style> = {
 type StyleArray<style extends object> = Array<
   style | Falsy | readonly (style | Falsy)[] | StyleArray<style>
 >
-type Length = 0 | '0' | `${number}px` | `${number}rem` | `calc(${string})`
+type Length =
+  | 0
+  | '0'
+  | `${number}px`
+  | `${number}rem`
+  | `${'c' | 'C'}${'a' | 'A'}${'l' | 'L'}${'c' | 'C'}(${string})`
 type Box =
   | Length
   | `${Length} ${Length}`
   | `${Length} ${Length} ${Length}`
-  | `${Length} ${Length} ${Length} ${Length}`
+  | Box4
+// Distribute the first item to keep case-insensitive calculations below the template expansion limit.
+type Box4<first extends string | number = Length> = first extends unknown
+  ? `${first} ${Length} ${Length} ${Length}`
+  : never
 type Weight =
   | 'bold'
   | 'normal'

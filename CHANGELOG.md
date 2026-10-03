@@ -1,5 +1,68 @@
 # zyzz
 
+## 0.0.22
+
+### Patch Changes
+
+- f57d4c3: Compact anonymous theme identifiers and isolate independent in-memory catalogs with matching token paths. Source-owned and explicitly identified themes retain their existing identifiers.
+- 49bcaa3: Added native length calculations using configured variables and scalar callback inputs.
+  
+  ```ts
+  import { style } from 'zyzz'
+  
+  const artwork = style((input: { aspectRatio: number }) => ({
+    height: `calc(440px / ${input.aspectRatio})`,
+    width: 'calc(180px * 2 + 80px)',
+  }))
+  
+  artwork({ aspectRatio: 2 })
+  ```
+- 2103f17: Added automatic window subscriptions and responsive native styles and variable reads.
+  
+  ```ts
+  import { defineConfig } from 'zyzz/react-native'
+  
+  const { Provider, style } = defineConfig({
+    vars: { breakpoint: { md: '768px' } },
+  })
+  
+  const panel = style({
+    flexDirection: 'column',
+    '@media md': { flexDirection: 'row' },
+  })
+  ```
+- 2f86e22: Added native `defineConfig` with a typed `Provider` and `useVars(vars, selector?)`, and renamed `Provider.set` to `Provider.vars`.
+  
+  ```diff
+  -import { defineConfig } from 'zyzz'
+  -import { Provider } from 'zyzz/react-native/react'
+  +import { defineConfig } from 'zyzz/react-native/react'
+  
+  -const { style, variants, vars } = defineConfig(options)
+  +const { Provider, style, variants, vars } = defineConfig(options)
+  
+  -<Provider colorScheme="dark" set="blue">
+  +<Provider colorScheme="dark" vars="blue">
+     <App />
+   </Provider>
+  ```
+- 9337bbd: Removed the combination limit from compiled native variants while preserving defaults, compound precedence, and typed inputs.
+- 306123a: Added the `pageMarginSafety` page descriptor with validation for source and packed stylesheets.
+- 79f5bb3: Removed compatibility aliases and legacy packed variable naming schemes, requiring older compiled libraries and standalone stylesheets to be rebuilt.
+- aae8daa: Added selective native view updates for compiled styles, scoped Providers, and provider-free defaults in custom native builds.
+- f57d4c3: Fixed shared native package compilation, composed token resolution, and font mapping delivery through Babel and Metro.
+  
+  ```ts
+  import { zyzz } from 'zyzz/metro'
+  
+  export default zyzz(existingMetroConfig, {
+    fonts: { 'Pilat, Arial, sans-serif': 'Pilat' },
+    units: { px: 1, rem: 16 },
+  })
+  ```
+- 8860e26: Listed the accepted token values in type errors for values outside a configured token domain, and limited completions on those properties to token names.
+- c77f82f: Deduplicated theme variables and dependency styles in Vite development and production stylesheets.
+
 ## 0.0.21
 
 ### Patch Changes

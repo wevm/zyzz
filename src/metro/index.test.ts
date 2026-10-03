@@ -99,7 +99,7 @@ describe('zyzz', () => {
       const configuration = (px: number) =>
         `import * as Path from 'node:path';import { getDefaultConfig } from 'expo/metro-config.js';import { zyzz } from 'zyzz/metro';
         const config=getDefaultConfig(import.meta.dirname);config.watchFolders.push(Path.resolve(import.meta.dirname,'../packages'));config.resolver.nodeModulesPaths.push(Path.resolve(import.meta.dirname,'node_modules'),Path.resolve(import.meta.dirname,'../packages/node_modules'));
-        config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='@shared-theme'?'@fixture/shared/theme':name,platform);
+        config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='@shared-theme'?(context.customResolverOptions.alternate?'@fixture/shared/alternate':'@fixture/shared/theme'):name,platform);
         export default zyzz(config, { fonts: {'Pilat, Arial, sans-serif':'Pilat'}, units: { px: ${px}, rem:16 } });`
       await Fs.writeFile(Path.join(root, 'metro.config.ts'), configuration(1))
       await Fs.writeFile(
@@ -114,7 +114,11 @@ describe('zyzz', () => {
         Path.join(library, 'package.json'),
         JSON.stringify({
           name: '@fixture/shared',
-          exports: { './nested': './Style.ts', './theme': './index.ts' },
+          exports: {
+            './alternate': './Alternate.ts',
+            './nested': './Style.ts',
+            './theme': './index.ts',
+          },
           peerDependencies: { zyzz: '*' },
         }),
       )
@@ -131,9 +135,10 @@ describe('zyzz', () => {
         `import {style} from 'zyzz';export const platformStyle=style({opacity:0.789});`,
       )
       await Fs.writeFile(Path.join(library, 'Theme.ts'), theme('#112233'))
+      await Fs.writeFile(Path.join(library, 'Alternate.ts'), theme('#fedcba'))
       await Fs.writeFile(
         Path.join(library, 'Style.ts'),
-        `import {style} from './Theme.js';export const nested=style({width:'19px'});`,
+        `import {style} from '@fixture/shared/theme';export const nested=style({width:'19px'});`,
       )
       await Fs.writeFile(
         Path.join(library, 'index.ts'),
@@ -167,7 +172,8 @@ describe('zyzz', () => {
       await Fs.mkdir(Path.join(publisher, 'dist'), { recursive: true })
       const published = Graph.compile({
         modules: {
-          'index.ts': `import {style} from 'zyzz';export const card=style({width:'77px'});`,
+          'base.ts': `import {Config} from 'zyzz';export const {style}=Config.create({vars:{spacing:{cell:'77px'}}});`,
+          'index.ts': `import {style} from './base.js';export const card=style({width:'cell'});`,
         },
       })
       const javascript = await Esbuild.transform(
@@ -179,6 +185,16 @@ describe('zyzz', () => {
         Path.join(publisher, 'dist/index.js.zyzz.json'),
         published.contracts['index.ts']!,
       )
+      const base = await Esbuild.transform(published.modules['base.ts']!.code, {
+        loader: 'ts',
+        format: 'esm',
+      })
+      await Fs.writeFile(Path.join(publisher, 'dist/base.js'), base.code)
+      await Fs.writeFile(
+        Path.join(publisher, 'dist/base.js.zyzz.json'),
+        published.contracts['base.ts']!,
+      )
+
       await Fs.writeFile(
         Path.join(publisher, 'package.json'),
         JSON.stringify({
@@ -279,6 +295,18 @@ describe('zyzz', () => {
           await new Promise((resolve) => setTimeout(resolve, 100))
         }
       }
+      const alternateResponse = await fetch(
+        `http://localhost:${port}/index.bundle?platform=ios&dev=true&minify=false&resolver.alternate=true`,
+      )
+      const alternateBundle = await alternateResponse.text()
+      if (!alternateResponse.ok) throw new Error(alternateBundle)
+      expect(execute(alternateBundle)[0]).toMatchInlineSnapshot(`
+        {
+          "color": "#fedcba",
+          "width": 123,
+        }
+      `)
+
       const [ios, android] = await Promise.all([
         bundle('ios'),
         bundle('android'),

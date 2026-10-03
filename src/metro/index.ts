@@ -6,6 +6,15 @@ import * as Module from 'node:module'
 import * as Path from 'node:path'
 import * as Watch from './Watch.js'
 
+type Context = {
+  readonly resolveRequest: Resolve
+}
+type Resolve = (
+  context: Context,
+  name: string,
+  platform: string | null,
+) => unknown
+
 /** Minimum Metro configuration consumed by the adapter. */
 export type Config = {
   /** Application root used for the adapter cache. */
@@ -70,14 +79,6 @@ export function zyzz<const config extends Config>(
       | ((middleware: Middleware, server: Watch.Server) => Middleware)
       | undefined)
   type Middleware = (...args: unknown[]) => unknown
-  type Context = {
-    readonly resolveRequest: Resolve
-  }
-  type Resolve = (
-    context: Context,
-    name: string,
-    platform: string | null,
-  ) => unknown
   const resolve =
     config.resolver &&
     (Reflect.get(config.resolver, 'resolveRequest') as Resolve | undefined)
@@ -139,7 +140,14 @@ export function zyzz<const config extends Config>(
 /** Configuration returned by the Metro adapter. */
 export declare namespace zyzz {
   /** Preserves caller configuration fields and the existing transformer options. */
-  type ReturnType<config extends Config> = Omit<config, 'transformer'> & {
+  type ReturnType<config extends Config> = Omit<
+    config,
+    'resolver' | 'transformer'
+  > & {
+    /** Existing resolver options with the chained native source resolver. */
+    resolver: Omit<NonNullable<config['resolver']>, 'resolveRequest'> & {
+      resolveRequest: Resolve
+    }
     /** Existing transformer configuration with the native compilation entrypoint. */
     transformer: Omit<
       NonNullable<config['transformer']>,

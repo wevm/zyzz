@@ -145,3 +145,15 @@ export declare namespace compile {
     readonly vars: Readonly<Record<string, Theme.Definition>>
   }
 }
+
+/** Graph-owned profile exports and imports, excluded from public adapter options. */
+export const shared = Symbol('zyzz.compiler.native.vars')
+
+/** Static profile artifacts belonging to one source module. */
+export type Shared = {
+  readonly definitions: ReadonlyMap<string, string>
+  readonly reads: ReadonlyMap<
+    number,
+    { readonly name: string; readonly source?: string | undefined }
+  >
+}

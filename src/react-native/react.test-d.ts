@@ -83,6 +83,23 @@ describe('useVars', () => {
     expectTypeOf(useVars(vars).breakpoint)
   })
 
+  test('infers unitless string typography line heights as native numbers', () => {
+    const { vars } = Config.create({
+      vars: {
+        typography: {
+          body: { fontSize: '16px', lineHeight: '1.25' },
+        },
+      },
+    })
+
+    expectTypeOf(
+      useVars(vars).typography.body.lineHeight,
+    ).toEqualTypeOf<number>()
+    expectTypeOf(
+      useVars(vars, (values) => values.typography.body.lineHeight),
+    ).toEqualTypeOf<number>()
+  })
+
   test('infers readonly native scalar domains and selected results', () => {
     const { vars } = Config.create({
       vars: {

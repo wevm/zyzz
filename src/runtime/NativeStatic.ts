@@ -2,10 +2,15 @@
 import * as Native from './Native.js'
 import type * as StyleSheet from '../react-native/StyleSheet.js'
 
-/** Binds finite selection data without including dynamic value converters. */
-export function create(
-  options: create.Options,
-): Native.Callable<Readonly<Record<string, readonly string[]>>> {
+/**
+ * Binds finite selection data without including dynamic value converters.
+ * @param options - Compiler-owned axes, defaults, ordered rules, and native fragments.
+ * @returns A callable preserving finite choices and caller-owned native overrides.
+ * @throws {Native.SelectionError} For invalid selections, missing fragments, or invalid line heights.
+ */
+export function create<
+  const axes extends Readonly<Record<string, readonly string[]>>,
+>(options: create.Options<axes>): Native.Callable<axes> {
   const axes = Object.entries(options.axes)
   const rules = options.rules.map((rule) => ({
     matches: rule.matches.map(([name, choices]) => {
@@ -34,8 +39,9 @@ export function create(
         throw new Native.SelectionError(`Unknown native recipe input: ${key}.`)
     const selected: number[] = []
     let key = ''
+    const values: Readonly<Record<string, unknown>> = input
     for (const [axis, choices] of axes) {
-      const supplied = Object.hasOwn(input, axis) ? input[axis] : undefined
+      const supplied = Object.hasOwn(values, axis) ? values[axis] : undefined
       const value =
         supplied === undefined
           ? Object.hasOwn(options.defaults, axis)
@@ -116,10 +122,16 @@ export function create(
 /** Compiler-owned finite metadata and converted native fragments. */
 export declare namespace create {
   /** Numeric steps are line-height multipliers resolved against the final font size. */
-  type Options = Native.create.Options & {
+  type Options<
+    axes extends Readonly<Record<string, readonly string[]>> = Readonly<
+      Record<string, readonly string[]>
+    >,
+  > = Native.create.Options<axes> & {
     /** Ordered rules containing static fragment names and line-height multipliers. */
     readonly rules: readonly {
+      /** Axis names and allowed choices, all of which must match. */
       readonly matches: readonly (readonly [string, readonly string[]])[]
+      /** Fragment names or line-height multipliers applied in order. */
       readonly steps: readonly (string | number)[]
     }[]
   }

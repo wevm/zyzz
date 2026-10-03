@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added automatic window subscriptions and responsive native styles and variable reads.

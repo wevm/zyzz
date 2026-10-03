@@ -1,5 +1,5 @@
 ---
-'zyzz': major
+'zyzz': patch
 ---
 
 Added native `defineConfig` with a typed `Provider` and `useVars(vars, selector?)`, and renamed `Provider.set` to `Provider.vars`.

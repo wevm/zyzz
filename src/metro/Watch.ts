@@ -104,13 +104,13 @@ export async function attach(server: Server, root: string) {
       options.platform,
       root,
       snapshot,
-      (filename, specifier) => {
+      (filename, specifier, isESMImport) => {
         const resolved = graph.resolveDependency(
           filename,
           {
             data: {
               asyncType: null,
-              isESMImport: true,
+              isESMImport,
               key: specifier,
               locs: [],
             },

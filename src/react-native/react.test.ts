@@ -505,6 +505,83 @@ describe('useVars', () => {
     }
   })
 
+  test('shares an imported catalog across consumer modules', async () => {
+    const modules = {
+      'config.ts': `import {Config} from 'zyzz';export const {vars}=Config.create({vars:{spacing:{gap:'4px'}}});`,
+      'left.ts': `import {useVars} from 'zyzz/react-native/react';import {vars} from './config.js';export function useLeft(){return useVars(vars).spacing}`,
+      'nested/right.ts': `import {useVars} from 'zyzz/react-native/react';import {vars} from '../config.js';export function useRight(){return useVars(vars).spacing}`,
+      'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';import {Provider} from 'zyzz/react-native/react';import {useLeft} from './left.js';import {useRight} from './nested/right.js';function App(){const left=useLeft();const right=useRight();return React.createElement('pre',null,JSON.stringify({gap:left.gap,shared:left===right}))}createRoot(document.getElementById('app')).render(React.createElement(Provider,{colorScheme:'light'},React.createElement(App)));`,
+    }
+    const compiled = Graph.compile({ modules, native })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: Object.fromEntries(
+        Object.entries(compiled.modules).map(([id, output]) => [
+          id,
+          output.code,
+        ]),
+      ),
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div>')
+      await page.addScriptTag({ content: code })
+      await expect
+        .poll(() => page.locator('pre').textContent())
+        .toBe('{"gap":4,"shared":true}')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('commits matching application props and variable selections', async () => {
+    const compiled = Graph.compile({
+      native,
+      modules: {
+        'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+        import {Config} from 'zyzz';import {Provider,useStyles,useVars} from 'zyzz/react-native/react';
+        const {vars,style}=Config.create({defaultVars:'base',vars:{base:{spacing:{gap:'4px'}},alternate:{spacing:{gap:'8px'}}}});
+        const card=style({paddingTop:'gap'});const commits=[];
+        function Child(props){const gap=useVars(vars).spacing.gap;const padding=useStyles().props(card()).style.paddingTop;
+          React.useLayoutEffect(()=>{commits.push([props.gap,gap,padding])});
+          return React.createElement('pre',{id:'values'},JSON.stringify([props.gap,gap,padding]))}
+        function App(){const [name,setName]=React.useState('base');return React.createElement(React.Fragment,null,
+          React.createElement('button',{onClick:()=>React.startTransition(()=>setName(name==='base'?'alternate':'base'))},'change'),
+          React.createElement(Provider,{colorScheme:'light',vars:name},React.createElement(Child,{gap:name==='base'?4:8})))}
+        createRoot(document.getElementById('app')).render(React.createElement(React.StrictMode,null,React.createElement(App)));export {commits};`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': compiled.modules['app.ts']!.code },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div>')
+      await page.addScriptTag({ content: code })
+      await expect
+        .poll(() => page.locator('#values').textContent())
+        .toBe('[4,4,4]')
+      await page.locator('button').click()
+      await expect
+        .poll(() => page.locator('#values').textContent())
+        .toBe('[8,8,8]')
+      await page.locator('button').click()
+      await expect
+        .poll(() => page.locator('#values').textContent())
+        .toBe('[4,4,4]')
+      expect(
+        await page.evaluate(
+          'Fixture.commits.every(([expected,vars,style])=>expected===vars&&expected===style)',
+        ),
+      ).toBe(true)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('filters selected updates and isolates nested and independent providers in Strict Mode', async () => {
     const compiled = Graph.compile({
       native,

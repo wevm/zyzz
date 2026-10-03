@@ -110,6 +110,8 @@ export type VarsRead = {
   readonly defaultVars: string
   /** Exclusive source offset. */
   readonly end: number
+  /** Stable configuration identity for graph-owned native profiles. */
+  readonly owner: string
   /** Inclusive source offset. */
   readonly start: number
   /** Complete compatible variable alternatives. */
@@ -1806,6 +1808,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     varsReads.push({
       defaultVars: named ? String(link.call.options!.defaultTheme) : 'default',
       end: node.end,
+      owner: link.call.name,
       start: node.start,
       vars,
     })

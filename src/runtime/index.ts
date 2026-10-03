@@ -29,6 +29,9 @@ export * as NativeContext from './NativeContext.js'
 /** Ordered native scalar bindings for generated dynamic callables. */
 export * as NativeDynamic from './NativeDynamic.js'
 
+/** Finite native selection without dynamic value conversion. */
+export * as NativeStatic from './NativeStatic.js'
+
 /** Readonly native variable selection for compiled hooks. */
 export * as NativeVars from './NativeVars.js'
 

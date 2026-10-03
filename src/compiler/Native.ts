@@ -52,9 +52,13 @@ export function compile(options: compile.Options): compile.ReturnType {
     })
   let helper = '__zyzzNative'
   while (
-    [helper, `${helper}Context`, `${helper}Dynamic`, `${helper}Vars`].some(
-      (name) => names.has(name),
-    )
+    [
+      helper,
+      `${helper}Context`,
+      `${helper}Dynamic`,
+      `${helper}Static`,
+      `${helper}Vars`,
+    ].some((name) => names.has(name))
   )
     helper += '_'
   let dynamicHelper = `${helper}Dynamic`
@@ -72,6 +76,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
   const recipes: Record<string, Variants.Definition> = Object.create(null)
   let dynamic = false
+  let finite = false
   const contexts = new Map<string, string>()
   const compiledCalls = new WeakMap<
     Variants.Definition,
@@ -431,21 +436,24 @@ export function compile(options: compile.Options): compile.ReturnType {
       .join(';')
 
     if (program) {
-      dynamic = true
+      const scalar = !!(call?.slots || call?.recipe?.payloads?.length)
+      dynamic ||= scalar
+      finite ||= !scalar
       const compiled = (() => {
         try {
-          return NativeBindings.compile(
+          const compiled = NativeBindings.compile(
             recipe,
             call ?? {},
             contextOptions,
             bindings,
           )
+          return scalar ? compiled : NativeBindings.finite(compiled)
         } catch (error) {
           if (error instanceof StyleSheet.CompileError) throw error
           throw new CompileError((error as Error).message)
         }
       })()
-      const value = create(dynamicHelper, compiled)
+      const value = create(scalar ? dynamicHelper : `${helper}Static`, compiled)
       if (!typed) return value
       if (!call?.slots && !call?.recipe?.payloads?.length)
         return `(${value} as import('zyzz/runtime').Native.Callable<{${axes}}>)`
@@ -836,7 +844,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       offset = node.end
     }
 
-    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `${shared?.definitions.has(value) ? 'export ' : ''}const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...imports, ...compositions, ...packed].join('\n')}\n`
+    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${finite ? `,NativeStatic as ${helper}Static` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `${shared?.definitions.has(value) ? 'export ' : ''}const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...imports, ...compositions, ...packed].join('\n')}\n`
     module.appendLeft(offset, prelude)
     edits.push({ start: offset, end: offset, code: prelude, expression: false })
   }

@@ -7,6 +7,7 @@ import * as StyleSheet from '../../react-native/StyleSheet.js'
 import * as Scalar from '../../react-native/internal/Scalar.js'
 import * as Tokens from '../../react-native/internal/Tokens.js'
 import type * as Runtime from '../../runtime/NativeDynamic.js'
+import type * as Static from '../../runtime/NativeStatic.js'
 import type * as Native from '../Native.js'
 import type * as Source from '../Source.js'
 
@@ -25,6 +26,39 @@ type PreparedStep =
 type PreparedRule = {
   readonly matches: Runtime.Program['rules'][number]['matches']
   readonly steps: readonly PreparedStep[]
+}
+
+/** Removes dynamic instructions and resolves absolute line heights before publication. */
+export function finite(options: Runtime.create.Options): Static.create.Options {
+  const styles = { ...options.styles }
+  return {
+    axes: options.axes,
+    defaults: options.defaults,
+    rules: options.program.rules.map((rule) => ({
+      matches: rule.matches,
+      steps: rule.steps.map((step) => {
+        if ('style' in step) return step.style
+        if (
+          step.property !== 'lineHeight' ||
+          !step.parts.length ||
+          step.parts.some((part) => typeof part === 'object')
+        )
+          throw new Error(
+            'Static native recipes cannot contain runtime bindings.',
+          )
+        const value = (
+          step.parts.length === 1 ? step.parts[0]! : step.parts.join('')
+        ) as string | number
+        if (typeof value === 'number') return value
+        const name = String(Object.keys(styles).length)
+        styles[name] = {
+          lineHeight: Scalar.length(value, options, false, ['lineHeight']),
+        }
+        return name
+      }),
+    })),
+    styles,
+  }
 }
 
 /** Compiles static fragments and retains scalar assignments in authored order. */

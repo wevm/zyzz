@@ -114,6 +114,8 @@ export type VarsRead = {
   readonly owner: string
   /** Inclusive source offset. */
   readonly start: number
+  /** A standalone definition that does not select a named catalog entry. */
+  readonly unnamed: boolean
   /** Complete compatible variable alternatives. */
   readonly vars: Readonly<Record<string, Theme.Definition>>
 }
@@ -1810,6 +1812,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       end: node.end,
       owner: link.call.name,
       start: node.start,
+      unnamed: !named,
       vars,
     })
     return true

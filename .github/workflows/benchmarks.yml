@@ -202,7 +202,7 @@ jobs:
           for kind in source packed; do
             jq -rs '
               .[0] as $base | .[1] as $head |
-              "| " + $head.kind + " | " + ($base.gzip | tostring) + " | " + ($head.gzip | tostring) + " | " + (($head.gzip - $base.gzip) | tostring) + " |"
+              "| " + $head.kind + " | " + ($base.javascript.gzip | tostring) + " | " + ($head.javascript.gzip | tostring) + " | " + (($head.javascript.gzip - $base.javascript.gzip) | tostring) + " |"
             ' "$RUNNER_TEMP/benchmark-baseline/native-programs/$kind.json" "bench/results/native-programs/$kind.json" >> bench/results/report.md
           done
           printf '\n| Workflow | Measurement | Baseline ms | Candidate ms |\n| --- | --- | ---: | ---: |\n' >> bench/results/report.md

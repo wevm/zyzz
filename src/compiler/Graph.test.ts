@@ -28,6 +28,35 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('versions packed native provider metadata', () => {
+    const native = {
+      colorScheme: 'light',
+      contextual: true,
+      platform: 'ios',
+    } as const
+    const publisher = Graph.compile({
+      modules: {
+        'config.ts': `import {defineConfig} from 'zyzz/react-native/react';export const config=defineConfig({vars:{color:{ink:'#123456'}}});`,
+      },
+      native,
+    })
+    const contract = JSON.parse(publisher.contracts['config.ts']!)
+
+    expect(contract.version).toMatchInlineSnapshot(`32`)
+    contract.version = 31
+    expect(() =>
+      Graph.compile({
+        contracts: { 'config.ts': JSON.stringify(contract) },
+        modules: {
+          'app.ts': `import {config} from './config.js';export const vars=config.vars;`,
+        },
+        native,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:0: Invalid library contract: Native providers require contract version 32 or later.]`,
+    )
+  })
+
   test('emits readable utilities and authored identities independent of module paths', async () => {
     const source = `import {style} from 'zyzz';export const heading=style({display:'inline-grid',opacity:0,filter:'blur(4px)'})();`
     const first = Transform.compile({ moduleId: 'one.ts', source })

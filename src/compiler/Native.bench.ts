@@ -159,8 +159,10 @@ for (const kind of ['source', 'packed'] as const) {
     `bench/results/native-programs/${kind}.json`,
     JSON.stringify(
       {
-        gzip: Zlib.gzipSync(javascript).byteLength,
-        javascript: Buffer.byteLength(javascript),
+        javascript: {
+          gzip: Zlib.gzipSync(javascript).byteLength,
+          raw: Buffer.byteLength(javascript),
+        },
         kind,
         selections: 256,
       },

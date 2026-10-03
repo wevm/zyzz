@@ -53,6 +53,106 @@ async function execute(code: string) {
 }
 
 describe('compile', () => {
+  test('selects absolute line heights and final-size multipliers', async () => {
+    const output = Graph.compile({
+      modules: {
+        'library.ts': `import {variants} from 'zyzz';
+        export const card=variants({base:{fontSize:'10px',lineHeight:1.5},variants:{size:{small:{fontSize:'12px'},large:{fontSize:'20px'}},active:{true:{lineHeight:'CaLc(4px + 1rem)'},false:{}}},defaultVariants:{size:'small',active:false}});`,
+      },
+      native: { colorScheme: 'light', platform: 'ios', units: { rem: 16 } },
+    })
+    const module = await execute(output.modules['library.ts']!.code)
+    expect(module.card()).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 12,
+          "lineHeight": 18,
+        },
+      }
+    `)
+    expect(module.card({ active: true })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 12,
+          "lineHeight": 20,
+        },
+      }
+    `)
+    expect(module.card({ size: 'large' })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 20,
+          "lineHeight": 30,
+        },
+      }
+    `)
+  })
+
+  test.each([false, true])(
+    'omits inherited constructor defaults in native recipes (packed: %s)',
+    async (packed) => {
+      const source = `import {variants} from 'zyzz';
+        export const card=variants({base:{opacity:0.2},variants:{constructor:{selected:{opacity:0.8}}}});`
+      const publisher = Graph.compile({ modules: { 'library.ts': source } })
+      const output = Graph.compile({
+        ...(packed ? { contracts: publisher.contracts } : {}),
+        imports: {
+          'app.ts': { './library.js': 'library.ts' },
+          'library.ts': { zyzz: null },
+        },
+        modules: {
+          ...(!packed ? { 'library.ts': source } : {}),
+          'app.ts': `import {card} from './library.js';
+            export const results=[card(),card({constructor:undefined}),card({constructor:null}),card({constructor:'selected'})];`,
+        },
+        native: { colorScheme: 'light', platform: 'ios' },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          ...Object.fromEntries(
+            Object.entries(publisher.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+          ...Object.fromEntries(
+            Object.entries(output.modules).map(([id, value]) => [
+              id,
+              value.code,
+            ]),
+          ),
+        },
+      })
+
+      expect(Vm.runInNewContext(`${code}; Fixture.results`))
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "style": {
+              "opacity": 0.2,
+            },
+          },
+          {
+            "style": {
+              "opacity": 0.2,
+            },
+          },
+          {
+            "style": {
+              "opacity": 0.2,
+            },
+          },
+          {
+            "style": {
+              "opacity": 0.8,
+            },
+          },
+        ]
+      `)
+    },
+  )
+
   test.each(['ios', 'android'] as const)(
     'selects large source and packed recipes on %s',
     async (platform) => {

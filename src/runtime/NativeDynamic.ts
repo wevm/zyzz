@@ -103,7 +103,9 @@ export function create(
     for (const [axis, choices] of Object.entries(options.axes)) {
       let value = Object.hasOwn(input, axis) ? input[axis] : undefined
       if (value === undefined) {
-        value = options.defaults[axis]
+        value = Object.hasOwn(options.defaults, axis)
+          ? options.defaults[axis]
+          : undefined
         if (value != null && Object.hasOwn(options.defaultPayloads ?? {}, axis))
           value = { [String(value)]: options.defaultPayloads![axis] }
       }

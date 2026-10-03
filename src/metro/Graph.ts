@@ -108,6 +108,28 @@ export function read(
     return node.source.value
   }
 
+  function requires(node: unknown, names: Set<string>): void {
+    if (!node || typeof node !== 'object') return
+    if (Array.isArray(node)) {
+      for (const child of node) requires(child, names)
+      return
+    }
+
+    const entry = node as Ast.Node
+    if (
+      entry.type === 'CallExpression' &&
+      entry.callee.type === 'Identifier' &&
+      entry.callee.name === 'require' &&
+      entry.arguments.length === 1
+    ) {
+      const argument = entry.arguments[0]!
+      if (argument.type === 'Literal' && typeof argument.value === 'string')
+        names.add(argument.value)
+    }
+
+    for (const child of Object.values(node)) requires(child, names)
+  }
+
   const authored = new Set<string>()
   function authoring(filename: string, seen = new Set<string>()): boolean {
     files.add(filename)
@@ -124,7 +146,12 @@ export function read(
         unknown
       >
       if (
-        !['dependencies', 'devDependencies', 'peerDependencies'].some((key) => {
+        ![
+          'dependencies',
+          'devDependencies',
+          'optionalDependencies',
+          'peerDependencies',
+        ].some((key) => {
           const dependencies = data[key]
           return (
             dependencies &&
@@ -161,10 +188,15 @@ export function read(
     if (!packed) modules[id] = source
     const resolved: Record<string, string | null> = Object.create(null)
     imports[id] = resolved
-    for (const statement of snapshot.parse({ moduleId: id, source }).program
-      .body) {
+    const program = snapshot.parse({ moduleId: id, source }).program
+    const names = new Set<string>()
+    for (const statement of program.body) {
       const name = specifier(statement)
-      if (!name) continue
+      if (name) names.add(name)
+    }
+    if (packed) requires(program, names)
+
+    for (const name of names) {
       resolved[name] = null
       if (
         name === 'zyzz' ||

@@ -226,7 +226,7 @@ export function length(
   path: readonly string[],
 ): number {
   if (value === 0 || value === '0') return 0
-  if (typeof value === 'string' && value.trimStart().startsWith('calc(')) {
+  if (typeof value === 'string' && /^\s*calc\(/i.test(value)) {
     const result = Calculation.length(value.trim(), options)
     if (!signed && result < 0)
       fail(

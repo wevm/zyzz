@@ -146,8 +146,7 @@ export function prepare(
           }
         })
         const calculation =
-          typeof values[0] === 'string' &&
-          values[0].trimStart().startsWith('calc(')
+          typeof values[0] === 'string' && /^\s*calc\(/i.test(values[0])
         if (
           values.length > 1 &&
           !calculation &&

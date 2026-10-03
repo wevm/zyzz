@@ -101,15 +101,15 @@ describe('zyzz', () => {
         const configuration = (px: number) =>
           `import * as Path from 'node:path';import { getDefaultConfig } from 'expo/metro-config.js';import { zyzz } from 'zyzz/metro';
         const config=getDefaultConfig(import.meta.dirname);config.watchFolders.push(Path.resolve(import.meta.dirname,'../packages'));config.resolver.nodeModulesPaths.push(Path.resolve(import.meta.dirname,'node_modules'),Path.resolve(import.meta.dirname,'../packages/node_modules'));
-        config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='@shared-theme'?(context.customResolverOptions.alternate?'@fixture/shared/alternate':'@fixture/shared/theme'):name,platform);
+        config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='@/tokens'?Path.resolve(import.meta.dirname,'Tokens.ts'):name==='@shared-theme'?(context.customResolverOptions.alternate?'@fixture/shared/alternate':'@fixture/shared/theme'):name,platform);
         export default zyzz(config, { fonts: {'Pilat, Arial, sans-serif':'Pilat'}, units: { px: ${px}, rem:16 } });`
         await Fs.writeFile(Path.join(root, 'metro.config.ts'), configuration(1))
         await Fs.writeFile(
           Path.join(root, 'index.ts'),
-          `import {NativeContext} from 'zyzz/runtime';import {box} from './Style';import {surface} from './DsStyles';import {card} from '@fixture/packed/card';import {platformStyle} from './Theme';import {nested} from '@fixture/shared/nested';console.log(...[box(),surface(),card(),platformStyle(),nested()].map(props=>NativeContext.resolve(props.style,{colorScheme:'light'})));`,
+          `import {NativeContext} from 'zyzz/runtime';import {box} from './Style';import {surface} from './DsStyles';import {card} from '@fixture/packed/card';import {platformStyle} from './Theme';import {nested} from '@fixture/shared/nested';import {late} from '@fixture/late';console.log(...[box(),surface(),card(),platformStyle(),nested(),late()].map(props=>NativeContext.resolve(props.style,{colorScheme:'light'})));`,
         )
         const source = (width: number) =>
-          `import {style} from './Theme';export const box=style({color:'ink',width:'${width}px'});`
+          `import {style} from './Theme';import {spacing} from '@/tokens';export const box=style({color:'ink',paddingTop:spacing.md,width:'${width}px'});`
         const theme = (color: string) =>
           `import {Config} from 'zyzz';export {platformStyle} from './Opacity';export const {style}=Config.create({vars:{base:{color:{ink:{light:'${color}',dark:'#abcdef'}}},alternate:{color:{ink:{light:'#123abc',dark:'#456def'}}}},defaultVars:'base'});`
         await Fs.writeFile(
@@ -118,6 +118,7 @@ describe('zyzz', () => {
             name: '@fixture/shared',
             exports: {
               './alternate': './Alternate.ts',
+              './authoring': './Authoring.ts',
               './nested': './Style.ts',
               './theme': './index.ts',
             },
@@ -139,6 +140,10 @@ describe('zyzz', () => {
         await Fs.writeFile(Path.join(library, 'Theme.ts'), theme('#112233'))
         await Fs.writeFile(Path.join(library, 'Alternate.ts'), theme('#fedcba'))
         await Fs.writeFile(
+          Path.join(library, 'Authoring.ts'),
+          `import {Config} from 'zyzz';export const {style}=Config.create({id:'late-authoring'});`,
+        )
+        await Fs.writeFile(
           Path.join(library, 'Style.ts'),
           `import {style} from '@fixture/shared/theme';export const nested=style({width:'19px'});`,
         )
@@ -151,6 +156,27 @@ describe('zyzz', () => {
           `export {platformStyle,style} from '@shared-theme';`,
         )
         await Fs.writeFile(Path.join(root, 'Style.ts'), source(123))
+
+        await Fs.writeFile(
+          Path.join(root, 'Tokens.ts'),
+          `export const spacing={md:'7px'} as const;`,
+        )
+        const late = Path.join(packages, '@fixture/late')
+        await Fs.mkdir(late, { recursive: true })
+        await Fs.writeFile(
+          Path.join(late, 'package.json'),
+          JSON.stringify({
+            exports: './index.js',
+            name: '@fixture/late',
+            type: 'module',
+          }),
+        )
+        await Fs.writeFile(
+          Path.join(late, 'index.js'),
+          `export {late} from './Late.js';`,
+        )
+        const lateSource = `import {style} from '@fixture/shared/authoring';export const late=style({width:'29px'});`
+        await Fs.writeFile(Path.join(late, 'Late.js'), lateSource)
 
         const ds = Path.join(packages, '@fixture/ds')
         for (const [name, content] of Object.entries(await Ds.read())) {
@@ -311,6 +337,7 @@ describe('zyzz', () => {
         expect(execute(alternateBundle)[0]).toMatchInlineSnapshot(`
         {
           "color": "#fedcba",
+          "paddingTop": 7,
           "width": 123,
         }
       `)
@@ -339,6 +366,7 @@ describe('zyzz', () => {
         [
           {
             "color": "#112233",
+            "paddingTop": 7,
             "width": 123,
           },
           {
@@ -366,6 +394,7 @@ describe('zyzz', () => {
           {
             "width": 19,
           },
+          undefined,
         ]
       `)
         expect(execute(android.text)[3]).toMatchInlineSnapshot(`
@@ -387,6 +416,46 @@ describe('zyzz', () => {
           ios.text.includes('"fontFamily": "Pilat"'),
         ).toMatchInlineSnapshot(`true`)
         expect(ios.text.includes('"width": 77')).toMatchInlineSnapshot(`true`)
+
+        await Fs.writeFile(
+          Path.join(root, 'Tokens.ts'),
+          `export const spacing={md:'9px'} as const;`,
+        )
+        const aliased = await bundle('ios', (result) =>
+          result.text.includes('"paddingTop": 9'),
+        )
+        expect(aliased.ok).toMatchInlineSnapshot(`true`)
+        expect(execute(aliased.text)[0]).toMatchInlineSnapshot(`
+          {
+            "color": "#112233",
+            "paddingTop": 9,
+            "width": 123,
+          }
+        `)
+
+        const lateContract = Graph.compile({
+          imports: {
+            'Authoring.ts': { zyzz: null },
+            'Late.js': { '@fixture/shared/authoring': 'Authoring.ts' },
+          },
+          modules: {
+            'Authoring.ts': `import {Config} from 'zyzz';export const {style}=Config.create({id:'late-authoring'});`,
+            'Late.js': lateSource,
+          },
+        })
+        await Fs.writeFile(
+          Path.join(late, 'Late.js.zyzz.json'),
+          lateContract.contracts['Late.js']!,
+        )
+        const activated = await bundle('ios', (result) =>
+          result.text.includes('"width": 29'),
+        )
+        expect(activated.ok).toMatchInlineSnapshot(`true`)
+        expect(execute(activated.text)[5]).toMatchInlineSnapshot(`
+          {
+            "width": 29,
+          }
+        `)
 
         const contract = Path.join(installed, 'dist/index.js.zyzz.json')
         const changedContract = Graph.compile({

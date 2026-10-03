@@ -26,7 +26,9 @@ export type Values<
       : category extends 'typography'
         ? key extends 'fontWeight'
           ? Exclude<StyleSheet.NativeStyle['fontWeight'], undefined>
-          : Scalar<Vars.Scalar<values[key]>>
+          : key extends 'lineHeight'
+            ? number
+            : Scalar<Vars.Scalar<values[key]>>
         : Scalar<Vars.Scalar<values[key]>>
     : Values<values[key], root extends true ? key : category, false>
 }

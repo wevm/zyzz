@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added native length calculations using configured variables and scalar callback inputs.

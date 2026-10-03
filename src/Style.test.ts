@@ -165,14 +165,14 @@ describe('define', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-theme-alternate{--z-backgroundColor-brand:#fff;--z-borderColor-brand:#000;--z-borderRadius-md:4px;--z-textColor-brand:light-dark(#111,#fff);--z-spacing-4:2rem;--z-color-blue-500:#06c;}
-      .z-theme-base{--z-backgroundColor-brand:#fff;--z-borderColor-brand:#000;--z-borderRadius-md:4px;--z-textColor-brand:light-dark(#111,#fff);--z-spacing-4:1rem;--z-color-blue-500:#06c;}
-      .z-bg-\\5b var\\28 --z-backgroundColor-brand\\2c \\23 fff\\29 \\5d {background-color:var(--z-backgroundColor-brand,#fff);}
-      .z-border-color-\\5b var\\28 --z-borderColor-brand\\2c \\23 000\\29 \\5d {border-color:var(--z-borderColor-brand,#000);}
-      .z-border-radius-\\5b var\\28 --z-borderRadius-md\\2c 4px\\29 \\5d {border-radius:var(--z-borderRadius-md,4px);}
-      .z-card-text-3{color:var(--z-textColor-brand,light-dark(#111,#fff));}
-      .z-p-\\5b var\\28 --z-spacing-4\\2c 1rem\\29 \\5d {padding:var(--z-spacing-4,1rem);}
-      .z-link-text-0{color:var(--z-color-blue-500,#06c);}"
+      ".z_t0{--z-0:#fff;--z-1:#000;--z-2:4px;--z-3:light-dark(#111,#fff);--z-4:2rem;--z-5:#06c;}
+      .z_t1{--z-0:#fff;--z-1:#000;--z-2:4px;--z-3:light-dark(#111,#fff);--z-4:1rem;--z-5:#06c;}
+      .z-bg-\\5b var\\28 --z-0\\2c \\23 fff\\29 \\5d {background-color:var(--z-0,#fff);}
+      .z-border-color-\\5b var\\28 --z-1\\2c \\23 000\\29 \\5d {border-color:var(--z-1,#000);}
+      .z-border-radius-\\5b var\\28 --z-2\\2c 4px\\29 \\5d {border-radius:var(--z-2,4px);}
+      .z-card-text-3{color:var(--z-3,light-dark(#111,#fff));}
+      .z-p-\\5b var\\28 --z-4\\2c 1rem\\29 \\5d {padding:var(--z-4,1rem);}
+      .z-link-text-0{color:var(--z-5,#06c);}"
     `)
     expect(
       output.css ===
@@ -230,9 +230,9 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-\\5b var\\28 --z-color-white\\2c \\23 000\\29 \\5d {color:var(--z-color-white,#000);}
-      .z-p-\\5b var\\28 --z-spacing-0\\2c 8px\\29 \\5d {padding:var(--z-spacing-0,8px);}
-      .z-w-\\5b var\\28 --z-spacing-1rem\\2c 2rem\\29 \\5d {width:var(--z-spacing-1rem,2rem);}"
+      ".z-text-\\5b var\\28 --z-0\\2c \\23 000\\29 \\5d {color:var(--z-0,#000);}
+      .z-p-\\5b var\\28 --z-1\\2c 8px\\29 \\5d {padding:var(--z-1,8px);}
+      .z-w-\\5b var\\28 --z-2\\2c 2rem\\29 \\5d {width:var(--z-2,2rem);}"
     `)
   })
 

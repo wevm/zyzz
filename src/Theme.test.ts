@@ -679,8 +679,8 @@ export const body=style({
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-theme-base{--z-color-brand:#fff;}
-      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 fff\\29 \\5d {color:var(--z-color-brand,#fff);}"
+      ".z_t0{--z-0:#fff;}
+      .z-text-\\5b var\\28 --z-0\\2c \\23 fff\\29 \\5d {color:var(--z-0,#fff);}"
     `)
   })
 
@@ -710,18 +710,18 @@ export const body=style({
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-theme-base{--z-color-brand_5f_2e_5f_primary:#000;--z-color-brand-primary:#fff;}
-      .z-theme-foo_2e_bar{--z-color-brand_5f_2e_5f_primary:#f00;--z-color-brand-primary:#06c;}
-      .z-theme-foo_5f_2e_5f_bar{--z-color-brand_5f_2e_5f_primary:#000;--z-color-brand-primary:#fff;}
-      .z-other-text-0{color:var(--z-color-brand_5f_2e_5f_primary,#000);}
+      ".z_t0{--z-0:#000;--z-1:#fff;}
+      .z_t1{--z-0:#f00;--z-1:#06c;}
+      .z_t2{--z-0:#000;--z-1:#fff;}
+      .z-other-text-0{color:var(--z-0,#000);}
       .z-t_5f_0-text-0{color:#175;}
-      .z-z_5f_theme-base-text-0{color:var(--z-color-brand-primary,#fff);}"
+      .z-z_5f_theme-base-text-0{color:var(--z-1,#fff);}"
     `)
     expect(output.vars).toMatchInlineSnapshot(`
       {
-        "base": "z-theme-base",
-        "foo.bar": "z-theme-foo_2e_bar",
-        "foo_2e_bar": "z-theme-foo_5f_2e_5f_bar",
+        "base": "z_t0",
+        "foo.bar": "z_t1",
+        "foo_2e_bar": "z_t2",
       }
     `)
 
@@ -779,36 +779,39 @@ export const body=style({
     const result = Css.compile({ styles, vars: { base: theme, independent } })
 
     expect(result.css).toMatchInlineSnapshot(`
-      ".z-theme-base{--z-backgroundColor-surface:light-dark(#fff,#111);--z-color-brand:#06c;--z-spacing-md:8px;}
-      .z-theme-independent{--z-color-brand:#06c;}
-      .z-bg-\\5b var\\28 --z-backgroundColor-surface\\2c light-dark\\28 \\23 fff\\2c \\23 111\\29 \\29 \\5d {background-color:var(--z-backgroundColor-surface,light-dark(#fff,#111));}
-      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
-      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
+      ".z_t0{--z-0:light-dark(#fff,#111);--z-1:#06c;--z-2:8px;}
+      .z_t1{--z-3:#06c;}
+      .z-bg-\\5b var\\28 --z-0\\2c light-dark\\28 \\23 fff\\2c \\23 111\\29 \\29 \\5d {background-color:var(--z-0,light-dark(#fff,#111));}
+      .z-button-text-1{color:var(--z-1,#06c);}
+      .z-p-\\5b var\\28 --z-2\\2c 8px\\29 \\5d {padding:var(--z-2,8px);}
+      .z-independent-text-0{color:var(--z-3,#06c);}"
     `)
     expect(result.classes).toMatchInlineSnapshot(`
       {
-        "button": "z-bg-[var(--z-backgroundColor-surface,light-dark(#fff,#111))] z-text-[var(--z-color-brand,#06c)] z-p-[var(--z-spacing-md,8px)]",
-        "independent": "z-text-[var(--z-color-brand,#06c)]",
+        "button": "z-bg-[var(--z-0,light-dark(#fff,#111))] z-button-text-1 z-p-[var(--z-2,8px)]",
+        "independent": "z-independent-text-0",
       }
     `)
     expect(result.vars).toMatchInlineSnapshot(`
       {
-        "base": "z-theme-base",
-        "independent": "z-theme-independent",
+        "base": "z_t0",
+        "independent": "z_t1",
       }
     `)
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-bg-\\5b var\\28 --z-backgroundColor-surface\\2c light-dark\\28 \\23 fff\\2c \\23 111\\29 \\29 \\5d {background-color:var(--z-backgroundColor-surface,light-dark(#fff,#111));}
-      .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
-      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
+      ".z-bg-\\5b var\\28 --z-0\\2c light-dark\\28 \\23 fff\\2c \\23 111\\29 \\29 \\5d {background-color:var(--z-0,light-dark(#fff,#111));}
+      .z-button-text-1{color:var(--z-1,#06c);}
+      .z-p-\\5b var\\28 --z-2\\2c 8px\\29 \\5d {padding:var(--z-2,8px);}
+      .z-independent-text-0{color:var(--z-3,#06c);}"
     `)
     expect(Css.compile({ styles, vars: { independent, renamed: theme } }).css)
       .toMatchInlineSnapshot(`
-        ".z-theme-independent{--z-color-brand:#06c;}
-        .z-theme-renamed{--z-backgroundColor-surface:light-dark(#fff,#111);--z-color-brand:#06c;--z-spacing-md:8px;}
-        .z-bg-\\5b var\\28 --z-backgroundColor-surface\\2c light-dark\\28 \\23 fff\\2c \\23 111\\29 \\29 \\5d {background-color:var(--z-backgroundColor-surface,light-dark(#fff,#111));}
-        .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}
-        .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
+        ".z_t0{--z-3:#06c;}
+        .z_t1{--z-0:light-dark(#fff,#111);--z-1:#06c;--z-2:8px;}
+        .z-bg-\\5b var\\28 --z-0\\2c light-dark\\28 \\23 fff\\2c \\23 111\\29 \\29 \\5d {background-color:var(--z-0,light-dark(#fff,#111));}
+        .z-button-text-1{color:var(--z-1,#06c);}
+        .z-p-\\5b var\\28 --z-2\\2c 8px\\29 \\5d {padding:var(--z-2,8px);}
+        .z-independent-text-0{color:var(--z-3,#06c);}"
       `)
     expect(Object.isFrozen(theme.tokens.spacing.md)).toMatchInlineSnapshot(
       'true',
@@ -832,8 +835,8 @@ export const body=style({
 
     expect(Css.compile({ styles, vars: { base: theme } }).css)
       .toMatchInlineSnapshot(`
-        ".z-theme-base{--z-color-brand:#06c;}
-        .z-text-\\5b var\\28 --z-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-color-brand,#06c);}"
+        ".z_t0{--z-0:#06c;}
+        .z-text-\\5b var\\28 --z-0\\2c \\23 06c\\29 \\5d {color:var(--z-0,#06c);}"
       `)
   })
 
@@ -911,9 +914,9 @@ describe('extend', () => {
 
     expect(Css.compile({ styles, vars: { alternate, base: theme } }).css)
       .toMatchInlineSnapshot(`
-        ".z-theme-alternate{--z-spacing-md:1lh;}
-        .z-theme-base{--z-spacing-md:1lh;}
-        .z-p-\\5b var\\28 --z-spacing-md\\2c 1lh\\29 \\5d {padding:var(--z-spacing-md,1lh);}"
+        ".z_t0{--z-0:1lh;}
+        .z_t1{--z-0:1lh;}
+        .z-p-\\5b var\\28 --z-0\\2c 1lh\\29 \\5d {padding:var(--z-0,1lh);}"
       `)
     expect(() =>
       Theme.extend(theme, { spacing: { md: undefined } } as never),
@@ -946,11 +949,11 @@ describe('extend', () => {
     expect(
       Css.compile({ styles, vars: { alternate, base: theme, nested } }).css,
     ).toMatchInlineSnapshot(`
-      ".z-theme-alternate{--z-color-blue-500:#f00;--z-spacing-md:8px;}
-      .z-theme-base{--z-color-blue-500:#06c;--z-spacing-md:8px;}
-      .z-theme-nested{--z-color-blue-500:#f00;--z-spacing-md:12px;}
-      .z-text-\\5b var\\28 --z-color-blue-500\\2c \\23 06c\\29 \\5d {color:var(--z-color-blue-500,#06c);}
-      .z-p-\\5b var\\28 --z-spacing-md\\2c 8px\\29 \\5d {padding:var(--z-spacing-md,8px);}"
+      ".z_t0{--z-0:#f00;--z-1:8px;}
+      .z_t1{--z-0:#06c;--z-1:8px;}
+      .z_t2{--z-0:#f00;--z-1:12px;}
+      .z-text-\\5b var\\28 --z-0\\2c \\23 06c\\29 \\5d {color:var(--z-0,#06c);}
+      .z-p-\\5b var\\28 --z-1\\2c 8px\\29 \\5d {padding:var(--z-1,8px);}"
     `)
     expect(
       Css.compile({
@@ -959,7 +962,7 @@ describe('extend', () => {
         }),
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-text-\\5b var\\28 --z-color-blue-500\\2c \\23 f00\\29 \\5d {color:var(--z-color-blue-500,#f00);}"`,
+      `".z-text-\\5b var\\28 --z-0\\2c \\23 f00\\29 \\5d {color:var(--z-0,#f00);}"`,
     )
     expect(input).toMatchInlineSnapshot(`
       {
@@ -1137,8 +1140,8 @@ describe('queries', () => {
         }).css,
       ).toMatchInlineSnapshot(
         `
-        ".z-font-size-\\5b var\\28 --z-fontSize-2xl\\2c 1\\2e 5rem\\29 \\5d {font-size:var(--z-fontSize-2xl,1.5rem);}
-        .z-border-radius-\\5b var\\28 --z-borderRadius-2xl\\2c 1rem\\29 \\5d {border-radius:var(--z-borderRadius-2xl,1rem);}"
+        ".z-font-size-\\5b var\\28 --z-0\\2c 1\\2e 5rem\\29 \\5d {font-size:var(--z-0,1.5rem);}
+        .z-border-radius-\\5b var\\28 --z-1\\2c 1rem\\29 \\5d {border-radius:var(--z-1,1rem);}"
       `,
       )
     })
@@ -1247,10 +1250,10 @@ describe('queries', () => {
       const output = Css.compile({ styles, vars: { base: theme, alternate } })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-theme-base{--z-fontSize-body:1rem;--z-fontWeight-medium:500;}
-        .z-theme-alternate{--z-fontSize-body:1.25rem;--z-fontWeight-medium:500;}
-        .z-font-size-\\5b var\\28 --z-fontSize-body\\2c 1rem\\29 \\5d {font-size:var(--z-fontSize-body,1rem);}
-        .z-font-weight-\\5b var\\28 --z-fontWeight-medium\\2c 500\\29 \\5d {font-weight:var(--z-fontWeight-medium,500);}"
+        ".z_t0{--z-0:1rem;--z-1:500;}
+        .z_t1{--z-0:1.25rem;--z-1:500;}
+        .z-font-size-\\5b var\\28 --z-0\\2c 1rem\\29 \\5d {font-size:var(--z-0,1rem);}
+        .z-font-weight-\\5b var\\28 --z-1\\2c 500\\29 \\5d {font-weight:var(--z-1,500);}"
       `)
       expect(Object.keys(theme.vars)).toMatchInlineSnapshot(`
       [
@@ -1342,11 +1345,11 @@ describe('queries', () => {
       const output = Css.compile({ styles, vars: { default: bundled } })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-theme-default{--z-color-foreground:light-dark(#171717,#ededed);--z-fontFamily-sans:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-fontSize-base:1rem;--z-spacing-4:1rem;}
-        .z-text-\\5b var\\28 --z-color-foreground\\2c light-dark\\28 \\23 171717\\2c \\23 ededed\\29 \\29 \\5d {color:var(--z-color-foreground,light-dark(#171717,#ededed));}
-        .z-font-family-\\5b var\\28 --z-fontFamily-sans\\2c Geist\\2c _20_-apple-system\\2c _20_BlinkMacSystemFont\\2c _20__22_Segoe_20_UI_22_\\2c _20_Roboto\\2c _20__22_Helvetica_20_Neue_22_\\2c _20__22_Noto_20_Sans_22_\\2c _20_Arial\\2c _20_sans-serif\\2c _20__22_Apple_20_Color_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Symbol_22_\\2c _20__22_Noto_20_Color_20_Emoji_22_\\29 \\5d {font-family:var(--z-fontFamily-sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z-font-size-\\5b var\\28 --z-fontSize-base\\2c 1rem\\29 \\5d {font-size:var(--z-fontSize-base,1rem);}
-        .z-p-\\5b var\\28 --z-spacing-4\\2c 1rem\\29 \\5d {padding:var(--z-spacing-4,1rem);}"
+        ".z_t0{--z-0:light-dark(#171717,#ededed);--z-1:Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--z-2:1rem;--z-3:1rem;}
+        .z-text-\\5b var\\28 --z-0\\2c light-dark\\28 \\23 171717\\2c \\23 ededed\\29 \\29 \\5d {color:var(--z-0,light-dark(#171717,#ededed));}
+        .z-font-family-\\5b var\\28 --z-1\\2c Geist\\2c _20_-apple-system\\2c _20_BlinkMacSystemFont\\2c _20__22_Segoe_20_UI_22_\\2c _20_Roboto\\2c _20__22_Helvetica_20_Neue_22_\\2c _20__22_Noto_20_Sans_22_\\2c _20_Arial\\2c _20_sans-serif\\2c _20__22_Apple_20_Color_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Symbol_22_\\2c _20__22_Noto_20_Color_20_Emoji_22_\\29 \\5d {font-family:var(--z-1,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z-font-size-\\5b var\\28 --z-2\\2c 1rem\\29 \\5d {font-size:var(--z-2,1rem);}
+        .z-p-\\5b var\\28 --z-3\\2c 1rem\\29 \\5d {padding:var(--z-3,1rem);}"
       `)
       expect(contextTokens.breakpoint.md).toMatchInlineSnapshot(`"48rem"`)
     })

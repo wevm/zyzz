@@ -14,6 +14,47 @@ import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('isolates anonymous catalogs with identical token paths in one graph', async () => {
+    const first = Vars.define({ color: { ink: 'red' } })
+    const second = Vars.define({ color: { ink: 'blue' } })
+    const output = Css.compile({
+      styles: Style.define({
+        first: { color: first.color.ink },
+        second: { color: second.color.ink },
+      }),
+      vars: {
+        first: Vars.extend(first, { color: { ink: 'green' } }),
+        second: Vars.extend(second, { color: { ink: 'purple' } }),
+      },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><section class="${output.vars.first} ${output.vars.second}"><div class="${output.classes.first}"></div><div class="${output.classes.second}"></div></section>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).color),
+          ),
+      ).toEqual(['rgb(0, 128, 0)', 'rgb(128, 0, 128)'])
+      await page
+        .locator('section')
+        .evaluate((node) => node.removeAttribute('class'))
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => getComputedStyle(node).color),
+          ),
+      ).toEqual(['rgb(255, 0, 0)', 'rgb(0, 0, 255)'])
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('keeps inactive atomic conditions outside matched class rules', async () => {
     const output = Transform.compile({
       moduleId: 'mobile-menu.ts',

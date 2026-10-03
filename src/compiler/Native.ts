@@ -101,8 +101,22 @@ export function compile(options: compile.Options): compile.ReturnType {
       units: options.units,
     })
 
-  const variables = new Map<string, string>()
+  const shared = options[NativeVars.shared]
+  const variables = new Map(shared?.definitions)
+  const imports = new Set<string>()
   for (const read of extracted.nativeVars ?? []) {
+    const imported = shared?.reads.get(read.start)
+    if (imported) {
+      if (imported.source)
+        imports.add(
+          `import {${imported.name}} from ${JSON.stringify(imported.source)};`,
+        )
+      const type = typed
+        ? ` as typeof ${options.source.slice(read.start, read.end)}`
+        : ''
+      overwrite(read.start, read.end, `(${imported.name}${type})`, true)
+      continue
+    }
     const definition = (() => {
       try {
         return NativeVars.compile({
@@ -737,7 +751,8 @@ export function compile(options: compile.Options): compile.ReturnType {
     extracted.calls.length ||
     compositions.length ||
     packed.length ||
-    variables.size
+    variables.size ||
+    imports.size
   ) {
     let offset = 0
     if (options.source.startsWith('#!')) {
@@ -753,7 +768,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       offset = node.end
     }
 
-    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...compositions, ...packed].join('\n')}\n`
+    const prelude = `\nimport {Native as ${helper}${dynamic ? `,NativeDynamic as ${dynamicHelper}` : ''}${options.contextual ? `,NativeContext as ${helper}Context` : ''}${variables.size ? `,NativeVars as ${helper}Vars` : ''}} from 'zyzz/runtime';\n${[...factories].map(([expression, factory]) => `const ${factory.name}=(${factory.parameters.join(',')})=>${expression};`).join('\n')}\n${[...contexts].map(([expression, name]) => `const ${name}=${expression};`).join('\n')}\n${[...variables].map(([value, name]) => `${shared?.definitions.has(value) ? 'export ' : ''}const ${name}=${helper}Vars.create(JSON.parse(${JSON.stringify(value)}));`).join('\n')}\n${[...imports, ...compositions, ...packed].join('\n')}\n`
     module.appendLeft(offset, prelude)
     edits.push({ start: offset, end: offset, code: prelude, expression: false })
   }
@@ -778,6 +793,8 @@ export declare namespace compile {
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
     /** Internal Babel emission mode; authoring types are still validated. */
     readonly [Edits.runtime]?: boolean | undefined
+    /** Compiler-owned shared native variable profiles. */
+    readonly [NativeVars.shared]?: NativeVars.Shared | undefined
     /** Compiler-owned graph context. */
     readonly [Themes.context]?: Themes.Context | undefined
     /** Retain every set and scheme for render-local selection. */

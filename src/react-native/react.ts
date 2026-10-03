@@ -78,11 +78,23 @@ export function Provider(props: Provider.Props) {
   const [store] = React.useState(() =>
     create({ colorScheme: props.colorScheme, set: props.vars }),
   )
+  const [, publish] = React.useReducer((version: number) => version + 1, 0)
+  const committed = React.useRef(props.children)
+  const snapshot = store.getSnapshot()
+  const pending =
+    snapshot.colorScheme !== props.colorScheme || snapshot.set !== props.vars
+  const children = pending ? committed.current : props.children
   React.useLayoutEffect(() => {
+    committed.current = children
+    if (!pending) return
+    // Keep the committed subtree until its selection is published. This avoids
+    // rendering new application props with the previous store snapshot, without
+    // mutating an external store during a potentially abandoned React render.
     store.update({ colorScheme: props.colorScheme, set: props.vars })
-  }, [props.colorScheme, props.vars, store])
+    publish()
+  }, [children, pending, props.colorScheme, props.vars, store])
 
-  return React.createElement(context.Provider, { value: store }, props.children)
+  return React.createElement(context.Provider, { value: store }, children)
 }
 
 /** Application boundary for native variable selection. */

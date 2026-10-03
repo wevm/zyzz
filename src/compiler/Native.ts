@@ -93,6 +93,14 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const staticTables = new Map<Source.Call, Variants.Definition>()
+  if (extracted.nativeVars?.length)
+    StyleSheet.compile({
+      fonts: options.fonts,
+      platform: options.platform,
+      styles: { styles: [] },
+      units: options.units,
+    })
+
   const variables = new Map<string, string>()
   for (const read of extracted.nativeVars ?? []) {
     const definition = (() => {

@@ -168,7 +168,7 @@
     },
     "./react-native": {
       "react-native": {
-        "types": "./dist/react-native/index.d.ts",
+        "types": "./dist/react-native/index.native.d.ts",
         "default": "./dist/react-native/index.native.js"
       },
       "src": "./src/react-native/index.ts",

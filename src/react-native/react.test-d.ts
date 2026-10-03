@@ -1,6 +1,6 @@
 /** Checks native variable inference and Provider selection props. @module */
 import { Config, Vars } from 'zyzz'
-import { defineConfig, useVars } from 'zyzz/react-native'
+import { defineConfig, useVars } from 'zyzz/react-native/react'
 import { Provider } from 'zyzz/react-native/react'
 import type * as React from 'react'
 import type { StyleSheet } from 'zyzz/react-native'

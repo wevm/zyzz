@@ -53,11 +53,11 @@ jobs:
           path: css-conformance.md
           retention-days: 30
   test-shards:
-    name: Test (${{ matrix.shard }}/3)
+    name: Test (${{ matrix.shard }}/16)
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -82,7 +82,8 @@ jobs:
       - env:
           CI: true
         name: Run tests
-        run: pnpm run test run --shard=${{ matrix.shard }}/3 --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
+        run: |
+          pnpm run test run --shard=${{ matrix.shard }}/16 --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
       - name: Upload shard results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -120,7 +121,7 @@ jobs:
         run: |
           test "$SHARDS_RESULT" = success
           test "$TYPES_RESULT" = success
-          for shard in 1 2 3; do test -f "test-results/blob-$shard.json"; done
+          for shard in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do test -f "test-results/blob-$shard.json"; done
       - name: Merge test results and coverage
         if: ${{ !cancelled() }}
         run: |
@@ -173,12 +174,12 @@ jobs:
           name: css-browser-capabilities
           path: test-results/css-browser-capabilities.json
           retention-days: 30
-      - if: ${{ failure() && hashFiles('test-results/css-consumer.test-d.ts') != '' }}
+      - if: ${{ failure() && hashFiles('test-results/css-consumer-*.test-d.ts') != '' }}
         name: Upload failing CSS consumer
         uses: actions/upload-artifact@v4
         with:
           name: css-consumer
-          path: test-results/css-consumer.test-d.ts
+          path: test-results/css-consumer-*.test-d.ts
           retention-days: 30
       - if: ${{ !cancelled() && hashFiles('test-results/at-rule-browser-capabilities.json') != '' }}
         name: Upload at-rule browser capabilities

@@ -48,7 +48,7 @@ export function resolve(
       if (
         !('group' in value) ||
         value.group !== 'spacing' ||
-        !text.startsWith('calc(')
+        !/^\s*calc\(/i.test(text)
       )
         return text
       return `${Calculation.length(text, options) / (options.units?.px ?? 1)}px`

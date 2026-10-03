@@ -221,16 +221,18 @@ describe('create', () => {
 
     expect(value.style.colorScheme).toMatchInlineSnapshot('"dark"')
   })
-  test('rejects variable catalogs recorded with old schemas', () => {
+  test('rejects legacy variable catalogs with a rebuild diagnostic', () => {
     const library = Graph.compile({
       modules: {
         'config.ts':
           "import {Config} from 'zyzz';export const config=Config.create({defaultVars:'base',vars:{base:{color:{ink:'red'}}}})",
       },
     })
-    for (const version of [2, 18, 25]) {
+
+    for (const version of [2, 18, 25, 28, 29, 30]) {
       const contract = JSON.parse(library.contracts['config.ts']!)
       contract.version = version
+
       for (const source of [
         "import {config} from 'lib';config.vars({set:'base'})",
         "import {config} from 'lib';const {vars}=config;vars({set:'base'})",
@@ -242,7 +244,9 @@ describe('create', () => {
             imports: { 'app.ts': { lib: 'lib.js' } },
             modules: { 'app.ts': source },
           }),
-        ).toThrow('Vars contracts require contract version 28 or later.')
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib.js:0: Invalid library contract: Legacy packed variable names are unsupported. Rebuild the library with the current version of Zyzz.]`,
+        )
     }
   })
   test('rejects unchecked selector names, fields, and schemes', async () => {

@@ -12,7 +12,7 @@ Select compiled native styles and readonly variable values through the `Provider
 Export the native configuration's helpers:
 
 ```ts
-import { defineConfig } from 'zyzz/react-native'
+import { defineConfig } from 'zyzz/react-native/react'
 
 export const { Provider, style, variants, vars } = defineConfig({
   defaultVars: 'base',
@@ -84,7 +84,7 @@ Unknown names fail in TypeScript and throw when the config-returned Provider mou
 `useVars(vars)` returns a readonly tree of native values selected by the nearest Provider. The argument is the `vars` helper from `defineConfig`, or a standalone `Vars.define` definition. Catalog names and color scheme pairs resolve through the same Provider selection as compiled styles.
 
 ```tsx
-import { useVars } from 'zyzz/react-native'
+import { useVars } from 'zyzz/react-native/react'
 import { vars } from './zyzz.config.js'
 
 export function useSheetOptions() {
@@ -118,7 +118,7 @@ Keep application code unchanged at the style boundary:
 
 ```tsx
 import { Text } from 'react-native'
-import { defineConfig } from 'zyzz/react-native'
+import { defineConfig } from 'zyzz/react-native/react'
 
 const { style } = defineConfig({
   vars: {

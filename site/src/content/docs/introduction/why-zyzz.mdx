@@ -1,139 +1,281 @@
 # Why Zyzz
 
-Type-safe CSS and explicit design variables for developers and agents.
+Standard CSS with design rules that developers and agents can check.
 
-Agents need a design system they can follow and rules they can check. Zyzz makes both explicit with standard CSS, strict types, and named design variables.
+Most styling drift looks plausible. A hex value one shade off the brand color, `13px` where the spacing scale has `12px`, or a third button size that no design specified will compile, render, and often pass review. Coding agents produce these values faster than reviewers can catch them.
+
+Zyzz turns the design system into checks. Design values live in a typed config, styles use standard CSS, and the type checker, compiler, and linter report values outside the system before review.
 
 ## Give agents rules they can check
 
-An agent that invents a token or uses a color as spacing should get a diagnostic. Zyzz's authoring types check properties, token paths, and variant choices. The compiler checks static rule structure and selector grammar before styles reach the application.
+A Zyzz config names each design value and groups it by domain, such as color or spacing. [Property mappings](/docs/guides/themes#customize-property-mappings) connect each domain to the CSS properties that accept its names.
 
-Design variables describe the project's shared values and their property domains. A configured `style` helper exposes those names through TypeScript inference, so agents can reference the design system when generating components.
-
-```ts title="zyzz.config.ts"
+```ts title="zyzz.config.ts" /md: '1rem', sm: '0.5rem'/
 import { defineConfig } from 'zyzz'
 
-export const { style, vars } = defineConfig({
+export const { style } = defineConfig({
   vars: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
-    spacing: { md: '1rem' },
+    spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
 ```
 
-```tsx title="Button.tsx"
+The configured `style` helper offers those names as completions, so editors and agents read the design system from the types:
+
+```ts twoslash title="button.ts"
+// @noErrors
+// @filename: zyzz.config.ts
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem', sm: '0.5rem' },
+  },
+})
+
+// @filename: button.ts
+// ---cut---
 import { style } from './zyzz.config.js'
 
-export function Button() {
-  return <button {...styles.button()}>Save</button>
-}
-
-namespace styles {
+export namespace styles {
   export const button = style({
     color: 'brand',
-    padding: 'md',
+    padding: '',
+    //        ^|
   })
 }
 ```
 
-`brand` is a color variable and `md` is a spacing variable. Unknown token names and incompatible property domains produce type errors. The configuration owns the values, and components reference the names.
+Values outside the system fail the type check at the declaration, and the diagnostic lists the values that property accepts. `#0070f3` is not a configured color, and the same value passes with the ` !custom` suffix:
 
-Standard CSS gives agents an existing specification to consult. Properties, selectors, and the cascade retain their CSS meaning, and design variables compile to [CSS custom properties](https://www.w3.org/TR/css-variables-1/). The project's configuration and Zyzz's supported contracts define which styles are accepted.
+```ts twoslash title="button.ts" /!custom/
+// @errors: 2322
+// @filename: zyzz.config.ts
+import { defineConfig } from 'zyzz'
 
-The root `zyzz` import stays token-free. The opt-in `zyzz/default` entrypoint supplies Geist and Tailwind tokens when a bundled starting point is useful. Type inference alone does not prove that an integration or native target supports a style.
+export const { style } = defineConfig({
+  vars: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem', sm: '0.5rem' },
+  },
+})
+
+// @filename: button.ts
+// ---cut---
+import { style } from './zyzz.config.js'
+
+export namespace styles {
+  export const button = style({
+    color: 'brand',
+    padding: 'md',
+    backgroundColor: '#0070f3',
+    borderColor: '#0070f3 !custom',
+  })
+}
+```
+
+The build rejects the same declarations with a message that names the fix: use a configured token, or add the ` !custom` suffix. The suffix accepts a literal CSS value for one declaration, so a deliberate exception stays possible and searchable in review:
+
+```ts /!custom/
+style({ marginTop: '7px !custom' })
+```
+
+### Integrate with Oxlint
+
+[Oxlint](https://oxc.rs/docs/guide/usage/linter.html) is a JavaScript and TypeScript linter from the Oxc project, written in Rust. It reads ESLint-style rule configuration and loads JavaScript plugins. Zyzz ships one, [`zyzz/oxlint`](/docs/api/oxlint), for rules that types cannot express:
+
+- `zyzz/valid-styles`: unknown properties, malformed value markers, and empty fallback arrays
+- `zyzz/no-conflicting-props`: `className` or `style` props that a style spread would overwrite
+- `zyzz/no-unused`: style and variant definitions that nothing applies
+- `zyzz/use-logical-properties`: physical properties such as `marginLeft` where a logical property fits
+- `zyzz/restricted-properties`: properties and values the project restricts, with a reason in each diagnostic
+
+A restriction carries the project's own reason. This configuration bans `zIndex` and points to the alternative:
+
+```json title=".oxlintrc.json"
+{
+  "jsPlugins": [{ "name": "zyzz", "specifier": "zyzz/oxlint" }],
+  "rules": {
+    "zyzz/restricted-properties": [
+      "error",
+      { "zIndex": { "reason": "Use the <Layer> component for stacking." } } // [!code hl]
+    ]
+  }
+}
+```
+
+The linter reports that reason at the declaration:
+
+```ts twoslash title="modal.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const modal = style({
+    position: 'fixed',
+    zIndex: 9999,
+    // @error: zyzz(restricted-properties): Property 'zIndex' is restricted. Use the <Layer> component for stacking.
+  })
+}
+```
+
+These checks run in tools that agents already call: the type checker, the build, and the linter. Each failure identifies the declaration to fix, so an agent can correct its own change before a person reviews it.
 
 ## CSS as the foundation
 
-Properties, selectors, custom properties, inheritance, and the cascade keep their CSS meaning. Pseudo-classes and queries belong in the style definition. Component state stays in ordinary props, data attributes, and ARIA attributes.
+Zyzz adds no styling language of its own. Properties use their CSS names in camelCase, values keep CSS syntax and units, and selectors, queries, and at-rules appear as written. What developers and agents already know about CSS applies directly, and MDN remains the reference.
 
 ```tsx title="Card.tsx"
 import { style } from 'zyzz'
 
 export function Card() {
   return (
-    <section {...styles.card()}>
-      <h2 {...styles.title()}>Account details</h2>
-    </section>
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>Account</h2>
+    </article>
   )
 }
 
 namespace styles {
   export const card = style({
-    border: '1px solid currentColor',
+    border: '1px solid light-dark(#ddd, #333)', // [!code hl]
     borderRadius: '0.75rem',
+    containerType: 'inline-size',
     padding: '1rem',
-    '@media (min-width: 48rem)': { padding: '1.5rem' },
+    ':focus-within': { outline: '2px solid currentColor' }, // [!code hl]
+    '@media (min-width: 48rem)': { padding: '1.5rem' }, // [!code hl]
   })
 
   export const title = style({
     fontSize: '1.25rem',
-    margin: '0px',
+    margin: 0,
+    '@container (min-width: 32rem)': { fontSize: '1.5rem' }, // [!code hl]
   })
 }
 ```
 
-`style` declares the rules. After compilation, calling `styles.card()` returns styling props to spread onto the element. The browser handles the media query through emitted CSS.
+The emitted stylesheet contains the same rules. Queries, inheritance, specificity, and the cascade work as CSS defines them, without a runtime style engine or viewport listeners from Zyzz.
 
-## Compile rules before rendering
+The types follow CSS too. Every property in MDN's CSS data has typed values, checked against MDN's published grammar, so `display: 'flx'` fails the type check. The [CSS conformance](https://github.com/wevm/zyzz/blob/main/test/conformance/README.md) inventory tracks that coverage.
 
-Zyzz emits rules ahead of time. Runtime work can select a variant or bind a value to an existing rule. Dynamic values do not require generating a new rule for each component instance.
+## Change design decisions in one place
 
-```tsx title="Bar.tsx"
+Components reference token names, and the config owns their values. A rebrand, a dark theme, or a tighter spacing scale changes the config. Every component that references those names follows without edits.
+
+Adding a dark theme, for example, pairs each color with a dark value:
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    color: {
+      surface: '#fff', // [!code --]
+      text: '#111', // [!code --]
+      surface: { dark: '#111', light: '#fff' }, // [!code ++]
+      text: { dark: '#eee', light: '#111' }, // [!code ++]
+    },
+  },
+})
+```
+
+```tsx title="Document.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Document() {
+  return (
+    // [!code hl]
+    <html {...vars({ colorScheme: 'light dark' })}>
+      <body {...styles.body()}>Content</body>
+    </html>
+  )
+}
+
+namespace styles {
+  export const body = style({ backgroundColor: 'surface', color: 'text' })
+}
+```
+
+Each color pair compiles to a custom property, such as `--z-color-surface: light-dark(#fff, #111)`. Components contain no dark-mode branches, and `colorScheme: 'light dark'` follows the system preference without a script or provider.
+
+Named variable sets work the same way. `vars({ set: 'mint' })` on any element changes the values its subtree inherits, while component styles and compiled rules stay the same. [Themes & Tokens](/docs/guides/themes) covers sets, scopes, and saved preferences.
+
+## Style state, not class names
+
+Interactive state already lives in the DOM as attributes such as `aria-selected`, `aria-expanded`, and `data-state`. Zyzz styles those attributes with selectors instead of toggling class names. The accessible state and the visual state then come from the same attribute.
+
+```tsx title="Tab.tsx"
 import { style } from 'zyzz'
 
-export function Bar() {
-  return <div {...styles.bar({ width: '50%' })} aria-hidden="true" />
+export function Tab(props: Tab.Props) {
+  return (
+    // [!code hl]
+    <button aria-selected={props.selected} role="tab" {...styles.tab()}>
+      {props.label}
+    </button>
+  )
+}
+
+export declare namespace Tab {
+  type Props = { label: string; selected: boolean }
 }
 
 namespace styles {
-  export const bar = style((values: { width: `${number}%` }) => ({
-    backgroundColor: 'currentColor',
-    height: '0.5rem',
-    width: values.width,
-  }))
-}
-```
-
-The callback declares a value binding. Compilation emits the rule with a custom property, and `styles.bar({ width: '50%' })` supplies the per-instance value without inserting CSS rules.
-
-This requires a source transform through a bundler adapter, the CLI, or the compiler API. Rule structure must remain statically analyzable. Arbitrary runtime code cannot create new selectors or queries. [Getting Started](/docs/introduction/getting-started) connects authoring to compilation.
-
-Compilation is a delivery model, not a speed guarantee. The [Benchmarks](https://github.com/wevm/zyzz/blob/main/docs/introduction/benchmarks.md) document measured workloads, artifact sizes, and comparison limits.
-
-## Keep platform boundaries visible
-
-The pure core is independent of frameworks and build tools. Adapters handle source files, bundlers, and platform output. Web components use normal class and style props without a mandatory provider, wrapper component, or custom JSX runtime.
-
-Shared definitions can target the web and React Native, within each platform's capabilities. Native compilation produces precompiled tables. Web layers, globals, and DOM relationships are rejected on native targets.
-
-```ts title="native-styles.ts"
-import { defineVars, Style } from 'zyzz'
-import { StyleSheet } from 'zyzz/react-native'
-
-const vars = defineVars({
-  color: { text: { dark: '#eee', light: '#111' } },
-})
-
-export function compileText() {
-  const output = StyleSheet.compile({
-    styles: styles.text,
-    vars: { base: vars },
+  export const tab = style({
+    borderBottom: '2px solid transparent',
+    '&[aria-selected="true"]': { borderBottomColor: 'currentColor' }, // [!code hl]
   })
-
-  return StyleSheet.select(output.styles, {
-    colorScheme: 'dark',
-    set: 'base',
-  }).text
-}
-
-namespace styles {
-  export const text = Style.define({ text: { color: vars.color.text } })
 }
 ```
 
-Call `compileText()` outside rendering and apply the returned text style through React Native's normal `style` prop. Native selection reads a precompiled table. Device preference handling remains in the application.
+A tab cannot look selected while assistive technology reports it as unselected. Tests and browser agents can query the same attribute that the style matches.
 
-> [!NOTE]
-> Universal native parity remains outside the verified web scope. Arbitrary imported object records passed to `style(record)`, inline Svelte authoring, and Vue SFC integration also remain outside that scope. The [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) page records implemented boundaries and remaining limits.
+Design choices such as size or tone are variants. The definition lists the choices and defaults, and the component's props type derives from it, so an unsupported choice fails at the call site.
 
-Zyzz fits component codebases that need explicit styling contracts and a compilation step. The [Concepts & Principles](https://github.com/wevm/zyzz/blob/main/docs/concepts.md) explain the contracts in more detail, including composition, variables, and target behavior.
+```tsx title="Button.tsx"
+import { type Props, variants } from 'zyzz'
+
+export function Button(props: Props.Variants<typeof styles.button>) {
+  return <button {...styles.button(props)}>Save</button>
+}
+
+const example = <Button size="xl" /> // Type error: size accepts 'md' or 'sm'
+
+namespace styles {
+  export const button = variants({
+    base: { display: 'inline-flex' },
+    defaultVariants: { size: 'md' },
+    variants: {
+      size: {
+        md: { padding: '1rem' },
+        sm: { padding: '0.5rem' },
+      },
+    },
+  })
+}
+```
+
+Each choice compiles ahead of time, and a data attribute such as `data-size="sm"` selects it on the rendered element. [Variants](/docs/guides/variants) covers compound rules and choices selected by CSS conditions.
+
+## Next Steps
+
+<Card.Group>
+  <Card
+    title="Getting Started"
+    icon="zap"
+    href="/docs/introduction/getting-started"
+  >
+    Connect Zyzz to Vite, Next.js, and other build tools.
+  </Card>
+  <Card
+    title="Thinking in Zyzz"
+    icon="layers"
+    href="/docs/introduction/thinking-in-zyzz"
+  >
+    Organize styles beside components and share design values.
+  </Card>
+  <Card title="Comparisons" icon="code" href="/docs/introduction/comparisons">
+    Compare the same components in Tailwind CSS, StyleX, and vanilla-extract.
+  </Card>
+</Card.Group>

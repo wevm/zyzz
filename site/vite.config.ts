@@ -1,19 +1,30 @@
 /** Configures TanStack Start for Cloudflare Workers. @module */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Url from 'node:url'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { compile } from '@mdx-js/mdx'
 import mdx from '@mdx-js/rollup'
 import babel from '@rolldown/plugin-babel'
+import {
+  transformerMetaWordHighlight,
+  transformerNotationDiff,
+  transformerNotationHighlight,
+} from '@shikijs/transformers'
+import { createTransformerFactory, rendererRich } from '@shikijs/twoslash/core'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import type { Nodes, Root } from 'mdast'
-import { toMarkdown } from 'mdast-util-to-markdown'
+import type { Code, Nodes, Root } from 'mdast'
+import { defaultHandlers, toMarkdown } from 'mdast-util-to-markdown'
 import {
   bundledLanguages,
   type BundledLanguage,
+  codeToHast,
   codeToTokensWithThemes,
+  hastToHtml,
+  type ShikiTransformer,
 } from 'shiki'
+import { createTwoslasher, type TwoslashExecuteOptions } from 'twoslash'
 import Icons from 'unplugin-icons/vite'
 import { defineConfig, type ViteDevServer } from 'vite'
 import { zyzz } from 'zyzz/vite'
@@ -42,6 +53,60 @@ export default defineConfig(async () => {
     }),
   )
   const docs: typeof __DOCS__ = { pages: {}, code: {} }
+  // TypeScript 7 has no JavaScript API, so these numbers mirror the TypeScript 6 enums that Twoslash runs.
+  const twoslasher = createTwoslasher({
+    compilerOptions: {
+      exactOptionalPropertyTypes: true,
+      jsx: 4, // JsxEmit.ReactJSX
+      moduleResolution: 100, // ModuleResolutionKind.Bundler
+      noUncheckedIndexedAccess: true,
+    },
+    customTags: ['error'],
+    handbookOptions: { noStaticSemanticInfo: true },
+    vfsRoot: Path.dirname(Url.fileURLToPath(import.meta.url)),
+  })
+  const transformers = [
+    transformerNotationDiff({ matchAlgorithm: 'v3' }),
+    transformerNotationHighlight({ matchAlgorithm: 'v3' }),
+    createTransformerFactory(
+      (source: string, lang?: string, options?: TwoslashExecuteOptions) => {
+        // Twoslash reads tags only at column 0, while formatters indent them with the code.
+        const result = twoslasher(
+          source.replace(/^[ \t]+(?=\/\/ @error:)/gm, ''),
+          lang,
+          options,
+        )
+        // Removing a final `^|` query line leaves the newline before it.
+        const code = result.code.trimEnd()
+
+        return {
+          code,
+          meta: result.meta,
+          // Shiki renders a tag after its `line`, so point it at the line that ends where the tag was.
+          nodes: result.nodes.map((node) =>
+            node.type === 'tag'
+              ? {
+                  ...node,
+                  line:
+                    code.slice(0, Math.max(0, node.start - 1)).split('\n')
+                      .length - 1,
+                }
+              : node,
+          ),
+        }
+      },
+      rendererRich({
+        completionIcons: false,
+        customTagIcons: false,
+        hast: {
+          completionPopup: { properties: { 'aria-label': 'Completions' } },
+        },
+      }),
+    )({ explicitTrigger: true }),
+    // Runs after Twoslash, so word offsets match the displayed code.
+    transformerMetaWordHighlight(),
+    lightDark,
+  ]
   const directory = new URL('./src/content/docs/', import.meta.url)
   for (const path of await Fs.readdir(directory, { recursive: true })) {
     if (!path.endsWith('.mdx')) continue
@@ -66,6 +131,39 @@ export default defineConfig(async () => {
             throw new Error(
               `Documentation page ${path} requires a title and subtitle.`,
             )
+
+          const highlighted = new Map<Code, Element>()
+          async function highlight(node: Nodes) {
+            if ('children' in node)
+              for (const child of node.children) await highlight(child)
+            if (node.type !== 'code') return
+
+            const root = await codeToHast(node.value, {
+              defaultColor: 'light-dark()',
+              lang:
+                node.lang && Object.hasOwn(bundledLanguages, node.lang)
+                  ? (node.lang as BundledLanguage)
+                  : 'text',
+              // Titles can contain paths, whose slashes would read as `/word/` highlights.
+              meta: { __raw: node.meta?.replace(titleMeta, '') ?? '' },
+              themes: { dark: theme, light: lightTheme },
+              transformers,
+            })
+            const pre = root.children[0]
+            const code = pre?.type === 'element' ? pre.children[0] : undefined
+            if (code?.type !== 'element')
+              throw new Error(`Shiki returned no code element in ${path}.`)
+
+            highlighted.set(node, code)
+            docs.code[node.value] = {
+              html: hastToHtml({ type: 'root', children: code.children }),
+              text: lines(code)
+                .map((line) => line.text)
+                .join('\n'),
+            }
+          }
+          await highlight(tree)
+
           docs.pages[
             path
               .replace(/\.mdx$/, '')
@@ -76,6 +174,15 @@ export default defineConfig(async () => {
             description: text(paragraph),
             markdown: toMarkdown(tree, {
               handlers: {
+                code: (node, parent, state, info) => {
+                  const code = highlighted.get(node)
+                  return defaultHandlers.code(
+                    code ? markdown(node, code) : node,
+                    parent,
+                    state,
+                    info,
+                  )
+                },
                 mdxjsEsm: () => '',
                 mdxFlowExpression: () => '',
                 mdxTextExpression: () => '',
@@ -169,32 +276,8 @@ export default defineConfig(async () => {
                 mdxJsxTextElement: (node, _parent, state, info) =>
                   state.containerPhrasing(node, info),
               },
-            }),
+            }).replace(escapedAlert, '$1[!$2]'),
           }
-          async function highlight(node: Nodes) {
-            if ('children' in node) {
-              for (const child of node.children) await highlight(child)
-            }
-            if (node.type !== 'code') return
-            const tokens = await codeToTokensWithThemes(node.value, {
-              lang:
-                node.lang && Object.hasOwn(bundledLanguages, node.lang)
-                  ? (node.lang as BundledLanguage)
-                  : 'text',
-              themes: { light: lightTheme, dark: theme },
-            })
-            docs.code[node.value] = tokens.map((line) =>
-              line.map((entry) => {
-                const { content, variants } = entry
-
-                return {
-                  content,
-                  color: `light-dark(${variants.light?.color ?? lightTheme.fg}, ${variants.dark?.color ?? theme.fg})`,
-                }
-              }),
-            )
-          }
-          await highlight(tree)
         },
       ],
     })
@@ -217,6 +300,27 @@ export default defineConfig(async () => {
             function annotate(node: Nodes) {
               if ('children' in node)
                 for (const child of node.children) annotate(child)
+
+              if (node.type === 'blockquote') {
+                const paragraph = node.children[0]
+                if (paragraph?.type !== 'paragraph') return
+                const marker = paragraph.children[0]
+                if (marker?.type !== 'text') return
+                const match = marker.value.match(calloutMarker)
+                if (!match) return
+
+                marker.value = marker.value.slice(match[0].length)
+                if (!marker.value) paragraph.children.shift()
+                if (!paragraph.children.length) node.children.shift()
+                node.data = {
+                  ...node.data,
+                  hProperties: {
+                    ...node.data?.hProperties,
+                    'data-callout': match[1]?.toLowerCase(),
+                  },
+                }
+                return
+              }
 
               if (node.type !== 'code') return
               const filename = node.meta?.match(/(?:^|\s)title="([^"]+)"/)?.[1]
@@ -272,3 +376,126 @@ export default defineConfig(async () => {
     ],
   }
 })
+
+/** Matches a GitHub alert marker, such as `[!NOTE]`, at the start of a blockquote. */
+const calloutMarker = /^\[!(CAUTION|IMPORTANT|NOTE|TIP|WARNING)\]\s*/
+
+/** Matches an alert marker escaped by Markdown serialization, which GitHub alerts require literally. */
+const escapedAlert = /^((?:> ?)+)\\\[!(CAUTION|IMPORTANT|NOTE|TIP|WARNING)\]/gm
+
+/** Matches a `title="..."` attribute in a code fence's metadata. */
+const titleMeta = /(?:^|\s)title="[^"]*"/
+
+/** Matches the `twoslash` flag in a code fence's metadata. */
+const twoslashMeta = /(?:^|\s)twoslash(?=\s|$)/
+
+/** Matches `/word/` highlights in a code fence's metadata. */
+const wordMeta = /(?:^|\s)\/(?:\\.|[^/])+\//g
+
+/** Highlighted HAST element produced by Shiki. */
+type Element = Extract<
+  Awaited<ReturnType<typeof codeToHast>>['children'][number],
+  { type: 'element' }
+>
+
+/** A highlighted line's text, diff marker, and annotations for Markdown twins. */
+type Line = {
+  marker: 'add' | 'remove' | undefined
+  notes: string[]
+  text: string
+}
+
+/** Drops per-theme variables, since `light-dark()` colors already carry both themes. */
+const lightDark: ShikiTransformer = {
+  name: 'docs:light-dark',
+  span(node) {
+    if (typeof node.properties.style === 'string')
+      node.properties.style = node.properties.style.replace(
+        /;--shiki-[\w-]+:[^;]*/g,
+        '',
+      )
+  },
+}
+
+function classes(node: Element) {
+  const value = node.properties.class
+  return Array.isArray(value)
+    ? value.map(String)
+    : String(value ?? '').split(' ')
+}
+
+/** Reads completion lists inside a line as Markdown notes. */
+function completions(node: Element['children'][number]): string[] {
+  if (node.type !== 'element') return []
+  if (classes(node).includes('twoslash-completion-list'))
+    return [`completions: ${node.children.map(text).join(', ')}`]
+  return node.children.flatMap(completions)
+}
+
+/** Reads lines, diff markers, and Twoslash annotations from highlighted code. */
+function lines(code: Element): Line[] {
+  const output: Line[] = []
+
+  for (const child of code.children) {
+    if (child.type !== 'element') continue
+    const names = classes(child)
+    if (names.includes('line')) {
+      output.push({
+        marker: (['add', 'remove'] as const).find((marker) =>
+          names.includes(marker),
+        ),
+        notes: completions(child),
+        text: text(child),
+      })
+      continue
+    }
+
+    // Twoslash renders errors and custom tags as rows after their line.
+    const [first = '', ...rest] = text(child).split('\n')
+    output
+      .at(-1)
+      ?.notes.push(
+        names.includes('twoslash-error-line') ? `error: ${first}` : first,
+        ...rest.map((note) => note.trim()),
+      )
+  }
+
+  return output
+}
+
+/** Writes a highlighted block for Markdown twins, with diff markers and annotations as comments. */
+function markdown(node: Code, code: Element): Code {
+  const entries = lines(code)
+  const diff = entries.some((entry) => entry.marker)
+  const signs = { add: '+', remove: '-' } as const
+
+  return {
+    ...node,
+    lang: diff ? 'diff' : node.lang,
+    meta:
+      node.meta?.replace(twoslashMeta, ' ').replace(wordMeta, ' ').trim() ||
+      null,
+    value: entries
+      .flatMap((entry) => {
+        const sign = entry.marker ? signs[entry.marker] : ' '
+        const indent = `${diff ? ' ' : ''}${entry.text.match(/^\s*/)?.[0] ?? ''}`
+
+        return [
+          `${diff ? sign : ''}${entry.text}`,
+          ...entry.notes.map((note) => `${indent}// ${note}`),
+        ]
+      })
+      .join('\n'),
+  }
+}
+
+/** Reads displayed text, without completion popups. */
+function text(node: Element['children'][number]): string {
+  if (node.type === 'text') return node.value
+  if (
+    node.type !== 'element' ||
+    classes(node).includes('twoslash-completion-list')
+  )
+    return ''
+  return node.children.map(text).join('')
+}

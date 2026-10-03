@@ -783,10 +783,10 @@ dynamic({ width: '12px' })
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_t0{--z-0:#06c;--z-1:8px;}
-      .z_t1{--z-0:light-dark(#175,#afa);--z-1:12px;}
-      .z-text-\\5b var\\28 --z-0\\2c \\23 06c\\29 \\5d {color:var(--z-0,#06c);}
-      .z-p-\\5b var\\28 --z-1\\2c 8px\\29 \\5d {padding:var(--z-1,8px);}"
+      ".z0{--z0:#06c;--z1:8px;}
+      .z1{--z0:light-dark(#175,#afa);--z1:12px;}
+      .z-text-\\5b var\\28 --z0\\2c \\23 06c\\29 \\5d {color:var(--z0,#06c);}
+      .z-p-\\5b var\\28 --z1\\2c 8px\\29 \\5d {padding:var(--z1,8px);}"
     `)
     expect(Object.isFrozen(zyzz.themes)).toMatchInlineSnapshot(`true`)
     expect(zyzz.themes.base === base).toMatchInlineSnapshot(`false`)
@@ -799,7 +799,7 @@ dynamic({ width: '12px' })
         vars: { original: base },
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-text-\\5b var\\28 --z-0\\2c \\23 06c\\29 \\5d {color:var(--z-0,#06c);}"`,
+      `".z-text-\\5b var\\28 --z0\\2c \\23 06c\\29 \\5d {color:var(--z0,#06c);}"`,
     )
 
     const other = Config.create({ theme: base })
@@ -812,7 +812,7 @@ dynamic({ width: '12px' })
         vars: zyzz.themes,
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-text-\\5b var\\28 --z-0\\2c \\23 06c\\29 \\5d {color:var(--z-0,#06c);}"`,
+      `".z-text-\\5b var\\28 --z0\\2c \\23 06c\\29 \\5d {color:var(--z0,#06c);}"`,
     )
   })
 
@@ -897,8 +897,8 @@ dynamic({ width: '12px' })
         vars: { selected: zyzz.theme },
       }).css,
     ).toMatchInlineSnapshot(`
-      ".z_t0{--z-0:12px;}
-      .z-p-\\5b var\\28 --z-0\\2c 12px\\29 \\5d {padding:var(--z-0,12px);}"
+      ".z0{--z0:12px;}
+      .z-p-\\5b var\\28 --z0\\2c 12px\\29 \\5d {padding:var(--z0,12px);}"
     `)
 
     const inline = Config.create({ theme: { spacing: { md: '1rem' } } })
@@ -910,7 +910,7 @@ dynamic({ width: '12px' })
         }),
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-p-\\5b var\\28 --z-0\\2c 1rem\\29 \\5d {padding:var(--z-0,1rem);}"`,
+      `".z-p-\\5b var\\28 --z0\\2c 1rem\\29 \\5d {padding:var(--z0,1rem);}"`,
     )
     expect(() =>
       zyzz.style({ padding: 'md' }),

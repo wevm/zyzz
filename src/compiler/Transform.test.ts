@@ -4712,7 +4712,7 @@ describe('case', () => {
 
       expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
         `
-        ".z-text-\\5b var\\28 --z-0\\2c blue\\29 \\5d {color:var(--z-0,blue);}
+        ".z-text-\\5b var\\28 --z0\\2c blue\\29 \\5d {color:var(--z0,blue);}
         .z-display-FlEx{display:FlEx;}
         .z-p-2PX{padding:2PX;}"
       `,

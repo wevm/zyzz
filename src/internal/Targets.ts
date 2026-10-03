@@ -147,6 +147,8 @@ export function copy(
 export function web<name extends string>(
   style: Style.NamedStyle<name>,
 ): Style.NamedStyle<name> {
+  if (!style.rules && !style.targets) return style
+
   const rules = style.rules?.map((rule) => ({
     ...rule,
     style: web(rule.style),

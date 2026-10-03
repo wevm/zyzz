@@ -133,7 +133,10 @@ for (const kind of ['source', 'packed'] as const) {
   const create = () => Vm.runInNewContext(`${code}; Fixture.card`) as Callable
   const card = create()
   const expected = {
-    borderWidth: 2,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderTopWidth: 2,
     fontWeight: 700,
     opacity: 1,
     paddingBottom: 8,
@@ -148,7 +151,7 @@ for (const kind of ['source', 'packed'] as const) {
     Object.entries(expected).some((entry) => actual[entry[0]] !== entry[1])
   )
     throw new Error(
-      `Native ${kind} recipe benchmark changed its selected style.`,
+      `Native ${kind} recipe benchmark changed its selected style: ${JSON.stringify(actual)}.`,
     )
   const javascript = (await Esbuild.transform(code, { minify: true })).code
   await Fs.mkdir('bench/results/native-programs', { recursive: true })

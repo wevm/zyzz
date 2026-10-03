@@ -320,6 +320,33 @@ describe('compile', () => {
     `)
   })
 
+  test('retains deferred errors for mixed supported and unsupported variable conditions', () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'mixed.ts',
+      source: `import {Vars} from 'zyzz';import {useVars} from 'zyzz/react-native/react';
+        const vars=Vars.define({spacing:{gap:{default:'2px','@media (width >= 768px)':'4px','@media (hover: hover)':'8px'}}});
+        export function read(){return useVars(vars)}`,
+    })
+
+    expect(
+      output.code.includes('Media-conditioned variables require a web target.'),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('omits responsive recipes from static metadata', () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'responsive-metadata.ts',
+      source: `import {style} from 'zyzz';export const panel=style({opacity:0.2,'@media (width >= 768px)':{opacity:0.8}});`,
+    })
+
+    expect(output.recipes).toMatchInlineSnapshot(`{}`)
+    expect(output.code.includes('.responsive(')).toMatchInlineSnapshot(`true`)
+  })
+
   test('preserves native media endpoints, boolean conditions, and authored precedence', async () => {
     const output = Native.compile({
       colorScheme: 'light',
@@ -998,6 +1025,51 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
+  })
+
+  test('converts custom native font mappings and reports unsupported line heights', async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'values.ts',
+      fonts: { 'Web Font': 'NativeFont' },
+      units: { px: 2 },
+      source: `import {Config} from 'zyzz';import {useVars} from 'zyzz/react-native/react';
+        const {vars}=Config.create({vars:{font:{body:'Web Font'},typography:{body:{fontSize:'10px',lineHeight:'normal'}}},mappings:{font:['fontFamily']}});
+        export function read(){return useVars(vars)}`,
+    })
+    expect(output.code.includes('NativeFont')).toMatchInlineSnapshot(`true`)
+    expect(
+      output.code.includes('Unsupported native line height: normal.'),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('validates units for modules containing only variable reads', () => {
+    expect(() =>
+      Native.compile({
+        units: { px: 0 },
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'values.ts',
+        source: `import {Vars} from 'zyzz';import {useVars} from 'zyzz/react-native/react';const vars=Vars.define({spacing:{gap:'2px'}});export function read(){return useVars(vars)}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["units","px"]: Unit scales must be positive finite px or rem conversions.]`,
+    )
+  })
+
+  test('validates fonts for modules containing only variable reads', () => {
+    expect(() =>
+      Native.compile({
+        fonts: { web: '' },
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'values.ts',
+        source: `import {Vars} from 'zyzz';import {useVars} from 'zyzz/react-native/react';const vars=Vars.define({spacing:{gap:'2px'}});export function read(){return useVars(vars)}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["fonts","web"]: Font mappings require nonempty family names.]`,
+    )
   })
 
   test('rejects applied web scopes after allowing exported config references', () => {

@@ -1,6 +1,7 @@
 /** Applies scoped style changes and preserves them through Fabric commits. */
 #include "NativeZyzz.h"
 #include <functional>
+#include <unordered_set>
 #include <jsi/JSIDynamic.h>
 #include <react/renderer/bridging/bridging.h>
 #include <react/renderer/core/PropsParserContext.h>
@@ -126,11 +127,20 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
   }
   if (overlays.empty()) return next;
 
+  std::unordered_set<const ShadowNodeFamily *> paths;
+  for (const auto &[family, overlay] : overlays) {
+    paths.insert(family);
+    for (const auto &[ancestor, index] : overlay.family->getAncestors(*next))
+      paths.insert(&ancestor.get().getFamily());
+  }
+
   PropsParserContext context{tree.getSurfaceId(),
                              *manager_->getContextContainer()};
   std::function<std::shared_ptr<const ShadowNode>(
       const std::shared_ptr<const ShadowNode> &)> visit =
       [&](const std::shared_ptr<const ShadowNode> &node) {
+    if (paths.find(&node->getFamily()) == paths.end()) return node;
+
     std::shared_ptr<std::vector<std::shared_ptr<const ShadowNode>>> children;
     const auto &current = node->getChildren();
     for (size_t index = 0; index < current.size(); ++index) {

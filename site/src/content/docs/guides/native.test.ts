@@ -132,7 +132,7 @@ describe('/docs/guides/native', () => {
     expect(await negotiated.text()).toBe(markdown)
     expect(markdown).toContain('npm install zyzz')
     expect(markdown).toContain(
-      'Independent iOS and Android rendering acceptance remains pending',
+      'The full native conformance gate and wider version matrix remain open.',
     )
     expect(markdown).toContain('[Linting](/docs/api/oxlint)')
 

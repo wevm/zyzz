@@ -117,3 +117,5 @@ const native = Graph.compile({
 Named, default, and namespace imports retain finite choices and defaults, including nested style namespaces. Named, star, and namespace re-exports preserve those contracts. Namespace imports preserve ordinary exports and their live bindings. Nested namespace re-exports use version 22 contracts; older contracts remain readable. Theme and configuration factories still require named imports. Version 23 retains scalar callback slots and variant payloads for dynamic native consumers. Older dynamic contracts without this metadata fail explicitly. Ordinary package side effects remain imported.
 
 Generate declarations from the transformed native TypeScript output. Contracts contain compiler data, not runtime implementations. Package resolution and declaration emission remain host responsibilities. Native tables do not establish iOS or Android rendering acceptance.
+
+Responsive callables select query profiles at runtime and are omitted from the static `recipes` metadata.

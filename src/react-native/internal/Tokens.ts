@@ -5,7 +5,9 @@ import type * as Style from '../../Style.js'
 import * as Token from '../../internal/Token.js'
 
 /** Identifies values whose behavior requires a web target. */
-export class UnsupportedError extends Error {}
+export class UnsupportedError extends Error {
+  override name = 'Tokens.UnsupportedError'
+}
 
 /** Selects live token aliases and schemes without evaluating authored code. */
 export function resolve(

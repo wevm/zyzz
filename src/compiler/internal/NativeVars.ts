@@ -83,30 +83,36 @@ export function compile(options: compile.Options): Runtime.create.Options {
       const parts = metadata.paths?.[path] ?? path.split('.')
       const property = parts.at(-1)
       const domain = VariableSets.domain(source)
+      const mappings = metadata.contract.mappings
+      const properties = mappings === false ? [] : mappings?.[parts[0]!]
+
       const converted = (() => {
         try {
           if (parts.some((part) => /^@(media|container)\s/.test(part)))
             throw new Error('Media-conditioned variables require a web target.')
           const value = resolve(source)
-          if (
-            parts[0] === 'typography' &&
-            property === 'lineHeight' &&
-            typeof value === 'number'
-          ) {
+          if (parts[0] === 'typography' && property === 'lineHeight') {
+            const multiplier = typeof value === 'number' ? value : Number(value)
+            if (
+              !Number.isFinite(multiplier) ||
+              (typeof value === 'string' && !value.trim())
+            )
+              throw new Error(`Unsupported native line height: ${value}.`)
             const size =
               metadata.values[[...parts.slice(0, -1), 'fontSize'].join('.')]
             if (size === undefined)
               throw new Error(`Native line height requires fontSize: ${path}.`)
             return Scalar.convert(
               'number',
-              value * Scalar.length(resolve(size), options, false, [path]),
+              multiplier * Scalar.length(resolve(size), options, false, [path]),
               options,
               [path],
             )
           }
           if (
             (parts[0] === 'typography' && property === 'fontFamily') ||
-            parts[0] === 'fontFamily'
+            parts[0] === 'fontFamily' ||
+            properties?.includes('fontFamily')
           )
             return Scalar.convert('font', value, options, [path])
           if (

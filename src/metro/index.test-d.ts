@@ -17,6 +17,9 @@ describe('zyzz', () => {
       { fonts: { 'Pilat, sans-serif': 'Pilat' }, units: { px: 1, rem: 16 } },
     )
 
+    expectTypeOf(config.resolver.resolveRequest).toBeFunction()
+    expectTypeOf(zyzz({}).resolver.resolveRequest).toBeFunction()
+
     expectTypeOf(config.serializer.custom).toEqualTypeOf<true>()
     expectTypeOf(config.resolver.custom).toEqualTypeOf<true>()
     expectTypeOf(config.resolver.nodeModulesPaths).toEqualTypeOf<

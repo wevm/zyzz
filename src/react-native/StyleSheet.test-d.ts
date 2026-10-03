@@ -60,6 +60,9 @@ describe('compile', () => {
     const declarations = {
       artwork: {
         height: 'calc((180px * 2 + 80px) / 2)',
+        margin: 'cAlC(4px + 2px) Calc(1px) CALC(2px) caLC(3px)',
+        maxHeight: 'CALC(180px * 2 + 80px)',
+        maxWidth: 'Calc(180px * 2 + 80px)',
         padding: 'calc(4px + 2px) 1rem',
         width: 'calc(180px * 2 + 80px)',
       } satisfies StyleSheet.Properties,

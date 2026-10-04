@@ -11,11 +11,12 @@ describe('variants guide', () => {
       new URL('./variants.mdx', import.meta.url),
       'utf8',
     )
+    // Twoslash fences span several files and include completion queries, so the docs build checks them instead.
     const examples = Array.from(
-      document.matchAll(/```tsx?[^\n]*\n([\s\S]*?)```/g),
+      document.matchAll(/```tsx?(?![^\n]*\btwoslash\b)[^\n]*\n([\s\S]*?)```/g),
     )
 
-    expect(examples).toHaveLength(7)
+    expect(examples).toHaveLength(8)
 
     const root = Path.resolve(import.meta.dirname, '../../../../..')
     const sources = new Map(

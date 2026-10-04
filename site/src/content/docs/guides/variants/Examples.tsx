@@ -14,7 +14,7 @@ export function Choices() {
   )
 }
 
-/** Shows a component forwarding its typed size and disabled props. */
+/** Shows a component forwarding its styling inputs beside `disabled`. */
 export function Props() {
   return (
     <Preview name="props">
@@ -94,19 +94,17 @@ export function Composition() {
 }
 
 function Button(props: Button.Props) {
+  const { children, disabled, ...rest } = props
+
   return (
-    <button
-      type="button"
-      disabled={props.disabled}
-      {...styles.props({ size: props.size })}
-    >
-      {props.children}
+    <button type="button" disabled={disabled} {...styles.props(rest)}>
+      {children}
     </button>
   )
 }
 
 declare namespace Button {
-  type Props = Pick<VariantProps.Variants<typeof styles.props>, 'size'> & {
+  type Props = VariantProps.Variants<typeof styles.props> & {
     children: ReactNode
     disabled?: boolean | undefined
   }

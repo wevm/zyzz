@@ -41,14 +41,6 @@ namespace styles {
       '& th': { fontWeight: 'medium' },
       '& th:first-child, & td:first-child': { width: '32% !custom' },
       '& td p': { margin: 0 },
-      '& td code': {
-        typography: 'label.14.mono',
-        fontSize: '15px !custom',
-        color: 'foreground',
-        backgroundColor: 'gray.100',
-        borderRadius: 'sm',
-        paddingInline: 1,
-      },
     },
   })
 }

@@ -428,7 +428,8 @@ namespace styles {
     '& ul': { listStyleType: 'disc' },
     '& ol:not([data-steps])': { listStyleType: 'decimal' },
     '& li:not([data-step])': { marginBlock: 2 },
-    '& p code, & aside :not(pre) > code, & li > code': {
+    // Inline code in text, including authored `<code>` tags. Components that render their own code, such as install commands, keep their styles.
+    '& :is(p, li, td, th, dd, dt, a, strong, em, h2, h3, h4) > code': {
       typography: 'label.14.mono',
       fontSize: '15px !custom',
       color: 'foreground',

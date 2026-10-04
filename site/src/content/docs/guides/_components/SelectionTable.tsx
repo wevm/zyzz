@@ -53,15 +53,7 @@ namespace styles {
       '& th': { backgroundColor: 'gray.100', fontWeight: 'medium' },
       '& td': { borderTop: '1px solid', borderColor: 'gray.400' },
       '& table p': { margin: 0 },
-      '& td code': {
-        typography: 'label.14.mono',
-        fontSize: '15px !custom',
-        color: 'foreground',
-        backgroundColor: 'gray.100',
-        borderRadius: 'sm',
-        paddingInline: 1,
-        whiteSpace: 'nowrap',
-      },
+      '& td code': { whiteSpace: 'nowrap' },
     },
   })
 }

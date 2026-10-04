@@ -1,6 +1,6 @@
 /** Collapses the Themes & Tokens guide's key reference table inside a note callout. @module */
 import type { ReactNode } from 'react'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 /** Renders a collapsed table that inherits the surrounding callout's tone. */
 export function KeyTable(props: KeyTable.Props) {

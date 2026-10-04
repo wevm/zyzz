@@ -13,7 +13,7 @@ import SafariIcon from '~icons/simple-icons/safari'
 import SolidIcon from '~icons/simple-icons/solid'
 import SvelteIcon from '~icons/simple-icons/svelte'
 import VueIcon from '~icons/simple-icons/vuedotjs'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 const icons = {
   chrome: ChromeIcon,

@@ -455,26 +455,47 @@ export function visitor(
     path: Babel.NodePath,
     expression: Babel.types.Node,
   ): boolean {
-    let required = false
-    t.traverseFast(expression, (node) => {
-      if (
-        callables.has(node) ||
-        t.isCallExpression(node) ||
-        (t.isMemberExpression(node) &&
-          !node.computed &&
-          t.isIdentifier(node.property, { name: 'style' }))
-      )
-        required = true
-      if (!t.isIdentifier(node)) return
-      const binding = path.scope.getBinding(node.name)
-      if (
-        binding?.path.isVariableDeclarator() &&
-        binding.path.node.init &&
-        callables.has(binding.path.node.init)
-      )
-        required = true
-    })
-    return required
+    const pending = [{ expression, scope: path.scope }]
+    const seen = new Set<Babel.types.VariableDeclarator>()
+    for (const entry of pending) {
+      let required = false
+      t.traverseFast(entry.expression, (node) => {
+        if (
+          callables.has(node) ||
+          (entry.expression === expression && t.isCallExpression(node)) ||
+          (t.isMemberExpression(node) &&
+            !node.computed &&
+            t.isIdentifier(node.property, { name: 'style' }))
+        ) {
+          required = true
+          return t.traverseFast.stop
+        }
+        // Alias factories stay opaque so worklet inputs do not become React subscriptions.
+        if (
+          t.isCallExpression(node) ||
+          t.isFunction(node) ||
+          t.isNewExpression(node)
+        )
+          return t.traverseFast.skip
+        if (!t.isIdentifier(node)) return
+        const binding = entry.scope.getBinding(node.name)
+        if (
+          binding?.constant &&
+          binding.path.isVariableDeclarator() &&
+          binding.path.node.init &&
+          !seen.has(binding.path.node)
+        ) {
+          seen.add(binding.path.node)
+          pending.push({
+            expression: binding.path.node.init,
+            scope: binding.path.scope,
+          })
+        }
+      })
+      if (required) return true
+    }
+
+    return false
   }
   function owner(
     path: Babel.NodePath,

@@ -1,5 +1,6 @@
 /** Verifies native JSX bindings through the Expo and Fast Refresh transforms. @module */
 import * as Babel from '@babel/core'
+import * as Fs from 'node:fs/promises'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
 import * as Packed from '../../test/fixtures/Packed.js'
@@ -13,6 +14,79 @@ const require = Module.createRequire(
 const expo = Module.createRequire(require.resolve('expo/package.json'))
 
 describe('zyzz', () => {
+  test.each([
+    ['member', 'const applied=card().style;', 'applied', true],
+    ['chain', 'const applied=card().style;const alias=applied;', 'alias', true],
+    [
+      'array',
+      'const applied=card().style;const alias=[applied];',
+      'alias',
+      true,
+    ],
+    [
+      'spread',
+      'const applied=card().style;const props={style:applied};',
+      '...props',
+      true,
+    ],
+    ['scope', 'const applied={opacity:0.5};', 'outer', true],
+    ['cycle', 'var applied=alias;var alias=applied;', 'alias', false],
+    [
+      'animated',
+      'const applied=useAnimatedStyle(()=>({opacity:withTiming(0.5)}));const alias=[native.box,applied];',
+      'alias',
+      false,
+    ],
+  ] as const)(
+    'resolves immutable %s aliases through the native Expo transform',
+    async (_, setup, value, resolved) => {
+      const source = `import Animated,{useAnimatedStyle,withTiming} from 'react-native-reanimated';
+      import {StyleSheet} from 'react-native';import {card} from './Styles.js';
+      const native=StyleSheet.create({box:{height:20}});const applied=card().style;const outer=applied;
+      function App(){${setup}return <Animated.View ${value.startsWith('...') ? `{${value}}` : `style={${value}}`}/>}`
+      const directory = await Fs.mkdtemp(Path.resolve('.fixture-native-alias-'))
+      const filename = Path.join(directory, 'App.tsx')
+
+      try {
+        await Fs.writeFile(filename, source)
+        const result = Babel.transformSync(source, {
+          babelrc: false,
+          configFile: false,
+          filename,
+          plugins: [
+            [
+              zyzz,
+              {
+                moduleId: 'App.tsx',
+                modules: {
+                  'App.tsx': source,
+                  'Styles.ts':
+                    "import {style} from 'zyzz';export const card=style({opacity:0.7});",
+                },
+                platform: 'ios',
+                target: 'native',
+              },
+            ],
+          ],
+          presets: [
+            [expo.resolve('babel-preset-expo'), { enableBabelRuntime: false }],
+          ],
+        })
+
+        if (resolved)
+          expect(result?.code?.includes('useStyles')).toMatchInlineSnapshot(
+            'true',
+          )
+        else
+          expect(result?.code?.includes('useStyles')).toMatchInlineSnapshot(
+            'false',
+          )
+      } finally {
+        await Fs.rm(directory, { force: true, recursive: true })
+      }
+    },
+  )
+
   test.each(['named', 'namespace'])(
     'lets withStyles own class JSX and local recipe inputs with %s imports',
     async (kind) => {

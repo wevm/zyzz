@@ -327,52 +327,61 @@ describe('defineConfig', () => {
             ).toMatchInlineSnapshot(`
               [
                 [
+                  "alias 100x20",
                   "mixed 100x40",
                   "motion 100x40",
                   "nested 100x40",
                   "safe 100x40",
                 ],
                 [
+                  "alias 100x20",
                   "mixed 100x40",
                   "motion 100x40",
                   "nested 100x40",
                   "safe 100x40",
                 ],
                 [
+                  "alias 100x20",
                   "mixed 200x40",
                   "motion 200x40",
                   "nested 100x40",
                   "safe 100x40",
                 ],
                 [
+                  "alias 160x20",
                   "mixed 200x60",
                   "motion 200x60",
                   "nested 100x40",
                   "safe 160x40",
                 ],
                 [
+                  "alias 160x20",
                   "mixed 120x60",
                   "motion 120x60",
                   "nested 100x40",
                   "safe 160x40",
                 ],
                 [
+                  "alias 160x20",
                   "mixed 160x36",
                   "motion 160x36",
                   "nested 100x40",
                   "safe 160x40",
                 ],
                 [
+                  "alias 160x20",
                   "nested 100x40",
                   "safe 160x40",
                 ],
                 [
+                  "alias 160x20",
                   "mixed 160x60",
                   "motion 160x60",
                   "nested 100x40",
                   "safe 160x40",
                 ],
                 [
+                  "alias 160x20",
                   "mixed 160x60",
                   "motion 160x60",
                   "nested 100x40",
@@ -450,52 +459,61 @@ describe('defineConfig', () => {
             expect(colors).toMatchInlineSnapshot(`
               [
                 {
+                  "alias": "#ff0000ff",
                   "mixed": "#ff0000ff",
                   "motion": "#ff0000ff",
                   "nested": "#ff0000ff",
                   "safe": "#ff0000ff",
                 },
                 {
+                  "alias": "#00ff00ff",
                   "mixed": "#00ff00ff",
                   "motion": "#00ff00ff",
                   "nested": "#ff0000ff",
                   "safe": "#00ff00ff",
                 },
                 {
+                  "alias": "#00ff00ff",
                   "mixed": "#00ff00ff",
                   "motion": "#00ff00ff",
                   "nested": "#ff0000ff",
                   "safe": "#00ff00ff",
                 },
                 {
+                  "alias": "#ffff00ff",
                   "mixed": "#ffff00ff",
                   "motion": "#ffff00ff",
                   "nested": "#ff0000ff",
                   "safe": "#ffff00ff",
                 },
                 {
+                  "alias": "#ffff00ff",
                   "mixed": "#ffff00ff",
                   "motion": "#ffff00ff",
                   "nested": "#ff0000ff",
                   "safe": "#ffff00ff",
                 },
                 {
+                  "alias": "#ffff00ff",
                   "mixed": "#ffff00ff",
                   "motion": "#ffff00ff",
                   "nested": "#ff0000ff",
                   "safe": "#ffff00ff",
                 },
                 {
+                  "alias": "#ffff00ff",
                   "nested": "#ff0000ff",
                   "safe": "#ffff00ff",
                 },
                 {
+                  "alias": "#0000ffff",
                   "mixed": "#0000ffff",
                   "motion": "#0000ffff",
                   "nested": "#ff0000ff",
                   "safe": "#0000ffff",
                 },
                 {
+                  "alias": "#0000ffff",
                   "mixed": "#0000ffff",
                   "motion": "#0000ffff",
                   "nested": "#ff0000ff",

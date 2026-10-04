@@ -174,6 +174,18 @@ namespace Motion {
   }
 }
 
+const Aliased = React.memo(function Aliased() {
+  const applied = styles.safe().style
+  const alias = applied
+  const composed = [alias, { height: 20 }]
+  const ref = React.useCallback((node: View | null) => {
+    if (node) refs.set('alias', node)
+    else refs.delete('alias')
+  }, [])
+
+  return <Animated.View ref={ref} style={composed} />
+})
+
 function App() {
   const [colorScheme, setScheme] = React.useState<'dark' | 'light'>('light')
   const [selection, setSelection] = React.useState<'alternate' | 'base'>('base')
@@ -309,6 +321,7 @@ function App() {
       <View accessibilityLabel={`commit ${tick}`} style={native.root}>
         <Provider colorScheme={colorScheme} vars={selection}>
           <SafeView edges={[]} ref={ref} style={styles.safe().style} />
+          <Aliased />
           {visible ? content : undefined}
           {nested}
         </Provider>

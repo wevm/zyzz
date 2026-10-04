@@ -1767,15 +1767,17 @@ export function collect(program: Ast.Program, options: collect.Options) {
             !callee.optional &&
             callee.object.type === 'Identifier' &&
             callee.property.type === 'Identifier' &&
-            callee.property.name === 'useVars'
+            ['useAnimatedVars', 'useVars'].includes(callee.property.name)
           ? callee.object.name
           : undefined
     const binding = name === undefined ? undefined : lookup(name)
     if (
       binding?.type !== 'Import' ||
-      !['zyzz/react-native', 'zyzz/react-native/react'].includes(
-        binding.importNode.source.value,
-      ) ||
+      ![
+        'zyzz/react-native',
+        'zyzz/react-native/reanimated',
+        'zyzz/react-native/react',
+      ].includes(binding.importNode.source.value) ||
       binding.importNode.importKind === 'type'
     )
       return false
@@ -1785,9 +1787,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
       callee.type === 'Identifier'
         ? specifier.type !== 'ImportSpecifier' ||
           specifier.importKind === 'type' ||
-          (specifier.imported.type === 'Identifier'
-            ? specifier.imported.name
-            : specifier.imported.value) !== 'useVars'
+          !['useAnimatedVars', 'useVars'].includes(
+            specifier.imported.type === 'Identifier'
+              ? specifier.imported.name
+              : specifier.imported.value,
+          )
         : specifier.type !== 'ImportNamespaceSpecifier'
     )
       return false

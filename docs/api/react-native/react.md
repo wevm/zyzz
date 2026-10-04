@@ -2,12 +2,13 @@
 
 Select compiled native styles and readonly variable values through the `Provider` returned by `defineConfig`. Import native authoring and hooks from `zyzz/react-native` and compile application modules with `zyzz/metro`.
 
-| API                        | Purpose                                                          |
-| -------------------------- | ---------------------------------------------------------------- |
-| `defineConfig(options)`    | Return existing authoring helpers and a typed `Provider`.        |
-| `Provider`                 | Select configured variables and a resolved scheme for a subtree. |
-| `useStyles()`              | Resolve compiled bindings for explicit style consumers.          |
-| `useVars(vars, selector?)` | Read native values from the nearest Provider.                    |
+| API                               | Purpose                                                          |
+| --------------------------------- | ---------------------------------------------------------------- |
+| `defineConfig(options)`           | Return existing authoring helpers and a typed `Provider`.        |
+| `Provider`                        | Select configured variables and a resolved scheme for a subtree. |
+| `useStyles()`                     | Resolve compiled bindings for explicit style consumers.          |
+| `useVars(vars, selector?)`        | Read native values from the nearest Provider.                    |
+| `withStyles(Component, options?)` | Resolve compiled style props for third-party components.         |
 
 Export the native configuration's helpers:
 
@@ -164,7 +165,37 @@ namespace styles {
 
 Metro's Babel pass resolves native bindings in JSX `style` expressions and prop spreads. Arrays, scalar payloads, variant choices, and native style callbacks retain their application inputs. Applied props can be declared outside rendering; selection remains local to the consuming render.
 
-This automatic path supports function components and custom hooks that render JSX, including `memo` and `forwardRef` declarations. Class render methods and JSX outside a component are rejected. Components preserve their state when selection changes.
+This automatic path supports function components and custom hooks that render JSX, including `memo` and `forwardRef` declarations. For class consumers, wrap the receiving component with `withStyles`. Components preserve their state when selection changes.
+
+## withStyles
+
+`withStyles(Component, options?)` returns a component that resolves compiled native styles through the nearest Provider. Define the wrapper at module scope. The wrapper preserves the component's required props and ref type.
+
+```tsx
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { withStyles } from 'zyzz/react-native'
+import { panel } from './styles.js'
+
+const SafeView = withStyles(SafeAreaView)
+
+function Screen() {
+  return <SafeView style={panel().style} />
+}
+```
+
+The wrapper resolves `style` and `contentContainerStyle` by default. Add other style-bearing prop names with `styleProps`. These names must belong to the component; `key` and `ref` are rejected.
+
+```ts
+const StyledCard = withStyles(Card, { styleProps: ['bodyStyle'] })
+```
+
+Style arrays retain authored order, including caller overrides. Plain native objects and caller-owned animated styles pass through unchanged. Other props and refs are forwarded unchanged. Resolve non-style values with `useVars` and pass them as ordinary component props.
+
+Wrappers support function components, class components, and `React.createElement` callers. The wrapper subscribes through React when the Provider selection changes. Direct native updates remain available on supported native primitives. Plain styles work without a Provider; compiled context-dependent bindings require one.
+
+For a class JSX caller, declare the `withStyles` wrapper in the caller's module so Metro can recognize it. Imported wrappers work with `React.createElement` callers.
+
+Use [`zyzz/react-native/reanimated`](reanimated.md) for shared animation targets. When combining a compiled style with Reanimated-owned styles, wrap the animated component with `withStyles` so the wrapper resolves only the compiled bindings.
 
 ## useStyles
 

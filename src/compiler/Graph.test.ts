@@ -28,6 +28,38 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('validates packed native style catalogs', () => {
+    const publisher = Graph.compile({
+      modules: {
+        'styles.ts': `import {Config} from 'zyzz';const {style}=Config.create({defaultVars:'base',vars:{base:{color:{ink:'#123456'}},alternate:{color:{ink:'#abcdef'}}}});export const card=style({color:'ink'});`,
+      },
+    })
+    const contract = JSON.parse(publisher.contracts['styles.ts']!)
+    const compile = () =>
+      Graph.compile({
+        contracts: { 'styles.ts': JSON.stringify(contract) },
+        modules: {
+          'app.ts': `import {card} from './styles.js';export const result=card();`,
+        },
+        native: { colorScheme: 'light', contextual: true, platform: 'ios' },
+      })
+    expect(contract.version).toMatchInlineSnapshot(`33`)
+    contract.version = 32
+    expect(compile).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: styles.ts:0: Invalid library contract: Native style catalogs require contract version 33 or later.]`,
+    )
+    contract.version = 33
+    contract.exports.card.nativeContext.defaultVars = 'missing'
+    expect(compile).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: styles.ts:0: Invalid library contract: Invalid packed native style default.]`,
+    )
+    contract.exports.card.nativeContext.defaultVars = 'base'
+    contract.exports.card.nativeContext.vars.base = 'missing'
+    expect(compile).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: styles.ts:0: Invalid library contract: Unknown packed native style catalog.]`,
+    )
+  })
+
   test('versions packed native provider metadata', () => {
     const native = {
       colorScheme: 'light',
@@ -1053,9 +1085,14 @@ ${web.modules['app.ts']!.code}`,
             "library/card.ts",
           ]
         `)
-        expect(
-          JSON.parse(output.contracts['app/index.ts']!).version,
-        ).toMatchInlineSnapshot(`31`)
+        if (order === 'single')
+          expect(
+            JSON.parse(output.contracts['app/index.ts']!).version,
+          ).toMatchInlineSnapshot(`31`)
+        else
+          expect(
+            JSON.parse(output.contracts['app/index.ts']!).version,
+          ).toMatchInlineSnapshot(`33`)
       } finally {
         await Fs.rm(directory, { recursive: true, force: true })
       }

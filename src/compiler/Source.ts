@@ -1530,7 +1530,17 @@ export function extract(options: extract.Options): extract.ReturnType {
     const style = call && styles.find((style) => style.name === call.name)
     return {
       ...link,
-      ...(call && style ? { style: PackedStyles.create(call, style) } : {}),
+      ...(call && style
+        ? {
+            style: PackedStyles.create(
+              {
+                ...call,
+                nativeContext: themes?.nativeContext(call.start, call.end),
+              },
+              style,
+            ),
+          }
+        : {}),
       ...(link.members
         ? {
             members: Object.fromEntries(

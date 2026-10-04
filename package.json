@@ -54,6 +54,9 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-native": "catalog:",
+    "react-native-reanimated": "catalog:",
+    "react-native-safe-area-context": "catalog:",
+    "react-native-worklets": "catalog:",
     "rollup": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
@@ -175,6 +178,11 @@
       "types": "./dist/react-native/index.d.ts",
       "default": "./dist/react-native/index.js"
     },
+    "./react-native/reanimated": {
+      "src": "./src/react-native/reanimated.ts",
+      "types": "./dist/react-native/reanimated.d.ts",
+      "default": "./dist/react-native/reanimated.js"
+    },
     "./react-native/react": {
       "react-native": {
         "types": "./dist/react-native/react.d.ts",
@@ -238,6 +246,7 @@
     "next": "catalog:peers",
     "react": "catalog:peers",
     "react-native": "catalog:peers",
+    "react-native-reanimated": "catalog:peers",
     "vite": "catalog:peers"
   },
   "peerDependenciesMeta": {
@@ -251,6 +260,9 @@
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "react-native-reanimated": {
       "optional": true
     },
     "vite": {

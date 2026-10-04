@@ -17,6 +17,164 @@ const native = {
   units: { px: 1, rem: 16 },
 } as const
 
+describe('withStyles', () => {
+  test.each([false, true])(
+    'resolves third-party props, scopes, class refs, and cleanup with packed=%s',
+    async (packed) => {
+      const modules = {
+        'styles.ts': `import {defineConfig} from 'zyzz/react-native/react';
+      export const {Provider,style,variants,vars}=defineConfig({defaultVars:'base',vars:{
+        base:{color:{ink:{light:'#ff0000',dark:'#00ff00'}},spacing:{size:'100px'}},
+        alternate:{color:{ink:{light:'#0000ff',dark:'#ffff00'}},spacing:{size:'160px'}}}});
+      export const card=style({backgroundColor:'ink',width:'size'});
+      export const button=variants({base:{height:'20px !custom'},variants:{large:{true:{height:'40px !custom'},false:{}}}});`,
+      }
+      const publisher = packed ? Graph.compile({ modules, native }) : undefined
+      const consumer = Graph.compile({
+        ...(publisher ? { contracts: publisher.contracts } : {}),
+        imports: {
+          'app.ts': {
+            './styles.js': 'styles.ts',
+            react: null,
+            'react-dom/client': null,
+            'zyzz/react-native/react': null,
+          },
+          'styles.ts': { 'zyzz/react-native/react': null },
+        },
+        modules: {
+          ...(!packed ? modules : {}),
+          'app.ts': `import * as React from 'react';import {createRoot} from 'react-dom/client';
+        import {withStyles,useVars} from 'zyzz/react-native/react';import {Provider,vars,card,button} from './styles.js';
+        let instance;let refs=0;let releases=0;let renders=0;
+        class Card extends React.Component {
+          read(){return this.props.bodyStyle}
+          render(){renders++;return React.createElement('pre',{id:this.props.id},JSON.stringify({
+            body:this.props.bodyStyle,content:this.props.contentContainerStyle,style:this.props.style,label:this.props.label}))}
+        }
+        const Wrapped=withStyles(Card,{styleProps:['bodyStyle']});
+        const content=React.createElement(Wrapped,{id:'card',label:'unchanged',
+          bodyStyle:[card().style,{width:120}],contentContainerStyle:button({large:true}).style,
+          ref:value=>{instance=value;refs++;return()=>{instance=undefined;releases++}}});
+        function Raw(){return React.createElement('span',{id:'raw'},useVars(vars,values=>values.color.ink))}
+        function App(){const [scheme,setScheme]=React.useState('light');const [name,setName]=React.useState('base');const [shown,setShown]=React.useState(true);
+          return React.createElement(Provider,{colorScheme:scheme,vars:name},
+            React.createElement('button',{id:'scheme',onClick:()=>setScheme('dark')},'scheme'),
+            React.createElement('button',{id:'vars',onClick:()=>setName('alternate')},'vars'),
+            React.createElement('button',{id:'remove',onClick:()=>setShown(false)},'remove'),
+            shown?content:null,React.createElement(Raw),
+            React.createElement(Provider,{colorScheme:'light',vars:'base'},React.createElement(Wrapped,{id:'nested',bodyStyle:card().style}))) }
+        createRoot(document.getElementById('app')).render(React.createElement(App));
+        createRoot(document.getElementById('plain')).render(React.createElement(Wrapped,{id:'plain-value',bodyStyle:{height:10}}));
+        createRoot(document.getElementById('error'),{onUncaughtError:error=>{document.getElementById('error').textContent=error.message}}).render(React.createElement(Wrapped,{bodyStyle:card().style}));
+        export const inspect=()=>({refs,releases,rendered:renders>0,value:instance?.read()});
+        export const invalid=()=>{try{withStyles(Card,{styleProps:['ref']})}catch(error){return error.message}};`,
+        },
+        native,
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          ...Object.fromEntries(
+            Object.entries(publisher?.modules ?? {}).map((entry) => [
+              entry[0],
+              entry[1].code,
+            ]),
+          ),
+          ...Object.fromEntries(
+            Object.entries(consumer.modules).map((entry) => [
+              entry[0],
+              entry[1].code,
+            ]),
+          ),
+        },
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          '<div id="app"></div><div id="plain"></div><div id="error"></div>',
+        )
+        await page.addScriptTag({ content: code })
+        await expect
+          .poll(() => page.locator('#card').textContent())
+          .toBeTruthy()
+        expect(JSON.parse((await page.locator('#card').textContent())!))
+          .toMatchInlineSnapshot(`
+        {
+          "body": [
+            {
+              "backgroundColor": "#ff0000",
+              "width": 100,
+            },
+            {
+              "width": 120,
+            },
+          ],
+          "content": {
+            "height": 40,
+          },
+          "label": "unchanged",
+        }
+      `)
+        await page.locator('#scheme').click()
+        await expect
+          .poll(() => page.locator('#card').textContent())
+          .toContain('#00ff00')
+        await page.locator('#vars').click()
+        await expect
+          .poll(() => page.locator('#card').textContent())
+          .toContain('#ffff00')
+        expect(await page.evaluate('Fixture.inspect()')).toMatchInlineSnapshot(`
+        {
+          "refs": 1,
+          "releases": 0,
+          "rendered": true,
+          "value": [
+            {
+              "backgroundColor": "#ffff00",
+              "width": 160,
+            },
+            {
+              "width": 120,
+            },
+          ],
+        }
+      `)
+        expect(JSON.parse((await page.locator('#nested').textContent())!))
+          .toMatchInlineSnapshot(`
+        {
+          "body": {
+            "backgroundColor": "#ff0000",
+            "width": 100,
+          },
+        }
+      `)
+        expect(
+          await page.locator('#plain-value').textContent(),
+        ).toMatchInlineSnapshot(`"{"body":{"height":10}}"`)
+        await expect
+          .poll(() => page.locator('#error').textContent())
+          .toBe('Compiled native styles require a Zyzz Provider.')
+        expect(await page.evaluate('Fixture.invalid()')).toMatchInlineSnapshot(
+          `"withStyles requires style prop names excluding key and ref."`,
+        )
+        await page.locator('#remove').click()
+        await expect.poll(() => page.locator('#card').count()).toBe(0)
+        expect(await page.evaluate('Fixture.inspect()')).toMatchInlineSnapshot(`
+        {
+          "refs": 1,
+          "releases": 1,
+          "rendered": true,
+          "value": undefined,
+        }
+      `)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+})
+
 describe('defineConfig', () => {
   test.each([false, true])(
     'selects returned providers and authoring helpers with packed=%s',

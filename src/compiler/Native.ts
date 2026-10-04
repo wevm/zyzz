@@ -608,10 +608,9 @@ export function compile(options: compile.Options): compile.ReturnType {
         throw new CompileError(
           `Packed native callable ${name} requires a static recipe contract.`,
         )
-      const expression = callable(
-        recipe,
-        `${specifier}:${name}`,
-        link.style?.dynamic
+      const expression = callable(recipe, `${specifier}:${name}`, {
+        nativeContext: link.style?.nativeContext,
+        ...(link.style?.dynamic
           ? {
               slots: link.style.dynamic.slots,
               recipe: {
@@ -621,8 +620,8 @@ export function compile(options: compile.Options): compile.ReturnType {
                 defaultPayloads: link.style.dynamic.defaultPayloads,
               },
             }
-          : undefined,
-      )
+          : {}),
+      })
       if (!link.style?.dynamic || !typed) return expression
       const type = `typeof import(${JSON.stringify(specifier)})${path
         .map((part) => `[${JSON.stringify(part)}]`)

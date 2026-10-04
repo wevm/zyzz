@@ -17,6 +17,9 @@
     "expo": "latest",
     "react": "latest",
     "react-native": "latest",
+    "react-native-reanimated": "catalog:",
+    "react-native-safe-area-context": "catalog:",
+    "react-native-worklets": "catalog:",
     "zyzz": "latest"
   },
   "devDependencies": {

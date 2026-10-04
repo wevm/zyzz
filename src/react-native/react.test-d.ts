@@ -1,10 +1,43 @@
 /** Checks native variable inference and Provider selection props. @module */
 import { Config, Vars } from 'zyzz'
-import { defineConfig, useVars } from 'zyzz/react-native/react'
+import { defineConfig, useVars, withStyles } from 'zyzz/react-native/react'
 import { Provider } from 'zyzz/react-native/react'
-import type * as React from 'react'
+import * as React from 'react'
 import type { StyleSheet } from 'zyzz/react-native'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
+
+describe('withStyles', () => {
+  test('preserves required component props, additional style names, and refs', () => {
+    const Control = React.forwardRef<
+      HTMLDivElement,
+      {
+        readonly bodyStyle?: object | undefined
+        readonly label: string
+        readonly style?: object | undefined
+      }
+    >(() => null)
+    const Wrapped = withStyles(Control, { styleProps: ['bodyStyle'] })
+
+    expectTypeOf<
+      React.ComponentProps<typeof Wrapped>['label']
+    >().toEqualTypeOf<string>()
+    React.createElement(Wrapped, {
+      label: 'value',
+      ref: React.createRef<HTMLDivElement>(),
+    })
+    // @ts-expect-error Required component props remain required.
+    React.createElement(Wrapped, {})
+    React.createElement(Wrapped, {
+      label: 'value',
+      // @ts-expect-error Refs retain the wrapped component's instance type.
+      ref: React.createRef<HTMLSpanElement>(),
+    })
+    // @ts-expect-error Additional names must belong to the component.
+    withStyles(Control, { styleProps: ['missing'] })
+    // @ts-expect-error Refs cannot be resolved as styles.
+    withStyles(Control, { styleProps: ['ref'] })
+  })
+})
 
 describe('defineConfig', () => {
   test('returns a Provider with inferred catalog names and existing authoring helpers', () => {

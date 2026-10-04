@@ -103,6 +103,8 @@ Native graph output uses the existing `modules` and `dependencies` shape. Module
 
 Both web and native graph builds publish static recipes in `<entry>.zyzz.json` contracts. Native consumers supply those contracts, host-resolved `imports` edges, and any selected variable catalogs. Compilation restores token references, applies the consumer's context, and replaces imported callables with typed native selectors. Packed recipes also avoid combination expansion.
 
+Version 33 retains the owning configuration's named catalogs for exported styles. Contextual consumers select every catalog through the nearest Provider, including when the package exports styles without its configuration. Catalog references and defaults are validated before compilation.
+
 ```ts
 const native = Graph.compile({
   contracts: { 'library/index.js': library.contracts['library/index.ts']! },

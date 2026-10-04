@@ -117,6 +117,8 @@ export function visitor(
   type Owners = Map<Babel.NodePath<Babel.types.Function>, Bindings>
   const files = new WeakMap<Babel.BabelFile, Owners>()
   const native = new WeakSet<Babel.types.JSXOpeningElement>()
+  const animated = new WeakSet<Babel.types.JSXOpeningElement>()
+  const wrapped = new WeakSet<Babel.types.JSXOpeningElement>()
   return {
     Program: {
       enter(_, state) {
@@ -205,6 +207,44 @@ export function visitor(
         })()
         if (!root) return
         const binding = path.scope.getBinding(root.name)
+        if (
+          binding?.path.parentPath?.isImportDeclaration() &&
+          binding.path.parentPath.node.source.value ===
+            'react-native-reanimated'
+        ) {
+          animated.add(path.node)
+          return
+        }
+        if (binding?.constant && binding.path.isVariableDeclarator()) {
+          const call = binding.path.node.init
+          if (t.isCallExpression(call)) {
+            const callee = call.callee
+            const name = t.isIdentifier(callee)
+              ? callee
+              : t.isMemberExpression(callee) &&
+                  !callee.computed &&
+                  t.isIdentifier(callee.object) &&
+                  t.isIdentifier(callee.property, { name: 'withStyles' })
+                ? callee.object
+                : undefined
+            const factory = name && binding.path.scope.getBinding(name.name)
+            if (
+              factory?.path.parentPath?.isImportDeclaration() &&
+              ['zyzz/react-native', 'zyzz/react-native/react'].includes(
+                factory.path.parentPath.node.source.value,
+              ) &&
+              (t.isIdentifier(callee)
+                ? factory.path.isImportSpecifier() &&
+                  t.isIdentifier(factory.path.node.imported, {
+                    name: 'withStyles',
+                  })
+                : factory.path.isImportNamespaceSpecifier())
+            ) {
+              wrapped.add(path.node)
+              return
+            }
+          }
+        }
         if (
           !binding?.path.parentPath?.isImportDeclaration() ||
           binding.path.parentPath.node.source.value !== 'react-native'
@@ -321,6 +361,29 @@ export function visitor(
         t.isJSXEmptyExpression(path.node.value.expression)
       )
         return
+      if (
+        animated.has(path.parentPath.node as Babel.types.JSXOpeningElement) &&
+        !requiresResolution(path, path.node.value.expression)
+      )
+        return
+      if (wrapped.has(path.parentPath.node as Babel.types.JSXOpeningElement)) {
+        const value = path.node.value.expression
+        if (t.isIdentifier(value) && callables.has(value))
+          path.node.value.expression = t.memberExpression(
+            t.callExpression(value, []),
+            t.identifier('style'),
+          )
+        else if (
+          t.isCallExpression(value) &&
+          t.isIdentifier(value.callee) &&
+          callables.has(value.callee)
+        )
+          path.node.value.expression = t.memberExpression(
+            value,
+            t.identifier('style'),
+          )
+        return
+      }
       const binding = owner(
         path,
         files.get(state.file)!,
@@ -377,11 +440,41 @@ export function visitor(
       path.node.value.expression = t.callExpression(binding, inputs)
     },
     JSXSpreadAttribute(path, state) {
-      if (native.has(path.parentPath.node as Babel.types.JSXOpeningElement))
+      if (
+        (animated.has(path.parentPath.node as Babel.types.JSXOpeningElement) &&
+          !requiresResolution(path, path.node.argument)) ||
+        native.has(path.parentPath.node as Babel.types.JSXOpeningElement) ||
+        wrapped.has(path.parentPath.node as Babel.types.JSXOpeningElement)
+      )
         return
       const binding = owner(path, files.get(state.file)!, 'props')
       path.node.argument = t.callExpression(binding, [path.node.argument])
     },
+  }
+  function requiresResolution(
+    path: Babel.NodePath,
+    expression: Babel.types.Node,
+  ): boolean {
+    let required = false
+    t.traverseFast(expression, (node) => {
+      if (
+        callables.has(node) ||
+        t.isCallExpression(node) ||
+        (t.isMemberExpression(node) &&
+          !node.computed &&
+          t.isIdentifier(node.property, { name: 'style' }))
+      )
+        required = true
+      if (!t.isIdentifier(node)) return
+      const binding = path.scope.getBinding(node.name)
+      if (
+        binding?.path.isVariableDeclarator() &&
+        binding.path.node.init &&
+        callables.has(binding.path.node.init)
+      )
+        required = true
+    })
+    return required
   }
   function owner(
     path: Babel.NodePath,

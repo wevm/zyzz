@@ -2,6 +2,8 @@
 import * as Babel from '@babel/core'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
+import * as Packed from '../../test/fixtures/Packed.js'
+import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/babel'
 
@@ -11,6 +13,69 @@ const require = Module.createRequire(
 const expo = Module.createRequire(require.resolve('expo/package.json'))
 
 describe('zyzz', () => {
+  test.each(['named', 'namespace'])(
+    'lets withStyles own class JSX and local recipe inputs with %s imports',
+    async (kind) => {
+      const source = `import * as React from 'react';import {createRoot} from 'react-dom/client';import {Provider} from 'zyzz/react-native/react';
+      ${kind === 'named' ? "import {withStyles as wrap} from 'zyzz/react-native/react';" : "import * as Native from 'zyzz/react-native/react';"}
+      import {style,variants} from 'zyzz';
+      const card=style({opacity:0.5});const button=variants({variants:{large:{true:{width:'20px'},false:{width:'10px'}}}});
+      class Card extends React.Component {render(){return React.createElement('pre',{id:this.props.id},JSON.stringify({style:this.props.style,content:this.props.contentContainerStyle}))}}
+      const Wrapped=${kind === 'named' ? 'wrap' : 'Native.withStyles'}(Card);
+      class Sample extends React.Component {render(){return <Wrapped id="class" style={button({large:true}).style}/>}}
+      function App(){return <Wrapped id="function" {...card()} style={card().style} contentContainerStyle={card().style}/>}
+      createRoot(document.getElementById('app')).render(React.createElement(Provider,{colorScheme:'light'},React.createElement(React.Fragment,null,React.createElement(Sample),React.createElement(App))));`
+      const result = Babel.transformSync(source, {
+        babelrc: false,
+        configFile: false,
+        filename: 'App.tsx',
+        plugins: [[zyzz, { platform: 'ios', units: { px: 1 } }]],
+        presets: [
+          [expo.resolve('babel-preset-expo'), { enableBabelRuntime: false }],
+        ],
+      })
+
+      expect(result?.code?.includes('useStyles')).toMatchInlineSnapshot('false')
+      expect(result?.code?.includes('useNativeStyles')).toMatchInlineSnapshot(
+        'false',
+      )
+      const code = await Packed.bundle({
+        entry: 'App.ts',
+        modules: { 'App.ts': result!.code! },
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent('<div id="app"></div>')
+        await page.addScriptTag({ content: code })
+        await expect
+          .poll(() => page.locator('#class').textContent())
+          .toBeTruthy()
+        expect(JSON.parse((await page.locator('#class').textContent())!))
+          .toMatchInlineSnapshot(`
+          {
+            "style": {
+              "width": 20,
+            },
+          }
+        `)
+        expect(JSON.parse((await page.locator('#function').textContent())!))
+          .toMatchInlineSnapshot(`
+          {
+            "content": {
+              "opacity": 0.5,
+            },
+            "style": {
+              "opacity": 0.5,
+            },
+          }
+        `)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
   test('keeps hook bindings inside memoized components through Fast Refresh and module lowering', () => {
     const source = `import {memo, useState} from 'react';
       import {View as Box} from 'react-native';

@@ -170,6 +170,63 @@ export function useVars(
   return React.useSyncExternalStore(store.subscribe, read, read)
 }
 
+/**
+ * Resolves compiled style props for components using React updates.
+ * @param Component - Function, class, or ref-forwarding component receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component preserving the original props and ref.
+ * @throws For invalid style prop names or unresolved native selections.
+ */
+export function withStyles<const component extends React.ElementType>(
+  Component: component,
+  options: withStyles.Options<component> = {},
+) {
+  const additional = options.styleProps ?? []
+  if (
+    !Array.isArray(additional) ||
+    additional.some(
+      (name) =>
+        typeof name !== 'string' || !name || name === 'key' || name === 'ref',
+    )
+  )
+    throw new Error(
+      'withStyles requires style prop names excluding key and ref.',
+    )
+
+  const names = [...new Set(['style', 'contentContainerStyle', ...additional])]
+  const Wrapped = React.forwardRef<
+    React.ComponentRef<component>,
+    React.ComponentPropsWithoutRef<component>
+  >((props, ref) => {
+    const selected = useStyles()
+    const resolved: Record<string, unknown> = { ...props, ref }
+    for (const name of names)
+      if (Object.hasOwn(props, name))
+        resolved[name] = selected.style(
+          (props as Record<string, unknown>)[name],
+        )
+
+    return React.createElement(Component, resolved)
+  })
+  Wrapped.displayName = `withStyles(${typeof Component === 'string' ? Component : Component.displayName || Component.name || 'Component'})`
+
+  return Wrapped
+}
+
+/** Style-bearing component properties resolved by the wrapper. */
+export declare namespace withStyles {
+  /** Additional names are resolved alongside style and contentContainerStyle. */
+  type Options<component extends React.ElementType> = {
+    /** Additional style props declared by the wrapped component. */
+    readonly styleProps?:
+      | readonly Exclude<
+          Extract<keyof React.ComponentProps<component>, string>,
+          'key' | 'ref'
+        >[]
+      | undefined
+  }
+}
+
 function styles(value: NativeContext.Context | undefined) {
   return {
     props: (props: Record<string, unknown> | null | undefined) =>

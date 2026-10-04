@@ -1,0 +1,518 @@
+# Conditions
+
+Style browser states, viewport and container sizes, supported features, and related elements with standard CSS conditions.
+
+## Overview
+
+A condition makes declarations apply only while something is true, such as the pointer hovering an element, the viewport reaching a width, or an ancestor being open. Otherwise, the element keeps its base declarations.
+
+In a definition, a condition is a key whose value holds the declarations to apply while it matches. Keys use CSS syntax: pseudo-classes such as `':hover'`, at-rules such as `'@media (min-width: 48rem)'`, and selectors such as `'&[aria-expanded="true"]'` grouped under `selectors`.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>Account</h2>
+    </article>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    containerType: 'inline-size',
+    padding: '1rem',
+    ':focus-within': { outline: '2px solid currentColor' }, // [!code hl]
+    '@media (min-width: 48rem)': { padding: '1.5rem' }, // [!code hl]
+  })
+
+  export const title = style({
+    fontSize: '1.25rem',
+    '@container (min-width: 32rem)': { fontSize: '1.5rem' }, // [!code hl]
+    selectors: {
+      [`${card}[data-state="open"] &`]: { color: '#06c' }, // [!code hl]
+    },
+  })
+}
+```
+
+The compiler emits each condition as an ordinary CSS rule ahead of time, so the browser evaluates it without runtime listeners from Zyzz. TypeScript checks the declarations inside every condition, and the compiler checks selector grammar and query names.
+
+Each condition groups the declarations that apply under it, as in vanilla-extract and Stitches. StyleX instead nests conditions inside each property's value with a `default` key, and Tailwind CSS adds a prefix such as `hover:` to each utility.
+
+## Basic Usage
+
+Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. These examples import the root `style`, so literal CSS values work without a config.
+
+### Style browser states
+
+Pseudo-class keys such as `':hover'`, `':active'`, `':focus-visible'`, and `':disabled'` apply while the browser reports that state.
+
+```tsx title="SaveButton.tsx"
+import { style } from 'zyzz'
+
+export function SaveButton(props: SaveButton.Props) {
+  return (
+    <button disabled={props.disabled} type="button" {...styles.button()}>
+      Save
+    </button>
+  )
+}
+
+export declare namespace SaveButton {
+  type Props = { disabled?: boolean | undefined }
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: '#06c',
+    color: 'white',
+    padding: '0.5rem 1rem',
+    ':hover': { backgroundColor: '#05a' }, // [!code hl]
+    ':active': { backgroundColor: '#048' }, // [!code hl]
+    ':focus-visible': { outline: '2px solid #06c', outlineOffset: '2px' }, // [!code hl]
+    ':disabled': { backgroundColor: '#999', cursor: 'not-allowed' }, // [!code hl]
+  })
+}
+```
+
+Conditions keep their authored order, which decides the result when several states match at once. While pressing, `:active` follows `:hover` and wins. A disabled button stays gray under the pointer because `:disabled` comes last.
+
+### Respond to the viewport and containers
+
+Media queries measure the viewport. Container queries measure the nearest ancestor that declares a `containerType`. Both use CSS syntax as written.
+
+```tsx title="Panel.tsx"
+import { style } from 'zyzz'
+
+export function Panel() {
+  return (
+    <div {...styles.container()}>
+      <section {...styles.panel()}>
+        <span>First</span>
+        <span>Second</span>
+      </section>
+    </div>
+  )
+}
+
+namespace styles {
+  export const container = style({ containerType: 'inline-size' })
+
+  export const panel = style({
+    display: 'grid',
+    gap: '0',
+    padding: '0.5rem',
+    '@container (min-width: 24rem)': { gap: '1rem' }, // [!code hl]
+    '@media (min-width: 48rem)': { padding: '1rem' }, // [!code hl]
+  })
+}
+```
+
+### Check feature support
+
+`@supports` applies declarations only where the browser supports a feature. The declarations outside the query act as the fallback.
+
+```ts title="gallery.styles.ts"
+import { style } from 'zyzz'
+
+export const gallery = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '1rem',
+  // [!code hl]
+  '@supports (display: grid)': {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
+  },
+})
+```
+
+### Combine conditions
+
+Nested conditions combine with AND. Here, the hover style applies only on devices that can hover, and only while the pointer is over the element.
+
+```ts title="link.styles.ts"
+import { style } from 'zyzz'
+
+export const link = style({
+  opacity: 1,
+  '@media (hover: hover)': {
+    ':hover': { opacity: 0.8 }, // [!code hl]
+  },
+})
+```
+
+The compiler emits the rules in the same order, with the pseudo-class nested inside the query. Class names depend on the module path:
+
+```css
+.z-bcI3yC-link-opacity-0 {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .z-bcI3yC-link-opacity-1 {
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+```
+
+Write base declarations before their conditions. vanilla-extract emits media queries last, but Zyzz keeps the authored order, so a query written before a base declaration does not override it. Tailwind CSS reads stacked variants from left to right, which matches nesting from the outer condition inward.
+
+### Style attribute states
+
+String selectors live under `selectors` and include `&` for the styled element. Attribute selectors read state that the element already exposes, such as `aria-expanded`, `aria-invalid`, or `data-state`.
+
+```tsx title="Disclosure.tsx"
+import { style } from 'zyzz'
+
+export function Disclosure(props: Disclosure.Props) {
+  return (
+    <button aria-expanded={props.open} type="button" {...styles.trigger()}>
+      Details
+    </button>
+  )
+}
+
+export declare namespace Disclosure {
+  type Props = { open: boolean }
+}
+
+namespace styles {
+  export const trigger = style({
+    backgroundColor: 'transparent',
+    selectors: {
+      '&[aria-expanded="true"]': { backgroundColor: '#eee' }, // [!code hl]
+    },
+  })
+}
+```
+
+Styling the attribute keeps the visual state and the accessible state in agreement. A separate prop or class for the same state could drift from what assistive technology reports.
+
+### Style related elements
+
+Relationship selectors interpolate another definition without calling it. `&` stays the target, and an empty `style()` supplies an identity for an ancestor or sibling.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card(props: Card.Props) {
+  return (
+    <section data-state={props.open ? 'open' : 'closed'} {...styles.card()}>
+      <span {...styles.label()}>Details</span>
+    </section>
+  )
+}
+
+export declare namespace Card {
+  type Props = { open: boolean }
+}
+
+namespace styles {
+  export const card = style()
+
+  export const label = style({
+    opacity: 0.5,
+    selectors: {
+      [`${card}:hover &`]: { opacity: 0.8 }, // [!code hl]
+      [`${card}[data-state="open"] &`]: { opacity: 1 }, // [!code hl]
+    },
+  })
+}
+```
+
+Tailwind CSS and Panda CSS mark the ancestor with a `group` class, and StyleX uses markers. Any `style()` definition plays that role here, including an empty one. The compiler checks interpolated identities and selector grammar, but cannot prove that the related element exists in the DOM.
+
+### Name queries
+
+A config can name breakpoints for media queries, container widths for container queries, and container names. Aliases compile to literal conditions, so selecting a different variable set never moves a threshold.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  vars: {
+    breakpoint: { desktop: '64rem', phone: '30rem', tablet: '48rem' },
+    container: { card: '24rem' },
+    containerNames: ['sidebar'],
+  },
+})
+```
+
+Each alias form compiles to one query:
+
+```ts title="layout.styles.ts"
+import { style } from './zyzz.config.js'
+
+export const layout = style({
+  '@media tablet': { padding: '2rem' }, // @media (width >= 48rem)
+  '@media <tablet': { padding: '1rem' }, // @media (width < 48rem)
+  '@media phone..tablet': { gap: '1rem' }, // @media (30rem <= width < 48rem)
+  '@container card': { display: 'grid' }, // @container (width >= 24rem)
+  '@container sidebar card': { gap: '2rem' }, // @container sidebar (width >= 24rem)
+})
+```
+
+`tablet` and `>=tablet` are equivalent, and ranges include the lower bound but not the upper one. An unknown name fails the type check, and the compiler reports it at the key. Conditions with parentheses and media types such as `print` pass through unchanged.
+
+## Recipes
+
+### Hover only where hovering exists
+
+Touch devices can keep a hover style after a tap. Wrapping `:hover` in a hover-capability query limits it to devices with a hovering pointer.
+
+```ts title="row.styles.ts"
+import { style } from 'zyzz'
+
+export const row = style({
+  backgroundColor: 'transparent',
+  '@media (hover: hover)': {
+    ':hover': { backgroundColor: '#f5f5f5' }, // [!code hl]
+  },
+})
+```
+
+Tailwind CSS's `hover:` variant includes this query automatically. In Zyzz, the query is written out, so it appears in the definition.
+
+### Lay out mobile first
+
+Base declarations style the smallest screens, and each breakpoint adds an override. At desktop widths both queries match, and the later `desktop` rule wins because rules keep their authored order.
+
+```ts title="grid.styles.ts"
+import { style } from './zyzz.config.js'
+
+export const grid = style({
+  display: 'grid',
+  gap: '1rem',
+  gridTemplateColumns: '1fr',
+  '@media tablet': { gridTemplateColumns: 'repeat(2, 1fr)' }, // [!code hl]
+  '@media desktop': { gridTemplateColumns: 'repeat(3, 1fr)' }, // [!code hl]
+})
+```
+
+A range such as `'@media tablet..desktop'` applies only between two thresholds, which avoids relying on order for overlapping queries.
+
+### Adapt a card to its container
+
+A container query reacts to the space a component receives rather than the viewport. The same card can stack in a narrow sidebar and sit side by side in a wide column.
+
+```tsx title="ProductCard.tsx"
+import { style } from './zyzz.config.js'
+
+export function ProductCard() {
+  return (
+    <div {...styles.container()}>
+      <article {...styles.card()}>
+        <img alt="" src="/product.png" />
+        <p>Product details</p>
+      </article>
+    </div>
+  )
+}
+
+namespace styles {
+  export const container = style({
+    containerName: 'sidebar',
+    containerType: 'inline-size',
+  })
+
+  export const card = style({
+    display: 'grid',
+    gap: '1rem',
+    '@container sidebar card': { gridTemplateColumns: '8rem 1fr' }, // [!code hl]
+  })
+}
+```
+
+### Mark invalid fields
+
+`aria-invalid` reports a failed validation to assistive technology. The input styles that attribute, and the hint after it reacts through a sibling selector.
+
+```tsx title="EmailField.tsx"
+import { style } from 'zyzz'
+
+export function EmailField(props: EmailField.Props) {
+  return (
+    <div {...styles.field()}>
+      <input
+        aria-describedby="email-hint"
+        aria-invalid={props.invalid}
+        type="email"
+        {...styles.input()}
+      />
+      <p id="email-hint" {...styles.hint()}>
+        Enter a valid email address.
+      </p>
+    </div>
+  )
+}
+
+export declare namespace EmailField {
+  type Props = { invalid?: boolean | undefined }
+}
+
+namespace styles {
+  export const field = style({ display: 'grid', gap: '0.25rem' })
+
+  export const input = style({
+    border: '1px solid #d4d4d4',
+    selectors: {
+      '&[aria-invalid="true"]': { borderColor: '#c00' }, // [!code hl]
+    },
+  })
+
+  export const hint = style({
+    color: '#666',
+    selectors: {
+      [`${input}[aria-invalid="true"] ~ &`]: { color: '#c00' }, // [!code hl]
+    },
+  })
+}
+```
+
+A sibling selector only reaches elements that come later in the DOM, so the hint follows the input.
+
+### Rotate an icon when a disclosure opens
+
+The trigger already exposes `aria-expanded`. A relationship selector lets the icon inside it react to that attribute from its own definition.
+
+```tsx title="Disclosure.tsx"
+import { style } from 'zyzz'
+
+export function Disclosure(props: Disclosure.Props) {
+  return (
+    <button aria-expanded={props.open} type="button" {...styles.trigger()}>
+      Details
+      <span aria-hidden="true" {...styles.icon()}>
+        ▾
+      </span>
+    </button>
+  )
+}
+
+export declare namespace Disclosure {
+  type Props = { open: boolean }
+}
+
+namespace styles {
+  export const trigger = style({ display: 'inline-flex', gap: '0.5rem' })
+
+  export const icon = style({
+    transition: 'rotate 150ms',
+    selectors: {
+      [`${trigger}[aria-expanded="true"] &`]: { rotate: '180deg' }, // [!code hl]
+    },
+  })
+}
+```
+
+### Reveal actions on hover or focus
+
+Actions inside a card can stay hidden until the card is hovered or focused. Including `:focus-within` keeps the actions reachable with a keyboard.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <article {...styles.card()}>
+      <h2>Invoice</h2>
+      <button type="button" {...styles.actions()}>
+        Download
+      </button>
+    </article>
+  )
+}
+
+namespace styles {
+  export const card = style({ padding: '1rem' })
+
+  export const actions = style({
+    opacity: 0,
+    selectors: {
+      [`${card}:hover &`]: { opacity: 1 }, // [!code hl]
+      [`${card}:focus-within &`]: { opacity: 1 }, // [!code hl]
+    },
+  })
+}
+```
+
+### Adapt to the color scheme
+
+Zyzz has no built-in dark condition. Colors switch through `light-dark()`, which follows the `color-scheme` of the element. Properties other than colors use a `prefers-color-scheme` query.
+
+```ts title="panel.styles.ts"
+import { style } from 'zyzz'
+
+export const panel = style({
+  backgroundColor: 'light-dark(#fff, #111)', // [!code hl]
+  boxShadow: '0 1px 2px rgb(0 0 0 / 0.2)',
+  color: 'light-dark(#111, #eee)', // [!code hl]
+  '@media (prefers-color-scheme: dark)': { boxShadow: 'none' }, // [!code hl]
+})
+```
+
+The query follows the system setting even when a scope selects a scheme explicitly, so `light-dark()` suits most color changes. Config color pairs compile to `light-dark()`, and [Themes & Tokens](/docs/guides/themes) covers selecting a scheme.
+
+### Respect reduced motion
+
+`prefers-reduced-motion` reports a user preference for less motion. The transition still exists by default and turns off when the preference is set.
+
+```ts title="panel.styles.ts"
+import { style } from 'zyzz'
+
+export const panel = style({
+  transition: 'transform 200ms ease-out',
+  '@media (prefers-reduced-motion: reduce)': { transition: 'none' }, // [!code hl]
+})
+```
+
+### Hide controls when printing
+
+Media types pass through unchanged, so a `print` query can drop interactive controls from printed pages.
+
+```ts title="toolbar.styles.ts"
+import { style } from 'zyzz'
+
+export const toolbar = style({
+  display: 'flex',
+  gap: '0.5rem',
+  '@media print': { display: 'none' }, // [!code hl]
+})
+```
+
+### Lower a selector's specificity
+
+A selector's specificity follows its authored text. Wrapping part of it in `:where(...)` removes that part's weight, so later overrides of the same element win more easily.
+
+```ts title="tab.styles.ts"
+import { style } from 'zyzz'
+
+export const tab = style({
+  color: '#666',
+  selectors: {
+    '&:where([aria-selected="true"])': { color: '#111' }, // [!code hl]
+  },
+})
+```
+
+## More
+
+<Card.Group>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Compose overrides, bind dynamic values, and share CSS variables.
+  </Card>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Select component choices, including choices driven by CSS conditions.
+  </Card>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Name breakpoints and containers, and make token values responsive.
+  </Card>
+  <Card title="Concepts & Principles" icon="boxes" href="/docs/concepts">
+    See how conditions and relationships compile into ordinary CSS.
+  </Card>
+</Card.Group>

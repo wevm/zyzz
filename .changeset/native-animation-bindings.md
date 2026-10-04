@@ -1,5 +1,5 @@
 ---
-'zyzz': minor
+'zyzz': patch
 ---
 
 Added `withStyles` and optional Reanimated hooks for Provider-selected variables and applied numeric or color properties.

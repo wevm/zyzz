@@ -21,7 +21,7 @@ The charts use the committed snapshot, verified against its downloaded `benchmar
 
 ### Literal Compilation
 
-Timings include compilation, common CSS minification, and browser JavaScript bundling. Zyzz starts from validated in-memory definitions using independent composition; source parsing and runtime composition are excluded. Other libraries have different source-processing costs.
+Timings include compilation, common CSS minification, and browser JavaScript bundling. Zyzz starts from validated in-memory definitions with independent composition, so source parsing and runtime composition are excluded. Other libraries have different source-processing costs, described under measurement boundaries below.
 
 <LiteralDelivery />
 
@@ -33,7 +33,7 @@ Each literal chart has its own linear byte scale. The tables retain all eight wo
 
 #### Mean Build Time
 
-Milliseconds; lower is better. Zyzz recorded the lowest observed mean in all eight literal workloads. The shaded cells compare each measurement with Zyzz, and the labels show ratios rounded to two decimals.
+Milliseconds, lower is better. Zyzz recorded the lowest observed mean in all eight literal workloads. The shaded cells compare each measurement with Zyzz, and the labels show ratios rounded to two decimals.
 
 <Results>
 
@@ -54,7 +54,7 @@ Literal timing samples ranged from 3 to 85 per case, with reported relative marg
 
 #### CSS Size
 
-Gzip bytes; lower is better.
+Gzip bytes, lower is better.
 
 <Results>
 
@@ -92,11 +92,13 @@ Gzip bytes for CSS plus required client JavaScript, compressed separately. Class
 
 ### Theme Compilation
 
-Two compatible scopes with light/dark values. All lanes include CSS and component/scope JavaScript delivery. `zyzz` starts from validated references; `zyzz-tokens` additionally validates and resolves shorthand tokens. Neither Zyzz lane includes source parsing.
+Two compatible scopes with light and dark values. All lanes include CSS and component and scope JavaScript delivery. `zyzz` starts from validated references, while `zyzz-tokens` also validates and resolves shorthand tokens. Neither Zyzz lane includes source parsing.
+
+The other lanes use [Panda semantic tokens](https://panda-css.com/docs/theming/tokens#semantic-tokens), [StyleX variables and `createTheme`](https://stylexjs.com/docs/learn/theming/creating-themes), [Tailwind theme variables](https://tailwindcss.com/docs/theme), and [vanilla-extract theme contracts](https://vanilla-extract.style/documentation/api/create-theme-contract/).
 
 <ThemeDelivery />
 
-The theme charts share a scale and show CSS and JavaScript separately. At 10 components, vanilla-extract delivered 592 gzip bytes versus Zyzz's 645. At 100 components, Zyzz delivered 1,218 versus 1,236. The `zyzz-tokens` lane has identical delivery and adds token resolution to build timing. Output size depends on the workload.
+The theme charts share a scale and split CSS from JavaScript. At 10 components, vanilla-extract delivered 592 gzip bytes versus Zyzz's 645. At 100 components, Zyzz delivered 1,218 versus 1,236. The `zyzz-tokens` lane has identical delivery and adds token resolution to build timing. Output size depends on the workload.
 
 #### 10 Components
 
@@ -128,7 +130,7 @@ The theme charts share a scale and show CSS and JavaScript separately. At 10 com
 
 </Results>
 
-Theme timings used 3 to 72 samples per case; reported relative margins of error ranged from 7.14% to 68.8%.
+Theme timings used 3 to 72 samples per case, with reported relative margins of error from 7.14% to 68.8%.
 
 ## Measurement boundaries
 
@@ -145,7 +147,9 @@ Theme timings used 3 to 72 samples per case; reported relative margins of error 
 
 </Results>
 
-Literal adapters perform different work. Tailwind excludes content scanning. StyleX includes Babel parsing. vanilla-extract includes loading and evaluation. Panda includes source rewriting. Zyzz starts with validated definitions and independent composition. The in-memory compiler results do not establish end-to-end bundler performance.
+Literal adapters perform different work. Tailwind runs `compile(...).build(candidates)` and excludes [content scanning](https://tailwindcss.com/docs/detecting-classes-in-source-files). StyleX includes parsing through its [Babel plugin](https://stylexjs.com/docs/api/configuration/babel-plugin/), and vanilla-extract includes source loading and evaluation through its [esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/).
+
+Panda runs its Node driver for [code generation and extraction](https://panda-css.com/docs/get-started/why-panda), including source rewriting by its esbuild transformer. Zyzz starts with validated definitions and independent composition. These in-memory compiler results do not establish end-to-end bundler performance.
 
 Current comparisons use grouped CSS output. Atomic output remains the application default. Browser correctness checks are separate from timing samples. See the [current methodology](https://github.com/wevm/zyzz/blob/main/bench/README.md), [adapter workloads](https://github.com/wevm/zyzz/blob/main/bench/adapters/README.md), and [native benchmarks](https://github.com/wevm/zyzz/blob/main/bench/native/README.md) for those suites.
 
@@ -158,14 +162,24 @@ pnpm install --frozen-lockfile
 pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
 ```
 
-For a baseline comparison, run both revisions sequentially on the same idle machine with the same harness and sample settings. Save the baseline outside the checkout, then append `--compare <baseline.json>` to the candidate run. Keep means, relative error, sample counts, commit IDs, and environment metadata together.
+For a baseline comparison, run both revisions sequentially on the same idle machine with the same harness and sample settings. Save the baseline outside the checkout, then compare the candidate against it:
+
+```sh /--outputJson/ /--compare/
+# On the baseline revision
+pnpm exec vp test bench --run --no-file-parallelism --outputJson ../baseline.json
+
+# On the candidate revision
+pnpm exec vp test bench --run --no-file-parallelism --compare ../baseline.json
+```
+
+Keep means, relative error, sample counts, commit IDs, and environment metadata together.
 
 - **Artifacts:** the run contains raw, gzip, Brotli, timing, and environment reports.
 - **Corpus:** eight literal workloads and two theme comparisons are retained above.
-- **Processing:** literal CSS targets Chrome 120, Firefox 128, Safari 17; theme CSS targets Chrome 123, Firefox 128, Safari 17.5.
+- **Processing:** literal CSS targets Chrome 120, Firefox 128, and Safari 17, while theme CSS targets Chrome 123, Firefox 128, and Safari 17.5.
 - **Scope:** source extraction, module rewriting, props binding, and host edits have separate measurements in the run report.
 
-See the [methodology at this commit](https://github.com/wevm/zyzz/blob/9f9d42c384bcd887fff8956e70b078ee75501bc2/bench/README.md) for compiler boundaries and sample configuration. Generated reports stay ignored; this curated snapshot is intentionally committed. Update all comparison lanes from one identified run.
+See the [methodology at this commit](https://github.com/wevm/zyzz/blob/9f9d42c384bcd887fff8956e70b078ee75501bc2/bench/README.md) for compiler boundaries and sample configuration. Generated reports stay ignored, while this curated snapshot is intentionally committed. Update all comparison lanes from one identified run.
 
 > [!NOTE]
 > The literal results above do not measure application rendering, dynamic variants, SSR, or native rendering. See the [variant measurements](https://github.com/wevm/zyzz/blob/main/bench/Web-variants.md) for the separate web workloads.

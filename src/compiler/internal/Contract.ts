@@ -412,7 +412,8 @@ export function read(
           throw new Error('Native style catalogs require a packed style.')
         const context = record(entry.nativeContext)
         const vars = Object.fromEntries(
-          Object.entries(record(context.vars)).map(([name, value]) => {
+          Object.entries(record(context.vars)).map((entry) => {
+            const [name, value] = entry
             const theme = themes[string(value)]
             if (!name || !theme)
               throw new Error('Unknown packed native style catalog.')

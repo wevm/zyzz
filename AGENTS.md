@@ -100,31 +100,63 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep authoritative state, configuration, schemas, and constants in one place; derive dependent values.
 - Avoid wrappers that only rename another function or mirror an SDK without narrowing capabilities or adding a domain contract.
 
-## Documentation Conventions
+## Code Documentation
 
 - Start every maintained TypeScript module with a brief standalone TSDoc `@module` comment describing its responsibility. Place it before imports, or after a required shebang. Include entrypoints, internal modules, tooling, fixtures, integration tests, type fixtures, and benchmarks; describe the module rather than repeating its filename. Keep export-level TSDoc separately.
 
 - Add TSDoc to every public export and public type property. Write or update the contract documentation alongside the implementation.
 - Document caller-visible purpose, inputs, output, defaults, errors, and side effects. Keep low-level wiring in nearby implementation comments.
-- Keep examples small and focused on the exported behavior. Prefer a snippet, concrete example, or useful visual to a long conceptual explanation; avoid repeating what the example already shows.
-- Keep prose paragraphs under 50 words and focused on one idea. Use bullets for enumerable content and tables for comparisons. Tighten wording rather than mechanically splitting paragraphs.
+- Update the owning entrypoint documentation when adding or changing a public module.
+
+## Writing Documentation
+
+Applies to the documentation site and other Markdown documentation. Prose Conventions also apply.
+
+### Voice and Terms
+
+- Write for developers who already know CSS. Use standard CSS terms, such as cascade, specificity, custom properties, and container queries, without defining them or replacing them with informal descriptions.
+- Explain behavior through authored styles and the emitted CSS. Leave compiler internals to the pages that document them, such as Build & Delivery and the Compiler API.
+- Do not mention other styling libraries in guides. Name them only on the Comparisons and Benchmarks pages and in the migration guides. Other libraries' documentation can inform a draft without appearing in its text.
+
+### Paragraphs and Sections
+
+- Keep each paragraph to one idea in about 40 words, and never more than 50. Tighten wording rather than mechanically splitting paragraphs.
+- Write at most three paragraphs per section. When a topic needs more, split it into sections with their own headings.
+- Use bullets for enumerable content and tables for comparisons.
 - Start each item of a topic list with a bold label that ends in a colon, such as ``- **`light dark`:** Follows the operating system preference.`` The site renders a list item's leading bold label in the primary `foreground` color.
 - Mark preview or unimplemented APIs with GitHub Markdown `> [!NOTE]` callouts scoped to the affected content. Do not add “Available” labels or status suffixes to headings. Examples must preserve the documented contract and must not imply preview APIs already work.
+
+### Headings
+
+- Write page titles and every heading in Title Case with fewer than four words, so they fit the sidebar and the "On this page" outline. Lowercase articles, coordinating conjunctions, and prepositions of four or fewer letters unless they begin or end the heading. Product names keep their own casing, such as `vanilla-extract`.
+
+### Guide Structure
+
+- Organize each guide into these `##` sections, in order:
+  - **Overview:** Introduces the feature in at most three paragraphs and ends with a basic example. Use one code block, or tabs when the example spans files or targets.
+  - **Walkthrough:** Builds one complete example step by step, from definition to applied styles.
+  - **Recipes:** Lists focused tasks the feature supports, each under its own `###` heading.
+  - **More:** Links to related guides and API pages.
+- When a guide has no recipes, hoist its sections to `##` headings between Overview and More, as the Variants guide does.
+- Group guides by topic, and preserve recipe coverage when consolidating pages.
+
+### Navigation
+
 - Order consumer documentation by common tasks: getting started, styling, themes, and variants before compiler internals. Use focused guides with end-to-end examples; show CLI and bundler setup variants in Getting Started. Preserve this intentional reading order instead of alphabetizing navigation.
 - Maintain three sidebar groups: Introduction, Guides, and API. Keep Concepts & Principles on one page under Introduction; theme scopes belong within Themes & Tokens. API navigation follows entrypoint, export/module, then method; document signatures, examples, parameters, returns, types, and errors alongside public exports.
-- Write page titles and every heading in Title Case with fewer than four words, so they fit the sidebar and the "On this page" outline. Lowercase articles, coordinating conjunctions, and prepositions of four or fewer letters unless they begin or end the heading. Product names keep their own casing, such as `vanilla-extract`.
-- Group guides by topic, with a Recipes section containing focused tasks; preserve recipe coverage when consolidating pages.
-- Do not mention other styling libraries in guides. Name them only on the Comparisons and Benchmarks pages and in the migration guides. Other libraries' documentation can inform a draft without appearing in its text.
 - Use API tables with descriptions in entrypoint and module overview pages. Give each parameter and returned property its own subheading, type, description, and small usage snippet; document defaults where applicable. Keep preview type names and unresolved defaults explicitly provisional.
+
+### Code Examples
+
+- Keep examples small and focused on the exported behavior. Prefer a snippet, concrete example, or useful visual to a long conceptual explanation; avoid repeating what the example already shows.
+- Explain documentation code examples with short comments on their own line above the code they describe. State what the code does or why, rather than restating it. Number the comments (`// 1.`, `// 2.`) when an example follows ordered steps, such as define, register, and apply. Keep `// [!code hl]` markers separate from explanatory comments, and highlight a comment whenever the code it describes is highlighted, usually with one `// [!code hl:N]` range covering both.
 - Export config helpers directly with `export const { style, variants, theme, ... } = Config.create(...)`, selecting the helpers needed by the application. Consume named imports such as `{ style, variants, theme }`; do not recommend a `zyzz` config instance or `zyzz.*` member access. Config modules need no default export. The Vite and Next.js plugin functions remain named `zyzz`.
 - Group related `style` and `variants` definitions in `namespace styles {}`, with exported `const` members and `styles.card()` or `styles.button(options)` at application sites. Use this convention throughout README, docs, architecture examples, and application fixtures. Use `export namespace styles` in shared style modules. Keep reusable literal declarations inside the namespace and reference earlier declarations directly. Namespaces belong at module scope and require TypeScript lowering. Keep focused API parameter snippets and fixtures testing other supported syntax when that syntax is the subject of the example or test. Overview usage should show two styles applied to nested elements in a component.
 - Separate adjacent `style` definitions with one blank line, including definitions inside `namespace styles`.
-- Explain documentation code examples with short comments on their own line above the code they describe. State what the code does or why, rather than restating it. Number the comments (`// 1.`, `// 2.`) when an example follows ordered steps, such as define, register, and apply. Keep `// [!code hl]` markers separate from explanatory comments, and highlight a comment whenever the code it describes is highlighted, usually with one `// [!code hl:N]` range covering both.
 - Place module-scope `namespace styles` declarations at the bottom of the file, after components and internal helpers. Follow this order in documentation examples as well.
 - Select named themes with `themes({ theme: 'mint', colorScheme: 'dark' })`, with inferred catalog keys and an optional scheme; do not recommend `themes.mint()` or `themes[name]()`. Keep preview status explicit until callable selection is implemented. Access shared token and variable references through `theme.tokens` and `theme.vars`.
 - Document the Vite plugin as a named `zyzz` function from `zyzz/vite`, called with `plugins: [zyzz()]`.
 - Document the Next.js integration as `zyzz(nextConfig)` from `zyzz/next`. It wraps existing configuration and owns Webpack/Turbopack wiring without requiring separate Babel or PostCSS setup. Keep preview notes until both bundler paths are verified.
-- Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions
 

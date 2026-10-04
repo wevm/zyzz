@@ -1,81 +1,100 @@
+import * as Examples from './styling/Examples.js'
+import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
+
 # Styling
 
-Define reusable component styles, compose overrides, and bind values without generating CSS at runtime.
+Define typed styles beside components, apply them as props, and combine them in a predictable order.
 
-## Style components
+## Overview
 
-Complete [Getting Started](/docs/introduction/getting-started) to connect compilation before using this guide. The examples target React on the web. Native support has separate [capabilities and limits](/docs/introduction/compatibility).
+A `style` definition describes one element with camelCase CSS properties. The compiler reads every definition during the build and writes its rules to a stylesheet. Calling a definition at render time returns props that reference those rules, so the browser never generates CSS.
 
-Call `style` at module scope to define styles. Apply the definition by calling it, then spread the returned props onto the element. Keep component-specific definitions in a `namespace styles` at the bottom of the file.
+Most tasks in this guide use three functions, with `style` taking two forms:
 
-```tsx title="Actions.tsx"
-import { style } from 'zyzz'
+- **`style({ … }){:ts}`:** Declarations, states, and queries for one element.
+- **`style((values) => ({ … })){:ts}`:** Values that change per instance, bound to precompiled rules.
+- **`cx(…){:ts}`:** Applied styles merged in argument order, so later conflicts win.
+- **`variable(…){:ts}`:** A typed CSS variable shared by styles and their descendants.
 
-export function Actions() {
-  return (
-    <>
-      <button {...styles.button()} type="button">
-        Save
-      </button>
-      <button {...styles.button()} type="button">
-        Continue
-      </button>
-    </>
-  )
-}
+> [!TIP]
+> This guide covers element styles. [Variants](/docs/guides/variants) handle a fixed set of choices such as size or tone, and [Themes & Tokens](/docs/guides/themes) handle values shared across an application.
 
-namespace styles {
-  export const button = style({
-    borderRadius: '0.5rem',
-    padding: '0.75rem 1rem',
-  })
-}
-```
+The examples target React on the web and assume the compiler setup from [Getting Started](/docs/introduction/getting-started). Native support has separate [capabilities and limits](/docs/introduction/compatibility).
 
-The root `zyzz` import accepts literal CSS values without bundled tokens. Use `zyzz/default` for bundled design tokens, or import the bound `style` helper from your project's config. See [Themes & Tokens](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for configuring shared values.
+## Basic Usage
 
-Events, children, and accessibility attributes belong on the component. A styling function accepts its declared values and styling overrides, not arbitrary component props.
+### Define and Apply Styles
 
-## Add states and responsive styles
+Call `style` at module scope, and keep a component's definitions in a `namespace styles` at the bottom of its file. During rendering, call each definition and spread the result onto its element.
 
-Group selectors under `selectors`. Each selector includes `&` for the styled element. Use CSS conditions to change layout based on the viewport or browser capabilities.
+<Tabs label="Define and apply styles">
+<Tab title="Card.tsx">
 
 ```tsx title="Card.tsx"
 import { style } from 'zyzz'
 
 export function Card() {
-  return <article {...styles.card()}>Account details</article>
+  return (
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>Account</h2>
+      <p>Manage the name, email, and password for this account.</p>
+    </article>
+  )
 }
 
 namespace styles {
   export const card = style({
-    border: '1px solid #ddd',
+    border: '1px solid #d4d4d4',
+    borderRadius: '8px',
+    display: 'grid',
+    gap: '4px',
     padding: '1rem',
-    selectors: {
-      '&:hover': { borderColor: '#999' },
-    },
-    '@media (min-width: 48rem)': { padding: '2rem' },
+  })
+
+  export const title = style({
+    fontSize: '18px',
+    fontWeight: 600,
+    margin: 0,
   })
 }
 ```
 
-Nested conditions combine with AND. CSS specificity and inheritance still apply. For data and ARIA states, container queries, and relationships between elements, continue with [Conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md).
+</Tab>
+<Tab title="Rendered">
 
-## Share styles
+<Examples.Card />
 
-When several components need the same definition, export it from a shared module. Import that module as a namespace. Keep the config import explicit so the shared definition uses the intended token contract.
+</Tab>
+</Tabs>
 
-```ts title="button.styles.ts"
-import { style } from 'zyzz/default'
+With the default atomic output, the compiler writes one rule per declaration during the build. A call only returns the names of rules that already exist:
 
-export const button = style({
-  borderRadius: 'md',
-  padding: 4,
-})
+```ts
+styles.title()
+// { className: 'z-font-size-18px z-font-weight-600 z-m-0' }
 ```
 
+Properties and values are typed from CSS data. Editors list the keywords each property accepts, and an unsupported value fails type checking at the declaration:
+
+```ts twoslash
+// @noErrors
+import { style } from 'zyzz'
+
+style({ flexDirection: '' })
+//                      ^|
+```
+
+The compiler reads definitions without running application code. Literal values, local `const` records, and typed callbacks qualify. Running source that skipped the transform throws `style.MissingTransformError`, which means the build integration did not process that file.
+
+### Add States and Queries
+
+Nest declarations under pseudo-class, pseudo-element, attribute, and at-rule keys. In attribute keys, `&` stands for the styled element. Nested keys combine with AND, and each selector keeps its CSS specificity.
+
+<Tabs label="States and queries">
+<Tab title="Button.tsx">
+
 ```tsx title="Button.tsx"
-import * as styles from './button.styles.js'
+import { style } from 'zyzz'
 
 export function Button() {
   return (
@@ -84,40 +103,46 @@ export function Button() {
     </button>
   )
 }
-```
-
-Your bundler integration resolves and transforms these imports. Import the authored module normally. For a precompiled package, follow [Publish Libraries](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries), including stylesheet delivery.
-
-## Override styles
-
-Pass `className` or `style` to an applied definition for a caller-provided override. Inline `style` values use React CSS semantics and bypass token resolution. Here, the second button receives `2rem` of padding.
-
-```tsx title="Actions.tsx"
-import { style } from 'zyzz'
-
-export function Actions() {
-  return (
-    <>
-      <button {...styles.button()} type="button">
-        Save
-      </button>
-      <button {...styles.button({ style: { padding: '2rem' } })} type="button">
-        Continue
-      </button>
-    </>
-  )
-}
 
 namespace styles {
-  export const button = style({ padding: '1rem' })
+  export const button = style({
+    backgroundColor: '#0070f3',
+    border: 'none',
+    borderRadius: '6px',
+    color: 'white',
+    padding: '8px 16px',
+    // [!code hl:7]
+    ':hover': { backgroundColor: '#0060df' },
+    ':focus-visible': {
+      outline: '2px solid #0070f3',
+      outlineOffset: '2px',
+    },
+    '&[aria-busy="true"]': { cursor: 'progress', opacity: 0.6 },
+    '@media (min-width: 48rem)': { padding: '12px 24px' },
+  })
 }
 ```
 
-External classes follow the ordinary CSS cascade. Their order in `className` does not determine which declarations win. Inline overrides also remain subject to CSS importance.
+</Tab>
+<Tab title="Rendered">
 
-### Compose generated styles
+<Examples.Button />
 
-Use `cx` when combining applied Zyzz styles. Later conflicting declarations win at equal specificity and importance within matching conditions. In this example, the button has `1rem` of padding when `roomy` is true and `0.5rem` otherwise.
+</Tab>
+</Tabs>
+
+Hover darkens the button, keyboard focus adds a ring, and `aria-busy="true"` dims it. At widths of `48rem` and above, the larger padding applies.
+
+Conditional rules keep their authored position in the stylesheet, so a condition overrides only the declarations written before it. [Conditions](/docs/guides/conditions) covers container queries, named breakpoints, and styles that depend on another element.
+
+## Recipes
+
+### Combine Styles
+
+`cx` merges applied styles into one props object. When declarations conflict, the later argument wins. `false`, `null`, and `undefined` arguments are skipped, so `&&` applies a style conditionally.
+
+<Tabs label="Combine styles">
+<Tab title="Button.tsx">
 
 ```tsx title="Button.tsx"
 import { cx, style } from 'zyzz'
@@ -125,31 +150,101 @@ import { cx, style } from 'zyzz'
 export function Button(props: Button.Props) {
   return (
     <button
-      {...cx(styles.button(), props.roomy && styles.roomy())}
+      // [!code hl]
+      {...cx(styles.button(), props.compact && styles.compact())}
       type="button"
     >
-      Continue
+      Save
     </button>
   )
 }
 
 export declare namespace Button {
-  type Props = { roomy: boolean }
+  type Props = { compact?: boolean | undefined }
 }
 
 namespace styles {
-  export const button = style({ padding: '0.5rem' })
-  export const roomy = style({ padding: '1rem' })
+  export const button = style({ padding: '12px 20px' })
+
+  export const compact = style({ padding: '4px 12px' })
 }
 ```
 
-Multiple JSX spreads replace fields such as `className` and `style`; they do not compose them. `cx` returns one props object and preserves variable bindings and variant attributes. Conflicting variant ownership produces a compiler diagnostic.
+</Tab>
+<Tab title="Rendered">
 
-Composition requires compiler-resolved applications or supported immutable local props bindings. Use `enabled && styles.example()` for conditional arguments. Ternary selections, mutated or escaping bindings, and arbitrary external props are unsupported. Up to eight conditional arguments are supported. See the [cx reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) for nested composition and packed-library constraints.
+<Examples.Combine />
 
-## Bind dynamic values
+</Tab>
+</Tabs>
 
-Use a typed callback for a value that varies per instance. The compiler turns the callback's static object body into CSS and creates private CSS-variable slots for its inputs. Application calls bind the values; generated code does not execute the authored callback or create CSS rules.
+`<Button compact />` receives the compact padding. With the arguments reversed, `button` would win instead. The compiler emits a rule group for each combination, so argument order decides the result and class-string order never does.
+
+Separate JSX spreads replace each other's `className`, so each element takes one `cx` call. Ternaries and mutated bindings fail compilation, and one call accepts up to eight conditional arguments. The [cx reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) covers nesting and packed libraries.
+
+### Accept Overrides
+
+An applied definition also accepts `className`, `style`, and `vars`. A reusable component can forward the first two, so a caller adjusts one instance without another definition.
+
+<Tabs label="Accept overrides">
+<Tab title="Button.tsx">
+
+```tsx title="Button.tsx"
+import type { CSSProperties, ReactNode } from 'react'
+import { style } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  return (
+    <button
+      // [!code hl]
+      {...styles.button({ className: props.className, style: props.style })}
+      type="button"
+    >
+      {props.children}
+    </button>
+  )
+}
+
+export declare namespace Button {
+  type Props = {
+    children: ReactNode
+    className?: string | undefined
+    style?: CSSProperties | undefined
+  }
+}
+
+namespace styles {
+  export const button = style({ padding: '8px 16px' })
+}
+```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Overrides />
+
+</Tab>
+</Tabs>
+
+`<Button style={{ padding: '16px 32px' }}>` receives the larger padding as an inline style. Inline values follow React semantics and skip token checks. An external class follows the normal cascade, and its position in `className` has no effect on which rule wins.
+
+Other inputs are type errors. Event handlers, children, and ARIA attributes belong on the element:
+
+```ts twoslash
+// @errors: 2353
+import { style } from 'zyzz'
+
+const button = style({ padding: '8px 16px' })
+
+button({ onClick: () => {} })
+```
+
+### Bind Dynamic Values
+
+A typed callback handles a value that changes per instance, such as progress or a measured size. The compiler turns the callback body into static rules backed by private CSS variables. Each call assigns those variables without creating CSS.
+
+<Tabs label="Bind dynamic values">
+<Tab title="Meter.tsx">
 
 ```tsx title="Meter.tsx"
 import { style } from 'zyzz'
@@ -164,6 +259,7 @@ export function Meter(props: Meter.Props) {
       role="progressbar"
       {...styles.track()}
     >
+      {/* [!code hl] */}
       <div {...styles.fill({ width: `${props.value}%` })} />
     </div>
   )
@@ -175,37 +271,114 @@ export declare namespace Meter {
 }
 
 namespace styles {
+  // [!code hl]
   export const fill = style((values: { width: `${number}%` }) => ({
-    backgroundColor: '#06c',
+    backgroundColor: '#0070f3',
     height: '100%',
-    width: values.width,
+    width: values.width, // [!code hl]
   }))
 
   export const track = style({
-    backgroundColor: '#eee',
-    height: '0.5rem',
+    backgroundColor: '#e5e5e5',
+    borderRadius: '4px',
+    height: '8px',
     overflow: 'hidden',
   })
 }
 ```
 
-Render `<Meter value={50} />` for a half-filled track. The component expects a value between 0 and 100; its `number` type does not validate that range. Application code must supply a valid value.
+</Tab>
+<Tab title="Rendered">
 
-Declare every callback input with an explicit finite scalar type. Local aliases, interfaces without inheritance, and compatible object intersections are supported. All declared inputs are required. Optional fields, imported or generic input types, arbitrary calls inside the body, and dynamic rule structure are unsupported. Native dynamic bindings are unsupported.
+<Examples.Meter />
 
-Compute a value before calling the applied style, then pass that value as an input. Keep selectors and queries static. Use [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md) for finite choices such as size or tone.
+</Tab>
+</Tabs>
 
-## Reference theme values in expressions
+A changing value has a narrower tool in most cases:
 
-Use typed config references inside CSS expressions. The example config declares a spacing token, then the component uses that reference in `calc()`.
+- **Fixed choices**, such as size or tone: [Variants](/docs/guides/variants).
+- **On and off states**: `cx` with `&&`, or an attribute key such as `&[aria-busy="true"]`.
+- **Values computed per instance**, such as progress or coordinates: a typed callback.
 
-```ts title="zyzz.config.ts"
-import { defineConfig } from 'zyzz'
+Every callback input needs an explicit finite scalar type, and every declared input is required. Optional fields, imported or generic types, calls inside the body, and dynamic rule structure are unsupported. The `number` type above does not check the 0 to 100 range.
 
-export const { style, vars } = defineConfig({
-  vars: { spacing: { md: '1rem' } },
-})
+### Inline CSS Variables
+
+`variable()` declares a typed CSS variable. Styles read it as a value and assign it with `vars`, either statically in a definition or inline when applying one. Unregistered variables inherit, so descendants read the nearest assignment.
+
+<Tabs label="Inline CSS variables">
+<Tab title="Plan.tsx">
+
+```tsx title="Plan.tsx"
+import { style, variable } from 'zyzz'
+
+export function Plan(props: Plan.Props) {
+  return (
+    // [!code hl]
+    <section {...styles.plan({ vars: { [variables.accent]: props.accent } })}>
+      <h3 {...styles.name()}>Pro</h3>
+      <button {...styles.button()} type="button">
+        Choose plan
+      </button>
+    </section>
+  )
+}
+
+export declare namespace Plan {
+  type Props = { accent?: string | undefined }
+}
+
+namespace variables {
+  // [!code hl]
+  export const accent = variable('color')
+}
+
+namespace styles {
+  export const button = style({
+    // [!code hl]
+    backgroundColor: variables.accent,
+    border: 'none',
+    borderRadius: '6px',
+    color: 'white',
+    padding: '8px 16px',
+  })
+
+  // [!code hl]
+  export const name = style({ color: variables.accent, margin: 0 })
+
+  export const plan = style({
+    borderLeft: '4px solid',
+    // [!code hl]
+    borderLeftColor: variables.accent,
+    display: 'grid',
+    gap: '8px',
+    justifyItems: 'start',
+    paddingLeft: '16px',
+    // [!code hl]
+    vars: { [variables.accent]: '#0070f3' },
+  })
+}
 ```
+
+</Tab>
+<Tab title="Rendered">
+
+<Examples.Plans />
+
+</Tab>
+</Tabs>
+
+`<Plan />` uses the default blue. `<Plan accent="#9333ea" />` turns the border, name, and button purple, because the inline assignment overrides the static one on the same element. An `undefined` value omits the inline assignment.
+
+Computed keys lose each variable's value type in TypeScript. `variables.accent.set(value)` keeps it and returns an assignment for the `style` option. The [variable reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md) covers registration, which controls inheritance and emits `@property`.
+
+### Use Theme Values
+
+A config's `vars` export holds typed references to its theme values. Interpolate a reference into a CSS expression such as `calc()`. A property constrained to tokens accepts the expression after the ` !custom` suffix.
+
+<Tabs label="Use theme values">
+<Tab title="Panel.tsx">
 
 ```tsx title="Panel.tsx"
 import { style, vars } from './zyzz.config.js'
@@ -217,112 +390,155 @@ export function Panel() {
 namespace styles {
   export const panel = style({
     padding: 'md',
+    // [!code hl]
     width: `calc(100% - ${vars.spacing.md}) !custom`,
   })
 }
 ```
 
-Append ` !custom` because `width` is constrained by the configured spacing tokens. These CSS references follow compatible theme scopes. Use callbacks for per-instance inputs and `variable()` for independently reusable CSS variables.
+</Tab>
+<Tab title="zyzz.config.ts">
 
-## Reuse static declarations
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
 
-Local `const` literals, object spreads, shorthand properties, and literal member reads can supply declarations. Keep these records immutable and within the compiler's supported uses. The compiler preserves property order and does not evaluate arbitrary application code.
-
-```tsx title="Card.tsx"
-import { style } from 'zyzz'
-
-export function Card() {
-  return <article {...styles.card()}>Account details</article>
-}
-
-namespace styles {
-  const inset = { padding: '1rem' } as const
-
-  export const card = style({
-    ...inset,
-    color: 'black',
-  })
-}
+export const { style, vars } = defineConfig({
+  vars: { spacing: { md: '1rem' } },
+})
 ```
 
-Use shared definitions and `cx` when reusing whole styles. A local declaration object is useful when only part of a definition is shared.
+</Tab>
+</Tabs>
 
-## Use fallback values and importance
+References follow the active theme scope. [Themes & Tokens](/docs/guides/themes) covers variable sets, color schemes, and property mappings.
 
-Arrays preserve CSS fallback order. The browser uses the last supported declaration. Append ` !important` to mark a declaration as important.
+### Share Styles Between Files
 
-```tsx title="Label.tsx"
+Definitions used by several components can live in a shared module as top-level exports. Importing the module as a namespace applies the same compiled rules in each component.
+
+<Tabs label="Share styles between files">
+<Tab title="button.styles.ts">
+
+```ts title="button.styles.ts"
 import { style } from 'zyzz'
 
-export function Label() {
-  return <span {...styles.label()}>Account</span>
-}
-
-namespace styles {
-  export const label = style({
-    color: 'black !important',
-    display: ['block', 'flex'],
-  })
-}
+export const button = style({
+  borderRadius: '6px',
+  padding: '8px 16px',
+})
 ```
 
-Importance affects the cascade, including composed styles and inline overrides. Use it only when the declaration needs that priority.
+</Tab>
+<Tab title="SaveButton.tsx">
 
-## Share CSS variables
+```tsx title="SaveButton.tsx"
+import * as styles from './button.styles.js'
 
-Declare `variable()` references before the styles that use them. Group related references in `namespace variables`. Use `vars` inside a definition for static assignments and in an application for inline assignments.
-
-```tsx title="Label.tsx"
-import { style, variable } from 'zyzz'
-
-namespace variables {
-  export const accent = variable('color')
-}
-
-export function Label() {
+export function SaveButton() {
   return (
-    <span {...styles.label({ vars: { [variables.accent]: 'blue' } })}>
-      Account
-    </span>
+    <button {...styles.button()} type="button">
+      Save
+    </button>
+  )
+}
+```
+
+</Tab>
+</Tabs>
+
+The bundler integration follows the import to the definitions. A shared module that uses tokens imports the config-bound `style`, so its definitions keep the same token contract. Packages need a build step, described in [Publish Libraries](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries).
+
+### Reuse Declarations
+
+A local `const` record can supply part of several definitions. The compiler copies spread declarations in place and preserves their order.
+
+```tsx title="Actions.tsx"
+import { style } from 'zyzz'
+
+export function Actions() {
+  return (
+    <nav {...styles.nav()}>
+      <button {...styles.button()} type="button">
+        Save
+      </button>
+      <a {...styles.link()} href="/drafts">
+        View drafts
+      </a>
+    </nav>
   )
 }
 
 namespace styles {
-  export const label = style({
-    color: variables.accent,
-    vars: { [variables.accent]: 'tomato' },
+  const focusRing = {
+    ':focus-visible': {
+      outline: '2px solid #0070f3',
+      outlineOffset: '2px',
+    },
+  } as const
+
+  export const button = style({ ...focusRing, padding: '8px 16px' })
+
+  export const link = style({ ...focusRing, color: '#0070f3' })
+
+  export const nav = style({ display: 'flex', gap: '12px' })
+}
+```
+
+Records must stay immutable and local to the module. Reuse a complete style with `cx`, and a record when only part of a definition repeats.
+
+### Add Fallback Values
+
+An array emits each value in order. The browser keeps the last value it supports, so older browsers fall back to `100vh` here.
+
+```tsx title="Sheet.tsx"
+import { style } from 'zyzz'
+
+export function Sheet() {
+  return <div {...styles.sheet()}>Details</div>
+}
+
+namespace styles {
+  export const sheet = style({
+    display: 'grid',
+    // [!code hl]
+    height: ['100vh', '100dvh'],
   })
 }
 ```
 
-The label renders blue because its inline assignment overrides the static tomato assignment. Unregistered CSS variables inherit through the DOM. Supplying registration options controls inheritance and emits `@property`; see the [variable reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md).
+## More
 
-Computed object keys lose individual variable-domain information in TypeScript. Use `.set(value)` when an inline assignment needs the variable's domain check. It returns an assignment object to pass through `style`.
-
-```tsx title="Label.tsx"
-import { style, variable } from 'zyzz'
-
-namespace variables {
-  export const accent = variable('color')
-}
-
-export function Label() {
-  return (
-    <span {...styles.label({ style: variables.accent.set('blue') })}>
-      Account
-    </span>
-  )
-}
-
-namespace styles {
-  export const label = style({ color: variables.accent })
-}
-```
-
-The assignment helper checks types without runtime value validation or CSS generation. Variable references can be shared through imports and re-exports; native bindings are unsupported.
-
-## Check compilation
-
-An untransformed `style`, `cx`, or `variable` call throws an error named `style.MissingTransformError` or `variable.MissingTransformError`. Confirm that the integration from [Getting Started](/docs/introduction/getting-started) processes the source and delivers the generated stylesheet.
-
-TypeScript checks application inputs. Compiler diagnostics check source extraction and CSS grammar. Inspect the rendered component as well: neither check proves its layout or accessibility. Add editor diagnostics through [Linting](/docs/api/oxlint), or follow [Testing & Troubleshooting](https://github.com/wevm/zyzz/blob/main/docs/guides/testing.md) for compiler and browser checks.
+<Card.Group>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Define typed choices such as size and tone, with defaults and compound
+    matches.
+  </Card>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Name shared values, switch color schemes, and scope variable sets to a
+    section.
+  </Card>
+  <Card title="Stylesheets" icon="code" href="/docs/guides/stylesheets">
+    Declare global rules, cascade layers, fonts, and keyframes beside
+    components.
+  </Card>
+  <Card title="CSS Output" icon="boxes" href="/docs/guides/css-output">
+    Choose atomic or grouped output and see how composition maps to emitted
+    rules.
+  </Card>
+  <Card
+    title="Testing & Troubleshooting"
+    icon="terminal"
+    href="/docs/guides/testing"
+  >
+    Test rendered components, inspect compiler output, and fix styles that do
+    not apply.
+  </Card>
+  <Card
+    title="Comparisons"
+    icon="sliders"
+    href="/docs/introduction/comparisons"
+  >
+    Compare authoring, composition, and runtime values with other styling
+    libraries.
+  </Card>
+</Card.Group>

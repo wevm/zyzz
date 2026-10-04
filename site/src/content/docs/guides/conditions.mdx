@@ -39,8 +39,6 @@ namespace styles {
 
 The compiler emits each condition as an ordinary CSS rule ahead of time, so the browser evaluates it without runtime listeners from Zyzz. TypeScript checks the declarations inside every condition, and the compiler checks selector grammar and query names.
 
-Each condition groups the declarations that apply under it, as in vanilla-extract and Stitches. StyleX instead nests conditions inside each property's value with a `default` key, and Tailwind CSS adds a prefix such as `hover:` to each utility.
-
 ## Basic Usage
 
 Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. These examples import the root `style`, so literal CSS values work without a config.
@@ -160,7 +158,7 @@ The compiler emits the rules in the same order, with the pseudo-class nested ins
 }
 ```
 
-Write base declarations before their conditions. vanilla-extract emits media queries last, but Zyzz keeps the authored order, so a query written before a base declaration does not override it. Tailwind CSS reads stacked variants from left to right, which matches nesting from the outer condition inward.
+Write base declarations before their conditions. Rules keep their authored order, so a query written before a base declaration does not override it.
 
 ### Style attribute states
 
@@ -225,7 +223,7 @@ namespace styles {
 }
 ```
 
-Tailwind CSS and Panda CSS mark the ancestor with a `group` class, and StyleX uses markers. Any `style()` definition plays that role here, including an empty one. The compiler checks interpolated identities and selector grammar, but cannot prove that the related element exists in the DOM.
+Any `style()` definition can mark the ancestor, including an empty one. The compiler checks interpolated identities and selector grammar, but cannot prove that the related element exists in the DOM.
 
 ### Name queries
 
@@ -275,8 +273,6 @@ export const row = style({
   },
 })
 ```
-
-Tailwind CSS's `hover:` variant includes this query automatically. In Zyzz, the query is written out, so it appears in the definition.
 
 ### Lay out mobile first
 

@@ -472,9 +472,17 @@ describe('create', () => {
       bundle: true,
       format: 'esm',
       platform: 'neutral',
+      // Resolve published exports without the repository's source aliases.
+      tsconfigRaw: {},
       write: false,
       metafile: true,
     })
+    expect(
+      Object.keys(output.metafile.inputs).includes(
+        'dist/react-native/index.js',
+      ),
+    ).toMatchInlineSnapshot('true')
+
     const bundled = output.outputFiles[0]!.text
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(bundled).toString('base64')}`

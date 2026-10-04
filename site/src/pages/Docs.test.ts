@@ -12,6 +12,7 @@ const directory = Fs.realpathSync(
 )
 const site = new URL('../..', import.meta.url)
 const fixture = `${directory}/src/content/docs/guides/navigation-review-fixture.mdx`
+const outlineFixture = `${directory}/src/content/docs/guides/outline-review-fixture.mdx`
 const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fixture.mdx`
 
 describe('/docs', () => {
@@ -87,6 +88,33 @@ describe('/docs', () => {
         '> const tip = true',
         '> ```',
         '',
+      ].join('\n'),
+    )
+    const filler = Array.from({ length: 12 }, () => 'Filler paragraph.\n')
+    Fs.writeFileSync(
+      outlineFixture,
+      [
+        '# Outline Fixture',
+        '',
+        'Sections listed beside the article.',
+        '',
+        '## Overview',
+        '',
+        ...filler,
+        '### Details',
+        '',
+        ...filler,
+        '<Steps>',
+        '',
+        '### Step Heading',
+        '',
+        'Step content.',
+        '',
+        '</Steps>',
+        '',
+        '## Overview',
+        '',
+        ...filler,
       ].join('\n'),
     )
     server = ChildProcess.spawn(
@@ -194,6 +222,105 @@ describe('/docs', () => {
           .getByRole('link', { name: 'Getting Started', exact: true })
           .getAttribute('href'),
       ).toMatchInlineSnapshot('"/docs/introduction/getting-started"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('spans the viewport and outlines page sections beside the article', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/guides/outline-review-fixture`)
+      await page.waitForLoadState('networkidle')
+      const outline = page.getByRole('navigation', { name: 'On this page' })
+
+      expect(
+        await page
+          .locator('main')
+          .evaluate((node) => node.getBoundingClientRect().width),
+      ).toMatchInlineSnapshot('1400')
+      expect(
+        await outline
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map(
+              (link) => `${link.textContent} ${link.getAttribute('href')}`,
+            ),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "Overview #overview",
+          "Details #details",
+          "Overview #overview-1",
+        ]
+      `)
+      expect(
+        await page.locator('#details').evaluate((node) => node.tagName),
+      ).toMatchInlineSnapshot('"H3"')
+      expect(
+        await outline.locator('[aria-current]').count(),
+      ).toMatchInlineSnapshot('0')
+
+      await outline.getByRole('link', { name: 'Details' }).click()
+      await page.waitForFunction(
+        () =>
+          document.querySelector('[aria-current="location"]')?.textContent ===
+          'Details',
+      )
+      expect(new URL(page.url()).hash).toMatchInlineSnapshot('"#details"')
+      expect(
+        await page
+          .locator('#details')
+          .evaluate((node) => node.getBoundingClientRect().top),
+      ).toMatchInlineSnapshot('96')
+
+      // The final section is too short to reach the header, so the page end selects it.
+      await page.evaluate(() =>
+        window.scrollTo(0, document.documentElement.scrollHeight),
+      )
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector('[aria-current="location"]')
+            ?.getAttribute('href') === '#overview-1',
+      )
+      expect(
+        await outline.locator('[aria-current]').count(),
+      ).toMatchInlineSnapshot('1')
+
+      await page.setViewportSize({ width: 1279, height: 900 })
+      expect(await outline.isVisible()).toMatchInlineSnapshot('false')
+      await page.setViewportSize({ width: 1280, height: 900 })
+      expect(await outline.isVisible()).toMatchInlineSnapshot('true')
+
+      // Wide viewports cap the article at its text width and center it between equal gutters.
+      await page.setViewportSize({ width: 2000, height: 900 })
+      expect(
+        await page
+          .locator('article')
+          .evaluate((node) => node.getBoundingClientRect().width),
+      ).toMatchInlineSnapshot('864')
+      expect(
+        await page
+          .locator('main aside')
+          .first()
+          .evaluate((node) => node.getBoundingClientRect().left),
+      ).toMatchInlineSnapshot('316')
+      expect(
+        await page
+          .locator('article + aside')
+          .evaluate((node) => node.getBoundingClientRect().left),
+      ).toMatchInlineSnapshot('1433')
+      expect(
+        await page
+          .locator('article + aside')
+          .evaluate(
+            (node) => window.innerWidth - node.getBoundingClientRect().right,
+          ),
+      ).toMatchInlineSnapshot('315')
     } finally {
       await browser.close()
     }

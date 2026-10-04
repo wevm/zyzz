@@ -166,8 +166,6 @@ namespace styles {
 
 Avoid assigning the same property in both systems on that element. Zyzz treats external classes as ordinary CSS. Neither `cx` nor `stylex.props` resolves cross-library conflicts. Specificity, layers, importance, and stylesheet order still apply.
 
-<span id="define-styles" />
-
 ## Define styles
 
 ### Properties and units
@@ -211,8 +209,6 @@ Keep camelCase CSS property names. Convert numeric dimensions to explicit CSS le
 
 Numbers are not a universal pixel shorthand in Zyzz. A configured spacing number can select a token instead. For example, `padding: 4` from `zyzz/default` selects `1rem`, not `4px`. Keep unitless numbers for properties that accept them and use explicit units for dimensions.
 
-<span id="fallback-values" />
-
 ### Fallback values
 
 StyleX's [`firstThatWorks`](https://stylexjs.com/docs/api/javascript/firstThatWorks/) lists the preferred value first. Zyzz arrays follow CSS declaration order, with the preferred supported value last:
@@ -237,8 +233,6 @@ namespace styles {
 
 Arrays are fallbacks, not responsive positions. Put responsive declarations under explicit queries.
 
-<span id="removing-declarations" />
-
 ### Removing declarations
 
 StyleX can [unset a previously applied property](https://stylexjs.com/docs/learn/styling-ui/using-styles/#unsetting-styles) with `null`. Do not translate that operation into `color: null` or automatically substitute `unset` in Zyzz. CSS-wide keywords emit declarations and can produce a different cascade result.
@@ -248,8 +242,6 @@ Split the removable declaration from the base and apply it conditionally, or mak
 ### Static source
 
 Keep definitions at module scope. Zyzz supports local literal constants and supported spreads, but does not evaluate arbitrary application functions to discover CSS. Imported configurations and definitions require the graph-aware build integration. See [Static Bindings](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#static-bindings) and [Source Extraction](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Source/extract.md).
-
-<span id="compose-styles" />
 
 ## Compose styles
 
@@ -290,8 +282,6 @@ Use `enabled && styles.example()` for conditional arguments. `false`, `null`, an
 
 Migrate finite style-map lookups into [Component Variants](#component-variants). See [`cx`](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) for supported local bindings and packed library applications.
 
-<span id="component-boundaries" />
-
 ### Component boundaries
 
 StyleX's [`StyleXStyles`](https://stylexjs.com/docs/api/types/StyleXStyles/) can describe a prop containing styles that a component merges internally. A component parameter is not a compiler-resolved Zyzz application, so replacing `stylex.props(base, props.style)` with `cx(base(), props.style)` is not supported.
@@ -318,8 +308,6 @@ namespace styles {
 ```
 
 This changes the component's styling contract. External classes follow the CSS cascade, and inline styles cannot express pseudo-classes or media queries. The callable accepts React's `style` prop and merges it with generated bindings. Keep events, children, and accessibility props on the element.
-
-<span id="states-and-queries" />
 
 ## States and queries
 
@@ -407,8 +395,6 @@ namespace styles {
 
 Retain `content` when migrating `::before` or `::after`. Every selector branch must contain `&`.
 
-<span id="element-relationships" />
-
 ### Element relationships
 
 StyleX's [`when`](https://stylexjs.com/docs/api/javascript/when/) APIs use markers and relationship conditions. Zyzz can reference a previously declared identity-only style in a selector:
@@ -441,8 +427,6 @@ namespace styles {
 ```
 
 Replace each marker's application as well as its dependent rules. Match the original ancestor, descendant, or sibling relationship and specificity. See [Style Relationships](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md#style-relationships) for supported selectors.
-
-<span id="component-variants" />
 
 ## Component variants
 
@@ -484,8 +468,6 @@ namespace styles {
 ```
 
 Each recipe styles one element. Defaults apply to omitted selections, and `null` suppresses a choice. Preserve the order of conflicting choices and compounds from the original composition. `Props.Variants` infers styling inputs, not ordinary button events or children. See [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md).
-
-<span id="dynamic-values" />
 
 ## Dynamic values
 
@@ -531,11 +513,7 @@ Both examples bind a value to a precompiled CSS variable. Preserve units explici
 
 Zyzz callbacks support explicit scalar inputs and supported local type aliases. Imported or generic dynamic input types are outside the current extraction boundary. See [Dynamic Values](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#dynamic-values) for source restrictions.
 
-<span id="vars-and-themes" />
-
 ## Vars and themes
-
-<span id="design-tokens" />
 
 ### Design tokens
 
@@ -617,8 +595,6 @@ namespace styles {
 Unlike `defineVars` with defaults, `variable('color')` alone does not assign a value. The example applies its default on an ancestor. Inline assignments use the same `vars` option on a callable. Registration through `variable(kind, options)` is optional and changes inheritance or initial-value behavior.
 
 Keep existing application-owned custom-property names when external CSS or scripts depend on them. Generated StyleX and Zyzz names are not interchangeable. Preserve the definition scope of derived variables, since moving an expression to a different ancestor can change inherited-variable resolution.
-
-<span id="theme-overrides" />
 
 ### Theme overrides
 
@@ -739,8 +715,6 @@ namespace styles {
 For one-off literals on a property constrained by configured tokens, append `!custom`, such as `padding: '12px !custom'`. The marker opts out of token lookup for that declaration. Keep StyleX build-time environment settings separate from browser state and saved theme preferences.
 
 ## Stylesheets and delivery
-
-<span id="keyframes" />
 
 ### Keyframes
 

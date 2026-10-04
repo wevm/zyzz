@@ -15,7 +15,13 @@ declare const __EXAMPLE__: {
 declare const __DOCS__: {
   pages: Record<
     string,
-    { title: string; description: string; markdown: string }
+    {
+      title: string
+      description: string
+      /** Section `##` and `###` headings in document order, with their anchor IDs. Step headings are excluded. */
+      headings: readonly { depth: 2 | 3; id: string; title: string }[]
+      markdown: string
+    }
   >
   /** Highlighted code fences, keyed by authored source. */
   code: Record<

@@ -4,7 +4,7 @@ import { appearance } from 'zyzz/default'
 import MonitorIcon from '~icons/lucide/monitor'
 import MoonIcon from '~icons/lucide/moon'
 import SunIcon from '~icons/lucide/sun'
-import { style } from '../zyzz.config.js'
+import { style, vars } from '../zyzz.config.js'
 import { Link } from './Link.js'
 
 /** Renders the common Docs and Variables frame. */
@@ -143,82 +143,80 @@ export function DocumentationShell(props: DocumentationShell.Props) {
   )
 
   return (
-    <div {...styles.canvas()}>
-      <div data-mobile-menu={mobileMenu || undefined} {...styles.page()}>
-        <header ref={headerRef} {...styles.header()}>
-          {brand}
-          <div {...styles.headerTools()}>
-            {search ?? <span />}
-            <div {...styles.headerActions()}>{navigation}</div>
-          </div>
-          {mobileMenu && (
+    <div data-mobile-menu={mobileMenu || undefined} {...styles.page()}>
+      <header ref={headerRef} {...styles.header()}>
+        {brand}
+        <div {...styles.headerTools()}>
+          {search ?? <span />}
+          <div {...styles.headerActions()}>{navigation}</div>
+        </div>
+        {mobileMenu && (
+          <button
+            aria-label="Open menu"
+            aria-controls="docs-menu"
+            aria-expanded={menuOpen}
+            onClick={() => {
+              clearTimeout(closeTimer.current)
+              menuRef.current?.showModal()
+              setMenuOpen(true)
+            }}
+            type="button"
+            {...styles.menuToggle()}
+          >
+            {menuIcon}
+          </button>
+        )}
+      </header>
+      {mobileMenu && (
+        <dialog
+          id="docs-menu"
+          aria-label="Documentation menu"
+          ref={menuRef}
+          onClose={() => {
+            clearTimeout(closeTimer.current)
+            setMenuOpen(false)
+          }}
+          {...styles.menu()}
+        >
+          <div {...styles.menuHeader()}>
+            {brand}
             <button
-              aria-label="Open menu"
-              aria-controls="docs-menu"
-              aria-expanded={menuOpen}
-              onClick={() => {
-                clearTimeout(closeTimer.current)
-                menuRef.current?.showModal()
-                setMenuOpen(true)
-              }}
+              aria-label="Close menu"
+              onClick={closeMenu}
               type="button"
-              {...styles.menuToggle()}
+              {...styles.menuClose()}
             >
               {menuIcon}
             </button>
-          )}
-        </header>
-        {mobileMenu && (
-          <dialog
-            id="docs-menu"
-            aria-label="Documentation menu"
-            ref={menuRef}
-            onClose={() => {
-              clearTimeout(closeTimer.current)
-              setMenuOpen(false)
-            }}
-            {...styles.menu()}
-          >
-            <div {...styles.menuHeader()}>
-              {brand}
-              <button
-                aria-label="Close menu"
-                onClick={closeMenu}
-                type="button"
-                {...styles.menuClose()}
-              >
-                {menuIcon}
-              </button>
-            </div>
-            <div {...styles.menuContent()}>
-              {search}
-              <div
-                onClick={(event) => {
-                  if (
-                    event.target instanceof Element &&
-                    event.target.closest('a')
-                  )
-                    menuRef.current?.close()
-                }}
-              >
-                {sidebar}
-              </div>
-              {schemeControl}
-            </div>
-          </dialog>
-        )}
-        <main>
-          <div {...styles.layout()}>
-            <aside {...styles.sidebar()}>
-              <div {...styles.sidebarNavigation()}>{sidebar}</div>
-              <div {...styles.sidebarFooter()}>{schemeControl}</div>
-            </aside>
-            <div ref={contentRef} {...styles.sections()}>
-              {children}
-            </div>
           </div>
-        </main>
-      </div>
+          <div {...styles.menuContent()}>
+            {search}
+            <div
+              onClick={(event) => {
+                if (
+                  event.target instanceof Element &&
+                  event.target.closest('a')
+                )
+                  menuRef.current?.close()
+              }}
+            >
+              {sidebar}
+            </div>
+            {schemeControl}
+          </div>
+        </dialog>
+      )}
+      <main>
+        <div {...styles.layout()}>
+          <aside {...styles.sidebar()}>
+            <div {...styles.sidebarNavigation()}>{sidebar}</div>
+            <div {...styles.sidebarFooter()}>{schemeControl}</div>
+          </aside>
+          <div ref={contentRef} {...styles.sections()}>
+            {children}
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
@@ -243,6 +241,10 @@ export declare namespace DocumentationShell {
 }
 
 namespace styles {
+  // Pads before the sidebar, so the docs article (`container.3xl` text plus `spacing.12` padding per side) stays centered on wide viewports.
+  const gutter =
+    `max(0px, calc((100% - ${vars.container['3xl']} - ${vars.spacing[12]} * 2) / 2 - 252px)) !custom` as const
+
   export const brand = style({
     color: 'foreground',
     display: 'block',
@@ -258,11 +260,6 @@ namespace styles {
     whiteSpace: 'nowrap',
   })
 
-  export const canvas = style({
-    backgroundColor: 'background.primary',
-    minHeight: '100vh !custom',
-  })
-
   export const header = style({
     backgroundColor: 'background.surface',
     borderBottom: '1px solid',
@@ -270,6 +267,7 @@ namespace styles {
     display: 'grid',
     gridTemplateColumns: '252px minmax(0, 1fr)',
     height: 16,
+    paddingLeft: gutter,
     position: 'sticky',
     top: 0,
     zIndex: 2,
@@ -320,6 +318,7 @@ namespace styles {
     alignItems: 'start',
     display: 'grid',
     gridTemplateColumns: '252px minmax(0, 1fr)',
+    paddingLeft: gutter,
     '@media (max-width: 700px)': {
       gridTemplateColumns: 'minmax(0, 1fr)',
     },
@@ -434,19 +433,11 @@ namespace styles {
 
   export const page = style({
     backgroundColor: 'background.surface',
-    borderInline: '1px solid',
-    borderColor: 'gray.400',
     color: 'foreground',
     fontFamily: 'sans',
-    marginInline: 'auto !custom',
-    maxWidth: '7xl',
     minHeight: '100vh !custom',
-    width: 'calc(100% - 48px) !custom',
-    '@media (max-width: 600px)': { width: '100% !custom' },
     '&[data-mobile-menu]': {
       '@media (max-width: 1023px)': {
-        width: '100% !custom',
-        borderInline: 'none',
         '& > header': {
           alignItems: 'center',
           display: 'flex',

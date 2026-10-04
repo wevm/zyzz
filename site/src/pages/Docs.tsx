@@ -10,7 +10,13 @@ import { Steps } from '../components/mdx/Steps.js'
 import { SearchField } from '../components/SearchField.js'
 import * as Docs from '../Docs.js'
 import { style, variants, vars } from '../zyzz.config.js'
-import { isValidElement, type ReactNode, useEffect, useState } from 'react'
+import {
+  isValidElement,
+  type ReactNode,
+  useEffect,
+  useId,
+  useState,
+} from 'react'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import BookOpenIcon from '~icons/lucide/book-open'
 import BoxIcon from '~icons/lucide/box'
@@ -120,24 +126,27 @@ export function Page(props: Page.Props) {
         </nav>
       }
     >
-      <article {...styles.article()}>
-        <header {...styles.heading()}>
-          <h1>{page.title}</h1>
-          <p>{page.description}</p>
-        </header>
-        <Content
-          components={{
-            AgentPrompt,
-            Card,
-            FrameworkSetup,
-            Install,
-            Steps,
-            a: Link,
-            blockquote: Callout,
-            pre: Code,
-          }}
-        />
-      </article>
+      <div {...styles.columns()}>
+        <article {...styles.article()}>
+          <header {...styles.heading()}>
+            <h1>{page.title}</h1>
+            <p>{page.description}</p>
+          </header>
+          <Content
+            components={{
+              AgentPrompt,
+              Card,
+              FrameworkSetup,
+              Install,
+              Steps,
+              a: Link,
+              blockquote: Callout,
+              pre: Code,
+            }}
+          />
+        </article>
+        <Outline headings={page.headings} />
+      </div>
     </DocumentationShell>
   )
 }
@@ -145,6 +154,82 @@ export function Page(props: Page.Props) {
 export declare namespace Page {
   /** Properties for the Page component. */
   type Props = { path: string }
+}
+
+/** Lists the page's sections and marks the one scrolled beneath the header. */
+function Outline(props: Outline.Props) {
+  const { headings } = props
+  const [current, setCurrent] = useState<string | undefined>(undefined)
+  const labelId = useId()
+
+  useEffect(() => {
+    const targets = headings.flatMap((heading) => {
+      const element = document.getElementById(heading.id)
+      return element ? [element] : []
+    })
+    let frame = 0
+
+    const update = () => {
+      frame = 0
+      const root = document.documentElement
+      // Short final sections never reach the top, so the end of a scrolled page selects the last one.
+      const end =
+        root.scrollTop > 0 &&
+        root.scrollTop + window.innerHeight >= root.scrollHeight - 1
+
+      // Anchor navigation stops at each heading's scroll margin, which marks it as current.
+      const passed = end
+        ? targets
+        : targets.filter(
+            (element) =>
+              element.getBoundingClientRect().top <=
+              Number.parseFloat(getComputedStyle(element).scrollMarginTop) + 1,
+          )
+      setCurrent(passed.at(-1)?.id)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('resize', schedule)
+    window.addEventListener('scroll', schedule, { passive: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('resize', schedule)
+      window.removeEventListener('scroll', schedule)
+    }
+  }, [headings])
+
+  return (
+    <aside {...styles.outline()}>
+      {headings.length > 0 && (
+        <nav aria-labelledby={labelId} {...styles.outlineNavigation()}>
+          <h2 id={labelId} {...styles.groupHeading()}>
+            On this page
+          </h2>
+          <ul>
+            {headings.map((heading) => (
+              <li key={heading.id}>
+                <a
+                  aria-current={heading.id === current ? 'location' : undefined}
+                  data-depth={heading.depth}
+                  href={`#${heading.id}`}
+                  {...styles.outlineLink()}
+                >
+                  {heading.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+    </aside>
+  )
+}
+
+declare namespace Outline {
+  type Props = { headings: (typeof __DOCS__.pages)[string]['headings'] }
 }
 
 function SidebarItem(props: SidebarItem.Props) {
@@ -306,7 +391,9 @@ namespace styles {
       '& h2': { marginTop: 6 },
       '& > header + h2': { marginTop: 0 },
     },
-    '& p, & aside': { color: 'gray.900', marginBlock: 4, maxWidth: '3xl' },
+    // Blocks share the text column width, while the header's border spans the padded article.
+    '& > :not(header), & > header > *': { maxWidth: '3xl' },
+    '& p, & aside': { color: 'gray.900', marginBlock: 4 },
     '& [data-step] > div > h3': { marginTop: 0 },
     '& h2': {
       typography: 'heading.24',
@@ -333,7 +420,6 @@ namespace styles {
     '& ul, & ol:not([data-steps])': {
       color: 'gray.900',
       marginBlock: 4,
-      maxWidth: '3xl',
       paddingLeft: 6,
     },
     '& strong, & b': { fontWeight: 'medium' },
@@ -477,6 +563,13 @@ namespace styles {
     paddingRight: 12,
   })
 
+  export const columns = style({
+    display: 'grid',
+    // Caps the article at its text width plus padding, so the outline sits beside the content. The shell gutter centers this width.
+    gridTemplateColumns: `minmax(0, calc(${vars.container['3xl']} + ${vars.spacing[12]} * 2)) 252px`,
+    '@media (max-width: 1279px)': { gridTemplateColumns: 'minmax(0, 1fr)' },
+  })
+
   export const construction = style({
     flexShrink: 0,
     marginLeft: 'auto !custom',
@@ -576,6 +669,34 @@ namespace styles {
   })
 
   export const nestedLinks = style({ paddingLeft: 6 })
+
+  export const outline = style({
+    borderLeft: '1px solid',
+    borderColor: 'gray.400',
+    '@media (max-width: 1279px)': { display: 'none' },
+  })
+
+  export const outlineLink = style({
+    typography: 'label.14',
+    color: 'gray.900',
+    display: 'block',
+    paddingBlock: 1,
+    paddingInline: 3,
+    textDecoration: 'none',
+    ':hover': { color: 'foreground' },
+    '&[aria-current="location"]': { color: 'foreground' },
+    '&[data-depth="3"]': { paddingLeft: 6 },
+  })
+
+  export const outlineNavigation = style({
+    maxHeight: 'calc(100dvh - 64px) !custom',
+    overflowY: 'auto',
+    paddingBottom: 4,
+    paddingInline: 2,
+    paddingTop: 4,
+    position: 'sticky',
+    top: 16,
+  })
 
   export const variables = style({
     typography: 'label.14',

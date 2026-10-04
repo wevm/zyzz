@@ -337,6 +337,8 @@ namespace styles {
       paddingLeft: 6,
     },
     '& strong, & b': { fontWeight: 'medium' },
+    // A leading bold label names the list item's topic, so it takes the primary text color.
+    '& li > strong:first-child': { color: 'foreground' },
     '& ul': { listStyleType: 'disc' },
     '& ol:not([data-steps])': { listStyleType: 'decimal' },
     '& li:not([data-step])': { marginBlock: 2 },

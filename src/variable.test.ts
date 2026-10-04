@@ -316,6 +316,68 @@ export namespace styles {
       )
     })
 
+    test('applies variables read inside functions declared before them', async () => {
+      const source = `import { style, variable } from 'zyzz'
+export function plan(accent?: string) {
+  return styles.plan({ vars: { [variables.accent]: accent } })
+}
+namespace variables {
+  export const accent = variable('color')
+}
+namespace styles {
+  export const plan = style({
+    color: variables.accent,
+    vars: { [variables.accent]: 'tomato' },
+  })
+}`
+      const result = Graph.compile({ modules: { 'plan.ts': source } })
+      const built = await Esbuild.build({
+        stdin: {
+          contents: result.modules['plan.ts']!.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        format: 'iife',
+        globalName: 'Fixture',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+
+      try {
+        const page = await browser.newPage()
+        await page.setContent('<span>default</span><span>inline</span>')
+        await page.addStyleTag({ content: result.modules['plan.ts']!.css })
+        await page.addScriptTag({ content: built.outputFiles[0]!.text })
+        await page.evaluate(`{
+        const [first, second] = document.querySelectorAll('span');
+        first.className = Fixture.plan().className;
+        const props = Fixture.plan('blue');
+        second.className = props.className;
+        for (const [key, value] of Object.entries(props.style)) second.style.setProperty(key, value);
+      }`)
+
+        expect(
+          await page
+            .locator('span')
+            .evaluateAll((nodes) =>
+              nodes.map((node) => getComputedStyle(node).color),
+            ),
+        ).toMatchInlineSnapshot(`
+          [
+            "rgb(255, 99, 71)",
+            "rgb(0, 0, 255)",
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('renders inherited defaults, conditional assignments and inline updates with fixed rules', async () => {
       const result = Graph.compile({ modules: { 'library.ts': library } })
       const built = await Esbuild.build({

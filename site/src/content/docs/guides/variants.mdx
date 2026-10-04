@@ -12,6 +12,8 @@ A variant is a named choice that changes how a component looks, such as a compac
 
 `variants` defines one element's axes, choices, defaults, and the rules that apply when choices combine. The compiler emits every choice ahead of time, so selecting one only switches the classes and `data-*` attributes on the element.
 
+Start with [Getting Started](/docs/introduction/getting-started) to connect the compiler. Import `variants` from `zyzz` for literal CSS values, or from a project config for its tokens.
+
 ```tsx title="Badge.tsx"
 import { variants } from 'zyzz'
 
@@ -32,8 +34,6 @@ namespace styles {
   })
 }
 ```
-
-Start with [Getting Started](/docs/introduction/getting-started) to connect the compiler. Import `variants` from `zyzz` for literal CSS values, or from a project config for its tokens.
 
 ## Choices and Defaults
 
@@ -352,9 +352,11 @@ namespace styles {
 </Tab>
 </Tabs>
 
-This button uses `compact` below 768px and `regular` when `wide` matches. Switching choices removes declarations unique to the previous choice, and compounds match the effective selections.
+This button uses `compact` below 768px and `regular` when `wide` matches. Switching choices removes declarations unique to the previous choice, and compounds match the effective selections. Each axis resolves its overrides separately:
 
-Later matching conditions win for each axis in recipe declaration order. Missing or `undefined` overrides inherit the earlier selection, and a conditional `null` suppresses that axis while the condition matches.
+- **Several matches:** The last matching condition in recipe declaration order wins.
+- **Missing or `undefined`:** Inherits the earlier selection.
+- **`null`:** Suppresses the axis while the condition matches.
 
 Selection conditions support `@media` and `@supports`, with up to eight named conditions per recipe. Container and selector queries cannot switch choices. Use ordinary [conditions](/docs/guides/conditions) inside a choice when only its declarations need to change.
 

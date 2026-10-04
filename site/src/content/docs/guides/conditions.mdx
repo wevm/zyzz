@@ -8,6 +8,8 @@ A condition makes declarations apply only while something is true, such as the p
 
 In a definition, a condition is a key whose value holds the declarations to apply while it matches. Keys use CSS syntax: pseudo-classes such as `':hover'`, at-rules such as `'@media (min-width: 48rem)'`, and selectors such as `'&[aria-expanded="true"]'` grouped under `selectors`.
 
+The compiler emits each condition as an ordinary CSS rule ahead of time, so the browser evaluates it without runtime listeners from Zyzz. TypeScript checks the declarations inside every condition, and the compiler checks selector grammar and query names.
+
 ```tsx title="Card.tsx"
 import { style } from 'zyzz'
 
@@ -37,33 +39,31 @@ namespace styles {
 }
 ```
 
-The compiler emits each condition as an ordinary CSS rule ahead of time, so the browser evaluates it without runtime listeners from Zyzz. TypeScript checks the declarations inside every condition, and the compiler checks selector grammar and query names.
+## Walkthrough
 
-## Basic Usage
-
-Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. These examples import the root `style`, so literal CSS values work without a config.
+The steps below build a disclosure trigger, from browser states to an icon that follows the trigger's state. Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. The walkthrough imports the root `style`, so literal CSS values work without a config.
 
 ### Style Browser States
 
 Pseudo-class keys such as `':hover'`, `':active'`, `':focus-visible'`, and `':disabled'` apply while the browser reports that state.
 
-```tsx title="SaveButton.tsx"
+```tsx title="Disclosure.tsx"
 import { style } from 'zyzz'
 
-export function SaveButton(props: SaveButton.Props) {
+export function Disclosure(props: Disclosure.Props) {
   return (
-    <button disabled={props.disabled} type="button" {...styles.button()}>
-      Save
+    <button disabled={props.disabled} type="button" {...styles.trigger()}>
+      Details
     </button>
   )
 }
 
-export declare namespace SaveButton {
+export declare namespace Disclosure {
   type Props = { disabled?: boolean | undefined }
 }
 
 namespace styles {
-  export const button = style({
+  export const trigger = style({
     backgroundColor: '#06c',
     color: 'white',
     padding: '0.5rem 1rem',
@@ -75,7 +75,112 @@ namespace styles {
 }
 ```
 
-Conditions keep their authored order, which decides the result when several states match at once. While pressing, `:active` follows `:hover` and wins. A disabled button stays gray under the pointer because `:disabled` comes last.
+Conditions keep their authored order, which decides the result when several states match at once. While pressing, `:active` follows `:hover` and wins. A disabled trigger stays gray under the pointer because `:disabled` comes last.
+
+### Style Attribute States
+
+String selectors live under `selectors` and include `&` for the styled element. Attribute selectors read state that the element already exposes, such as `aria-expanded`, `aria-invalid`, or `data-state`.
+
+```tsx title="Disclosure.tsx"
+import { style } from 'zyzz'
+
+export function Disclosure(props: Disclosure.Props) {
+  return (
+    <button
+      // [!code hl]
+      aria-expanded={props.open}
+      disabled={props.disabled}
+      type="button"
+      {...styles.trigger()}
+    >
+      Details
+    </button>
+  )
+}
+
+export declare namespace Disclosure {
+  // [!code hl]
+  type Props = { disabled?: boolean | undefined; open: boolean }
+}
+
+namespace styles {
+  export const trigger = style({
+    backgroundColor: '#06c',
+    color: 'white',
+    padding: '0.5rem 1rem',
+    ':hover': { backgroundColor: '#05a' },
+    ':active': { backgroundColor: '#048' },
+    ':focus-visible': { outline: '2px solid #06c', outlineOffset: '2px' },
+    // [!code hl:4]
+    // Authored before :disabled, so a disabled trigger stays gray while open
+    selectors: {
+      '&[aria-expanded="true"]': { backgroundColor: '#048' },
+    },
+    ':disabled': { backgroundColor: '#999', cursor: 'not-allowed' },
+  })
+}
+```
+
+Styling the attribute keeps the visual state and the accessible state in agreement. A separate prop or class for the same state could drift from what assistive technology reports.
+
+### Style Related Elements
+
+Relationship selectors interpolate another definition without calling it, and `&` stays the target. The icon reads the trigger's `aria-expanded` attribute from its own definition and rotates while the disclosure is open.
+
+```tsx title="Disclosure.tsx"
+import { style } from 'zyzz'
+
+export function Disclosure(props: Disclosure.Props) {
+  return (
+    <button
+      aria-expanded={props.open}
+      disabled={props.disabled}
+      type="button"
+      {...styles.trigger()}
+    >
+      Details
+      {/* [!code hl:3] */}
+      <span aria-hidden="true" {...styles.icon()}>
+        ▾
+      </span>
+    </button>
+  )
+}
+
+export declare namespace Disclosure {
+  type Props = { disabled?: boolean | undefined; open: boolean }
+}
+
+namespace styles {
+  export const trigger = style({
+    backgroundColor: '#06c',
+    color: 'white',
+    display: 'inline-flex', // [!code hl]
+    gap: '0.5rem', // [!code hl]
+    padding: '0.5rem 1rem',
+    ':hover': { backgroundColor: '#05a' },
+    ':active': { backgroundColor: '#048' },
+    ':focus-visible': { outline: '2px solid #06c', outlineOffset: '2px' },
+    // Authored before :disabled, so a disabled trigger stays gray while open
+    selectors: {
+      '&[aria-expanded="true"]': { backgroundColor: '#048' },
+    },
+    ':disabled': { backgroundColor: '#999', cursor: 'not-allowed' },
+  })
+
+  // [!code hl:6]
+  export const icon = style({
+    transition: 'rotate 150ms',
+    selectors: {
+      [`${trigger}[aria-expanded="true"] &`]: { rotate: '180deg' },
+    },
+  })
+}
+```
+
+Any `style()` definition can mark the related element. The compiler checks interpolated identities and selector grammar, but cannot prove that the related element exists in the DOM.
+
+## Recipes
 
 ### Respond to Size
 
@@ -108,123 +213,6 @@ namespace styles {
 }
 ```
 
-### Check Feature Support
-
-`@supports` applies declarations only where the browser supports a feature. The declarations outside the query act as the fallback.
-
-```ts title="gallery.styles.ts"
-import { style } from 'zyzz'
-
-export const gallery = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '1rem',
-  // [!code hl]
-  '@supports (display: grid)': {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
-  },
-})
-```
-
-### Combine Conditions
-
-Nested conditions combine with AND. Here, the hover style applies only on devices that can hover, and only while the pointer is over the element.
-
-```ts title="link.styles.ts"
-import { style } from 'zyzz'
-
-export const link = style({
-  opacity: 1,
-  '@media (hover: hover)': {
-    ':hover': { opacity: 0.8 }, // [!code hl]
-  },
-})
-```
-
-The compiler emits the rules in the same order, with the pseudo-class nested inside the query. Class names depend on the module path:
-
-```css
-.z-bcI3yC-link-opacity-0 {
-  opacity: 1;
-}
-
-@media (hover: hover) {
-  .z-bcI3yC-link-opacity-1 {
-    &:hover {
-      opacity: 0.8;
-    }
-  }
-}
-```
-
-Write base declarations before their conditions. Rules keep their authored order, so a query written before a base declaration does not override it.
-
-### Style Attribute States
-
-String selectors live under `selectors` and include `&` for the styled element. Attribute selectors read state that the element already exposes, such as `aria-expanded`, `aria-invalid`, or `data-state`.
-
-```tsx title="Disclosure.tsx"
-import { style } from 'zyzz'
-
-export function Disclosure(props: Disclosure.Props) {
-  return (
-    <button aria-expanded={props.open} type="button" {...styles.trigger()}>
-      Details
-    </button>
-  )
-}
-
-export declare namespace Disclosure {
-  type Props = { open: boolean }
-}
-
-namespace styles {
-  export const trigger = style({
-    backgroundColor: 'transparent',
-    selectors: {
-      '&[aria-expanded="true"]': { backgroundColor: '#eee' }, // [!code hl]
-    },
-  })
-}
-```
-
-Styling the attribute keeps the visual state and the accessible state in agreement. A separate prop or class for the same state could drift from what assistive technology reports.
-
-### Style Related Elements
-
-Relationship selectors interpolate another definition without calling it. `&` stays the target, and an empty `style()` supplies an identity for an ancestor or sibling.
-
-```tsx title="Card.tsx"
-import { style } from 'zyzz'
-
-export function Card(props: Card.Props) {
-  return (
-    <section data-state={props.open ? 'open' : 'closed'} {...styles.card()}>
-      <span {...styles.label()}>Details</span>
-    </section>
-  )
-}
-
-export declare namespace Card {
-  type Props = { open: boolean }
-}
-
-namespace styles {
-  export const card = style()
-
-  export const label = style({
-    opacity: 0.5,
-    selectors: {
-      [`${card}:hover &`]: { opacity: 0.8 }, // [!code hl]
-      [`${card}[data-state="open"] &`]: { opacity: 1 }, // [!code hl]
-    },
-  })
-}
-```
-
-Any `style()` definition can mark the ancestor, including an empty one. The compiler checks interpolated identities and selector grammar, but cannot prove that the related element exists in the DOM.
-
 ### Name Queries
 
 A config can name breakpoints for media queries, container widths for container queries, and container names. Aliases compile to literal conditions, so selecting a different variable set never moves a threshold.
@@ -247,32 +235,20 @@ Each alias form compiles to one query:
 import { style } from './zyzz.config.js'
 
 export const layout = style({
-  '@media tablet': { padding: '2rem' }, // @media (width >= 48rem)
-  '@media <tablet': { padding: '1rem' }, // @media (width < 48rem)
-  '@media phone..tablet': { gap: '1rem' }, // @media (30rem <= width < 48rem)
-  '@container card': { display: 'grid' }, // @container (width >= 24rem)
-  '@container sidebar card': { gap: '2rem' }, // @container sidebar (width >= 24rem)
+  // @media (width >= 48rem)
+  '@media tablet': { padding: '2rem' },
+  // @media (width < 48rem)
+  '@media <tablet': { padding: '1rem' },
+  // @media (30rem <= width < 48rem)
+  '@media phone..tablet': { gap: '1rem' },
+  // @container (width >= 24rem)
+  '@container card': { display: 'grid' },
+  // @container sidebar (width >= 24rem)
+  '@container sidebar card': { gap: '2rem' },
 })
 ```
 
 `tablet` and `>=tablet` are equivalent, and ranges include the lower bound but not the upper one. An unknown name fails the type check, and the compiler reports it at the key. Conditions with parentheses and media types such as `print` pass through unchanged.
-
-## Recipes
-
-### Guard Hover Styles
-
-Touch devices can keep a hover style after a tap. Wrapping `:hover` in a hover-capability query limits it to devices with a hovering pointer.
-
-```ts title="row.styles.ts"
-import { style } from 'zyzz'
-
-export const row = style({
-  backgroundColor: 'transparent',
-  '@media (hover: hover)': {
-    ':hover': { backgroundColor: '#f5f5f5' }, // [!code hl]
-  },
-})
-```
 
 ### Mobile-First Layout
 
@@ -324,6 +300,58 @@ namespace styles {
 }
 ```
 
+### Check Feature Support
+
+`@supports` applies declarations only where the browser supports a feature. The declarations outside the query act as the fallback.
+
+```ts title="gallery.styles.ts"
+import { style } from 'zyzz'
+
+export const gallery = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '1rem',
+  // [!code hl]
+  '@supports (display: grid)': {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
+  },
+})
+```
+
+### Guard Hover Styles
+
+Touch devices can keep a hover style after a tap. Nested conditions combine with AND, so wrapping `:hover` in a hover-capability query limits it to devices with a hovering pointer.
+
+```ts title="link.styles.ts"
+import { style } from 'zyzz'
+
+export const link = style({
+  opacity: 1,
+  '@media (hover: hover)': {
+    ':hover': { opacity: 0.8 }, // [!code hl]
+  },
+})
+```
+
+The compiler emits the rules in the same order, with the pseudo-class nested inside the query. Class names depend on the module path:
+
+```css
+.z-bcI3yC-link-opacity-0 {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .z-bcI3yC-link-opacity-1 {
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+```
+
+Write base declarations before their conditions. Rules keep their authored order, so a query written before a base declaration does not override it.
+
 ### Mark Invalid Fields
 
 `aria-invalid` reports a failed validation to assistive technology. The input styles that attribute, and the hint after it reacts through a sibling selector.
@@ -372,35 +400,33 @@ namespace styles {
 
 A sibling selector only reaches elements that come later in the DOM, so the hint follows the input.
 
-### Rotate Disclosure Icons
+### Mark an Ancestor
 
-The trigger already exposes `aria-expanded`. A relationship selector lets the icon inside it react to that attribute from its own definition.
+An empty `style()` supplies an identity for an ancestor or sibling that needs no declarations of its own. Here, the label follows the card's hover state and its `data-state` attribute.
 
-```tsx title="Disclosure.tsx"
+```tsx title="Card.tsx"
 import { style } from 'zyzz'
 
-export function Disclosure(props: Disclosure.Props) {
+export function Card(props: Card.Props) {
   return (
-    <button aria-expanded={props.open} type="button" {...styles.trigger()}>
-      Details
-      <span aria-hidden="true" {...styles.icon()}>
-        ▾
-      </span>
-    </button>
+    <section data-state={props.open ? 'open' : 'closed'} {...styles.card()}>
+      <span {...styles.label()}>Details</span>
+    </section>
   )
 }
 
-export declare namespace Disclosure {
+export declare namespace Card {
   type Props = { open: boolean }
 }
 
 namespace styles {
-  export const trigger = style({ display: 'inline-flex', gap: '0.5rem' })
+  export const card = style()
 
-  export const icon = style({
-    transition: 'rotate 150ms',
+  export const label = style({
+    opacity: 0.5,
     selectors: {
-      [`${trigger}[aria-expanded="true"] &`]: { rotate: '180deg' }, // [!code hl]
+      [`${card}:hover &`]: { opacity: 0.8 }, // [!code hl]
+      [`${card}[data-state="open"] &`]: { opacity: 1 }, // [!code hl]
     },
   })
 }

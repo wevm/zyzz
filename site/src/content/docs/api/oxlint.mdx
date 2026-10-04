@@ -2,25 +2,13 @@
 
 Catch invalid web styles, conflicting JSX props, and unused definitions with Zyzz's Oxlint plugin.
 
-The `zyzz/oxlint` plugin checks source without evaluating application code or loading imported configuration modules. Enable the rules that fit your project. Keep compilation and TypeScript checking in your workflow, since linting cannot validate every style or token contract.
+## Overview
 
-## Set Up Oxlint
+The `zyzz/oxlint` plugin checks source without evaluating application code or loading imported configuration modules. Keep compilation and TypeScript checking in the workflow, since linting cannot validate every style or token contract.
 
-<Steps>
+Each of the five rules reports diagnostics without automatic fixes, and linting preserves declaration order. Review each change before removing a definition or merging expressions that could change evaluation order.
 
-### Install the Linter
-
-With [Zyzz set up](/docs/introduction/getting-started), add Oxlint as a development dependency:
-
-```sh
-npm install --save-dev oxlint
-```
-
-If your project already uses Vite Plus, use the [Vite Plus configuration](#use-vite-plus) below instead.
-
-### Register the Plugin
-
-Add `jsPlugins` and enable individual rules in your existing configuration:
+Registration alone enables no Zyzz rules, so enable the ones that fit the project. This configuration treats invalid styles and competing JSX props as errors, and unused namespace definitions as warnings:
 
 ```json title=".oxlintrc.json"
 {
@@ -33,7 +21,23 @@ Add `jsPlugins` and enable individual rules in your existing configuration:
 }
 ```
 
-Registration alone enables no Zyzz rules. This configuration treats invalid styles and competing JSX props as errors, and unused namespace definitions as warnings. Logical properties and project restrictions remain opt-in.
+## Walkthrough
+
+<Steps>
+
+### Install the Linter
+
+With [Zyzz set up](/docs/introduction/getting-started), add Oxlint as a development dependency:
+
+```sh
+npm install --save-dev oxlint
+```
+
+If the project already uses Vite Plus, use the [Vite Plus configuration](#use-vite-plus) below instead.
+
+### Register the Plugin
+
+Save the [Overview](#overview) configuration as `.oxlintrc.json`, or merge its `jsPlugins` and `rules` into the existing configuration. Logical properties and project restrictions remain opt-in.
 
 ### Run Linting
 
@@ -43,7 +47,7 @@ Run the linter from the project directory:
 npx oxlint .
 ```
 
-Errors produce a failing exit status. To fail on warnings too, run `npx oxlint --deny-warnings .`. Add the command to your project's checks alongside its type check and build.
+Errors produce a failing exit status. To fail on warnings too, run `npx oxlint --deny-warnings .`. Add the command to the project's checks alongside its type check and build.
 
 </Steps>
 
@@ -53,9 +57,11 @@ Errors produce a failing exit status. To fail on warnings too, run `npx oxlint -
 > integration fixtures use Oxlint 1.72.0 and Vite Plus 0.2.2. These are tested
 > versions, not minimum supported versions.
 
-## Use Vite Plus
+## Recipes
 
-Put the same plugin registration and rules under `lint` in your existing `vite.config.ts`. Preserve your build plugins and other configuration.
+### Use Vite Plus
+
+Put the same plugin registration and rules under `lint` in the existing `vite.config.ts`. Preserve its build plugins and other configuration.
 
 ```ts title="vite.config.ts"
 import { defineConfig } from 'vite-plus'
@@ -74,11 +80,7 @@ export default defineConfig({
 
 Run `vp lint`. The Zyzz rules do not require type-aware linting. See [Vite Plus lint configuration](https://viteplus.dev/guide/lint) for the surrounding workflow.
 
-## Fix Common Diagnostics
-
-All five rules report diagnostics without automatic fixes. Linting preserves declaration order. Review each change before removing a definition or merging expressions that could change evaluation order.
-
-### Invalid Styles
+### Fix Invalid Styles
 
 `zyzz/valid-styles` reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, and known nonscalar declaration values. For example, `display: []` has no fallback value, and `color: 'red!important'` lacks the required space before `!important`.
 
@@ -95,9 +97,9 @@ export namespace styles {
 }
 ```
 
-Unknown-property checks apply to token-free imports from `zyzz`. Configured helpers can define shorthand properties, so the rule leaves their property names to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction. Unresolved expressions also remain the compiler's responsibility.
+Unknown-property checks apply only to token-free imports from `zyzz`, since configured helpers can define shorthand properties. The rule leaves those property names and any unresolved expressions to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction.
 
-### Conflicting JSX Props
+### Fix Conflicting Props
 
 `zyzz/no-conflicting-props` reports explicit `className` or `style` attributes beside a known Zyzz application spread, in either order. Multiple known application spreads also conflict, since JSX can overwrite the props from an earlier spread.
 
@@ -125,7 +127,7 @@ namespace styles {
 
 Replace `<section {...styles.card()} className="external">` with the override call above. For inline overrides, pass `style` into the same call. Detection targets React-style web props and locally resolved definitions or `cx` applications. Unknown spreads and style definitions imported from another module are skipped.
 
-### Unused Definitions
+### Remove Unused Definitions
 
 `zyzz/no-unused` reports unused style and variant definitions in local, top-level TypeScript namespaces. Oxlint's built-in `no-unused-vars` remains responsible for ordinary local bindings.
 
@@ -144,8 +146,6 @@ namespace styles {
 ```
 
 This example reports only `styles.unused`. Remove that definition if it is no longer needed. Exported, merged, or nested namespaces, computed member access, and namespaces passed as values are retained conservatively. Direct references between namespace members count as uses.
-
-## Add Project Policies
 
 ### Prefer Logical Properties
 
@@ -182,7 +182,7 @@ The `allow-physical-property` comment permits an intentional physical edge. Sugg
 
 ### Restrict Properties
 
-`zyzz/restricted-properties` accepts one object keyed by exact authored property names. Merge this rule into your plugin configuration:
+`zyzz/restricted-properties` accepts one object keyed by exact authored property names. Merge this rule into the plugin configuration:
 
 ```json title=".oxlintrc.json"
 {
@@ -206,11 +206,9 @@ Under this policy, `padding: '4px'` passes and `padding: '7px'` fails. Every sta
 
 An empty `values` array rejects known literals. Unresolved expressions, such as imported token references, pass a value allowlist check. This does not prove that an expression is a token. Each restriction can include a `reason` to explain the project policy in the diagnostic.
 
-## Recognize Configured Helpers
+### Recognize Configured Helpers
 
-The rules recognize imports from `zyzz`, `zyzz/default`, and modules whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts` or `@/zyzz.config.js`. These config filenames need no extra settings.
-
-For a config module with another name, add its exact import specifier:
+The rules recognize imports from `zyzz`, `zyzz/default`, and modules whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts` or `@/zyzz.config.js`. These filenames need no extra settings. For a config module with another name, add its exact import specifier:
 
 ```json title=".oxlintrc.json"
 {
@@ -226,11 +224,11 @@ These entries supplement automatic recognition. Matching uses the import text wi
 
 Named import aliases, namespace imports, immutable local aliases, and helpers destructured from local `Config.create()` calls are supported. Lexical shadowing is respected. The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
 
-## Scope Web Rules
+### Scope Web Rules
 
 Declaration rules inspect `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. They exclude variant selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches.
 
-In a mixed web and native project, enable these rules only for web authoring files through [Oxlint overrides](https://oxc.rs/docs/guide/usage/linter/config.html). Adapt the file pattern to your project:
+In a mixed web and native project, enable these rules only for web authoring files through [Oxlint overrides](https://oxc.rs/docs/guide/usage/linter/config.html). Adapt the file pattern to the project:
 
 ```json title=".oxlintrc.json"
 {
@@ -248,6 +246,8 @@ In a mixed web and native project, enable these rules only for web authoring fil
 }
 ```
 
+### Suppress Diagnostics
+
 All rules support standard Oxlint suppression comments. Keep exceptions narrow and explain why the declaration is intentional:
 
 ```ts title="styles.ts"
@@ -263,4 +263,31 @@ export namespace styles {
 }
 ```
 
-For the complete contract, see the [Oxlint API documentation](https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md) and [plugin integration tests](https://github.com/wevm/zyzz/blob/main/src/oxlint/index.test.ts).
+## More
+
+<Card.Group>
+  <Card
+    title="Testing & Troubleshooting"
+    icon="terminal"
+    href="/docs/guides/testing"
+  >
+    Test rendered styles, trace compilation failures, and check CSS delivery.
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Compose definitions, override styles, and bind dynamic values.
+  </Card>
+  <Card
+    title="Oxlint API"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md"
+  >
+    Read the complete contract for each rule and recognized import.
+  </Card>
+  <Card
+    title="Plugin Tests"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/src/oxlint/index.test.ts"
+  >
+    Exercise each rule through real Oxlint and Vite Plus processes.
+  </Card>
+</Card.Group>

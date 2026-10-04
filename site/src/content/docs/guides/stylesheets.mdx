@@ -2,13 +2,11 @@ import { StylesheetTable } from './_components/StylesheetTable.js'
 
 # Stylesheets
 
-Declare global styles, cascade layers, fonts, and animations alongside your component styles.
+Declare global styles, cascade layers, fonts, and animations alongside component styles.
 
 ## Overview
 
-Stylesheet helpers from `zyzz/web` contribute CSS during compilation. Use `global` for document selectors, dedicated helpers for rules such as `@font-face`, and returned references for named animations or positioning fallbacks.
-
-Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. Keep helper calls at module scope with direct named imports and statically analyzable definitions. Calling a helper during rendering does not install a stylesheet.
+Stylesheet helpers from `zyzz/web` contribute CSS during compilation. Use `global` for document selectors, dedicated helpers for rules such as `@font-face`, and returned references for named animations or positioning fallbacks. Component selectors stay inside `style({ selectors: { … } })`.
 
 <StylesheetTable label="Stylesheet helpers">
   <table>
@@ -53,13 +51,39 @@ Start with [Getting Started](/docs/introduction/getting-started) to connect comp
   </table>
 </StylesheetTable>
 
-These are web features. Native font loading and animations need platform-specific behavior. Compiler support also does not establish browser support for an at-rule. Check [Compatibility](/docs/introduction/compatibility) before depending on newer CSS features.
+These are web features. Native font loading and animations need platform-specific behavior. Compiler support also does not establish browser support for an at-rule, so check [Compatibility](/docs/introduction/compatibility) before depending on newer CSS features.
 
-## Recipes
+Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. Call helpers at module scope with direct named imports and statically analyzable definitions. Calling a helper during rendering does not install a stylesheet, and repeated calls preserve distinct rules in authored order.
 
-### Global Styles
+```ts title="src/document.ts"
+import { global } from 'zyzz/web'
 
-Add a source module for document-wide defaults. `global` accepts a selector map, with grouping rules around selectors where CSS permits them.
+global({
+  body: { margin: 0 },
+})
+```
+
+## Walkthrough
+
+Cascade layers order document defaults below component styles. These steps declare the order, add defaults to the `base` layer, and style a card in the `components` layer.
+
+<Steps>
+
+### Declare Layer Order
+
+Declare the layer order once in the configuration. Import the returned `style` helper to infer the allowed names in component definitions.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  layers: ['reset', 'base', 'components'],
+})
+```
+
+### Add Document Defaults
+
+Add a source module for rules that intentionally target the document. `global` accepts a selector map, with grouping rules around selectors where CSS permits them. The compiler validates its raw layer names, but TypeScript does not infer them from the configuration.
 
 ```ts title="src/globals.ts"
 import { global } from 'zyzz/web'
@@ -77,21 +101,11 @@ global({
 
 The Vite integration discovers physical project sources under its root, including modules that components never import. Tests, generated output, and dependencies are excluded by default. The standalone host scans its configured source tree. With the compiler API, include the contributing modules in the supplied graph.
 
-Global contributions are eager, including those declared beside lazy components. They survive JavaScript tree shaking. Watching a changed or deleted source replaces or removes its contribution.
+Global contributions are eager, including those declared beside lazy components, and survive JavaScript tree shaking. Watching a changed or deleted source replaces or removes its contribution.
 
-Keep component selectors inside `style({ selectors: { … } })`. Use `global` for rules that intentionally target the document. Its raw layer names receive compiler validation, but do not infer a project's layer names in TypeScript.
+### Apply Component Styles
 
-### Cascade Layers
-
-Declare the layer order once in your configuration. Import the returned `style` helper to infer the allowed names in component definitions.
-
-```ts title="zyzz.config.ts"
-import { defineConfig } from 'zyzz'
-
-export const { style } = defineConfig({
-  layers: ['reset', 'base', 'components'],
-})
-```
+Import the configured `style` helper and nest the card's declarations under the `components` layer.
 
 ```tsx title="Card.tsx"
 import { style } from './zyzz.config.js'
@@ -107,15 +121,7 @@ namespace styles {
 }
 ```
 
-The compiler merges layer constraints into a shared prelude and rejects contradictory orders. Global modules can contribute to the same layers independently. If only stylesheet ordering is needed, use a direct module-level call instead of introducing configuration.
-
-```ts title="src/layers.ts"
-import { layers } from 'zyzz/web'
-
-layers(['reset', 'base', 'components'])
-```
-
-This helper records order but does not bind layer names to a `style` import. CSS cascade rules still determine precedence. For declarations at the same origin, the example's order behaves as follows.
+The compiler merges layer constraints from the configuration and global modules into one shared `@layer reset, base, components;` prelude, and rejects contradictory orders. For declarations at the same origin, the cascade ranks the layers as follows.
 
 <StylesheetTable label="Cascade layer precedence">
   <table>
@@ -139,6 +145,22 @@ This helper records order but does not bind layer names to a `style` import. CSS
 </StylesheetTable>
 
 Within a layer, specificity and source order still matter. Inline styles, animations, and transitions have their own cascade precedence. See MDN's [cascade layer reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer) for the complete ordering rules.
+
+</Steps>
+
+## Recipes
+
+### Layers Without Config
+
+When only stylesheet ordering is needed, call `layers` at module scope instead of introducing configuration.
+
+```ts title="src/layers.ts"
+import { layers } from 'zyzz/web'
+
+layers(['reset', 'base', 'components'])
+```
+
+This helper records order but does not bind layer names to a `style` import. The compiler merges it with other layer constraints, and CSS cascade rules still determine precedence.
 
 ### Fonts and Motion
 
@@ -177,11 +199,11 @@ namespace styles {
 
 Place `app.woff2` beside this module. Relative URLs belong to their source module, and Vite processes the asset through its CSS pipeline. `fontFace` contributes an eager rule. Reachable keyframes use stable references, while unused local keyframes are omitted.
 
-Keyframe bodies accept declarations only, without nested selectors, queries, or important declarations. The reduced-motion query disables this nonessential animation. The optional [default config](https://github.com/wevm/zyzz/blob/main/docs/api/default.md) provides font stacks, but your application still owns font loading.
+Keyframe bodies accept declarations only, without nested selectors, queries, or important declarations. The reduced-motion query disables this nonessential animation. The optional [default config](https://github.com/wevm/zyzz/blob/main/docs/api/default.md) provides font stacks, but the application still owns font loading.
 
 ### Optional Reset
 
-Enable the reset in your web integration. It is disabled by default.
+The reset is disabled by default, and core imports do not install it. Enable it in the web integration.
 
 ```ts title="vite.config.ts"
 import { defineConfig } from 'vite'
@@ -192,19 +214,22 @@ export default defineConfig({
 })
 ```
 
-Next.js uses `zyzz(nextConfig, { reset: true })`. The esbuild, Rollup, Webpack, and unplugin adapters accept the same option. Babel accepts it with `target: 'web'` and inserts a CSS import for the consuming bundler.
-
-When plugin injection is disabled, import the stylesheet explicitly from your application entrypoint.
+Next.js uses `zyzz(nextConfig, { reset: true })`. The esbuild, Rollup, Webpack, and unplugin adapters accept the same option. Babel accepts it with `target: 'web'` and inserts a CSS import for the consuming bundler. When plugin injection is disabled, import the stylesheet explicitly from the application entrypoint.
 
 ```ts title="src/main.ts"
 import 'zyzz/reset.css'
 ```
 
-The reset lives in the `reset` layer. It applies border-box sizing, removes margins and padding, removes default heading, link, and list styling, inherits form-control typography, and makes replaced elements block-level. Its document and code font stacks use system fallbacks.
+The reset's declarations live in the `reset` layer, so normal unlayered declarations take precedence regardless of stylesheet load order. Use configured layers when component styles also need an explicit order. The reset applies these defaults:
 
-Core imports do not install the reset. Normal unlayered declarations take precedence over its layered declarations, regardless of stylesheet load order. Use configured layers when component styles also need an explicit order.
+- Applies border-box sizing.
+- Removes margins and padding.
+- Removes default heading, link, and list styling.
+- Makes form controls inherit typography.
+- Makes replaced elements block-level.
+- Uses system fallbacks in its document and code font stacks.
 
-### Other Stylesheet Rules
+### Pages and Transitions
 
 Use dedicated helpers for descriptors and statement rules. `global` owns selectors and grouping rules, rather than `@font-face`, `@page`, or stylesheet imports.
 
@@ -220,7 +245,11 @@ page({
 })
 ```
 
-`page` emits a print rule. Margin-box rendering depends on the browser or print engine. Use `viewTransition({ navigation: 'auto' })` for a navigation transition rule only when the target browser supports it.
+`page` emits an `@page` rule for print, and margin-box rendering depends on the browser or print engine. Use `viewTransition({ navigation: 'auto' })` for a navigation transition rule only when the target browser supports it.
+
+Nested `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys belong in valid style bodies instead. See the [at-rule reference](https://github.com/wevm/zyzz/blob/main/docs/api/web/at-rules.md) for each helper's grammar and target limits.
+
+### Position Fallbacks
 
 Named helpers return typed references for their intended properties. For example, `positionTry` returns a fallback reference for `positionTryFallbacks`.
 
@@ -247,14 +276,18 @@ export namespace styles {
 
 Apply `styles.trigger()` to the anchor and `styles.tooltip()` to the positioned element. The browser can try the `above` fallback when the initial placement overflows. Anchor positioning requires browser support and an eligible anchor in scope.
 
-Repeated helper calls preserve distinct rules and authored order. Nested `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys belong in valid style bodies. See the [at-rule reference](https://github.com/wevm/zyzz/blob/main/docs/api/web/at-rules.md) for each helper's grammar and target limits.
-
 ### Packed Libraries
 
-Publish transformed modules, declarations, and their matching CSS together. Document the stylesheet import that consumers need. When consumers compile their own Zyzz sources against the library, keep generated `<entry>.zyzz.json` metadata beside the compiled entrypoints.
+Publish transformed modules, declarations, and matching CSS together, and document the stylesheet import that consumers need. Standalone builds load combined `zyzz.css`, or `zyzz.shared.css` before individual module stylesheets. See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries) for the complete publishing workflow.
 
-These sidecars retain global contributions, fonts, keyframes, and layer constraints across imports and re-exports. Source maps preserve the original authoring content. Identical source contributions emit once, while conflicting copies fail compilation.
+When consumers compile their own Zyzz sources against the library, keep generated `<entry>.zyzz.json` metadata beside the compiled entrypoints. These sidecars retain global contributions, fonts, keyframes, and layer constraints across imports and re-exports, and source maps preserve the original authoring content. Identical contributions emit once, while conflicting copies fail compilation.
 
 Keep referenced assets with the published output. Source assets resolve relative to their owning module. The standalone host copies local source assets into its output tree, and Vite resolves assets through its CSS pipeline. Packed external asset copying in the standalone host remains unsupported.
 
-For standalone builds, load combined `zyzz.css`, or load `zyzz.shared.css` before individual module stylesheets. See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries) for the complete publishing workflow.
+## More
+
+- **[Build & Delivery](/docs/guides/compilation):** Publish libraries with matching code, CSS, and compiler metadata.
+- **[Conditions](/docs/guides/conditions):** Nest media, feature, and container queries inside style bodies.
+- **[Styling](/docs/guides/styling):** Define typed component styles and combine them in a predictable order.
+- **[Compatibility](/docs/introduction/compatibility):** Check browser and platform support before adopting newer at-rules.
+- **[At-rule reference](https://github.com/wevm/zyzz/blob/main/docs/api/web/at-rules.md):** Review each helper's grammar, descriptors, and target limits.

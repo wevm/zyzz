@@ -1,3 +1,4 @@
+import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
 import { styles } from './_components/Stylex.js'
 
 # Migrating from StyleX
@@ -6,29 +7,16 @@ Move StyleX components, variables, and themes to Zyzz while preserving their ren
 
 <div {...styles.guide()}>
 
-## Before Migrating
-
-### Guide Scope
-
-Examples use React and TypeScript with StyleX's build integration already configured. Each example is independent unless it names a shared config or variable module. Other web frameworks need their own prop application and build setup. See [Compatibility](/docs/introduction/compatibility) for supported integrations.
-
-### Incremental Migration
-
-Start with one component and retain its CSS values, DOM structure, states, and theme scopes. Keep StyleX's compiler and stylesheet delivery for remaining consumers. Changing tokens, resets, or component APIs at the same time makes visual differences harder to diagnose.
-
-### Requirements and Limitations
-
-Zyzz requires source compilation and matching CSS delivery. A successful TypeScript check does not establish that a definition can be extracted or that its selectors match the intended elements. Run the application build and compare rendered behavior.
-
-> Arbitrary style objects passed through component props are not a direct migration to `cx`. Composition requires compiler-resolved applications. See [Component Boundaries](#component-boundaries) before migrating a shared component API based on `StyleXStyles`.
-
-## Thinking in Zyzz
+## Overview
 
 Both libraries keep style definitions beside components and compile CSS before rendering. Zyzz applies each definition as a callable, groups related definitions in a TypeScript namespace, and keeps configuration explicit through imports. See [Thinking in Zyzz](/docs/introduction/thinking-in-zyzz).
 
-### Co-located Styles
+Examples use React and TypeScript with StyleX's build integration already configured. Each example is independent unless it names a shared config or variable module. Other web frameworks need their own prop application and build setup. See [Compatibility](/docs/introduction/compatibility) for supported integrations.
 
-StyleX defines a map with `create` and applies its entries with `props`:
+StyleX defines a map with `create` and applies its entries with `props`. Zyzz defines each style separately and calls it at the element:
+
+<Tabs label="Card before and after">
+<Tab title="StyleX">
 
 ```tsx
 import * as stylex from '@stylexjs/stylex'
@@ -47,7 +35,8 @@ export function Card() {
 }
 ```
 
-Zyzz defines each style separately and calls it at the element:
+</Tab>
+<Tab title="Zyzz">
 
 ```tsx
 import { style } from 'zyzz'
@@ -71,7 +60,20 @@ namespace styles {
 }
 ```
 
-The explicit lengths preserve the original dimensions. Keep the existing font loading and reset while comparing the two components.
+</Tab>
+</Tabs>
+
+## Before Migrating
+
+Start with one component and retain its CSS values, DOM structure, states, and theme scopes. Keep StyleX's compiler and stylesheet delivery for remaining consumers. Changing tokens, resets, or component APIs at the same time makes visual differences harder to diagnose.
+
+The explicit lengths in the [Overview](#overview) example preserve the original dimensions. Keep the existing font loading and reset while comparing the two components.
+
+### Requirements and Limitations
+
+Zyzz requires source compilation and matching CSS delivery. A successful TypeScript check does not establish that a definition can be extracted or that its selectors match the intended elements. Run the application build and compare rendered behavior.
+
+> Arbitrary style objects passed through component props are not a direct migration to `cx`. Composition requires compiler-resolved applications. See [Component Boundaries](#component-boundaries) before migrating a shared component API based on `StyleXStyles`.
 
 ### Explicit Configuration
 
@@ -131,7 +133,7 @@ This snippet shows only the Zyzz entry. Retain the framework plugin and StyleX i
 
 ### Replace Lint Rules
 
-Keep StyleX lint rules for remaining StyleX files. Add Zyzz's [Oxlint plugin](/docs/api/oxlint) for migrated web authoring, using file overrides where needed. Lint catches supported declaration and JSX conflicts; the compiler still checks extraction and linked token contracts.
+Keep StyleX lint rules for remaining StyleX files. Add Zyzz's [Oxlint plugin](/docs/api/oxlint) for migrated web authoring, using file overrides where needed. Lint catches supported declaration and JSX conflicts, while the compiler still checks extraction and linked token contracts.
 
 ### Preserve Existing CSS
 
@@ -272,7 +274,11 @@ namespace styles {
 
 The StyleX application would be `stylex.props(styles.base, selected && styles.selected)`. Zyzz calls each definition first. `cx` preserves generated classes, variable bindings, and recipe attributes. Separate JSX spreads overwrite props rather than composing them.
 
-Later conflicting declarations win under matching conditions at equal specificity and importance. Shorthands still reset their longhands in authored order. StyleX's default property-specificity resolution gives longhands priority over shorthands, so an existing composition involving both needs a computed-style check.
+Later conflicting declarations win under matching conditions at equal specificity and importance.
+
+### Shorthands and Longhands
+
+In Zyzz, a shorthand resets its longhands in authored order. StyleX's default property-specificity resolution gives longhands priority over shorthands, so an existing composition involving both needs a computed-style check.
 
 For example, a later Zyzz `padding: '8px'` resets an earlier `paddingLeft: '12px'`. Move the longhand later if that is the intended result. Preserve logical properties and check both LTR and RTL behavior when the original build performs direction-dependent transforms.
 
@@ -471,7 +477,7 @@ Each recipe styles one element. Defaults apply to omitted selections, and `null`
 
 ## Dynamic Values
 
-StyleX defines a dynamic style function as a namespace entry:
+StyleX defines a dynamic style function as a namespace entry. Zyzz declares a typed input object and passes values to the generated callable:
 
 ```tsx
 import * as stylex from '@stylexjs/stylex'
@@ -488,8 +494,6 @@ export declare namespace Bar {
   type Props = { width: `${number}%` }
 }
 ```
-
-Zyzz declares a typed input object and passes values to the generated callable:
 
 ```tsx
 import { style } from 'zyzz'
@@ -659,7 +663,7 @@ To combine overrides, define one complete set with `extendVars` before selecting
 
 ### Context-Driven Styles
 
-Keep React context responsible for application state. Pass a finite context value into a recipe choice, or select a variable set at the enclosing element. A style callback receives its declared scalar inputs; it does not read React context or call hooks.
+Keep React context responsible for application state. Pass a finite context value into a recipe choice, or select a variable set at the enclosing element. A style callback receives its declared scalar inputs. It does not read React context or call hooks.
 
 For example, a context-derived `tone` can be passed to the button recipe as `styles.button({ tone })`. For several descendants sharing a palette, use `vars({ set: 'mint' })` on their common ancestor.
 
@@ -841,5 +845,29 @@ Run application type checks and the production build. Confirm stylesheet deliver
 ### Remove StyleX
 
 After all remaining consumers migrate, remove unused StyleX imports, packages, compiler integrations, lint rules, generated stylesheet entries, and marker props. Keep unrelated Babel, PostCSS, and CSS processing. Search application source and dependencies for remaining StyleX requirements, then rebuild and repeat the rendering checks.
+
+## More
+
+<Card.Group>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Compose definitions, override styles, and bind dynamic values.
+  </Card>
+  <Card title="Conditions" icon="sliders" href="/docs/guides/conditions">
+    Write state selectors, media and container queries, and element
+    relationships.
+  </Card>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Define tokens, variable sets, and color schemes in a typed config.
+  </Card>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Define typed choices such as size and tone, with defaults and compounds.
+  </Card>
+  <Card title="CSS Output" icon="code" href="/docs/guides/css-output">
+    Choose atomic or grouped output and compare the emitted rules.
+  </Card>
+  <Card title="Build & Delivery" icon="boxes" href="/docs/guides/compilation">
+    Publish libraries and deliver matching CSS with server-rendered content.
+  </Card>
+</Card.Group>
 
 </div>

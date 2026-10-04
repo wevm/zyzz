@@ -9,7 +9,7 @@ Name shared design values once, use them in every style, and change them for a c
 
 ## Overview
 
-A token names a design decision, such as `accent` for a brand color. A theme is a set of token values applied to an element, and switching it changes inherited CSS custom properties, never component classes. A color token can hold both a light and a dark value, so themes and color schemes switch independently.
+A token names a design decision, such as `accent` for a brand color. A theme applies token values through inherited custom properties, so switching it never changes component classes. Color tokens can hold light and dark values, so themes and color schemes switch independently.
 
 Most tasks in this guide use four groups of functions. The first two come from `zyzz`, and the others come from the config that `defineConfig` returns:
 
@@ -21,9 +21,57 @@ Most tasks in this guide use four groups of functions. The first two come from `
 > [!TIP]
 > Tokens hold values shared across an application. A value that one component owns, such as a plan's accent color, fits a [CSS variable](/docs/guides/styling). A fixed list of choices, such as button sizes, fits [Variants](/docs/guides/variants).
 
-The examples target React on the web and assume the compiler setup from [Getting Started](/docs/introduction/getting-started). React Native selects themes without CSS inheritance, as described in [React Native](/docs/guides/native).
+A config module binds the tokens to `style`, and `vars()` applies them to a section that follows the system color scheme:
 
-## Basic Usage
+<Tabs label="Define and apply tokens">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  color: {
+    accent: { dark: '#60a5fa', light: '#2563eb' },
+    surface: { dark: '#111111', light: '#ffffff' },
+  },
+  spacing: { page: '1.5rem' },
+})
+
+export const { style, vars } = defineConfig({ vars: base })
+```
+
+</Tab>
+<Tab title="Card.tsx">
+
+```tsx title="Card.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Card() {
+  return (
+    // [!code hl]
+    <section {...vars({ colorScheme: 'light dark' })}>
+      <article {...styles.card()}>
+        <h2 {...styles.title()}>Account</h2>
+      </article>
+    </section>
+  )
+}
+
+namespace styles {
+  // [!code hl:2]
+  // Token names compile to CSS variable references
+  export const card = style({ backgroundColor: 'surface', padding: 'page' })
+
+  export const title = style({ color: 'accent' }) // [!code hl]
+}
+```
+
+</Tab>
+</Tabs>
+
+## Walkthrough
+
+The steps below define tokens, use them in a card, and apply a theme to the document. They target React on the web and assume the compiler setup from [Getting Started](/docs/introduction/getting-started). [React Native](/docs/guides/native) selects themes without CSS inheritance.
 
 ### Define Tokens
 
@@ -50,7 +98,7 @@ const base = defineVars({
 export const { style, vars } = defineConfig({ vars: base })
 ```
 
-A `{ dark, light }` pair gives a color one value per scheme, and a plain value applies to both. The top-level key of a set decides which properties accept its tokens. For example, `color` tokens apply to `color` and `backgroundColor`, and `spacing` tokens apply to padding, margin, gap, and sizes.
+A `{ dark, light }` pair holds one color per scheme, and a plain value applies to both. A set's top-level keys decide which properties accept its tokens. For example, `color` tokens apply to `color` and `backgroundColor`, and `spacing` tokens apply to padding, margin, gap, and sizes.
 
 <Callout data-callout="note">
 
@@ -324,7 +372,7 @@ namespace styles {
 
 `maxWidth` accepts spacing tokens, so the literal `28rem` takes the ` !custom` suffix. The compiler removes the suffix and still checks the CSS value. `borderRadius` has no configured tokens in this config, so it accepts CSS values directly.
 
-A value outside the scale fails type checking at the declaration:
+Configured names take precedence over CSS keywords, so with a color token named `red`, `color: 'red'` selects the token and `'red !custom'` selects the CSS color. A value outside the scale fails type checking at the declaration:
 
 ```ts twoslash
 // @errors: 2322
@@ -334,27 +382,6 @@ const { style } = defineConfig({ vars: { spacing: { page: '1.5rem' } } })
 
 style({ padding: '18px' })
 ```
-
-`vars` holds a typed reference for every token. A reference fits any property with a compatible value, including CSS expressions:
-
-```tsx title="Sidebar.tsx"
-import { style, vars } from './zyzz.config.js'
-
-export function Sidebar() {
-  return <aside {...styles.sidebar()}>Navigation</aside>
-}
-
-namespace styles {
-  export const sidebar = style({
-    // [!code hl:2]
-    // An explicit reference fits inside a CSS expression
-    height: `calc(100dvh - ${vars.spacing.page} * 2) !custom`,
-    padding: 'page',
-  })
-}
-```
-
-Configured names take precedence over CSS keywords. With a color token named `red`, `color: 'red'` selects the token, and `'red !custom'` selects the CSS color.
 
 ### Apply a Theme
 
@@ -384,6 +411,27 @@ export declare namespace Document {
 Outside any scope, references fall back to the values from `defineVars`. Color pairs then resolve to their light value unless an ancestor sets `color-scheme`.
 
 ## Recipes
+
+### Use Token References
+
+`vars` holds a typed reference for every token. A reference fits any property with a compatible value, including CSS expressions:
+
+```tsx title="Sidebar.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Sidebar() {
+  return <aside {...styles.sidebar()}>Navigation</aside>
+}
+
+namespace styles {
+  export const sidebar = style({
+    // [!code hl:2]
+    // An explicit reference fits inside a CSS expression
+    height: `calc(100dvh - ${vars.spacing.page} * 2) !custom`,
+    padding: 'page',
+  })
+}
+```
 
 ### Add a Theme
 
@@ -461,9 +509,10 @@ export function ThemePreview() {
 </Tab>
 </Tabs>
 
-`Card` is unchanged from Use Tokens in Styles. The first card uses base values and the second uses alternate values. The nested card returns to base values in the light scheme, because the nearest scope supplies each value.
+`ThemePreview` reuses the `Card` from the walkthrough. The first card uses base values and the second uses alternate values. The nested card returns to base values in the light scheme, because the nearest scope supplies each value. Omitted options inherit differently:
 
-The two options inherit differently. Omitting `set` selects `defaultVars` rather than an outer set, while omitting `colorScheme` keeps the outer scheme.
+- **`set`:** Selects `defaultVars` rather than an outer set.
+- **`colorScheme`:** Keeps the outer scheme.
 
 Every set keeps the token paths and value domains of its base. A new path or a value from another domain fails type checking:
 

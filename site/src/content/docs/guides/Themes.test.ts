@@ -59,8 +59,10 @@ test('compiles every themes example with its documented imports', async () => {
       [
         "zyzz.config.ts: compiled CSS",
         "Card.tsx: compiled CSS",
-        "Sidebar.tsx: compiled CSS",
+        "zyzz.config.ts: compiled CSS",
+        "Card.tsx: compiled CSS",
         "Document.tsx: compiled CSS",
+        "Sidebar.tsx: compiled CSS",
         "zyzz.config.ts: compiled CSS",
         "ThemePreview.tsx: compiled CSS",
         "DarkPreview.tsx: compiled CSS",

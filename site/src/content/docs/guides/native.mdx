@@ -2,11 +2,44 @@
 
 Compile typed styles with Metro and select themes as the app renders.
 
+## Overview
+
 Use Zyzz's `style` and `variants` helpers with ordinary React Native components. Metro compiles the definitions into native styles during iOS and Android bundling. The React adapter selects the current theme and color scheme when those styles are consumed.
 
 This guide assumes an existing Expo app with React 19. Start with [Getting Started](/docs/introduction/getting-started) for other compilation targets. Metro currently requires custom variables rather than `zyzz/default`.
 
-## Setup
+Spread applied props onto native components. Put text styles on `Text` and layout styles on the container. A shared numeric `lineHeight` is a multiplier and requires an explicit `fontSize` in the same style.
+
+```tsx title="Card.tsx"
+import { Text, View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <View {...styles.card()}>
+      <Text {...styles.label()}>Saved for later</Text>
+    </View>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    backgroundColor: '#f3f4f6',
+    borderRadius: '12px',
+    padding: '16px',
+  })
+
+  export const label = style({
+    color: '#111111',
+    fontSize: '16px',
+    lineHeight: 1.5,
+  })
+}
+```
+
+## Walkthrough
+
+These steps add Zyzz to the app and render text in a configured color for the device's color scheme.
 
 <Steps>
 
@@ -69,50 +102,21 @@ namespace styles {
 }
 ```
 
+The `style` returned by `defineConfig` accepts the configuration's token names, such as `ink`, while root `style` from `zyzz` accepts literal values without a theme.
+
+Compiled styles outside a Provider use the light scheme, their configuration's default variables, and automatic window dimensions. A Provider selects other schemes or catalogs. Explicit variable reads still require a Provider.
+
+### Run the App
+
 Run the app's existing Expo command, such as `npx expo start`, and open its iOS or Android target. The text uses the configured `ink` color for the selected scheme. Changing appearance selects compiled styles without recompilation.
 
 Provider also reads window dimensions automatically. Responsive styles and variable reads follow window changes without an additional prop or application subscription.
 
 Custom native builds apply theme changes directly to supported native views without rerendering their style consumers. Rebuild the app after installing Zyzz to include its native module. Expo Go retains React subscriptions. Callback styles and other components also retain React subscriptions.
 
-Compiled styles outside a Provider use the light scheme, their configuration's default variables, and automatic window dimensions. A Provider selects other schemes or catalogs. Explicit variable reads still require a Provider.
-
 </Steps>
 
 ## Recipes
-
-### Style Native Components
-
-Spread applied props onto native components. Put text styles on `Text` and layout styles on the container. A shared numeric `lineHeight` is a multiplier and requires an explicit `fontSize` in the same style.
-
-```tsx title="Card.tsx"
-import { Text, View } from 'react-native'
-import { style } from 'zyzz'
-
-export function Card() {
-  return (
-    <View {...styles.card()}>
-      <Text {...styles.label()}>Saved for later</Text>
-    </View>
-  )
-}
-
-namespace styles {
-  export const card = style({
-    backgroundColor: '#f3f4f6',
-    borderRadius: '12px',
-    padding: '16px',
-  })
-
-  export const label = style({
-    color: '#111111',
-    fontSize: '16px',
-    lineHeight: 1.5,
-  })
-}
-```
-
-Root `style` accepts literal values without a theme. A helper returned by `defineConfig` accepts the configuration's token names, as in the setup example.
 
 ### Define Variants
 
@@ -294,11 +298,9 @@ namespace styles {
 }
 ```
 
-Below width 768, the card uses a column and padding 16. At width 768 or above, the card uses a row and padding 24. Provider reads native window dimensions automatically. Safe-area insets and application geometry calculations remain in your components and hooks.
+Below width 768, the card uses a column and padding 16. At width 768 or above, the card uses a row and padding 24. Provider reads native window dimensions automatically. Safe-area insets and application geometry calculations remain in application components and hooks.
 
-Native media supports width, height, orientation, and boolean conditions with `px` or a configured `units.rem`. Comparison operators retain CSS endpoints. Each style or compiled variable catalog supports up to eight distinct conditions; larger definitions and unsupported features fail compilation.
-
-Every compiled alternative must satisfy native value constraints. Shared numeric `lineHeight` needs a base `fontSize` even when queries do not match. Named variant conditions and manual static `StyleSheet.compile` media selection remain unsupported.
+Native media supports width, height, orientation, and boolean conditions with `px` or a configured `units.rem`. Comparison operators retain CSS endpoints. Each style or compiled variable catalog supports up to eight distinct conditions, and larger definitions and unsupported features fail compilation.
 
 ### Resolve Styles Explicitly
 
@@ -351,12 +353,48 @@ Pass `selected.label` to a native component's `style` prop. Selection returns an
 
 ## Native Boundaries
 
-Shared declarations keep CSS value semantics. `px` defaults to one native logical unit. Supply `units.rem` when using `rem`. Zyzz does not load fonts or read screen density.
+Shared declarations keep CSS value semantics. Native compilation applies these boundaries:
 
-With Metro, use an installed native family name in `targets.native.fontFamily`. For manual `StyleSheet.compile`, supply `fonts` mappings when using shared CSS font families.
-
-Native compilation rejects DOM selectors, container queries, unsupported media features, web globals, CSS layers, and unresolved CSS expressions. Use explicit `flexGrow`, `flexShrink`, and `flexBasis` rather than the shared CSS `flex` shorthand. Compilation diagnostics identify the unsupported declaration.
+- **Units:** `px` defaults to one native logical unit. Supply `units.rem` when using `rem`. Zyzz does not read screen density.
+- **Fonts:** Zyzz does not load fonts. With Metro, use an installed native family name in `targets.native.fontFamily`. For manual `StyleSheet.compile`, supply `fonts` mappings when using shared CSS font families.
+- **Rejected features:** DOM selectors, container queries, unsupported media features, web globals, CSS layers, and unresolved CSS expressions fail compilation. Diagnostics identify the unsupported declaration.
+- **Shorthands:** Use explicit `flexGrow`, `flexShrink`, and `flexBasis` rather than the shared CSS `flex` shorthand.
+- **Compiled alternatives:** Every alternative must satisfy native value constraints. Shared numeric `lineHeight` needs a base `fontSize` even when queries do not match.
+- **Conditional selection:** Named variant conditions and manual static `StyleSheet.compile` media selection remain unsupported.
 
 The [StyleSheet reference](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describes conversions and target branches. Static tables, variants, scalar bindings, and host updates have automated coverage. Selective updates have iOS and Android renderer coverage on RN 0.86.3 and Expo 57. The full native conformance gate and wider version matrix remain open.
 
-For authoring diagnostics, configure [Linting](/docs/api/oxlint). For an app with theme and appearance controls, see the [React Native example](https://github.com/wevm/zyzz/tree/main/examples/react-native).
+## More
+
+<Card.Group>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Define variable catalogs, color schemes, and named themes.
+  </Card>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Define typed component choices with defaults and compound matches.
+  </Card>
+  <Card title="Linting" icon="terminal" href="/docs/api/oxlint">
+    Configure authoring diagnostics for native styles.
+  </Card>
+  <Card
+    title="React Native Example"
+    icon="smartphone"
+    href="https://github.com/wevm/zyzz/tree/main/examples/react-native"
+  >
+    Explore an app with theme and appearance controls.
+  </Card>
+  <Card
+    title="StyleSheet Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md"
+  >
+    Review native conversions, target branches, and manual compilation.
+  </Card>
+  <Card
+    title="React Adapter"
+    icon="react"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/react.md"
+  >
+    Review Provider, `useStyles`, and automatic selection boundaries.
+  </Card>
+</Card.Group>

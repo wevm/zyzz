@@ -118,12 +118,56 @@ describe('withStyles', () => {
       `)
         await page.locator('#scheme').click()
         await expect
-          .poll(() => page.locator('#card').textContent())
-          .toContain('#00ff00')
+          .poll(
+            async () =>
+              JSON.parse((await page.locator('#card').textContent())!).body[0]
+                .backgroundColor,
+          )
+          .toBe('#00ff00')
+        expect(JSON.parse((await page.locator('#card').textContent())!))
+          .toMatchInlineSnapshot(`
+          {
+            "body": [
+              {
+                "backgroundColor": "#00ff00",
+                "width": 100,
+              },
+              {
+                "width": 120,
+              },
+            ],
+            "content": {
+              "height": 40,
+            },
+            "label": "unchanged",
+          }
+        `)
         await page.locator('#vars').click()
         await expect
-          .poll(() => page.locator('#card').textContent())
-          .toContain('#ffff00')
+          .poll(
+            async () =>
+              JSON.parse((await page.locator('#card').textContent())!).body[0]
+                .backgroundColor,
+          )
+          .toBe('#ffff00')
+        expect(JSON.parse((await page.locator('#card').textContent())!))
+          .toMatchInlineSnapshot(`
+          {
+            "body": [
+              {
+                "backgroundColor": "#ffff00",
+                "width": 160,
+              },
+              {
+                "width": 120,
+              },
+            ],
+            "content": {
+              "height": 40,
+            },
+            "label": "unchanged",
+          }
+        `)
         expect(await page.evaluate('Fixture.inspect()')).toMatchInlineSnapshot(`
         {
           "refs": 1,

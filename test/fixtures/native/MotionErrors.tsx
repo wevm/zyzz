@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { AppRegistry, PixelRatio, TurboModuleRegistry } from 'react-native'
 import type { TurboModule } from 'react-native'
-import { defineConfig } from 'zyzz/react-native/react'
+import { defineConfig } from 'zyzz/react-native'
 import {
   useAnimatedStyleValue,
   useAnimatedVars,

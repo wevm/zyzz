@@ -121,14 +121,7 @@ export default defineConfig(async () => {
           const paragraph = tree.children.find(
             (node) => node.type === 'paragraph',
           )
-          function text(node: Nodes | undefined): string {
-            if (!node) return ''
-            if ('children' in node) return node.children.map(text).join('')
-            if ('value' in node) return node.value
-            if (node.type === 'image') return node.alt ?? ''
-            return ''
-          }
-          if (!text(heading) || !text(paragraph))
+          if (!plain(heading) || !plain(paragraph))
             throw new Error(
               `Documentation page ${path} requires a title and subtitle.`,
             )
@@ -171,8 +164,9 @@ export default defineConfig(async () => {
               .split(Path.sep)
               .join('/')
           ] = {
-            title: text(heading),
-            description: text(paragraph),
+            title: plain(heading),
+            description: plain(paragraph),
+            headings: headings(tree),
             markdown: toMarkdown(tree, {
               handlers: {
                 code: (node, parent, state, info) => {
@@ -348,6 +342,9 @@ export default defineConfig(async () => {
             tree.children = tree.children.filter(
               (node) => node !== heading && node !== paragraph,
             )
+
+            // Assigns the anchor IDs that `__DOCS__` headings link to.
+            headings(tree)
           },
         ],
       }),
@@ -435,6 +432,38 @@ function completions(node: Element['children'][number]): string[] {
   if (classes(node).includes('twoslash-completion-list'))
     return [`completions: ${node.children.map(text).join(', ')}`]
   return node.children.flatMap(completions)
+}
+
+/** Assigns anchor IDs to `##` and `###` section headings and returns them in document order. Both MDX passes call it, so the IDs match. */
+function headings(tree: Root) {
+  const counts = new Map<string, number>()
+
+  function collect(node: Nodes): (typeof __DOCS__.pages)[string]['headings'] {
+    // Step headings label procedures rather than sections, and setup renders only the selected framework's steps.
+    if (
+      node.type === 'mdxJsxFlowElement' &&
+      (node.name === 'FrameworkSetup' || node.name === 'Steps')
+    )
+      return []
+    if (node.type !== 'heading')
+      return 'children' in node ? node.children.flatMap(collect) : []
+    if (node.depth !== 2 && node.depth !== 3) return []
+
+    const title = plain(node)
+    const slug = title
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .trim()
+      .replace(/\s+/g, '-')
+    const count = counts.get(slug) ?? 0
+    counts.set(slug, count + 1)
+    const id = count ? `${slug}-${count}` : slug
+
+    node.data = { ...node.data, hProperties: { ...node.data?.hProperties, id } }
+    return [{ depth: node.depth, id, title }]
+  }
+
+  return collect(tree)
 }
 
 /** Highlights inline code marked with a trailing `{:lang}`, and removes the marker from its text. */
@@ -525,6 +554,15 @@ function markdown(node: Code, code: Element): Code {
       })
       .join('\n'),
   }
+}
+
+/** Reads a Markdown node's plain text, such as a heading's title. */
+function plain(node: Nodes | undefined): string {
+  if (!node) return ''
+  if ('children' in node) return node.children.map(plain).join('')
+  if ('value' in node) return node.value
+  if (node.type === 'image') return node.alt ?? ''
+  return ''
 }
 
 /** Reads displayed text, without completion popups. */

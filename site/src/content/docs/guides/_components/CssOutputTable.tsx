@@ -1,6 +1,6 @@
 /** Styles the CSS Output page's authored comparison. @module */
 import type { ReactNode } from 'react'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 /** Keeps output mode descriptions readable on narrow screens. */
 export function CssOutputTable(props: CssOutputTable.Props) {

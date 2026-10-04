@@ -56,9 +56,9 @@ describe('StyleX migration examples', () => {
   })
 
   test('retains fallback order, conditions, and dynamic bindings', () => {
-    const definitions = compile('Define styles')
-    const conditions = compile('States and queries')
-    const dynamic = compile('Dynamic values')
+    const definitions = compile('Define Styles')
+    const conditions = compile('States and Queries')
+    const dynamic = compile('Dynamic Values')
 
     expect(
       /color:#2563eb;[\s\S]*color:oklch\(60% 0.2 250\);/.test(definitions),

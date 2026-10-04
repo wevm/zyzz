@@ -2,7 +2,7 @@
 
 Answers to common questions about configuration, compilation, and platform support.
 
-## Is configuration required?
+## Is Configuration Required?
 
 No. Import `style` from `zyzz` to write literal CSS values without built-in design tokens.
 
@@ -25,13 +25,13 @@ Use `defineConfig` when you need project-specific variables, themes, or cascade 
 
 See [Getting Started](/docs/introduction/getting-started) for setup and [Themes & Tokens](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for custom configuration.
 
-## Does importing configuration compile styles?
+## Does Configuration Compile?
 
 No. Configuration binds the authoring helpers to your variables and layers. A bundler integration, the CLI, or the compiler API transforms style definitions into executable code and emits the matching stylesheet.
 
 Importing a config module alone does not replace that build step. Follow [Getting Started](/docs/introduction/getting-started) to connect compilation to your application.
 
-## Are design tokens bundled?
+## Are Tokens Bundled?
 
 Core imports from `zyzz` are token-free. The optional `zyzz/default` entrypoint includes Geist colors and typography, plus spacing, radii, effects, and query scales.
 
@@ -49,7 +49,7 @@ namespace styles {
 
 The default config provides font stacks but does not load fonts. Your application owns font loading. See [Default config](https://github.com/wevm/zyzz/blob/main/docs/api/default.md) for the bundled values and exports.
 
-## Why use a callback for dynamic values?
+## Why Use Callbacks?
 
 A callback declares typed values that can change for each style application. The web compiler creates fixed CSS rules and custom-property slots. Applying the compiled style assigns values to those slots without generating CSS rules during rendering.
 
@@ -57,7 +57,7 @@ Callbacks require an explicit finite input type and a static object body. Arbitr
 
 See [Dynamic values](https://github.com/wevm/zyzz/blob/main/docs/api/core/style.md#dynamic-values) for supported web inputs and examples. Native scalar bindings have separate [target limits](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/README.md).
 
-## Can a library publish precompiled styles?
+## Can Libraries Precompile?
 
 Yes. Publish transformed modules, declarations, and the matching CSS from the same build. Consumers load the stylesheet once and do not need to compile already-transformed library code.
 
@@ -65,7 +65,7 @@ Keep generated `.zyzz.json` compiler metadata beside the published entry modules
 
 See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries) for the publishing workflow.
 
-## Does React Native support every web feature?
+## Is Native Feature-Complete?
 
 No. Shared style definitions must fit the native target's capabilities. DOM relationships, CSS cascade layers, and global styles are web semantics and are rejected by the native compiler.
 

@@ -4,7 +4,7 @@ Keep styles beside components, compose them by name, and let TypeScript check th
 
 These conventions guide how components, shared styles, and configuration fit together. Each section names a preference and the alternative it replaces.
 
-## Co-location over separate modules
+## Co-location over Separation
 
 Component-specific styles belong beside the component, in a module-level `namespace styles` at the bottom of the file. Markup, behavior, and styling change together, without a separate stylesheet or style module for every component.
 
@@ -36,7 +36,7 @@ namespace styles {
 
 A [shared style module](/docs/guides/styling) comes later, once a second component needs the same definition. Co-location is the starting point, and reuse supplies the reason to move a definition. Some repetition across components costs less than a shared definition that couples them.
 
-## Composition over inline declarations
+## Composition over Inlining
 
 Named definitions keep styling decisions out of markup. Names such as `button` and `focusRing` describe the element or treatment, while the declarations stay in the namespace. Definition and application remain separate within the same file.
 
@@ -69,7 +69,7 @@ The focus ring composes with buttons, links, and other controls. `cx` preserves 
 
 Two spreads on one element replace each other's `className` and `style`, so they cannot substitute for composition. [Styling](/docs/guides/styling) covers overrides and the inputs `cx` accepts.
 
-## Feedback while authoring over CLI-only checks
+## Feedback While Authoring
 
 Types put feedback where styles are defined and applied. Property names, supported values, configured tokens, variant choices, and callback inputs reach the editor as completions and diagnostics. A renamed variant or removed token fails at its callers before a build runs.
 
@@ -90,7 +90,7 @@ styles.stack({ gap: 8 })
 
 Type checking is static analysis, and it complements compilation. Selector grammar, extraction constraints, and target capabilities still need the compiler. Types cannot prove DOM structure or rendered appearance either. [Agents](/docs/introduction/agents) covers editor and agent setup.
 
-## Standard names over shorthand conventions
+## Standards over Shorthand
 
 Styles use CSS property names in camelCase, such as `borderColor` and `outlineOffset`. Values keep CSS units and syntax. Conditions use CSS names too, such as `:focus-visible`, `[aria-invalid="true"]`, and `@media (min-width: 48rem)`, so there is no separate utility vocabulary to learn.
 
@@ -137,7 +137,7 @@ Keyboard focus and validity are states the element already exposes, so selectors
 
 CSS knowledge still applies to selectors, inheritance, specificity, and the cascade. Configured token names add a project's own vocabulary on top.
 
-## Explicit configuration over ambient settings
+## Explicit Configuration
 
 Importing `style` from `zyzz` gives token-free authoring. Importing it from a project's `zyzz.config.ts` gives the tokens and layers that config declares. The import identifies the contract, and another config does not silently change it.
 
@@ -196,7 +196,7 @@ namespace styles {
 
 Shared colors, spacing, and typography belong in a [theme](/docs/guides/themes). The bundled Geist and Tailwind tokens are an opt-in import from `zyzz/default`.
 
-## Variant styling over class concatenation
+## Variants over Concatenation
 
 Component choices such as size or tone belong in `variants`. Callers select typed values such as `{ size: 'compact' }` instead of concatenating class names. The definition owns the choices, defaults, and compound rules, so call sites do not rebuild that logic.
 
@@ -337,7 +337,7 @@ export function SignIn() {
 
 Browser states such as focus belong in CSS conditions, and application state stays in props and ordinary data or ARIA attributes. [Variants](/docs/guides/variants) covers compound rules and choices selected by CSS conditions.
 
-## Static rules with runtime values
+## Static Rules
 
 Rules compile ahead of time. Runtime calls select existing styles or bind values to precompiled CSS variables. A strength meter accepts a different width for every instance without generating a CSS rule for each width.
 

@@ -1,6 +1,6 @@
 /** Styles the selection comparison table in the Variants guide. @module */
 import type { ReactNode } from 'react'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 /** Keeps the guide's comparison scrollable without widening the page. */
 export function SelectionTable(props: SelectionTable.Props) {

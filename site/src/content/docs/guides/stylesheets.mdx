@@ -1,4 +1,4 @@
-import { StylesheetTable } from './StylesheetTable.js'
+import { StylesheetTable } from './_components/StylesheetTable.js'
 
 # Stylesheets
 
@@ -57,7 +57,7 @@ These are web features. Native font loading and animations need platform-specifi
 
 ## Recipes
 
-### Global styles
+### Global Styles
 
 Add a source module for document-wide defaults. `global` accepts a selector map, with grouping rules around selectors where CSS permits them.
 
@@ -81,7 +81,7 @@ Global contributions are eager, including those declared beside lazy components.
 
 Keep component selectors inside `style({ selectors: { … } })`. Use `global` for rules that intentionally target the document. Its raw layer names receive compiler validation, but do not infer a project's layer names in TypeScript.
 
-### Cascade layers
+### Cascade Layers
 
 Declare the layer order once in your configuration. Import the returned `style` helper to infer the allowed names in component definitions.
 
@@ -140,7 +140,7 @@ This helper records order but does not bind layer names to a `style` import. CSS
 
 Within a layer, specificity and source order still matter. Inline styles, animations, and transitions have their own cascade precedence. See MDN's [cascade layer reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer) for the complete ordering rules.
 
-### Fonts and motion
+### Fonts and Motion
 
 Declare `fontFace` with the font's source URL, then use its family in a style. Keep keyframes near the component that owns the animation. The returned reference supplies `animationName` without a handwritten CSS name.
 
@@ -179,7 +179,7 @@ Place `app.woff2` beside this module. Relative URLs belong to their source modul
 
 Keyframe bodies accept declarations only, without nested selectors, queries, or important declarations. The reduced-motion query disables this nonessential animation. The optional [default config](https://github.com/wevm/zyzz/blob/main/docs/api/default.md) provides font stacks, but your application still owns font loading.
 
-### Optional reset
+### Optional Reset
 
 Enable the reset in your web integration. It is disabled by default.
 
@@ -204,7 +204,7 @@ The reset lives in the `reset` layer. It applies border-box sizing, removes marg
 
 Core imports do not install the reset. Normal unlayered declarations take precedence over its layered declarations, regardless of stylesheet load order. Use configured layers when component styles also need an explicit order.
 
-### Other stylesheet rules
+### Other Stylesheet Rules
 
 Use dedicated helpers for descriptors and statement rules. `global` owns selectors and grouping rules, rather than `@font-face`, `@page`, or stylesheet imports.
 
@@ -249,7 +249,7 @@ Apply `styles.trigger()` to the anchor and `styles.tooltip()` to the positioned 
 
 Repeated helper calls preserve distinct rules and authored order. Nested `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys belong in valid style bodies. See the [at-rule reference](https://github.com/wevm/zyzz/blob/main/docs/api/web/at-rules.md) for each helper's grammar and target limits.
 
-### Packed libraries
+### Packed Libraries
 
 Publish transformed modules, declarations, and their matching CSS together. Document the stylesheet import that consumers need. When consumers compile their own Zyzz sources against the library, keep generated `<entry>.zyzz.json` metadata beside the compiled entrypoints.
 

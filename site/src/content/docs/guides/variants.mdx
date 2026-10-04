@@ -1,6 +1,6 @@
-import * as Examples from './variants/Examples.js'
+import * as Examples from './_components/variants/Examples.js'
 import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
-import { SelectionTable } from './SelectionTable.js'
+import { SelectionTable } from './_components/SelectionTable.js'
 
 # Variants
 
@@ -35,7 +35,7 @@ namespace styles {
 
 Start with [Getting Started](/docs/introduction/getting-started) to connect the compiler. Import `variants` from `zyzz` for literal CSS values, or from a project config for its tokens.
 
-## Define choices and defaults
+## Choices and Defaults
 
 Put declarations shared by every choice in `base`. Group alternatives under a named axis in `variants`, then choose the initial values with `defaultVariants`.
 
@@ -83,7 +83,7 @@ This button selects `compact` and keeps the default `primary` tone. Calls return
 
 Axis names become `data-*` attributes. They use lowercase letters, digits, and hyphens, start with a letter, and cannot be `class`, `conditions`, `key`, `ref`, `style`, or `vars`.
 
-## Type component props
+## Type Component Props
 
 `Props.Variants` derives the allowed selections from the definition. Component behavior such as `disabled` stays on the element rather than passing through the styling call.
 
@@ -182,7 +182,7 @@ export function Toolbar() {
 }
 ```
 
-## Suppress a default
+## Suppress a Default
 
 An omitted or `undefined` selection uses the default. Pass `null` to suppress an axis and its default. Boolean choices use actual booleans, and `false` selects the `false` choice.
 
@@ -264,7 +264,7 @@ styles.label({ muted: null }) // [!code hl]
   </table>
 </SelectionTable>
 
-## Combine matching choices
+## Combine Matching Choices
 
 Use `compoundVariants` when styling depends on more than one axis. Every axis in `when` must match, and an array matches any listed choice for that axis.
 
@@ -310,7 +310,7 @@ styles.button({ tone: 'quiet' })
 
 The quiet button receives a visible border at either size, and compounds also match defaults. For conflicting declarations, precedence is `base`, then axes in declaration order, then compounds in array order, within matching contexts and importance. Selection attributes add no selector specificity.
 
-## Select choices with CSS conditions
+## Select with Conditions
 
 Declare named conditions when a query should switch the selected choice, then pass overrides under `conditions` at the application site. CSS evaluates the queries, so the call does not read the viewport or install listeners.
 
@@ -358,7 +358,7 @@ Later matching conditions win for each axis in recipe declaration order. Missing
 
 Selection conditions support `@media` and `@supports`, with up to eight named conditions per recipe. Container and selector queries cannot switch choices. Use ordinary [conditions](/docs/guides/conditions) inside a choice when only its declarations need to change.
 
-## Bind a value to a dynamic choice
+## Bind Dynamic Choices
 
 When one choice needs a per-instance value, define that choice with a typed callback. Select it with an object containing the choice name and its payload.
 
@@ -410,7 +410,7 @@ The compiler creates fixed CSS-variable slots for the callback's fields. Applyin
 
 Payload fields must be required scalars with explicit types. Defaults need complete static payloads, so a bare `size: 'custom'` is invalid. Conditional selections accept the same payload shape, with separate slots for each condition.
 
-## Compose with other styles
+## Compose Variants
 
 Use `cx` when combining a recipe with another generated style. Separate JSX spreads replace props and can lose the recipe's class, attributes, or variable bindings.
 

@@ -6,7 +6,7 @@ import {
   useId,
   useState,
 } from 'react'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 /** Scopes typography for this page's nested benchmark sections. */
 export function BenchmarkContent(props: BenchmarkContent.Props) {

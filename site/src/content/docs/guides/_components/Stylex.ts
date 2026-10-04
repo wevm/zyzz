@@ -1,5 +1,5 @@
 /** Styles the migration guide's nested headings and comparison tables. @module */
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 export namespace styles {
   export const guide = style({

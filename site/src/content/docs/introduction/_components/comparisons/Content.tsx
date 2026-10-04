@@ -1,6 +1,6 @@
 /** Page-specific comparison heading typography and tables. @module */
 import type { ReactNode } from 'react'
-import { style } from '../../../../zyzz.config.js'
+import { style } from '../../../../../zyzz.config.js'
 
 /** Applies heading typography within this comparison page. */
 export function Content(props: Content.Props) {

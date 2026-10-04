@@ -1,4 +1,4 @@
-import * as Examples from './styling/Examples.js'
+import * as Examples from './_components/styling/Examples.js'
 import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
 
 # Styling
@@ -23,7 +23,7 @@ The examples target React on the web and assume the compiler setup from [Getting
 
 ## Basic Usage
 
-### Define and Apply Styles
+### Define and Apply
 
 Call `style` at module scope, and keep a component's definitions in a `namespace styles` at the bottom of its file. During rendering, call each definition and spread the result onto its element.
 
@@ -86,7 +86,7 @@ style({ flexDirection: '' })
 
 The compiler reads definitions without running application code. Literal values, local `const` records, and typed callbacks qualify. Running source that skipped the transform throws `style.MissingTransformError`, which means the build integration did not process that file.
 
-### Add States and Queries
+### Add Conditions
 
 Nest declarations under pseudo-class, pseudo-element, attribute, and at-rule keys. In attribute keys, `&` stands for the styled element. Nested keys combine with AND, and each selector keeps its CSS specificity.
 
@@ -412,7 +412,7 @@ export const { style, vars } = defineConfig({
 
 References follow the active theme scope. [Themes & Tokens](/docs/guides/themes) covers variable sets, color schemes, and property mappings.
 
-### Share Styles Between Files
+### Share Styles
 
 Definitions used by several components can live in a shared module as top-level exports. Importing the module as a namespace applies the same compiled rules in each component.
 

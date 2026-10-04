@@ -4,11 +4,11 @@ Catch invalid web styles, conflicting JSX props, and unused definitions with Zyz
 
 The `zyzz/oxlint` plugin checks source without evaluating application code or loading imported configuration modules. Enable the rules that fit your project. Keep compilation and TypeScript checking in your workflow, since linting cannot validate every style or token contract.
 
-## Set up Oxlint
+## Set Up Oxlint
 
 <Steps>
 
-### Install the linter
+### Install the Linter
 
 With [Zyzz set up](/docs/introduction/getting-started), add Oxlint as a development dependency:
 
@@ -18,7 +18,7 @@ npm install --save-dev oxlint
 
 If your project already uses Vite Plus, use the [Vite Plus configuration](#use-vite-plus) below instead.
 
-### Register the plugin
+### Register the Plugin
 
 Add `jsPlugins` and enable individual rules in your existing configuration:
 
@@ -35,7 +35,7 @@ Add `jsPlugins` and enable individual rules in your existing configuration:
 
 Registration alone enables no Zyzz rules. This configuration treats invalid styles and competing JSX props as errors, and unused namespace definitions as warnings. Logical properties and project restrictions remain opt-in.
 
-### Run linting
+### Run Linting
 
 Run the linter from the project directory:
 
@@ -52,8 +52,6 @@ Errors produce a failing exit status. To fail on warnings too, run `npx oxlint -
 > API](https://oxc.rs/docs/guide/usage/linter/js-plugins.html) is alpha. Zyzz's
 > integration fixtures use Oxlint 1.72.0 and Vite Plus 0.2.2. These are tested
 > versions, not minimum supported versions.
-
-<span id="use-vite-plus" />
 
 ## Use Vite Plus
 
@@ -76,11 +74,11 @@ export default defineConfig({
 
 Run `vp lint`. The Zyzz rules do not require type-aware linting. See [Vite Plus lint configuration](https://viteplus.dev/guide/lint) for the surrounding workflow.
 
-## Fix common diagnostics
+## Fix Common Diagnostics
 
 All five rules report diagnostics without automatic fixes. Linting preserves declaration order. Review each change before removing a definition or merging expressions that could change evaluation order.
 
-### Invalid styles
+### Invalid Styles
 
 `zyzz/valid-styles` reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, and known nonscalar declaration values. For example, `display: []` has no fallback value, and `color: 'red!important'` lacks the required space before `!important`.
 
@@ -99,7 +97,7 @@ export namespace styles {
 
 Unknown-property checks apply to token-free imports from `zyzz`. Configured helpers can define shorthand properties, so the rule leaves their property names to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction. Unresolved expressions also remain the compiler's responsibility.
 
-### Conflicting JSX props
+### Conflicting JSX Props
 
 `zyzz/no-conflicting-props` reports explicit `className` or `style` attributes beside a known Zyzz application spread, in either order. Multiple known application spreads also conflict, since JSX can overwrite the props from an earlier spread.
 
@@ -127,7 +125,7 @@ namespace styles {
 
 Replace `<section {...styles.card()} className="external">` with the override call above. For inline overrides, pass `style` into the same call. Detection targets React-style web props and locally resolved definitions or `cx` applications. Unknown spreads and style definitions imported from another module are skipped.
 
-### Unused definitions
+### Unused Definitions
 
 `zyzz/no-unused` reports unused style and variant definitions in local, top-level TypeScript namespaces. Oxlint's built-in `no-unused-vars` remains responsible for ordinary local bindings.
 
@@ -147,9 +145,9 @@ namespace styles {
 
 This example reports only `styles.unused`. Remove that definition if it is no longer needed. Exported, merged, or nested namespaces, computed member access, and namespaces passed as values are retained conservatively. Direct references between namespace members count as uses.
 
-## Add project policies
+## Add Project Policies
 
-### Prefer logical properties
+### Prefer Logical Properties
 
 Enable `zyzz/use-logical-properties` to report covered horizontal physical properties and corner radii:
 
@@ -182,7 +180,7 @@ export namespace styles {
 
 The `allow-physical-property` comment permits an intentional physical edge. Suggestions assume horizontal left-to-right layouts. The rule does not cover vertical properties, physical keyword values, or shorthand values. Check direction and writing mode before changing a property.
 
-### Restrict properties and values
+### Restrict Properties
 
 `zyzz/restricted-properties` accepts one object keyed by exact authored property names. Merge this rule into your plugin configuration:
 
@@ -208,7 +206,7 @@ Under this policy, `padding: '4px'` passes and `padding: '7px'` fails. Every sta
 
 An empty `values` array rejects known literals. Unresolved expressions, such as imported token references, pass a value allowlist check. This does not prove that an expression is a token. Each restriction can include a `reason` to explain the project policy in the diagnostic.
 
-## Recognize configured helpers
+## Recognize Configured Helpers
 
 The rules recognize imports from `zyzz`, `zyzz/default`, and modules whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts` or `@/zyzz.config.js`. These config filenames need no extra settings.
 
@@ -228,7 +226,7 @@ These entries supplement automatic recognition. Matching uses the import text wi
 
 Named import aliases, namespace imports, immutable local aliases, and helpers destructured from local `Config.create()` calls are supported. Lexical shadowing is respected. The linter does not resolve arbitrary re-exports, imported style definitions, token contracts, or custom shorthand mappings across files.
 
-## Scope web rules
+## Scope Web Rules
 
 Declaration rules inspect `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. They exclude variant selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches.
 

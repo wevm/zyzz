@@ -1,6 +1,6 @@
 /** Styles the Tailwind guide's headings and migration reference tables. @module */
 import type { ReactNode } from 'react'
-import { style } from '../../../zyzz.config.js'
+import { style } from '../../../../zyzz.config.js'
 
 /** Applies page-specific heading typography. */
 export function TailwindContent(props: TailwindContent.Props) {

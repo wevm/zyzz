@@ -1,7 +1,7 @@
 import { Callout } from '../../../components/mdx/Callout.js'
 import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
 import * as Examples from '../../../components/mdx/themes/Examples.js'
-import { KeyTable } from './KeyTable.js'
+import { KeyTable } from './_components/KeyTable.js'
 
 # Themes & Tokens
 
@@ -279,7 +279,7 @@ A `*` stands for longhands, so `margin*` covers properties such as `marginTop` a
 
 A key named after a property, such as `padding` or `zIndex`, applies only to that property and takes precedence over a shared key such as `spacing`. [Category fallbacks](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md#category-fallbacks) documents the full lookup order.
 
-### Use Tokens in Styles
+### Reference Tokens
 
 Write token names as values. Each name compiles to a reference to its CSS variable.
 
@@ -480,7 +480,7 @@ extendVars(base, { color: { brand: '#9333ea' } })
 extendVars(base, { spacing: { page: '#9333ea' } })
 ```
 
-### Force a Color Scheme
+### Force a Scheme
 
 Pass `colorScheme` to fix the scheme of one section, such as a dark sidebar on a light page. The scheme and the set are separate options.
 
@@ -516,7 +516,7 @@ export function DarkPreview() {
 
 Browser-drawn parts such as form controls and scrollbars inside the section follow the same `color-scheme`.
 
-### Add a Theme Switcher
+### Switch Themes
 
 `appearance.set()` applies a set and a scheme to the document root and saves them. `appearance.get()` reads the current root selection as `{ colorScheme, set }`.
 
@@ -552,7 +552,7 @@ The selection persists in `localStorage` under the config's `storageKey`, which 
 
 `appearance` changes only the document root, while `vars` creates local scopes. The helper does not notify subscribers, so a control that displays the current choice keeps its own state. Single-set configs accept only `colorScheme`.
 
-### Restore Preferences Before Paint
+### Prevent Theme Flicker
 
 A preference saved by `appearance` applies only after application JavaScript runs. `script()` returns a small inline script that reapplies it before the first paint. Generate the script on the server or at build time, and place it early in `<head>`.
 
@@ -597,7 +597,7 @@ The server markup keeps the default selection, and the script replaces it only w
 
 [Config Script](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md) documents the stored record and framework constraints.
 
-### Use the Bundled Tokens
+### Use Bundled Tokens
 
 `zyzz/default` exports a ready config with Geist colors and typography, plus Tailwind spacing, radius, shadow, and query scales. The root `zyzz` entrypoint stays token-free. The [Variables explorer](/vars) lists every bundled value.
 
@@ -791,7 +791,7 @@ export const { style, vars } = defineConfig({ vars: base })
 
 `style({ padding: 'page' })` grows with the viewport. When several conditions match, the last authored one wins. `extendVars` replaces a responsive token as a whole, so an override lists every branch it keeps. Native compilation rejects media-conditioned tokens.
 
-### Name Breakpoints and Containers
+### Name Query Thresholds
 
 `breakpoint` and `container` tokens name the thresholds used in `@media` and `@container` keys. `containerNames` lists the container names that styles may declare and query.
 
@@ -899,8 +899,6 @@ namespace styles {
 
 A field written beside `typography` overrides the matching preset field, regardless of position, so the title above uses weight `700`. Native compilation rejects responsive typography blocks.
 
-<span id="customize-property-mappings" />
-
 ### Customize Property Mappings
 
 `mappings` connects a category to the properties that accept its tokens. Each supplied category replaces its default mapping, and other categories keep theirs. `shorthands` defines local aliases that expand into several properties.
@@ -961,7 +959,7 @@ namespace styles {
 
 Avoid mappings that give one property the same name from two categories. [Config.create](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#full-variable-paths) shows full-path authoring.
 
-### Compile Without a Bundler
+### Compile Without Bundlers
 
 `Css.compile` turns explicit definitions into an in-memory stylesheet. The page loads the CSS and applies both the scope class and the component class.
 

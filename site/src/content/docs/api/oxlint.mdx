@@ -6,7 +6,7 @@ Catch invalid web styles, conflicting JSX props, and unused definitions with Zyz
 
 The `zyzz/oxlint` plugin checks source without evaluating application code or loading imported configuration modules. Keep compilation and TypeScript checking in the workflow, since linting cannot validate every style or token contract.
 
-Each of the five rules reports diagnostics without automatic fixes, and linting preserves declaration order. Review each change before removing a definition or merging expressions that could change evaluation order.
+Each of the five [rules](#rules) reports diagnostics without automatic fixes, and linting preserves declaration order. Review each change before removing a definition or merging expressions that could change evaluation order.
 
 Registration alone enables no Zyzz rules, so enable the ones that fit the project. This configuration treats invalid styles and competing JSX props as errors, and unused namespace definitions as warnings:
 
@@ -37,7 +37,7 @@ If the project already uses Vite Plus, use the [Vite Plus configuration](#use-vi
 
 ### Register the Plugin
 
-Save the [Overview](#overview) configuration as `.oxlintrc.json`, or merge its `jsPlugins` and `rules` into the existing configuration. Logical properties and project restrictions remain opt-in.
+Save the [Overview](#overview) configuration as `.oxlintrc.json`, or merge its `jsPlugins` and `rules` into the existing configuration. [Logical properties](#use-logical-properties) and [project restrictions](#restricted-properties) remain opt-in.
 
 ### Run Linting
 
@@ -79,132 +79,6 @@ export default defineConfig({
 ```
 
 Run `vp lint`. The Zyzz rules do not require type-aware linting. See [Vite Plus lint configuration](https://viteplus.dev/guide/lint) for the surrounding workflow.
-
-### Fix Invalid Styles
-
-`zyzz/valid-styles` reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, and known nonscalar declaration values. For example, `display: []` has no fallback value, and `color: 'red!important'` lacks the required space before `!important`.
-
-Use a nonempty fallback array and the ` !important` suffix:
-
-```ts title="styles.ts"
-import { style } from 'zyzz'
-
-export namespace styles {
-  export const card = style({
-    color: 'red !important',
-    display: ['block', 'flex'],
-  })
-}
-```
-
-Unknown-property checks apply only to token-free imports from `zyzz`, since configured helpers can define shorthand properties. The rule leaves those property names and any unresolved expressions to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction.
-
-### Fix Conflicting Props
-
-`zyzz/no-conflicting-props` reports explicit `className` or `style` attributes beside a known Zyzz application spread, in either order. Multiple known application spreads also conflict, since JSX can overwrite the props from an earlier spread.
-
-Pass overrides into the style call, and use `cx` to compose applications:
-
-```tsx title="Card.tsx"
-import { cx, style } from 'zyzz'
-
-export function Card() {
-  return (
-    <section {...styles.card({ className: 'external' })}>
-      <span {...cx(styles.label(), styles.selected())}>Selected</span>
-    </section>
-  )
-}
-
-namespace styles {
-  export const card = style({ padding: '16px' })
-
-  export const label = style({ fontWeight: 500 })
-
-  export const selected = style({ opacity: 0.8 })
-}
-```
-
-Replace `<section {...styles.card()} className="external">` with the override call above. For inline overrides, pass `style` into the same call. Detection targets React-style web props and locally resolved definitions or `cx` applications. Unknown spreads and style definitions imported from another module are skipped.
-
-### Remove Unused Definitions
-
-`zyzz/no-unused` reports unused style and variant definitions in local, top-level TypeScript namespaces. Oxlint's built-in `no-unused-vars` remains responsible for ordinary local bindings.
-
-```tsx title="Card.tsx"
-import { style } from 'zyzz'
-
-export function Card() {
-  return <section {...styles.card()}>Content</section>
-}
-
-namespace styles {
-  export const card = style({ padding: '16px' })
-
-  export const unused = style({ color: 'red' })
-}
-```
-
-This example reports only `styles.unused`. Remove that definition if it is no longer needed. Exported, merged, or nested namespaces, computed member access, and namespaces passed as values are retained conservatively. Direct references between namespace members count as uses.
-
-### Prefer Logical Properties
-
-Enable `zyzz/use-logical-properties` to report covered horizontal physical properties and corner radii:
-
-```json title=".oxlintrc.json"
-{
-  "rules": {
-    "zyzz/use-logical-properties": "warn"
-  }
-}
-```
-
-Merge this rule into the registered plugin configuration. For example, replace `marginLeft` with `marginInlineStart` and `paddingRight` with `paddingInlineEnd` when those properties match the intended direction and writing mode.
-
-```ts title="styles.ts"
-import { style } from 'zyzz'
-
-export namespace styles {
-  export const card = style({
-    marginInlineStart: '16px',
-    paddingInlineEnd: '8px',
-  })
-
-  export const overlay = style({
-    position: 'absolute',
-    // allow-physical-property
-    left: '0px',
-  })
-}
-```
-
-The `allow-physical-property` comment permits an intentional physical edge. Suggestions assume horizontal left-to-right layouts. The rule does not cover vertical properties, physical keyword values, or shorthand values. Check direction and writing mode before changing a property.
-
-### Restrict Properties
-
-`zyzz/restricted-properties` accepts one object keyed by exact authored property names. Merge this rule into the plugin configuration:
-
-```json title=".oxlintrc.json"
-{
-  "rules": {
-    "zyzz/restricted-properties": [
-      "error",
-      {
-        "color": { "reason": "Use color tokens.", "values": [] },
-        "padding": {
-          "reason": "Use the spacing scale.",
-          "values": [0, "4px", "8px"]
-        },
-        "zIndex": { "reason": "Use a stacking context." }
-      }
-    ]
-  }
-}
-```
-
-Under this policy, `padding: '4px'` passes and `padding: '7px'` fails. Every statically resolved fallback value must be allowed. Omitting `values` bans the property, including dynamic values, so any `zIndex` declaration fails.
-
-An empty `values` array rejects known literals. Unresolved expressions, such as imported token references, pass a value allowlist check. This does not prove that an expression is a token. Each restriction can include a `reason` to explain the project policy in the diagnostic.
 
 ### Recognize Configured Helpers
 
@@ -259,6 +133,238 @@ export namespace styles {
     // Keep this overlay aligned to the physical left edge.
     // oxlint-disable-next-line zyzz/use-logical-properties
     left: '0px',
+  })
+}
+```
+
+## Rules
+
+None of the rules needs type-aware linting or applies automatic fixes. The [Overview](#overview) configuration enables the first three, and the last two are opt-in:
+
+- **[`zyzz/valid-styles`](#valid-styles):** Malformed declarations and values.
+- **[`zyzz/no-conflicting-props`](#no-conflicting-props):** JSX props that overwrite applied styles.
+- **[`zyzz/no-unused`](#no-unused):** Style definitions that nothing applies.
+- **[`zyzz/use-logical-properties`](#use-logical-properties):** Physical properties with logical equivalents.
+- **[`zyzz/restricted-properties`](#restricted-properties):** Properties and values the project restricts.
+
+### Valid Styles
+
+Reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, and nonscalar declaration values. Unknown-property checks apply only to imports from `zyzz`, since configured helpers can define shorthand properties.
+
+The rule leaves unresolved expressions to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction.
+
+#### Incorrect
+
+```ts twoslash title="styles.ts"
+// @noErrors
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const card = style({
+    colr: 'red',
+    // @error: zyzz(valid-styles): Unknown CSS property 'colr'.
+    color: 'red!important',
+    // @error: zyzz(valid-styles): Value markers require " !custom" followed by optional " !important", or " !important" alone.
+    display: [],
+    // @error: zyzz(valid-styles): Fallback arrays must be nonempty.
+  })
+}
+```
+
+#### Correct
+
+```ts title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const card = style({
+    color: 'red !important', // [!code hl]
+    display: ['block', 'flex'], // [!code hl]
+  })
+}
+```
+
+### No Conflicting Props
+
+Reports explicit `className` or `style` attributes beside a known Zyzz application spread, in either order. Multiple known application spreads also conflict, since a later JSX spread overwrites props from an earlier one.
+
+Pass overrides into the style call, and compose applications with `cx`. Detection targets React-style web props and locally resolved definitions or `cx` applications. Unknown spreads and style definitions imported from another module are skipped.
+
+#### Incorrect
+
+```tsx twoslash title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    <section {...styles.card()} className="external">
+      // @error: zyzz(no-conflicting-props): Pass 'className' into the Zyzz style call to merge styling props.
+      <span {...styles.label()} {...styles.selected()}>Selected</span>
+      // @error: zyzz(no-conflicting-props): Compose Zyzz applications with cx() instead of overwriting them with multiple JSX spreads.
+    </section>
+  )
+}
+
+namespace styles {
+  export const card = style({ padding: '16px' })
+
+  export const label = style({ fontWeight: 500 })
+
+  export const selected = style({ opacity: 0.8 })
+}
+```
+
+#### Correct
+
+```tsx title="Card.tsx"
+import { cx, style } from 'zyzz'
+
+export function Card() {
+  return (
+    // [!code hl:2]
+    <section {...styles.card({ className: 'external' })}>
+      <span {...cx(styles.label(), styles.selected())}>Selected</span>
+    </section>
+  )
+}
+
+namespace styles {
+  export const card = style({ padding: '16px' })
+
+  export const label = style({ fontWeight: 500 })
+
+  export const selected = style({ opacity: 0.8 })
+}
+```
+
+### No Unused
+
+Reports unused style and variant definitions in local, top-level TypeScript namespaces. Oxlint's built-in `no-unused-vars` remains responsible for ordinary local bindings.
+
+Exported, merged, or nested namespaces, computed member access, and namespaces passed as values are retained conservatively. Direct references between namespace members count as uses.
+
+#### Incorrect
+
+```tsx twoslash title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return <section {...styles.card()}>Content</section>
+}
+
+namespace styles {
+  export const card = style({ padding: '16px' })
+
+  export const unused = style({ color: 'red' })
+  // @error: zyzz(no-unused): Style 'styles.unused' is never used.
+}
+```
+
+#### Correct
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card() {
+  return <section {...styles.card()}>Content</section>
+}
+
+namespace styles {
+  export const card = style({ padding: '16px' })
+}
+```
+
+### Use Logical Properties
+
+Reports covered horizontal physical properties and corner radii, and suggests a logical replacement for horizontal left-to-right layouts. Enable it with `"zyzz/use-logical-properties": "warn"`.
+
+An `allow-physical-property` comment permits an intentional physical edge. The rule does not cover vertical properties, physical keyword values, or shorthand values, so check direction and writing mode before changing a property.
+
+#### Incorrect
+
+```ts twoslash title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const card = style({
+    marginLeft: '16px',
+    // @error: zyzz(use-logical-properties): Use a CSS logical property instead of 'marginLeft', such as 'marginInlineStart' for horizontal LTR layouts.
+    paddingRight: '8px',
+    // @error: zyzz(use-logical-properties): Use a CSS logical property instead of 'paddingRight', such as 'paddingInlineEnd' for horizontal LTR layouts.
+  })
+}
+```
+
+#### Correct
+
+```ts title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const card = style({
+    marginInlineStart: '16px', // [!code hl]
+    paddingInlineEnd: '8px', // [!code hl]
+  })
+
+  export const overlay = style({
+    position: 'absolute',
+    // allow-physical-property
+    left: '0px',
+  })
+}
+```
+
+### Restricted Properties
+
+Bans properties, or limits their statically resolved values, keyed by exact authored property names. Each restriction accepts a `reason` for the diagnostic and a `values` allowlist of strings or numbers. Omitting `values` bans the property, including dynamic values.
+
+```json title=".oxlintrc.json"
+{
+  "rules": {
+    "zyzz/restricted-properties": [
+      "error",
+      {
+        "color": { "reason": "Use color tokens.", "values": [] },
+        "padding": {
+          "reason": "Use the spacing scale.",
+          "values": [0, "4px", "8px"]
+        },
+        "zIndex": { "reason": "Use a stacking context." }
+      }
+    ]
+  }
+}
+```
+
+Every statically resolved fallback value must be allowed. Unresolved expressions, such as imported token references, pass an allowlist without proving that they are tokens, so an empty `values` array rejects only known literals.
+
+#### Incorrect
+
+```ts twoslash title="styles.ts"
+import { style } from 'zyzz'
+
+export namespace styles {
+  export const modal = style({
+    color: '#ff0000',
+    // @error: zyzz(restricted-properties): Property 'color' is restricted. Use color tokens.
+    padding: '7px',
+    // @error: zyzz(restricted-properties): Property 'padding' is restricted. Use the spacing scale.
+    zIndex: 10,
+    // @error: zyzz(restricted-properties): Property 'zIndex' is restricted. Use a stacking context.
+  })
+}
+```
+
+#### Correct
+
+```ts title="styles.ts"
+import { style } from 'zyzz'
+import { vars } from 'zyzz/default'
+
+export namespace styles {
+  export const modal = style({
+    color: vars.color.foreground, // [!code hl]
+    padding: '4px', // [!code hl]
   })
 }
 ```

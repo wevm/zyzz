@@ -6,7 +6,7 @@ Most styling drift looks plausible. A hex value one shade off the brand color, `
 
 Zyzz turns the design system into checks. Design values live in a typed config, styles use standard CSS, and the type checker, compiler, and linter report values outside the system before review.
 
-## Give agents rules they can check
+## Checkable Agent Rules
 
 A Zyzz config names each design value and groups it by domain, such as color or spacing. [Property mappings](/docs/guides/themes#customize-property-mappings) connect each domain to the CSS properties that accept its names.
 
@@ -122,7 +122,7 @@ export namespace styles {
 
 These checks run in tools that agents already call: the type checker, the build, and the linter. Each failure identifies the declaration to fix, so an agent can correct its own change before a person reviews it.
 
-## CSS as the foundation
+## Built on CSS
 
 Zyzz adds no styling language of its own. Properties use their CSS names in camelCase, values keep CSS syntax and units, and selectors, queries, and at-rules appear as written. What developers and agents already know about CSS applies directly, and MDN remains the reference.
 
@@ -159,7 +159,7 @@ The emitted stylesheet contains the same rules. Queries, inheritance, specificit
 
 The types follow CSS too. Every property in MDN's CSS data has typed values, checked against MDN's published grammar, so `display: 'flx'` fails the type check. The [CSS conformance](https://github.com/wevm/zyzz/blob/main/test/conformance/README.md) inventory tracks that coverage.
 
-## Change design decisions in one place
+## Centralized Design Decisions
 
 Components reference token names, and the config owns their values. A rebrand, a dark theme, or a tighter spacing scale changes the config. Every component that references those names follows without edits.
 
@@ -201,7 +201,7 @@ Each color pair compiles to a custom property, such as `--z-color-surface: light
 
 Named variable sets work the same way. `vars({ set: 'mint' })` on any element changes the values its subtree inherits, while component styles and compiled rules stay the same. [Themes & Tokens](/docs/guides/themes) covers sets, scopes, and saved preferences.
 
-## Style state, not class names
+## State-Based Styling
 
 Interactive state already lives in the DOM as attributes such as `aria-selected`, `aria-expanded`, and `data-state`. Zyzz styles those attributes with selectors instead of toggling class names. The accessible state and the visual state then come from the same attribute.
 

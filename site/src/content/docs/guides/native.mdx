@@ -157,7 +157,7 @@ namespace styles {
 
 Metro compiles the alternatives. Applying a choice selects its native output. Native interaction does not use DOM selectors such as `:hover`.
 
-### Bind a Runtime Value
+### Bind Runtime Values
 
 For a changing scalar value, declare a typed style callback and pass its input when applying the style. Keep the value within the native property's supported domain.
 
@@ -251,7 +251,7 @@ namespace styles {
 
 Pass application state to `vars` for a theme picker. Every themed definition under that provider must recognize the chosen name. Unknown names fail selection. Nested providers and separate React roots have isolated selections.
 
-### Respond to Window Size
+### Respond to Size
 
 Use breakpoint aliases and media conditions inside existing styles. Conditional variables update through the same Provider, including numeric values read with `useVars`.
 

@@ -10,7 +10,7 @@ Each example group below specifies one behavior and uses the same elements, valu
 
 The examples use React and TypeScript with each library's build integration configured. Code block titles name the files in each example. Tailwind examples target v4 and omit its optional [Preflight reset](https://tailwindcss.com/docs/preflight#disabling-preflight) so browser defaults can match.
 
-## Authoring, Types, and DX/AX
+## Authoring Experience
 
 All four examples render a button labeled "Continue" with `#06c` text and `1rem` padding. DX means developer experience, and AX means agent experience.
 
@@ -75,7 +75,7 @@ export function Button() {
 
 Typed styles live in `.css.ts` modules that the build integration evaluates, and components import the exported class names. [Sprinkles](https://vanilla-extract.style/documentation/packages/sprinkles/) optionally adds typed utilities and token mappings. This example uses the core [style API](https://vanilla-extract.style/documentation/api/style/).
 
-## Themes and Color Schemes
+## Themes and Schemes
 
 Each panel has `1rem` padding and displays "Content". Text is `#111` in light mode and `#eee` in dark mode. All four examples use `light-dark()` with `color-scheme: light dark`, so selection follows the browser preference without application state.
 
@@ -193,7 +193,7 @@ export function Panel() {
 
 `createTheme` returns a theme class and a variable contract. Applying the theme class supplies the variables that the panel consumes. See [createTheme](https://vanilla-extract.style/documentation/api/create-theme/).
 
-## Selectors, Queries, and Value Helpers
+## Selectors and Queries
 
 Each panel is a grid inside an inline-size container. Padding changes from `0.5rem` to `1rem` at a `48rem` viewport, and gap changes from `0` to `1rem` at a `24rem` container width. Hover sets opacity to `0.8` on devices that support hover.
 
@@ -909,7 +909,7 @@ Declare independent variables, constrain assignments with `.set`, and optionally
 </table>
 </Table>
 
-## Compilation, Libraries, and Platforms
+## Compilation and Platforms
 
 Build commands perform different jobs, so they are not interchangeable examples. The useful comparison is which artifacts each library produces and what a consuming application must load.
 
@@ -969,7 +969,7 @@ The [CLI](https://stylexjs.com/docs/learn/installation/cli/) transforms modules,
 
 Zyzz's `Css` namespace compiles style data in memory. Stylesheet helpers such as `global`, `fontFace`, and `keyframes` are direct exports from `zyzz/web`. Source optimization and native output use separate compiler and host entrypoints.
 
-## Performance and Bundle Size
+## Performance and Size
 
 Equivalent examples do not establish a performance winner. Compare generated CSS, JavaScript, and markup together, and account for selection helpers, variable bindings, metadata, and delivery conventions. [Benchmarks](/docs/introduction/benchmarks) records the measured workloads and their limits.
 

@@ -43,7 +43,7 @@ The compiler emits each condition as an ordinary CSS rule ahead of time, so the 
 
 Start with [Getting Started](/docs/introduction/getting-started) to connect compilation. These examples import the root `style`, so literal CSS values work without a config.
 
-### Style browser states
+### Style Browser States
 
 Pseudo-class keys such as `':hover'`, `':active'`, `':focus-visible'`, and `':disabled'` apply while the browser reports that state.
 
@@ -77,7 +77,7 @@ namespace styles {
 
 Conditions keep their authored order, which decides the result when several states match at once. While pressing, `:active` follows `:hover` and wins. A disabled button stays gray under the pointer because `:disabled` comes last.
 
-### Respond to the viewport and containers
+### Respond to Size
 
 Media queries measure the viewport. Container queries measure the nearest ancestor that declares a `containerType`. Both use CSS syntax as written.
 
@@ -108,7 +108,7 @@ namespace styles {
 }
 ```
 
-### Check feature support
+### Check Feature Support
 
 `@supports` applies declarations only where the browser supports a feature. The declarations outside the query act as the fallback.
 
@@ -127,7 +127,7 @@ export const gallery = style({
 })
 ```
 
-### Combine conditions
+### Combine Conditions
 
 Nested conditions combine with AND. Here, the hover style applies only on devices that can hover, and only while the pointer is over the element.
 
@@ -160,7 +160,7 @@ The compiler emits the rules in the same order, with the pseudo-class nested ins
 
 Write base declarations before their conditions. Rules keep their authored order, so a query written before a base declaration does not override it.
 
-### Style attribute states
+### Style Attribute States
 
 String selectors live under `selectors` and include `&` for the styled element. Attribute selectors read state that the element already exposes, such as `aria-expanded`, `aria-invalid`, or `data-state`.
 
@@ -191,7 +191,7 @@ namespace styles {
 
 Styling the attribute keeps the visual state and the accessible state in agreement. A separate prop or class for the same state could drift from what assistive technology reports.
 
-### Style related elements
+### Style Related Elements
 
 Relationship selectors interpolate another definition without calling it. `&` stays the target, and an empty `style()` supplies an identity for an ancestor or sibling.
 
@@ -225,7 +225,7 @@ namespace styles {
 
 Any `style()` definition can mark the ancestor, including an empty one. The compiler checks interpolated identities and selector grammar, but cannot prove that the related element exists in the DOM.
 
-### Name queries
+### Name Queries
 
 A config can name breakpoints for media queries, container widths for container queries, and container names. Aliases compile to literal conditions, so selecting a different variable set never moves a threshold.
 
@@ -259,7 +259,7 @@ export const layout = style({
 
 ## Recipes
 
-### Hover only where hovering exists
+### Guard Hover Styles
 
 Touch devices can keep a hover style after a tap. Wrapping `:hover` in a hover-capability query limits it to devices with a hovering pointer.
 
@@ -274,7 +274,7 @@ export const row = style({
 })
 ```
 
-### Lay out mobile first
+### Mobile-First Layout
 
 Base declarations style the smallest screens, and each breakpoint adds an override. At desktop widths both queries match, and the later `desktop` rule wins because rules keep their authored order.
 
@@ -292,7 +292,7 @@ export const grid = style({
 
 A range such as `'@media tablet..desktop'` applies only between two thresholds, which avoids relying on order for overlapping queries.
 
-### Adapt a card to its container
+### Container-Aware Cards
 
 A container query reacts to the space a component receives rather than the viewport. The same card can stack in a narrow sidebar and sit side by side in a wide column.
 
@@ -324,7 +324,7 @@ namespace styles {
 }
 ```
 
-### Mark invalid fields
+### Mark Invalid Fields
 
 `aria-invalid` reports a failed validation to assistive technology. The input styles that attribute, and the hint after it reacts through a sibling selector.
 
@@ -372,7 +372,7 @@ namespace styles {
 
 A sibling selector only reaches elements that come later in the DOM, so the hint follows the input.
 
-### Rotate an icon when a disclosure opens
+### Rotate Disclosure Icons
 
 The trigger already exposes `aria-expanded`. A relationship selector lets the icon inside it react to that attribute from its own definition.
 
@@ -406,7 +406,7 @@ namespace styles {
 }
 ```
 
-### Reveal actions on hover or focus
+### Reveal Hidden Actions
 
 Actions inside a card can stay hidden until the card is hovered or focused. Including `:focus-within` keeps the actions reachable with a keyboard.
 
@@ -437,7 +437,7 @@ namespace styles {
 }
 ```
 
-### Adapt to the color scheme
+### Follow Color Schemes
 
 Zyzz has no built-in dark condition. Colors switch through `light-dark()`, which follows the `color-scheme` of the element. Properties other than colors use a `prefers-color-scheme` query.
 
@@ -454,7 +454,7 @@ export const panel = style({
 
 The query follows the system setting even when a scope selects a scheme explicitly, so `light-dark()` suits most color changes. Config color pairs compile to `light-dark()`, and [Themes & Tokens](/docs/guides/themes) covers selecting a scheme.
 
-### Respect reduced motion
+### Respect Reduced Motion
 
 `prefers-reduced-motion` reports a user preference for less motion. The transition still exists by default and turns off when the preference is set.
 
@@ -467,7 +467,7 @@ export const panel = style({
 })
 ```
 
-### Hide controls when printing
+### Style for Print
 
 Media types pass through unchanged, so a `print` query can drop interactive controls from printed pages.
 
@@ -481,7 +481,7 @@ export const toolbar = style({
 })
 ```
 
-### Lower a selector's specificity
+### Lower Selector Specificity
 
 A selector's specificity follows its authored text. Wrapping part of it in `:where(...)` removes that part's weight, so later overrides of the same element win more easily.
 

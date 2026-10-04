@@ -4,7 +4,7 @@ import { CssOutputTable } from './CssOutputTable.js'
 
 Choose how Zyzz groups declarations in the generated CSS.
 
-## Choose an output mode
+## Choose a Mode
 
 `cssOutput` selects atomic or grouped CSS. Both compile ahead of time. Connect a compiler through [Getting Started](/docs/introduction/getting-started).
 
@@ -53,7 +53,7 @@ The setting applies to config-bound helpers. Imports from `zyzz` still use atomi
 
 `output` controls React or HTML props independently of `cssOutput`. See the [config reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md).
 
-## Compare the generated CSS
+## Compare Generated CSS
 
 The same component works in either mode.
 
@@ -105,7 +105,7 @@ Contextual classes and inferred selector identities include a stable six-charact
 
 Development and production use the same naming rules. Rebuild generated code and CSS together after edits.
 
-## Preserve cascade and composition
+## Preserve the Cascade
 
 Both modes preserve CSS cascade behavior. Declarations share classes only when reuse preserves precedence.
 
@@ -129,7 +129,7 @@ Here, the later padding wins. `cx` also preserves variable bindings and variant 
 
 Global rules, keyframes, and variable scopes keep their CSS structures. Dynamic values bind to precompiled custom properties. Applying styles never inserts CSS rules.
 
-## Deliver matching artifacts
+## Deliver Matching Artifacts
 
 Rebuild CSS and generated code together when changing modes. A config alone does not compile or load styles.
 

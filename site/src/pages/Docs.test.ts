@@ -821,7 +821,7 @@ describe('/docs', () => {
       'true',
     )
     expect(html.includes('>Compiler API</span>')).toMatchInlineSnapshot('true')
-    expect(html.includes('Add the Vite Plugin')).toMatchInlineSnapshot('true')
+    expect(html.includes('Configure Vite')).toMatchInlineSnapshot('true')
     expect(html.includes('Style a Component')).toMatchInlineSnapshot('true')
     expect((article.match(/data-step=""/g) ?? []).length).toMatchInlineSnapshot(
       '5',
@@ -949,10 +949,10 @@ describe('/docs', () => {
       for (const [title, integration] of [
         ['Next.js', 'Configure Next.js'],
         ['React Native', 'Configure Metro'],
-        ['Other Bundlers', 'Add a Bundler Adapter'],
-        ['CLI', 'Compile with the CLI'],
+        ['Other Bundlers', 'Configure the Bundler'],
+        ['CLI', 'Run the CLI'],
         ['Compiler API', 'Compile Programmatically'],
-        ['Vite', 'Add the Vite Plugin'],
+        ['Vite', 'Configure Vite'],
       ]) {
         await page.getByRole('button', { name: title!, exact: false }).click()
         const panel = page.locator('#framework-setup')
@@ -1119,16 +1119,14 @@ describe('/docs', () => {
     const html = await (await fetch(shared)).text()
     expect(html.includes('Configure Next.js')).toMatchInlineSnapshot('true')
     expect(html.includes('Define Config')).toMatchInlineSnapshot('true')
-    expect(html.includes('Add the Vite Plugin')).toMatchInlineSnapshot('false')
+    expect(html.includes('Configure Vite')).toMatchInlineSnapshot('false')
 
     const invalid = await (
       await fetch(
         `${origin}/docs/introduction/getting-started?framework=unknown&mode=unknown`,
       )
     ).text()
-    expect(invalid.includes('Add the Vite Plugin')).toMatchInlineSnapshot(
-      'true',
-    )
+    expect(invalid.includes('Configure Vite')).toMatchInlineSnapshot('true')
     expect(invalid.includes('Define Config')).toMatchInlineSnapshot('false')
 
     const browser = await chromium.launch({ headless: true })

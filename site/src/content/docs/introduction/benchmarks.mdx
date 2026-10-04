@@ -25,11 +25,9 @@ Timings include compilation, common CSS minification, and browser JavaScript bun
 
 <LiteralDelivery />
 
-Hover or focus a library to inspect CSS, client JavaScript, and total gzip bytes. Each library shows CSS above JavaScript on the same scale.
+Each literal chart has its own linear byte scale, with each library's CSS above its JavaScript. Hover or focus a library to inspect CSS, client JavaScript, and total gzip bytes. The tables retain all eight workloads and every library, including uncharted results.
 
 For 1,000 repeated components, Zyzz delivered 473 gzip bytes: 111 bytes of CSS and 362 bytes of JavaScript. With unique padding, the total grew to 7,275 bytes. These charts show compressed fixture delivery, including required helpers. They do not measure application load time.
-
-Each literal chart has its own linear byte scale. The tables retain all eight workloads and every library, including the results that are not charted.
 
 #### Mean Build Time
 
@@ -172,14 +170,13 @@ pnpm exec vp test bench --run --no-file-parallelism --outputJson ../baseline.jso
 pnpm exec vp test bench --run --no-file-parallelism --compare ../baseline.json
 ```
 
-Keep means, relative error, sample counts, commit IDs, and environment metadata together.
+Keep means, relative error, sample counts, commit IDs, and environment metadata together. Generated reports stay ignored, while this curated snapshot is intentionally committed. Update all comparison lanes from one identified run.
 
 - **Artifacts:** the run contains raw, gzip, Brotli, timing, and environment reports.
 - **Corpus:** eight literal workloads and two theme comparisons are retained above.
+- **Methodology:** the [methodology at this commit](https://github.com/wevm/zyzz/blob/9f9d42c384bcd887fff8956e70b078ee75501bc2/bench/README.md) documents compiler boundaries and sample configuration.
 - **Processing:** literal CSS targets Chrome 120, Firefox 128, and Safari 17, while theme CSS targets Chrome 123, Firefox 128, and Safari 17.5.
 - **Scope:** source extraction, module rewriting, props binding, and host edits have separate measurements in the run report.
-
-See the [methodology at this commit](https://github.com/wevm/zyzz/blob/9f9d42c384bcd887fff8956e70b078ee75501bc2/bench/README.md) for compiler boundaries and sample configuration. Generated reports stay ignored, while this curated snapshot is intentionally committed. Update all comparison lanes from one identified run.
 
 > [!NOTE]
 > The literal results above do not measure application rendering, dynamic variants, SSR, or native rendering. See the [variant measurements](https://github.com/wevm/zyzz/blob/main/bench/Web-variants.md) for the separate web workloads.

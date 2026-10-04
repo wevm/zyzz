@@ -153,7 +153,7 @@ export const { style, variants } = defineConfig({
 })
 ```
 
-The field switches its import, and its literals become token names:
+The field switches its import, and its literals become token names, so renaming or removing a token produces a type error at every definition that uses it:
 
 ```tsx title="PasswordField.tsx"
 import { style } from 'zyzz' // [!code --]
@@ -192,9 +192,7 @@ namespace styles {
 }
 ```
 
-`fontWeight` keeps its literal because the config defines no font weights. Renaming or removing a token produces a type error at every definition that uses it.
-
-Shared colors, spacing, and typography belong in a [theme](/docs/guides/themes). The bundled Geist and Tailwind tokens are an opt-in import from `zyzz/default`.
+`fontWeight` keeps its literal because the config defines no font weights. Shared colors, spacing, and typography belong in a [theme](/docs/guides/themes). The opt-in `zyzz/default` import bundles Geist colors and typography, plus spacing, radius, shadow, and query scales.
 
 ## Variants over Concatenation
 

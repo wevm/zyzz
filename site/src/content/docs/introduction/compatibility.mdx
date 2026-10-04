@@ -184,7 +184,7 @@ Support and scope
 
 ## Browsers
 
-Browser support follows the emitted CSS. The Vite adapter preserves native `light-dark()` for theme switching and rejects CSS targets that would lower it. Its default baseline is:
+Browser support follows the emitted CSS. The [Vite adapter](https://github.com/wevm/zyzz/blob/main/src/vite/index.ts) preserves native `light-dark()` for theme switching and rejects CSS targets that would lower it. Its default baseline is:
 
 <CompatibilityMatrix label="Vite theme baseline">
 <table aria-label="Vite theme baseline">
@@ -243,9 +243,9 @@ Minimum target
 </table>
 </CompatibilityMatrix>
 
-This is a theme baseline, not a guarantee for every CSS feature. Chromium has automated rendering coverage. The target checks do not establish equivalent Firefox or Safari rendering coverage.
+This is a theme baseline, not a guarantee for every CSS feature. Other CSS features still need compatible targets and rendering checks. Chromium has automated rendering coverage, and the target checks do not establish equivalent Firefox or Safari rendering coverage.
 
-Explicit Vite CSS targets must retain native `light-dark()` support:
+[Lightning CSS targets](https://lightningcss.dev/transpilation.html) control compatible transformations. Zyzz excludes `light-dark()` lowering in Vite and Next.js, and explicit Vite CSS targets must retain native `light-dark()` support:
 
 ```ts title="vite.config.ts"
 import { defineConfig } from 'vite'
@@ -258,8 +258,6 @@ export default defineConfig({
   plugins: [zyzz()],
 })
 ```
-
-[Lightning CSS targets](https://lightningcss.dev/transpilation.html) control compatible transformations. Zyzz excludes `light-dark()` lowering in Vite and Next.js. Other CSS features still need compatible targets and rendering checks. See the [Vite implementation](https://github.com/wevm/zyzz/blob/main/src/vite/index.ts).
 
 ## React Native
 

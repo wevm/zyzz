@@ -22,7 +22,7 @@ Guides such as [Styling](/docs/guides/styling) cover complete tasks. [Thinking i
 
 ## Typed Styles
 
-Definitions describe static rules. Calling a definition returns styling props and never creates CSS rules. Authoring calls require compilation, even for literal styles.
+Definitions describe static rules. Calling a definition returns styling props and never creates CSS rules. Authoring calls require compilation, even for literal styles, and [Getting Started](/docs/introduction/getting-started) covers compiler setup for each build tool.
 
 <Tabs label="Typed styles">
 
@@ -56,7 +56,7 @@ namespace styles {
 
 </Tabs>
 
-Compiling `Card.tsx` emits each rule before rendering. With the default atomic output, every declaration becomes one class, and `styles.card()` returns `{ className: 'z-p-1rem' }`:
+Definitions sit at module scope, and the compiler reads literals, local constant records, and typed callbacks statically without evaluating arbitrary application code. Compiling `Card.tsx` emits each rule before rendering. With the default atomic output, every declaration becomes one class, and `styles.card()` returns `{ className: 'z-p-1rem' }`:
 
 ```css
 .z-p-1rem {
@@ -68,8 +68,6 @@ Compiling `Card.tsx` emits each rule before rendering. With the default atomic o
 }
 ```
 
-Definitions sit at module scope, and the compiler reads their values statically. Literals, local constant records, and typed callbacks qualify, while arbitrary application code is never evaluated.
-
 Values are typed from CSS data. Editors complete the keywords that a property accepts:
 
 ```ts twoslash
@@ -79,8 +77,6 @@ import { style } from 'zyzz'
 style({ position: '' })
 //                 ^|
 ```
-
-[Getting Started](/docs/introduction/getting-started) covers compiler setup for each build tool.
 
 ## Configuration
 
@@ -101,6 +97,10 @@ export const { style, vars } = defineConfig({
 - **Several sets:** Named sets under `vars`, with a required `defaultVars`.
 
 Named sets share the default's token paths and value domains. Imports outside the config receive no ambient tokens or layer types.
+
+Named exports preserve the config's inferred contract. `vars` exposes CSS variable references rather than runtime setters, and compatible scopes change their inherited values.
+
+### Property Mappings
 
 Each category supplies specific properties. `color` supplies `color` and `backgroundColor`, and `spacing` supplies padding and gap. [Property mappings](/docs/guides/themes#customize-property-mappings) replace those defaults one category at a time.
 
@@ -127,8 +127,6 @@ const { style } = defineConfig({ vars: { spacing: { md: '1rem' } } })
 style({ padding: '12px' })
 style({ padding: '12px !custom' })
 ```
-
-Named exports preserve the config's inferred contract. `vars` exposes CSS variable references rather than runtime setters, and compatible scopes change their inherited values.
 
 ## Themes & Tokens
 
@@ -182,12 +180,10 @@ export const { style, vars } = defineConfig({
 
 A variable set holds token data and the property domains it implies, without a name or color scheme wrapper.
 
-- **Contracts:** Explicit references such as `vars.spacing.md` keep their defining identity and value domain.
+- **Contracts:** Explicit references such as `vars.spacing.md` keep their defining identity and value domain. That reference compiles to `var(--z-spacing-md, 1rem)`, so expressions such as `calc()` read the value of the nearest scope.
 - **Extensions:** `extendVars` changes existing paths while keeping the set compatible.
 - **Names:** Token names infer only for properties whose domain they fit, so a color name is not a spacing value.
 - **Schemes:** Color leaves accept one shared value or a complete light and dark pair.
-
-`vars.spacing.md` compiles to a CSS variable reference, `var(--z-spacing-md, 1rem)`, so expressions such as `calc()` read the value of the nearest scope.
 
 Root helpers from `zyzz` use literal values, and `zyzz/default` supplies bundled tokens. [Themes & Tokens](/docs/guides/themes) covers definitions, mappings, and typography sets.
 
@@ -256,10 +252,8 @@ Switch the set in the Rendered tab. The outer card changes color, while the nest
 
 - **Color pairs:** `{ dark, light }` compiles to `light-dark()`.
 - **Color scheme:** `light` or `dark` selects a scheme explicitly, while `light dark` follows the browser preference.
-- **Set selection:** Changes tokens independently of the color scheme.
+- **Set selection:** Changes tokens independently of the color scheme. [Themes & Tokens](/docs/guides/themes) shows the complete config for selecting sets and restoring a saved set before the first paint.
 - **Query thresholds:** Compile to literal conditions and do not change with the selected set.
-
-[Themes & Tokens](/docs/guides/themes) shows the complete config for selecting sets and restoring a saved set before the first paint.
 
 ## Composition and Overrides
 
@@ -419,9 +413,10 @@ namespace styles {
 
 References keep their identity through local aliases, namespace members, named imports, re-exports, and packed libraries. The compiler checks selector grammar and interpolated identities. TypeScript checks the nested declaration values but cannot prove the DOM relationship.
 
-Every selector branch needs `&`. A selector such as `'body'` fails compilation because it has no `&` target. Document rules belong in `global` from `zyzz/web`.
-
-Specificity follows the authored selector, and `:where(...)` lowers it explicitly. Application state stays in ordinary data or ARIA attributes. Relationships need no runtime selector parsing, DOM lookup, or CSS generation.
+- **Targets:** Every selector branch needs `&`. A selector such as `'body'` fails compilation because it has no `&` target, and document rules belong in `global` from `zyzz/web`.
+- **Specificity:** Follows the authored selector, and `:where(...)` lowers it explicitly.
+- **State:** Application state stays in ordinary data or ARIA attributes.
+- **Runtime:** Relationships need no runtime selector parsing, DOM lookup, or CSS generation.
 
 ## Dynamic Values
 

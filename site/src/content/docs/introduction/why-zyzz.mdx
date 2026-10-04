@@ -48,6 +48,8 @@ export namespace styles {
 }
 ```
 
+### Rejected Values
+
 Values outside the system fail the type check at the declaration, and the diagnostic lists the values that property accepts. `#0070f3` is not a configured color, and the same value passes with the ` !custom` suffix:
 
 ```ts twoslash title="button.ts" /!custom/
@@ -92,7 +94,7 @@ style({ marginTop: '7px !custom' })
 - `zyzz/use-logical-properties`: physical properties such as `marginLeft` where a logical property fits
 - `zyzz/restricted-properties`: properties and values the project restricts, with a reason in each diagnostic
 
-A restriction carries the project's own reason. This configuration bans `zIndex` and points to the alternative:
+A restriction carries the project's own reason, and the linter reports that reason at the declaration. This configuration bans `zIndex` and points to the alternative:
 
 ```json title=".oxlintrc.json"
 {
@@ -105,8 +107,6 @@ A restriction carries the project's own reason. This configuration bans `zIndex`
   }
 }
 ```
-
-The linter reports that reason at the declaration:
 
 ```ts twoslash title="modal.ts"
 import { style } from 'zyzz'
@@ -161,9 +161,7 @@ The types follow CSS too. Every property in MDN's CSS data has typed values, che
 
 ## Centralized Design Decisions
 
-Components reference token names, and the config owns their values. A rebrand, a dark theme, or a tighter spacing scale changes the config. Every component that references those names follows without edits.
-
-Adding a dark theme, for example, pairs each color with a dark value:
+Components reference token names, and the config owns their values. A rebrand, a dark theme, or a tighter spacing scale changes the config, and components follow without edits. A dark theme, for example, pairs each color with a dark value:
 
 ```ts title="zyzz.config.ts"
 import { defineConfig } from 'zyzz'
@@ -231,6 +229,8 @@ namespace styles {
 
 A tab cannot look selected while assistive technology reports it as unselected. Tests and browser agents can query the same attribute that the style matches.
 
+### Variants
+
 Design choices such as size or tone are variants. The definition lists the choices and defaults, and the component's props type derives from it, so an unsupported choice fails at the call site.
 
 ```tsx title="Button.tsx"
@@ -276,6 +276,6 @@ Each choice compiles ahead of time, and a data attribute such as `data-size="sm"
     Organize styles beside components and share design values.
   </Card>
   <Card title="Comparisons" icon="code" href="/docs/introduction/comparisons">
-    Compare the same components in Tailwind CSS, StyleX, and vanilla-extract.
+    Compare the same components across other styling libraries.
   </Card>
 </Card.Group>

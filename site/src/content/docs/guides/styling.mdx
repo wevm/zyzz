@@ -19,13 +19,7 @@ Most tasks in this guide use three functions, with `style` taking two forms:
 > [!TIP]
 > This guide covers element styles. [Variants](/docs/guides/variants) handle a fixed set of choices such as size or tone, and [Themes & Tokens](/docs/guides/themes) handle values shared across an application.
 
-The examples target React on the web and assume the compiler setup from [Getting Started](/docs/introduction/getting-started). Native support has separate [capabilities and limits](/docs/introduction/compatibility).
-
-## Basic Usage
-
-### Define and Apply
-
-Call `style` at module scope, and keep a component's definitions in a `namespace styles` at the bottom of its file. During rendering, call each definition and spread the result onto its element.
+A component spreads each applied definition onto its element. This card styles an article and its heading with two definitions:
 
 <Tabs label="Define and apply styles">
 <Tab title="Card.tsx">
@@ -67,11 +61,26 @@ namespace styles {
 </Tab>
 </Tabs>
 
-With the default atomic output, the compiler writes one rule per declaration during the build. A call only returns the names of rules that already exist:
+## Walkthrough
+
+The steps below build a save button in React on the web, from its first declarations to states and queries. They assume the compiler setup from [Getting Started](/docs/introduction/getting-started). Native support has separate [capabilities and limits](/docs/introduction/compatibility).
+
+### Define a Style
+
+Call `style` at module scope, and keep a component's definitions in a `namespace styles` at the bottom of its file.
 
 ```ts
-styles.title()
-// { className: 'z-font-size-18px z-font-weight-600 z-m-0' }
+import { style } from 'zyzz'
+
+namespace styles {
+  export const button = style({
+    backgroundColor: '#0070f3',
+    border: 'none',
+    borderRadius: '6px',
+    color: 'white',
+    padding: '8px 16px',
+  })
+}
 ```
 
 Properties and values are typed from CSS data. Editors list the keywords each property accepts, and an unsupported value fails type checking at the declaration:
@@ -85,6 +94,40 @@ style({ flexDirection: '' })
 ```
 
 The compiler reads definitions without running application code. Literal values, local `const` records, and typed callbacks qualify. Running source that skipped the transform throws `style.MissingTransformError`, which means the build integration did not process that file.
+
+### Apply the Style
+
+During rendering, call the definition and spread the result onto its element.
+
+```tsx title="Button.tsx"
+import { style } from 'zyzz'
+
+export function Button() {
+  return (
+    // [!code hl]
+    <button {...styles.button()} type="button">
+      Save
+    </button>
+  )
+}
+
+namespace styles {
+  export const button = style({
+    backgroundColor: '#0070f3',
+    border: 'none',
+    borderRadius: '6px',
+    color: 'white',
+    padding: '8px 16px',
+  })
+}
+```
+
+With the default atomic output, the compiler writes one rule per declaration during the build. A call returns only the names of rules that already exist, such as the three rules behind the overview card's title:
+
+```ts
+styles.title()
+// { className: 'z-font-size-18px z-font-weight-600 z-m-0' }
+```
 
 ### Add Conditions
 

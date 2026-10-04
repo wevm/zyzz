@@ -1,49 +1,289 @@
-import * as Examples from '../../../components/mdx/themes/Examples.js'
+import { Callout } from '../../../components/mdx/Callout.js'
 import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
-import { Card } from '../../../components/mdx/Card.js'
+import * as Examples from '../../../components/mdx/themes/Examples.js'
+import { KeyTable } from './KeyTable.js'
 
 # Themes & Tokens
 
-Define shared design values, apply named sets to sections of a page, and keep light and dark colors in the same component styles.
+Name shared design values once, use them in every style, and change them for a color scheme, a brand, or one section of a page.
 
-## Start with shared values
+## Overview
 
-A token is a named design value, such as `foreground` or `page`. Zyzz stores tokens in variable sets and compiles references to CSS custom properties. Import the configured `style` helper to use those names in components.
+A token names a design decision, such as `accent` for a brand color. A theme is a set of token values applied to an element, and switching it changes inherited CSS custom properties, never component classes. A color token can hold both a light and a dark value, so themes and color schemes switch independently.
 
-The examples below require the compiler setup in [Getting Started](/docs/introduction/getting-started). A variable definition alone does not load its CSS or apply its scope.
+Most tasks in this guide use four groups of functions. The first two come from `zyzz`, and the others come from the config that `defineConfig` returns:
+
+- **`defineVars(…){:ts}` and `extendVars(…){:ts}`:** Typed token sets. An extension overrides some values and keeps the rest.
+- **`defineConfig(…){:ts}`:** Binds sets to `style`, so properties accept token names.
+- **`vars(…){:ts}`:** Selects a set and a color scheme for an element and its descendants.
+- **`appearance.set(…){:ts}` and `script(){:ts}`:** Save a document preference and restore it before the first paint.
+
+> [!TIP]
+> Tokens hold values shared across an application. A value that one component owns, such as a plan's accent color, fits a [CSS variable](/docs/guides/styling). A fixed list of choices, such as button sizes, fits [Variants](/docs/guides/variants).
+
+The examples target React on the web and assume the compiler setup from [Getting Started](/docs/introduction/getting-started). React Native selects themes without CSS inheritance, as described in [React Native](/docs/guides/native).
+
+## Basic Usage
+
+### Define Tokens
+
+Pass a `defineVars` set to `defineConfig`, and export the helpers from one config module. Styles that import `style` from that module accept the token names.
 
 ```ts title="zyzz.config.ts"
-import { defineConfig, defineVars, extendVars } from 'zyzz'
+import { defineConfig, defineVars } from 'zyzz'
 
+// [!code hl:2]
+// 1. Define tokens, grouped by category
 const base = defineVars({
   color: {
-    accent: { light: '#2563eb', dark: '#60a5fa' },
-    foreground: { light: '#171717', dark: '#fafafa' },
-    surface: { light: '#ffffff', dark: '#111111' },
+    // [!code hl:2]
+    // A pair holds one value per color scheme
+    accent: { dark: '#60a5fa', light: '#2563eb' },
+    foreground: { dark: '#fafafa', light: '#171717' },
+    surface: { dark: '#111111', light: '#ffffff' },
   },
   spacing: { page: '1.5rem' },
 })
 
-const alternate = extendVars(base, {
-  color: { accent: { light: '#9333ea', dark: '#c084fc' } },
-  spacing: { page: '2rem' },
-})
-
-export const { appearance, script, style, vars } = defineConfig({
-  defaultVars: 'base',
-  storageKey: 'app-appearance',
-  vars: { base, alternate },
-})
+// [!code hl:2]
+// 2. Bind the tokens to the exported helpers
+export const { style, vars } = defineConfig({ vars: base })
 ```
 
-`defineVars` creates a typed reference tree. `extendVars` replaces existing leaves and retains omitted values. All named sets must have matching paths and compatible value domains. New paths or incompatible overrides fail validation. To use one set, pass `vars: base` and omit `defaultVars`.
+A `{ dark, light }` pair gives a color one value per scheme, and a plain value applies to both. The top-level key of a set decides which properties accept its tokens. For example, `color` tokens apply to `color` and `backgroundColor`, and `spacing` tokens apply to padding, margin, gap, and sizes.
 
-## Use tokens in components
+<Callout data-callout="note">
 
-Default mappings connect categories to CSS properties. For example, `color` supplies `color` and `backgroundColor`, while `spacing` supplies padding and gap. Explicit references such as `vars.spacing.page` retain their value domain and bypass category lookup.
+<KeyTable summary="Keys and CSS properties">
 
-<Tabs label="Card.tsx">
+<table>
+<thead>
+<tr>
+<th scope="col">Key</th>
+<th scope="col">CSS properties</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
 
+`animate`
+
+</td>
+<td>
+
+`animation`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`aspect`
+
+</td>
+<td>
+
+`aspectRatio`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`borderWidth`
+
+</td>
+<td>
+
+`border*Width`, `borderWidth`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`breakpoint`
+
+</td>
+<td>
+
+`@media`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`color`
+
+</td>
+<td>
+
+`accentColor`, `backgroundColor`, `border*Color`, `caretColor`, `color`, `columnRuleColor`, `fill`, `floodColor`, `lightingColor`, `outlineColor`, `stopColor`, `stroke`, `strokeColor`, `textDecorationColor`, `textEmphasisColor`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`container`
+
+</td>
+<td>
+
+`@container`, `columns`, `flexBasis`, `inlineSize`, `maxInlineSize`, `maxWidth`, `minInlineSize`, `minWidth`, `width`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`ease`
+
+</td>
+<td>
+
+`transitionTimingFunction`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`fontFamily`
+
+</td>
+<td>
+
+`fontFamily`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`fontSize`
+
+</td>
+<td>
+
+`fontSize`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`fontWeight`
+
+</td>
+<td>
+
+`fontWeight`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`letterSpacing`
+
+</td>
+<td>
+
+`letterSpacing`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`lineHeight`
+
+</td>
+<td>
+
+`lineHeight`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`radius`
+
+</td>
+<td>
+
+`border*Radius`, `borderRadius`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`shadow`
+
+</td>
+<td>
+
+`boxShadow`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`spacing`
+
+</td>
+<td>
+
+`blockSize`, `borderSpacing`, `bottom`, `columnGap`, `flexBasis`, `gap`, `height`, `inlineSize`, `inset*`, `left`, `margin*`, `maxBlockSize`, `maxHeight`, `maxInlineSize`, `maxWidth`, `minBlockSize`, `minHeight`, `minInlineSize`, `minWidth`, `padding*`, `right`, `rowGap`, `scrollMargin*`, `scrollPadding*`, `textIndent`, `top`, `translate`, `width`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`textShadow`
+
+</td>
+<td>
+
+`textShadow`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`typography`
+
+</td>
+<td>
+
+`fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight`
+
+</td>
+</tr>
+</tbody>
+</table>
+
+A `*` stands for longhands, so `margin*` covers properties such as `marginTop` and `marginInline`.
+
+</KeyTable>
+
+</Callout>
+
+A key named after a property, such as `padding` or `zIndex`, applies only to that property and takes precedence over a shared key such as `spacing`. [Category fallbacks](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md#category-fallbacks) documents the full lookup order.
+
+### Use Tokens in Styles
+
+Write token names as values. Each name compiles to a reference to its CSS variable.
+
+<Tabs label="Use tokens in styles">
 <Tab title="Card.tsx">
 
 ```tsx title="Card.tsx"
@@ -52,7 +292,7 @@ import { style } from './zyzz.config.js'
 export function Card() {
   return (
     <article {...styles.card()}>
-      <h2>Account</h2>
+      <h2 {...styles.title()}>Account</h2>
       <p>Manage account preferences.</p>
     </article>
   )
@@ -60,38 +300,128 @@ export function Card() {
 
 namespace styles {
   export const card = style({
+    // [!code hl:2]
+    // Token names compile to CSS variable references
     backgroundColor: 'surface',
-    color: 'foreground',
-    padding: 'page',
     borderRadius: '12px',
+    color: 'foreground', // [!code hl]
+    // maxWidth accepts spacing tokens, so a literal takes !custom
     maxWidth: '28rem !custom',
-    marginInline: 'auto !custom',
-    '& h2': { color: 'accent', margin: '0px !custom', fontSize: '1.25rem' },
-    '& p': { margin: '0px !custom', fontSize: '0.875rem' },
+    padding: 'page', // [!code hl]
   })
+
+  export const title = style({ color: 'accent', fontSize: '1.25rem' }) // [!code hl]
 }
 ```
 
 </Tab>
-
 <Tab title="Rendered">
 
 <Examples.Tokens />
 
 </Tab>
-
 </Tabs>
 
-Properties with configured tokens require a token name or compatible reference. Use ` !custom` for a CSS value outside the scale, such as `padding: '18px !custom'`. The compiler removes the suffix and retains CSS value checking. Properties without configured tokens accept ordinary CSS values.
+`maxWidth` accepts spacing tokens, so the literal `28rem` takes the ` !custom` suffix. The compiler removes the suffix and still checks the CSS value. `borderRadius` has no configured tokens in this config, so it accepts CSS values directly.
 
-Configured token names take precedence over CSS literals. If a token is named `red`, `color: 'red'` selects the token, while `color: 'red !custom'` selects the CSS color. Dynamic callbacks cannot choose token names. Use [variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md) for finite token choices.
+A value outside the scale fails type checking at the declaration:
 
-## Apply a scope
+```ts twoslash
+// @errors: 2322
+import { defineConfig } from 'zyzz'
 
-Call `vars` on an enclosing element to select a set. Apply the default at the application boundary, then select alternate sets where needed. The same component styles resolve against the nearest enclosing variable scope.
+const { style } = defineConfig({ vars: { spacing: { page: '1.5rem' } } })
 
-<Tabs label="ThemePreview.tsx">
+style({ padding: '18px' })
+```
 
+`vars` holds a typed reference for every token. A reference fits any property with a compatible value, including CSS expressions:
+
+```tsx title="Sidebar.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Sidebar() {
+  return <aside {...styles.sidebar()}>Navigation</aside>
+}
+
+namespace styles {
+  export const sidebar = style({
+    // [!code hl:2]
+    // An explicit reference fits inside a CSS expression
+    height: `calc(100dvh - ${vars.spacing.page} * 2) !custom`,
+    padding: 'page',
+  })
+}
+```
+
+Configured names take precedence over CSS keywords. With a color token named `red`, `color: 'red'` selects the token, and `'red !custom'` selects the CSS color.
+
+### Apply a Theme
+
+Spread `vars()` on the root element. Its `colorScheme` option sets the CSS `color-scheme` property, and `light dark` follows the operating system preference.
+
+```tsx title="Document.tsx"
+import type { ReactNode } from 'react'
+import { vars } from './zyzz.config.js'
+
+export function Document(props: Document.Props) {
+  return (
+    // [!code hl:2]
+    // Scope the document and follow the system color scheme
+    <html lang="en" {...vars({ colorScheme: 'light dark' })}>
+      <body>{props.children}</body>
+    </html>
+  )
+}
+
+export declare namespace Document {
+  type Props = { children: ReactNode }
+}
+```
+
+`vars(…)` returns a scope class and an inline `color-scheme`, and creates no CSS at runtime. A change to the operating system preference applies immediately, with no listener, because the browser resolves `light-dark()` on every style recalculation.
+
+Outside any scope, references fall back to the values from `defineVars`. Color pairs then resolve to their light value unless an ancestor sets `color-scheme`.
+
+## Recipes
+
+### Add a Theme
+
+`extendVars` derives a set that shares every token path with its base and replaces only the listed values. Register the sets by name, and name the default with `defaultVars`.
+
+<Tabs label="Add a theme">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars, extendVars } from 'zyzz'
+
+// 1. Define the base set
+const base = defineVars({
+  color: {
+    accent: { dark: '#60a5fa', light: '#2563eb' },
+    foreground: { dark: '#fafafa', light: '#171717' },
+    surface: { dark: '#111111', light: '#ffffff' },
+  },
+  spacing: { page: '1.5rem' },
+})
+
+// [!code hl:5]
+// 2. Override some values and keep the rest from base
+const alternate = extendVars(base, {
+  color: { accent: { dark: '#c084fc', light: '#9333ea' } },
+  spacing: { page: '2rem' },
+})
+
+// [!code hl]
+// 3. Register both sets and choose the default
+export const { appearance, script, style, vars } = defineConfig({
+  // [!code hl:2]
+  defaultVars: 'base',
+  vars: { alternate, base },
+})
+```
+
+</Tab>
 <Tab title="ThemePreview.tsx">
 
 ```tsx title="ThemePreview.tsx"
@@ -100,11 +430,21 @@ import { vars } from './zyzz.config.js'
 
 export function ThemePreview() {
   return (
+    // [!code hl:2]
+    // 1. Apply the default set at the root
     <main {...vars()}>
       <Card />
-      <section {...vars({ set: 'alternate' })}>
+      <section
+        // [!code hl:2]
+        // 2. Switch this subtree to the alternate set
+        {...vars({ set: 'alternate' })}
+      >
         <Card />
-        <section {...vars({ set: 'base' })}>
+        <section
+          // [!code hl:2]
+          // 3. Return to base and fix the light scheme
+          {...vars({ colorScheme: 'light', set: 'base' })}
+        >
           <Card />
         </section>
       </section>
@@ -114,25 +454,37 @@ export function ThemePreview() {
 ```
 
 </Tab>
-
 <Tab title="Rendered">
 
 <Examples.Scopes />
 
 </Tab>
-
 </Tabs>
 
-The first card uses base values, the second uses alternate values, and the nested card returns to base values. Scope selection returns styling props and emits no new CSS rules. `vars()` selects the configured default. Omitting `set` also selects that default, rather than inheriting an alternate set.
+`Card` is unchanged from Use Tokens in Styles. The first card uses base values and the second uses alternate values. The nested card returns to base values in the light scheme, because the nearest scope supplies each value.
 
-Omitting `colorScheme` inherits the surrounding scheme. A single-set configuration accepts a scheme but no `set` option. These web scopes rely on CSS inheritance. See [React Native](https://github.com/wevm/zyzz/blob/main/docs/guides/native.md) for native theme selection and target limitations.
+The two options inherit differently. Omitting `set` selects `defaultVars` rather than an outer set, while omitting `colorScheme` keeps the outer scheme.
 
-## Select a color scheme
+Every set keeps the token paths and value domains of its base. A new path or a value from another domain fails type checking:
 
-Define scheme-dependent colors as complete `{ light, dark }` pairs. A plain color value stays the same in both schemes. Select the scheme independently of the variable set.
+```ts twoslash
+// @errors: 2322 2353
+import { defineVars, extendVars } from 'zyzz'
 
-<Tabs label="DarkPreview.tsx">
+const base = defineVars({
+  color: { accent: '#2563eb' },
+  spacing: { page: '1.5rem' },
+})
 
+extendVars(base, { color: { brand: '#9333ea' } })
+extendVars(base, { spacing: { page: '#9333ea' } })
+```
+
+### Force a Color Scheme
+
+Pass `colorScheme` to fix the scheme of one section, such as a dark sidebar on a light page. The scheme and the set are separate options.
+
+<Tabs label="Force a color scheme">
 <Tab title="DarkPreview.tsx">
 
 ```tsx title="DarkPreview.tsx"
@@ -141,7 +493,9 @@ import { vars } from './zyzz.config.js'
 
 export function DarkPreview() {
   return (
-    <section {...vars({ set: 'alternate', colorScheme: 'dark' })}>
+    // [!code hl:2]
+    // Fix the dark scheme regardless of the page scheme
+    <section {...vars({ colorScheme: 'dark', set: 'alternate' })}>
       <Card />
     </section>
   )
@@ -149,247 +503,24 @@ export function DarkPreview() {
 ```
 
 </Tab>
-
 <Tab title="Rendered">
 
 <Examples.Schemes />
 
 </Tab>
-
 </Tabs>
 
-Use `light` or `dark` to fix a scheme. Use `light dark` to follow the browser's preferred scheme. Selecting `alternate` changes the accent and spacing, while selecting `dark` changes the foreground and surface pair values. Neither selection requires different component definitions.
+- **`light` or `dark`:** Fixes the scheme for the section.
+- **`light dark`:** Follows the operating system preference.
+- **Omitted:** Inherits the surrounding scheme.
 
-## Use the bundled tokens
+Browser-drawn parts such as form controls and scrollbars inside the section follow the same `color-scheme`.
 
-Import from `zyzz/default` for the bundled Geist colors and typography, plus Tailwind-based spacing and effect scales. Root imports from `zyzz` remain token-free. The [Variables explorer](/vars) lists the bundled values.
+### Add a Theme Switcher
 
-<Tabs label="DefaultCard.tsx">
+`appearance.set()` applies a set and a scheme to the document root and saves them. `appearance.get()` reads the current root selection as `{ colorScheme, set }`.
 
-<Tab title="DefaultCard.tsx">
-
-```tsx title="DefaultCard.tsx"
-import { style, vars } from 'zyzz/default'
-
-export function DefaultCard() {
-  return (
-    <section {...vars()}>
-      <article {...styles.card()}>
-        <div {...styles.details()}>
-          <h2 {...styles.title()}>Account</h2>
-          <p {...styles.body()}>Manage account preferences.</p>
-        </div>
-        <div {...styles.account()}>
-          <div {...styles.details()}>
-            <strong>Personal account</strong>
-            <p {...styles.body()}>alex@example.com</p>
-          </div>
-          <span {...styles.status()}>Active</span>
-        </div>
-      </article>
-    </section>
-  )
-}
-
-namespace styles {
-  export const account = style({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 4,
-    borderTop: '1px solid light-dark(#e5e5e5, #2a2a2a)',
-    paddingTop: 4,
-    '& strong': { typography: 'label.14', fontWeight: 'medium' },
-  })
-
-  export const body = style({
-    typography: 'copy.14',
-    opacity: 0.65,
-    margin: 0,
-  })
-
-  export const card = style({
-    backgroundColor: 'background.surface',
-    borderRadius: 'md',
-    color: 'foreground',
-    padding: 6,
-    maxWidth: '28rem !custom',
-    width: '100% !custom',
-    boxSizing: 'border-box',
-    marginInline: 'auto !custom',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 5,
-    border: '1px solid',
-    borderColor: 'gray.400',
-  })
-
-  export const details = style({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.25rem !custom',
-  })
-
-  export const status = style({
-    color: 'blue.900',
-    backgroundColor: 'blue.100',
-    borderRadius: '999px !custom',
-    paddingBlock: 1,
-    paddingInline: '10px !custom',
-    typography: 'label.12',
-  })
-
-  export const title = style({
-    typography: 'heading.20',
-    margin: 0,
-  })
-}
-```
-
-</Tab>
-
-<Tab title="Rendered">
-
-<Examples.Bundled />
-
-</Tab>
-
-</Tabs>
-
-Typography sets bundle font family, size, weight, letter spacing, and line height. Explicit fields override preset fields in the same block, including conditional fields. Load fonts in the application. The bundled sets do not install fonts or descendant styles.
-
-The `vars` export contains references. The separate `tokens` export contains raw values. Use references when a value should follow a scope or scheme. See the [default config reference](https://github.com/wevm/zyzz/blob/main/docs/api/default.md) for all categories and typography sets.
-
-## Derive semantic values
-
-Keep palette values and their semantic aliases in one set with the second `defineVars` argument. The callback receives references to the base values. Extending a palette leaf then updates the semantic values that reference it within the extended scope.
-
-```ts title="palette.config.ts"
-import { defineConfig, defineVars, extendVars } from 'zyzz'
-
-const base = defineVars(
-  { color: { palette: { ink: '#171717', paper: '#fafafa' } } },
-  (vars) => ({
-    color: {
-      foreground: {
-        light: vars.color.palette.ink,
-        dark: vars.color.palette.paper,
-      },
-    },
-  }),
-)
-
-const alternate = extendVars(base, {
-  color: { palette: { ink: '#2563eb' } },
-})
-
-export const { style, vars } = defineConfig({
-  defaultVars: 'base',
-  vars: { base, alternate },
-})
-```
-
-The alternate foreground is blue in light mode and retains the paper color in dark mode. Derived callbacks cannot reference other derived values or redefine existing leaves. Keep the callback synchronous with a literal object result so the compiler can extract it.
-
-References to separately defined palettes retain those palettes' identities. Scope those definitions too when they need to change. Use derivation within one set when palette overrides should follow the selected set. [Vars](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md) also documents composed CSS values and cycle validation.
-
-<span id="customize-property-mappings" />
-
-## Customize property mappings
-
-Use `mappings` to connect a custom category to CSS properties. Each supplied category replaces its default mapping. Other category mappings stay intact. Shorthands expand local aliases into CSS properties, and each expanded property checks the value.
-
-```ts title="mapped.config.ts"
-import { defineConfig } from 'zyzz'
-
-export const { style, vars } = defineConfig({
-  mappings: {
-    surface: ['backgroundColor'],
-    spacing: ['gap', 'padding', 'paddingLeft', 'paddingRight'],
-  },
-  shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  vars: {
-    surface: { panel: { light: '#fff', dark: '#171717' } },
-    spacing: { page: '1rem' },
-  },
-})
-
-namespace styles {
-  export const panel = style({
-    backgroundColor: 'panel',
-    px: 'page',
-    width: vars.spacing.page,
-  })
-}
-```
-
-Here, `width` uses an explicit reference because the custom spacing mapping only supplies gap, padding, and its left and right longhands. Use `[]` to disable a category's shortcuts or `mappings: false` to require full paths. Dedicated categories, such as `padding`, take precedence over shared `spacing` for the same name.
-
-Avoid mappings that give one property the same name from multiple categories. See [category fallbacks](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md#category-fallbacks) for lookup order and [Config.create](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#full-variable-paths) for full-path examples.
-
-## Make values responsive
-
-Give a conditional leaf a `default` and ordered media overrides. Every branch must have a compatible value domain. A color branch can also contain a light/dark pair.
-
-```ts title="responsive.config.ts"
-import { defineConfig, defineVars } from 'zyzz'
-
-const base = defineVars({
-  spacing: {
-    page: {
-      default: '1rem',
-      '@media (min-width: 48rem)': '2rem',
-      '@media (min-width: 72rem)': '3rem',
-    },
-  },
-})
-
-export const { style, vars } = defineConfig({ vars: base })
-
-namespace styles {
-  export const page = style({ padding: 'page' })
-}
-```
-
-At matching widths, the last authored matching declaration wins. The browser evaluates precompiled media rules. Media-conditioned variable values require the web target. `extendVars` replaces a conditional leaf as a whole, so include every branch that the override should retain.
-
-## Name queries
-
-Query aliases describe compile-time thresholds. Define `breakpoint` for media queries, `container` for container queries, and `containerNames` for named containers.
-
-```ts title="queries.config.ts"
-import { defineConfig } from 'zyzz'
-
-export const { style } = defineConfig({
-  vars: {
-    breakpoint: { tablet: '48rem' },
-    container: { card: '20rem' },
-    containerNames: ['preview'],
-  },
-})
-
-namespace styles {
-  export const container = style({
-    containerName: 'preview',
-    containerType: 'inline-size',
-  })
-
-  export const card = style({
-    '@media >=tablet': { padding: '2rem' },
-    '@container preview card': { display: 'grid' },
-  })
-}
-```
-
-Apply `styles.container()` to an ancestor and `styles.card()` to its child. Runtime set selection does not change query thresholds. Breakpoints and container names have no declaration references. Container values also supply sizing variables. See [Conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md) for query syntax.
-
-## Save and restore preferences
-
-Use the `appearance` helper from the first config to update the document root and save a preference. This action affects the root, while `vars` can create local scopes. Preference controls must keep their own application state in sync.
-
-<Tabs label="AppearanceButton.tsx">
-
+<Tabs label="Add a theme switcher">
 <Tab title="AppearanceButton.tsx">
 
 ```tsx title="AppearanceButton.tsx"
@@ -398,8 +529,10 @@ import { appearance } from './zyzz.config.js'
 export function AppearanceButton() {
   return (
     <button
+      // [!code hl:2]
+      // Apply the selection to the document root and save it
+      onClick={() => appearance.set({ colorScheme: 'dark', set: 'alternate' })}
       type="button"
-      onClick={() => appearance.set({ set: 'alternate', colorScheme: 'dark' })}
     >
       Use alternate dark colors
     </button>
@@ -408,24 +541,20 @@ export function AppearanceButton() {
 ```
 
 </Tab>
-
 <Tab title="Rendered">
 
 <Examples.Preferences />
 
 </Tab>
-
 </Tabs>
 
-`appearance.get()` reads the applied root `{ set, colorScheme }`. `appearance.set()` persists under the config's `storageKey`, which defaults to `zyzz`. If storage is blocked, the selection still applies to the current document. Single-set configs support only color-scheme preferences.
+The selection persists in `localStorage` under the config's `storageKey`, which defaults to `'zyzz'`. Blocked storage still applies the selection to the current document. `colorScheme: undefined` clears the scheme and saves the cleared state.
 
-Passing `colorScheme: undefined` clears the scheme selection and persists that cleared state.
+`appearance` changes only the document root, while `vars` creates local scopes. The helper does not notify subscribers, so a control that displays the current choice keeps its own state. Single-set configs accept only `colorScheme`.
 
-Generate `script()` on the server or at build time. Execute the returned JavaScript in a synchronous inline script early in the document head to restore saved preferences before painting. Keep default root props in the server markup.
+### Restore Preferences Before Paint
 
-<Tabs label="Document.tsx">
-
-<Tab title="Document.tsx">
+A preference saved by `appearance` applies only after application JavaScript runs. `script()` returns a small inline script that reapplies it before the first paint. Generate the script on the server or at build time, and place it early in `<head>`.
 
 ```tsx title="Document.tsx"
 import type { ReactNode } from 'react'
@@ -435,13 +564,19 @@ export function Document(props: Document.Props) {
   return (
     <html
       lang="en"
+      // [!code hl:2]
+      // The script changes root attributes before hydration
       suppressHydrationWarning
+      // Server markup keeps the default selection
       {...vars({ colorScheme: 'light dark' })}
     >
       <head>
         <script
-          nonce={props.nonce}
+          // [!code hl:2]
+          // Reapply the saved preference before the first paint
           dangerouslySetInnerHTML={{ __html: script() }}
+          // Allow the inline script under a content security policy
+          nonce={props.nonce}
         />
       </head>
       <body>{props.children}</body>
@@ -454,50 +589,425 @@ export declare namespace Document {
 }
 ```
 
-</Tab>
+The server markup keeps the default selection, and the script replaces it only when storage holds a valid preference. Missing, malformed, or blocked storage leaves the server markup intact.
 
+- **Timing:** The script must run synchronously, so it takes no `async`, `defer`, or `type="module"`.
+- **CSP:** Pass the application's nonce, or allow a hash of the generated source.
+- **Hydration:** `suppressHydrationWarning` covers the root attributes that the script changes before React hydrates.
+
+[Config Script](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md) documents the stored record and framework constraints.
+
+### Use the Bundled Tokens
+
+`zyzz/default` exports a ready config with Geist colors and typography, plus Tailwind spacing, radius, shadow, and query scales. The root `zyzz` entrypoint stays token-free. The [Variables explorer](/vars) lists every bundled value.
+
+<Tabs label="Use the bundled tokens">
+<Tab title="AccountCard.tsx">
+
+```tsx title="AccountCard.tsx"
+// [!code hl:2]
+// Geist colors and typography, plus Tailwind scales
+import { style, vars } from 'zyzz/default'
+
+export function AccountCard() {
+  return (
+    <section {...vars()}>
+      <article {...styles.card()}>
+        <h2 {...styles.title()}>Personal account</h2>
+        <p {...styles.body()}>alex@example.com</p>
+        <span {...styles.status()}>Active</span>
+      </article>
+    </section>
+  )
+}
+
+namespace styles {
+  export const body = style({ color: 'gray.900', typography: 'copy.14' })
+
+  export const card = style({
+    backgroundColor: 'background.surface',
+    border: '1px solid',
+    borderColor: 'gray.400',
+    borderRadius: 'md',
+    color: 'foreground',
+    display: 'grid',
+    gap: 2,
+    justifyItems: 'start',
+    // [!code hl:4]
+    // The md container size, 28rem
+    maxWidth: 'md',
+    // Spacing step 6, 1.5rem
+    padding: 6,
+  })
+
+  export const status = style({
+    backgroundColor: 'blue.100',
+    borderRadius: '9999px !custom',
+    color: 'blue.900',
+    paddingBlock: 1,
+    paddingInline: 3,
+    typography: 'label.12',
+  })
+
+  // [!code hl:2]
+  // Sets font family, size, weight, letter spacing, and line height
+  export const title = style({ typography: 'heading.20' })
+}
+```
+
+</Tab>
 <Tab title="Rendered">
 
-<Examples.Preferences />
+<Examples.Bundled />
 
 </Tab>
-
 </Tabs>
 
-Use the application's CSP nonce or a hash of the generated source when CSP requires it. Do not add `async`, `defer`, or `type="module"` to this script. Missing, malformed, or inaccessible storage leaves server defaults intact. The helper does not manage hydration or subscribe controls to changes.
+Numeric spacing names such as `6` follow a quarter-rem scale, and `maxWidth: 'md'` resolves to the `md` container size. Typography sets combine font family, size, weight, letter spacing, and line height. The bundled config loads no fonts.
 
-For exact storage behavior and framework integration constraints, see [Config Script](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md).
+`vars` holds references that follow the active scope. The separate `tokens` export holds raw values for code outside CSS, such as a charting library. The [default config reference](https://github.com/wevm/zyzz/blob/main/docs/api/default.md) lists every category and typography set.
 
-## Compile without a bundler
+### Derive Semantic Tokens
 
-For an in-memory stylesheet, compile explicit definitions through `Css.compile`. Load the resulting CSS and apply both the scope class and the component class.
+A palette token names a raw value, such as `ink`. A semantic token names a purpose, such as `foreground`, and points at palette tokens. The second `defineVars` argument receives references to the first and returns the semantic tokens.
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars, extendVars } from 'zyzz'
+
+const base = defineVars(
+  // 1. Palette tokens name raw values
+  { color: { palette: { ink: '#171717', paper: '#fafafa' } } },
+  // [!code hl:9]
+  // 2. Semantic tokens point at palette tokens
+  (vars) => ({
+    color: {
+      foreground: {
+        dark: vars.color.palette.paper,
+        light: vars.color.palette.ink,
+      },
+    },
+  }),
+)
+
+// [!code hl]
+// 3. Override a palette value, and foreground follows it
+const alternate = extendVars(base, {
+  color: { palette: { ink: '#2563eb' } }, // [!code hl]
+})
+
+export const { style, vars } = defineConfig({
+  defaultVars: 'base',
+  vars: { alternate, base },
+})
+```
+
+In the alternate set, `foreground` turns blue in the light scheme and keeps the paper color in the dark scheme. The semantic token references the palette of whichever set is active, so a palette override needs no change to `foreground`.
+
+The callback must be synchronous and return a literal object, because the compiler reads it without running it. It cannot reference other derived tokens or redefine a palette path. [Vars](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md) covers references between separate sets and cycle validation.
+
+### Adjust Color Opacity
+
+`color-mix()` derives a translucent color from a token. `Vars.compose` turns the expression into a token of its own, which keeps a live reference, so it follows the accent of the active set and scheme.
+
+<Tabs label="Adjust color opacity">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars, Vars } from 'zyzz'
+
+const base = defineVars(
+  { color: { accent: { dark: '#60a5fa', light: '#2563eb' } } },
+  (vars) => ({
+    color: {
+      // [!code hl:6]
+      // A composed token keeps a live reference to accent
+      accentSubtle: Vars.compose('color', [
+        'color-mix(in srgb, ',
+        vars.color.accent,
+        ' 15%, transparent)',
+      ]),
+    },
+  }),
+)
+
+export const { style, vars } = defineConfig({ vars: base })
+```
+
+</Tab>
+<Tab title="Badge.tsx">
+
+```tsx title="Badge.tsx"
+import { style } from './zyzz.config.js'
+
+export function Badge() {
+  return <span {...styles.badge()}>New</span>
+}
+
+namespace styles {
+  export const badge = style({
+    // [!code hl:2]
+    // Reads the composed token like any other color token
+    backgroundColor: 'accentSubtle',
+    color: 'accent',
+  })
+}
+```
+
+</Tab>
+</Tabs>
+
+For a single declaration, interpolate the reference into the expression and add ` !custom`:
+
+```ts
+style({
+  backgroundColor: `color-mix(in srgb, ${vars.color.accent} 15%, transparent) !custom`,
+})
+```
+
+The browser evaluates the expression. React Native rejects composed values.
+
+### Make Tokens Responsive
+
+Give a token a `default` and ordered `@media` overrides. Each branch must hold a value from the same domain, and a color branch can hold a `{ dark, light }` pair.
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  spacing: {
+    page: {
+      // [!code hl:5]
+      // Used when no condition matches
+      default: '1rem',
+      // The last matching condition wins
+      '@media (min-width: 48rem)': '2rem',
+      '@media (min-width: 72rem)': '3rem',
+    },
+  },
+})
+
+export const { style, vars } = defineConfig({ vars: base })
+```
+
+`style({ padding: 'page' })` grows with the viewport. When several conditions match, the last authored one wins. `extendVars` replaces a responsive token as a whole, so an override lists every branch it keeps. Native compilation rejects media-conditioned tokens.
+
+### Name Breakpoints and Containers
+
+`breakpoint` and `container` tokens name the thresholds used in `@media` and `@container` keys. `containerNames` lists the container names that styles may declare and query.
+
+<Tabs label="Name breakpoints and containers">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: {
+    // [!code hl:6]
+    // Named thresholds for @media keys
+    breakpoint: { tablet: '48rem' },
+    // Named thresholds for @container keys
+    container: { card: '20rem' },
+    // Container names that styles can declare and query
+    containerNames: ['preview'],
+  },
+})
+```
+
+</Tab>
+<Tab title="Preview.tsx">
+
+```tsx title="Preview.tsx"
+import { style } from './zyzz.config.js'
+
+export function Preview() {
+  return (
+    <section {...styles.region()}>
+      <article {...styles.card()}>Account</article>
+    </section>
+  )
+}
+
+namespace styles {
+  export const card = style({
+    // [!code hl:4]
+    // Viewport is at least 48rem wide
+    '@media >=tablet': { padding: '2rem' },
+    // Nearest preview container is at least 20rem wide
+    '@container preview >=card': { display: 'grid' },
+  })
+
+  // Declares the container that the card queries
+  export const region = style({
+    containerName: 'preview',
+    containerType: 'inline-size',
+  })
+}
+```
+
+</Tab>
+</Tabs>
+
+Thresholds compile to literal conditions, so selecting another set does not change them. [Conditions](/docs/guides/conditions) covers the full query syntax.
+
+### Add Typography Presets
+
+A `typography` token groups font properties under one name, with optional `@media` and `@container` blocks. The `typography` field applies the whole group.
+
+<Tabs label="Add typography presets">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  breakpoint: { tablet: '48rem' },
+  typography: {
+    // [!code hl:7]
+    // A preset groups font properties under one name
+    heading: {
+      fontSize: '1.5rem',
+      fontWeight: 600,
+      lineHeight: 1.2,
+      '@media >=tablet': { fontSize: '2.5rem' },
+    },
+  },
+})
+
+export const { style, vars } = defineConfig({ vars: base })
+```
+
+</Tab>
+<Tab title="Title.tsx">
+
+```tsx title="Title.tsx"
+import { style } from './zyzz.config.js'
+
+export function Title() {
+  return <h1 {...styles.title()}>Account</h1>
+}
+
+namespace styles {
+  // [!code hl:2]
+  // The explicit fontWeight overrides the preset's 600
+  export const title = style({ fontWeight: 700, typography: 'heading' })
+}
+```
+
+</Tab>
+</Tabs>
+
+A field written beside `typography` overrides the matching preset field, regardless of position, so the title above uses weight `700`. Native compilation rejects responsive typography blocks.
+
+<span id="customize-property-mappings" />
+
+### Customize Property Mappings
+
+`mappings` connects a category to the properties that accept its tokens. Each supplied category replaces its default mapping, and other categories keep theirs. `shorthands` defines local aliases that expand into several properties.
+
+<Tabs label="Customize property mappings">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  // [!code hl:7]
+  // Properties that accept each category's short names
+  mappings: {
+    spacing: ['gap', 'padding', 'paddingLeft', 'paddingRight'],
+    surface: ['backgroundColor'],
+  },
+  // A local alias that expands into several properties
+  shorthands: { px: ['paddingLeft', 'paddingRight'] },
+  vars: {
+    spacing: { page: '1rem' },
+    surface: { panel: { dark: '#171717', light: '#ffffff' } },
+  },
+})
+```
+
+</Tab>
+<Tab title="Panel.tsx">
+
+```tsx title="Panel.tsx"
+import { style, vars } from './zyzz.config.js'
+
+export function Panel() {
+  return <section {...styles.panel()}>Account details</section>
+}
+
+namespace styles {
+  export const panel = style({
+    // [!code hl:6]
+    // surface tokens apply to backgroundColor
+    backgroundColor: 'panel',
+    // Expands to paddingLeft and paddingRight
+    px: 'page',
+    // width is outside the spacing mapping, so it takes a reference
+    width: vars.spacing.page,
+  })
+}
+```
+
+</Tab>
+</Tabs>
+
+`width` needs an explicit reference, because this spacing mapping covers only gap and padding. Each property that a shorthand expands to checks the value on its own.
+
+- **`[]`:** Disables short names for one category.
+- **`mappings: false`:** Requires full paths such as `'surface.panel'` everywhere.
+- **Dedicated categories:** A category such as `padding` takes precedence over `spacing` for the same name.
+
+Avoid mappings that give one property the same name from two categories. [Config.create](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#full-variable-paths) shows full-path authoring.
+
+### Compile Without a Bundler
+
+`Css.compile` turns explicit definitions into an in-memory stylesheet. The page loads the CSS and applies both the scope class and the component class.
 
 ```ts title="compile.ts"
 import { defineVars, Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
+// 1. Define tokens and styles as data
 const base = defineVars({
-  color: { foreground: { light: '#171717', dark: '#fafafa' } },
+  color: { foreground: { dark: '#fafafa', light: '#171717' } },
 })
 const styles = Style.define({ card: { color: base.color.foreground } })
+
+// [!code hl:2]
+// 2. Compile them into a stylesheet and class names
 const output = Css.compile({ styles, vars: { base } })
 
+// 3. Apply the scope class and the component class
 const markup = `<section class="${output.vars.base}"><article class="${output.classes.card}">Account</article></section>`
 ```
 
-`output.css` contains the stylesheet. `output.vars.base` and `output.classes.card` contain the classes used above. For multi-file source linking and library packaging, use [Graph.compile](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Graph/compile.md).
+`output.css` holds the stylesheet, and `output.vars.base` and `output.classes.card` hold the class names. [Graph.compile](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Graph/compile.md) covers multi-file source and library packaging.
 
-## Continue building
+## More
 
 <Card.Group>
-  <Card title="Explore Variables" href="/vars" icon="palette">
-    Browse the bundled colors, spacing, and typography tokens.
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Define element styles, combine them in order, and bind changing values.
+  </Card>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Define typed choices such as size and tone, with defaults and compounds.
+  </Card>
+  <Card title="Variables" icon="palette" href="/vars">
+    Browse the bundled colors, spacing, typography, and effect token values.
+  </Card>
+  <Card title="React Native" icon="smartphone" href="/docs/guides/native">
+    Apply themes and color schemes in native apps, and review the limits.
   </Card>
   <Card
-    title="Styling"
-    href="https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md"
-    icon="paintbrush"
+    title="Migrating from Tailwind"
+    icon="code"
+    href="/docs/guides/tailwind"
   >
-    Compose component styles and bind values that vary per instance.
+    Map Tailwind theme variables and dark mode onto Zyzz variable sets.
+  </Card>
+  <Card title="Concepts & Principles" icon="sliders" href="/docs/concepts">
+    See how tokens and scopes fit into the rest of the Zyzz styling model.
   </Card>
 </Card.Group>

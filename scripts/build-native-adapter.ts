@@ -70,7 +70,7 @@ await Fs.writeFile(
 export * as Host from './Host.js'
 export * as StyleSheet from './StyleSheet.js'
 export * as Variants from './Variants.js'
-export { defineConfig, useStyles, useVars } from './react.js'
+export { defineConfig, useStyles, useVars, withStyles } from './react.js'
 `,
 )
 

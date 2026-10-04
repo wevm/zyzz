@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -333,7 +333,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29, 30, 31, 32,
+          27, 28, 29, 30, 31, 32, 33,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -402,6 +402,34 @@ export function read(
                 return [key, member]
               }),
             )
+      const nativeContext = (() => {
+        if (entry.nativeContext === undefined) return undefined
+        if ((data.version as number) < 33)
+          throw new Error(
+            'Native style catalogs require contract version 33 or later.',
+          )
+        if (entry.style === undefined)
+          throw new Error('Native style catalogs require a packed style.')
+        const context = record(entry.nativeContext)
+        const vars = Object.fromEntries(
+          Object.entries(record(context.vars)).map((entry) => {
+            const [name, value] = entry
+            const theme = themes[string(value)]
+            if (!name || !theme)
+              throw new Error('Unknown packed native style catalog.')
+            return [name, theme]
+          }),
+        )
+        const defaultVars = string(context.defaultVars)
+        if (!Object.hasOwn(vars, defaultVars))
+          throw new Error('Invalid packed native style default.')
+        const identities = new Set(
+          Object.values(vars).map((theme) => theme[Token.definition].contract),
+        )
+        if (identities.size !== 1)
+          throw new Error('Incompatible packed native style catalog.')
+        return { defaultVars, vars }
+      })()
       return {
         binding,
         call: {
@@ -415,11 +443,14 @@ export function read(
         ...(entry.style === undefined
           ? {}
           : {
-              style: PackedStyles.read(
-                entry.style,
-                themes,
-                data.version as number,
-              ),
+              style: {
+                ...PackedStyles.read(
+                  entry.style,
+                  themes,
+                  data.version as number,
+                ),
+                ...(nativeContext ? { nativeContext } : {}),
+              },
             }),
         ...(members ? { members } : {}),
       }
@@ -702,6 +733,28 @@ export function write(
       return {
         binding: link.binding,
         kind: link.kind,
+        ...(link.style?.nativeContext
+          ? {
+              nativeContext: {
+                defaultVars: link.style.nativeContext.defaultVars,
+                vars: Object.fromEntries(
+                  Object.entries(link.style.nativeContext.vars).map((entry) => {
+                    const [name, definition] = entry
+                    const theme = Object.entries(themes).find(
+                      (candidate) =>
+                        candidate[1][Token.definition].contract ===
+                          definition[Token.definition].contract &&
+                        JSON.stringify(input(candidate[1])) ===
+                          JSON.stringify(input(definition)),
+                    )
+                    if (!theme)
+                      throw new Error('Missing packed native style catalog.')
+                    return [name, theme[0]]
+                  }),
+                ),
+              },
+            }
+          : {}),
         ...(link.style ? { style: PackedStyles.write(link.style) } : {}),
         ...(link.members
           ? {
@@ -790,13 +843,24 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(nativeProvider) ? 32 : 31,
+    version: Object.values(links).some(nativeCatalog)
+      ? 33
+      : Object.values(links).some(nativeProvider)
+        ? 32
+        : 31,
   })
 
   function nativeProvider(link: Themes.Link): boolean {
     return (
       link.call.nativeProvider === true ||
       Object.values(link.members ?? {}).some(nativeProvider)
+    )
+  }
+
+  function nativeCatalog(link: Themes.Link): boolean {
+    return (
+      Boolean(link.style?.nativeContext) ||
+      Object.values(link.members ?? {}).some(nativeCatalog)
     )
   }
 }

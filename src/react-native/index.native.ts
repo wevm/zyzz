@@ -2,4 +2,9 @@
 export * as Host from './Host.js'
 export * as StyleSheet from './StyleSheet.js'
 export * as Variants from './Variants.js'
-export { defineConfig, useStyles, useVars } from './internal/Device.js'
+export {
+  defineConfig,
+  useStyles,
+  useVars,
+  withStyles,
+} from './internal/Device.js'

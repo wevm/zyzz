@@ -8,6 +8,8 @@ import * as Path from 'node:path'
 import * as Timers from 'node:timers'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
+import type { Report as MotionErrorsReport } from '../../../test/fixtures/native/MotionErrors.js'
+import type { Report as MotionReport } from '../../../test/fixtures/native/MotionUpdates.js'
 import type { Report as UpdatesReport } from '../../../test/fixtures/native/Updates.js'
 import type { Report as VariantsReport } from '../../../test/fixtures/native/VariantUpdates.js'
 import { describe, expect, test } from 'vite-plus/test'
@@ -17,13 +19,15 @@ const require = Module.createRequire(
   Path.resolve('examples/react-native/package.json'),
 )
 const application = 'xyz.wevm.zyzz.updates'
-type Report = UpdatesReport | VariantsReport
+type Report = MotionErrorsReport | MotionReport | UpdatesReport | VariantsReport
 
 describe('defineConfig', () => {
   for (const platform of ['ios', 'android'] as const) {
     const device = process.env[`ZYZZ_NATIVE_${platform.toUpperCase()}_DEVICE`]
     const app = process.env[`ZYZZ_NATIVE_${platform.toUpperCase()}_APP`]
-    test.runIf(!!device && !!app).each(['Updates', 'VariantUpdates'])(
+    test
+      .runIf(!!device && !!app)
+      .each(['Updates', 'VariantUpdates', 'MotionUpdates', 'MotionErrors'])(
       `${platform}: updates native views for %s`,
       async (fixture) => {
         const root = await Fs.mkdtemp(Path.resolve('.fixture-native-render-'))
@@ -154,7 +158,9 @@ describe('defineConfig', () => {
             `/** Configures the real Expo fixture and its framework peers. @module */
           import * as Module from 'node:module'; import {getDefaultConfig} from 'expo/metro-config.js'; import {zyzz} from 'zyzz/metro';
           const require=Module.createRequire(import.meta.url);const config=getDefaultConfig(import.meta.dirname);
-          config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,name==='react'||name.startsWith('react/')||name==='react-native'?require.resolve(name):name,platform);
+          config.maxWorkers=2;
+          const peers=['react','react-native','react-native-reanimated','react-native-safe-area-context','react-native-worklets'];
+          config.resolver.resolveRequest=(context,name,platform)=>context.resolveRequest(context,peers.some(peer=>name===peer||name.startsWith(peer+'/'))?require.resolve(name):name,platform);
           export default zyzz(config,{units:{px:1}});`,
           )
           child = ChildProcess.spawn(
@@ -277,6 +283,246 @@ describe('defineConfig', () => {
               )
             }),
           ])
+          if (fixture === 'MotionErrors') {
+            expect((frames[0] as MotionErrorsReport).errors)
+              .toMatchInlineSnapshot(`
+              {
+                "color": "useAnimatedStyleValue requires a numeric or color value for backgroundColor.",
+                "cycle": "Animated selections cannot contain cycles.",
+                "function": "Animated selections require finite, serializable native values.",
+                "instance": "Animated selections require finite, serializable native values.",
+                "missing": "useAnimatedStyleValue requires a numeric or color value for width.",
+                "nonfinite": "useAnimatedStyleValue requires a numeric or color value for width.",
+                "percentage": "useAnimatedStyleValue requires a numeric or color value for width.",
+                "provider": "useAnimatedVars requires a Zyzz Provider.",
+                "symbol": "Animated selections cannot contain symbol properties.",
+              }
+            `)
+            return
+          }
+          if (fixture === 'MotionUpdates') {
+            const motion = frames as MotionReport[]
+            expect(motion.map((frame) => frame.name)).toMatchInlineSnapshot(`
+              [
+                "initial",
+                "scheme",
+                "choice",
+                "vars",
+                "override",
+                "inputs",
+                "unmount",
+                "remount",
+                "commit",
+              ]
+            `)
+            expect(
+              motion.map((frame) =>
+                frame.geometry
+                  .map(
+                    (view) =>
+                      `${view.id} ${Math.round(view.width)}x${Math.round(view.height)}`,
+                  )
+                  .sort(),
+              ),
+            ).toMatchInlineSnapshot(`
+              [
+                [
+                  "alias 100x20",
+                  "mixed 100x40",
+                  "motion 100x40",
+                  "nested 100x40",
+                  "safe 100x40",
+                ],
+                [
+                  "alias 100x20",
+                  "mixed 100x40",
+                  "motion 100x40",
+                  "nested 100x40",
+                  "safe 100x40",
+                ],
+                [
+                  "alias 100x20",
+                  "mixed 200x40",
+                  "motion 200x40",
+                  "nested 100x40",
+                  "safe 100x40",
+                ],
+                [
+                  "alias 160x20",
+                  "mixed 200x60",
+                  "motion 200x60",
+                  "nested 100x40",
+                  "safe 160x40",
+                ],
+                [
+                  "alias 160x20",
+                  "mixed 120x60",
+                  "motion 120x60",
+                  "nested 100x40",
+                  "safe 160x40",
+                ],
+                [
+                  "alias 160x20",
+                  "mixed 160x36",
+                  "motion 160x36",
+                  "nested 100x40",
+                  "safe 160x40",
+                ],
+                [
+                  "alias 160x20",
+                  "nested 100x40",
+                  "safe 160x40",
+                ],
+                [
+                  "alias 160x20",
+                  "mixed 160x60",
+                  "motion 160x60",
+                  "nested 100x40",
+                  "safe 160x40",
+                ],
+                [
+                  "alias 160x20",
+                  "mixed 160x60",
+                  "motion 160x60",
+                  "nested 100x40",
+                  "safe 160x40",
+                ],
+              ]
+            `)
+            expect(motion.map((frame) => frame.renders.motion))
+              .toMatchInlineSnapshot(`
+                [
+                  1,
+                  1,
+                  2,
+                  2,
+                  3,
+                  4,
+                  4,
+                  5,
+                  5,
+                ]
+              `)
+            expect(motion.map((frame) => frame.renders.nested))
+              .toMatchInlineSnapshot(`
+                [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                ]
+              `)
+            expect(
+              motion.every(
+                (frame) => frame.identities.motion && frame.identities.nested,
+              ),
+            ).toMatchInlineSnapshot(`true`)
+            expect(motion.map((frame) => frame.releases)).toMatchInlineSnapshot(
+              `
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                2,
+                2,
+              ]
+            `,
+            )
+            expect(
+              motion.at(-1)!.reactions.motion ===
+                motion.at(-2)!.reactions.motion,
+            ).toMatchInlineSnapshot(`true`)
+            expect(motion.at(-1)!.reactions.nested).toMatchInlineSnapshot(`1`)
+            expect(motion.at(-1)!.targets).toMatchInlineSnapshot(`
+              {
+                "motion": {
+                  "color": "#0000ff",
+                  "height": 60,
+                  "width": 160,
+                },
+                "nested": {
+                  "color": "#ff0000",
+                  "height": 40,
+                  "width": 100,
+                },
+              }
+            `)
+            expect(colors).toMatchInlineSnapshot(`
+              [
+                {
+                  "alias": "#ff0000ff",
+                  "mixed": "#ff0000ff",
+                  "motion": "#ff0000ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#ff0000ff",
+                },
+                {
+                  "alias": "#00ff00ff",
+                  "mixed": "#00ff00ff",
+                  "motion": "#00ff00ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#00ff00ff",
+                },
+                {
+                  "alias": "#00ff00ff",
+                  "mixed": "#00ff00ff",
+                  "motion": "#00ff00ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#00ff00ff",
+                },
+                {
+                  "alias": "#ffff00ff",
+                  "mixed": "#ffff00ff",
+                  "motion": "#ffff00ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#ffff00ff",
+                },
+                {
+                  "alias": "#ffff00ff",
+                  "mixed": "#ffff00ff",
+                  "motion": "#ffff00ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#ffff00ff",
+                },
+                {
+                  "alias": "#ffff00ff",
+                  "mixed": "#ffff00ff",
+                  "motion": "#ffff00ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#ffff00ff",
+                },
+                {
+                  "alias": "#ffff00ff",
+                  "nested": "#ff0000ff",
+                  "safe": "#ffff00ff",
+                },
+                {
+                  "alias": "#0000ffff",
+                  "mixed": "#0000ffff",
+                  "motion": "#0000ffff",
+                  "nested": "#ff0000ff",
+                  "safe": "#0000ffff",
+                },
+                {
+                  "alias": "#0000ffff",
+                  "mixed": "#0000ffff",
+                  "motion": "#0000ffff",
+                  "nested": "#ff0000ff",
+                  "safe": "#0000ffff",
+                },
+              ]
+            `)
+            return
+          }
           if (fixture === 'VariantUpdates') {
             expect(frames.map((frame) => frame.name)).toMatchInlineSnapshot(`
               [
@@ -450,14 +696,15 @@ describe('defineConfig', () => {
             '#ffffffff',
             '#ffff00ff',
           ])
-          expect(
-            transitions[0]!.geometry.find((view) => view.id === 'themed')!
-              .width,
-          ).toBe(60)
-          expect(
-            transitions[2]!.geometry.find((view) => view.id === 'themed')!
-              .width,
-          ).toBe(160)
+          for (const index of [0, 2]) {
+            const frame = transitions[index]!
+            const width = frame.geometry.find(
+              (view) => view.id === 'themed',
+            )!.width
+            expect(Math.round(width * frame.scale)).toBe(
+              Math.round((index === 0 ? 60 : 160) * frame.scale),
+            )
+          }
           expect(frames.map((frame) => frame.name)).toMatchInlineSnapshot(`
             [
               "initial",

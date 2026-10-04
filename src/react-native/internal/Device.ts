@@ -22,7 +22,7 @@ export function defineConfig<const options extends Config.create.Options = {}>(
 /** Provides selected variables, appearance, and automatic native dimensions. */
 export const Provider = dimensions(Subscription.Provider)
 
-export { useStyles, useVars } from '../react.js'
+export { useStyles, useVars, withStyles } from '../react.js'
 
 function dimensions<props extends Subscription.Provider.Props>(
   Component: React.FunctionComponent<props>,

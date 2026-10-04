@@ -26,6 +26,8 @@ export type Definition = {
   readonly className?: string | undefined
   /** Attributes owned by the callable, including conditional selections. */
   readonly attributes: readonly string[]
+  /** Named Provider selections retained by separately compiled styles. */
+  readonly nativeContext?: Source.Call['nativeContext']
   /** Native HTML output; React props are the default. */
   readonly output?: 'html' | undefined
   /** Private dynamic custom properties owned by the callable. */
@@ -39,6 +41,7 @@ export type Definition = {
 /** Captures ownership without retaining source ASTs or executable expressions. */
 export function create(call: Source.Call, style: Style.NamedStyle): Definition {
   return {
+    ...(call.nativeContext ? { nativeContext: call.nativeContext } : {}),
     ...(call.slots || call.dynamicRecipe
       ? {
           dynamic: {
@@ -419,6 +422,7 @@ export function write(definition: Definition): unknown {
     JSON.stringify(
       {
         ...definition,
+        nativeContext: undefined,
         style: {
           ...definition.style,
           cssOutput: definition.style.cssOutput ?? 'atomic',

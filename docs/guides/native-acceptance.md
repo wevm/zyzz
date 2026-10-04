@@ -18,6 +18,8 @@ Static shared authoring compiles through source graphs, file builds, and source-
 | Shared DS tokens      | `test/fixtures/native/ds`, `src/compiler/Native.test.ts`          | Pinned core/platform sources, base/inverse and light/dark values, composed spacing, radii, typography, and source-free configuration consumption                                                         |
 | Metro packages        | `src/metro/index.test.ts`                                         | Expo 57 resolution, package exports and aliases, outside-root barrels, platform suffixes, npm contracts, executed native values, transitive token edits, error recovery, and offline iOS/Android exports |
 | Font delivery         | `src/babel/index.test.ts`, `src/metro/index.test.ts`              | Compiler mappings reach Babel and Metro output; application font registration and device rendering remain separate                                                                                       |
+| Native package        | `src/react-native/Exports.test.ts`                                | Packed native declarations, inferred Provider catalogs, numeric variable reads, iOS pod discovery, and Android C++ autolinking outside the workspace                                                     |
+| Installed renderer    | `src/react-native/internal/Device.test.ts`                        | Existing Fabric scenarios can resolve dependencies from an installed consumer through `ZYZZ_NATIVE_PROJECT`                                                                                              |
 
 ## Reproduction
 
@@ -35,9 +37,38 @@ Tests use the repository-pinned toolchain and Chromium from Playwright. Package 
 
 The DS fixture retains [core variables](https://github.com/tempoxyz/ds/blob/8a03c7c85cfaa56377f224aa9f50d18c6a8e726e/src/core/vars.ts), [platform projections](https://github.com/tempoxyz/ds/blob/8a03c7c85cfaa56377f224aa9f50d18c6a8e726e/src/platform/vars.ts), and configuration. The tests resolve selected tokens into independently specified native values. Responsive tokens remain outside this acceptance.
 
-The adapter preserves the resolver shape used by [Tempro](https://github.com/tempoxyz/tempro/blob/40705e4654d2e7ad3699382db4ea46e5c40d8bdc/apps/mobile/metro.config.js). [Unistyles 3.4](https://github.com/jpudysz/react-native-unistyles/blob/29f51324605270c63146f0722041faa561c625fd/packages/unistyles/plugin/index.d.ts) exposes library-processing options. Zyzz discovers authoring through resolved imports and contracts. Broader third-party component processing remains a separate capability.
+The adapter preserves the resolver shape used by [Tempro](https://github.com/tempoxyz/tempro/blob/40705e4654d2e7ad3699382db4ea46e5c40d8bdc/apps/mobile/metro.config.js). Zyzz discovers authoring through resolved imports and contracts. Broader third-party component processing remains a separate capability.
 
-[Tempro typography](https://github.com/tempoxyz/tempro/blob/40705e4654d2e7ad3699382db4ea46e5c40d8bdc/apps/mobile/lib/typography.ts) uses native family names and numeric metrics. Unistyles has no corresponding family-conversion option. DS mappings convert authored family strings; they require application assets and device verification. These compiler tests do not establish a Tempro migration or runtime-engine parity.
+[Tempro typography](https://github.com/tempoxyz/tempro/blob/40705e4654d2e7ad3699382db4ea46e5c40d8bdc/apps/mobile/lib/typography.ts) uses native family names and numeric metrics. DS mappings convert authored family strings; they require application assets and device verification. These compiler tests do not establish a Tempro migration or runtime-engine parity.
+
+## Installed Native Package
+
+Build and pack Zyzz before installing the archive in an Expo development-build project outside the repository. Keep Zyzz as an archive dependency. Workspace aliases or links to Zyzz source do not establish published-package delivery.
+
+```sh
+pnpm build
+pnpm pack --pack-destination /tmp/zyzz-native-pack
+pnpm exec vp test src/react-native/Exports.test.ts --run
+```
+
+The package test extracts the archive in a temporary external consumer and shares installed framework dependencies. The separate device gate uses a real package-manager installation, native autolinking, and native builds. A type check or autolinking report alone does not establish rendering behavior.
+
+Install the printed archive in the external app, then run Expo prebuild and build each native target. The renderer fixtures require the app identifier `xyz.wevm.zyzz.updates`, plus Reanimated, Worklets, and safe-area-context. Expo Go does not contain the native adapter.
+
+Point the renderer suite at the external project and its built app:
+
+```sh
+ZYZZ_NATIVE_PROJECT=/absolute/path/to/consumer \
+ZYZZ_NATIVE_IOS_APP=/absolute/path/to/ZyzzNativeUpdates.app \
+ZYZZ_NATIVE_IOS_DEVICE='simulator-id' \
+pnpm exec vp test src/react-native/internal/Device.test.ts --run --no-file-parallelism
+```
+
+Android uses `ZYZZ_NATIVE_ANDROID_APP` for the APK and `ZYZZ_NATIVE_ANDROID_DEVICE` for the emulator serial. The default project remains `examples/react-native`. Both platforms can run in one invocation when both app paths and device identifiers are provided.
+
+The suite starts Metro with the selected project's installed dependencies and compiles fixtures that import `zyzz/react-native`. It verifies geometry, screenshot colors, scoped catalog/scheme changes, render counts, variant choices, animation bindings, refs, cleanup, and errors against the actual native adapter.
+
+The consumer acceptance matrix pins React 19.2.3, RN 0.86.0, Expo 57.0.8, Reanimated 4.5.3, Worklets 0.10.3, safe-area-context 5.7.0, and babel-preset-expo 57.0.4. This matrix covers the styling integrations. Complete application migration, physical devices, wider RN versions, and performance remain separate gates.
 
 ## Remaining Gates
 

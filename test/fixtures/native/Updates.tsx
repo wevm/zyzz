@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native'
 import type { TurboModule } from 'react-native'
-import { defineConfig, useVars } from 'zyzz/react-native/react'
+import { defineConfig, useVars } from 'zyzz/react-native'
 
 const { Provider, style, vars } = defineConfig({
   defaultVars: 'base',

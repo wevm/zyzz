@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { scheduleOnRN } from 'react-native-worklets'
-import { defineConfig, withStyles } from 'zyzz/react-native/react'
+import { defineConfig, withStyles } from 'zyzz/react-native'
 import {
   useAnimatedStyleValue,
   useAnimatedVars,

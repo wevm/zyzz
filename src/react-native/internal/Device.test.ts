@@ -15,9 +15,10 @@ import type { Report as VariantsReport } from '../../../test/fixtures/native/Var
 import { describe, expect, test } from 'vite-plus/test'
 
 const exec = Util.promisify(ChildProcess.execFile)
-const require = Module.createRequire(
-  Path.resolve('examples/react-native/package.json'),
+const project = Path.resolve(
+  process.env.ZYZZ_NATIVE_PROJECT ?? 'examples/react-native',
 )
+const require = Module.createRequire(Path.join(project, 'package.json'))
 const application = 'xyz.wevm.zyzz.updates'
 type Report = MotionErrorsReport | MotionReport | UpdatesReport | VariantsReport
 
@@ -149,7 +150,7 @@ describe('defineConfig', () => {
             }),
           )
           await Fs.symlink(
-            Path.resolve('examples/react-native/node_modules'),
+            Path.join(project, 'node_modules'),
             Path.join(root, 'node_modules'),
             'dir',
           )

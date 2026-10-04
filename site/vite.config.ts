@@ -113,6 +113,7 @@ export default defineConfig(async () => {
     const source = await Fs.readFile(new URL(path, directory), 'utf8')
     await compile(source, {
       remarkPlugins: [
+        inlineCode,
         () => async (tree: Root) => {
           const heading = tree.children.find(
             (node) => node.type === 'heading' && node.depth === 1,
@@ -296,6 +297,7 @@ export default defineConfig(async () => {
       zyzz(),
       mdx({
         remarkPlugins: [
+          inlineCode,
           () => (tree: Root) => {
             function annotate(node: Nodes) {
               if ('children' in node)
@@ -383,6 +385,9 @@ const calloutMarker = /^\[!(CAUTION|IMPORTANT|NOTE|TIP|WARNING)\]\s*/
 /** Matches an alert marker escaped by Markdown serialization, which GitHub alerts require literally. */
 const escapedAlert = /^((?:> ?)+)\\\[!(CAUTION|IMPORTANT|NOTE|TIP|WARNING)\]/gm
 
+/** Matches inline code ending in a language marker, such as `` `cx(…){:ts}` ``. */
+const inlineMarker = /^([\s\S]+)\{:([\w-]+)\}$/
+
 /** Matches a `title="..."` attribute in a code fence's metadata. */
 const titleMeta = /(?:^|\s)title="[^"]*"/
 
@@ -430,6 +435,39 @@ function completions(node: Element['children'][number]): string[] {
   if (classes(node).includes('twoslash-completion-list'))
     return [`completions: ${node.children.map(text).join(', ')}`]
   return node.children.flatMap(completions)
+}
+
+/** Highlights inline code marked with a trailing `{:lang}`, and removes the marker from its text. */
+function inlineCode() {
+  return async (tree: Root) => {
+    async function highlight(node: Nodes) {
+      if ('children' in node)
+        for (const child of node.children) await highlight(child)
+      if (node.type !== 'inlineCode') return
+
+      const [, code, lang] = node.value.match(inlineMarker) ?? []
+      if (code === undefined || lang === undefined) return
+      if (!Object.hasOwn(bundledLanguages, lang))
+        throw new Error(`Inline code uses an unknown language: ${lang}.`)
+
+      const root = await codeToHast(code, {
+        defaultColor: 'light-dark()',
+        lang: lang as BundledLanguage,
+        structure: 'inline',
+        themes: { dark: theme, light: lightTheme },
+        transformers: [lightDark],
+      })
+      node.value = code
+      node.data = {
+        ...node.data,
+        hChildren: root.children.filter(
+          (child) => child.type === 'element' || child.type === 'text',
+        ),
+      }
+    }
+
+    await highlight(tree)
+  }
 }
 
 /** Reads lines, diff markers, and Twoslash annotations from highlighted code. */

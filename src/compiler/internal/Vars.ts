@@ -477,6 +477,7 @@ export function collect(
   function reference(
     node: Extract<Ast.Node, { type: 'Identifier' | 'JSXIdentifier' }>,
     parent: Ast.Node,
+    ancestors: readonly Ast.Node[],
     binding: Walker.ScopeTrackerNode | null,
   ) {
     if (binding?.type === 'Import' && imports.has(binding.node.start))
@@ -488,7 +489,17 @@ export function collect(
           : node,
       ) ?? resolve(node)
     if (!link) return false
-    if (link.call.start >= 0 && node.start < link.call.end)
+    // Reads inside functions wait for a call, so only module-scope reads must follow the declaration.
+    if (
+      link.call.start >= 0 &&
+      node.start < link.call.end &&
+      !ancestors.some(
+        (ancestor) =>
+          ancestor.type === 'ArrowFunctionExpression' ||
+          ancestor.type === 'FunctionDeclaration' ||
+          ancestor.type === 'FunctionExpression',
+      )
+    )
       throw new InvalidError('Vars must be declared before use.', node)
     return true
   }

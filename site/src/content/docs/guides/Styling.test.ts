@@ -15,7 +15,10 @@ const project = Path.resolve(import.meta.dirname, '../../../../..')
 
 test('compiles every styling example with its documented imports', async () => {
   const root = await Fs.mkdtemp(Path.join(project, '.fixture-styling-guide-'))
-  const modules = new Map<string, string>()
+  // Tabs can show a module before its dependency, so imports resolve against every example.
+  const modules = new Map(
+    examples.map((example) => [example[1]!, example[2]!] as const),
+  )
   const output: string[] = []
 
   try {
@@ -25,7 +28,6 @@ test('compiles every styling example with its documented imports', async () => {
     for (const [index, example] of examples.entries()) {
       const name = example[1]!
       const source = example[2]!
-      modules.set(name, source)
       const directory = Path.join(root, String(index))
       await Fs.mkdir(directory)
       await Fs.writeFile(Path.join(directory, name), source)
@@ -51,19 +53,18 @@ test('compiles every styling example with its documented imports', async () => {
 
     expect(output).toMatchInlineSnapshot(`
       [
-        "Actions.tsx: compiled CSS",
         "Card.tsx: compiled CSS",
-        "button.styles.ts: compiled CSS",
         "Button.tsx: compiled CSS",
-        "Actions.tsx: compiled CSS",
+        "Button.tsx: compiled CSS",
         "Button.tsx: compiled CSS",
         "Meter.tsx: compiled CSS",
-        "zyzz.config.ts: compiled CSS",
+        "Plan.tsx: compiled CSS",
         "Panel.tsx: compiled CSS",
-        "Card.tsx: compiled CSS",
-        "Label.tsx: compiled CSS",
-        "Label.tsx: compiled CSS",
-        "Label.tsx: compiled CSS",
+        "zyzz.config.ts: compiled CSS",
+        "button.styles.ts: compiled CSS",
+        "SaveButton.tsx: compiled CSS",
+        "Actions.tsx: compiled CSS",
+        "Sheet.tsx: compiled CSS",
       ]
     `)
   } finally {

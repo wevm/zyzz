@@ -337,7 +337,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       contributions.read(node, parent, binding)
 
       try {
-        if (variables.reference(node, parent, binding)) return
+        if (variables.reference(node, parent, ancestors, binding)) return
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
 

@@ -122,7 +122,7 @@ The `vars` property emits static custom-property declarations in authored order,
 
 ## Source Requirements
 
-Declare variables in module-level constants or namespaces before use. References preserve their identities through aliases, imports, re-exports, and packed libraries. Factories and registration options are compiled without evaluating application code. Native bindings remain unsupported.
+Declare variables in module-level constants or namespaces. Module-scope reads, such as style definitions, must follow the declaration, while reads inside functions, such as components, may precede it. References preserve their identities through aliases, imports, re-exports, and packed libraries. Factories and registration options are compiled without evaluating application code. Native bindings remain unsupported.
 
 This API replaces `Vars.define` and contract-level `.set(values)`. Recompile packed libraries using the new API; variable metadata uses contract version 14.
 

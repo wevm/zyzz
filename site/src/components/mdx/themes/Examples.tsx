@@ -5,14 +5,14 @@ import { style as ui, vars as defaultVars } from 'zyzz/default'
 
 const base = defineVars({
   color: {
-    accent: { light: '#2563eb', dark: '#60a5fa' },
-    foreground: { light: '#171717', dark: '#fafafa' },
-    surface: { light: '#ffffff', dark: '#111111' },
+    accent: { dark: '#60a5fa', light: '#2563eb' },
+    foreground: { dark: '#fafafa', light: '#171717' },
+    surface: { dark: '#111111', light: '#ffffff' },
   },
   spacing: { page: '1.5rem' },
 })
 const alternate = extendVars(base, {
-  color: { accent: { light: '#9333ea', dark: '#c084fc' } },
+  color: { accent: { dark: '#c084fc', light: '#9333ea' } },
   spacing: { page: '2rem' },
 })
 const { style, vars } = defineConfig({
@@ -26,17 +26,9 @@ export function Bundled() {
     <div {...styles.example()}>
       <section {...defaultVars()}>
         <article {...styles.defaultCard()}>
-          <div {...styles.details()}>
-            <h2 {...styles.defaultTitle()}>Account</h2>
-            <p {...styles.defaultBody()}>Manage account preferences.</p>
-          </div>
-          <div {...styles.account()}>
-            <div {...styles.details()}>
-              <strong>Personal account</strong>
-              <p {...styles.defaultBody()}>alex@example.com</p>
-            </div>
-            <span {...styles.defaultStatus()}>Active</span>
-          </div>
+          <h2 {...styles.defaultTitle()}>Personal account</h2>
+          <p {...styles.defaultBody()}>alex@example.com</p>
+          <span {...styles.defaultStatus()}>Active</span>
         </article>
       </section>
     </div>
@@ -112,7 +104,7 @@ export function Schemes() {
   )
 }
 
-/** Shows the same card inside default, alternate, and nested base scopes. */
+/** Shows the same card inside default, alternate, and nested light base scopes. */
 export function Scopes() {
   return (
     <div {...styles.example()}>
@@ -124,8 +116,8 @@ export function Scopes() {
             <span {...styles.caption()}>Alternate</span>
             <Card />
             <section {...styles.scope()}>
-              <div {...vars({ set: 'base' })}>
-                <span {...styles.caption()}>Nested base</span>
+              <div {...vars({ colorScheme: 'light', set: 'base' })}>
+                <span {...styles.caption()}>Nested base, light</span>
                 <Card />
               </div>
             </section>
@@ -149,25 +141,14 @@ export function Tokens() {
 
 function Card() {
   return (
-    <article data-theme-card="" {...styles.card()}>
-      <h2>Account</h2>
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>Account</h2>
       <p>Manage account preferences.</p>
     </article>
   )
 }
 
 namespace styles {
-  export const account = ui({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 4,
-    borderTop: '1px solid light-dark(#e5e5e5, #2a2a2a)',
-    paddingTop: 4,
-    '& strong': { typography: 'label.14', fontWeight: 'medium' },
-  })
-
   export const caption = ui({
     color: '#a1a1a1 !custom',
     typography: 'copy.13',
@@ -177,13 +158,12 @@ namespace styles {
 
   export const card = style({
     backgroundColor: 'surface',
-    color: 'foreground',
-    padding: 'page',
     borderRadius: '12px',
-    maxWidth: '28rem !custom',
+    color: 'foreground',
     marginInline: 'auto !custom',
-    '& h2': { color: 'accent', margin: '0px !custom', fontSize: '1.25rem' },
-    '& p': { margin: '0px !custom', fontSize: '0.875rem' },
+    maxWidth: '28rem !custom',
+    padding: 'page',
+    '& p': { fontSize: '0.875rem', margin: '0px !custom' },
   })
 
   export const control = ui({
@@ -209,41 +189,34 @@ namespace styles {
 
   export const controls = ui({ display: 'flex', flexWrap: 'wrap', gap: 2 })
 
-  export const defaultBody = ui({
-    typography: 'copy.14',
-    opacity: 0.65,
-    margin: 0,
-  })
+  export const defaultBody = ui({ color: 'gray.900', typography: 'copy.14' })
 
   export const defaultCard = ui({
     backgroundColor: 'background.surface',
-    borderRadius: 'md',
-    color: 'foreground',
-    padding: 6,
-    maxWidth: '28rem !custom',
-    width: '100% !custom',
-    boxSizing: 'border-box',
-    marginInline: 'auto !custom',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 5,
     border: '1px solid',
     borderColor: 'gray.400',
+    borderRadius: 'md',
+    boxSizing: 'border-box',
+    color: 'foreground',
+    display: 'grid',
+    gap: 2,
+    justifyItems: 'start',
+    marginInline: 'auto !custom',
+    maxWidth: 'md',
+    padding: 6,
+    width: '100% !custom',
   })
 
   export const defaultStatus = ui({
-    color: 'blue.900',
     backgroundColor: 'blue.100',
-    borderRadius: '999px !custom',
+    borderRadius: '9999px !custom',
+    color: 'blue.900',
     paddingBlock: 1,
-    paddingInline: '10px !custom',
+    paddingInline: 3,
     typography: 'label.12',
   })
 
-  export const defaultTitle = ui({
-    typography: 'heading.20',
-    margin: '0px !custom !important',
-  })
+  export const defaultTitle = ui({ typography: 'heading.20' })
 
   export const example = ui({
     display: 'flex',
@@ -259,10 +232,11 @@ namespace styles {
     },
 
     '& p': {
-      color: 'inherit !custom !important',
       typography: 'copy.14',
       margin: '0px !custom !important',
     },
+    // Unstyled paragraphs inherit the scoped card color instead of the article's.
+    '& p:not([class])': { color: 'inherit !custom !important' },
     '@media (max-width: 640px)': { padding: 4 },
   })
 
@@ -274,9 +248,5 @@ namespace styles {
     padding: 3,
   })
 
-  export const details = style({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.25rem !custom',
-  })
+  export const title = style({ color: 'accent', fontSize: '1.25rem' })
 }

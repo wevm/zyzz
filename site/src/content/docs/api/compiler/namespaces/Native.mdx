@@ -37,7 +37,7 @@ Native.compile(options)
 
 - **Type:** `'light' | 'dark'{:ts}`
 
-The color scheme compiled into the callables. Color pairs resolve to this scheme's value, so another scheme needs another compilation.
+The color scheme compiled into the callables. Color pairs resolve to this scheme's value, so another scheme needs another compilation unless `contextual` keeps both.
 
 ```ts /colorScheme: 'dark'/
 // Resolves { light: '#171717', dark: '#fafafa' } to '#fafafa'
@@ -143,7 +143,7 @@ Native.compile({
 - **Type:** `string{:ts}`
 - **Default:** `'default'{:ts}`
 
-The `vars` label compiled into the callables. An unknown label throws `StyleSheet.SelectionError`.
+The `vars` label compiled into the callables. An unknown label throws `StyleSheet.SelectionError`, except with `contextual`, where it becomes the render-time default and fails when a Provider resolves it.
 
 ```ts /set: 'brand'/
 // Selects the `brand` table
@@ -286,7 +286,7 @@ Native.compile({ colorScheme: 'auto', moduleId: 'app/Label.tsx', source })
 
 ## Errors
 
-`Native.compile` returns no partial output. It throws `Source.ExtractError` for source outside the [static input](/docs/api/compiler/namespaces/Source#static-input), and `StyleSheet.SelectionError` from `zyzz/react-native` for an unknown `set`.
+`Native.compile` returns no partial output. It throws `Source.ExtractError` for source outside the [static input](/docs/api/compiler/namespaces/Source#static-input), and `StyleSheet.SelectionError` from `zyzz/react-native` for an unknown `set` without `contextual`.
 
 ### Native.CompileError
 

@@ -9,6 +9,7 @@ import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
 import { Steps } from '../components/mdx/Steps.js'
 import { SearchField } from '../components/SearchField.js'
 import * as Docs from '../Docs.js'
+import * as Manifest from '../Manifest.js'
 import { style, variants, vars } from '../zyzz.config.js'
 import {
   isValidElement,
@@ -152,7 +153,7 @@ export function Page(props: Page.Props) {
   const { path } = props
 
   const Content = Docs.pages[`./content/docs/${path}.mdx`]!
-  const page = __DOCS__.pages[path]!
+  const page = Manifest.pages[path]!
   return (
     <DocumentationShell
       mobileMenu
@@ -290,7 +291,7 @@ declare namespace Outline {
 function SidebarItem(props: SidebarItem.Props) {
   const { item, path } = props
   const enabled =
-    item.path !== undefined && Object.hasOwn(__DOCS__.pages, item.path)
+    item.path !== undefined && Object.hasOwn(Manifest.pages, item.path)
   const labelId = useId()
 
   // A section labels a run of pages inside a topic without adding another disclosure level.
@@ -393,8 +394,8 @@ function Code(input: Code.Props) {
   })()
 
   const source = children.props.children?.replace(/\n$/, '') ?? ''
-  const code = Object.hasOwn(__DOCS__.code, source)
-    ? __DOCS__.code[source]
+  const code = Object.hasOwn(Manifest.code, source)
+    ? Manifest.code[source]
     : undefined
   const text = code?.text ?? source
   const copyButton = (

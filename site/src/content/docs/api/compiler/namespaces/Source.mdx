@@ -58,7 +58,7 @@ Source.extract({ moduleId: 'app/Card.tsx', source: text })
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Whether a later step rewrites the module. With `false`, each call also carries a `portable` class identity, which the unchanged `style` calls compute at runtime.
+Whether a later step rewrites the module. With `false`, each static `style` call also carries a `portable` class identity, which the unchanged call computes at runtime. Dynamic styles, variants, and empty styles need an explicit `id` instead.
 
 ```ts /compiler: false/
 // calls[0].portable holds the class the runtime call returns

@@ -2,7 +2,7 @@
 
 Compile a source graph, linking configs and definitions across modules.
 
-`Graph.compile` takes a complete set of modules, resolves their imports, and rewrites each one with [`Transform.compile`](/docs/api/compiler/namespaces/Transform). Exported configs, imported definitions, and re-exports link without running source or reading files. Bundler plugins and the CLI call it for every build.
+`Graph.compile` takes a complete set of modules, resolves their imports, and rewrites each one with [`Transform.compile`](/docs/api/compiler/namespaces/Transform), or with [`Native.compile`](/docs/api/compiler/namespaces/Native) for a native graph. Exported configs, imported definitions, and re-exports link without running source or reading files. Bundler plugins and the CLI call it for every build.
 
 ```ts title="graph.ts"
 import { Graph } from 'zyzz/compiler'
@@ -197,7 +197,7 @@ output.dependencies['app/Card.tsx']
 
 - **Type:** `Readonly<Record<string, string>>{:ts}`
 
-Versioned contract JSON for each module, keyed by module ID. A library publishes the contract of each entrypoint beside its JavaScript, as `index.js.zyzz.json` for `index.js`.
+Versioned contract JSON, keyed by module ID, for modules that export configs, definitions, or their re-exports. Other modules have no entry. A library publishes the contract of each entrypoint beside its JavaScript, as `index.js.zyzz.json` for `index.js`.
 
 ```ts /output.contracts['library/index.ts']/
 // Published as index.js.zyzz.json after lowering index.ts

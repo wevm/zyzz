@@ -144,6 +144,24 @@ describe('Source API page', () => {
     )
   })
 
+  test('omits portable identities for dynamic styles and variants', () => {
+    const output = Source.extract({
+      compiler: false,
+      moduleId: 'app/Card.tsx',
+      source: `import { style, variants } from 'zyzz'
+export const bar = style((values: { alpha: number }) => ({ opacity: values.alpha }))
+export const button = variants({ variants: { tone: { loud: { opacity: 1 } } } })
+`,
+    })
+
+    expect(output.calls.map((call) => call.portable)).toMatchInlineSnapshot(`
+      [
+        undefined,
+        undefined,
+      ]
+    `)
+  })
+
   test('compiles extracted variable sets', async () => {
     const module = await run(await example('namespaces/Source', 'vars'))
 
@@ -451,6 +469,17 @@ describe('Graph API page', () => {
     `)
   })
 
+  test('emits contracts only for modules with compiler exports', () => {
+    const output = Graph.compile({
+      modules: {
+        'app/constants.ts': `export const size = 1
+`,
+      },
+    })
+
+    expect(output.contracts).toMatchInlineSnapshot(`{}`)
+  })
+
   test('requires host resolution for every import', () => {
     expect(() =>
       Graph.compile({
@@ -741,6 +770,20 @@ export const label = style({ opacity: 0.5 })
     ).toThrowErrorMatchingInlineSnapshot(
       `[StyleSheet.SelectionError: Select an existing set label and light or dark colorScheme.]`,
     )
+  })
+
+  test('defers set validation in contextual output', () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'app/Label.tsx',
+      set: 'missing',
+      source: `import { style } from 'zyzz'
+export const label = style({ opacity: 0.5 })
+`,
+    })
+
+    expect(output.code.includes('"missing"')).toMatchInlineSnapshot(`true`)
   })
 
   test('runs the compiled callables', async () => {

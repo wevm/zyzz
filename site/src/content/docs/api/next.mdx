@@ -60,7 +60,7 @@ export default zyzz({ reactStrictMode: true }, { reset: true })
 
 - **Type:** `NextConfig | Promise<NextConfig> | zyzz.Factory{:ts}`
 
-A configuration of the same form as the input, with the Zyzz loader and a Lightning CSS exclusion that preserves `light-dark()`. A factory or promise resolves before the integration is attached.
+A configuration of the same form as the input, with the Zyzz loader and a Lightning CSS exclusion that preserves `light-dark()`. Theme colors therefore need native `light-dark()` support in the [target browsers](/docs/introduction/compatibility#browsers). A factory or promise resolves before the integration is attached.
 
 ```ts title="next.config.ts"
 import type { NextConfig } from 'next'

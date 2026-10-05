@@ -1071,7 +1071,10 @@ async function shell(
   } finally {
     if (child.exitCode === null && child.signalCode === null) {
       child.kill('SIGTERM')
+      // A stuck publication can hold shutdown open, so the wait is bounded.
+      const timer = setTimeout(() => child.kill('SIGKILL'), 10_000)
       await exited
+      clearTimeout(timer)
     }
   }
 }

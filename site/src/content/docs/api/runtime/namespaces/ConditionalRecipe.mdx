@@ -159,10 +159,10 @@ button({ size: 'large', style: { padding: '24px' } }).style
 
 ### input.conditions
 
-- **Type:** `{ [condition: string]: { [axis: string]: string | boolean | null | undefined } }{:ts}`
+- **Type:** `{ [condition: string]: { [axis: string]: string | boolean | null | undefined } | undefined }{:ts}`
 - **Default:** `undefined{:ts}`
 
-Selections that apply inside each named condition. A choice serializes with an `s` prefix, and `null` serializes as `n`, which clears the axis inside the condition. Omitted and `undefined` entries add no attribute.
+Selections that apply inside each named condition. A choice serializes with an `s` prefix, and `null` serializes as `n`, which clears the axis inside the condition. Omitted and `undefined` conditions or entries add no attribute.
 
 ```ts /wide: { size: null }/
 // Adds 'data-zyzz-condition-0-size': 'n'
@@ -182,7 +182,7 @@ props.className
 
 ### data-[axis]
 
-- **Type:** `string{:ts}`
+- **Type:** `string | undefined{:ts}`
 
 The unconditional choice of each selected axis. A cleared or unselected axis has no attribute.
 
@@ -204,7 +204,7 @@ button({ style: { padding: '24px' }, vars: { '--accent': 'crimson' } }).style
 
 ### data-zyzz-condition-[index]-[axis]
 
-- **Type:** `string{:ts}`
+- **Type:** `string | undefined{:ts}`
 
 One returned attribute per conditional selection, beside the unconditional `data-[axis]` attributes.
 

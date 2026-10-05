@@ -120,6 +120,39 @@ A compiled callable that returns React-shaped props. The returned function accep
 const html = Html.bind(card)
 ```
 
+### class
+
+- **Type:** `string{:ts}`
+
+The wrapped callable's `className`.
+
+```ts /html({ className: 'wide' }).class/
+// 'z-card wide'
+html({ className: 'wide' }).class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The wrapped callable's `style`, serialized as `Html.from` serializes it, and present only when the props have one.
+
+```ts /html({ style: { padding: '1rem' } }).style/
+// 'padding:1rem'
+html({ style: { padding: '1rem' } }).style
+```
+
+### data-[name]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the wrapped callable's props, copied unchanged.
+
+```ts /Html.bind(button)({})['data-size']/
+// 'large' for a recipe whose default size is large
+Html.bind(button)({})['data-size']
+```
+
 ## Html.create
 
 ```ts

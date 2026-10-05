@@ -156,6 +156,41 @@ Applied props. The result equals [`Html.from`](/docs/api/runtime/namespaces/Html
 const attributes = CompositionHtml.from({ className: 'z-card' })
 ```
 
+### class
+
+- **Type:** `string{:ts}`
+
+The `className` of the props.
+
+```ts /.class/
+// 'z-card'
+CompositionHtml.from({ className: 'z-card' }).class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The serialized `style` of the props, present only when the props have one.
+
+```ts /.style/
+// 'padding:1rem'
+CompositionHtml.from({ className: 'z-card', style: { padding: '1rem' } }).style
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the props, copied unchanged.
+
+```ts /['data-size']/
+// 'large'
+CompositionHtml.from({ className: 'z-button', 'data-size': 'large' })[
+  'data-size'
+]
+```
+
 ## Errors
 
 Attributes without retained props, such as plain `Html.from` output, contribute nothing to a composition. Like [`Composition.create`](/docs/api/runtime/namespaces/Composition#errors), the `create` callable throws a `TypeError` for a retained entry beyond `options.inputs`, which generated calls never pass. A `bind` wrapper propagates any error thrown by the wrapped `fn`.

@@ -612,6 +612,18 @@ describe('Selection API page', () => {
         },
       }
     `)
+    expect(
+      Selection.create([['mint', 'z-theme-mint']], true)({ set: 'mint' }).class,
+    ).toMatchInlineSnapshot(`"z-theme-mint"`)
+    expect(
+      Selection.create(
+        [['mint', 'z-theme-mint']],
+        true,
+      )({
+        colorScheme: 'dark',
+        set: 'mint',
+      }).style,
+    ).toMatchInlineSnapshot(`"color-scheme:dark"`)
   })
 })
 
@@ -983,6 +995,32 @@ describe('NativeDynamic API page', () => {
     expect(() => grid({ gap: Number.NaN })).toThrowErrorMatchingInlineSnapshot(
       `[Native.SelectionError: Missing or invalid native payload: gap.]`,
     )
+  })
+
+  test('scales px lengths by units.px', () => {
+    const box = NativeDynamic.create({
+      axes: {},
+      defaults: {},
+      program: {
+        rules: [
+          {
+            matches: [],
+            steps: [{ parts: [{ slot: '--box-width' }], property: 'width' }],
+          },
+        ],
+        slots: { width: '--box-width' },
+      },
+      styles: {},
+      units: { px: 2 },
+    }) as unknown as (input: { width: string }) => unknown
+
+    expect(box({ width: '4px' })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "width": 8,
+        },
+      }
+    `)
   })
 })
 

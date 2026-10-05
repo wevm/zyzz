@@ -154,11 +154,16 @@ NativeDynamic.create({
 - **Type:** `{ px?: number; rem?: number }{:ts}`
 - **Default:** `undefined{:ts}`
 
-Explicit logical-unit scales for converting bound lengths. A bound `rem` value throws without `rem`.
+Logical-unit scales for converting bound lengths. `px` multiplies bound `px` lengths and defaults to `1`. `rem` has no default, so a bound `rem` value throws without it.
 
 ```ts /units: { rem: 16 }/
 // '1rem' binds as 16
 NativeDynamic.create({ axes, defaults, program, styles, units: { rem: 16 } })
+```
+
+```ts /px: 2/
+// '4px' binds as 8
+NativeDynamic.create({ axes, defaults, program, styles, units: { px: 2 } })
 ```
 
 ### options.fonts

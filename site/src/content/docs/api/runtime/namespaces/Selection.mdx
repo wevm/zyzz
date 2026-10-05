@@ -110,22 +110,44 @@ vars({ set: 'mint', colorScheme: 'dark' })
 
 - **Type:** `string{:ts}`
 
-The set's scope class, followed by the scheme class when a scheme is selected. HTML output names it `class`.
+The set's scope class, followed by the scheme class when a scheme is selected.
 
 ```ts /props.className/
 // 'z-theme-mint z_scheme-dark'
 props.className
 ```
 
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `html` is `true`, which returns `class` in place of `className`.
+
+```ts /.class/
+// 'z-theme-mint'
+Selection.create([['mint', 'z-theme-mint']], true)({ set: 'mint' }).class
+```
+
 ### style
 
-- **Type:** `{ colorScheme: 'light' | 'dark' | 'light dark' } | undefined{:ts}`
+- **Type:** `{ colorScheme: 'light' | 'dark' | 'light dark' } | string | undefined{:ts}`
 
-The inline `color-scheme`, present only with a scheme. The scheme class carries the same declaration in the stylesheet, which lowered `light-dark()` fallbacks require. HTML output serializes it to a string.
+The inline `color-scheme`, present only with a scheme. The scheme class carries the same declaration in the stylesheet, which lowered `light-dark()` fallbacks require. With `html` set to `true`, it is the serialized string.
 
 ```ts /props.style/
 // { colorScheme: 'dark' }
 props.style
+```
+
+```ts /true/
+// 'color-scheme:dark'
+Selection.create(
+  [['mint', 'z-theme-mint']],
+  true,
+)({
+  colorScheme: 'dark',
+  set: 'mint',
+}).style
 ```
 
 ## Types

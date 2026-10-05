@@ -93,9 +93,8 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Host.create](api/node/Host/create.md): Reference and examples.
 - [Host.watch](api/node/Host/watch.md): Reference and examples.
 - [zyzz/oxlint](https://zyzz.sh/docs/api/oxlint.md): Lint web styles and JSX applications.
-- [zyzz/runtime](api/runtime/README.md): Section index.
-- [Props](api/runtime/Props/README.md): Section index.
-- [Props.create](api/runtime/Props/create.md): Reference and examples.
+- [zyzz/runtime](https://zyzz.sh/docs/api/runtime.md): Section index.
+- [Props](https://zyzz.sh/docs/api/runtime/namespaces/Props.md): Reference and examples.
 
 ## Introduction Reference
 

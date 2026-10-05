@@ -1,0 +1,183 @@
+# Selection
+
+Select a compiled variable set and an optional color scheme for one element's subtree.
+
+The compiler rewrites the `vars` helper returned by [`defineConfig`](/docs/api/core/defineConfig/vars) into a `Selection.create` call. Applications normally do not import it. The selector returns the set's scope class, plus a scheme class and an inline `color-scheme` when a scheme is selected.
+
+```ts title="vars.ts"
+import { Selection } from 'zyzz/runtime'
+
+// [!code hl:5]
+// Set names paired with compiled scope classes
+const vars = Selection.create([
+  ['base', 'z-theme-base'],
+  ['mint', 'z-theme-mint'],
+])
+
+// { className: 'z-theme-mint z_scheme-dark', style: { colorScheme: 'dark' } }
+export const props = vars({ set: 'mint', colorScheme: 'dark' })
+```
+
+## Signature
+
+```ts
+// Typed selector over a set catalog
+Selection.create(entries, html?)
+
+// Generated form with a default set
+Selection.create(entries, html, 'set', defaultSet?)
+```
+
+## Parameters
+
+### entries
+
+- **Type:** `readonly (readonly [string, string])[]{:ts}`
+
+Set names paired with their compiled scope classes. The names infer the accepted `set` values.
+
+```ts /[['base', 'z-theme-base']]/
+// A catalog with one set
+Selection.create([['base', 'z-theme-base']])
+```
+
+### html
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Return `class` and a serialized `style` instead of React props.
+
+```ts /true/
+// { class: 'z-theme-base z_scheme-light-dark', style: 'color-scheme:light dark' }
+Selection.create(
+  [['base', 'z-theme-base']],
+  true,
+)({ set: 'base', colorScheme: 'light dark' })
+```
+
+### key
+
+- **Type:** `'set'{:ts}`
+
+The input field that names the set. It is always `'set'`, and the selector rejects every other field except `colorScheme`.
+
+This generated overload is typed broadly. Its `set` accepts any string, and its result has optional `className`, `class`, and an `unknown` `style`, so TypeScript callers narrow the result by `html`.
+
+```ts /'set'/
+// Generated code passes the key before the default set
+Selection.create(entries, false, 'set', 'base')
+```
+
+### defaultSet
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The set used when the input omits `set`. Generated code passes the configuration's `defaultVars`, so `vars()` and `vars({ colorScheme })` select it.
+
+```ts /'base'/
+// { className: 'z-theme-base z_scheme-dark', style: { colorScheme: 'dark' } }
+Selection.create(entries, false, 'set', 'base')({ colorScheme: 'dark' })
+```
+
+## Application
+
+### options.set
+
+- **Type:** `name{:ts}`
+
+One catalog name, inferred from `entries`. It is required unless the selector has a default set.
+
+```ts /set: 'base'/
+// { className: 'z-theme-base' }
+vars({ set: 'base' })
+```
+
+### options.colorScheme
+
+- **Type:** `'light' | 'dark' | 'light dark'{:ts}`
+- **Default:** `undefined{:ts}`
+
+The scheme for the subtree. Omitting it adds no scheme class, so the subtree inherits its scheme.
+
+```ts /colorScheme: 'dark'/
+// Adds z_scheme-dark and an inline color-scheme
+vars({ set: 'mint', colorScheme: 'dark' })
+```
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The set's scope class, followed by the scheme class when a scheme is selected.
+
+```ts /props.className/
+// 'z-theme-mint z_scheme-dark'
+props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `html` is `true`, which returns `class` in place of `className`.
+
+```ts /.class/
+// 'z-theme-mint'
+Selection.create([['mint', 'z-theme-mint']], true)({ set: 'mint' }).class
+```
+
+### style
+
+- **Type:** `{ colorScheme: 'light' | 'dark' | 'light dark' } | string | undefined{:ts}`
+
+The inline `color-scheme`, present only with a scheme. The scheme class carries the same declaration in the stylesheet, which lowered `light-dark()` fallbacks require. With `html` set to `true`, it is the serialized string.
+
+```ts /props.style/
+// { colorScheme: 'dark' }
+props.style
+```
+
+```ts /true/
+// 'color-scheme:dark'
+Selection.create(
+  [['mint', 'z-theme-mint']],
+  true,
+)({
+  colorScheme: 'dark',
+  set: 'mint',
+}).style
+```
+
+## Types
+
+- **`Selection.create.ReturnType<name, html>{:ts}`:** The selector for set names `name`, returning HTML attributes when `html` is `true`.
+
+```ts title="selector.ts"
+import type { Selection } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A selector over two sets with React output
+export type Selector = Selection.create.ReturnType<'base' | 'mint'>
+```
+
+## Errors
+
+The selector throws a `TypeError` for an unknown set name, an unsupported scheme, an option key other than `set` and `colorScheme`, or a missing `set` without a default set.
+
+```ts title="invalid.ts"
+import { Selection } from 'zyzz/runtime'
+
+const vars = Selection.create([['base', 'z-theme-base']])
+
+try {
+  // `mint` is not in the catalog
+  vars({ set: 'mint' } as never)
+} catch (error) {
+  // [!code hl]
+  if (error instanceof TypeError) console.error(error.message)
+}
+```

@@ -1,0 +1,196 @@
+# CompositionHtml
+
+Keep the canonical props behind HTML attributes, so a composition serializes them once.
+
+HTML attributes hold a serialized `style` string, which a composition cannot merge without parsing CSS. The compiler wraps each HTML definition passed to [`cx`](/docs/api/core/cx) with `CompositionHtml.bind`, and the composition reads the original props back. Applications normally do not import it.
+
+```ts title="compose.ts"
+import { CompositionHtml, Props } from 'zyzz/runtime'
+
+// [!code hl:2]
+// Attributes that also retain their React-shaped props
+const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
+
+const compose = CompositionHtml.create({
+  className: 'z-card-composed',
+  inputs: [{ className: 'z-card', owners: [] }],
+})
+
+// { class: 'z-card-composed', style: 'padding:1rem' }
+export const attributes = compose(card({ style: { padding: '1rem' } }))
+```
+
+## CompositionHtml.bind
+
+```ts
+// Wrap a callable compiled with React-shaped output
+CompositionHtml.bind(fn)
+```
+
+### fn
+
+- **Type:** `(...args) => style.Props | Html.Attributes{:ts}`
+
+A compiled callable created with HTML output disabled. The returned function takes the same arguments and converts each result with `CompositionHtml.from`.
+
+The declared type also accepts a callable returning `Html.Attributes`, but `bind` reads its result as React-shaped props. Such a wrapper returns `{ class: undefined }`, and a composition of it throws a `TypeError`.
+
+```ts /CompositionHtml.bind/
+// Returns `{ class: 'z-card' }` with retained props
+const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The wrapped callable's `className`, as [`Html.from`](/docs/api/runtime/namespaces/Html#class) names it.
+
+```ts /card().class/
+// 'z-card'
+card().class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The inline styles serialized once, present only when the props have a `style`. A later composition merges the retained props instead of parsing this string.
+
+```ts /card({ style: { padding: '1rem' } }).style/
+// 'padding:1rem'
+card({ style: { padding: '1rem' } }).style
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the wrapped callable's props, copied unchanged.
+
+```ts /CompositionHtml.bind(button)()/
+// 'large' for a recipe whose default size is large
+CompositionHtml.bind(button)()['data-size']
+```
+
+## CompositionHtml.create
+
+```ts
+// The HTML form of Composition.create
+CompositionHtml.create(options)
+```
+
+### options
+
+- **Type:** `Composition.create.Options{:ts}`
+
+The precompiled class lists and argument metadata of [`Composition.create`](/docs/api/runtime/namespaces/Composition#parameters). The callable accepts attributes from `bind` or `from`, plus `false`, `null`, and `undefined`, merges their retained props, and serializes the result once.
+
+```ts /inputs/
+// One argument whose generated class the composition replaces
+CompositionHtml.create({
+  className: 'z-card-composed',
+  inputs: [{ className: 'z-card', owners: [] }],
+})
+```
+
+### entries
+
+- **Type:** `readonly (Html.Attributes | false | null | undefined)[]{:ts}`
+
+Attributes in the order of `options.inputs`, with the [`Composition`](/docs/api/runtime/namespaces/Composition#entries) merge rules applied to their retained props. Attributes without retained props contribute nothing.
+
+```ts /card({ style: { padding: '1rem' } })/
+// Merges the retained props of one bound card
+compose(card({ style: { padding: '1rem' } }))
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The selected precompiled class list, followed by external classes in argument order.
+
+```ts /attributes.class/
+// 'z-card-composed'
+attributes.class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The merged inline styles serialized once, present only when a style remains.
+
+```ts /attributes.style/
+// 'padding:1rem'
+attributes.style
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the retained props, with later arguments winning.
+
+```ts /compose(button())['data-size']/
+// 'large' for a bound recipe whose default size is large
+compose(button())['data-size']
+```
+
+## CompositionHtml.from
+
+```ts
+// Convert props and retain them for a later composition
+CompositionHtml.from(props)
+```
+
+### props
+
+- **Type:** ``style.Props & { [name: `data-${string}`]: string | undefined }{:ts}``
+
+Applied props. The result equals [`Html.from`](/docs/api/runtime/namespaces/Html#htmlfrom) with the props attached under a nonenumerable `Symbol.for('zyzz.composition.input.v1')` key. The key is shared across copies of the runtime, such as separate SSR and client module graphs.
+
+```ts /CompositionHtml.from/
+// Spreading or serializing the attributes ignores the retained props
+const attributes = CompositionHtml.from({ className: 'z-card' })
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The `className` of the props.
+
+```ts /.class/
+// 'z-card'
+CompositionHtml.from({ className: 'z-card' }).class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The serialized `style` of the props, present only when the props have one.
+
+```ts /.style/
+// 'padding:1rem'
+CompositionHtml.from({ className: 'z-card', style: { padding: '1rem' } }).style
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the props, copied unchanged.
+
+```ts /['data-size']/
+// 'large'
+CompositionHtml.from({ className: 'z-button', 'data-size': 'large' })[
+  'data-size'
+]
+```
+
+## Errors
+
+Attributes without retained props, such as plain `Html.from` output, contribute nothing to a composition. Like [`Composition.create`](/docs/api/runtime/namespaces/Composition#errors), the `create` callable throws a `TypeError` for a retained entry beyond `options.inputs`, which generated calls never pass. A `bind` wrapper propagates any error thrown by the wrapped `fn`.

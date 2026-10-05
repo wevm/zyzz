@@ -272,11 +272,33 @@ describe('/docs', () => {
           .getByRole('link', { name: 'style', exact: true })
           .getAttribute('aria-current'),
       ).toMatchInlineSnapshot('"page"')
+      // Every Core export has a page, so no entry renders as under construction.
       expect(
-        await authoring
-          .getByRole('link', { name: 'variants', exact: false })
-          .getAttribute('aria-disabled'),
-      ).toMatchInlineSnapshot('"true"')
+        await core
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map((link) => link.getAttribute('href') ?? 'disabled'),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "/docs/api/core",
+          "/docs/api/core/style",
+          "/docs/api/core/variants",
+          "/docs/api/core/cx",
+          "/docs/api/core/variable",
+          "/docs/api/core/defineConfig",
+          "/docs/api/core/defineVars",
+          "/docs/api/core/extendVars",
+          "/docs/api/core/defineConfig/vars",
+          "/docs/api/core/defineConfig/appearance",
+          "/docs/api/core/defineConfig/script",
+          "/docs/api/core/namespaces/Config",
+          "/docs/api/core/namespaces/Props",
+          "/docs/api/core/namespaces/Style",
+          "/docs/api/core/namespaces/Vars",
+          "/docs/api/core/values",
+        ]
+      `)
       expect(await navigation.getByRole('heading').allTextContents())
         .toMatchInlineSnapshot(`
         [

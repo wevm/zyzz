@@ -1,0 +1,150 @@
+# vars
+
+Reference tokens, and select a variable set or color scheme for a subtree.
+
+`vars` comes from [`defineConfig`](/docs/api/core/defineConfig). It is a function that returns scope props for one element, and a tree of token references with the same paths as the config's set. Selecting a scope emits no CSS, because the compiler emits every set ahead of time.
+
+```tsx title="Preview.tsx"
+import type { ReactNode } from 'react'
+import { style, vars } from './zyzz.config.js'
+
+export function Preview(props: Preview.Props) {
+  return (
+    // [!code hl:2]
+    // Descendants read the roomy set in the dark scheme
+    <section {...vars({ colorScheme: 'dark', set: 'roomy' })}>
+      <div {...styles.panel()}>{props.children}</div>
+    </section>
+  )
+}
+
+export declare namespace Preview {
+  type Props = { children: ReactNode }
+}
+
+namespace styles {
+  // [!code hl]
+  export const panel = style({ padding: vars.spacing.page })
+}
+```
+
+## Signature
+
+```ts
+// Scope props for one element
+vars(options?)
+
+// A token reference
+vars.spacing.page
+```
+
+## Parameters
+
+### options.set
+
+- **Type:** `string{:ts}`
+- **Default:** The config's `defaultVars`
+
+The catalog key of the set for the element and its descendants. Configs with a single set accept only `colorScheme`, and the nearest enclosing scope supplies each variable's value.
+
+```ts /set: 'roomy'/
+// Applies the roomy set's values inside this element
+vars({ set: 'roomy' })
+```
+
+### options.colorScheme
+
+- **Type:** `'light' | 'dark' | 'light dark'{:ts}`
+- **Default:** `undefined{:ts}`
+
+The color scheme for the element, which selects one side of each color pair. `'light dark'` follows the operating system preference, and omitting it inherits the surrounding scheme.
+
+```ts /colorScheme: 'dark'/
+// Fixes the dark scheme regardless of the page scheme
+vars({ colorScheme: 'dark' })
+```
+
+## References
+
+Each path in the set is a reference, usable in any style property whose CSS syntax matches the value, regardless of category mappings. A reference reads the value of the nearest scope, so the same style changes with the selected set.
+
+```ts
+import { style, vars } from './zyzz.config.js'
+
+// [!code hl:2]
+// A spacing reference in a property with no spacing mapping
+const rail = style({ width: vars.spacing.page })
+```
+
+References keep their source identity through imports, re-exports, and compiled libraries, and an extension's values replace the base set's values inside its scope.
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The compiled scope class of the selected set, followed by the color scheme class when `colorScheme` is passed.
+
+```tsx /{...vars({ set: 'roomy' })}/
+// Spreading assigns the scope class and color scheme together
+<section {...vars({ set: 'roomy' })} />
+```
+
+### style
+
+- **Type:** `{ colorScheme: string } | undefined{:ts}`
+
+An inline `color-scheme` matching `options.colorScheme`, so browser-drawn controls and scrollbars follow it. Configs with `output: 'html'` return `class` and a serialized `style` string instead.
+
+```ts /props/
+// { className: '…', style: { colorScheme: 'dark' } }
+const props = vars({ colorScheme: 'dark' })
+```
+
+## Errors
+
+TypeScript rejects set names outside the catalog and unknown schemes. At runtime, the same input throws a `TypeError`.
+
+```ts twoslash
+// @errors: 2322
+import { defineConfig, defineVars, extendVars } from 'zyzz'
+
+const base = defineVars({ spacing: { page: '1rem' } })
+const roomy = extendVars(base, { spacing: { page: '2rem' } })
+const { vars } = defineConfig({ defaultVars: 'base', vars: { base, roomy } })
+
+// `compact` is not in the catalog
+vars({ set: 'compact' })
+```
+
+## React Native
+
+Scope props have no native equivalent. The `Provider` from the native [`defineConfig`](/docs/api/core/defineConfig#react-native) takes the same `vars` and `colorScheme` selection, and references resolve to native values in styles.
+
+```tsx title="Screen.tsx"
+import type { ReactNode } from 'react'
+import { defineVars, extendVars } from 'zyzz'
+import { defineConfig } from 'zyzz/react-native'
+
+const base = defineVars({ spacing: { page: '16px' } })
+const roomy = extendVars(base, { spacing: { page: '24px' } })
+const { Provider } = defineConfig({
+  defaultVars: 'base',
+  vars: { base, roomy },
+})
+
+export function Screen(props: Screen.Props) {
+  // [!code hl:2]
+  // The native counterpart of vars({ colorScheme: 'dark', set: 'roomy' })
+  return (
+    <Provider colorScheme="dark" vars="roomy">
+      {props.children}
+    </Provider>
+  )
+}
+
+export declare namespace Screen {
+  type Props = { children: ReactNode }
+}
+```

@@ -732,7 +732,7 @@ const roomy = extendVars(base, { spacing: { gutter: '2rem' } })
 export const { style, vars } = defineConfig({ vars: roomy })
 ```
 
-`extendVars` changes existing paths while retaining their contract. Add new paths to the base definition when designing a shared contract. It is not an unrestricted merge of arbitrary new token groups. See [extendVars](../api/core/Vars/README.md).
+`extendVars` changes existing paths while retaining their contract. Add new paths to the base definition when designing a shared contract. It is not an unrestricted merge of arbitrary new token groups. See [extendVars](https://zyzz.sh/docs/api/core/extendVars).
 
 ### Replace Defaults
 

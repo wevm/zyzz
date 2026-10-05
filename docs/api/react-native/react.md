@@ -52,7 +52,7 @@ export function Root() {
 
 ## defineConfig
 
-The native `defineConfig` accepts the same [configuration options](../core/Config/create.md) as shared `defineConfig` from `zyzz`. It returns the same `style`, `variants`, and `vars` helpers, plus a `Provider` whose variable names are inferred from the configuration. Define configurations at module scope.
+The native `defineConfig` accepts the same [configuration options](https://zyzz.sh/docs/api/core/defineConfig) as shared `defineConfig` from `zyzz`. It returns the same `style`, `variants`, and `vars` helpers, plus a `Provider` whose variable names are inferred from the configuration. Define configurations at module scope.
 
 Native configuration modules require a native compilation target, including when publishing packed packages. `zyzz/metro` supplies this target and enables Provider selection. Explicit graph builds supply `Graph.compile({ native: { contextual: true, colorScheme: 'light', platform: 'ios' }, modules })`. Shared configuration from `zyzz` remains independent of React and usable across targets.
 

@@ -325,7 +325,7 @@ A `*` stands for longhands, so `margin*` covers properties such as `marginTop` a
 
 </Callout>
 
-A key named after a property, such as `padding` or `zIndex`, applies only to that property and takes precedence over a shared key such as `spacing`. [Category fallbacks](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md#category-fallbacks) documents the full lookup order.
+A key named after a property, such as `padding` or `zIndex`, applies only to that property and takes precedence over a shared key such as `spacing`. [Category fallbacks](/docs/api/core/defineConfig#category-fallbacks) documents the full lookup order.
 
 ### Reference Tokens
 
@@ -644,7 +644,7 @@ The server markup keeps the default selection, and the script replaces it only w
 - **CSP:** Pass the application's nonce, or allow a hash of the generated source.
 - **Hydration:** `suppressHydrationWarning` covers the root attributes that the script changes before React hydrates.
 
-[Config Script](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md) documents the stored record and framework constraints.
+[Config Script](/docs/api/core/defineConfig/script) documents the stored record and framework constraints.
 
 ### Use Bundled Tokens
 
@@ -752,7 +752,7 @@ export const { style, vars } = defineConfig({
 
 In the alternate set, `foreground` turns blue in the light scheme and keeps the paper color in the dark scheme. The semantic token references the palette of whichever set is active, so a palette override needs no change to `foreground`.
 
-The callback must be synchronous and return a literal object, because the compiler reads it without running it. It cannot reference other derived tokens or redefine a palette path. [Vars](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md) covers references between separate sets and cycle validation.
+The callback must be synchronous and return a literal object, because the compiler reads it without running it. It cannot reference other derived tokens or redefine a palette path. [defineVars](/docs/api/core/defineVars) covers references between separate sets and cycle validation.
 
 ### Adjust Color Opacity
 
@@ -1006,7 +1006,7 @@ namespace styles {
 - **`mappings: false`:** Requires full paths such as `'surface.panel'` everywhere.
 - **Dedicated categories:** A category such as `padding` takes precedence over `spacing` for the same name.
 
-Avoid mappings that give one property the same name from two categories. [Config.create](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#full-variable-paths) shows full-path authoring.
+Avoid mappings that give one property the same name from two categories. [Config.create](/docs/api/core/defineConfig#optionsmappings) shows full-path authoring.
 
 ### Compile Without Bundlers
 

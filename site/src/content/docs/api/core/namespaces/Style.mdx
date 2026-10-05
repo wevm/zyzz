@@ -1,0 +1,117 @@
+# Style
+
+Define and validate ordered style data, with the shared style types and errors.
+
+`Style.define` copies plain style objects into frozen, ordered data for the compilers, such as `Css.compile` from `zyzz/web`. It runs without a compiler transform and creates no CSS. Applications author styles with [`style`](/docs/api/core/style) instead.
+
+```ts title="compile.ts"
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+// [!code hl]
+const styles = Style.define({ card: { padding: '1rem', paddingLeft: 0 } })
+
+// Emits the rules and the class list for each named style
+const { classes, css } = Css.compile({ styles })
+```
+
+## Signature
+
+```ts
+// Named styles, validated and frozen
+Style.define(styles, options?)
+```
+
+## Parameters
+
+### styles
+
+- **Type:** `{ [name: string]: Style.Properties }{:ts}`
+
+Named plain objects of declarations, with the same values and `targets` branches as a [`style`](/docs/api/core/style#styles) definition. Declarations keep their own-property order, and names infer as literal strings.
+
+```ts /card: { display: 'flex', padding: '1rem' }/
+// One named style with two declarations
+Style.define({ card: { display: 'flex', padding: '1rem' } })
+```
+
+### options.vars
+
+- **Type:** `Vars.Definition{:ts}`
+- **Default:** `undefined{:ts}`
+
+A variable set whose token names the styles may use, as with a configured `style`.
+
+```ts /{ vars: base }/
+// `md` resolves through the set's spacing category
+Style.define({ card: { padding: 'md' } }, { vars: base })
+```
+
+### options.locations
+
+- **Type:** `readonly Style.SourceLocation[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Source spans attached to diagnostics whose path matches exactly. Callers supply the offsets, since `Style.define` never parses source text.
+
+```ts /locations/
+// A diagnostic at card.padding reports this span
+Style.define(input, {
+  locations: [
+    { end: 10, path: ['card', 'padding'], source: 'card.ts', start: 0 },
+  ],
+})
+```
+
+## Returns
+
+### styles
+
+- **Type:** `readonly Style.NamedStyle[]{:ts}`
+
+The named styles in input order, each with its frozen declarations. Fallback arrays expand in place, and importance is stored on each declaration instead of in its value.
+
+```ts /styles.styles[0]?.declarations/
+// [{ property: 'display', value: 'flex' }, { property: 'padding', value: '1rem' }]
+styles.styles[0]?.declarations
+```
+
+## Types
+
+- **`Style.Declaration{:ts}`:** One property, value, and importance flag.
+- **`Style.Definition{:ts}`:** The returned data.
+- **`Style.Diagnostic{:ts}`:** One validation failure, with a code, path, and message.
+- **`Style.LiteralProperties{:ts}`:** The declarations accepted by `style` and `variants`.
+- **`Style.NamedStyle{:ts}`:** One named style and its declarations.
+- **`Style.Properties{:ts}`:** Declarations, optionally with token names.
+- **`Style.SourceLocation{:ts}`:** A caller-supplied source span.
+- **`Style.TargetBranches{:ts}`:** The `targets` branches of a style.
+
+```ts title="tokens.ts"
+import type { Style } from 'zyzz'
+
+// [!code hl:2]
+// A reusable block of declarations checked against the supported values
+export const focusRing = {
+  outline: '2px solid',
+  outlineOffset: '2px',
+} satisfies Style.LiteralProperties
+```
+
+## Errors
+
+### Style.InvalidError
+
+Thrown when input cannot form ordered declarations, such as accessors, class instances, empty names, or sparse and empty fallback arrays. `diagnostics` lists every failure in traversal order. CSS properties and values are checked by TypeScript instead.
+
+```ts
+import { Style } from 'zyzz'
+
+try {
+  // An empty fallback array has no declaration to emit
+  Style.define({ card: { display: [] as never } })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Style.InvalidError) console.error(error.diagnostics)
+}
+```

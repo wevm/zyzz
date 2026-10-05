@@ -1,0 +1,363 @@
+# defineConfig
+
+Bind style and recipe helpers to a variable set, and return the config helpers.
+
+A config module calls `defineConfig` once and exports the helpers it needs. Styles that import `style` from that module accept the set's token names, and the compiler emits the set's custom properties ahead of time.
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  color: { foreground: { light: '#171717', dark: '#fafafa' } },
+  spacing: { page: '1rem' },
+})
+
+// [!code hl:3]
+export const { appearance, script, style, variants, vars } = defineConfig({
+  vars: base,
+})
+```
+
+`defineConfig` is the root alias of `Config.create`, with the same options and inferred helpers.
+
+## Signature
+
+```ts
+// Helpers bound to the options
+defineConfig(options?)
+```
+
+## Parameters
+
+### options.vars
+
+- **Type:** `Vars.Definition | Vars.Values | { [name: string]: Vars.Definition | Vars.Values }{:ts}`
+- **Default:** `undefined{:ts}`
+
+One variable set, an inline record of values, or a catalog of named sets. Omit it for token-free helpers. A catalog requires `defaultVars`, and every named set must share the default set's paths and value types.
+
+```ts
+import { defineConfig, defineVars, extendVars } from 'zyzz'
+
+const base = defineVars({ spacing: { page: '1rem' } })
+const roomy = extendVars(base, { spacing: { page: '2rem' } })
+
+// [!code hl]
+export const { style, vars } = defineConfig({
+  defaultVars: 'base',
+  vars: { base, roomy },
+})
+```
+
+### options.defaultVars
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The catalog key applied when a scope or the document selects no set. It is required when `vars` holds named sets.
+
+```ts /defaultVars: 'base'/
+// Applies `base` until a scope selects `roomy`
+defineConfig({ defaultVars: 'base', vars: { base, roomy } })
+```
+
+### options.mappings
+
+- **Type:** `{ [category: string]: readonly string[] } | false{:ts}`
+- **Default:** `undefined{:ts}`
+
+Category-to-property mappings for token names. Each supplied category replaces its default properties, and `[]` disables that category's names. `false` turns off short names, so styles reference tokens by full path, such as `'spacing.page'`.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  // [!code hl:4]
+  mappings: {
+    color: ['color', 'backgroundColor'],
+    spacing: ['padding', 'gap'],
+  },
+  vars: { color: { brand: '#06c' }, spacing: { md: '8px' } },
+})
+```
+
+[Category Fallbacks](#category-fallbacks) lists the default mappings and their lookup order.
+
+### options.shorthands
+
+- **Type:** `{ [alias: string]: readonly string[] }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Local property aliases that expand to one or more CSS properties. Each expanded property validates the value on its own.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  // [!code hl]
+  shorthands: { px: ['paddingLeft', 'paddingRight'] },
+  vars: { spacing: { md: '8px' } },
+})
+
+// Emits padding-left and padding-right
+const chip = style({ px: 'md' })
+```
+
+### options.layers
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Ordered CSS layer names, emitted as one `@layer` statement. Names are plain or dotted CSS identifiers. Styles place declarations in a layer with an `@layer` key.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  // [!code hl]
+  layers: ['components', 'overrides'],
+})
+
+const label = style({
+  // Emits this declaration inside `@layer overrides`
+  '@layer overrides': { color: 'blue' },
+})
+```
+
+### options.defaultLayer
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The layer for declarations that no `@layer` key places. Omit it to keep declarations unlayered. Unlayered caller styles then outrank layered component styles.
+
+```ts /defaultLayer: 'components'/
+// Every bound style and recipe lands in `components` by default
+defineConfig({
+  defaultLayer: 'components',
+  layers: ['components', 'overrides'],
+})
+```
+
+### options.output
+
+- **Type:** `'react' | 'html'{:ts}`
+- **Default:** `'react'{:ts}`
+
+The props shape applications return. `'react'` returns `className` and a `style` object. `'html'` returns `class` and a serialized `style` string.
+
+```ts /output: 'html'/
+// Applications return { class, style } strings
+defineConfig({ output: 'html', vars: base })
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+The emitted CSS shape. Atomic output emits one rule per declaration and condition. Grouped output emits one scoped block per style. [CSS Output](/docs/guides/css-output) compares both.
+
+```ts /cssOutput: 'grouped'/
+// One rule block per style definition
+defineConfig({ cssOutput: 'grouped', vars: base })
+```
+
+### options.storageKey
+
+- **Type:** `string{:ts}`
+- **Default:** `'zyzz'{:ts}`
+
+The localStorage key that [`appearance`](/docs/api/core/defineConfig/appearance) writes and [`script`](/docs/api/core/defineConfig/script) reads.
+
+```ts /storageKey: 'acme-appearance'/
+// Keeps preferences separate from other configs on the origin
+defineConfig({ storageKey: 'acme-appearance', vars: base })
+```
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A namespace for generated classes, scopes, and custom properties. Give each independently compiled config a distinct ID. Variable configs require it when source runs without a compiler transform.
+
+```ts /id: 'acme'/
+// `color.brand` becomes `--z-acme-color-brand`
+defineConfig({ id: 'acme', vars: { color: { brand: '#06c' } } })
+```
+
+## Token Values
+
+A property with configured tokens accepts a token name or a compatible variable reference. Append ` !custom` to use any other CSS value. The suffix is removed from the emitted CSS, and the value keeps ordinary CSS type checking.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+const { style } = defineConfig({ vars: { spacing: { md: '8px' } } })
+
+const button = style({
+  padding: 'md',
+  // [!code hl:2]
+  // An arbitrary length on a property with spacing tokens
+  marginTop: '7px !custom',
+})
+```
+
+Token names take precedence over CSS keywords, so a color token named `red` resolves to the variable while `'red !custom'` means the CSS color. Combine suffixes as `'red !custom !important'`. Properties without configured tokens accept either spelling.
+
+## Category Fallbacks
+
+A token name resolves through the categories mapped to the property, and the first category containing the name wins. Custom `mappings` replace a category's properties, and explicit `vars` references skip the lookup.
+
+- **`color`:** `textColor`, then `color`.
+- **`backgroundColor`:** `backgroundColor`, then `color`.
+- **Border colors:** `borderColor`, then `color`.
+- **`accentColor`, `caretColor`, `outlineColor`, `textDecorationColor`, `fill`, `stroke`:** The matching property category, then `color`.
+- **Other color properties:** `color`.
+- **Margin, padding, inset, and gap:** The matching category, then `spacing`.
+- **`width`, `minWidth`, `maxWidth`:** The matching property category, `spacing`, then `container`.
+- **`height`:** `height`, then `spacing`.
+- **`minHeight`, `maxHeight`:** The matching property category, `height`, then `spacing`.
+- **Inline sizes:** `spacing`, then `container`.
+- **Block sizes:** `spacing`.
+- **`flexBasis`:** `flexBasis`, `spacing`, then `container`.
+- **`columns`:** `columns`, then `container`.
+- **Scroll margin and padding, `borderSpacing`, `translate`, `textIndent`:** The matching category, then `spacing`.
+- **Border radii:** `radius`.
+- **`boxShadow` and `textShadow`:** `shadow` and `textShadow`.
+- **`aspectRatio` and `perspective`:** `aspect` and `perspective`.
+- **`transitionTimingFunction` and `animation`:** `ease` and `animate`.
+- **Font properties:** `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` each use only their matching category.
+- **Other mapped properties:** The matching property category, such as `zIndex` or `opacity`.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+const { style } = defineConfig({
+  vars: { color: { brand: '#06c' }, textColor: { brand: '#004a99' } },
+})
+
+// [!code hl:2]
+// `textColor.brand` for color, `color.brand` for the background
+const badge = style({ backgroundColor: 'brand', color: 'brand' })
+```
+
+`blur`, `dropShadow`, and `insetShadow` values have no mapped property, so styles reference them through `vars`. The `breakpoint` and `container` categories also supply query aliases.
+
+## Returns
+
+### style
+
+- **Type:** `Config.StyleFactory{:ts}`
+
+The [`style`](/docs/api/core/style) function, accepting the config's token names and shorthands.
+
+```ts /'foreground'/
+const card = style({ color: 'foreground', padding: 'page' })
+```
+
+### variants
+
+- **Type:** `variants.Bound{:ts}`
+
+The [`variants`](/docs/api/core/variants) function, with the same token names and the config's query aliases.
+
+```ts /'page'/
+const button = variants({ variants: { size: { roomy: { padding: 'page' } } } })
+```
+
+### vars
+
+- **Type:** `Config.VariableScope{:ts}`
+
+[Token references and scope selection](/docs/api/core/defineConfig/vars). Present when `options.vars` is set.
+
+```ts /vars.spacing.page/
+const rail = style({ width: vars.spacing.page })
+```
+
+### appearance
+
+- **Type:** `{ get, set }{:ts}`
+
+[Document preference controls](/docs/api/core/defineConfig/appearance) for the variable set and color scheme.
+
+```ts /appearance.set/
+appearance.set({ colorScheme: 'dark' })
+```
+
+### script
+
+- **Type:** `() => string{:ts}`
+
+Returns the [inline preference script](/docs/api/core/defineConfig/script) that restores saved selections before the first paint.
+
+```ts /script()/
+const source = script()
+```
+
+## Types
+
+- **`Config.create.Options{:ts}`:** The accepted options.
+- **`Config.create.ReturnType<options>{:ts}`:** The helpers inferred from the options.
+- **`Config.VariableConfig<options>{:ts}`:** The helpers of a config with `vars`.
+
+```ts title="theme.ts"
+import { type Config, defineConfig } from 'zyzz'
+
+// [!code hl:2]
+// Shares one options object between configs
+const options = {
+  vars: { spacing: { md: '8px' } },
+} satisfies Config.create.Options
+
+export const { style } = defineConfig(options)
+```
+
+## Errors
+
+TypeScript rejects unknown options, named sets with different paths, and token names a property cannot accept.
+
+```ts twoslash
+// @errors: 2322
+import { defineConfig } from 'zyzz'
+
+defineConfig({
+  defaultVars: 'base',
+  // `roomy` lacks the `page` path of `base`
+  vars: {
+    base: { spacing: { page: '1rem' } },
+    roomy: { spacing: { gap: '1rem' } },
+  },
+})
+```
+
+At runtime, the same mistakes throw `Config.InvalidError`, as do invalid layer names. Invalid variable values throw `Vars.InvalidError`.
+
+## React Native
+
+Native apps import `defineConfig` from `zyzz/react-native`. It takes the same options and returns the same helpers, plus a `Provider` that selects the color scheme and set for its descendants. Tokens resolve to native values, and media-conditioned or composed values fail native compilation.
+
+```tsx title="App.tsx"
+import type { ReactNode } from 'react'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider } = defineConfig({
+  vars: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+})
+
+export function App(props: App.Props) {
+  return (
+    // [!code hl:2]
+    // Styles beneath resolve `ink` for the dark scheme
+    <Provider colorScheme="dark">{props.children}</Provider>
+  )
+}
+
+export declare namespace App {
+  type Props = { children: ReactNode }
+}
+```
+
+[Native Themes](/docs/guides/native/themes) covers set selection on native.

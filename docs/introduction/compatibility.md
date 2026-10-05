@@ -17,4 +17,4 @@ This documentation describes the implemented web compiler and marks remaining AP
 
 Browser support depends on emitted CSS and selected processing targets. Explicit target processing belongs to adapters. Web integration evidence does not establish native rendering parity.
 
-See [Literal Values](../api/core/Style/literals.md) for supported properties and [Platforms](../concepts.md#compilation-and-platforms) for target boundaries.
+See [Literal Values](https://zyzz.sh/docs/api/core/values) for supported properties and [Platforms](../concepts.md#compilation-and-platforms) for target boundaries.

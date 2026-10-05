@@ -48,7 +48,7 @@ See [zyzz/vite](README.md) for the entrypoint overview.
 
 ## Initialization Script
 
-Each exported configuration's [`script()`](../core/Config/script.md) is inlined at the start of `index.html`'s `<head>`, before Vite's client and every application module. Saved theme and scheme preferences therefore apply before first paint. Development compiles the catalog when the page is requested; production reads it from the bundled modules.
+Each exported configuration's [`script()`](https://zyzz.sh/docs/api/core/defineConfig/script) is inlined at the start of `index.html`'s `<head>`, before Vite's client and every application module. Saved theme and scheme preferences therefore apply before first paint. Development compiles the catalog when the page is requested; production reads it from the bundled modules.
 
 ```ts
 defineConfig({

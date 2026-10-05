@@ -213,9 +213,7 @@ describe('/docs', () => {
           .count(),
       ).toMatchInlineSnapshot('0')
       // Nested topics stay collapsed unless they contain the current page.
-      await navigation
-        .getByRole('button', { name: 'Integrations', exact: true })
-        .click()
+      await navigation.locator('summary', { hasText: 'Integrations' }).click()
       expect(
         await navigation
           .getByRole('link', { name: 'Vite', exact: true })

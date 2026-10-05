@@ -33,7 +33,6 @@ import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import MonitorIcon from '~icons/lucide/monitor'
-import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PlayIcon from '~icons/lucide/play'
@@ -77,7 +76,6 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/web': MonitorIcon,
   concepts: BookOpenIcon,
   'guides/at-rules': AtSignIcon,
-  'guides/compilation': PackageIcon,
   'guides/conditions': WorkflowIcon,
   'guides/css-output': CodeXmlIcon,
   'guides/global-styles': GlobeIcon,

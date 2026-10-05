@@ -156,7 +156,7 @@ The compiler reports incompatible generated names when it can detect them. Consu
 
 ## Delivery
 
-Rebuild CSS and generated code together after edits and when changing modes. Precompiled libraries keep their output mode, so a consumer's config does not change published classes. See [Build & Delivery](/docs/guides/compilation) for setup.
+Rebuild CSS and generated code together after edits and when changing modes. Precompiled libraries keep their output mode, so a consumer's config does not change published classes. See [Getting Started](/docs/introduction/getting-started) for setup.
 
 A custom pipeline selects the mode when compiling style data. `Css.compile` has no filesystem or browser side effects.
 
@@ -176,8 +176,12 @@ const output = Css.compile({ cssOutput: 'grouped', styles })
 ## More
 
 <Card.Group>
-  <Card title="Build & Delivery" icon="boxes" href="/docs/guides/compilation">
-    Publish code, declarations, CSS, and compiler metadata from the same build.
+  <Card
+    title="Getting Started"
+    icon="terminal"
+    href="/docs/introduction/getting-started"
+  >
+    Connect the integration that transforms styles and delivers CSS.
   </Card>
   <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
     Combine styles with `cx` and override declarations in a predictable order.

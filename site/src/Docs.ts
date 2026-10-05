@@ -38,7 +38,6 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       { path: 'guides/at-rules', title: 'At-Rules' },
       { path: 'guides/reset', title: 'Reset' },
       { path: 'guides/css-output', title: 'CSS Output' },
-      { path: 'guides/compilation', title: 'Build & Delivery' },
       { path: 'guides/native', title: 'React Native' },
       { path: 'api/oxlint', title: 'Linting' },
       { path: 'guides/testing', title: 'Testing & Troubleshooting' },

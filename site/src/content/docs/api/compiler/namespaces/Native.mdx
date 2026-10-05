@@ -37,7 +37,7 @@ Native.compile(options)
 
 - **Type:** `'light' | 'dark'{:ts}`
 
-The color scheme compiled into the callables. Color pairs resolve to this scheme's value, so another scheme needs another compilation unless `contextual` keeps both.
+The color scheme compiled into the callables in `code`. Their color pairs resolve to this scheme's value unless `contextual` keeps both, while `recipes` always holds both schemes.
 
 ```ts /colorScheme: 'dark'/
 // Resolves { light: '#171717', dark: '#fafafa' } to '#fafafa'

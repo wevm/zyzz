@@ -260,9 +260,9 @@ output.themeSelections
 
 ### nativeVars
 
-- **Type:** `readonly object[] | undefined{:ts}`
+- **Type:** `readonly { defaultVars: string; end: number; owner: string; start: number; unnamed: boolean; vars: object }[] | undefined{:ts}`
 
-With `target: 'native'`, the `useVars` arguments in the module, each with its complete catalog of variable sets.
+With `target: 'native'`, the `useVars` arguments in the module. Each has the argument's span, the owning config's identity in `owner` and fallback set in `defaultVars`, and its variable sets in `vars`. `unnamed` marks a standalone set with no named alternatives.
 
 ```ts /output.nativeVars/
 // [{ defaultVars: 'default', vars: { default: … }, … }]

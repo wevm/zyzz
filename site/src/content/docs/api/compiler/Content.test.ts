@@ -394,6 +394,17 @@ export function read() {
       target: 'native',
     })
 
+    expect(Object.keys(output.nativeVars?.[0] ?? {}).sort())
+      .toMatchInlineSnapshot(`
+      [
+        "defaultVars",
+        "end",
+        "owner",
+        "start",
+        "unnamed",
+        "vars",
+      ]
+    `)
     expect(output.nativeVars?.map((read) => Object.keys(read.vars)))
       .toMatchInlineSnapshot(`
       [
@@ -532,6 +543,24 @@ describe('Transform.compile', () => {
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
       .z-p-1rem{padding:1rem;}"
+    `)
+  })
+
+  test('keeps config factory imports', () => {
+    const output = Transform.compile({
+      moduleId: 'app/Card.tsx',
+      source: `import { defineConfig } from 'zyzz'
+const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
+export const card = style({ color: 'brand' })
+`,
+    })
+
+    expect(output.code.split('\n').filter((line) => line.startsWith('import')))
+      .toMatchInlineSnapshot(`
+      [
+        "import { Props as __zyzzProps } from 'zyzz/runtime';",
+        "import { defineConfig } from 'zyzz'",
+      ]
     `)
   })
 
@@ -792,6 +821,23 @@ export const size = 2
         "app/b.ts",
       ]
     `)
+  })
+
+  test('emits private appearance contracts only in web graphs', () => {
+    const modules = {
+      'app/a.ts': `import { defineConfig } from 'zyzz'
+const { appearance } = defineConfig({ vars: { color: { brand: { light: '#000', dark: '#fff' } } } })
+const props = appearance('dark')
+export const size = 1
+`,
+    }
+
+    const native = Graph.compile({
+      modules,
+      native: { colorScheme: 'light', contextual: true },
+    })
+
+    expect(Object.keys(native.contracts)).toMatchInlineSnapshot(`[]`)
   })
 
   test('rejects relative and nonliteral dynamic imports', () => {

@@ -82,7 +82,7 @@ Run `vp lint`. The Zyzz rules do not require type-aware linting. See [Vite Plus 
 
 ### Recognize Configured Helpers
 
-The rules recognize imports from `zyzz`, `zyzz/default`, and modules whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts` or `@/zyzz.config.js`. These filenames need no extra settings. For a config module with another name, add its exact import specifier:
+The rules recognize imports from `zyzz`, `zyzz/default`, and modules whose final filename matches `zyzz.config.*`, such as `./zyzz.config.ts`, `../zyzz.config.mjs`, or `@/zyzz.config.js`. These filenames need no extra settings. For a config module with another name, add its exact import specifier:
 
 ```json title=".oxlintrc.json"
 {
@@ -100,7 +100,7 @@ Named import aliases, namespace imports, immutable local aliases, and helpers de
 
 ### Scope Web Rules
 
-Declaration rules inspect `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. They exclude variant selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches.
+Declaration rules inspect `style()` objects and callback returns, variant bases and choices, compound styles, selectors, conditions, and `targets.web`. They exclude variant names, selection metadata, variable assignment containers, arbitrary callback expressions, and native target branches.
 
 In a mixed web and native project, enable these rules only for web authoring files through [Oxlint overrides](https://oxc.rs/docs/guide/usage/linter/config.html). Adapt the file pattern to the project:
 
@@ -139,7 +139,7 @@ export namespace styles {
 
 ## Rules
 
-None of the rules needs type-aware linting or applies automatic fixes. The [Overview](#overview) configuration enables the first three, and the last two are opt-in:
+None of the rules needs type-aware linting or applies automatic fixes, and only `restricted-properties` takes options. The [Overview](#overview) configuration enables the first three, and the last two are opt-in:
 
 - **[`zyzz/valid-styles`](#valid-styles):** Malformed declarations and values.
 - **[`zyzz/no-conflicting-props`](#no-conflicting-props):** JSX props that overwrite applied styles.
@@ -149,7 +149,7 @@ None of the rules needs type-aware linting or applies automatic fixes. The [Over
 
 ### Valid Styles
 
-Reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, and nonscalar declaration values. Unknown-property checks apply only to imports from `zyzz`, since configured helpers can define shorthand properties.
+Reports unknown properties in token-free styles, malformed value markers, empty or sparse fallback arrays, nonscalar declaration values, and literal structures that cannot describe styles. Unknown-property checks apply only to imports from `zyzz`, since configured helpers can define shorthand properties.
 
 The rule leaves unresolved expressions to the compiler. It does not validate complete CSS grammars, configured token membership, or every compiler restriction.
 
@@ -276,7 +276,7 @@ namespace styles {
 
 ### Use Logical Properties
 
-Reports covered horizontal physical properties and corner radii, and suggests a logical replacement for horizontal left-to-right layouts. Enable it with `"zyzz/use-logical-properties": "warn"`.
+Reports the horizontal physical properties and corner radii in Tempo's [logical-property policy](https://github.com/tempoxyz/tempo.xyz/blob/4544c69b7535974bf0ff97a222be31b8f1b2f3f7/config/oxlint/logical-properties.ts), and suggests a logical replacement for horizontal left-to-right layouts. Enable it with `"zyzz/use-logical-properties": "warn"`.
 
 An `allow-physical-property` comment permits an intentional physical edge. The rule does not cover vertical properties, physical keyword values, or shorthand values, so check direction and writing mode before changing a property.
 
@@ -383,11 +383,11 @@ export namespace styles {
     Compose definitions, override styles, and bind dynamic values.
   </Card>
   <Card
-    title="Oxlint API"
+    title="Oxlint Plugins"
     icon="code"
-    href="https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md"
+    href="https://oxc.rs/docs/guide/usage/linter/js-plugins.html"
   >
-    Read the complete contract for each rule and recognized import.
+    Configure JavaScript plugins, overrides, and suppression comments in Oxlint.
   </Card>
   <Card
     title="Plugin Tests"

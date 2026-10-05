@@ -1,10 +1,8 @@
-import { CompatibilityContent, CompatibilityIcon, CompatibilityMatrix } from './_components/CompatibilityMatrix.js'
+import { CompatibilityIcon, CompatibilityMatrix } from './_components/CompatibilityMatrix.js'
 
 # Compatibility
 
 Framework, runtime, browser, and native support, with the limits of each verified path.
-
-<CompatibilityContent>
 
 Zyzz compiles web styles ahead of time. Applied styles return ordinary class and style props. The core is framework-independent, while source transforms, stylesheet delivery, and native output depend on the selected adapter.
 
@@ -344,5 +342,3 @@ The [native API documentation](https://github.com/wevm/zyzz/blob/main/docs/api/r
 [Getting Started](/docs/introduction/getting-started) covers Vite, Next.js, Metro, other bundlers, and standalone compilation. Rollup, Webpack, and esbuild adapters are implemented through unplugin. Adapter availability does not establish support for every framework that uses those bundlers.
 
 Standalone output must deliver its generated stylesheets and initialization script alongside the compiled modules. Native builds emit native modules instead of browser CSS. Keep generated code and styles from the same build.
-
-</CompatibilityContent>

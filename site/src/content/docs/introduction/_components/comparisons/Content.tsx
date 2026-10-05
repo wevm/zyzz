@@ -68,7 +68,6 @@ namespace styles {
         borderColor: 'gray.400',
       },
       '& table p': { margin: 0 },
-      '& code': { typography: 'label.14.mono' },
     },
   })
 }

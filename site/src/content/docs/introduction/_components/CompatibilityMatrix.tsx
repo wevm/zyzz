@@ -56,23 +56,6 @@ export declare namespace CompatibilityIcon {
   }
 }
 
-/** Sizes inline code relative to the Compatibility page's surrounding text. */
-export function CompatibilityContent(props: CompatibilityContent.Props) {
-  return (
-    <div data-compatibility-content {...styles.content()}>
-      {props.children}
-    </div>
-  )
-}
-
-export declare namespace CompatibilityContent {
-  /** Properties for the page content. */
-  type Props = {
-    /** Authored documentation content. */
-    children: ReactNode
-  }
-}
-
 /** Keeps support tables readable on narrow screens. */
 export function CompatibilityMatrix(props: CompatibilityMatrix.Props) {
   return (
@@ -93,14 +76,6 @@ export declare namespace CompatibilityMatrix {
 }
 
 namespace styles {
-  export const content = style({
-    selectors: {
-      '&[data-compatibility-content] :is(p, aside, li) code': {
-        fontSize: '0.9em !custom',
-      },
-    },
-  })
-
   export const icon = style({
     display: 'inline-flex',
     marginRight: 2,

@@ -80,12 +80,6 @@ namespace styles {
       },
       '& thead th': { borderTopWidth: 0, fontWeight: 'medium' },
       '& th:first-child': { width: '40% !custom' },
-      '& table :is(th, td) code': {
-        backgroundColor: 'transparent !custom',
-        borderRadius: '0px !custom',
-        padding: 0,
-        typography: 'label.13.mono',
-      },
       '& table p': { margin: 0 },
     },
   })

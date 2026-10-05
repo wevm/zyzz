@@ -204,4 +204,4 @@ export const payloads = [
 
 ## Errors
 
-`PayloadRecipe.create` throws no dedicated errors and does not validate payloads. Its own callable accepts any record, so a dynamic-looking selection with an unknown choice throws a `TypeError` while reading slot metadata. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript checks choice names and payload fields.
+`PayloadRecipe.create` throws no dedicated errors and does not validate payloads. Its own callable accepts any record, so a dynamic-looking selection throws a `TypeError` while reading slot metadata when its choice is unknown or lacks a slot record for the base or a selected condition. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript checks choice names and payload fields.

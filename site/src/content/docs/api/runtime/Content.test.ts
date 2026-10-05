@@ -321,6 +321,21 @@ describe('PayloadRecipe API page', () => {
       }
     `)
   })
+
+  test('throws for a choice without a slot record', () => {
+    const definition = { axes: { size: ['custom'] }, defaults: {} }
+    const box = PayloadRecipe.create({
+      ...definition,
+      payloads: [{ axis: 'size', choice: 'custom', slots: [] }],
+      select: Recipe.create({ ...definition, className: 'z-box' }),
+    })
+
+    expect(() =>
+      box({ size: { custom: { padding: '12px' } } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot convert undefined or null to object]`,
+    )
+  })
 })
 
 describe('Composition API page', () => {
@@ -422,6 +437,23 @@ describe('CompositionHtml API page', () => {
         "class": "z-card-composed",
       }
     `)
+  })
+
+  test('reads HTML-returning callables as React-shaped props', () => {
+    const card = CompositionHtml.bind(Html.create({ className: 'z-card' }))
+    const compose = CompositionHtml.create({
+      className: 'z-card-composed',
+      inputs: [{ className: 'z-card', owners: [] }],
+    })
+
+    expect(card()).toMatchInlineSnapshot(`
+      {
+        "class": undefined,
+      }
+    `)
+    expect(() => compose(card())).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot read properties of undefined (reading 'split')]`,
+    )
   })
 })
 
@@ -886,6 +918,38 @@ describe('NativeContext API page', () => {
       NativeContext.resolve(box().style, { colorScheme: 'light' }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Native media queries require the native Provider window dimensions.]`,
+    )
+  })
+
+  test('lists a missing media alternative without throwing in key', () => {
+    const table = Native.create({
+      axes: {},
+      defaults: {},
+      styles: { 0: { padding: 4 } },
+    })
+    const box = NativeContext.responsive(
+      [{ kind: 'compare', left: 'width', operator: '>=', right: 600 }],
+      {
+        0: NativeContext.create(
+          { default: { dark: table, light: table } },
+          'default',
+        ),
+      },
+    )
+    const context = {
+      colorScheme: 'light',
+      viewport: { height: 844, width: 700 },
+    } as const
+
+    expect(NativeContext.key(box(), context)).toMatchInlineSnapshot(`
+      [
+        undefined,
+      ]
+    `)
+    expect(() =>
+      NativeContext.resolve(box().style, context),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Native media alternative is missing.]`,
     )
   })
 })

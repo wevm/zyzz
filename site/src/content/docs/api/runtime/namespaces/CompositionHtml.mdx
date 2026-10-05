@@ -29,9 +29,11 @@ CompositionHtml.bind(fn)
 
 ### fn
 
-- **Type:** `(...args) => style.Props{:ts}`
+- **Type:** `(...args) => style.Props | Html.Attributes{:ts}`
 
 A compiled callable created with HTML output disabled. The returned function takes the same arguments and converts each result with `CompositionHtml.from`.
+
+The declared type also accepts a callable returning `Html.Attributes`, but `bind` reads its result as React-shaped props. Such a wrapper returns `{ class: undefined }`, and a composition of it throws a `TypeError`.
 
 ```ts /CompositionHtml.bind/
 // Returns `{ class: 'z-card' }` with retained props

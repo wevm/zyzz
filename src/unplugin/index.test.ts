@@ -425,6 +425,49 @@ describe('zyzz', () => {
     }
   }, 30000)
 
+  test('esbuild declares scheme classes once across modules', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-unplugin-schemes-'))
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'config.ts'),
+        `import { defineConfig, defineVars } from 'zyzz'; const base = defineVars({ spacing: { page: '1rem' } }); export const { vars } = defineConfig({ vars: base });`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import { vars } from './config.js'; export const props = vars({ colorScheme: 'dark' });`,
+      )
+      await Esbuild.build({
+        alias: { 'zyzz/runtime': runtime },
+        bundle: true,
+        entryPoints: [Path.join(root, 'main.ts')],
+        entryNames: 'app',
+        format: 'iife',
+        globalName: 'App',
+        outdir: Path.join(root, 'dist'),
+        plugins: [zyzz.esbuild({ root })],
+      })
+      expect(await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_scheme-dark {
+          color-scheme: dark;
+        }
+
+        .z_scheme-light {
+          color-scheme: light;
+        }
+
+        .z_scheme-light-dark {
+          color-scheme: light dark;
+        }
+
+        /*# sourceMappingURL=zyzz.css.map */
+        "
+      `)
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30000)
+
   test('rollup invalidates cached transforms after a shared theme edit', async () => {
     const root = await fixture()
     const plugin = rollup({ root })

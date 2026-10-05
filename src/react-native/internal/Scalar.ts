@@ -60,6 +60,7 @@ export const properties = {
   fontWeight: 'weight',
   gap: 'length',
   height: 'size',
+  inset: 'boxOffset',
   justifyContent: [
     'center',
     'flex-end',
@@ -206,13 +207,14 @@ export function convert(
       return value
     fail('unsupported_value', 'Invalid native percentage.', path)
   }
-  if (kind === 'box' || kind === 'boxSigned') {
+  if (kind === 'box' || kind === 'boxOffset' || kind === 'boxSigned') {
     const values =
       typeof value === 'string' ? Calculation.parts(value) : [value]
     if (!values.length || values.length > 4)
       fail('unsupported_value', 'Use one to four scalar lengths.', path)
     for (const value of values)
-      length(value, options, kind === 'boxSigned', path)
+      if (kind === 'boxOffset') convert('offset', value, options, path)
+      else length(value, options, kind === 'boxSigned', path)
     return 0
   }
   return length(value, options, kind === 'signed' || kind === 'offset', path)

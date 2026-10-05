@@ -1321,6 +1321,58 @@ describe('compile', () => {
     ).toMatchInlineSnapshot('true')
   })
 
+  test('expands inset shorthands to physical offsets in authored order', () => {
+    const base = Vars.define({ spacing: { edge: '1rem' } })
+    const styles = Style.define({
+      edges: { inset: '-1px 10% calc(1rem + 2px)' },
+      fill: { inset: 0, position: 'absolute' },
+      insetFirst: { inset: base.spacing.edge, left: '4px' },
+      leftFirst: { left: '4px', inset: '1px 2px' },
+    })
+    const output = StyleSheet.compile({
+      styles,
+      units: { px: 2, rem: 20 },
+      vars: { base },
+    })
+
+    expect(output.styles.base.light.fill).toMatchInlineSnapshot(`
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    `)
+    expect(output.styles.base.light.edges).toMatchInlineSnapshot(`
+      {
+        "bottom": 24,
+        "left": "10%",
+        "right": "10%",
+        "top": -2,
+      }
+    `)
+    expect(output.styles.base.light.insetFirst).toMatchInlineSnapshot(`
+      {
+        "bottom": 20,
+        "left": 8,
+        "right": 20,
+        "top": 20,
+      }
+    `)
+    expect(output.styles.base.light.leftFirst).toMatchInlineSnapshot(`
+      {
+        "bottom": 2,
+        "left": 4,
+        "right": 4,
+        "top": 2,
+      }
+    `)
+    expect(
+      Css.compile({ styles }).css.includes('inset:0'),
+    ).toMatchInlineSnapshot('true')
+  })
+
   test('does not substitute unrelated token contracts with matching paths', () => {
     const base = Vars.define({ color: { ink: 'red' } })
     const unrelated = Vars.define({ color: { ink: 'blue' } })

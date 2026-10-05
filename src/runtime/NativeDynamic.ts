@@ -205,6 +205,13 @@ export function create(
             [`${property}Bottom`]: bottom,
             [`${property}Left`]: left,
           })
+        } else if (property === 'inset') {
+          const parts =
+            typeof value === 'string' ? Calculation.parts(value) : [value]
+          const [top, right = top, bottom = top, left = right] = parts.map(
+            (part) => Scalar.convert('offset', part, options, [property]),
+          )
+          Object.assign(output, { top, right, bottom, left })
         } else if (property === 'borderColor' || property === 'borderWidth') {
           for (const side of ['Top', 'Right', 'Bottom', 'Left'])
             output[

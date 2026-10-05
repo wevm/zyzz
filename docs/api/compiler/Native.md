@@ -77,7 +77,7 @@ const artwork = style((input: { aspectRatio: number }) => ({
 artwork({ aspectRatio: 2 }) // Native width: 440, height: 220.
 ```
 
-Calculations support finite numbers, px/rem lengths, parentheses, unary signs, addition, subtraction, multiplication, and division. Addition and subtraction require matching dimensions; multiplication permits one length operand, and division requires a nonzero number. `units.rem` is required for rem lengths. Calculated padding and margin shorthands preserve spaces within each expression.
+Calculations support finite numbers, px/rem lengths, parentheses, unary signs, addition, subtraction, multiplication, and division. Addition and subtraction require matching dimensions; multiplication permits one length operand, and division requires a nonzero number. `units.rem` is required for rem lengths. Calculated padding, margin, and inset shorthands preserve spaces within each expression.
 
 Native application rejects percentages and relative units within calculations, unresolved CSS variables, nonfinite results, and negative lengths on unsigned properties. Expressions are limited to 512 tokens and 64 nested operations. Use variants for finite conditional choices; JavaScript arithmetic and conditional callback expressions remain unsupported.
 

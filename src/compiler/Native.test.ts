@@ -936,6 +936,68 @@ describe('compile', () => {
     `)
   })
 
+  test('expands dynamic and responsive inset offsets in authored order', async () => {
+    const dynamic = Native.compile({
+      colorScheme: 'light',
+      moduleId: 'dynamic-inset.ts',
+      source: `import {style} from 'zyzz';
+        const overlay=style((input:{edge:string})=>({inset:input.edge,left:'4px',position:'absolute'}));
+        export const results=[overlay({edge:'10%'}),overlay({edge:'calc(1px + 2px) 10%'})];`,
+    })
+    expect((await execute(dynamic.code)).results).toMatchInlineSnapshot(`
+      [
+        {
+          "style": {
+            "bottom": "10%",
+            "left": 4,
+            "position": "absolute",
+            "right": "10%",
+            "top": "10%",
+          },
+        },
+        {
+          "style": {
+            "bottom": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": "10%",
+            "top": 3,
+          },
+        },
+      ]
+    `)
+
+    const responsive = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'responsive-inset.ts',
+      source: `import {style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+        const panel=style({inset:0,'@media (width >= 400px)':{inset:'10% 1rem'}});
+        export const results=viewport=>NativeContext.resolve(panel,{colorScheme:'light',viewport});`,
+      units: { rem: 16 },
+    })
+    const apply = (await execute(responsive.code)).results as (viewport: {
+      height: number
+      width: number
+    }) => unknown
+    expect(apply({ height: 800, width: 399 })).toMatchInlineSnapshot(`
+      {
+        "bottom": 0,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+      }
+    `)
+    expect(apply({ height: 800, width: 400 })).toMatchInlineSnapshot(`
+      {
+        "bottom": "10%",
+        "left": 16,
+        "right": 16,
+        "top": "10%",
+      }
+    `)
+  })
+
   test('rejects invalid calculated payloads before returning native props', async () => {
     const source = `import {style} from 'zyzz';
       const box=style((input:{gap:string;ratio:number})=>({width:\`calc(\${input.gap} / \${input.ratio})\`}));

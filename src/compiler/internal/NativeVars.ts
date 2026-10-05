@@ -171,6 +171,8 @@ export function compile(options: compile.Options): Runtime.create.Options {
               )
             if (kind === 'box' || kind === 'boxSigned')
               return Scalar.length(value, options, kind === 'boxSigned', [path])
+            if (kind === 'boxOffset')
+              return Scalar.convert('offset', value, options, [path])
             return Scalar.convert(kind, value, options, [path])
           }
 

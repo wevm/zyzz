@@ -313,6 +313,23 @@ describe('compile', () => {
     expectTypeOf(invalid).not.toBeAny()
   })
 
+  test('accepts one to four inset offsets with percentages and tokens', () => {
+    const base = Vars.define({ spacing: { edge: '1rem' } })
+    const declarations = {
+      inset: '-1px 10% calc(1rem + 2px) 0',
+    } satisfies StyleSheet.Properties
+    const token = { inset: base.spacing.edge } satisfies StyleSheet.Properties
+    // @ts-expect-error Native offsets have no automatic value.
+    const automatic = { inset: 'auto' } satisfies StyleSheet.Properties
+    // @ts-expect-error Inset shorthands accept at most four offsets.
+    const extra = { inset: '0 0 0 0 0' } satisfies StyleSheet.Properties
+
+    expectTypeOf(declarations).not.toBeAny()
+    expectTypeOf(token).not.toBeAny()
+    expectTypeOf(automatic).not.toBeAny()
+    expectTypeOf(extra).not.toBeAny()
+  })
+
   test('retains style and set labels through native lookup', () => {
     const base = Vars.define({ spacing: { md: '1rem' } })
     const styles = Style.define({

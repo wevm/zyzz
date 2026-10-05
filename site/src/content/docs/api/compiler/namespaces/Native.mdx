@@ -1,6 +1,6 @@
 # Native
 
-Compile shared style authoring into native callables for one color scheme.
+Compile shared style authoring into native callables, fixed or contextual per scheme.
 
 `Native.compile` rewrites a module's `style`, `variants`, and `cx` authoring into callables that return React Native `style` props, and `useVars` arguments into token profiles. Static tokens and units resolve at compile time, while dynamic values convert their units on each call. Babel and `Graph.compile` call it per module.
 
@@ -230,7 +230,7 @@ button({ tone: 'loud' })
 bar({ alpha: 0.25 })
 ```
 
-A missing or invalid payload value throws before props are returned.
+Without `contextual`, a missing or invalid payload value throws before props are returned. Contextual callables defer that error until a Provider resolves the props.
 
 ## Variable Reads
 

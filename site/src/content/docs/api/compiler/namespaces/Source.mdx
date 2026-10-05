@@ -58,7 +58,7 @@ Source.extract({ moduleId: 'app/Card.tsx', source: text })
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Whether a later step rewrites the module. With `false`, each static `style` call also carries a `portable` class identity, which the unchanged call computes at runtime. Every other definition needs an explicit `id`, as listed under [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscompiler), which enforces the list.
+Whether a later step rewrites the module. With `false`, each nonempty static `style` call also carries a `portable` class identity, which the unchanged call computes at runtime. Empty styles and every other definition need an explicit `id`, as listed under [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscompiler), which enforces the list.
 
 ```ts /compiler: false/
 // calls[0].portable holds the class the runtime call returns

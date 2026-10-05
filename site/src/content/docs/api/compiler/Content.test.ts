@@ -151,18 +151,20 @@ describe('Source.extract', () => {
     )
   })
 
-  test('omits portable identities for dynamic styles and variants', () => {
+  test('omits portable identities for dynamic, variant, and empty styles', () => {
     const output = Source.extract({
       compiler: false,
       moduleId: 'app/Card.tsx',
       source: `import { style, variants } from 'zyzz'
 export const bar = style((values: { alpha: number }) => ({ opacity: values.alpha }))
 export const button = variants({ variants: { tone: { loud: { opacity: 1 } } } })
+export const empty = style({})
 `,
     })
 
     expect(output.calls.map((call) => call.portable)).toMatchInlineSnapshot(`
       [
+        undefined,
         undefined,
         undefined,
       ]
@@ -654,6 +656,51 @@ export const card = style({ padding: '1rem' })
     ).toMatchInlineSnapshot(`
       ".z-text-red{color:red;}
       .z-p-1rem{padding:1rem;}"
+    `)
+  })
+
+  test('gives repeated declarations their own classes in development', () => {
+    const source = `import { style } from 'zyzz'
+export const a = style({ color: 'red' })
+export const b = style({ color: 'blue' })
+export const c = style({ color: 'red' })
+`
+
+    const css = (development: boolean) =>
+      Transform.compile({
+        composition: 'independent',
+        development,
+        moduleId: 'app/Text.tsx',
+        source,
+      }).css
+
+    expect(css(false)).toMatchInlineSnapshot(`
+      ".z-JJZ3wD-a-text-0{color:red;}
+      .z-JJZ3wD-b-text-0{color:blue;}"
+    `)
+    expect(css(true)).toMatchInlineSnapshot(`
+      ".z-JJZ3wD-a-text-0{color:red;}
+      .z-JJZ3wD-b-text-0{color:blue;}
+      .z-JJZ3wD-c-text-0{color:red;}"
+    `)
+  })
+
+  test('prunes replaced zyzz/web imports', () => {
+    const output = Transform.compile({
+      moduleId: 'app/global.ts',
+      source: `import { global, keyframes } from 'zyzz/web'
+import React from 'react'
+global({ body: { margin: 0 } })
+export const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
+export const element = React
+`,
+    })
+
+    expect(output.code.split('\n').filter((line) => line.startsWith('import')))
+      .toMatchInlineSnapshot(`
+      [
+        "import React from 'react'",
+      ]
     `)
   })
 
@@ -1530,6 +1577,27 @@ export const label = style({ color: 'ink' })
         source,
       }).code,
     ).toMatchInlineSnapshot(`"string"`)
+  })
+
+  test('defers payload errors in contextual output', async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'app/Bar.tsx',
+      source: `import { style } from 'zyzz'
+export const bar = style((values: { alpha: number }) => ({ opacity: values.alpha }))
+`,
+    })
+    const module = await load<{
+      bar: (values: { alpha: number }) => { style: unknown }
+    }>(output.code)
+    const props = module.bar({} as never)
+
+    expect(() =>
+      NativeContext.resolve(props.style, { colorScheme: 'light' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Missing or invalid native payload: alpha.]`,
+    )
   })
 
   test('runs the compiled callables', async () => {

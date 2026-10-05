@@ -2,7 +2,7 @@
 
 Rewrite one module's authoring calls and emit its matching CSS and source maps.
 
-`Transform.compile` extracts a module with [`Source.extract`](/docs/api/compiler/namespaces/Source), compiles its CSS, and replaces each definition with its compiled props. Authoring imports from `zyzz` give way to small `zyzz/runtime` helpers, except `defineConfig`, `defineVars`, and `extendVars`, which stay imported. Other imports stay as written, and the module never creates CSS rules.
+`Transform.compile` extracts a module with [`Source.extract`](/docs/api/compiler/namespaces/Source), compiles its CSS, and replaces each definition with its compiled props. Replaced imports from `zyzz` and `zyzz/web` give way to small `zyzz/runtime` helpers, except `defineConfig`, `defineVars`, and `extendVars`, which stay imported. Unrelated imports stay as written, and the module never creates CSS rules.
 
 ```ts title="transform.ts"
 import { Transform } from 'zyzz/compiler'
@@ -116,7 +116,7 @@ export const c = style({ color: 'red' })
 - **Type:** `boolean{:ts}`
 - **Default:** `false{:ts}`
 
-Keeps every definition live for development updates, including ones the module does not reach. Class names follow the same rules as production, and bundler plugins set this in development.
+Keeps every definition live for development updates, including ones the module does not reach. Bundler plugins set this in development. Class names follow production rules, except that `composition: 'independent'` gives each repeated declaration its own class and rule.
 
 ```ts /development: true/
 // Retains unreached definitions for hot updates

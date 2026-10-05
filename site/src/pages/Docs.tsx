@@ -442,7 +442,8 @@ namespace styles {
     // Inline code in text, including authored `<code>` tags. Components that render their own code, such as install commands, keep their styles.
     '& :is(p, li, td, th, dd, dt, a, strong, em, h2, h3, h4) > code': {
       typography: 'label.14.mono',
-      fontSize: '15px !custom',
+      // A relative size keeps inline code slightly smaller than its surrounding text.
+      fontSize: '0.9375em !custom',
       color: 'foreground',
       backgroundColor: 'gray.100',
       borderRadius: 'sm',

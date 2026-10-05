@@ -1,4 +1,5 @@
 /** Negotiates documentation Markdown for agents and HTML for browsers. @module */
+import * as Manifest from './Manifest.js'
 import {
   createStartHandler,
   defaultStreamHandler,
@@ -15,8 +16,8 @@ export default {
       .slice('/docs/'.length)
       .replace(/\.md$/, '')
       .replace(/\/$/, '')
-    const page = __DOCS__.pages[path]
-    if (!Object.hasOwn(__DOCS__.pages, path) || !page)
+    const page = Manifest.pages[path]
+    if (!Object.hasOwn(Manifest.pages, path) || !page)
       return handle(request, options)
 
     const agent = request.headers.get('user-agent') ?? ''

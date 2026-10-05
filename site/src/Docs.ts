@@ -1,4 +1,5 @@
 /** Indexes authored MDX pages for navigation and route rendering. @module */
+import * as Manifest from './Manifest.js'
 import type { ComponentType, ElementType } from 'react'
 
 /** Compiled MDX components indexed by their documentation path. */
@@ -130,7 +131,7 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
   ...group,
   pages: [
     ...group.pages,
-    ...Object.entries(__DOCS__.pages)
+    ...Object.entries(Manifest.pages)
       .filter(
         (entry) =>
           entry[0].split('/')[0] === group.title.toLowerCase() &&

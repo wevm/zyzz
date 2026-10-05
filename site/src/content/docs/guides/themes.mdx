@@ -838,7 +838,7 @@ const base = defineVars({
 export const { style, vars } = defineConfig({ vars: base })
 ```
 
-`style({ padding: 'page' })` grows with the viewport. When several conditions match, the last authored one wins. `extendVars` replaces a responsive token as a whole, so an override lists every branch it keeps. Native compilation rejects media-conditioned tokens.
+`style({ padding: 'page' })` grows with the viewport. When several conditions match, the last authored one wins. `extendVars` replaces a responsive token as a whole, so an override lists every branch it keeps. Native builds select the matching branch from the window size, as described in [Responsive Tokens](/docs/guides/native/responsive#responsive-tokens).
 
 ### Name Query Thresholds
 

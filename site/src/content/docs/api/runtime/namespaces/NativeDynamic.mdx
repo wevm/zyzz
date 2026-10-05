@@ -215,7 +215,7 @@ box({ size: { custom: { padding: '12px' } } })
 - **Type:** `StyleSheet.StyleProp<overrides>{:ts}`
 - **Default:** `undefined{:ts}`
 
-Native overrides placed after the generated style, with their identity and type kept. Host objects, such as `Animated` values, enter only here, never as fields.
+Native overrides placed after the generated style, with their identity and type kept. Host objects, such as `Animated` values, enter only here, never as fields. A falsy override, such as `false` or `null`, is dropped.
 
 ```ts /style: { opacity: 0.5 }/
 // { style: [{ width: 12 }, { opacity: 0.5 }] }

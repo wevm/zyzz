@@ -112,7 +112,7 @@ text({ size: null })
 - **Type:** `StyleSheet.StyleProp<overrides>{:ts}`
 - **Default:** `undefined{:ts}`
 
-Native overrides placed after the merged style in a new array. Their identity and type are kept, and the helper never freezes or copies them.
+Native overrides placed after the merged style in a new array. Their identity and type are kept, and the helper never freezes or copies them. A falsy override, such as `false` or `null`, is dropped.
 
 ```ts /style: { opacity: 0.5 }/
 // { style: [{ fontSize: 20, lineHeight: 25 }, { opacity: 0.5 }] }

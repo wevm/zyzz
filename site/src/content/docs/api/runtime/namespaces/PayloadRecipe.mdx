@@ -199,11 +199,22 @@ The `select` delegate's props. When a call assigns slots, `style` is a new objec
 
 - **Type:** `string{:ts}`
 
-The delegate's generated class list and any `className` override, unchanged. HTML output names it `class`.
+The delegate's generated class list and any `className` override, unchanged. HTML output has `class` instead.
 
 ```ts /props.className/
 // 'z-box'
 props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `options.html` is `true`, which returns no `className`.
+
+```ts /html: true/
+// { class: 'z-box' }
+PayloadRecipe.create({ ...definition, html: true, payloads, select })()
 ```
 
 ### data-[axis]
@@ -247,3 +258,5 @@ export const payloads = [
 `PayloadRecipe.create` throws no dedicated errors and does not validate payloads. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript checks choice names and payload fields.
 
 The callable's own type accepts any record, so a dynamic-looking selection throws a `TypeError` while reading slot metadata when its choice is unknown or lacks a slot record for the base or a selected condition. A `null` field record, such as `{ custom: null }`, throws the same way.
+
+With `html: true`, a field value that cannot convert to a string, such as a `Symbol`, throws a `TypeError` during serialization.

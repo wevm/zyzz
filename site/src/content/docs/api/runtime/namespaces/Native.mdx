@@ -82,6 +82,8 @@ badge({ size: null })
 
 Native overrides placed after the selected style. Their identity and type are kept, including `Animated` values and platform colors, and the helper never freezes or copies them.
 
+A falsy override, such as `false` or `null`, is dropped, so the result is the selected style alone.
+
 ```ts /style: { opacity: 0.5 }/
 // { style: [{ padding: 4 }, { opacity: 0.5 }] }
 badge({ style: { opacity: 0.5 } })

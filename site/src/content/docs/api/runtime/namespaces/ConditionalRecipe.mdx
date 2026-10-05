@@ -173,11 +173,28 @@ button({ size: 'large', conditions: { wide: { size: null } } })
 
 - **Type:** `string{:ts}`
 
-The generated class list, followed by `input.className`. HTML output names it `class`.
+The generated class list, followed by `input.className`. HTML output has `class` instead.
 
 ```ts /props.className/
 // 'z-button'
 props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `options.html` is `true`, which returns no `className`.
+
+```ts /html: true/
+// { class: 'z-button' }
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: {},
+  html: true,
+})()
 ```
 
 ### data-[axis]

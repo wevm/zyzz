@@ -144,11 +144,22 @@ button({ style: { padding: '24px' } })
 
 - **Type:** `string{:ts}`
 
-The generated class list, followed by `options.className` when supplied. HTML output names it `class`.
+The generated class list, followed by `options.className` when supplied. HTML output has `class` instead.
 
 ```ts /props.className/
 // 'z-button'
 props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `options.html` is `true`, which returns no `className`.
+
+```ts /html: true/
+// { class: 'z-button' }
+Recipe.create({ axes: {}, className: 'z-button', defaults: {}, html: true })()
 ```
 
 ### data-[axis]
@@ -193,4 +204,6 @@ export const payload = {
 
 ## Errors
 
-`Recipe.create` throws no errors and adds no runtime validation. Its own callable accepts any record, so an unknown choice serializes as given. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript rejects unknown axes and choices.
+`Recipe.create` throws no errors and adds no runtime validation. Its own callable accepts any record, so an unknown choice serializes as given. A value that cannot convert to a string, such as `Object.create(null)`, throws a `TypeError`.
+
+Generated code casts the callable to `variants.ReturnType`, which is how TypeScript rejects unknown axes and choices.

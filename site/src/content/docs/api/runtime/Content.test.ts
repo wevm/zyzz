@@ -158,6 +158,32 @@ describe('Dynamic API page', () => {
 })
 
 describe('Recipe API page', () => {
+  test('returns class and rejects unstringifiable choices', () => {
+    const button = Recipe.create({
+      axes: { size: ['small'] },
+      className: 'z-button',
+      defaults: {},
+    })
+
+    expect(
+      Recipe.create({
+        axes: {},
+        className: 'z-button',
+        defaults: {},
+        html: true,
+      })(),
+    ).toMatchInlineSnapshot(`
+      {
+        "class": "z-button",
+      }
+    `)
+    expect(() =>
+      button({ size: Object.create(null) }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot convert object to primitive value]`,
+    )
+  })
+
   test('applies the overview example', async () => {
     const example = await load<{
       button: ReturnType<typeof Recipe.create>
@@ -280,6 +306,22 @@ describe('ConditionalRecipe API page', () => {
     expect(button({ conditions: { wide: undefined } })).toMatchInlineSnapshot(`
       {
         "className": "z-button",
+      }
+    `)
+  })
+
+  test('returns class for HTML output', () => {
+    expect(
+      ConditionalRecipe.create({
+        axes: {},
+        className: 'z-button',
+        conditions: ['wide'],
+        defaults: {},
+        html: true,
+      })(),
+    ).toMatchInlineSnapshot(`
+      {
+        "class": "z-button",
       }
     `)
   })
@@ -483,6 +525,30 @@ describe('PayloadRecipe API page', () => {
         },
       }
     `)
+  })
+
+  test('returns class and rejects unstringifiable HTML fields', () => {
+    const definition = { axes: { size: ['custom'] }, defaults: {} }
+    const payloads: readonly Recipe.Payload[] = [
+      { axis: 'size', choice: 'custom', slots: [{ padding: '--box-padding' }] },
+    ]
+    const box = PayloadRecipe.create({
+      ...definition,
+      html: true,
+      payloads,
+      select: Recipe.create({ ...definition, className: 'z-box' }),
+    })
+
+    expect(box()).toMatchInlineSnapshot(`
+      {
+        "class": "z-box",
+      }
+    `)
+    expect(() =>
+      box({ size: { custom: { padding: Symbol('padding') } } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot convert a Symbol value to a string]`,
+    )
   })
 })
 
@@ -937,6 +1003,29 @@ describe('Variable API page', () => {
 })
 
 describe('Native API page', () => {
+  test('drops a falsy style override', () => {
+    const card = Native.create({
+      axes: {},
+      defaults: {},
+      styles: { 0: { padding: 4 } },
+    })
+
+    expect(card({ style: false })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "padding": 4,
+        },
+      }
+    `)
+    expect(card({ style: null })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "padding": 4,
+        },
+      }
+    `)
+  })
+
   test('applies the overview example', async () => {
     const example = await load<{
       badge: Native.Callable<{ size: readonly ['small', 'large'] }>

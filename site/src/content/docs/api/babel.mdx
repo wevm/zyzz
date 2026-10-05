@@ -23,10 +23,11 @@ const result = transformSync(source, {
 ## Signature
 
 ```ts
-// Babel plugin entries
-;[zyzz, { target: 'web', ...options }][
-  (zyzz, { target: 'native', platform, ...options })
-]
+// Web compilation
+plugins: [[zyzz, { target: 'web', ...options }]]
+
+// Native compilation
+plugins: [[zyzz, { target: 'native', platform, ...options }]]
 ```
 
 The options accept either the web or native branch, exported as `WebOptions{:ts}` and `NativeOptions{:ts}` and joined as `Options{:ts}`.
@@ -164,7 +165,7 @@ Babel's JavaScript map and `cssMap` are separate, and both point to the authored
 
 Authoring modules require a filename, and unsupported target semantics fail compilation.
 
-Babel compiles one module at a time, so a configuration must stay local to its module, and `Config` imports, `zyzz/default`, and re-exported authoring helpers are rejected. [Metro](/docs/api/metro) supplies the module graph that shared configurations need.
+Web and fixed-scheme native transforms compile one module at a time, so a configuration must stay local to its module, and `Config` imports and re-exported authoring helpers are rejected. Every mode rejects `zyzz/default`. [Metro](/docs/api/metro) supplies the module graph that shared configurations need.
 
 ```ts title="build.ts"
 import { transformSync } from '@babel/core'

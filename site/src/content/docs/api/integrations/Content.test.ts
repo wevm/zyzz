@@ -1421,6 +1421,7 @@ describe('integration API examples', () => {
     )
 
     expect(checked.length).toMatchInlineSnapshot(`32`)
-    expect(result.status, result.stdout + result.stderr).toBe(0)
+    expect(result.stdout + result.stderr).toMatchInlineSnapshot(`""`)
+    expect(result.status).toMatchInlineSnapshot(`0`)
   }, 120_000)
 })

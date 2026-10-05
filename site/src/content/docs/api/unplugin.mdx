@@ -2,7 +2,7 @@
 
 Compile styles with esbuild, Rollup, or Webpack and emit CSS beside the bundle.
 
-The `zyzz` object from `zyzz/unplugin` holds one plugin factory per bundler. Each compiles the source root, rewrites authoring calls, and emits a complete stylesheet into the output directory. [Getting Started](/docs/introduction/getting-started?framework=other-bundlers) covers the setup.
+The `zyzz` object from `zyzz/unplugin` holds one plugin factory per bundler. The esbuild, Rollup, and Webpack factories compile the source root, rewrite authoring calls, and emit a complete stylesheet into the output directory. [Getting Started](/docs/introduction/getting-started?framework=other-bundlers) covers the setup.
 
 ```ts title="build.ts"
 import { build } from 'esbuild'

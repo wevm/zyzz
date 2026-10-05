@@ -79,7 +79,8 @@ Second paragraph with a [link](/docs).
     server.stderr?.on('data', (data) => {
       output += data
     })
-    for (let attempt = 0; attempt < 120; attempt++) {
+    // The first request compiles every documentation page.
+    for (let attempt = 0; attempt < 480; attempt++) {
       if (server.exitCode !== null) throw new Error(output)
       try {
         if ((await fetch(`${origin}/docs/introduction/compatibility`)).ok)
@@ -88,7 +89,7 @@ Second paragraph with a [link](/docs).
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
     throw new Error(`Documentation site did not start. ${output}`)
-  }, 60000)
+  }, 180000)
 
   afterAll(async () => {
     if (server?.pid && server.exitCode === null) {

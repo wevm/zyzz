@@ -8,7 +8,7 @@ Select compiled native styles and readonly variable values through the `Provider
 | `Provider`                        | Select configured variables and a resolved scheme for a subtree. |
 | `useStyles()`                     | Resolve compiled bindings for explicit style consumers.          |
 | `useVars(vars, selector?)`        | Read native values from the nearest Provider.                    |
-| `withStyles(Component, options?)` | Resolve compiled style props for third-party components.         |
+| `withStyles(Component, options?)` | Resolve compiled style props outside function component JSX.     |
 
 Export the native configuration's helpers:
 
@@ -163,23 +163,36 @@ namespace styles {
 }
 ```
 
-Metro's Babel pass resolves native bindings in JSX `style` expressions and prop spreads. Arrays, scalar payloads, variant choices, and native style callbacks retain their application inputs. Applied props can be declared outside rendering; selection remains local to the consuming render.
+Metro's Babel pass resolves native bindings in JSX `style` expressions, prop spreads, and props whose names end in `Style` on any component. Other props, such as `tintColor`, pass through unchanged.
 
-This automatic path supports function components and custom hooks that render JSX, including `memo` and `forwardRef` declarations. For class consumers, wrap the receiving component with `withStyles`. Components preserve their state when selection changes.
+```tsx
+function Feed() {
+  // contentContainerStyle resolves like style, without a wrapper
+  return <ScrollView contentContainerStyle={styles.content().style} />
+}
+```
+
+Arrays, scalar payloads, variant choices, and native style callbacks retain their application inputs. Applied props can be declared outside rendering; selection remains local to the consuming render.
+
+This automatic path supports function components and custom hooks that render JSX, including `memo` and `forwardRef` declarations. For class components, module-scope JSX, and `React.createElement` callers, wrap the receiving component with `withStyles`. Components preserve their state when selection changes.
 
 ## withStyles
 
-`withStyles(Component, options?)` returns a component that resolves compiled native styles through the nearest Provider. Define the wrapper at module scope. The wrapper preserves the component's required props and ref type.
+`withStyles(Component, options?)` returns a component that resolves compiled native styles through the nearest Provider. Function components and custom hooks need no wrapper. Use it for class components, module-scope JSX, and `React.createElement` callers. Define the wrapper at module scope. The wrapper preserves the component's required props and ref type.
 
 ```tsx
+import { Component } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { withStyles } from 'zyzz/react-native'
 import { panel } from './styles.js'
 
+// Class render methods are outside Metro's automatic resolution
 const SafeView = withStyles(SafeAreaView)
 
-function Screen() {
-  return <SafeView style={panel().style} />
+class Screen extends Component {
+  render() {
+    return <SafeView style={panel().style} />
+  }
 }
 ```
 

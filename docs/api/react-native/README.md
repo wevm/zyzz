@@ -13,7 +13,7 @@ Create typed native authoring and compile shared definitions into native style o
 | [useStyles](react.md#usestyles)       | Explicit resolution of Provider-selected native styles.          |
 | [useVars](react.md#usevars)           | Readonly native variables with an optional selector.             |
 | [Variants](Variants.md)               | Bounded native recipe tables with finite choice metadata.        |
-| [withStyles](react.md#withstyles)     | Third-party style props with preserved component props and refs. |
+| [withStyles](react.md#withstyles)     | Style props for class, module-scope, or `createElement` callers. |
 
 Static recipes from `Source.extract` retain ordered alternatives for [`Variants.compile`](Variants.md).
 

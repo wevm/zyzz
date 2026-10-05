@@ -4,9 +4,9 @@ Resolve compiled styles for third-party components, class components, and code o
 
 ## Overview
 
-Metro binds applied styles automatically on `View`, `Text`, `Image`, `Pressable`, and `TextInput` from `react-native`, inside function components and custom hooks. Other components receive compiled styles through `withStyles` or `useStyles`, which resolve them for the nearest Provider.
+Inside function components and custom hooks, Metro resolves applied styles automatically. `View`, `Text`, `Image`, `Pressable`, and `TextInput` from `react-native` bind natively. Other components resolve `style` and every prop ending in `Style`, such as `contentContainerStyle`.
 
-Rendering a core component with compiled styles outside a function component or hook fails compilation with a code frame. Class render methods and module-scope JSX need one of these resolvers.
+Rendering a core component with compiled styles outside a function component or hook fails compilation with a code frame. Class render methods, module-scope JSX, and code outside JSX resolve styles through `withStyles` or `useStyles`.
 
 ```tsx title="Notice.tsx"
 import { Text, View } from 'react-native'
@@ -31,9 +31,33 @@ namespace styles {
 
 ## Third-Party Components
 
-`withStyles` wraps a component so its `style` and `contentContainerStyle` props resolve compiled styles. Define the wrapper at module scope. It forwards other props and refs, and works with class components.
+Inside a function component, Metro resolves `style` and every prop whose name ends in `Style` on any component, such as `contentContainerStyle` on `ScrollView` or `columnWrapperStyle` on `FlatList`. Other props, such as `tintColor`, pass through unchanged.
 
 ```tsx title="Feed.tsx"
+import { ScrollView, Text } from 'react-native'
+import { style } from 'zyzz'
+
+export function Feed() {
+  return (
+    // [!code hl:2]
+    // contentContainerStyle resolves like style, without a wrapper
+    <ScrollView contentContainerStyle={styles.content().style}>
+      <Text>First post</Text>
+    </ScrollView>
+  )
+}
+
+namespace styles {
+  export const content = style({ gap: '12px', padding: '16px' })
+}
+```
+
+## Class Components
+
+`withStyles` wraps a component so its `style` and `contentContainerStyle` props resolve compiled styles in class render methods, module-scope JSX, and `React.createElement` calls. Define the wrapper at module scope. It forwards other props and refs, and accepts class components.
+
+```tsx title="Feed.tsx"
+import { Component } from 'react'
 import { ScrollView, Text } from 'react-native'
 import { style } from 'zyzz'
 import { withStyles } from 'zyzz/react-native'
@@ -42,12 +66,14 @@ import { withStyles } from 'zyzz/react-native'
 // Resolves style and contentContainerStyle for the nearest Provider
 const Scroll = withStyles(ScrollView)
 
-export function Feed() {
-  return (
-    <Scroll contentContainerStyle={styles.content().style}>
-      <Text>First post</Text>
-    </Scroll>
-  )
+export class Feed extends Component {
+  render() {
+    return (
+      <Scroll contentContainerStyle={styles.content().style}>
+        <Text>First post</Text>
+      </Scroll>
+    )
+  }
 }
 
 namespace styles {
@@ -57,10 +83,10 @@ namespace styles {
 
 ## Custom Style Props
 
-`styleProps` names other props that take styles, such as a component's `headerStyle`. The names must belong to the component, and `key` and `ref` are rejected.
+`styleProps` names other props that the wrapper resolves, such as a component's `headerStyle`. The names must belong to the component, and `key` and `ref` are rejected.
 
 ```tsx title="Sheet.tsx"
-import type { ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 import { Text, View, type StyleProp, type ViewStyle } from 'react-native'
 import { style } from 'zyzz'
 import { withStyles } from 'zyzz/react-native'
@@ -87,16 +113,18 @@ declare namespace Panel {
 // headerStyle resolves alongside the default style props
 const StyledPanel = withStyles(Panel, { styleProps: ['headerStyle'] })
 
-export function Sheet() {
-  return (
-    <StyledPanel
-      header={<Text>Settings</Text>}
-      headerStyle={styles.header().style}
-      style={styles.panel().style}
-    >
-      <Text>Notifications</Text>
-    </StyledPanel>
-  )
+export class Sheet extends Component {
+  render() {
+    return (
+      <StyledPanel
+        header={<Text>Settings</Text>}
+        headerStyle={styles.header().style}
+        style={styles.panel().style}
+      >
+        <Text>Notifications</Text>
+      </StyledPanel>
+    )
+  }
 }
 
 namespace styles {

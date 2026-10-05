@@ -355,8 +355,10 @@ export function visitor(
       },
     },
     JSXAttribute(path, state) {
+      const name = path.node.name
       if (
-        !t.isJSXIdentifier(path.node.name, { name: 'style' }) ||
+        !t.isJSXIdentifier(name) ||
+        (name.name !== 'style' && !name.name.endsWith('Style')) ||
         !t.isJSXExpressionContainer(path.node.value) ||
         t.isJSXEmptyExpression(path.node.value.expression)
       )
@@ -384,10 +386,13 @@ export function visitor(
           )
         return
       }
+      // Unlike style, other style props stay untouched outside components, so class and module-scope JSX keep compiling.
+      if (name.name !== 'style' && !component(path)) return
       const binding = owner(
         path,
         files.get(state.file)!,
-        native.has(path.parentPath.node as Babel.types.JSXOpeningElement)
+        name.name === 'style' &&
+          native.has(path.parentPath.node as Babel.types.JSXOpeningElement)
           ? 'nativeStyle'
           : 'style',
       )
@@ -497,11 +502,7 @@ export function visitor(
 
     return false
   }
-  function owner(
-    path: Babel.NodePath,
-    owners: Owners,
-    method: Method,
-  ): Babel.types.Identifier {
+  function component(path: Babel.NodePath) {
     const parent = path.findParent((candidate) => {
       if (!candidate.isFunction()) return false
       let declaration = candidate.parentPath
@@ -518,7 +519,15 @@ export function visitor(
         candidate.parentPath.isExportDefaultDeclaration()
       )
     })
-    if (!parent?.isFunction() || parent.isClassMethod())
+    return parent?.isFunction() && !parent.isClassMethod() ? parent : undefined
+  }
+  function owner(
+    path: Babel.NodePath,
+    owners: Owners,
+    method: Method,
+  ): Babel.types.Identifier {
+    const parent = component(path)
+    if (!parent)
       throw path.buildCodeFrameError(
         'Native style props must be rendered in a function component or custom hook.',
       )

@@ -150,6 +150,82 @@ describe('zyzz', () => {
     },
   )
 
+  test('resolves style-suffixed props on third-party and generic components', async () => {
+    const source = `import * as React from 'react';import {createRoot} from 'react-dom/client';import {Provider} from 'zyzz/react-native/react';
+      import {style} from 'zyzz';
+      const card=style({opacity:0.5});const ink='#ff0000';
+      function Scroll(props:{contentContainerStyle?:unknown;id:string;style?:unknown;tintColor?:string}){return <pre id={props.id}>{JSON.stringify({content:props.contentContainerStyle,style:props.style,tint:props.tintColor})}</pre>}
+      function List<Item>(props:{columnWrapperStyle?:unknown;data:readonly Item[];ListHeaderComponentStyle?:unknown}){return <pre id="list">{JSON.stringify({column:props.columnWrapperStyle,count:props.data.length,header:props.ListHeaderComponentStyle})}</pre>}
+      class Legacy extends React.Component {render(){return <Scroll id="legacy" contentContainerStyle={{padding:4}}/>}}
+      function App(){return <><Scroll id="scroll" contentContainerStyle={card().style} style={card().style} tintColor={ink}/><List<{id:string}> columnWrapperStyle={[card().style,{width:10}]} data={[{id:'a'}]} ListHeaderComponentStyle={card().style}/><Legacy/></>}
+      createRoot(document.getElementById('app')).render(React.createElement(Provider,{colorScheme:'light'},React.createElement(App)));`
+    const result = Babel.transformSync(source, {
+      babelrc: false,
+      configFile: false,
+      filename: 'App.tsx',
+      plugins: [[zyzz, { platform: 'ios', units: { px: 1 } }]],
+      presets: [
+        [expo.resolve('babel-preset-expo'), { enableBabelRuntime: false }],
+      ],
+    })
+
+    expect(result?.code?.includes('tintColor:ink')).toMatchInlineSnapshot(
+      'true',
+    )
+    const code = await Packed.bundle({
+      entry: 'App.ts',
+      modules: { 'App.ts': result!.code! },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div>')
+      await page.addScriptTag({ content: code })
+      await expect
+        .poll(() => page.locator('#legacy').textContent())
+        .toBeTruthy()
+      expect(JSON.parse((await page.locator('#scroll').textContent())!))
+        .toMatchInlineSnapshot(`
+        {
+          "content": {
+            "opacity": 0.5,
+          },
+          "style": {
+            "opacity": 0.5,
+          },
+          "tint": "#ff0000",
+        }
+      `)
+      expect(JSON.parse((await page.locator('#list').textContent())!))
+        .toMatchInlineSnapshot(`
+        {
+          "column": [
+            {
+              "opacity": 0.5,
+            },
+            {
+              "width": 10,
+            },
+          ],
+          "count": 1,
+          "header": {
+            "opacity": 0.5,
+          },
+        }
+      `)
+      expect(JSON.parse((await page.locator('#legacy').textContent())!))
+        .toMatchInlineSnapshot(`
+        {
+          "content": {
+            "padding": 4,
+          },
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('keeps hook bindings inside memoized components through Fast Refresh and module lowering', () => {
     const source = `import {memo, useState} from 'react';
       import {View as Box} from 'react-native';

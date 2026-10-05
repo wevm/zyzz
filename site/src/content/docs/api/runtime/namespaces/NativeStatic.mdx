@@ -91,13 +91,41 @@ NativeStatic.create({
 })
 ```
 
+## Application
+
+The returned callable accepts the inferred choices and a native `style` override, as [`Native.create`](/docs/api/runtime/namespaces/Native#inputaxis) does.
+
+### input[axis]
+
+- **Type:** `string | boolean | null | undefined{:ts}`
+- **Default:** `options.defaults[axis]{:ts}`
+
+The selected choice. `null` clears the axis, overriding its default, so only rules without a match on that axis apply.
+
+```ts /size: null/
+// { style: { fontSize: 16, lineHeight: 20 } }
+text({ size: null })
+```
+
+### input.style
+
+- **Type:** `StyleSheet.StyleProp<overrides>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Native overrides placed after the merged style in a new array. Their identity and type are kept, and the helper never freezes or copies them.
+
+```ts /style: { opacity: 0.5 }/
+// { style: [{ fontSize: 20, lineHeight: 25 }, { opacity: 0.5 }] }
+text({ size: 'large', style: { opacity: 0.5 } })
+```
+
 ## Returns
 
 ### callable
 
 - **Type:** `Native.Callable<axes>{:ts}`
 
-Accepts the inferred choices and a native `style` override, as [`Native.create`](/docs/api/runtime/namespaces/Native#inputstyle) does. Each merged style is frozen and reused for up to 256 combinations, evicting the oldest first. The returned props are new on every call.
+Each merged style is frozen and reused for up to 256 combinations, evicting the oldest first. The returned props are new on every call.
 
 ```ts /text()/
 // The same frozen object on every call: { fontSize: 16, lineHeight: 20 }

@@ -151,6 +151,46 @@ Selections inside named conditions, using the same forms. Their fields assign th
 box({ conditions: { wide: { size: { custom: { padding: '20px' } } } } })
 ```
 
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes passed to the `select` delegate, which appends them after the generated class list.
+
+```ts /className: 'wide'/
+// 'z-box wide'
+box({ className: 'wide' }).className
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments passed to the delegate, which merges them before `options.style`. Slot assignments follow both.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { '--accent': 'crimson', '--box-padding': '12px' }
+box({ size: { custom: { padding: '12px' } }, vars: { '--accent': 'crimson' } })
+  .style
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline overrides passed to the delegate. A slot assignment wins over an override of the same private property.
+
+```ts /style: { '--box-padding': '0px' }/
+// { '--box-padding': '12px' }
+box({
+  size: { custom: { padding: '12px' } },
+  style: { '--box-padding': '0px' },
+}).style
+```
+
 ## Returns
 
 The `select` delegate's props. When a call assigns slots, `style` is a new object with the delegate's `style` followed by the slot assignments, so slots win over overrides of the same property.

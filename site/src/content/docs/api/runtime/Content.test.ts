@@ -277,6 +277,30 @@ describe('PayloadRecipe API page', () => {
         "data-size": "fixed",
       }
     `)
+    expect(example.box({ className: 'wide' }).className).toMatchInlineSnapshot(
+      `"z-box wide"`,
+    )
+    expect(
+      example.box({
+        size: { custom: { padding: '12px' } },
+        vars: { '--accent': 'crimson' },
+      }).style,
+    ).toMatchInlineSnapshot(`
+      {
+        "--accent": "crimson",
+        "--box-padding": "12px",
+      }
+    `)
+    expect(
+      example.box({
+        size: { custom: { padding: '12px' } },
+        style: { '--box-padding': '0px' },
+      }).style,
+    ).toMatchInlineSnapshot(`
+      {
+        "--box-padding": "12px",
+      }
+    `)
   })
 
   test('binds default and conditional payload slots', () => {
@@ -705,6 +729,28 @@ describe('NativeStatic API page', () => {
     expect(example.text().style === example.text().style).toMatchInlineSnapshot(
       `true`,
     )
+    expect(example.text({ size: null })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "fontSize": 16,
+          "lineHeight": 20,
+        },
+      }
+    `)
+    expect(example.text({ size: 'large', style: { opacity: 0.5 } }))
+      .toMatchInlineSnapshot(`
+      {
+        "style": [
+          {
+            "fontSize": 20,
+            "lineHeight": 25,
+          },
+          {
+            "opacity": 0.5,
+          },
+        ],
+      }
+    `)
   })
 
   test('rejects a rule that names a missing fragment', () => {
@@ -805,6 +851,32 @@ describe('NativeDynamic API page', () => {
         },
       }
     `)
+  })
+
+  test('rejects a line-height multiplier without a font size', () => {
+    const text = NativeDynamic.create({
+      axes: {},
+      defaults: {},
+      program: {
+        rules: [
+          {
+            matches: [],
+            steps: [
+              {
+                parts: [{ number: true, slot: '--text-leading' }],
+                property: 'lineHeight',
+              },
+            ],
+          },
+        ],
+        slots: { leading: '--text-leading' },
+      },
+      styles: {},
+    }) as unknown as (input: { leading: number }) => unknown
+
+    expect(() => text({ leading: 1.5 })).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Numeric lineHeight requires an explicit fontSize and a nonnegative finite multiplier.]`,
+    )
   })
 })
 

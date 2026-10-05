@@ -80,7 +80,7 @@ The callable accepts applied props, or `false`, `null`, and `undefined` for omit
 
 ### entries
 
-- **Type:** `readonly (style.Props | false | null | undefined)[]{:ts}`
+- **Type:** ``readonly ((style.Props & { [key: `data-${string}`]: string | undefined }) | false | null | undefined)[]{:ts}``
 
 Later arguments win. Before an argument's values merge, the attributes and slots of its `owners` are removed, so a repeated definition replaces earlier bindings instead of leaving stale ones.
 

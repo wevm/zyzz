@@ -250,6 +250,8 @@ The callable throws [`Native.SelectionError`](/docs/api/runtime/namespaces/Nativ
 
 A dynamic choice declared without a base slot record throws a `TypeError`. A value that cannot convert throws an `Error`, such as a `rem` length without `units.rem`.
 
+A numeric `lineHeight` from the program is a multiplier. It throws `Native.SelectionError` when it is negative or not finite, when the merged style has no numeric `fontSize`, or when the product is not finite.
+
 ```ts title="invalid.ts"
 import { Native, NativeDynamic } from 'zyzz/runtime'
 

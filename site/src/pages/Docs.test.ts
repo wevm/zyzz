@@ -213,14 +213,14 @@ describe('/docs', () => {
           .count(),
       ).toMatchInlineSnapshot('0')
       // Nested topics stay collapsed unless they contain the current page.
-      await navigation
-        .getByRole('button', { name: 'Integrations', exact: true })
-        .click()
-      expect(
-        await navigation
-          .getByRole('link', { name: 'Vite', exact: true })
-          .getAttribute('aria-disabled'),
-      ).toMatchInlineSnapshot('"true"')
+      // Each topic is a `details` element whose `summary` has no implicit role.
+      const vite = navigation.getByRole('link', { name: 'Vite', exact: true })
+      expect(await vite.isVisible()).toMatchInlineSnapshot('false')
+      await navigation.locator('summary', { hasText: 'Integrations' }).click()
+      expect(await vite.isVisible()).toMatchInlineSnapshot('true')
+      expect(await vite.getAttribute('aria-disabled')).toMatchInlineSnapshot(
+        '"true"',
+      )
       expect(
         await navigation
           .getByRole('link', { name: 'Getting Started', exact: true })

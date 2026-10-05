@@ -76,11 +76,19 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       .filter(
         (entry) =>
           entry[0].split('/')[0] === group.title.toLowerCase() &&
-          !group.pages.some((page) => page.path === entry[0]),
+          !group.pages.some((page) => paths(page).includes(entry[0])),
       )
       .map((entry) => ({ path: entry[0], title: entry[1].title })),
   ],
 }))
+
+/** Lists an item's path and every path nested beneath it. */
+export function paths(item: Item): readonly string[] {
+  return [
+    ...(item.path === undefined ? [] : [item.path]),
+    ...(item.children ?? []).flatMap(paths),
+  ]
+}
 
 /** A page or nested topic in documentation navigation. */
 export type Item = {

@@ -20,12 +20,14 @@ import {
   useId,
   useState,
 } from 'react'
+import ActivityIcon from '~icons/lucide/activity'
 import ALargeSmallIcon from '~icons/lucide/a-large-small'
 import AnchorIcon from '~icons/lucide/anchor'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import AtSignIcon from '~icons/lucide/at-sign'
 import BookOpenIcon from '~icons/lucide/book-open'
 import BoxIcon from '~icons/lucide/box'
+import BoxesIcon from '~icons/lucide/boxes'
 import BracesIcon from '~icons/lucide/braces'
 import BrainIcon from '~icons/lucide/brain'
 import CheckIcon from '~icons/lucide/check'
@@ -123,6 +125,17 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/node': NodeIcon,
   'api/oxlint': ShieldCheckIcon,
   'api/react-native': ReactIcon,
+  'api/react-native/defineConfig': SettingsIcon,
+  'api/react-native/namespaces/Host': SmartphoneIcon,
+  'api/react-native/namespaces/StyleSheet': TableIcon,
+  'api/react-native/namespaces/Variants': LayersIcon,
+  'api/react-native/Provider': SunMoonIcon,
+  'api/react-native/useAnimatedStyleValue': ActivityIcon,
+  'api/react-native/useAnimatedVars': ZapIcon,
+  'api/react-native/useStyles': PaintbrushIcon,
+  'api/react-native/useVars': VariableIcon,
+  'api/react-native/values': ListIcon,
+  'api/react-native/withStyles': BoxesIcon,
   'api/runtime': BookOpenIcon,
   'api/runtime/namespaces/Appearance': SunMoonIcon,
   'api/runtime/namespaces/Composition': CombineIcon,

@@ -1,0 +1,121 @@
+# withStyles
+
+Wrap a component so its style props resolve through the nearest Provider.
+
+Metro resolves styles in the JSX of function components and custom hooks, including `memo` and `forwardRef` declarations. Class render methods, module-scope JSX, and `React.createElement` callers are outside that path, so the component they render is wrapped instead.
+
+```tsx title="Screen.tsx"
+import { Component } from 'react'
+import { View } from 'react-native'
+import { withStyles } from 'zyzz/react-native'
+import { style } from './zyzz.config.js'
+
+// [!code hl:2]
+// Declared in the caller's module, so Metro recognizes the wrapper
+const StyledView = withStyles(View)
+
+export class Screen extends Component {
+  override render() {
+    return <StyledView {...styles.panel()} />
+  }
+}
+
+namespace styles {
+  export const panel = style({ backgroundColor: 'ink', flexGrow: 1 })
+}
+```
+
+A class JSX caller declares its wrapper in the same module. Imported wrappers work with `React.createElement` callers.
+
+## Signature
+
+```ts
+// A component with the original props and ref
+withStyles(Component, options?)
+```
+
+## Parameters
+
+### Component
+
+- **Type:** `React.ElementType{:ts}`
+
+A function, `memo`, `forwardRef`, class, or host component that receives native styles. Props other than style props, and refs, pass through unchanged.
+
+```ts /SafeAreaView/
+// A third-party component that reads its style prop
+const SafeView = withStyles(SafeAreaView)
+```
+
+### options.styleProps
+
+- **Type:** `readonly string[]{:ts}`, narrowed to the component's prop names
+- **Default:** `undefined{:ts}`
+
+Style-bearing props resolved in addition to `style` and `contentContainerStyle`, which are always resolved. `key` and `ref` are rejected.
+
+```ts /styleProps: ['bodyStyle']/
+// Resolves a third-party prop that takes a style
+const StyledCard = withStyles(Card, { styleProps: ['bodyStyle'] })
+```
+
+## Returns
+
+### component
+
+- **Type:** `(props: props) => result{:ts}` for function components, or `React.ForwardRefExoticComponent<React.ComponentPropsWithRef<Component>>{:ts}`
+
+A component with the original props and ref. Function components keep their call signature and type parameters, but not overloads or static members, when `styleProps` is omitted. A generic class, such as `FlatList`, is instantiated before wrapping, since its two constructors carry no type parameters through the wrapper.
+
+```tsx title="Rows.tsx"
+import { FlatList } from 'react-native'
+import { withStyles } from 'zyzz/react-native'
+
+type Row = { readonly id: string }
+
+// [!code hl:2]
+// Accepts FlatList<Row> props and a FlatList<Row> ref
+export const Rows = withStyles(FlatList<Row>)
+```
+
+## Style Arrays
+
+Style arrays keep their authored order, including caller overrides. Plain native objects and Reanimated styles pass through unchanged, so `withStyles(Animated.View)` combines compiled styles with animated ones, as [Native Animations](/docs/guides/native/animations#mix-compiled-styles) shows.
+
+```tsx title="Panel.tsx"
+import Animated, { useAnimatedStyle } from 'react-native-reanimated'
+import { withStyles } from 'zyzz/react-native'
+import { style } from './zyzz.config.js'
+
+const AnimatedView = withStyles(Animated.View)
+
+export function Panel() {
+  const animated = useAnimatedStyle(() => ({ opacity: 0.8 }))
+  // [!code hl:2]
+  // The wrapper resolves the compiled entry and forwards the animated one
+  return <AnimatedView style={[styles.panel().style, animated]} />
+}
+
+namespace styles {
+  export const panel = style({ backgroundColor: 'ink' })
+}
+```
+
+The wrapper rerenders through React when the Provider's selection changes. Outside a Provider it follows the [Default Selection](/docs/api/react-native/Provider#default-selection).
+
+## Errors
+
+TypeScript rejects `styleProps` names the component does not declare. At runtime, invalid names throw `withStyles requires style prop names excluding key and ref.`
+
+```tsx twoslash
+// @customConditions: react-native
+// @errors: 2769
+import { withStyles } from 'zyzz/react-native'
+
+function Card(props: { readonly style?: object | undefined }) {
+  return null
+}
+
+// Card declares no bodyStyle prop
+const StyledCard = withStyles(Card, { styleProps: ['bodyStyle'] })
+```

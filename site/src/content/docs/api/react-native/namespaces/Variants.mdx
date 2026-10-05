@@ -1,0 +1,188 @@
+# Variants
+
+Compile a static recipe into native tables for every choice combination.
+
+`Variants.compile` turns the `staticRecipe` that [`Source.extract`](/docs/api/compiler/namespaces/Source) keeps for a finite [`variants`](/docs/api/core/variants) call into native tables. Metro compiles recipes in application source without this table format, so it serves manual tables, tools, and tests.
+
+```ts title="button.ts"
+import { Source } from 'zyzz/compiler'
+import { Variants } from 'zyzz/react-native'
+
+const extracted = Source.extract({
+  moduleId: 'button.ts',
+  source: `import { variants } from 'zyzz'
+export const button = variants({
+  base: { padding: '8px' },
+  variants: { tone: { quiet: { opacity: 0.5 }, loud: { opacity: 1 } } },
+  defaultVariants: { tone: 'quiet' },
+})`,
+})
+
+// [!code hl:2]
+// Tables for quiet, loud, and an omitted tone
+const compiled = Variants.compile({ recipe: extracted.calls[0]!.staticRecipe! })
+```
+
+## Variants.compile
+
+Apply the base, the selected choices in axis order, and matching compound rules in authored order, then compile every combination. Each group applies shared declarations, then `targets.native`, then the platform branch.
+
+```ts
+// Tables for every selection
+Variants.compile(options)
+```
+
+### options.recipe
+
+- **Type:** `Source.Call['staticRecipe']{:ts}`, without `undefined`
+
+Static recipe data with ordered `axes`, `defaults`, and `rules`. Axes need unique string choices, and defaults and rule matches must name declared choices. Dynamic payloads and named conditions produce no `staticRecipe`.
+
+```ts /extracted.calls[0]!.staticRecipe!/
+// The recipe the extractor keeps for the first call
+Variants.compile({ recipe: extracted.calls[0]!.staticRecipe! })
+```
+
+### options.vars
+
+- **Type:** `{ [set: string]: Vars.Definition }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Variable sets keyed by output label, as in [`StyleSheet.compile`](/docs/api/react-native/namespaces/StyleSheet#optionsvars). Omission creates one `default` table.
+
+```ts /vars: { alternate, base: theme }/
+// Two labels, each with light and dark tables
+Variants.compile({ recipe, vars: { alternate, base: theme } })
+```
+
+### options.platform
+
+- **Type:** `'android' | 'ios'{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selects the platform branch after shared and `targets.native` declarations, and is required when a selected rule has one.
+
+```ts /platform: 'ios'/
+// Applies targets.ios in every rule
+Variants.compile({ platform: 'ios', recipe })
+```
+
+### options.units
+
+- **Type:** `{ px?: number, rem?: number }{:ts}`
+- **Default:** `{ px: 1 }{:ts}`
+
+Positive logical-unit scales, as in [`StyleSheet.compile`](/docs/api/react-native/namespaces/StyleSheet#optionsunits).
+
+```ts /units: { rem: 16 }/
+// 1rem compiles to 16 logical units
+Variants.compile({ recipe, units: { rem: 16 } })
+```
+
+### options.fonts
+
+- **Type:** `{ [family: string]: string }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Installed family names for authored `fontFamily` text, as in [`StyleSheet.compile`](/docs/api/react-native/namespaces/StyleSheet#optionsfonts).
+
+```ts /fonts: { 'Inter, sans-serif': 'Inter-Regular' }/
+// Maps the authored stack to one installed family
+Variants.compile({ fonts: { 'Inter, sans-serif': 'Inter-Regular' }, recipe })
+```
+
+### compiled.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Frozen copies of the choice lists in declaration order, with literal names inferred from the recipe.
+
+```ts /compiled.axes.tone/
+// ['quiet', 'loud']
+const tones = compiled.axes.tone
+```
+
+### compiled.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+A frozen copy of the declared defaults, where `null` omits an axis. The tables cover every combination, so defaults are metadata for the callable that selects them.
+
+```ts /compiled.defaults.tone/
+// 'quiet'
+const tone = compiled.defaults.tone
+```
+
+### compiled.styles
+
+- **Type:** `StyleSheet.Tables<string, set>{:ts}`
+
+Frozen tables indexed by set, scheme, and a mixed-radix selection index. Each axis has one more slot than its choices, for omission, and the first axis varies fastest.
+
+```ts /compiled.styles.default.light/
+// '0' is quiet, '1' is loud, and '2' omits tone
+const loud = compiled.styles.default.light['1']
+```
+
+## Selection Limit
+
+The product of each axis's choice count plus one must stay at or below 256 per set and scheme, and compilation checks it before building tables. Recipes compiled by Metro have no such limit.
+
+```ts
+import { Variants } from 'zyzz/react-native'
+
+Variants.compile({
+  recipe: {
+    // [!code hl:7]
+    // 4 × 4 × 4 × 5 = 320 selections exceeds the limit
+    axes: {
+      a: ['1', '2', '3'],
+      b: ['1', '2', '3'],
+      c: ['1', '2', '3'],
+      d: ['1', '2', '3', '4'],
+    },
+    defaults: {},
+    rules: [],
+  },
+})
+```
+
+## Types
+
+- **`Variants.Definition<recipe, set>{:ts}`:** The compiled `axes`, `defaults`, and `styles`.
+- **`Variants.compile.Options<recipe, set>{:ts}`:** The accepted options.
+- **`Variants.compile.ReturnType<recipe, set>{:ts}`:** The same shape as `Variants.Definition`.
+
+A definition pairs with `Native.create` from `zyzz/runtime`, which selects a table entry from choice names, as the [Host](/docs/api/react-native/namespaces/Host) binding example shows.
+
+```ts title="tables.ts"
+import type { Variants } from 'zyzz/react-native'
+
+// [!code hl:2]
+// Any compiled recipe, such as one loaded from JSON
+export type Tables = Variants.Definition
+```
+
+## Errors
+
+### Variants.CompileError
+
+Thrown for invalid axes, defaults or compound matches that name undeclared choices, and recipes past the selection limit. Declarations that cannot compile for native throw [`StyleSheet.CompileError`](/docs/api/react-native/namespaces/StyleSheet#stylesheetcompileerror) instead.
+
+```ts
+import { Variants } from 'zyzz/react-native'
+
+try {
+  // `loud` is not a choice of `tone`
+  Variants.compile({
+    recipe: {
+      axes: { tone: ['quiet'] },
+      defaults: { tone: 'loud' },
+      rules: [],
+    },
+  })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Variants.CompileError) console.error(error.message)
+}
+```

@@ -337,7 +337,7 @@ At runtime, the same mistakes throw `Config.InvalidError`, as do invalid layer n
 
 ## React Native
 
-Native apps import `defineConfig` from `zyzz/react-native`. It takes the same options and returns the same helpers, plus a `Provider` that selects the color scheme and set for its descendants. Tokens resolve to native values, and media-conditioned or composed values fail native compilation.
+Native apps import [`defineConfig`](/docs/api/react-native/defineConfig) from `zyzz/react-native`. It takes the same options and returns the same helpers, plus a [`Provider`](/docs/api/react-native/Provider) that selects the color scheme, set, and window size for its descendants. Tokens resolve to native values.
 
 ```tsx title="App.tsx"
 import type { ReactNode } from 'react'

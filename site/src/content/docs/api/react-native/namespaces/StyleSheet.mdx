@@ -1,0 +1,278 @@
+# StyleSheet
+
+Compile shared definitions into frozen native tables, then select and compose them.
+
+`StyleSheet` compiles [`Style.define`](/docs/api/core/namespaces/Style) data into tables indexed by set, color scheme, and style name, without reading device state. Metro applications receive compiled styles from the bundler, so these functions serve manual tables, tools, and tests.
+
+```ts title="tables.ts"
+import { defineVars, Style } from 'zyzz'
+import { StyleSheet } from 'zyzz/react-native'
+
+const theme = defineVars({
+  color: { text: { dark: '#ffffff', light: '#111111' } },
+})
+const styles = Style.define({
+  text: { color: theme.color.text, fontSize: '16px' },
+})
+
+// [!code hl:6]
+// Compile both schemes once, then look one up
+const output = StyleSheet.compile({ styles, vars: { base: theme } })
+const selected = StyleSheet.select(output.styles, {
+  colorScheme: 'dark',
+  set: 'base',
+})
+```
+
+## StyleSheet.compile
+
+Resolve definitions into deeply frozen tables for every supplied set and both color schemes. Identical resolved styles share one object, and conversion follows [Values](/docs/api/react-native/values).
+
+```ts
+// Tables for each set and both schemes
+StyleSheet.compile(options)
+```
+
+### options.styles
+
+- **Type:** `Style.Definition{:ts}`
+
+Shared definitions from `Style.define`, the same input `Css.compile` accepts. Selectors, queries, and other features native views cannot express fail compilation.
+
+```ts /styles/
+// The definitions to convert
+StyleSheet.compile({ styles })
+```
+
+### options.vars
+
+- **Type:** `{ [set: string]: Vars.Definition }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Variable sets keyed by output label. Omission creates one `default` table from each token's own values, and an empty map is invalid. Sets from `extendVars` replace values of the definition they extend, while unrelated definitions keep their own values.
+
+```ts /vars: { alternate, base: theme }/
+// Two labels, each with light and dark tables
+StyleSheet.compile({ styles, vars: { alternate, base: theme } })
+```
+
+### options.platform
+
+- **Type:** `'android' | 'ios'{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selects the `targets.ios` or `targets.android` branch after shared and `targets.native` declarations. It is required when a definition has a platform branch.
+
+```ts /platform: 'android'/
+// Applies targets.android after the shared declarations
+StyleSheet.compile({ platform: 'android', styles })
+```
+
+### options.units
+
+- **Type:** `{ px?: number, rem?: number }{:ts}`
+- **Default:** `{ px: 1 }{:ts}`
+
+Positive logical-unit scales. `px` defaults to one logical unit, and `rem` has no default, so a definition with `rem` lengths requires it. No pixel ratio or root font size is read.
+
+```ts /units: { px: 1, rem: 16 }/
+// 1rem compiles to 16 logical units
+StyleSheet.compile({ styles, units: { px: 1, rem: 16 } })
+```
+
+### options.fonts
+
+- **Type:** `{ [family: string]: string }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Maps exact authored `fontFamily` text to installed native family names. Every shared family needs a mapping, and compilation neither loads fonts nor picks a platform fallback.
+
+```ts /fonts: { 'Inter, sans-serif': 'Inter-Regular' }/
+// Authored CSS stacks map to one installed family
+StyleSheet.compile({ fonts: { 'Inter, sans-serif': 'Inter-Regular' }, styles })
+```
+
+### output.styles
+
+- **Type:** `StyleSheet.Tables<name, set>{:ts}`
+
+Frozen tables indexed by set label, then `'dark' | 'light'`, then style name. Both schemes exist for every label.
+
+```ts /output.styles.base.dark.text/
+// { color: '#ffffff', fontSize: 16 }
+const text = output.styles.base.dark.text
+```
+
+## StyleSheet.select
+
+Return one existing scheme table for a set. Selection never compiles or copies, so the result keeps the identity of the compiled objects.
+
+```ts
+// The table for one set and scheme
+StyleSheet.select(styles, options)
+```
+
+### styles
+
+- **Type:** `StyleSheet.Tables{:ts}`
+
+The `styles` field of a `StyleSheet.compile` result, or of a `Variants.compile` result.
+
+```ts /output.styles/
+// The tables from the introductory example
+StyleSheet.select(output.styles, { colorScheme: 'light', set: 'base' })
+```
+
+### options.colorScheme
+
+- **Type:** `'dark' | 'light'{:ts}`
+
+The resolved scheme, chosen by the application.
+
+```ts /colorScheme: 'dark'/
+// The dark half of each color pair
+StyleSheet.select(output.styles, { colorScheme: 'dark', set: 'base' })
+```
+
+### options.set
+
+- **Type:** `string{:ts}`, inferred from the table labels
+
+A label from `options.vars`, or `'default'` when compilation omitted it.
+
+```ts /set: 'default'/
+// Tables compiled without vars use the default label
+StyleSheet.select(defaults.styles, { colorScheme: 'light', set: 'default' })
+```
+
+## StyleSheet.compose
+
+Combine two native styles without flattening or copying them. Two present operands produce a two-element array, and a falsy operand returns the other operand unchanged.
+
+```ts
+import { StyleSheet } from 'zyzz/react-native'
+
+declare const active: boolean
+
+// [!code hl:3]
+// [base, { opacity: 0.5 }] when active, or base itself
+const base = { borderRadius: 8 }
+const style = StyleSheet.compose(base, active && { opacity: 0.5 })
+```
+
+### first
+
+- **Type:** `object | '' | false | null | undefined{:ts}`
+
+The earlier native style. Later declarations win when React Native or `StyleSheet.flatten` consumes the result.
+
+```ts /selected.text/
+// A compiled style followed by a native override
+StyleSheet.compose(selected.text, { opacity: 0.5 })
+```
+
+### second
+
+- **Type:** `object | '' | false | null | undefined{:ts}`
+
+The later native style, which can be a conditional entry.
+
+```ts /active && { opacity: 0.5 }/
+// Returns selected.text alone while inactive
+StyleSheet.compose(selected.text, active && { opacity: 0.5 })
+```
+
+## StyleSheet.flatten
+
+Merge nested native style arrays into one object, with later declarations winning. Falsy entries are skipped, and structured values such as transforms replace earlier values without deep merging.
+
+```ts
+import { StyleSheet } from 'zyzz/react-native'
+
+// [!code hl:5]
+// { borderRadius: 8, opacity: 0.5 }
+const style = StyleSheet.flatten([
+  { borderRadius: 8 },
+  [false, { opacity: 0.5 }],
+])
+```
+
+### styles
+
+- **Type:** `StyleSheet.StyleProp<object>{:ts}`
+
+A native object, a nested array, or a falsy value. A plain object returns unchanged, an array returns a new object, and a falsy value returns `undefined`.
+
+```ts /StyleSheet.flatten([])/
+// An empty array flattens to {}
+const empty = StyleSheet.flatten([])
+```
+
+## StyleSheet.absoluteFill
+
+A frozen style with absolute positioning and zero `top`, `right`, `bottom`, and `left` offsets. Composition can override its offsets.
+
+```ts
+import { StyleSheet } from 'zyzz/react-native'
+
+// [!code hl:2]
+// An overlay that starts 12 units below the top edge
+const overlay = StyleSheet.compose(StyleSheet.absoluteFill, { top: 12 })
+```
+
+## Types
+
+- **`StyleSheet.ColorScheme{:ts}`:** `'dark' | 'light'`.
+- **`StyleSheet.Diagnostic{:ts}`:** One compilation failure, with `code`, `message`, and `path`.
+- **`StyleSheet.NativeStyle{:ts}`:** A compiled native style object.
+- **`StyleSheet.Properties{:ts}`:** An optional constraint that checks native properties and units before `Style.define`.
+- **`StyleSheet.StyleProp<style>{:ts}`:** A native style, a nested array, or a falsy value.
+- **`StyleSheet.Tables<name, set>{:ts}`:** Compiled tables by set, scheme, and style name.
+
+`Style.define` keeps style names but widens property values, so `satisfies StyleSheet.Properties` checks each style before that boundary.
+
+```ts title="card.ts"
+import { Style } from 'zyzz'
+import type { StyleSheet } from 'zyzz/react-native'
+
+export const styles = Style.define({
+  // [!code hl:2]
+  // Checked against the native subset before definition
+  card: { display: 'flex', padding: '1rem' } satisfies StyleSheet.Properties,
+})
+```
+
+## Errors
+
+### StyleSheet.CompileError
+
+Thrown when a definition or option cannot compile for native. Its frozen `diagnostics` list each failure with a `code` of `invalid_options`, `unsupported_feature`, or `unsupported_value`, and a `path` through set, scheme, style, and property.
+
+```ts
+import { Style } from 'zyzz'
+import { StyleSheet } from 'zyzz/react-native'
+
+try {
+  // `rem` lengths need units.rem
+  StyleSheet.compile({ styles: Style.define({ label: { fontSize: '1rem' } }) })
+} catch (error) {
+  // [!code hl:2]
+  if (error instanceof StyleSheet.CompileError)
+    for (const diagnostic of error.diagnostics) console.error(diagnostic.path)
+}
+```
+
+### StyleSheet.SelectionError
+
+Thrown when `StyleSheet.select` receives an unknown set label or a scheme other than `'dark'` or `'light'`. TypeScript rejects both for typed tables.
+
+```ts twoslash
+// @customConditions: react-native
+// @errors: 2322
+import { StyleSheet } from 'zyzz/react-native'
+
+declare const tables: StyleSheet.Tables<'text', 'default'>
+
+// The only label is `default`
+StyleSheet.select(tables, { colorScheme: 'light', set: 'base' })
+```

@@ -269,13 +269,10 @@ Thrown when `StyleSheet.select` receives an unknown set label or a scheme other 
 ```ts twoslash
 // @customConditions: react-native
 // @errors: 2322
-import { Style } from 'zyzz'
 import { StyleSheet } from 'zyzz/react-native'
 
-const output = StyleSheet.compile({
-  styles: Style.define({ text: { opacity: 1 } }),
-})
+declare const tables: StyleSheet.Tables<'text', 'default'>
 
 // The only label is `default`
-StyleSheet.select(output.styles, { colorScheme: 'light', set: 'base' })
+StyleSheet.select(tables, { colorScheme: 'light', set: 'base' })
 ```

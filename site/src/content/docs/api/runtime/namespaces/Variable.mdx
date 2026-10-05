@@ -1,0 +1,90 @@
+# Variable
+
+Bind a compiler-assigned custom property name to a reference with a typed setter.
+
+The compiler rewrites each [`variable`](/docs/api/core/variable) declaration into a `Variable.create` call with the property name it assigned. Applications normally do not import it. The reference converts to its name, so it works as a computed key in `vars` assignments.
+
+```ts title="variables.ts"
+import { Variable } from 'zyzz/runtime'
+
+// [!code hl:6]
+// The name the compiler assigned to `variable('color')`
+export const accent = Variable.create({
+  name: '--accent',
+  type: 'color',
+  variable: true,
+})
+
+// { '--accent': 'crimson' }
+export const assignment = accent.set('crimson')
+```
+
+## Signature
+
+```ts
+// Generated slot metadata for one declaration
+Variable.create(slot)
+```
+
+## Parameters
+
+### slot.name
+
+- **Type:** `` `--${string}`{:ts} ``
+
+The custom property name, which every compiled rule that reads the variable uses.
+
+```ts /name: '--accent'/
+// Converts to '--accent'
+Variable.create({ name: '--accent', type: 'color', variable: true })
+```
+
+### slot.type
+
+- **Type:** `variable.Kind | '*'{:ts}`
+
+The scalar domain, such as `'color'` or `'length'`. It types the values `set` accepts, and `'*'` accepts any string or number.
+
+```ts /type: 'length'/
+// set() accepts lengths such as '12px'
+Variable.create({ name: '--gap', type: 'length', variable: true })
+```
+
+### slot.variable
+
+- **Type:** `true{:ts}`
+
+Marks the slot as an individual variable rather than a theme reference.
+
+```ts /variable: true/
+// Required on every slot
+Variable.create({ name: '--accent', type: 'color', variable: true })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `variable.Reference<kind>{:ts}`
+
+A frozen object holding the slot fields. It converts to `slot.name` as a string or property key.
+
+```ts /[accent]/
+// Assigns --accent when applying a style
+styles.button({ vars: { [accent]: 'crimson' } })
+```
+
+### set
+
+- **Type:** `(value) => { [name]: value }{:ts}`
+
+Returns a new frozen assignment object. The value is typed by `slot.type` and not validated at runtime.
+
+```ts /accent.set('crimson')/
+// { '--accent': 'crimson' }
+accent.set('crimson')
+```
+
+## Errors
+
+`Variable.create` throws no errors. It creates no CSS and does not validate the slot or assigned values.

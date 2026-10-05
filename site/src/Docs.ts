@@ -121,7 +121,75 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
         ],
       },
       { path: 'api/compiler', title: 'Compiler' },
-      { path: 'api/runtime', title: 'Runtime' },
+      {
+        title: 'Runtime',
+        children: [
+          { path: 'api/runtime', title: 'Overview' },
+          {
+            title: 'Web',
+            items: [
+              { path: 'api/runtime/namespaces/Props', title: 'Props' },
+              { path: 'api/runtime/namespaces/Dynamic', title: 'Dynamic' },
+              { path: 'api/runtime/namespaces/Recipe', title: 'Recipe' },
+              {
+                path: 'api/runtime/namespaces/ConditionalRecipe',
+                title: 'ConditionalRecipe',
+              },
+              {
+                path: 'api/runtime/namespaces/PayloadRecipe',
+                title: 'PayloadRecipe',
+              },
+              {
+                path: 'api/runtime/namespaces/Composition',
+                title: 'Composition',
+              },
+            ],
+          },
+          {
+            title: 'HTML',
+            items: [
+              { path: 'api/runtime/namespaces/Html', title: 'Html' },
+              {
+                path: 'api/runtime/namespaces/CompositionHtml',
+                title: 'CompositionHtml',
+              },
+            ],
+          },
+          {
+            title: 'Themes',
+            items: [
+              { path: 'api/runtime/namespaces/Selection', title: 'Selection' },
+              {
+                path: 'api/runtime/namespaces/Appearance',
+                title: 'Appearance',
+              },
+              { path: 'api/runtime/namespaces/Variable', title: 'Variable' },
+            ],
+          },
+          {
+            title: 'Native',
+            items: [
+              { path: 'api/runtime/namespaces/Native', title: 'Native' },
+              {
+                path: 'api/runtime/namespaces/NativeStatic',
+                title: 'NativeStatic',
+              },
+              {
+                path: 'api/runtime/namespaces/NativeDynamic',
+                title: 'NativeDynamic',
+              },
+              {
+                path: 'api/runtime/namespaces/NativeContext',
+                title: 'NativeContext',
+              },
+              {
+                path: 'api/runtime/namespaces/NativeVars',
+                title: 'NativeVars',
+              },
+            ],
+          },
+        ],
+      },
       { path: 'api/node', title: 'Node' },
       { path: 'api/oxlint', title: 'Oxlint' },
     ],

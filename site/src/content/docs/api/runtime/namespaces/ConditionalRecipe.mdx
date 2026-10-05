@@ -1,0 +1,136 @@
+# ConditionalRecipe
+
+Add scoped attributes for variant selections that apply only inside a named condition.
+
+The compiler rewrites a [`variants`](/docs/api/core/variants) definition with `conditions` into a `ConditionalRecipe.create` call. Applications normally do not import it. Each conditional selection becomes one attribute that compiled rules match inside the condition's query, so the helper never evaluates a query.
+
+```ts title="button.ts"
+import { ConditionalRecipe } from 'zyzz/runtime'
+
+const button = ConditionalRecipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  // [!code hl:2]
+  // Index 0 in attribute names refers to `wide`
+  conditions: ['wide'],
+  defaults: { size: 'small' },
+})
+
+// { className: 'z-button', 'data-size': 'small', 'data-zyzz-condition-0-size': 'slarge' }
+export const props = button({ conditions: { wide: { size: 'large' } } })
+```
+
+## ConditionalRecipe.create
+
+```ts
+// Recipe metadata plus the ordered condition names
+ConditionalRecipe.create(options)
+```
+
+### options.conditions
+
+- **Type:** `readonly string[]{:ts}`
+
+The condition names in authored order. The other options match [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#parameters), which selects the unconditional attributes.
+
+```ts /conditions: ['wide', 'print']/
+// Attributes use index 0 for wide and 1 for print
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-card',
+  conditions: ['wide', 'print'],
+  defaults: {},
+})
+```
+
+### options.html
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Return HTML attributes. Serialization happens once, after every conditional attribute is added.
+
+```ts /html: true/
+// Returns `class` instead of `className`
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-card',
+  conditions: ['wide'],
+  defaults: {},
+  html: true,
+})
+```
+
+### input.conditions
+
+- **Type:** `{ [condition: string]: { [axis: string]: string | boolean | null | undefined } }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selections that apply inside each named condition. A choice serializes with an `s` prefix, and `null` serializes as `n`, which clears the axis inside the condition. Omitted and `undefined` entries add no attribute.
+
+```ts /wide: { size: null }/
+// Adds 'data-zyzz-condition-0-size': 'n'
+button({ size: 'large', conditions: { wide: { size: null } } })
+```
+
+### data-zyzz-condition-[index]-[axis]
+
+- **Type:** `string{:ts}`
+
+One returned attribute per conditional selection, beside the unconditional `data-[axis]` attributes.
+
+```ts /props['data-zyzz-condition-0-size']/
+// 'slarge'
+props['data-zyzz-condition-0-size']
+```
+
+## ConditionalRecipe.attribute
+
+```ts
+// The attribute name shared by compiled rules and the callable
+ConditionalRecipe.attribute(options)
+```
+
+### options.axis
+
+- **Type:** `string{:ts}`
+
+The declared axis name.
+
+```ts /axis: 'size'/
+// 'data-zyzz-condition-0-size'
+ConditionalRecipe.attribute({ axis: 'size', condition: 0 })
+```
+
+### options.condition
+
+- **Type:** `number{:ts}`
+
+The condition's index in authored order.
+
+```ts /condition: 1/
+// 'data-zyzz-condition-1-size'
+ConditionalRecipe.attribute({ axis: 'size', condition: 1 })
+```
+
+## Types
+
+- **`ConditionalRecipe.attribute.Options{:ts}`:** The `{ axis, condition }` input.
+- **`ConditionalRecipe.create.Options{:ts}`:** [`Recipe.create.Options`](/docs/api/runtime/namespaces/Recipe#types) with `conditions`.
+
+```ts title="options.ts"
+import type { ConditionalRecipe } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A recipe whose size can change inside `wide`
+export const options = {
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: { size: 'small' },
+} satisfies ConditionalRecipe.create.Options
+```
+
+## Errors
+
+Neither function throws or validates selections. TypeScript and the compiler reject unknown conditions, axes, and choices.

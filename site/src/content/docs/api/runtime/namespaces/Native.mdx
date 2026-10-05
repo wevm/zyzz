@@ -1,0 +1,168 @@
+# Native
+
+Select one precompiled native style per variant combination, and compose native style props.
+
+Native compilation rewrites a definition whose styles fit one table into a `Native.create` call. Applications normally do not import it. The table holds one frozen style object per combination of choices, so applying the callable is a lookup.
+
+```ts title="badge.ts"
+import { Native } from 'zyzz/runtime'
+
+// [!code hl:5]
+// Keys 0 and 1 select small and large, and 2 a cleared size
+const badge = Native.create({
+  axes: { size: ['small', 'large'] },
+  defaults: { size: 'small' },
+  styles: { 0: { padding: 4 }, 1: { padding: 8 }, 2: {} },
+})
+
+// { style: { padding: 8 } }
+export const props = badge({ size: 'large' })
+```
+
+## Native.create
+
+```ts
+// Generated table for one set and scheme
+Native.create(options)
+```
+
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and its choices, in authored order. Boolean choices appear as `'true'` and `'false'` and accept `true` and `false`.
+
+```ts /axes: {}/
+// A definition without variants has one entry, at key 0
+Native.create({ axes: {}, defaults: {}, styles: { 0: { padding: 8 } } })
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The choice used when an axis is omitted or `undefined`. `null` and axes without a default select the cleared entry.
+
+```ts /defaults: { size: 'small' }/
+// An omitted size selects small
+Native.create({
+  axes: { size: ['small', 'large'] },
+  defaults: { size: 'small' },
+  styles,
+})
+```
+
+### options.styles
+
+- **Type:** `{ [index: string]: StyleSheet.NativeStyle }{:ts}`
+
+One style per combination, frozen at creation. The key is a mixed-radix number with the first axis as its lowest digit. Each axis contributes its choice index, or its choice count when cleared, in base choice count plus one.
+
+```ts /2: {}/
+// With two choices, index 2 is the cleared size
+const styles = { 0: { padding: 4 }, 1: { padding: 8 }, 2: {} }
+```
+
+### input[axis]
+
+- **Type:** `string | boolean | null | undefined{:ts}`
+- **Default:** `options.defaults[axis]{:ts}`
+
+The selected choice. `null` clears the axis, overriding its default.
+
+```ts /size: null/
+// { style: {} }
+badge({ size: null })
+```
+
+### input.style
+
+- **Type:** `StyleSheet.StyleProp<overrides>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Native overrides placed after the selected style. Their identity and type are kept, including `Animated` values and platform colors, and the helper never freezes or copies them.
+
+```ts /style: { opacity: 0.5 }/
+// { style: [{ padding: 4 }, { opacity: 0.5 }] }
+badge({ style: { opacity: 0.5 } })
+```
+
+### props
+
+- **Type:** `Native.Props<style>{:ts}`
+
+`{ style }`, with the selected style alone or followed by the override. A definition without axes returns the same frozen object for every call without input.
+
+```ts /props.style/
+// { padding: 8 }
+props.style
+```
+
+## Native.compose
+
+```ts
+// Applied native props in order
+Native.compose(...entries)
+```
+
+### entries
+
+- **Type:** `readonly (Native.Props<object> | false | null | undefined)[]{:ts}`
+
+Applied props, or falsy values that are skipped. Each entry must have only a `style` key.
+
+```ts /active && badge({ size: 'large' })/
+// A false entry drops out
+Native.compose(badge(), active && badge({ size: 'large' }))
+```
+
+### props
+
+- **Type:** `Native.Props<style>{:ts}`
+
+`{ style }` holding the entries' styles in order, for React Native's later-wins merging. A single entry keeps its style reference, and nested arrays stay as they are.
+
+```ts /Native.compose/
+// { style: [{ padding: 4 }, { padding: 8 }] }
+Native.compose(badge(), badge({ size: 'large' }))
+```
+
+## Types
+
+- **`Native.Callable<axes, style>{:ts}`:** A table callable with inferred choices and native overrides.
+- **`Native.create.Options<axes, styles>{:ts}`:** The `{ axes, defaults, styles }` input.
+- **`Native.Props<style>{:ts}`:** The returned `{ style }`.
+
+```ts title="emphasize.ts"
+import { Native } from 'zyzz/runtime'
+
+// [!code hl:2]
+// Accepts props from any compiled native definition
+export function emphasize(props: Native.Props): Native.Props {
+  return Native.compose(props, { style: { fontWeight: '600' } })
+}
+```
+
+## Errors
+
+### Native.SelectionError
+
+Thrown for an unknown input key or choice, a missing table entry, or a `compose` entry that is not native style props.
+
+```ts title="invalid.ts"
+import { Native } from 'zyzz/runtime'
+
+const badge = Native.create({
+  axes: { size: ['small'] },
+  defaults: {},
+  styles: { 0: {}, 1: {} },
+})
+
+try {
+  // `huge` is not a declared choice
+  badge({ size: 'huge' } as never)
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Native.SelectionError) console.error(error.message)
+}
+```

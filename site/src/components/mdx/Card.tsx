@@ -3,12 +3,15 @@ import type { ReactNode } from 'react'
 import BoxesIcon from '~icons/lucide/boxes'
 import BracesIcon from '~icons/lucide/braces'
 import CodeIcon from '~icons/lucide/code'
+import CodeXmlIcon from '~icons/lucide/code-xml'
 import CombineIcon from '~icons/lucide/combine'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileTypeIcon from '~icons/lucide/file-type'
+import GitBranchIcon from '~icons/lucide/git-branch'
 import LayersIcon from '~icons/lucide/layers'
 import ListIcon from '~icons/lucide/list'
+import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PanelsIcon from '~icons/lucide/panels-top-left'
@@ -18,9 +21,11 @@ import SlidersIcon from '~icons/lucide/sliders-horizontal'
 import SmartphoneIcon from '~icons/lucide/smartphone'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TableIcon from '~icons/lucide/table'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import VariableIcon from '~icons/lucide/variable'
+import WorkflowIcon from '~icons/lucide/workflow'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import ReactIcon from '~icons/simple-icons/react'
@@ -162,13 +167,16 @@ const icons = {
   boxes: BoxesIcon,
   braces: BracesIcon,
   code: CodeIcon,
+  'code-xml': CodeXmlIcon,
   combine: CombineIcon,
   'copy-plus': CopyPlusIcon,
   'file-code': FileCodeIcon,
   'file-type': FileTypeIcon,
+  'git-branch': GitBranchIcon,
   layers: LayersIcon,
   list: ListIcon,
   next: NextIcon,
+  package: PackageIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
   panels: PanelsIcon,
@@ -180,9 +188,11 @@ const icons = {
   smartphone: SmartphoneIcon,
   'sun-moon': SunMoonIcon,
   'swatch-book': SwatchBookIcon,
+  table: TableIcon,
   tag: TagIcon,
   terminal: TerminalIcon,
   variable: VariableIcon,
   vite: ViteIcon,
+  workflow: WorkflowIcon,
   zap: ZapIcon,
 }

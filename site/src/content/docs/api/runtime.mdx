@@ -1,0 +1,141 @@
+# Runtime
+
+Apply compiled class names, variant attributes, theme scopes, and native tables without generating CSS.
+
+The compiler rewrites each definition into a call to one of these helpers and imports it from `zyzz/runtime`. Applications normally do not import them. They author with [`style`](/docs/api/core/style), [`variants`](/docs/api/core/variants), and [`defineConfig`](/docs/api/core/defineConfig) instead.
+
+## Web
+
+<Card.Group>
+  <Card title="Props" icon="tag" href="/docs/api/runtime/namespaces/Props">
+    Bind compiled class names to the className, style, and vars overrides of a
+    static style.
+  </Card>
+  <Card
+    title="Dynamic"
+    icon="sliders"
+    href="/docs/api/runtime/namespaces/Dynamic"
+  >
+    Assign required callback values to fixed private custom properties on each
+    application.
+  </Card>
+  <Card title="Recipe" icon="layers" href="/docs/api/runtime/namespaces/Recipe">
+    Serialize finite variant selections as data attributes beside compiled class
+    names.
+  </Card>
+  <Card
+    title="ConditionalRecipe"
+    icon="git-branch"
+    href="/docs/api/runtime/namespaces/ConditionalRecipe"
+  >
+    Add scoped attributes for variant selections that apply only inside a named
+    condition.
+  </Card>
+  <Card
+    title="PayloadRecipe"
+    icon="package"
+    href="/docs/api/runtime/namespaces/PayloadRecipe"
+  >
+    Bind the values of dynamic variant choices to precompiled private custom
+    properties.
+  </Card>
+  <Card
+    title="Composition"
+    icon="combine"
+    href="/docs/api/runtime/namespaces/Composition"
+  >
+    Merge applied props over one precompiled class list for a statically
+    resolved composition.
+  </Card>
+</Card.Group>
+
+## HTML
+
+<Card.Group>
+  <Card title="Html" icon="code-xml" href="/docs/api/runtime/namespaces/Html">
+    Convert applied props to class, style, and data attributes, and escape them
+    for markup.
+  </Card>
+  <Card
+    title="CompositionHtml"
+    icon="file-code"
+    href="/docs/api/runtime/namespaces/CompositionHtml"
+  >
+    Keep the canonical props behind HTML attributes, so a composition serializes
+    them once.
+  </Card>
+</Card.Group>
+
+## Themes
+
+<Card.Group>
+  <Card
+    title="Selection"
+    icon="swatch-book"
+    href="/docs/api/runtime/namespaces/Selection"
+  >
+    Select a compiled variable set and an optional color scheme for one
+    element's subtree.
+  </Card>
+  <Card
+    title="Appearance"
+    icon="sun-moon"
+    href="/docs/api/runtime/namespaces/Appearance"
+  >
+    Restore the saved root selection before paint, and read or persist it
+    afterwards.
+  </Card>
+  <Card
+    title="Variable"
+    icon="variable"
+    href="/docs/api/runtime/namespaces/Variable"
+  >
+    Bind a compiler-assigned custom property name to a reference with a typed
+    setter.
+  </Card>
+</Card.Group>
+
+## Native
+
+<Card.Group>
+  <Card
+    title="Native"
+    icon="smartphone"
+    href="/docs/api/runtime/namespaces/Native"
+  >
+    Select one precompiled native style per variant combination, and compose
+    native style props.
+  </Card>
+  <Card
+    title="NativeStatic"
+    icon="table"
+    href="/docs/api/runtime/namespaces/NativeStatic"
+  >
+    Merge ordered native fragments for finite variant selections and cache each
+    result.
+  </Card>
+  <Card
+    title="NativeDynamic"
+    icon="zap"
+    href="/docs/api/runtime/namespaces/NativeDynamic"
+  >
+    Convert callback values and variant payloads to native styles with compiled
+    binding rules.
+  </Card>
+  <Card
+    title="NativeContext"
+    icon="workflow"
+    href="/docs/api/runtime/namespaces/NativeContext"
+  >
+    Defer the choice between compiled set, scheme, and media alternatives until
+    a view renders.
+  </Card>
+  <Card
+    title="NativeVars"
+    icon="braces"
+    href="/docs/api/runtime/namespaces/NativeVars"
+  >
+    Hold compiled native variable values for every set and scheme, and read one
+    profile.
+  </Card>
+</Card.Group>

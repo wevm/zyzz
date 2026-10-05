@@ -1,0 +1,260 @@
+# NativeDynamic
+
+Convert callback values and variant payloads to native styles with compiled binding rules.
+
+Native compilation rewrites a callback [`style`](/docs/api/core/style), or a [`variants`](/docs/api/core/variants) definition with callback choices, into a `NativeDynamic.create` call. Applications normally do not import it. A binding program replaces the authored callback, which never runs on the device.
+
+```ts title="meter.ts"
+import { NativeDynamic } from 'zyzz/runtime'
+
+const meter = NativeDynamic.create({
+  axes: {},
+  defaults: {},
+  // [!code hl:10]
+  // Assigns the `width` field to the width property
+  program: {
+    rules: [
+      {
+        matches: [],
+        steps: [{ parts: [{ slot: '--meter-width' }], property: 'width' }],
+      },
+    ],
+    slots: { width: '--meter-width' },
+  },
+  styles: {},
+})
+
+// { style: { width: 12 } }
+export const props = meter({ width: '12px' })
+```
+
+## Signature
+
+```ts
+// Generated program and fragments for one set and scheme
+NativeDynamic.create(options)
+```
+
+## Parameters
+
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and all of its choices, static and dynamic, as in [`NativeStatic.create`](/docs/api/runtime/namespaces/NativeStatic#optionsaxes).
+
+```ts /axes: { size: ['custom', 'fixed'] }/
+// `custom` takes a payload and `fixed` does not
+NativeDynamic.create({
+  axes: { size: ['custom', 'fixed'] },
+  defaults: {},
+  payloads,
+  program,
+  styles,
+})
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The choice used when an axis is omitted or `undefined`. `null` clears the axis.
+
+```ts /defaults: { size: 'fixed' }/
+// An omitted size selects fixed
+NativeDynamic.create({
+  axes,
+  defaults: { size: 'fixed' },
+  payloads,
+  program,
+  styles,
+})
+```
+
+### options.defaultPayloads
+
+- **Type:** `{ [axis: string]: { [field: string]: string | number } }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Field values for an axis whose default is a dynamic choice.
+
+```ts /defaultPayloads: { size: { padding: '4px' } }/
+// An omitted size selects custom with 4px padding
+NativeDynamic.create({
+  axes,
+  defaults: { size: 'custom' },
+  defaultPayloads: { size: { padding: '4px' } },
+  payloads,
+  program,
+  styles,
+})
+```
+
+### options.payloads
+
+- **Type:** `readonly Recipe.Payload[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+The dynamic choices, as in [`Recipe.Payload`](/docs/api/runtime/namespaces/Recipe#types). Native output uses only the base slots.
+
+```ts /slots: [{ padding: '--box-padding' }]/
+// The `padding` field of `custom` binds `--box-padding`
+const payloads = [
+  { axis: 'size', choice: 'custom', slots: [{ padding: '--box-padding' }] },
+]
+```
+
+### options.program
+
+- **Type:** `NativeDynamic.Program{:ts}`
+
+`slots` maps required top-level fields to slot names. `rules` lists base, variant, and compound rules in authored order, as in [`NativeStatic.create`](/docs/api/runtime/namespaces/NativeStatic#optionsrules). A step either names a fragment or joins `parts`, literals and slot values, into one property value.
+
+```ts /{ style: 'fixed' }/
+// The fixed choice applies a fragment, and custom binds its padding
+const program = {
+  rules: [
+    {
+      matches: [['size', ['custom']]],
+      steps: [{ parts: [{ slot: '--box-padding' }], property: 'padding' }],
+    },
+    { matches: [['size', ['fixed']]], steps: [{ style: 'fixed' }] },
+  ],
+  slots: {},
+}
+```
+
+### options.styles
+
+- **Type:** `{ [name: string]: StyleSheet.NativeStyle }{:ts}`
+
+Converted native fragments named by `style` steps. They are frozen at creation.
+
+```ts /styles: { fixed: { padding: 0 } }/
+// The fragment for the fixed choice
+NativeDynamic.create({
+  axes,
+  defaults,
+  payloads,
+  program,
+  styles: { fixed: { padding: 0 } },
+})
+```
+
+### options.units
+
+- **Type:** `{ px?: number; rem?: number }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Explicit logical-unit scales for converting bound lengths. A bound `rem` value throws without `rem`.
+
+```ts /units: { rem: 16 }/
+// '1rem' binds as 16
+NativeDynamic.create({ axes, defaults, program, styles, units: { rem: 16 } })
+```
+
+### options.fonts
+
+- **Type:** `{ [family: string]: string }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Authored font family names mapped to native font names for bound `fontFamily` values.
+
+```ts /fonts: { Geist: 'Geist-Regular' }/
+// A bound 'Geist' becomes 'Geist-Regular'
+NativeDynamic.create({
+  axes,
+  defaults,
+  fonts: { Geist: 'Geist-Regular' },
+  program,
+  styles,
+})
+```
+
+## Application
+
+### input[field]
+
+- **Type:** `string | number{:ts}`
+
+A required callback field. Bound values convert with the same scalar rules as static native compilation, and the `padding`, `margin`, and `inset` shorthands expand to longhands.
+
+```ts /width: '50%'/
+// { style: { width: '50%' } }
+meter({ width: '50%' })
+```
+
+### input[axis]
+
+- **Type:** `string | boolean | { [choice: string]: { [field: string]: string | number } } | null | undefined{:ts}`
+
+A static choice name, or a dynamic choice with its field values.
+
+```ts /size: { custom: { padding: '12px' } }/
+// Expands to paddingTop, paddingRight, paddingBottom, and paddingLeft
+box({ size: { custom: { padding: '12px' } } })
+```
+
+### input.style
+
+- **Type:** `StyleSheet.StyleProp<overrides>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Native overrides placed after the generated style, with their identity and type kept. Host objects, such as `Animated` values, enter only here, never as fields.
+
+```ts /style: { opacity: 0.5 }/
+// { style: [{ width: 12 }, { opacity: 0.5 }] }
+meter({ width: '12px', style: { opacity: 0.5 } })
+```
+
+## Returns
+
+### props
+
+- **Type:** `Native.Props<style>{:ts}`
+
+`{ style }`, with the generated style alone or followed by the override. Results with bound values are new objects on every call. Without fields or payloads, results are frozen and cached for up to 256 combinations.
+
+```ts /props.style/
+// { width: 12 }
+props.style
+```
+
+## Types
+
+- **`NativeDynamic.Callable<input>{:ts}`:** A callable with required input fields.
+- **`NativeDynamic.create.Options{:ts}`:** The full input, including `units` and `fonts`.
+- **`NativeDynamic.From<fn>{:ts}`:** The native callable for a published web callable, with native `style` overrides in place of `className`, `style`, and `vars`.
+- **`NativeDynamic.Program{:ts}`:** The `slots` and ordered `rules`.
+- **`NativeDynamic.RecipeCallable<input>{:ts}`:** A variant callable whose input may be omitted.
+
+```ts title="meter.ts"
+import type { NativeDynamic } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A native callable that requires `width` on each call
+export type Meter = NativeDynamic.Callable<{ width: string }>
+```
+
+## Errors
+
+The callable throws [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) before returning for an unknown input key or choice, a missing or non-scalar field, a payload on a static choice, or incomplete metadata. A value that cannot convert throws an `Error`, such as a `rem` length without `units.rem`.
+
+```ts title="invalid.ts"
+import { Native, NativeDynamic } from 'zyzz/runtime'
+
+const meter = NativeDynamic.create({
+  axes: {},
+  defaults: {},
+  program: { rules: [], slots: { width: '--meter-width' } },
+  styles: {},
+})
+
+try {
+  // Every program slot is required
+  meter({} as never)
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Native.SelectionError) console.error(error.message)
+}
+```

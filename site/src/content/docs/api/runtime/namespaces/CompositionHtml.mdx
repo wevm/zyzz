@@ -1,0 +1,82 @@
+# CompositionHtml
+
+Keep the canonical props behind HTML attributes, so a composition serializes them once.
+
+HTML attributes hold a serialized `style` string, which a composition cannot merge without parsing CSS. The compiler wraps each HTML definition passed to [`cx`](/docs/api/core/cx) with `CompositionHtml.bind`, and the composition reads the original props back. Applications normally do not import it.
+
+```ts title="compose.ts"
+import { CompositionHtml, Props } from 'zyzz/runtime'
+
+// [!code hl:2]
+// Attributes that also retain their React-shaped props
+const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
+
+const compose = CompositionHtml.create({
+  className: 'z-card-composed',
+  inputs: [{ className: 'z-card', owners: [] }],
+})
+
+// { class: 'z-card-composed', style: 'padding:1rem' }
+export const attributes = compose(card({ style: { padding: '1rem' } }))
+```
+
+## CompositionHtml.bind
+
+```ts
+// Wrap a callable compiled with React-shaped output
+CompositionHtml.bind(fn)
+```
+
+### fn
+
+- **Type:** `(...args) => style.Props{:ts}`
+
+A compiled callable created with HTML output disabled. The returned function takes the same arguments and converts each result with `CompositionHtml.from`.
+
+```ts /CompositionHtml.bind/
+// Returns `{ class: 'z-card' }` with retained props
+const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
+```
+
+## CompositionHtml.create
+
+```ts
+// The HTML form of Composition.create
+CompositionHtml.create(options)
+```
+
+### options
+
+- **Type:** `Composition.create.Options{:ts}`
+
+The precompiled class lists and argument metadata of [`Composition.create`](/docs/api/runtime/namespaces/Composition#parameters). The callable accepts attributes from `bind` or `from`, plus `false`, `null`, and `undefined`, merges their retained props, and serializes the result once.
+
+```ts /inputs/
+// One argument whose generated class the composition replaces
+CompositionHtml.create({
+  className: 'z-card-composed',
+  inputs: [{ className: 'z-card', owners: [] }],
+})
+```
+
+## CompositionHtml.from
+
+```ts
+// Convert props and retain them for a later composition
+CompositionHtml.from(props)
+```
+
+### props
+
+- **Type:** ``style.Props & { [name: `data-${string}`]: string | undefined }{:ts}``
+
+Applied props. The result equals [`Html.from`](/docs/api/runtime/namespaces/Html#htmlfrom) with the props attached under a nonenumerable `Symbol.for('zyzz.composition.input.v1')` key. The key is shared across copies of the runtime, such as separate SSR and client module graphs.
+
+```ts /CompositionHtml.from/
+// Spreading or serializing the attributes ignores the retained props
+const attributes = CompositionHtml.from({ className: 'z-card' })
+```
+
+## Errors
+
+These functions throw no errors. Attributes without retained props, such as plain `Html.from` output, contribute nothing to a composition.

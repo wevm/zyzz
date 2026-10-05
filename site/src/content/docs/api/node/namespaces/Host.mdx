@@ -58,6 +58,7 @@ export async function run(host: Host.Runtime) {
 `Host` defines no error class. It throws plain `Error` instances for lock, ownership, and lifecycle failures, and passes compiler errors through unchanged.
 
 - **`Source.ExtractError`:** From `zyzz/compiler`. A source value the compiler cannot read, or an import that does not resolve.
+- **`Css.CompileError`:** From `zyzz/web`. Conflicting web rules, such as two modules emitting one class with different declarations.
 - **`Native.CompileError`:** From `zyzz/compiler`. A native module that uses web-only features, such as CSS contributions.
 - **`StyleSheet.CompileError`:** From `zyzz/react-native`. A style the native context cannot compile, such as a `rem` length without `units.rem`.
 - **`StyleSheet.SelectionError`:** From `zyzz/react-native`. A `native.set` label missing from the compiled tables, in a build without `contextual`.

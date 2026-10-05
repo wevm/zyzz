@@ -18,6 +18,8 @@ export function Link(props: Link.Props) {
     return (
       <RouterLink
         {...attributes}
+        // Prefix matching would mark a parent page, such as a section overview, as current on its children.
+        activeOptions={{ exact: true }}
         href={href}
         to={path}
         {...(target === undefined ? {} : { target })}

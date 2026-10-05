@@ -153,6 +153,8 @@ export type Spacing = NativeVars.Values<
 
 `read` throws an `Error` when the value was not created by `NativeVars.create`, names a set that was not compiled, or selects media alternatives with a negative or nonfinite `viewport`. Reading a diagnostic leaf throws its message.
 
+When `options.media.profiles` lacks the alternative a valid viewport selects, `read` throws a `TypeError`. The compiler emits every alternative.
+
 ```ts title="invalid.ts"
 import { NativeVars } from 'zyzz/runtime'
 

@@ -68,6 +68,30 @@ The value for one slot. An empty string is written as a single space, so the cus
 meter({ amount: '50%' })
 ```
 
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// 'z-meter wide'
+meter({ amount: '50%', className: 'wide' }).className
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments copied into the new `style` first, before `options.style` and the slot assignments.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { '--accent': 'crimson', '--meter-amount': '50%' }
+meter({ amount: '50%', vars: { '--accent': 'crimson' } }).style
+```
+
 ### options.style
 
 - **Type:** `style.Options['style']{:ts}`

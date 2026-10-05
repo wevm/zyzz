@@ -211,6 +211,8 @@ export const context = {
 
 `resolve` throws an `Error` when a deferred binding has no context, the set is not compiled, a media alternative is missing, or media queries lack valid window dimensions. `key` reads the same selection, so it throws for an uncompiled set and for media queries without valid window dimensions.
 
+Errors from the selected callable pass through `resolve`, including a deferred `application`. For example, an unknown choice in `input` for a [`Native.create`](/docs/api/runtime/namespaces/Native#errors) table throws `Native.SelectionError`.
+
 ```ts title="invalid.ts"
 import { Native, NativeContext } from 'zyzz/runtime'
 

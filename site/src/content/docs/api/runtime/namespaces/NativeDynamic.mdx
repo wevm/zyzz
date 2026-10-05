@@ -111,6 +111,8 @@ const payloads = [
 
 `slots` maps required top-level fields to slot names. `rules` lists base, variant, and compound rules in authored order, as in [`NativeStatic.create`](/docs/api/runtime/namespaces/NativeStatic#optionsrules). A step either names a fragment or joins `parts`, literals and slot values, into one property value.
 
+The compiler marks a numeric field's slot part with `number: true` and omits the marker otherwise. A marked part requires a number, and a string value throws `Native.SelectionError`.
+
 ```ts /{ style: 'fixed' }/
 // The fixed choice applies a fragment, and custom binds its padding
 const program = {
@@ -123,6 +125,11 @@ const program = {
   ],
   slots: {},
 }
+```
+
+```ts /number: true/
+// Binds 0.5 for opacity and rejects '0.5'
+const parts = [{ number: true, slot: '--meter-opacity' }] as const
 ```
 
 ### options.styles

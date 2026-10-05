@@ -669,6 +669,54 @@ describe('/docs', () => {
     }
   }, 60000)
 
+  test('preloads the pages of links near the viewport', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      const chunks: string[] = []
+      page.on('request', (request) => {
+        const chunk = new URL(request.url()).pathname.match(
+          /\/content\/docs\/(.+)\.mdx$/,
+        )?.[1]
+        if (chunk) chunks.push(chunk)
+      })
+      const visible = page.waitForRequest(
+        /\/content\/docs\/introduction\/why-zyzz\.mdx/,
+      )
+
+      // A sidebar link on screen fetches its page without pointer or focus intent.
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      await visible
+      const navigation = page.getByRole('navigation', { name: 'Documentation' })
+      expect(chunks.includes('api/core/style')).toMatchInlineSnapshot('false')
+
+      // Opening a collapsed topic brings its links into view.
+      const revealed = page.waitForRequest(
+        /\/content\/docs\/api\/core\/style\.mdx/,
+      )
+      await navigation.locator('summary', { hasText: 'Core' }).click()
+      await revealed
+
+      await navigation
+        .getByRole('link', { name: 'Why Zyzz', exact: true })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Why Zyzz', exact: true })
+        .waitFor()
+      // Navigation reuses the preloaded chunk instead of requesting it again.
+      expect(
+        chunks.filter((chunk) => chunk === 'introduction/why-zyzz').length,
+      ).toMatchInlineSnapshot('1')
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
   test('reloads onto current assets when a page chunk is unavailable', async () => {
     const browser = await chromium.launch({ headless: true })
     try {
@@ -678,14 +726,14 @@ describe('/docs', () => {
       // Loading the target once lets the dev server optimize its dependencies before the scenario.
       await page.goto(`${origin}/docs/guides/reset`)
       await page.getByRole('heading', { level: 1, name: 'Reset' }).waitFor()
+      // A deployment that replaced hashed assets leaves the old chunk URL unavailable, including to the sidebar link's preload.
+      await page.route(/\/content\/docs\/guides\/reset\.mdx/, (route) =>
+        route.abort(),
+      )
       await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
       await page
         .locator('[data-navigation-ready="true"]')
         .waitFor({ state: 'attached' })
-      // A deployment that replaced hashed assets leaves the old chunk URL unavailable.
-      await page.route(/\/content\/docs\/guides\/reset\.mdx/, (route) =>
-        route.abort(),
-      )
       const documents: string[] = []
       page.on('request', (request) => {
         if (

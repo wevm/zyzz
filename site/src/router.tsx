@@ -5,7 +5,8 @@ import { routeTree } from './routeTree.gen.js'
 /** Creates a router for each application instance. */
 export function getRouter() {
   return createTanStackRouter({
-    defaultPreload: 'intent',
+    // Documentation pages load as separate chunks, so a link fetches its page once it nears the viewport.
+    defaultPreload: 'viewport',
     routeTree,
     scrollRestoration: true,
   })

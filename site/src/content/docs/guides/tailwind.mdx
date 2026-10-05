@@ -6,39 +6,37 @@ import {
 
 # Migrating from Tailwind
 
-Move a Tailwind CSS v4 application to Zyzz one component at a time, preserving its styles, states, and CSS delivery.
+Move a Tailwind CSS v4 application to Zyzz one component at a time, with before-and-after examples for each pattern.
 
 <TailwindContent>
 
 ## Overview
 
-Start with one component and keep Tailwind for everything else. Preserve the component's actual values before adopting new tokens or changing its design. Keep the same fonts, reset, content, and viewport while comparing the two versions.
+Tailwind styles an element with utility classes in its markup. Zyzz names the same declarations in `style` definitions beside the component, compiles them to CSS at build time, and applies each definition by spreading the props it returns.
 
-This guide uses React and TypeScript. Follow [Getting Started](/docs/introduction/getting-started) for the framework's build integration and [Compatibility](/docs/introduction/compatibility) for verified paths. React Native needs a separate [native migration](https://github.com/wevm/zyzz/blob/main/docs/guides/native.md).
+The examples import `style` from `zyzz/default`, which shares Tailwind's spacing, type, radius, shadow, breakpoint, and container scales. Most utilities keep their names as tokens, such as `4` for `p-4` and `'lg'` for `rounded-lg`.
 
-Replace utility strings with named definitions beside the component, and apply each definition by spreading its returned props:
-
-<Tabs label="Card before and after">
-<Tab title="Tailwind">
+Both libraries can run in one application, so migrate one component at a time. This card renders the same grid, spacing, and type before and after migrating:
 
 ```tsx title="Card.tsx"
 export function Card() {
   return (
+    // [!code hl:3]
+    // Utility classes set each declaration in the markup
     <article className="grid gap-4 p-6">
-      <h2 className="m-0 text-[1.25rem]">Account</h2>
+      <h2 className="text-xl leading-tight font-semibold">Account</h2>
     </article>
   )
 }
 ```
 
-</Tab>
-<Tab title="Zyzz">
-
 ```tsx title="Card.tsx"
-import { style } from 'zyzz'
+import { style } from 'zyzz/default'
 
 export function Card() {
   return (
+    // [!code hl:3]
+    // Each element spreads the props of one named style
     <article {...styles.card()}>
       <h2 {...styles.title()}>Account</h2>
     </article>
@@ -46,244 +44,596 @@ export function Card() {
 }
 
 namespace styles {
-  export const card = style({
-    display: 'grid',
-    gap: '1rem',
-    padding: '1.5rem',
-  })
+  // [!code hl:2]
+  // grid gap-4 p-6
+  export const card = style({ display: 'grid', gap: 4, padding: 6 })
 
-  export const title = style({ fontSize: '1.25rem', margin: 0 })
+  // [!code hl:6]
+  // text-xl leading-tight font-semibold
+  export const title = style({
+    fontSize: 'xl',
+    fontWeight: 'semibold',
+    lineHeight: 'tight',
+  })
 }
 ```
 
-</Tab>
-</Tabs>
+## Run Both
 
-## Install Alongside Tailwind
+Add the Zyzz integration from [Getting Started](/docs/introduction/getting-started) beside Tailwind's. Keep `@import "tailwindcss"` and its Preflight reset until the last component migrates, so both versions of a component render on the same baseline.
 
-Install Zyzz and add its compiler to the existing build. The build integration transforms authoring source and delivers matching CSS. Importing a stylesheet or config alone cannot compile definitions.
+While an element moves over, pass its remaining utilities to the style call as `className`:
 
-```sh
-pnpm add zyzz
+```tsx title="SaveButton.tsx"
+export function SaveButton() {
+  return (
+    // [!code hl:2]
+    // Every declaration comes from a utility
+    <button className="rounded-lg px-4 py-2 shadow-sm">Save</button>
+  )
+}
 ```
 
-For Vite, add `zyzz()` to the existing plugin list. This snippet shows only the Zyzz entry. Follow the [Next.js](https://github.com/wevm/zyzz/blob/main/docs/introduction/next.md) or [CLI](https://github.com/wevm/zyzz/blob/main/docs/introduction/cli.md) setup for other builds.
+```tsx title="SaveButton.tsx"
+import { style } from 'zyzz/default'
 
-```ts title="vite.config.ts"
-import { defineConfig } from 'vite'
-import { zyzz } from 'zyzz/vite'
+export function SaveButton() {
+  return (
+    // [!code hl:2]
+    // shadow-sm stays a utility until its declarations move
+    <button {...styles.button({ className: 'shadow-sm' })}>Save</button>
+  )
+}
 
-export default defineConfig({
-  plugins: [zyzz()],
-})
+namespace styles {
+  // rounded-lg px-4 py-2
+  export const button = style({
+    borderRadius: 'lg',
+    paddingBlock: 2,
+    paddingInline: 4,
+  })
+}
 ```
 
-Keep the framework plugin and Tailwind integration until their consumers have migrated. During the first migration, also keep `@import "tailwindcss"` and its Preflight reset. Preflight affects Zyzz components too, so adding another reset at this stage changes the baseline under comparison.
+Tailwind utilities sit in the `utilities` cascade layer, and unlayered Zyzz declarations outrank them regardless of class order. Avoid setting one property from both libraries on the same element.
 
-## Migrate One Component
+## Utilities
 
-The [Overview](#overview) example assumes Tailwind's default `--spacing: 0.25rem`. Copy the application's values when that variable differs. The existing reset still supplies heading, box-sizing, and font defaults.
+Each utility expands to one or more declarations, so copy the full expansion. Values from Tailwind's default theme become `zyzz/default` tokens with the same names.
 
-CSS properties use camelCase, and values retain CSS units and syntax. Put `namespace styles` at the bottom of the file. [Thinking in Zyzz](/docs/introduction/thinking-in-zyzz) explains naming, composition, and explicit configuration.
-
-### Translate Complete Utilities
-
-Check each utility's CSS expansion. Some utilities set several declarations or coordinate variables, and matching only one property drops the rest.
-
-<TailwindTable label="Common utility migrations">
-  <table aria-label="Common utility migrations">
+<TailwindTable label="Utility migrations">
+  <table aria-label="Utility migrations">
     <thead>
       <tr>
-        <th scope="col">
-
-Tailwind
-
-</th>
-        <th scope="col">
-
-Zyzz declarations
-
-</th>
+        <th scope="col">Tailwind</th>
+        <th scope="col">Zyzz</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>
-
-`flex items-center`
-
-</td>
-        <td>
-
-`display: 'flex', alignItems: 'center'`
-
-</td>
+        <td>`flex items-center`</td>
+        <td>`display: 'flex', alignItems: 'center'`</td>
       </tr>
       <tr>
-        <td>
-
-`grid grid-cols-2`
-
-</td>
-        <td>
-
-`display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'`
-
-</td>
+        <td>`grid-cols-2`</td>
+        <td>`gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'`</td>
       </tr>
       <tr>
-        <td>
-
-`p-4`
-
-</td>
-        <td>
-
-`padding: '1rem'`
-
-</td>
+        <td>`px-4`</td>
+        <td>`paddingInline: 4`</td>
       </tr>
       <tr>
-        <td>
-
-`px-4`
-
-</td>
-        <td>
-
-`paddingInline: '1rem'`
-
-</td>
+        <td>`size-12`</td>
+        <td>`height: 12, width: 12`</td>
       </tr>
       <tr>
-        <td>
-
-`size-12`
-
-</td>
-        <td>
-
-`width: '3rem', height: '3rem'`
-
-</td>
+        <td>`rounded-lg`</td>
+        <td>`borderRadius: 'lg'`</td>
       </tr>
       <tr>
-        <td>
-
-`rounded-lg`
-
-</td>
-        <td>
-
-`borderRadius: '0.5rem'`
-
-</td>
+        <td>`shadow-sm`</td>
+        <td>`boxShadow: 'sm'`</td>
       </tr>
       <tr>
-        <td>
-
-`text-lg`
-
-</td>
-        <td>
-
-`fontSize: '1.125rem', lineHeight: '1.75rem'`
-
-</td>
+        <td>`text-lg leading-snug`</td>
+        <td>`fontSize: 'lg', lineHeight: 'snug'`</td>
       </tr>
       <tr>
-        <td>
-
-`font-medium`
-
-</td>
-        <td>
-
-`fontWeight: 500`
-
-</td>
+        <td>`font-medium`</td>
+        <td>`fontWeight: 'medium'`</td>
       </tr>
       <tr>
+        <td>`truncate`</td>
         <td>
-
-`truncate`
-
-</td>
-        <td>
-
-`overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'`
-
-</td>
+          `overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'`
+        </td>
       </tr>
     </tbody>
   </table>
 </TailwindTable>
 
-These examples assume unmodified Tailwind defaults. Preserve logical properties for horizontal spacing and direction-dependent utilities. A bare number is not universally a spacing multiplier. Use explicit lengths until a config defines the scale.
+Arbitrary values become plain CSS values, with spaces where Tailwind uses underscores. A property that takes tokens needs the `!custom` suffix for a value outside the scale:
 
-Arbitrary utilities become ordinary values. `grid-cols-[12rem_1fr]` becomes `gridTemplateColumns: '12rem 1fr'`, and `w-[calc(100%-2rem)]` becomes `width: 'calc(100% - 2rem)'`. Keep spaces and valid CSS function syntax.
+```tsx title="Sidebar.tsx"
+export function Sidebar() {
+  return (
+    // [!code hl:2]
+    // Brackets hold arbitrary values, and underscores stand for spaces
+    <aside className="grid grid-cols-[12rem_1fr] w-[calc(100%-2rem)]">
+      Navigation
+    </aside>
+  )
+}
+```
 
-### Compose Generated Styles
+```tsx title="Sidebar.tsx"
+import { style } from 'zyzz/default'
 
-Use `cx` to combine applied definitions. Multiple JSX spreads replace styling props rather than composing them.
-
-```tsx title="SaveButton.tsx"
-import { cx, style } from 'zyzz'
-
-export function SaveButton() {
-  return <button {...cx(styles.button(), styles.focusRing())}>Save</button>
+export function Sidebar() {
+  return <aside {...styles.sidebar()}>Navigation</aside>
 }
 
 namespace styles {
-  export const button = style({ borderRadius: '0.5rem', padding: '1rem' })
+  export const sidebar = style({
+    display: 'grid',
+    // [!code hl:4]
+    // Arbitrary values are ordinary CSS values
+    gridTemplateColumns: '12rem 1fr',
+    // !custom marks a width outside the spacing scale
+    width: 'calc(100% - 2rem) !custom',
+  })
+}
+```
 
-  export const focusRing = style({
+## States
+
+State prefixes such as `hover:` and `disabled:` become condition keys that hold the declarations to change. Tailwind's `hover:` applies only on devices that can hover, so keep that media query to match its behavior on touch screens.
+
+```tsx title="SaveButton.tsx"
+export function SaveButton(props: SaveButton.Props) {
+  return (
+    <button
+      // [!code hl:2]
+      // Each prefix applies one utility in that state
+      className="hover:opacity-80 focus-visible:outline-2 disabled:opacity-50"
+      disabled={props.disabled}
+    >
+      Save
+    </button>
+  )
+}
+
+export declare namespace SaveButton {
+  type Props = { disabled?: boolean | undefined }
+}
+```
+
+```tsx title="SaveButton.tsx"
+import { style } from 'zyzz/default'
+
+export function SaveButton(props: SaveButton.Props) {
+  return (
+    <button disabled={props.disabled} {...styles.button()}>
+      Save
+    </button>
+  )
+}
+
+export declare namespace SaveButton {
+  type Props = { disabled?: boolean | undefined }
+}
+
+namespace styles {
+  export const button = style({
+    // [!code hl:6]
+    // hover: only matches devices that can hover
+    '@media (hover: hover)': {
+      ':hover': { opacity: 0.8 },
+    },
+    ':focus-visible': { outlineStyle: 'solid', outlineWidth: '2px' },
+    ':disabled': { opacity: 0.5 },
+  })
+}
+```
+
+Conditions keep their authored order, so `:disabled` comes last to win over `:hover` while both match.
+
+## Other Variants
+
+Attribute, child, and arbitrary variants become selectors under `selectors`, with `&` for the styled element. Feature and preference variants become the at-rules they stand for.
+
+```tsx title="Disclosure.tsx"
+export function Disclosure(props: Disclosure.Props) {
+  return (
+    <button
+      aria-expanded={props.open}
+      // [!code hl:2]
+      // aria-* and [&...] variants match attributes and child elements
+      className="aria-expanded:font-semibold [&>svg]:size-4"
+      type="button"
+    >
+      Details
+      <svg aria-hidden="true" viewBox="0 0 16 16" />
+    </button>
+  )
+}
+
+export declare namespace Disclosure {
+  type Props = { open: boolean }
+}
+```
+
+```tsx title="Disclosure.tsx"
+import { style } from 'zyzz/default'
+
+export function Disclosure(props: Disclosure.Props) {
+  return (
+    <button aria-expanded={props.open} type="button" {...styles.trigger()}>
+      Details
+      <svg aria-hidden="true" viewBox="0 0 16 16" />
+    </button>
+  )
+}
+
+export declare namespace Disclosure {
+  type Props = { open: boolean }
+}
+
+namespace styles {
+  export const trigger = style({
+    // [!code hl:5]
+    // Each selector includes & for the button
     selectors: {
-      '&:focus-visible': {
-        outline: '2px solid currentColor',
-        outlineOffset: '2px',
-      },
+      '&[aria-expanded="true"]': { fontWeight: 'semibold' },
+      '& > svg': { height: 4, width: 4 },
     },
   })
 }
 ```
 
-`cx` preserves generated classes, variable bindings, and variant attributes. Later conflicting generated declarations win within matching conditions, subject to importance. External classes still follow the CSS cascade.
+<TailwindTable label="Variant migrations">
+<table aria-label="Variant migrations">
+  <thead>
+    <tr>
+      <th scope="col">Tailwind</th>
+      <th scope="col">Zyzz</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`data-[state=open]:`</td>
+      <td>`'&[data-state="open"]'`</td>
+    </tr>
+    <tr>
+      <td>`*:`</td>
+      <td>`'& > *'`</td>
+    </tr>
+    <tr>
+      <td>`has-checked:`</td>
+      <td>`'&:has(:checked)'`</td>
+    </tr>
+    <tr>
+      <td>`supports-[display:grid]:`</td>
+      <td>`'@supports (display: grid)'`</td>
+    </tr>
+    <tr>
+      <td>`motion-reduce:`</td>
+      <td>`'@media (prefers-reduced-motion: reduce)'`</td>
+    </tr>
+    <tr>
+      <td>`print:`</td>
+      <td>`'@media print'`</td>
+    </tr>
+  </tbody>
+</table>
+</TailwindTable>
 
-Conditional composition can use `cx(styles.base(), enabled && styles.emphasis())`. The compiler requires resolved applications or supported immutable local props bindings. Ternary arguments, arbitrary external props, and more than eight conditional arguments are unsupported. See [composition limits](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md).
+## Groups and Peers
 
-### Keep Remaining Classes
+`group` and `peer` mark an element that others observe. In Zyzz, an empty `style()` marks it, and dependent styles interpolate it in a selector without calling it.
 
-If one element still needs utilities, pass them through the style application:
-
-```tsx title="SaveButton.tsx"
-import { style } from 'zyzz'
-
-export function SaveButton() {
-  return <button {...styles.button({ className: 'rounded-lg' })}>Save</button>
-}
-
-namespace styles {
-  export const button = style({ padding: '1rem' })
+```tsx title="EmailField.tsx"
+export function EmailField() {
+  return (
+    // [!code hl:6]
+    // group marks the ancestor, and peer marks the preceding sibling
+    <label className="group">
+      <span className="group-hover:underline">Email</span>
+      <input className="peer" required type="email" />
+      <p className="invisible peer-invalid:visible">Enter a valid email.</p>
+    </label>
+  )
 }
 ```
 
-Avoid defining the same property in both systems on that element. Unlayered normal Zyzz declarations outrank layered normal Tailwind utilities regardless of class-string order. Reconcile shared layer ordering before depending on overrides across libraries.
+```tsx title="EmailField.tsx"
+import { style } from 'zyzz/default'
 
-Use a value suffix such as `color: '#ef4444 !important'` for importance. Arrays such as `display: ['block', 'flex']` are ordered fallbacks, not responsive positions.
+export function EmailField() {
+  return (
+    <label {...styles.field()}>
+      <span {...styles.label()}>Email</span>
+      <input required type="email" {...styles.input()} />
+      <p {...styles.hint()}>Enter a valid email.</p>
+    </label>
+  )
+}
 
-### Preserve Combined Effects
+namespace styles {
+  // [!code hl:4]
+  // Empty styles mark the elements that others observe
+  export const field = style()
 
-Reconstruct the full value for filters, gradients, rings, and shadows. For example, `blur-sm grayscale` needs a combined `filter`, with the blur radius from the actual theme. Composing two definitions of `filter` replaces one value with the other.
+  export const input = style()
 
-Preserve ring offsets, inset shadows, gradient interpolation spaces, and transform order. Individual `translate`, `rotate`, and `scale` properties can remain separate. Utilities such as `space-x-*` and `divide-*` require child selectors. Replacing them with `gap` only matches appropriate layouts.
+  export const label = style({
+    '@media (hover: hover)': {
+      selectors: { [`${field}:hover &`]: { textDecorationLine: 'underline' } },
+    },
+  })
 
-## Convert Conditional Classes
+  export const hint = style({
+    visibility: 'hidden',
+    // [!code hl:2]
+    // Matches when the input before the hint is invalid
+    selectors: { [`${input}:invalid ~ &`]: { visibility: 'visible' } },
+  })
+}
+```
 
-Use `variants` for finite component choices such as size or tone. The definition owns the allowed choices and defaults. Keep children, events, and accessibility props on the component.
+A group observes an ancestor and a peer observes a preceding sibling, so keep the element order. Named groups such as `group/item` become separate marker styles.
+
+## Breakpoints
+
+Responsive prefixes become media queries on the breakpoint names that `zyzz/default` shares with Tailwind. Unprefixed utilities stay as base declarations, and queries keep ascending order so wider ones win.
+
+```tsx title="Grid.tsx"
+export function Grid() {
+  return (
+    // [!code hl:2]
+    // md: and lg: start at 48rem and 64rem by default
+    <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <li>Account</li>
+    </ul>
+  )
+}
+```
+
+```tsx title="Grid.tsx"
+import { style } from 'zyzz/default'
+
+export function Grid() {
+  return (
+    <ul {...styles.grid()}>
+      <li>Account</li>
+    </ul>
+  )
+}
+
+namespace styles {
+  export const grid = style({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
+    // [!code hl:7]
+    // md and lg compile to (width >= 48rem) and (width >= 64rem)
+    '@media md': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    '@media lg': {
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    },
+  })
+}
+```
+
+`max-md:` becomes `'@media <md'`, and `md:max-lg:` becomes `'@media md..lg'`. See [Name Queries](/docs/guides/conditions#name-queries) for every alias form.
+
+## Container Queries
+
+The `@container` utility becomes the `containerType` property, and prefixes such as `@md:` become `@container` queries on the same container sizes.
+
+```tsx title="Sidebar.tsx"
+export function Sidebar() {
+  return (
+    // [!code hl:3]
+    // @container marks the container, and @md: queries its width
+    <aside className="@container">
+      <div className="grid grid-cols-1 @md:grid-cols-2">Content</div>
+    </aside>
+  )
+}
+```
+
+```tsx title="Sidebar.tsx"
+import { style } from 'zyzz/default'
+
+export function Sidebar() {
+  return (
+    <aside {...styles.sidebar()}>
+      <div {...styles.grid()}>Content</div>
+    </aside>
+  )
+}
+
+namespace styles {
+  // [!code hl:2]
+  // Query the inline size of the sidebar
+  export const sidebar = style({ containerType: 'inline-size' })
+
+  export const grid = style({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
+    // [!code hl:4]
+    // md compiles to (width >= 28rem) on the nearest container
+    '@container md': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+  })
+}
+```
+
+A named container such as `@container/sidebar` also sets `containerName: 'sidebar'`, and its queries name it, as in `'@container sidebar (width >= 28rem)'`.
+
+## Dark Mode
+
+Tailwind's default `dark:` variant follows the system color scheme through a media query. Use the same query to keep that behavior while both libraries run.
+
+```tsx title="Panel.tsx"
+export function Panel() {
+  return (
+    // [!code hl:2]
+    // dark: follows the system color scheme by default
+    <section className="bg-white text-black dark:bg-black dark:text-white">
+      Account
+    </section>
+  )
+}
+```
+
+```tsx title="Panel.tsx"
+import { style } from 'zyzz/default'
+
+export function Panel() {
+  return <section {...styles.panel()}>Account</section>
+}
+
+namespace styles {
+  export const panel = style({
+    backgroundColor: 'white',
+    color: 'black',
+    // [!code hl:5]
+    // The default dark: variant uses this query
+    '@media (prefers-color-scheme: dark)': {
+      backgroundColor: 'black',
+      color: 'white',
+    },
+  })
+}
+```
+
+A class toggle declared with `@custom-variant dark (&:where(.dark, .dark *))` becomes the selector `'&:where(.dark, .dark *)'` instead. Geist colors in `zyzz/default`, such as `'background.primary'`, hold light and dark pairs that follow `color-scheme`. See [Themes & Tokens](/docs/guides/themes).
+
+## Theme Tokens
+
+`zyzz/default` holds the values of Tailwind's default theme under the same names, except for colors. Its colors come from the Geist palette, so a Tailwind color keeps its literal value.
+
+```tsx title="Panel.tsx"
+export function Panel() {
+  return (
+    // [!code hl:2]
+    // Each utility reads a variable from Tailwind's default theme
+    <section className="rounded-lg bg-blue-600 p-4 shadow-sm md:p-6">
+      Account
+    </section>
+  )
+}
+```
+
+```tsx title="Panel.tsx"
+import { style } from 'zyzz/default'
+
+export function Panel() {
+  return <section {...styles.panel()}>Account</section>
+}
+
+namespace styles {
+  export const panel = style({
+    // [!code hl:2]
+    // Tailwind's blue-600 is outside the Geist palette
+    backgroundColor: 'oklch(54.6% 0.245 262.881) !custom',
+    // [!code hl:5]
+    // Other tokens share Tailwind's names and values
+    borderRadius: 'lg',
+    boxShadow: 'sm',
+    padding: 4,
+    '@media md': { padding: 6 },
+  })
+}
+```
+
+<TailwindTable label="Theme namespace migrations">
+  <table aria-label="Theme namespace migrations">
+    <thead>
+      <tr>
+        <th scope="col">Tailwind</th>
+        <th scope="col">`zyzz/default`</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>`--spacing`</td>
+        <td>`spacing`</td>
+      </tr>
+      <tr>
+        <td>`--text-*`</td>
+        <td>`fontSize`</td>
+      </tr>
+      <tr>
+        <td>`--font-weight-*`</td>
+        <td>`fontWeight`</td>
+      </tr>
+      <tr>
+        <td>`--leading-*`</td>
+        <td>`lineHeight`</td>
+      </tr>
+      <tr>
+        <td>`--tracking-*`</td>
+        <td>`letterSpacing`</td>
+      </tr>
+      <tr>
+        <td>`--radius-*`</td>
+        <td>`radius`</td>
+      </tr>
+      <tr>
+        <td>`--shadow-*`</td>
+        <td>`shadow`</td>
+      </tr>
+      <tr>
+        <td>`--breakpoint-*`</td>
+        <td>`breakpoint`</td>
+      </tr>
+      <tr>
+        <td>`--container-*`</td>
+        <td>`container`</td>
+      </tr>
+      <tr>
+        <td>`--ease-*`</td>
+        <td>`ease`</td>
+      </tr>
+      <tr>
+        <td>`--animate-*`</td>
+        <td>`animate`</td>
+      </tr>
+    </tbody>
+  </table>
+</TailwindTable>
+
+Values that `@theme` adds or overrides, such as a brand color, need a project config. A config declares its own tokens in place of `zyzz/default`, as described in [Themes & Tokens](/docs/guides/themes).
+
+## Conditional Classes
+
+Tailwind calls prefixes such as `hover:` variants. Zyzz's `variants` function instead defines a component's choices, such as size or tone, with typed props and defaults. Class strings picked by a prop become its choices.
 
 ```tsx title="Button.tsx"
-import { type Props, variants } from 'zyzz'
+// [!code hl:5]
+// A lookup table holds the class string for each size
+const sizes = {
+  compact: 'px-2 py-1',
+  regular: 'px-4 py-2',
+}
+
+export function Button(props: Button.Props) {
+  return <button className={sizes[props.size ?? 'regular']}>Save</button>
+}
+
+export declare namespace Button {
+  type Props = { size?: keyof typeof sizes | undefined }
+}
+```
+
+```tsx title="Button.tsx"
+import type { Props } from 'zyzz'
+import { variants } from 'zyzz/default'
 
 export function Button(props: Button.Props) {
   return <button {...styles.button({ size: props.size })}>Save</button>
@@ -295,767 +645,240 @@ export declare namespace Button {
 
 namespace styles {
   export const button = variants({
-    base: { display: 'inline-flex' },
+    // [!code hl:2]
+    // The default replaces the lookup's fallback
     defaultVariants: { size: 'regular' },
     variants: {
       size: {
-        compact: { padding: '0.5rem' },
-        regular: { padding: '1rem' },
+        compact: { paddingBlock: 1, paddingInline: 2 },
+        regular: { paddingBlock: 2, paddingInline: 4 },
       },
     },
   })
 }
 ```
 
-Tailwind calls `hover:` and `md:` prefixes variants. In Zyzz, those are CSS conditions. Zyzz's `variants` function defines component choices, including defaults and compound rules. See [Variants](https://github.com/wevm/zyzz/blob/main/docs/guides/variants.md).
+`Props.Variants` infers the component's styling props from the definition. See [Variants](/docs/guides/variants) for compound rules and conditional choices.
 
-### Bind Changing Values
+## Dynamic Values
 
-Replace dynamically constructed utility names with typed scalar inputs. A callback binds values to precompiled CSS variables without inserting rules at render time.
+Tailwind generates classes from source text, so runtime values usually fall back to inline styles. A style callback declares typed inputs instead, and each value binds to a CSS variable in a rule compiled ahead of time.
 
-```tsx title="Bar.tsx"
-import { style } from 'zyzz'
-
-export function Bar(props: Bar.Props) {
+```tsx title="Progress.tsx"
+export function Progress(props: Progress.Props) {
   return (
-    <progress
-      aria-label="Progress"
-      max={100}
-      value={Number.parseFloat(props.width)}
-      {...styles.bar({ width: props.width })}
+    <div
+      className="h-2 bg-black"
+      // [!code hl:2]
+      // Runtime values bypass utilities through inline styles
+      style={{ width: `${props.value}%` }}
     />
   )
 }
 
-export declare namespace Bar {
-  type Props = { width: `${number}%` }
+export declare namespace Progress {
+  type Props = { value: number }
+}
+```
+
+```tsx title="Progress.tsx"
+import { style } from 'zyzz/default'
+
+export function Progress(props: Progress.Props) {
+  return <div {...styles.bar({ width: `${props.value}%` })} />
+}
+
+export declare namespace Progress {
+  type Props = { value: number }
 }
 
 namespace styles {
+  // [!code hl:2]
+  // The callback names each runtime value and its type
   export const bar = style((values: { width: `${number}%` }) => ({
-    width: values.width,
+    backgroundColor: 'black',
+    height: 2,
+    // [!code hl:2]
+    // Runtime widths sit outside the spacing scale, so they need !custom
+    width: `${values.width} !custom`,
   }))
 }
 ```
 
-Calculate and validate values in application code. The callback declares a fixed rule structure. It cannot generate arbitrary rules from runtime data. Finite alternatives fit recipes. See [Dynamic Values](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#dynamic-values).
+Calculate values in application code before passing them in. The callback cannot add properties or conditions at runtime.
 
-## States and Relationships
+## Custom Utilities
 
-Translate state prefixes into selectors and queries. Keep the HTML attributes and DOM relationships that make those selectors match.
+`@utility` and `@apply` share declarations across class lists. In Zyzz, a style holds the shared declarations, and `cx` combines it with other styles on the same element.
 
-### Pseudo-Selectors
+<Tabs label="Tailwind utility">
+<Tab title="app.css">
 
-Tailwind's hover utilities include a hover-capability query. Preserve that guard when matching behavior on touch devices.
+```css
+@import 'tailwindcss';
 
-```ts title="button.styles.ts"
-import { style } from 'zyzz'
-
-export namespace styles {
-  export const button = style({
-    selectors: {
-      '&:disabled': { opacity: 0.5 },
-      '&:focus-visible': { outlineStyle: 'solid', outlineWidth: '2px' },
-    },
-    '@media (hover: hover)': {
-      selectors: { '&:hover': { opacity: 0.8 } },
-    },
-  })
-
-  export const required = style({
-    selectors: { '&::after': { content: '" *"', color: 'red' } },
-  })
+/* [!code hl:7] */
+/* A custom utility combines with built-in ones */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
 }
 ```
 
-A pseudo-element rule needs its own `content`. Preserve extra declarations and descendant coverage contributed by placeholder, marker, and selection utilities. Nested conditions combine with AND. `md:hover:*` needs both the breakpoint and hover-capability query.
+</Tab>
+<Tab title="SaveButton.tsx">
 
-### Groups and Peers
-
-An identity-only definition replaces a group or peer marker. Apply the marker to its element, then interpolate the definition in the related selector without calling it.
-
-```tsx title="EmailField.tsx"
-import { style } from 'zyzz'
-
-export function EmailField() {
+```tsx
+export function SaveButton() {
   return (
-    <section {...styles.field()}>
-      <label {...styles.label()} htmlFor="email">
-        Email
-      </label>
-      <input {...styles.input()} id="email" type="email" required />
-      <p {...styles.hint()}>Enter an email address.</p>
-    </section>
+    // [!code hl:2]
+    // The custom utility sits beside built-in utilities
+    <button className="rounded-lg p-4 focus-ring">Save</button>
+  )
+}
+```
+
+</Tab>
+</Tabs>
+
+```tsx title="SaveButton.tsx"
+import { cx } from 'zyzz'
+import { style } from 'zyzz/default'
+
+export function SaveButton() {
+  return (
+    // [!code hl:2]
+    // cx combines applied styles, and later ones win conflicts
+    <button {...cx(styles.button(), styles.focusRing())}>Save</button>
   )
 }
 
 namespace styles {
-  export const field = style()
-  export const input = style()
+  export const button = style({ borderRadius: 'lg', padding: 4 })
 
-  export const hint = style({
-    selectors: { [`:where(${input}):invalid ~ &`]: { color: 'red' } },
-  })
-
-  export const label = style({
-    '@media (hover: hover)': {
-      selectors: {
-        [`:where(${field}):hover &`]: { textDecorationLine: 'underline' },
-      },
+  // [!code hl:7]
+  // A shared style replaces the custom utility
+  export const focusRing = style({
+    ':focus-visible': {
+      outline: '2px solid currentColor',
+      outlineOffset: '2px',
     },
   })
 }
 ```
 
-Groups observe an ancestor. Peers observe a preceding sibling, so element order matters. Distinct marker definitions replace named groups and peers. `:where(...)` prevents the marker identity from adding specificity.
+Separate JSX spreads replace each other's `className`, so combine styles with `cx` rather than spreading twice. Replace each `@apply` with the declarations its utilities expand to.
 
-### Selectors and Queries
+## Global Styles
 
-Use CSS selectors under `selectors`, with `&` in every branch. Arbitrary Tailwind selector escaping and underscore substitutions are unnecessary.
+Rules in Tailwind's `base` layer become `global` rules from `zyzz/web`. Keeping the `base` layer name places them in Tailwind's existing layer while both stylesheets load.
 
-<TailwindTable label="State and condition migrations">
-<table aria-label="State and condition migrations">
-<thead><tr><th scope="col">
+```css title="app.css"
+@import 'tailwindcss';
 
-Tailwind
-
-</th><th scope="col">
-
-CSS condition
-
-</th></tr></thead>
-<tbody>
-<tr><td>
-
-`data-[state=open]:`
-
-</td><td>
-
-`&[data-state="open"]`
-
-</td></tr>
-<tr><td>
-
-`aria-expanded:`
-
-</td><td>
-
-`&[aria-expanded="true"]`
-
-</td></tr>
-<tr><td>
-
-`*:` / `**:`
-
-</td><td>
-
-`& > *` / `& *`
-
-</td></tr>
-<tr><td>
-
-`has-checked:`
-
-</td><td>
-
-`&:has(:checked)`
-
-</td></tr>
-<tr><td>
-
-`[&>span]:underline`
-
-</td><td>
-
-`'& > span': { textDecorationLine: 'underline' }`
-
-</td></tr>
-<tr><td>
-
-`supports-[display:grid]:`
-
-</td><td>
-
-`@supports (display: grid)`
-
-</td></tr>
-<tr><td>
-
-`motion-reduce:` / `motion-safe:`
-
-</td><td>
-
-`@media (prefers-reduced-motion: reduce)` / `no-preference`
-
-</td></tr>
-<tr><td>
-
-`contrast-more:` / `forced-colors:`
-
-</td><td>
-
-`@media (prefers-contrast: more)` / `@media (forced-colors: active)`
-
-</td></tr>
-<tr><td>
-
-`pointer-coarse:` / `pointer-fine:`
-
-</td><td>
-
-`@media (pointer: coarse)` / `fine`
-
-</td></tr>
-<tr><td>
-
-`print:` / `starting:`
-
-</td><td>
-
-`@media print` / `@starting-style`
-
-</td></tr>
-</tbody>
-</table>
-</TailwindTable>
-
-Keep ARIA meaning and attribute updates in component code. Preserve inherited direction for `rtl:` and `ltr:`, and both element and descendant coverage for `inert:`. Browser support remains a separate concern from compiler grammar. See [Conditions](https://github.com/wevm/zyzz/blob/main/docs/guides/conditions.md).
-
-## Preserve Responsive Layout
-
-Keep unprefixed declarations as base styles. Translate responsive prefixes into queries using the application's exact thresholds.
-
-```ts title="grid.styles.ts"
-import { style } from 'zyzz'
-
-export namespace styles {
-  export const grid = style({
-    display: 'grid',
-    gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
-    '@media (width >= 48rem)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-  })
+/* [!code hl:6] */
+/* Base styles sit below components and utilities */
+@layer base {
+  h1 {
+    font-size: var(--text-2xl);
+  }
 }
 ```
 
-This matches `grid grid-cols-1 md:grid-cols-2` with Tailwind's default `md`. Use `@media (48rem <= width < 64rem)` for default `md:max-lg:` and `@media (width < 48rem)` for `max-md:`. Keep exclusive upper bounds and the document's viewport meta tag.
-
-Configured `breakpoint` values support named queries such as `@media md`. Root `style` has no named breakpoints. Query thresholds are compile-time metadata. Changing a runtime variable scope does not change them.
-
-### Container Queries
-
-Migrate the container declaration and query together. This example preserves a named sidebar container with a `24rem` minimum query.
-
-```tsx title="Sidebar.tsx"
-import { style } from 'zyzz'
-
-export function Sidebar() {
-  return (
-    <aside {...styles.sidebar()}>
-      <div {...styles.grid()}>Content</div>
-    </aside>
-  )
-}
-
-namespace styles {
-  export const sidebar = style({
-    containerName: 'sidebar',
-    containerType: 'inline-size',
-  })
-
-  export const grid = style({
-    display: 'grid',
-    gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
-    '@container sidebar (width >= 24rem)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-  })
-}
-```
-
-Unnamed queries omit the container name. Preserve max and range bounds. Container-relative lengths such as `50cqw` remain CSS values. Configured thresholds use `vars.container`, while declared names use `vars.containerNames`.
-
-## Preserve Design Tokens
-
-Copy actual Tailwind values and overrides into a config. Import its helpers wherever those tokens are used. The filename does not install global configuration.
-
-```ts title="zyzz.config.ts"
-import { defineConfig } from 'zyzz'
-
-export const { style, vars, variants } = defineConfig({
-  vars: {
-    breakpoint: { md: '48rem' },
-    color: { brand: '#2563eb' },
-    spacing: { 2: '0.5rem', 4: '1rem', 6: '1.5rem' },
-  },
-})
-```
-
-```tsx title="Panel.tsx"
-import { style } from './zyzz.config.js'
-
-export function Panel() {
-  return <section {...styles.panel()}>Account</section>
-}
-
-namespace styles {
-  export const panel = style({
-    color: 'brand',
-    padding: 4,
-    '@media md': { padding: 6 },
-  })
-}
-```
-
-`padding: 4` selects the configured `spacing.4` value. Tailwind's scalar `--spacing` generates multiples. Zyzz uses explicit steps. Define the required steps, use semantic names for fractional steps, or retain expressions such as `calc(var(--spacing) * 4)` and their variable declarations.
-
-### Map Theme Namespaces
-
-Translate `@theme` values into groups used by the properties that consume them. Keep palettes in their original color space when appearance must match.
-
-<TailwindTable label="Theme namespace migrations">
-  <table aria-label="Theme namespace migrations">
-    <thead>
-      <tr>
-        <th scope="col">
-
-Tailwind namespace
-
-</th>
-        <th scope="col">
-
-Zyzz group
-
-</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-
-`--color-*`
-
-</td>
-        <td>
-
-`color`
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--font-*`
-
-</td>
-        <td>
-
-`font`
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--text-*` and its line-height, weight, tracking companions
-
-</td>
-        <td>
-
-`typography` sets or separate `fontSize`, `lineHeight`, `fontWeight`, `letterSpacing` values
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--font-weight-*`, `--tracking-*`, `--leading-*`
-
-</td>
-        <td>
-
-`fontWeight`, `letterSpacing`, `lineHeight`
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--radius-*`, `--breakpoint-*`, `--container-*`
-
-</td>
-        <td>
-
-`radius`, `breakpoint`, `container`
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--shadow-*`, `--text-shadow-*`
-
-</td>
-        <td>
-
-`shadow`, `textShadow`
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--ease-*`, `--animate-*`, `--perspective-*`
-
-</td>
-        <td>
-
-`ease`, `animate`, `perspective`
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--blur-*`, `--drop-shadow-*`, `--inset-shadow-*`
-
-</td>
-        <td>
-
-Explicit variable references within complete `filter` or `boxShadow` values
-
-</td>
-      </tr>
-    </tbody>
-  </table>
-</TailwindTable>
-
-A custom config includes only its declared groups. Use `defineVars` to share a contract and `extendVars` to override existing paths. Add new paths to the base contract. Named compatible sets can change inherited values with `vars({ set: 'alternate' })`. See [Variables & Scopes](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md).
-
-`zyzz/default` is opt-in and needs no custom config. Its spacing and radius scales can be familiar, but its Geist colors and typography differ from Tailwind defaults. Choosing it during migration can change appearance. See [Default Config](https://github.com/wevm/zyzz/blob/main/docs/api/default.md).
-
-### Preserve Variable Resolution
-
-For `@theme inline`, preserve direct references such as `fontFamily: 'var(--font-app)'` together with their declarations and scopes. Introducing a generated variable can change where inherited references resolve.
-
-For `@theme static`, retain an application-owned variable stylesheet when external CSS or scripts require always-present names. Zyzz emits used tokens and has no all-token emission flag. Generated references such as `vars.spacing[4]` can appear in CSS expressions. They are not resolved JavaScript measurements.
-
-### Variables and Alpha
-
-Existing references such as `bg-(--brand)` become `backgroundColor: 'var(--brand)'`. Keep the declaration until all consumers migrate. For variables owned by Zyzz, use a typed `variable` and assign values in definitions or applications:
-
-```tsx title="Label.tsx"
-import { style, variable } from 'zyzz'
-
-namespace variables {
-  export const accent = variable('color')
-}
-
-export function Label() {
-  return (
-    <span {...styles.label({ vars: variables.accent.set('#9333ea') })}>
-      Account
-    </span>
-  )
-}
-
-namespace styles {
-  export const label = style({
-    vars: { [variables.accent]: '#2563eb' },
-    color: variables.accent,
-  })
-}
-```
-
-The `.set()` helper retains the variable's domain check. Computed object assignment keys lose individual domain information in TypeScript. See [variable](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md).
-
-Preserve color alpha independently from element opacity. `bg-brand/50` can use `backgroundColor: 'color-mix(in oklab, var(--brand) 50%, transparent)'` when the existing `--brand` remains declared. `opacity: 0.5` also fades text and descendants. `currentColor`, `inherit`, and literal color functions remain CSS values.
-
-## Preserve Dark-Mode Selection
-
-Keep the existing selection mechanism during migration. Tailwind's default dark mode uses system preference. A manually toggled class or attribute uses a different condition.
-
-```ts title="panel.styles.ts"
-import { style } from 'zyzz'
-
-export namespace styles {
-  export const systemPanel = style({
-    backgroundColor: 'white',
-    '@media (prefers-color-scheme: dark)': { backgroundColor: 'black' },
-  })
-
-  export const manualPanel = style({
-    backgroundColor: 'white',
-    selectors: {
-      '&:where(.dark, .dark *)': { backgroundColor: 'black' },
-    },
-  })
-}
-```
-
-Choose the definition that matches the current Tailwind setup. The manual selector matches `@custom-variant dark (&:where(.dark, .dark *))`. Preserve the actual selector for an attribute-based toggle. A system query alone does not preserve a manual choice.
-
-### Adopt Paired Colors
-
-After preserving behavior, repeated light/dark pairs can become semantic variables. This config is an alternative to the earlier config:
-
-```ts title="appearance.config.ts"
-import { defineConfig } from 'zyzz'
-
-export const { appearance, script, style, vars } = defineConfig({
-  vars: {
-    color: {
-      foreground: { dark: '#fff', light: '#111' },
-      surface: { dark: '#111', light: '#fff' },
-    },
-  },
-})
-```
-
-Paired colors compile to `light-dark()` and follow the element's effective `color-scheme`. Set `color-scheme: light dark` on the root for system preference. A `.dark` class alone does not set the scheme. Keep explicit conditions for layout, visibility, and other non-color changes.
-
-### Persist the Scheme
-
-Import `appearance` from the same config that supplies `style`, such as `appearance.config.ts`. `appearance.set({ colorScheme: 'dark' })` applies and persists the root scheme, and `'light dark'` restores system preference. Avoid competing persistence mechanisms while Tailwind and Zyzz coexist.
-
-For initial paint, follow the [appearance script contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md). Install the config's early script as the framework requires and account for CSP. Test reloads and direct server-rendered loads. A post-hydration effect alone does not prevent a theme flash.
-
-## Migrate Custom CSS
-
-Ordinary CSS imports and CSS modules can remain. Replace Tailwind directives before removing the compiler that processes them. Use `global` for document selectors and named definitions for component styles.
-
-```ts title="base.styles.ts"
+```ts title="globals.ts"
 import { global } from 'zyzz/web'
 
 global({
+  // [!code hl:4]
+  // The same layer keeps the same precedence
   '@layer base': {
-    body: { margin: 0 },
-    h1: { fontSize: '2rem' },
+    h1: { fontSize: '1.5rem' },
   },
 })
 ```
 
-Global rules are collected eagerly from eligible project source, including beside lazy components. They do not wait for a component to render. For markup that cannot accept generated props, retain an ordinary CSS selector or a global rule.
-
-Declare layer order once and include Tailwind's `theme`, `base`, `components`, and `utilities` layers during coexistence. Reconcile the first ordering declaration across stylesheets. Normal unlayered declarations outrank layered declarations. Important declarations reverse layer precedence.
-
-### Utilities and Plugins
-
-Replace `@apply` with the utilities' full declarations. Replace `@utility` with reusable definitions, local property aliases, or ordinary CSS. Functional utilities need explicit recipe choices or scalar inputs. Translate `@variant` and `@custom-variant` into their actual selectors or queries.
-
-Tailwind plugins do not execute inside Zyzz. Inventory their emitted base rules, descendant selectors, variables, utilities, and variants. Rewrite that behavior or retain its precompiled CSS and dependencies. A typography plugin is not replaced by setting only font size and line height.
-
-### Fonts and Motion
-
-Use [`fontFace`](/docs/guides/typography) and [`keyframes`](/docs/guides/keyframes) where appropriate. A font token selects a font. It does not load it. Preserve full animation timing and reduced-motion behavior.
-
-## Replace Source Scanning
-
-Tailwind detects utility strings. Zyzz analyzes supported JavaScript and TypeScript definitions and resolves imports. Keep rule structure static, with finite recipes or annotated scalar callbacks for runtime choices.
-
-Use static imports, literals, and supported local immutable records. Share compiled definitions across modules. Arbitrary imported records passed to `style(record)` are unsupported. Inline Svelte authoring and Vue SFC integration are outside the verified scope. See [Source Extraction](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Source/extract.md).
-
-There is no Zyzz `@source` directive or string safelist. Replace `@source inline(...)` lists with explicit definitions or recipe choices in the compilation graph. If a CMS emits arbitrary Tailwind strings, convert its data to controlled choices or retain the stylesheet that fulfills that contract.
-
-### Source Boundaries
-
-The selected adapter owns source discovery. Vite processes eligible physical source under its root and excludes tests, generated output, and raw dependency authoring. Do not translate `@source not` or `source(none)` into invented plugin `include` or `exclude` options.
-
-Shared monorepo source must fit the adapter's boundaries or ship as a compiled package. Precompiled libraries need matching JavaScript and CSS. Exposed authoring contracts also need adjacent `.zyzz.json` metadata. Follow [library delivery](https://github.com/wevm/zyzz/blob/main/docs/introduction/vite.md#theme-libraries) and verify actual imports.
-
-### Directives and Functions
-
-Use this mapping when reviewing retained CSS. Tailwind's build-time syntax does not pass through Zyzz unchanged.
-
-<TailwindTable label="Tailwind directive and function replacements">
-  <table aria-label="Tailwind directive and function replacements">
-    <thead>
-      <tr>
-        <th scope="col">
-
-Tailwind
-
-</th>
-        <th scope="col">
-
-Migration
-
-</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-
-`@import "tailwindcss"`
-
-</td>
-        <td>
-
-Keep during coexistence. Replace build setup and reset before removing it.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@theme`
-
-</td>
-        <td>
-
-Define explicit config variables and import configured helpers.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@theme inline` / `@theme static`
-
-</td>
-        <td>
-
-Preserve direct references / always-present application CSS variables.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@source`, `source(...)`, exclusions
-
-</td>
-        <td>
-
-Use the selected adapter's supported source boundaries.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@source inline(...)`, including exclusions
-
-</td>
-        <td>
-
-Declare finite styles and review which definitions remain required.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@apply` / `@utility`
-
-</td>
-        <td>
-
-Named styles, recipes, aliases, or ordinary CSS.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@variant` / `@custom-variant`
-
-</td>
-        <td>
-
-Explicit selectors and queries.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@reference`
-
-</td>
-        <td>
-
-Import configured helpers in source. Remove Tailwind directives from retained CSS.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`@plugin`
-
-</td>
-        <td>
-
-Migrate emitted behavior or keep precompiled CSS and dependencies.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--alpha(...)`
-
-</td>
-        <td>
-
-`color-mix()` with the intended color space and alpha.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--spacing(n)`
-
-</td>
-        <td>
-
-An explicit spacing token or `calc()` over a retained base variable.
-
-</td>
-      </tr>
-      <tr>
-        <td>
-
-`--value(...)` / `--modifier(...)`
-
-</td>
-        <td>
-
-Recipe choices or typed scalar inputs with application-owned validation.
-
-</td>
-      </tr>
-    </tbody>
-  </table>
-</TailwindTable>
-
-The [original migration reference](https://github.com/wevm/zyzz/blob/main/docs/guides/tailwind.md) covers additional mappings. Tailwind's [core concepts](https://tailwindcss.com/docs/styling-with-utility-classes), [theme variables](https://tailwindcss.com/docs/theme), [states](https://tailwindcss.com/docs/hover-focus-and-other-states), and [directives](https://tailwindcss.com/docs/functions-and-directives) document the source behavior.
-
-## Verify Each Component
-
-Verify each migrated component before moving to the next. Type checks and compilation catch different problems from browser comparisons. Use [Testing & Troubleshooting](https://github.com/wevm/zyzz/blob/main/docs/guides/testing.md) and [Linting](https://github.com/wevm/zyzz/blob/main/docs/api/oxlint/README.md) for supporting checks.
-
-- **Appearance:** Compare computed spacing, typography, borders, colors, and combined effects with the same content, fonts, and reset.
-- **Interaction:** Exercise keyboard focus, disabled and invalid controls, touch and hover inputs, attributes, recipe choices, and runtime values. Check reduced motion where animation exists.
-- **Thresholds:** Check below, at, and above viewport and container thresholds. Include the application's writing directions and look for overflow.
-- **Color schemes:** Check light, dark, and system modes, nested scopes, persistence, and initial paint. Confirm both libraries follow the same active preference.
-- **Builds:** Run type checks and production builds. Load server-rendered pages directly before hydration and navigate to lazy routes. Verify matching JavaScript and CSS delivery, including published components.
+Keep component styles in `style` definitions. See [Global Styles](/docs/guides/global-styles) and [Layers](/docs/guides/layers).
+
+## Animations
+
+Built-in animations map to tokens, such as `animation: 'spin'` for `animate-spin`. Custom theme animations and their `@keyframes` become `keyframes` from `zyzz/web`, which returns a reference for `animationName`.
+
+<Tabs label="Tailwind animation">
+<Tab title="app.css">
+
+```css
+@import 'tailwindcss';
+
+/* [!code hl:9] */
+/* animate-fade-in reads this theme variable */
+@theme {
+  --animate-fade-in: fade-in 200ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+```
+
+</Tab>
+<Tab title="Notice.tsx">
+
+```tsx
+export function Notice() {
+  return (
+    // [!code hl:2]
+    // motion-reduce: removes the animation for reduced motion
+    <p className="animate-fade-in motion-reduce:animate-none">Saved.</p>
+  )
+}
+```
+
+</Tab>
+</Tabs>
+
+```tsx title="Notice.tsx"
+import { style } from 'zyzz/default'
+import { keyframes } from 'zyzz/web'
+
+// [!code hl:2]
+// The same frames, referenced by animationName
+const fadeIn = keyframes({ from: { opacity: 0 } })
+
+export function Notice() {
+  return <p {...styles.notice()}>Saved.</p>
+}
+
+namespace styles {
+  export const notice = style({
+    animationDuration: '200ms',
+    animationName: fadeIn,
+    animationTimingFunction: 'ease-out',
+    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  })
+}
+```
 
 ## Remove Tailwind
 
-After all consumers have migrated, remove Tailwind's import, build plugin, dependencies, and unused directives. Search retained CSS and third-party packages for remaining requirements. Keep unrelated CSS processing.
+After the last component migrates, remove Tailwind's import, integration, and packages. Removing the import also removes Preflight, so replace it deliberately, then recheck headings, lists, borders, and form controls. See [Reset](/docs/guides/reset).
 
-Replace Preflight deliberately with an application-owned reset or the optional Zyzz reset:
+```css title="app.css"
+/* [!code hl:2] */
+/* Importing Tailwind also installs Preflight */
+@import 'tailwindcss';
+```
 
-```ts
+```ts title="main.ts"
+// [!code hl:2]
+// The Zyzz reset replaces Preflight
 import 'zyzz/reset.css'
 ```
 
-Zyzz's reset uses the `reset` layer and is not installed by core imports. Recheck headings, lists, borders, form controls, images, box sizing, and font inheritance. See [Reset](/docs/guides/reset).
+Plugins such as `@tailwindcss/typography` and `@source inline()` safelists have no equivalent. Rewrite the CSS they generate as styles, or keep it as a separate stylesheet. Compare computed styles before and after each step, as described in [Testing & Troubleshooting](/docs/guides/testing).
 
 ## More
 

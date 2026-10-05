@@ -16,7 +16,11 @@ const guide = await Fs.readFile(
 const examples = [
   ...guide.matchAll(/```(tsx|ts)(?: title="([^"]+)")?\n([\s\S]*?)```/g),
 ]
-const config = examples.find((entry) => entry[2] === 'zyzz.config.ts')![3]!
+// The bundled config ships as a packed contract that the graph links by import identity.
+const contract = await Fs.readFile(
+  Path.join(root, 'dist/default.js.zyzz.json'),
+  'utf8',
+)
 const origin = 'http://localhost:34159'
 const route = '/docs/guides/tailwind'
 let server: ChildProcess.ChildProcess
@@ -32,7 +36,6 @@ describe('Tailwind migration examples', () => {
         await Fs.mkdir(folder)
         const path = Path.join(folder, `example.${entry[1]}`)
         await Fs.writeFile(path, entry[3]!)
-        await Fs.writeFile(Path.join(folder, 'zyzz.config.ts'), config)
         files.push(path)
       }
       const settings = Ts.readConfigFile(
@@ -46,6 +49,7 @@ describe('Tailwind migration examples', () => {
       )
       const program = Ts.createProgram(files, {
         ...parsed.options,
+        paths: { 'zyzz/default': [Path.join(root, 'dist/default.d.ts')] },
         types: ['node', 'vite/client'],
       })
       const diagnostics = [
@@ -71,7 +75,7 @@ describe('Tailwind migration examples', () => {
     }
   }, 120000)
 
-  test('compiles all authored definitions, including config imports and relationships', () => {
+  test('compiles all authored definitions against the bundled config', () => {
     const results = examples
       .filter(
         (entry) =>
@@ -80,49 +84,53 @@ describe('Tailwind migration examples', () => {
           entry[3]!.includes('global('),
       )
       .map((entry, index) => {
+        const id = `example-${index}.${entry[1]}`
+        const specifiers = Array.from(
+          entry[3]!.matchAll(/from '([^']+)'/g),
+          (match) => match[1]!,
+        )
         const output = Graph.compile({
-          modules: {
-            [`example-${index}.${entry[1]}`]: entry[3]!,
-            'zyzz.config.ts': config,
+          contracts: { 'zyzz/default': contract },
+          imports: {
+            [id]: Object.fromEntries(
+              specifiers.map((specifier) => [
+                specifier,
+                specifier === 'zyzz/default' ? specifier : null,
+              ]),
+            ),
           },
+          modules: { [id]: entry[3]! },
         })
-        return Object.values(output.modules)
-          .map((module) => module.css)
-          .join('\n')
+        return [
+          output.sharedCss,
+          ...Object.values(output.modules).map((module) => module.css),
+        ].join('\n')
       })
+    const css = results.join('\n')
 
-    expect(results.length).toMatchInlineSnapshot('13')
-    expect(results.every((css) => css.length > 0)).toMatchInlineSnapshot('true')
-    expect(results.join('\n').includes('padding:1.5rem')).toMatchInlineSnapshot(
+    expect(results.length).toMatchInlineSnapshot('15')
+    expect(
+      results.every((result) => result.trim().length > 0),
+    ).toMatchInlineSnapshot('true')
+    expect(css.includes('--z-default-spacing-6:1.5rem')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(css.includes('@media (width >= 48rem)')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(css.includes('width:calc(100% - 2rem)')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(css.includes('@media (hover: hover)')).toMatchInlineSnapshot('true')
+    expect(css.includes(':invalid ~')).toMatchInlineSnapshot('true')
+    expect(css.includes('@container (width >= 28rem)')).toMatchInlineSnapshot(
       'true',
     )
     expect(
-      results.join('\n').includes('@media (hover: hover)'),
+      css.includes('@media (prefers-color-scheme: dark)'),
     ).toMatchInlineSnapshot('true')
-    expect(results.join('\n').includes(':invalid ~')).toMatchInlineSnapshot(
-      'true',
-    )
-    expect(
-      results.join('\n').includes('@container sidebar'),
-    ).toMatchInlineSnapshot('true')
-    const paired = examples.find(
-      (entry) => entry[2] === 'appearance.config.ts',
-    )![3]!
-    const output = Graph.compile({
-      modules: {
-        'appearance.config.ts': paired,
-        'panel.ts':
-          "import {style} from './appearance.config.js'; export const panel = style({color:'foreground',backgroundColor:'surface'});",
-      },
-    })
-    expect(
-      [
-        output.sharedCss,
-        ...Object.values(output.modules).map((module) => module.css),
-      ]
-        .join('\n')
-        .includes('light-dark('),
-    ).toMatchInlineSnapshot('true')
+    expect(css.includes('@layer base{h1{')).toMatchInlineSnapshot('true')
+    expect(css.includes('@keyframes')).toMatchInlineSnapshot('true')
   })
 })
 
@@ -253,7 +261,7 @@ describe('Tailwind migration page', () => {
       const paragraphs = await page
         .locator('main article p:not(table p)')
         .allTextContents()
-      expect(paragraphs.length > 40).toMatchInlineSnapshot('true')
+      expect(paragraphs.length > 30).toMatchInlineSnapshot('true')
       expect(
         paragraphs.filter(
           (paragraph) => !prose.includes(paragraph.replace(/\s+/g, ' ').trim()),
@@ -312,7 +320,7 @@ describe('Tailwind migration page', () => {
           expect(layout.width <= layout.viewport).toMatchInlineSnapshot('true')
           expect(
             await page.locator('main table').count(),
-          ).toMatchInlineSnapshot('4')
+          ).toMatchInlineSnapshot('3')
         }
       }
       expect(errors).toMatchInlineSnapshot('[]')

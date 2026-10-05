@@ -277,9 +277,11 @@ describe('PayloadRecipe API page', () => {
         "data-size": "fixed",
       }
     `)
-    expect(example.box({ className: 'wide' }).className).toMatchInlineSnapshot(
-      `"z-box wide"`,
-    )
+    expect(example.box({ className: 'wide' })).toMatchInlineSnapshot(`
+      {
+        "className": "z-box wide",
+      }
+    `)
     expect(
       example.box({
         size: { custom: { padding: '12px' } },

@@ -28,8 +28,9 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
     title: 'Guides',
     pages: [
       { path: 'guides/styling', title: 'Styling' },
-      { path: 'guides/conditions', title: 'Conditions' },
       { path: 'guides/themes', title: 'Themes & Tokens' },
+      { path: 'guides/default-theme', title: 'Default Theme' },
+      { path: 'guides/conditions', title: 'Conditions' },
       { path: 'guides/variants', title: 'Variants' },
       { path: 'guides/global-styles', title: 'Global Styles' },
       { path: 'guides/layers', title: 'Layers' },
@@ -104,19 +105,6 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           {
             title: 'Reference',
             items: [{ path: 'api/core/values', title: 'Values' }],
-          },
-        ],
-      },
-      {
-        title: 'Default',
-        children: [
-          { path: 'api/default', title: 'Overview' },
-          {
-            title: 'Reference',
-            items: [
-              { path: 'api/default/tokens', title: 'Tokens' },
-              { path: 'api/default/typography', title: 'Typography' },
-            ],
           },
         ],
       },

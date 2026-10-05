@@ -78,7 +78,7 @@ Each panel has `1rem` padding and displays "Content". Text is `#111` in light mo
 
 ### Zyzz
 
-`defineConfig` binds tokens to named authoring helpers. Color pairs compile to `light-dark()`, and property domains constrain token usage. The optional [default theme](https://zyzz.sh/docs/api/default) is available from `zyzz/default`. See [Themes & Tokens](../guides/themes.md).
+`defineConfig` binds tokens to named authoring helpers. Color pairs compile to `light-dark()`, and property domains constrain token usage. The optional [default theme](https://zyzz.sh/docs/guides/default-theme) is available from `zyzz/default`. See [Themes & Tokens](../guides/themes.md).
 
 `zyzz.config.ts`:
 

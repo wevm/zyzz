@@ -19,5 +19,5 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/vite](vite/README.md)                 | Connect source transformation and CSS delivery to Vite.                            |
 | [zyzz/web](web/README.md)                   | Compile web CSS and declare stylesheet contributions and element relationships.    |
 
-[default]: https://zyzz.sh/docs/api/default
+[default]: https://zyzz.sh/docs/guides/default-theme
 [oxlint]: https://zyzz.sh/docs/api/oxlint

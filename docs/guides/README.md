@@ -7,6 +7,7 @@ Recipes grouped by topic. Begin with [Getting Started](../introduction/getting-s
 | [Styling](styling.md)                  | [Style Components](styling.md#style-components), [Share Styles](styling.md#share-styles), [Override Styles](styling.md#override-styles), [Dynamic Values](styling.md#dynamic-values)                         |
 | [Conditions](conditions.md)            | [Responsive Styles](conditions.md#responsive-styles), [Style States](conditions.md#style-states), [Style Relationships](conditions.md#style-relationships)                                                   |
 | [Themes & Tokens](themes.md)           | [Use Themes](themes.md#define-variables), [Dark Mode](themes.md#dark-mode), [Compile Themes](themes.md#compile-themes), [Shared Configuration](themes.md#shared-configuration)                               |
+| [Default Theme][default-theme]         | Bundled colors, spacing, typography, effect, and query tokens.                                                                                                                                               |
 | [Variants](variants.md)                | [Define Variants](variants.md#define-variants)                                                                                                                                                               |
 | [Stylesheets](stylesheets.md)          | [Global Styles](stylesheets.md#global-styles), [Cascade Layers](stylesheets.md#cascade-layers), [Fonts and Motion](stylesheets.md#fonts-and-motion)                                                          |
 | [CSS Output](css-output.md)            | Atomic and grouped CSS, composition, and delivery.                                                                                                                                                           |
@@ -18,3 +19,4 @@ Recipes grouped by topic. Begin with [Getting Started](../introduction/getting-s
 | [React Native](native.md)              | [Native Styles](native.md#native-styles)                                                                                                                                                                     |
 
 [linting]: https://zyzz.sh/docs/api/oxlint
+[default-theme]: https://zyzz.sh/docs/guides/default-theme

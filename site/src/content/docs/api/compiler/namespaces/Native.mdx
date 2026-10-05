@@ -123,10 +123,10 @@ Native.compile({
 
 ### options.vars
 
-- **Type:** `Readonly<Record<string, Vars.Definition>>{:ts}`
+- **Type:** `Native.compile.Options['vars']{:ts}`
 - **Default:** `undefined{:ts}`
 
-Named variable sets that label the compiled tables in `recipes`. Without it, the tables use one `default` label. Tokens from a local config keep the values that config defines.
+Named variable sets or extracted config scopes, such as [`Source.extract`](/docs/api/compiler/namespaces/Source#vars) `vars`, that label the compiled tables in `recipes`. Without it, the tables use one `default` label. Tokens from a local config keep the values that config defines.
 
 ```ts /vars: { base, brand }/
 // recipes tables gain `base` and `brand` labels
@@ -253,7 +253,7 @@ export function Gap() {
 
 ## Graph Output
 
-`Graph.compile` accepts the same context as its [`native`](/docs/api/compiler/namespaces/Graph#optionsnative) option, so imports, re-exports, configs, and library contracts link across a native graph. Each module's `code` and `map` hold native callables, and its `css` and `classes` are empty.
+`Graph.compile` accepts the same context as its [`native`](/docs/api/compiler/namespaces/Graph#optionsnative) option, so imports, re-exports, configs, and library contracts link across a native graph. Each module's `code` holds native callables, its `map` is the source map for that code, and its `css` and `classes` are empty.
 
 ```ts
 import { Graph } from 'zyzz/compiler'

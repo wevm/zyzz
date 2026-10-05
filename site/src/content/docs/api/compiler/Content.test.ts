@@ -1289,6 +1289,38 @@ export const label = style({ opacity: 0.5 })
     )
   })
 
+  test('labels tables with extracted config scopes', () => {
+    const config = `import { defineConfig } from 'zyzz'
+
+const { style } = defineConfig({ vars: { color: { ink: '#171717' } } })
+
+export const label = style({ color: 'ink' })
+`
+    const extracted = Source.extract({
+      moduleId: 'app/Label.tsx',
+      source: config,
+      target: 'native',
+    })
+
+    const output = Native.compile({
+      colorScheme: 'light',
+      moduleId: 'app/Label.tsx',
+      set: Object.keys(extracted.vars)[0]!,
+      source: config,
+      vars: extracted.vars,
+    })
+
+    expect(
+      Object.values(output.recipes).map((recipe) => Object.keys(recipe.styles)),
+    ).toMatchInlineSnapshot(`
+      [
+        [
+          "src-Label-0_yIk1Y48PY-style-theme",
+        ],
+      ]
+    `)
+  })
+
   test('defers set validation in contextual output', async () => {
     const output = Native.compile({
       colorScheme: 'light',

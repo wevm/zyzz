@@ -1,0 +1,186 @@
+# NativeStatic
+
+Merge ordered native fragments for finite variant selections and cache each result.
+
+Native compilation rewrites a [`variants`](/docs/api/core/variants) definition without callback values into a `NativeStatic.create` call. Applications normally do not import it. Instead of one style per combination, it keeps each fragment once and merges the matching rules on first use.
+
+```ts title="text.ts"
+import { NativeStatic } from 'zyzz/runtime'
+
+const text = NativeStatic.create({
+  axes: { size: ['small', 'large'] },
+  defaults: { size: 'small' },
+  // [!code hl:5]
+  // A line-height multiplier resolves against the final font size
+  rules: [
+    { matches: [], steps: ['base', 1.25] },
+    { matches: [['size', ['large']]], steps: ['large'] },
+  ],
+  styles: { base: { fontSize: 16 }, large: { fontSize: 20 } },
+})
+
+// { style: { fontSize: 20, lineHeight: 25 } }
+export const props = text({ size: 'large' })
+```
+
+## Signature
+
+```ts
+// Generated rules and fragments for one set and scheme
+NativeStatic.create(options)
+```
+
+## Parameters
+
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and its choices, in authored order. Boolean choices appear as `'true'` and `'false'` and accept `true` and `false`.
+
+```ts /axes: { size: ['small', 'large'] }/
+// The callable accepts size: 'small' | 'large' | null
+NativeStatic.create({
+  axes: { size: ['small', 'large'] },
+  defaults: {},
+  rules: [],
+  styles: {},
+})
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The choice used when an axis is omitted or `undefined`. `null` clears the axis, and an axis without a default stays unselected.
+
+```ts /defaults: { size: 'small' }/
+// An omitted size selects small
+NativeStatic.create({
+  axes: { size: ['small', 'large'] },
+  defaults: { size: 'small' },
+  rules,
+  styles,
+})
+```
+
+### options.rules
+
+- **Type:** `readonly { matches: readonly (readonly [string, readonly string[]])[]; steps: readonly (string | number)[] }[]{:ts}`
+
+Base, variant, and compound rules in authored order. A rule applies when every `[axis, choices]` entry matches, and an empty `matches` always applies. String steps name fragments. Numeric steps are line-height multipliers that a later absolute `lineHeight` replaces.
+
+```ts /matches: [['size', ['large']]]/
+// Applies the `large` fragment when size is large
+const rules = [{ matches: [['size', ['large']]], steps: ['large'] }]
+```
+
+### options.styles
+
+- **Type:** `{ [name: string]: StyleSheet.NativeStyle }{:ts}`
+
+Converted native fragments, keyed by the names in rule steps. Matching fragments merge in order, and every referenced fragment is frozen at creation.
+
+```ts /styles: { base: { fontSize: 16 }, large: { fontSize: 20 } }/
+// Two fragments shared by every combination
+NativeStatic.create({
+  axes,
+  defaults,
+  rules,
+  styles: { base: { fontSize: 16 }, large: { fontSize: 20 } },
+})
+```
+
+## Application
+
+The returned callable accepts the inferred choices and a native `style` override, as [`Native.create`](/docs/api/runtime/namespaces/Native#inputaxis) does.
+
+### input[axis]
+
+- **Type:** `string | boolean | null | undefined{:ts}`
+- **Default:** `options.defaults[axis]{:ts}`
+
+The selected choice. `null` clears the axis, overriding its default, so only rules without a match on that axis apply.
+
+```ts /size: null/
+// { style: { fontSize: 16, lineHeight: 20 } }
+text({ size: null })
+```
+
+### input.style
+
+- **Type:** `StyleSheet.StyleProp<overrides>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Native overrides placed after the merged style in a new array. Their identity and type are kept, and the helper never freezes or copies them. A falsy override, such as `false` or `null`, is dropped.
+
+```ts /style: { opacity: 0.5 }/
+// { style: [{ fontSize: 20, lineHeight: 25 }, { opacity: 0.5 }] }
+text({ size: 'large', style: { opacity: 0.5 } })
+```
+
+## Returns
+
+### callable
+
+- **Type:** `Native.Callable<axes>{:ts}`
+
+Each merged style is frozen and reused for up to 256 combinations, evicting the oldest first. The returned props are new on every call.
+
+```ts /text()/
+// The same frozen object on every call: { fontSize: 16, lineHeight: 20 }
+text().style
+```
+
+### style
+
+- **Type:** `StyleSheet.StyleProp<style>{:ts}`
+
+The cached merged style, or a new `[merged, override]` array when `input.style` is truthy.
+
+```ts /.style/
+// [{ fontSize: 20, lineHeight: 25 }, { opacity: 0.5 }]
+text({ size: 'large', style: { opacity: 0.5 } }).style
+```
+
+## Types
+
+- **`NativeStatic.create.Options<axes>{:ts}`:** [`Native.create.Options`](/docs/api/runtime/namespaces/Native#types) with `rules` and fragment `styles`.
+
+```ts title="options.ts"
+import type { NativeStatic } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A definition with one unconditional fragment
+export const options = {
+  axes: {},
+  defaults: {},
+  rules: [{ matches: [], steps: ['base'] }],
+  styles: { base: { padding: 8 } },
+} satisfies NativeStatic.create.Options
+```
+
+## Errors
+
+`NativeStatic.create` and its callable throw [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) for an unknown input key or choice, a payload passed to a static choice, a missing fragment, or a multiplier without a numeric `fontSize`.
+
+The multiplier must be finite and nonnegative, and the converted line height finite. A negative `fontSize` therefore yields a negative line height.
+
+A rule that names an axis missing from `options.axes` throws a `TypeError` at creation. Generated metadata never contains one.
+
+```ts title="invalid.ts"
+import { Native, NativeStatic } from 'zyzz/runtime'
+
+try {
+  // The rule names a fragment that `styles` lacks
+  NativeStatic.create({
+    axes: {},
+    defaults: {},
+    rules: [{ matches: [], steps: ['base'] }],
+    styles: {},
+  })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Native.SelectionError) console.error(error.message)
+}
+```

@@ -126,7 +126,7 @@ Native.compile({
 - **Type:** `Native.compile.Options['vars']{:ts}`
 - **Default:** `undefined{:ts}`
 
-Named variable sets or extracted config scopes, such as [`Source.extract`](/docs/api/compiler/namespaces/Source#vars) `vars`, that label the compiled tables in `recipes`. Without it, the tables use one `default` label. Tokens from a local config keep the values that config defines.
+Named variable sets or extracted config scopes, such as [`Source.extract`](/docs/api/compiler/namespaces/Source#vars) `vars`, that label the compiled tables in `recipes`. Without it, the tables use one `default` label, unless `contextual` keeps a local config's named sets as labels. Tokens from a local config keep the values that config defines.
 
 ```ts /vars: { base, brand }/
 // recipes tables gain `base` and `brand` labels

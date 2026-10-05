@@ -308,6 +308,34 @@ export const card = style({ color: 'red' })
     `)
   })
 
+  test('orders variable registrations before contribution calls', () => {
+    const output = Source.extract({
+      moduleId: 'app/theme.ts',
+      source: `import { defineConfig, variable } from 'zyzz'
+import { global } from 'zyzz/web'
+global({ body: { margin: 0 } })
+export const accent = variable('color', { inherits: true, initialValue: 'red' })
+const { style } = defineConfig({ layers: ['base'] })
+export const card = style({ color: 'red' })
+`,
+    })
+
+    expect(output.contributions?.map((entry) => entry.kind))
+      .toMatchInlineSnapshot(`
+      [
+        "property",
+        "rule",
+        "layers",
+      ]
+    `)
+    expect(output.contributionStarts).toMatchInlineSnapshot(`
+      [
+        134,
+        80,
+      ]
+    `)
+  })
+
   test('returns contribution, namespace, and config helper fields', () => {
     const output = Source.extract({
       moduleId: 'app/theme.tsx',
@@ -1316,6 +1344,42 @@ export const label = style({ color: 'ink' })
       [
         [
           "src-Label-0_yIk1Y48PY-style-theme",
+        ],
+      ]
+    `)
+  })
+
+  test("labels contextual tables with a local config's named sets", () => {
+    const source = `import { defineConfig } from 'zyzz'
+const { style } = defineConfig({
+  defaultVars: 'base',
+  vars: { base: { color: { ink: '#000' } }, brand: { color: { ink: '#f00' } } },
+})
+export const label = style({ color: 'ink' })
+`
+
+    const labels = (contextual: boolean) =>
+      Object.values(
+        Native.compile({
+          colorScheme: 'light',
+          contextual,
+          moduleId: 'app/Label.tsx',
+          source,
+        }).recipes,
+      ).map((recipe) => Object.keys(recipe.styles))
+
+    expect(labels(true)).toMatchInlineSnapshot(`
+      [
+        [
+          "base",
+          "brand",
+        ],
+      ]
+    `)
+    expect(labels(false)).toMatchInlineSnapshot(`
+      [
+        [
+          "default",
         ],
       ]
     `)

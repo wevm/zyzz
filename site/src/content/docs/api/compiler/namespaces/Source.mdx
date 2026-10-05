@@ -128,9 +128,9 @@ const result = Css.compile({ styles: output.styles, vars: output.vars })
 
 ### themeCalls
 
-- **Type:** `readonly { end: number; name: string; start: number; tokenType: string }[]{:ts}`
+- **Type:** `Source.extract.ReturnType['themeCalls']{:ts}`
 
-The spans of local `defineConfig`, `defineVars`, and `extendVars` calls, with each call's scope key in `name` and its token type text in `tokenType`. A rewriter replaces each span with compiled scope data.
+The spans of local `defineConfig`, `defineVars`, and `extendVars` calls, with each call's scope key in `name` and its token type text in `tokenType`. Calls also carry the options and named sets a rewriter reads to replace each span with compiled scope data.
 
 ```ts /output.themeCalls/
 // One entry per local config or variable set
@@ -139,7 +139,7 @@ output.themeCalls.length
 
 ### themeAliases
 
-- **Type:** `readonly { destructured: boolean; end: number; name: string; start: number; tokenType: string }[]{:ts}`
+- **Type:** `Source.extract.ReturnType['themeAliases']{:ts}`
 
 Local aliases of configured helpers, such as `const { style } = config`. Each has its span, its scope key in `name`, the token type text in `tokenType`, and whether it destructures helpers.
 
@@ -163,7 +163,7 @@ output.themeReferences.length
 
 - **Type:** `readonly Css.Contribution[] | undefined{:ts}`
 
-Stylesheet contributions from `zyzz/web` functions, such as `global`, `fontFace`, `keyframes`, and `layers`, in source order. The field is absent when the module declares none.
+Stylesheet contributions from `zyzz/web` functions, such as `global`, `fontFace`, `keyframes`, and `layers`. Registered `variable` properties come first, then the calls in source order, then layer orders from a config's `layers` option. The field is absent when the module declares none.
 
 ```ts /output.contributions/
 // [{ kind: 'rule', selector: 'body', … }] for global({ body: { margin: 0 } })

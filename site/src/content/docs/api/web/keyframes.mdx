@@ -63,9 +63,9 @@ export const reveal = keyframes({
 
 ### frames[atRule]
 
-- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: frames }{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
 
-Grouping keys around a complete set of frames. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+Grouping keys around a complete set of frames. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { keyframes } from 'zyzz/web'

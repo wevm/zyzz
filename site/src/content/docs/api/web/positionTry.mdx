@@ -60,9 +60,9 @@ export const end = positionTry({
 
 ### declarations[atRule]
 
-- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: positionTry.Declarations }{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
 
-Grouping keys around a complete set of declarations. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+Grouping keys around a complete set of declarations. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { positionTry } from 'zyzz/web'
@@ -92,7 +92,7 @@ positionTry({ positionArea: 'top' }, { id: 'above' })
 
 - **Type:** `positionTry.Reference{:ts}`
 
-The generated dashed name. `positionTryFallbacks` accepts it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+The generated dashed name. `positionTryFallbacks` and the `positionTry` shorthand accept it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
 
 ```ts /positionTryFallbacks: above/
 // Compiles to `position-try-fallbacks:--z-positiontry-above`

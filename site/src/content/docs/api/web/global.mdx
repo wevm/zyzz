@@ -2,7 +2,7 @@
 
 Emit global selector rules and their grouping rules into the shared stylesheet.
 
-`global` maps complete selectors to declarations. The compiler emits the rules into the shared stylesheet and erases the call, so the rules apply whether or not any module imports the file that declares them. The [Global Styles](/docs/guides/global-styles) guide covers common patterns.
+`global` maps complete selectors to declarations. The compiler emits the rules into the shared stylesheet and erases the call, so no runtime code applies them. The [Global Styles](/docs/guides/global-styles) guide covers common patterns.
 
 ```ts title="src/document.ts"
 import { global } from 'zyzz/web'
@@ -77,7 +77,7 @@ Layer names in `@layer` keys are raw CSS names. Declare their order with [`layer
 
 ## Returns
 
-`void`. The compiler erases the call, and the rules stay in the shared stylesheet even when nothing imports the module. Hosts load the shared stylesheet before module stylesheets.
+`void`. The compiler erases the call and keeps the rules in the shared stylesheet. Vite, Unplugin, and `zyzz/node` scan the source tree, so unimported modules still contribute. Next.js compiles only imported modules, so import the declaring module from an entrypoint there. Hosts load the shared stylesheet before module stylesheets.
 
 ## Errors
 

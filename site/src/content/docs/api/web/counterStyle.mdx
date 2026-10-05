@@ -78,9 +78,9 @@ export const parenthesized = counterStyle({
 
 ### descriptors[atRule]
 
-- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: counterStyle.Options }{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
 
-Grouping keys around a complete set of descriptors. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+Grouping keys around a complete set of descriptors. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { counterStyle } from 'zyzz/web'
@@ -110,7 +110,7 @@ counterStyle({ system: 'cyclic', symbols: '"*"' }, { id: 'stars' })
 
 - **Type:** `counterStyle.Reference{:ts}`
 
-The generated counter style name. `listStyleType` accepts it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+The generated counter style name. `listStyleType` and `listStyle` accept it, as do the `fallback`, `speakAs`, and `extends` system of another counter style. Other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
 
 ```ts /listStyleType: circled/
 // Compiles to `list-style-type:z-counterstyle-circled`

@@ -81,9 +81,9 @@ fontFeatureValues({
 
 ### options[atRule]
 
-- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: fontFeatureValues.Options }{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
 
-Grouping keys around a complete definition. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+Grouping keys around a complete definition. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { fontFeatureValues } from 'zyzz/web'
@@ -100,7 +100,7 @@ fontFeatureValues({
 
 ## Returns
 
-`void`. The compiler erases the call, and the rule stays in the shared stylesheet even when nothing imports the module.
+`void`. The compiler erases the call and keeps the rule in the shared stylesheet. Vite, Unplugin, and `zyzz/node` scan the source tree, so unimported modules still contribute. Next.js compiles only imported modules, so import the declaring module from an entrypoint there.
 
 ## Types
 

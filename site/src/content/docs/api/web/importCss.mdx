@@ -77,7 +77,7 @@ importCss({ supports: 'display: grid', url: 'https://example.com/grid.css' })
 
 ## Returns
 
-`void`. The compiler erases the call, and the import stays in the shared stylesheet even when nothing imports the module.
+`void`. The compiler erases the call and keeps the import in the shared stylesheet. Vite, Unplugin, and `zyzz/node` scan the source tree, so unimported modules still contribute. Next.js compiles only imported modules, so import the declaring module from an entrypoint there.
 
 ## Errors
 

@@ -116,7 +116,7 @@ Namespaces apply only to the module that declares them. The compiler renames eac
 
 ## Static Compilation
 
-Every helper is a static authoring call that compiles away. Calls must be direct module-level statements with literal data, and none registers CSS at runtime. Rules without a reference stay in the shared stylesheet even when JavaScript tree shaking removes their module.
+Every helper is a static call that compiles away. Calls must be direct module-level statements with literal data, and none registers CSS at runtime. Unreferenced rules survive JavaScript tree shaking, but Next.js compiles only imported modules, so an entrypoint must import modules that declare them.
 
 ```ts
 import { global } from 'zyzz/web'

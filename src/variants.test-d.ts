@@ -341,5 +341,33 @@ describe('payloads', () => {
       // @ts-expect-error Exactly one dynamic choice per axis.
       button({ size: { custom: { padding: '1px' }, fluid: { width: '10%' } } })
     })
+
+    test('infers inline dynamic choices when defaults precede axes', () => {
+      const button = variants({
+        defaultVariants: { size: 'regular' },
+        variants: {
+          size: {
+            compact: { padding: '4px' },
+            custom: (values: { padding: `${number}px` }) => ({
+              padding: values.padding,
+            }),
+            regular: { padding: '8px' },
+          },
+        },
+      })
+
+      expectTypeOf<
+        NonNullable<Parameters<typeof button>[0]>['size']
+      >().toEqualTypeOf<
+        | 'compact'
+        | 'regular'
+        | ({ readonly custom: { padding: `${number}px` } } & {
+            readonly compact?: never
+            readonly regular?: never
+          })
+        | null
+        | undefined
+      >()
+    })
   })
 })

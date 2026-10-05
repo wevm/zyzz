@@ -224,6 +224,116 @@ global({ body: { margin: 0 } })
     `)
   })
 
+  test('returns contribution, namespace, and config helper fields', () => {
+    const output = Source.extract({
+      moduleId: 'app/theme.tsx',
+      source: `import { defineConfig } from 'zyzz'
+import { global, namespace } from 'zyzz/web'
+
+const { appearance, script, style, vars } = defineConfig({
+  vars: { color: { brand: '#06c' } },
+})
+
+global({ body: { margin: 0 } })
+
+namespace({ prefix: 'svg', uri: 'http://www.w3.org/2000/svg' })
+
+export const tag = script()
+
+export const card = style({ color: 'brand' })
+
+const tokens = { color: vars.color.brand } as const
+
+export const box = style({ color: tokens.color })
+`,
+    })
+
+    expect(output.contributionCalls?.map((call) => call.kind))
+      .toMatchInlineSnapshot(`
+      [
+        "global",
+        "namespace",
+      ]
+    `)
+    expect(output.contributionStarts).toMatchInlineSnapshot(`
+      [
+        183,
+        216,
+      ]
+    `)
+    expect(output.namespaces).toMatchInlineSnapshot(`
+      [
+        {
+          "kind": "namespace",
+          "name": "z-n1s08wvjtx687h-60",
+          "prefix": "svg",
+          "uri": "http://www.w3.org/2000/svg",
+        },
+      ]
+    `)
+    expect(output.staticThemeReferences).toMatchInlineSnapshot(`
+      [
+        {
+          "end": 397,
+          "start": 381,
+          "value": "var(--z-color-brand,#06c)",
+        },
+      ]
+    `)
+    expect(output.themeAppearances).toMatchInlineSnapshot(`
+      [
+        "src-theme-eqLm6-5DbIH-appearance-theme",
+      ]
+    `)
+    expect(output.themeScripts).toMatchInlineSnapshot(`
+      [
+        "src-theme-eqLm6-5DbIH-appearance-theme",
+      ]
+    `)
+    expect(output.themeSelections).toMatchInlineSnapshot(`
+      [
+        "src-theme-eqLm6-5DbIH-appearance-theme",
+      ]
+    `)
+  })
+
+  test('returns native variable arguments', () => {
+    const output = Source.extract({
+      moduleId: 'app/Gap.tsx',
+      source: `import { defineVars } from 'zyzz'
+import { useVars } from 'zyzz/react-native/react'
+
+const vars = defineVars({ spacing: { gap: '4px' } })
+
+export function read() {
+  return useVars(vars)
+}
+`,
+      target: 'native',
+    })
+
+    expect(output.nativeVars?.map((read) => Object.keys(read.vars)))
+      .toMatchInlineSnapshot(`
+      [
+        [
+          "default",
+        ],
+      ]
+    `)
+  })
+
+  test('rejects native output', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'app/Card.tsx',
+        source: '',
+        target: 'native',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Use Native.compile for native source output.]`,
+    )
+  })
+
   test('resolves static input', async () => {
     const source = await example('namespaces/Source', 'Static Input')
     const output = Source.extract({ moduleId: 'app/Card.tsx', source })

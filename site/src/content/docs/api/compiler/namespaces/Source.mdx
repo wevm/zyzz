@@ -181,6 +181,94 @@ The spans of module-owned [`variable`](/docs/api/core/variable) calls, each with
 output.variableCalls
 ```
 
+### contributionCalls
+
+- **Type:** `readonly { end: number; kind: string; start: number }[] | undefined{:ts}`
+
+The span and function name of each contribution call, such as `'global'` or `'namespace'`. A rewriter removes these calls, since their CSS is emitted ahead of time.
+
+```ts /output.contributionCalls/
+// [{ kind: 'global', start: …, end: … }]
+output.contributionCalls
+```
+
+### contributionStarts
+
+- **Type:** `readonly number[] | undefined{:ts}`
+
+The start offset of each contribution call, in source order.
+
+```ts /output.contributionStarts/
+// One offset per global, fontFace, keyframes, or other contribution
+output.contributionStarts
+```
+
+### namespaces
+
+- **Type:** `readonly { kind: 'namespace'; name: string; prefix?: string; uri: string }[] | undefined{:ts}`
+
+The module's `namespace` declarations, with their prefixes and URIs.
+
+```ts /output.namespaces/
+// [{ kind: 'namespace', prefix: 'svg', uri: 'http://www.w3.org/2000/svg', … }]
+output.namespaces
+```
+
+### staticThemeReferences
+
+- **Type:** `readonly { end: number; start: number; value: string }[] | undefined{:ts}`
+
+Token reads held in immutable records, such as `{ color: vars.color.brand }`, with the CSS value that replaces each one.
+
+```ts /output.staticThemeReferences/
+// [{ start: …, end: …, value: 'var(--z-color-brand,#06c)' }]
+output.staticThemeReferences
+```
+
+### themeAppearances
+
+- **Type:** `readonly string[] | undefined{:ts}`
+
+The scope keys of local configs whose `appearance` helper the module reads.
+
+```ts /output.themeAppearances/
+// ['src-theme-…-appearance-theme']
+output.themeAppearances
+```
+
+### themeScripts
+
+- **Type:** `readonly string[] | undefined{:ts}`
+
+The scope keys of local configs whose `script` helper the module reads.
+
+```ts /output.themeScripts/
+// ['src-theme-…-appearance-theme']
+output.themeScripts
+```
+
+### themeSelections
+
+- **Type:** `readonly string[] | undefined{:ts}`
+
+The scope keys of local configs whose `vars` selector the module calls, passes, or binds.
+
+```ts /output.themeSelections/
+// ['src-theme-…-appearance-theme']
+output.themeSelections
+```
+
+### nativeVars
+
+- **Type:** `readonly object[] | undefined{:ts}`
+
+With `target: 'native'`, the `useVars` arguments in the module, each with its complete catalog of variable sets.
+
+```ts /output.nativeVars/
+// [{ defaultVars: 'default', vars: { default: … }, … }]
+output.nativeVars
+```
+
 ## Static Input
 
 Values must be literals the compiler can read. Module-level `const` bindings, object spreads, template literals with literal substitutions, fallback arrays, and ` !important` suffixes all resolve statically.

@@ -230,6 +230,8 @@ Transform.compile({ cssOutput: 'nested', moduleId: 'app/Card.tsx', source })
 
 `Transform.compile` returns no partial output. It throws `Source.ExtractError` for source outside the [static input](/docs/api/compiler/namespaces/Source#static-input), and `Css.CompileError` when the CSS cannot compile.
 
+It also throws a plain `Error` for `target: 'native'`, which belongs to `Native.compile`, and under `compiler: false` for definitions that need an explicit ID. `Transform.compile.ErrorType` does not include these.
+
 ```ts
 import { Source, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'

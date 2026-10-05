@@ -84,8 +84,10 @@ The callable accepts applied props, or `false`, `null`, and `undefined` for omit
 
 Later arguments win. Before an argument's values merge, the attributes and slots of its `owners` are removed, so a repeated definition replaces earlier bindings instead of leaving stale ones.
 
+Only an argument whose input has a `condition` may be omitted. Its bit selects a class list from `options.cases`. Omitting any other argument still returns `options.className`, with that argument's precompiled classes applied.
+
 ```ts /false/
-// An omitted argument contributes no attributes or styles
+// The second input is unconditional, so this still returns { className: 'z-card-button' }
 compose({ className: 'z-card' }, false)
 ```
 

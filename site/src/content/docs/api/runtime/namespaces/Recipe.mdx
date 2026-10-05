@@ -102,12 +102,36 @@ The selected choice. `null` clears the axis, overriding its default.
 button({ size: null })
 ```
 
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// { className: 'z-button wide', 'data-size': 'small' }
+button({ className: 'wide' })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments merged into a new `style` before `options.style`, as [`Props.create`](/docs/api/runtime/namespaces/Props#optionsvars) merges them.
+
+```ts /vars: { '--accent': 'crimson' }/
+// Adds style: { '--accent': 'crimson' }
+button({ vars: { '--accent': 'crimson' } })
+```
+
 ### options.style
 
 - **Type:** `style.Options['style']{:ts}`
 - **Default:** `undefined{:ts}`
 
-Inline overrides, merged with `options.className` and `options.vars` as [`Props.create`](/docs/api/runtime/namespaces/Props#application) merges them.
+Inline overrides, copied after `options.vars`. Without `options.vars`, the returned `style` is the supplied object.
 
 ```ts /style: { padding: '24px' }/
 // Adds style: { padding: '24px' }

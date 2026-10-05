@@ -154,4 +154,4 @@ export function badge(attributes: Html.Attributes) {
 
 ## Errors
 
-These functions throw no errors and do not validate values. CSS values keep the units the caller supplied.
+`Html.from`, `Html.serialize`, and `Html.create` throw no errors and do not validate values. CSS values keep the units the caller supplied. A callable returned by `Html.bind` propagates any error thrown by the wrapped `fn`.

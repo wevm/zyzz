@@ -101,7 +101,7 @@ Inline declarations, copied after `options.vars`. Slot assignments always win ov
 
 ```ts /style: { opacity: 0.5 }/
 // { '--meter-amount': '50%', opacity: 0.5 }
-meter({ amount: '50%', style: { opacity: 0.5 } })
+meter({ amount: '50%', style: { opacity: 0.5 } }).style
 ```
 
 ## Returns

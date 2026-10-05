@@ -123,7 +123,7 @@ export const options = {
 
 ## Errors
 
-`NativeStatic.create` and its callable throw [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) for an unknown input key or choice, a payload passed to a static choice, a missing fragment, or a multiplier without a numeric `fontSize`. The converted line height must be finite and nonnegative.
+`NativeStatic.create` and its callable throw [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) for an unknown input key or choice, a payload passed to a static choice, a missing fragment, or a multiplier without a numeric `fontSize`. The multiplier must be finite and nonnegative, and the converted line height finite. A negative `fontSize` therefore yields a negative line height.
 
 A rule that names an axis missing from `options.axes` throws a `TypeError` at creation. Generated metadata never contains one.
 

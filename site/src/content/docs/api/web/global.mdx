@@ -57,9 +57,9 @@ global({ body: { fontFamily: sans } })
 
 ### styles[atRule]
 
-- **Type:** ``{ [atRule: `@${string}`]: { [selector: string]: Style.LiteralProperties } }{:ts}``
+- **Type:** ``'@layer' | '@scope' | '@starting-style' | `@document ${string}` | `@${'container' | 'layer' | 'media' | 'scope' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
 
-`@media`, `@supports`, `@container`, `@layer`, `@scope`, and `@starting-style` keys group further selectors, at any depth.
+`@media`, `@supports`, `@container`, `@layer`, `@scope`, `@starting-style`, and `@document` keys group further selectors, at any depth. Other at-rules, such as `@font-face`, have dedicated functions instead.
 
 ```ts
 import { global } from 'zyzz/web'

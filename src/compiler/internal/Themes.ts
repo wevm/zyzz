@@ -120,6 +120,34 @@ export type VarsRead = {
   readonly vars: Readonly<Record<string, Theme.Definition>>
 }
 
+/** Resolves the variable alternatives a linked configuration or variable set exposes to native hooks. */
+export function varsRead(
+  link: Pick<Link, 'call' | 'definition' | 'members'>,
+): Omit<VarsRead, 'end' | 'start'> {
+  const named = link.call.options?.themes !== undefined
+  const vars = (() => {
+    if (!named) return { default: link.definition }
+    return Object.fromEntries(
+      Object.entries(link.members ?? {}).flatMap((entry) => {
+        const [key, member] = entry
+        const path = JSON.parse(key) as string[]
+        if (path.length === 1 && link.call.selection)
+          return [[path[0]!, member.definition]]
+        if (path.length === 2 && path[0] === 'themes')
+          return [[path[1]!, member.definition]]
+        return []
+      }),
+    )
+  })()
+
+  return {
+    defaultVars: named ? String(link.call.options!.defaultTheme) : 'default',
+    owner: link.call.name,
+    unnamed: !named,
+    vars,
+  }
+}
+
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
   /** Canonical identifier names collected during graph validation. */
@@ -1796,29 +1824,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     )
       return false
 
-    const named = link.call.options?.themes !== undefined
-    const vars = (() => {
-      if (!named) return { default: link.definition }
-      return Object.fromEntries(
-        Object.entries(link.members ?? {}).flatMap((entry) => {
-          const [key, member] = entry
-          const path = JSON.parse(key) as string[]
-          if (path.length === 1 && link.call.selection)
-            return [[path[0]!, member.definition]]
-          if (path.length === 2 && path[0] === 'themes')
-            return [[path[1]!, member.definition]]
-          return []
-        }),
-      )
-    })()
-    varsReads.push({
-      defaultVars: named ? String(link.call.options!.defaultTheme) : 'default',
-      end: node.end,
-      owner: link.call.name,
-      start: node.start,
-      unnamed: !named,
-      vars,
-    })
+    varsReads.push({ ...varsRead(link), end: node.end, start: node.start })
     return true
   }
 

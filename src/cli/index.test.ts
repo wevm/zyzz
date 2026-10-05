@@ -484,17 +484,23 @@ describe('zyzz', () => {
             'localStorage.getItem("zyzz")',
           ),
         ).toMatchInlineSnapshot('true')
-        expect(
-          (
-            await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8')
-          ).includes(
-            await Fs.readFile(Path.join(root, 'dist/button.ts.css'), 'utf8'),
-          ),
-        ).toMatchInlineSnapshot('true')
         const original = await Fs.readFile(
           Path.join(root, 'dist/button.ts.css'),
           'utf8',
         )
+        const complete = await Fs.readFile(
+          Path.join(root, 'dist/zyzz.css'),
+          'utf8',
+        )
+        // The complete stylesheet carries module rules and one copy of the scheme rules.
+        expect(
+          complete.includes(
+            original.replace(/\.z_scheme-[\w-]+ \{[^}]*\}\s*/g, ''),
+          ),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          complete.match(/\.z_scheme-dark /g)?.length,
+        ).toMatchInlineSnapshot('1')
         // CSS-only output keeps stylesheets, their maps, and the initialization script.
         expect(
           result.files.some(

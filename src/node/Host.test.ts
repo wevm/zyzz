@@ -1042,6 +1042,67 @@ export const widget = style({ color: '#ff0000', padding: '4px' });`,
     }
   })
 
+  test('declares scheme classes once in the complete stylesheet', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(project, '.fixture-complete-schemes-'),
+    )
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'x', root })
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'zyzz.config.ts'),
+        `import { defineConfig, defineVars } from 'zyzz'
+const base = defineVars({ spacing: { page: '1rem' } })
+export const { appearance, script, style, variants, vars } = defineConfig({ vars: base })`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'Preview.tsx'),
+        `import { vars } from './zyzz.config.js'
+export function Preview() {
+  return <section {...vars({ colorScheme: 'dark' })} />
+}`,
+      )
+      await host.build()
+
+      expect(await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_scheme-dark {
+          color-scheme: dark;
+        }
+
+        .z_scheme-light {
+          color-scheme: light;
+        }
+
+        .z_scheme-light-dark {
+          color-scheme: light dark;
+        }
+        "
+      `)
+
+      // Module stylesheets keep their own declarations for independent loading.
+      expect(await Fs.readFile(Path.join(outDir, 'Preview.tsx.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_scheme-dark {
+          color-scheme: dark;
+        }
+
+        .z_scheme-light {
+          color-scheme: light;
+        }
+
+        .z_scheme-light-dark {
+          color-scheme: light dark;
+        }
+        "
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('publishes initialization for configurations kept local to a module', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-local-config-'))
     const outDir = Path.join(root, 'output')

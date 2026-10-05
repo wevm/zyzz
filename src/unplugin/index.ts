@@ -13,6 +13,7 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Contract from '../compiler/internal/Contract.js'
 import * as Vite from '../vite/index.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 
 /** Portable build configuration. Vite uses the options from `zyzz/vite` instead. */
 export type Options = {
@@ -284,7 +285,9 @@ const portable = createUnplugin<Options | undefined, false>(
             }
           }
 
+          // Only the combined stylesheet is emitted, so generated theme rules are shared once.
           const result = compiler.compile({
+            [ThemeRules.shared]: 'all',
             [Syntax.cache]: snapshot.programs(modules),
             compiler: options.compiler,
             reset: options.reset ? Reset.read() : undefined,
@@ -460,7 +463,7 @@ const portable = createUnplugin<Options | undefined, false>(
           let line = 0
           css = ''
           for (const chunk of chunks) {
-            if (!chunk.code) continue
+            if (!chunk.code.trim()) continue
             const traced = Mapping.fromMap(chunk.map)
             for (const mapping of Mapping.allMappings(traced)) {
               const generated = {

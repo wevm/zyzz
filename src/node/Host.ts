@@ -13,6 +13,7 @@ import * as Graph from '../compiler/Graph.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Relative from '../compiler/internal/Relative.js'
+import * as Scheme from '../internal/Scheme.js'
 import * as Snapshot from './internal/Snapshot.js'
 import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Source from '../compiler/Source.js'
@@ -620,7 +621,10 @@ export async function create(options: create.Options): Promise<Runtime> {
       artifacts.set('zyzz.shared.css.map', shared.map)
     }
 
-    const moduleStylesheets = new Map<string, Stylesheet>()
+    const moduleStylesheets = new Map<
+      string,
+      { name: string; stylesheet: Stylesheet }
+    >()
 
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
@@ -661,23 +665,40 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       artifacts.set(`${name}.css`, stylesheet.code)
       artifacts.set(`${name}.css.map`, stylesheet.map)
-      // Module URLs resolve beside the module file; the complete stylesheet at
-      // the output root carries a copy with those URLs rebased.
-      moduleStylesheets.set(
-        `${options.packageId}/${name}`,
-        rebase(stylesheet, name, css === false ? false : css.minify),
-      )
+      moduleStylesheets.set(`${options.packageId}/${name}`, {
+        name,
+        stylesheet,
+      })
     }
 
     // The complete stylesheet follows the module graph so a consumer's rules
     // cascade over the rules of the modules it imports.
     if (shared || moduleStylesheets.size) {
-      const complete = concatenate([
-        ...(shared ? [shared] : []),
-        ...order(graph.dependencies, [...moduleStylesheets.keys()]).map(
-          (id) => moduleStylesheets.get(id)!,
-        ),
-      ])
+      const parts = shared ? [shared] : []
+      let schemes = false
+
+      // Each module stylesheet declares the scheme classes to load alone. The
+      // complete stylesheet keeps the first declaration.
+      for (const id of order(graph.dependencies, [
+        ...moduleStylesheets.keys(),
+      ])) {
+        const { name, stylesheet } = moduleStylesheets.get(id)!
+        const declares = Object.values(Scheme.classes).some((className) =>
+          stylesheet.code.includes(`.${className}`),
+        )
+
+        parts.push(
+          rebase(
+            stylesheet,
+            name,
+            css === false ? false : css.minify,
+            schemes && declares,
+          ),
+        )
+        schemes ||= declares
+      }
+
+      const complete = concatenate(parts)
 
       artifacts.set('zyzz.css', complete.code)
       artifacts.set('zyzz.css.map', complete.map)
@@ -1025,7 +1046,7 @@ function concatenate(parts: readonly { code: string; map: string }[]) {
   let offset = 0
 
   for (const part of parts) {
-    if (!part.code) continue
+    if (!part.code.trim()) continue
 
     const code = part.code.endsWith('\n') ? part.code : `${part.code}\n`
     const traced = Mapping.fromMap(part.map)
@@ -1169,15 +1190,22 @@ async function read(
   }
 }
 
-/** Rewrites a nested module stylesheet's relative URLs against the output root. */
+/**
+ * Copies a module stylesheet into the complete stylesheet at the output root,
+ * rebasing nested relative URLs and optionally dropping the scheme rules.
+ */
 function rebase(
   stylesheet: { code: string; map: string },
   name: string,
   minify: boolean,
+  schemes: boolean,
 ) {
   const directory = Path.posix.dirname(name)
 
-  if (directory === '.' || !stylesheet.code.includes('url(')) return stylesheet
+  if (!schemes && (directory === '.' || !stylesheet.code.includes('url(')))
+    return stylesheet
+
+  const classes = Object.values(Scheme.classes)
 
   const result = AtRules.transform({
     code: Buffer.from(stylesheet.code),
@@ -1186,8 +1214,27 @@ function rebase(
     minify,
     sourceMap: true,
     visitor: {
+      Rule: {
+        style(rule) {
+          const [selector, ...others] = rule.value.selectors
+          const [component, ...rest] = selector ?? []
+
+          if (
+            schemes &&
+            !others.length &&
+            !rest.length &&
+            component?.type === 'class' &&
+            classes.includes(component.name)
+          )
+            return []
+        },
+      },
       Url(url) {
-        if (/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)) return url
+        if (
+          directory === '.' ||
+          /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)
+        )
+          return url
 
         return { ...url, url: Path.posix.join(directory, url.url) }
       },

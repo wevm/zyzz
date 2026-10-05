@@ -119,7 +119,7 @@ describe('/docs/guides/testing', () => {
       .allTextContents()
     for (const heading of headings) expect(markdown).toContain(heading)
     const blocks = await page.locator('article pre code').allTextContents()
-    expect(blocks).toHaveLength(5)
+    expect(blocks).toHaveLength(10)
     for (const block of blocks) expect(markdown).toContain(block.trim())
     const paragraphs = await page
       .locator('article p, article li')

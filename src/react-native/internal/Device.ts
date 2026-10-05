@@ -5,6 +5,7 @@ import NativeZyzz from './NativeZyzz.js'
 import * as React from 'react'
 import * as ReactNative from 'react-native'
 import * as Store from './Store.js'
+import * as Styles from './Styles.js'
 import * as Subscription from '../react.js'
 import * as Viewport from './Viewport.js'
 
@@ -22,7 +23,52 @@ export function defineConfig<const options extends Config.create.Options = {}>(
 /** Provides selected variables, appearance, and automatic native dimensions. */
 export const Provider = dimensions(Subscription.Provider)
 
-export { useStyles, useVars, withStyles } from '../react.js'
+/**
+ * Compiler-inserted subscription for resolving native style applications.
+ * Outside a Provider, selections use default variables, the light scheme, and window dimensions.
+ */
+export function useStyles() {
+  const owner = React.useContext(Store.context)
+  const [fallback] = React.useState(() =>
+    Store.create({
+      colorScheme: 'light',
+      viewport: ReactNative.Dimensions.get('window'),
+    }),
+  )
+  React.useLayoutEffect(() => {
+    if (owner) return
+    const update = () =>
+      fallback.update({
+        colorScheme: 'light',
+        viewport: ReactNative.Dimensions.get('window'),
+      })
+    // Dimensions can change between render and commit.
+    update()
+    const subscription = ReactNative.Dimensions.addEventListener(
+      'change',
+      update,
+    )
+    return () => subscription.remove()
+  }, [fallback, owner])
+
+  return Styles.use(owner ?? fallback)
+}
+
+export { useVars } from '../react.js'
+
+/**
+ * Resolves compiled style props for components using React updates.
+ * @param Component - Function, class, or ref-forwarding component receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component preserving the original props and ref.
+ * @throws For invalid style prop names or unresolved native selections.
+ */
+export function withStyles<const component extends React.ElementType>(
+  Component: component,
+  options: Subscription.withStyles.Options<component> = {},
+) {
+  return Styles.wrap(Component, options, useStyles)
+}
 
 function dimensions<props extends Subscription.Provider.Props>(
   Component: React.FunctionComponent<props>,

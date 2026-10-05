@@ -226,6 +226,51 @@ describe('zyzz', () => {
     }
   })
 
+  test('resolves third-party style props above and outside a Provider with defaults', async () => {
+    const source = `import * as React from 'react';import {createRoot} from 'react-dom/client';import {defineConfig} from 'zyzz/react-native/react';
+      const {Provider,style}=defineConfig({defaultVars:'base',vars:{base:{color:{ink:{light:'#ff0000',dark:'#00ff00'}}},alternate:{color:{ink:{light:'#0000ff',dark:'#ffff00'}}}}});
+      const root=style({backgroundColor:'ink',flexGrow:1});
+      function Gesture(props){return <div id={props.id} data-style={JSON.stringify(props.style)}>{props.children}</div>}
+      function Inner(){return <Gesture id="inner" style={root().style}/>}
+      function Root(){return <Provider colorScheme="dark" vars="alternate"><Gesture id="root" {...root()}><Inner/></Gesture></Provider>}
+      function Outside(){return <Gesture id="outside" style={root().style}/>}
+      createRoot(document.getElementById('app')).render(<Root/>);
+      createRoot(document.getElementById('plain')).render(<Outside/>);`
+    const result = Babel.transformSync(source, {
+      babelrc: false,
+      configFile: false,
+      filename: 'App.tsx',
+      plugins: [[zyzz, { platform: 'ios', units: { px: 1 } }]],
+      presets: [
+        [expo.resolve('babel-preset-expo'), { enableBabelRuntime: false }],
+      ],
+    })
+
+    const code = await Packed.bundle({
+      entry: 'App.ts',
+      modules: { 'App.ts': result!.code! },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div id="app"></div><div id="plain"></div>')
+      await page.addScriptTag({ content: code })
+      await expect.poll(() => page.locator('[data-style]').count()).toBe(3)
+
+      expect(
+        await page.locator('#root').getAttribute('data-style'),
+      ).toMatchInlineSnapshot(`"{"backgroundColor":"#ff0000","flexGrow":1}"`)
+      expect(
+        await page.locator('#inner').getAttribute('data-style'),
+      ).toMatchInlineSnapshot(`"{"backgroundColor":"#ffff00","flexGrow":1}"`)
+      expect(
+        await page.locator('#outside').getAttribute('data-style'),
+      ).toMatchInlineSnapshot(`"{"backgroundColor":"#ff0000","flexGrow":1}"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('keeps hook bindings inside memoized components through Fast Refresh and module lowering', () => {
     const source = `import {memo, useState} from 'react';
       import {View as Box} from 'react-native';

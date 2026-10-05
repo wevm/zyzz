@@ -64,7 +64,7 @@ On native, Provider reads window width and height automatically with React Nativ
 
 In custom native builds, compiled styles on supported native components update directly when their selected alternatives change. `useVars` and explicit `useStyles` calls remain reactive. Static styles do not subscribe. Expo Go and callback styles use React subscriptions.
 
-Compiled styles outside a Provider use their configuration's default variables, the light scheme, and automatic window dimensions. Use a Provider to select another scheme or catalog. `useVars` and explicit `useStyles` still require a Provider for context-dependent reads.
+Compiled styles outside a Provider use their configuration's default variables, the light scheme, and automatic window dimensions. Styles applied in the component that renders a Provider also use these defaults. Use a Provider to select another scheme or catalog. `useVars` still requires one.
 
 ### children
 
@@ -204,7 +204,7 @@ const StyledCard = withStyles(Card, { styleProps: ['bodyStyle'] })
 
 Style arrays retain authored order, including caller overrides. Plain native objects and caller-owned animated styles pass through unchanged. Other props and refs are forwarded unchanged. Resolve non-style values with `useVars` and pass them as ordinary component props.
 
-Wrappers support function components, class components, and `React.createElement` callers. The wrapper subscribes through React when the Provider selection changes. Direct native updates remain available on supported native primitives. Plain styles work without a Provider; compiled context-dependent bindings require one.
+Wrappers support function components, class components, and `React.createElement` callers. The wrapper subscribes through React when the Provider selection changes. Direct native updates remain available on supported native primitives. Outside a Provider, compiled bindings use the defaults described under [Provider](#provider).
 
 For a class JSX caller, declare the `withStyles` wrapper in the caller's module so Metro can recognize it. Imported wrappers work with `React.createElement` callers.
 

@@ -55,6 +55,18 @@ NativeDynamic.create({
 })
 ```
 
+### options.conditions
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Accepted through `Recipe.Definition` but ignored. Native compilation resolves conditions before this helper runs, so conditional slot records in `payloads` are never read.
+
+```ts /conditions: ['wide']/
+// Same result as without `conditions`
+NativeDynamic.create({ axes, conditions: ['wide'], defaults, program, styles })
+```
+
 ### options.defaults
 
 - **Type:** `{ [axis: string]: string | null }{:ts}`
@@ -233,6 +245,17 @@ meter({ width: '12px', style: { opacity: 0.5 } })
 ```ts /props.style/
 // { width: 12 }
 props.style
+```
+
+### style
+
+- **Type:** `StyleSheet.StyleProp<style>{:ts}`
+
+The generated style, or a new `[generated, override]` array when `input.style` is truthy.
+
+```ts /.style/
+// [{ width: 12 }, { opacity: 0.5 }]
+meter({ style: { opacity: 0.5 }, width: '12px' }).style
 ```
 
 ## Types

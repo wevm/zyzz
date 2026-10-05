@@ -146,11 +146,11 @@ html({ style: { padding: '1rem' } }).style
 
 - **Type:** `string | undefined{:ts}`
 
-Every `data-*` attribute of the wrapped callable's props, copied unchanged.
+Every `data-*` attribute of the wrapped callable's props, copied unchanged. The declared return type, `style.Props<'html'>`, omits them, so TypeScript reads them through `Html.Attributes`.
 
-```ts /Html.bind(button)({})['data-size']/
+```ts /as Html.Attributes/
 // 'large' for a recipe whose default size is large
-Html.bind(button)({})['data-size']
+;(Html.bind(button)({}) as Html.Attributes)['data-size']
 ```
 
 ## Html.create

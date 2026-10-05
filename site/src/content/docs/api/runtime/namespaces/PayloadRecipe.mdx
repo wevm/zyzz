@@ -195,6 +195,8 @@ box({
 
 The `select` delegate's props. When a call assigns slots, `style` is a new object with the delegate's `style` followed by the slot assignments, so slots win over overrides of the same property.
 
+The declared return type is React props or `Html.Attributes`, whatever `options.html` is. Generated code casts the callable to `variants.ReturnType`, so direct TypeScript callers narrow with `'className' in props` before reading `className`.
+
 ### className
 
 - **Type:** `string{:ts}`

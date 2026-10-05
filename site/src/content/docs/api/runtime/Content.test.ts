@@ -1077,6 +1077,16 @@ describe('Native API page', () => {
     )
   })
 
+  test('keeps a single composed entry by reference', async () => {
+    const example = await load<{
+      badge: Native.Callable<{ size: readonly ['small', 'large'] }>
+    }>('namespaces/Native')
+
+    expect(
+      Native.compose(example.badge(), false).style === example.badge().style,
+    ).toMatchInlineSnapshot(`true`)
+  })
+
   test('returns one frozen object for a table without axes', () => {
     const card = Native.create({
       axes: {},
@@ -1309,6 +1319,62 @@ describe('NativeDynamic API page', () => {
     expect(() => box({ size: {} })).toThrowErrorMatchingInlineSnapshot(
       `[Native.SelectionError: Native payloads require exactly one choice.]`,
     )
+  })
+
+  test('ignores options.conditions', () => {
+    const definition = {
+      axes: { size: ['custom'] },
+      defaults: {},
+      payloads: [
+        {
+          axis: 'size',
+          choice: 'custom',
+          slots: [{ padding: '--box-padding' }, { padding: '--box-wide' }],
+        },
+      ] satisfies readonly Recipe.Payload[],
+      program: {
+        rules: [
+          {
+            matches: [],
+            steps: [
+              { parts: [{ slot: '--box-padding' }], property: 'padding' },
+            ],
+          },
+        ],
+        slots: {},
+      },
+      styles: {},
+    } as const
+    const plain = NativeDynamic.create(definition) as unknown as (
+      input: object,
+    ) => unknown
+    const conditional = NativeDynamic.create({
+      ...definition,
+      conditions: ['wide'],
+    }) as unknown as (input: object) => unknown
+
+    expect(plain({ size: { custom: { padding: '4px' } } }))
+      .toMatchInlineSnapshot(`
+      {
+        "style": {
+          "paddingBottom": 4,
+          "paddingLeft": 4,
+          "paddingRight": 4,
+          "paddingTop": 4,
+        },
+      }
+    `)
+    expect(conditional({ size: { custom: { padding: '4px' } } }))
+      .toMatchInlineSnapshot(`
+      {
+        "style": {
+          "paddingBottom": 4,
+          "paddingLeft": 4,
+          "paddingRight": 4,
+          "paddingTop": 4,
+        },
+      }
+    `)
   })
 
   test('scales px lengths by units.px', () => {

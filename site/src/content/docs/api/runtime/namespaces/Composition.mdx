@@ -108,11 +108,11 @@ props.className
 
 - **Type:** `string | undefined{:ts}`
 
-Every `data-*` attribute of the arguments, with later arguments winning. An attribute explicitly set to `undefined` is copied as `undefined`.
+Every `data-*` attribute of the arguments, with later arguments winning. An attribute explicitly set to `undefined` is copied as `undefined`. The declared return type omits these attributes, so TypeScript reads them through a cast.
 
-```ts /props['data-size']/
+```ts /props as Record/
 // 'large'
-props['data-size']
+;(props as Record<`data-${string}`, string | undefined>)['data-size']
 ```
 
 ### style

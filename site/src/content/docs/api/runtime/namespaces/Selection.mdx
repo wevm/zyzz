@@ -62,6 +62,8 @@ Selection.create(
 
 The input field that names the set. It is always `'set'`, and the selector rejects every other field except `colorScheme`.
 
+This generated overload is typed broadly. Its `set` accepts any string, and its result has optional `className`, `class`, and an `unknown` `style`, so TypeScript callers narrow the result by `html`.
+
 ```ts /'set'/
 // Generated code passes the key before the default set
 Selection.create(entries, false, 'set', 'base')

@@ -100,6 +100,17 @@ badge({ style: { opacity: 0.5 } })
 props.style
 ```
 
+### style
+
+- **Type:** `StyleSheet.StyleProp<style>{:ts}`
+
+The frozen selected style, or a new `[selected, override]` array when `input.style` is truthy.
+
+```ts /.style/
+// [{ padding: 4 }, { opacity: 0.5 }]
+badge({ style: { opacity: 0.5 } }).style
+```
+
 ## Native.compose
 
 ```ts
@@ -127,6 +138,17 @@ Native.compose(badge(), active && badge({ size: 'large' }))
 ```ts /Native.compose/
 // { style: [{ padding: 4 }, { padding: 8 }] }
 Native.compose(badge(), badge({ size: 'large' }))
+```
+
+### style
+
+- **Type:** `StyleSheet.StyleProp<style>{:ts}`
+
+A new array of the entries' styles in order, or the single entry's own style when one entry remains.
+
+```ts /.style/
+// The same object as badge().style
+Native.compose(badge(), false).style
 ```
 
 ## Types

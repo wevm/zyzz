@@ -132,6 +132,17 @@ Each merged style is frozen and reused for up to 256 combinations, evicting the 
 text().style
 ```
 
+### style
+
+- **Type:** `StyleSheet.StyleProp<style>{:ts}`
+
+The cached merged style, or a new `[merged, override]` array when `input.style` is truthy.
+
+```ts /.style/
+// [{ fontSize: 20, lineHeight: 25 }, { opacity: 0.5 }]
+text({ size: 'large', style: { opacity: 0.5 } }).style
+```
+
 ## Types
 
 - **`NativeStatic.create.Options<axes>{:ts}`:** [`Native.create.Options`](/docs/api/runtime/namespaces/Native#types) with `rules` and fragment `styles`.

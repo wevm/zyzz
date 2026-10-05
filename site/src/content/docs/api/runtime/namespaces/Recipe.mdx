@@ -140,6 +140,8 @@ button({ style: { padding: '24px' } })
 
 ## Returns
 
+The declared return type is React props or `Html.Attributes`, whatever `options.html` is. Generated code casts the callable to `variants.ReturnType`, so direct TypeScript callers narrow with `'className' in props` before reading `className`.
+
 ### className
 
 - **Type:** `string{:ts}`

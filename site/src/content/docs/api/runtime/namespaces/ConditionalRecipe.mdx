@@ -169,6 +169,8 @@ Selections that apply inside each named condition. A choice serializes with an `
 button({ size: 'large', conditions: { wide: { size: null } } })
 ```
 
+The declared return type is React props or `Html.Attributes`, whatever `options.html` is. Generated code casts the callable to `variants.ReturnType`, so direct TypeScript callers narrow with `'className' in props` before reading `className`.
+
 ### className
 
 - **Type:** `string{:ts}`

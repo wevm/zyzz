@@ -38,7 +38,22 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       { path: 'guides/at-rules', title: 'At-Rules' },
       { path: 'guides/reset', title: 'Reset' },
       { path: 'guides/css-output', title: 'CSS Output' },
-      { path: 'guides/native', title: 'React Native' },
+      {
+        title: 'React Native',
+        children: [
+          { path: 'guides/native', title: 'Overview' },
+          { path: 'guides/native/styling', title: 'Styling' },
+          { path: 'guides/native/themes', title: 'Themes' },
+          { path: 'guides/native/responsive', title: 'Responsive Styles' },
+          { path: 'guides/native/components', title: 'Components' },
+          { path: 'guides/native/animations', title: 'Animations' },
+          { path: 'guides/native/packages', title: 'Shared Packages' },
+          {
+            path: 'guides/native/unistyles',
+            title: 'Migrating from Unistyles',
+          },
+        ],
+      },
       { path: 'api/oxlint', title: 'Linting' },
       { path: 'guides/testing', title: 'Testing & Troubleshooting' },
       { path: 'guides/tailwind', title: 'Migrating from Tailwind' },
@@ -76,11 +91,19 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       .filter(
         (entry) =>
           entry[0].split('/')[0] === group.title.toLowerCase() &&
-          !group.pages.some((page) => page.path === entry[0]),
+          !group.pages.some((page) => paths(page).includes(entry[0])),
       )
       .map((entry) => ({ path: entry[0], title: entry[1].title })),
   ],
 }))
+
+/** Lists an item's path and every path nested beneath it. */
+export function paths(item: Item): readonly string[] {
+  return [
+    ...(item.path === undefined ? [] : [item.path]),
+    ...(item.children ?? []).flatMap(paths),
+  ]
+}
 
 /** A page or nested topic in documentation navigation. */
 export type Item = {

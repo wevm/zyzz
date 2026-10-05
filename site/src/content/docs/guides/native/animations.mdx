@@ -1,0 +1,154 @@
+# Native Animations
+
+Animate between theme and variant values with Reanimated shared values.
+
+## Overview
+
+`zyzz/react-native/reanimated` publishes compiled values as Reanimated shared values. When a variant, theme, scheme, or window size changes, the shared value receives the new target without rerendering the component, and Reanimated animates toward it.
+
+The entrypoint requires Reanimated 4.5.3 or later within version 4. The hooks publish targets only. The app chooses transitions, such as `withTiming` or `withSpring`.
+
+```tsx title="Toggle.tsx"
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { variants } from 'zyzz'
+import { useAnimatedStyleValue } from 'zyzz/react-native/reanimated'
+
+export function Toggle(props: Toggle.Props) {
+  // [!code hl:5]
+  // The selected choice's color, published as a shared value
+  const color = useAnimatedStyleValue(
+    styles.track({ active: props.active }).style,
+    'backgroundColor',
+  )
+  const animated = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(color.get()),
+  }))
+
+  return <Animated.View style={animated} />
+}
+
+export declare namespace Toggle {
+  type Props = { active: boolean }
+}
+
+namespace styles {
+  export const track = variants({
+    variants: {
+      active: {
+        false: { backgroundColor: '#d1d5db' },
+        true: { backgroundColor: '#2563eb' },
+      },
+    },
+  })
+}
+```
+
+`useAnimatedStyleValue` reads one numeric or color property. Structured properties such as `transform` and shadows have no scalar binding.
+
+## Animate Tokens
+
+`useAnimatedVars` publishes tokens selected by the nearest Provider, so a theme or scheme change animates instead of switching immediately. A selector limits the published value.
+
+```tsx title="Tile.tsx"
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { defineConfig } from 'zyzz/react-native'
+import { useAnimatedVars } from 'zyzz/react-native/reanimated'
+
+const { vars } = defineConfig({
+  vars: { color: { surface: { dark: '#111111', light: '#ffffff' } } },
+})
+
+export function Tile() {
+  // [!code hl:2]
+  // Updates when the Provider's scheme changes
+  const surface = useAnimatedVars(vars, (values) => values.color.surface)
+  const animated = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(surface.get()),
+  }))
+
+  return <Animated.View style={animated} />
+}
+```
+
+## Mix Compiled Styles
+
+An animated component receives compiled styles through `withStyles`, which resolves the compiled bindings and forwards Reanimated's style objects unchanged. Define the wrapper at module scope.
+
+```tsx title="Panel.tsx"
+import Animated, { useAnimatedStyle } from 'react-native-reanimated'
+import { style } from 'zyzz'
+import { withStyles } from 'zyzz/react-native'
+
+// [!code hl:2]
+// Resolves compiled styles in the array, and keeps animated ones as they are
+const AnimatedView = withStyles(Animated.View)
+
+export function Panel() {
+  const animated = useAnimatedStyle(() => ({ opacity: 0.8 }))
+
+  return <AnimatedView style={[styles.panel().style, animated]} />
+}
+
+namespace styles {
+  export const panel = style({ borderRadius: '12px', padding: '16px' })
+}
+```
+
+## Reduced Motion
+
+Reanimated animations follow the system reduced-motion setting by default. Passing `ReduceMotion.System` states that choice explicitly, so the shared value jumps to its target instead of animating when the setting is on.
+
+```tsx title="Badge.tsx"
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated'
+import { variants } from 'zyzz'
+import { useAnimatedStyleValue } from 'zyzz/react-native/reanimated'
+
+export function Badge(props: Badge.Props) {
+  const opacity = useAnimatedStyleValue(
+    styles.badge({ visible: props.visible }).style,
+    'opacity',
+  )
+  const animated = useAnimatedStyle(() => ({
+    // [!code hl:2]
+    // Skip the transition when the system asks for reduced motion
+    opacity: withTiming(opacity.get(), { reduceMotion: ReduceMotion.System }),
+  }))
+
+  return <Animated.View style={animated} />
+}
+
+export declare namespace Badge {
+  type Props = { visible: boolean }
+}
+
+namespace styles {
+  export const badge = variants({
+    variants: { visible: { false: { opacity: 0 }, true: { opacity: 1 } } },
+  })
+}
+```
+
+## More
+
+<Card.Group>
+  <Card title="Themes" icon="palette" href="/docs/guides/native/themes">
+    Select color schemes and named token sets, and read tokens in components.
+  </Card>
+  <Card title="Components" icon="boxes" href="/docs/guides/native/components">
+    Resolve compiled styles for third-party components and code outside JSX.
+  </Card>
+  <Card
+    title="Animation Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/reanimated.md"
+  >
+    Review `useAnimatedVars`, `useAnimatedStyleValue`, and their limits.
+  </Card>
+  <Card title="Keyframes" icon="zap" href="/docs/guides/keyframes">
+    Declare CSS keyframe animations for web styles.
+  </Card>
+</Card.Group>

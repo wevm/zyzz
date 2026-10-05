@@ -1,0 +1,117 @@
+import { Tab, Tabs } from '../../../../components/mdx/concepts/Tabs.js'
+
+# Shared Packages
+
+Share styles and themes across packages in a monorepo, and consume published packages.
+
+## Overview
+
+Metro compiles packages that import `zyzz` and declare it as a dependency, through the app's own resolver. Package exports, subpaths, aliases, platform files such as `button.ios.ts`, and linked workspace packages outside the project root all resolve.
+
+A shared package exports its definitions from `export namespace styles`, and the app applies them like local styles. Each package compiles once for the app's platform and selected theme.
+
+<Tabs label="Shared styles package">
+<Tab title="package.json">
+
+```json
+{
+  "name": "@acme/ui",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "zyzz": "^0.0.22" }
+}
+```
+
+</Tab>
+<Tab title="index.ts">
+
+```ts
+import { style } from 'zyzz'
+
+// [!code hl:2]
+// Exported definitions compile in every app that imports them
+export namespace styles {
+  export const button = style({
+    backgroundColor: '#2563eb',
+    borderRadius: '8px',
+    padding: '12px',
+  })
+}
+```
+
+</Tab>
+<Tab title="App.tsx">
+
+```tsx
+import { styles } from '@acme/ui'
+import { Pressable, Text } from 'react-native'
+
+export function SaveButton() {
+  return (
+    // [!code hl:2]
+    // Applied like a local style
+    <Pressable accessibilityRole="button" {...styles.button()}>
+      <Text>Save</Text>
+    </Pressable>
+  )
+}
+```
+
+</Tab>
+</Tabs>
+
+## Shared Themes
+
+A theme package exports the helpers from its native `defineConfig`. Apps import them with named imports, since theme and config factories require them, and every style from that config resolves through the app's Provider.
+
+```ts title="theme.ts"
+import { defineConfig } from 'zyzz/react-native'
+
+// [!code hl:2]
+// Apps import these helpers by name
+export const { Provider, style, vars } = defineConfig({
+  defaultVars: 'base',
+  vars: {
+    base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+    mint: { color: { ink: { dark: '#86efac', light: '#166534' } } },
+  },
+})
+```
+
+Composed tokens and font mappings resolve across packages too. The Metro `fonts` option maps families used in package styles.
+
+## Published Packages
+
+A package can ship compiled output with an adjacent `.zyzz.json` contract instead of source. Metro compiles any installed package that ships a contract, keeping finite choices, defaults, and named token sets, and selects them through the app's Provider.
+
+```sh
+# Each contract sits beside the entry module it describes
+ls node_modules/@acme/ui/dist
+# index.d.ts  index.js  index.js.zyzz.json
+```
+
+Contracts hold compiler data, not runtime code, so Metro never executes the package's theme code. See [Packed Callables](https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Native.md#packed-callables) for the contract format.
+
+## More
+
+<Card.Group>
+  <Card title="Themes" icon="palette" href="/docs/guides/native/themes">
+    Select color schemes and named token sets, and read tokens in components.
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/native/styling">
+    Combine styles, branch by platform, and bind values that change at runtime.
+  </Card>
+  <Card
+    title="Metro Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/metro/README.md"
+  >
+    Review package discovery, resolver chaining, and Metro options.
+  </Card>
+  <Card
+    title="Compiler Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/compiler/Native.md"
+  >
+    Review native graph compilation and packed contracts.
+  </Card>
+</Card.Group>

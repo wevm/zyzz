@@ -23,6 +23,7 @@ import BookOpenIcon from '~icons/lucide/book-open'
 import BoxIcon from '~icons/lucide/box'
 import BrainIcon from '~icons/lucide/brain'
 import CheckIcon from '~icons/lucide/check'
+import ChevronRightIcon from '~icons/lucide/chevron-right'
 import CircleHelpIcon from '~icons/lucide/circle-help'
 import CodeXmlIcon from '~icons/lucide/code-xml'
 import CopyIcon from '~icons/lucide/copy'
@@ -33,6 +34,7 @@ import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import MonitorIcon from '~icons/lucide/monitor'
+import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PlayIcon from '~icons/lucide/play'
@@ -81,7 +83,14 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/global-styles': GlobeIcon,
   'guides/keyframes': FilmIcon,
   'guides/layers': SquareStackIcon,
-  'guides/native': ReactIcon,
+  'guides/native': BookOpenIcon,
+  'guides/native/animations': FilmIcon,
+  'guides/native/components': BoxIcon,
+  'guides/native/packages': PackageIcon,
+  'guides/native/responsive': SmartphoneIcon,
+  'guides/native/styling': PaintbrushIcon,
+  'guides/native/themes': PaletteIcon,
+  'guides/native/unistyles': ArrowLeftRightIcon,
   'guides/reset': RotateCcwIcon,
   'guides/stylex': ArrowLeftRightIcon,
   'guides/styling': PaintbrushIcon,
@@ -91,6 +100,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/typography': TypeIcon,
   'guides/variants': LayersIcon,
   Integrations: PlugIcon,
+  'React Native': ReactIcon,
   'introduction/agents': SparklesIcon,
   'introduction/benchmarks': GaugeIcon,
   'introduction/comparisons': ArrowLeftRightIcon,
@@ -253,36 +263,49 @@ function SidebarItem(props: SidebarItem.Props) {
     </>
   )
 
-  return (
-    <>
-      {enabled ? (
-        <Link
-          aria-current={item.path === path ? 'page' : undefined}
-          href={`/docs/${item.path}`}
-          {...styles.link()}
-        >
+  // A topic collapses its nested pages and opens while one of them is current.
+  if (item.children)
+    return (
+      <details open={Docs.paths(item).includes(path)} {...styles.topic()}>
+        <summary {...styles.link()}>
           {content}
-        </Link>
-      ) : (
-        <span aria-disabled="true" role="link" {...styles.link()}>
-          {content}
-          <span
+          <ChevronRightIcon
             aria-hidden="true"
-            title="Under construction"
-            {...styles.construction()}
-          >
-            🚧
-          </span>
-        </span>
-      )}
-      {item.children && (
+            height="16"
+            width="16"
+            {...styles.chevron()}
+          />
+        </summary>
         <div {...styles.nestedLinks()}>
           {item.children.map((child) => (
             <SidebarItem item={child} key={child.title} path={path} />
           ))}
         </div>
-      )}
-    </>
+      </details>
+    )
+
+  if (enabled)
+    return (
+      <Link
+        aria-current={item.path === path ? 'page' : undefined}
+        href={`/docs/${item.path}`}
+        {...styles.link()}
+      >
+        {content}
+      </Link>
+    )
+
+  return (
+    <span aria-disabled="true" role="link" {...styles.link()}>
+      {content}
+      <span
+        aria-hidden="true"
+        title="Under construction"
+        {...styles.construction()}
+      >
+        🚧
+      </span>
+    </span>
   )
 }
 
@@ -680,6 +703,22 @@ namespace styles {
   })
 
   export const nestedLinks = style({ paddingLeft: 6 })
+
+  export const topic = style({
+    selectors: {
+      '& > summary': { cursor: 'pointer', listStyle: 'none' },
+      '& > summary::-webkit-details-marker': { display: 'none' },
+    },
+  })
+
+  export const chevron = style({
+    marginLeft: 'auto !custom',
+    transition: 'rotate 150ms',
+    selectors: {
+      [`${topic}[open] > summary > &`]: { rotate: '90deg' },
+    },
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  })
 
   export const outline = style({
     borderLeft: '1px solid',

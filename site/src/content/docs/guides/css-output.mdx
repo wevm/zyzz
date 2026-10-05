@@ -6,7 +6,7 @@ Choose whether Zyzz writes one class per declaration or one class per style.
 
 ## Overview
 
-The compiler turns every style into CSS ahead of time, and `cssOutput` decides how declarations become classes. Applying a style returns class names and never inserts CSS rules.
+The compiler turns each reachable style into CSS ahead of time, and `cssOutput` decides how declarations become classes. Applying a style returns class names and never inserts CSS rules.
 
 <CssOutputTable>
   <table aria-label="CSS output modes">
@@ -21,7 +21,7 @@ The compiler turns every style into CSS ahead of time, and `cssOutput` decides h
         <td>
           <code>atomic</code> (default)
         </td>
-        <td>One per declaration or fallback array, shared by every style that repeats it.</td>
+        <td>One per declaration or fallback array, shared when reuse keeps precedence.</td>
       </tr>
       <tr>
         <td>
@@ -33,7 +33,7 @@ The compiler turns every style into CSS ahead of time, and `cssOutput` decides h
   </table>
 </CssOutputTable>
 
-Set the mode in the config. It applies to config-bound helpers, while imports from `zyzz` always use atomic output.
+Set the mode in the config. It applies to config-bound helpers. Helpers imported directly from `zyzz` use the integration's mode instead, which is atomic unless an integration such as Babel sets `cssOutput`.
 
 ```ts title="zyzz.config.ts"
 import { defineConfig } from 'zyzz'
@@ -47,7 +47,7 @@ export const { style, variants } = defineConfig({
 
 ## Atomic Output
 
-Each declaration becomes its own class, and a fallback array, such as `display: ['block', 'grid']`, stays together in one class. The card and label below both declare `color: red`, so they share one class.
+Each declaration becomes its own class, and a fallback array, such as `display: ['block', 'grid']`, stays together in one class. Styles share a class when reuse keeps precedence, so the card and label below share `color: red`.
 
 ```tsx title="Card.tsx"
 import { style } from './zyzz.config.js'

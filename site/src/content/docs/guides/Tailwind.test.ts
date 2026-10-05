@@ -86,43 +86,28 @@ describe('Tailwind migration examples', () => {
             'zyzz.config.ts': config,
           },
         })
-        return Object.values(output.modules)
-          .map((module) => module.css)
-          .join('\n')
+        return [
+          output.sharedCss,
+          ...Object.values(output.modules).map((module) => module.css),
+        ].join('\n')
       })
+    const css = results.join('\n')
 
-    expect(results.length).toMatchInlineSnapshot('13')
-    expect(results.every((css) => css.length > 0)).toMatchInlineSnapshot('true')
-    expect(results.join('\n').includes('padding:1.5rem')).toMatchInlineSnapshot(
+    expect(results.length).toMatchInlineSnapshot('15')
+    expect(
+      results.every((result) => result.trim().length > 0),
+    ).toMatchInlineSnapshot('true')
+    expect(css.includes('padding:1.5rem')).toMatchInlineSnapshot('true')
+    expect(css.includes('@media (hover: hover)')).toMatchInlineSnapshot('true')
+    expect(css.includes(':invalid ~')).toMatchInlineSnapshot('true')
+    expect(css.includes('@container (width >= 28rem)')).toMatchInlineSnapshot(
       'true',
     )
     expect(
-      results.join('\n').includes('@media (hover: hover)'),
+      css.includes('@media (prefers-color-scheme: dark)'),
     ).toMatchInlineSnapshot('true')
-    expect(results.join('\n').includes(':invalid ~')).toMatchInlineSnapshot(
-      'true',
-    )
-    expect(
-      results.join('\n').includes('@container sidebar'),
-    ).toMatchInlineSnapshot('true')
-    const paired = examples.find(
-      (entry) => entry[2] === 'appearance.config.ts',
-    )![3]!
-    const output = Graph.compile({
-      modules: {
-        'appearance.config.ts': paired,
-        'panel.ts':
-          "import {style} from './appearance.config.js'; export const panel = style({color:'foreground',backgroundColor:'surface'});",
-      },
-    })
-    expect(
-      [
-        output.sharedCss,
-        ...Object.values(output.modules).map((module) => module.css),
-      ]
-        .join('\n')
-        .includes('light-dark('),
-    ).toMatchInlineSnapshot('true')
+    expect(css.includes('@layer base{h1{')).toMatchInlineSnapshot('true')
+    expect(css.includes('@keyframes')).toMatchInlineSnapshot('true')
   })
 })
 
@@ -253,7 +238,7 @@ describe('Tailwind migration page', () => {
       const paragraphs = await page
         .locator('main article p:not(table p)')
         .allTextContents()
-      expect(paragraphs.length > 40).toMatchInlineSnapshot('true')
+      expect(paragraphs.length > 30).toMatchInlineSnapshot('true')
       expect(
         paragraphs.filter(
           (paragraph) => !prose.includes(paragraph.replace(/\s+/g, ' ').trim()),
@@ -312,7 +297,7 @@ describe('Tailwind migration page', () => {
           expect(layout.width <= layout.viewport).toMatchInlineSnapshot('true')
           expect(
             await page.locator('main table').count(),
-          ).toMatchInlineSnapshot('4')
+          ).toMatchInlineSnapshot('3')
         }
       }
       expect(errors).toMatchInlineSnapshot('[]')

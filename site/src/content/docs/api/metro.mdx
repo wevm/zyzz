@@ -30,12 +30,17 @@ The Metro configuration. `transformer.babelTransformerPath` must name the existi
 
 ```ts title="metro.config.ts"
 import { getDefaultConfig } from 'expo/metro-config'
+import * as Path from 'node:path'
 import { zyzz } from 'zyzz/metro'
 
 const config = getDefaultConfig(import.meta.dirname)
-// [!code hl:2]
-// Linked workspace packages stay visible to Metro and the compiler
-config.watchFolders = [...config.watchFolders, '../packages']
+// [!code hl:5]
+// Linked workspace packages stay visible to Metro and the compiler.
+// Metro keeps relative entries as written, so resolve from this file.
+config.watchFolders = [
+  ...config.watchFolders,
+  Path.resolve(import.meta.dirname, '../packages'),
+]
 
 export default zyzz(config)
 ```

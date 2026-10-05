@@ -21,7 +21,14 @@ export const Route = createFileRoute('/docs/$')({
     if (!Object.hasOwn(__DOCS__.pages, path)) throw notFound()
     const { title, description } = __DOCS__.pages[path]!
     // Rendering reads the loaded page synchronously during SSR and client navigation.
-    await Docs.load(path)
+    try {
+      await Docs.load(path)
+    } catch (error) {
+      // A deployment can replace the hashed chunk under an open tab, so a full load fetches the current assets.
+      if (typeof window !== 'undefined' && entry.cause !== 'preload')
+        window.location.assign(entry.location.href)
+      throw error
+    }
 
     return { path, title, description }
   },

@@ -543,6 +543,54 @@ describe('/docs', () => {
     }
   }, 60000)
 
+  test('reloads onto current assets when a page chunk is unavailable', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      // Loading the target once lets the dev server optimize its dependencies before the scenario.
+      await page.goto(`${origin}/docs/guides/reset`)
+      await page.getByRole('heading', { level: 1, name: 'Reset' }).waitFor()
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      // A deployment that replaced hashed assets leaves the old chunk URL unavailable.
+      await page.route(/\/content\/docs\/guides\/reset\.mdx/, (route) =>
+        route.abort(),
+      )
+      const documents: string[] = []
+      page.on('request', (request) => {
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame()
+        )
+          documents.push(new URL(request.url()).pathname)
+      })
+
+      await page
+        .getByRole('navigation', { name: 'Documentation' })
+        .getByRole('link', { name: 'Reset', exact: true })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Reset' })
+        .waitFor({ timeout: 20000 })
+
+      // The failed client navigation falls back to one full load of the target.
+      expect(documents).toMatchInlineSnapshot(`
+        [
+          "/docs/guides/reset",
+        ]
+      `)
+      expect(
+        await page.locator('article h2').first().textContent(),
+      ).toMatchInlineSnapshot(`"Overview"`)
+    } finally {
+      await browser.close()
+    }
+  }, 90000)
+
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

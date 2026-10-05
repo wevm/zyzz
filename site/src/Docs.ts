@@ -20,10 +20,17 @@ export function load(path: string): ReactPromise<Content> {
   const module = modules[`./content/docs/${path}.mdx`]
   if (!module) throw new Error(`Missing documentation page: ${path}`)
 
-  const promise: Promise<Content> = module().then((content) => {
-    Object.assign(promise, { status: 'fulfilled', value: content })
-    return content
-  })
+  const promise: Promise<Content> = module().then(
+    (content) => {
+      Object.assign(promise, { status: 'fulfilled', value: content })
+      return content
+    },
+    (error: unknown) => {
+      // A failed chunk request must not stay cached, so a later attempt can retry it.
+      loads.delete(path)
+      throw error
+    },
+  )
   loads.set(path, promise)
 
   return promise

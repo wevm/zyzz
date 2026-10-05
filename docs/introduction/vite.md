@@ -68,7 +68,7 @@ element.className = `${theme.className} ${styles.card().className}`
 
 ## Theme Libraries
 
-Publish the [graph contract](../api/compiler/Graph/compile.md#contracts) next to each exported JavaScript entrypoint: `index.js.zyzz.json` beside `index.js`. Vite resolves package exports and aliases; Zyzz reads the adjacent metadata without evaluating the library. Raw dependency source extraction remains unsupported.
+Publish the [graph contract](https://zyzz.sh/docs/api/compiler/namespaces/Graph#library-contracts) next to each exported JavaScript entrypoint: `index.js.zyzz.json` beside `index.js`. Vite resolves package exports and aliases; Zyzz reads the adjacent metadata without evaluating the library. Raw dependency source extraction remains unsupported.
 
 Exclude authoring packages from dependency optimization so Vite retains the original entrypoint and its metadata:
 

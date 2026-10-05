@@ -1,0 +1,368 @@
+# Graph
+
+Compile a source graph, linking configs and definitions across modules.
+
+`Graph.compile` takes a complete set of modules, resolves their imports, and rewrites each one with [`Transform.compile`](/docs/api/compiler/namespaces/Transform), or with [`Native.compile`](/docs/api/compiler/namespaces/Native) for a native graph. Exported configs, imported definitions, and re-exports link without running source or reading files. Bundler plugins and the CLI call it for every build.
+
+```ts title="graph.ts"
+import { Graph } from 'zyzz/compiler'
+
+// [!code hl:15]
+// Links the card's `style` import to the config module
+const output = Graph.compile({
+  modules: {
+    'app/zyzz.config.ts': `import { defineConfig } from 'zyzz'
+
+export const { style, vars } = defineConfig({
+  vars: { color: { brand: '#06c' } },
+})
+`,
+    'app/Card.tsx': `import { style } from './zyzz.config.js'
+
+export const card = style({ color: 'brand' })
+`,
+  },
+})
+```
+
+## Graph.compile
+
+Compiles one complete snapshot from scratch. Use [`Graph.create`](#graphcreate) to reuse work across snapshots.
+
+```ts
+// Rewritten modules, shared CSS, and contracts for a graph
+Graph.compile(options)
+```
+
+### options.modules
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+The complete source graph, keyed by stable package-relative module IDs. Without `imports`, relative imports resolve against these keys, including `.js` to `.ts` or `.tsx`, extensionless paths, and `index` files. Bare imports stay external, and relative or nonliteral dynamic imports throw.
+
+```ts /'app/Card.tsx': source/
+// One module, with no imports to resolve
+Graph.compile({ modules: { 'app/Card.tsx': source } })
+```
+
+### options.imports
+
+- **Type:** `Readonly<Record<string, Readonly<Record<string, string | null>>>>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Host-resolved static imports, keyed by importing module ID and then by specifier. A target names a module in `modules` or `contracts`, and `null` marks an external import. Once supplied, every static runtime import needs an entry, while type-only imports need none. The host owns dynamic imports.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+declare const modules: Readonly<Record<string, string>>
+
+Graph.compile({
+  // [!code hl:5]
+  // An alias resolved by the host, and two external packages
+  imports: {
+    'app/Card.tsx': { '@theme': 'app/zyzz.config.ts', react: null },
+    'app/zyzz.config.ts': { zyzz: null },
+  },
+  modules,
+})
+```
+
+### options.contracts
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Contract JSON from separately compiled libraries, keyed by the module ID an `imports` entry resolves to. The graph reads configs, tokens, and packed definitions from it without loading the library's code.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+declare const library: Graph.compile.ReturnType
+
+const output = Graph.compile({
+  // [!code hl:4]
+  // The library's contract stands in for its source
+  contracts: { 'library/index.js': library.contracts['library/index.ts']! },
+  imports: { 'app/Card.tsx': { '@acme/theme': 'library/index.js' } },
+  modules: {
+    'app/Card.tsx': `import { style } from '@acme/theme'
+
+export const card = style({ color: 'brand' })
+`,
+  },
+})
+```
+
+### options.native
+
+- **Type:** `{ colorScheme: 'light' | 'dark'; platform?: 'ios' | 'android'; … }{:ts}`
+- **Default:** `undefined{:ts}`
+
+A native output context with the same fields as [`Native.compile`](/docs/api/compiler/namespaces/Native#parameters), apart from `moduleId` and `source`. Each module's `code` then holds native callables, and its `css` and `classes` are empty.
+
+```ts /native: { colorScheme: 'light', platform: 'ios' }/
+// Compiles every module to native callables
+Graph.compile({ modules, native: { colorScheme: 'light', platform: 'ios' } })
+```
+
+### options.reset
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The contents of a reset stylesheet, such as `zyzz/reset.css`. They are added to `sharedCss`, which then opens with a `@layer reset` statement that orders the reset before authored layers. Native graphs reject it.
+
+```ts /reset: resetCss/
+// The host reads the file, and the compiler orders it
+Graph.compile({ modules, reset: resetCss })
+```
+
+### options.compiler
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Whether to rewrite authoring calls, as in [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscompiler). With `false`, every module needs the same explicit IDs, so a graph with an ID-less config throws. Native graphs require rewriting.
+
+```ts /compiler: false/
+// Emits CSS while the calls run unchanged
+Graph.compile({ compiler: false, modules })
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+The CSS shape for every module, as in [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscssoutput).
+
+```ts /cssOutput: 'grouped'/
+// One rule block per style definition
+Graph.compile({ cssOutput: 'grouped', modules })
+```
+
+### options.composition
+
+- **Type:** `'ordered' | 'independent'{:ts}`
+- **Default:** `'ordered'{:ts}`
+
+How class lists combine, as in [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscomposition).
+
+```ts /composition: 'independent'/
+// Reuses the first rule for repeated declarations
+Graph.compile({ composition: 'independent', modules })
+```
+
+### options.development
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Keeps every definition live for development updates, as in [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionsdevelopment).
+
+```ts /development: true/
+// Bundler plugins set this in development
+Graph.compile({ development: true, modules })
+```
+
+### Returns
+
+The compiled graph, read as `output` in the examples below.
+
+### output.modules
+
+- **Type:** `Readonly<Record<string, Transform.compile.ReturnType>>{:ts}`
+
+The rewritten `code`, `css`, and maps of each module, keyed by module ID. Load the CSS of every module in the graph together.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+declare const output: Graph.compile.ReturnType
+
+// [!code hl:2]
+// The card's rule, plus the config's variable scope it reads
+output.modules['app/Card.tsx']?.css
+```
+
+### output.dependencies
+
+- **Type:** `Readonly<Record<string, readonly string[]>>{:ts}`
+
+The direct source and contract dependencies of each module, keyed by module ID. Hosts use them to recompile importers when a module changes.
+
+```ts /output.dependencies['app/Card.tsx']/
+// ['app/zyzz.config.ts']
+output.dependencies['app/Card.tsx']
+```
+
+### output.contracts
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+Versioned contract JSON, keyed by module ID. Modules get one when they export configs, definitions, or re-exports, or carry stylesheet contributions directly or through an import. In web graphs, reading a private config's `appearance` or `script` also counts.
+
+A library publishes the contract of each entrypoint beside its JavaScript, as `index.js.zyzz.json` for `index.js`.
+
+```ts /output.contracts['library/index.ts']/
+// Published as index.js.zyzz.json after lowering index.ts
+output.contracts['library/index.ts']
+```
+
+### output.sharedCss
+
+- **Type:** `string | undefined{:ts}`
+
+The graph's stylesheet contributions, such as `global` rules and font faces, deduplicated across modules with the reset and layer order. Load it once, before the CSS of `modules`. It is absent when the graph has none.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+declare const output: Graph.compile.ReturnType
+
+// [!code hl:5]
+// Shared rules first, then each module's rules
+const css = [
+  output.sharedCss,
+  ...Object.values(output.modules).map((module) => module.css),
+].join('\n')
+```
+
+### output.sharedCssMap
+
+- **Type:** `EncodedSourceMap | undefined{:ts}`
+
+A version 3 source map from `sharedCss` to the contributions that produced it. It is present whenever `sharedCss` is.
+
+```ts /output.sharedCssMap/
+// Writes the map only when the graph has shared CSS
+if (output.sharedCssMap)
+  await Fs.writeFile('shared.css.map', JSON.stringify(output.sharedCssMap))
+```
+
+### output.sharedAssets
+
+- **Type:** `Readonly<Record<string, string>> | undefined{:ts}`
+
+Relative URLs in `sharedCss`, such as font files, become `zyzz-asset:` placeholders. This maps each placeholder to its module-relative target, which the host publishes and substitutes.
+
+```ts /output.sharedAssets/
+// { 'zyzz-asset:app%2FGeist.woff2': 'app/Geist.woff2' }
+output.sharedAssets
+```
+
+### output.sharedAssetOwners
+
+- **Type:** `Readonly<Record<string, string>> | undefined{:ts}`
+
+The module or contract that declared each asset placeholder. Hosts use it to check that an asset belongs to its package before publishing it.
+
+```ts /output.sharedAssetOwners/
+// { 'zyzz-asset:app%2FGeist.woff2': 'app/fonts.ts' }
+output.sharedAssetOwners
+```
+
+## Graph.create
+
+Creates an isolated compiler that reuses work across snapshots. Each compiler holds one snapshot in memory and shares nothing with other compilers.
+
+```ts
+// A compiler with its own incremental cache
+Graph.create()
+```
+
+### compiler.compile
+
+- **Type:** `(options: Graph.compile.Options) => Graph.compile.ReturnType{:ts}`
+
+Takes the same options and returns the same output as `Graph.compile`. An unchanged snapshot returns the previous result. An edit recompiles the changed modules and their importers, and keeps unaffected module results. An edit to a config or variable set recompiles every module, since each stylesheet carries the graph's scopes.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+declare const modules: Readonly<Record<string, string>>
+declare const source: string
+
+const compiler = Graph.create()
+const first = compiler.compile({ modules })
+// [!code hl:2]
+// Recompiles the card, and keeps the config module's result
+const next = compiler.compile({
+  modules: { ...modules, 'app/Card.tsx': source },
+})
+```
+
+A failed compile throws and keeps the last successful snapshot, so the next call compares against it.
+
+## Library Contracts
+
+A library compiles its own graph and publishes each entrypoint's contract beside the JavaScript. Consumers pass that contract in `contracts` and resolve the import in `imports`. Contracts hold compiler data, not code, and readers reject unknown versions.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+// [!code hl:7]
+// The library build emits contracts['library/index.ts']
+const library = Graph.compile({
+  modules: {
+    'library/index.ts': `import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
+`,
+  },
+})
+```
+
+Publish the contract together with the matching JavaScript, declarations, and CSS from one build. Bundler plugins resolve and watch these files for packed dependencies.
+
+## Types
+
+- **`Graph.compile.ErrorType{:ts}`:** The typed errors `compile` throws.
+- **`Graph.compile.Options{:ts}`:** The accepted options.
+- **`Graph.compile.ReturnType{:ts}`:** The compiled modules and graph metadata.
+- **`Graph.create.ReturnType{:ts}`:** The incremental compiler.
+
+```ts title="watch.ts"
+import { Graph } from 'zyzz/compiler'
+
+// [!code hl:2]
+// Owns one compiler for the lifetime of a watcher
+export function watch(compiler: Graph.create.ReturnType) {
+  return (modules: Graph.compile.Options['modules']) =>
+    compiler.compile({ modules })
+}
+```
+
+A native context without a color scheme fails the type check.
+
+```ts twoslash
+// @errors: 2322
+import { Graph } from 'zyzz/compiler'
+
+declare const modules: Readonly<Record<string, string>>
+
+Graph.compile({ modules, native: { colorScheme: 'dim' } })
+```
+
+## Errors
+
+`Graph.compile` returns no partial output. Missing modules, unresolved imports, invalid contracts, and circular imports throw `Source.ExtractError`. CSS failures throw `Css.CompileError`, and native failures throw the [`Native.compile` errors](/docs/api/compiler/namespaces/Native#errors). With `compiler: false`, a definition without a required ID throws a plain `Error`, which `Graph.compile.ErrorType` does not include.
+
+```ts
+import { Graph, Source } from 'zyzz/compiler'
+
+try {
+  Graph.compile({
+    modules: {
+      // `./missing.js` is not in the graph
+      'app/Card.tsx': `import { card } from './missing.js'
+export { card }
+`,
+    },
+  })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Source.ExtractError) console.error(error.message)
+}
+```

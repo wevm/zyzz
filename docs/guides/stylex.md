@@ -204,7 +204,7 @@ Split the removable declaration from the base and apply it conditionally, or mak
 
 ### Static Source
 
-Keep definitions at module scope. Zyzz supports local literal constants and supported spreads, but does not evaluate arbitrary application functions to discover CSS. Imported configurations and definitions require the graph-aware build integration. See [Static Bindings](styling.md#static-bindings) and [Source Extraction](../api/compiler/Source/extract.md).
+Keep definitions at module scope. Zyzz supports local literal constants and supported spreads, but does not evaluate arbitrary application functions to discover CSS. Imported configurations and definitions require the graph-aware build integration. See [Static Bindings](styling.md#static-bindings) and [Source Extraction](https://zyzz.sh/docs/api/compiler/namespaces/Source#static-input).
 
 ## Compose Styles
 

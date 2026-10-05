@@ -7,7 +7,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [CLI][cli]                                  | Compile a source tree into rewritten modules, CSS, maps, and packed contracts.     |
 | [zyzz](https://zyzz.sh/docs/api/core)       | Typed style definitions, themes, configuration, and callable authoring.            |
 | [zyzz/babel][babel]                         | Compile literal web or native authoring before Babel language transforms.          |
-| [zyzz/compiler](compiler/README.md)         | Extract style definitions and rewrite source with matching CSS and source maps.    |
+| [zyzz/compiler][compiler]                   | Extract style definitions and rewrite source with matching CSS and source maps.    |
 | [zyzz/default][default]                     | Default config with appearance controls, a restoration script, and bundled tokens. |
 | [zyzz/metro][metro]                         | Compile native style modules during Metro bundling.                                |
 | [zyzz/next][next]                           | Connect source transformation, CSS delivery, and watching to Next.js.              |
@@ -21,6 +21,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 
 [babel]: https://zyzz.sh/docs/api/babel
 [cli]: https://zyzz.sh/docs/api/cli
+[compiler]: https://zyzz.sh/docs/api/compiler
 [default]: https://zyzz.sh/docs/guides/default-theme
 [metro]: https://zyzz.sh/docs/api/metro
 [next]: https://zyzz.sh/docs/api/next

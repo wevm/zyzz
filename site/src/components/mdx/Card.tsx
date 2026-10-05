@@ -14,6 +14,7 @@ import CopyPlusIcon from '~icons/lucide/copy-plus'
 import EyeIcon from '~icons/lucide/eye'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileInputIcon from '~icons/lucide/file-input'
+import FileSearchIcon from '~icons/lucide/file-search'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
 import FolderCogIcon from '~icons/lucide/folder-cog'
@@ -25,6 +26,7 @@ import ListIcon from '~icons/lucide/list'
 import ListOrderedIcon from '~icons/lucide/list-ordered'
 import LockOpenIcon from '~icons/lucide/lock-open'
 import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
+import NetworkIcon from '~icons/lucide/network'
 import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaintBucketIcon from '~icons/lucide/paint-bucket'
@@ -46,6 +48,7 @@ import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
+import WandSparklesIcon from '~icons/lucide/wand-sparkles'
 import WorkflowIcon from '~icons/lucide/workflow'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
@@ -199,6 +202,7 @@ const icons = {
   eye: EyeIcon,
   'file-code': FileCodeIcon,
   'file-input': FileInputIcon,
+  'file-search': FileSearchIcon,
   'file-type': FileTypeIcon,
   film: FilmIcon,
   'folder-cog': FolderCogIcon,
@@ -210,6 +214,7 @@ const icons = {
   'list-ordered': ListOrderedIcon,
   'lock-open': LockOpenIcon,
   'monitor-smartphone': MonitorSmartphoneIcon,
+  network: NetworkIcon,
   next: NextIcon,
   package: PackageIcon,
   'paint-bucket': PaintBucketIcon,
@@ -235,6 +240,7 @@ const icons = {
   type: TypeIcon,
   variable: VariableIcon,
   vite: ViteIcon,
+  'wand-sparkles': WandSparklesIcon,
   workflow: WorkflowIcon,
   zap: ZapIcon,
 }

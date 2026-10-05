@@ -1,0 +1,357 @@
+# Source
+
+Extract static style definitions from module text without running it.
+
+`Source.extract` parses one module as TypeScript with JSX and returns its validated styles, local variable sets, and the spans of each authoring call. It reads no files and leaves the source unchanged. [`Transform.compile`](/docs/api/compiler/namespaces/Transform) uses it to rewrite modules.
+
+```ts title="extract.ts"
+import { Source } from 'zyzz/compiler'
+import { Css } from 'zyzz/web'
+
+// [!code hl:7]
+// Reads the definitions without evaluating the module
+const output = Source.extract({
+  moduleId: 'app/Card.tsx',
+  source: `import { style } from 'zyzz'
+
+export const card = style({ padding: '1rem' })
+`,
+})
+
+// Emits `.z-p-1rem{padding:1rem;}` from the extracted styles
+const { css } = Css.compile({ styles: output.styles })
+```
+
+## Signature
+
+```ts
+// Definitions and spans from one module
+Source.extract(options)
+```
+
+## Parameters
+
+### options.moduleId
+
+- **Type:** `string{:ts}`
+
+A stable, package-relative module identity. Generated names, scope keys, and diagnostics derive from it, so the same file must keep the same ID across builds.
+
+```ts /moduleId: 'app/Card.tsx'/
+// Diagnostics report `app/Card.tsx:<offset>`
+Source.extract({ moduleId: 'app/Card.tsx', source })
+```
+
+### options.source
+
+- **Type:** `string{:ts}`
+
+The complete module text. Only definitions imported from `zyzz` and its entrypoints are extracted, and other code is ignored.
+
+```ts /source: text/
+// The text is parsed, never executed
+Source.extract({ moduleId: 'app/Card.tsx', source: text })
+```
+
+### options.compiler
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Whether a later step rewrites the module. With `false`, each nonempty static `style` call also carries a `portable` class identity, which the unchanged call computes at runtime. Empty styles and every other definition need an explicit `id`, as listed under [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscompiler), which enforces the list.
+
+```ts /compiler: false/
+// calls[0].portable holds the class the runtime call returns
+Source.extract({ compiler: false, moduleId: 'app/Card.tsx', source })
+```
+
+### options.target
+
+- **Type:** `'web' | 'native'{:ts}`
+- **Default:** `'web'{:ts}`
+
+The output the extraction serves. `'native'` keeps style applications for native props composition, as [`Native.compile`](/docs/api/compiler/namespaces/Native) requires.
+
+```ts /target: 'native'/
+// Extracts for native callables instead of CSS
+Source.extract({ moduleId: 'app/Card.tsx', source, target: 'native' })
+```
+
+## Returns
+
+### styles
+
+- **Type:** `Style.Definition{:ts}`
+
+The validated definitions in source order, the same data [`Style.define`](/docs/api/core/namespaces/Style) returns. Pass them to `Css.compile` to emit CSS.
+
+```ts /output.styles/
+// [{ property: 'padding', value: '1rem' }]
+output.styles.styles[0]?.declarations
+```
+
+### calls
+
+- **Type:** `readonly Source.Call[]{:ts}`
+
+Each authoring call in source order, with the `name` of its definition in `styles` and its `start` and `end` UTF-16 offsets. A rewriter replaces these spans with compiled values.
+
+```ts /output.calls[0]/
+// { name: 'style-…', start: 50, end: 76, … }
+output.calls[0]
+```
+
+### vars
+
+- **Type:** `Source.extract.ReturnType['vars']{:ts}`
+
+The module's local variable sets, keyed by stable scope keys. Pass them to `Css.compile` with `styles` to emit the custom properties and scope classes.
+
+```ts
+import { Source } from 'zyzz/compiler'
+import { Css } from 'zyzz/web'
+
+const output = Source.extract({
+  moduleId: 'app/Card.tsx',
+  source: `import { defineConfig } from 'zyzz'
+
+const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
+
+export const card = style({ color: 'brand' })
+`,
+})
+
+// [!code hl:2]
+// Emits the `.z-theme-theme` scope beside the card rule
+const result = Css.compile({ styles: output.styles, vars: output.vars })
+```
+
+### themeCalls
+
+- **Type:** `Source.extract.ReturnType['themeCalls']{:ts}`
+
+The spans of local `defineConfig`, `defineVars`, and `extendVars` calls, with each call's scope key in `name` and its token type text in `tokenType`. Calls also carry the options and named sets a rewriter reads to replace each span with compiled scope data.
+
+```ts /output.themeCalls/
+// One entry per local config or variable set
+output.themeCalls.length
+```
+
+### themeAliases
+
+- **Type:** `Source.extract.ReturnType['themeAliases']{:ts}`
+
+Local aliases of configured helpers, such as `const { style } = config`. Each has its span, its scope key in `name`, the token type text in `tokenType`, and whether it destructures helpers.
+
+```ts /output.themeAliases/
+// Empty when helpers are destructured from defineConfig directly
+output.themeAliases.length
+```
+
+### themeReferences
+
+- **Type:** `readonly { end: number; name: string; start: number }[]{:ts}`
+
+Direct theme `.className` reads, which a rewriter replaces with the class for the scope key in `name`. Scope selections through `vars` are not listed here.
+
+```ts /output.themeReferences/
+// One entry per direct theme className read
+output.themeReferences.length
+```
+
+### contributions
+
+- **Type:** `readonly Css.Contribution[] | undefined{:ts}`
+
+Stylesheet contributions from `zyzz/web` functions, such as `global`, `fontFace`, `keyframes`, and `layers`. Registered `variable` properties come first, then the calls in source order, then layer orders from a config's `layers` option. The field is absent when the module declares none.
+
+```ts /output.contributions/
+// [{ kind: 'rule', selector: 'body', … }] for global({ body: { margin: 0 } })
+output.contributions
+```
+
+### variableCalls
+
+- **Type:** `readonly { end: number; explicit?: boolean; slots: Readonly<Record<string, { name: string; type: string; variable: true }>>; start: number }[] | undefined{:ts}`
+
+The spans of module-owned [`variable`](/docs/api/core/variable) calls, each with its fixed custom-property slots and whether the call supplied an explicit `id`. The field is absent when the module declares no variables.
+
+```ts /output.variableCalls/
+// [{ slots: { value: { name: '--z-accent', type: 'color' } }, … }]
+output.variableCalls
+```
+
+### contributionCalls
+
+- **Type:** `readonly { argument: object; end: number; function?: object; kind: string; name?: string; start: number }[] | undefined{:ts}`
+
+The span, function name, and argument AST node of each contribution call, such as `'global'` or `'keyframes'`. A rewriter removes unnamed calls. Named factories, such as `keyframes`, carry their generated `name`, which replaces the call, and `cssFunction` calls add a `function` signature.
+
+```ts /output.contributionCalls/
+// [{ kind: 'keyframes', name: 'z-k-spin', start: …, end: … }]
+output.contributionCalls
+```
+
+### contributionStarts
+
+- **Type:** `readonly number[] | undefined{:ts}`
+
+The start offset of the call behind each entry in `contributions`, aligned by index. A call that emits several rules, such as a `global` with two selectors, repeats its offset. Layer orders from a config's `layers` option come last and have no offset.
+
+```ts /output.contributionStarts/
+// [45, 45, 121] for a two-selector global and one keyframes call
+output.contributionStarts
+```
+
+### namespaces
+
+- **Type:** `readonly { name: string; prefix?: string; uri: string }[] | undefined{:ts}`
+
+The module's `namespace` declarations, with their prefixes and URIs.
+
+```ts /output.namespaces/
+// [{ name: 'z-…', prefix: 'svg', uri: 'http://www.w3.org/2000/svg' }]
+output.namespaces
+```
+
+### staticThemeReferences
+
+- **Type:** `readonly { end: number; start: number; value: string }[] | undefined{:ts}`
+
+Token reads held in immutable records, such as `{ color: vars.color.brand }`, with the CSS value that replaces each one.
+
+```ts /output.staticThemeReferences/
+// [{ start: …, end: …, value: 'var(--z-color-brand,#06c)' }]
+output.staticThemeReferences
+```
+
+### themeAppearances
+
+- **Type:** `readonly string[] | undefined{:ts}`
+
+The scope keys of local configs whose `appearance` helper the module reads.
+
+```ts /output.themeAppearances/
+// ['src-theme-…-appearance-theme']
+output.themeAppearances
+```
+
+### themeScripts
+
+- **Type:** `readonly string[] | undefined{:ts}`
+
+The scope keys of local configs whose `script` helper the module reads.
+
+```ts /output.themeScripts/
+// ['src-theme-…-appearance-theme']
+output.themeScripts
+```
+
+### themeSelections
+
+- **Type:** `readonly string[] | undefined{:ts}`
+
+The scope keys of local configs whose `vars` selector the module calls, passes, or binds.
+
+```ts /output.themeSelections/
+// ['src-theme-…-appearance-theme']
+output.themeSelections
+```
+
+### nativeVars
+
+- **Type:** `readonly { defaultVars: string; end: number; owner: string; start: number; unnamed: boolean; vars: object }[] | undefined{:ts}`
+
+With `target: 'native'`, the `useVars` arguments in the module. Each has the argument's span, the owning config's identity in `owner` and fallback set in `defaultVars`, and its variable sets in `vars`. `unnamed` marks a standalone set with no named alternatives.
+
+```ts /output.nativeVars/
+// [{ defaultVars: 'default', vars: { default: … }, … }]
+output.nativeVars
+```
+
+### themeExports
+
+- **Type:** `Readonly<Record<string, object>> | undefined{:ts}`
+
+The module's exported configs and bound helpers, which `Graph.compile` links into importing modules. It is set only during graph compilation and is absent from a direct call.
+
+```ts /output.themeExports/
+// undefined outside Graph.compile
+output.themeExports
+```
+
+## Static Input
+
+Values must be literals the compiler can read. Module-level `const` bindings, object spreads, template literals with literal substitutions, fallback arrays, and ` !important` suffixes all resolve statically.
+
+```ts title="Card.tsx"
+import { style } from 'zyzz'
+
+const space = 8
+
+const base = { display: 'flex' } as const
+
+export const card = style({
+  ...base,
+  // Expands to display: block, then display: grid
+  display: ['block', 'grid'],
+  // [!code hl:2]
+  // Folds to 8px without running the module
+  padding: `${space}px`,
+  color: 'red !important',
+})
+```
+
+Arithmetic, arbitrary calls, mutation, and tagged templates are rejected with a diagnostic. Exported configs and imported definitions need [`Graph.compile`](/docs/api/compiler/namespaces/Graph), which links modules.
+
+## Types
+
+- **`Source.Call{:ts}`:** One authoring call, with its definition name and span.
+- **`Source.Diagnostic{:ts}`:** One located failure, with a code, message, and span.
+- **`Source.extract.ErrorType{:ts}`:** The error `extract` throws.
+- **`Source.extract.Options{:ts}`:** The accepted options.
+- **`Source.extract.ReturnType{:ts}`:** The extracted definitions and spans.
+
+```ts title="report.ts"
+import type { Source } from 'zyzz/compiler'
+
+// [!code hl:2]
+// Formats one diagnostic as `file:offset message`
+export function format(diagnostic: Source.Diagnostic) {
+  return `${diagnostic.source}:${diagnostic.start} ${diagnostic.message}`
+}
+```
+
+A missing `moduleId` fails the type check.
+
+```ts twoslash
+// @errors: 2345
+import { Source } from 'zyzz/compiler'
+
+declare const source: string
+
+Source.extract({ source })
+```
+
+## Errors
+
+### Source.ExtractError
+
+Thrown for syntax errors, invalid literals, and unsupported input. `diagnostics` lists every failure in source order, and no partial result is returned. Each diagnostic `code` is `'invalid_literal'`, `'invalid_module'`, `'syntax_error'`, or `'unsupported_syntax'`.
+
+```ts
+import { Source } from 'zyzz/compiler'
+
+try {
+  Source.extract({
+    moduleId: 'app/Card.tsx',
+    // Arithmetic is not evaluated
+    source: `import { style } from 'zyzz'
+export const card = style({ padding: 1 + 1 })
+`,
+  })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Source.ExtractError) console.error(error.diagnostics)
+}
+```

@@ -75,9 +75,9 @@ page({ descriptors: { marginTop: '4cm' }, selector: ':first' })
 
 ### options[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: { descriptors; selector? } }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: { descriptors; selector? } }{:ts}``
 
-Grouping keys around a complete page definition. Outer keys emit outer groups.
+Grouping keys around a complete page definition. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { page } from 'zyzz/web'

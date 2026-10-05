@@ -78,9 +78,9 @@ export const parenthesized = counterStyle({
 
 ### descriptors[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: counterStyle.Options }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: counterStyle.Options }{:ts}``
 
-Grouping keys around a complete set of descriptors. Outer keys emit outer groups.
+Grouping keys around a complete set of descriptors. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { counterStyle } from 'zyzz/web'

@@ -63,9 +63,9 @@ fontFace({
 
 ### descriptors[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: fontFace.Options }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: fontFace.Options }{:ts}``
 
-Grouping keys around a complete set of descriptors. Outer keys emit outer groups, and each branch must hold a complete definition.
+Grouping keys around a complete set of descriptors. Outer keys emit outer groups, and each branch must hold a complete definition. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { fontFace } from 'zyzz/web'

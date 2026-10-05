@@ -60,9 +60,9 @@ export const end = positionTry({
 
 ### declarations[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: positionTry.Declarations }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: positionTry.Declarations }{:ts}``
 
-Grouping keys around a complete set of declarations. Outer keys emit outer groups.
+Grouping keys around a complete set of declarations. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { positionTry } from 'zyzz/web'

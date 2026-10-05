@@ -80,9 +80,9 @@ export const cmyk = colorProfile({
 
 ### descriptors[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: colorProfile.Options }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: colorProfile.Options }{:ts}``
 
-Grouping keys around a complete set of descriptors. Outer keys emit outer groups.
+Grouping keys around a complete set of descriptors. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { colorProfile } from 'zyzz/web'

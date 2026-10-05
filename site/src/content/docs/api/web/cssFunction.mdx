@@ -102,9 +102,9 @@ export const gutter = cssFunction({
 
 ### options[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: cssFunction.Options }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: cssFunction.Options }{:ts}``
 
-Grouping keys around a complete definition. Every branch must declare the same parameters and return syntax, while bodies may differ.
+Grouping keys around a complete definition. Every branch must declare the same parameters and return syntax, while bodies may differ. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { cssFunction } from 'zyzz/web'

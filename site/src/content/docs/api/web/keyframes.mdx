@@ -33,7 +33,7 @@ keyframes(frames, context?)
 
 ### frames
 
-- **Type:** `{ [stop: string]: Style.LiteralProperties }{:ts}`
+- **Type:** `{ [stop: string]: Style.LiteralDeclarations }{:ts}`
 
 Frame stops mapped to declarations, in authored order. Stops are `from`, `to`, percentages, timeline ranges such as `entry 0%`, or comma-separated lists of these. Frames cannot contain nested rules or importance.
 
@@ -63,9 +63,9 @@ export const reveal = keyframes({
 
 ### frames[atRule]
 
-- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: frames }{:ts}``
+- **Type:** ``{ [atRule: '@layer' | `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: frames }{:ts}``
 
-Grouping keys around a complete set of frames. Outer keys emit outer groups.
+Grouping keys around a complete set of frames. Outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
 ```ts
 import { keyframes } from 'zyzz/web'

@@ -78,7 +78,7 @@ export const accent = fontPaletteValues({
 
 ### descriptors[atRule]
 
-- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
 
 Grouping keys around a complete set of descriptors. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
@@ -97,7 +97,7 @@ export const night = fontPaletteValues({
 - **Type:** `string{:ts}`
 - **Default:** `undefined{:ts}`
 
-A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
 
 ```ts /{ id: 'brand' }/
 // Returns `--z-fontpalettevaluesid-brand`
@@ -110,7 +110,7 @@ fontPaletteValues({ fontFamily: '"Brand Icons"' }, { id: 'brand' })
 
 - **Type:** `fontPaletteValues.Reference{:ts}`
 
-The generated dashed name. `fontPalette` accepts it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+The generated dashed name. `fontPalette` and custom properties, such as a `vars` assignment, accept it. Other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
 
 ```ts /fontPalette: brand/
 // Compiles to `font-palette:--z-fontpalettevalues-brand`

@@ -2,7 +2,7 @@
 
 Emit an `@keyframes` rule and return its generated animation name.
 
-`keyframes` emits ordered frame stops into the shared stylesheet. The compiler replaces the call with a name derived from the module and binding, so styles reference the animation without a handwritten name. The [Keyframes](/docs/guides/keyframes) guide covers reduced motion and timeline ranges.
+`keyframes` emits ordered frame stops into the shared stylesheet. The compiler replaces the call with a name derived from its binding, so styles reference the animation without a handwritten name. The [Keyframes](/docs/guides/keyframes) guide covers reduced motion and timeline ranges.
 
 ```ts title="Notice.tsx"
 import { style } from 'zyzz'
@@ -63,7 +63,7 @@ export const reveal = keyframes({
 
 ### frames[atRule]
 
-- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
 
 Grouping keys around a complete set of frames. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
@@ -82,7 +82,7 @@ export const fade = keyframes({
 - **Type:** `string{:ts}`
 - **Default:** `undefined{:ts}`
 
-A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, such as in tests, a call requires it.
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, such as in tests, a call requires it.
 
 ```ts /{ id: 'fade' }/
 // Returns `z-kid-fade` with or without a compiler transform

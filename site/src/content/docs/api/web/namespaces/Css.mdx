@@ -106,7 +106,7 @@ const output = Css.compile({
 - **Type:** `boolean{:ts}`
 - **Default:** `false{:ts}`
 
-Keeps each style's rules separate, so a changed style replaces only its own rules during development updates. It disables the deduplication of `composition: 'independent'`. Integrations enable it in development servers.
+Disables the application deduplication and grouped factoring of `composition: 'independent'`. Atomic output still shares identical declarations across styles. Integrations enable it in development servers.
 
 ```ts /development: true/
 // Replace the class map and CSS together after each edit

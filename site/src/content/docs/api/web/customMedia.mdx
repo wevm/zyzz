@@ -54,7 +54,7 @@ export const wideHover = customMedia('(width >= 64rem) and (hover: hover)')
 - **Type:** `string{:ts}`
 - **Default:** `undefined{:ts}`
 
-A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
 
 ```ts /{ id: 'compact' }/
 // Returns '@media (--z-custommediaid-compact)'

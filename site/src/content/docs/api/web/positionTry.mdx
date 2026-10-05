@@ -60,7 +60,7 @@ export const end = positionTry({
 
 ### declarations[atRule]
 
-- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
 
 Grouping keys around a complete set of declarations. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
@@ -79,7 +79,7 @@ export const above = positionTry({
 - **Type:** `string{:ts}`
 - **Default:** `undefined{:ts}`
 
-A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
 
 ```ts /{ id: 'above' }/
 // Returns `--z-positiontryid-above`
@@ -92,7 +92,7 @@ positionTry({ positionArea: 'top' }, { id: 'above' })
 
 - **Type:** `positionTry.Reference{:ts}`
 
-The generated dashed name. `positionTryFallbacks` and the `positionTry` shorthand accept it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+The generated dashed name. `positionTryFallbacks` and the `positionTry` shorthand accept it, as do custom properties through a `vars` assignment. Other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
 
 ```ts /positionTryFallbacks: above/
 // Compiles to `position-try-fallbacks:--z-positiontry-above`

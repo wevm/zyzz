@@ -81,7 +81,7 @@ fontFeatureValues({
 
 ### options[atRule]
 
-- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
 
 Grouping keys around a complete definition. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 

@@ -85,7 +85,7 @@ fontFace({
 
 ## Named References
 
-`colorProfile`, `counterStyle`, `cssFunction`, `customMedia`, `fontPaletteValues`, `keyframes`, and `positionTry` return references. The compiler names each one from its module and binding, and keeps the name through imports, re-exports, packed libraries, and rebuilds. A `{ id }` argument fixes the name instead.
+`colorProfile`, `counterStyle`, `cssFunction`, `customMedia`, `fontPaletteValues`, `keyframes`, and `positionTry` return references. Each name comes from the binding, such as `z-k-fade` for `const fade`, and survives imports and packed libraries. Two modules declaring the same binding fail compilation, so an `{ id }` argument renames one.
 
 References keep their domains in TypeScript, so a palette cannot become an animation name. The compiler omits named definitions that are neither exported nor referenced.
 
@@ -116,7 +116,7 @@ Namespaces apply only to the module that declares them. The compiler renames eac
 
 ## Static Compilation
 
-Every helper is a static call that compiles away. Calls must be direct module-level statements with literal data, and none registers CSS at runtime. Unreferenced rules survive JavaScript tree shaking, but Next.js compiles only imported modules, so an entrypoint must import modules that declare them.
+Every helper is a static call that compiles away. Calls must be direct module-level statements with literal data. Rules without a reference survive JavaScript tree shaking, while named definitions follow reachability. Next.js compiles only imported modules, so an entrypoint must import modules that declare global rules.
 
 ```ts
 import { global } from 'zyzz/web'

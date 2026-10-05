@@ -80,7 +80,7 @@ export const cmyk = colorProfile({
 
 ### descriptors[atRule]
 
-- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '('}${string}`{:ts}``
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
 
 Grouping keys around a complete set of descriptors. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
 
@@ -99,7 +99,7 @@ export const press = colorProfile({
 - **Type:** `string{:ts}`
 - **Default:** `undefined{:ts}`
 
-A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
 
 ```ts /{ id: 'swop' }/
 // Returns `--z-colorprofileid-swop`

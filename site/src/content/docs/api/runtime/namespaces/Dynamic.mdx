@@ -5,14 +5,15 @@ Assign required callback values to fixed private custom properties on each appli
 `Dynamic.create` binds a [`style`](/docs/api/core/style) callback definition's compiled class list to its value slots. Web compilation inlines an equivalent function into each callback definition, so generated modules do not import this helper. It remains available to tooling that has compiled class and slot names.
 
 ```ts title="meter.ts"
+import type { style } from 'zyzz'
 import { Dynamic } from 'zyzz/runtime'
 
-// [!code hl:4]
-// Rules for `z-meter` read `--meter-amount`
+// [!code hl:5]
+// Rules for `z-meter` read `--meter-amount`, and the cast mirrors generated code
 const meter = Dynamic.create({
   className: 'z-meter',
   slots: { amount: { name: '--meter-amount', type: 'length' } },
-})
+}) as style.Dynamic<{ amount: string }>
 
 // { className: 'z-meter', style: { '--meter-amount': '50%' } }
 export const props = meter({ amount: '50%' })
@@ -54,7 +55,7 @@ Dynamic.create({
 
 ## Application
 
-The returned callable requires every slot field and accepts the [`style`](/docs/api/core/style#application) overrides `className`, `style`, and `vars`.
+Generated code casts the callable to `style.Dynamic<values>`, which requires every slot field and accepts the [`style`](/docs/api/core/style#application) overrides `className`, `style`, and `vars`. The helper's own return type keeps no slot names, and its string index signature rejects object-valued `style` and `vars` overrides.
 
 ### options[field]
 
@@ -120,4 +121,4 @@ export const options = {
 
 ## Errors
 
-`Dynamic.create` throws no errors. The callable reads fields as supplied, so a missing field assigns `undefined`. TypeScript requires every field on the [`style.Dynamic`](/docs/api/core/style#types) callable.
+`Dynamic.create` throws no errors. The callable reads fields as supplied, so a missing field assigns `undefined`. TypeScript requires every field only through the generated [`style.Dynamic`](/docs/api/core/style#types) cast.

@@ -22,7 +22,8 @@ const meter = NativeDynamic.create({
     slots: { width: '--meter-width' },
   },
   styles: {},
-})
+  // The cast mirrors generated code
+}) as NativeDynamic.Callable<{ width: string }>
 
 // { style: { width: 12 } }
 export const props = meter({ width: '12px' })
@@ -177,7 +178,7 @@ NativeDynamic.create({
 
 - **Type:** `string | number{:ts}`
 
-A required callback field. Bound values convert with the same scalar rules as static native compilation, and the `padding`, `margin`, and `inset` shorthands expand to longhands.
+A required callback field. Generated code casts the callable to `NativeDynamic.Callable<input>` with the authored fields, while the helper's own return type accepts any record. Bound values convert with the same scalar rules as static native compilation, and the `padding`, `margin`, and `inset` shorthands expand to longhands.
 
 ```ts /width: '50%'/
 // { style: { width: '50%' } }

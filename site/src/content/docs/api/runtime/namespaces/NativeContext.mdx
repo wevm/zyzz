@@ -181,6 +181,17 @@ A style value or props. The result lists the selected compiled callables, which 
 NativeContext.key(ink(), { colorScheme: 'dark' })
 ```
 
+### context
+
+- **Type:** `NativeContext.Context{:ts}`
+
+The selection to read dependencies for. Its set and scheme pick the table, and responsive bindings also read `viewport`.
+
+```ts /{ colorScheme: 'light', set: 'base' }/
+// The table for the base set in light mode
+NativeContext.key(ink(), { colorScheme: 'light', set: 'base' })
+```
+
 ## Types
 
 - **`NativeContext.Context{:ts}`:** The `{ colorScheme, set?, viewport? }` selection.
@@ -198,7 +209,7 @@ export const context = {
 
 ## Errors
 
-`resolve` throws an `Error` when a deferred binding has no context, the set is not compiled, a media alternative is missing, or media queries lack valid window dimensions.
+`resolve` throws an `Error` when a deferred binding has no context, the set is not compiled, a media alternative is missing, or media queries lack valid window dimensions. `key` reads the same selection, so it throws for an uncompiled set and for media queries without valid window dimensions.
 
 ```ts title="invalid.ts"
 import { Native, NativeContext } from 'zyzz/runtime'

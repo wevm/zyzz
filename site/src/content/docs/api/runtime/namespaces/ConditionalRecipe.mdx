@@ -133,4 +133,4 @@ export const options = {
 
 ## Errors
 
-Neither function throws or validates selections. TypeScript and the compiler reject unknown conditions, axes, and choices.
+Neither function throws or validates selections. The callable's own type accepts any record, so an unknown choice serializes into a conditional attribute as given. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript rejects unknown conditions, axes, and choices.

@@ -7,8 +7,10 @@ import * as Module from 'node:module'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
+import type { style, variable } from 'zyzz'
 import {
   Appearance,
+  Composition,
   CompositionHtml,
   ConditionalRecipe,
   Html,
@@ -67,8 +69,8 @@ async function examples(page: string, heading?: string | undefined) {
   ).filter((example) => example.source.includes('import '))
 }
 
-/** Imports a page's first example, exporting its module-level `const` declarations. */
-async function load(page: string): Promise<Record<string, any>> {
+/** Imports a page's first example, exporting its module-level `const` declarations as the bindings `module` names. */
+async function load<module>(page: string): Promise<module> {
   const [example] = await examples(page)
   const directory = await Fs.mkdtemp(Path.join(root, 'load-'))
   const file = Path.join(directory, example!.name!)
@@ -82,7 +84,9 @@ async function load(page: string): Promise<Record<string, any>> {
 
 describe('Props API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/Props')
+    const example = await load<{ card: style.ReturnType; props: style.Props }>(
+      'namespaces/Props',
+    )
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -118,7 +122,10 @@ describe('Props API page', () => {
 
 describe('Dynamic API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/Dynamic')
+    const example = await load<{
+      meter: style.Dynamic<{ amount: string }>
+      props: style.Props
+    }>('namespaces/Dynamic')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -152,7 +159,10 @@ describe('Dynamic API page', () => {
 
 describe('Recipe API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/Recipe')
+    const example = await load<{
+      button: ReturnType<typeof Recipe.create>
+      props: unknown
+    }>('namespaces/Recipe')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -204,7 +214,10 @@ describe('Recipe API page', () => {
 
 describe('ConditionalRecipe API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/ConditionalRecipe')
+    const example = await load<{
+      button: ReturnType<typeof ConditionalRecipe.create>
+      props: unknown
+    }>('namespaces/ConditionalRecipe')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -233,7 +246,10 @@ describe('ConditionalRecipe API page', () => {
 
 describe('PayloadRecipe API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/PayloadRecipe')
+    const example = await load<{
+      box: ReturnType<typeof PayloadRecipe.create>
+      props: unknown
+    }>('namespaces/PayloadRecipe')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -298,7 +314,10 @@ describe('PayloadRecipe API page', () => {
 
 describe('Composition API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/Composition')
+    const example = await load<{
+      compose: ReturnType<typeof Composition.create>
+      props: unknown
+    }>('namespaces/Composition')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -322,7 +341,9 @@ describe('Composition API page', () => {
 
 describe('Html API page', () => {
   test('renders the overview example', async () => {
-    const example = await load('namespaces/Html')
+    const example = await load<{ attributes: Html.Attributes; markup: string }>(
+      'namespaces/Html',
+    )
 
     expect(example.attributes).toMatchInlineSnapshot(`
       {
@@ -358,7 +379,9 @@ describe('Html API page', () => {
 
 describe('CompositionHtml API page', () => {
   test('composes the overview example', async () => {
-    const example = await load('namespaces/CompositionHtml')
+    const example = await load<{ attributes: Html.Attributes }>(
+      'namespaces/CompositionHtml',
+    )
 
     expect(example.attributes).toMatchInlineSnapshot(`
       {
@@ -393,7 +416,10 @@ describe('CompositionHtml API page', () => {
 
 describe('Selection API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/Selection')
+    const example = await load<{
+      props: unknown
+      vars: Selection.create.ReturnType<'base' | 'mint'>
+    }>('namespaces/Selection')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -409,7 +435,7 @@ describe('Selection API page', () => {
       }
     `)
     expect(() =>
-      example.vars({ set: 'missing' }),
+      example.vars({ set: 'missing' } as never),
     ).toThrowErrorMatchingInlineSnapshot(
       `[TypeError: Invalid variable selection.]`,
     )
@@ -448,7 +474,7 @@ describe('Selection API page', () => {
 describe('Appearance API page', () => {
   test('restores and persists the root selection in Chromium', async () => {
     const [example] = await examples('namespaces/Appearance')
-    const loaded = await load('namespaces/Appearance')
+    const loaded = await load<{ script: () => string }>('namespaces/Appearance')
     const bundle = await Esbuild.build({
       stdin: { contents: example!.source, loader: 'ts', resolveDir: project },
       alias: { 'zyzz/runtime': Path.join(project, 'src/runtime/index.ts') },
@@ -529,7 +555,10 @@ describe('Appearance API page', () => {
 
 describe('Variable API page', () => {
   test('creates the overview reference', async () => {
-    const example = await load('namespaces/Variable')
+    const example = await load<{
+      accent: variable.Reference<'color'>
+      assignment: unknown
+    }>('namespaces/Variable')
 
     expect(String(example.accent)).toMatchInlineSnapshot(`"--accent"`)
     expect(example.assignment).toMatchInlineSnapshot(`
@@ -548,7 +577,10 @@ describe('Variable API page', () => {
 
 describe('Native API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/Native')
+    const example = await load<{
+      badge: Native.Callable<{ size: readonly ['small', 'large'] }>
+      props: unknown
+    }>('namespaces/Native')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -589,7 +621,7 @@ describe('Native API page', () => {
       }
     `)
     expect(() =>
-      example.badge({ size: 'huge' }),
+      example.badge({ size: 'huge' } as never),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Native.SelectionError: Unknown native recipe choice for size.]`,
     )
@@ -608,7 +640,10 @@ describe('Native API page', () => {
 
 describe('NativeStatic API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/NativeStatic')
+    const example = await load<{
+      props: unknown
+      text: Native.Callable<{ size: readonly ['small', 'large'] }>
+    }>('namespaces/NativeStatic')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -645,7 +680,10 @@ describe('NativeStatic API page', () => {
 
 describe('NativeDynamic API page', () => {
   test('applies the overview example', async () => {
-    const example = await load('namespaces/NativeDynamic')
+    const example = await load<{
+      meter: NativeDynamic.Callable<{ width: string }>
+      props: unknown
+    }>('namespaces/NativeDynamic')
 
     expect(example.props).toMatchInlineSnapshot(`
       {
@@ -674,7 +712,7 @@ describe('NativeDynamic API page', () => {
         ],
       }
     `)
-    expect(() => example.meter({})).toThrowErrorMatchingInlineSnapshot(
+    expect(() => example.meter({} as never)).toThrowErrorMatchingInlineSnapshot(
       `[Native.SelectionError: Missing or invalid native payload: width.]`,
     )
   })
@@ -729,7 +767,9 @@ describe('NativeDynamic API page', () => {
 
 describe('NativeContext API page', () => {
   test('resolves the overview example', async () => {
-    const example = await load('namespaces/NativeContext')
+    const example = await load<{ ink: Native.Callable<{}>; style: unknown }>(
+      'namespaces/NativeContext',
+    )
 
     expect(example.style).toMatchInlineSnapshot(`
       {
@@ -761,8 +801,8 @@ describe('NativeContext API page', () => {
       }
     `)
     expect(
-      NativeContext.key(example.ink(), { colorScheme: 'dark' }),
-    ).toHaveLength(1)
+      NativeContext.key(example.ink(), { colorScheme: 'dark' }).length,
+    ).toMatchInlineSnapshot(`1`)
     expect(() =>
       NativeContext.resolve(example.ink().style, undefined),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -838,7 +878,9 @@ describe('NativeContext API page', () => {
 
 describe('NativeVars API page', () => {
   test('reads the overview example', async () => {
-    const example = await load('namespaces/NativeVars')
+    const example = await load<{ tokens: object; values: NativeVars.Tree }>(
+      'namespaces/NativeVars',
+    )
 
     expect(example.values).toMatchInlineSnapshot(`
       {
@@ -942,7 +984,8 @@ describe('runtime API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(37)
-    expect(checked.status, checked.stdout + checked.stderr).toBe(0)
+    expect(files.length).toMatchInlineSnapshot(`37`)
+    expect(checked.stdout + checked.stderr).toMatchInlineSnapshot(`""`)
+    expect(checked.status).toMatchInlineSnapshot(`0`)
   }, 60_000)
 })

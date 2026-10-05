@@ -57,7 +57,7 @@ const stylesheet = result.files.find((file) => file === 'zyzz.css')
 
 ## Publication
 
-A build compiles the whole graph and checks ownership before it writes. Each file is written to a temporary path and renamed into place. When a write fails, the host restores the files this build already replaced, so the output never mixes two builds.
+A build compiles the whole graph and checks ownership before it writes. Each file is written to a temporary path and renamed into place, so no file is ever partially written. Files are renamed one at a time, so a concurrent reader can briefly see files from two builds.
 
 ```ts
 try {
@@ -69,11 +69,11 @@ try {
 }
 ```
 
-Each build reads package metadata again, so changed export maps and `.zyzz.json` files take effect on the next build. An unchanged graph reuses its compiled output.
+When a write fails, the host restores the files this build already replaced. Each build reads package metadata again, so changed export maps and `.zyzz.json` files take effect on the next build. An unchanged graph reuses its compiled output.
 
 ## Ownership
 
-`.zyzz.json` in `outDir` records the package ID and a SHA-256 digest of each published file. A build refuses to replace a file the host did not write or one edited since its last build, and removes owned files that no source produces anymore.
+`.zyzz.json` in `outDir` records the package ID and a SHA-256 digest of each file the host owns there. Builds refuse to replace files the host did not write or that changed since, and remove owned files no source produces. A `script` outside `outDir` is tracked by its banner instead.
 
 ```sh /Button.tsx.css/
 # An edited output blocks the next build until it is restored or deleted

@@ -765,34 +765,37 @@ describe('watch API page', () => {
     const project = await fixture()
 
     const running = run(project.directory, overview!.source)
-    const initial = await until(() => project.read('Button.tsx.css'))
+    try {
+      const initial = await until(() => project.read('Button.tsx.css'))
 
-    await Fs.writeFile(
-      Path.join(project.directory, 'src/Button.tsx'),
-      web['src/Button.tsx'].replace('padding: 16', 'padding: 20'),
-    )
-    const rebuilt = await until(async () => {
-      const css = await project.read('Button.tsx.css')
-      return css === initial ? undefined : css
-    })
+      await Fs.writeFile(
+        Path.join(project.directory, 'src/Button.tsx'),
+        web['src/Button.tsx'].replace('padding: 16', 'padding: 20'),
+      )
+      const rebuilt = await until(async () => {
+        const css = await project.read('Button.tsx.css')
+        return css === initial ? undefined : css
+      })
 
-    expect(rebuilt).toContain('padding: 20px')
+      expect(rebuilt).toContain('padding: 20px')
 
-    expect(added!.source).toContain('src/forms/Field.ts')
-    await Fs.mkdir(Path.join(project.directory, 'src/forms'))
-    await Fs.writeFile(
-      Path.join(project.directory, 'src/forms/Field.ts'),
-      `export const id = 'field'\n`,
-    )
+      expect(added!.source).toContain('src/forms/Field.ts')
+      await Fs.mkdir(Path.join(project.directory, 'src/forms'))
+      await Fs.writeFile(
+        Path.join(project.directory, 'src/forms/Field.ts'),
+        `export const id = 'field'\n`,
+      )
 
-    expect(await until(() => project.read('forms/Field.ts')))
-      .toMatchInlineSnapshot(`
-      "export const id = 'field'
-      "
-    `)
-
-    process.emit('SIGINT')
-    await running
+      expect(await until(() => project.read('forms/Field.ts')))
+        .toMatchInlineSnapshot(`
+        "export const id = 'field'
+        "
+      `)
+    } finally {
+      // Stops the example's watchers and releases its lock even after a failure.
+      process.emit('SIGINT')
+      await running
+    }
 
     expect(
       await Fs.readdir(Path.join(project.directory, 'dist')),

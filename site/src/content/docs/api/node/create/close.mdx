@@ -32,8 +32,8 @@ await host.close()
 Resolves after queued builds settle and the lock file is removed. Builds already queued still publish.
 
 ```ts
-// Queues a build without awaiting it
-void host.build()
+// Queues a build and reports its failure without awaiting it
+host.build().catch((error) => console.error(error))
 
 // [!code hl:2]
 // Resolves after the queued build publishes
@@ -69,7 +69,7 @@ A process that exits without closing leaves `.zyzz-lock` behind. Later hosts the
 
 ## Errors
 
-After `close`, [`build`](/docs/api/node/create/build) rejects and [`watch`](/docs/api/node/create/watch) throws, both with `Host is closed.` Closing itself rejects only when the lock file cannot be removed.
+After `close`, [`build`](/docs/api/node/create/build) rejects and [`watch`](/docs/api/node/create/watch) throws, both with `Host is closed.` Closing itself rejects only when the lock file cannot be closed or removed.
 
 ```ts
 await host.close()

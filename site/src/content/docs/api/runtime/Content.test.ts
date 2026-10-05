@@ -443,6 +443,47 @@ describe('PayloadRecipe API page', () => {
       `[TypeError: Cannot read properties of null (reading 'padding')]`,
     )
   })
+
+  test('skips undefined conditions and misreads an HTML delegate', () => {
+    const definition = {
+      axes: { size: ['custom'] },
+      conditions: ['wide'],
+      defaults: {},
+    }
+    const payloads: readonly Recipe.Payload[] = [
+      {
+        axis: 'size',
+        choice: 'custom',
+        slots: [{ padding: '--box-padding' }, { padding: '--box-wide' }],
+      },
+    ]
+    const box = PayloadRecipe.create({
+      ...definition,
+      payloads,
+      select: Recipe.create({ ...definition, className: 'z-box' }),
+    })
+    const html = PayloadRecipe.create({
+      ...definition,
+      payloads,
+      select: Recipe.create({ ...definition, className: 'z-box', html: true }),
+    })
+
+    expect(box({ conditions: { wide: undefined } })).toMatchInlineSnapshot(`
+      {
+        "className": "z-box",
+      }
+    `)
+    expect(html({ size: { custom: { padding: '1px' } } }))
+      .toMatchInlineSnapshot(`
+      {
+        "class": "z-box",
+        "data-size": "custom",
+        "style": {
+          "--box-padding": "1px",
+        },
+      }
+    `)
+  })
 })
 
 describe('Composition API page', () => {

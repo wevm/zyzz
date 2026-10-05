@@ -113,7 +113,7 @@ const payloads = [
 
 - **Type:** `ReturnType<typeof Recipe.create>{:ts}`
 
-The selection delegate, created with `html: false`. It receives choice names in place of payloads. Conditional recipes pass a [`ConditionalRecipe.create`](/docs/api/runtime/namespaces/ConditionalRecipe) callable instead.
+The selection delegate, created with `html: false`. It receives choice names in place of payloads. The declared type also accepts an HTML delegate. Its result then has `class` with an unserialized `style`, which is neither React props nor HTML attributes. Conditional recipes pass a [`ConditionalRecipe.create`](/docs/api/runtime/namespaces/ConditionalRecipe) callable instead.
 
 ```ts /select: Recipe.create({ ...definition, className: 'z-box' })/
 // Serializes the normalized choice names
@@ -141,10 +141,10 @@ box({ size: { custom: { padding: '12px' } } })
 
 ### options.conditions
 
-- **Type:** `{ [condition: string]: { [axis: string]: unknown } }{:ts}`
+- **Type:** `{ [condition: string]: { [axis: string]: unknown } | undefined }{:ts}`
 - **Default:** `undefined{:ts}`
 
-Selections inside named conditions, using the same forms. Their fields assign the condition's slots.
+Selections inside named conditions, using the same forms. Their fields assign the condition's slots, and an `undefined` condition is skipped.
 
 ```ts /conditions: { wide: { size: { custom: { padding: '20px' } } } }/
 // Assigns the wide slot of the padding field
@@ -219,7 +219,7 @@ props['data-size']
 
 ### style
 
-- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+- **Type:** `Readonly<Record<string, string | number | undefined>> | string | undefined{:ts}`
 
 The delegate's inline styles followed by the assigned slots. HTML output serializes it to a string.
 

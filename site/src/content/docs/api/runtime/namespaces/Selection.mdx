@@ -83,9 +83,9 @@ Selection.create(entries, false, 'set', 'base')({ colorScheme: 'dark' })
 
 ### options.set
 
-- **Type:** `string{:ts}`
+- **Type:** `name{:ts}`
 
-One catalog name. It is required unless the selector has a default set.
+One catalog name, inferred from `entries`. It is required unless the selector has a default set.
 
 ```ts /set: 'base'/
 // { className: 'z-theme-base' }

@@ -197,10 +197,10 @@ card({ vars: { '--accent': 'crimson' } })
 
 ### options.style
 
-- **Type:** `style.Options['style']{:ts}`
+- **Type:** `style.Options<'html'>['style']{:ts}`
 - **Default:** `undefined{:ts}`
 
-Inline declarations, serialized after `options.vars`.
+Inline declarations, serialized after `options.vars`. Lengths need CSS units, so `padding: 24` is a type error.
 
 ```ts /style: { padding: '24px' }/
 // { class: 'z-card', style: '--accent:crimson;padding:24px' }

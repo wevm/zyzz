@@ -618,12 +618,12 @@ describe('defineConfig', () => {
               [
                 {
                   "batches": 0,
-                  "bindings": 1,
+                  "bindings": 0,
                   "writes": 0,
                 },
                 {
                   "batches": 0,
-                  "bindings": 1,
+                  "bindings": 0,
                   "writes": 0,
                 },
                 {
@@ -633,7 +633,7 @@ describe('defineConfig', () => {
                 },
                 {
                   "batches": 1,
-                  "bindings": 1,
+                  "bindings": 0,
                   "writes": 1,
                 },
                 {
@@ -643,12 +643,12 @@ describe('defineConfig', () => {
                 },
                 {
                   "batches": 2,
-                  "bindings": 1,
+                  "bindings": 0,
                   "writes": 2,
                 },
                 {
                   "batches": 2,
-                  "bindings": 1,
+                  "bindings": 0,
                   "writes": 2,
                 },
               ]
@@ -689,7 +689,7 @@ describe('defineConfig', () => {
             'rebound',
           ])
           expect(transitions.map((frame) => frame.native.bindings)).toEqual([
-            2, 2, 3,
+            0, 0, 0,
           ])
           expect(transitions.map((frame) => frame.releases)).toEqual([2, 2, 2])
           expect(transitionColors.map((frame) => frame.themed)).toEqual([
@@ -721,28 +721,23 @@ describe('defineConfig', () => {
             [
               {
                 "batches": 0,
-                "bindings": 3,
+                "bindings": 0,
                 "writes": 0,
               },
               {
                 "batches": 1,
-                "bindings": 3,
+                "bindings": 1,
                 "writes": 1,
               },
               {
                 "batches": 1,
-                "bindings": 3,
+                "bindings": 1,
                 "writes": 1,
               },
               {
                 "batches": 1,
-                "bindings": 3,
+                "bindings": 0,
                 "writes": 1,
-              },
-              {
-                "batches": 2,
-                "bindings": 3,
-                "writes": 2,
               },
               {
                 "batches": 2,
@@ -751,7 +746,12 @@ describe('defineConfig', () => {
               },
               {
                 "batches": 2,
-                "bindings": 3,
+                "bindings": 0,
+                "writes": 2,
+              },
+              {
+                "batches": 2,
+                "bindings": 0,
                 "writes": 2,
               },
             ]

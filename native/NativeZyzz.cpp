@@ -32,15 +32,10 @@ double NativeZyzz::attach(jsi::Runtime &runtime, jsi::Object node, jsi::Object p
     manager_->registerCommitHook(*this);
   }
 
-  double id;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    id = ++nextId_;
-    entries_.emplace(id, Entry{shadowNode->getFamilyShared(), values, values,
-                               folly::dynamic::object(), shadowNode->getProps(), nullptr});
-  }
-  // A React commit can restore its earlier rendered props before the ref relinks.
-  write({{shadowNode->getTag(), std::move(values)}});
+  std::lock_guard<std::mutex> lock(mutex_);
+  const auto id = ++nextId_;
+  entries_.emplace(id, Entry{shadowNode->getFamilyShared(), values, values,
+                             folly::dynamic::object(), shadowNode->getProps(), nullptr});
   return id;
 }
 

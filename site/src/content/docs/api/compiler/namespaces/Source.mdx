@@ -269,6 +269,17 @@ With `target: 'native'`, the `useVars` arguments in the module, each with its co
 output.nativeVars
 ```
 
+### themeExports
+
+- **Type:** `Readonly<Record<string, object>> | undefined{:ts}`
+
+The module's exported configs and bound helpers, which `Graph.compile` links into importing modules. It is set only during graph compilation and is absent from a direct call.
+
+```ts /output.themeExports/
+// undefined outside Graph.compile
+output.themeExports
+```
+
 ## Static Input
 
 Values must be literals the compiler can read. Module-level `const` bindings, object spreads, template literals with literal substitutions, fallback arrays, and ` !important` suffixes all resolve statically.

@@ -105,7 +105,7 @@ async function load<module>(code: string): Promise<module> {
   return (await import(file)) as module
 }
 
-describe('Source API page', () => {
+describe('Source.extract', () => {
   test('extracts the overview example', async () => {
     const module = await run<{
       css: string
@@ -133,6 +133,8 @@ describe('Source API page', () => {
     `)
     expect(module.output.themeCalls).toMatchInlineSnapshot(`[]`)
     expect(module.output.contributions).toMatchInlineSnapshot(`undefined`)
+    // Set only when Graph.compile extracts the module
+    expect(module.output.themeExports).toMatchInlineSnapshot(`undefined`)
   })
 
   test('returns portable identities without rewriting', async () => {
@@ -322,18 +324,6 @@ export function read() {
     `)
   })
 
-  test('rejects native output', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'app/Card.tsx',
-        source: '',
-        target: 'native',
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Use Native.compile for native source output.]`,
-    )
-  })
-
   test('resolves static input', async () => {
     const source = await example('namespaces/Source', 'Static Input')
     const output = Source.extract({ moduleId: 'app/Card.tsx', source })
@@ -387,7 +377,19 @@ export const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
   })
 })
 
-describe('Transform API page', () => {
+describe('Transform.compile', () => {
+  test('rejects native output', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'app/Card.tsx',
+        source: '',
+        target: 'native',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Use Native.compile for native source output.]`,
+    )
+  })
+
   test('compiles the overview example', async () => {
     const module = await run<{ output: Transform.compile.ReturnType }>(
       await example('namespaces/Transform'),
@@ -539,7 +541,40 @@ export const card = style({ padding: '1rem' })
   })
 })
 
-describe('Graph API page', () => {
+describe('Graph.compile', () => {
+  test('compiles the native graph output example', async () => {
+    const module = await run<{ output: Graph.compile.ReturnType }>(
+      await example('namespaces/Native', 'Graph Output'),
+    )
+
+    expect(module.output.modules['app/card.ts']?.code).toMatchInlineSnapshot(`
+      "
+      import {Native as __zyzzNative} from 'zyzz/runtime';
+
+
+
+
+      import { style } from 'zyzz'
+
+      export const card = (__zyzzNative.create({"axes":{},"defaults":{},"styles":{"0":{"opacity":0.5}}}) as import('zyzz/runtime').Native.Callable<{}>)
+      "
+    `)
+    expect(module.output.modules['app/card.ts']?.css).toMatchInlineSnapshot(
+      `""`,
+    )
+    expect(module.output.modules['app/card.ts']?.classes).toMatchInlineSnapshot(
+      `{}`,
+    )
+    expect(module.output.dependencies).toMatchInlineSnapshot(`
+      {
+        "app/card.ts": [],
+        "app/index.ts": [
+          "app/card.ts",
+        ],
+      }
+    `)
+  })
+
   test('links the overview example', async () => {
     const module = await run<{ output: Graph.compile.ReturnType }>(
       await example('namespaces/Graph'),
@@ -710,6 +745,46 @@ global({ body: { margin: 0 } })
     expect(output.modules['app/fonts.ts']?.css).toMatchInlineSnapshot(`""`)
   })
 
+  test('rejects circular imports and invalid contracts', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'a.ts': `import { b } from './b.js'
+export const a = b
+`,
+          'b.ts': `import { a } from './a.js'
+export const b = a
+`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: a.ts:0: Circular source dependencies are not supported yet.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        contracts: { 'library/index.js': '{"version":999}' },
+        imports: { 'app/Card.tsx': { library: 'library/index.js' } },
+        modules: {
+          'app/Card.tsx': `import { style } from 'library'
+export const card = style({ color: 'brand' })
+`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library/index.js:0: Invalid library contract: Unsupported Zyzz contract version.]`,
+    )
+  })
+
+  test('throws the documented error', async () => {
+    const modules = templates(await example('namespaces/Graph', 'Errors'))
+
+    expect(() => Graph.compile({ modules })).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app/Card.tsx:0: Missing source module: ./missing.js]`,
+    )
+  })
+})
+
+describe('Graph.create', () => {
   test('reuses unaffected results across snapshots', async () => {
     const modules = templates(await example('namespaces/Graph'))
     const compiler = Graph.create()
@@ -750,47 +825,9 @@ global({ body: { margin: 0 } })
       compiler.compile({ modules: edited }) === next,
     ).toMatchInlineSnapshot(`true`)
   })
-
-  test('rejects circular imports and invalid contracts', () => {
-    expect(() =>
-      Graph.compile({
-        modules: {
-          'a.ts': `import { b } from './b.js'
-export const a = b
-`,
-          'b.ts': `import { a } from './a.js'
-export const b = a
-`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: a.ts:0: Circular source dependencies are not supported yet.]`,
-    )
-    expect(() =>
-      Graph.compile({
-        contracts: { 'library/index.js': '{"version":999}' },
-        imports: { 'app/Card.tsx': { library: 'library/index.js' } },
-        modules: {
-          'app/Card.tsx': `import { style } from 'library'
-export const card = style({ color: 'brand' })
-`,
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: library/index.js:0: Invalid library contract: Unsupported Zyzz contract version.]`,
-    )
-  })
-
-  test('throws the documented error', async () => {
-    const modules = templates(await example('namespaces/Graph', 'Errors'))
-
-    expect(() => Graph.compile({ modules })).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app/Card.tsx:0: Missing source module: ./missing.js]`,
-    )
-  })
 })
 
-describe('Native API page', () => {
+describe('Native.compile', () => {
   test('compiles the overview example', async () => {
     const module = await run<{ output: Native.compile.ReturnType }>(
       await example('namespaces/Native'),
@@ -993,39 +1030,6 @@ export const label = style({ opacity: 0.5 })
     expect(() => module.bar({} as never)).toThrowErrorMatchingInlineSnapshot(
       `[Native.SelectionError: Missing or invalid native payload: alpha.]`,
     )
-  })
-
-  test('compiles the graph output example', async () => {
-    const module = await run<{ output: Graph.compile.ReturnType }>(
-      await example('namespaces/Native', 'Graph Output'),
-    )
-
-    expect(module.output.modules['app/card.ts']?.code).toMatchInlineSnapshot(`
-      "
-      import {Native as __zyzzNative} from 'zyzz/runtime';
-
-
-
-
-      import { style } from 'zyzz'
-
-      export const card = (__zyzzNative.create({"axes":{},"defaults":{},"styles":{"0":{"opacity":0.5}}}) as import('zyzz/runtime').Native.Callable<{}>)
-      "
-    `)
-    expect(module.output.modules['app/card.ts']?.css).toMatchInlineSnapshot(
-      `""`,
-    )
-    expect(module.output.modules['app/card.ts']?.classes).toMatchInlineSnapshot(
-      `{}`,
-    )
-    expect(module.output.dependencies).toMatchInlineSnapshot(`
-      {
-        "app/card.ts": [],
-        "app/index.ts": [
-          "app/card.ts",
-        ],
-      }
-    `)
   })
 
   test('throws the documented errors', async () => {

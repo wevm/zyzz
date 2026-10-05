@@ -54,7 +54,7 @@ Transform.compile({ moduleId: 'app/Card.tsx', source: text })
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Whether to rewrite authoring calls. With `false`, `code` is the unchanged source and `css` matches the classes that runtime `style` calls compute. Dynamic styles, variants, compositions, and variable sets then need explicit IDs, or the call throws.
+Whether to rewrite authoring calls. With `false`, `code` is the unchanged source and `css` matches the classes that runtime `style` calls compute. Each dynamic style, variant, composition, empty style, config, variable set, `variable` declaration, named stylesheet declaration, and selector reference then needs an explicit ID, or the call throws.
 
 ```ts /compiler: false/
 // Emits CSS while the calls run unchanged
@@ -147,12 +147,11 @@ export const card = __zyzzProps.create({
 
 The module's stylesheet, in authored order and compact form. Load it with the rewritten module.
 
+{/* prettier-ignore */}
 ```css
 /* [!code hl:2] */
 /* Output for the overview example */
-.z-p-1rem {
-  padding: 1rem;
-}
+.z-p-1rem{padding:1rem;}
 ```
 
 ### classes

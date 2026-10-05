@@ -218,8 +218,8 @@ describe('/docs', () => {
       expect(await vite.isVisible()).toMatchInlineSnapshot('false')
       await navigation.locator('summary', { hasText: 'Integrations' }).click()
       expect(await vite.isVisible()).toMatchInlineSnapshot('true')
-      expect(await vite.getAttribute('aria-disabled')).toMatchInlineSnapshot(
-        '"true"',
+      expect(await vite.getAttribute('href')).toMatchInlineSnapshot(
+        '"/docs/api/vite"',
       )
       expect(
         await navigation

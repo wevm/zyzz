@@ -11,15 +11,19 @@ import CodeIcon from '~icons/lucide/code'
 import CodeXmlIcon from '~icons/lucide/code-xml'
 import CombineIcon from '~icons/lucide/combine'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
+import EyeIcon from '~icons/lucide/eye'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
+import FolderCogIcon from '~icons/lucide/folder-cog'
 import GitBranchIcon from '~icons/lucide/git-branch'
 import GlobeIcon from '~icons/lucide/globe'
+import HammerIcon from '~icons/lucide/hammer'
 import LayersIcon from '~icons/lucide/layers'
 import ListIcon from '~icons/lucide/list'
 import ListOrderedIcon from '~icons/lucide/list-ordered'
+import LockOpenIcon from '~icons/lucide/lock-open'
 import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
 import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
@@ -29,6 +33,7 @@ import PanelsIcon from '~icons/lucide/panels-top-left'
 import PipetteIcon from '~icons/lucide/pipette'
 import PrinterIcon from '~icons/lucide/printer'
 import ScrollTextIcon from '~icons/lucide/scroll-text'
+import ServerIcon from '~icons/lucide/server'
 import Settings2Icon from '~icons/lucide/settings-2'
 import SettingsIcon from '~icons/lucide/settings'
 import SlidersIcon from '~icons/lucide/sliders-horizontal'
@@ -191,15 +196,19 @@ const icons = {
   'code-xml': CodeXmlIcon,
   combine: CombineIcon,
   'copy-plus': CopyPlusIcon,
+  eye: EyeIcon,
   'file-code': FileCodeIcon,
   'file-input': FileInputIcon,
   'file-type': FileTypeIcon,
   film: FilmIcon,
+  'folder-cog': FolderCogIcon,
   'git-branch': GitBranchIcon,
   globe: GlobeIcon,
+  hammer: HammerIcon,
   layers: LayersIcon,
   list: ListIcon,
   'list-ordered': ListOrderedIcon,
+  'lock-open': LockOpenIcon,
   'monitor-smartphone': MonitorSmartphoneIcon,
   next: NextIcon,
   package: PackageIcon,
@@ -212,6 +221,7 @@ const icons = {
   react: ReactIcon,
   rollup: RollupIcon,
   'scroll-text': ScrollTextIcon,
+  server: ServerIcon,
   settings: SettingsIcon,
   'settings-2': Settings2Icon,
   sliders: SlidersIcon,

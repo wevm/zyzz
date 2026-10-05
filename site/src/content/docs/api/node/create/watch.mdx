@@ -1,0 +1,120 @@
+# watch
+
+Rebuild after source or dependency changes, and report each build or failure.
+
+`watch` comes from [`Host.create`](/docs/api/node/create). It starts an initial build, then rebuilds whenever a watched path changes. Each build's result or error reaches `onResult` until the host closes.
+
+```ts title="scripts/watch.ts"
+import { once } from 'node:events'
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+// [!code hl:7]
+// Reports the initial build and every rebuild
+host.watch({
+  onResult: (event) => {
+    if ('error' in event) console.error(event.error)
+    else console.log(event.result.changed)
+  },
+})
+
+// Keeps the host open until the process receives SIGINT
+await once(process, 'SIGINT')
+```
+
+## Signature
+
+```ts
+// Starts watching and returns immediately
+host.watch(options)
+```
+
+## Parameters
+
+### options.onResult
+
+- **Type:** `(event: Host.Event) => void{:ts}`
+
+Receives `{ result }` after each successful build and `{ error }` after each failed build or watcher error. The callback must not throw.
+
+```ts
+host.watch({
+  onResult: (event) => {
+    // [!code hl:2]
+    // The output still holds the last successful build
+    if ('error' in event) return console.error(event.error)
+
+    console.log(event.result.files)
+  },
+})
+```
+
+## Returns
+
+- **Type:** `void{:ts}`
+
+`watch` returns before the initial build finishes, and that build reports through `onResult` like every later one.
+
+```ts /host.watch/
+// The first event carries the initial build
+host.watch({ onResult: (event) => console.log(event) })
+```
+
+## Watched Paths
+
+The host watches every directory under `root` except `node_modules`, `.git`, and the output directory. A directory created later joins the watch through the rebuild its creation triggers. Watching directories rather than files keeps working when an editor saves by replacing a file.
+
+```sh /Field.ts/
+# Adding a module triggers a build that publishes its output
+mkdir src/forms && echo "export const id = 'field'" > src/forms/Field.ts
+```
+
+Imports add the `package.json` files and `node_modules` directories that resolution searched, the resolved package directory, its entry, and the entry's `.zyzz.json` file. Polling every 250 ms catches removed packages, replaced files, and retargeted symbolic links.
+
+## Recovery
+
+A failed build reports `{ error }` and leaves the last successful output in place. The next change rebuilds, so correcting the source publishes normally. Several changes in quick succession can produce consecutive builds, and later ones report an empty `changed` list.
+
+```ts
+host.watch({
+  onResult: (event) => {
+    // [!code hl:2]
+    // Skips builds that published nothing new
+    if ('result' in event && event.result.changed.length === 0) return
+
+    console.log(event)
+  },
+})
+```
+
+A successful build stops watching paths it no longer reads. A failed build keeps them, so restoring a missing dependency triggers the next build. A dependency whose `.zyzz.json` file disappears fails the build rather than compiling as plain JavaScript.
+
+## Types
+
+- **`Host.Event{:ts}`:** `{ result: Host.Build }` or `{ error: unknown }`.
+- **`Host.watch.Options{:ts}`:** The accepted options.
+
+```ts title="log.ts"
+import type { Host } from 'zyzz/node'
+
+// [!code hl:2]
+// A reusable handler for several hosts
+export const log: Host.watch.Options['onResult'] = (event: Host.Event) => {
+  if ('error' in event) console.error(event.error)
+}
+```
+
+## Errors
+
+`watch` throws `Host is already watching.` when called twice on one host, and `Host is closed.` after [`close`](/docs/api/node/create/close). Build failures never throw from `watch`, since they reach `onResult`.
+
+```ts
+try {
+  host.watch({ onResult: (event) => console.log(event) })
+} catch (error) {
+  // [!code hl:2]
+  // The host already watches or has closed
+  console.error(error)
+}
+```

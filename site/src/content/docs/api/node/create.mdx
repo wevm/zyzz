@@ -1,0 +1,436 @@
+# Host.create
+
+Open a host that compiles a source directory into an owned output directory.
+
+The host scans `root` for TypeScript and JavaScript modules, compiles their styles, and publishes rewritten modules, stylesheets, and source maps to `outDir`. It holds an exclusive lock on the output until it closes.
+
+```ts title="scripts/build.ts"
+import { Host } from 'zyzz/node'
+
+// [!code hl:6]
+// Releases the output lock when the scope exits
+await using host = await Host.create({
+  outDir: 'dist',
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+## Signature
+
+```ts
+// A host for one source directory and one output directory
+await Host.create(options)
+```
+
+## Parameters
+
+### options.root
+
+- **Type:** `string{:ts}`
+
+The source directory, resolved from the working directory. Builds scan it recursively for `.js`, `.jsx`, `.ts`, and `.tsx` modules, including their `.mjs`, `.cjs`, `.mts`, and `.cts` forms.
+
+```ts /root: 'src'/
+// Compiles every module under src/
+Host.create({ packageId: 'my-app', root: 'src' })
+```
+
+Scans skip declaration files, `.test`, `.test-d`, and `.bench` modules, the output directory, and directories named `node_modules`, `.git`, `test`, `tests`, `__tests__`, `fixtures`, or `__fixtures__`.
+
+### options.packageId
+
+- **Type:** `string{:ts}`
+
+A stable package name that prefixes each module identity, such as `my-app/Card.tsx`. Generated class names derive from these identities. The ownership manifest records the ID, and a host with another ID rejects the existing output.
+
+```ts /packageId: 'my-app'/
+// Module identities start with my-app/
+Host.create({ packageId: 'my-app', root: 'src' })
+```
+
+### options.outDir
+
+- **Type:** `string{:ts}`
+- **Default:** `'dist'{:ts}`
+
+The output directory, resolved from the working directory and created when missing. It must not contain `root`, though it may sit inside `root`, and neither its path nor any output file's path may pass through a symbolic link. Another host cannot open it until this one closes.
+
+```ts /outDir: 'out'/
+// Publishes to out/ instead of dist/
+Host.create({ outDir: 'out', packageId: 'my-app', root: 'src' })
+```
+
+### options.css
+
+- **Type:** `false | { minify?: boolean; targets?: LightningCss.Targets }{:ts}`
+- **Default:** `{ minify: false }{:ts}`
+
+Processes each emitted stylesheet with Lightning CSS and composes its source map back to the authored source. `false` publishes the compiler's intermediate CSS for another processor. The host reads these options once, at creation.
+
+```ts /css: false/
+// Leaves stylesheet processing to a later build step
+Host.create({ css: false, packageId: 'my-app', root: 'src' })
+```
+
+### options.css.minify
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Minifies every generated stylesheet, including `zyzz.css`, and the source maps still point at the authored modules. CSS files copied through `importCss` publish unchanged.
+
+```ts
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  // [!code hl:2]
+  // Emits each rule on one line without whitespace
+  css: { minify: true },
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+### options.css.targets
+
+- **Type:** `LightningCss.Targets{:ts}`
+- **Default:** `{}{:ts}`
+
+Browser versions that control prefixing and syntax lowering. Each version is encoded as `(major << 16) | (minor << 8) | patch`. The host reads no Browserslist configuration, and targets never polyfill missing browser features.
+
+```ts
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  // [!code hl:2]
+  // Adds -webkit-user-select and lowers media range syntax
+  css: { targets: { safari: 15 << 16 } },
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+### options.external
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `[]{:ts}`
+
+Imports left unresolved for downstream tooling. A pattern matches an exact specifier, or a prefix when it ends in `*`. Other bare runtime imports must resolve, and external modules cannot supply compiled styles or variables.
+
+```ts
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  // [!code hl:2]
+  // Keeps virtual icon modules for the bundler
+  external: ['~icons/*'],
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+Type-only imports, imports of `zyzz` and its subpaths, Node built-ins such as `fs`, URL specifiers, and specifiers with a query are never resolved. `zyzz/default` resolves like any installed module.
+
+### options.script
+
+- **Type:** `string | false{:ts}`
+- **Default:** `'<outDir>/zyzz.js'{:ts}`
+
+The path of the initialization script that restores the set and color scheme each configuration saved, resolved from the working directory. It is written only when a configuration exists, and inside `outDir` it is then an owned output file listed in build results.
+
+```ts
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  packageId: 'my-app',
+  root: 'src',
+  // [!code hl:2]
+  // Writes the script where the bundler serves static files
+  script: 'public/zyzz.js',
+})
+
+await host.build()
+```
+
+A path outside `outDir` must not sit inside `root`, and `false` disables the script.
+
+Such a path is rewritten when its content changes and removed when no configuration remains. The host marks it with a leading `/* zyzz initialization */` comment, and refuses to replace a file at that path without one. Native builds emit no script.
+
+### options.compiler
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Rewrites style calls in the published modules. `false` publishes modules unchanged and still emits their CSS, so the runtime derives each class name itself.
+
+```ts /compiler: false/
+// Publishes source modules without rewriting their style calls
+Host.create({ compiler: false, packageId: 'my-app', root: 'src' })
+```
+
+These forms then need an explicit `id`:
+
+- **Variable sets:** `defineConfig` calls with variables, and `defineVars` sets outside a configuration.
+- **Dynamic definitions:** Dynamic styles, variants, and compositions.
+- **Declarations:** `variable` declarations and named stylesheet declarations such as `keyframes`.
+- **Selector targets:** Styles that other selectors reference.
+
+### options.modules
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Publishes rewritten modules, their source maps, and compiler metadata beside the stylesheets. `false` omits those three, for a pipeline that compiles the modules separately. Stylesheets, copied assets, and the initialization script still publish.
+
+```ts /modules: false/
+// Publishes stylesheets without rewritten modules
+Host.create({ modules: false, packageId: 'my-app', root: 'src' })
+```
+
+### options.native
+
+- **Type:** `{ colorScheme, contextual?, fonts?, platform?, set?, units?, vars? }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Compiles React Native modules instead of web output. Builds publish modules, source maps, and metadata, with no stylesheets or initialization script. The host copies the context at creation, and native builds require `compiler` and `modules`.
+
+```ts
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  // [!code hl:7]
+  // Compiles dark iOS tables with explicit font and rem mappings
+  native: {
+    colorScheme: 'dark',
+    fonts: { 'Inter, sans-serif': 'Inter-Regular' },
+    platform: 'ios',
+    units: { rem: 16 },
+  },
+  outDir: 'dist-native',
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+The platform stays fixed for the host's lifetime. Without `contextual`, the scheme and set are fixed too, so each additional context needs its own host and output directory.
+
+### options.native.colorScheme
+
+- **Type:** `'light' | 'dark'{:ts}`
+
+Without `contextual`, the scheme compiled into each callable. A contextual build keeps both schemes, and the `Provider` selects one while rendering. The host reads no device scheme.
+
+```ts /colorScheme: 'light'/
+// Without contextual, compiles the light value of every color pair
+native: {
+  colorScheme: 'light'
+}
+```
+
+### options.native.platform
+
+- **Type:** `'ios' | 'android'{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selects the platform branches applied after the shared `native` branch. Styles with `targets.ios` or `targets.android` fail to compile without it.
+
+```ts /platform: 'android'/
+// Applies targets.android branches
+native: { colorScheme: 'light', platform: 'android' }
+```
+
+### options.native.fonts
+
+- **Type:** `{ [family: string]: string }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Maps exact authored `fontFamily` text to an installed native font family. An authored family without a mapping fails to compile. Installing the font remains the application's job.
+
+```ts /fonts: { 'Inter, sans-serif': 'Inter-Regular' }/
+// Replaces the CSS font stack with one native family
+native: { colorScheme: 'light', fonts: { 'Inter, sans-serif': 'Inter-Regular' } }
+```
+
+### options.native.units
+
+- **Type:** `{ px?: number; rem?: number }{:ts}`
+- **Default:** `{ px: 1 }{:ts}`
+
+Positive scales that convert lengths to native logical units. `rem` has no default, so styles with `rem` lengths fail to compile without it.
+
+```ts /units: { rem: 16 }/
+// Converts 1rem to 16 logical units
+native: { colorScheme: 'light', units: { rem: 16 } }
+```
+
+### options.native.vars
+
+- **Type:** `{ [label: string]: Vars.Definition }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Fallback variable sets keyed by output label, for styles that no configuration binds. A style from a `defineConfig` helper resolves its tokens through that configuration's own sets instead. Without `vars`, a `default` table resolves each token to its authored fallback.
+
+```ts
+import { defineVars } from 'zyzz'
+import { Host } from 'zyzz/node'
+
+const brand = defineVars({
+  color: { ink: { dark: '#a8c7fa', light: '#0b57d0' } },
+})
+
+await using host = await Host.create({
+  // [!code hl:2]
+  // Supplies a brand set to styles that no configuration binds
+  native: { colorScheme: 'light', set: 'brand', vars: { brand } },
+  outDir: 'dist-native',
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+### options.native.set
+
+- **Type:** `string{:ts}`
+- **Default:** `'default'{:ts}`
+
+The label selected from `vars`. Without `contextual`, a label missing from the compiled tables fails with `StyleSheet.SelectionError`. A contextual build passes the label to the `Provider` as its default without checking it.
+
+```ts /set: 'brand'/
+// Selects the brand set from vars
+native: { colorScheme: 'light', set: 'brand', vars: { brand } }
+```
+
+### options.native.contextual
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Keeps every set and scheme in the published modules, so a native `Provider` selects them while rendering. Without it, each callable holds only the selected set and scheme.
+
+```ts /contextual: true/
+// Leaves the scheme choice to the Provider
+native: { colorScheme: 'light', contextual: true }
+```
+
+## Returns
+
+### build
+
+- **Type:** `() => Promise<Host.Build>{:ts}`
+
+[Builds and publishes](/docs/api/node/create/build) the source tree, and resolves with the changed and complete output files.
+
+```ts /host.build()/
+// Resolves with the build result
+const result = await host.build()
+```
+
+### watch
+
+- **Type:** `(options: Host.watch.Options) => void{:ts}`
+
+[Watches](/docs/api/node/create/watch) sources and installed dependencies, and reports each rebuild or failure.
+
+```ts /host.watch/
+// Logs every build and failure
+host.watch({ onResult: (event) => console.log(event) })
+```
+
+### close
+
+- **Type:** `() => Promise<void>{:ts}`
+
+[Stops watching](/docs/api/node/create/close), finishes queued builds, and releases the output lock.
+
+```ts /host.close()/
+// Releases the output lock
+await host.close()
+```
+
+### [Symbol.asyncDispose]
+
+- **Type:** `() => Promise<void>{:ts}`
+
+The same function as `close`, so an `await using` declaration closes the host when its scope exits, including after an error.
+
+```ts /await using/
+// Closes the host at the end of the enclosing block
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+```
+
+## Output Layout
+
+In a default web build, each source module publishes its rewritten module, a stylesheet, and their source maps under the same relative path. A module that exports styles, variables, or configuration also publishes compiler metadata. Rewritten modules stay TypeScript or JSX, so a later step transpiles them.
+
+```sh /zyzz.css/
+# Output for src/Button.tsx and src/zyzz.config.ts
+dist/Button.tsx
+dist/Button.tsx.css
+dist/Button.tsx.css.map
+dist/Button.tsx.map
+dist/Button.tsx.zyzz.json
+dist/zyzz.config.ts
+dist/zyzz.config.ts.css
+dist/zyzz.config.ts.css.map
+dist/zyzz.config.ts.map
+dist/zyzz.config.ts.zyzz.json
+dist/zyzz.css
+dist/zyzz.css.map
+dist/zyzz.js
+```
+
+`zyzz.css` holds every module stylesheet with dependencies before their consumers, so an application loads one file. Global contributions also publish `zyzz.shared.css`, which `zyzz.css` begins with. The `.zyzz.json` ownership manifest and the `.zyzz-lock` file stay out of build results.
+
+`modules: false` omits the rewritten modules, their maps, and metadata. Native builds omit every stylesheet and the initialization script.
+
+## Package Imports
+
+Bare imports resolve with the `node`, `import`, and `default` export conditions, including subpaths and `#imports`. An installed module supplies styles or variables through a `.zyzz.json` file beside its entry, which the host reads without running package code.
+
+```sh /theme.js.zyzz.json/
+# A published library keeps each metadata file beside its JavaScript entry
+node_modules/my-library/theme.js
+node_modules/my-library/theme.js.zyzz.json
+```
+
+A library that transpiles its published modules copies each metadata file to match, such as `theme.ts.zyzz.json` to `theme.js.zyzz.json`. TypeScript path aliases and browser or native conditions are not applied.
+
+## Types
+
+- **`Host.create.Options{:ts}`:** The accepted options.
+- **`Host.Runtime{:ts}`:** The returned host.
+
+```ts title="scripts/options.ts"
+import type { Host } from 'zyzz/node'
+
+// [!code hl:2]
+// Shares one options object between build and watch scripts
+export const options: Host.create.Options = { packageId: 'my-app', root: 'src' }
+```
+
+## Errors
+
+TypeScript rejects a missing `packageId` or `root`, and a native context without `colorScheme`.
+
+```ts twoslash
+// @errors: 2345
+import { Host } from 'zyzz/node'
+
+// `root` is required
+Host.create({ packageId: 'my-app' })
+```
+
+Creation rejects when `outDir` contains `root`, a `script` outside `outDir` sits inside `root`, an `external` pattern has a `*` before its end, or another host holds the output lock. Native contexts reject with `compiler` or `modules` set to `false`. The host throws plain `Error` instances and defines no error class.

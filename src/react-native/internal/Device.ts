@@ -27,7 +27,7 @@ export const Provider = dimensions(Subscription.Provider)
  * Compiler-inserted subscription for resolving native style applications.
  * Outside a Provider, selections use default variables, the light scheme, and window dimensions.
  */
-export function useStyles() {
+export function useStyles(): Subscription.useStyles.ReturnType {
   const owner = React.useContext(Store.context)
   const [fallback] = React.useState(() =>
     Store.create({
@@ -57,16 +57,36 @@ export function useStyles() {
 export { useVars } from '../react.js'
 
 /**
- * Resolves compiled style props for components using React updates.
- * @param Component - Function, class, or ref-forwarding component receiving native styles.
+ * Resolves compiled style props for function components using React updates.
+ * @param Component - Function, memo, or ref-forwarding component receiving native styles.
  * @param options - Additional style-bearing prop names.
- * @returns A component preserving the original props and ref.
- * @throws For invalid style prop names or unresolved native selections.
+ * @returns A component with the original call signature and ref. Type parameters remain when `styleProps` is omitted.
+ * @throws For invalid style prop names.
+ */
+export function withStyles<
+  props extends object,
+  result extends React.ReactNode,
+>(
+  Component: (props: props) => result,
+  options?: NoInfer<Subscription.withStyles.Options<(props: props) => result>>,
+): (props: props) => result
+/**
+ * Resolves compiled style props for class and host components using React updates.
+ * @param Component - Class component or host element type receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component preserving the original props and instance ref.
+ * @throws For invalid style prop names.
  */
 export function withStyles<const component extends React.ElementType>(
   Component: component,
-  options: Subscription.withStyles.Options<component> = {},
-) {
+  options?: Subscription.withStyles.Options<component>,
+): React.ForwardRefExoticComponent<React.ComponentPropsWithRef<component>>
+export function withStyles(
+  Component: React.ElementType,
+  options: Subscription.withStyles.Options<
+    (props: Readonly<Record<string, unknown>>) => React.ReactNode
+  > = {},
+): React.ElementType {
   return Styles.wrap(Component, options, useStyles)
 }
 

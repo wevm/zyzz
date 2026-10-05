@@ -1,10 +1,13 @@
 /** Resolves compiled style applications for consumers outside native view bindings. @module */
 import * as NativeContext from '../../runtime/NativeContext.js'
 import * as React from 'react'
+import type { useStyles } from '../react.js'
 import type * as Store from './Store.js'
 
 /** Subscribes to a selection and returns its style resolvers. */
-export function use(store: ReturnType<typeof Store.create>) {
+export function use(
+  store: ReturnType<typeof Store.create>,
+): useStyles.ReturnType {
   const value = React.useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
@@ -12,12 +15,12 @@ export function use(store: ReturnType<typeof Store.create>) {
   )
   return React.useMemo(
     () => ({
-      props: (props: Record<string, unknown> | null | undefined) =>
+      props: (props) =>
         props && Object.hasOwn(props, 'style')
           ? { ...props, style: NativeContext.resolve(props.style, value) }
           : props,
-      style: (style: unknown, input?: unknown) =>
-        NativeContext.resolve(style, value, input),
+      style: <style>(style: style, input?: unknown) =>
+        NativeContext.resolve(style, value, input) as useStyles.Style<style>,
     }),
     [value],
   )
@@ -30,7 +33,7 @@ export function use(store: ReturnType<typeof Store.create>) {
 export function wrap<const component extends React.ElementType>(
   Component: component,
   options: wrap.Options,
-  useStyles: () => ReturnType<typeof use>,
+  useStyles: () => useStyles.ReturnType,
 ) {
   const additional = options.styleProps ?? []
   if (

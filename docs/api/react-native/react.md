@@ -210,6 +210,22 @@ For a class JSX caller, declare the `withStyles` wrapper in the caller's module 
 
 Use [`zyzz/react-native/reanimated`](reanimated.md) for shared animation targets. When combining a compiled style with Reanimated-owned styles, wrap the animated component with `withStyles` so the wrapper resolves only the compiled bindings.
 
+### Generic Components
+
+Function, `memo`, and `forwardRef` wrappers keep the component's call signature, including declared ref unions such as Reanimated's animated refs. Class wrappers keep the instance ref type. A generic function component keeps its type parameters when `styleProps` is omitted.
+
+TypeScript carries type parameters only through a single signature, and React class components declare two constructors. Instantiate a generic class, such as `FlatList`, before wrapping it.
+
+```tsx
+import { FlatList } from 'react-native'
+import { withStyles } from 'zyzz/react-native'
+
+type Row = { readonly id: string }
+
+// Rows accepts FlatList<Row> props and a FlatList<Row> ref
+const Rows = withStyles(FlatList<Row>)
+```
+
 ## useStyles
 
 `useStyles()` returns `style(value)` and `props(props)` resolvers for `React.createElement`, imperative native APIs, and third-party consumers that inspect style objects outside compiled JSX. Call the hook inside a function component and resolve bindings before handing values to those consumers.
@@ -217,6 +233,21 @@ Use [`zyzz/react-native/reanimated`](reanimated.md) for shared animation targets
 ```tsx
 const current = useStyles()
 const selected = current.style(styles.label().style)
+```
+
+`style(value)` returns the type of its input. Native applications always carry a style, so an applied style resolves without `undefined` and is assignable to React Native style props and `ViewStyle` or `TextStyle` values. Native objects, arrays, and callbacks keep their types. `props(props)` returns the props type.
+
+```tsx
+import type { TextStyle, ViewStyle } from 'react-native'
+
+type ToastOptions = { style: ViewStyle; titleStyle: TextStyle }
+
+const current = useStyles()
+// Resolved styles satisfy typed style options without assertions
+const options: ToastOptions = {
+  style: current.style(styles.toast().style),
+  titleStyle: current.style(styles.title().style),
+}
 ```
 
 With Metro, `zyzz/react-native` requires React 19 and React Native 0.86 or later. The native package condition loads automatic window subscriptions. Portable compiler and web entrypoints keep device APIs outside their imports. The existing `zyzz/react-native/react` entrypoint remains available for `useStyles`, `useVars`, and the standalone `Provider`, which also reads native dimensions automatically.

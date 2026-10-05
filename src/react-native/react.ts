@@ -113,11 +113,35 @@ export declare namespace Provider {
  * Compiler-inserted subscription for resolving native style applications.
  * Outside a Provider, selections use default variables and the light scheme.
  */
-export function useStyles() {
+export function useStyles(): useStyles.ReturnType {
   const [fallback] = React.useState(() =>
     Store.create({ colorScheme: 'light' }),
   )
   return Styles.use(React.useContext(Store.context) ?? fallback)
+}
+
+/** Resolver types for Provider-selected native styles. */
+export declare namespace useStyles {
+  /** Resolvers bound to the nearest Provider selection. */
+  type ReturnType = {
+    /** Resolves the `style` prop of applied props and preserves other props. */
+    readonly props: <
+      props extends Readonly<Record<string, unknown>> | null | undefined,
+    >(
+      props: props,
+    ) => props
+    /** Resolves an applied style, native style, style array, or style callback. */
+    readonly style: <style>(style: style, input?: unknown) => Style<style>
+  }
+  /**
+   * Resolved style type. Caller-owned values keep their types. Native applications
+   * always carry `style`, so an applied style drops the `undefined` allowed by the shared props type.
+   */
+  type Style<style> = [
+    style extends object ? (string extends keyof style ? style : never) : never,
+  ] extends [never]
+    ? style
+    : Exclude<style, undefined>
 }
 
 /** Compiler fallback for native view bindings when no native adapter is installed. */
@@ -167,16 +191,36 @@ export function useVars(
 }
 
 /**
- * Resolves compiled style props for components using React updates.
- * @param Component - Function, class, or ref-forwarding component receiving native styles.
+ * Resolves compiled style props for function components using React updates.
+ * @param Component - Function, memo, or ref-forwarding component receiving native styles.
  * @param options - Additional style-bearing prop names.
- * @returns A component preserving the original props and ref.
- * @throws For invalid style prop names or unresolved native selections.
+ * @returns A component with the original call signature and ref. Type parameters remain when `styleProps` is omitted.
+ * @throws For invalid style prop names.
+ */
+export function withStyles<
+  props extends object,
+  result extends React.ReactNode,
+>(
+  Component: (props: props) => result,
+  options?: NoInfer<withStyles.Options<(props: props) => result>>,
+): (props: props) => result
+/**
+ * Resolves compiled style props for class and host components using React updates.
+ * @param Component - Class component or host element type receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component preserving the original props and instance ref.
+ * @throws For invalid style prop names.
  */
 export function withStyles<const component extends React.ElementType>(
   Component: component,
-  options: withStyles.Options<component> = {},
-) {
+  options?: withStyles.Options<component>,
+): React.ForwardRefExoticComponent<React.ComponentPropsWithRef<component>>
+export function withStyles(
+  Component: React.ElementType,
+  options: withStyles.Options<
+    (props: Readonly<Record<string, unknown>>) => React.ReactNode
+  > = {},
+): React.ElementType {
   return Styles.wrap(Component, options, useStyles)
 }
 

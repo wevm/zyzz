@@ -631,7 +631,7 @@ namespace styles {
 }
 ```
 
-Preserve animation timing, fill mode, iteration count, and reduced-motion behavior. Keep font loading and global CSS, or migrate them explicitly with [`fontFace`](../api/web/fontFace.md) and [`global`](../api/web/global.md).
+Preserve animation timing, fill mode, iteration count, and reduced-motion behavior. Keep font loading and global CSS, or migrate them explicitly with [`fontFace`](https://zyzz.sh/docs/api/web/fontFace) and [`global`](https://zyzz.sh/docs/api/web/global).
 
 ### Source And Packages
 

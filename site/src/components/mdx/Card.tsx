@@ -1,5 +1,9 @@
 /** Provides linked next-step cards and responsive card groups for MDX. @module */
 import type { ReactNode } from 'react'
+import ALargeSmallIcon from '~icons/lucide/a-large-small'
+import AnchorIcon from '~icons/lucide/anchor'
+import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
+import AtSignIcon from '~icons/lucide/at-sign'
 import BoxesIcon from '~icons/lucide/boxes'
 import BracesIcon from '~icons/lucide/braces'
 import CodeIcon from '~icons/lucide/code'
@@ -7,18 +11,28 @@ import CodeXmlIcon from '~icons/lucide/code-xml'
 import CombineIcon from '~icons/lucide/combine'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
 import FileCodeIcon from '~icons/lucide/file-code'
+import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
+import FilmIcon from '~icons/lucide/film'
 import GitBranchIcon from '~icons/lucide/git-branch'
+import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import ListIcon from '~icons/lucide/list'
+import ListOrderedIcon from '~icons/lucide/list-ordered'
+import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
 import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
+import PaintBucketIcon from '~icons/lucide/paint-bucket'
 import PaletteIcon from '~icons/lucide/palette'
 import PanelsIcon from '~icons/lucide/panels-top-left'
+import PipetteIcon from '~icons/lucide/pipette'
+import PrinterIcon from '~icons/lucide/printer'
+import ScrollTextIcon from '~icons/lucide/scroll-text'
 import Settings2Icon from '~icons/lucide/settings-2'
 import SettingsIcon from '~icons/lucide/settings'
 import SlidersIcon from '~icons/lucide/sliders-horizontal'
 import SmartphoneIcon from '~icons/lucide/smartphone'
+import SquareFunctionIcon from '~icons/lucide/square-function'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
 import TableIcon from '~icons/lucide/table'
@@ -165,6 +179,10 @@ namespace styles {
 }
 
 const icons = {
+  'a-large-small': ALargeSmallIcon,
+  anchor: AnchorIcon,
+  'arrow-left-right': ArrowLeftRightIcon,
+  'at-sign': AtSignIcon,
   boxes: BoxesIcon,
   braces: BracesIcon,
   code: CodeIcon,
@@ -172,21 +190,31 @@ const icons = {
   combine: CombineIcon,
   'copy-plus': CopyPlusIcon,
   'file-code': FileCodeIcon,
+  'file-input': FileInputIcon,
   'file-type': FileTypeIcon,
+  film: FilmIcon,
   'git-branch': GitBranchIcon,
+  globe: GlobeIcon,
   layers: LayersIcon,
   list: ListIcon,
+  'list-ordered': ListOrderedIcon,
+  'monitor-smartphone': MonitorSmartphoneIcon,
   next: NextIcon,
   package: PackageIcon,
+  'paint-bucket': PaintBucketIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
   panels: PanelsIcon,
+  pipette: PipetteIcon,
+  printer: PrinterIcon,
   react: ReactIcon,
   rollup: RollupIcon,
+  'scroll-text': ScrollTextIcon,
   settings: SettingsIcon,
   'settings-2': Settings2Icon,
   sliders: SlidersIcon,
   smartphone: SmartphoneIcon,
+  'square-function': SquareFunctionIcon,
   'sun-moon': SunMoonIcon,
   'swatch-book': SwatchBookIcon,
   table: TableIcon,

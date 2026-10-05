@@ -3,7 +3,7 @@ import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
-import * as Content from './Content.js'
+import * as Manifest from './Manifest.js'
 
 // Representation precedence follows wevm/vocs src/internal/markdown-negotiation.ts.
 const handle = createStartHandler(defaultStreamHandler)
@@ -16,8 +16,8 @@ export default {
       .slice('/docs/'.length)
       .replace(/\.md$/, '')
       .replace(/\/$/, '')
-    const page = Content.docs.pages[path]
-    if (!Object.hasOwn(Content.docs.pages, path) || !page)
+    const page = Manifest.pages[path]
+    if (!Object.hasOwn(Manifest.pages, path) || !page)
       return handle(request, options)
 
     const agent = request.headers.get('user-agent') ?? ''

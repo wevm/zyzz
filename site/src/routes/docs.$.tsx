@@ -4,7 +4,8 @@ import {
   notFound,
   type SearchSchemaInput,
 } from '@tanstack/react-router'
-import * as Content from '../Content.js'
+import * as Docs from '../Docs.js'
+import * as Manifest from '../Manifest.js'
 import { Page as DocsPage } from '../pages/Docs.js'
 
 export const Route = createFileRoute('/docs/$')({
@@ -14,12 +15,22 @@ export const Route = createFileRoute('/docs/$')({
       typeof search.framework === 'string' ? search.framework : undefined,
     mode: search.mode === 'custom' ? ('custom' as const) : ('default' as const),
   }),
-  loader: (entry) => {
+  loader: async (entry) => {
     const { params } = entry
 
     const path = (params._splat ?? '').replace(/\.md$/, '').replace(/\/$/, '')
-    if (!Object.hasOwn(Content.docs.pages, path)) throw notFound()
-    const { title, description } = Content.docs.pages[path]!
+    if (!Object.hasOwn(Manifest.pages, path)) throw notFound()
+    const { title, description } = Manifest.pages[path]!
+    // Rendering reads the loaded page synchronously during SSR and client navigation.
+    try {
+      await Docs.load(path)
+    } catch (error) {
+      // A deployment can replace the hashed chunk under an open tab, so a full load fetches the current assets.
+      if (typeof window !== 'undefined' && entry.cause !== 'preload')
+        window.location.assign(entry.location.href)
+      throw error
+    }
+
     return { path, title, description }
   },
   head: (entry) => {

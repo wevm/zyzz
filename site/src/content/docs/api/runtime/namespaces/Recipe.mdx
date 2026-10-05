@@ -1,0 +1,211 @@
+# Recipe
+
+Serialize finite variant selections as data attributes beside compiled class names.
+
+The compiler rewrites each [`variants`](/docs/api/core/variants) definition without conditions or dynamic choices into a `Recipe.create` call. Applications normally do not import it. The compiled rules match the returned `data-*` attributes, so a selection never adds a class.
+
+```ts title="button.ts"
+import { Recipe } from 'zyzz/runtime'
+
+// [!code hl:5]
+// Rules match `[data-size="small"]` and `[data-size="large"]`
+const button = Recipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  defaults: { size: 'small' },
+})
+
+// { className: 'z-button', 'data-size': 'large' }
+export const props = button({ size: 'large' })
+```
+
+## Signature
+
+```ts
+// Generated metadata for one variants definition
+Recipe.create(options)
+```
+
+## Parameters
+
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and its choices, in authored order. Boolean choices appear as `'true'` and `'false'`.
+
+```ts /axes: { size: ['small', 'large'] }/
+// One axis with two choices
+Recipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  defaults: {},
+})
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The complete generated class list, including every variant rule's class.
+
+```ts /className: 'z-button'/
+// Every selection returns the same class list
+Recipe.create({ axes: {}, className: 'z-button', defaults: {} })
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The choice used when an axis is omitted or `undefined`. An axis without a default stays unselected.
+
+```ts /defaults: { size: 'small' }/
+// An omitted size selects small
+Recipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  defaults: { size: 'small' },
+})
+```
+
+### options.html
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Return HTML attributes, with `class` and a serialized `style`, through [`Html.from`](/docs/api/runtime/namespaces/Html#htmlfrom). Configurations with `output: 'html'` set it.
+
+```ts /html: true/
+// { class: 'z-button', 'data-size': 'small' }
+Recipe.create({
+  axes: { size: ['small'] },
+  className: 'z-button',
+  defaults: { size: 'small' },
+  html: true,
+})()
+```
+
+## Application
+
+The returned callable accepts the [`variants`](/docs/api/core/variants#application) application options. Selections are not validated at runtime, since TypeScript and the compiler already check them.
+
+### options[axis]
+
+- **Type:** `string | boolean | null | undefined{:ts}`
+- **Default:** `options.defaults[axis]{:ts}`
+
+The selected choice. `null` clears the axis, overriding its default.
+
+```ts /size: null/
+// { className: 'z-button' }
+button({ size: null })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// { className: 'z-button wide', 'data-size': 'small' }
+button({ className: 'wide' })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments merged into a new `style` before `options.style`, as [`Props.create`](/docs/api/runtime/namespaces/Props#optionsvars) merges them.
+
+```ts /vars: { '--accent': 'crimson' }/
+// Adds style: { '--accent': 'crimson' }
+button({ vars: { '--accent': 'crimson' } })
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline overrides, copied after `options.vars`. Without `options.vars`, the returned `style` is the supplied object.
+
+```ts /style: { padding: '24px' }/
+// Adds style: { padding: '24px' }
+button({ style: { padding: '24px' } })
+```
+
+## Returns
+
+The declared return type is React props or `Html.Attributes`, whatever `options.html` is. Generated code casts the callable to `variants.ReturnType`, so direct TypeScript callers narrow with `'className' in props` before reading `className`.
+
+### className
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `options.className` when supplied. HTML output has `class` instead.
+
+```ts /props.className/
+// 'z-button'
+props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `options.html` is `true`, which returns no `className`.
+
+```ts /html: true/
+// { class: 'z-button' }
+Recipe.create({ axes: {}, className: 'z-button', defaults: {}, html: true })()
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+The selected choice of each axis, converted to a string. A cleared or unselected axis has no attribute.
+
+```ts /props['data-size']/
+// 'large'
+props['data-size']
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | string | undefined{:ts}`
+
+The merged inline styles, present only when the call supplies overrides. HTML output serializes it to a string.
+
+```ts /style/
+// { padding: '24px' }
+button({ style: { padding: '24px' } }).style
+```
+
+## Types
+
+- **`Recipe.create.Options{:ts}`:** The `{ axes, className, defaults, html? }` input.
+- **`Recipe.Definition{:ts}`:** Metadata shared with [`PayloadRecipe`](/docs/api/runtime/namespaces/PayloadRecipe), adding `conditions`, `defaultPayloads`, and `payloads`.
+- **`Recipe.Payload{:ts}`:** One dynamic choice, with its `axis`, `choice`, and ordered `slots`.
+
+```ts title="payload.ts"
+import type { Recipe } from 'zyzz/runtime'
+
+// [!code hl:2]
+// Base slots first, then one record per condition
+export const payload = {
+  axis: 'size',
+  choice: 'custom',
+  slots: [{ padding: '--size-padding' }, { padding: '--size-padding-wide' }],
+} satisfies Recipe.Payload
+```
+
+## Errors
+
+`Recipe.create` throws no errors and adds no runtime validation. Its own callable accepts any record, so an unknown choice serializes as given. A value that cannot convert to a string, such as `Object.create(null)`, throws a `TypeError`.
+
+Generated code casts the callable to `variants.ReturnType`, which is how TypeScript rejects unknown axes and choices.

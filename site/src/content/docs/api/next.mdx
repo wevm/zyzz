@@ -1,0 +1,111 @@
+# Next.js
+
+Wrap a Next.js configuration with style compilation and CSS delivery.
+
+The `zyzz` function from `zyzz/next` adds the same loader to Webpack and Turbopack, so both bundlers compile source and deliver CSS without a separate Babel or PostCSS setup. [Getting Started](/docs/introduction/getting-started?framework=nextjs) covers the setup.
+
+```ts title="next.config.ts"
+import { zyzz } from 'zyzz/next'
+
+// [!code hl:2]
+// Wraps the existing configuration
+export default zyzz({
+  reactStrictMode: true,
+})
+```
+
+## Signature
+
+```ts
+// Object, promise, or factory configuration
+zyzz(nextConfig, options?)
+```
+
+## Parameters
+
+### nextConfig
+
+- **Type:** `NextConfig | Promise<NextConfig> | zyzz.Factory{:ts}`
+
+The application's existing configuration, which is required. Pass `{}` when there is none. Its options, Turbopack rules, and `webpack` callback are preserved. A factory receives the Next.js phase and `{ defaultConfig }`.
+
+```ts title="next.config.ts"
+import { zyzz } from 'zyzz/next'
+
+// [!code hl:2]
+// The factory runs before the integration is attached
+export default zyzz((phase) => ({
+  distDir: phase === 'phase-production-build' ? 'build' : '.next',
+}))
+```
+
+### options.reset
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Adds the packaged [reset](/docs/guides/reset) through the active bundler's CSS delivery, in a `reset` layer ordered before authored layers. No stylesheet import is needed.
+
+```ts title="next.config.ts"
+import { zyzz } from 'zyzz/next'
+
+// [!code hl:2]
+// Prepends the reset layer to the delivered CSS
+export default zyzz({ reactStrictMode: true }, { reset: true })
+```
+
+## Returns
+
+### nextConfig
+
+- **Type:** `NextConfig | Promise<NextConfig> | zyzz.Factory{:ts}`
+
+A configuration of the same form as the input, with the Zyzz loader and a Lightning CSS exclusion that preserves `light-dark()`. Theme colors therefore need native `light-dark()` support in the [target browsers](/docs/introduction/compatibility#browsers). A factory or promise resolves before the integration is attached.
+
+```ts title="next.config.ts"
+import type { NextConfig } from 'next'
+import { zyzz } from 'zyzz/next'
+
+const nextConfig: NextConfig = { reactStrictMode: true }
+
+// [!code hl:2]
+// The object form returns an object
+export default zyzz(nextConfig)
+```
+
+## Compilation
+
+Each loader compiles its module and follows style and token imports through the active bundler's resolver, so aliases and package conditions apply. Only imported files contribute CSS, so import modules that declare global styles or fonts from an application entrypoint.
+
+```tsx title="app/layout.tsx"
+import type { ReactNode } from 'react'
+// [!code hl:2]
+// Imported for its global styles
+import './global.js'
+
+export default function Layout(props: Layout.Props) {
+  return (
+    <html lang="en">
+      <body>{props.children}</body>
+    </html>
+  )
+}
+
+export declare namespace Layout {
+  type Props = { children: ReactNode }
+}
+```
+
+Development emits stable stylesheets beneath `.zyzz/next`, so CSS updates in server components apply without a reload. Production emits content-addressed stylesheets. Fixtures verify Next.js 16.3.5 with both bundlers.
+
+## Errors
+
+Compilation and resolution errors are reported by the active bundler with their source locations, and fixing the source recompiles the module. File-system errors while preparing `.zyzz/next` are thrown while the configuration loads.
+
+```ts title="next.config.ts"
+import { zyzz } from 'zyzz/next'
+
+// [!code hl:2]
+// Creates .zyzz/next before either bundler starts
+export default zyzz({})
+```

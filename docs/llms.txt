@@ -68,10 +68,11 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [namespace](https://zyzz.sh/docs/api/web/namespace.md): Reference and examples.
 - [Css](https://zyzz.sh/docs/api/web/namespaces/Css.md): Reference and examples.
 - [At-Rule Contract](https://zyzz.sh/docs/api/web/at-rules.md): Reference.
-- [zyzz/vite](api/vite/README.md): Section index.
-- [zyzz](api/vite/zyzz.md): Vite plugin factory.
-- [zyzz/next](api/next/README.md): Section index.
-- [zyzz](api/next/zyzz.md): Next.js configuration wrapper.
+- [Vite](https://zyzz.sh/docs/api/vite.md): Vite plugin factory.
+- [Next.js](https://zyzz.sh/docs/api/next.md): Next.js configuration wrapper.
+- [Metro](https://zyzz.sh/docs/api/metro.md): Metro configuration wrapper.
+- [Unplugin](https://zyzz.sh/docs/api/unplugin.md): esbuild, Rollup, and Webpack plugins.
+- [Babel](https://zyzz.sh/docs/api/babel.md): Babel plugin for web and native compilation.
 - [zyzz/react-native](https://zyzz.sh/docs/api/react-native.md): Section index.
 - [defineConfig](https://zyzz.sh/docs/api/react-native/defineConfig.md): Reference and examples.
 - [Provider](https://zyzz.sh/docs/api/react-native/Provider.md): Reference and examples.
@@ -84,7 +85,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Variants](https://zyzz.sh/docs/api/react-native/namespaces/Variants.md): Reference and examples.
 - [Host](https://zyzz.sh/docs/api/react-native/namespaces/Host.md): Reference and examples.
 - [Values](https://zyzz.sh/docs/api/react-native/values.md): Reference and examples.
-- [CLI](api/cli.md): Reference and examples.
+- [CLI](https://zyzz.sh/docs/api/cli.md): Reference and examples.
 - [zyzz/compiler](api/compiler/README.md): Section index.
 - [Graph](api/compiler/Graph/README.md): Source graph compilation.
 - [Graph.compile](api/compiler/Graph/compile.md): Linked modules, CSS, and maps.

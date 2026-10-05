@@ -2,7 +2,7 @@
 
 Compile shared style authoring into native callables for one color scheme.
 
-`Native.compile` rewrites a module's `style`, `variants`, and `cx` authoring into callables that return React Native `style` props, and `useVars` arguments into precompiled token profiles. Token references and units resolve at compile time, so the callables only select precompiled fragments and bind runtime values. The Babel integration calls it per module, and graph builds call it through `Graph.compile`.
+`Native.compile` rewrites a module's `style`, `variants`, and `cx` authoring into callables that return React Native `style` props, and `useVars` arguments into token profiles. Tokens and units resolve at compile time, so callables only select precompiled fragments and bind runtime values. Babel and `Graph.compile` call it per module.
 
 ```ts title="native.ts"
 import { Native } from 'zyzz/compiler'

@@ -39,7 +39,7 @@ async function examples(page: string, heading?: string | undefined) {
     heading === undefined
       ? document
       : document
-          .split(/^#{2,3} /m)
+          .split(/^#{2,4} /m)
           .find((entry) => entry.startsWith(`${heading}\n`))
   if (section === undefined)
     throw new Error(`${page} has no ${heading} section.`)
@@ -232,6 +232,52 @@ global({ body: { margin: 0 } })
           "variable": true,
         },
       }
+    `)
+  })
+
+  test('aligns contribution starts and names named factories', () => {
+    const source = `import { global, keyframes } from 'zyzz/web'
+global({ body: { margin: 0 }, html: { color: 'red' } })
+export const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
+`
+
+    const output = Source.extract({ moduleId: 'app/g.ts', source })
+
+    expect(output.contributions?.map((entry) => entry.kind))
+      .toMatchInlineSnapshot(`
+      [
+        "rule",
+        "rule",
+        "keyframes",
+      ]
+    `)
+    expect(output.contributionStarts).toMatchInlineSnapshot(`
+      [
+        45,
+        45,
+        121,
+      ]
+    `)
+    expect(output.contributionCalls?.map((call) => [call.kind, call.name]))
+      .toMatchInlineSnapshot(`
+      [
+        [
+          "global",
+          undefined,
+        ],
+        [
+          "keyframes",
+          "z-k-spin",
+        ],
+      ]
+    `)
+
+    expect(Transform.compile({ moduleId: 'app/g.ts', source }).code)
+      .toMatchInlineSnapshot(`
+      "
+      void 0
+      export const spin = "z-k-spin"
+      "
     `)
   })
 
@@ -697,6 +743,68 @@ export const vars = defineVars({ spacing: { gap: '4px' } })
     })
 
     expect(output.contracts).toMatchInlineSnapshot(`{}`)
+  })
+
+  test('emits contracts for private appearance and script reads', () => {
+    const output = Graph.compile({
+      modules: {
+        'app/a.ts': `import { defineConfig } from 'zyzz'
+const { appearance } = defineConfig({ vars: { color: { brand: { light: '#000', dark: '#fff' } } } })
+const props = appearance('dark')
+export const size = 1
+`,
+        'app/b.ts': `import { defineConfig } from 'zyzz'
+const { script } = defineConfig({ vars: { color: { brand: '#000' } } })
+script()
+export const size = 2
+`,
+      },
+    })
+
+    expect(Object.keys(output.contracts)).toMatchInlineSnapshot(`
+      [
+        "app/a.ts",
+        "app/b.ts",
+      ]
+    `)
+  })
+
+  test('rejects relative and nonliteral dynamic imports', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app/a.ts': `export const load = () => import('./lazy.js')
+`,
+          'app/lazy.ts': `export const size = 1
+`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app/a.ts:26: Source graph dependencies require static imports.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app/a.ts': `export const load = (path: string) => import(path)
+`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app/a.ts:38: Source graph dependencies require static imports.]`,
+    )
+
+    const output = Graph.compile({
+      modules: {
+        'app/a.ts': `export const load = () => import('react')
+`,
+      },
+    })
+
+    expect(output.dependencies).toMatchInlineSnapshot(`
+      {
+        "app/a.ts": [],
+      }
+    `)
   })
 
   test('needs no host resolution for type-only imports', () => {

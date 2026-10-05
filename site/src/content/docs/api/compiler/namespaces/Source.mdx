@@ -183,12 +183,12 @@ output.variableCalls
 
 ### contributionCalls
 
-- **Type:** `readonly { argument: object; end: number; kind: string; start: number }[] | undefined{:ts}`
+- **Type:** `readonly { argument: object; end: number; function?: object; kind: string; name?: string; start: number }[] | undefined{:ts}`
 
-The span, function name, and argument AST node of each contribution call, such as `'global'` or `'namespace'`. A rewriter removes these calls, since their CSS is emitted ahead of time.
+The span, function name, and argument AST node of each contribution call, such as `'global'` or `'keyframes'`. A rewriter removes unnamed calls. Named factories, such as `keyframes`, carry their generated `name`, which replaces the call, and `cssFunction` calls add a `function` signature.
 
 ```ts /output.contributionCalls/
-// [{ kind: 'global', start: …, end: … }]
+// [{ kind: 'keyframes', name: 'z-k-spin', start: …, end: … }]
 output.contributionCalls
 ```
 
@@ -196,10 +196,10 @@ output.contributionCalls
 
 - **Type:** `readonly number[] | undefined{:ts}`
 
-The start offset of each contribution call, in source order.
+The start offset of the call behind each entry in `contributions`, aligned by index. A call that emits several rules, such as a `global` with two selectors, repeats its offset.
 
 ```ts /output.contributionStarts/
-// One offset per global, fontFace, keyframes, or other contribution
+// [45, 45, 121] for a two-selector global and one keyframes call
 output.contributionStarts
 ```
 

@@ -281,6 +281,31 @@ export const spin = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
     `)
   })
 
+  test('omits offsets for config layer contributions', () => {
+    const output = Source.extract({
+      moduleId: 'app/config.ts',
+      source: `import { defineConfig } from 'zyzz'
+import { global } from 'zyzz/web'
+const { style } = defineConfig({ layers: ['base', 'components'] })
+global({ body: { margin: 0 } })
+export const card = style({ color: 'red' })
+`,
+    })
+
+    expect(output.contributions?.map((entry) => entry.kind))
+      .toMatchInlineSnapshot(`
+      [
+        "rule",
+        "layers",
+      ]
+    `)
+    expect(output.contributionStarts).toMatchInlineSnapshot(`
+      [
+        137,
+      ]
+    `)
+  })
+
   test('returns contribution, namespace, and config helper fields', () => {
     const output = Source.extract({
       moduleId: 'app/theme.tsx',

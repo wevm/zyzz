@@ -196,7 +196,7 @@ output.contributionCalls
 
 - **Type:** `readonly number[] | undefined{:ts}`
 
-The start offset of the call behind each entry in `contributions`, aligned by index. A call that emits several rules, such as a `global` with two selectors, repeats its offset.
+The start offset of the call behind each entry in `contributions`, aligned by index. A call that emits several rules, such as a `global` with two selectors, repeats its offset. Layer orders from a config's `layers` option come last and have no offset.
 
 ```ts /output.contributionStarts/
 // [45, 45, 121] for a two-selector global and one keyframes call

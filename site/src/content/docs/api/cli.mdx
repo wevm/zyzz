@@ -1,0 +1,206 @@
+# CLI
+
+Compile a source tree into rewritten modules, CSS, source maps, and packed contracts.
+
+The `zyzz` binary compiles without a bundler or configuration file. Source imports provide configured authoring helpers, and downstream tooling lowers TypeScript and JSX. [Getting Started](/docs/introduction/getting-started?framework=cli) covers the setup.
+
+```sh
+# [!code hl:2]
+# Compiles src into dist once
+npx zyzz build
+```
+
+## Signature
+
+```sh
+# Compile once, or compile and watch
+zyzz build [src] [options]
+zyzz dev [src] [options]
+```
+
+Both commands accept the same argument and options. Paths resolve from the working directory.
+
+## Commands
+
+### build
+
+Compiles once and publishes the output. A missing source directory or compilation error exits with a nonzero status.
+
+```sh /build/
+# Compiles app into build
+npx zyzz build app --out-dir build
+```
+
+### dev
+
+Compiles immediately, then rebuilds after changes within the source tree. A compilation error keeps the last successful output, and the next valid edit recovers. `Ctrl-C` and `SIGTERM` stop watching after pending output is published.
+
+```sh /dev/
+# Rebuilds dist after each source change
+npx zyzz dev
+```
+
+## Arguments
+
+### src
+
+- **Type:** `string{:ts}`
+- **Default:** `'src'{:ts}`
+
+The authored JavaScript and TypeScript module tree. The output directory is excluded from discovery.
+
+```sh /app/
+# Compiles the app directory
+npx zyzz build app
+```
+
+## Options
+
+### --color-scheme
+
+- **Type:** `'light' | 'dark'{:ts}`
+
+The scheme compiled into native output. It is required with `--target native` and rejected for web builds.
+
+```sh /--color-scheme dark/
+# Compiles native tables with dark values
+npx zyzz build --target native --color-scheme dark
+```
+
+### --css-only
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Emits CSS, CSS maps, and the initialization script without transformed modules or packed contracts. The original source runs as authored, so identity-bearing declarations need explicit identities.
+
+```sh /--css-only/
+# Emits only stylesheets for source that runs uncompiled
+npx zyzz build --css-only
+```
+
+### --external
+
+- **Type:** `readonly string[]{:ts}`
+
+Imports left in emitted modules without resolution, matched by exact name or by a prefix ending in `*`. Repeat the flag for several patterns, and quote prefixes to prevent shell expansion. Externals cannot supply compiled styles or themes.
+
+```sh /--external/
+# Leaves virtual icon imports to a downstream plugin
+npx zyzz build --external '~icons/*' --external framework-config
+```
+
+Any other unresolved bare import fails the build.
+
+### --minify
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Minifies emitted CSS with Lightning CSS. Browser syntax is otherwise preserved without compatibility targets.
+
+```sh /--minify/
+# Emits minified stylesheets
+npx zyzz build --minify
+```
+
+### --out-dir
+
+- **Type:** `string{:ts}`
+- **Default:** `'dist'{:ts}`
+
+The output directory, which has one active writer at a time. Cleanup removes only unchanged files that a previous build emitted, leaving unrelated files in place.
+
+```sh /--out-dir build/
+# Writes output to build
+npx zyzz build --out-dir build
+```
+
+### --package-id
+
+- **Type:** `string{:ts}`
+- **Default:** `package.json` name, otherwise `'app'{:ts}`
+
+The stable package identity that compiled module IDs, class names, and source maps derive from. It defaults to the `name` in the working directory's `package.json`.
+
+```sh /--package-id my-library/
+# Names compiled modules after the published package
+npx zyzz build --package-id my-library
+```
+
+### --platform
+
+- **Type:** `'ios' | 'android'{:ts}`
+
+The native platform for platform branches, required when styles author them. It is rejected for web builds.
+
+```sh /--platform ios/
+# Compiles iOS branches
+npx zyzz build --target native --color-scheme light --platform ios
+```
+
+### --script
+
+- **Type:** `string{:ts}`
+- **Default:** `'<out-dir>/zyzz.js'{:ts}`
+
+The path of the initialization script. Outside the output directory, the CLI replaces only a file that starts with its `/* zyzz initialization */` comment, such as one in a public directory.
+
+```sh /--script/
+# Writes the script where the dev server serves it
+npx zyzz dev --script public/zyzz.js
+```
+
+### --target
+
+- **Type:** `'web' | 'native'{:ts}`
+- **Default:** `'web'{:ts}`
+
+The compilation target. See [React Native](#react-native) for native output.
+
+```sh /--target native/
+# Compiles native modules instead of CSS
+npx zyzz build --target native --color-scheme light
+```
+
+## Output
+
+For `src/button.ts`, the CLI emits `dist/button.ts` with its source map, `button.ts.css` with its map, and the packed `button.ts.zyzz.json` contract. Global contributions also produce `zyzz.shared.css`. The complete `zyzz.css` holds shared contributions, then every module stylesheet with dependencies first.
+
+```html title="index.html"
+<!-- [!code hl:3] -->
+<!-- Restores saved selections, then loads the complete stylesheet -->
+<script src="/dist/zyzz.js"></script>
+<link rel="stylesheet" href="/dist/zyzz.css" />
+```
+
+Applications load `zyzz.css`, and libraries can publish the per-module files beside their modules. A configuration whose module uses `appearance`, `script`, or `vars` also produces `zyzz.js`, a classic script for the start of the `<head>` that restores the saved variable set and color scheme.
+
+## Structured Output
+
+`--json` prints the build result with its `changed` and `files` lists. `zyzz dev --format jsonl` streams one event per rebuild, with `status: 'built'` and those lists, or `status: 'error'` and a message.
+
+```sh /--format jsonl/
+# Streams build and error events as JSON lines
+npx zyzz dev --format jsonl
+```
+
+## Errors
+
+A build fails when the source directory is missing, when an option conflicts with the target, or when compilation fails. The message names the source location where one applies.
+
+```sh /--platform ios/
+# Rejected because --platform requires --target native
+npx zyzz build --platform ios
+```
+
+The CLI compiles a closed source tree and does not resolve installed package contracts. Projects with source-free Zyzz dependencies compile through a bundler integration such as [Vite](/docs/api/vite).
+
+## React Native
+
+`--target native` emits modules, maps, and packed contracts without CSS or an initialization script, so `--css-only` and `--script` are rejected. The color scheme and platform stay fixed for a watch session.
+
+```sh /--target native/
+# Watches and compiles dark Android tables
+npx zyzz dev --target native --color-scheme dark --platform android
+```

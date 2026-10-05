@@ -1,0 +1,200 @@
+# Babel
+
+Compile literal style definitions for web or native inside a Babel pipeline.
+
+The `zyzz` plugin from `zyzz/babel` rewrites authoring calls before the application's presets lower TypeScript and JSX. Web transforms return CSS on Babel's result metadata, and native transforms emit executable style tables. It requires Babel 7.
+
+```ts title="build.ts"
+import { transformSync } from '@babel/core'
+import { zyzz } from 'zyzz/babel'
+
+const source =
+  "import { style } from 'zyzz'\nexport const card = style({ color: 'red' })"
+
+const result = transformSync(source, {
+  filename: 'src/styles.ts',
+  // [!code hl:2]
+  // Runs before the TypeScript preset
+  plugins: [[zyzz, { target: 'web' }]],
+  presets: ['@babel/preset-typescript'],
+})
+```
+
+## Signature
+
+```ts
+// Babel plugin entries
+;[zyzz, { target: 'web', ...options }][
+  (zyzz, { target: 'native', platform, ...options })
+]
+```
+
+The options accept either the web or native branch, exported as `WebOptions{:ts}` and `NativeOptions{:ts}` and joined as `Options{:ts}`.
+
+## Parameters
+
+### options.target
+
+- **Type:** `'web' | 'native'{:ts}`
+- **Default:** `'native'{:ts}`
+
+Selects the compiler. Web output includes CSS metadata, and native output contains style tables. Omitting `target` selects native compilation for existing configurations.
+
+```ts
+// [!code hl:2]
+// Emits rewritten JavaScript and CSS metadata
+const plugins = [[zyzz, { target: 'web' }]]
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+Web only. Atomic output emits one class per declaration, and grouped output emits one class per definition. The [CSS Output](/docs/guides/css-output) guide compares them.
+
+```ts
+// [!code hl:2]
+// One rule per definition
+const plugins = [[zyzz, { cssOutput: 'grouped', target: 'web' }]]
+```
+
+### options.moduleId
+
+- **Type:** `string{:ts}`
+
+The portable identity used for class names and stylesheet ownership. Web transforms default to the filename relative to Babel's `root`. Files outside that root need an explicit stable, package-relative ID without traversal segments.
+
+```ts
+// [!code hl:2]
+// Names a module outside Babel's root
+const plugins = [[zyzz, { moduleId: 'ui/Button.ts', target: 'web' }]]
+```
+
+### options.reset
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Web only. Adds `import 'zyzz/reset.css'` to each transformed module that does not already import it. The consuming bundler must support CSS imports.
+
+```ts
+// [!code hl:2]
+// Imports the reset from each compiled module
+const plugins = [[zyzz, { reset: true, target: 'web' }]]
+```
+
+### options.platform
+
+- **Type:** `'ios' | 'android'{:ts}`
+
+Native only, and required. Selects platform branches in native output.
+
+```ts
+// [!code hl:2]
+// Compiles iOS tables
+const plugins = [[zyzz, { platform: 'ios', target: 'native' }]]
+```
+
+### options.colorScheme
+
+- **Type:** `'light' | 'dark'{:ts}`
+
+Native only. Fixes the scheme at build time. Without it, both schemes compile and the [React provider](/docs/guides/native/themes) selects one at runtime.
+
+```ts
+// [!code hl:2]
+// Compiles only dark values
+const plugins = [[zyzz, { colorScheme: 'dark', platform: 'ios' }]]
+```
+
+### options.fonts
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+Native only. Maps exact authored `fontFamily` strings to registered native family names, and an unmapped family fails compilation. The application loads the fonts.
+
+```ts
+// [!code hl:2]
+// Authored `fontFamily: 'Pilat, Arial, sans-serif'` renders with Pilat
+const fonts = { 'Pilat, Arial, sans-serif': 'Pilat' }
+const plugins = [[zyzz, { fonts, platform: 'ios' }]]
+```
+
+### options.units
+
+- **Type:** `{ px?: number, rem?: number }{:ts}`
+- **Default:** `{ px: 1 }{:ts}`
+
+Native only. Positive scales that convert authored lengths to logical units. `rem` lengths fail compilation without a `rem` scale.
+
+```ts
+// [!code hl:2]
+// `1rem` compiles to 16 logical units
+const plugins = [[zyzz, { platform: 'ios', units: { rem: 16 } }]]
+```
+
+## Returns
+
+### metadata.zyzz
+
+- **Type:** `WebMetadata | undefined{:ts}`
+
+Web transforms set `css`, `cssMap`, and `moduleId` on `result.metadata.zyzz`. The build writes and loads the CSS, keeps stylesheet order, and resolves relative URLs against the source module. Absent metadata or empty CSS removes the module's previous stylesheet.
+
+```ts title="build.ts"
+import { transformSync } from '@babel/core'
+import { zyzz } from 'zyzz/babel'
+
+const source =
+  "import { style } from 'zyzz'\nexport const card = style({ color: 'red' })"
+const result = transformSync(source, {
+  filename: 'src/styles.ts',
+  plugins: [[zyzz, { target: 'web' }]],
+})
+
+// [!code hl:2]
+// The build owns writing this stylesheet
+const css = result?.metadata?.zyzz?.css
+```
+
+Babel's JavaScript map and `cssMap` are separate, and both point to the authored source. Native transforms and ordinary modules have no `metadata.zyzz`.
+
+## Errors
+
+Authoring modules require a filename, and unsupported target semantics fail compilation.
+
+Babel compiles one module at a time, so a configuration must stay local to its module, and `Config` imports, `zyzz/default`, and re-exported authoring helpers are rejected. [Metro](/docs/api/metro) supplies the module graph that shared configurations need.
+
+```ts title="build.ts"
+import { transformSync } from '@babel/core'
+import { zyzz } from 'zyzz/babel'
+
+// [!code hl:3]
+// Throws because an exported configuration needs a module graph
+const source =
+  "import { defineConfig } from 'zyzz'\nexport const { style } = defineConfig({})"
+transformSync(source, {
+  filename: 'src/config.ts',
+  plugins: [[zyzz, { target: 'web' }]],
+})
+```
+
+## React Native
+
+Native output contains style tables and bindings, without CSS. Shared `lineHeight` numbers multiply the font size, while values inside native target branches stay absolute. Expo projects use [Metro](/docs/api/metro), which selects the platform and chains the transformer.
+
+```ts title="build.ts"
+import { transformSync } from '@babel/core'
+import { zyzz } from 'zyzz/babel'
+
+const source =
+  "import { style } from 'zyzz'\nexport const title = style({ fontSize: '1rem' })"
+const result = transformSync(source, {
+  filename: 'Styles.ts',
+  // [!code hl:2]
+  // Compiles iOS tables for both schemes
+  plugins: [[zyzz, { platform: 'ios', target: 'native', units: { rem: 16 } }]],
+  presets: ['babel-preset-expo'],
+})
+```

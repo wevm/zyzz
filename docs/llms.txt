@@ -56,15 +56,16 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [fontFace](api/web/fontFace.md): Reference and examples.
 - [global](api/web/global.md): Reference and examples.
 - [keyframes](api/web/keyframes.md): Reference and examples.
-- [zyzz/vite](api/vite/README.md): Section index.
-- [zyzz](api/vite/zyzz.md): Vite plugin factory.
-- [zyzz/next](api/next/README.md): Section index.
-- [zyzz](api/next/zyzz.md): Next.js configuration wrapper.
+- [Vite](https://zyzz.sh/docs/api/vite.md): Vite plugin factory.
+- [Next.js](https://zyzz.sh/docs/api/next.md): Next.js configuration wrapper.
+- [Metro](https://zyzz.sh/docs/api/metro.md): Metro configuration wrapper.
+- [Unplugin](https://zyzz.sh/docs/api/unplugin.md): esbuild, Rollup, and Webpack plugins.
+- [Babel](https://zyzz.sh/docs/api/babel.md): Babel plugin for web and native compilation.
 - [zyzz/react-native](api/react-native/README.md): Section index.
 - [StyleSheet](api/react-native/StyleSheet/README.md): Section index.
 - [StyleSheet.compile](api/react-native/StyleSheet/compile.md): Reference and examples.
 - [StyleSheet.select](api/react-native/StyleSheet/select.md): Reference and examples.
-- [CLI](api/cli.md): Reference and examples.
+- [CLI](https://zyzz.sh/docs/api/cli.md): Reference and examples.
 - [zyzz/compiler](api/compiler/README.md): Section index.
 - [Graph](api/compiler/Graph/README.md): Source graph compilation.
 - [Graph.compile](api/compiler/Graph/compile.md): Linked modules, CSS, and maps.

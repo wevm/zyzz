@@ -1,0 +1,172 @@
+# Vite
+
+Compile styles and deliver their CSS through Vite's module graph.
+
+The `zyzz` plugin from `zyzz/vite` statically compiles physical source within the Vite root and serves the emitted CSS in development and builds. Vite keeps ownership of resolution, transpilation, CSS processing, and HMR. [Getting Started](/docs/introduction/getting-started) covers the setup.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Compiles source modules and delivers their CSS
+  plugins: [zyzz()],
+})
+```
+
+## Signature
+
+```ts
+// Creates a Vite 8 plugin
+zyzz(options?)
+```
+
+## Parameters
+
+### options.compiler
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Rewrites authoring calls into compiled props. With `false`, the plugin still extracts and delivers CSS but keeps the authored calls, so variable sets, variants, dynamic definitions, and named stylesheet declarations need explicit identities.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Keeps authored calls in the emitted JavaScript
+  plugins: [zyzz({ compiler: false })],
+})
+```
+
+### options.include
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `[]{:ts}`
+
+Additional source directories compiled alongside the Vite root, absolute or relative to it. Their modules take part in CSS delivery, initialization scripts, source maps, and hot updates. Nested `node_modules`, build output, and test directories stay excluded.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Compiles a linked workspace package's source
+  plugins: [zyzz({ include: ['../library/src'] })],
+})
+```
+
+Each path must name an existing directory, and symlinks resolve to their physical paths. Exclude linked authoring packages from dependency optimization, and allow directories outside the workspace through `server.fs.allow`.
+
+### options.native
+
+- **Type:** `Graph.compile.Options['native']{:ts}`
+
+Compiles native modules instead of web CSS. The context is captured when the plugin is created, so changing it requires a restart. Native output has no CSS delivery or initialization scripts, and requires source compilation.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Compiles native style tables for a dark iOS build
+  plugins: [zyzz({ native: { colorScheme: 'dark', platform: 'ios' } })],
+})
+```
+
+### options.reset
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Adds the packaged [reset](/docs/guides/reset) to the shared CSS, in a `reset` layer ordered before authored layers. No stylesheet import is needed.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Prepends the reset layer to the delivered CSS
+  plugins: [zyzz({ reset: true })],
+})
+```
+
+### options.script
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Inlines the [initialization script](/docs/api/core/defineConfig/script) of each configuration whose module uses `appearance`, `script`, or `vars` at the start of the `<head>` in `index.html`. Saved variable sets and color schemes then apply before Vite's client and application modules run.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Leaves index.html unchanged for a document that inlines script() itself
+  plugins: [zyzz({ script: false })],
+})
+```
+
+Applications without an `index.html`, such as server-rendered frameworks, inline `script()` in their own document.
+
+## Returns
+
+### plugin
+
+- **Type:** `Plugin{:ts}`
+
+A Vite plugin with isolated compiler state for each environment. It runs before other transforms, so framework plugins receive the compiled source.
+
+```ts title="vite.config.ts"
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Framework plugins transform the compiled modules
+  plugins: [zyzz(), react()],
+})
+```
+
+## Browser Targets
+
+Theme colors rely on native `light-dark()`, so the plugin stops Lightning CSS from lowering it, including in application stylesheets. Without a build target, CSS targets default to Chrome and Edge 123, Firefox 120, and Safari 17.5.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // An ECMAScript build target needs a separate browser CSS target
+  build: { cssTarget: ['chrome123', 'safari18'], target: 'es2022' },
+  plugins: [zyzz()],
+})
+```
+
+## Errors
+
+Configuration fails when a CSS target cannot preserve `light-dark()` or cannot be verified, when an `include` path is not a directory, and when `native` is combined with `reset` or `compiler: false`. Source errors keep their locations.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Rejected because Safari 15 would lower light-dark()
+  build: { cssTarget: 'safari15' },
+  plugins: [zyzz()],
+})
+```
+
+A failed development rebuild keeps the previous complete output until the source is fixed. Virtual modules and authoring inside framework single-file components are not compiled.

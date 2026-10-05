@@ -1,0 +1,164 @@
+# Unplugin
+
+Compile styles with esbuild, Rollup, or Webpack and emit CSS beside the bundle.
+
+The `zyzz` object from `zyzz/unplugin` holds one plugin factory per bundler. Each compiles the source root, rewrites authoring calls, and emits a complete stylesheet into the output directory. [Getting Started](/docs/introduction/getting-started?framework=other-bundlers) covers the setup.
+
+```ts title="build.ts"
+import { build } from 'esbuild'
+import { zyzz } from 'zyzz/unplugin'
+
+await build({
+  bundle: true,
+  entryPoints: ['src/main.ts'],
+  outdir: 'dist',
+  // [!code hl:2]
+  // Emits dist/zyzz.css beside the bundle
+  plugins: [zyzz.esbuild({ root: 'src' })],
+})
+```
+
+## Signature
+
+```ts
+// One factory per bundler
+zyzz.esbuild(options?)
+zyzz.rollup(options?)
+zyzz.webpack(options?)
+zyzz.vite(options?)
+```
+
+`zyzz.vite` is the [Vite plugin](/docs/api/vite) and takes its options. The other factories share `Options{:ts}`, also exported from `zyzz/unplugin`.
+
+## Parameters
+
+### options.compiler
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Rewrites authoring calls into compiled props. With `false`, the stylesheet is still emitted but the authored calls stay, so identity-bearing declarations need explicit identities.
+
+```ts title="build.ts"
+import { zyzz } from 'zyzz/unplugin'
+
+// [!code hl:2]
+// Keeps authored calls in the bundle
+const plugin = zyzz.esbuild({ compiler: false })
+```
+
+### options.reset
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Adds the packaged [reset](/docs/guides/reset) to `zyzz.css`, in a `reset` layer ordered before authored layers.
+
+```ts title="build.ts"
+import { zyzz } from 'zyzz/unplugin'
+
+// [!code hl:2]
+// Prepends the reset layer to zyzz.css
+const plugin = zyzz.rollup({ reset: true })
+```
+
+### options.root
+
+- **Type:** `string{:ts}`
+- **Default:** `process.cwd(){:ts}`
+
+The source directory to compile. Every module under it contributes CSS, including unimported global styles. Hidden directories, `node_modules`, `dist`, `build`, `coverage`, tests, fixtures, and declaration, test, and benchmark modules are skipped.
+
+```ts title="build.ts"
+import { zyzz } from 'zyzz/unplugin'
+
+// [!code hl:2]
+// Leaves build scripts at the project root uncompiled
+const plugin = zyzz.webpack({ root: 'src' })
+```
+
+Keep other generated output outside the root. Dependencies are not compiled from source, so packed libraries need adjacent `.zyzz.json` contracts.
+
+## Returns
+
+### plugin
+
+- **Type:** `EsbuildPlugin | RollupPlugin | WebpackPluginInstance{:ts}`
+
+A plugin for the factory's bundler that emits these files into its output directory:
+
+- **`zyzz.css`:** Shared contributions, then module styles with dependencies first.
+- **`zyzz.css.map`:** The stylesheet's map to authored source.
+- **`zyzz.js`:** The initialization script that restores saved selections.
+- **`zyzz-assets/`:** Copied local assets and CSS imports.
+
+The plugins do not modify HTML, so the document loads the stylesheet and script itself. Adjust the URLs to the deployment base.
+
+```html title="index.html"
+<!-- [!code hl:3] -->
+<!-- Restores saved selections, then loads the styles -->
+<script src="/zyzz.js"></script>
+<link rel="stylesheet" href="/zyzz.css" />
+```
+
+## esbuild
+
+`zyzz.esbuild` is also exported as `zyzz` from `zyzz/esbuild`. The build needs `outdir` and the default `write: true`, since assets are written to the output directory.
+
+```ts title="build.ts"
+import { build } from 'esbuild'
+import { zyzz } from 'zyzz/esbuild'
+
+await build({
+  bundle: true,
+  entryPoints: ['src/main.ts'],
+  // [!code hl:3]
+  // `outfile` and `write: false` are rejected
+  outdir: 'dist',
+  plugins: [zyzz({ root: 'src' })],
+})
+```
+
+## Rollup
+
+`zyzz.rollup` is also exported as `zyzz` from `zyzz/rollup`. Keep the project's resolution and TypeScript plugins after it, since it reads authored source and resolves imported themes through Rollup.
+
+```ts title="rollup.config.ts"
+import { zyzz } from 'zyzz/rollup'
+
+export default {
+  input: 'src/main.js',
+  output: { dir: 'dist', format: 'es' },
+  // [!code hl:2]
+  // Runs before the project's source transforms
+  plugins: [zyzz({ root: 'src' })],
+}
+```
+
+## Webpack
+
+`zyzz.webpack` is also exported as `zyzz` from `zyzz/webpack`. It runs as a pre-loader ahead of the project's TypeScript and JSX loaders and resolves imports through Webpack, including aliases.
+
+```ts title="webpack.config.ts"
+import { zyzz } from 'zyzz/webpack'
+
+export default {
+  entry: './src/main.js',
+  // [!code hl:2]
+  // Compiles before the project's loaders run
+  plugins: [zyzz({ root: 'src' })],
+}
+```
+
+## Errors
+
+Builds fail on unsupported authoring, unresolved dependencies, assets outside their package, and source changed by a transform that ran first. Each rebuild rescans the root, so added and removed modules update `zyzz.css`.
+
+```ts title="build.ts"
+import { build } from 'esbuild'
+import { zyzz } from 'zyzz/esbuild'
+
+// [!code hl:2]
+// Rejected because assets need an output directory
+await build({ outfile: 'dist/app.js', plugins: [zyzz()] })
+```

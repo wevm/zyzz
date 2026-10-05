@@ -1,0 +1,127 @@
+# Metro
+
+Compile native styles during iOS and Android bundling with Metro.
+
+The `zyzz` function from `zyzz/metro` chains native compilation before the application's existing Babel transformer, keeping Expo's preset, plugins, and platform handling. Metro supplies the platform for each bundle. [Getting Started](/docs/introduction/getting-started?framework=react-native) covers the setup.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+// [!code hl:2]
+// Wraps Expo's configuration, keeping its transformer
+export default zyzz(getDefaultConfig(import.meta.dirname))
+```
+
+## Signature
+
+```ts
+// Returns the configuration with native compilation chained in
+zyzz(config, options?)
+```
+
+## Parameters
+
+### config
+
+- **Type:** `Config{:ts}`
+
+The Metro configuration. `transformer.babelTransformerPath` must name the existing Babel transformer, and `projectRoot` defaults to the working directory. Keep `watchFolders` and resolver settings, since compilation follows Metro's resolution into linked packages.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+const config = getDefaultConfig(import.meta.dirname)
+// [!code hl:2]
+// Linked workspace packages stay visible to Metro and the compiler
+config.watchFolders = [...config.watchFolders, '../packages']
+
+export default zyzz(config)
+```
+
+### options.fonts
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+Maps exact authored `fontFamily` strings to registered native family names. An unmapped family fails compilation. The mapping does not load fonts, so register font assets before rendering.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+export default zyzz(getDefaultConfig(import.meta.dirname), {
+  // [!code hl:2]
+  // Authored `fontFamily: 'Pilat, Arial, sans-serif'` renders with Pilat
+  fonts: { 'Pilat, Arial, sans-serif': 'Pilat' },
+})
+```
+
+### options.units
+
+- **Type:** `{ px?: number, rem?: number }{:ts}`
+- **Default:** `{ px: 1 }{:ts}`
+
+Positive scales that convert authored lengths to logical units. `rem` has no default, so `rem` lengths fail compilation without it. Changing `fonts` or `units` requires a Metro restart.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+export default zyzz(getDefaultConfig(import.meta.dirname), {
+  // [!code hl:2]
+  // `1rem` compiles to 16 logical units
+  units: { px: 1, rem: 16 },
+})
+```
+
+## Returns
+
+### config
+
+- **Type:** `zyzz.ReturnType<config>{:ts}`
+
+The input configuration with three fields chained. `transformer.babelTransformerPath` points to a generated entry beneath `.zyzz/metro` that loads `zyzz/metro/transformer`. `resolver.resolveRequest` and `server.enhanceMiddleware` wrap any existing implementations.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+const config = zyzz(getDefaultConfig(import.meta.dirname))
+// [!code hl:2]
+// The generated entry delegates to Expo's transformer
+console.log(config.transformer.babelTransformerPath)
+
+export default config
+```
+
+## Source Graphs
+
+Compilation follows Metro's resolver through package exports, aliases, platform suffixes, and linked packages. A missing relative `.js` import retries the TypeScript source, as NodeNext packages author it. Shared packages can publish source or compiled JavaScript with adjacent `.zyzz.json` contracts.
+
+```json title="packages/ui/package.json"
+{
+  "name": "@acme/ui",
+  "exports": { ".": "./src/index.ts" },
+  "peerDependencies": { "zyzz": "*" }
+}
+```
+
+A source package lists `zyzz` in any dependency field so that authoring behind barrels and helper imports is discovered. Edits to imported tokens, styles, and package metadata invalidate their consumers. [Shared Packages](/docs/guides/native/packages) covers publishing.
+
+## Errors
+
+Setup throws when the configuration has no Babel transformer, and when `options` sets `colorScheme`, which the [React provider](/docs/guides/native/themes) selects at runtime. Unsupported native semantics fail compilation with their source location.
+
+```ts twoslash title="metro.config.ts"
+// @errors: 2353
+import { zyzz } from 'zyzz/metro'
+
+// The scheme is selected at runtime, not in Metro configuration
+zyzz(
+  { transformer: { babelTransformerPath: 'transformer.js' } },
+  { colorScheme: 'dark' },
+)
+```
+
+Web bundles and ordinary dependencies pass through to the upstream transformer, and `zyzz/default` is unsupported on native. A successful bundle does not prove device rendering conformance.

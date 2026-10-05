@@ -121,7 +121,7 @@ export default zyzz(getDefaultConfig(import.meta.dirname), {
 })
 ```
 
-Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](docs/api/metro/README.md) and the [Expo example](examples/react-native).
+Metro compiles styles during iOS and Android bundling. Connect the [React provider](docs/api/react-native/react.md) above the application for theme and color scheme selection. See [Metro Setup](https://zyzz.sh/docs/api/metro) and the [Expo example](examples/react-native).
 
 ### Other Bundlers
 
@@ -133,7 +133,7 @@ import { zyzz } from 'zyzz/unplugin'
 const plugins = [zyzz.esbuild()] // or zyzz.rollup() / zyzz.webpack()
 ```
 
-The adapters emit `zyzz.css` and `zyzz.js` beside the JavaScript bundle. Load these files in the application document. See [Bundler Setup](docs/api/unplugin/README.md) for configuration and output requirements.
+The adapters emit `zyzz.css` and `zyzz.js` beside the JavaScript bundle. Load these files in the application document. See [Bundler Setup](https://zyzz.sh/docs/api/unplugin) for configuration and output requirements.
 
 ### CLI
 

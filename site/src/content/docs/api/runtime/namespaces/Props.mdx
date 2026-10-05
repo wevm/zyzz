@@ -1,0 +1,116 @@
+# Props
+
+Bind compiled class names to the styling overrides of a static style.
+
+The compiler rewrites each static [`style`](/docs/api/core/style) definition into a `Props.create` call. Applications normally do not import it. Applying the returned callable merges class names and inline styles without creating CSS.
+
+```ts title="card.ts"
+import { Props } from 'zyzz/runtime'
+
+// [!code hl:2]
+// The stylesheet already holds the rules for this class
+const card = Props.create({ className: 'z-card' })
+
+// { className: 'z-card wide', style: { padding: '24px' } }
+export const props = card({ className: 'wide', style: { padding: '24px' } })
+```
+
+## Signature
+
+```ts
+// Generated code passes the complete class list
+Props.create(options)
+```
+
+## Parameters
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The complete generated class list. The emitted stylesheet must already contain its rules.
+
+```ts /className: 'z-card'/
+// One atomic class per declaration, plus the definition's identity class
+Props.create({ className: 'z-card' })
+```
+
+## Application
+
+The returned callable has the [`style`](/docs/api/core/style#application) application contract. Calling it without an argument returns `{ className }` alone.
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// { className: 'z-card wide' }
+card({ className: 'wide' })
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline declarations. Without `options.vars`, the returned `style` is the same object, so it must not change after the call.
+
+```ts /style: { padding: '24px' }/
+// The returned style is this object
+card({ style: { padding: '24px' } })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments merged into a new `style` object before `options.style`.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { className: 'z-card', style: { '--accent': 'crimson' } }
+card({ vars: { '--accent': 'crimson' } })
+```
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `options.className` when supplied.
+
+```ts /props.className/
+// 'z-card wide'
+props.className
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+
+The merged inline styles, present only when the call supplies `options.style` or `options.vars`.
+
+```ts /props.style/
+// { padding: '24px' }
+props.style
+```
+
+## Types
+
+- **`Props.create.Options{:ts}`:** The `{ className }` input.
+
+```ts title="options.ts"
+import type { Props } from 'zyzz/runtime'
+
+// [!code hl:2]
+// The input of a generated static style
+export const options = { className: 'z-card' } satisfies Props.create.Options
+```
+
+## Errors
+
+`Props.create` throws no errors. TypeScript checks override shapes and values, and the callable merges them without validation.

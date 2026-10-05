@@ -1,0 +1,248 @@
+# Html
+
+Convert applied props to class, style, and data attributes, and escape them for markup.
+
+Configurations with `output: 'html'` return HTML attributes, which compiled code produces through these functions. Applications can also call `Html.from` and `Html.serialize` to render props from a React-shaped definition as markup. None of them create CSS or mutate their inputs.
+
+```ts title="render.ts"
+import { Html } from 'zyzz/runtime'
+
+// { class: 'z-card', style: 'background-color:red', 'data-state': 'open' }
+const attributes = Html.from({
+  className: 'z-card',
+  'data-state': 'open',
+  style: { backgroundColor: 'red' },
+})
+
+// [!code hl:2]
+// Quotes and escapes each attribute value
+export const markup = `<article ${Html.serialize(attributes)}></article>`
+```
+
+## Html.from
+
+```ts
+// Applied props in, DOM attribute values out
+Html.from(props)
+```
+
+### props
+
+- **Type:** ``style.Props & { [name: `data-${string}`]: string | undefined }{:ts}``
+
+Applied props with their `data-*` attributes. Style keys convert from camelCase to kebab-case, with `ms` becoming `-ms-`. Custom properties keep their names, and `undefined` or `null` values are skipped.
+
+```ts /msTransform: 'none'/
+// 'color:red;-ms-transform:none;--x:1'
+Html.from({
+  className: 'z-card',
+  style: { color: 'red', msTransform: 'none', '--x': '1' },
+}).style
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The `className` value.
+
+```ts /class/
+// 'z-card'
+Html.from({ className: 'z-card' }).class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+Declarations joined with `;`, present when the props have a `style`. Values are unescaped attribute data, so markup needs `Html.serialize` or a renderer that escapes attributes.
+
+```ts /style/
+// 'padding:1rem'
+Html.from({ className: 'z-card', style: { padding: '1rem' } }).style
+```
+
+### data-[name]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute, copied unchanged.
+
+```ts /['data-state']/
+// 'open'
+Html.from({ className: 'z-card', 'data-state': 'open' })['data-state']
+```
+
+## Html.serialize
+
+```ts
+// Attributes in, markup text out
+Html.serialize(attributes)
+```
+
+### attributes
+
+- **Type:** `Html.Attributes{:ts}`
+
+Attributes returned by `Html.from` or by an HTML callable. Entries whose value is `undefined` are omitted.
+
+```ts /Html.serialize(attributes)/
+// Renders the attributes inside an opening tag
+const markup = `<article ${Html.serialize(attributes)}></article>`
+```
+
+### markup
+
+- **Type:** `string{:ts}`
+
+Space-separated `name="value"` pairs. `&`, `<`, `>`, quotes, and whitespace inside names and values become character references.
+
+```ts /Html.serialize/
+// 'class="z-card&#32;wide" data-x="it&#39;s"'
+Html.serialize({ class: 'z-card wide', 'data-x': "it's" })
+```
+
+## Html.bind
+
+```ts
+// Wrap a React-shaped callable
+Html.bind(fn)
+```
+
+### fn
+
+- **Type:** `(input) => style.Props{:ts}`
+
+A compiled callable that returns React-shaped props. The returned function accepts the same input and passes the result through `Html.from`.
+
+```ts /Html.bind(card)/
+// card({ className: 'wide' }) becomes { class: 'z-card wide' }
+const html = Html.bind(card)
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The wrapped callable's `className`.
+
+```ts /html({ className: 'wide' }).class/
+// 'z-card wide'
+html({ className: 'wide' }).class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The wrapped callable's `style`, serialized as `Html.from` serializes it, and present only when the props have one.
+
+```ts /html({ style: { padding: '1rem' } }).style/
+// 'padding:1rem'
+html({ style: { padding: '1rem' } }).style
+```
+
+### data-[name]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the wrapped callable's props, copied unchanged. The declared return type, `style.Props<'html'>`, omits them, so TypeScript reads them through `Html.Attributes`.
+
+```ts /as Html.Attributes/
+// 'large' for a recipe whose default size is large
+;(Html.bind(button)({}) as Html.Attributes)['data-size']
+```
+
+## Html.create
+
+```ts
+// A static HTML style callable
+Html.create(options)
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The complete generated class list. The result equals `Html.bind(Props.create(options))`.
+
+```ts /Html.create({ className: 'z-card' })/
+// card({ style: { padding: '1rem' } }) returns { class: 'z-card', style: 'padding:1rem' }
+const card = Html.create({ className: 'z-card' })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes passed to the callable, appended after the generated class list.
+
+```ts /className: 'wide'/
+// { class: 'z-card wide' }
+card({ className: 'wide' })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments, serialized before `options.style`.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { class: 'z-card', style: '--accent:crimson' }
+card({ vars: { '--accent': 'crimson' } })
+```
+
+### options.style
+
+- **Type:** `style.Options<'html'>['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline declarations, serialized after `options.vars`. Lengths need CSS units, so `padding: 24` is a type error.
+
+```ts /style: { padding: '24px' }/
+// { class: 'z-card', style: '--accent:crimson;padding:24px' }
+card({ style: { padding: '24px' }, vars: { '--accent': 'crimson' } })
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `options.className` when supplied.
+
+```ts /card().class/
+// 'z-card'
+card().class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The merged declarations serialized as [`Html.from`](#style) serializes them, present only when the call supplies `vars` or `style`.
+
+```ts /card({ style: { padding: '1rem' } }).style/
+// 'padding:1rem'
+card({ style: { padding: '1rem' } }).style
+```
+
+## Types
+
+- **`Html.Attributes{:ts}`:** The returned `class`, optional `style`, and `data-*` attributes.
+
+```ts title="Badge.ts"
+import { Html } from 'zyzz/runtime'
+
+// [!code hl:2]
+// Accepts output from any HTML callable
+export function badge(attributes: Html.Attributes) {
+  return `<span ${Html.serialize(attributes)}></span>`
+}
+```
+
+## Errors
+
+`Html.from`, `Html.serialize`, and `Html.create` throw no errors and do not validate values. CSS values keep the units the caller supplied. A callable returned by `Html.bind` propagates any error thrown by the wrapped `fn`.

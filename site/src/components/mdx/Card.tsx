@@ -15,11 +15,13 @@ import FileCodeIcon from '~icons/lucide/file-code'
 import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
+import GitBranchIcon from '~icons/lucide/git-branch'
 import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import ListIcon from '~icons/lucide/list'
 import ListOrderedIcon from '~icons/lucide/list-ordered'
 import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
+import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaintBucketIcon from '~icons/lucide/paint-bucket'
 import PaletteIcon from '~icons/lucide/palette'
@@ -39,6 +41,7 @@ import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
+import WorkflowIcon from '~icons/lucide/workflow'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import ReactIcon from '~icons/simple-icons/react'
@@ -192,12 +195,14 @@ const icons = {
   'file-input': FileInputIcon,
   'file-type': FileTypeIcon,
   film: FilmIcon,
+  'git-branch': GitBranchIcon,
   globe: GlobeIcon,
   layers: LayersIcon,
   list: ListIcon,
   'list-ordered': ListOrderedIcon,
   'monitor-smartphone': MonitorSmartphoneIcon,
   next: NextIcon,
+  package: PackageIcon,
   'paint-bucket': PaintBucketIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
@@ -220,5 +225,6 @@ const icons = {
   type: TypeIcon,
   variable: VariableIcon,
   vite: ViteIcon,
+  workflow: WorkflowIcon,
   zap: ZapIcon,
 }

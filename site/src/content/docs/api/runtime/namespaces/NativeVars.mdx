@@ -1,0 +1,168 @@
+# NativeVars
+
+Hold compiled native variable values for every set and scheme, and read one profile.
+
+Native compilation rewrites a variable set passed to `useVars` or `useAnimatedVars` from `zyzz/react-native` into a `NativeVars.create` call. Applications normally do not import it. The hooks read the profile that matches the nearest `Provider` selection.
+
+```ts title="tokens.ts"
+import { NativeVars } from 'zyzz/runtime'
+
+// [!code hl:11]
+// Converted values for each set and scheme
+const tokens = NativeVars.create({
+  defaultVars: 'base',
+  profiles: {
+    base: {
+      dark: { color: { ink: '#fafafa' } },
+      light: { color: { ink: '#171717' } },
+    },
+  },
+  unnamed: false,
+})
+
+// { color: { ink: '#fafafa' } }
+export const values = NativeVars.read(tokens, { colorScheme: 'dark' })
+```
+
+## NativeVars.create
+
+```ts
+// Compiled profiles for one variable set
+NativeVars.create(options)
+```
+
+### options.defaultVars
+
+- **Type:** `string{:ts}`
+
+The set read when the selection omits `set`.
+
+```ts /defaultVars: 'base'/
+// An omitted set reads base
+NativeVars.create({ defaultVars: 'base', profiles, unnamed: false })
+```
+
+### options.profiles
+
+- **Type:** `{ [set: string]: { dark: NativeVars.EncodedTree; light: NativeVars.EncodedTree } }{:ts}`
+
+Native values by set and scheme, nested under their authored paths. A one-element array holds a diagnostic for a value native views cannot use, and reading that leaf throws it. Equal branches are shared, and every tree is frozen.
+
+```ts /['Composed values are not supported on native.']/
+// Reading `color.faded` throws this message
+const light = {
+  color: {
+    faded: ['Composed values are not supported on native.'],
+    ink: '#171717',
+  },
+}
+```
+
+### options.unnamed
+
+- **Type:** `boolean{:ts}`
+
+Whether the values ignore the selected set. An unnamed definition stores one `default` profile used for every set.
+
+```ts /unnamed: true/
+// Every set reads the default profile
+NativeVars.create({
+  defaultVars: 'default',
+  profiles: { default: schemes },
+  unnamed: true,
+})
+```
+
+### options.media
+
+- **Type:** `{ profiles: { [key: string]: profiles }; queries: readonly Query[] }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Alternative profiles keyed by the matching window queries, as in [`NativeContext.responsive`](/docs/api/runtime/namespaces/NativeContext#nativecontextresponsive). They apply when the selection has a `viewport`.
+
+```ts /media/
+// Wide windows read the `1` profiles
+NativeVars.create({
+  defaultVars: 'base',
+  media: { profiles: { 0: narrow, 1: wide }, queries },
+  profiles: narrow,
+  unnamed: false,
+})
+```
+
+## NativeVars.read
+
+```ts
+// Values for one Provider selection
+NativeVars.read(value, selection)
+```
+
+### value
+
+- **Type:** `object{:ts}`
+
+The result of `NativeVars.create`.
+
+```ts /tokens/
+// Reads the compiled profiles
+NativeVars.read(tokens, { colorScheme: 'light' })
+```
+
+### selection
+
+- **Type:** `NativeVars.read.Options{:ts}`
+
+The resolved `colorScheme`, an optional `set`, and an optional `viewport`.
+
+```ts /set: 'base'/
+// { color: { ink: '#171717' } }
+NativeVars.read(tokens, { colorScheme: 'light', set: 'base' })
+```
+
+### values
+
+- **Type:** `NativeVars.Tree{:ts}`
+
+The frozen values of the selected profile, nested under their authored paths.
+
+```ts /values.color/
+// { ink: '#fafafa' }
+values.color
+```
+
+## Types
+
+- **`NativeVars.EncodedTree{:ts}`:** A compiled profile, with diagnostics as one-element arrays.
+- **`NativeVars.Tree{:ts}`:** A profile as returned by `read`.
+- **`NativeVars.Values<values>{:ts}`:** The native value types of a variable set, with lengths as numbers. The root omits `breakpoint` and `containerNames`.
+- **`NativeVars.create.Options{:ts}`:** The `{ defaultVars, media?, profiles, unnamed }` input.
+- **`NativeVars.read.Options{:ts}`:** The `{ colorScheme, set?, viewport? }` selection.
+
+```ts title="values.ts"
+import type { Vars } from 'zyzz'
+import type { NativeVars } from 'zyzz/runtime'
+
+// [!code hl:4]
+// The native shape of a set with one spacing token
+export type Spacing = NativeVars.Values<
+  Vars.Extract<Vars.Definition<{ spacing: { page: '16px' } }>>
+>
+```
+
+## Errors
+
+`read` throws an `Error` when the value was not created by `NativeVars.create`, names a set that was not compiled, or selects media alternatives with a negative or nonfinite `viewport`. Reading a diagnostic leaf throws its message.
+
+When `options.media.profiles` lacks the alternative a valid viewport selects, `read` throws a `TypeError`. The compiler emits every alternative.
+
+```ts title="invalid.ts"
+import { NativeVars } from 'zyzz/runtime'
+
+try {
+  // Plain objects are not compiled profiles
+  NativeVars.read({}, { colorScheme: 'dark' })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Error) console.error(error.message)
+}
+```

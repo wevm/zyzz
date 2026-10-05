@@ -1,0 +1,54 @@
+# Default
+
+Author with Geist colors and typography and Tailwind scales from the opt-in `zyzz/default` entrypoint.
+
+The entrypoint exports the helpers of one bundled config, plus its raw `tokens`. The helpers keep the Core contracts and accept the bundled token names, so no `zyzz.config.ts` is needed. Core imports never load this data.
+
+The package ships a compiled contract beside the module, which the bundler plugins and `Host` from `zyzz/node` read. `style` and `variants` exist only in compiled modules. Font stacks name Geist first, but the application loads the fonts.
+
+## Authoring
+
+<Card.Group>
+  <Card title="style" icon="paintbrush" href="/docs/api/core/style">
+    Define a callable style that accepts bundled token names and typography
+    sets.
+  </Card>
+  <Card title="variants" icon="layers" href="/docs/api/core/variants">
+    Define finite style choices with bundled tokens and breakpoint query
+    aliases.
+  </Card>
+</Card.Group>
+
+## Config Helpers
+
+<Card.Group>
+  <Card title="vars" icon="braces" href="/docs/api/core/defineConfig/vars">
+    Reference bundled tokens, and select a color scheme for a subtree.
+  </Card>
+  <Card
+    title="appearance"
+    icon="sun-moon"
+    href="/docs/api/core/defineConfig/appearance"
+  >
+    Read and persist the document's color scheme under the `zyzz` storage key.
+  </Card>
+  <Card
+    title="script"
+    icon="file-code"
+    href="/docs/api/core/defineConfig/script"
+  >
+    Return an inline script that restores the saved color scheme before the
+    first paint.
+  </Card>
+</Card.Group>
+
+## Reference
+
+<Card.Group>
+  <Card title="Tokens" icon="swatch-book" href="/docs/api/default/tokens">
+    Bundled token groups, their property mappings, and the raw tokens export.
+  </Card>
+  <Card title="Typography" icon="type" href="/docs/api/default/typography">
+    Geist heading, button, label, and copy sets applied through one property.
+  </Card>
+</Card.Group>

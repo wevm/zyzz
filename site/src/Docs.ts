@@ -107,6 +107,19 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           },
         ],
       },
+      {
+        title: 'Default',
+        children: [
+          { path: 'api/default', title: 'Overview' },
+          {
+            title: 'Reference',
+            items: [
+              { path: 'api/default/tokens', title: 'Tokens' },
+              { path: 'api/default/typography', title: 'Typography' },
+            ],
+          },
+        ],
+      },
       { path: 'api/web', title: 'Web' },
       { path: 'api/react-native', title: 'React Native' },
       { path: 'api/cli', title: 'CLI' },

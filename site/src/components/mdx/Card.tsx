@@ -20,6 +20,7 @@ import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
+import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
@@ -182,6 +183,7 @@ const icons = {
   'swatch-book': SwatchBookIcon,
   tag: TagIcon,
   terminal: TerminalIcon,
+  type: TypeIcon,
   variable: VariableIcon,
   vite: ViteIcon,
   zap: ZapIcon,

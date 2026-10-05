@@ -205,7 +205,7 @@ The snippet shows only the Zyzz entry. The plugin transforms source and delivers
 Themes supply the tokens available to `style` and `variants`. Use the bundled theme or define an application theme that preserves existing Tailwind values.
 
 > [!TIP]
-> Start with [`zyzz/default`](../api/default.md) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Geist colors and typography. No `zyzz.config.ts` is required.
+> Start with [`zyzz/default`](https://zyzz.sh/docs/api/default) when a custom theme is unnecessary. It exports configured `style` and `variants` helpers with familiar spacing, radius, and breakpoint scales, plus Geist colors and typography. No `zyzz.config.ts` is required.
 >
 > ```tsx
 > import { style } from 'zyzz/default'
@@ -777,7 +777,7 @@ See [Selecting a Theme](themes.md#selecting-sets) for a complete catalog. Breakp
 
 ### Effect Categories
 
-Use `shadow`, `textShadow`, `ease`, `animate`, and `perspective` tokens through their mapped CSS properties. Compose `blur`, `dropShadow`, and `insetShadow` values with explicit variable references in `filter` or `boxShadow`. Use `keyframes` for application-defined animation rules. See [Default Config](../api/default.md) for examples.
+Use `shadow`, `textShadow`, `ease`, `animate`, and `perspective` tokens through their mapped CSS properties. Compose `blur`, `dropShadow`, and `insetShadow` values with explicit variable references in `filter` or `boxShadow`. Use `keyframes` for application-defined animation rules. See [Default Tokens](https://zyzz.sh/docs/api/default/tokens#effects) for examples.
 
 ## Colors
 
@@ -787,7 +787,7 @@ Copy the application's actual [color values](https://tailwindcss.com/docs/colors
 
 ### Default Differences
 
-`zyzz/default` uses Geist light/dark scales with steps from `100` to `1000`, plus semantic colors. Tailwind's palette names, steps, and values differ. Matching token names do not establish visual equivalence. See [Default Config](../api/default.md).
+`zyzz/default` uses Geist light/dark scales with steps from `100` to `1000`, plus semantic colors. Tailwind's palette names, steps, and values differ. Matching token names do not establish visual equivalence. See [Default Tokens](https://zyzz.sh/docs/api/default/tokens#colors).
 
 ### Semantic Colors
 

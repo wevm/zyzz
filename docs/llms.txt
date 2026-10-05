@@ -48,7 +48,9 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [cx](https://zyzz.sh/docs/api/core/cx.md): Reference and examples.
 - [Style](https://zyzz.sh/docs/api/core/namespaces/Style.md): Reference and examples.
 - [Values](https://zyzz.sh/docs/api/core/values.md): Reference and examples.
-- [zyzz/default](api/default.md): Reference and examples.
+- [zyzz/default](https://zyzz.sh/docs/api/default.md): Section index.
+- [Tokens](https://zyzz.sh/docs/api/default/tokens.md): Reference and examples.
+- [Typography](https://zyzz.sh/docs/api/default/typography.md): Reference and examples.
 - [zyzz/web](api/web/README.md): Section index.
 - [Css](api/web/Css/README.md): Section index.
 - [Css.compile](api/web/Css/compile.md): Reference and examples.
@@ -79,7 +81,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Host.close](api/node/Host/close.md): Reference and examples.
 - [Host.create](api/node/Host/create.md): Reference and examples.
 - [Host.watch](api/node/Host/watch.md): Reference and examples.
-- [zyzz/oxlint](api/oxlint/README.md): Lint web styles and JSX applications.
+- [zyzz/oxlint](https://zyzz.sh/docs/api/oxlint.md): Lint web styles and JSX applications.
 - [zyzz/runtime](api/runtime/README.md): Section index.
 - [Props](api/runtime/Props/README.md): Section index.
 - [Props.create](api/runtime/Props/create.md): Reference and examples.

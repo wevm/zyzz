@@ -1,0 +1,151 @@
+# Typography
+
+Geist typography sets, applied with one `typography` declaration.
+
+Each set follows [Geist typography](https://vercel.com/geist/typography) and expands to `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` declarations. A set's path names its group, its pixel size, and an optional variant.
+
+```tsx title="Article.tsx"
+import type { ReactNode } from 'react'
+import { style } from 'zyzz/default'
+
+export function Article(props: Article.Props) {
+  return (
+    <article>
+      <h1 {...styles.title()}>{props.title}</h1>
+      <p {...styles.body()}>{props.children}</p>
+    </article>
+  )
+}
+
+export declare namespace Article {
+  type Props = { children: ReactNode; title: string }
+}
+
+namespace styles {
+  // [!code hl:2]
+  // 32px Geist at weight 600, with 40px line height
+  export const title = style({ typography: 'heading.32' })
+
+  export const body = style({ typography: 'copy.16' })
+}
+```
+
+## Sets
+
+Sizes are the font size in pixels. Headings use negative letter spacing that grows with their size, and every other set resets it to `0px`.
+
+- **`heading`:** `14`, `16`, `20`, `24`, `32`, `40`, `48`, `56`, `64`, and `72`, at weight `600`.
+- **`button`:** `12`, `14`, and `16`, at weight `500`.
+- **`label`:** `12`, `13`, `14`, `16`, `18`, and `20`, at weight `400`.
+- **`copy`:** `13`, `14`, `16`, `18`, `20`, and `24`, at weight `400`.
+
+```ts
+import { style } from 'zyzz/default'
+
+// [!code hl:2]
+// 14px at weight 500, with 20px line height
+const action = style({ typography: 'button.14' })
+```
+
+## Variants
+
+A variant is a complete set at the same size, named by a third path segment. It changes only the expanded font fields.
+
+- **`.subtle`:** Weight `500`, on `heading` `16`, `20`, `24`, and `32`.
+- **`.strong`:** Weight `500` on `label` `12` to `16`, and `550` on `copy` `14` to `24`.
+- **`.mono`:** Geist Mono, on `label` `12` to `14` and `copy` `13`.
+
+```ts
+import { style } from 'zyzz/default'
+
+namespace styles {
+  // [!code hl:2]
+  // Geist Mono at 14px
+  export const code = style({ typography: 'label.14.mono' })
+
+  export const emphasis = style({ typography: 'copy.16.strong' })
+}
+```
+
+Geist's descendant colors, capitalization, and tabular numbers stay explicit declarations, since the sets install no descendant selectors.
+
+## Overrides
+
+A font declaration in the same block replaces that field of the set, wherever it appears. Weights use `fontWeight` token names, or the ` !custom` suffix for another value. A ` !important` suffix on the set marks every expanded declaration important.
+
+```ts
+import { style } from 'zyzz/default'
+
+namespace styles {
+  // [!code hl:2]
+  // The medium weight replaces the set's 400
+  export const body = style({ fontWeight: 'medium', typography: 'copy.14' })
+
+  // [!code hl:2]
+  // Every expanded declaration ends in !important
+  export const pinned = style({ typography: 'label.13 !important' })
+}
+```
+
+A numeric weight fails the type check, since it is neither a token name nor a custom value.
+
+```ts twoslash
+// @errors: 2322
+import { style } from 'zyzz/default'
+
+// `500` is not a fontWeight token name
+const body = style({ fontWeight: 500, typography: 'copy.14' })
+```
+
+## Conditions
+
+Sets apply inside pseudo-classes, conditions, selectors, and variant choices, where they expand under the same rule.
+
+```ts
+import { style, variants } from 'zyzz/default'
+
+namespace styles {
+  export const link = style({
+    typography: 'label.14',
+    // [!code hl:2]
+    // Switches to the strong set on hover
+    ':hover': { typography: 'label.14.strong' },
+  })
+
+  export const text = variants({
+    variants: {
+      // [!code hl:2]
+      // Each choice applies its own set
+      size: { lg: { typography: 'copy.16' }, sm: { typography: 'copy.13' } },
+    },
+  })
+}
+```
+
+## Field References
+
+Each field is also a reference under `vars.typography`, for one declaration without the rest of the set.
+
+```ts
+import { style, vars } from 'zyzz/default'
+
+// [!code hl:2]
+// Reads only the heading's 32px size
+const lead = style({ fontSize: vars.typography.heading[32].fontSize })
+```
+
+## Font Loading
+
+The sets name `Geist` and `"Geist Mono"` before system fallbacks, and load no fonts. Declare the faces with `fontFace` from `zyzz/web`, as the [Fonts & Typography](/docs/guides/typography) guide shows.
+
+```ts title="src/fonts.ts"
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  fontDisplay: 'swap',
+  // [!code hl:2]
+  // Matches the family name the sets use
+  fontFamily: 'Geist',
+  src: 'url("./Geist.woff2") format("woff2")',
+})
+```

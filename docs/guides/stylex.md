@@ -237,7 +237,7 @@ For example, a later Zyzz `padding: '8px'` resets an earlier `paddingLeft: '12px
 
 Use `enabled && styles.example()` for conditional arguments. `false`, `null`, and `undefined` omit an entire argument. `cx` currently supports at most eight conditional arguments. Ternary selections, arbitrary arrays of styles, and escaping or mutated props bindings are outside its supported source contract.
 
-Migrate finite style-map lookups into [Component Variants](#component-variants). See [`cx`](../api/core/cx.md) for supported local bindings and packed library applications.
+Migrate finite style-map lookups into [Component Variants](#component-variants). See [`cx`](https://zyzz.sh/docs/api/core/cx) for supported local bindings and packed library applications.
 
 ### Component Boundaries
 
@@ -505,7 +505,7 @@ The configured helper resolves token names. Explicit `vars` references avoid col
 
 ### Independent Vars
 
-Not every StyleX variable belongs in a Zyzz theme group. Use [`variable`](../api/core/variable.md) for a custom property with its own scope and assignments:
+Not every StyleX variable belongs in a Zyzz theme group. Use [`variable`](https://zyzz.sh/docs/api/core/variable) for a custom property with its own scope and assignments:
 
 ```tsx
 import { style, variable } from 'zyzz'

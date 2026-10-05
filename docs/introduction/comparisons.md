@@ -339,7 +339,7 @@ Every `Button` accepts the same optional `size` and `tone` choices. Defaults are
 
 ### Zyzz
 
-`variants` owns choices, defaults, and compound rules. `Props.Variants` infers component props from the definition, including styling overrides. The examples compare the shared size and tone choices. See [variants](../api/core/variants.md).
+`variants` owns choices, defaults, and compound rules. `Props.Variants` infers component props from the definition, including styling overrides. The examples compare the shared size and tone choices. See [variants](https://zyzz.sh/docs/api/core/variants).
 
 ```tsx
 import { type Props, variants } from 'zyzz'
@@ -482,7 +482,7 @@ Each example combines a button's `1rem` padding with an independent focus ring. 
 
 ### Zyzz
 
-`cx` combines applied styling props, including variable bindings and recipe attributes. Multiple JSX spreads would replace overlapping props. See [cx](../api/core/cx.md) for supported inputs and conflict rules.
+`cx` combines applied styling props, including variable bindings and recipe attributes. Multiple JSX spreads would replace overlapping props. See [cx](https://zyzz.sh/docs/api/core/cx) for supported inputs and conflict rules.
 
 ```tsx
 import { cx, style } from 'zyzz'
@@ -755,8 +755,8 @@ The paired examples cover common tasks. These documented APIs cover further requ
 | [Property mappings](../guides/themes.md#property-mappings)                        | Configure optional aliases and property-specific token scales.                                                  |
 | [Stylesheets](../api/web/README.md)                                               | Declare globals, cascade layers, fonts, keyframes, and supported CSS at-rules.                                  |
 | [Typography sets](../guides/themes.md#typography-sets)                            | Apply a named set of font properties, with explicit field overrides.                                            |
-| [Typed variables](../api/core/variable.md)                                        | Declare independent variables, constrain assignments with `.set`, and optionally emit `@property` registration. |
-| [Variant conditions and payloads](../api/core/variants.md#conditional-selections) | Select choices through media/supports conditions or bind typed payloads to a dynamic choice.                    |
+| [Typed variables](https://zyzz.sh/docs/api/core/variable)                                        | Declare independent variables, constrain assignments with `.set`, and optionally emit `@property` registration. |
+| [Variant conditions and payloads](https://zyzz.sh/docs/api/core/variants#optionsconditions) | Select choices through media/supports conditions or bind typed payloads to a dynamic choice.                    |
 
 ## Compilation, Libraries, and Platforms
 

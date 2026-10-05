@@ -1,6 +1,6 @@
 # Variant Selection
 
-`Recipe` is the compiler-facing finite-variant serializer exported from `zyzz/runtime`. Application code normally uses [`variants`](../../core/variants.md).
+`Recipe` is the compiler-facing finite-variant serializer exported from `zyzz/runtime`. Application code normally uses [`variants`](https://zyzz.sh/docs/api/core/variants).
 
 | API          | Description                                                               |
 | ------------ | ------------------------------------------------------------------------- |

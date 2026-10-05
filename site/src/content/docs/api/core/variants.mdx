@@ -1,0 +1,372 @@
+# variants
+
+Define finite style choices, defaults, and compound rules for one element.
+
+The compiler emits every choice and compound ahead of time. Applying the recipe selects choices through `data-*` attributes under one generated class, so a call never creates CSS.
+
+```tsx title="Button.tsx"
+import { variants } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  return (
+    // [!code hl:2]
+    // Selects a size choice, or the default when omitted
+    <button {...styles.button({ size: props.size })} type="button">
+      Save
+    </button>
+  )
+}
+
+export declare namespace Button {
+  type Props = { size?: 'compact' | 'regular' | undefined }
+}
+
+namespace styles {
+  export const button = variants({
+    base: { borderRadius: '6px' },
+    defaultVariants: { size: 'regular' },
+    variants: {
+      size: {
+        compact: { padding: '4px 8px' },
+        regular: { padding: '8px 16px' },
+      },
+    },
+  })
+}
+```
+
+## Signature
+
+```ts
+// One recipe for one element
+variants(definition, options?)
+```
+
+The `variants` returned by [`defineConfig`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md) has the same signature and also accepts the config's token names.
+
+## Parameters
+
+### definition.base
+
+- **Type:** `Style.LiteralProperties{:ts}`
+- **Default:** `{}{:ts}`
+
+Declarations applied before any choice. The base accepts the same keys as a [`style`](/docs/api/core/style) definition, including conditions and `selectors`.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  // [!code hl]
+  base: { borderRadius: '6px', ':hover': { opacity: 0.9 } },
+  variants: { size: { compact: { padding: '4px' } } },
+})
+```
+
+### definition.variants
+
+- **Type:** `{ [axis: string]: { [choice: string]: Style.LiteralProperties } }{:ts}`
+- **Default:** `{}{:ts}`
+
+Named axes, each holding named style objects. Axis names become `data-*` attributes, so they use lowercase names and cannot reuse styling props such as `style`. Choices named `true` and `false` make an axis accept booleans.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  variants: {
+    // [!code hl]
+    loading: { false: {}, true: { opacity: 0.5 } },
+    size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+  },
+})
+```
+
+A choice can also be a callback with typed values, like a [`style`](/docs/api/core/style#styles) callback. Applications select it with a payload, and each value binds to a private custom property.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  variants: {
+    size: {
+      compact: { padding: '4px' },
+      // [!code hl:4]
+      // Each call supplies `padding` for this choice
+      custom: (values: { padding: `${number}px` }) => ({
+        padding: values.padding,
+      }),
+    },
+  },
+})
+```
+
+### definition.defaultVariants
+
+- **Type:** `{ [axis: string]: choice }{:ts}`
+- **Default:** `{}{:ts}`
+
+Choices applied when a call omits an axis or passes `undefined`. A dynamic choice default holds a complete payload, such as `{ custom: { padding: '12px' } }`.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  // [!code hl]
+  defaultVariants: { size: 'regular' },
+  variants: {
+    size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+  },
+})
+```
+
+### definition.compoundVariants
+
+- **Type:** `readonly { style: Style.LiteralProperties; when: { [axis: string]: choice | readonly choice[] } }[]{:ts}`
+- **Default:** `[]{:ts}`
+
+Styles applied when every axis in `when` matches. An array matches any listed choice, and a dynamic choice matches by name.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  // [!code hl:3]
+  compoundVariants: [
+    { style: { fontWeight: 600 }, when: { loading: true, size: 'regular' } },
+  ],
+  variants: {
+    loading: { false: {}, true: { opacity: 0.5 } },
+    size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+  },
+})
+```
+
+Precedence follows the base, then axes in declaration order, then compounds in array order. Choices match through `:where()` attribute selectors, so they add no specificity.
+
+### definition.conditions
+
+- **Type:** `{ [name: string]: string }{:ts}`
+- **Default:** `{}{:ts}`
+
+Named `@media` or `@supports` queries that applications use to select different choices while a query matches. A recipe accepts up to eight conditions.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  // [!code hl]
+  conditions: { wide: '@media (width >= 48rem)' },
+  variants: {
+    size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+  },
+})
+```
+
+Recipes from `defineConfig` also accept the config's query aliases, such as `@media >=md`.
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed recipe identity, which replaces the identity derived from the source. Recipes require it when source runs without a compiler transform.
+
+```ts /{ id: 'button' }/
+import { variants } from 'zyzz'
+
+// Applies as `z-style-id-button` without a compiler transform
+const button = variants(
+  { variants: { size: { compact: {} } } },
+  { id: 'button' },
+)
+```
+
+## Application
+
+Applying a recipe returns props for one element. The argument accepts one selection per axis, plus the same styling overrides as [`style`](/docs/api/core/style#application).
+
+### options[axis]
+
+- **Type:** `choice | boolean | { [choice: string]: values } | null | undefined{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selects a choice for the axis. Omitting the axis or passing `undefined` applies the default, and `null` removes the axis along with its default. Boolean axes still set the attribute for `false`.
+
+```ts /size: 'compact'/
+// Sets data-size="compact" and keeps the default for other axes
+styles.button({ size: 'compact' })
+```
+
+A dynamic choice takes a payload scoped to its name. The call assigns the payload's values without creating CSS.
+
+```ts /size: { custom: { padding: '16px' } }/
+// Selects the `custom` choice and binds its padding
+styles.button({ size: { custom: { padding: '16px' } } })
+```
+
+### options.conditions
+
+- **Type:** `{ [condition: string]: { [axis: string]: choice | null } }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selections that apply while a named condition matches. Later conditions win per axis in declaration order, and omitted axes keep the earlier selection. CSS evaluates the queries, so the call never reads the viewport.
+
+```ts /conditions: { wide: { size: 'regular' } }/
+// Compact by default, regular while the wide query matches
+styles.button({ conditions: { wide: { size: 'regular' } }, size: 'compact' })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class, as with [`style`](/docs/api/core/style#optionsclassname).
+
+```ts /className: 'external'/
+// Returns the generated class followed by `external`
+styles.button({ className: 'external' })
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline declarations copied onto the returned `style`, as with [`style`](/docs/api/core/style#optionsstyle).
+
+```ts /style: { opacity: 0.5 }/
+// Overrides opacity on this element only
+styles.button({ style: { opacity: 0.5 } })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Inline custom-property assignments keyed by variable reference, as with [`style`](/docs/api/core/style#optionsvars).
+
+```ts /vars: { [variables.accent]: 'crimson' }/
+// Assigns the variable on this element
+styles.button({ vars: { [variables.accent]: 'crimson' } })
+```
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The recipe's generated class, followed by `options.className` when supplied.
+
+```tsx /{...styles.button({ size: 'compact' })}/
+// Spreading assigns the class, data attributes, and style together
+<button {...styles.button({ size: 'compact' })} />
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+One attribute per selected axis, such as `data-size`. Defaults are serialized, and axes suppressed with `null` are omitted.
+
+```ts /props['data-size']/
+const props = styles.button({ size: 'compact' })
+
+// "compact"
+props['data-size']
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+
+Inline overrides and dynamic choice values, present only when the call assigns one.
+
+```ts /props/
+// { className: '…', 'data-size': 'custom', style: { '--…': '16px' } }
+const props = styles.button({ size: { custom: { padding: '16px' } } })
+```
+
+## Types
+
+- **`Props.Variants<typeof recipe>{:ts}`:** The recipe's input, including selections, conditions, and styling overrides.
+- **`variants.Bound{:ts}`:** The `variants` signature returned by `defineConfig`.
+- **`variants.ReturnType<definition>{:ts}`:** A recipe, called with optional selections.
+
+```tsx title="Button.tsx"
+import type { ReactNode } from 'react'
+import { type Props, variants } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  const { children, ...selection } = props
+  return (
+    <button {...styles.button(selection)} type="button">
+      {children}
+    </button>
+  )
+}
+
+export declare namespace Button {
+  // [!code hl:2]
+  // Accepts `size` plus the styling overrides
+  type Props = Props.Variants<typeof styles.button> & { children: ReactNode }
+}
+
+namespace styles {
+  export const button = variants({
+    variants: {
+      size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+    },
+  })
+}
+```
+
+## Errors
+
+TypeScript rejects undeclared axes and choices, and unknown keys when applying a recipe.
+
+```ts twoslash
+// @errors: 2322
+import { variants } from 'zyzz'
+
+const button = variants({
+  variants: { size: { compact: {}, regular: {} } },
+})
+
+// `huge` is not a declared choice
+button({ size: 'huge' })
+```
+
+The compiler reports unsupported source as `Source.ExtractError` with the source location, such as an axis named `isLoading`. Without a compiler transform, a recipe without `options.id` throws an `Error`.
+
+## React Native
+
+Applying a recipe on native returns `{ style }`, resolved from the selected choices as the component renders. Native compilation rejects named conditions, so interaction and viewport states come from component props.
+
+```tsx title="Badge.tsx"
+import { Text } from 'react-native'
+import { variants } from 'zyzz'
+
+export function Badge(props: Badge.Props) {
+  // [!code hl:2]
+  // Resolves the selected tone to a native style
+  return <Text {...styles.badge({ tone: props.tone })}>New</Text>
+}
+
+export declare namespace Badge {
+  type Props = { tone: 'info' | 'warning' }
+}
+
+namespace styles {
+  export const badge = variants({
+    variants: {
+      tone: { info: { color: '#0070f3' }, warning: { color: '#f5a623' } },
+    },
+  })
+}
+```
+
+[Native Styling](/docs/guides/native/styling) covers recipes and platform branches on native.

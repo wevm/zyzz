@@ -223,7 +223,7 @@ namespace styles {
 
 `<Button compact />` receives the compact padding. With the arguments reversed, `button` would win instead. The compiler emits a rule group for each combination, so argument order decides the result and class-string order never does.
 
-Separate JSX spreads replace each other's `className`, so each element takes one `cx` call. Ternaries and mutated bindings fail compilation, and one call accepts up to eight conditional arguments. The [cx reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) covers nesting and packed libraries.
+Separate JSX spreads replace each other's `className`, so each element takes one `cx` call. Ternaries and mutated bindings fail compilation, and one call accepts up to eight conditional arguments. The [cx reference](/docs/api/core/cx) covers nesting and packed libraries.
 
 ### Accept Overrides
 
@@ -414,7 +414,7 @@ namespace styles {
 
 `<Plan />` uses the default blue. `<Plan accent="#9333ea" />` turns the border, name, and button purple, because the inline assignment overrides the static one on the same element. An `undefined` value omits the inline assignment.
 
-Computed keys lose each variable's value type in TypeScript. `variables.accent.set(value)` keeps it and returns an assignment for the `style` option. The [variable reference](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md) covers registration, which controls inheritance and emits `@property`.
+Computed keys lose each variable's value type in TypeScript. `variables.accent.set(value)` keeps it and returns an assignment for the `style` option. The [variable reference](/docs/api/core/variable) covers registration, which controls inheritance and emits `@property`.
 
 ### Use Theme Values
 

@@ -1,0 +1,197 @@
+# variable
+
+Declare a typed CSS variable that styles read and assign, statically or when applied.
+
+A reference works as a declaration value and as a computed key inside `vars`. The compiler names the custom property after the authored binding, so `variables.accent` below becomes `--z-variables-accent`.
+
+```tsx title="Plan.tsx"
+import { style, variable } from 'zyzz'
+
+export function Plan(props: Plan.Props) {
+  return (
+    // [!code hl:2]
+    // An inline assignment overrides the static one on this element
+    <section {...styles.plan({ vars: { [variables.accent]: props.accent } })}>
+      <h3 {...styles.name()}>Pro</h3>
+    </section>
+  )
+}
+
+export declare namespace Plan {
+  type Props = { accent?: string | undefined }
+}
+
+namespace variables {
+  export const accent = variable('color')
+}
+
+namespace styles {
+  export const name = style({ color: variables.accent, margin: 0 })
+
+  export const plan = style({
+    borderLeft: '4px solid',
+    borderLeftColor: variables.accent,
+    // [!code hl]
+    vars: { [variables.accent]: '#0070f3' },
+  })
+}
+```
+
+## Signature
+
+```ts
+// Any string or number
+variable()
+
+// Typed, and registered with @property when options are passed
+variable(kind, options?)
+```
+
+## Parameters
+
+### kind
+
+- **Type:** `'color' | 'length' | 'number' | 'percentage' | 'signedLength' | 'signedPercentage'{:ts}`
+- **Default:** `undefined{:ts}`
+
+Constrains the declarations a reference can supply and the values `set` accepts. `length` and `percentage` are nonnegative, and the signed kinds allow negative values. Omitting `kind` accepts any string or number.
+
+```ts
+import { style, variable } from 'zyzz'
+
+namespace variables {
+  // [!code hl]
+  export const gap = variable('length')
+}
+
+// `gap` accepts lengths, so `color: variables.gap` fails type checking
+const grid = style({ display: 'grid', gap: variables.gap })
+```
+
+### options.inherits
+
+- **Type:** `boolean{:ts}`
+
+Whether the registered property inherits through the DOM. Passing options emits an `@property` rule under the same generated name, and requires a `kind`.
+
+```ts
+import { variable } from 'zyzz'
+
+const gap = variable('length', {
+  // [!code hl]
+  inherits: false,
+  initialValue: '0px',
+})
+```
+
+Without options, the property is unregistered and inherits like any custom property.
+
+### options.initialValue
+
+- **Type:** `string | number{:ts}`
+
+The registered initial value, matching `kind`. It must be computationally independent, so lengths use absolute units and values cannot depend on `currentColor`, `var()`, `env()`, or font-relative units.
+
+```ts
+import { variable } from 'zyzz'
+
+const accent = variable('color', {
+  inherits: true,
+  // [!code hl]
+  initialValue: '#0070f3',
+})
+```
+
+### options.syntax
+
+- **Type:** `'<color>' | '<length>' | '<number>' | '<percentage>'{:ts}`
+- **Default:** Inferred from `kind`
+
+The registered CSS syntax. Signed and unsigned length kinds both emit `<length>`, and percentage kinds emit `<percentage>`.
+
+```ts
+import { variable } from 'zyzz'
+
+const offset = variable('signedLength', {
+  inherits: false,
+  initialValue: '0px',
+  // [!code hl]
+  syntax: '<length>',
+})
+```
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed name, which replaces the name derived from the binding. Variables require it when source runs without a compiler transform. Two declarations with the same name fail compilation, so independent declarations need distinct IDs.
+
+```ts /{ id: 'acme-accent' }/
+import { variable } from 'zyzz'
+
+// Names the custom property `--z-acme_2d_accent`
+const accent = variable('color', { id: 'acme-accent' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `variable.Reference<kind>{:ts}`
+
+An opaque string usable as a declaration value, inside template expressions, and as a computed key in [`styles.vars`](/docs/api/core/style#stylesvars) or [`options.vars`](/docs/api/core/style#optionsvars).
+
+```ts /variables.gap/
+// Reads the variable inside a larger value
+const card = style({ padding: `calc(${variables.gap} * 2)` })
+```
+
+Computed keys lose each variable's value type in TypeScript, so `vars` assignments are not checked against `kind`.
+
+### set
+
+- **Type:** ``(value) => { [variable: `--${string}`]: value }{:ts}``
+
+Returns a frozen inline assignment that keeps the variable's value type, for use as a `style` override. It performs no runtime validation and creates no CSS.
+
+```ts /variables.gap.set('12px')/
+// Type-checked against the `length` kind
+styles.grid({ style: variables.gap.set('12px') })
+```
+
+## Types
+
+- **`variable.Kind{:ts}`:** The supported value kinds.
+- **`variable.Options<kind>{:ts}`:** Registration options for a kind.
+- **`variable.Reference<kind>{:ts}`:** A declared variable with its `set` method.
+
+```ts title="spacing.ts"
+import { variable } from 'zyzz'
+
+// [!code hl:2]
+// Accepts any length reference, such as a spacing scale entry
+export function double(reference: variable.Reference<'length'>) {
+  return `calc(${reference} * 2)`
+}
+```
+
+## Errors
+
+TypeScript rejects values that do not match a variable's kind.
+
+```ts twoslash
+// @errors: 2345
+import { variable } from 'zyzz'
+
+const accent = variable('color')
+
+// A length is not a color
+accent.set('12px')
+```
+
+The compiler reports a variable declared outside a module-level constant as `Source.ExtractError`. Without a compiler transform, a variable without `options.id` throws an `Error`.
+
+## React Native
+
+Native views have no custom properties, so native compilation rejects modules that declare or read variables. Native themes use [`vars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#helpers) tokens, which resolve to native values.

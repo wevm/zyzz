@@ -353,7 +353,7 @@ const example = (
 )
 ```
 
-Definitions emit static assignments. Applications bind per-element values. Computed assignment keys lose individual domain information in TypeScript; `vars.accent.set(value)` retains that check. See [variable](../api/core/variable.md).
+Definitions emit static assignments. Applications bind per-element values. Computed assignment keys lose individual domain information in TypeScript; `vars.accent.set(value)` retains that check. See [variable](https://zyzz.sh/docs/api/core/variable).
 
 ### Conditional Styles
 

@@ -270,7 +270,7 @@ Graph.create()
 
 - **Type:** `(options: Graph.compile.Options) => Graph.compile.ReturnType{:ts}`
 
-Takes the same options and returns the same output as `Graph.compile`. An unchanged snapshot returns the previous result. An edit recompiles the changed modules and their importers, and keeps unaffected module results.
+Takes the same options and returns the same output as `Graph.compile`. An unchanged snapshot returns the previous result. An edit recompiles the changed modules and their importers, and keeps unaffected module results. An edit to a config or variable set recompiles every module, since each stylesheet carries the graph's scopes.
 
 ```ts
 import { Graph } from 'zyzz/compiler'
@@ -312,7 +312,7 @@ Publish the contract together with the matching JavaScript, declarations, and CS
 
 ## Types
 
-- **`Graph.compile.ErrorType{:ts}`:** The errors `compile` throws.
+- **`Graph.compile.ErrorType{:ts}`:** The typed errors `compile` throws.
 - **`Graph.compile.Options{:ts}`:** The accepted options.
 - **`Graph.compile.ReturnType{:ts}`:** The compiled modules and graph metadata.
 - **`Graph.create.ReturnType{:ts}`:** The incremental compiler.
@@ -341,7 +341,7 @@ Graph.compile({ modules, native: { colorScheme: 'dim' } })
 
 ## Errors
 
-`Graph.compile` returns no partial output. Missing modules, unresolved imports, invalid contracts, and circular imports throw `Source.ExtractError`. CSS failures throw `Css.CompileError`, and native failures throw the [`Native.compile` errors](/docs/api/compiler/namespaces/Native#errors).
+`Graph.compile` returns no partial output. Missing modules, unresolved imports, invalid contracts, and circular imports throw `Source.ExtractError`. CSS failures throw `Css.CompileError`, and native failures throw the [`Native.compile` errors](/docs/api/compiler/namespaces/Native#errors). With `compiler: false`, a definition without a required ID throws a plain `Error`, which `Graph.compile.ErrorType` does not include.
 
 ```ts
 import { Graph, Source } from 'zyzz/compiler'

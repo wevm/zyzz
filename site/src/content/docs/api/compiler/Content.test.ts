@@ -874,6 +874,48 @@ describe('Graph.create', () => {
       compiler.compile({ modules: edited }) === next,
     ).toMatchInlineSnapshot(`true`)
   })
+
+  test('recompiles every module after a config edit', () => {
+    const modules = {
+      'app/Card.tsx': `import { style } from './zyzz.config.js'
+
+export const card = style({ color: 'brand' })
+`,
+      'app/Other.tsx': `import { style } from 'zyzz'
+
+export const other = style({ color: 'red' })
+`,
+      'app/zyzz.config.ts': `import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
+`,
+    }
+    const compiler = Graph.create()
+    const first = compiler.compile({ modules })
+    const card = compiler.compile({
+      modules: { ...modules, 'app/Card.tsx': `${modules['app/Card.tsx']}\n` },
+    })
+
+    // An unrelated module keeps its result after a non-config edit
+    expect(
+      card.modules['app/Other.tsx'] === first.modules['app/Other.tsx'],
+    ).toMatchInlineSnapshot(`true`)
+
+    const themed = compiler.compile({
+      modules: {
+        ...modules,
+        'app/zyzz.config.ts': modules['app/zyzz.config.ts'].replace(
+          '#06c',
+          '#f00',
+        ),
+      },
+    })
+
+    // A config edit recompiles it too
+    expect(
+      themed.modules['app/Other.tsx'] === card.modules['app/Other.tsx'],
+    ).toMatchInlineSnapshot(`false`)
+  })
 })
 
 describe('Native.compile', () => {
@@ -1064,6 +1106,30 @@ export const label = style({ opacity: 0.5 })
     expect(
       output.code.includes('useVars((__zyzzNativeVars0 as typeof vars))'),
     ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('requires contextual output for media queries', () => {
+    const source = `import { style } from 'zyzz'
+export const panel = style({ opacity: 0.2, '@media (width >= 768px)': { opacity: 0.8 } })
+`
+
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        moduleId: 'app/Panel.tsx',
+        source,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[StyleSheet.CompileError: ["style-1xdpvwof0zvei-50"]: Selectors, queries, and nested rules are not supported on native.]`,
+    )
+    expect(
+      Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'app/Panel.tsx',
+        source,
+      }).recipes,
+    ).toMatchInlineSnapshot(`{}`)
   })
 
   test('runs the compiled callables', async () => {

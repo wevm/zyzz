@@ -161,7 +161,7 @@ Native.compile({
 - **Type:** `boolean{:ts}`
 - **Default:** `false{:ts}`
 
-Keeps every set and scheme in the output, so callables select one at render time from the nearest [`Provider`](/docs/guides/native/themes). Without it, `colorScheme` and `set` are fixed at compile time.
+Keeps every set and scheme in the output, so callables select one at render time from the nearest [`Provider`](/docs/guides/native/themes). It is also required for `@media` queries, which otherwise throw `StyleSheet.CompileError`. Without it, `colorScheme` and `set` are fixed at compile time.
 
 ```ts /contextual: true/
 // Retains the light and dark tables for render-time selection
@@ -201,7 +201,7 @@ await Fs.writeFile('Button.js.map', output.map)
 
 - **Type:** `Readonly<Record<string, Variants.Definition>>{:ts}`
 
-Tables for each static `style` definition, keyed by definition name, with every set and scheme. Definitions with variants, dynamic values, or media queries keep their data in `code` and have no entry here.
+Tables for each static `style` definition, keyed by definition name, with every set and scheme. Definitions with variants, dynamic values, or contextual media queries keep their data in `code` and have no entry here.
 
 ```ts /output.recipes/
 // { 'style-…': { styles: { default: { light: …, dark: … } }, … } }

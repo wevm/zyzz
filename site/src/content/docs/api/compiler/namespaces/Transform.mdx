@@ -2,7 +2,7 @@
 
 Rewrite one module's authoring calls and emit its matching CSS and source maps.
 
-`Transform.compile` extracts a module with [`Source.extract`](/docs/api/compiler/namespaces/Source), compiles its CSS, and replaces each definition with its compiled props. The rewritten module imports only the small `zyzz/runtime` helpers and never creates CSS rules.
+`Transform.compile` extracts a module with [`Source.extract`](/docs/api/compiler/namespaces/Source), compiles its CSS, and replaces each definition with its compiled props. The `zyzz` authoring import is replaced with small `zyzz/runtime` helpers, other imports stay as written, and the module never creates CSS rules.
 
 ```ts title="transform.ts"
 import { Transform } from 'zyzz/compiler'

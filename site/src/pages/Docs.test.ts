@@ -312,6 +312,69 @@ describe('/docs', () => {
     }
   })
 
+  test('groups web API exports under labelled sections', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/api/web/global`)
+      const navigation = page.getByRole('navigation', { name: 'Documentation' })
+      const web = navigation.locator('details', {
+        has: page.getByRole('group', { name: 'Stylesheets' }),
+      })
+
+      // The topic opens because it contains the current page.
+      expect(await web.getAttribute('open')).toMatchInlineSnapshot('""')
+      expect(
+        await web
+          .getByRole('group')
+          .evaluateAll((groups) =>
+            groups.map((group) => group.firstElementChild?.textContent),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "Stylesheets",
+          "At-Rules",
+          "Namespaces",
+          "Reference",
+        ]
+      `)
+      // Every web export has a page, so no entry renders as under construction.
+      expect(
+        await web
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map((link) => link.getAttribute('href') ?? 'disabled'),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "/docs/api/web",
+          "/docs/api/web/global",
+          "/docs/api/web/layers",
+          "/docs/api/web/fontFace",
+          "/docs/api/web/keyframes",
+          "/docs/api/web/importCss",
+          "/docs/api/web/page",
+          "/docs/api/web/viewTransition",
+          "/docs/api/web/positionTry",
+          "/docs/api/web/counterStyle",
+          "/docs/api/web/customMedia",
+          "/docs/api/web/property",
+          "/docs/api/web/fontFeatureValues",
+          "/docs/api/web/fontPaletteValues",
+          "/docs/api/web/cssFunction",
+          "/docs/api/web/colorProfile",
+          "/docs/api/web/namespace",
+          "/docs/api/web/namespaces/Css",
+          "/docs/api/web/at-rules",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('spans the viewport and outlines page sections beside the article', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

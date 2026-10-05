@@ -1,0 +1,150 @@
+# At-Rule Contract
+
+Which API owns each CSS at-rule, and the rules every stylesheet helper follows.
+
+Grouping rules stay native keys in style bodies and in [`global`](/docs/api/web/global), which also owns global selectors. Rules that hold descriptors or statements have dedicated functions from `zyzz/web`. The [At-Rules](/docs/guides/at-rules) guide shows each helper in a task.
+
+```ts title="src/document.ts"
+import { style } from 'zyzz'
+import { global, page } from 'zyzz/web'
+
+// [!code hl:2]
+// A descriptor rule uses its own function
+page({ descriptors: { margin: '2cm' } })
+
+// [!code hl:2]
+// A grouping rule stays a key, in global or in a style
+global({ '@media print': { nav: { display: 'none' } } })
+
+export const card = style({ '@media print': { boxShadow: 'none' } })
+```
+
+## Rule Coverage
+
+Each rule maps to the API that authors it. Compiler support does not establish browser support, so check [Compatibility](/docs/introduction/compatibility) before depending on newer rules.
+
+| CSS rule               | Authoring                                               | Result                     |
+| ---------------------- | ------------------------------------------------------- | -------------------------- |
+| `@charset`             | None, since output is UTF-8 without a BOM or `@charset` | Output encoding            |
+| `@color-profile`       | [`colorProfile`](/docs/api/web/colorProfile)            | Profile reference          |
+| `@container`           | `'@container …'` key                                    | Grouped rules              |
+| `@counter-style`       | [`counterStyle`](/docs/api/web/counterStyle)            | Counter style reference    |
+| `@custom-media`        | [`customMedia`](/docs/api/web/customMedia)              | Grouping key               |
+| `@document`            | `'@document …'` key                                     | Grouped rules              |
+| `@font-face`           | [`fontFace`](/docs/api/web/fontFace)                    | Shared stylesheet rule     |
+| `@font-feature-values` | [`fontFeatureValues`](/docs/api/web/fontFeatureValues)  | Shared stylesheet rule     |
+| `@font-palette-values` | [`fontPaletteValues`](/docs/api/web/fontPaletteValues)  | Palette reference          |
+| `@function`            | [`cssFunction`](/docs/api/web/cssFunction)              | Callable function          |
+| `@import`              | [`importCss`](/docs/api/web/importCss)                  | Ordered import             |
+| `@keyframes`           | [`keyframes`](/docs/api/web/keyframes)                  | Animation name             |
+| `@layer`               | [`layers`](/docs/api/web/layers) and `'@layer …'` keys  | Layer order, grouped rules |
+| `@media`               | `'@media …'` key                                        | Grouped rules              |
+| `@namespace`           | [`namespace`](/docs/api/web/namespace)                  | Module namespace           |
+| `@page`                | [`page`](/docs/api/web/page)                            | Shared stylesheet rule     |
+| `@position-try`        | [`positionTry`](/docs/api/web/positionTry)              | Fallback reference         |
+| `@property`            | [`property`](/docs/api/web/property), or `variable()`   | Registration               |
+| `@scope`               | `'@scope …'` key                                        | Grouped rules              |
+| `@starting-style`      | `'@starting-style'` key                                 | Grouped rules              |
+| `@supports`            | `'@supports …'` key                                     | Grouped rules              |
+| `@view-transition`     | [`viewTransition`](/docs/api/web/viewTransition)        | Shared stylesheet rule     |
+
+## Grouping Keys
+
+Grouping keys nest in style bodies, variants, compound variants, and `global` selector maps, wherever CSS permits the rule. `@scope` keeps native scoping roots, limits, and specificity.
+
+```ts
+import { style } from 'zyzz'
+
+export const card = style({
+  // [!code hl:4]
+  // Scoped, scroll-state, and starting-style rules nest like media queries
+  '@scope (&) to (.boundary)': { '& h2': { color: 'red' } },
+  '@container scroll-state(stuck: top)': { boxShadow: '0 2px 8px #0002' },
+  '@starting-style': { opacity: 0 },
+})
+```
+
+## Enclosing Contexts
+
+Descriptor helpers accept `@layer`, `@media`, `@supports`, and `@container` keys around a complete definition. Outer keys emit outer groups, and each branch holds a complete definition. Flat definitions emit at stylesheet scope. Statement helpers and `layers` stay at stylesheet scope.
+
+```ts
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  // [!code hl:2]
+  // Emits `@layer fonts{@supports font-tech(variations){@font-face{…}}}`
+  '@layer fonts': {
+    '@supports font-tech(variations)': {
+      fontFamily: 'Body',
+      src: 'url("/body.woff2")',
+    },
+  },
+})
+```
+
+## Named References
+
+`colorProfile`, `counterStyle`, `cssFunction`, `customMedia`, `fontPaletteValues`, `keyframes`, and `positionTry` return references. The compiler names each one from its module and binding, and keeps the name through imports, re-exports, packed libraries, and rebuilds. A `{ id }` argument fixes the name instead.
+
+References keep their domains in TypeScript, so a palette cannot become an animation name. The compiler omits named definitions that are neither exported nor referenced.
+
+```ts title="src/rules.ts"
+import { counterStyle, positionTry } from 'zyzz/web'
+
+// [!code hl:3]
+// Emits `@counter-style z-counterstyle-circled{…}` and `@position-try --z-positiontry-above{…}`
+export const circled = counterStyle({ system: 'fixed', symbols: '"①" "②" "③"' })
+export const above = positionTry({ positionArea: 'top' })
+```
+
+## Stylesheet Order
+
+The shared stylesheet starts with the `@layer` order statement, then imports, then namespaces, then other rules in authored order. Generated CSS is UTF-8 without a BOM or `@charset` declaration, and imported stylesheets keep their own bytes.
+
+```ts title="src/document.ts"
+import { global, importCss, layers } from 'zyzz/web'
+
+global({ body: { margin: 0 } })
+importCss({ layer: 'reset', url: './normalize.css' })
+// [!code hl:2]
+// Emitted first, ahead of the import and the global rule
+layers(['reset', 'base'])
+```
+
+Namespaces apply only to the module that declares them. The compiler renames each prefix and rewrites that module's selectors, so a declaration never changes selectors elsewhere.
+
+## Static Compilation
+
+Every helper is a static authoring call that compiles away. Calls must be direct module-level statements with literal data, and none registers CSS at runtime. Rules without a reference stay in the shared stylesheet even when JavaScript tree shaking removes their module.
+
+```ts
+import { global } from 'zyzz/web'
+
+export function reset() {
+  // [!code hl:2]
+  // Fails: "Stylesheet contributions require direct module-level calls…"
+  global({ body: { margin: 0 } })
+}
+```
+
+## React Native
+
+Native builds reject every helper from `zyzz/web` with `Native.CompileError`, since native views have no stylesheet. Keep stylesheet helpers in modules that only web builds compile.
+
+```ts title="src/web.ts"
+import { global } from 'zyzz/web'
+
+// [!code hl:2]
+// Compiles for web, and fails a native build that includes this module
+global({ body: { margin: 0 } })
+```
+
+## Conformance
+
+The repository tracks every MDN at-rule and descriptor in `test/conformance/at-rules.json`, with evidence files for each. Coverage there establishes compiler support only, not browser or print-engine rendering.
+
+```sh
+# Verifies the inventory, descriptor fingerprints, and evidence files
+pnpm check:at-rules # [!code hl]
+```

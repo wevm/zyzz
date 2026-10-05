@@ -1,0 +1,94 @@
+# importCss
+
+Emit an `@import` rule for an external stylesheet, with optional conditions.
+
+`importCss` places the import at the top of the shared stylesheet, after the `@layer` order statement and before namespaces and ordinary rules. Repeated calls keep their authored order.
+
+```ts title="src/imports.ts"
+import { importCss } from 'zyzz/web'
+
+// [!code hl:2]
+// Imports the published file into the `reset` layer
+importCss({ layer: 'reset', url: './normalize.css' })
+```
+
+## Signature
+
+```ts
+// One stylesheet with optional conditions
+importCss(options)
+```
+
+## Parameters
+
+### options.url
+
+- **Type:** `string{:ts}`
+
+The stylesheet URL. A relative URL resolves against the declaring module, and the host publishes the file as an asset. Absolute URLs are emitted unchanged.
+
+```ts
+// [!code hl:2]
+// Published as an asset, and the rule points at its URL
+importCss({ url: './print.css' })
+```
+
+### options.layer
+
+- **Type:** `string | true{:ts}`
+- **Default:** `undefined{:ts}`
+
+The cascade layer for the imported rules. `true` places them in an anonymous layer.
+
+```ts
+import { importCss } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@import url("https://example.com/vendor.css") layer;`
+importCss({ layer: true, url: 'https://example.com/vendor.css' })
+```
+
+### options.media
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A media query list that conditions the import.
+
+```ts /media: 'print'/
+// Applies the imported rules only when printing
+importCss({ media: 'print', url: './print.css' })
+```
+
+### options.supports
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A supports condition or declaration, without the outer `supports()`.
+
+```ts
+import { importCss } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@import url("https://example.com/grid.css") supports(display: grid);`
+importCss({ supports: 'display: grid', url: 'https://example.com/grid.css' })
+```
+
+## Returns
+
+`void`. The compiler erases the call, and the import stays in the shared stylesheet even when nothing imports the module.
+
+## Errors
+
+TypeScript rejects unknown options and calls without `url`.
+
+```ts twoslash
+// @errors: 2353
+import { importCss } from 'zyzz/web'
+
+// The option is `url`
+importCss({ href: './reset.css' })
+```
+
+The compiler reports `Source.ExtractError` for values it cannot read statically and calls outside module scope. Native builds reject the call with `Native.CompileError`.

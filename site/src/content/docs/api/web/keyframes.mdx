@@ -1,0 +1,117 @@
+# keyframes
+
+Emit an `@keyframes` rule and return its generated animation name.
+
+`keyframes` emits ordered frame stops into the shared stylesheet. The compiler replaces the call with a name derived from the module and binding, so styles reference the animation without a handwritten name. The [Keyframes](/docs/guides/keyframes) guide covers reduced motion and timeline ranges.
+
+```ts title="Notice.tsx"
+import { style } from 'zyzz'
+import { keyframes } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@keyframes z-k-enter{from{opacity:0;}to{opacity:1;}}`
+const enter = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
+
+export namespace styles {
+  export const notice = style({
+    // [!code hl:2]
+    // The reference compiles to `animation-name:z-k-enter`
+    animationName: enter,
+    animationDuration: '200ms',
+  })
+}
+```
+
+## Signature
+
+```ts
+// Frame stops, optionally inside grouping keys
+keyframes(frames, context?)
+```
+
+## Parameters
+
+### frames
+
+- **Type:** `{ [stop: string]: Style.LiteralProperties }{:ts}`
+
+Frame stops mapped to declarations, in authored order. Stops are `from`, `to`, percentages, timeline ranges such as `entry 0%`, or comma-separated lists of these. Frames cannot contain nested rules or importance.
+
+```ts
+import { keyframes } from 'zyzz/web'
+
+export const pulse = keyframes({
+  // [!code hl:2]
+  // One frame for both stops
+  '0%, 100%': { opacity: 1 },
+  '50%': { opacity: 0.5 },
+})
+```
+
+Timeline ranges are `contain`, `cover`, `entry`, `entry-crossing`, `exit`, and `exit-crossing`, each followed by a percentage.
+
+```ts
+import { keyframes } from 'zyzz/web'
+
+export const reveal = keyframes({
+  // [!code hl:3]
+  // Stops within a view timeline's entry range
+  'entry 0%': { opacity: 0 },
+  'entry 100%': { opacity: 1 },
+})
+```
+
+### frames[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: frames }{:ts}``
+
+Grouping keys around a complete set of frames. Outer keys emit outer groups.
+
+```ts
+import { keyframes } from 'zyzz/web'
+
+export const fade = keyframes({
+  // [!code hl:2]
+  // Emits the rule inside `@layer animations`
+  '@layer animations': { from: { opacity: 0 }, to: { opacity: 1 } },
+})
+```
+
+### context.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, such as in tests, a call requires it.
+
+```ts /{ id: 'fade' }/
+// Returns `z-kid-fade` with or without a compiler transform
+keyframes({ from: { opacity: 0 } }, { id: 'fade' })
+```
+
+## Returns
+
+### name
+
+- **Type:** `string{:ts}`
+
+The generated animation name, such as `z-k-enter`. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+
+```ts /animationName: enter/
+// Compiles to `animation-name:z-k-enter`
+style({ animationName: enter })
+```
+
+## Errors
+
+TypeScript rejects invalid stops and declarations.
+
+```ts twoslash
+// @errors: 2322
+import { keyframes } from 'zyzz/web'
+
+// `middle` is not a frame stop
+keyframes({ middle: { opacity: 0.5 } })
+```
+
+The compiler reports `Source.ExtractError` for nested rules or importance inside a frame. Without a compiler transform, a call without `context.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

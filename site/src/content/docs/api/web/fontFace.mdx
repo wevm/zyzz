@@ -1,0 +1,118 @@
+# fontFace
+
+Emit an `@font-face` rule from typed font descriptors.
+
+`fontFace` emits its descriptors into the shared stylesheet in authored order and compiles away. Styles then select the face through its family name. The [Fonts & Typography](/docs/guides/typography) guide covers font tokens and typography presets.
+
+```ts title="src/fonts.ts"
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  fontDisplay: 'swap',
+  // [!code hl:3]
+  // Styles select this face with `fontFamily: 'App Sans'`
+  fontFamily: 'App Sans',
+  src: 'url("/app.woff2") format("woff2")',
+})
+```
+
+## Signature
+
+```ts
+// Font descriptors, optionally inside grouping keys
+fontFace(descriptors)
+```
+
+## Parameters
+
+### descriptors
+
+- **Type:** `fontFace.Options{:ts}`
+
+Font descriptors keyed in camelCase. `fontFamily` and `src` are required. The optional descriptors are `ascentOverride`, `descentOverride`, `fontDisplay`, `fontFeatureSettings`, `fontStretch`, `fontStyle`, `fontVariationSettings`, `fontWeight`, `lineGapOverride`, `sizeAdjust`, and `unicodeRange`.
+
+```ts
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  fontFamily: 'Inter',
+  // [!code hl:3]
+  // Variable fonts declare a weight range and axis defaults
+  fontVariationSettings: '"opsz" 32',
+  fontWeight: '100 900',
+  src: 'url("/inter.woff2") format("woff2")',
+})
+```
+
+### descriptors.src
+
+- **Type:** `string{:ts}`
+
+The CSS `src` descriptor. A relative URL resolves against the declaring module, and the host publishes the file as an asset. Root-relative and absolute URLs are emitted unchanged. Vite also resolves a package path, such as a font from `@fontsource-variable/geist`.
+
+```ts
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  fontFamily: 'Body',
+  // [!code hl:2]
+  // Resolved next to this module and emitted as an asset URL
+  src: 'url("./body.woff2") format("woff2")',
+})
+```
+
+### descriptors[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: fontFace.Options }{:ts}``
+
+Grouping keys around a complete set of descriptors. Outer keys emit outer groups, and each branch must hold a complete definition.
+
+```ts
+import { fontFace } from 'zyzz/web'
+
+fontFace({
+  // [!code hl:2]
+  // Emits `@layer fonts{@supports font-tech(variations){@font-face{…}}}`
+  '@layer fonts': {
+    '@supports font-tech(variations)': {
+      fontFamily: 'Body',
+      src: 'url("/body.woff2")',
+    },
+  },
+})
+```
+
+## Returns
+
+`void`. The compiler erases the call, and the rule stays in the shared stylesheet even when nothing imports the module. The face has no generated name, so styles use the authored family.
+
+## Types
+
+- **`fontFace.Options{:ts}`:** The accepted descriptors.
+
+```ts title="src/fonts.ts"
+import { fontFace } from 'zyzz/web'
+
+// [!code hl:2]
+// Checks a shared descriptor object without widening its values
+const inter = {
+  fontFamily: 'Inter',
+  src: 'url("/inter.woff2")',
+} as const satisfies fontFace.Options
+
+fontFace(inter)
+```
+
+## Errors
+
+TypeScript rejects unknown descriptors and calls without `fontFamily` or `src`.
+
+```ts twoslash
+// @errors: 2345
+import { fontFace } from 'zyzz/web'
+
+// A face requires a source
+fontFace({ fontFamily: 'App Sans' })
+```
+
+The compiler reports `Source.ExtractError` for invalid descriptor values and calls outside module scope. Native builds reject the call with `Native.CompileError`, since native apps load fonts through platform APIs.

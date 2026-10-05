@@ -1,0 +1,129 @@
+# fontFeatureValues
+
+Emit an `@font-feature-values` rule that names OpenType feature indices for a font family.
+
+`fontFeatureValues` gives feature indices readable names for one or more families. Styles then select a named feature through `font-variant-alternates`, such as `styleset(editorial)`.
+
+```ts title="src/fonts.ts"
+import { fontFeatureValues } from 'zyzz/web'
+
+fontFeatureValues({
+  families: '"Example Font"',
+  features: {
+    // [!code hl:2]
+    // Emits `@styleset{editorial:1 3;}` inside the rule
+    '@styleset': { editorial: [1, 3] },
+    '@swash': { decorative: 2 },
+  },
+})
+```
+
+## Signature
+
+```ts
+// Families and named feature blocks
+fontFeatureValues(options)
+```
+
+## Parameters
+
+### options.families
+
+- **Type:** `string | readonly [string, ...string[]]{:ts}`
+
+A CSS font family list, or a tuple of family names that the compiler quotes individually.
+
+```ts
+import { fontFeatureValues } from 'zyzz/web'
+
+fontFeatureValues({
+  // [!code hl:2]
+  // Emits `@font-feature-values "Inter","Inter Display"{…}`
+  families: ['Inter', 'Inter Display'],
+  features: { '@stylistic': { alternate: 1 } },
+})
+```
+
+### options.features
+
+- **Type:** `fontFeatureValues.Options['features']{:ts}`
+
+Feature blocks mapping names to indices, in authored order. The blocks are `@annotation`, `@character-variant`, `@ornaments`, `@styleset`, `@stylistic`, and `@swash`. `@styleset` accepts several indices, and `@character-variant` accepts an index with a variation selector.
+
+```ts
+import { fontFeatureValues } from 'zyzz/web'
+
+fontFeatureValues({
+  families: '"Example Font"',
+  features: {
+    // [!code hl:2]
+    // Character variant 2, alternate 1
+    '@character-variant': { singleStorey: [2, 1] },
+  },
+})
+```
+
+### options.fontDisplay
+
+- **Type:** `'auto' | 'block' | 'fallback' | 'optional' | 'swap'{:ts}`
+- **Default:** `undefined{:ts}`
+
+The `font-display` descriptor for the family aliases.
+
+```ts /fontDisplay: 'swap'/
+// Emits `font-display:swap;` before the feature blocks
+fontFeatureValues({
+  families: '"Example Font"',
+  features: {},
+  fontDisplay: 'swap',
+})
+```
+
+### options[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: fontFeatureValues.Options }{:ts}``
+
+Grouping keys around a complete definition. Outer keys emit outer groups.
+
+```ts
+import { fontFeatureValues } from 'zyzz/web'
+
+fontFeatureValues({
+  // [!code hl:2]
+  // Emits the rule inside `@layer fonts`
+  '@layer fonts': {
+    families: '"Example Font"',
+    features: { '@swash': { decorative: 2 } },
+  },
+})
+```
+
+## Returns
+
+`void`. The compiler erases the call, and the rule stays in the shared stylesheet even when nothing imports the module.
+
+## Types
+
+- **`fontFeatureValues.Options{:ts}`:** The accepted families, feature blocks, and display policy.
+
+```ts
+import type { fontFeatureValues } from 'zyzz/web'
+
+// [!code hl:2]
+// Reads the accepted feature blocks
+type Features = fontFeatureValues.Options['features']
+```
+
+## Errors
+
+TypeScript rejects unknown feature blocks and options.
+
+```ts twoslash
+// @errors: 2345
+import { fontFeatureValues } from 'zyzz/web'
+
+// Ligatures are not a feature block
+fontFeatureValues({ families: 'Font', features: { '@ligatures': { a: 1 } } })
+```
+
+The compiler reports `Source.ExtractError` for invalid family lists and indices. Native builds reject the call with `Native.CompileError`.

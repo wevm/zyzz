@@ -1,0 +1,144 @@
+# property
+
+Emit an `@property` rule that registers a custom property with a syntax, inheritance, and initial value.
+
+`property` registers an authored custom-property name. Registration changes how the browser computes, inherits, and animates the value. For a typed variable with a generated name and typed assignments, use [`variable`](/docs/api/core/variable).
+
+```ts title="src/properties.ts"
+import { property } from 'zyzz/web'
+
+// [!code hl:7]
+// Emits `@property --angle{syntax:"<angle>";inherits:false;initial-value:0deg;}`
+property({
+  inherits: false,
+  initialValue: '0deg',
+  name: '--angle',
+  syntax: '<angle>',
+})
+```
+
+## Signature
+
+```ts
+// One registration, optionally inside grouping keys
+property(options)
+```
+
+## Parameters
+
+### options.name
+
+- **Type:** `` `--${string}`{:ts} ``
+
+The registered custom-property name, emitted as authored. Styles read it with `var()` and assign it as an ordinary custom property.
+
+```ts /name: '--angle'/
+// Styles read the value with `var(--angle)`
+property({
+  inherits: false,
+  initialValue: '0deg',
+  name: '--angle',
+  syntax: '<angle>',
+})
+```
+
+### options.syntax
+
+- **Type:** `string{:ts}`
+
+A syntax descriptor: one component type such as `<length>`, alternatives joined with `|`, `+` or `#` multipliers, or the universal `*`.
+
+```ts
+import { property } from 'zyzz/web'
+
+property({
+  inherits: false,
+  // [!code hl:3]
+  // One or more lengths, or the keyword `auto`
+  initialValue: '4px 8px',
+  syntax: '<length>+ | auto',
+  name: '--spacing',
+})
+```
+
+### options.inherits
+
+- **Type:** `boolean{:ts}`
+
+Whether elements inherit the value from their parent.
+
+```ts /inherits: true/
+// Descendants inherit the assigned color
+property({
+  inherits: true,
+  initialValue: 'black',
+  name: '--ink',
+  syntax: '<color>',
+})
+```
+
+### options.initialValue
+
+- **Type:** `string | number{:ts}`
+- **Default:** `undefined{:ts}`
+
+The initial value, which must match the syntax and be computationally independent, so `1em` is rejected. Every syntax except `*` requires it.
+
+```ts
+import { property } from 'zyzz/web'
+
+// [!code hl:2]
+// The universal syntax needs no initial value
+property({ inherits: true, name: '--payload', syntax: '*' })
+```
+
+### options[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: property.Options }{:ts}``
+
+Grouping keys around a complete registration. Outer keys emit outer groups.
+
+```ts
+import { property } from 'zyzz/web'
+
+property({
+  // [!code hl:2]
+  // Emits the registration inside `@layer defaults`
+  '@layer defaults': {
+    inherits: false,
+    initialValue: '0px',
+    name: '--gap',
+    syntax: '<length>',
+  },
+})
+```
+
+## Returns
+
+`void`. The compiler erases the call, and the registration stays in the shared stylesheet even when nothing imports the module.
+
+## Types
+
+- **`property.Options{:ts}`:** The accepted registration.
+
+```ts
+import type { property } from 'zyzz/web'
+
+// [!code hl:2]
+// Reads the accepted name shape
+type Name = property.Options['name']
+```
+
+## Errors
+
+TypeScript rejects unknown options, invalid syntax descriptors, and a missing initial value.
+
+```ts twoslash
+// @errors: 2345
+import { property } from 'zyzz/web'
+
+// `<length>` requires an initial value
+property({ inherits: false, name: '--gap', syntax: '<length>' })
+```
+
+The compiler reports `Source.ExtractError` for an initial value that does not match the syntax or depends on other values. Native builds reject the call with `Native.CompileError`.

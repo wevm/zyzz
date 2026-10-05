@@ -753,7 +753,7 @@ The paired examples cover common tasks. These documented APIs cover further requ
 | [Appearance](../guides/themes.md)                                                 | Select named theme scopes and color schemes, with initialization scripts for saved preferences.                 |
 | [CSS output](../guides/css-output.md)                                             | Choose atomic or grouped output without changing authoring or composition semantics.                            |
 | [Property mappings](../guides/themes.md#property-mappings)                        | Configure optional aliases and property-specific token scales.                                                  |
-| [Stylesheets](../api/web/README.md)                                               | Declare globals, cascade layers, fonts, keyframes, and supported CSS at-rules.                                  |
+| [Stylesheets](https://zyzz.sh/docs/api/web)                                               | Declare globals, cascade layers, fonts, keyframes, and supported CSS at-rules.                                  |
 | [Typography sets](../guides/themes.md#typography-sets)                            | Apply a named set of font properties, with explicit field overrides.                                            |
 | [Typed variables](https://zyzz.sh/docs/api/core/variable)                                        | Declare independent variables, constrain assignments with `.set`, and optionally emit `@property` registration. |
 | [Variant conditions and payloads](https://zyzz.sh/docs/api/core/variants#optionsconditions) | Select choices through media/supports conditions or bind typed payloads to a dynamic choice.                    |

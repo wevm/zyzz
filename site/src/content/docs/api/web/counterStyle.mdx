@@ -1,0 +1,145 @@
+# counterStyle
+
+Emit an `@counter-style` rule and return a reference for list markers and counters.
+
+`counterStyle` emits a named counter style from its descriptors. The compiler replaces the call with a generated name, which `listStyleType` accepts.
+
+```tsx title="Steps.tsx"
+import { style } from 'zyzz'
+import { counterStyle } from 'zyzz/web'
+
+// [!code hl:6]
+// Emits `@counter-style z-counterstyle-circled{…}`
+const circled = counterStyle({
+  suffix: '" "',
+  symbols: '"①" "②" "③"',
+  system: 'fixed',
+})
+
+export function Steps() {
+  return (
+    <ol {...styles.list()}>
+      <li>Install</li>
+      <li>Configure</li>
+    </ol>
+  )
+}
+
+namespace styles {
+  // [!code hl]
+  export const list = style({ listStyleType: circled })
+}
+```
+
+## Signature
+
+```ts
+// Counter descriptors, optionally inside grouping keys
+counterStyle(descriptors, context?)
+```
+
+## Parameters
+
+### descriptors
+
+- **Type:** `counterStyle.Options{:ts}`
+
+Counter descriptors keyed in camelCase: `additiveSymbols`, `fallback`, `negative`, `pad`, `prefix`, `range`, `speakAs`, `suffix`, `symbols`, and `system`. String values are CSS text, so symbols keep their quotes.
+
+```ts
+import { counterStyle } from 'zyzz/web'
+
+export const thumbs = counterStyle({
+  // [!code hl:3]
+  // Repeats the symbols in order
+  system: 'cyclic',
+  symbols: '"👍"',
+  suffix: '" "',
+})
+```
+
+### descriptors.system
+
+- **Type:** ``'cyclic' | 'numeric' | 'alphabetic' | 'symbolic' | 'additive' | 'fixed' | `fixed ${bigint}` | `extends ${string}`{:ts}``
+- **Default:** `undefined{:ts}`
+
+The counter algorithm, which CSS defaults to `symbolic`. `additive` requires `additiveSymbols`, `extends` reuses another style's algorithm, and every other system requires `symbols`.
+
+```ts
+import { counterStyle } from 'zyzz/web'
+
+export const parenthesized = counterStyle({
+  // [!code hl:2]
+  // Keeps decimal numbering with a different suffix
+  system: 'extends decimal',
+  suffix: '") "',
+})
+```
+
+### descriptors[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: counterStyle.Options }{:ts}``
+
+Grouping keys around a complete set of descriptors. Outer keys emit outer groups.
+
+```ts
+import { counterStyle } from 'zyzz/web'
+
+export const stars = counterStyle({
+  // [!code hl:2]
+  // Emits the rule inside `@layer lists`
+  '@layer lists': { system: 'cyclic', symbols: '"*"' },
+})
+```
+
+### context.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+
+```ts /{ id: 'stars' }/
+// Returns `z-counterstyleid-stars`
+counterStyle({ system: 'cyclic', symbols: '"*"' }, { id: 'stars' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `counterStyle.Reference{:ts}`
+
+The generated counter style name. `listStyleType` accepts it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+
+```ts /listStyleType: circled/
+// Compiles to `list-style-type:z-counterstyle-circled`
+style({ listStyleType: circled })
+```
+
+## Types
+
+- **`counterStyle.Options{:ts}`:** The accepted descriptors.
+- **`counterStyle.Reference{:ts}`:** The returned counter style name.
+
+```ts
+import type { counterStyle } from 'zyzz/web'
+
+// [!code hl:2]
+// Reads the accepted counter algorithms
+type System = counterStyle.Options['system']
+```
+
+## Errors
+
+TypeScript rejects unknown descriptors, unknown systems, and calls missing the symbols their system requires.
+
+```ts twoslash
+// @errors: 2345
+import { counterStyle } from 'zyzz/web'
+
+// A cyclic system requires `symbols`
+counterStyle({ system: 'cyclic' })
+```
+
+The compiler reports `Source.ExtractError` for invalid descriptor values. Without a compiler transform, a call without `context.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

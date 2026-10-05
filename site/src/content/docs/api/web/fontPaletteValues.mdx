@@ -1,0 +1,148 @@
+# fontPaletteValues
+
+Emit an `@font-palette-values` rule and return a reference for color font palettes.
+
+`fontPaletteValues` emits a named palette for a color font. The compiler replaces the call with a generated dashed name, which `fontPalette` accepts.
+
+```tsx title="Icon.tsx"
+import { style } from 'zyzz'
+import { fontPaletteValues } from 'zyzz/web'
+
+// [!code hl:6]
+// Emits `@font-palette-values --z-fontpalettevalues-brand{…}`
+const brand = fontPaletteValues({
+  basePalette: 0,
+  fontFamily: '"Brand Icons"',
+  overrideColors: '0 #ff5500, 1 #111111',
+})
+
+export function Icon() {
+  return <span {...styles.icon()}>★</span>
+}
+
+namespace styles {
+  // [!code hl]
+  export const icon = style({ fontFamily: '"Brand Icons"', fontPalette: brand })
+}
+```
+
+## Signature
+
+```ts
+// Palette descriptors, optionally inside grouping keys
+fontPaletteValues(descriptors, context?)
+```
+
+## Parameters
+
+### descriptors.fontFamily
+
+- **Type:** `string{:ts}`
+
+The color font family the palette applies to.
+
+```ts /fontFamily: '"Brand Icons"'/
+// The palette applies only to this family
+fontPaletteValues({ fontFamily: '"Brand Icons"' })
+```
+
+### descriptors.basePalette
+
+- **Type:** `'light' | 'dark' | number{:ts}`
+- **Default:** `undefined{:ts}`
+
+The font's built-in palette to start from, by index or by its light or dark flag. Indices must be nonnegative integers.
+
+```ts /basePalette: 'dark'/
+// Starts from the font's dark palette
+fontPaletteValues({ basePalette: 'dark', fontFamily: '"Brand Icons"' })
+```
+
+### descriptors.overrideColors
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Comma-separated pairs of palette index and color, applied over the base palette.
+
+```ts
+import { fontPaletteValues } from 'zyzz/web'
+
+export const accent = fontPaletteValues({
+  fontFamily: '"Brand Icons"',
+  // [!code hl:2]
+  // Replaces the first color only
+  overrideColors: '0 crimson',
+})
+```
+
+### descriptors[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: fontPaletteValues.Options }{:ts}``
+
+Grouping keys around a complete set of descriptors. Outer keys emit outer groups.
+
+```ts
+import { fontPaletteValues } from 'zyzz/web'
+
+export const night = fontPaletteValues({
+  // [!code hl:2]
+  // Emits the rule inside `@layer fonts`
+  '@layer fonts': { basePalette: 'dark', fontFamily: '"Brand Icons"' },
+})
+```
+
+### context.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+
+```ts /{ id: 'brand' }/
+// Returns `--z-fontpalettevaluesid-brand`
+fontPaletteValues({ fontFamily: '"Brand Icons"' }, { id: 'brand' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `fontPaletteValues.Reference{:ts}`
+
+The generated dashed name. `fontPalette` accepts it, and other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+
+```ts /fontPalette: brand/
+// Compiles to `font-palette:--z-fontpalettevalues-brand`
+style({ fontPalette: brand })
+```
+
+## Types
+
+- **`fontPaletteValues.Options{:ts}`:** The accepted descriptors.
+- **`fontPaletteValues.Reference{:ts}`:** The returned palette name.
+
+```ts
+import type { fontPaletteValues } from 'zyzz/web'
+
+// [!code hl:2]
+// Accepts only palette references
+export type Palettes = Readonly<Record<string, fontPaletteValues.Reference>>
+```
+
+## Errors
+
+TypeScript rejects unknown descriptors, negative or fractional palette indices, and a palette reference outside `fontPalette`.
+
+```ts twoslash
+// @errors: 2322
+import { style } from 'zyzz'
+import { fontPaletteValues } from 'zyzz/web'
+
+const brand = fontPaletteValues({ fontFamily: '"Brand Icons"' })
+
+// A palette is not an animation
+style({ animationName: brand })
+```
+
+The compiler reports `Source.ExtractError` for invalid descriptor values. Without a compiler transform, a call without `context.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

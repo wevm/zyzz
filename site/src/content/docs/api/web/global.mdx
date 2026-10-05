@@ -1,0 +1,94 @@
+# global
+
+Emit global selector rules and their grouping rules into the shared stylesheet.
+
+`global` maps complete selectors to declarations. The compiler emits the rules into the shared stylesheet and erases the call, so the rules apply whether or not any module imports the file that declares them. The [Global Styles](/docs/guides/global-styles) guide covers common patterns.
+
+```ts title="src/document.ts"
+import { global } from 'zyzz/web'
+
+global({
+  // [!code hl:3]
+  // Each selector maps to declarations, as in a style body
+  body: { margin: 0 },
+  'a:hover': { textDecoration: 'underline' },
+})
+```
+
+## Signature
+
+```ts
+// Selector and grouping rules
+global(styles)
+```
+
+## Parameters
+
+### styles
+
+- **Type:** `{ [selector: string]: Style.LiteralProperties }{:ts}`
+
+Complete selectors mapped to declarations in authored order. Declarations accept nested pseudo-classes, pseudo-elements, and conditions, as a [`style`](/docs/api/core/style) body does. Specificity follows the authored selector.
+
+```ts
+import { global } from 'zyzz/web'
+
+global({
+  a: {
+    color: 'blue',
+    // [!code hl:2]
+    // Nests under `a` as `&:hover`
+    ':hover': { color: 'navy' },
+  },
+})
+```
+
+Values must be static. Local constants and literal exports from other modules in the source graph are read at build time.
+
+```ts title="src/base.ts"
+import { global } from 'zyzz/web'
+
+const sans = 'Inter, sans-serif'
+
+// [!code hl:2]
+// The constant is inlined into the emitted rule
+global({ body: { fontFamily: sans } })
+```
+
+### styles[atRule]
+
+- **Type:** ``{ [atRule: `@${string}`]: { [selector: string]: Style.LiteralProperties } }{:ts}``
+
+`@media`, `@supports`, `@container`, `@layer`, `@scope`, and `@starting-style` keys group further selectors, at any depth.
+
+```ts
+import { global } from 'zyzz/web'
+
+global({
+  // [!code hl:4]
+  // Emits `@layer base{body{margin:0;}}`
+  '@layer base': { body: { margin: 0 } },
+  // Emits `@media print{nav{display:none;}}`
+  '@media print': { nav: { display: 'none' } },
+})
+```
+
+Layer names in `@layer` keys are raw CSS names. Declare their order with [`layers`](/docs/api/web/layers).
+
+## Returns
+
+`void`. The compiler erases the call, and the rules stay in the shared stylesheet even when nothing imports the module. Hosts load the shared stylesheet before module stylesheets.
+
+## Errors
+
+TypeScript rejects properties and values that a style body would reject, and at-rule keys outside the grouping rules above.
+
+```ts twoslash
+// @errors: 2322
+import { global } from 'zyzz/web'
+
+// `colr` is not a CSS property
+global({ body: { colr: 'red' } })
+```
+
+The compiler reports `Source.ExtractError` for an invalid selector, a value it cannot read statically, or a call outside module scope. Native builds reject the call with `Native.CompileError`.

@@ -107,7 +107,52 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           },
         ],
       },
-      { path: 'api/web', title: 'Web' },
+      {
+        title: 'Web',
+        children: [
+          { path: 'api/web', title: 'Overview' },
+          {
+            title: 'Stylesheets',
+            items: [
+              { path: 'api/web/global', title: 'global' },
+              { path: 'api/web/layers', title: 'layers' },
+              { path: 'api/web/fontFace', title: 'fontFace' },
+              { path: 'api/web/keyframes', title: 'keyframes' },
+            ],
+          },
+          {
+            title: 'At-Rules',
+            items: [
+              { path: 'api/web/importCss', title: 'importCss' },
+              { path: 'api/web/page', title: 'page' },
+              { path: 'api/web/viewTransition', title: 'viewTransition' },
+              { path: 'api/web/positionTry', title: 'positionTry' },
+              { path: 'api/web/counterStyle', title: 'counterStyle' },
+              { path: 'api/web/customMedia', title: 'customMedia' },
+              { path: 'api/web/property', title: 'property' },
+              {
+                path: 'api/web/fontFeatureValues',
+                title: 'fontFeatureValues',
+              },
+              {
+                path: 'api/web/fontPaletteValues',
+                title: 'fontPaletteValues',
+              },
+              { path: 'api/web/cssFunction', title: 'cssFunction' },
+              { path: 'api/web/colorProfile', title: 'colorProfile' },
+              { path: 'api/web/namespace', title: 'namespace' },
+            ],
+          },
+          {
+            title: 'Namespaces',
+            items: [{ path: 'api/web/namespaces/Css', title: 'Css' }],
+          },
+          {
+            title: 'Reference',
+            items: [{ path: 'api/web/at-rules', title: 'At-Rule Contract' }],
+          },
+        ],
+      },
       { path: 'api/react-native', title: 'React Native' },
       { path: 'api/cli', title: 'CLI' },
       {

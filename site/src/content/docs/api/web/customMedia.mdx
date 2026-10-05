@@ -1,0 +1,112 @@
+# customMedia
+
+Emit an `@custom-media` rule and return a key that groups declarations under it.
+
+`customMedia` names a media query once. The compiler replaces the call with a computed key, so style bodies group declarations under the query without repeating it.
+
+```tsx title="Sidebar.tsx"
+import { style } from 'zyzz'
+import { customMedia } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@custom-media --z-custommedia-compact (width < 40rem);`
+const compact = customMedia('(width < 40rem)')
+
+export function Sidebar() {
+  return <nav {...styles.sidebar()}>Links</nav>
+}
+
+namespace styles {
+  export const sidebar = style({
+    display: 'block',
+    // [!code hl:2]
+    // Emits `@media (--z-custommedia-compact){…}`
+    [compact]: { display: 'none' },
+  })
+}
+```
+
+## Signature
+
+```ts
+// A media query, with an optional fixed identity
+customMedia(query, options?)
+```
+
+## Parameters
+
+### query
+
+- **Type:** `string | boolean{:ts}`
+
+A media query list, or `true` or `false` for a query that always or never matches.
+
+```ts
+import { customMedia } from 'zyzz/web'
+
+// [!code hl:2]
+// Combines several conditions under one name
+export const wideHover = customMedia('(width >= 64rem) and (hover: hover)')
+```
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the module and binding. Without a compiler transform, a call requires it.
+
+```ts /{ id: 'compact' }/
+// Returns '@media (--z-custommediaid-compact)'
+customMedia('(width < 40rem)', { id: 'compact' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `customMedia.Reference{:ts}`
+
+An opaque grouping key for style bodies, at any depth. Imports, re-exports, and packed libraries keep the same name.
+
+```ts
+import { style } from 'zyzz'
+import { customMedia } from 'zyzz/web'
+
+const print = customMedia('print')
+
+export const link = style({
+  color: 'blue',
+  // [!code hl:2]
+  // Emits `@media (--z-custommedia-print){…&:hover{…}}`
+  ':hover': { [print]: { textDecoration: 'none' } },
+})
+```
+
+## Types
+
+- **`customMedia.Reference{:ts}`:** The returned grouping key.
+
+```ts
+import type { customMedia } from 'zyzz/web'
+
+// [!code hl:2]
+// Accepts only named queries
+export type Breakpoints = Readonly<Record<string, customMedia.Reference>>
+```
+
+## Errors
+
+The reference is opaque, so TypeScript rejects string operations on it.
+
+```ts twoslash
+// @errors: 2339
+import { customMedia } from 'zyzz/web'
+
+const compact = customMedia('(width < 40rem)')
+
+// The key is not a string
+compact.toUpperCase()
+```
+
+The compiler reports `Source.ExtractError` for a query it cannot read statically. Without a compiler transform, a call without `options.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

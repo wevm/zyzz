@@ -1,0 +1,124 @@
+# page
+
+Emit an `@page` rule with page descriptors and page-margin boxes.
+
+`page` emits its descriptors into the shared stylesheet in authored order. Repeated calls keep separate rules, so later rules for a selected page override earlier ones by the usual cascade.
+
+```ts title="src/print.ts"
+import { page } from 'zyzz/web'
+
+page({
+  descriptors: {
+    margin: '2cm',
+    size: 'A4',
+    // [!code hl:2]
+    // A page-margin box with its own declarations
+    '@bottom-center': { content: 'counter(page)' },
+  },
+})
+```
+
+## Signature
+
+```ts
+// Descriptors for every page, or for selected pages
+page(options)
+```
+
+## Parameters
+
+### options.descriptors
+
+- **Type:** `page.Body<descriptors>{:ts}`
+
+Page descriptors and properties that apply to the page box, such as margins, padding, borders, and backgrounds. The page descriptors are `bleed`, `marks`, `pageMarginSafety`, `pageOrientation`, and `size`.
+
+```ts
+import { page } from 'zyzz/web'
+
+page({
+  descriptors: {
+    // [!code hl:3]
+    // Named paper sizes accept an orientation
+    size: 'A4 landscape',
+    marks: 'crop cross',
+    margin: '1cm',
+  },
+})
+```
+
+Page-margin box keys, such as `@top-center` and `@bottom-right-corner`, hold their own declarations. They also accept `content`, `overflow`, `unicodeBidi`, `verticalAlign`, and `zIndex`.
+
+```ts
+import { page } from 'zyzz/web'
+
+page({
+  descriptors: {
+    // [!code hl:2]
+    // Emits `@top-right{content:"Draft";}` inside the page rule
+    '@top-right': { content: '"Draft"' },
+  },
+})
+```
+
+### options.selector
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A page selector, such as a named page or a page pseudo-class. Omitting it targets every page.
+
+```ts /selector: ':first'/
+// Emits `@page :first{margin-top:4cm;}`
+page({ descriptors: { marginTop: '4cm' }, selector: ':first' })
+```
+
+### options[atRule]
+
+- **Type:** ``{ [atRule: `@${'container' | 'layer' | 'media' | 'supports'} ${string}`]: { descriptors; selector? } }{:ts}``
+
+Grouping keys around a complete page definition. Outer keys emit outer groups.
+
+```ts
+import { page } from 'zyzz/web'
+
+page({
+  // [!code hl:2]
+  // Emits the page rule inside `@layer print`
+  '@layer print': { descriptors: { margin: '2cm' } },
+})
+```
+
+## Returns
+
+`void`. The compiler erases the call, and the rule stays in the shared stylesheet even when nothing imports the module.
+
+## Types
+
+- **`page.Body<descriptors>{:ts}`:** The accepted descriptors, properties, and margin boxes.
+- **`page.Descriptors{:ts}`:** The page descriptors that are not element properties.
+- **`page.Margin{:ts}`:** The sixteen page-margin box keys.
+- **`page.MarginProperties{:ts}`:** The properties accepted inside a margin box.
+- **`page.Properties{:ts}`:** The element properties accepted on the page box.
+
+```ts
+import type { page } from 'zyzz/web'
+
+// [!code hl:2]
+// Narrows a setting to the accepted paper sizes
+type Size = page.Descriptors['size']
+```
+
+## Errors
+
+TypeScript rejects unknown descriptors and properties that do not apply to a page.
+
+```ts twoslash
+// @errors: 2322
+import { page } from 'zyzz/web'
+
+// `display` does not apply to the page box
+page({ descriptors: { display: 'grid' } })
+```
+
+The compiler reports `Source.ExtractError` for invalid descriptor values, such as a percentage `size`. Native builds reject the call with `Native.CompileError`. Rendering of margin boxes depends on the browser or print engine.

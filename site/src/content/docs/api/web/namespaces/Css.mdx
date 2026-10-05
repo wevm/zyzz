@@ -1,0 +1,294 @@
+# Css
+
+Compile ordered style data into CSS text, class names, and variable set scopes.
+
+`Css` holds the pure web CSS compiler, with its types and errors. It reads data and returns strings without touching the filesystem, the DOM, or a bundler. Bundler integrations call it for each module, and custom pipelines and tests can call it directly.
+
+```ts title="compile.ts"
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({ card: { color: 'black', padding: '1rem' } })
+
+// [!code hl:2]
+// { classes: { card: 'z-text-black z-p-1rem' }, css: '.z-text-black{color:black;}…' }
+const output = Css.compile({ styles })
+```
+
+## Css.compile
+
+Compile [`Style.define`](/docs/api/core/namespaces/Style) data into a stylesheet and a class map. The result is frozen, and its keys keep the authored style and variable set names.
+
+## Signature
+
+```ts
+// One options object, returning the stylesheet and class maps
+Css.compile(options)
+```
+
+## Parameters
+
+### options.styles
+
+- **Type:** `Style.Definition{:ts}`
+
+The ordered, validated definitions from `Style.define`. Each style key becomes a key of the returned class map.
+
+```ts /styles/
+// Styles keep their authored order in the stylesheet
+Css.compile({ styles: Style.define({ card: { padding: '1rem' } }) })
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+Atomic output emits one class per declaration and shares identical declarations across styles. Grouped output emits one class per style with all its declarations. The [CSS Output](/docs/guides/css-output) guide compares the two.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({ card: { color: 'black', padding: '1rem' } })
+
+// [!code hl:2]
+// { classes: { card: 'z-card' }, css: '.z-card{color:black;padding:1rem;}' }
+const output = Css.compile({ cssOutput: 'grouped', styles })
+```
+
+### options.composition
+
+- **Type:** `'independent' | 'ordered'{:ts}`
+- **Default:** `'ordered'{:ts}`
+
+`ordered` keeps precedence correct when class lists combine on one element. `independent` deduplicates identical styles and factors shared grouped declarations, so its class lists must never combine with each other.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({
+  card: { color: 'black', padding: '1rem' },
+  title: { fontSize: '2rem', padding: '1rem' },
+})
+
+// [!code hl:2]
+// card: 'z-card z-card__1', title: 'z-card z-title'
+const output = Css.compile({
+  composition: 'independent',
+  cssOutput: 'grouped',
+  styles,
+})
+```
+
+### options.contributions
+
+- **Type:** `readonly Css.Contribution[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Ordered stylesheet rules that belong to no style, such as layer order, global rules, and at-rules. Source compilation builds them from `global`, `layers`, and the other stylesheet helpers. Their CSS precedes the style rules.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const output = Css.compile({
+  // [!code hl:2]
+  // Emits `@layer reset,base;` before the style rules
+  contributions: [{ kind: 'layers', names: ['reset', 'base'] }],
+  styles: Style.define({ card: { padding: '1rem' } }),
+})
+```
+
+### options.development
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Keeps each style's rules separate, so a changed style replaces only its own rules during development updates. It disables the deduplication of `composition: 'independent'`. Integrations enable it in development servers.
+
+```ts /development: true/
+// Replace the class map and CSS together after each edit
+Css.compile({ development: true, styles })
+```
+
+### options.names
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Fixed class names for styles, keyed by style name. A fixed name replaces the generated classes, which suits stylesheets consumed without the class map.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({ card: { padding: '1rem' } })
+
+// [!code hl:2]
+// { classes: { card: 'card' }, css: '.card{padding:1rem;}' }
+const output = Css.compile({ names: { card: 'card' }, styles })
+```
+
+### options.schemes
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Emits the `color-scheme` classes that `vars({ colorScheme })`, `appearance`, and `script()` apply. Source compilation enables it for modules that use those helpers.
+
+```ts /schemes: true/
+// Adds `.z_scheme-dark{color-scheme:dark;}` and its siblings
+Css.compile({ schemes: true, styles })
+```
+
+### options.scope
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A namespace inserted into generated class names, which keeps stylesheets compiled and delivered separately from colliding.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({ card: { padding: '1rem' } })
+
+// [!code hl:2]
+// { classes: { card: 'z-card-p-1rem' }, css: '.z-card-p-1rem{padding:1rem;}' }
+const output = Css.compile({ scope: 'card', styles })
+```
+
+### options.vars
+
+- **Type:** `Readonly<Record<string, Vars.Definition>>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Named variable sets from [`defineVars`](/docs/api/core/defineVars) and [`extendVars`](/docs/api/core/extendVars). Each set emits a scope class that assigns the variables the styles reference.
+
+```ts
+import { defineVars, Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const base = defineVars({ color: { ink: '#171717' } })
+const styles = Style.define({ card: { color: base.color.ink } })
+
+// [!code hl:2]
+// output.vars.base is the scope class that assigns `--z0`
+const output = Css.compile({ styles, vars: { base } })
+```
+
+## Returns
+
+### classes
+
+- **Type:** `Readonly<Record<name, string>>{:ts}`
+
+Space-separated classes for each style, keyed by style name. A style without declarations maps to an empty string.
+
+```ts /output.classes.card/
+// Applies the compiled classes in markup
+const markup = `<article class="${output.classes.card}"></article>`
+```
+
+### css
+
+- **Type:** `string{:ts}`
+
+The complete stylesheet, including any contributions before the style rules. Deliver it together with the class map from the same call.
+
+```ts /output.css/
+// Loads the stylesheet in a page
+const markup = `<style>${output.css}</style>`
+```
+
+### contributionCss
+
+- **Type:** `string | undefined{:ts}`
+
+The contribution rules alone, present when contributions emit CSS. Hosts that hoist shared rules load it before `scopedCss` and before other stylesheets that declare layers.
+
+```ts /output.contributionCss/
+// '@layer reset,base;'
+const shared = output.contributionCss
+```
+
+### scopedCss
+
+- **Type:** `string | undefined{:ts}`
+
+The variable scopes and style rules alone, present when contributions emit CSS. A consumer loads either `css`, or `contributionCss` followed by `scopedCss`, but never both.
+
+```ts /output.scopedCss/
+// Falls back to the complete stylesheet without contributions
+const moduleCss = output.scopedCss ?? output.css
+```
+
+### vars
+
+- **Type:** `Readonly<Record<themeName, string>>{:ts}`
+
+The scope class for each variable set, keyed by set name. It is empty when `options.vars` is omitted.
+
+```ts /output.vars.base/
+// Applies the base set's variables to a subtree
+const markup = `<section class="${output.vars.base}"></section>`
+```
+
+## Types
+
+- **`Css.compile.ErrorType{:ts}`:** The error `Css.compile` throws, `Css.CompileError`.
+- **`Css.compile.Options{:ts}`:** The accepted options.
+- **`Css.compile.ReturnType{:ts}`:** The returned stylesheet and class maps.
+- **`Css.Contribution{:ts}`:** One stylesheet rule, discriminated by `kind`, such as `'layers'`, `'rule'`, `'font-face'`, `'keyframes'`, or `'property'`. An optional `within` lists enclosing groups, outermost first.
+- **`Css.Diagnostic{:ts}`:** One compilation failure, with a `code`, a `message`, and a `path`.
+
+```ts
+import type { Css } from 'zyzz/web'
+
+// [!code hl:2]
+// A shared layer order for several compilations
+export const order = [
+  { kind: 'layers', names: ['reset', 'base'] },
+] satisfies Css.Contribution[]
+```
+
+## Errors
+
+### Css.CompileError
+
+Thrown when styles, variable sets, or names cannot compile, with no partial output. `diagnostics` lists every failure in authored order. Each `code` is `identity_collision`, `invalid_declaration`, `invalid_name`, `invalid_output`, or `invalid_theme`.
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+try {
+  // Two different styles cannot share one fixed name
+  Css.compile({
+    names: { body: 'text', title: 'text' },
+    styles: Style.define({ body: { color: 'black' }, title: { color: 'red' } }),
+  })
+} catch (error) {
+  // [!code hl:2]
+  // [{ code: 'identity_collision', path: ['title'], … }]
+  if (error instanceof Css.CompileError) console.error(error.diagnostics)
+}
+```
+
+TypeScript also rejects reads of style names that the input does not define.
+
+```ts twoslash
+// @errors: 2339
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const output = Css.compile({
+  styles: Style.define({ card: { padding: '1rem' } }),
+})
+
+// `title` is not a style in this compilation
+output.classes.title
+```

@@ -6,9 +6,11 @@ import CodeIcon from '~icons/lucide/code'
 import CombineIcon from '~icons/lucide/combine'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
 import FileCodeIcon from '~icons/lucide/file-code'
+import FileSearchIcon from '~icons/lucide/file-search'
 import FileTypeIcon from '~icons/lucide/file-type'
 import LayersIcon from '~icons/lucide/layers'
 import ListIcon from '~icons/lucide/list'
+import NetworkIcon from '~icons/lucide/network'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PanelsIcon from '~icons/lucide/panels-top-left'
@@ -21,6 +23,7 @@ import SwatchBookIcon from '~icons/lucide/swatch-book'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import VariableIcon from '~icons/lucide/variable'
+import WandSparklesIcon from '~icons/lucide/wand-sparkles'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import ReactIcon from '~icons/simple-icons/react'
@@ -165,9 +168,11 @@ const icons = {
   combine: CombineIcon,
   'copy-plus': CopyPlusIcon,
   'file-code': FileCodeIcon,
+  'file-search': FileSearchIcon,
   'file-type': FileTypeIcon,
   layers: LayersIcon,
   list: ListIcon,
+  network: NetworkIcon,
   next: NextIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
@@ -184,5 +189,6 @@ const icons = {
   terminal: TerminalIcon,
   variable: VariableIcon,
   vite: ViteIcon,
+  'wand-sparkles': WandSparklesIcon,
   zap: ZapIcon,
 }

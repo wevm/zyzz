@@ -32,6 +32,7 @@ import CopyIcon from '~icons/lucide/copy'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileIcon from '~icons/lucide/file'
+import FileSearchIcon from '~icons/lucide/file-search'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
 import GaugeIcon from '~icons/lucide/gauge'
@@ -40,6 +41,7 @@ import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import ListIcon from '~icons/lucide/list'
 import MonitorIcon from '~icons/lucide/monitor'
+import NetworkIcon from '~icons/lucide/network'
 import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
@@ -60,6 +62,7 @@ import TerminalIcon from '~icons/lucide/terminal'
 import TestTubeIcon from '~icons/lucide/test-tube'
 import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
+import WandSparklesIcon from '~icons/lucide/wand-sparkles'
 import WorkflowIcon from '~icons/lucide/workflow'
 import WrenchIcon from '~icons/lucide/wrench'
 import BabelIcon from '~icons/simple-icons/babel'
@@ -77,7 +80,11 @@ const blink = keyframes({ '50%': { opacity: 0 } })
 const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/babel': BabelIcon,
   'api/cli': TerminalIcon,
-  'api/compiler': WrenchIcon,
+  'api/compiler': BookOpenIcon,
+  'api/compiler/namespaces/Graph': NetworkIcon,
+  'api/compiler/namespaces/Native': SmartphoneIcon,
+  'api/compiler/namespaces/Source': FileSearchIcon,
+  'api/compiler/namespaces/Transform': WandSparklesIcon,
   'api/core': BookOpenIcon,
   'api/core/cx': CombineIcon,
   'api/core/defineConfig': SettingsIcon,
@@ -126,6 +133,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/themes': PaletteIcon,
   'guides/typography': TypeIcon,
   'guides/variants': LayersIcon,
+  Compiler: WrenchIcon,
   Core: BoxIcon,
   Integrations: PlugIcon,
   'React Native': ReactIcon,

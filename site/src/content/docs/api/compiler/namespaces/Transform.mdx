@@ -1,0 +1,251 @@
+# Transform
+
+Rewrite one module's authoring calls and emit its matching CSS and source maps.
+
+`Transform.compile` extracts a module with [`Source.extract`](/docs/api/compiler/namespaces/Source), compiles its CSS, and replaces each definition with its compiled props. The rewritten module imports only the small `zyzz/runtime` helpers and never creates CSS rules.
+
+```ts title="transform.ts"
+import { Transform } from 'zyzz/compiler'
+
+// [!code hl:7]
+// Rewrites the module and returns the stylesheet beside it
+const output = Transform.compile({
+  moduleId: 'app/Card.tsx',
+  source: `import { style } from 'zyzz'
+
+export const card = style({ padding: '1rem' })
+`,
+})
+```
+
+## Signature
+
+```ts
+// Rewritten code, CSS, and maps for one module
+Transform.compile(options)
+```
+
+## Parameters
+
+### options.moduleId
+
+- **Type:** `string{:ts}`
+
+A stable, package-relative module identity. Contextual class names include a six-character hash of it, and both source maps name it as their source.
+
+```ts /moduleId: 'app/Card.tsx'/
+// Keep the ID stable so class names stay stable
+Transform.compile({ moduleId: 'app/Card.tsx', source })
+```
+
+### options.source
+
+- **Type:** `string{:ts}`
+
+The complete module text, parsed as TypeScript with JSX. Lowering TypeScript and JSX in the returned `code` is left to the consuming build.
+
+```ts /source: text/
+// The text is parsed, never executed
+Transform.compile({ moduleId: 'app/Card.tsx', source: text })
+```
+
+### options.compiler
+
+- **Type:** `boolean{:ts}`
+- **Default:** `true{:ts}`
+
+Whether to rewrite authoring calls. With `false`, `code` is the unchanged source and `css` matches the classes that runtime `style` calls compute.
+
+```ts /compiler: false/
+// Emits CSS while the calls run unchanged
+Transform.compile({ compiler: false, moduleId: 'app/Card.tsx', source })
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+The CSS shape for definitions without their own config setting. Atomic output emits one rule per declaration. Grouped output emits one block per style. [CSS Output](/docs/guides/css-output) compares both.
+
+```ts /cssOutput: 'grouped'/
+// Emits .z-ZYrHvJ-card{color:red;padding:0;}
+Transform.compile({ cssOutput: 'grouped', moduleId: 'app/Card.tsx', source })
+```
+
+### options.composition
+
+- **Type:** `'ordered' | 'independent'{:ts}`
+- **Default:** `'ordered'{:ts}`
+
+How class lists combine. Ordered output keeps authored precedence when applications are combined, so a later style that repeats an overridden declaration gets its own rule. Independent output reuses the first rule, and its class lists must not be combined.
+
+```ts
+import { Transform } from 'zyzz/compiler'
+
+const output = Transform.compile({
+  // [!code hl:2]
+  // `c` reuses the rule of `a` instead of emitting its own
+  composition: 'independent',
+  moduleId: 'app/Text.tsx',
+  source: `import { style } from 'zyzz'
+
+export const a = style({ color: 'red' })
+
+export const b = style({ color: 'blue' })
+
+export const c = style({ color: 'red' })
+`,
+})
+```
+
+### options.development
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Keeps every definition live for development updates, including ones the module does not reach. Class names follow the same rules as production, and bundler plugins set this in development.
+
+```ts /development: true/
+// Retains unreached definitions for hot updates
+Transform.compile({ development: true, moduleId: 'app/Card.tsx', source })
+```
+
+### options.schemes
+
+- **Type:** `boolean{:ts}`
+- **Default:** `undefined{:ts}`
+
+Whether to emit the `color-scheme` classes (`.z_scheme-light`, `.z_scheme-dark`, and `.z_scheme-light-dark`). When omitted, they are emitted for modules that use a config's `appearance`, `script`, or `vars` selection.
+
+```ts /schemes: true/
+// Adds the three color-scheme classes to css
+Transform.compile({ moduleId: 'app/Card.tsx', schemes: true, source })
+```
+
+## Returns
+
+### code
+
+- **Type:** `string{:ts}`
+
+The rewritten module. Each definition becomes a call to the runtime `Props` helper with its compiled class list, and a direct application inlines its props.
+
+```ts
+// Output for the overview example
+import { Props as __zyzzProps } from 'zyzz/runtime'
+
+// [!code hl]
+export const card = __zyzzProps.create({
+  className: 'z-p-1rem z-style-FdvK6e-card',
+})
+```
+
+### css
+
+- **Type:** `string{:ts}`
+
+The module's stylesheet, in authored order and unminified. Load it with the rewritten module.
+
+```css
+/* [!code hl:2] */
+/* Output for the overview example */
+.z-p-1rem {
+  padding: 1rem;
+}
+```
+
+### classes
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+The compiled class list of each definition, keyed by its name in [`Source.extract`](/docs/api/compiler/namespaces/Source#styles) styles.
+
+```ts /output.classes/
+// { 'style-…': 'z-p-1rem z-style-FdvK6e-card' }
+output.classes
+```
+
+### vars
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+The scope class of each local variable set, keyed by its scope key. It is empty for a module without variable sets.
+
+```ts /output.vars/
+// { 'src-Card-…-style-theme': 'z-theme-theme' } for a local defineConfig
+output.vars
+```
+
+### map
+
+- **Type:** `EncodedSourceMap{:ts}`
+
+A version 3 source map from `code` to the original source, with the source content included.
+
+```ts /output.map/
+// Writes the map beside the module
+await Fs.writeFile('Card.js.map', JSON.stringify(output.map))
+```
+
+### cssMap
+
+- **Type:** `EncodedSourceMap{:ts}`
+
+A version 3 source map from `css` to the authored selectors and declarations.
+
+```ts /output.cssMap/
+// Writes the map beside the stylesheet
+await Fs.writeFile('Card.css.map', JSON.stringify(output.cssMap))
+```
+
+## Types
+
+- **`Transform.compile.ErrorType{:ts}`:** The errors `compile` throws.
+- **`Transform.compile.Options{:ts}`:** The accepted options.
+- **`Transform.compile.ReturnType{:ts}`:** The rewritten module, CSS, and maps.
+
+```ts title="build.ts"
+import { Transform } from 'zyzz/compiler'
+
+// [!code hl:2]
+// Compiles one module with options shared across a build
+export function build(options: Transform.compile.Options) {
+  return Transform.compile({ cssOutput: 'grouped', ...options })
+}
+```
+
+An unsupported option value fails the type check.
+
+```ts twoslash
+// @errors: 2322
+import { Transform } from 'zyzz/compiler'
+
+declare const source: string
+
+Transform.compile({ cssOutput: 'nested', moduleId: 'app/Card.tsx', source })
+```
+
+## Errors
+
+`Transform.compile` returns no partial output. It throws `Source.ExtractError` for source outside the [static input](/docs/api/compiler/namespaces/Source#static-input), and `Css.CompileError` when the CSS cannot compile.
+
+```ts
+import { Source, Transform } from 'zyzz/compiler'
+import { Css } from 'zyzz/web'
+
+try {
+  Transform.compile({
+    // Only atomic and grouped output exist
+    cssOutput: 'nested' as never,
+    moduleId: 'app/Card.tsx',
+    source: `import { style } from 'zyzz'
+export const card = style({ color: 'red' })
+`,
+  })
+} catch (error) {
+  // [!code hl:2]
+  if (error instanceof Source.ExtractError) console.error(error.diagnostics)
+  if (error instanceof Css.CompileError) console.error(error.diagnostics)
+}
+```

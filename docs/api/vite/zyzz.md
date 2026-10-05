@@ -90,6 +90,6 @@ zyzz({ reset: true })
 zyzz({ native: { colorScheme: 'dark', platform: 'ios' } })
 ```
 
-`native` accepts the [graph compiler context](../compiler/Graph/compile.md) and captures it when the plugin is created. Native mode emits modules and maps without virtual CSS imports or initialization scripts. It skips browser CSS target configuration and requires source compilation. Restart the build to change native context.
+`native` accepts the [graph compiler context](https://zyzz.sh/docs/api/compiler/namespaces/Graph#optionsnative) and captures it when the plugin is created. Native mode emits modules and maps without virtual CSS imports or initialization scripts. It skips browser CSS target configuration and requires source compilation. Restart the build to change native context.
 
 Vite still owns module resolution and bundling. This option does not provide a Metro adapter or device rendering. Web output remains the default.

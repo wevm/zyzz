@@ -139,4 +139,4 @@ const styles = Style.define({ card: { color: base.color.foreground } })
 const output = Css.compile({ styles, vars: { base } })
 ```
 
-Load `output.css`, apply `output.classes.card`, and use `output.vars.base` for its scope class. For library packaging and source linking, see [Graph.compile](../api/compiler/Graph/compile.md).
+Load `output.css`, apply `output.classes.card`, and use `output.vars.base` for its scope class. For library packaging and source linking, see [Graph.compile](https://zyzz.sh/docs/api/compiler/namespaces/Graph#graphcompile).

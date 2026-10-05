@@ -120,7 +120,24 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           { path: 'api/babel', title: 'Babel' },
         ],
       },
-      { path: 'api/compiler', title: 'Compiler' },
+      {
+        title: 'Compiler',
+        children: [
+          { path: 'api/compiler', title: 'Overview' },
+          {
+            title: 'Namespaces',
+            items: [
+              { path: 'api/compiler/namespaces/Graph', title: 'Graph' },
+              { path: 'api/compiler/namespaces/Native', title: 'Native' },
+              { path: 'api/compiler/namespaces/Source', title: 'Source' },
+              {
+                path: 'api/compiler/namespaces/Transform',
+                title: 'Transform',
+              },
+            ],
+          },
+        ],
+      },
       { path: 'api/runtime', title: 'Runtime' },
       { path: 'api/node', title: 'Node' },
       { path: 'api/oxlint', title: 'Oxlint' },

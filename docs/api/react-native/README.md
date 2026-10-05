@@ -19,7 +19,7 @@ Static recipes from `Source.extract` retain ordered alternatives for [`Variants.
 
 See the planned [universal styling contract](universal.md) and the version-pinned native conformance inventory.
 
-[Native.compile](../compiler/Native.md) emits callable native modules from local shared authoring.
+[Native.compile](https://zyzz.sh/docs/api/compiler/namespaces/Native) emits callable native modules from local shared authoring.
 
 See [React integration](react.md) for configuration-returned `Provider`, `useStyles`, and `useVars` usage.
 

@@ -1,0 +1,334 @@
+# Native
+
+Compile shared style authoring into native callables for one color scheme.
+
+`Native.compile` rewrites a module's `style`, `variants`, and `cx` authoring into callables that return React Native `style` props. Token references and units resolve at compile time, so the callables only select precompiled fragments and bind runtime values. The Babel integration calls it per module, and graph builds call it through `Graph.compile`.
+
+```ts title="native.ts"
+import { Native } from 'zyzz/compiler'
+
+// [!code hl:13]
+// Rewrites the module for iOS in the light scheme
+const output = Native.compile({
+  colorScheme: 'light',
+  moduleId: 'app/Button.tsx',
+  platform: 'ios',
+  source: `import { variants } from 'zyzz'
+
+export const button = variants({
+  base: { paddingTop: '8px' },
+  variants: { tone: { quiet: { opacity: 0.5 }, loud: { opacity: 1 } } },
+  defaultVariants: { tone: 'quiet' },
+})
+`,
+})
+```
+
+## Signature
+
+```ts
+// Native callables for one module and color scheme
+Native.compile(options)
+```
+
+## Parameters
+
+### options.colorScheme
+
+- **Type:** `'light' | 'dark'{:ts}`
+
+The color scheme compiled into the callables. Color pairs resolve to this scheme's value, so another scheme needs another compilation.
+
+```ts /colorScheme: 'dark'/
+// Resolves { light: '#171717', dark: '#fafafa' } to '#fafafa'
+Native.compile({ colorScheme: 'dark', moduleId: 'app/Label.tsx', source })
+```
+
+### options.moduleId
+
+- **Type:** `string{:ts}`
+
+A stable module identity, including its extension. A `.ts` or `.tsx` ID emits typed TypeScript, and dynamic styles require it to read their typed values.
+
+```ts /moduleId: 'app/Label.tsx'/
+// Emits TypeScript with the callables' finite choice types
+Native.compile({ colorScheme: 'light', moduleId: 'app/Label.tsx', source })
+```
+
+### options.source
+
+- **Type:** `string{:ts}`
+
+The complete module text, parsed as TypeScript with JSX. Stylesheet contributions, `variable` declarations, and web scheme controls fail native compilation.
+
+```ts /source: text/
+// The text is parsed, never executed
+Native.compile({
+  colorScheme: 'light',
+  moduleId: 'app/Label.tsx',
+  source: text,
+})
+```
+
+### options.platform
+
+- **Type:** `'ios' | 'android'{:ts}`
+- **Default:** `undefined{:ts}`
+
+The platform whose `targets` branches apply. It is required when any style has platform branches.
+
+```ts /platform: 'android'/
+// Applies targets.android branches
+Native.compile({
+  colorScheme: 'light',
+  moduleId: 'app/Label.tsx',
+  platform: 'android',
+  source,
+})
+```
+
+### options.units
+
+- **Type:** `{ px?: number; rem?: number }{:ts}`
+- **Default:** `{ px: 1 }{:ts}`
+
+Scales from CSS lengths to native logical units. `px` defaults to one. `rem` has no default, so rem lengths fail without it.
+
+```ts /units: { rem: 16 }/
+// Compiles padding: '1rem' to 16
+Native.compile({
+  colorScheme: 'light',
+  moduleId: 'app/Label.tsx',
+  source,
+  units: { rem: 16 },
+})
+```
+
+### options.fonts
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Native font family names, keyed by the exact authored `fontFamily` text. Every authored family needs an entry.
+
+```ts /fonts: { Geist: 'Geist-Regular' }/
+// Compiles fontFamily: 'Geist' to 'Geist-Regular'
+Native.compile({
+  colorScheme: 'light',
+  fonts: { Geist: 'Geist-Regular' },
+  moduleId: 'app/Label.tsx',
+  source,
+})
+```
+
+### options.vars
+
+- **Type:** `Readonly<Record<string, Vars.Definition>>{:ts}`
+- **Default:** `undefined{:ts}`
+
+Named variable sets that label the compiled tables in `recipes`. Without it, the tables use one `default` label. Tokens from a local config keep the values that config defines.
+
+```ts /vars: { base, brand }/
+// recipes tables gain `base` and `brand` labels
+Native.compile({
+  colorScheme: 'light',
+  moduleId: 'app/Label.tsx',
+  source,
+  vars: { base, brand },
+})
+```
+
+### options.set
+
+- **Type:** `string{:ts}`
+- **Default:** `'default'{:ts}`
+
+The `vars` label compiled into the callables. An unknown label throws `StyleSheet.SelectionError`.
+
+```ts /set: 'brand'/
+// Selects the `brand` table
+Native.compile({
+  colorScheme: 'light',
+  moduleId: 'app/Label.tsx',
+  set: 'brand',
+  source,
+  vars: { base, brand },
+})
+```
+
+### options.contextual
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Keeps every set and scheme in the output, so callables select one at render time from the nearest [`Provider`](/docs/guides/native/themes). Without it, `colorScheme` and `set` are fixed at compile time.
+
+```ts /contextual: true/
+// Retains the light and dark tables for render-time selection
+Native.compile({
+  colorScheme: 'light',
+  contextual: true,
+  moduleId: 'app/Label.tsx',
+  source,
+})
+```
+
+## Returns
+
+### code
+
+- **Type:** `string{:ts}`
+
+The rewritten module, with its exports intact. Each definition becomes a call to a `zyzz/runtime` native helper with its precompiled fragments, typed with its finite choices in TypeScript output.
+
+```ts /output.code/
+// export const button = __zyzzNativeStatic.create({ axes: { tone: ['quiet', 'loud'] }, … })
+output.code
+```
+
+### map
+
+- **Type:** `string{:ts}`
+
+A version 3 source map from `code` to the original source, encoded as JSON and including the source content.
+
+```ts /output.map/
+// Already JSON, so it is written as is
+await Fs.writeFile('Button.js.map', output.map)
+```
+
+### recipes
+
+- **Type:** `Readonly<Record<string, Variants.Definition>>{:ts}`
+
+Tables for each static `style` definition, keyed by definition name, with every set and scheme. Definitions with variants, dynamic values, or media queries keep their data in `code` and have no entry here.
+
+```ts /output.recipes/
+// { 'style-…': { styles: { default: { light: …, dark: … } }, … } }
+output.recipes
+```
+
+## Callables
+
+A compiled `style` or `variants` callable returns `{ style }` for a native component. Omitted choices use their defaults, and `null` suppresses a default. A `style` override is appended after the compiled style, and dynamic values bind from typed callback payloads.
+
+```ts
+import { style, variants } from 'zyzz'
+
+const button = variants({
+  base: { paddingTop: '8px' },
+  variants: { tone: { quiet: { opacity: 0.5 }, loud: { opacity: 1 } } },
+  defaultVariants: { tone: 'quiet' },
+})
+
+const bar = style((values: { alpha: number }) => ({ opacity: values.alpha }))
+
+// [!code hl:4]
+// { style: { paddingTop: 8, opacity: 1 } }
+button({ tone: 'loud' })
+// { style: { opacity: 0.25 } }
+bar({ alpha: 0.25 })
+```
+
+A missing or invalid payload value throws before props are returned.
+
+## Graph Output
+
+`Graph.compile` accepts the same context as its [`native`](/docs/api/compiler/namespaces/Graph#optionsnative) option, so imports, re-exports, configs, and library contracts link across a native graph. Each module's `code` and `map` hold native callables, and its `css` and `classes` are empty.
+
+```ts
+import { Graph } from 'zyzz/compiler'
+
+const output = Graph.compile({
+  modules: {
+    'app/card.ts': `import { style } from 'zyzz'
+
+export const card = style({ opacity: 0.5 })
+`,
+    'app/index.ts': `export { card } from './card.js'
+`,
+  },
+  // [!code hl:2]
+  // Compiles every module for iOS in the light scheme
+  native: { colorScheme: 'light', platform: 'ios' },
+})
+```
+
+## Types
+
+- **`Native.compile.ErrorType{:ts}`:** The errors `compile` throws.
+- **`Native.compile.Options{:ts}`:** The accepted options.
+- **`Native.compile.ReturnType{:ts}`:** The rewritten module, map, and tables.
+
+```ts title="native-build.ts"
+import { Native } from 'zyzz/compiler'
+
+// [!code hl:2]
+// Compiles both schemes of one module
+export function schemes(options: Omit<Native.compile.Options, 'colorScheme'>) {
+  return {
+    dark: Native.compile({ ...options, colorScheme: 'dark' }),
+    light: Native.compile({ ...options, colorScheme: 'light' }),
+  }
+}
+```
+
+A color scheme other than `light` or `dark` fails the type check.
+
+```ts twoslash
+// @errors: 2322
+import { Native } from 'zyzz/compiler'
+
+declare const source: string
+
+Native.compile({ colorScheme: 'auto', moduleId: 'app/Label.tsx', source })
+```
+
+## Errors
+
+`Native.compile` returns no partial output. It throws `Source.ExtractError` for source outside the [static input](/docs/api/compiler/namespaces/Source#static-input), and `StyleSheet.SelectionError` from `zyzz/react-native` for an unknown `set`.
+
+### Native.CompileError
+
+Thrown for source features without a native form, such as stylesheet contributions, `variable` declarations, named conditions, and HTML output.
+
+```ts
+import { Native } from 'zyzz/compiler'
+
+try {
+  Native.compile({
+    colorScheme: 'light',
+    moduleId: 'app/global.ts',
+    // global rules have no native form
+    source: `import { global } from 'zyzz/web'
+global({ body: { margin: 0 } })
+`,
+  })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Native.CompileError) console.error(error.message)
+}
+```
+
+### StyleSheet.CompileError
+
+Thrown from `zyzz/react-native` for declaration values without a native form, such as `display: 'grid'` or a rem length without `units.rem`. `diagnostics` lists each failing set, scheme, and property.
+
+```ts
+import { Native } from 'zyzz/compiler'
+import { StyleSheet } from 'zyzz/react-native'
+
+try {
+  Native.compile({
+    colorScheme: 'light',
+    moduleId: 'app/Card.tsx',
+    // rem lengths need units.rem
+    source: `import { style } from 'zyzz'
+export const card = style({ padding: '1rem' })
+`,
+  })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof StyleSheet.CompileError) console.error(error.diagnostics)
+}
+```

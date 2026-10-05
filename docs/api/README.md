@@ -7,7 +7,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [CLI](cli.md)                               | Compile a source tree into rewritten modules, declarations, and CSS.               |
 | [zyzz](https://zyzz.sh/docs/api/core)       | Typed style definitions, themes, configuration, and callable authoring.            |
 | [zyzz/babel](babel/README.md)               | Compile literal web or native authoring before Babel language transforms.          |
-| [zyzz/compiler](compiler/README.md)         | Extract style definitions and rewrite source with matching CSS and source maps.    |
+| [zyzz/compiler][compiler]                   | Extract style definitions and rewrite source with matching CSS and source maps.    |
 | [zyzz/default](default.md)                  | Default config with appearance controls, a restoration script, and bundled tokens. |
 | [zyzz/metro](metro/README.md)               | Compile native style modules during Metro bundling.                                |
 | [zyzz/next](next/README.md)                 | Connect source transformation, CSS delivery, and watching to Next.js.              |
@@ -18,3 +18,5 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/unplugin](unplugin/README.md)         | Compile web styles with Rollup, Webpack, esbuild, or the existing Vite adapter.    |
 | [zyzz/vite](vite/README.md)                 | Connect source transformation and CSS delivery to Vite.                            |
 | [zyzz/web](web/README.md)                   | Compile web CSS and declare stylesheet contributions and element relationships.    |
+
+[compiler]: https://zyzz.sh/docs/api/compiler

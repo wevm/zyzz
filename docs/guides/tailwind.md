@@ -957,7 +957,7 @@ Scanning a Tailwind-based dependency cannot turn it into a Zyzz package. Keep it
 
 ### Authoring Restrictions
 
-Use supported static imports, literals, local immutable records, and annotated scalar callbacks. Arbitrary build-time application execution is not part of extraction. Keep styles in supported source modules for frameworks whose inline syntax is not supported. See [Source Extraction](../api/compiler/Source/extract.md).
+Use supported static imports, literals, local immutable records, and annotated scalar callbacks. Arbitrary build-time application execution is not part of extraction. Keep styles in supported source modules for frameworks whose inline syntax is not supported. See [Source Extraction](https://zyzz.sh/docs/api/compiler/namespaces/Source#static-input).
 
 ## Functions And Directives
 

@@ -139,9 +139,9 @@ output.themeCalls.length
 
 ### themeAliases
 
-- **Type:** `readonly { end: number; start: number }[]{:ts}`
+- **Type:** `readonly { destructured: boolean; end: number; name: string; start: number; tokenType: string }[]{:ts}`
 
-Local aliases of configured helpers, such as `const { style } = config`, with their spans and retained token types.
+Local aliases of configured helpers, such as `const { style } = config`. Each has its span, its scope key in `name`, the token type text in `tokenType`, and whether it destructures helpers.
 
 ```ts /output.themeAliases/
 // Empty when helpers are destructured from defineConfig directly
@@ -150,9 +150,9 @@ output.themeAliases.length
 
 ### themeReferences
 
-- **Type:** `readonly { end: number; start: number }[]{:ts}`
+- **Type:** `readonly { end: number; name: string; start: number }[]{:ts}`
 
-Direct theme `.className` reads, which a rewriter replaces with class constants. Scope selections through `vars` are not listed here.
+Direct theme `.className` reads, which a rewriter replaces with the class for the scope key in `name`. Scope selections through `vars` are not listed here.
 
 ```ts /output.themeReferences/
 // One entry per direct theme className read

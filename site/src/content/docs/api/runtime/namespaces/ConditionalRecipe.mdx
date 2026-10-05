@@ -1,0 +1,286 @@
+# ConditionalRecipe
+
+Add scoped attributes for variant selections that apply only inside a named condition.
+
+The compiler rewrites a [`variants`](/docs/api/core/variants) definition with `conditions` into a `ConditionalRecipe.create` call. Applications normally do not import it. Each conditional selection becomes one attribute that compiled rules match inside the condition's query, so the helper never evaluates a query.
+
+```ts title="button.ts"
+import { ConditionalRecipe } from 'zyzz/runtime'
+
+const button = ConditionalRecipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  // [!code hl:2]
+  // Index 0 in attribute names refers to `wide`
+  conditions: ['wide'],
+  defaults: { size: 'small' },
+})
+
+// { className: 'z-button', 'data-size': 'small', 'data-zyzz-condition-0-size': 'slarge' }
+export const props = button({ conditions: { wide: { size: 'large' } } })
+```
+
+## ConditionalRecipe.create
+
+```ts
+// Recipe metadata plus the ordered condition names
+ConditionalRecipe.create(options)
+```
+
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and its choices, in authored order. Every axis may also take a conditional selection.
+
+```ts /axes: { size: ['small', 'large'] }/
+// Conditional attributes exist for size only
+ConditionalRecipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: {},
+})
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The complete generated class list, including the class of every conditional rule.
+
+```ts /className: 'z-button'/
+// Conditional selections never add a class
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: {},
+})
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The unconditional choice used when an axis is omitted or `undefined`. Defaults never apply inside a condition, so an omitted conditional selection adds no attribute.
+
+```ts /defaults: { size: 'small' }/
+// Adds 'data-size': 'small' but no conditional attribute
+ConditionalRecipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: { size: 'small' },
+})()
+```
+
+### options.conditions
+
+- **Type:** `readonly string[]{:ts}`
+
+The condition names in authored order. [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#parameters) selects the unconditional attributes from the other options.
+
+```ts /conditions: ['wide', 'print']/
+// Attributes use index 0 for wide and 1 for print
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-card',
+  conditions: ['wide', 'print'],
+  defaults: {},
+})
+```
+
+### options.html
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Return HTML attributes. Serialization happens once, after every conditional attribute is added.
+
+```ts /html: true/
+// Returns `class` instead of `className`
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-card',
+  conditions: ['wide'],
+  defaults: {},
+  html: true,
+})
+```
+
+### input[axis]
+
+- **Type:** `string | boolean | null | undefined{:ts}`
+- **Default:** `options.defaults[axis]{:ts}`
+
+The unconditional choice, serialized as [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#optionsaxis) serializes it. `null` clears the axis outside every condition.
+
+```ts /size: 'large'/
+// { className: 'z-button', 'data-size': 'large' }
+button({ size: 'large' })
+```
+
+### input.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// 'z-button wide'
+button({ className: 'wide' }).className
+```
+
+### input.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments merged into a new `style` before `input.style`.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { '--accent': 'crimson' }
+button({ vars: { '--accent': 'crimson' } }).style
+```
+
+### input.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline overrides, copied after `input.vars`.
+
+```ts /style: { padding: '24px' }/
+// { padding: '24px' }
+button({ size: 'large', style: { padding: '24px' } }).style
+```
+
+### input.conditions
+
+- **Type:** `{ [condition: string]: { [axis: string]: string | boolean | null | undefined } | undefined }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selections that apply inside each named condition. A choice serializes with an `s` prefix, and `null` serializes as `n`, which clears the axis inside the condition. Omitted and `undefined` conditions or entries add no attribute.
+
+```ts /wide: { size: null }/
+// Adds 'data-zyzz-condition-0-size': 'n'
+button({ size: 'large', conditions: { wide: { size: null } } })
+```
+
+The declared return type is React props or `Html.Attributes`, whatever `options.html` is. Generated code casts the callable to `variants.ReturnType`, so direct TypeScript callers narrow with `'className' in props` before reading `className`.
+
+### className
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `input.className`. HTML output has `class` instead.
+
+```ts /props.className/
+// 'z-button'
+props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `options.html` is `true`, which returns no `className`.
+
+```ts /html: true/
+// { class: 'z-button' }
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: {},
+  html: true,
+})()
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+The unconditional choice of each selected axis. A cleared or unselected axis has no attribute.
+
+```ts /props['data-size']/
+// 'small'
+props['data-size']
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | string | undefined{:ts}`
+
+The merged inline styles, present only when the call supplies overrides. HTML output serializes it to a string.
+
+```ts /style/
+// { '--accent': 'crimson', padding: '24px' }
+button({ style: { padding: '24px' }, vars: { '--accent': 'crimson' } }).style
+```
+
+### data-zyzz-condition-[index]-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+One returned attribute per conditional selection, beside the unconditional `data-[axis]` attributes.
+
+```ts /props['data-zyzz-condition-0-size']/
+// 'slarge'
+props['data-zyzz-condition-0-size']
+```
+
+## ConditionalRecipe.attribute
+
+```ts
+// The attribute name shared by compiled rules and the callable
+ConditionalRecipe.attribute(options)
+```
+
+### options.axis
+
+- **Type:** `string{:ts}`
+
+The declared axis name.
+
+```ts /axis: 'size'/
+// 'data-zyzz-condition-0-size'
+ConditionalRecipe.attribute({ axis: 'size', condition: 0 })
+```
+
+### options.condition
+
+- **Type:** `number{:ts}`
+
+The condition's index in authored order.
+
+```ts /condition: 1/
+// 'data-zyzz-condition-1-size'
+ConditionalRecipe.attribute({ axis: 'size', condition: 1 })
+```
+
+## Types
+
+- **`ConditionalRecipe.attribute.Options{:ts}`:** The `{ axis, condition }` input.
+- **`ConditionalRecipe.create.Options{:ts}`:** [`Recipe.create.Options`](/docs/api/runtime/namespaces/Recipe#types) with `conditions`.
+
+```ts title="options.ts"
+import type { ConditionalRecipe } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A recipe whose size can change inside `wide`
+export const options = {
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: { size: 'small' },
+} satisfies ConditionalRecipe.create.Options
+```
+
+## Errors
+
+Neither function validates selections. The callable's own type accepts any record, so an unknown choice serializes into a conditional attribute as given, and a value that cannot convert to a string, such as a `Symbol`, throws a `TypeError`.
+
+Generated code casts the callable to `variants.ReturnType`, which is how TypeScript rejects unknown conditions, axes, and choices.

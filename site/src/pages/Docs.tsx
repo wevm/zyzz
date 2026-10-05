@@ -9,6 +9,7 @@ import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
 import { Steps } from '../components/mdx/Steps.js'
 import { SearchField } from '../components/SearchField.js'
 import * as Docs from '../Docs.js'
+import * as Manifest from '../Manifest.js'
 import { style, variants, vars } from '../zyzz.config.js'
 import {
   isValidElement,
@@ -40,6 +41,7 @@ import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
 import GaugeIcon from '~icons/lucide/gauge'
+import GitBranchIcon from '~icons/lucide/git-branch'
 import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
@@ -61,12 +63,14 @@ import ScrollTextIcon from '~icons/lucide/scroll-text'
 import Settings2Icon from '~icons/lucide/settings-2'
 import SettingsIcon from '~icons/lucide/settings'
 import ShieldCheckIcon from '~icons/lucide/shield-check'
+import SlidersHorizontalIcon from '~icons/lucide/sliders-horizontal'
 import SmartphoneIcon from '~icons/lucide/smartphone'
 import SparklesIcon from '~icons/lucide/sparkles'
 import SquareFunctionIcon from '~icons/lucide/square-function'
 import SquareStackIcon from '~icons/lucide/square-stack'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TableIcon from '~icons/lucide/table'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TestTubeIcon from '~icons/lucide/test-tube'
@@ -74,6 +78,7 @@ import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
 import WorkflowIcon from '~icons/lucide/workflow'
 import WrenchIcon from '~icons/lucide/wrench'
+import ZapIcon from '~icons/lucide/zap'
 import BabelIcon from '~icons/simple-icons/babel'
 import HtmlIcon from '~icons/simple-icons/html5'
 import NextIcon from '~icons/simple-icons/nextdotjs'
@@ -111,7 +116,23 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/node': NodeIcon,
   'api/oxlint': ShieldCheckIcon,
   'api/react-native': ReactIcon,
-  'api/runtime': PlayIcon,
+  'api/runtime': BookOpenIcon,
+  'api/runtime/namespaces/Appearance': SunMoonIcon,
+  'api/runtime/namespaces/Composition': CombineIcon,
+  'api/runtime/namespaces/CompositionHtml': FileCodeIcon,
+  'api/runtime/namespaces/ConditionalRecipe': GitBranchIcon,
+  'api/runtime/namespaces/Dynamic': SlidersHorizontalIcon,
+  'api/runtime/namespaces/Html': CodeXmlIcon,
+  'api/runtime/namespaces/Native': SmartphoneIcon,
+  'api/runtime/namespaces/NativeContext': WorkflowIcon,
+  'api/runtime/namespaces/NativeDynamic': ZapIcon,
+  'api/runtime/namespaces/NativeStatic': TableIcon,
+  'api/runtime/namespaces/NativeVars': BracesIcon,
+  'api/runtime/namespaces/PayloadRecipe': PackageIcon,
+  'api/runtime/namespaces/Props': TagIcon,
+  'api/runtime/namespaces/Recipe': LayersIcon,
+  'api/runtime/namespaces/Selection': SwatchBookIcon,
+  'api/runtime/namespaces/Variable': VariableIcon,
   'api/unplugin': PlugIcon,
   'api/vite': ViteIcon,
   'api/web': MonitorIcon,
@@ -160,6 +181,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   Core: BoxIcon,
   Integrations: PlugIcon,
   'React Native': ReactIcon,
+  Runtime: PlayIcon,
   'introduction/agents': SparklesIcon,
   'introduction/benchmarks': GaugeIcon,
   'introduction/comparisons': ArrowLeftRightIcon,
@@ -174,7 +196,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
 export function Page(props: Page.Props) {
   const { path } = props
 
-  const page = __DOCS__.pages[path]!
+  const page = Manifest.pages[path]!
   return (
     <DocumentationShell
       mobileMenu
@@ -328,7 +350,7 @@ declare namespace Outline {
 function SidebarItem(props: SidebarItem.Props) {
   const { item, path } = props
   const enabled =
-    item.path !== undefined && Object.hasOwn(__DOCS__.pages, item.path)
+    item.path !== undefined && Object.hasOwn(Manifest.pages, item.path)
   const labelId = useId()
 
   // A section labels a run of pages inside a topic without adding another disclosure level.
@@ -431,8 +453,8 @@ function Code(input: Code.Props) {
   })()
 
   const source = children.props.children?.replace(/\n$/, '') ?? ''
-  const code = Object.hasOwn(__DOCS__.code, source)
-    ? __DOCS__.code[source]
+  const code = Object.hasOwn(Manifest.code, source)
+    ? Manifest.code[source]
     : undefined
   const text = code?.text ?? source
   const copyButton = (

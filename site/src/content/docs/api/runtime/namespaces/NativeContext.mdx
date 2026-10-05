@@ -1,0 +1,253 @@
+# NativeContext
+
+Defer the choice between compiled set, scheme, and media alternatives until a view renders.
+
+Native compilation with every set and scheme retained wraps each definition's precompiled tables in these calls. Applications normally do not import them. Applying a definition returns a deferred `style`, and the native `Provider` resolves it with the nearest set, color scheme, and window dimensions.
+
+```ts title="ink.ts"
+import { Native, NativeContext } from 'zyzz/runtime'
+
+const table = (color: string) =>
+  Native.create({ axes: {}, defaults: {}, styles: { 0: { color } } })
+
+// [!code hl:4]
+// One compiled callable per set and scheme
+const ink = NativeContext.create(
+  { base: { dark: table('#fafafa'), light: table('#171717') } },
+  'base',
+)
+
+// { color: '#fafafa' }
+export const style = NativeContext.resolve(ink().style, { colorScheme: 'dark' })
+```
+
+## NativeContext.create
+
+```ts
+// Tables by set and scheme, with the configuration's default set
+NativeContext.create(tables, defaultVars)
+```
+
+### tables
+
+- **Type:** `{ [set: string]: { dark: callable; light: callable } }{:ts}`
+
+Compiled callables, such as [`Native.create`](/docs/api/runtime/namespaces/Native) results, for every set and scheme. A definition that reads no tokens uses one `default` set for any selected set.
+
+```ts /default/
+// Applies for every set
+NativeContext.create({ default: { dark: card, light: card } }, 'default')
+```
+
+### defaultVars
+
+- **Type:** `keyof tables & string{:ts}`
+
+The set used when the context omits `set`.
+
+```ts /'base'/
+// An omitted set selects base
+NativeContext.create(tables, 'base')
+```
+
+### callable
+
+- **Type:** `tables[keyof tables]['light']{:ts}`
+
+A callable with the tables' input type, returning `{ style }` with a deferred binding. Calls without input return one frozen object.
+
+```ts /ink()/
+// The same frozen props on every call
+ink() === ink()
+```
+
+## NativeContext.resolve
+
+```ts
+// Replace deferred bindings with native styles
+NativeContext.resolve(value, context, input?)
+```
+
+### value
+
+- **Type:** `unknown{:ts}`
+
+A style value. Deferred bindings and arrays resolve recursively, functions are wrapped to resolve their results, and other values, such as caller overrides, are returned unchanged.
+
+```ts /[ink().style, { opacity: 0.5 }]/
+// [{ color: '#fafafa' }, { opacity: 0.5 }]
+NativeContext.resolve([ink().style, { opacity: 0.5 }], { colorScheme: 'dark' })
+```
+
+### context
+
+- **Type:** `NativeContext.Context | undefined{:ts}`
+
+The resolved `colorScheme`, an optional `set`, and optional `viewport` dimensions. Resolving a deferred binding without a context throws.
+
+```ts /{ colorScheme: 'light', set: 'base' }/
+// { color: '#171717' }
+NativeContext.resolve(ink().style, { colorScheme: 'light', set: 'base' })
+```
+
+### input
+
+- **Type:** `unknown{:ts}`
+- **Default:** `undefined{:ts}`
+
+The application input for a context callable passed as `value`. The selected set and scheme's callable receives it, so variant choices and callback values reach the deferred table.
+
+Only a callable passed directly as `value` receives `input`. Entries of an array resolve without it.
+
+```ts /{ size: 'large' }/
+// Applies `badge({ size: 'large' })` from the dark table
+NativeContext.resolve(badge, { colorScheme: 'dark' }, { size: 'large' })
+```
+
+## NativeContext.responsive
+
+```ts
+// Media alternatives keyed by the queries that match
+NativeContext.responsive(queries, profiles)
+```
+
+### queries
+
+- **Type:** `readonly Query[]{:ts}`
+
+Compiled media queries as trees of `compare`, `and`, `or`, and `not` nodes over the window `width` and `height`. The query results form a key with one `0` or `1` digit per query.
+
+```ts /{ kind: 'compare', left: 'width', operator: '>=', right: 600 }/
+// `@media (width >= 600px)` as compiled data
+const queries = [
+  { kind: 'compare', left: 'width', operator: '>=', right: 600 },
+] as const
+```
+
+### profiles
+
+- **Type:** `{ [key: string]: callable }{:ts}`
+
+A context callable for each query key. Resolving requires `context.viewport`.
+
+```ts /1: wide/
+// Selects `wide` on windows at least 600 logical pixels wide
+NativeContext.responsive(queries, { 0: narrow, 1: wide })
+```
+
+## NativeContext.application
+
+```ts
+// Defer a value and its input together
+NativeContext.application(value, input?)
+```
+
+### value
+
+- **Type:** `unknown{:ts}`
+
+A style value or context callable. The native adapter wraps a component's `style` prop with it, so `resolve` selects the alternative inside the rendering view.
+
+```ts /NativeContext.application(ink)/
+// { color: '#fafafa' }
+NativeContext.resolve(NativeContext.application(ink), { colorScheme: 'dark' })
+```
+
+### input
+
+- **Type:** `unknown{:ts}`
+- **Default:** `undefined{:ts}`
+
+The application input retained with `value` and passed to `resolve` once the view selects its context.
+
+```ts /{ size: 'large' }/
+// Resolves later as badge({ size: 'large' })
+NativeContext.application(badge, { size: 'large' })
+```
+
+## NativeContext.key
+
+```ts
+// The compiled alternatives a value currently uses
+NativeContext.key(value, context)
+```
+
+### value
+
+- **Type:** `unknown{:ts}`
+
+A style value or props. The result lists the selected compiled callables, which the adapter compares between renders to update only when an alternative changes.
+
+Plain values return `[]`. So does a definition whose sets and schemes all share one callable, since no context change can select another alternative.
+
+```ts /NativeContext.key/
+// One selected table
+NativeContext.key(ink(), { colorScheme: 'dark' })
+```
+
+### context
+
+- **Type:** `NativeContext.Context{:ts}`
+
+The selection to read dependencies for. Its set and scheme pick the table, and responsive bindings also read `viewport`.
+
+```ts /{ colorScheme: 'light', set: 'base' }/
+// The table for the base set in light mode
+NativeContext.key(ink(), { colorScheme: 'light', set: 'base' })
+```
+
+### dependencies
+
+- **Type:** `readonly unknown[]{:ts}`
+
+A new array of the selected compiled callables and responsive profiles, in resolution order. Adapters compare it element by element with `Object.is`. A missing responsive alternative appears as `undefined`.
+
+```ts /.length/
+// 1
+NativeContext.key(ink(), { colorScheme: 'dark' }).length
+```
+
+## Types
+
+- **`NativeContext.Context{:ts}`:** The `{ colorScheme, set?, viewport? }` selection.
+
+```ts title="context.ts"
+import type { NativeContext } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A dark scheme on a phone-sized window
+export const context = {
+  colorScheme: 'dark',
+  viewport: { height: 844, width: 390 },
+} satisfies NativeContext.Context
+```
+
+## Errors
+
+`resolve` throws an `Error` when a deferred binding has no context, the set is not compiled, a media alternative is missing, or media queries lack valid window dimensions.
+
+`key` reads the same selection, so it throws for an uncompiled set and for media queries without valid window dimensions. A missing media alternative does not throw in `key`, which lists `undefined` in its place.
+
+Errors from the selected callable pass through `resolve`, including a deferred `application`. For example, an unknown choice in `input` for a [`Native.create`](/docs/api/runtime/namespaces/Native#errors) table throws `Native.SelectionError`.
+
+```ts title="invalid.ts"
+import { Native, NativeContext } from 'zyzz/runtime'
+
+const card = Native.create({
+  axes: {},
+  defaults: {},
+  styles: { 0: { padding: 8 } },
+})
+const styled = NativeContext.create(
+  { base: { dark: card, light: card } },
+  'base',
+)
+
+try {
+  // Compiled styles render inside a Provider
+  NativeContext.resolve(styled().style, undefined)
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Error) console.error(error.message)
+}
+```

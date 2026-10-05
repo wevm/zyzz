@@ -1,0 +1,264 @@
+# PayloadRecipe
+
+Bind the values of dynamic variant choices to precompiled private custom properties.
+
+The compiler rewrites a [`variants`](/docs/api/core/variants) definition with callback choices into a `PayloadRecipe.create` call. Applications normally do not import it. A selection such as `{ custom: { padding: '12px' } }` selects the `custom` choice and assigns its fields to that choice's slots.
+
+```ts title="box.ts"
+import { PayloadRecipe, Recipe } from 'zyzz/runtime'
+
+const definition = { axes: { size: ['custom', 'fixed'] }, defaults: {} }
+
+const box = PayloadRecipe.create({
+  ...definition,
+  // [!code hl:4]
+  // Rules for `[data-size="custom"]` read `--box-padding`
+  payloads: [
+    { axis: 'size', choice: 'custom', slots: [{ padding: '--box-padding' }] },
+  ],
+  select: Recipe.create({ ...definition, className: 'z-box' }),
+})
+
+// { className: 'z-box', 'data-size': 'custom', style: { '--box-padding': '12px' } }
+export const props = box({ size: { custom: { padding: '12px' } } })
+```
+
+## Signature
+
+```ts
+// Payload metadata plus a selection delegate
+PayloadRecipe.create(options)
+```
+
+## Parameters
+
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and all of its choices, static and dynamic, in authored order.
+
+```ts /axes: { size: ['custom', 'fixed'] }/
+// `custom` takes a payload and `fixed` does not
+const definition = { axes: { size: ['custom', 'fixed'] }, defaults: {} }
+```
+
+### options.conditions
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+The condition names in authored order. Slot index 0 holds the base slots, and index 1 the first condition's slots.
+
+```ts /conditions: ['wide']/
+// Payloads under `conditions.wide` use slot index 1
+PayloadRecipe.create({ ...definition, conditions: ['wide'], payloads, select })
+```
+
+### options.defaultPayloads
+
+- **Type:** `{ [axis: string]: { [field: string]: string | number } }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Complete field values for an axis whose default is a dynamic choice. They apply when the axis is omitted.
+
+```ts /defaultPayloads: { size: { padding: '4px' } }/
+// An omitted size selects `custom` with 4px padding
+PayloadRecipe.create({
+  ...definition,
+  defaults: { size: 'custom' },
+  defaultPayloads: { size: { padding: '4px' } },
+  payloads,
+  select,
+})
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The default choice names, as in [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#optionsdefaults).
+
+```ts /defaults: {}/
+// No axis has a default
+const definition = { axes: { size: ['custom', 'fixed'] }, defaults: {} }
+```
+
+### options.html
+
+- **Type:** `boolean{:ts}`
+- **Default:** `false{:ts}`
+
+Return HTML attributes, serialized once after the slot assignments are added. The `select` delegate itself returns React-shaped props.
+
+```ts /html: true/
+// Returns `class` and a serialized `style`
+PayloadRecipe.create({ ...definition, html: true, payloads, select })
+```
+
+### options.payloads
+
+- **Type:** `readonly Recipe.Payload[]{:ts}`
+
+The dynamic choices. Each `slots` array maps fields to private custom properties, base slots first, then one record per condition.
+
+```ts /slots: [{ padding: '--box-padding' }]/
+// The base `padding` field of `custom` assigns `--box-padding`
+const payloads = [
+  { axis: 'size', choice: 'custom', slots: [{ padding: '--box-padding' }] },
+]
+```
+
+### options.select
+
+- **Type:** `ReturnType<typeof Recipe.create>{:ts}`
+
+The selection delegate, created with `html: false`. It receives choice names in place of payloads. The declared type also accepts an HTML delegate. Its result then has `class` with an unserialized `style`, which is neither React props nor HTML attributes. Conditional recipes pass a [`ConditionalRecipe.create`](/docs/api/runtime/namespaces/ConditionalRecipe) callable instead.
+
+```ts /select: Recipe.create({ ...definition, className: 'z-box' })/
+// Serializes the normalized choice names
+PayloadRecipe.create({
+  ...definition,
+  payloads,
+  select: Recipe.create({ ...definition, className: 'z-box' }),
+})
+```
+
+## Application
+
+The returned callable accepts the [`variants`](/docs/api/core/variants#application) application options. Values are not validated at runtime.
+
+### options[axis]
+
+- **Type:** `string | boolean | { [choice: string]: { [field: string]: string | number } } | null | undefined{:ts}`
+
+A static choice name, or a dynamic choice with its field values. A dynamic selection names one choice, and only its first key is read. An empty string is written as a single space, so the custom property keeps an explicit empty value.
+
+```ts /size: { custom: { padding: '12px' } }/
+// Selects `custom` and assigns its padding
+box({ size: { custom: { padding: '12px' } } })
+```
+
+### options.conditions
+
+- **Type:** `{ [condition: string]: { [axis: string]: unknown } | undefined }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Selections inside named conditions, using the same forms. Their fields assign the condition's slots, and an `undefined` condition is skipped.
+
+```ts /conditions: { wide: { size: { custom: { padding: '20px' } } } }/
+// Assigns the wide slot of the padding field
+box({ conditions: { wide: { size: { custom: { padding: '20px' } } } } })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes passed to the `select` delegate, which appends them after the generated class list.
+
+```ts /className: 'wide'/
+// 'z-box wide'
+box({ className: 'wide' }).className
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments passed to the delegate, which merges them before `options.style`. Slot assignments follow both.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { '--accent': 'crimson', '--box-padding': '12px' }
+box({ size: { custom: { padding: '12px' } }, vars: { '--accent': 'crimson' } })
+  .style
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline overrides passed to the delegate. A slot assignment wins over an override of the same private property.
+
+```ts /style: { '--box-padding': '0px' }/
+// { '--box-padding': '12px' }
+box({
+  size: { custom: { padding: '12px' } },
+  style: { '--box-padding': '0px' },
+}).style
+```
+
+## Returns
+
+The `select` delegate's props. When a call assigns slots, `style` is a new object with the delegate's `style` followed by the slot assignments, so slots win over overrides of the same property.
+
+The declared return type is React props or `Html.Attributes`, whatever `options.html` is. Generated code casts the callable to `variants.ReturnType`, so direct TypeScript callers narrow with `'className' in props` before reading `className`.
+
+### className
+
+- **Type:** `string{:ts}`
+
+The delegate's generated class list and any `className` override, unchanged. HTML output has `class` instead.
+
+```ts /props.className/
+// 'z-box'
+props.className
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The same class list when `options.html` is `true`, which returns no `className`.
+
+```ts /html: true/
+// { class: 'z-box' }
+PayloadRecipe.create({ ...definition, html: true, payloads, select })()
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+The delegate's attributes for the normalized choice names. A dynamic selection serializes as its choice name, and a [`ConditionalRecipe`](/docs/api/runtime/namespaces/ConditionalRecipe#data-zyzz-condition-index-axis) delegate adds conditional attributes.
+
+```ts /props['data-size']/
+// 'custom'
+props['data-size']
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | string | undefined{:ts}`
+
+The delegate's inline styles followed by the assigned slots. HTML output serializes it to a string.
+
+```ts /props.style/
+// { '--box-padding': '12px' }
+props.style
+```
+
+## Types
+
+- **`PayloadRecipe.create.Options{:ts}`:** [`Recipe.Definition`](/docs/api/runtime/namespaces/Recipe#types) with `html`, `payloads`, and `select`.
+
+```ts title="payloads.ts"
+import type { PayloadRecipe } from 'zyzz/runtime'
+
+// [!code hl:2]
+// The dynamic choices of one recipe
+export const payloads = [
+  { axis: 'size', choice: 'custom', slots: [{ padding: '--box-padding' }] },
+] satisfies PayloadRecipe.create.Options['payloads']
+```
+
+## Errors
+
+`PayloadRecipe.create` throws no dedicated errors and does not validate payloads. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript checks choice names and payload fields.
+
+The callable's own type accepts any record, so a dynamic-looking selection throws a `TypeError` while reading slot metadata when its choice is unknown or lacks a slot record for the base or a selected condition. A `null` field record, such as `{ custom: null }`, throws the same way.
+
+With `html: true`, a field value that cannot convert to a string, such as a `Symbol`, throws a `TypeError` during serialization.

@@ -2,7 +2,7 @@
   "entries": {
     "@charset": {
       "evidence": [
-        "docs/api/web/at-rules.md",
+        "site/src/content/docs/api/web/at-rules.mdx",
         "src/compiler/Transform.test.ts",
         "src/node/Host.test.ts"
       ],

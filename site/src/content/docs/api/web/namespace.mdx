@@ -1,0 +1,71 @@
+# namespace
+
+Emit an `@namespace` rule for the selectors of one module.
+
+`namespace` binds a prefix to a namespace URI, so `global` selectors in the same module can write `prefix|element`. The compiler isolates each module's namespaces, so declarations never change selectors in other modules.
+
+```ts title="src/svg.ts"
+import { global, namespace } from 'zyzz/web'
+
+// [!code hl:2]
+// Binds `svg|` for selectors in this module
+namespace({ prefix: 'svg', uri: 'http://www.w3.org/2000/svg' })
+
+global({ 'svg|a': { color: 'blue' } })
+```
+
+## Signature
+
+```ts
+// A URI, with an optional prefix
+namespace(options)
+```
+
+## Parameters
+
+### options.uri
+
+- **Type:** `string{:ts}`
+
+The namespace URI. It is an identity and is never fetched or published as an asset. An empty string selects elements with no namespace.
+
+```ts
+// [!code hl:2]
+// Restricts unprefixed selectors in this module to HTML elements
+namespace({ uri: 'http://www.w3.org/1999/xhtml' })
+```
+
+### options.prefix
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The selector prefix, as a CSS identifier, including Unicode and escaped spellings. Omitting it declares the default namespace for the module's unprefixed selectors. The last declaration for each prefix applies throughout the module.
+
+```ts
+import { global, namespace } from 'zyzz/web'
+
+// [!code hl:2]
+// Selects MathML elements with `m|`
+namespace({ prefix: 'm', uri: 'http://www.w3.org/1998/Math/MathML' })
+
+global({ 'm|math': { fontSize: '1.125rem' } })
+```
+
+## Returns
+
+`void`. The compiler erases the call and emits the rule with a generated prefix, rewriting the module's selectors to match.
+
+## Errors
+
+TypeScript rejects unknown options and calls without `uri`.
+
+```ts twoslash
+// @errors: 2345
+import { namespace } from 'zyzz/web'
+
+// The URI is required
+namespace({ prefix: 'svg' })
+```
+
+The compiler reports `Source.ExtractError` for an invalid prefix and for namespace combinations it cannot isolate. Native builds reject the call with `Native.CompileError`.

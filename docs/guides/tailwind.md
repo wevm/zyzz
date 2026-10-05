@@ -515,7 +515,7 @@ For `supports-[display:grid]:grid`, use `'@supports (display: grid)': { display:
 | `print:`                  | `@media print`                                   |
 | `starting:`               | `@starting-style`                                |
 
-Preserve inherited direction behavior for `rtl:` and `ltr:` with matching direction selectors. Preserve `inert:` coverage for both an inert element and its descendants. The browser determines support for these CSS features. See [At-Rules](../api/web/at-rules.md) for compiler grammar.
+Preserve inherited direction behavior for `rtl:` and `ltr:` with matching direction selectors. Preserve `inert:` coverage for both an inert element and its descendants. The browser determines support for these CSS features. See [At-Rules](https://zyzz.sh/docs/api/web/at-rules) for compiler grammar.
 
 ## Responsive Design
 

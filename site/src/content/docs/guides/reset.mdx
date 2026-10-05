@@ -1,0 +1,146 @@
+import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
+
+# Reset
+
+Opt into a base reset that normalizes browser defaults below application styles.
+
+## Overview
+
+The reset is disabled by default, and core imports do not install it. Enable it with the `reset` option of the web integration. Babel inserts `import 'zyzz/reset.css'` for web builds, so the consuming bundler must support CSS imports.
+
+<Tabs label="Enable the reset">
+<Tab title="vite.config.ts">
+
+```ts
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  plugins: [zyzz({ reset: true })],
+})
+```
+
+</Tab>
+<Tab title="next.config.ts">
+
+```ts
+import { zyzz } from 'zyzz/next'
+
+export default zyzz({}, { reset: true })
+```
+
+</Tab>
+<Tab title="build.ts">
+
+```ts
+import { build } from 'esbuild'
+import { zyzz } from 'zyzz/esbuild'
+
+await build({
+  bundle: true,
+  entryPoints: ['src/main.ts'],
+  outdir: 'dist',
+  plugins: [zyzz({ reset: true })],
+})
+```
+
+</Tab>
+<Tab title="rollup.config.ts">
+
+```ts
+import { zyzz } from 'zyzz/rollup'
+
+export default {
+  input: 'src/main.ts',
+  output: { dir: 'dist', format: 'es' },
+  plugins: [zyzz({ reset: true })],
+}
+```
+
+</Tab>
+<Tab title="webpack.config.ts">
+
+```ts
+import { zyzz } from 'zyzz/webpack'
+
+export default {
+  plugins: [zyzz({ reset: true })],
+}
+```
+
+</Tab>
+<Tab title="babel.config.mjs">
+
+```js
+import { zyzz } from 'zyzz/babel'
+
+export default {
+  plugins: [[zyzz, { target: 'web', reset: true }]],
+}
+```
+
+</Tab>
+</Tabs>
+
+## Manual Import
+
+When plugin injection is disabled, import the stylesheet once from the application entrypoint.
+
+```ts title="src/main.ts"
+import 'zyzz/reset.css'
+```
+
+## Reset Layer
+
+The reset's declarations live in the `reset` layer, so normal unlayered declarations take precedence regardless of stylesheet load order. This list restores the markers and indentation that the reset removes:
+
+```tsx title="Steps.tsx"
+import { style } from 'zyzz'
+
+export function Steps() {
+  return (
+    <ol {...styles.list()}>
+      <li>Install</li>
+      <li>Configure</li>
+    </ol>
+  )
+}
+
+namespace styles {
+  export const list = style({
+    listStyleType: 'decimal',
+    paddingInlineStart: '1.5rem',
+  })
+}
+```
+
+Use configured [layers](/docs/guides/layers) when component styles also need an explicit order.
+
+## Defaults
+
+The reset applies these defaults:
+
+- Applies border-box sizing.
+- Removes margins and padding.
+- Removes default heading, link, and list styling.
+- Makes form controls inherit typography.
+- Makes replaced elements block-level.
+- Uses system fallbacks in its document and code font stacks.
+
+## More
+
+<Card.Group>
+  <Card title="Layers" icon="layers" href="/docs/guides/layers">
+    Order the reset, document defaults, and component styles.
+  </Card>
+  <Card title="Global Styles" icon="code" href="/docs/guides/global-styles">
+    Add document defaults on top of the reset with selector maps.
+  </Card>
+  <Card
+    title="Getting Started"
+    icon="terminal"
+    href="/docs/introduction/getting-started"
+  >
+    Connect the web integration that compiles styles and loads the reset.
+  </Card>
+</Card.Group>

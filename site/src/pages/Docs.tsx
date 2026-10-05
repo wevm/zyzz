@@ -18,6 +18,7 @@ import {
   useState,
 } from 'react'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
+import AtSignIcon from '~icons/lucide/at-sign'
 import BookOpenIcon from '~icons/lucide/book-open'
 import BoxIcon from '~icons/lucide/box'
 import BrainIcon from '~icons/lucide/brain'
@@ -26,7 +27,9 @@ import CircleHelpIcon from '~icons/lucide/circle-help'
 import CodeXmlIcon from '~icons/lucide/code-xml'
 import CopyIcon from '~icons/lucide/copy'
 import FileIcon from '~icons/lucide/file'
+import FilmIcon from '~icons/lucide/film'
 import GaugeIcon from '~icons/lucide/gauge'
+import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import MonitorIcon from '~icons/lucide/monitor'
@@ -36,11 +39,14 @@ import PaletteIcon from '~icons/lucide/palette'
 import PlayIcon from '~icons/lucide/play'
 import PlugIcon from '~icons/lucide/plug'
 import RocketIcon from '~icons/lucide/rocket'
+import RotateCcwIcon from '~icons/lucide/rotate-ccw'
 import ShieldCheckIcon from '~icons/lucide/shield-check'
 import SmartphoneIcon from '~icons/lucide/smartphone'
 import SparklesIcon from '~icons/lucide/sparkles'
+import SquareStackIcon from '~icons/lucide/square-stack'
 import TerminalIcon from '~icons/lucide/terminal'
 import TestTubeIcon from '~icons/lucide/test-tube'
+import TypeIcon from '~icons/lucide/type'
 import WorkflowIcon from '~icons/lucide/workflow'
 import WrenchIcon from '~icons/lucide/wrench'
 import BabelIcon from '~icons/simple-icons/babel'
@@ -70,16 +76,21 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/vite': ViteIcon,
   'api/web': MonitorIcon,
   concepts: BookOpenIcon,
+  'guides/at-rules': AtSignIcon,
   'guides/compilation': PackageIcon,
   'guides/conditions': WorkflowIcon,
   'guides/css-output': CodeXmlIcon,
+  'guides/global-styles': GlobeIcon,
+  'guides/keyframes': FilmIcon,
+  'guides/layers': SquareStackIcon,
   'guides/native': ReactIcon,
-  'guides/stylesheets': FileIcon,
+  'guides/reset': RotateCcwIcon,
   'guides/stylex': ArrowLeftRightIcon,
   'guides/styling': PaintbrushIcon,
   'guides/tailwind': ArrowLeftRightIcon,
   'guides/testing': TestTubeIcon,
   'guides/themes': PaletteIcon,
+  'guides/typography': TypeIcon,
   'guides/variants': LayersIcon,
   Integrations: PlugIcon,
   'introduction/agents': SparklesIcon,

@@ -138,14 +138,14 @@ await using host = await Host.create({
 await host.build()
 ```
 
-Imports of `zyzz` and its subpaths, URL specifiers, and specifiers with a query are never resolved. `zyzz/default` resolves like any installed module.
+Imports of `zyzz` and its subpaths, Node built-ins such as `fs`, URL specifiers, and specifiers with a query are never resolved. `zyzz/default` resolves like any installed module.
 
 ### options.script
 
 - **Type:** `string | false{:ts}`
 - **Default:** `'<outDir>/zyzz.js'{:ts}`
 
-The path of the initialization script that restores the set and color scheme each configuration saved. Inside `outDir` it is an owned output file listed in build results. It must not sit inside `root`, and `false` disables it.
+The path of the initialization script that restores the set and color scheme each configuration saved. Inside `outDir` it is an owned output file listed in build results. A path outside `outDir` must not sit inside `root`, and `false` disables the script.
 
 ```ts
 import { Host } from 'zyzz/node'
@@ -168,7 +168,7 @@ A path outside `outDir` is rewritten when its content changes and removed when n
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Rewrites style calls in the published modules. `false` publishes modules unchanged and still emits their CSS, so the runtime derives each class name itself. Configurations with variables, dynamic styles, and variants then need an explicit `id`.
+Rewrites style calls in the published modules. `false` publishes modules unchanged and still emits their CSS, so the runtime derives each class name itself. Configurations with variables, dynamic styles, variants, compositions, `variable` declarations, and named stylesheet declarations such as `keyframes` then need an explicit `id`.
 
 ```ts /compiler: false/
 // Publishes source modules without rewriting their style calls
@@ -220,10 +220,10 @@ The platform stays fixed for the host's lifetime. Without `contextual`, the sche
 
 - **Type:** `'light' | 'dark'{:ts}`
 
-The scheme compiled into each callable. The host reads no device scheme.
+Without `contextual`, the scheme compiled into each callable. A contextual build keeps both schemes, and the `Provider` selects one while rendering. The host reads no device scheme.
 
 ```ts /colorScheme: 'light'/
-// Compiles the light values of every color pair
+// Without contextual, compiles the light value of every color pair
 native: {
   colorScheme: 'light'
 }
@@ -270,7 +270,7 @@ native: { colorScheme: 'light', units: { rem: 16 } }
 - **Type:** `{ [label: string]: Vars.Definition }{:ts}`
 - **Default:** `undefined{:ts}`
 
-Variable sets keyed by output label. Without it, a `default` table resolves each token to its authored fallback.
+Fallback variable sets keyed by output label, for styles that no configuration binds. A style from a `defineConfig` helper resolves its tokens through that configuration's own sets instead. Without `vars`, a `default` table resolves each token to its authored fallback.
 
 ```ts
 import { defineVars } from 'zyzz'
@@ -282,7 +282,7 @@ const brand = defineVars({
 
 await using host = await Host.create({
   // [!code hl:2]
-  // Compiles the brand set's light values
+  // Supplies a brand set to styles that no configuration binds
   native: { colorScheme: 'light', set: 'brand', vars: { brand } },
   outDir: 'dist-native',
   packageId: 'my-app',
@@ -364,7 +364,7 @@ await using host = await Host.create({ packageId: 'my-app', root: 'src' })
 
 ## Output Layout
 
-Each source module publishes its rewritten module, a stylesheet, and their source maps under the same relative path. A module that exports styles, variables, or configuration also publishes compiler metadata. Rewritten modules stay TypeScript or JSX, so a later step transpiles them.
+In a default web build, each source module publishes its rewritten module, a stylesheet, and their source maps under the same relative path. A module that exports styles, variables, or configuration also publishes compiler metadata. Rewritten modules stay TypeScript or JSX, so a later step transpiles them.
 
 ```sh /zyzz.css/
 # Output for src/Button.tsx and src/zyzz.config.ts
@@ -384,6 +384,8 @@ dist/zyzz.js
 ```
 
 `zyzz.css` holds every module stylesheet with dependencies before their consumers, so an application loads one file. Global contributions also publish `zyzz.shared.css`, which `zyzz.css` begins with. The `.zyzz.json` ownership manifest and the `.zyzz-lock` file stay out of build results.
+
+`modules: false` omits the rewritten modules, their maps, and metadata. Native builds omit every stylesheet and the initialization script.
 
 ## Package Imports
 

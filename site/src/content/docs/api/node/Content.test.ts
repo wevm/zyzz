@@ -431,6 +431,21 @@ describe('Host.create API page', () => {
 
     await run(kept.directory, external!.source)
 
+    const builtin = await fixture({
+      'src/Files.ts': `import * as Fs from 'fs'\n\nexport const read = Fs.readFileSync\n`,
+    })
+    await run(
+      builtin.directory,
+      script(`Host.create({ packageId: 'my-app', root: 'src' })`),
+    )
+
+    expect(await builtin.read('Files.ts')).toMatchInlineSnapshot(`
+      "import * as Fs from 'fs'
+
+      export const read = Fs.readFileSync
+      "
+    `)
+
     expect(await kept.read('Icon.ts')).toMatchInlineSnapshot(`
       "import icon from '~icons/lucide/eye'
 
@@ -535,6 +550,16 @@ describe('Host.create API page', () => {
       run(unnamed.directory, script(compiler!.source)),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       `[Error: CSS-only themes require an explicit id on Config.create or Vars.define.]`,
+    )
+
+    const keyframes = await fixture({
+      'src/Fade.ts': `import { keyframes } from 'zyzz/web'\n\nexport const fade = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })\n`,
+    })
+
+    await expect(
+      run(keyframes.directory, script(compiler!.source)),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[Error: CSS-only named stylesheet declarations require an explicit id.]`,
     )
   })
 

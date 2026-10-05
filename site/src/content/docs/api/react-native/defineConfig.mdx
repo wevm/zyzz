@@ -121,6 +121,28 @@ Token references for styles, and the definition [`useVars`](/docs/api/react-nati
 const values = useVars(vars)
 ```
 
+### appearance
+
+- **Type:** `{ get, set }{:ts}`
+
+The Core [document preference controls](/docs/api/core/defineConfig/appearance), returned for shared typing. They read the document and localStorage, so native apps keep the selection in application state and pass it to the Provider.
+
+```ts /appearance/
+// Web-only, unused in native apps
+const { appearance } = defineConfig({ vars: base })
+```
+
+### script
+
+- **Type:** `() => string{:ts}`
+
+The Core [preference script](/docs/api/core/defineConfig/script), which runs against the document. Native apps have no counterpart.
+
+```ts /script/
+// Web-only, unused in native apps
+const { script } = defineConfig({ vars: base })
+```
+
 ## Types
 
 - **`defineConfig.ReturnType<options>{:ts}`:** The Core helpers plus `Provider`.

@@ -63,9 +63,9 @@ const StyledCard = withStyles(Card, { styleProps: ['bodyStyle'] })
 
 ### component
 
-- **Type:** `typeof Component{:ts}` for function components, or `React.ForwardRefExoticComponent<React.ComponentPropsWithRef<Component>>{:ts}`
+- **Type:** `(props: props) => result{:ts}` for function components, or `React.ForwardRefExoticComponent<React.ComponentPropsWithRef<Component>>{:ts}`
 
-A component with the original props and ref. Function components keep their type parameters when `styleProps` is omitted. A generic class, such as `FlatList`, is instantiated before wrapping, since its two constructors carry no type parameters through the wrapper.
+A component with the original props and ref. Function components keep their call signature and type parameters, but not overloads or static members, when `styleProps` is omitted. A generic class, such as `FlatList`, is instantiated before wrapping, since its two constructors carry no type parameters through the wrapper.
 
 ```tsx title="Rows.tsx"
 import { FlatList } from 'react-native'

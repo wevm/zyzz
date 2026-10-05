@@ -38,7 +38,7 @@ Existing application middleware and custom resolution run through the adapter. T
 
 ## Boundaries
 
-Native declarations retain the existing compiler diagnostics for unsupported CSS semantics. React JSX subscriptions and prop resolution are inserted by Babel; no custom JSX runtime or component wrapper is required. See the [React integration](https://zyzz.sh/docs/api/react-native/Provider) for supported component forms and explicit resolution outside JSX.
+Native declarations retain the existing compiler diagnostics for unsupported CSS semantics. React JSX subscriptions and prop resolution are inserted by Babel; no custom JSX runtime or component wrapper is required. See [`withStyles`](https://zyzz.sh/docs/api/react-native/withStyles) for supported component forms and [`useStyles`](https://zyzz.sh/docs/api/react-native/useStyles) for explicit resolution outside JSX.
 
 iOS/Android application and shared authoring receive native compilation. Web and ordinary dependencies pass through to the upstream transformer. Web CSS delivery remains a separate integration. TypeScript still checks shared authoring types before Babel rewrites them to native props.
 

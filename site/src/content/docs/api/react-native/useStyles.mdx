@@ -46,7 +46,7 @@ const current = useStyles()
 
 Resolves an applied style, a native object, a style array, or a style callback. An applied style resolves without `undefined`, so it is assignable to `ViewStyle` and `TextStyle` values. Native objects, arrays, and callbacks keep their types.
 
-The optional `input` holds the choices for a recipe passed without calling it. In Metro builds, `current.style(styles.badge, { tone: 'info' })` resolves like `current.style(styles.badge({ tone: 'info' }).style)`.
+The optional `input` reaches a compiled binding when the style is passed uncalled. The result keeps the type of the first argument, so typed callers pass an applied style, such as `styles.badge({ tone: 'info' }).style`, instead.
 
 ```ts /current.style/
 // The applied style, resolved for the current scheme and set

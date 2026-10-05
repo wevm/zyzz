@@ -4,6 +4,8 @@ Configure native styles, select themes with React, and compile shared definition
 
 Three entrypoints serve native apps. `zyzz/react-native` exports the native configuration, hooks, and table namespaces. The compiler imports its bindings from `zyzz/react-native/react`. The optional `zyzz/react-native/reanimated` publishes selected values to Reanimated shared values.
 
+Native entrypoints require React 19 and React Native 0.86 or later. The Reanimated entrypoint also requires Reanimated 4.5.3 or later within version 4.
+
 ## Import Paths
 
 The `react-native` export condition decides what an import resolves to. Metro sets it, and TypeScript reads it from `customConditions`, as the [native setup walkthrough](/docs/guides/native#walkthrough) shows.

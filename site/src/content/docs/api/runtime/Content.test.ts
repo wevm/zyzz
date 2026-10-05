@@ -1161,6 +1161,26 @@ describe('NativeDynamic API page', () => {
     )
   })
 
+  test('requires exactly one choice in a payload object', () => {
+    const box = NativeDynamic.create({
+      axes: { size: ['custom', 'other'] },
+      defaults: {},
+      payloads: [
+        {
+          axis: 'size',
+          choice: 'custom',
+          slots: [{ padding: '--box-padding' }],
+        },
+      ],
+      program: { rules: [], slots: {} },
+      styles: {},
+    }) as unknown as (input: { size: object }) => unknown
+
+    expect(() => box({ size: {} })).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Native payloads require exactly one choice.]`,
+    )
+  })
+
   test('scales px lengths by units.px', () => {
     const box = NativeDynamic.create({
       axes: {},

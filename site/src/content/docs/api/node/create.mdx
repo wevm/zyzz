@@ -180,10 +180,10 @@ Host.create({ compiler: false, packageId: 'my-app', root: 'src' })
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Publishes rewritten modules, their source maps, and compiler metadata beside the stylesheets. `false` publishes only the stylesheets and their maps, for a pipeline that compiles the modules separately.
+Publishes rewritten modules, their source maps, and compiler metadata beside the stylesheets. `false` omits those three, for a pipeline that compiles the modules separately. Stylesheets, copied assets, and the initialization script still publish.
 
 ```ts /modules: false/
-// Publishes stylesheets alone
+// Publishes stylesheets without rewritten modules
 Host.create({ modules: false, packageId: 'my-app', root: 'src' })
 ```
 

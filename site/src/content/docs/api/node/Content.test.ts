@@ -227,8 +227,10 @@ describe('Host.create API page', () => {
       ]
     `)
     expect(
-      await Fs.readdir(Path.join(project.directory, 'dist')),
-    ).not.toContain('.zyzz-lock')
+      (await Fs.readdir(Path.join(project.directory, 'dist'))).includes(
+        '.zyzz-lock',
+      ),
+    ).toMatchInlineSnapshot(`false`)
   })
 
   test('lists the documented output layout', async () => {
@@ -240,13 +242,45 @@ describe('Host.create API page', () => {
       script(`Host.create({ packageId: 'my-app', root: 'src' })`),
     )
 
-    expect(await project.files()).toEqual(
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
+    expect(
       layout!.source
         .split('\n')
         .filter((line) => line.startsWith('dist/'))
-        .map((line) => line.slice('dist/'.length))
-        .sort(),
-    )
+        .map((line) => line.slice('dist/'.length)),
+    ).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
   })
 
   test('scans the root and records the package ID', async () => {
@@ -280,7 +314,23 @@ describe('Host.create API page', () => {
 
     await run(project.directory, script(outDir!.source))
 
-    expect(await project.files()).toContain('zyzz.css')
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
   })
 
   test('processes stylesheets with Lightning CSS options', async () => {
@@ -368,12 +418,17 @@ describe('Host.create API page', () => {
     const unresolved = await fixture(files)
     const kept = await fixture(files)
 
-    await expect(
-      run(
-        unresolved.directory,
-        script(`Host.create({ packageId: 'my-app', root: 'src' })`),
-      ),
-    ).rejects.toThrow('Unable to resolve "~icons/lucide/eye"')
+    const unresolvedError = await run(
+      unresolved.directory,
+      script(`Host.create({ packageId: 'my-app', root: 'src' })`),
+    ).catch((error: Error) =>
+      error.message.replace(unresolved.directory, '<project>'),
+    )
+
+    expect(unresolvedError).toMatchInlineSnapshot(
+      `"my-app/Icon.ts:0: Unable to resolve "~icons/lucide/eye" from <project>/src/Icon.ts: Cannot find module '~icons/lucide/eye'"`,
+    )
+
     await run(kept.directory, external!.source)
 
     expect(await kept.read('Icon.ts')).toMatchInlineSnapshot(`
@@ -396,7 +451,22 @@ describe('Host.create API page', () => {
 
     await run(project.directory, public_!.source)
 
-    expect(await project.files()).not.toContain('zyzz.js')
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+      ]
+    `)
     expect(
       (
         await Fs.readFile(
@@ -431,7 +501,23 @@ describe('Host.create API page', () => {
     await run(unchanged.directory, script(compiler!.source))
     await run(stylesheets.directory, script(modules!.source))
 
-    expect(await unchanged.read('Button.tsx')).toBe(web['src/Button.tsx'])
+    expect(await unchanged.read('Button.tsx')).toMatchInlineSnapshot(`
+      "import { style } from './zyzz.config.js'
+
+      export function Button() {
+        return <button {...styles.button()} />
+      }
+
+      export namespace styles {
+        export const button = style({
+          '@media (width >= 40rem)': { padding: 24 },
+          color: 'ink',
+          padding: 16,
+          userSelect: 'none',
+        })
+      }
+      "
+    `)
     expect(await stylesheets.files()).toMatchInlineSnapshot(`
       [
         "Button.tsx.css",
@@ -511,7 +597,11 @@ describe('Host.create API page', () => {
     const provided = await fixture(token)
     await run(provided.directory, script(contextual!.source))
 
-    expect(await provided.read('Label.ts')).toContain('__zyzzNativeContext')
+    expect(
+      (await provided.read('Label.ts')).match(/^import .*$/m)![0],
+    ).toMatchInlineSnapshot(
+      `"import {Native as __zyzzNative,NativeContext as __zyzzNativeContext} from 'zyzz/runtime';"`,
+    )
   })
 
   test('maps native fonts and units, and selects sets', async () => {
@@ -643,8 +733,16 @@ describe('Host.create API page', () => {
 
     await using host = await create({})
 
-    await expect(create({})).rejects.toThrow('EEXIST')
-    expect(host.close).toBe(host[Symbol.asyncDispose])
+    const locked = await create({}).catch((error: Error) =>
+      error.message.replace(project.directory, '<project>'),
+    )
+
+    expect(locked).toMatchInlineSnapshot(
+      `"EEXIST: file already exists, open '<project>/dist/.zyzz-lock'"`,
+    )
+    expect(host.close === host[Symbol.asyncDispose]).toMatchInlineSnapshot(
+      `true`,
+    )
   })
 })
 
@@ -655,7 +753,23 @@ describe('build API page', () => {
 
     await run(project.directory, overview!.source)
 
-    expect(await project.files()).toContain('zyzz.css')
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
   })
 
   test('reports changed files and removes outputs of deleted modules', async () => {
@@ -699,7 +813,40 @@ describe('build API page', () => {
         "zyzz.css.map",
       ]
     `)
-    expect(removed.files).toEqual(await project.files())
+    expect(removed.files).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
   })
 
   test('keeps the previous output after a failed build', async () => {
@@ -718,11 +865,13 @@ describe('build API page', () => {
     )
     const error = await host.build().catch((error: unknown) => error)
 
-    expect(error).toBeInstanceOf(Source.ExtractError)
+    expect(error instanceof Source.ExtractError).toMatchInlineSnapshot(`true`)
     expect(error).toMatchInlineSnapshot(
       `[Source.ExtractError: my-app/Button.tsx:69: Expected a literal string or number; expressions are not evaluated.]`,
     )
-    expect(await project.read('Button.tsx.css')).toBe(before)
+    expect(
+      (await project.read('Button.tsx.css')) === before,
+    ).toMatchInlineSnapshot(`true`)
   })
 
   test('refuses to replace edited output', async () => {
@@ -733,7 +882,11 @@ describe('build API page', () => {
       script(`Host.create({ packageId: 'my-app', root: 'src' })`),
     )
 
-    expect(edit!.source).toContain('dist/Button.tsx.css')
+    expect(edit!.source).toMatchInlineSnapshot(`
+      "# An edited output blocks the next build until it is restored or deleted
+      echo '/* edited */' > dist/Button.tsx.css
+      "
+    `)
 
     await Fs.writeFile(
       Path.join(project.directory, 'dist/Button.tsx.css'),
@@ -753,8 +906,24 @@ describe('build API page', () => {
       `[Error: Refusing to replace an unowned or modified output: Button.tsx.css]`,
     )
     expect(
-      Object.keys(JSON.parse(await project.read('.zyzz.json')).files),
-    ).toContain('Button.tsx.css')
+      Object.keys(JSON.parse(await project.read('.zyzz.json')).files).sort(),
+    ).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
   })
 })
 
@@ -777,9 +946,18 @@ describe('watch API page', () => {
         return css === initial ? undefined : css
       })
 
-      expect(rebuilt).toContain('padding: 20px')
+      expect(rebuilt.match(/padding: \d+px/g)).toMatchInlineSnapshot(`
+        [
+          "padding: 24px",
+          "padding: 20px",
+        ]
+      `)
 
-      expect(added!.source).toContain('src/forms/Field.ts')
+      expect(added!.source).toMatchInlineSnapshot(`
+        "# Adding a module triggers a build that publishes its output
+        mkdir src/forms && echo "export const id = 'field'" > src/forms/Field.ts
+        "
+      `)
       await Fs.mkdir(Path.join(project.directory, 'src/forms'))
       await Fs.writeFile(
         Path.join(project.directory, 'src/forms/Field.ts'),
@@ -798,8 +976,10 @@ describe('watch API page', () => {
     }
 
     expect(
-      await Fs.readdir(Path.join(project.directory, 'dist')),
-    ).not.toContain('.zyzz-lock')
+      (await Fs.readdir(Path.join(project.directory, 'dist'))).includes(
+        '.zyzz-lock',
+      ),
+    ).toMatchInlineSnapshot(`false`)
   })
 
   test('reports failures and recovers after a corrected source', async () => {
@@ -826,7 +1006,13 @@ describe('watch API page', () => {
         "error": [Source.ExtractError: my-app/Button.tsx:69: Expected a literal string or number; expressions are not evaluated.],
       }
     `)
-    expect(await project.read('Button.tsx.css')).toContain('padding: 16px')
+    expect((await project.read('Button.tsx.css')).match(/padding: \d+px/g))
+      .toMatchInlineSnapshot(`
+      [
+        "padding: 24px",
+        "padding: 16px",
+      ]
+    `)
 
     await Fs.writeFile(
       Path.join(project.directory, 'src/Button.tsx'),
@@ -939,12 +1125,16 @@ describe('close API page', () => {
     await run(closed.directory, overview!.source)
     await run(disposed.directory, disposal!.source)
 
-    expect(await Fs.readdir(Path.join(closed.directory, 'dist'))).not.toContain(
-      '.zyzz-lock',
-    )
     expect(
-      await Fs.readdir(Path.join(disposed.directory, 'dist')),
-    ).not.toContain('.zyzz-lock')
+      (await Fs.readdir(Path.join(closed.directory, 'dist'))).includes(
+        '.zyzz-lock',
+      ),
+    ).toMatchInlineSnapshot(`false`)
+    expect(
+      (await Fs.readdir(Path.join(disposed.directory, 'dist'))).includes(
+        '.zyzz-lock',
+      ),
+    ).toMatchInlineSnapshot(`false`)
   })
 
   test('publishes queued builds before closing', async () => {
@@ -958,11 +1148,27 @@ describe('close API page', () => {
     void host.build()
     const closing = host.close()
 
-    expect(host.close()).toBe(closing)
+    expect(host.close() === closing).toMatchInlineSnapshot(`true`)
 
     await closing
 
-    expect(await project.files()).toContain('zyzz.css')
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
     await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
       `[Error: Host is closed.]`,
     )
@@ -987,7 +1193,13 @@ describe('close API page', () => {
 
     await Fs.writeFile(Path.join(project.directory, 'dist/.zyzz-lock'), '')
 
-    await expect(Host.create(options)).rejects.toMatchObject({ code: 'EEXIST' })
+    const stale = await Host.create(options).catch((error: Error) =>
+      error.message.replace(project.directory, '<project>'),
+    )
+
+    expect(stale).toMatchInlineSnapshot(
+      `"EEXIST: file already exists, open '<project>/dist/.zyzz-lock'"`,
+    )
   })
 })
 
@@ -998,7 +1210,23 @@ describe('Host API page', () => {
 
     await run(project.directory, overview!.source)
 
-    expect(await project.files()).toContain('zyzz.css')
+    expect(await project.files()).toMatchInlineSnapshot(`
+      [
+        "Button.tsx",
+        "Button.tsx.css",
+        "Button.tsx.css.map",
+        "Button.tsx.map",
+        "Button.tsx.zyzz.json",
+        "zyzz.config.ts",
+        "zyzz.config.ts.css",
+        "zyzz.config.ts.css.map",
+        "zyzz.config.ts.map",
+        "zyzz.config.ts.zyzz.json",
+        "zyzz.css",
+        "zyzz.css.map",
+        "zyzz.js",
+      ]
+    `)
   })
 
   test('passes native compiler errors through', async () => {
@@ -1096,7 +1324,8 @@ describe('node API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(18)
-    expect(checked.status, checked.stdout + checked.stderr).toBe(0)
+    expect(files.length).toMatchInlineSnapshot(`18`)
+    expect(checked.stdout + checked.stderr).toMatchInlineSnapshot(`""`)
+    expect(checked.status).toMatchInlineSnapshot(`0`)
   }, 60_000)
 })

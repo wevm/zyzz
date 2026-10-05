@@ -136,14 +136,17 @@ appearance.set({ colorScheme: 'dark' })
 - **`Appearance.Selection<name>{:ts}`:** A set with an optional scheme. A catalog without names selects only a scheme.
 
 ```ts title="toggle.ts"
-import type { Appearance } from 'zyzz/runtime'
+import { Appearance } from 'zyzz/runtime'
 
 // [!code hl:2]
-// Accepts the controls of any catalog
-export function toggle(appearance: Appearance.Root<string>) {
+// `Root<never>` reads and writes only the scheme, so any catalog's controls fit
+export function toggle(appearance: Appearance.Root<never>) {
   const dark = appearance.get().colorScheme === 'dark'
   appearance.set({ colorScheme: dark ? 'light' : 'dark' })
 }
+
+// Controls for a catalog with named sets
+toggle(Appearance.root([['base', 'z-theme-base']], { defaultVars: 'base' }))
 ```
 
 ## Errors

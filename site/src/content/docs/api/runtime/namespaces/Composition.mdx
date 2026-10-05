@@ -104,9 +104,9 @@ props.className
 
 ### data-[axis]
 
-- **Type:** `string{:ts}`
+- **Type:** `string | undefined{:ts}`
 
-Every `data-*` attribute of the arguments, with later arguments winning.
+Every `data-*` attribute of the arguments, with later arguments winning. An attribute explicitly set to `undefined` is copied as `undefined`.
 
 ```ts /props['data-size']/
 // 'large'

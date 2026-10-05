@@ -214,7 +214,7 @@ meter({ width: '12px', style: { opacity: 0.5 } })
 
 - **Type:** `Native.Props<style>{:ts}`
 
-`{ style }`, with the generated style alone or followed by the override. Results with bound values are new objects on every call. Without fields or payloads, results are frozen and cached for up to 256 combinations.
+`{ style }`, with the generated style alone or followed by the override. Each call returns new props. A style with bound values is also new on every call. Without fields or payloads, the generated style itself is frozen and reused for up to 256 combinations.
 
 ```ts /props.style/
 // { width: 12 }
@@ -239,7 +239,7 @@ export type Meter = NativeDynamic.Callable<{ width: string }>
 
 ## Errors
 
-The callable throws [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) before returning for an unknown input key or choice, a missing or non-scalar field, a payload on a static choice, or incomplete metadata. A value that cannot convert throws an `Error`, such as a `rem` length without `units.rem`.
+The callable throws [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) before returning for an unknown input key or choice, a missing or non-scalar field, a payload on a static choice, or a rule that references a missing fragment or unbound slot. A dynamic choice declared without a base slot record throws a `TypeError`. A value that cannot convert throws an `Error`, such as a `rem` length without `units.rem`.
 
 ```ts title="invalid.ts"
 import { Native, NativeDynamic } from 'zyzz/runtime'

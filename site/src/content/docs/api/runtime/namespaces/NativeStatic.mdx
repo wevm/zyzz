@@ -97,7 +97,7 @@ NativeStatic.create({
 
 - **Type:** `Native.Callable<axes>{:ts}`
 
-Accepts the inferred choices and a native `style` override, as [`Native.create`](/docs/api/runtime/namespaces/Native#inputstyle) does. Each merged result is frozen and cached for up to 256 combinations, evicting the oldest first.
+Accepts the inferred choices and a native `style` override, as [`Native.create`](/docs/api/runtime/namespaces/Native#inputstyle) does. Each merged style is frozen and reused for up to 256 combinations, evicting the oldest first. The returned props are new on every call.
 
 ```ts /text()/
 // The same frozen object on every call: { fontSize: 16, lineHeight: 20 }

@@ -56,6 +56,17 @@ Selection.create(
 )({ set: 'base', colorScheme: 'light dark' })
 ```
 
+### key
+
+- **Type:** `'set'{:ts}`
+
+The input field that names the set. It is always `'set'`, and the selector rejects every other field except `colorScheme`.
+
+```ts /'set'/
+// Generated code passes the key before the default set
+Selection.create(entries, false, 'set', 'base')
+```
+
 ### defaultSet
 
 - **Type:** `string{:ts}`

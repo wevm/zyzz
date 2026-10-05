@@ -49,13 +49,25 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [cx](https://zyzz.sh/docs/api/core/cx.md): Reference and examples.
 - [Style](https://zyzz.sh/docs/api/core/namespaces/Style.md): Reference and examples.
 - [Values](https://zyzz.sh/docs/api/core/values.md): Reference and examples.
-- [zyzz/web](api/web/README.md): Section index.
-- [Css](api/web/Css/README.md): Section index.
-- [Css.compile](api/web/Css/compile.md): Reference and examples.
-- [layers](api/web/layers.md): Reference and examples.
-- [fontFace](api/web/fontFace.md): Reference and examples.
-- [global](api/web/global.md): Reference and examples.
-- [keyframes](api/web/keyframes.md): Reference and examples.
+- [zyzz/web](https://zyzz.sh/docs/api/web.md): Section index.
+- [global](https://zyzz.sh/docs/api/web/global.md): Reference and examples.
+- [layers](https://zyzz.sh/docs/api/web/layers.md): Reference and examples.
+- [fontFace](https://zyzz.sh/docs/api/web/fontFace.md): Reference and examples.
+- [keyframes](https://zyzz.sh/docs/api/web/keyframes.md): Reference and examples.
+- [importCss](https://zyzz.sh/docs/api/web/importCss.md): Reference and examples.
+- [page](https://zyzz.sh/docs/api/web/page.md): Reference and examples.
+- [viewTransition](https://zyzz.sh/docs/api/web/viewTransition.md): Reference and examples.
+- [positionTry](https://zyzz.sh/docs/api/web/positionTry.md): Reference and examples.
+- [counterStyle](https://zyzz.sh/docs/api/web/counterStyle.md): Reference and examples.
+- [customMedia](https://zyzz.sh/docs/api/web/customMedia.md): Reference and examples.
+- [property](https://zyzz.sh/docs/api/web/property.md): Reference and examples.
+- [fontFeatureValues](https://zyzz.sh/docs/api/web/fontFeatureValues.md): Reference and examples.
+- [fontPaletteValues](https://zyzz.sh/docs/api/web/fontPaletteValues.md): Reference and examples.
+- [cssFunction](https://zyzz.sh/docs/api/web/cssFunction.md): Reference and examples.
+- [colorProfile](https://zyzz.sh/docs/api/web/colorProfile.md): Reference and examples.
+- [namespace](https://zyzz.sh/docs/api/web/namespace.md): Reference and examples.
+- [Css](https://zyzz.sh/docs/api/web/namespaces/Css.md): Reference and examples.
+- [At-Rule Contract](https://zyzz.sh/docs/api/web/at-rules.md): Reference.
 - [zyzz/vite](api/vite/README.md): Section index.
 - [zyzz](api/vite/zyzz.md): Vite plugin factory.
 - [zyzz/next](api/next/README.md): Section index.

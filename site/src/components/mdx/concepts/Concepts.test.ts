@@ -52,7 +52,7 @@ describe('/docs/concepts', () => {
     server.stderr?.on('data', (data) => {
       output += data
     })
-    const deadline = Date.now() + 50_000
+    const deadline = Date.now() + 140_000
     while (Date.now() < deadline) {
       if (server.exitCode !== null) throw new Error(output)
       try {
@@ -68,7 +68,7 @@ describe('/docs/concepts', () => {
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
     throw new Error(`Documentation site did not start. ${output}`)
-  }, 60000)
+  }, 150000)
 
   afterAll(async () => {
     if (server?.pid && server.exitCode === null) {

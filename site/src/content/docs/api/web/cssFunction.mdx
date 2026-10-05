@@ -1,0 +1,186 @@
+# cssFunction
+
+Emit an `@function` rule and return a callable that writes calls to it.
+
+`cssFunction` emits a native CSS custom function. The compiler replaces the call with a function that formats a CSS call expression, so the browser evaluates the body and JavaScript never does.
+
+```tsx title="Box.tsx"
+import { style } from 'zyzz'
+import { cssFunction } from 'zyzz/web'
+
+// [!code hl:6]
+// Emits `@function --z-cssfunction-double(--size <length>) returns <length>{…}`
+const double = cssFunction({
+  body: { result: 'calc(var(--size) * 2)' },
+  parameters: [{ name: '--size', syntax: '<length>' }],
+  returns: '<length>',
+})
+
+export function Box() {
+  return <div {...styles.box()} />
+}
+
+namespace styles {
+  // [!code hl:2]
+  // Compiles to `width:--z-cssfunction-double(2rem)`
+  export const box = style({ width: double('2rem') })
+}
+```
+
+## Signature
+
+```ts
+// Parameters, an optional return syntax, and a body
+cssFunction(options, context?)
+```
+
+## Parameters
+
+### options.parameters
+
+- **Type:** `readonly cssFunction.Parameter[]{:ts}`
+
+Ordered parameters, each with a dashed `name`, an optional `syntax`, and an optional `default`. A parameter without `syntax` accepts any CSS value. Parameters with defaults become optional trailing arguments.
+
+```ts
+import { cssFunction } from 'zyzz/web'
+
+export const fluid = cssFunction({
+  body: { result: 'clamp(var(--min), 4vw, var(--max))' },
+  parameters: [
+    { name: '--min', syntax: '<length>' },
+    // [!code hl:2]
+    // Callers may omit the maximum
+    { default: '3rem', name: '--max', syntax: '<length>' },
+  ],
+  returns: '<length>',
+})
+```
+
+A syntax accepts one component, `+` or `#` multipliers, and `type(...)` alternatives. Typed parameters narrow the accepted arguments, so `<length>` rejects a bare number.
+
+### options.returns
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The syntax of the result. TypeScript accepts the call only in properties whose values fit that syntax. An omitted syntax accepts any CSS value.
+
+```ts
+import { cssFunction } from 'zyzz/web'
+
+export const tint = cssFunction({
+  body: { result: 'color-mix(in srgb, var(--color), white 20%)' },
+  parameters: [{ name: '--color', syntax: '<color>' }],
+  // [!code hl:2]
+  // Calls fit color properties
+  returns: '<color>',
+})
+```
+
+### options.body
+
+- **Type:** `cssFunction.Body{:ts}`
+
+The function body: a `result`, local custom properties, and `@media`, `@supports`, or `@container` groups that override them. An omitted `result` makes the call invalid at computed-value time.
+
+```ts
+import { cssFunction } from 'zyzz/web'
+
+export const gutter = cssFunction({
+  body: {
+    // [!code hl:4]
+    // A local custom property, then a conditional result
+    '--base': 'var(--size)',
+    result: 'var(--base)',
+    '@media (width >= 48rem)': { result: 'calc(var(--base) * 2)' },
+  },
+  parameters: [{ name: '--size', syntax: '<length>' }],
+  returns: '<length>',
+})
+```
+
+### options[atRule]
+
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
+
+Grouping keys around a complete definition. Every branch must declare the same parameters and return syntax, while bodies may differ. Each value holds a complete definition or further grouping keys, and a bare `@layer` key emits an anonymous layer.
+
+```ts
+import { cssFunction } from 'zyzz/web'
+
+export const half = cssFunction({
+  // [!code hl:2]
+  // Emits the function inside `@layer functions`
+  '@layer functions': {
+    body: { result: 'calc(var(--size) / 2)' },
+    parameters: [{ name: '--size', syntax: '<length>' }],
+  },
+})
+```
+
+### context.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
+
+```ts /{ id: 'double' }/
+// Calls format as `--z-cssfunctionid-double(…)`
+cssFunction({ body: { result: '0px' }, parameters: [] }, { id: 'double' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `cssFunction.Reference<parameters, returns>{:ts}`
+
+A function that formats a call expression from its arguments. Arguments that contain commas are wrapped in braces, as CSS requires. Imports, re-exports, and packed libraries keep the same name.
+
+```ts /fluid('1rem', '2rem')/
+// Compiles to `font-size:--z-cssfunction-fluid(1rem,2rem)`
+style({ fontSize: fluid('1rem', '2rem') })
+```
+
+## Types
+
+- **`cssFunction.Arguments<parameters>{:ts}`:** The accepted argument tuple.
+- **`cssFunction.Body{:ts}`:** The accepted body.
+- **`cssFunction.Input<parameter>{:ts}`:** The argument type implied by one parameter's syntax.
+- **`cssFunction.Options{:ts}`:** The accepted definition.
+- **`cssFunction.Parameter{:ts}`:** One parameter declaration.
+- **`cssFunction.Reference<parameters, returns>{:ts}`:** The returned callable.
+- **`cssFunction.Syntax{:ts}`:** A syntax string.
+
+```ts
+import type { cssFunction } from 'zyzz/web'
+
+// [!code hl:2]
+// A reusable parameter declaration
+export const size = {
+  name: '--size',
+  syntax: '<length>',
+} as const satisfies cssFunction.Parameter
+```
+
+## Errors
+
+TypeScript rejects invalid syntax strings and arguments outside a parameter's syntax.
+
+```ts twoslash
+// @errors: 2345
+import { cssFunction } from 'zyzz/web'
+
+const double = cssFunction({
+  body: { result: 'calc(var(--size) * 2)' },
+  parameters: [{ name: '--size', syntax: '<length>' }],
+  returns: '<length>',
+})
+
+// A length requires a unit
+double(2)
+```
+
+The compiler reports `Source.ExtractError` for invalid syntax and branches whose signatures differ. Without a compiler transform, a call without `context.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

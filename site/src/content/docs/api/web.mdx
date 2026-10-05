@@ -1,0 +1,111 @@
+# Web
+
+Declare global rules, cascade layers, and at-rules, and compile web CSS with the `zyzz/web` entrypoint.
+
+## Stylesheets
+
+<Card.Group>
+  <Card title="global" icon="globe" href="/docs/api/web/global">
+    Emit global selector rules and their grouping rules into the shared
+    stylesheet.
+  </Card>
+  <Card title="layers" icon="layers" href="/docs/api/web/layers">
+    Declare the order of cascade layers once for every module in the project.
+  </Card>
+  <Card title="fontFace" icon="type" href="/docs/api/web/fontFace">
+    Emit an @font-face rule from typed font descriptors, with relative font
+    assets.
+  </Card>
+  <Card title="keyframes" icon="film" href="/docs/api/web/keyframes">
+    Emit an @keyframes rule and return its generated animation name for styles.
+  </Card>
+</Card.Group>
+
+## At-Rules
+
+<Card.Group>
+  <Card title="importCss" icon="file-input" href="/docs/api/web/importCss">
+    Emit an @import rule for an external stylesheet, with layer and media
+    conditions.
+  </Card>
+  <Card title="page" icon="printer" href="/docs/api/web/page">
+    Emit an @page rule with page descriptors and page-margin boxes for print.
+  </Card>
+  <Card
+    title="viewTransition"
+    icon="arrow-left-right"
+    href="/docs/api/web/viewTransition"
+  >
+    Emit an @view-transition rule that opts documents into navigation
+    transitions.
+  </Card>
+  <Card title="positionTry" icon="anchor" href="/docs/api/web/positionTry">
+    Emit an @position-try rule and return a reference for anchored fallbacks.
+  </Card>
+  <Card
+    title="counterStyle"
+    icon="list-ordered"
+    href="/docs/api/web/counterStyle"
+  >
+    Emit an @counter-style rule and return a reference for list markers.
+  </Card>
+  <Card
+    title="customMedia"
+    icon="monitor-smartphone"
+    href="/docs/api/web/customMedia"
+  >
+    Emit an @custom-media rule and return a key that groups declarations.
+  </Card>
+  <Card title="property" icon="variable" href="/docs/api/web/property">
+    Register a custom property with a syntax, inheritance, and initial value.
+  </Card>
+  <Card
+    title="fontFeatureValues"
+    icon="a-large-small"
+    href="/docs/api/web/fontFeatureValues"
+  >
+    Emit an @font-feature-values rule that names OpenType feature indices.
+  </Card>
+  <Card
+    title="fontPaletteValues"
+    icon="paint-bucket"
+    href="/docs/api/web/fontPaletteValues"
+  >
+    Emit an @font-palette-values rule and return a reference for color fonts.
+  </Card>
+  <Card
+    title="cssFunction"
+    icon="square-function"
+    href="/docs/api/web/cssFunction"
+  >
+    Emit an @function rule and return a callable that writes calls to it.
+  </Card>
+  <Card title="colorProfile" icon="pipette" href="/docs/api/web/colorProfile">
+    Emit an @color-profile rule and return a reference for color() values.
+  </Card>
+  <Card title="namespace" icon="at-sign" href="/docs/api/web/namespace">
+    Emit an @namespace rule that binds a selector prefix for one module.
+  </Card>
+</Card.Group>
+
+## Namespaces
+
+<Card.Group>
+  <Card title="Css" icon="code-xml" href="/docs/api/web/namespaces/Css">
+    Compile ordered style data into CSS text, class names, and variable set
+    scopes.
+  </Card>
+</Card.Group>
+
+## Reference
+
+<Card.Group>
+  <Card
+    title="At-Rule Contract"
+    icon="scroll-text"
+    href="/docs/api/web/at-rules"
+  >
+    Which API owns each CSS at-rule, and the rules every stylesheet helper
+    follows.
+  </Card>
+</Card.Group>

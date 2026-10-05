@@ -13,10 +13,14 @@ import { style, variants, vars } from '../zyzz.config.js'
 import {
   isValidElement,
   type ReactNode,
+  Suspense,
+  use,
   useEffect,
   useId,
   useState,
 } from 'react'
+import ALargeSmallIcon from '~icons/lucide/a-large-small'
+import AnchorIcon from '~icons/lucide/anchor'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import AtSignIcon from '~icons/lucide/at-sign'
 import BookOpenIcon from '~icons/lucide/book-open'
@@ -33,6 +37,7 @@ import CopyPlusIcon from '~icons/lucide/copy-plus'
 import EyeIcon from '~icons/lucide/eye'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileIcon from '~icons/lucide/file'
+import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
 import FolderCogIcon from '~icons/lucide/folder-cog'
@@ -42,21 +47,28 @@ import HammerIcon from '~icons/lucide/hammer'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import ListIcon from '~icons/lucide/list'
+import ListOrderedIcon from '~icons/lucide/list-ordered'
 import LockOpenIcon from '~icons/lucide/lock-open'
 import MonitorIcon from '~icons/lucide/monitor'
+import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
 import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
+import PaintBucketIcon from '~icons/lucide/paint-bucket'
 import PaletteIcon from '~icons/lucide/palette'
+import PipetteIcon from '~icons/lucide/pipette'
 import PlayIcon from '~icons/lucide/play'
 import PlugIcon from '~icons/lucide/plug'
+import PrinterIcon from '~icons/lucide/printer'
 import RocketIcon from '~icons/lucide/rocket'
 import RotateCcwIcon from '~icons/lucide/rotate-ccw'
+import ScrollTextIcon from '~icons/lucide/scroll-text'
 import ServerIcon from '~icons/lucide/server'
 import Settings2Icon from '~icons/lucide/settings-2'
 import SettingsIcon from '~icons/lucide/settings'
 import ShieldCheckIcon from '~icons/lucide/shield-check'
 import SmartphoneIcon from '~icons/lucide/smartphone'
 import SparklesIcon from '~icons/lucide/sparkles'
+import SquareFunctionIcon from '~icons/lucide/square-function'
 import SquareStackIcon from '~icons/lucide/square-stack'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
@@ -113,6 +125,24 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/unplugin': PlugIcon,
   'api/vite': ViteIcon,
   'api/web': MonitorIcon,
+  'api/web/at-rules': ScrollTextIcon,
+  'api/web/colorProfile': PipetteIcon,
+  'api/web/counterStyle': ListOrderedIcon,
+  'api/web/cssFunction': SquareFunctionIcon,
+  'api/web/customMedia': MonitorSmartphoneIcon,
+  'api/web/fontFace': TypeIcon,
+  'api/web/fontFeatureValues': ALargeSmallIcon,
+  'api/web/fontPaletteValues': PaintBucketIcon,
+  'api/web/global': GlobeIcon,
+  'api/web/importCss': FileInputIcon,
+  'api/web/keyframes': FilmIcon,
+  'api/web/layers': LayersIcon,
+  'api/web/namespace': AtSignIcon,
+  'api/web/namespaces/Css': CodeXmlIcon,
+  'api/web/page': PrinterIcon,
+  'api/web/positionTry': AnchorIcon,
+  'api/web/property': VariableIcon,
+  'api/web/viewTransition': ArrowLeftRightIcon,
   concepts: BookOpenIcon,
   'guides/at-rules': AtSignIcon,
   'guides/conditions': WorkflowIcon,
@@ -154,7 +184,6 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
 export function Page(props: Page.Props) {
   const { path } = props
 
-  const Content = Docs.pages[`./content/docs/${path}.mdx`]!
   const page = __DOCS__.pages[path]!
   return (
     <DocumentationShell
@@ -190,18 +219,10 @@ export function Page(props: Page.Props) {
             <h1>{page.title}</h1>
             <p>{page.description}</p>
           </header>
-          <Content
-            components={{
-              AgentPrompt,
-              Card,
-              FrameworkSetup,
-              Install,
-              Steps,
-              a: Link,
-              blockquote: Callout,
-              pre: Code,
-            }}
-          />
+          {/* Hydration keeps the server-rendered page until its chunk loads. */}
+          <Suspense>
+            <PageContent path={path} />
+          </Suspense>
         </article>
         <Outline headings={page.headings} />
       </div>
@@ -211,6 +232,30 @@ export function Page(props: Page.Props) {
 
 export declare namespace Page {
   /** Properties for the Page component. */
+  type Props = { path: string }
+}
+
+/** Renders a page's MDX once its chunk has loaded. */
+function PageContent(props: PageContent.Props) {
+  const Content = use(Docs.load(props.path))
+
+  return (
+    <Content
+      components={{
+        AgentPrompt,
+        Card,
+        FrameworkSetup,
+        Install,
+        Steps,
+        a: Link,
+        blockquote: Callout,
+        pre: Code,
+      }}
+    />
+  )
+}
+
+declare namespace PageContent {
   type Props = { path: string }
 }
 

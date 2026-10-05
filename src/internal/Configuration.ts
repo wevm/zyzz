@@ -63,7 +63,8 @@ export function create(
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values)
       const theme = VariableSets.theme(definition, variableMappings)
-      if (variableMappings === false) return theme
+      // Tokens are ambiguous only through an explicit mapping, so skip the property scan without one.
+      if (!variableMappings) return theme
       const metadata = theme[Token.definition]
       const names = new Map<string, string>()
       for (const path of Object.keys(metadata.values)) {

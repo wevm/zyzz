@@ -43,3 +43,28 @@ for (const count of [10, 100]) {
     )
   })
 }
+
+for (const count of [100, 1000]) {
+  const color = Object.fromEntries(
+    Array.from({ length: count }, (_, index) => [
+      `tone${index}`,
+      { dark: '#fff', light: '#000' } as const,
+    ]),
+  )
+  const spacing = Object.fromEntries(
+    Array.from({ length: count }, (_, index) => [`space${index}`, index]),
+  )
+
+  describe(`configuration / ${count} tokens`, () => {
+    bench(
+      'create',
+      () => {
+        Config.create({
+          defaultVars: 'base',
+          vars: { base: { color, spacing }, mint: { color, spacing } },
+        })
+      },
+      { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
+    )
+  })
+}

@@ -134,7 +134,7 @@ values.color
 
 - **`NativeVars.EncodedTree{:ts}`:** A compiled profile, with diagnostics as one-element arrays.
 - **`NativeVars.Tree{:ts}`:** A profile as returned by `read`.
-- **`NativeVars.Values<values>{:ts}`:** The native value types of a variable set, with lengths as numbers.
+- **`NativeVars.Values<values>{:ts}`:** The native value types of a variable set, with lengths as numbers. The root omits `breakpoint` and `containerNames`.
 - **`NativeVars.create.Options{:ts}`:** The `{ defaultVars, media?, profiles, unnamed }` input.
 - **`NativeVars.read.Options{:ts}`:** The `{ colorScheme, set?, viewport? }` selection.
 

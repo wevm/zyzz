@@ -27,11 +27,59 @@ export const props = button({ conditions: { wide: { size: 'large' } } })
 ConditionalRecipe.create(options)
 ```
 
+### options.axes
+
+- **Type:** `{ [axis: string]: readonly string[] }{:ts}`
+
+Each axis and its choices, in authored order. Every axis may also take a conditional selection.
+
+```ts /axes: { size: ['small', 'large'] }/
+// Conditional attributes exist for size only
+ConditionalRecipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: {},
+})
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The complete generated class list, including the class of every conditional rule.
+
+```ts /className: 'z-button'/
+// Conditional selections never add a class
+ConditionalRecipe.create({
+  axes: {},
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: {},
+})
+```
+
+### options.defaults
+
+- **Type:** `{ [axis: string]: string | null }{:ts}`
+
+The unconditional choice used when an axis is omitted or `undefined`. Defaults never apply inside a condition, so an omitted conditional selection adds no attribute.
+
+```ts /defaults: { size: 'small' }/
+// Adds 'data-size': 'small' but no conditional attribute
+ConditionalRecipe.create({
+  axes: { size: ['small', 'large'] },
+  className: 'z-button',
+  conditions: ['wide'],
+  defaults: { size: 'small' },
+})()
+```
+
 ### options.conditions
 
 - **Type:** `readonly string[]{:ts}`
 
-The condition names in authored order. The other options match [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#parameters), which selects the unconditional attributes.
+The condition names in authored order. [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#parameters) selects the unconditional attributes from the other options.
 
 ```ts /conditions: ['wide', 'print']/
 // Attributes use index 0 for wide and 1 for print

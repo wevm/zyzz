@@ -185,7 +185,9 @@ NativeDynamic.create({
 
 - **Type:** `string | number{:ts}`
 
-A required callback field. Generated code casts the callable to `NativeDynamic.Callable<input>` with the authored fields, while the helper's own return type accepts any record. Bound values convert with the same scalar rules as static native compilation, and the `padding`, `margin`, and `inset` shorthands expand to longhands.
+A required callback field. Generated code casts the callable to `NativeDynamic.Callable<input>` with the authored fields, while the helper's own return type accepts any record. Bound values convert with the same scalar rules as static native compilation.
+
+Shorthands expand to longhands. `padding`, `margin`, and `inset` assign each side, `borderColor`, `borderWidth`, and `borderRadius` assign every side or corner, and `gap` assigns `columnGap` and `rowGap`. Later steps overwrite earlier longhands.
 
 ```ts /width: '50%'/
 // { style: { width: '50%' } }
@@ -246,7 +248,7 @@ export type Meter = NativeDynamic.Callable<{ width: string }>
 
 ## Errors
 
-The callable throws [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) before returning for an unknown input key or choice, a missing or non-scalar field, a payload on a static choice, or a rule that references a missing fragment or unbound slot.
+The callable throws [`Native.SelectionError`](/docs/api/runtime/namespaces/Native#nativeselectionerror) before returning for an unknown input key or choice, a missing, non-scalar, or non-finite field, a payload on a static choice, or a rule that references a missing fragment or unbound slot.
 
 A dynamic choice declared without a base slot record throws a `TypeError`. A value that cannot convert throws an `Error`, such as a `rem` length without `units.rem`.
 

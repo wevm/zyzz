@@ -97,6 +97,8 @@ NativeContext.resolve(ink().style, { colorScheme: 'light', set: 'base' })
 
 The application input for a context callable passed as `value`. The selected set and scheme's callable receives it, so variant choices and callback values reach the deferred table.
 
+Only a callable passed directly as `value` receives `input`. Entries of an array resolve without it.
+
 ```ts /{ size: 'large' }/
 // Applies `badge({ size: 'large' })` from the dark table
 NativeContext.resolve(badge, { colorScheme: 'dark' }, { size: 'large' })

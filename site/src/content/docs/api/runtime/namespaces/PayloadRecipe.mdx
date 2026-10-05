@@ -132,7 +132,7 @@ The returned callable accepts the [`variants`](/docs/api/core/variants#applicati
 
 - **Type:** `string | boolean | { [choice: string]: { [field: string]: string | number } } | null | undefined{:ts}`
 
-A static choice name, or a dynamic choice with its field values. An empty string is written as a single space, so the custom property keeps an explicit empty value.
+A static choice name, or a dynamic choice with its field values. A dynamic selection names one choice, and only its first key is read. An empty string is written as a single space, so the custom property keeps an explicit empty value.
 
 ```ts /size: { custom: { padding: '12px' } }/
 // Selects `custom` and assigns its padding

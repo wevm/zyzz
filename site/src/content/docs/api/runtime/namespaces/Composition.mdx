@@ -49,7 +49,7 @@ Composition.create({ className: 'z-card-button', inputs })
 - **Type:** `readonly string[]{:ts}`
 - **Default:** `undefined{:ts}`
 
-Class lists indexed by a bit mask of the conditional arguments that are present. Bit `n` is set when the argument with `condition: n` is truthy.
+Class lists indexed by a bit mask of the conditional arguments that are present. Bit `n` is set when the argument with `condition: n` is truthy. A mask without an entry falls back to `options.className`.
 
 ```ts /cases: ['z-card-only', 'z-card-button']/
 // Index 0 when the conditional argument is falsy, 1 when present

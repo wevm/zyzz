@@ -40,6 +40,39 @@ The declared type also accepts a callable returning `Html.Attributes`, but `bind
 const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
 ```
 
+### class
+
+- **Type:** `string{:ts}`
+
+The wrapped callable's `className`, as [`Html.from`](/docs/api/runtime/namespaces/Html#class) names it.
+
+```ts /card().class/
+// 'z-card'
+card().class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The inline styles serialized once, present only when the props have a `style`. A later composition merges the retained props instead of parsing this string.
+
+```ts /card({ style: { padding: '1rem' } }).style/
+// 'padding:1rem'
+card({ style: { padding: '1rem' } }).style
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the wrapped callable's props, copied unchanged.
+
+```ts /CompositionHtml.bind(button)()/
+// 'large' for a recipe whose default size is large
+CompositionHtml.bind(button)()['data-size']
+```
+
 ## CompositionHtml.create
 
 ```ts

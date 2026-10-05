@@ -362,9 +362,57 @@ describe('PayloadRecipe API page', () => {
       `[TypeError: Cannot convert undefined or null to object]`,
     )
   })
+
+  test('reads only the first key of a dynamic selection', () => {
+    const definition = { axes: { size: ['custom', 'other'] }, defaults: {} }
+    const box = PayloadRecipe.create({
+      ...definition,
+      payloads: [
+        {
+          axis: 'size',
+          choice: 'custom',
+          slots: [{ padding: '--box-padding' }],
+        },
+        { axis: 'size', choice: 'other', slots: [{ padding: '--box-other' }] },
+      ],
+      select: Recipe.create({ ...definition, className: 'z-box' }),
+    })
+
+    expect(
+      box({
+        size: { custom: { padding: '12px' }, other: { padding: '4px' } },
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "className": "z-box",
+        "data-size": "custom",
+        "style": {
+          "--box-padding": "12px",
+        },
+      }
+    `)
+  })
 })
 
 describe('Composition API page', () => {
+  test('falls back to className for a mask without a case', () => {
+    const compose = Composition.create({
+      cases: ['z-card-only'],
+      className: 'z-card-button',
+      inputs: [
+        { className: 'z-card', owners: [] },
+        { className: 'z-button', condition: 0, owners: [] },
+      ],
+    })
+
+    expect(compose({ className: 'z-card' }, { className: 'z-button' }))
+      .toMatchInlineSnapshot(`
+      {
+        "className": "z-card-button",
+      }
+    `)
+  })
+
   test('applies the overview example', async () => {
     const example = await load<{
       compose: ReturnType<typeof Composition.create>
@@ -430,6 +478,33 @@ describe('Html API page', () => {
 })
 
 describe('CompositionHtml API page', () => {
+  test('returns serialized attributes from bind', () => {
+    const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
+    const button = Recipe.create({
+      axes: { size: ['large'] },
+      className: 'z-button',
+      defaults: { size: 'large' },
+    })
+
+    expect(card()).toMatchInlineSnapshot(`
+      {
+        "class": "z-card",
+      }
+    `)
+    expect(card({ style: { padding: '1rem' } })).toMatchInlineSnapshot(`
+      {
+        "class": "z-card",
+        "style": "padding:1rem",
+      }
+    `)
+    expect(CompositionHtml.bind(button)()).toMatchInlineSnapshot(`
+      {
+        "class": "z-button",
+        "data-size": "large",
+      }
+    `)
+  })
+
   test('composes the overview example', async () => {
     const example = await load<{ attributes: Html.Attributes }>(
       'namespaces/CompositionHtml',
@@ -880,6 +955,35 @@ describe('NativeDynamic API page', () => {
       `[Native.SelectionError: Numeric lineHeight requires an explicit fontSize and a nonnegative finite multiplier.]`,
     )
   })
+
+  test('expands gap and rejects nonfinite fields', () => {
+    const grid = NativeDynamic.create({
+      axes: {},
+      defaults: {},
+      program: {
+        rules: [
+          {
+            matches: [],
+            steps: [{ parts: [{ slot: '--grid-gap' }], property: 'gap' }],
+          },
+        ],
+        slots: { gap: '--grid-gap' },
+      },
+      styles: {},
+    }) as unknown as (input: { gap: number | string }) => unknown
+
+    expect(grid({ gap: '8px' })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "columnGap": 8,
+          "rowGap": 8,
+        },
+      }
+    `)
+    expect(() => grid({ gap: Number.NaN })).toThrowErrorMatchingInlineSnapshot(
+      `[Native.SelectionError: Missing or invalid native payload: gap.]`,
+    )
+  })
 })
 
 describe('NativeContext API page', () => {
@@ -958,6 +1062,32 @@ describe('NativeContext API page', () => {
       {
         "padding": 6,
       }
+    `)
+  })
+
+  test('resolves array entries without application input', () => {
+    const table = Native.create({
+      axes: { size: ['small', 'large'] },
+      defaults: { size: 'small' },
+      styles: { 0: { padding: 4 }, 1: { padding: 8 }, 2: {} },
+    })
+    const badge = NativeContext.create(
+      { base: { dark: table, light: table } },
+      'base',
+    )
+
+    expect(
+      NativeContext.resolve(
+        [badge],
+        { colorScheme: 'dark' },
+        { size: 'large' },
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "padding": 4,
+        },
+      ]
     `)
   })
 

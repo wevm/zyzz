@@ -1,0 +1,187 @@
+# Values
+
+Supported native properties, units, colors, and conversions, with rejected values.
+
+Shared declarations keep their CSS meaning, and native compilation converts them into React Native style values. A declaration outside the native subset fails with a diagnostic that names its path, rather than changing meaning.
+
+```ts
+import { style } from 'zyzz'
+
+const card = style({
+  // [!code hl:2]
+  // Expands to four padding longhands of 16 logical units
+  padding: '16px',
+  color: 'rgb(17 17 17 / 50%)',
+})
+```
+
+## Properties
+
+The subset covers layout, spacing, borders, colors, text, images, and scalars. Shorthands expand to physical longhands in authored order. Logical properties, such as `paddingInline`, fail native compilation.
+
+- **Layout:** Sizes and min and max sizes, `aspectRatio`, physical offsets and `inset`, flex shorthands and longhands, alignment, `display` of `flex`, `none`, or `contents`, `absolute`, `relative`, or `static` positioning, `boxSizing`, `direction`, and `hidden` or `visible` overflow.
+- **Spacing:** Physical margins and padding with one to four values, and single-value `gap`, `rowGap`, and `columnGap`.
+- **Borders:** Physical widths, colors, and radii, and `solid`, `dotted`, or `dashed` styles.
+- **Text:** Mapped font families, sizes, styles, weights, `fontVariant`, letter spacing, line height, alignment, decoration, case, and selection.
+- **Images and scalars:** `objectFit`, `backfaceVisibility`, `opacity` from 0 to 1, and integer `zIndex`.
+
+```ts
+import { style } from 'zyzz'
+
+const overlay = style({
+  // [!code hl:2]
+  // { top: 0, right: 8, bottom: 0, left: 8 }
+  inset: '0 8px',
+  position: 'absolute',
+})
+```
+
+## Lengths
+
+`px` and `rem` lengths convert to logical units, with `px` at one unit unless `units.px` changes it. `rem` needs an explicit `units.rem`, since no root font size is read. Numeric `0` is the only unitless length.
+
+- **Percentages:** Sizes, `flexBasis`, offsets, and `inset` accept them.
+- **`auto`:** `width`, `height`, and `flexBasis` accept it. Margins do not.
+- **Negative lengths:** Margins, offsets, and `letterSpacing` accept them.
+- **`calc()`:** Finite arithmetic over numbers, `px`, and `rem`, with matching dimensions for addition and subtraction.
+
+```ts
+import { style } from 'zyzz'
+
+const rail = style({
+  // [!code hl:2]
+  // 20 logical units with units.rem set to 16
+  width: 'calc(1rem + 4px)',
+})
+```
+
+Viewport and font-relative units, such as `vw` and `em`, and percentages inside `calc()` fail native compilation.
+
+## Colors
+
+Named colors, hex colors, and absolute `rgb()`, `hsl()`, and `hwb()` functions are supported. Functional colors normalize to RGBA hex, and named and hex colors stay in their own form, trimmed and lowercased. Other functions, such as `oklch()` and `color-mix()`, fail native compilation.
+
+```ts
+import { style } from 'zyzz'
+
+const scrim = style({
+  // [!code hl:2]
+  // Compiles to '#ff000080'
+  backgroundColor: 'rgb(255 0 0 / 50%)',
+})
+```
+
+## Flex Shorthand
+
+The `flex` shorthand follows CSS, so `flex: 1` compiles to `1 1 0`. React Native's own `flex: 1` does not shrink, and `flex: '1 0 0'` matches it.
+
+```ts
+import { style } from 'zyzz'
+
+const fill = style({
+  // [!code hl:2]
+  // flexGrow 1, flexShrink 0, and flexBasis 0
+  flex: '1 0 0',
+})
+```
+
+## Line Height
+
+A numeric `lineHeight` multiplies the `fontSize` in the same style, and compiles to an absolute length. Without a `fontSize` in that style, compilation fails, since native text has no inherited size to multiply.
+
+```ts
+import { style } from 'zyzz'
+
+const body = style({
+  // [!code hl:3]
+  // lineHeight compiles to 24 logical units
+  fontSize: '16px',
+  lineHeight: 1.5,
+})
+```
+
+## Fonts
+
+Shared `fontFamily` values need an exact mapping to an installed family through the `fonts` option of Metro or [`StyleSheet.compile`](/docs/api/react-native/namespaces/StyleSheet#optionsfonts). Zyzz never loads fonts. `fontVariant` keywords convert to a native array, and `normal` clears it.
+
+```ts
+import { style } from 'zyzz'
+
+const figures = style({
+  // [!code hl:2]
+  // ['tabular-nums', 'small-caps']
+  fontVariant: 'tabular-nums small-caps',
+})
+```
+
+## Transforms
+
+`transform` lists compile to ordered native transform objects, and `none` compiles to an empty list. Translations accept lengths and percentages, angles accept `deg`, `rad`, `grad`, and `turn`, and `matrix()` and `matrix3d()` compile to native matrices.
+
+```ts
+import { style } from 'zyzz'
+
+const badge = style({
+  // [!code hl:3]
+  // [{ translateX: 10 }, { rotate: '90deg' }] and [-20, '25%', -2]
+  transform: 'translateX(10px) rotate(0.25turn)',
+  transformOrigin: '-1.25rem 25% -2px',
+})
+```
+
+`transformOrigin` takes one to three values and compiles to an `[x, y, z]` tuple. A list that mixes a matrix with percentage translations fails, since composing it requires layout.
+
+## Shadows
+
+`boxShadow` lists compile to native shadow objects with converted offsets, blur, and spread. `textShadow` takes one shadow and compiles to the native offset, radius, and color fields. Each color must resolve to an absolute color, and `none` clears shadows.
+
+```ts
+import { style } from 'zyzz'
+
+const title = style({
+  // [!code hl:2]
+  // textShadowColor, textShadowOffset, and textShadowRadius
+  textShadow: '0 1px 2px #0003',
+})
+```
+
+## Target Branches
+
+`targets.native`, `targets.ios`, and `targets.android` hold React Native values without CSS conversion. Native numbers are logical units, including an absolute `lineHeight`. Shared declarations apply first, then `targets.native`, then the platform branch, and later properties replace earlier ones shallowly.
+
+```ts
+import { style } from 'zyzz'
+
+const label = style({
+  fontSize: '16px',
+  targets: {
+    // [!code hl:3]
+    // An absolute native line height, then an iOS family
+    native: { lineHeight: 24 },
+    ios: { fontFamily: 'System' },
+    android: { includeFontPadding: false },
+  },
+})
+```
+
+A platform branch needs a compilation platform, which Metro supplies. [Platform Branches](/docs/guides/native/styling#platform-branches) shows more.
+
+## Rejected Values
+
+Native compilation reports these with a diagnostic, without a partial table.
+
+- **Selectors and pseudo-classes:** Native views have no selector matching.
+- **Queries outside a Provider build:** `@media` alternatives need the Provider's window size, and `@container` always fails.
+- **Cascade features:** `!important`, fallback arrays, layers, and global styles.
+- **CSS references:** Custom properties, `var()`, and web variables declared with `variable`.
+- **Unsupported keywords:** Values such as `position: 'fixed'` and `overflow: 'scroll'`.
+
+```ts
+import { style } from 'zyzz'
+
+const sticky = style({
+  // [!code hl:2]
+  // Fails native compilation with the path of position
+  position: 'fixed',
+})
+```

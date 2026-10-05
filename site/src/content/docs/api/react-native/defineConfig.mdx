@@ -1,0 +1,261 @@
+# defineConfig
+
+Bind native style helpers to variables, and return a Provider typed to the config.
+
+The native `defineConfig` takes the options of the [Core `defineConfig`](/docs/api/core/defineConfig) and returns the same `style`, `variants`, and `vars` helpers. It adds a [`Provider`](/docs/api/react-native/Provider) whose `vars` prop accepts the config's set names.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz/react-native'
+
+// [!code hl:8]
+// Two named sets, with base applied when a Provider names none
+export const { Provider, style, variants, vars } = defineConfig({
+  defaultVars: 'base',
+  vars: {
+    base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+    alternate: { color: { ink: { dark: '#ffcccc', light: '#990000' } } },
+  },
+})
+```
+
+Native config modules need a native compilation target, which Metro supplies. Call `defineConfig` once at module scope, so the compiler can read the options. [Native Themes](/docs/guides/native/themes) covers set selection, and [Shared Packages](/docs/guides/native/packages) covers published configs.
+
+## Signature
+
+```ts
+// Helpers bound to the options, plus a Provider
+defineConfig(options?)
+```
+
+## Parameters
+
+### options.vars
+
+- **Type:** `Vars.Definition | Vars.Values | { [name: string]: Vars.Definition | Vars.Values }{:ts}`
+- **Default:** `undefined{:ts}`
+
+One variable set, or a catalog of named sets that share paths and value types. The compiler converts every set to native values ahead of time, and the Provider selects one as components render.
+
+```ts
+import { defineVars, extendVars } from 'zyzz'
+import { defineConfig } from 'zyzz/react-native'
+
+const base = defineVars({ spacing: { page: '16px' } })
+const roomy = extendVars(base, { spacing: { page: '24px' } })
+
+// [!code hl:5]
+// Two sets that share the page path
+export const { Provider } = defineConfig({
+  defaultVars: 'base',
+  vars: { base, roomy },
+})
+```
+
+### options.defaultVars
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+The catalog key used when a Provider omits `vars`, and outside any Provider. It is required when `vars` holds named sets.
+
+```ts /defaultVars: 'base'/
+// Applies `base` until a Provider selects `roomy`
+defineConfig({ defaultVars: 'base', vars: { base, roomy } })
+```
+
+### options.mappings
+
+- **Type:** `{ [category: string]: readonly string[] } | false{:ts}`
+- **Default:** `undefined{:ts}`
+
+Category-to-property mappings for token names, as in the [Core option](/docs/api/core/defineConfig#optionsmappings). Native compilation resolves the mapped names to native values.
+
+```ts /mappings: { spacing: ['padding', 'gap'] }/
+// Spacing names apply only to padding and gap
+defineConfig({ mappings: { spacing: ['padding', 'gap'] }, vars: base })
+```
+
+### options.shorthands
+
+- **Type:** `{ [alias: string]: readonly string[] }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Local property aliases, as in the [Core option](/docs/api/core/defineConfig#optionsshorthands). Each expanded property compiles to its native longhands.
+
+```ts /shorthands: { px: ['paddingLeft', 'paddingRight'] }/
+// `px: 'md'` sets both horizontal paddings
+defineConfig({
+  shorthands: { px: ['paddingLeft', 'paddingRight'] },
+  vars: base,
+})
+```
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A namespace for the config's generated identities, as in the [Core option](/docs/api/core/defineConfig#optionsid). Give each independently compiled config a distinct ID.
+
+```ts /id: 'acme'/
+// Keeps this config's bindings separate from other packages
+defineConfig({ id: 'acme', vars: base })
+```
+
+### options.layers
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Cascade layer names, which native views cannot express. A native config with `layers` or `defaultLayer` fails native compilation.
+
+```ts /layers: ['components']/
+// Fails native compilation
+defineConfig({ layers: ['components'], vars: base })
+```
+
+### options.output
+
+- **Type:** `'react' | 'html'{:ts}`
+- **Default:** `'react'{:ts}`
+
+The props shape for web applications. Native applications always return `{ style }`, and `output: 'html'` fails native compilation.
+
+```ts /output: 'html'/
+// Fails native compilation
+defineConfig({ output: 'html', vars: base })
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+The emitted CSS shape for web builds. Native compilation emits no CSS, so the option has no native effect.
+
+```ts /cssOutput: 'grouped'/
+// Ignored by native compilation
+defineConfig({ cssOutput: 'grouped', vars: base })
+```
+
+### options.storageKey
+
+- **Type:** `string{:ts}`
+- **Default:** `'zyzz'{:ts}`
+
+The localStorage key read by `appearance` and `script`. Native apps keep the selection in application state, so the key has no native effect.
+
+```ts /storageKey: 'acme-appearance'/
+// Used only by the web-only appearance helpers
+defineConfig({ storageKey: 'acme-appearance', vars: base })
+```
+
+## Returns
+
+### Provider
+
+- **Type:** `React.FunctionComponent<defineConfig.ProviderProps<options>>{:ts}`
+
+The [`Provider`](/docs/api/react-native/Provider) bound to this config. Its `vars` prop accepts the catalog keys, and omission uses `defaultVars`.
+
+```tsx /vars="alternate"/
+// Descendants read the alternate set in the dark scheme
+<Provider colorScheme="dark" vars="alternate" />
+```
+
+### style
+
+- **Type:** `Config.StyleFactory{:ts}`
+
+The [`style`](/docs/api/core/style) function. Applying a style returns `{ style }` with native objects, resolved for the nearest Provider's selection.
+
+```ts /'ink'/
+// A token name, resolved for the Provider's scheme and set
+const label = style({ color: 'ink', fontSize: '16px' })
+```
+
+### variants
+
+- **Type:** `variants.Bound{:ts}`
+
+The [`variants`](/docs/api/core/variants) function, with the same token names. Native compilation rejects named conditions.
+
+```ts /'ink'/
+// A choice that reads the same token
+const badge = variants({ variants: { tone: { ink: { color: 'ink' } } } })
+```
+
+### vars
+
+- **Type:** `Config.VariableScope{:ts}`
+
+Token references for styles, and the definition [`useVars`](/docs/api/react-native/useVars) reads. Present when `options.vars` is set.
+
+```ts /useVars(vars)/
+// Native values for the Provider's selection
+const values = useVars(vars)
+```
+
+### appearance
+
+- **Type:** `{ get, set }{:ts}`
+
+The Core [document preference controls](/docs/api/core/defineConfig/appearance), returned for shared typing. They read the document and localStorage, so native apps keep the selection in application state and pass it to the Provider.
+
+```ts /appearance/
+// Web-only, unused in native apps
+const { appearance } = defineConfig({ vars: base })
+```
+
+### script
+
+- **Type:** `() => string{:ts}`
+
+The Core [preference script](/docs/api/core/defineConfig/script), which runs against the document. Native apps have no counterpart.
+
+```ts /script/
+// Web-only, unused in native apps
+const { script } = defineConfig({ vars: base })
+```
+
+## Types
+
+- **`defineConfig.ReturnType<options>{:ts}`:** The Core helpers plus `Provider`.
+- **`defineConfig.ProviderProps<options>{:ts}`:** The bound Provider's props, with set names inferred from the options.
+
+The namespace is declared in `zyzz/react-native/react`, so type references import it from there.
+
+```ts title="theme.ts"
+import type { defineConfig } from 'zyzz/react-native/react'
+
+const options = {
+  defaultVars: 'base',
+  vars: {
+    base: { spacing: { gap: '8px' } },
+    roomy: { spacing: { gap: '12px' } },
+  },
+} as const
+
+// [!code hl:2]
+// Resolves to 'base' | 'roomy' | undefined
+export type Name = defineConfig.ProviderProps<typeof options>['vars']
+```
+
+## Errors
+
+TypeScript rejects the same options as the Core `defineConfig`, such as named sets with different paths. Compiling a native config module for the web throws `Source.ExtractError` with the message `Native defineConfig requires a native compilation target.`
+
+```ts twoslash
+// @customConditions: react-native
+// @errors: 2322
+import { defineConfig } from 'zyzz/react-native'
+
+defineConfig({
+  defaultVars: 'base',
+  // `roomy` lacks the `page` path of `base`
+  vars: {
+    base: { spacing: { page: '16px' } },
+    roomy: { spacing: { gap: '16px' } },
+  },
+})
+```

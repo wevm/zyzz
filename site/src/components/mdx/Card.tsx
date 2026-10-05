@@ -1,5 +1,6 @@
 /** Provides linked next-step cards and responsive card groups for MDX. @module */
 import type { ReactNode } from 'react'
+import ActivityIcon from '~icons/lucide/activity'
 import ALargeSmallIcon from '~icons/lucide/a-large-small'
 import AnchorIcon from '~icons/lucide/anchor'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
@@ -185,6 +186,7 @@ namespace styles {
 
 const icons = {
   'a-large-small': ALargeSmallIcon,
+  activity: ActivityIcon,
   anchor: AnchorIcon,
   'arrow-left-right': ArrowLeftRightIcon,
   'at-sign': AtSignIcon,

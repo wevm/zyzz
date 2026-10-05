@@ -148,7 +148,58 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           },
         ],
       },
-      { path: 'api/react-native', title: 'React Native' },
+      {
+        title: 'React Native',
+        children: [
+          { path: 'api/react-native', title: 'Overview' },
+          {
+            title: 'Configuration',
+            items: [
+              { path: 'api/react-native/defineConfig', title: 'defineConfig' },
+              { path: 'api/react-native/Provider', title: 'Provider' },
+            ],
+          },
+          {
+            title: 'Hooks',
+            items: [
+              { path: 'api/react-native/useStyles', title: 'useStyles' },
+              { path: 'api/react-native/useVars', title: 'useVars' },
+              { path: 'api/react-native/withStyles', title: 'withStyles' },
+            ],
+          },
+          {
+            title: 'Reanimated',
+            items: [
+              {
+                path: 'api/react-native/useAnimatedVars',
+                title: 'useAnimatedVars',
+              },
+              {
+                path: 'api/react-native/useAnimatedStyleValue',
+                title: 'useAnimatedStyleValue',
+              },
+            ],
+          },
+          {
+            title: 'Namespaces',
+            items: [
+              {
+                path: 'api/react-native/namespaces/StyleSheet',
+                title: 'StyleSheet',
+              },
+              {
+                path: 'api/react-native/namespaces/Variants',
+                title: 'Variants',
+              },
+              { path: 'api/react-native/namespaces/Host', title: 'Host' },
+            ],
+          },
+          {
+            title: 'Reference',
+            items: [{ path: 'api/react-native/values', title: 'Values' }],
+          },
+        ],
+      },
       { path: 'api/cli', title: 'CLI' },
       {
         title: 'Integrations',

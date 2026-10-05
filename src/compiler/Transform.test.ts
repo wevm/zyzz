@@ -13812,6 +13812,19 @@ describe('variables', () => {
       }
     })
 
+    test('compiles custom shadow templates with theme colors', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'shadow.ts',
+          source:
+            'import { Config, Vars } from "zyzz"; const theme = Vars.define({ color: { brand: "red" }, shadow: { soft: "0 1px 2px red" } }); const themeConfig = Config.create({ vars: theme }); export const box = themeConfig.style({ boxShadow: `0 0 2px ${theme.color.brand} !custom` })();',
+        }).css,
+      ).toMatchInlineSnapshot(`
+        ".z-theme-theme{--z-color-brand:red;}
+        .z-box-shadow-\\5b 0_20_0_20_2px_20_var\\28 --z-color-brand\\2c red\\29 \\5d {box-shadow:0 0 2px var(--z-color-brand,red);}"
+      `)
+    })
+
     test('compiles independent color variables inside gradients', () => {
       expect(
         Transform.compile({

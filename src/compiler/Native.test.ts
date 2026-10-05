@@ -832,6 +832,84 @@ describe('compile', () => {
     `)
   })
 
+  test('selects theme references in shadow templates for each native set and scheme', async () => {
+    const source = `import {defineConfig} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+      const {style,vars}=defineConfig({vars:{base:{color:{shadow:{light:'#112233',dark:'#334455'}},shadow:{soft:'0 1px 2px red'},spacing:{lift:'4px'}},compact:{color:{shadow:{light:'#445566',dark:'#556677'}},shadow:{soft:'0 1px 2px red'},spacing:{lift:'2px'}}},defaultVars:'base'});
+      const card=style({boxShadow:\`0px \${vars.spacing.lift} 24px \${vars.color.shadow} !custom\`,textShadow:\`0px 1px 2px \${vars.color.shadow}\`});
+      export const results=(set,colorScheme)=>NativeContext.resolve(card,{set,colorScheme});`
+    const output = Native.compile({
+      source,
+      moduleId: 'shadow-tokens.ts',
+      colorScheme: 'light',
+      contextual: true,
+    })
+    const apply = (await execute(output.code)).results as (
+      set: string,
+      scheme: string,
+    ) => unknown
+
+    expect(apply('base', 'light')).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 24,
+            "color": "#112233",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 4,
+            "spreadDistance": 0,
+          },
+        ],
+        "textShadowColor": "#112233",
+        "textShadowOffset": {
+          "height": 1,
+          "width": 0,
+        },
+        "textShadowRadius": 2,
+      }
+    `)
+    expect(apply('base', 'dark')).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 24,
+            "color": "#334455",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 4,
+            "spreadDistance": 0,
+          },
+        ],
+        "textShadowColor": "#334455",
+        "textShadowOffset": {
+          "height": 1,
+          "width": 0,
+        },
+        "textShadowRadius": 2,
+      }
+    `)
+    expect(apply('compact', 'dark')).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 24,
+            "color": "#556677",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 2,
+            "spreadDistance": 0,
+          },
+        ],
+        "textShadowColor": "#556677",
+        "textShadowOffset": {
+          "height": 1,
+          "width": 0,
+        },
+        "textShadowRadius": 2,
+      }
+    `)
+  })
+
   test('converts nested callback calculations, shorthand lengths, and typography together', async () => {
     const source = `import {style} from 'zyzz';
       const box=style((input:{gap:string;ratio:number})=>({width:\`CaLc(\${input.gap} / \${input.ratio})\`,padding:\`1rem calc(\${input.gap} * 2)\`,marginLeft:\`calc(\${input.gap} - 10px)\`,fontSize:\`calc(1rem + \${input.gap})\`,lineHeight:1.5}));

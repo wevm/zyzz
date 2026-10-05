@@ -112,7 +112,22 @@ Source imports must resolve to immutable literal data. Re-exports and packed sty
 
 ### Shadows and Fonts
 
-Shared `boxShadow` lists convert px/rem offsets, blur radii, and spreads into native shadow objects. Shared `textShadow` converts one shadow into native offset, radius, and color fields. Both require an explicit absolute color. Negative blur, text-shadow spreads/inset, multiple text shadows, and unresolved expressions produce diagnostics. `none` clears shadows.
+Shared `boxShadow` lists convert px/rem offsets, blur radii, and spreads into native shadow objects. Shared `textShadow` converts one shadow into native offset, radius, and color fields. Each color must resolve to an absolute color. Negative blur, text-shadow spreads/inset, multiple text shadows, and unresolved expressions produce diagnostics. `none` clears shadows.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+const { style, vars } = defineConfig({
+  vars: {
+    color: { shadow: { dark: '#0008', light: '#0003' } },
+    shadow: { soft: '0 1px 2px #0003' },
+  },
+})
+
+// Shadow tokens restrict boxShadow, so the template is marked custom.
+// Each set and scheme table receives the resolved shadow color.
+const card = style({ boxShadow: `0px 2px 24px ${vars.color.shadow} !custom` })
+```
 
 Shared font families still require explicit installed-family mappings. `fontVariant` converts supported CSS keywords to a native array, and `normal` resets that array. Native target branches retain destination family names, weight aliases, font-variant strings/arrays, font padding, and platform-specific text fields without CSS conversion.
 

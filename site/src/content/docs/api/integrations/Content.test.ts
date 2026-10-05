@@ -1048,23 +1048,32 @@ async function shell(
   const child = ChildProcess.spawn(process.execPath, [cli, ...args], {
     cwd: path,
   })
-  const output = await new Promise<string>((resolve, reject) => {
-    let text = ''
-    const timer = setTimeout(
-      () => reject(new Error(`${args.join(' ')} produced no event.`)),
-      30_000,
-    )
-    child.stdout.on('data', (chunk: Buffer) => {
-      text += chunk.toString()
-      if (!text.includes('\n')) return
-      clearTimeout(timer)
-      resolve(text.split('\n')[0]!)
-    })
-  })
   const exited = new Promise((resolve) => child.once('exit', resolve))
-  child.kill('SIGTERM')
 
-  return { output, path, status: await exited }
+  // The watcher stops on every path, so a missing event cannot leave it running.
+  try {
+    const output = await new Promise<string>((resolve, reject) => {
+      let text = ''
+      const timer = setTimeout(
+        () => reject(new Error(`${args.join(' ')} produced no event.`)),
+        30_000,
+      )
+      child.stdout.on('data', (chunk: Buffer) => {
+        text += chunk.toString()
+        if (!text.includes('\n')) return
+        clearTimeout(timer)
+        resolve(text.split('\n')[0]!)
+      })
+    })
+    child.kill('SIGTERM')
+
+    return { output, path, status: await exited }
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGTERM')
+      await exited
+    }
+  }
 }
 
 describe('CLI API page', () => {

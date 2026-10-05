@@ -1588,6 +1588,41 @@ describe('compile', () => {
     })
   })
 
+  test('executes positive literal ratio bindings and rejects degenerate ratios', async () => {
+    const output = Native.compile({
+      moduleId: 'ratio.ts',
+      colorScheme: 'light',
+      source:
+        "import {style} from 'zyzz'; const media=style((values:{ratio:1|1.5})=>({aspectRatio:values.ratio})); export const results=[media({ratio:1}),media({ratio:1.5})];",
+    })
+
+    expect((await execute(output.code)).results).toMatchInlineSnapshot(`
+      [
+        {
+          "style": {
+            "aspectRatio": 1,
+          },
+        },
+        {
+          "style": {
+            "aspectRatio": 1.5,
+          },
+        },
+      ]
+    `)
+
+    expect(() =>
+      Native.compile({
+        moduleId: 'invalid.ts',
+        colorScheme: 'light',
+        source:
+          "import {style} from 'zyzz'; style((values:{ratio:0|1})=>({aspectRatio:values.ratio}));",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:70: Variable domain is incompatible with this property.]`,
+    )
+  })
+
   test('executes imported and packed dynamic contracts without publisher source', async () => {
     const directory = await Fs.mkdtemp(Path.resolve('.fixture-native-payload-'))
     try {

@@ -6686,6 +6686,38 @@ describe('dynamic', () => {
         ]
       `)
     })
+
+    test('binds positive literal ratios and rejects degenerate ratio literals', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'ratio.ts',
+          source:
+            'import {style} from "zyzz"; style((v:{ratio:1|1.5})=>({aspectRatio:v.ratio}))',
+        }).css,
+      ).toMatchInlineSnapshot(
+        `".z-aspect-ratio-\\5b var\\28 --z-uD69fJ-style-0-ratio\\29 \\5d {aspect-ratio:var(--z-uD69fJ-style-0-ratio);}"`,
+      )
+
+      const errors = ['0|1', '-1|1'].map((type) => {
+        try {
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {style} from "zyzz"; style((v:{ratio:${type}})=>({aspectRatio:v.ratio}))`,
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return String(error)
+        }
+      })
+
+      expect(errors).toMatchInlineSnapshot(`
+        [
+          "Source.ExtractError: invalid.ts:65: Variable domain is incompatible with this property.",
+          "Source.ExtractError: invalid.ts:66: Variable domain is incompatible with this property.",
+        ]
+      `)
+    })
     test('unwraps non-null callback bodies before binding theme variables', () => {
       expect(
         Transform.compile({

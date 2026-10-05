@@ -154,6 +154,10 @@ export function read(
           (value) => Number.isSafeInteger(value) && value !== 0,
         )
 
+      // Native conversion rejects degenerate and negative ratios.
+      if (rule.kind === 'ratio')
+        return values.every((value) => Number.isFinite(value) && value > 0)
+
       if (rule.kind !== 'number') return false
 
       return values.every(

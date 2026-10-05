@@ -178,4 +178,4 @@ function Label() {
 }
 ```
 
-Computed assignment keys lose individual domain information in TypeScript. `.set(value)` preserves it. See [variable](../api/core/variable.md) for registration, inheritance, and imported references.
+Computed assignment keys lose individual domain information in TypeScript. `.set(value)` preserves it. See [variable](https://zyzz.sh/docs/api/core/variable) for registration, inheritance, and imported references.

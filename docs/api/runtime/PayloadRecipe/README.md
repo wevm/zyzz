@@ -1,6 +1,6 @@
 # Variant Payloads
 
-`PayloadRecipe` is the compiler-facing dynamic-variant serializer exported from `zyzz/runtime`. Application code normally uses typed callbacks in [`variants`](../../core/variants.md).
+`PayloadRecipe` is the compiler-facing dynamic-variant serializer exported from `zyzz/runtime`. Application code normally uses typed callbacks in [`variants`](https://zyzz.sh/docs/api/core/variants).
 
 | API      | Description                                                         |
 | -------- | ------------------------------------------------------------------- |

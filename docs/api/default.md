@@ -120,7 +120,7 @@ card({ className: 'external' })
 
 ## variants
 
-Signature: `variants(definition)`. Accepts base styles, ordered axes, defaults, compounds, named conditions, and typed dynamic choices. Returns a recipe callable with inferred selections and styling overrides. See [variants parameters, returns, and errors](./core/variants.md). Authoring requires compilation; runtime selection performs no validation.
+Signature: `variants(definition)`. Accepts base styles, ordered axes, defaults, compounds, named conditions, and typed dynamic choices. Returns a recipe callable with inferred selections and styling overrides. See [variants parameters, returns, and errors](https://zyzz.sh/docs/api/core/variants). Authoring requires compilation; runtime selection performs no validation.
 
 ```ts
 const button = variants({ variants: { size: { sm: { padding: 2 } } } })

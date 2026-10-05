@@ -1,0 +1,176 @@
+# cx
+
+Combine applied styles in order, keeping their variable bindings and recipe attributes.
+
+Later arguments win conflicting declarations at equal specificity and importance. The compiler emits one ordered rule group per combination, so the order of class names never decides a conflict.
+
+```tsx title="Tab.tsx"
+import { cx, style } from 'zyzz'
+
+export function Tab(props: Tab.Props) {
+  return (
+    // [!code hl:2]
+    // The active color replaces the base color while `active` is true
+    <button {...cx(styles.tab(), props.active && styles.active())}>
+      {props.label}
+    </button>
+  )
+}
+
+export declare namespace Tab {
+  type Props = { active: boolean; label: string }
+}
+
+namespace styles {
+  export const tab = style({ color: 'gray', padding: '8px 12px' })
+
+  export const active = style({ color: 'black' })
+}
+```
+
+## Signature
+
+```ts
+// Applied styles, combined in argument order
+cx(...applied)
+```
+
+## Parameters
+
+### applied
+
+- **Type:** `readonly (style.Props | false | null | undefined)[]{:ts}`
+
+Props returned by applying `style` or `variants` definitions, in order. Each application keeps its own overrides and selections. `false`, `null`, and `undefined` skip an argument, so conditional arguments use `&&`.
+
+```ts
+import { cx, style } from 'zyzz'
+
+const base = style({ color: 'red', padding: '8px' })
+const inset = style({ color: 'blue', paddingLeft: '12px' })
+
+// [!code hl:2]
+// Padding stays 8px except on the left, and the color is blue
+const props = cx(base(), inset())
+```
+
+Shorthands and longhands keep ordinary CSS semantics. Passing `base()` again after `inset()` resets all four sides, because its shorthand now comes last.
+
+```ts /base()/
+// All four sides return to 8px, and the color to red
+const props = cx(base(), inset(), base())
+```
+
+A call accepts up to eight conditional arguments. The compiler emits a group for every combination of present arguments, and the call selects one at runtime without creating CSS.
+
+## Variable Scopes
+
+A [`vars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#helpers) scope can be combined with applied styles to place a variable set or color scheme on the same element.
+
+```tsx title="Root.tsx"
+import type { ReactNode } from 'react'
+import { cx } from 'zyzz'
+import { style, vars } from './zyzz.config.js'
+
+export function Root(props: Root.Props) {
+  return (
+    // [!code hl:2]
+    // The dark scheme and the page styles land on one element
+    <body {...cx(vars({ colorScheme: 'dark' }), styles.page())}>
+      {props.children}
+    </body>
+  )
+}
+
+export declare namespace Root {
+  type Props = { children: ReactNode }
+}
+
+namespace styles {
+  export const page = style({ margin: 0 })
+}
+```
+
+Scopes follow the normal cascade, so argument order does not choose between two scopes that define the same variables.
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+One generated class for the combination, followed by any classes passed through `options.className`.
+
+```tsx /{...cx(styles.tab(), styles.active())}/
+// Spreading assigns the class, data attributes, and style together
+<button {...cx(styles.tab(), styles.active())} />
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Attributes from applied `variants` recipes. When two applications of the same recipe set an axis, the later one wins.
+
+```ts /size: 'regular'/
+// data-size="regular"
+cx(styles.button({ size: 'compact' }), styles.button({ size: 'regular' }))
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+
+Inline overrides and dynamic values from every argument, merged in argument order. A repeated application replaces its own earlier values.
+
+```ts /style: { opacity: 0.5 }/
+// { className: '…', style: { '--…': '50%', opacity: 0.5 } }
+cx(styles.meter({ amount: '50%' }), styles.fade({ style: { opacity: 0.5 } }))
+```
+
+Configurations with `output: 'html'` return `class` and a serialized `style` string instead. HTML and React props cannot be combined in one call.
+
+## Errors
+
+TypeScript rejects arguments that are not applied styles, such as class strings or unapplied definitions.
+
+```ts twoslash
+// @errors: 2345
+import { cx, style } from 'zyzz'
+
+const card = style({ padding: '16px' })
+
+// Definitions must be applied first
+cx(card)
+```
+
+The compiler reports unsupported calls as `Source.ExtractError` with the source location. Ternary arguments, mutated bindings, and more than eight conditional arguments are unsupported.
+
+## React Native
+
+On native, `cx` combines `{ style }` props into one ordered style array, and later styles win conflicting properties. Combining web class props with native props throws `Native.SelectionError`.
+
+```tsx title="Label.tsx"
+import { Text } from 'react-native'
+import { cx, style } from 'zyzz'
+
+export function Label(props: Label.Props) {
+  return (
+    // [!code hl:2]
+    // The selected color replaces the base color when selected is true
+    <Text {...cx(styles.base(), props.selected && styles.selected())}>
+      Account
+    </Text>
+  )
+}
+
+export declare namespace Label {
+  type Props = { selected: boolean }
+}
+
+namespace styles {
+  export const base = style({ color: '#111111', fontSize: '16px' })
+
+  export const selected = style({ color: '#2563eb' })
+}
+```

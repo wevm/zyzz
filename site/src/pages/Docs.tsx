@@ -135,6 +135,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/at-rules': AtSignIcon,
   'guides/conditions': WorkflowIcon,
   'guides/css-output': CodeXmlIcon,
+  'guides/default-theme': SwatchBookIcon,
   'guides/global-styles': GlobeIcon,
   'guides/keyframes': FilmIcon,
   'guides/layers': SquareStackIcon,

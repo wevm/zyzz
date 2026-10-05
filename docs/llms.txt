@@ -26,6 +26,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Styling](guides/styling.md): Define, reuse, compose, and bind component styles.
 - [Conditions](guides/conditions.md): Respond to viewport size, browser state, and related elements.
 - [Themes & Tokens](guides/themes.md): Define token contracts, choose theme scopes, and select color schemes.
+- [Default Theme](https://zyzz.sh/docs/guides/default-theme.md): Style with bundled Geist colors and typography and Tailwind scales.
 - [Variants](guides/variants.md): Define finite choices, defaults, and compound matches for one element.
 - [Stylesheets](guides/stylesheets.md): Declare global rules, cascade order, fonts, and animations.
 - [CSS Output](guides/css-output.md): Atomic and grouped CSS, composition, and delivery.
@@ -48,7 +49,6 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [cx](https://zyzz.sh/docs/api/core/cx.md): Reference and examples.
 - [Style](https://zyzz.sh/docs/api/core/namespaces/Style.md): Reference and examples.
 - [Values](https://zyzz.sh/docs/api/core/values.md): Reference and examples.
-- [zyzz/default](api/default.md): Reference and examples.
 - [zyzz/web](https://zyzz.sh/docs/api/web.md): Section index.
 - [global](https://zyzz.sh/docs/api/web/global.md): Reference and examples.
 - [layers](https://zyzz.sh/docs/api/web/layers.md): Reference and examples.
@@ -91,7 +91,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Host.close](api/node/Host/close.md): Reference and examples.
 - [Host.create](api/node/Host/create.md): Reference and examples.
 - [Host.watch](api/node/Host/watch.md): Reference and examples.
-- [zyzz/oxlint](api/oxlint/README.md): Lint web styles and JSX applications.
+- [zyzz/oxlint](https://zyzz.sh/docs/api/oxlint.md): Lint web styles and JSX applications.
 - [zyzz/runtime](api/runtime/README.md): Section index.
 - [Props](api/runtime/Props/README.md): Section index.
 - [Props.create](api/runtime/Props/create.md): Reference and examples.

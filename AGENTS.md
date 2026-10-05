@@ -116,12 +116,15 @@ Applies to the documentation site and other Markdown documentation. Prose Conven
 
 - Write for developers who already know CSS. Use standard CSS terms, such as cascade, specificity, custom properties, and container queries, without defining them or replacing them with informal descriptions.
 - Explain behavior through authored styles and the emitted CSS. Leave compiler internals to the pages that document them, such as Build & Delivery and the Compiler API.
+- Keep guides integration-neutral. When setup differs by integration, show every integration, such as in tabs, rather than assuming one bundler or framework.
+- Do not state the obvious, such as "Animations are a web feature." When a feature differs on React Native, state that limit directly.
 - Do not mention other styling libraries in guides. Name them only on the Comparisons and Benchmarks pages and in the migration guides. Other libraries' documentation can inform a draft without appearing in its text.
 
 ### Paragraphs and Sections
 
 - Keep each paragraph to one idea in about 40 words, and never more than 50. Tighten wording rather than mechanically splitting paragraphs.
 - Write at most three paragraphs per section. When a topic needs more, split it into sections with their own headings.
+- Prefer an example in every section. Show the behavior rather than only describing it or deferring to another page.
 - Use bullets for enumerable content and tables for comparisons.
 - Start each item of a topic list with a bold label that ends in a colon, such as ``- **`light dark`:** Follows the operating system preference.`` The site renders a list item's leading bold label in the primary `foreground` color.
 - Mark preview or unimplemented APIs with GitHub Markdown `> [!NOTE]` callouts scoped to the affected content. Do not add “Available” labels or status suffixes to headings. Examples must preserve the documented contract and must not imply preview APIs already work.
@@ -136,7 +139,7 @@ Applies to the documentation site and other Markdown documentation. Prose Conven
   - **Overview:** Introduces the feature in at most three paragraphs and ends with a basic example. Use one code block, or tabs when the example spans files or targets.
   - **Walkthrough:** Builds one complete example step by step, from definition to applied styles.
   - **Recipes:** Lists focused tasks the feature supports, each under its own `###` heading.
-  - **More:** Links to related guides and API pages.
+  - **More:** Links to related guides and API pages as a `Card.Group`, not a bulleted list.
 - When a guide has no recipes, hoist its sections to `##` headings between Overview and More, as the Variants guide does.
 - Group guides by topic, and preserve recipe coverage when consolidating pages.
 

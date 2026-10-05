@@ -52,11 +52,8 @@ async function examples(heading?: string | undefined) {
 }
 
 /** Builds one example through the filesystem compiler and returns its rules, without the bundled variable and scheme blocks. */
-async function build(
-  name: string,
-  example: { name?: string | undefined; source: string },
-  assets: readonly string[] = [],
-) {
+async function build(options: build.Options) {
+  const { example, name } = options
   const directory = Path.join(root, name)
   const file = Path.basename(example.name ?? 'Example.tsx')
   await Fs.mkdir(directory)
@@ -65,8 +62,6 @@ async function build(
     Path.join(directory, file),
     example.source.replace(/^(const|namespace) /gm, 'export $1 '),
   )
-  for (const asset of assets)
-    await Fs.writeFile(Path.join(directory, asset), '')
 
   await using host = await Host.create({
     outDir: Path.join(directory, 'dist'),
@@ -83,6 +78,15 @@ async function build(
     .split('\n\n')
     .filter((block) => !/^\.(z-theme-|z_scheme-)/.test(block))
     .join('\n\n')
+}
+
+declare namespace build {
+  type Options = {
+    /** Example extracted from the guide. */
+    example: { name?: string | undefined; source: string }
+    /** Directory name, unique within the fixture root. */
+    name: string
+  }
 }
 
 describe('Default Theme guide', () => {
@@ -125,7 +129,8 @@ describe('Default Theme guide', () => {
     const [card] = await examples('Overview')
     const [account] = await examples('Style Elements')
 
-    expect(await build('overview', card!)).toMatchInlineSnapshot(`
+    expect(await build({ example: card!, name: 'overview' }))
+      .toMatchInlineSnapshot(`
       ".z-default-border-radius-\\[var\\(--z-default-radius-lg\\,0\\.5rem\\)\\] {
         border-radius: var(--z-default-radius-lg, .5rem);
       }
@@ -159,7 +164,8 @@ describe('Default Theme guide', () => {
       }
       "
     `)
-    expect(await build('walkthrough', account!)).toMatchInlineSnapshot(`
+    expect(await build({ example: account!, name: 'walkthrough' }))
+      .toMatchInlineSnapshot(`
       ".z-default-Spuo_V-styles-body-text-0 {
         color: var(--z-default-color-gray-900, light-dark(#4d4d4d, #a1a1a1));
       }
@@ -238,7 +244,8 @@ describe('Default Theme guide', () => {
   test('builds the Use Colors recipe', async () => {
     const [example] = await examples('Use Colors')
 
-    expect(await build('colors', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'colors' }))
+      .toMatchInlineSnapshot(`
       ".z-default-bg-\\[var\\(--z-default-color-background-surface\\,light-dark\\(\\#fff\\,\\#0a0a0a\\)\\)\\] {
         background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
       }
@@ -253,7 +260,8 @@ describe('Default Theme guide', () => {
   test('builds the Use Spacing recipe', async () => {
     const [example] = await examples('Use Spacing')
 
-    expect(await build('spacing', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'spacing' }))
+      .toMatchInlineSnapshot(`
       ".z-default-gap-\\[var\\(--z-default-spacing-px\\,1px\\)\\] {
         gap: var(--z-default-spacing-px, 1px);
       }
@@ -272,7 +280,8 @@ describe('Default Theme guide', () => {
   test('builds the Set Fonts recipe', async () => {
     const [example] = await examples('Set Fonts')
 
-    expect(await build('fonts', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'fonts' }))
+      .toMatchInlineSnapshot(`
       ".z-default-font-family-\\[var\\(--z-default-fontFamily-mono\\,_22_Geist_20_Mono_22_\\,_20_ui-monospace\\,_20_SFMono-Regular\\,_20_Menlo\\,_20_Monaco\\,_20_Consolas\\,_20__22_Liberation_20_Mono_22_\\,_20__22_Courier_20_New_22_\\,_20_monospace\\)\\] {
         font-family: var(--z-default-fontFamily-mono, "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
       }
@@ -295,7 +304,8 @@ describe('Default Theme guide', () => {
   test('builds the Size Elements recipe', async () => {
     const [example] = await examples('Size Elements')
 
-    expect(await build('sizes', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'sizes' }))
+      .toMatchInlineSnapshot(`
       ".z-default-aspect-ratio-\\[var\\(--z-default-aspect-video\\,16_20_\\/_20_9\\)\\] {
         aspect-ratio: var(--z-default-aspect-video, 16 / 9);
       }
@@ -314,7 +324,8 @@ describe('Default Theme guide', () => {
   test('builds the Apply Effects recipe', async () => {
     const [example] = await examples('Apply Effects')
 
-    expect(await build('effects', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'effects' }))
+      .toMatchInlineSnapshot(`
       ".z-default-animation-\\[var\\(--z-default-animate-spin\\,z-kid-zyzz_5f_2d_5f_spin_20_1s_20_linear_20_infinite\\)\\] {
         animation: var(--z-default-animate-spin, z-kid-zyzz_2d_spin 1s linear infinite);
       }
@@ -329,7 +340,8 @@ describe('Default Theme guide', () => {
   test('builds the Reference Effects recipe', async () => {
     const [example] = await examples('Reference Effects')
 
-    expect(await build('references', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'references' }))
+      .toMatchInlineSnapshot(`
       ".z-default-backdrop-filter-\\[blur\\(var\\(--z-default-blur-md\\,12px\\)\\)\\] {
         backdrop-filter: blur(var(--z-default-blur-md, 12px));
       }
@@ -344,7 +356,8 @@ describe('Default Theme guide', () => {
   test('builds the Use Query Aliases recipe', async () => {
     const [example] = await examples('Use Query Aliases')
 
-    expect(await build('queries', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'queries' }))
+      .toMatchInlineSnapshot(`
       ".z-default-aTfGk4-grid-display-0 {
         display: grid;
       }
@@ -367,7 +380,8 @@ describe('Default Theme guide', () => {
   test('builds the Apply Typography recipe', async () => {
     const [example] = await examples('Apply Typography')
 
-    expect(await build('typography', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'typography' }))
+      .toMatchInlineSnapshot(`
       ".z-default-font-family-\\[var\\(--z-default-typography-button-14-fontFamily\\,Geist\\,_20_-apple-system\\,_20_BlinkMacSystemFont\\,_20__22_Segoe_20_UI_22_\\,_20_Roboto\\,_20__22_Helvetica_20_Neue_22_\\,_20__22_Noto_20_Sans_22_\\,_20_Arial\\,_20_sans-serif\\,_20__22_Apple_20_Color_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Symbol_22_\\,_20__22_Noto_20_Color_20_Emoji_22_\\)\\] {
         font-family: var(--z-default-typography-button-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
       }
@@ -394,7 +408,8 @@ describe('Default Theme guide', () => {
   test('builds the Use Set Variants recipe', async () => {
     const [example] = await examples('Use Set Variants')
 
-    expect(await build('set-variants', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'set-variants' }))
+      .toMatchInlineSnapshot(`
       ".z-default-aTfGk4-styles-code-font-family-0 {
         font-family: var(--z-default-typography-label-14-mono-fontFamily, "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
       }
@@ -441,7 +456,8 @@ describe('Default Theme guide', () => {
   test('builds the Override Set Fields recipe', async () => {
     const [example] = await examples('Override Set Fields')
 
-    expect(await build('overrides', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'overrides' }))
+      .toMatchInlineSnapshot(`
       ".z-default-aTfGk4-styles-body-font-weight-0 {
         font-weight: var(--z-default-fontWeight-medium, 500);
       }
@@ -488,7 +504,8 @@ describe('Default Theme guide', () => {
   test('builds the Switch Sets Conditionally recipe', async () => {
     const [example] = await examples('Switch Sets Conditionally')
 
-    expect(await build('states', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'states' }))
+      .toMatchInlineSnapshot(`
       ".z-default-aTfGk4-styles-link-font-family-0 {
         font-family: var(--z-default-typography-label-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
       }
@@ -605,7 +622,8 @@ describe('Default Theme guide', () => {
   test('builds the Reference Set Fields recipe', async () => {
     const [example] = await examples('Reference Set Fields')
 
-    expect(await build('fields', example!)).toMatchInlineSnapshot(`
+    expect(await build({ example: example!, name: 'fields' }))
+      .toMatchInlineSnapshot(`
       ".z-default-font-size-\\[var\\(--z-default-typography-heading-32-fontSize\\,32px\\)\\] {
         font-size: var(--z-default-typography-heading-32-fontSize, 32px);
       }
@@ -627,9 +645,8 @@ describe('Default Theme guide', () => {
     })
     await host.build()
 
-    expect(
-      await Fs.readFile(Path.join(directory, 'dist/zyzz.css'), 'utf8'),
-    ).toMatchInlineSnapshot(`
+    expect(await Fs.readFile(Path.join(directory, 'dist/zyzz.css'), 'utf8'))
+      .toMatchInlineSnapshot(`
       "@font-face {
         font-display: swap;
         font-family: Geist;

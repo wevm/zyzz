@@ -6,7 +6,7 @@ Style with bundled Geist colors and typography and Tailwind scales, without a co
 
 The opt-in `zyzz/default` entrypoint exports `style`, `variants`, `vars`, `appearance`, and `script` from one bundled config, plus its raw `tokens`. The helpers follow the [Core contracts](/docs/api/core) and accept the bundled token names. Core imports never load this data.
 
-The package ships a compiled contract beside the module, which the bundler plugins and `Host` from `zyzz/node` read. `style` and `variants` exist only in compiled modules. Font stacks name Geist first, but the application loads the fonts.
+The package ships a compiled contract beside the module, which the bundler plugins and `Host` from `zyzz/node` read. `style` and `variants` exist only in compiled modules. The `sans` and `mono` stacks name Geist faces first, but the application loads the fonts.
 
 Colors keep Geist light and dark pairs. Effect, radius, and query scales follow [Tailwind CSS 4.3.3](https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/tailwindcss/theme.css). The [Variables explorer](/vars) lists every value.
 
@@ -128,10 +128,10 @@ export function SchemeToggle() {
 
 The `color` group holds Geist families in steps `100` to `1000`. Most steps pair a light and a dark value, which compile to `light-dark()` and follow the selected color scheme.
 
-- **Families:** `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, and `teal`.
 - **`background`:** `primary` and `surface` page backgrounds.
-- **`foreground`:** Text color, with the same values as `gray.1000`.
 - **`black` and `white`:** `#000` and `#fff` in both schemes.
+- **Families:** `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, and `teal`.
+- **`foreground`:** Text color, with the same values as `gray.1000`.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -169,7 +169,7 @@ const stack = style({
 
 Font properties read only their own group, so `lineHeight` never falls back to spacing. Font weights are names, and a numeric weight needs the ` !custom` suffix.
 
-- **`fontFamily`:** `sans`, `mono`, and `serif`.
+- **`fontFamily`:** `mono`, `sans`, and `serif`. Only `mono` and `sans` name Geist faces first.
 - **`fontSize`:** `xs` (`0.75rem`), `sm`, `base` (`1rem`), `lg`, `xl`, and `2xl` to `9xl` (`8rem`).
 - **`fontWeight`:** `thin` (`100`), `extralight`, `light`, `normal`, `medium`, `semibold`, `bold`, `extrabold`, and `black` (`900`).
 - **`letterSpacing`:** `tighter`, `tight`, `normal`, `wide`, `wider`, and `widest`.
@@ -192,9 +192,9 @@ const code = style({
 
 Radii, container sizes, and aspect ratios each map to their own properties. Widths try `spacing` before `container`, so `width: 'md'` reads the container size.
 
-- **`radius`:** `xs` (`0.125rem`), `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`, and `4xl` (`2rem`), for border radii.
-- **`container`:** `3xs` (`16rem`), `2xs`, `xs`, `sm`, `md`, `lg`, `xl`, and `2xl` to `7xl` (`80rem`), for widths and inline sizes.
 - **`aspect`:** `video` (`16 / 9`), for `aspectRatio`.
+- **`container`:** `3xs` (`16rem`), `2xs`, `xs`, `sm`, `md`, `lg`, `xl`, and `2xl` to `7xl` (`80rem`), for widths and inline sizes.
+- **`radius`:** `xs` (`0.125rem`), `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`, and `4xl` (`2rem`), for border radii.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -212,11 +212,11 @@ const media = style({
 
 Shadows, perspective, easing, and animations map to their CSS properties. The `animate` values reference keyframes that ship with the config.
 
+- **`animate`:** `bounce`, `ping`, `pulse`, and `spin`, for `animation`.
+- **`ease`:** `in`, `in-out`, and `out`, for `transitionTimingFunction`.
+- **`perspective`:** `dramatic`, `near`, `normal`, `midrange`, and `distant`.
 - **`shadow`:** `2xs` to `2xl`, and `inner`, for `boxShadow`.
 - **`textShadow`:** `2xs` to `lg`.
-- **`perspective`:** `dramatic`, `near`, `normal`, `midrange`, and `distant`.
-- **`ease`:** `in`, `out`, and `in-out`, for `transitionTimingFunction`.
-- **`animate`:** `spin`, `ping`, `pulse`, and `bounce`, for `animation`.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -274,10 +274,10 @@ The [Conditions](/docs/guides/conditions#name-queries) guide covers below and ra
 
 Each set follows [Geist typography](https://vercel.com/geist/typography) and expands to `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight`. A set's path names its group and its pixel size. Headings use negative letter spacing that grows with their size, and every other set resets it to `0px`.
 
-- **`heading`:** `14`, `16`, `20`, `24`, `32`, `40`, `48`, `56`, `64`, and `72`, at weight `600`.
 - **`button`:** `12`, `14`, and `16`, at weight `500`.
-- **`label`:** `12`, `13`, `14`, `16`, `18`, and `20`, at weight `400`.
 - **`copy`:** `13`, `14`, `16`, `18`, `20`, and `24`, at weight `400`.
+- **`heading`:** `14`, `16`, `20`, `24`, `32`, `40`, `48`, `56`, `64`, and `72`, at weight `600`.
+- **`label`:** `12`, `13`, `14`, `16`, `18`, and `20`, at weight `400`.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -291,9 +291,9 @@ const action = style({ typography: 'button.14' })
 
 A variant is a complete set at the same size, named by a third path segment. It changes only the expanded font fields, so Geist's descendant colors, capitalization, and tabular numbers stay explicit declarations.
 
+- **`.mono`:** Geist Mono, on `copy` `13` and `label` `12` to `14`.
+- **`.strong`:** Weight `550` on `copy` `14` to `24`, and `500` on `label` `12` to `16`.
 - **`.subtle`:** Weight `500`, on `heading` `16`, `20`, `24`, and `32`.
-- **`.strong`:** Weight `500` on `label` `12` to `16`, and `550` on `copy` `14` to `24`.
-- **`.mono`:** Geist Mono, on `label` `12` to `14` and `copy` `13`.
 
 ```ts
 import { style } from 'zyzz/default'
@@ -374,7 +374,7 @@ const lead = style({ fontSize: vars.typography.heading[32].fontSize })
 
 ### Load Geist Fonts
 
-The font stacks name `Geist` and `"Geist Mono"` before system fallbacks, and load no fonts. Declare the faces with `fontFace` from `zyzz/web`, as the [Fonts & Typography](/docs/guides/typography) guide shows.
+The `sans` and `mono` stacks, and every typography set, name `Geist` or `"Geist Mono"` before system fallbacks, and load no fonts. Declare the faces with `fontFace` from `zyzz/web`, as the [Fonts & Typography](/docs/guides/typography) guide shows.
 
 ```ts title="src/fonts.ts"
 import { fontFace } from 'zyzz/web'
@@ -382,7 +382,7 @@ import { fontFace } from 'zyzz/web'
 fontFace({
   fontDisplay: 'swap',
   // [!code hl:2]
-  // Matches the family name the font stacks use
+  // Matches the family name the sans stack uses
   fontFamily: 'Geist',
   src: 'url("./Geist.woff2") format("woff2")',
 })

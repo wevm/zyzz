@@ -1,0 +1,126 @@
+# Vars
+
+The functions behind defineVars and extendVars, with variable set types.
+
+`Vars` holds the variable set functions, the composition helper, and their types. Applications usually call `define` and `extend` through their root aliases, [`defineVars`](/docs/api/core/defineVars) and [`extendVars`](/docs/api/core/extendVars).
+
+```ts title="tokens.ts"
+import { Vars } from 'zyzz'
+
+// [!code hl:2]
+const base = Vars.define({ color: { ink: '#171717' } })
+const brand = Vars.extend(base, { color: { ink: '#2563eb' } })
+```
+
+## Members
+
+<Card.Group>
+  <Card title="Vars.define" icon="palette" href="/docs/api/core/defineVars">
+    Define a typed variable set of tokens, color pairs, and conditions without
+    emitting CSS.
+  </Card>
+  <Card title="Vars.extend" icon="copy-plus" href="/docs/api/core/extendVars">
+    Override values in an existing variable set while keeping its paths and
+    value types.
+  </Card>
+</Card.Group>
+
+## Vars.compose
+
+Combine CSS text, numbers, and references into one value without resolving the references. Browsers evaluate the result, so references stay live across set scopes and extensions.
+
+```ts
+import { Vars } from 'zyzz'
+
+const base = Vars.define(
+  { color: { ink: '#171717' }, number: { opacity: 25 } },
+  (vars) => ({
+    color: {
+      // [!code hl:7]
+      faded: Vars.compose('color', [
+        'color-mix(in srgb, ',
+        vars.color.ink,
+        ' calc(',
+        vars.number.opacity,
+        ' * 1%), transparent)',
+      ]),
+    },
+  }),
+)
+```
+
+### group
+
+- **Type:** `'color' | 'spacing'{:ts}`
+
+The value type of the complete expression, which decides where the composition can appear. A color composition can still contain numeric references, such as an opacity.
+
+```ts /'spacing'/
+// A spacing value built from a number reference
+Vars.compose('spacing', ['calc(', vars.number.space, ' * 1px)'])
+```
+
+### parts
+
+- **Type:** `readonly (string | number | Vars.Reference)[]{:ts}`
+
+The pieces of the CSS value, joined in order. They must form a nonempty value without declaration separators, braces, or importance. The compiler reads a literal array without running application code.
+
+```ts /['calc(', vars.number.space, ' * 2px)']/
+Vars.compose('spacing', ['calc(', vars.number.space, ' * 2px)'])
+```
+
+### composition
+
+- **Type:** `Vars.Composition{:ts}`
+
+An immutable value usable as a leaf, a conditional or color-scheme branch, or an override in `Vars.extend`.
+
+```ts /Vars.compose/
+// An override that keeps the composed shape
+Vars.extend(base, { color: { faded: Vars.compose('color', ['transparent']) } })
+```
+
+## Types
+
+- **`Vars.Composition{:ts}`:** A composed value.
+- **`Vars.Definition<values>{:ts}`:** A defined set.
+- **`Vars.Mappings{:ts}`:** Category-to-property mappings for `defineConfig`.
+- **`Vars.Overrides<values>{:ts}`:** The accepted overrides for `Vars.extend`.
+- **`Vars.Reference<value>{:ts}`:** One reference in a set.
+- **`Vars.References<values>{:ts}`:** The reference tree passed to a derive callback.
+- **`Vars.Values{:ts}`:** The accepted value tree.
+
+```ts title="mappings.ts"
+import type { Vars } from 'zyzz'
+
+// [!code hl:2]
+// Shared mappings for several configs
+export const mappings = {
+  color: ['color', 'borderColor'],
+} satisfies Vars.Mappings
+```
+
+## Errors
+
+### Vars.InvalidError
+
+Thrown when values cannot form a variable set, such as an incomplete color pair, a key with `!` or dots, or a derived value that replaces a path. Overrides that add a path or change a value type throw it too. The message starts with the failing path.
+
+```ts
+import { Vars } from 'zyzz'
+
+try {
+  // `section` is not a path of the base set
+  Vars.extend(Vars.define({ spacing: { page: '1rem' } }), {
+    spacing: { section: '2rem' },
+  } as never)
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Vars.InvalidError) console.error(error.message)
+}
+```
+
+## React Native
+
+Native compilation resolves references to native values. Composed values fail native compilation with a diagnostic, since native views have no CSS expressions.

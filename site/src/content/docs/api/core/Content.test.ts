@@ -4,7 +4,17 @@ import * as Fs from 'node:fs/promises'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
-import { style, variable, variants } from 'zyzz'
+import {
+  Config,
+  defineConfig,
+  defineVars,
+  extendVars,
+  Style,
+  style,
+  variable,
+  variants,
+  Vars,
+} from 'zyzz'
 import { Source } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 import { Css } from 'zyzz/web'
@@ -69,7 +79,10 @@ async function build(
   await Fs.mkdir(directory)
   for (const file of files)
     await Fs.writeFile(Path.join(directory, file.name!), file.source)
-  if (files.some((file) => file.source.includes("'./zyzz.config.js'")))
+  if (
+    files.some((file) => file.source.includes("'./zyzz.config.js'")) &&
+    !files.some((file) => file.name === 'zyzz.config.ts')
+  )
     await Fs.writeFile(Path.join(directory, 'zyzz.config.ts'), config)
 
   await using host = await Host.create({
@@ -84,11 +97,23 @@ async function build(
     Fs.readFile(Path.join(directory, 'dist', file), 'utf8')
 }
 
-/** Config module for examples that import helpers from `./zyzz.config.js`. */
-const config = `import { defineConfig } from 'zyzz'
+/** Exports a snippet's module-level `const` definitions, which the compiler emits only when exported or applied. */
+function exported(source: string) {
+  return source.replace(/^const /gm, 'export const ')
+}
 
-export const { style, vars } = defineConfig({
-  vars: { color: { page: { light: '#ffffff', dark: '#000000' } } },
+/** Config module for examples that import helpers from `./zyzz.config.js`. */
+const config = `import { defineConfig, defineVars, extendVars } from 'zyzz'
+
+const base = defineVars({
+  color: { foreground: { light: '#171717', dark: '#fafafa' } },
+  spacing: { page: '1rem' },
+})
+const roomy = extendVars(base, { spacing: { page: '2rem' } })
+
+export const { appearance, script, style, variants, vars } = defineConfig({
+  defaultVars: 'base',
+  vars: { base, roomy },
 })
 `
 
@@ -265,7 +290,7 @@ describe('variants API page', () => {
     const button = variants(
       {
         conditions: { wide: '@media (width >= 48rem)' },
-        // A dynamic choice infers its callback only when `variants` precedes `defaultVariants`.
+        defaultVariants: { size: 'regular' },
         variants: {
           loading: { false: {}, true: { opacity: 0.5 } },
           size: {
@@ -276,7 +301,6 @@ describe('variants API page', () => {
             regular: { padding: '8px' },
           },
         },
-        defaultVariants: { size: 'regular' },
       },
       { id: 'button' },
     )
@@ -438,7 +462,11 @@ describe('cx API page', () => {
     const read = await build('cx-scopes', [root!])
 
     expect(await read('Root.tsx.css')).toMatchInlineSnapshot(`
-      ".z_scheme-dark {
+      ".z-theme-base, .z-theme-roomy {
+        --z-color-foreground: light-dark(#171717, #fafafa);
+      }
+
+      .z_scheme-dark {
         color-scheme: dark;
       }
 
@@ -450,8 +478,8 @@ describe('cx API page', () => {
         color-scheme: light dark;
       }
 
-      .z-SlmzrP-styles-page-m-0, .z-Root-0-SlmzrP-styles-page-m-0 {
-        margin: 0;
+      .z-SlmzrP-styles-page-text-0, .z-Root-0-SlmzrP-styles-page-text-0 {
+        color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
       "
     `)
@@ -549,9 +577,6 @@ describe('variable API page', () => {
         inherits: false;
         initial-value: 0;
       }
-
-
-
       "
     `)
   })
@@ -586,10 +611,598 @@ describe('variable API page', () => {
   })
 })
 
+describe('defineConfig API page', () => {
+  test('builds token custom properties for a consuming style', async () => {
+    const [config] = await examples('defineConfig')
+    const read = await build('define-config', [
+      config!,
+      {
+        name: 'Card.ts',
+        source: `import { style } from './zyzz.config.js'\n\nexport const card = style({ color: 'foreground', padding: 'page' })\n`,
+      },
+    ])
+
+    expect(await read('zyzz.css')).toMatchInlineSnapshot(`
+      ".z_scheme-dark {
+        color-scheme: dark;
+      }
+
+      .z_scheme-light {
+        color-scheme: light;
+      }
+
+      .z_scheme-light-dark {
+        color-scheme: light dark;
+      }
+      .z-theme-theme {
+        --z-color-foreground: light-dark(#171717, #fafafa);
+        --z-spacing-page: 1rem;
+      }
+
+      .z-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
+        color: var(--z-color-foreground, light-dark(#171717, #fafafa));
+      }
+
+      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+        padding: var(--z-spacing-page, 1rem);
+      }
+      "
+    `)
+  })
+
+  test('builds custom values, fallbacks, shorthands, and layers', async () => {
+    const [tokens] = await examples('defineConfig', 'Token Values')
+    const [fallbacks] = await examples('defineConfig', 'Category Fallbacks')
+    const [shorthands] = await examples('defineConfig', 'options.shorthands')
+    const [layers] = await examples('defineConfig', 'options.layers')
+    const read = await build('define-config-values', [
+      { name: 'tokens.ts', source: exported(tokens!.source) },
+      { name: 'fallbacks.ts', source: exported(fallbacks!.source) },
+      { name: 'shorthands.ts', source: exported(shorthands!.source) },
+    ])
+    const layered = await build('define-config-layers', [
+      { name: 'layers.ts', source: exported(layers!.source) },
+    ])
+
+    expect(await read('tokens.ts.css')).toMatchInlineSnapshot(`
+      ".z-theme-theme {
+        --z-spacing-md: 8px;
+      }
+
+      .z-p-\\[var\\(--z-spacing-md\\,8px\\)\\] {
+        padding: var(--z-spacing-md, 8px);
+      }
+
+      .z-mt-7px {
+        margin-top: 7px;
+      }
+      "
+    `)
+    expect(await read('fallbacks.ts.css')).toMatchInlineSnapshot(`
+      ".z-theme-theme {
+        --z-color-brand: #06c;
+        --z-textColor-brand: #004a99;
+      }
+
+      .z-bg-\\[var\\(--z-color-brand\\,\\#06c\\)\\] {
+        background-color: var(--z-color-brand, #06c);
+      }
+
+      .z-text-\\[var\\(--z-textColor-brand\\,\\#004a99\\)\\] {
+        color: var(--z-textColor-brand, #004a99);
+      }
+      "
+    `)
+    expect(await read('shorthands.ts.css')).toMatchInlineSnapshot(`
+      ".z-theme-theme {
+        --z-spacing-md: 8px;
+      }
+
+      .z-Jpn02f-chip-pl-0 {
+        padding-left: var(--z-spacing-md, 8px);
+      }
+
+      .z-Jpn02f-chip-pr-1 {
+        padding-right: var(--z-spacing-md, 8px);
+      }
+      "
+    `)
+    expect(await layered('zyzz.css')).toMatchInlineSnapshot(`
+      "@layer components, overrides;
+      .z-n9FPFt-label-text-0 {
+        @layer overrides {
+          color: #00f;
+        }
+      }
+      "
+    `)
+  })
+
+  test('rejects invalid options without a compiler transform', () => {
+    expect(() =>
+      Config.create({ bogus: true, id: 'a' } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Unknown configuration option: bogus]`,
+    )
+    expect(() =>
+      defineConfig({
+        defaultVars: 'base',
+        id: 'b',
+        vars: {
+          base: { spacing: { page: '1rem' } },
+          roomy: { spacing: { gap: '1rem' } },
+        },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Theme "roomy" must have the default theme's complete token paths and domains.]`,
+    )
+    expect(() =>
+      defineConfig({ id: 'c', layers: ['bad name'] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Layer names must be plain CSS identifiers, optionally dotted.]`,
+    )
+    expect(() =>
+      defineConfig({ vars: { spacing: { page: '1rem' } } }).style({
+        padding: 'page',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Config.create requires an explicit id without the compiler plugin.]`,
+    )
+  })
+})
+
+describe('defineVars API page', () => {
+  test('builds pairs, conditional values, and query aliases', async () => {
+    const [config] = await examples('defineVars')
+    const [, conditional] = await examples('defineVars', 'values')
+    const [typography] = await examples('defineVars', 'values.typography')
+    const intro = await build('define-vars', [
+      config!,
+      {
+        name: 'Card.ts',
+        source: `import { style } from './zyzz.config.js'\n\nexport const card = style({ color: 'foreground', padding: 'page' })\n`,
+      },
+    ])
+    const aliased = await build('define-vars-alias', [
+      {
+        name: 'conditional.ts',
+        source: `${exported(conditional!.source)}\nimport { defineConfig } from 'zyzz'\n\nexport const { style } = defineConfig({ vars: base })\n\nexport const page = style({ padding: 'page' })\n`,
+      },
+    ])
+    const typographic = await build('define-vars-typography', [
+      { name: 'typography.ts', source: exported(typography!.source) },
+    ])
+
+    expect(await intro('zyzz.css')).toMatchInlineSnapshot(`
+      ":where(*) {
+        --z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_: 1rem;
+      }
+
+      @media (width >= 48rem) {
+        :where(*) {
+          --z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_: 2rem;
+        }
+      }
+      .z_scheme-dark {
+        color-scheme: dark;
+      }
+
+      .z_scheme-light {
+        color-scheme: light;
+      }
+
+      .z_scheme-light-dark {
+        color-scheme: light dark;
+      }
+      .z-theme-theme {
+        --z-color-foreground: light-dark(#171717, #fafafa);
+        --z-spacing-page: var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_);
+      }
+
+      @media (width >= 48rem) {
+        .z-theme-theme {
+          --z-spacing-page: 2rem;
+        }
+      }
+
+      .z-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
+        color: var(--z-color-foreground, light-dark(#171717, #fafafa));
+      }
+
+      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_1rem_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_width_5f_20_5f__5f_3e_5f__5f_3d_5f__5f_20_5f_48rem_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_2rem_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\)\\)\\] {
+        padding: var(--z-spacing-page, var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_));
+      }
+      "
+    `)
+    expect(await aliased('conditional.ts.css')).toMatchInlineSnapshot(`
+      ".z-theme-theme {
+        --z-spacing-page: var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_);
+      }
+
+      @media (width >= 48rem) {
+        .z-theme-theme {
+          --z-spacing-page: 2rem;
+        }
+      }
+
+      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_1rem_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_width_5f_20_5f__5f_3e_5f__5f_3d_5f__5f_20_5f_48rem_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_2rem_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\)\\)\\] {
+        padding: var(--z-spacing-page, var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_));
+      }
+      "
+    `)
+    expect(await typographic('typography.ts.css')).toMatchInlineSnapshot(`
+      ".z-theme-theme {
+        --z-typography-heading-fontSize: 24px;
+        --z-typography-heading-_40_media_20__3e__3d_tablet-fontSize: 40px;
+      }
+
+      .z-w4OP4a-title-font-size-0 {
+        font-size: var(--z-typography-heading-fontSize, 24px);
+      }
+
+      @media (width >= 48rem) {
+        .z-w4OP4a-title-font-size-1 {
+          font-size: var(--z-typography-heading-_40_media_20__3e__3d_tablet-fontSize, 40px);
+        }
+      }
+      "
+    `)
+  })
+
+  test('rejects invalid values without a compiler transform', () => {
+    expect(() =>
+      defineVars({ color: { foreground: { light: '#171717' } } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["color","foreground"]: Expected a scalar, a complete color pair, or media overrides with a default.]`,
+    )
+    expect(() =>
+      defineVars({ spacing: { 'md!': '1rem' } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","md!"]: Expected a nonempty variable key without dots or conditions.]`,
+    )
+    expect(() =>
+      defineVars({ color: { ink: '#171717' } }, () => ({
+        color: { ink: '#000000' },
+      })),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["color","ink"]: Derived variables cannot replace existing paths.]`,
+    )
+  })
+})
+
+describe('extendVars API page', () => {
+  test('builds one scope per named set', async () => {
+    const [config] = await examples('extendVars')
+    const read = await build('extend-vars', [
+      config!,
+      {
+        name: 'Card.ts',
+        source: `import { style } from './zyzz.config.js'\n\nexport const card = style({ color: 'accent', padding: 'page' })\n`,
+      },
+    ])
+
+    expect(await read('zyzz.css')).toMatchInlineSnapshot(`
+      ".z_scheme-dark {
+        color-scheme: dark;
+      }
+
+      .z_scheme-light {
+        color-scheme: light;
+      }
+
+      .z_scheme-light-dark {
+        color-scheme: light dark;
+      }
+      .z-theme-base {
+        --z-color-accent: #2563eb;
+        --z-spacing-page: 1rem;
+      }
+
+      .z-theme-brand {
+        --z-color-accent: #9333ea;
+        --z-spacing-page: 1rem;
+      }
+
+      .z-text-\\[var\\(--z-color-accent\\,\\#2563eb\\)\\] {
+        color: var(--z-color-accent, #2563eb);
+      }
+
+      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+        padding: var(--z-spacing-page, 1rem);
+      }
+      "
+    `)
+  })
+
+  test('rejects new paths and changed value types', () => {
+    const base = defineVars({ spacing: { page: '1rem' } })
+
+    expect(() =>
+      extendVars(base, { spacing: { section: '2rem' } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","section"]: Extensions cannot add variable paths.]`,
+    )
+    expect(() =>
+      extendVars(base, { spacing: { page: '#ffffff' } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: ["spacing","page"]: Variable overrides must preserve their domain.]`,
+    )
+  })
+})
+
+describe('vars API page', () => {
+  test('returns scope props without a compiler transform', () => {
+    const base = defineVars({ spacing: { page: '1rem' } })
+    const roomy = extendVars(base, { spacing: { page: '2rem' } })
+    const helpers = defineConfig({
+      defaultVars: 'base',
+      id: 'app',
+      vars: { base, roomy },
+    })
+
+    expect(helpers.vars()).toMatchInlineSnapshot(`
+      {
+        "className": "z-theme-app-base",
+      }
+    `)
+    expect(helpers.vars({ colorScheme: 'dark', set: 'roomy' }))
+      .toMatchInlineSnapshot(`
+      {
+        "className": "z-theme-app-roomy z_scheme-dark",
+        "style": {
+          "colorScheme": "dark",
+        },
+      }
+    `)
+    expect(helpers.vars({ colorScheme: 'light dark' })).toMatchInlineSnapshot(`
+      {
+        "className": "z-theme-app-base z_scheme-light-dark",
+        "style": {
+          "colorScheme": "light dark",
+        },
+      }
+    `)
+    expect(() =>
+      helpers.vars({ set: 'compact' } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Invalid variable selection.]`,
+    )
+  })
+
+  test('builds a scope and a reference with the config module', async () => {
+    const [preview] = await examples('defineConfig/vars')
+    const read = await build('vars-preview', [preview!])
+
+    expect(await read('Preview.tsx.css')).toMatchInlineSnapshot(`
+      ".z-theme-base {
+        --z-spacing-page: 1rem;
+      }
+
+      .z-theme-roomy {
+        --z-spacing-page: 2rem;
+      }
+
+      .z_scheme-dark {
+        color-scheme: dark;
+      }
+
+      .z_scheme-light {
+        color-scheme: light;
+      }
+
+      .z_scheme-light-dark {
+        color-scheme: light dark;
+      }
+
+      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+        padding: var(--z-spacing-page, 1rem);
+      }
+      "
+    `)
+  })
+})
+
+describe('script API page', () => {
+  test('reads the configured storage key and set catalog', () => {
+    const base = defineVars({ spacing: { page: '1rem' } })
+    const roomy = extendVars(base, { spacing: { page: '2rem' } })
+    const source = defineConfig({
+      defaultVars: 'base',
+      id: 'acme',
+      storageKey: 'acme-appearance',
+      vars: { base, roomy },
+    }).script()
+
+    expect(
+      source.includes('localStorage.getItem("acme-appearance")'),
+    ).toMatchInlineSnapshot(`true`)
+    expect(source.match(/new Map\((\[\[.*?\]\])\)/)?.[1]).toMatchInlineSnapshot(
+      `"[["base","z-theme-acme-base"],["roomy","z-theme-acme-roomy"]]"`,
+    )
+    expect(source.includes('setItem')).toMatchInlineSnapshot(`false`)
+  })
+})
+
+describe('Style API page', () => {
+  test('defines ordered data for the web compiler', () => {
+    const styles = Style.define({ card: { padding: '1rem', paddingLeft: 0 } })
+
+    expect(Css.compile({ styles })).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-card-p-0 z-card-pl-1",
+        },
+        "css": ".z-card-p-0{padding:1rem;}
+      .z-card-pl-1{padding-left:0;}",
+        "vars": {},
+      }
+    `)
+    expect(
+      Style.define({ card: { display: 'flex', padding: '1rem' } }).styles[0]
+        ?.declarations,
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "property": "display",
+          "value": "flex",
+        },
+        {
+          "property": "padding",
+          "value": "1rem",
+        },
+      ]
+    `)
+    expect(
+      Style.define({ card: { opacity: '0 !important' } }).styles[0]
+        ?.declarations,
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "important": true,
+          "property": "opacity",
+          "value": 0,
+        },
+      ]
+    `)
+  })
+
+  test('reports structural errors with diagnostics', () => {
+    const error = (() => {
+      try {
+        Style.define({ card: { display: [] as never } })
+      } catch (error) {
+        return error
+      }
+    })()
+
+    expect(error instanceof Style.InvalidError).toMatchInlineSnapshot(`true`)
+    expect((error as Style.InvalidError).diagnostics).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "invalid_value",
+          "message": "Fallback arrays must be nonempty.",
+          "path": [
+            "card",
+            "display",
+          ],
+        },
+      ]
+    `)
+  })
+})
+
+describe('Vars API page', () => {
+  test('builds a composed value with live references', async () => {
+    const [compose] = await examples('namespaces/Vars', 'Vars.compose')
+    const read = await build('vars-compose', [
+      {
+        name: 'faded.ts',
+        source: `${exported(compose!.source)}\nimport { defineConfig } from 'zyzz'\n\nexport const { style } = defineConfig({ vars: base })\n\nexport const badge = style({ color: 'faded' })\n`,
+      },
+    ])
+
+    expect(await read('zyzz.css')).toMatchInlineSnapshot(`
+      ".z-theme-theme {
+        --z-color-faded: color-mix(in srgb, var(--z-color-ink, #171717) calc(var(--z-number-opacity, 25) * 1%), transparent);
+        --z-color-ink: #171717;
+        --z-number-opacity: 25;
+      }
+
+      .z-text-\\[var\\(--z-color-faded\\,color-mix\\(in_20_srgb\\,_20_var\\(--z-color-ink\\,\\#171717\\)_20_calc\\(var\\(--z-number-opacity\\,25\\)_20_\\*_20_1\\%\\)\\,_20_transparent\\)\\)\\] {
+        color: var(--z-color-faded, color-mix(in srgb, var(--z-color-ink, #171717) calc(var(--z-number-opacity, 25) * 1%), transparent));
+      }
+      "
+    `)
+  })
+
+  test('rejects invalid composition parts', () => {
+    expect(() =>
+      Vars.compose('color', ['red; color: blue']),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Vars.InvalidError: []: Composition parts must be CSS text, finite numbers, or variable references.]`,
+    )
+  })
+})
+
+describe('Values API page', () => {
+  test('compiles each value example as authored', async () => {
+    const [properties] = await examples('values', 'Properties')
+    const [lengths] = await examples('values', 'Lengths')
+    const [colors] = await examples('values', 'Colors')
+    const [numbers] = await examples('values', 'Numbers')
+    const [keywords] = await examples('values', 'Keywords')
+    const [multipleValues] = await examples('values', 'Multiple Values')
+    const [mathFunctions] = await examples('values', 'Math Functions')
+    const [customProperties] = await examples('values', 'Custom Properties')
+    const [fallbacks] = await examples('values', 'Fallbacks')
+    const [importance] = await examples('values', 'Importance')
+
+    expect(css(properties!.source)).toMatchInlineSnapshot(`
+      ".z-3oDDjY-label--webkit-user-select-0{-webkit-user-select:none;}
+      .z-3oDDjY-label-user-select-1{user-select:none;}"
+    `)
+    expect(css(lengths!.source)).toMatchInlineSnapshot(`
+      ".z-h-100dvh{height:100dvh;}
+      .z-m-0{margin:0;}
+      .z-padding-block-1lh{padding-block:1lh;}"
+    `)
+    expect(css(colors!.source)).toMatchInlineSnapshot(`
+      ".z-bg-\\5b rgb\\28 0_20_112_20_243_20_\\2f _20_50\\25 \\29 \\5d {background-color:rgb(0 112 243 / 50%);}
+      .z-border-color-currentColor{border-color:currentColor;}
+      .z-text-\\5b oklch\\28 0\\2e 7_20_0\\2e 15_20_250\\29 \\5d {color:oklch(0.7 0.15 250);}"
+    `)
+    expect(css(numbers!.source)).toMatchInlineSnapshot(`
+      ".z-font-weight-650{font-weight:650;}
+      .z-line-height-\\5b 1\\2e 5\\5d {line-height:1.5;}
+      .z-opacity-\\5b 0\\2e 8\\5d {opacity:0.8;}"
+    `)
+    expect(css(keywords!.source)).toMatchInlineSnapshot(`
+      ".z-text-inherit{color:inherit;}
+      .z-display-revert-layer{display:revert-layer;}"
+    `)
+    expect(css(multipleValues!.source)).toMatchInlineSnapshot(`
+      ".z-border-\\5b 1px_20_solid_20_currentColor\\5d {border:1px solid currentColor;}
+      .z-m-\\5b 0_20_auto\\5d {margin:0 auto;}
+      .z-transition-\\5b opacity_20_200ms_20_ease\\2c _20_transform_20_300ms\\5d {transition:opacity 200ms ease, transform 300ms;}"
+    `)
+    expect(css(mathFunctions!.source)).toMatchInlineSnapshot(`
+      ".z-font-size-\\5b clamp\\28 1rem\\2c _20_2vw_20_\\2b _20_0\\2e 5rem\\2c _20_2rem\\29 \\5d {font-size:clamp(1rem, 2vw + 0.5rem, 2rem);}
+      .z-w-\\5b calc\\28 100\\25 _20_-_20_2rem\\29 \\5d {width:calc(100% - 2rem);}"
+    `)
+    expect(css(customProperties!.source)).toMatchInlineSnapshot(
+      `".z-text-\\5b var\\28 --brand\\2c _20_blue\\29 \\5d {color:var(--brand, blue);}"`,
+    )
+    expect(css(fallbacks!.source)).toMatchInlineSnapshot(`
+      ".z-display-\\5b block\\3b display\\3a grid\\5d {display:block;display:grid;}
+      .z-w-\\5b 80vw\\3b width\\3a 80cqi\\5d {width:80vw;width:80cqi;}"
+    `)
+    expect(css(importance!.source)).toMatchInlineSnapshot(`
+      ".z-display-\\5b none\\21 important\\5d {display:none!important;}
+      .z-opacity-\\5b 0\\21 important\\5d {opacity:0!important;}"
+    `)
+  })
+})
+
 describe('core API examples', () => {
   test('type-check against the published declarations', async () => {
     const pages = await Promise.all(
-      ['style', 'variants', 'cx', 'variable'].map((page) => examples(page)),
+      [
+        'style',
+        'variants',
+        'cx',
+        'variable',
+        'defineConfig',
+        'defineVars',
+        'extendVars',
+        'defineConfig/vars',
+        'defineConfig/appearance',
+        'defineConfig/script',
+        'namespaces/Config',
+        'namespaces/Props',
+        'namespaces/Style',
+        'namespaces/Vars',
+        'values',
+      ].map((page) => examples(page)),
     )
     const files = await Promise.all(
       pages
@@ -625,6 +1238,9 @@ describe('core API examples', () => {
         'preserve',
         '--moduleResolution',
         'bundler',
+        // Native examples import `zyzz/react-native` as Metro resolves it.
+        '--customConditions',
+        'react-native',
         '--target',
         'ESNext',
         ...files,
@@ -632,7 +1248,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(31)
+    expect(files).toHaveLength(79)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

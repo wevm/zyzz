@@ -1,0 +1,74 @@
+# script
+
+Return an inline script that restores saved preferences before the first paint.
+
+`script` comes from [`defineConfig`](/docs/api/core/defineConfig). Calling it is pure and safe during server rendering. The returned source runs in the browser, reads the record that [`appearance`](/docs/api/core/defineConfig/appearance) saves, and applies it to `document.documentElement`.
+
+```tsx title="Document.tsx"
+import type { ReactNode } from 'react'
+import { script } from './zyzz.config.js'
+
+export function Document(props: Document.Props) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* [!code hl:2] */}
+        {/* Runs synchronously before the body renders */}
+        <script dangerouslySetInnerHTML={{ __html: script() }} />
+      </head>
+      <body>{props.children}</body>
+    </html>
+  )
+}
+
+export declare namespace Document {
+  type Props = { children: ReactNode }
+}
+```
+
+## Signature
+
+```ts
+// HTML-safe JavaScript source
+script()
+```
+
+## Returns
+
+### source
+
+- **Type:** `string{:ts}`
+
+JavaScript for an inline, synchronous `<script>` early in `<head>`. It restores a saved set and color scheme, replaces only the config's own set and scheme classes, and assigns only the inline `color-scheme`. Never mark it `async`, `defer`, or `type="module"`.
+
+```ts /script()/
+// Embed as the script element's text
+const source = script()
+```
+
+The script reads the localStorage record named by [`storageKey`](/docs/api/core/defineConfig#optionsstoragekey). Missing, malformed, or blocked storage leaves the server markup unchanged. It never writes storage, registers listeners, or inserts CSS.
+
+## Storage Record
+
+The record is a JSON object with an optional `set` (a catalog key) and an optional `colorScheme` (`'light'`, `'dark'`, `'light dark'`, or `null`). A `null` scheme removes the scheme class and the inline `color-scheme`, so a cleared selection outlives a server-rendered scheme.
+
+```json title="localStorage zyzz"
+{ "colorScheme": "dark", "set": "roomy" }
+```
+
+Fields with unknown values keep their server defaults. Configs with a single set restore only the color scheme.
+
+## Security
+
+The generated source escapes every value for embedding in HTML, including `</script>`, quotes, and Unicode line separators, and never evaluates saved strings. A content security policy can allow it with a nonce on the script element or a hash of the exact source.
+
+```tsx /nonce={props.nonce}/
+// The nonce comes from the response's content security policy
+<script dangerouslySetInnerHTML={{ __html: script() }} nonce={props.nonce} />
+```
+
+React markup can set `suppressHydrationWarning` on `<html>`, since the script changes its classes before hydration.
+
+## React Native
+
+The script runs against the document, so native apps have no counterpart. A native app loads its saved preference into application state and passes it to the native `Provider`, as [Native Themes](/docs/guides/native/themes) shows.

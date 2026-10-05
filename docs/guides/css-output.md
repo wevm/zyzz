@@ -102,7 +102,7 @@ Minification and browser-target processing remain separate. Final processing may
 
 Performance comparisons use grouped output across repeated and mostly unique styles, including CSS, JavaScript, class strings, combined transfer, compilation, and rendering. Atomic remains the application default and has correctness coverage; no atomic performance advantage is claimed.
 
-See [defineConfig](../api/core/Config/create.md#optionscssoutput) for the option.
+See [defineConfig](https://zyzz.sh/docs/api/core/defineConfig#optionscssoutput) for the option.
 
 With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.
 

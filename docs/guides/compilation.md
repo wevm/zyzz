@@ -20,7 +20,7 @@ const styles = Style.define({
 const output = Css.compile({ styles })
 ```
 
-Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](../api/core/Style/literals.md) documents supported values; [themes](themes.md#compile-themes) adds token references and compatible scopes.
+Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](https://zyzz.sh/docs/api/core/values) documents supported values; [themes](themes.md#compile-themes) adds token references and compatible scopes.
 
 #### Transform Source
 

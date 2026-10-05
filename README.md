@@ -213,7 +213,7 @@ namespace styles {
 }
 ```
 
-Extend the default theme with [`extendVars`](docs/api/core/Vars/README.md) to override existing tokens while retaining all other values and the same token contract.
+Extend the default theme with [`extendVars`](https://zyzz.sh/docs/api/core/extendVars) to override existing tokens while retaining all other values and the same token contract.
 
 ```ts
 // zyzz.config.ts
@@ -259,7 +259,7 @@ namespace styles {
 }
 ```
 
-Use [`defineVars`](docs/api/core/Vars/README.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
+Use [`defineVars`](https://zyzz.sh/docs/api/core/defineVars) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
 ### Token Values
 
@@ -283,7 +283,7 @@ const button = style({
 })
 ```
 
-See [Token values](docs/api/core/Config/create.md#token-values) for mappings, fallbacks, and validation behavior.
+See [Token values](https://zyzz.sh/docs/api/core/defineConfig#token-values) for mappings, fallbacks, and validation behavior.
 
 ### Color Schemes (Light/Dark Mode)
 

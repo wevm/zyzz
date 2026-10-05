@@ -58,7 +58,7 @@ namespace styles {
 }
 ```
 
-See [category fallbacks](./core/Vars/README.md#category-fallbacks) for the lookup order. Font-related mappings and typography behavior remain unchanged, including no spacing fallback for `lineHeight`.
+See [category fallbacks](https://zyzz.sh/docs/api/core/defineConfig#category-fallbacks) for the lookup order. Font-related mappings and typography behavior remain unchanged, including no spacing fallback for `lineHeight`.
 
 `breakpoint` and `containerNames` are query metadata without declaration references. `container` supplies both container-query thresholds and sizing variables. Extensions may change existing thresholds; selecting a runtime scope does not change compiled queries.
 
@@ -68,7 +68,7 @@ The package includes its versioned `.zyzz.json` contract and generated declarati
 
 ## appearance
 
-`appearance.get()` reads the root color scheme. `appearance.set({ colorScheme: 'dark' })` updates and persists it under the default `zyzz` storage key. The [appearance contract](./core/Config/create.md#appearance) applies.
+`appearance.get()` reads the root color scheme. `appearance.set({ colorScheme: 'dark' })` updates and persists it under the default `zyzz` storage key. The [appearance contract](https://zyzz.sh/docs/api/core/defineConfig/appearance) applies.
 
 ## script
 
@@ -107,7 +107,7 @@ Explicit typography fields in the same block override preset fields regardless o
 
 Variants are complete sets, such as `copy.14.strong`. They change typography only. Geist's descendant colors, capitalization, and tabular-number treatments remain explicit style declarations. No descendant selectors or font loading are installed.
 
-Individual fields remain available through `vars.typography.heading[32].fontSize`. [Vars.extend](./core/Vars/README.md) overrides existing fields while preserving inherited theme references.
+Individual fields remain available through `vars.typography.heading[32].fontSize`. [Vars.extend](https://zyzz.sh/docs/api/core/extendVars) overrides existing fields while preserving inherited theme references.
 
 ### Signature
 

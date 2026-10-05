@@ -1,0 +1,184 @@
+# defineVars
+
+Define a typed variable set of tokens, color pairs, and conditions without emitting CSS.
+
+A set is an immutable reference tree with the same paths as its values. Passing it to [`defineConfig`](/docs/api/core/defineConfig) makes its names valid style values, and the compiler emits its custom properties ahead of time.
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+// [!code hl:4]
+const base = defineVars({
+  color: { foreground: { light: '#171717', dark: '#fafafa' } },
+  spacing: { page: { default: '1rem', '@media (width >= 48rem)': '2rem' } },
+})
+
+export const { style, vars } = defineConfig({ vars: base })
+```
+
+`defineVars` is the root alias of `Vars.define`, with the same types and behavior.
+
+## Signature
+
+```ts
+// A set of values
+defineVars(values, options?)
+
+// A set plus values derived from its own references
+defineVars(values, derive, options?)
+```
+
+## Parameters
+
+### values
+
+- **Type:** `Vars.Values{:ts}`
+
+Nested categories of values. A leaf is a string, a finite number, a reference to another set, a light and dark color pair, or conditional values. Keys cannot contain dots, conditions, or `!`.
+
+```ts
+import { defineVars } from 'zyzz'
+
+const palette = defineVars({ gray: { 50: '#fafafa', 900: '#171717' } })
+
+const base = defineVars({
+  color: {
+    accent: '#2563eb',
+    // [!code hl:2]
+    // A pair follows the active color scheme, and references stay live
+    foreground: { light: palette.gray[900], dark: palette.gray[50] },
+  },
+})
+```
+
+A conditional value needs a `default`, then `@media` keys that override it in authored order. A condition can hold a color pair, and query aliases such as `@media >=tablet` read the set's `breakpoint` category.
+
+```ts
+import { defineVars } from 'zyzz'
+
+const base = defineVars({
+  breakpoint: { tablet: '48rem' },
+  spacing: {
+    // [!code hl]
+    page: { default: '1rem', '@media >=tablet': '2rem' },
+  },
+})
+```
+
+### values.typography
+
+- **Type:** `{ [name: string]: Style.LiteralProperties }{:ts}`
+
+Named sets of font declarations, applied with `typography: 'heading'` in a style. Sets can include `@media` and `@container` blocks, and explicit font declarations in the same style override the set's fields.
+
+```ts
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  breakpoint: { tablet: '48rem' },
+  typography: {
+    // [!code hl]
+    heading: { fontSize: '24px', '@media >=tablet': { fontSize: '40px' } },
+  },
+})
+
+const { style } = defineConfig({ vars: base })
+
+const title = style({ typography: 'heading' })
+```
+
+### derive
+
+- **Type:** `(vars: Vars.References<values>) => Vars.Values{:ts}`
+
+A callback that adds values derived from typed references to `values`. Categories merge, and derived references stay live, so an extension that changes a base value also changes its derived values.
+
+```ts
+import { defineVars } from 'zyzz'
+
+const base = defineVars(
+  { color: { palette: { ink: '#171717', paper: '#fafafa' } } },
+  // [!code hl:5]
+  (vars) => ({
+    color: {
+      foreground: {
+        light: vars.color.palette.ink,
+        dark: vars.color.palette.paper,
+      },
+    },
+  }),
+)
+```
+
+The compiler reads the callback without running it, so it must be inline and synchronous, with one parameter and an object literal result. Derived values cannot reference other derived values or replace existing paths.
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the identity derived from the source. Separate definitions keep separate identities, even with identical values.
+
+```ts /{ id: 'base' }/
+import { defineVars } from 'zyzz'
+
+const base = defineVars({ spacing: { page: '1rem' } }, { id: 'base' })
+```
+
+## Returns
+
+### set
+
+- **Type:** `Vars.Definition<values>{:ts}`
+
+A frozen tree of references with the same paths as the values. Pass it to `defineConfig`, extend it with [`extendVars`](/docs/api/core/extendVars), or read its references in another set.
+
+```ts /base.spacing.page/
+// A reference to the base set's `spacing.page` value
+const roomy = defineVars({ spacing: { section: base.spacing.page } })
+```
+
+## Types
+
+- **`Vars.Definition<values>{:ts}`:** A defined set.
+- **`Vars.Reference<value>{:ts}`:** One reference in a set.
+- **`Vars.Values{:ts}`:** The accepted value tree.
+
+```ts title="tokens.ts"
+import { type Vars, defineVars } from 'zyzz'
+
+const values = { spacing: { page: '1rem' } } satisfies Vars.Values
+
+// [!code hl:2]
+// A set typed by its values, for sharing across modules
+export const base: Vars.Definition<typeof values> = defineVars(values)
+```
+
+## Errors
+
+TypeScript rejects incomplete color pairs and conditional values without a default. At runtime, the same input throws `Vars.InvalidError` with the path of the invalid value.
+
+```ts twoslash
+// @errors: 2322
+import { defineVars } from 'zyzz'
+
+// A color pair needs both schemes
+defineVars({ color: { foreground: { light: '#171717' } } })
+```
+
+Derived values that replace an existing path, keys containing `!` or dots, and reference cycles introduced by an extension also throw `Vars.InvalidError`.
+
+## React Native
+
+Native compilation resolves references to native values, and color pairs follow the selected scheme. Conditional values, responsive typography sets, and composed values fail native compilation.
+
+```ts title="tokens.ts"
+import { defineVars } from 'zyzz'
+
+// [!code hl:2]
+// Pairs and scalars resolve on native
+export const base = defineVars({
+  color: { foreground: { light: '#171717', dark: '#fafafa' } },
+  spacing: { page: '16px' },
+})
+```

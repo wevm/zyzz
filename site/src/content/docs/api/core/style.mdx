@@ -38,7 +38,7 @@ style(styles?, options?)
 style((values) => styles, options?)
 ```
 
-Both forms return a definition, which is applied by calling it. The `style` returned by [`defineConfig`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md) has the same signature and also accepts the config's token names.
+Both forms return a definition, which is applied by calling it. The `style` returned by [`defineConfig`](/docs/api/core/defineConfig) has the same signature and also accepts the config's token names.
 
 ## Parameters
 
@@ -47,7 +47,7 @@ Both forms return a definition, which is applied by calling it. The `style` retu
 - **Type:** `Style.LiteralProperties | ((values: values) => Style.LiteralProperties){:ts}`
 - **Default:** `{}{:ts}`
 
-CSS declarations keyed by camelCase property names, in authored order. [Values](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md) lists the supported properties and literal values.
+CSS declarations keyed by camelCase property names, in authored order. [Values](/docs/api/core/values) lists the supported properties and literal values.
 
 ```ts
 import { style } from 'zyzz'

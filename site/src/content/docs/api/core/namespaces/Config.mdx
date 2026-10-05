@@ -1,0 +1,68 @@
+# Config
+
+Configuration types and errors, plus the create function behind defineConfig.
+
+`Config` holds `Config.create` and the types of the helpers it returns. Applications usually call it through its root alias, [`defineConfig`](/docs/api/core/defineConfig), which has the same options and inferred helpers.
+
+```ts title="zyzz.config.ts"
+import { Config } from 'zyzz'
+
+// [!code hl:3]
+export const { style, vars } = Config.create({
+  vars: { color: { brand: '#06c' } },
+})
+```
+
+## Members
+
+<Card.Group>
+  <Card
+    title="Config.create"
+    icon="settings"
+    href="/docs/api/core/defineConfig"
+  >
+    Bind style and recipe helpers to a variable set, and return the config
+    helpers.
+  </Card>
+</Card.Group>
+
+## Types
+
+- **`Config.create.Options{:ts}`:** The accepted options.
+- **`Config.create.ReturnType<options>{:ts}`:** The helpers inferred from the options.
+- **`Config.StyleFactory{:ts}`:** The bound `style` function.
+- **`Config.VariableConfig<options>{:ts}`:** The helpers of a config with `vars`.
+- **`Config.VariableOptions{:ts}`:** The options of a config with `vars`.
+- **`Config.VariableScope<options>{:ts}`:** The bound `vars` function and reference tree.
+
+```ts title="scoped.ts"
+import type { Config } from 'zyzz'
+
+// [!code hl:2]
+// Accepts the `vars` helper of any config with a `color.brand` token
+export function scoped(
+  select: Config.VariableScope<{ vars: { color: { brand: string } } }>,
+) {
+  return select({ colorScheme: 'dark' })
+}
+```
+
+## Errors
+
+### Config.InvalidError
+
+Thrown when options cannot form a configuration, such as unknown options, named sets with different paths, or invalid layer names. Its `name` is `'Config.InvalidError'`. Invalid variable values throw [`Vars.InvalidError`](/docs/api/core/namespaces/Vars#varsinvaliderror) instead.
+
+```ts
+import { Config } from 'zyzz'
+
+// Options loaded at runtime, which TypeScript cannot check
+declare const options: Config.create.Options
+
+try {
+  Config.create(options)
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Config.InvalidError) console.error(error.message)
+}
+```

@@ -65,7 +65,7 @@ A call accepts up to eight conditional arguments. The compiler emits a group for
 
 ## Variable Scopes
 
-A [`vars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#helpers) scope can be combined with applied styles to place a variable set or color scheme on the same element.
+A [`vars`](/docs/api/core/defineConfig/vars) scope can be combined with applied styles to place a variable set or color scheme on the same element.
 
 ```tsx title="Root.tsx"
 import type { ReactNode } from 'react'
@@ -87,7 +87,7 @@ export declare namespace Root {
 }
 
 namespace styles {
-  export const page = style({ margin: 0 })
+  export const page = style({ color: 'foreground' })
 }
 ```
 

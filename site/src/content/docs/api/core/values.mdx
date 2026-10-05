@@ -1,0 +1,192 @@
+# Values
+
+Supported CSS properties and literal values, including fallbacks and importance.
+
+Style properties use camelCase names and accept the values their CSS grammar allows, typed from the CSS specifications. Editors complete each property's keywords. The compiler emits values as authored, and the browser resolves units, functions, and variables.
+
+```ts
+import { style } from 'zyzz'
+
+const panel = style({
+  // [!code hl:3]
+  // A unit, a keyword, and a multi-value shorthand
+  height: '100dvh',
+  overflow: 'auto',
+  padding: '8px 16px',
+})
+```
+
+## Properties
+
+Every standard property is available, along with prefixed properties such as `WebkitUserSelect`, which keep their capitalized prefix. The [conformance inventory](https://github.com/wevm/zyzz/blob/main/test/conformance/README.md) tracks all 670 property mappings. An unknown property fails type checking.
+
+```ts
+import { style } from 'zyzz'
+
+const label = style({
+  // [!code hl:2]
+  // Emits -webkit-user-select: none
+  WebkitUserSelect: 'none',
+  userSelect: 'none',
+})
+```
+
+## Lengths
+
+Lengths need a unit, and numeric `0` is the only unitless length. Units keep their authored spelling.
+
+- **Absolute:** `px`, `cm`, `mm`, `q`, `in`, `pc`, `pt`.
+- **Font-relative:** `em`, `ex`, `cap`, `ch`, `ic`, `lh`, `rem`, `rex`, `rcap`, `rch`, `ric`, `rlh`.
+- **Viewport-relative:** `vw`, `vh`, `vi`, `vb`, `vmin`, `vmax`, each also with an `s`, `l`, or `d` prefix.
+- **Container-relative:** `cqw`, `cqh`, `cqi`, `cqb`, `cqmin`, `cqmax`.
+- **Percentages:** `%`, where the property accepts them.
+
+```ts
+import { style } from 'zyzz'
+
+const panel = style({
+  // [!code hl:3]
+  height: '100dvh',
+  margin: 0,
+  paddingBlock: '1lh',
+})
+```
+
+Negative values follow each property's grammar, so margins and offsets accept them while padding does not.
+
+## Colors
+
+Color properties accept hex colors, named and system colors, `transparent`, `currentColor`, and color functions such as `rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color()`, and `light-dark()`.
+
+```ts
+import { style } from 'zyzz'
+
+const badge = style({
+  // [!code hl:3]
+  backgroundColor: 'rgb(0 112 243 / 50%)',
+  borderColor: 'currentColor',
+  color: 'oklch(0.7 0.15 250)',
+})
+```
+
+## Numbers
+
+Unitless properties accept finite numbers, such as `opacity`, `lineHeight`, `zIndex`, and `flexGrow`. Properties with integer or range limits, such as `order` or `fontWeight`, type-check those bounds where TypeScript can express them.
+
+```ts
+import { style } from 'zyzz'
+
+const card = style({
+  // [!code hl:3]
+  fontWeight: 650,
+  lineHeight: 1.5,
+  opacity: 0.8,
+})
+```
+
+## Keywords
+
+Every property accepts the CSS-wide keywords `inherit`, `initial`, `revert`, `revert-layer`, and `unset`, in addition to its own keywords.
+
+```ts
+import { style } from 'zyzz'
+
+const reset = style({
+  // [!code hl:2]
+  color: 'inherit',
+  display: 'revert-layer',
+})
+```
+
+## Multiple Values
+
+Shorthands accept their space-separated forms, such as one to four box sides, and list properties accept comma-separated entries. Combined shorthands, such as `border`, accept their components in any order.
+
+```ts
+import { style } from 'zyzz'
+
+const card = style({
+  // [!code hl:3]
+  border: '1px solid currentColor',
+  margin: '0 auto',
+  transition: 'opacity 200ms ease, transform 300ms',
+})
+```
+
+Shorthands and longhands keep authored order, so a later longhand overrides one side of an earlier shorthand.
+
+## Math Functions
+
+Numeric, length, and time properties accept `calc()`, `min()`, `max()`, and `clamp()`. The browser evaluates the expression, including mixed units and percentages.
+
+```ts
+import { style } from 'zyzz'
+
+const title = style({
+  // [!code hl:2]
+  fontSize: 'clamp(1rem, 2vw + 0.5rem, 2rem)',
+  width: 'calc(100% - 2rem)',
+})
+```
+
+## Custom Properties
+
+Every property accepts `var()` references, including fallbacks. Declared [`variable`](/docs/api/core/variable) references and config [`vars`](/docs/api/core/defineConfig/vars) references add type checking, so they are the usual way to read custom properties.
+
+```ts
+import { style } from 'zyzz'
+
+const link = style({
+  // [!code hl]
+  color: 'var(--brand, blue)',
+})
+```
+
+## Fallbacks
+
+An array emits one declaration per entry, in order, so browsers that reject a later value keep an earlier one. Each entry is validated separately.
+
+```ts
+import { style } from 'zyzz'
+
+const grid = style({
+  // [!code hl]
+  display: ['block', 'grid'],
+  // Emits width: 80vw; width: 80cqi;
+  width: ['80vw', '80cqi'],
+})
+```
+
+## Importance
+
+The suffix ` !important`, with one space and lowercase spelling, marks a declaration as important. Numbers take the string form, such as `'0.5 !important'`, and each fallback entry carries its own suffix.
+
+```ts
+import { style } from 'zyzz'
+
+const hidden = style({
+  // [!code hl:2]
+  display: 'none !important',
+  opacity: '0 !important',
+})
+```
+
+Configured properties also accept ` !custom` for values outside their tokens, as [Token Values](/docs/api/core/defineConfig#token-values) describes.
+
+## Rejected Values
+
+TypeScript rejects values outside a property's grammar before compilation.
+
+- **Unknown properties:** A misspelled or unsupported name.
+- **Unitless lengths:** Numbers other than `0` on length properties, such as `padding: 8`.
+- **Explicit `undefined`:** Omit the property instead.
+- **Nested arrays:** Fallback entries are values, not arrays.
+- **Malformed importance:** Such as `'0.5!important'`.
+
+```ts twoslash
+// @errors: 2322
+import { style } from 'zyzz'
+
+// A length needs a unit
+style({ padding: 8 })
+```

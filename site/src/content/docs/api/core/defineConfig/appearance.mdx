@@ -1,0 +1,124 @@
+# appearance
+
+Read and persist the document's variable set and color scheme across page loads.
+
+`appearance` comes from [`defineConfig`](/docs/api/core/defineConfig). It reads the classes on `document.documentElement` and writes the selection to localStorage, where [`script`](/docs/api/core/defineConfig/script) restores it before the next page paints.
+
+```tsx title="SchemeToggle.tsx"
+import { appearance } from './zyzz.config.js'
+
+export function SchemeToggle() {
+  return (
+    <button
+      // [!code hl:2]
+      // Applies and saves the dark scheme for the whole document
+      onClick={() => appearance.set({ colorScheme: 'dark' })}
+      type="button"
+    >
+      Dark
+    </button>
+  )
+}
+```
+
+Creating the config touches no browser state, so `appearance` is safe to import during server rendering. Only `get` and `set` read and write the document.
+
+## Signature
+
+```ts
+// The document's current selection
+appearance.get()
+
+// Apply and save a new selection
+appearance.set(selection)
+```
+
+## Parameters
+
+### selection.set
+
+- **Type:** `string{:ts}`
+- **Default:** The current set
+
+The catalog key to apply to the document. Configs with a single set accept only `colorScheme`.
+
+```ts /set: 'roomy'/
+// Switches the document to the roomy set and keeps the scheme
+appearance.set({ set: 'roomy' })
+```
+
+### selection.colorScheme
+
+- **Type:** `'light' | 'dark' | 'light dark' | undefined{:ts}`
+- **Default:** The current scheme
+
+The document's color scheme. `undefined` clears the scheme class and the inline `color-scheme`, and saves the cleared value so a server-rendered scheme does not return on the next load.
+
+```ts /colorScheme: undefined/
+// Returns to the scheme the page inherits
+appearance.set({ colorScheme: undefined })
+```
+
+## Returns
+
+### get
+
+- **Type:** `() => { colorScheme?: 'light' | 'dark' | 'light dark'; set?: string }{:ts}`
+
+The selection the document carries. Named catalogs always report a set, falling back to `defaultVars` when the document has no set class.
+
+```ts /appearance.get()/
+// { colorScheme: 'dark', set: 'base' }
+const selection = appearance.get()
+```
+
+### set
+
+- **Type:** `(selection: { colorScheme?: …; set?: … }) => void{:ts}`
+
+Merges the fields over the current selection, replaces the set and scheme classes and the inline `color-scheme`, then saves the record under [`storageKey`](/docs/api/core/defineConfig#optionsstoragekey). Blocked storage keeps the change for the current document only.
+
+```ts /appearance.set/
+// Applies both fields in one call
+appearance.set({ colorScheme: 'light', set: 'roomy' })
+```
+
+## Errors
+
+TypeScript rejects set names outside the catalog and unknown schemes. At runtime, `set` throws a `TypeError` for the same input and leaves the document and the saved record unchanged.
+
+```ts twoslash
+// @errors: 2322
+import { defineConfig, defineVars } from 'zyzz'
+
+const { appearance } = defineConfig({
+  vars: defineVars({ spacing: { page: '1rem' } }),
+})
+
+// `sepia` is not a color scheme
+appearance.set({ colorScheme: 'sepia' })
+```
+
+## React Native
+
+`appearance` reads the document and localStorage, so it has no native counterpart. Native apps keep the selection in application state and pass it to the native `Provider`, as [Native Themes](/docs/guides/native/themes) shows.
+
+```tsx title="App.tsx"
+import { type ReactNode, useState } from 'react'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider } = defineConfig({
+  vars: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+})
+
+export function App(props: App.Props) {
+  // [!code hl:2]
+  // Application state replaces the saved document preference
+  const [scheme] = useState<'dark' | 'light'>('light')
+  return <Provider colorScheme={scheme}>{props.children}</Provider>
+}
+
+export declare namespace App {
+  type Props = { children: ReactNode }
+}
+```

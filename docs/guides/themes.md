@@ -38,7 +38,7 @@ namespace styles {
 }
 ```
 
-Each set bundles font family, size, weight, letter spacing, and line height. Sets can include `@media` and `@container` blocks. Explicit typography fields override base and conditional preset fields within the same block. [Custom sets](../api/core/Vars/README.md) use the same nested structure and support field overrides with `extendVars`.
+Each set bundles font family, size, weight, letter spacing, and line height. Sets can include `@media` and `@container` blocks. Explicit typography fields override base and conditional preset fields within the same block. [Custom sets](https://zyzz.sh/docs/api/core/defineVars#valuestypography) use the same nested structure and support field overrides with `extendVars`.
 
 ### Property Mappings
 

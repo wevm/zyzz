@@ -26,8 +26,9 @@ type ChoiceName<choices> = keyof choices extends infer key
       ? key
       : never
   : never
+/** `void` targets skip dynamic choice return types, which resolve through `Checked` and cycle when selections are read first. */
 type DynamicKeys<choices> = {
-  [key in keyof choices]: choices[key] extends (...args: never[]) => unknown
+  [key in keyof choices]: choices[key] extends (...args: never[]) => void
     ? key
     : never
 }[keyof choices]
@@ -36,7 +37,7 @@ type Choice<choices> =
   | {
       [key in DynamicKeys<choices>]: choices[key] extends (
         values: infer values,
-      ) => unknown
+      ) => void
         ? { readonly [name in key]: values } & {
             readonly [name in Exclude<keyof choices, key>]?: never
           }

@@ -34,9 +34,7 @@ Compiles one complete snapshot from scratch. Use [`Graph.create`](#graphcreate) 
 Graph.compile(options)
 ```
 
-### Parameters
-
-#### options.modules
+### options.modules
 
 - **Type:** `Readonly<Record<string, string>>{:ts}`
 
@@ -47,7 +45,7 @@ The complete source graph, keyed by stable package-relative module IDs. Without 
 Graph.compile({ modules: { 'app/Card.tsx': source } })
 ```
 
-#### options.imports
+### options.imports
 
 - **Type:** `Readonly<Record<string, Readonly<Record<string, string | null>>>>{:ts}`
 - **Default:** `undefined{:ts}`
@@ -70,7 +68,7 @@ Graph.compile({
 })
 ```
 
-#### options.contracts
+### options.contracts
 
 - **Type:** `Readonly<Record<string, string>>{:ts}`
 - **Default:** `undefined{:ts}`
@@ -96,7 +94,7 @@ export const card = style({ color: 'brand' })
 })
 ```
 
-#### options.native
+### options.native
 
 - **Type:** `{ colorScheme: 'light' | 'dark'; platform?: 'ios' | 'android'; … }{:ts}`
 - **Default:** `undefined{:ts}`
@@ -108,7 +106,7 @@ A native output context with the same fields as [`Native.compile`](/docs/api/com
 Graph.compile({ modules, native: { colorScheme: 'light', platform: 'ios' } })
 ```
 
-#### options.reset
+### options.reset
 
 - **Type:** `string{:ts}`
 - **Default:** `undefined{:ts}`
@@ -120,7 +118,7 @@ The contents of a reset stylesheet, such as `zyzz/reset.css`. They are added to 
 Graph.compile({ modules, reset: resetCss })
 ```
 
-#### options.compiler
+### options.compiler
 
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
@@ -132,7 +130,7 @@ Whether to rewrite authoring calls, as in [`Transform.compile`](/docs/api/compil
 Graph.compile({ compiler: false, modules })
 ```
 
-#### options.cssOutput
+### options.cssOutput
 
 - **Type:** `'atomic' | 'grouped'{:ts}`
 - **Default:** `'atomic'{:ts}`
@@ -144,7 +142,7 @@ The CSS shape for every module, as in [`Transform.compile`](/docs/api/compiler/n
 Graph.compile({ cssOutput: 'grouped', modules })
 ```
 
-#### options.composition
+### options.composition
 
 - **Type:** `'ordered' | 'independent'{:ts}`
 - **Default:** `'ordered'{:ts}`
@@ -156,7 +154,7 @@ How class lists combine, as in [`Transform.compile`](/docs/api/compiler/namespac
 Graph.compile({ composition: 'independent', modules })
 ```
 
-#### options.development
+### options.development
 
 - **Type:** `boolean{:ts}`
 - **Default:** `false{:ts}`
@@ -170,7 +168,9 @@ Graph.compile({ development: true, modules })
 
 ### Returns
 
-#### modules
+The compiled graph, read as `output` in the examples below.
+
+### output.modules
 
 - **Type:** `Readonly<Record<string, Transform.compile.ReturnType>>{:ts}`
 
@@ -186,7 +186,7 @@ declare const output: Graph.compile.ReturnType
 output.modules['app/Card.tsx']?.css
 ```
 
-#### dependencies
+### output.dependencies
 
 - **Type:** `Readonly<Record<string, readonly string[]>>{:ts}`
 
@@ -197,7 +197,7 @@ The direct source and contract dependencies of each module, keyed by module ID. 
 output.dependencies['app/Card.tsx']
 ```
 
-#### contracts
+### output.contracts
 
 - **Type:** `Readonly<Record<string, string>>{:ts}`
 
@@ -208,7 +208,7 @@ Versioned contract JSON, keyed by module ID, for modules that export configs, de
 output.contracts['library/index.ts']
 ```
 
-#### sharedCss
+### output.sharedCss
 
 - **Type:** `string | undefined{:ts}`
 
@@ -227,7 +227,7 @@ const css = [
 ].join('\n')
 ```
 
-#### sharedCssMap
+### output.sharedCssMap
 
 - **Type:** `EncodedSourceMap | undefined{:ts}`
 
@@ -239,7 +239,7 @@ if (output.sharedCssMap)
   await Fs.writeFile('shared.css.map', JSON.stringify(output.sharedCssMap))
 ```
 
-#### sharedAssets
+### output.sharedAssets
 
 - **Type:** `Readonly<Record<string, string>> | undefined{:ts}`
 
@@ -250,7 +250,7 @@ Relative URLs in `sharedCss`, such as font files, become `zyzz-asset:` placehold
 output.sharedAssets
 ```
 
-#### sharedAssetOwners
+### output.sharedAssetOwners
 
 - **Type:** `Readonly<Record<string, string>> | undefined{:ts}`
 
@@ -270,9 +270,7 @@ Creates an isolated compiler that reuses work across snapshots. Each compiler ho
 Graph.create()
 ```
 
-### Returns
-
-#### compile
+### compiler.compile
 
 - **Type:** `(options: Graph.compile.Options) => Graph.compile.ReturnType{:ts}`
 

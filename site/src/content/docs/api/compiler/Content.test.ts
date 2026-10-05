@@ -39,7 +39,7 @@ async function examples(page: string, heading?: string | undefined) {
     heading === undefined
       ? document
       : document
-          .split(/^#{2,4} /m)
+          .split(/^#{2,3} /m)
           .find((entry) => entry.startsWith(`${heading}\n`))
   if (section === undefined)
     throw new Error(`${page} has no ${heading} section.`)

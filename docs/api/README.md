@@ -14,7 +14,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/node][node]                           | Build and watch filesystem sources with explicit output ownership.                 |
 | [zyzz/oxlint][oxlint]                       | Lint web styles, JSX applications, and project conventions.                        |
 | [zyzz/react-native](react-native/README.md) | Compile shared definitions into native tables and select themes and schemes.       |
-| [zyzz/runtime](runtime/README.md)           | Bind compiled class lists to styling overrides without generating CSS.             |
+| [zyzz/runtime][runtime]                     | Bind compiled class lists to styling overrides without generating CSS.             |
 | [zyzz/unplugin](unplugin/README.md)         | Compile web styles with Rollup, Webpack, esbuild, or the existing Vite adapter.    |
 | [zyzz/vite](vite/README.md)                 | Connect source transformation and CSS delivery to Vite.                            |
 | [zyzz/web][web]                             | Compile web CSS and declare global rules, cascade layers, and at-rules.            |
@@ -22,4 +22,5 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 [default]: https://zyzz.sh/docs/guides/default-theme
 [node]: https://zyzz.sh/docs/api/node
 [oxlint]: https://zyzz.sh/docs/api/oxlint
+[runtime]: https://zyzz.sh/docs/api/runtime
 [web]: https://zyzz.sh/docs/api/web

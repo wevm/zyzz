@@ -1,0 +1,148 @@
+# Dynamic
+
+Assign required callback values to fixed private custom properties on each application.
+
+`Dynamic.create` binds a [`style`](/docs/api/core/style) callback definition's compiled class list to its value slots. Web compilation inlines an equivalent function into each callback definition, so generated modules do not import this helper. It remains available to tooling that has compiled class and slot names.
+
+```ts title="meter.ts"
+import type { style } from 'zyzz'
+import { Dynamic } from 'zyzz/runtime'
+
+// [!code hl:5]
+// Rules for `z-meter` read `--meter-amount`, and the cast mirrors generated code
+const meter = Dynamic.create({
+  className: 'z-meter',
+  slots: { amount: { name: '--meter-amount', type: 'length' } },
+}) as style.Dynamic<{ amount: string }>
+
+// { className: 'z-meter', style: { '--meter-amount': '50%' } }
+export const props = meter({ amount: '50%' })
+```
+
+## Signature
+
+```ts
+// Generated metadata for one callback definition
+Dynamic.create(options)
+```
+
+## Parameters
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The complete generated class list, whose rules read the slot variables.
+
+```ts /className: 'z-meter'/
+// The class list of the compiled callback definition
+Dynamic.create({ className: 'z-meter', slots: {} })
+```
+
+### options.slots
+
+- **Type:** ``{ [input: string]: { name: `--${string}`; type: string; zero?: boolean } }{:ts}``
+
+One private custom property per callback field. `type` and `zero` record the field's scalar domain for tooling. The callable assigns values without checking them.
+
+```ts /slots: { amount: { name: '--meter-amount', type: 'length' } }/
+// The `amount` field assigns `--meter-amount`
+Dynamic.create({
+  className: 'z-meter',
+  slots: { amount: { name: '--meter-amount', type: 'length' } },
+})
+```
+
+## Application
+
+Generated code casts the callable to `style.Dynamic<values>`, which requires every slot field and accepts the [`style`](/docs/api/core/style#application) overrides `className`, `style`, and `vars`. The helper's own return type keeps no slot names, and its string index signature rejects object-valued `style` and `vars` overrides.
+
+### options[field]
+
+- **Type:** `string | number{:ts}`
+
+The value for one slot. An empty string is written as a single space, so the custom property keeps an explicit empty value.
+
+```ts /amount: '50%'/
+// Assigns 50% to --meter-amount
+meter({ amount: '50%' })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// 'z-meter wide'
+meter({ amount: '50%', className: 'wide' }).className
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments copied into the new `style` first, before `options.style` and the slot assignments.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { '--accent': 'crimson', '--meter-amount': '50%' }
+meter({ amount: '50%', vars: { '--accent': 'crimson' } }).style
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline declarations, copied after `options.vars`. Slot assignments always win over an override of the same private property.
+
+```ts /style: { opacity: 0.5 }/
+// { '--meter-amount': '50%', opacity: 0.5 }
+meter({ amount: '50%', style: { opacity: 0.5 } }).style
+```
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `options.className` when supplied.
+
+```ts /className: 'wide'/
+// 'z-meter wide'
+meter({ amount: '50%', className: 'wide' }).className
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>>{:ts}`
+
+A new object holding `options.vars`, `options.style`, and the slot assignments, in that order.
+
+```ts /props.style/
+// { '--meter-amount': '50%' }
+props.style
+```
+
+## Types
+
+- **`Dynamic.create.Options{:ts}`:** The `{ className, slots }` input.
+
+```ts title="options.ts"
+import type { Dynamic } from 'zyzz/runtime'
+
+// [!code hl:2]
+// Metadata for a callback with one `amount` field
+export const options = {
+  className: 'z-meter',
+  slots: { amount: { name: '--meter-amount', type: 'length' } },
+} satisfies Dynamic.create.Options
+```
+
+## Errors
+
+`Dynamic.create` throws no errors. The callable reads fields as supplied, so a missing field assigns `undefined`. TypeScript requires every field only through the generated [`style.Dynamic`](/docs/api/core/style#types) cast.

@@ -1,0 +1,151 @@
+# Composition
+
+Merge applied props over one precompiled class list for a statically resolved composition.
+
+The compiler rewrites a [`cx`](/docs/api/core/cx) call whose arguments it can resolve into one `Composition.create` callable. Applications normally do not import it. The compiler emits combined rules ahead of time, so the callable swaps the arguments' generated classes for one class list and keeps their bindings and attributes.
+
+```ts title="compose.ts"
+import { Composition } from 'zyzz/runtime'
+
+const compose = Composition.create({
+  // [!code hl:2]
+  // Rules for these classes already hold the merged declarations
+  className: 'z-card-button',
+  inputs: [
+    { className: 'z-card', owners: [] },
+    { className: 'z-button', owners: [] },
+  ],
+})
+
+// { className: 'z-card-button wide', 'data-size': 'large' }
+export const props = compose(
+  { className: 'z-card wide' },
+  { className: 'z-button', 'data-size': 'large' },
+)
+```
+
+## Signature
+
+```ts
+// Generated metadata for one `cx` call site
+Composition.create(options)
+```
+
+## Parameters
+
+### options.className
+
+- **Type:** `string{:ts}`
+
+The precompiled class list used when every argument is present.
+
+```ts /className: 'z-card-button'/
+// Replaces the generated classes of both arguments
+Composition.create({ className: 'z-card-button', inputs })
+```
+
+### options.cases
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Class lists indexed by a bit mask of the conditional arguments that are present. Bit `n` is set when the argument with `condition: n` is truthy. A mask without an entry falls back to `options.className`.
+
+```ts /cases: ['z-card-only', 'z-card-button']/
+// Index 0 when the conditional argument is falsy, 1 when present
+Composition.create({
+  cases: ['z-card-only', 'z-card-button'],
+  className: 'z-card-button',
+  inputs,
+})
+```
+
+### options.inputs
+
+- **Type:** `readonly { className: string; condition?: number; owners: readonly Composition.Owner[] }[]{:ts}`
+
+One entry per argument, in call order. Classes from an argument that are not in its `className` are external, so they follow the composed list.
+
+```ts /condition: 0/
+// The second argument may be false, null, or undefined
+const inputs = [
+  { className: 'z-card', owners: [] },
+  { className: 'z-button', condition: 0, owners: [] },
+]
+```
+
+## Application
+
+The callable accepts applied props, or `false`, `null`, and `undefined` for omitted arguments, in the order of `options.inputs`. It never mutates them.
+
+### entries
+
+- **Type:** ``readonly ((style.Props & { [key: `data-${string}`]: string | undefined }) | false | null | undefined)[]{:ts}``
+
+Later arguments win. Before an argument's values merge, the attributes and slots of its `owners` are removed, so a repeated definition replaces earlier bindings instead of leaving stale ones.
+
+Only an argument whose input has a `condition` may be omitted. Its bit selects a class list from `options.cases`. Omitting any other argument still returns `options.className`, with that argument's precompiled classes applied.
+
+```ts /false/
+// The second input is unconditional, so this still returns { className: 'z-card-button' }
+compose({ className: 'z-card' }, false)
+```
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The selected precompiled class list, followed by external classes in argument order.
+
+```ts /props.className/
+// 'z-card-button wide'
+props.className
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the arguments, with later arguments winning. An attribute explicitly set to `undefined` is copied as `undefined`. The declared return type omits these attributes, so TypeScript reads them through a cast.
+
+```ts /props as Record/
+// 'large'
+;(props as Record<`data-${string}`, string | undefined>)['data-size']
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+
+The arguments' inline styles merged in order. A later value moves its key to the end, so shorthand and longhand order follows the arguments. It is present only when a style remains.
+
+```ts /style/
+// { padding: '8px', color: 'red' }
+compose(
+  { className: 'z-card', style: { color: 'blue', padding: '8px' } },
+  { className: 'z-button', style: { color: 'red' } },
+).style
+```
+
+## Types
+
+- **`Composition.Owner{:ts}`:** One definition's `identity`, with the `attributes` and `slots` it owns.
+- **`Composition.create.Options{:ts}`:** The `{ cases?, className, inputs }` input.
+
+```ts title="owner.ts"
+import type { Composition } from 'zyzz/runtime'
+
+// [!code hl:2]
+// A recipe argument owns its size attribute
+export const owner = {
+  attributes: ['data-size'],
+  identity: 'button',
+  slots: [],
+} satisfies Composition.Owner
+```
+
+## Errors
+
+`Composition.create` throws no errors. Its callable throws a `TypeError` when it receives a truthy entry beyond `options.inputs`, which generated calls never pass. The compiler reports a `cx` call it cannot resolve as `Source.ExtractError`.

@@ -16,6 +16,7 @@ import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
 import FolderCogIcon from '~icons/lucide/folder-cog'
+import GitBranchIcon from '~icons/lucide/git-branch'
 import GlobeIcon from '~icons/lucide/globe'
 import HammerIcon from '~icons/lucide/hammer'
 import LayersIcon from '~icons/lucide/layers'
@@ -23,6 +24,7 @@ import ListIcon from '~icons/lucide/list'
 import ListOrderedIcon from '~icons/lucide/list-ordered'
 import LockOpenIcon from '~icons/lucide/lock-open'
 import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
+import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaintBucketIcon from '~icons/lucide/paint-bucket'
 import PaletteIcon from '~icons/lucide/palette'
@@ -38,10 +40,12 @@ import SmartphoneIcon from '~icons/lucide/smartphone'
 import SquareFunctionIcon from '~icons/lucide/square-function'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TableIcon from '~icons/lucide/table'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
+import WorkflowIcon from '~icons/lucide/workflow'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import ReactIcon from '~icons/simple-icons/react'
@@ -196,6 +200,7 @@ const icons = {
   'file-type': FileTypeIcon,
   film: FilmIcon,
   'folder-cog': FolderCogIcon,
+  'git-branch': GitBranchIcon,
   globe: GlobeIcon,
   hammer: HammerIcon,
   layers: LayersIcon,
@@ -204,6 +209,7 @@ const icons = {
   'lock-open': LockOpenIcon,
   'monitor-smartphone': MonitorSmartphoneIcon,
   next: NextIcon,
+  package: PackageIcon,
   'paint-bucket': PaintBucketIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
@@ -221,10 +227,12 @@ const icons = {
   'square-function': SquareFunctionIcon,
   'sun-moon': SunMoonIcon,
   'swatch-book': SwatchBookIcon,
+  table: TableIcon,
   tag: TagIcon,
   terminal: TerminalIcon,
   type: TypeIcon,
   variable: VariableIcon,
   vite: ViteIcon,
+  workflow: WorkflowIcon,
   zap: ZapIcon,
 }

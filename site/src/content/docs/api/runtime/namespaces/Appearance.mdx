@@ -1,0 +1,166 @@
+# Appearance
+
+Restore the saved root selection before paint, and read or persist it afterwards.
+
+The compiler rewrites the [`script`](/docs/api/core/defineConfig/script) and [`appearance`](/docs/api/core/defineConfig/appearance) helpers returned by `defineConfig` into these calls. Applications normally do not import them. Both act on `document.documentElement` and share one `localStorage` record.
+
+```ts title="appearance.ts"
+import { Appearance } from 'zyzz/runtime'
+
+const entries = [
+  ['base', 'z-theme-base'],
+  ['mint', 'z-theme-mint'],
+] as const
+
+// [!code hl:6]
+// Inline script source and live root controls over one record
+export const script = Appearance.create(entries, { storageKey: 'theme' })
+export const appearance = Appearance.root(entries, {
+  defaultVars: 'base',
+  storageKey: 'theme',
+})
+```
+
+## Appearance.create
+
+```ts
+// Returns a script factory
+Appearance.create(entries, options?)
+```
+
+### entries
+
+- **Type:** `readonly (readonly [string, string])[]{:ts}`
+
+Set names paired with their compiled scope classes.
+
+```ts /[['mint', 'z-theme-mint']]/
+// A catalog with one set
+Appearance.create([['mint', 'z-theme-mint']])
+```
+
+### options.storageKey
+
+- **Type:** `string{:ts}`
+- **Default:** `'zyzz'{:ts}`
+
+The `localStorage` key the script reads. It must match the key of `Appearance.root`.
+
+```ts /storageKey: 'theme'/
+// Reads the record saved under `theme`
+Appearance.create(entries, { storageKey: 'theme' })
+```
+
+### script
+
+- **Type:** `() => string{:ts}`
+
+A factory returning JavaScript source for a synchronous `<script>` before the application renders. Calling it touches no DOM or storage. The catalog and key are serialized with `<`, `>`, and `&` escaped, so the source is safe inside a `<script>` element.
+
+```tsx /dangerouslySetInnerHTML={{ __html: script() }}/
+// Runs before the first paint
+<script dangerouslySetInnerHTML={{ __html: script() }} />
+```
+
+When the script runs, it restores each recognized field of the saved record independently and keeps unrelated root classes. A saved `null` scheme removes the scheme class and the inline `color-scheme`. Unrecognized values and missing, unparsable, or blocked records change nothing.
+
+## Appearance.root
+
+```ts
+// Returns { get, set }
+Appearance.root(entries, options?)
+```
+
+### entries
+
+- **Type:** `readonly (readonly [name, string])[]{:ts}`
+
+Set names paired with their compiled scope classes. The names infer the accepted `set` values.
+
+```ts /entries/
+// Accepts 'base' and 'mint'
+Appearance.root(entries, { defaultVars: 'base' })
+```
+
+### options.defaultVars
+
+- **Type:** `name{:ts}`
+- **Default:** `undefined{:ts}`
+
+The set `get` reports when the root has no catalog class. A nonempty catalog requires one of its names.
+
+```ts /defaultVars: 'base'/
+// get() reports base until another set is applied
+Appearance.root(entries, { defaultVars: 'base' })
+```
+
+### options.storageKey
+
+- **Type:** `string{:ts}`
+- **Default:** `'zyzz'{:ts}`
+
+The `localStorage` key that `set` writes. It must match the key of `Appearance.create`.
+
+```ts /storageKey: 'theme'/
+// Saves under `theme`
+Appearance.root(entries, { defaultVars: 'base', storageKey: 'theme' })
+```
+
+### get
+
+- **Type:** `() => Appearance.Selection<name>{:ts}`
+
+Reads the set and scheme classes on the root. An absent scheme class omits `colorScheme`.
+
+```ts /appearance.get()/
+// { set: 'base' }
+appearance.get()
+```
+
+### set
+
+- **Type:** `(selection: { set?: name; colorScheme?: 'light' | 'dark' | 'light dark' | undefined }) => void{:ts}`
+
+Merges the fields over `get()`, replaces the root's set and scheme classes and inline `color-scheme`, and saves the record. An `undefined` scheme clears it and saves `null`. With blocked storage, the change lasts for the current document only.
+
+```ts /appearance.set({ colorScheme: 'dark' })/
+// Keeps the set and applies the dark scheme
+appearance.set({ colorScheme: 'dark' })
+```
+
+## Types
+
+- **`Appearance.create.Options{:ts}`:** The `{ storageKey? }` input.
+- **`Appearance.Root<name>{:ts}`:** The `{ get, set }` controls.
+- **`Appearance.root.Options<name>{:ts}`:** The `{ defaultVars?, storageKey? }` input.
+- **`Appearance.Selection<name>{:ts}`:** A set with an optional scheme. A catalog without names selects only a scheme.
+
+```ts title="toggle.ts"
+import { Appearance } from 'zyzz/runtime'
+
+// [!code hl:2]
+// `Root<never>` reads and writes only the scheme, so any catalog's controls fit
+export function toggle(appearance: Appearance.Root<never>) {
+  const dark = appearance.get().colorScheme === 'dark'
+  appearance.set({ colorScheme: dark ? 'light' : 'dark' })
+}
+
+// Controls for a catalog with named sets
+toggle(Appearance.root([['base', 'z-theme-base']], { defaultVars: 'base' }))
+```
+
+## Errors
+
+`Appearance.root` throws a `TypeError` when a nonempty catalog has no `defaultVars`, or one outside its names. `set` throws a `TypeError` for an unknown set or scheme and leaves the root and the record unchanged.
+
+```ts title="invalid.ts"
+import { Appearance } from 'zyzz/runtime'
+
+try {
+  // A named catalog needs a default set
+  Appearance.root([['mint', 'z-theme-mint']])
+} catch (error) {
+  // [!code hl]
+  if (error instanceof TypeError) console.error(error.message)
+}
+```

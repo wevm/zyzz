@@ -5,6 +5,7 @@ import {
   type SearchSchemaInput,
 } from '@tanstack/react-router'
 import * as Docs from '../Docs.js'
+import * as Manifest from '../Manifest.js'
 import { Page as DocsPage } from '../pages/Docs.js'
 
 export const Route = createFileRoute('/docs/$')({
@@ -18,8 +19,8 @@ export const Route = createFileRoute('/docs/$')({
     const { params } = entry
 
     const path = (params._splat ?? '').replace(/\.md$/, '').replace(/\/$/, '')
-    if (!Object.hasOwn(__DOCS__.pages, path)) throw notFound()
-    const { title, description } = __DOCS__.pages[path]!
+    if (!Object.hasOwn(Manifest.pages, path)) throw notFound()
+    const { title, description } = Manifest.pages[path]!
     // Rendering reads the loaded page synchronously during SSR and client navigation.
     try {
       await Docs.load(path)

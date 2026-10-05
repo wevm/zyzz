@@ -13,6 +13,8 @@ import { style, variants, vars } from '../zyzz.config.js'
 import {
   isValidElement,
   type ReactNode,
+  Suspense,
+  use,
   useEffect,
   useId,
   useState,
@@ -144,7 +146,6 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
 export function Page(props: Page.Props) {
   const { path } = props
 
-  const Content = Docs.pages[`./content/docs/${path}.mdx`]!
   const page = __DOCS__.pages[path]!
   return (
     <DocumentationShell
@@ -180,18 +181,10 @@ export function Page(props: Page.Props) {
             <h1>{page.title}</h1>
             <p>{page.description}</p>
           </header>
-          <Content
-            components={{
-              AgentPrompt,
-              Card,
-              FrameworkSetup,
-              Install,
-              Steps,
-              a: Link,
-              blockquote: Callout,
-              pre: Code,
-            }}
-          />
+          {/* Hydration keeps the server-rendered page until its chunk loads. */}
+          <Suspense>
+            <PageContent path={path} />
+          </Suspense>
         </article>
         <Outline headings={page.headings} />
       </div>
@@ -201,6 +194,30 @@ export function Page(props: Page.Props) {
 
 export declare namespace Page {
   /** Properties for the Page component. */
+  type Props = { path: string }
+}
+
+/** Renders a page's MDX once its chunk has loaded. */
+function PageContent(props: PageContent.Props) {
+  const Content = use(Docs.load(props.path))
+
+  return (
+    <Content
+      components={{
+        AgentPrompt,
+        Card,
+        FrameworkSetup,
+        Install,
+        Steps,
+        a: Link,
+        blockquote: Callout,
+        pre: Code,
+      }}
+    />
+  )
+}
+
+declare namespace PageContent {
   type Props = { path: string }
 }
 

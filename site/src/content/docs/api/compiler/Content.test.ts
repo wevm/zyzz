@@ -1385,6 +1385,31 @@ export const label = style({ color: 'ink' })
     `)
   })
 
+  test("prefers a local config's defaultVars over set in contextual output", async () => {
+    const output = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'app/Label.tsx',
+      set: 'brand',
+      source: `import { defineConfig } from 'zyzz'
+const { style } = defineConfig({
+  defaultVars: 'base',
+  vars: { base: { color: { ink: '#000000' } }, brand: { color: { ink: '#ff0000' } } },
+})
+export const label = style({ color: 'ink' })
+`,
+    })
+    const module = await load<{ label: () => { style: unknown } }>(output.code)
+
+    expect(
+      NativeContext.resolve(module.label().style, { colorScheme: 'light' }),
+    ).toMatchInlineSnapshot(`
+      {
+        "color": "#000000",
+      }
+    `)
+  })
+
   test('defers set validation in contextual output', async () => {
     const output = Native.compile({
       colorScheme: 'light',

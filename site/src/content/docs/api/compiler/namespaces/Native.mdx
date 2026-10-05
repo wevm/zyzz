@@ -143,7 +143,7 @@ Native.compile({
 - **Type:** `string{:ts}`
 - **Default:** `'default'{:ts}`
 
-The `vars` label compiled into the callables. An unknown label throws `StyleSheet.SelectionError`, except with `contextual`, where it becomes the render-time default. It then fails only when a Provider supplies no set of its own.
+The `vars` label compiled into the callables. An unknown label throws `StyleSheet.SelectionError`, except with `contextual`, where it becomes the render-time default unless a local config sets `defaultVars`. It then fails only when a Provider supplies no set of its own.
 
 ```ts /set: 'brand'/
 // Selects the `brand` table

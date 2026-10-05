@@ -1,0 +1,98 @@
+# viewTransition
+
+Emit an `@view-transition` rule that opts documents into cross-document transitions.
+
+`viewTransition` emits its descriptors into the shared stylesheet. The browser runs the transitions on matching same-origin navigations, so only target browsers that support the rule animate.
+
+```ts title="src/transitions.ts"
+import { viewTransition } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@view-transition{navigation:auto;}`
+viewTransition({ navigation: 'auto' })
+```
+
+## Signature
+
+```ts
+// Navigation and transition type descriptors
+viewTransition(descriptors)
+```
+
+## Parameters
+
+### descriptors.navigation
+
+- **Type:** `'auto' | 'none'{:ts}`
+- **Default:** `undefined{:ts}`
+
+Whether same-origin navigations to or from the document run a view transition.
+
+```ts /navigation: 'none'/
+// Disables transitions for this document
+viewTransition({ navigation: 'none' })
+```
+
+### descriptors.types
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A space-separated list of custom identifiers, or `none`. Transition types activate `:active-view-transition-type()` selectors during the transition.
+
+```ts
+import { viewTransition } from 'zyzz/web'
+
+viewTransition({
+  navigation: 'auto',
+  // [!code hl:2]
+  // Matches `:active-view-transition-type(slide)`
+  types: 'slide forward',
+})
+```
+
+### descriptors[atRule]
+
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
+
+Grouping keys around a complete set of descriptors. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+
+```ts
+import { viewTransition } from 'zyzz/web'
+
+viewTransition({
+  // [!code hl:2]
+  // Skips navigation transitions under reduced motion
+  '@media (prefers-reduced-motion: no-preference)': { navigation: 'auto' },
+})
+```
+
+## Returns
+
+`void`. The compiler erases the call and keeps the rule in the shared stylesheet. Vite, Unplugin, and `zyzz/node` scan the source tree, so unimported modules still contribute. Next.js compiles only imported modules, so import the declaring module from an entrypoint there.
+
+## Types
+
+- **`viewTransition.Options{:ts}`:** The accepted descriptors.
+
+```ts
+import type { viewTransition } from 'zyzz/web'
+
+// [!code hl:2]
+// Reads the accepted navigation keywords
+type Navigation = viewTransition.Options['navigation']
+```
+
+## Errors
+
+TypeScript rejects unknown descriptors, invalid `navigation` keywords, and reserved names in `types`.
+
+```ts twoslash
+// @errors: 2322
+import { viewTransition } from 'zyzz/web'
+
+// The keywords are `auto` and `none`
+viewTransition({ navigation: 'always' })
+```
+
+The compiler reports `Source.ExtractError` for values it cannot read statically. Native builds reject the call with `Native.CompileError`.

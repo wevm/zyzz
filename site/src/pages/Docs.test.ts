@@ -312,6 +312,69 @@ describe('/docs', () => {
     }
   })
 
+  test('groups web API exports under labelled sections', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/api/web/global`)
+      const navigation = page.getByRole('navigation', { name: 'Documentation' })
+      const web = navigation.locator('details', {
+        has: page.getByRole('group', { name: 'Stylesheets' }),
+      })
+
+      // The topic opens because it contains the current page.
+      expect(await web.getAttribute('open')).toMatchInlineSnapshot('""')
+      expect(
+        await web
+          .getByRole('group')
+          .evaluateAll((groups) =>
+            groups.map((group) => group.firstElementChild?.textContent),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "Stylesheets",
+          "At-Rules",
+          "Namespaces",
+          "Reference",
+        ]
+      `)
+      // Every web export has a page, so no entry renders as under construction.
+      expect(
+        await web
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map((link) => link.getAttribute('href') ?? 'disabled'),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "/docs/api/web",
+          "/docs/api/web/global",
+          "/docs/api/web/layers",
+          "/docs/api/web/fontFace",
+          "/docs/api/web/keyframes",
+          "/docs/api/web/importCss",
+          "/docs/api/web/page",
+          "/docs/api/web/viewTransition",
+          "/docs/api/web/positionTry",
+          "/docs/api/web/counterStyle",
+          "/docs/api/web/customMedia",
+          "/docs/api/web/property",
+          "/docs/api/web/fontFeatureValues",
+          "/docs/api/web/fontPaletteValues",
+          "/docs/api/web/cssFunction",
+          "/docs/api/web/colorProfile",
+          "/docs/api/web/namespace",
+          "/docs/api/web/namespaces/Css",
+          "/docs/api/web/at-rules",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('groups React Native API exports under labelled sections', async () => {
     const browser = await chromium.launch({ headless: true })
     try {
@@ -605,6 +668,54 @@ describe('/docs', () => {
       await browser.close()
     }
   }, 60000)
+
+  test('reloads onto current assets when a page chunk is unavailable', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      // Loading the target once lets the dev server optimize its dependencies before the scenario.
+      await page.goto(`${origin}/docs/guides/reset`)
+      await page.getByRole('heading', { level: 1, name: 'Reset' }).waitFor()
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      // A deployment that replaced hashed assets leaves the old chunk URL unavailable.
+      await page.route(/\/content\/docs\/guides\/reset\.mdx/, (route) =>
+        route.abort(),
+      )
+      const documents: string[] = []
+      page.on('request', (request) => {
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame()
+        )
+          documents.push(new URL(request.url()).pathname)
+      })
+
+      await page
+        .getByRole('navigation', { name: 'Documentation' })
+        .getByRole('link', { name: 'Reset', exact: true })
+        .click()
+      await page
+        .getByRole('heading', { level: 1, name: 'Reset' })
+        .waitFor({ timeout: 20000 })
+
+      // The failed client navigation falls back to one full load of the target.
+      expect(documents).toMatchInlineSnapshot(`
+        [
+          "/docs/guides/reset",
+        ]
+      `)
+      expect(
+        await page.locator('article h2').first().textContent(),
+      ).toMatchInlineSnapshot(`"Overview"`)
+    } finally {
+      await browser.close()
+    }
+  }, 90000)
 
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })

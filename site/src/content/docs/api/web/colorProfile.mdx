@@ -1,0 +1,147 @@
+# colorProfile
+
+Emit an `@color-profile` rule and return a reference for `color()` values.
+
+`colorProfile` emits a named ICC color profile. The compiler replaces the call with a generated dashed name, which a `color()` value takes in place of a predefined color space. Rendering depends on the browser or print engine.
+
+```ts title="src/print.ts"
+import { style } from 'zyzz'
+import { colorProfile } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@color-profile --z-colorprofile-swop{…}`
+const swop = colorProfile({ src: 'url("./swop.icc")' })
+
+export namespace styles {
+  export const ink = style({
+    // [!code hl:2]
+    // Compiles to `color:color(--z-colorprofile-swop 0 0.5 1 0)`
+    color: `color(${swop} 0 0.5 1 0)`,
+  })
+}
+```
+
+## Signature
+
+```ts
+// Profile descriptors, optionally inside grouping keys
+colorProfile(descriptors, context?)
+```
+
+## Parameters
+
+### descriptors.src
+
+- **Type:** `string{:ts}`
+
+The profile source. A relative URL resolves against the declaring module, and the host publishes the file as an asset.
+
+```ts
+// [!code hl:2]
+// Published as an asset next to the stylesheet
+colorProfile({ src: 'url("./swop.icc")' })
+```
+
+### descriptors.renderingIntent
+
+- **Type:** `'absolute-colorimetric' | 'relative-colorimetric' | 'perceptual' | 'saturation'{:ts}`
+- **Default:** `undefined{:ts}`
+
+How colors outside the profile's gamut map into it.
+
+```ts
+import { colorProfile } from 'zyzz/web'
+
+export const photo = colorProfile({
+  // [!code hl:2]
+  // Compresses the gamut while keeping relative differences
+  renderingIntent: 'perceptual',
+  src: 'url("./photo.icc")',
+})
+```
+
+### descriptors.components
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Comma-separated component names, which relative color syntax uses to read each channel.
+
+```ts
+import { colorProfile } from 'zyzz/web'
+
+export const cmyk = colorProfile({
+  // [!code hl:2]
+  // Names the four channels for relative colors
+  components: 'cyan, magenta, yellow, black',
+  src: 'url("./cmyk.icc")',
+})
+```
+
+### descriptors[atRule]
+
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
+
+Grouping keys around a complete set of descriptors. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+
+```ts
+import { colorProfile } from 'zyzz/web'
+
+export const press = colorProfile({
+  // [!code hl:2]
+  // Emits the rule only for print
+  '@media print': { src: 'url("./press.icc")' },
+})
+```
+
+### context.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
+
+```ts /{ id: 'swop' }/
+// Returns `--z-colorprofileid-swop`
+colorProfile({ src: 'url("./swop.icc")' }, { id: 'swop' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `colorProfile.Reference{:ts}`
+
+The generated dashed name, for the color space position of `color()`. Imports, re-exports, and packed libraries keep the same name.
+
+```ts /${swop}/
+// Compiles to `color(--z-colorprofile-swop 0 0.5 1 0)`
+style({ color: `color(${swop} 0 0.5 1 0)` })
+```
+
+## Types
+
+- **`colorProfile.Options{:ts}`:** The accepted descriptors.
+- **`colorProfile.Reference{:ts}`:** The returned profile name.
+
+```ts
+import type { colorProfile } from 'zyzz/web'
+
+// [!code hl:2]
+// Reads the accepted rendering intents
+type Intent = colorProfile.Options['renderingIntent']
+```
+
+## Errors
+
+TypeScript rejects unknown descriptors and rendering intents.
+
+```ts twoslash
+// @errors: 2322
+import { colorProfile } from 'zyzz/web'
+
+// `vivid` is not a rendering intent
+colorProfile({ renderingIntent: 'vivid', src: 'url("./swop.icc")' })
+```
+
+The compiler reports `Source.ExtractError` for invalid descriptor values. Without a compiler transform, a call without `context.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

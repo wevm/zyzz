@@ -1,0 +1,127 @@
+# positionTry
+
+Emit an `@position-try` rule and return a reference for anchored fallbacks.
+
+`positionTry` emits a named block of positioning declarations. The compiler replaces the call with a generated name, which `positionTryFallbacks` accepts. The browser tries the fallback when the initial anchored placement overflows.
+
+```tsx title="Tooltip.tsx"
+import { style } from 'zyzz'
+import { positionTry } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@position-try --z-positiontry-above{…}`
+const above = positionTry({ marginBottom: '0.5rem', positionArea: 'top' })
+
+export function Tooltip(props: Tooltip.Props) {
+  return <div {...styles.tooltip()}>{props.label}</div>
+}
+
+export declare namespace Tooltip {
+  type Props = { label: string }
+}
+
+namespace styles {
+  export const tooltip = style({
+    position: 'absolute',
+    positionAnchor: '--trigger',
+    positionArea: 'bottom',
+    // [!code hl:2]
+    // Falls back to the block above the anchor
+    positionTryFallbacks: above,
+  })
+}
+```
+
+## Signature
+
+```ts
+// Positioning declarations, optionally inside grouping keys
+positionTry(declarations, context?)
+```
+
+## Parameters
+
+### declarations
+
+- **Type:** `positionTry.Declarations{:ts}`
+
+Declarations that a position-try block permits: insets, margins, sizes, self-alignment, `positionAnchor`, and `positionArea`. Values follow the same literal types as a style body.
+
+```ts
+import { positionTry } from 'zyzz/web'
+
+export const end = positionTry({
+  // [!code hl:3]
+  // Moves to the inline end and narrows the box
+  positionArea: 'right',
+  maxWidth: '240px',
+})
+```
+
+### declarations[atRule]
+
+- **Type:** ``'@layer' | `@${'container' | 'layer' | 'media' | 'supports'}${' ' | '\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`{:ts}``
+
+Grouping keys around a complete set of declarations. Each value holds a complete definition or further grouping keys, and outer keys emit outer groups. A bare `@layer` key emits an anonymous layer.
+
+```ts
+import { positionTry } from 'zyzz/web'
+
+export const above = positionTry({
+  // [!code hl:2]
+  // Emits the rule inside `@layer overlays`
+  '@layer overlays': { positionArea: 'top' },
+})
+```
+
+### context.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed identity, which replaces the name derived from the binding. It also separates two modules that declare the same binding name. Without a compiler transform, a call requires it.
+
+```ts /{ id: 'above' }/
+// Returns `--z-positiontryid-above`
+positionTry({ positionArea: 'top' }, { id: 'above' })
+```
+
+## Returns
+
+### reference
+
+- **Type:** `positionTry.Reference{:ts}`
+
+The generated dashed name. `positionTryFallbacks` and the `positionTry` shorthand accept it, as do custom properties through a `vars` assignment. Other properties reject it. Imports, re-exports, and packed libraries keep the same name. The compiler omits definitions that are neither exported nor referenced.
+
+```ts /positionTryFallbacks: above/
+// Compiles to `position-try-fallbacks:--z-positiontry-above`
+style({ positionTryFallbacks: above })
+```
+
+## Types
+
+- **`positionTry.Declarations{:ts}`:** The accepted declarations.
+- **`positionTry.Reference{:ts}`:** The returned fallback name.
+
+```ts
+import type { positionTry } from 'zyzz/web'
+
+// [!code hl:2]
+// Accepts only fallback references
+export type Fallbacks = readonly positionTry.Reference[]
+```
+
+## Errors
+
+TypeScript rejects properties that a position-try block does not permit.
+
+```ts twoslash
+// @errors: 2322
+import { positionTry } from 'zyzz/web'
+
+// Colors do not affect position
+positionTry({ color: 'red' })
+```
+
+The compiler reports `Source.ExtractError` for values it cannot read statically. Without a compiler transform, a call without `context.id` throws an `Error`. Native builds reject the call with `Native.CompileError`.

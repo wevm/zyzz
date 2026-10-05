@@ -214,7 +214,7 @@ await using host = await Host.create({
 await host.build()
 ```
 
-The platform and scheme stay fixed for the host's lifetime, so each additional context needs its own host and output directory.
+The platform stays fixed for the host's lifetime. Without `contextual`, the scheme and set are fixed too, so each additional context needs its own host and output directory.
 
 ### options.native.colorScheme
 
@@ -297,7 +297,7 @@ await host.build()
 - **Type:** `string{:ts}`
 - **Default:** `'default'{:ts}`
 
-The label selected from `vars`. A label missing from the compiled tables fails with `StyleSheet.SelectionError`.
+The label selected from `vars`. Without `contextual`, a label missing from the compiled tables fails with `StyleSheet.SelectionError`. A contextual build passes the label to the `Provider` as its default without checking it.
 
 ```ts /set: 'brand'/
 // Selects the brand set from vars

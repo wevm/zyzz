@@ -639,6 +639,18 @@ describe('Host.create API page', () => {
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       `[StyleSheet.SelectionError: Select an existing set label and light or dark colorScheme.]`,
     )
+
+    const contextual = await fixture(token)
+    await run(
+      contextual.directory,
+      script(
+        `native: { colorScheme: 'light', contextual: true, set: 'missing' }`,
+      ),
+    )
+
+    expect(
+      (await contextual.read('Label.ts')).match(/\}\},"[^"]+"\)/)![0],
+    ).toMatchInlineSnapshot(`"}},"missing")"`)
   })
 
   test('reads installed package metadata beside its entry', async () => {

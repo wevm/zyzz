@@ -60,7 +60,7 @@ export async function run(host: Host.Runtime) {
 - **`Source.ExtractError`:** From `zyzz/compiler`. A source value the compiler cannot read, or an import that does not resolve.
 - **`Native.CompileError`:** From `zyzz/compiler`. A native module that uses web-only features, such as CSS contributions.
 - **`StyleSheet.CompileError`:** From `zyzz/react-native`. A style the native context cannot compile, such as a `rem` length without `units.rem`.
-- **`StyleSheet.SelectionError`:** From `zyzz/react-native`. A `native.set` label missing from the compiled tables.
+- **`StyleSheet.SelectionError`:** From `zyzz/react-native`. A `native.set` label missing from the compiled tables, in a build without `contextual`.
 - **`Variants.CompileError`:** From `zyzz/react-native`. Invalid native recipe data, such as a recipe with more than 256 selections.
 
 ```ts

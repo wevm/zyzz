@@ -43,7 +43,7 @@ const { changed } = await host.build()
 
 - **Type:** `readonly string[]{:ts}`
 
-Every output file after this build, sorted and relative to `outDir`. The ownership manifest and lock file are excluded. Files of a deleted source module leave both the list and the directory.
+Every file the host owns in `outDir` after this build, sorted and relative to `outDir`. Control files and files the host did not write are excluded. Files of a deleted source module leave both the list and the directory.
 
 ```ts
 const result = await host.build()
@@ -110,6 +110,7 @@ try {
   // [!code hl:2]
   // Locates the source the compiler rejected
   if (error instanceof Source.ExtractError) console.error(error.message)
+  else throw error
 }
 ```
 

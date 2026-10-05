@@ -1,0 +1,113 @@
+# useStyles
+
+Resolve compiled native styles for consumers that read style objects outside JSX.
+
+Metro resolves applied styles in JSX `style` props, prop spreads, and props whose names end in `Style`. `useStyles` resolves them explicitly for `React.createElement` callers, imperative APIs, and libraries that inspect style objects. Call it in a function component, then pass the resolved values on.
+
+```tsx title="Toast.tsx"
+import type { TextStyle, ViewStyle } from 'react-native'
+import { useStyles } from 'zyzz/react-native'
+import { style } from './zyzz.config.js'
+
+export function useToastOptions(): Toast.Options {
+  const current = useStyles()
+
+  return {
+    // [!code hl:3]
+    // Resolved styles satisfy typed style options without assertions
+    style: current.style(styles.toast().style),
+    titleStyle: current.style(styles.title().style),
+  }
+}
+
+export declare namespace Toast {
+  type Options = { style: ViewStyle; titleStyle: TextStyle }
+}
+
+namespace styles {
+  export const toast = style({ backgroundColor: 'ink', padding: 'gap' })
+
+  export const title = style({ fontSize: '14px', fontWeight: 600 })
+}
+```
+
+## Signature
+
+```ts
+// Resolvers bound to the nearest Provider's selection
+const current = useStyles()
+```
+
+## Returns
+
+### style
+
+- **Type:** `<style>(style: style, input?: unknown) => useStyles.Style<style>{:ts}`
+
+Resolves an applied style, a native object, a style array, or a style callback. An applied style resolves without `undefined`, so it is assignable to `ViewStyle` and `TextStyle` values. Native objects, arrays, and callbacks keep their types.
+
+The optional `input` reaches a compiled binding when the style is passed uncalled. The result keeps the type of the first argument, so typed callers pass an applied style, such as `styles.badge({ tone: 'info' }).style`, instead.
+
+```ts /current.style/
+// The applied style, resolved for the current scheme and set
+const resolved = current.style(styles.toast().style)
+```
+
+### props
+
+- **Type:** `<props>(props: props) => props{:ts}`
+
+Resolves the `style` field of applied props and keeps every other prop, which suits `React.createElement`.
+
+```ts /current.props/
+// Props ready for an element created without JSX
+createElement(View, current.props({ ...styles.toast(), testID: 'toast' }))
+```
+
+## Default Selection
+
+Outside a Provider, the resolvers use the config's default set, the light scheme, and the window size, as described in [Default Selection](/docs/api/react-native/Provider#default-selection). The hook rerenders its component when the Provider's selection changes.
+
+```tsx title="Banner.tsx"
+import { Text } from 'react-native'
+import { useStyles } from 'zyzz/react-native'
+import { style } from './zyzz.config.js'
+
+export function Banner() {
+  // [!code hl:2]
+  // Light scheme and default set, since no Provider is above
+  const current = useStyles()
+  return <Text style={current.style(styles.banner().style)}>Offline</Text>
+}
+
+namespace styles {
+  export const banner = style({ color: 'ink' })
+}
+```
+
+## Compiler Bindings
+
+`zyzz/react-native/react` also exports `useNativeStyles`, the hook Metro inserts for ordinary `Image`, `Pressable`, `Text`, `TextInput`, and `View` elements. Its result is a compiler contract, so applications call `useStyles` instead.
+
+```tsx
+// [!code hl:2]
+// Metro adds the binding hook, so this source declares none
+const label = <Text {...styles.label()}>Saved</Text>
+```
+
+In custom native builds, those elements update in place when their selected alternatives change. Style callbacks and styles with `aspectRatio`, background images, `boxShadow`, `filter`, `fontVariant`, `transform`, or `transformOrigin` rerender through React instead, as every style does in Expo Go.
+
+## Types
+
+- **`useStyles.ReturnType{:ts}`:** The `style` and `props` resolvers.
+- **`useStyles.Style<style>{:ts}`:** The resolved type of one style input.
+
+The namespace is declared in `zyzz/react-native/react`.
+
+```ts title="resolvers.ts"
+import type { useStyles } from 'zyzz/react-native/react'
+
+// [!code hl:2]
+// A helper that receives the resolvers from a component
+export type Resolvers = useStyles.ReturnType
+```

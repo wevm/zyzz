@@ -17,37 +17,64 @@ const directory = Fs.realpathSync(
 )
 const site = new URL('../../../..', import.meta.url)
 
-test('compiles every callable example for iOS and Android', () => {
-  const authored = Fs.readFileSync(
+test('compiles every Zyzz example in the native guides for iOS and Android', () => {
+  const pages = [
     new URL('native.mdx', import.meta.url),
-    'utf8',
-  )
-  const snippets = [...authored.matchAll(/```tsx[^\n]*\n([\s\S]*?)```/g)]
-  expect(snippets).toHaveLength(8)
-  for (const platform of ['ios', 'android'] as const) {
-    for (const [index, match] of snippets.entries()) {
+    ...Fs.readdirSync(new URL('native/', import.meta.url))
+      .filter((file) => file.endsWith('.mdx'))
+      .map((file) => new URL(`native/${file}`, import.meta.url)),
+  ]
+  let compiled = 0
+
+  for (const page of pages) {
+    const authored = Fs.readFileSync(page, 'utf8')
+    let config: string | undefined
+
+    for (const [index, match] of [
+      ...authored.matchAll(/```tsx?(?: title="([^"]+)")?\n([\s\S]*?)```/g),
+    ].entries()) {
+      const source = match[2]!
+      if (match[1] === 'zyzz.config.ts') config = source
+      // Migration examples, Metro configs, and manual tables are not compiled by the Babel plugin.
+      if (
+        source.includes('react-native-unistyles') ||
+        source.includes("from 'expo/metro-config'") ||
+        source.includes('StyleSheet.compile')
+      )
+        continue
+      if (!/from '(zyzz|\.\/zyzz\.config\.js)/.test(source)) continue
+
       const moduleId = 'Example' + index + '.tsx'
-      const source = match[1]!
-      const result = Babel.transformSync(source, {
-        configFile: false,
-        filename: moduleId,
-        parserOpts: { plugins: ['typescript', 'jsx'] },
-        plugins: [
-          [
-            zyzz,
-            {
-              moduleId,
-              modules: { [moduleId]: source },
-              platform,
-              target: 'native',
-              units: { px: 1 },
-            },
+      const modules: Record<string, string> = { [moduleId]: source }
+      if (source.includes("from './zyzz.config.js'"))
+        modules['zyzz.config.ts'] = config!
+      for (const platform of ['ios', 'android'] as const) {
+        const result = Babel.transformSync(source, {
+          configFile: false,
+          filename: moduleId,
+          parserOpts: { plugins: ['typescript', 'jsx'] },
+          plugins: [
+            [
+              zyzz,
+              {
+                moduleId,
+                modules,
+                platform,
+                target: 'native',
+                units: { px: 1, rem: 16 },
+              },
+            ],
           ],
-        ],
-      })
-      expect(result?.code).toContain('zyzz/runtime')
+        })
+
+        if (source.includes('styles.'))
+          expect(result?.code).toContain('zyzz/runtime')
+      }
+      compiled++
     }
   }
+
+  expect(compiled).toMatchInlineSnapshot('44')
 })
 
 describe('/docs/guides/native', () => {
@@ -132,9 +159,11 @@ describe('/docs/guides/native', () => {
     expect(await negotiated.text()).toBe(markdown)
     expect(markdown).toContain('npm install zyzz')
     expect(markdown).toContain(
-      'The full native conformance gate and wider version matrix remain open.',
+      'Rebuild a development client after installing Zyzz.',
     )
-    expect(markdown).toContain('[Linting](/docs/api/oxlint)')
+    expect(markdown).toContain(
+      "[Expo's Metro guide](https://docs.expo.dev/guides/customizing-metro/)",
+    )
 
     const browser = await chromium.launch({ headless: true })
     try {

@@ -1,0 +1,248 @@
+# Native Styling
+
+Combine and override compiled styles, branch by platform, and bind values that change at runtime.
+
+## Overview
+
+Applying a style on native returns `{ style }`, which spreads onto a component's props. Metro binds applied styles on `View`, `Text`, `Image`, `Pressable`, and `TextInput` inside function components and custom hooks, including `memo` and `forwardRef` components.
+
+The same definitions compile for web, where they return class names. A definition that uses a feature native views cannot express fails native compilation with a diagnostic. See [Components](/docs/guides/native/components) for other components and code outside JSX.
+
+```tsx title="Profile.tsx"
+import { Image, Text, View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Profile(props: Profile.Props) {
+  return (
+    <View {...styles.row()}>
+      {/* [!code hl:2] */}
+      {/* Image and Text receive their own styles, since nothing inherits */}
+      <Image source={{ uri: props.avatar }} {...styles.avatar()} />
+      <Text {...styles.name()}>{props.name}</Text>
+    </View>
+  )
+}
+
+export declare namespace Profile {
+  type Props = { avatar: string; name: string }
+}
+
+namespace styles {
+  export const row = style({
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: '12px',
+  })
+
+  export const avatar = style({
+    borderRadius: '20px',
+    height: '40px',
+    width: '40px',
+  })
+
+  export const name = style({ color: '#111111', fontSize: '16px' })
+}
+```
+
+## Combine Styles
+
+`cx` combines applied styles in order, and later styles win conflicting properties. A caller can also pass a `style` override, which follows the compiled styles in the resulting style array.
+
+```tsx title="Label.tsx"
+import { Text } from 'react-native'
+import { cx, style } from 'zyzz'
+
+export function Label(props: Label.Props) {
+  return (
+    // [!code hl:2]
+    // The selected color replaces the base color when selected is true
+    <Text {...cx(styles.base(), props.selected && styles.selected())}>
+      Account
+    </Text>
+  )
+}
+
+export declare namespace Label {
+  type Props = { selected: boolean }
+}
+
+namespace styles {
+  export const base = style({ color: '#111111', fontSize: '16px' })
+
+  export const selected = style({ color: '#2563eb' })
+}
+```
+
+`false`, `null`, and `undefined` arguments are skipped. Combining a web class prop with native props throws `Native.SelectionError`.
+
+## Platform Branches
+
+Keep portable declarations at the top level. `targets.native` holds native values, and `targets.ios` or `targets.android` holds platform differences. Metro supplies the build platform.
+
+```tsx title="Balance.tsx"
+import { Text } from 'react-native'
+import { style } from 'zyzz'
+
+export function Balance() {
+  return <Text {...styles.balance()}>$1,024.00</Text>
+}
+
+namespace styles {
+  export const balance = style({
+    fontSize: '16px',
+    // [!code hl:6]
+    // Applied after the shared declarations, then by platform
+    targets: {
+      native: { fontVariant: ['tabular-nums'], lineHeight: 24 },
+      ios: { fontFamily: 'Menlo' },
+      android: { fontFamily: 'monospace', includeFontPadding: false },
+    },
+  })
+}
+```
+
+Branch numbers are logical units, so `lineHeight: 24` is an absolute height. Branch values are not converted or font-mapped. An unsupported shared declaration still fails, even when a branch replaces the same property.
+
+## Units and Fonts
+
+Shared lengths convert through the Metro `units` option: `px` defaults to one logical unit, and `rem` requires an explicit size. The `fonts` option maps shared font stacks to installed native family names.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+export default zyzz(getDefaultConfig(import.meta.dirname), {
+  // [!code hl:2]
+  // Shared fontFamily values become the installed native family
+  fonts: { 'Inter, system-ui, sans-serif': 'Inter' },
+  units: { px: 1, rem: 16 },
+})
+```
+
+Zyzz does not load fonts, so register font assets with the app's font loader. See [Fonts & Typography](/docs/guides/typography) for shared font families.
+
+## Calculated Lengths
+
+`calc()` resolves on native when its operands are numbers, `px` lengths, or `rem` lengths. Expressions can combine literals, token references, and runtime inputs with `+`, `-`, `*`, `/`, and parentheses.
+
+```tsx title="Artwork.tsx"
+import { View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Artwork(props: Artwork.Props) {
+  return <View {...styles.artwork({ ratio: props.ratio })} />
+}
+
+export declare namespace Artwork {
+  type Props = { ratio: number }
+}
+
+namespace styles {
+  export const artwork = style((values: { ratio: number }) => ({
+    backgroundColor: '#e5e7eb',
+    // [!code hl:3]
+    // Computed for each ratio, such as 440 by 220 at a ratio of 2
+    height: `calc(440px / ${values.ratio})`,
+    width: 'calc(180px * 2 + 80px)',
+  }))
+}
+```
+
+Percentages and `var()` are not supported inside native `calc()`, and an incompatible combination throws when the style resolves.
+
+## Dynamic Values
+
+A style callback declares typed inputs, and each value binds to the compiled style when the style is applied. Calculate values in application code before passing them in.
+
+```tsx title="Meter.tsx"
+import { View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Meter(props: Meter.Props) {
+  return <View {...styles.meter({ width: props.width })} />
+}
+
+export declare namespace Meter {
+  type Props = { width: `${number}px` }
+}
+
+namespace styles {
+  // [!code hl:5]
+  // A width of 120px binds 120 logical units
+  export const meter = style((values: { width: `${number}px` }) => ({
+    backgroundColor: '#2563eb',
+    height: '8px',
+    width: values.width,
+  }))
+}
+```
+
+## Variants
+
+`variants` resolves choices as the app renders, including defaults and compound rules, with no limit on combinations. Native views have no `:hover` or `:pressed` selectors, so interaction states come from component state or props.
+
+```tsx title="SaveButton.tsx"
+import { Pressable, Text } from 'react-native'
+import { style, variants } from 'zyzz'
+
+export function SaveButton(props: SaveButton.Props) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={props.disabled}
+      onPress={props.onPress}
+      // [!code hl:2]
+      // The disabled prop selects a compiled choice
+      {...styles.button({ disabled: props.disabled ?? false })}
+    >
+      <Text {...styles.label()}>Save</Text>
+    </Pressable>
+  )
+}
+
+export declare namespace SaveButton {
+  type Props = {
+    disabled?: boolean | undefined
+    onPress: () => void
+  }
+}
+
+namespace styles {
+  export const button = variants({
+    base: { backgroundColor: '#2563eb', padding: '12px' },
+    variants: {
+      disabled: { false: { opacity: 1 }, true: { opacity: 0.5 } },
+    },
+    defaultVariants: { disabled: false },
+  })
+
+  export const label = style({ color: '#ffffff', fontSize: '16px' })
+}
+```
+
+See [Variants](/docs/guides/variants) for compound rules, dynamic choices, and typed props.
+
+## More
+
+<Card.Group>
+  <Card title="Themes" icon="palette" href="/docs/guides/native/themes">
+    Select color schemes and named token sets, and read tokens in components.
+  </Card>
+  <Card
+    title="Responsive Styles"
+    icon="smartphone"
+    href="/docs/guides/native/responsive"
+  >
+    Adapt styles to the window size and orientation with media queries.
+  </Card>
+  <Card title="Components" icon="boxes" href="/docs/guides/native/components">
+    Resolve compiled styles for third-party components and code outside JSX.
+  </Card>
+  <Card
+    title="StyleSheet Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md"
+  >
+    Review native conversions, target branches, and supported properties.
+  </Card>
+</Card.Group>

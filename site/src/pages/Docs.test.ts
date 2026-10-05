@@ -958,7 +958,11 @@ describe('/docs', () => {
         ['Compiler API', 'Compile Programmatically'],
         ['Vite', 'Configure Vite'],
       ]) {
-        await page.getByRole('button', { name: title!, exact: false }).click()
+        // The sidebar's React Native topic is also a button, so search only the article.
+        await page
+          .locator('article')
+          .getByRole('button', { name: title!, exact: false })
+          .click()
         const panel = page.locator('#framework-setup')
         expect(
           await panel
@@ -1173,6 +1177,7 @@ describe('/docs', () => {
       ).toMatchInlineSnapshot('1')
 
       await page
+        .locator('article')
         .getByRole('button', { name: 'React Native', exact: false })
         .click()
       await page.waitForURL('**framework=react-native**')

@@ -34,6 +34,7 @@ import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import MonitorIcon from '~icons/lucide/monitor'
+import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PlayIcon from '~icons/lucide/play'
@@ -82,7 +83,14 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/global-styles': GlobeIcon,
   'guides/keyframes': FilmIcon,
   'guides/layers': SquareStackIcon,
-  'guides/native': ReactIcon,
+  'guides/native': BookOpenIcon,
+  'guides/native/animations': FilmIcon,
+  'guides/native/components': BoxIcon,
+  'guides/native/packages': PackageIcon,
+  'guides/native/responsive': SmartphoneIcon,
+  'guides/native/styling': PaintbrushIcon,
+  'guides/native/themes': PaletteIcon,
+  'guides/native/unistyles': ArrowLeftRightIcon,
   'guides/reset': RotateCcwIcon,
   'guides/stylex': ArrowLeftRightIcon,
   'guides/styling': PaintbrushIcon,
@@ -92,6 +100,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/typography': TypeIcon,
   'guides/variants': LayersIcon,
   Integrations: PlugIcon,
+  'React Native': ReactIcon,
   'introduction/agents': SparklesIcon,
   'introduction/benchmarks': GaugeIcon,
   'introduction/comparisons': ArrowLeftRightIcon,

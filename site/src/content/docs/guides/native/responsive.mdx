@@ -1,0 +1,195 @@
+# Responsive Styles
+
+Adapt native styles and tokens to the window size and orientation with media queries.
+
+## Overview
+
+`@media` conditions work in native styles, variants, and tokens. The Provider reads the window size with React Native's `useWindowDimensions`, so rotating or resizing the window selects new alternatives without an extra prop or hook.
+
+Conditions compare window width and height in logical units. Thresholds accept `px`, or `rem` when the Metro `units` option sets a size.
+
+```tsx title="Gallery.tsx"
+import { Text, View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Gallery() {
+  return (
+    <View {...styles.gallery()}>
+      <Text>First</Text>
+      <Text>Second</Text>
+    </View>
+  )
+}
+
+namespace styles {
+  export const gallery = style({
+    flexDirection: 'column',
+    gap: '12px',
+    // [!code hl:2]
+    // A row from a window width of 768 upward
+    '@media (width >= 768px)': { flexDirection: 'row' },
+  })
+}
+```
+
+## Named Breakpoints
+
+A config can name breakpoints, and styles from that config accept the names as queries. Ranges include the lower bound but not the upper one.
+
+```tsx title="Gallery.tsx"
+import { View } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { style } = defineConfig({
+  vars: { breakpoint: { md: '768px', lg: '1024px' } },
+})
+
+export function Gallery() {
+  return <View {...styles.gallery()} />
+}
+
+namespace styles {
+  export const gallery = style({
+    padding: '12px',
+    // [!code hl:4]
+    // Each alias compiles to a width query
+    '@media <md': { flexDirection: 'column' },
+    '@media md..lg': { flexDirection: 'row' },
+    '@media lg': { padding: '24px' },
+  })
+}
+```
+
+## Orientation
+
+`orientation` queries follow the window's shape, and a square window counts as portrait. Conditions combine with `and`, `or`, and `not`.
+
+```tsx title="Player.tsx"
+import { View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Player() {
+  return <View {...styles.player()} />
+}
+
+namespace styles {
+  export const player = style({
+    flexDirection: 'column',
+    // [!code hl:2]
+    // Place the controls beside the video when the device turns sideways
+    '@media (orientation: landscape)': { flexDirection: 'row' },
+  })
+}
+```
+
+## Responsive Tokens
+
+A token can hold a default and query branches. Styles and `useVars` reads both select the branch that matches the Provider's window size.
+
+```tsx title="Feed.tsx"
+import { Text, View } from 'react-native'
+import { defineConfig, useVars } from 'zyzz/react-native'
+
+const { Provider, style, vars } = defineConfig({
+  vars: {
+    breakpoint: { md: '768px' },
+    // [!code hl:2]
+    // 16 below a width of 768, and 24 from there upward
+    spacing: { gutter: { default: '16px', '@media md': '24px' } },
+  },
+})
+
+export default function App() {
+  return (
+    <Provider colorScheme="light">
+      <Feed />
+    </Provider>
+  )
+}
+
+function Feed() {
+  const gutter = useVars(vars, (values) => values.spacing.gutter)
+
+  return (
+    <View {...styles.feed()}>
+      <Text>Gutter: {gutter}</Text>
+    </View>
+  )
+}
+
+namespace styles {
+  export const feed = style({ gap: 'gutter', padding: 'gutter' })
+}
+```
+
+## Safe Areas
+
+Safe-area insets come from the app, not from the Provider. Pass them into a style callback, which binds the values as the style renders.
+
+```tsx title="Screen.tsx"
+import type { ReactNode } from 'react'
+import { View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { style } from 'zyzz'
+
+export function Screen(props: Screen.Props) {
+  const insets = useSafeAreaInsets()
+
+  return (
+    // [!code hl:2]
+    // Insets are logical units, so they bind as px lengths
+    <View
+      {...styles.screen({
+        bottom: `${insets.bottom}px`,
+        top: `${insets.top}px`,
+      })}
+    >
+      {props.children}
+    </View>
+  )
+}
+
+export declare namespace Screen {
+  type Props = { children: ReactNode }
+}
+
+namespace styles {
+  export const screen = style(
+    (values: { bottom: `${number}px`; top: `${number}px` }) => ({
+      flexGrow: 1,
+      paddingBottom: values.bottom,
+      paddingTop: values.top,
+    }),
+  )
+}
+```
+
+## Query Limits
+
+Native media queries support a focused set of features, and anything else fails compilation with a diagnostic:
+
+- **Features:** `width` and `height` with ranges or `min-` and `max-` prefixes, plus `orientation`.
+- **Media types:** `all` and `screen`, without negation.
+- **Count:** At most eight distinct conditions per definition or token set.
+- **Rejected:** Container queries and named variant `conditions`.
+
+## More
+
+<Card.Group>
+  <Card title="Themes" icon="palette" href="/docs/guides/native/themes">
+    Select color schemes and named token sets, and read tokens in components.
+  </Card>
+  <Card title="Conditions" icon="sliders" href="/docs/guides/conditions">
+    Write media queries and named breakpoints shared with web styles.
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/native/styling">
+    Combine styles, branch by platform, and bind values that change at runtime.
+  </Card>
+  <Card
+    title="React Adapter"
+    icon="react"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/react.md"
+  >
+    Review how Provider reads window dimensions and responsive tokens.
+  </Card>
+</Card.Group>

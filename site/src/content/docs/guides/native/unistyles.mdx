@@ -1,0 +1,800 @@
+import { Tab, Tabs } from '../../../../components/mdx/concepts/Tabs.js'
+
+# Migrating from Unistyles
+
+Move a Unistyles 3 app to Zyzz one screen at a time, with before-and-after examples for each pattern.
+
+## Overview
+
+Both libraries compile styles ahead of rendering and apply them through React Native's `style` prop. Unistyles collects styles in `StyleSheet.create`. Zyzz defines each style with `style`, groups definitions in `namespace styles`, and applies one by calling it.
+
+Shared lengths use CSS units, and the Metro `units` option converts `px` to logical units one to one. This card renders the same layout before and after migrating:
+
+```tsx title="Card.tsx"
+import { Text, View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
+export function Card() {
+  return (
+    // [!code hl:3]
+    // Each element reads an entry from the stylesheet
+    <View style={styles.card}>
+      <Text style={styles.label}>Saved for later</Text>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: '#f3f4f6', borderRadius: 12, padding: 16 },
+  label: { color: '#111111', fontSize: 16 },
+})
+```
+
+```tsx title="Card.tsx"
+import { Text, View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Card() {
+  return (
+    // [!code hl:3]
+    // Calling a style returns its style prop
+    <View {...styles.card()}>
+      <Text {...styles.label()}>Saved for later</Text>
+    </View>
+  )
+}
+
+namespace styles {
+  // [!code hl:6]
+  // Lengths take px units, one logical unit each
+  export const card = style({
+    backgroundColor: '#f3f4f6',
+    borderRadius: '12px',
+    padding: '16px',
+  })
+
+  export const label = style({ color: '#111111', fontSize: '16px' })
+}
+```
+
+## Run Both
+
+Zyzz's Metro adapter compiles iOS and Android modules, then runs the app's existing Babel configuration. The Unistyles plugin keeps processing unmigrated files, so both libraries run side by side during the migration.
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+
+// [!code hl:2]
+// The default transformer runs babel.config.js and the Unistyles plugin
+export default getDefaultConfig(import.meta.dirname)
+```
+
+```ts title="metro.config.ts"
+import { getDefaultConfig } from 'expo/metro-config'
+import { zyzz } from 'zyzz/metro'
+
+// [!code hl:2]
+// Zyzz compiles first, then the same Babel configuration runs
+export default zyzz(getDefaultConfig(import.meta.dirname), { units: { px: 1 } })
+```
+
+Keep `StyleSheet.configure` until the last screen migrates. Migrated screens need a Zyzz Provider above them, as described in [Themes](#themes).
+
+## Themes
+
+Unistyles registers whole themes and switches between them. A Zyzz config pairs each token's light and dark values instead, and a Provider selects the scheme. `useColorScheme` replaces adaptive themes.
+
+```ts title="unistyles.ts"
+import { StyleSheet } from 'react-native-unistyles'
+
+const themes = {
+  dark: { colors: { ink: '#eeeeee', surface: '#111111' } },
+  light: { colors: { ink: '#111111', surface: '#ffffff' } },
+}
+
+type AppThemes = typeof themes
+
+declare module 'react-native-unistyles' {
+  export interface UnistylesThemes extends AppThemes {}
+}
+
+// [!code hl:2]
+// Adaptive themes switch between the light and dark themes
+StyleSheet.configure({ settings: { adaptiveThemes: true }, themes })
+```
+
+<Tabs label="Zyzz themes">
+<Tab title="zyzz.config.ts">
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz/react-native'
+
+export const { Provider, style, vars } = defineConfig({
+  vars: {
+    color: {
+      // [!code hl:3]
+      // Each token pairs its light and dark values
+      ink: { dark: '#eeeeee', light: '#111111' },
+      surface: { dark: '#111111', light: '#ffffff' },
+    },
+  },
+})
+```
+
+</Tab>
+<Tab title="App.tsx">
+
+```tsx title="App.tsx"
+import { Text, useColorScheme } from 'react-native'
+import { Provider, style } from './zyzz.config.js'
+
+export default function App() {
+  const scheme = useColorScheme()
+
+  return (
+    // [!code hl:2]
+    // Follows the device scheme, as adaptive themes did
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'}>
+      <Text {...styles.label()}>Hello</Text>
+    </Provider>
+  )
+}
+
+namespace styles {
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
+
+</Tab>
+</Tabs>
+
+The config's types come from its definition, so no module augmentation is needed. Styles that import `style` from the config accept its token names.
+
+## Theme Styles
+
+A theme callback in `StyleSheet.create` becomes token names in each style. The names resolve for the Provider's scheme as styles render.
+
+```tsx title="Card.tsx"
+import { View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
+export function Card() {
+  return <View style={styles.card} />
+}
+
+// [!code hl:4]
+// The callback reads values from the active theme
+const styles = StyleSheet.create((theme) => ({
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.ink,
+  },
+}))
+```
+
+```tsx title="Card.tsx"
+import { View } from 'react-native'
+import { style } from './zyzz.config.js'
+
+export function Card() {
+  return <View {...styles.card()} />
+}
+
+namespace styles {
+  // [!code hl:5]
+  // Token names replace theme lookups
+  export const card = style({
+    backgroundColor: 'surface',
+    borderColor: 'ink',
+  })
+}
+```
+
+## Merging Styles
+
+Unistyles merges styles with arrays. `cx` combines applied Zyzz styles in the same order, and later styles win conflicting properties.
+
+```tsx title="Label.tsx"
+import { Text } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
+export function Label(props: Label.Props) {
+  return (
+    // [!code hl:2]
+    // Later entries in the array win
+    <Text style={[styles.base, props.selected && styles.selected]}>
+      Account
+    </Text>
+  )
+}
+
+export declare namespace Label {
+  type Props = { selected: boolean }
+}
+
+const styles = StyleSheet.create({
+  base: { color: '#111111', fontSize: 16 },
+  selected: { color: '#2563eb' },
+})
+```
+
+```tsx title="Label.tsx"
+import { Text } from 'react-native'
+import { cx, style } from 'zyzz'
+
+export function Label(props: Label.Props) {
+  return (
+    // [!code hl:2]
+    // cx keeps the order, and false arguments are skipped
+    <Text {...cx(styles.base(), props.selected && styles.selected())}>
+      Account
+    </Text>
+  )
+}
+
+export declare namespace Label {
+  type Props = { selected: boolean }
+}
+
+namespace styles {
+  export const base = style({ color: '#111111', fontSize: '16px' })
+
+  export const selected = style({ color: '#2563eb' })
+}
+```
+
+## Named Themes
+
+`UnistylesRuntime.setTheme` switches a global theme. In Zyzz, a config registers named token sets, and the selection is application state passed to the Provider's `vars` prop.
+
+```tsx title="ThemeButton.tsx"
+import { Pressable, Text } from 'react-native'
+import { UnistylesRuntime } from 'react-native-unistyles'
+
+export function ThemeButton() {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      // [!code hl:2]
+      // Switches the theme for the whole app
+      onPress={() => UnistylesRuntime.setTheme('mint')}
+    >
+      <Text>Use mint</Text>
+    </Pressable>
+  )
+}
+```
+
+```tsx title="App.tsx"
+import { useState } from 'react'
+import { Pressable, Text } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider, style } = defineConfig({
+  defaultVars: 'base',
+  vars: {
+    base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+    mint: { color: { ink: { dark: '#86efac', light: '#166534' } } },
+  },
+})
+
+export default function App() {
+  const [theme, setTheme] = useState<'base' | 'mint'>('base')
+
+  return (
+    // [!code hl:2]
+    // The Provider applies the selected set to every descendant
+    <Provider colorScheme="light" vars={theme}>
+      <Pressable accessibilityRole="button" onPress={() => setTheme('mint')}>
+        <Text {...styles.label()}>Use mint</Text>
+      </Pressable>
+    </Provider>
+  )
+}
+
+namespace styles {
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
+
+The app owns persistence, such as reading a saved name from storage into the initial state.
+
+## Scoped Themes
+
+`ScopedTheme` pins a subtree to one theme. A nested Provider does the same for a scheme or a named set, and its selection stays independent of the outer one.
+
+```tsx title="Promo.tsx"
+import { Text } from 'react-native'
+import { ScopedTheme } from 'react-native-unistyles'
+
+export function Promo() {
+  return (
+    // [!code hl:2]
+    // Pins the subtree to the dark theme
+    <ScopedTheme name="dark">
+      <Text>Upgrade</Text>
+    </ScopedTheme>
+  )
+}
+```
+
+```tsx title="Promo.tsx"
+import { Text } from 'react-native'
+import { Provider, style } from './zyzz.config.js'
+
+export function Promo() {
+  return (
+    // [!code hl:2]
+    // Selects the dark scheme for the subtree
+    <Provider colorScheme="dark">
+      <Text {...styles.label()}>Upgrade</Text>
+    </Provider>
+  )
+}
+
+namespace styles {
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
+
+## Breakpoints
+
+Unistyles breakpoint objects hold one value per breakpoint inside each property. In Zyzz, a config names the breakpoints, and one query block holds every declaration that changes from that width upward.
+
+```tsx title="Feed.tsx"
+import { View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
+export function Feed() {
+  return <View style={styles.feed} />
+}
+
+const styles = StyleSheet.create({
+  feed: {
+    // [!code hl:3]
+    // Breakpoints registered as xs: 0 and md: 768
+    flexDirection: { xs: 'column', md: 'row' },
+    padding: { xs: 12, md: 24 },
+  },
+})
+```
+
+```tsx title="Feed.tsx"
+import { View } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { style } = defineConfig({ vars: { breakpoint: { md: '768px' } } })
+
+export function Feed() {
+  return <View {...styles.feed()} />
+}
+
+namespace styles {
+  export const feed = style({
+    flexDirection: 'column',
+    padding: '12px',
+    // [!code hl:2]
+    // The base applies below md, and the block applies from md upward
+    '@media md': { flexDirection: 'row', padding: '24px' },
+  })
+}
+```
+
+The Provider reads the window size automatically. See [Responsive Styles](/docs/guides/native/responsive) for ranges and responsive tokens.
+
+## Media Queries
+
+`mq` builders and the `portrait` and `landscape` keys become `@media` conditions in CSS syntax. Unistyles ranges include both bounds, so keep an inclusive upper bound when matching them exactly.
+
+```tsx title="Banner.tsx"
+import { View } from 'react-native'
+import { mq, StyleSheet } from 'react-native-unistyles'
+
+export function Banner() {
+  return <View style={styles.banner} />
+}
+
+const styles = StyleSheet.create({
+  banner: {
+    // [!code hl:4]
+    // A width range, then an orientation
+    height: { [mq.only.width(240, 380)]: 120 },
+    flexDirection: { landscape: 'row', portrait: 'column' },
+  },
+})
+```
+
+```tsx title="Banner.tsx"
+import { View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Banner() {
+  return <View {...styles.banner()} />
+}
+
+namespace styles {
+  export const banner = style({
+    flexDirection: 'column',
+    // [!code hl:3]
+    // CSS range syntax keeps both bounds inclusive
+    '@media (240px <= width <= 380px)': { height: '120px' },
+    '@media (orientation: landscape)': { flexDirection: 'row' },
+  })
+}
+```
+
+## Variants
+
+`variants` and `compoundVariants` move into a `variants` definition with the same choices. Calling the style with selections replaces `useVariants`, and `defaultVariants` names the defaults.
+
+```tsx title="Button.tsx"
+import { Pressable, Text } from 'react-native'
+import { StyleSheet, type UnistylesVariants } from 'react-native-unistyles'
+
+export function Button(props: Button.Props) {
+  // [!code hl:2]
+  // Selects the variants for every style in the sheet
+  styles.useVariants({ size: props.size, tone: props.tone })
+
+  return (
+    <Pressable accessibilityRole="button" style={styles.button}>
+      <Text>Save</Text>
+    </Pressable>
+  )
+}
+
+export declare namespace Button {
+  type Props = UnistylesVariants<typeof styles>
+}
+
+const styles = StyleSheet.create({
+  button: {
+    variants: {
+      size: { large: { padding: 16 }, small: { padding: 8 } },
+      tone: {
+        neutral: { backgroundColor: '#e5e7eb' },
+        primary: { backgroundColor: '#2563eb' },
+      },
+    },
+    compoundVariants: [
+      { size: 'large', tone: 'primary', styles: { borderRadius: 12 } },
+    ],
+  },
+})
+```
+
+```tsx title="Button.tsx"
+import { Pressable, Text } from 'react-native'
+import { type Props, variants } from 'zyzz'
+
+export function Button(props: Button.Props) {
+  return (
+    // [!code hl:2]
+    // The call selects choices, and omitted ones use the defaults
+    <Pressable accessibilityRole="button" {...styles.button(props)}>
+      <Text>Save</Text>
+    </Pressable>
+  )
+}
+
+export declare namespace Button {
+  type Props = Props.Variants<typeof styles.button>
+}
+
+namespace styles {
+  export const button = variants({
+    variants: {
+      size: { large: { padding: '16px' }, small: { padding: '8px' } },
+      tone: {
+        neutral: { backgroundColor: '#e5e7eb' },
+        primary: { backgroundColor: '#2563eb' },
+      },
+    },
+    // [!code hl:4]
+    // Compound rules match choices under when
+    compoundVariants: [
+      {
+        style: { borderRadius: '12px' },
+        when: { size: 'large', tone: 'primary' },
+      },
+    ],
+    defaultVariants: { size: 'small', tone: 'primary' },
+  })
+}
+```
+
+Each recipe styles one element, so a stylesheet whose entries share variants becomes one recipe per element.
+
+## Dynamic Functions
+
+A style function in `StyleSheet.create` becomes a style callback with one typed object of inputs. Each value binds to the compiled style when the style is applied.
+
+```tsx title="Meter.tsx"
+import { View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
+export function Meter(props: Meter.Props) {
+  return <View style={styles.meter(props.width)} />
+}
+
+export declare namespace Meter {
+  type Props = { width: number }
+}
+
+const styles = StyleSheet.create({
+  // [!code hl:2]
+  // Positional arguments passed at the call
+  meter: (width: number) => ({ backgroundColor: '#2563eb', height: 8, width }),
+})
+```
+
+```tsx title="Meter.tsx"
+import { View } from 'react-native'
+import { style } from 'zyzz'
+
+export function Meter(props: Meter.Props) {
+  return <View {...styles.meter({ width: `${props.width}px` })} />
+}
+
+export declare namespace Meter {
+  type Props = { width: number }
+}
+
+namespace styles {
+  // [!code hl:5]
+  // Named, typed inputs bind to the compiled style
+  export const meter = style((values: { width: `${number}px` }) => ({
+    backgroundColor: '#2563eb',
+    height: '8px',
+    width: values.width,
+  }))
+}
+```
+
+## Runtime Values
+
+The `rt` argument's insets and screen size come from the app in Zyzz. Pass insets into a style callback, and replace screen-size checks with media queries, which the Provider evaluates from the window size.
+
+```tsx title="Screen.tsx"
+import type { ReactNode } from 'react'
+import { View } from 'react-native'
+import { StyleSheet } from 'react-native-unistyles'
+
+export function Screen(props: Screen.Props) {
+  return <View style={styles.screen}>{props.children}</View>
+}
+
+export declare namespace Screen {
+  type Props = { children: ReactNode }
+}
+
+// [!code hl:4]
+// The runtime supplies the safe-area insets
+const styles = StyleSheet.create((theme, rt) => ({
+  screen: { flex: 1, paddingTop: rt.insets.top },
+}))
+```
+
+```tsx title="Screen.tsx"
+import type { ReactNode } from 'react'
+import { View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { style } from 'zyzz'
+
+export function Screen(props: Screen.Props) {
+  // [!code hl:2]
+  // The app reads the insets and passes them in
+  const insets = useSafeAreaInsets()
+
+  return (
+    <View {...styles.screen({ top: `${insets.top}px` })}>{props.children}</View>
+  )
+}
+
+export declare namespace Screen {
+  type Props = { children: ReactNode }
+}
+
+namespace styles {
+  export const screen = style((values: { top: `${number}px` }) => ({
+    flexGrow: 1,
+    paddingTop: values.top,
+  }))
+}
+```
+
+## Reading Tokens
+
+`useUnistyles` returns the active theme for props that are not styles. `useVars` reads tokens for the nearest Provider, with lengths as numbers and colors as strings.
+
+```tsx title="Loading.tsx"
+import { ActivityIndicator } from 'react-native'
+import { useUnistyles } from 'react-native-unistyles'
+
+export function Loading() {
+  // [!code hl:2]
+  // Rerenders when the theme changes
+  const { theme } = useUnistyles()
+
+  return <ActivityIndicator color={theme.colors.ink} />
+}
+```
+
+```tsx title="Loading.tsx"
+import { ActivityIndicator } from 'react-native'
+import { useVars } from 'zyzz/react-native'
+import { vars } from './zyzz.config.js'
+
+export function Loading() {
+  // [!code hl:2]
+  // A selector limits the read to one token
+  const ink = useVars(vars, (values) => values.color.ink)
+
+  return <ActivityIndicator color={ink} />
+}
+```
+
+## Third-Party Components
+
+`withUnistyles` becomes `withStyles`, which resolves compiled styles on a component's `style` and `contentContainerStyle` props. Other style props are named with `styleProps`.
+
+```tsx title="Feed.tsx"
+import { ScrollView, Text } from 'react-native'
+import { StyleSheet, withUnistyles } from 'react-native-unistyles'
+
+// [!code hl:2]
+// Maps style and contentContainerStyle automatically
+const UniScrollView = withUnistyles(ScrollView)
+
+export function Feed() {
+  return (
+    <UniScrollView contentContainerStyle={styles.content}>
+      <Text>First post</Text>
+    </UniScrollView>
+  )
+}
+
+const styles = StyleSheet.create({ content: { gap: 12, padding: 16 } })
+```
+
+```tsx title="Feed.tsx"
+import { ScrollView, Text } from 'react-native'
+import { style } from 'zyzz'
+import { withStyles } from 'zyzz/react-native'
+
+// [!code hl:2]
+// Resolves the same two props for the nearest Provider
+const Scroll = withStyles(ScrollView)
+
+export function Feed() {
+  return (
+    <Scroll contentContainerStyle={styles.content().style}>
+      <Text>First post</Text>
+    </Scroll>
+  )
+}
+
+namespace styles {
+  export const content = style({ gap: '12px', padding: '16px' })
+}
+```
+
+## Theme Props
+
+A `withUnistyles` mapping or `uniProps` passes theme values to props that are not styles. In Zyzz, `useVars` reads the values and the component receives them as ordinary props.
+
+```tsx title="Toggle.tsx"
+import { Switch } from 'react-native'
+import { withUnistyles } from 'react-native-unistyles'
+
+// [!code hl:4]
+// Maps a theme color onto the trackColor prop
+const UniSwitch = withUnistyles(Switch, (theme) => ({
+  trackColor: { false: theme.colors.surface, true: theme.colors.ink },
+}))
+
+export function Toggle() {
+  return <UniSwitch value />
+}
+```
+
+```tsx title="Toggle.tsx"
+import { Switch } from 'react-native'
+import { useVars } from 'zyzz/react-native'
+import { vars } from './zyzz.config.js'
+
+export function Toggle() {
+  // [!code hl:2]
+  // Read both colors for the Provider's scheme
+  const colors = useVars(vars, (values) => values.color)
+
+  return (
+    <Switch trackColor={{ false: colors.surface, true: colors.ink }} value />
+  )
+}
+```
+
+## Animations
+
+`useAnimatedTheme` becomes `useAnimatedVars`, and `useAnimatedVariantColor` becomes `useAnimatedStyleValue`. Both publish shared values that update without rerendering the component.
+
+```tsx title="Tile.tsx"
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { useAnimatedTheme } from 'react-native-unistyles/reanimated'
+
+export function Tile() {
+  // [!code hl:2]
+  // The whole theme as a shared value
+  const theme = useAnimatedTheme()
+  const animated = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(theme.value.colors.surface),
+  }))
+
+  return <Animated.View style={animated} />
+}
+```
+
+```tsx title="Tile.tsx"
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { useAnimatedVars } from 'zyzz/react-native/reanimated'
+import { vars } from './zyzz.config.js'
+
+export function Tile() {
+  // [!code hl:2]
+  // One selected token as a shared value
+  const surface = useAnimatedVars(vars, (values) => values.color.surface)
+  const animated = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(surface.get()),
+  }))
+
+  return <Animated.View style={animated} />
+}
+```
+
+See [Animations](/docs/guides/native/animations) for variant values, mixing compiled styles, and reduced motion.
+
+## Remove Unistyles
+
+After the last screen migrates, remove `StyleSheet.configure`, the Unistyles Babel plugin, and the packages. Remove `react-native-nitro-modules` too when no other dependency uses it, then rebuild the development client.
+
+```js title="babel.config.js"
+module.exports = function (api) {
+  api.cache(true)
+  return {
+    presets: ['babel-preset-expo'],
+    // [!code hl:2]
+    // The Unistyles plugin processes files under root
+    plugins: [['react-native-unistyles/plugin', { root: 'src' }]],
+  }
+}
+```
+
+```js title="babel.config.js"
+module.exports = function (api) {
+  api.cache(true)
+  // [!code hl:2]
+  // Zyzz compiles through Metro, so no Babel plugin is needed
+  return { presets: ['babel-preset-expo'] }
+}
+```
+
+## More
+
+<Card.Group>
+  <Card title="React Native" icon="react" href="/docs/guides/native">
+    Set up Metro, add a Provider, and review what native compilation rejects.
+  </Card>
+  <Card title="Themes" icon="palette" href="/docs/guides/native/themes">
+    Select color schemes and named token sets, and read tokens in components.
+  </Card>
+  <Card
+    title="Responsive Styles"
+    icon="smartphone"
+    href="/docs/guides/native/responsive"
+  >
+    Adapt styles and tokens to the window size and orientation.
+  </Card>
+  <Card title="Variants" icon="layers" href="/docs/guides/variants">
+    Define typed choices such as size and tone, with defaults and compounds.
+  </Card>
+</Card.Group>

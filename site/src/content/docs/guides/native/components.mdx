@@ -1,0 +1,186 @@
+# Native Components
+
+Resolve compiled styles for third-party components, class components, and code outside JSX.
+
+## Overview
+
+Metro binds applied styles automatically on `View`, `Text`, `Image`, `Pressable`, and `TextInput` from `react-native`, inside function components and custom hooks. Other components receive compiled styles through `withStyles` or `useStyles`, which resolve them for the nearest Provider.
+
+Rendering a core component with compiled styles outside a function component or hook fails compilation with a code frame. Class render methods and module-scope JSX need one of these resolvers.
+
+```tsx title="Notice.tsx"
+import { Text, View } from 'react-native'
+import { style } from 'zyzz'
+
+// [!code hl:2]
+// A function component, so Metro binds the styles automatically
+export function Notice() {
+  return (
+    <View {...styles.notice()}>
+      <Text {...styles.message()}>Changes saved</Text>
+    </View>
+  )
+}
+
+namespace styles {
+  export const notice = style({ backgroundColor: '#ecfdf5', padding: '12px' })
+
+  export const message = style({ color: '#065f46', fontSize: '14px' })
+}
+```
+
+## Third-Party Components
+
+`withStyles` wraps a component so its `style` and `contentContainerStyle` props resolve compiled styles. Define the wrapper at module scope. It forwards other props and refs, and works with class components.
+
+```tsx title="Feed.tsx"
+import { ScrollView, Text } from 'react-native'
+import { style } from 'zyzz'
+import { withStyles } from 'zyzz/react-native'
+
+// [!code hl:2]
+// Resolves style and contentContainerStyle for the nearest Provider
+const Scroll = withStyles(ScrollView)
+
+export function Feed() {
+  return (
+    <Scroll contentContainerStyle={styles.content().style}>
+      <Text>First post</Text>
+    </Scroll>
+  )
+}
+
+namespace styles {
+  export const content = style({ gap: '12px', padding: '16px' })
+}
+```
+
+## Custom Style Props
+
+`styleProps` names other props that take styles, such as a component's `headerStyle`. The names must belong to the component, and `key` and `ref` are rejected.
+
+```tsx title="Sheet.tsx"
+import type { ReactNode } from 'react'
+import { Text, View, type StyleProp, type ViewStyle } from 'react-native'
+import { style } from 'zyzz'
+import { withStyles } from 'zyzz/react-native'
+
+function Panel(props: Panel.Props) {
+  return (
+    <View style={props.style}>
+      <View style={props.headerStyle}>{props.header}</View>
+      {props.children}
+    </View>
+  )
+}
+
+declare namespace Panel {
+  type Props = {
+    children: ReactNode
+    header: ReactNode
+    headerStyle?: StyleProp<ViewStyle>
+    style?: StyleProp<ViewStyle>
+  }
+}
+
+// [!code hl:2]
+// headerStyle resolves alongside the default style props
+const StyledPanel = withStyles(Panel, { styleProps: ['headerStyle'] })
+
+export function Sheet() {
+  return (
+    <StyledPanel
+      header={<Text>Settings</Text>}
+      headerStyle={styles.header().style}
+      style={styles.panel().style}
+    >
+      <Text>Notifications</Text>
+    </StyledPanel>
+  )
+}
+
+namespace styles {
+  export const header = style({ paddingBottom: '8px' })
+
+  export const panel = style({ padding: '16px' })
+}
+```
+
+## Explicit Resolution
+
+`useStyles` resolves applied styles inside a function component, for `React.createElement` calls and code that inspects style values before rendering. `current.style(value)` returns only the native style value.
+
+```tsx title="Label.tsx"
+import { createElement } from 'react'
+import { Text } from 'react-native'
+import { style } from 'zyzz'
+import { useStyles } from 'zyzz/react-native'
+
+export function Label() {
+  // [!code hl:4]
+  // Resolve the applied props before passing them to createElement
+  const current = useStyles()
+
+  return createElement(Text, current.props(styles.label()), 'Resolved style')
+}
+
+namespace styles {
+  export const label = style({ color: '#111111', fontSize: '16px' })
+}
+```
+
+## Manual Tables
+
+A custom host without the React adapter can compile definitions to native tables and select one explicitly. Selection returns an existing table without compiling or cloning styles.
+
+```ts title="native-styles.ts"
+import { defineVars, Style } from 'zyzz'
+import { StyleSheet } from 'zyzz/react-native'
+
+const theme = defineVars({
+  color: { ink: { dark: '#eeeeee', light: '#111111' } },
+})
+const definitions = Style.define({
+  label: { color: theme.color.ink, fontSize: '16px' },
+})
+
+// [!code hl:8]
+// 1. Compile every alternative ahead of time
+const output = StyleSheet.compile({
+  styles: definitions,
+  vars: { base: theme },
+})
+
+// 2. Select the table for the host's current scheme
+const selected = StyleSheet.select(output.styles, {
+  colorScheme: 'dark',
+  set: 'base',
+})
+```
+
+Pass `selected.label` to a component's `style` prop. The host owns device preferences and updates, and manual compilation does not support media queries.
+
+## More
+
+<Card.Group>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/native/styling">
+    Combine styles, branch by platform, and bind values that change at runtime.
+  </Card>
+  <Card title="Animations" icon="zap" href="/docs/guides/native/animations">
+    Mix compiled styles with Reanimated styles on animated components.
+  </Card>
+  <Card
+    title="React Adapter"
+    icon="react"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/react.md"
+  >
+    Review `withStyles`, `useStyles`, and automatic selection boundaries.
+  </Card>
+  <Card
+    title="StyleSheet Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md"
+  >
+    Review manual compilation, selection, and host updates.
+  </Card>
+</Card.Group>

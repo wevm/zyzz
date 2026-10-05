@@ -1,0 +1,216 @@
+# Native Themes
+
+Select color schemes and named token sets with a typed Provider, and read tokens in components.
+
+## Overview
+
+`defineConfig` from `zyzz/react-native` binds tokens to `style` and returns a typed `Provider`. The Provider selects the color scheme and token set for its descendants, and compiled styles switch to the matching alternative without recompiling.
+
+Native views have no CSS variables, so tokens resolve to native values as styles render. In custom native builds, a selection change updates supported views directly without rerendering them. Expo Go and callback styles update through React subscriptions.
+
+```tsx title="App.tsx"
+import { Text, useColorScheme } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider, style } = defineConfig({
+  vars: {
+    color: {
+      // [!code hl:3]
+      // A pair holds one value per color scheme
+      ink: { dark: '#eeeeee', light: '#111111' },
+      surface: { dark: '#111111', light: '#ffffff' },
+    },
+  },
+})
+
+export default function App() {
+  const scheme = useColorScheme()
+
+  return (
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'}>
+      <Greeting />
+    </Provider>
+  )
+}
+
+function Greeting() {
+  return <Text {...styles.label()}>Hello from Zyzz</Text>
+}
+
+namespace styles {
+  // [!code hl:2]
+  // Token names resolve for the Provider's scheme
+  export const label = style({
+    backgroundColor: 'surface',
+    color: 'ink',
+    fontSize: '16px',
+    padding: '16px',
+  })
+}
+```
+
+Compiled styles outside a Provider use the light scheme and the config's default tokens. `colorScheme` takes a resolved `'dark'` or `'light'`, so an absent device preference needs an application fallback.
+
+## Named Themes
+
+A config with named token sets registers them under `vars` and names the default with `defaultVars`. The Provider's `vars` prop selects a set, and TypeScript accepts only the registered names.
+
+```tsx title="App.tsx"
+import { Text, useColorScheme } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider, style } = defineConfig({
+  defaultVars: 'base',
+  vars: {
+    base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+    mint: { color: { ink: { dark: '#86efac', light: '#166534' } } },
+  },
+})
+
+export default function App() {
+  const scheme = useColorScheme()
+
+  return (
+    // [!code hl:2]
+    // Select the mint set for every descendant
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'} vars="mint">
+      <Greeting />
+    </Provider>
+  )
+}
+
+function Greeting() {
+  return <Text {...styles.label()}>Mint theme</Text>
+}
+
+namespace styles {
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
+
+An unknown name fails type checking and throws when the Provider mounts. Omitting `vars` selects the `defaultVars` set.
+
+## Switch Themes
+
+Theme selection is ordinary application state. Passing a new `vars` name or scheme to the Provider switches every compiled style beneath it.
+
+```tsx title="App.tsx"
+import { useState } from 'react'
+import { Pressable, Text } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider, style } = defineConfig({
+  defaultVars: 'base',
+  vars: {
+    base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+    mint: { color: { ink: { dark: '#86efac', light: '#166534' } } },
+  },
+})
+
+export default function App() {
+  // [!code hl:2]
+  // The app owns the selection and any saved preference
+  const [theme, setTheme] = useState<'base' | 'mint'>('base')
+
+  return (
+    <Provider colorScheme="light" vars={theme}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setTheme(theme === 'base' ? 'mint' : 'base')}
+      >
+        <Text {...styles.label()}>Switch theme</Text>
+      </Pressable>
+    </Provider>
+  )
+}
+
+namespace styles {
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
+
+Saving a preference across launches belongs to the app, such as in async storage that feeds the initial state.
+
+## Nested Themes
+
+A nested Provider selects a scheme or set for its subtree, such as a dark card on a light screen. Nested Providers and separate React roots keep independent selections.
+
+```tsx title="Promo.tsx"
+import { Text, View } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider, style } = defineConfig({
+  vars: {
+    color: {
+      ink: { dark: '#eeeeee', light: '#111111' },
+      surface: { dark: '#111111', light: '#ffffff' },
+    },
+  },
+})
+
+export function Promo() {
+  return (
+    // [!code hl:2]
+    // Force the dark scheme for this subtree
+    <Provider colorScheme="dark">
+      <View {...styles.card()}>
+        <Text {...styles.label()}>Upgrade</Text>
+      </View>
+    </Provider>
+  )
+}
+
+namespace styles {
+  export const card = style({ backgroundColor: 'surface', padding: '16px' })
+
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
+
+## Read Tokens
+
+`useVars` reads tokens for the nearest Provider, for props that are not styles. Lengths return numbers in logical units and colors return strings. A selector limits the read, and unchanged results keep their identity.
+
+```tsx title="Loading.tsx"
+import { ActivityIndicator } from 'react-native'
+import { defineConfig, useVars } from 'zyzz/react-native'
+
+const { vars } = defineConfig({
+  vars: { color: { accent: { dark: '#60a5fa', light: '#2563eb' } } },
+})
+
+export function Loading() {
+  // [!code hl:2]
+  // A color string for the Provider's current scheme
+  const accent = useVars(vars, (values) => values.color.accent)
+
+  return <ActivityIndicator color={accent} />
+}
+```
+
+`useVars` requires a Provider. Reading a token that has no native value, such as one that depends on a web-only condition, throws.
+
+## More
+
+<Card.Group>
+  <Card
+    title="Responsive Styles"
+    icon="smartphone"
+    href="/docs/guides/native/responsive"
+  >
+    Adapt styles and tokens to the window size and orientation.
+  </Card>
+  <Card title="Animations" icon="zap" href="/docs/guides/native/animations">
+    Animate between theme and variant values with Reanimated shared values.
+  </Card>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Define token sets, color pairs, and derived tokens in a typed config.
+  </Card>
+  <Card
+    title="React Adapter"
+    icon="react"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/react.md"
+  >
+    Review `defineConfig`, `Provider`, `useVars`, and their errors.
+  </Card>
+</Card.Group>

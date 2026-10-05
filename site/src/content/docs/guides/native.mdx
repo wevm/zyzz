@@ -1,14 +1,12 @@
 # React Native
 
-Compile typed styles with Metro and select themes as the app renders.
+Compile typed styles with Metro, and select themes and window sizes as the app renders.
 
 ## Overview
 
-Use Zyzz's `style` and `variants` helpers with ordinary React Native components. Metro compiles the definitions into native styles during iOS and Android bundling. The React adapter selects the current theme and color scheme when those styles are consumed.
+Zyzz compiles the same `style` and `variants` definitions to native style tables for iOS and Android. Metro compiles them during bundling, and applying a style returns a `style` prop instead of a class name.
 
-This guide assumes an existing Expo app with React 19. Start with [Getting Started](/docs/introduction/getting-started) for other compilation targets. Metro currently requires custom variables rather than `zyzz/default`.
-
-Spread applied props onto native components. Put text styles on `Text` and layout styles on the container. A shared numeric `lineHeight` is a multiplier and requires an explicit `fontSize` in the same style.
+A Provider selects the color scheme, named tokens, and window size, and compiled styles switch alternatives without recompiling. The guides in this section cover styling, themes, responsive styles, components, animations, shared packages, and migrating from Unistyles.
 
 ```tsx title="Card.tsx"
 import { Text, View } from 'react-native'
@@ -16,6 +14,8 @@ import { style } from 'zyzz'
 
 export function Card() {
   return (
+    // [!code hl:3]
+    // Each applied style spreads a native style prop
     <View {...styles.card()}>
       <Text {...styles.label()}>Saved for later</Text>
     </View>
@@ -29,6 +29,7 @@ namespace styles {
     padding: '16px',
   })
 
+  // A numeric lineHeight multiplies the fontSize in the same style
   export const label = style({
     color: '#111111',
     fontSize: '16px',
@@ -39,34 +40,48 @@ namespace styles {
 
 ## Walkthrough
 
-These steps add Zyzz to the app and render text in a configured color for the device's color scheme.
+These steps add Zyzz to an Expo app with React 19 and render text in a configured color for the device's color scheme.
 
 <Steps>
 
 ### Install Zyzz
 
-Add Zyzz to the existing app.
+Add Zyzz to the existing app. React Native 0.86 or later is required.
 
 <Install expanded />
 
 ### Configure Metro
 
-Wrap the app's existing Metro configuration. Zyzz preserves its settings and chains compilation before the configured Babel transformer.
+Wrap the app's existing Metro configuration. Zyzz keeps its settings and compiles iOS and Android modules before the configured Babel transformer runs.
 
 ```ts title="metro.config.ts"
 import { getDefaultConfig } from 'expo/metro-config'
 import { zyzz } from 'zyzz/metro'
 
 export default zyzz(getDefaultConfig(import.meta.dirname), {
-  units: { px: 1 },
+  // [!code hl:2]
+  // One px is one native logical unit, and rem needs an explicit size
+  units: { px: 1, rem: 16 },
 })
 ```
 
-Keep existing resolver and transformer customizations inside the configuration passed to `zyzz`. The adapter requires a configured `babelTransformerPath`. See [Expo's Metro guide](https://docs.expo.dev/guides/customizing-metro/) for the base configuration.
+The adapter requires a configured `babelTransformerPath`, which Expo's default configuration provides. Restart Metro after changing `units` or `fonts`. See [Expo's Metro guide](https://docs.expo.dev/guides/customizing-metro/) for the base configuration.
 
-### Connect Appearance
+### Configure TypeScript
 
-Return `Provider` from native `defineConfig` and place it above the components that consume compiled styles. React Native's [`useColorScheme`](https://reactnative.dev/docs/usecolorscheme) subscribes to device appearance changes. Resolve an absent device preference to `light`.
+Types for the `zyzz/react-native` hooks resolve under the `react-native` export condition. Expo's base configuration sets it already. Other apps add the condition to `compilerOptions`:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "customConditions": ["react-native"]
+  }
+}
+```
+
+### Add a Provider
+
+`defineConfig` from `zyzz/react-native` returns a typed `Provider` with the config's helpers. Place it above the components that consume compiled styles, and pass the device scheme from [`useColorScheme`](https://reactnative.dev/docs/usecolorscheme).
 
 ```tsx title="App.tsx"
 import { Text, useColorScheme } from 'react-native'
@@ -74,6 +89,7 @@ import { defineConfig } from 'zyzz/react-native'
 
 const { Provider, style } = defineConfig({
   vars: {
+    // A pair holds one value per color scheme
     color: { ink: { dark: '#eeeeee', light: '#111111' } },
   },
 })
@@ -82,6 +98,8 @@ export default function App() {
   const scheme = useColorScheme()
 
   return (
+    // [!code hl:4]
+    // Resolve an absent device preference to light
     <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'}>
       <Greeting />
     </Provider>
@@ -102,299 +120,55 @@ namespace styles {
 }
 ```
 
-The `style` returned by `defineConfig` accepts the configuration's token names, such as `ink`, while root `style` from `zyzz` accepts literal values without a theme.
+### Build the App
 
-Compiled styles outside a Provider use the light scheme, their configuration's default variables, and automatic window dimensions. A Provider selects other schemes or catalogs. Explicit variable reads still require a Provider.
+Zyzz includes a native module that updates compiled styles on supported views without rerendering them. Rebuild a development client after installing Zyzz. Expo Go has no native module, so styles there update through React subscriptions.
 
-### Run the App
-
-Run the app's existing Expo command, such as `npx expo start`, and open its iOS or Android target. The text uses the configured `ink` color for the selected scheme. Changing appearance selects compiled styles without recompilation.
-
-Provider also reads window dimensions automatically. Responsive styles and variable reads follow window changes without an additional prop or application subscription.
-
-Custom native builds apply theme changes directly to supported native views without rerendering their style consumers. Rebuild the app after installing Zyzz to include its native module. Expo Go retains React subscriptions. Callback styles and other components also retain React subscriptions.
+```sh
+# Rebuild the development client with the native module
+npx expo run:ios
+```
 
 </Steps>
 
-## Recipes
+## Native Differences
 
-### Define Variants
+Shared declarations keep CSS value semantics, and native compilation rejects what native views cannot express. Diagnostics name the unsupported declaration.
 
-Use finite choices for component states. Keep event handling and accessibility props on the component.
-
-```tsx title="SaveButton.tsx"
-import { Pressable, Text } from 'react-native'
-import { style, variants } from 'zyzz'
-
-export function SaveButton(props: SaveButton.Props) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={props.disabled}
-      onPress={props.onPress}
-      {...styles.button({ disabled: props.disabled ?? false })}
-    >
-      <Text {...styles.label()}>Save</Text>
-    </Pressable>
-  )
-}
-
-export declare namespace SaveButton {
-  type Props = {
-    disabled?: boolean | undefined
-    onPress: () => void
-  }
-}
-
-namespace styles {
-  export const button = variants({
-    base: { backgroundColor: '#2563eb', padding: '12px' },
-    variants: {
-      disabled: { false: { opacity: 1 }, true: { opacity: 0.5 } },
-    },
-    defaultVariants: { disabled: false },
-  })
-
-  export const label = style({ color: '#ffffff', fontSize: '16px' })
-}
-```
-
-Metro compiles the alternatives. Applying a choice selects its native output. Native interaction does not use DOM selectors such as `:hover`.
-
-### Bind Runtime Values
-
-For a changing scalar value, declare a typed style callback and pass its input when applying the style. Keep the value within the native property's supported domain.
-
-```tsx title="Meter.tsx"
-import { View } from 'react-native'
-import { style } from 'zyzz'
-
-export function Meter(props: Meter.Props) {
-  return <View {...styles.meter({ width: props.width })} />
-}
-
-export declare namespace Meter {
-  type Props = {
-    width: `${number}px`
-  }
-}
-
-namespace styles {
-  export const meter = style((values: { width: `${number}px` }) => ({
-    backgroundColor: '#2563eb',
-    height: '8px',
-    width: values.width,
-  }))
-}
-```
-
-For example, `<Meter width="120px" />` binds a width of 120 logical units with `units.px: 1`. Native scalar bindings do not establish support for animated or opaque host values.
-
-### Override a Platform
-
-Keep portable declarations at the top level. Use `targets.native` for native values and `targets.ios` or `targets.android` for platform differences.
-
-```tsx title="Label.tsx"
-import { Text } from 'react-native'
-import { style } from 'zyzz'
-
-export function Label() {
-  return <Text {...styles.label()}>Account balance</Text>
-}
-
-namespace styles {
-  export const label = style({
-    fontSize: '16px',
-    targets: {
-      native: { lineHeight: 24, fontVariant: ['tabular-nums'] },
-      ios: { fontFamily: 'System' },
-      android: { includeFontPadding: false },
-    },
-  })
-}
-```
-
-Native compilation applies shared declarations, then `native`, then the platform branch. Metro supplies the build platform. Native branch numbers use logical units, so `lineHeight: 24` is an absolute height here.
-
-Put web-only declarations inside `targets.web`. An unsupported shared declaration still fails native compilation even when a native branch replaces the same property.
-
-### Select a Theme
-
-For named themes, define a catalog with `defaultVars` and pass its name through `Provider.vars`. Omit `vars` to use each configuration's default.
-
-```tsx title="App.tsx"
-import { Text, useColorScheme } from 'react-native'
-import { defineConfig } from 'zyzz/react-native'
-
-const { Provider, style } = defineConfig({
-  defaultVars: 'base',
-  vars: {
-    base: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
-    mint: { color: { ink: { dark: '#86efac', light: '#166534' } } },
-  },
-})
-
-export default function App() {
-  const scheme = useColorScheme()
-
-  return (
-    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'} vars="mint">
-      <Greeting />
-    </Provider>
-  )
-}
-
-function Greeting() {
-  return <Text {...styles.label()}>Mint theme</Text>
-}
-
-namespace styles {
-  export const label = style({ color: 'ink', fontSize: '16px' })
-}
-```
-
-Pass application state to `vars` for a theme picker. Every themed definition under that provider must recognize the chosen name. Unknown names fail selection. Nested providers and separate React roots have isolated selections.
-
-### Respond to Size
-
-Use breakpoint aliases and media conditions inside existing styles. Conditional variables update through the same Provider, including numeric values read with `useVars`.
-
-```tsx title="ResponsiveCard.tsx"
-import { Text, View } from 'react-native'
-import { defineConfig, useVars } from 'zyzz/react-native'
-
-const { Provider, style, vars } = defineConfig({
-  vars: {
-    breakpoint: { md: '768px' },
-    spacing: { gutter: { default: '16px', '@media md': '24px' } },
-  },
-})
-
-export default function Example() {
-  return (
-    <Provider colorScheme="light">
-      <Card />
-    </Provider>
-  )
-}
-
-function Card() {
-  const gutter = useVars(vars, (values) => values.spacing.gutter)
-  return (
-    <View {...styles.card()}>
-      <Text>First item</Text>
-      <Text>Padding: {gutter}</Text>
-    </View>
-  )
-}
-
-namespace styles {
-  export const card = style({
-    flexDirection: 'column',
-    gap: 'gutter',
-    padding: 'gutter',
-    '@media md': { flexDirection: 'row' },
-  })
-}
-```
-
-Below width 768, the card uses a column and padding 16. At width 768 or above, the card uses a row and padding 24. Provider reads native window dimensions automatically. Safe-area insets and application geometry calculations remain in application components and hooks.
-
-Native media supports width, height, orientation, and boolean conditions with `px` or a configured `units.rem`. Comparison operators retain CSS endpoints. Each style or compiled variable catalog supports up to eight distinct conditions, and larger definitions and unsupported features fail compilation.
-
-### Resolve Styles Explicitly
-
-Metro resolves bindings in JSX style expressions and prop spreads inside function components. For `React.createElement` or consumers that inspect style values before rendering, resolve the binding with `useStyles` inside a function component.
-
-```tsx title="Label.tsx"
-import { createElement } from 'react'
-import { Text } from 'react-native'
-import { style } from 'zyzz'
-import { useStyles } from 'zyzz/react-native'
-
-export function Label() {
-  const current = useStyles()
-
-  return createElement(Text, current.props(styles.label()), 'Resolved style')
-}
-
-namespace styles {
-  export const label = style({ color: '#111111', fontSize: '16px' })
-}
-```
-
-Use `current.style(value)` when only a native style value is needed. Automatic selection supports function components, including `memo` and `forwardRef`. Class render methods and JSX outside a component are rejected. See the [React adapter reference](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/react.md) for its boundaries.
-
-### Compile Tables Manually
-
-For a custom host without the React adapter, compile shared definitions outside rendering and select the resulting table explicitly.
-
-```ts title="native-styles.ts"
-import { defineVars, Style } from 'zyzz'
-import { StyleSheet } from 'zyzz/react-native'
-
-const theme = defineVars({
-  color: { ink: { dark: '#eeeeee', light: '#111111' } },
-})
-const definitions = Style.define({
-  label: { color: theme.color.ink, fontSize: '16px' },
-})
-const output = StyleSheet.compile({
-  styles: definitions,
-  vars: { base: theme },
-})
-const selected = StyleSheet.select(output.styles, {
-  colorScheme: 'dark',
-  set: 'base',
-})
-```
-
-Pass `selected.label` to a native component's `style` prop. Selection returns an existing table without compiling or cloning styles. Supply `platform` when compiling platform branches. Device preferences and updates belong to the host.
-
-## Native Boundaries
-
-Shared declarations keep CSS value semantics. Native compilation applies these boundaries:
-
-- **Units:** `px` defaults to one native logical unit. Supply `units.rem` when using `rem`. Zyzz does not read screen density.
-- **Fonts:** Zyzz does not load fonts. With Metro, use an installed native family name in `targets.native.fontFamily`. For manual `StyleSheet.compile`, supply `fonts` mappings when using shared CSS font families.
-- **Rejected features:** DOM selectors, container queries, unsupported media features, web globals, CSS layers, and unresolved CSS expressions fail compilation. Diagnostics identify the unsupported declaration.
-- **Shorthands:** Use explicit `flexGrow`, `flexShrink`, and `flexBasis` rather than the shared CSS `flex` shorthand.
-- **Compiled alternatives:** Every alternative must satisfy native value constraints. Shared numeric `lineHeight` needs a base `fontSize` even when queries do not match.
-- **Conditional selection:** Named variant conditions and manual static `StyleSheet.compile` media selection remain unsupported.
-
-The [StyleSheet reference](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describes conversions and target branches. Static tables, variants, scalar bindings, and host updates have automated coverage. Selective updates have iOS and Android renderer coverage on RN 0.86.3 and Expo 57. The full native conformance gate and wider version matrix remain open.
+- **Output:** Applied styles return `style` props. Native views have no cascade or inheritance, so each element receives its own styles.
+- **Units:** `px` is one logical unit by default. `rem` requires `units.rem`, and Zyzz does not read screen density.
+- **Fonts:** Zyzz does not load fonts. Map shared families with the Metro `fonts` option, or name an installed family in `targets.native`.
+- **Rejected features:** Selectors, pseudo-classes, container queries, cascade layers, global styles, `!important`, and fallback arrays fail native compilation.
+- **Shorthands:** Use `flexGrow`, `flexShrink`, and `flexBasis` instead of the CSS `flex` shorthand.
+- **Bundled tokens:** `zyzz/default` is not yet available on native, so tokens come from a native `defineConfig`.
 
 ## More
 
 <Card.Group>
-  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
-    Define variable catalogs, color schemes, and named themes.
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/native/styling">
+    Combine styles, branch by platform, and bind values that change at runtime.
   </Card>
-  <Card title="Variants" icon="layers" href="/docs/guides/variants">
-    Define typed component choices with defaults and compound matches.
-  </Card>
-  <Card title="Linting" icon="terminal" href="/docs/api/oxlint">
-    Configure authoring diagnostics for native styles.
+  <Card title="Themes" icon="palette" href="/docs/guides/native/themes">
+    Select color schemes and named token sets, and read tokens in components.
   </Card>
   <Card
-    title="React Native Example"
+    title="Responsive Styles"
     icon="smartphone"
-    href="https://github.com/wevm/zyzz/tree/main/examples/react-native"
+    href="/docs/guides/native/responsive"
   >
-    Explore an app with theme and appearance controls.
+    Adapt styles to the window size and orientation with media queries.
+  </Card>
+  <Card title="Components" icon="boxes" href="/docs/guides/native/components">
+    Resolve compiled styles for third-party components and code outside JSX.
+  </Card>
+  <Card title="Animations" icon="zap" href="/docs/guides/native/animations">
+    Animate between theme and variant values with Reanimated shared values.
   </Card>
   <Card
-    title="StyleSheet Reference"
-    icon="code"
-    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md"
-  >
-    Review native conversions, target branches, and manual compilation.
-  </Card>
-  <Card
-    title="React Adapter"
+    title="Migrating from Unistyles"
     icon="react"
-    href="https://github.com/wevm/zyzz/blob/main/docs/api/react-native/react.md"
+    href="/docs/guides/native/unistyles"
   >
-    Review Provider, `useStyles`, and automatic selection boundaries.
+    Move Unistyles stylesheets, themes, and breakpoints to Zyzz one at a time.
   </Card>
 </Card.Group>

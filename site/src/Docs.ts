@@ -38,7 +38,22 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       { path: 'guides/at-rules', title: 'At-Rules' },
       { path: 'guides/reset', title: 'Reset' },
       { path: 'guides/css-output', title: 'CSS Output' },
-      { path: 'guides/native', title: 'React Native' },
+      {
+        title: 'React Native',
+        children: [
+          { path: 'guides/native', title: 'Overview' },
+          { path: 'guides/native/styling', title: 'Styling' },
+          { path: 'guides/native/themes', title: 'Themes' },
+          { path: 'guides/native/responsive', title: 'Responsive Styles' },
+          { path: 'guides/native/components', title: 'Components' },
+          { path: 'guides/native/animations', title: 'Animations' },
+          { path: 'guides/native/packages', title: 'Shared Packages' },
+          {
+            path: 'guides/native/unistyles',
+            title: 'Migrating from Unistyles',
+          },
+        ],
+      },
       { path: 'api/oxlint', title: 'Linting' },
       { path: 'guides/testing', title: 'Testing & Troubleshooting' },
       { path: 'guides/tailwind', title: 'Migrating from Tailwind' },

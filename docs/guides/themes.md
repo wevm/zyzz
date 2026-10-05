@@ -27,7 +27,7 @@ References keep their source identity. Changing a primitive through its own scop
 
 ### Typography Sets
 
-Apply a named set of font properties with a dotted path. The [default theme](../api/default.md#typography-sets) includes Geist's headings, buttons, labels, and copy styles:
+Apply a named set of font properties with a dotted path. The [default theme](https://zyzz.sh/docs/guides/default-theme#apply-typography) includes Geist's headings, buttons, labels, and copy styles:
 
 ```ts
 import { style } from 'zyzz/default'

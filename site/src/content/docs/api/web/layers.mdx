@@ -1,0 +1,57 @@
+# layers
+
+Declare the order of cascade layers for the whole project.
+
+`layers` emits one `@layer` statement at the top of the shared stylesheet. Calls in different modules merge into one order, and the call compiles away. The [Layers](/docs/guides/layers) guide covers layered rules and precedence.
+
+```ts title="src/layers.ts"
+import { layers } from 'zyzz/web'
+
+// [!code hl:2]
+// Emits `@layer reset,base,components;`
+layers(['reset', 'base', 'components'])
+```
+
+## Signature
+
+```ts
+// Layer names, lowest precedence first
+layers(names)
+```
+
+## Parameters
+
+### names
+
+- **Type:** `readonly string[]{:ts}`
+
+CSS layer names, lowest precedence first. Dotted names such as `base.typography` declare nested layers. Each list constrains only the relative order of its own names, so lists from several modules combine into one statement.
+
+```ts title="src/components.ts"
+import { layers } from 'zyzz/web'
+
+// [!code hl:2]
+// Merged with ['reset', 'base', 'components'] from another module
+layers(['base', 'components', 'utilities'])
+```
+
+Rules join a layer through `@layer` keys in [`global`](/docs/api/web/global), in a style body, or through the `layer` option of [`importCss`](/docs/api/web/importCss).
+
+## Returns
+
+`void`. The compiler records the order and erases the call. The `@layer` statement precedes every other rule in the shared stylesheet, so it decides precedence before any layered rule appears.
+
+## Errors
+
+The compiler reports `Source.ExtractError` for an invalid name, such as a CSS-wide keyword, and for lists that order the same names in opposite directions.
+
+```ts
+import { layers } from 'zyzz/web'
+
+layers(['a', 'b'])
+// [!code hl:2]
+// Fails with "Conflicting layer order constraints."
+layers(['b', 'a'])
+```
+
+TypeScript requires an array, and native builds reject the call with `Native.CompileError`.

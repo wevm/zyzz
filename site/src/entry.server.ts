@@ -1,9 +1,9 @@
 /** Negotiates documentation Markdown for agents and HTML for browsers. @module */
-import * as Manifest from './Manifest.js'
 import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
+import * as Manifest from './Manifest.js'
 
 // Representation precedence follows wevm/vocs src/internal/markdown-negotiation.ts.
 const handle = createStartHandler(defaultStreamHandler)

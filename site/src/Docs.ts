@@ -1,13 +1,6 @@
 /** Indexes authored MDX pages for navigation and route rendering. @module */
 import * as Manifest from './Manifest.js'
-import type { ComponentType, ElementType } from 'react'
-
-/** Compiled MDX components indexed by their documentation path. */
-export const pages = import.meta.glob<
-  ComponentType<{
-    components?: Record<string, ElementType>
-  }>
->('./content/docs/**/*.mdx', { eager: true, import: 'default' })
+import type { ComponentType, ElementType, ReactPromise } from 'react'
 
 /** Authored sidebar order, including pages awaiting migration. */
 export const groups: readonly { pages: readonly Item[]; title: string }[] = [
@@ -109,7 +102,52 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           },
         ],
       },
-      { path: 'api/web', title: 'Web' },
+      {
+        title: 'Web',
+        children: [
+          { path: 'api/web', title: 'Overview' },
+          {
+            title: 'Stylesheets',
+            items: [
+              { path: 'api/web/global', title: 'global' },
+              { path: 'api/web/layers', title: 'layers' },
+              { path: 'api/web/fontFace', title: 'fontFace' },
+              { path: 'api/web/keyframes', title: 'keyframes' },
+            ],
+          },
+          {
+            title: 'At-Rules',
+            items: [
+              { path: 'api/web/importCss', title: 'importCss' },
+              { path: 'api/web/page', title: 'page' },
+              { path: 'api/web/viewTransition', title: 'viewTransition' },
+              { path: 'api/web/positionTry', title: 'positionTry' },
+              { path: 'api/web/counterStyle', title: 'counterStyle' },
+              { path: 'api/web/customMedia', title: 'customMedia' },
+              { path: 'api/web/property', title: 'property' },
+              {
+                path: 'api/web/fontFeatureValues',
+                title: 'fontFeatureValues',
+              },
+              {
+                path: 'api/web/fontPaletteValues',
+                title: 'fontPaletteValues',
+              },
+              { path: 'api/web/cssFunction', title: 'cssFunction' },
+              { path: 'api/web/colorProfile', title: 'colorProfile' },
+              { path: 'api/web/namespace', title: 'namespace' },
+            ],
+          },
+          {
+            title: 'Namespaces',
+            items: [{ path: 'api/web/namespaces/Css', title: 'Css' }],
+          },
+          {
+            title: 'Reference',
+            items: [{ path: 'api/web/at-rules', title: 'At-Rule Contract' }],
+          },
+        ],
+      },
       { path: 'api/react-native', title: 'React Native' },
       { path: 'api/cli', title: 'CLI' },
       {
@@ -142,6 +180,36 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
   ],
 }))
 
+// Lazy imports give each page its own chunk, keeping every asset under the Workers size limit.
+const modules = import.meta.glob<Content>('./content/docs/**/*.mdx', {
+  import: 'default',
+})
+const loads = new Map<string, ReactPromise<Content>>()
+
+/** Loads a page's compiled MDX once, marking the promise fulfilled so `use` reads it without suspending again. */
+export function load(path: string): ReactPromise<Content> {
+  const previous = loads.get(path)
+  if (previous) return previous
+
+  const module = modules[`./content/docs/${path}.mdx`]
+  if (!module) throw new Error(`Missing documentation page: ${path}`)
+
+  const promise: Promise<Content> = module().then(
+    (content) => {
+      Object.assign(promise, { status: 'fulfilled', value: content })
+      return content
+    },
+    (error: unknown) => {
+      // A failed chunk request must not stay cached, so a later attempt can retry it.
+      loads.delete(path)
+      throw error
+    },
+  )
+  loads.set(path, promise)
+
+  return promise
+}
+
 /** Lists an item's path and every path nested beneath it. */
 export function paths(item: Item): readonly string[] {
   return [
@@ -150,6 +218,12 @@ export function paths(item: Item): readonly string[] {
     ...(item.items ?? []).flatMap(paths),
   ]
 }
+
+/** Compiled MDX component for one documentation page. */
+export type Content = ComponentType<{
+  /** Elements and MDX components that replace the defaults while rendering. */
+  components?: Record<string, ElementType>
+}>
 
 /** A page, nested topic, or labelled section in documentation navigation. */
 export type Item = {

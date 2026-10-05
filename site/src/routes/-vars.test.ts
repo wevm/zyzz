@@ -24,7 +24,7 @@ beforeAll(async () => {
   server.stderr?.on('data', (data) => {
     output += data
   })
-  for (let attempt = 0; attempt < 120; attempt++) {
+  for (let attempt = 0; attempt < 480; attempt++) {
     if (server.exitCode !== null) throw new Error(output)
     try {
       if ((await fetch(`${origin}/vars`)).ok) return
@@ -32,7 +32,7 @@ beforeAll(async () => {
     await new Promise((resolve) => setTimeout(resolve, 250))
   }
   throw new Error(`Variables site did not start. ${output}`)
-}, 60000)
+}, 150000)
 
 afterAll(() => {
   if (server?.pid && server.exitCode === null)

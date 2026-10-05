@@ -1,6 +1,10 @@
-/** Exposes the documentation manifest collected at build time. @module */
+/** Reads the build-time documentation manifest once, so bundles hold one copy of its data. @module */
 
-// The `__DOCS__` define inlines its whole value at every reference, so the
-// site reads it through these bindings to bundle one copy.
-/** Page metadata and highlighted code blocks keyed by their source. */
-export const { code, pages } = __DOCS__
+// Vite inlines a `define` at every reference, so other modules read the manifest through these bindings.
+const manifest = __DOCS__
+
+/** Highlighted code fences, keyed by authored source. */
+export const code = manifest.code
+
+/** Page metadata and Markdown, keyed by documentation path. */
+export const pages = manifest.pages

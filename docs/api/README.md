@@ -17,7 +17,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/runtime](runtime/README.md)           | Bind compiled class lists to styling overrides without generating CSS.             |
 | [zyzz/unplugin][unplugin]                   | Compile web styles with Rollup, Webpack, esbuild, or the existing Vite adapter.    |
 | [zyzz/vite][vite]                           | Connect source transformation and CSS delivery to Vite.                            |
-| [zyzz/web](web/README.md)                   | Compile web CSS and declare stylesheet contributions and element relationships.    |
+| [zyzz/web][web]                             | Compile web CSS and declare global rules, cascade layers, and at-rules.            |
 
 [babel]: https://zyzz.sh/docs/api/babel
 [cli]: https://zyzz.sh/docs/api/cli
@@ -27,3 +27,4 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 [oxlint]: https://zyzz.sh/docs/api/oxlint
 [unplugin]: https://zyzz.sh/docs/api/unplugin
 [vite]: https://zyzz.sh/docs/api/vite
+[web]: https://zyzz.sh/docs/api/web

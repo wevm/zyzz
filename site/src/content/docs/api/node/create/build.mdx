@@ -29,7 +29,7 @@ await host.build()
 
 - **Type:** `readonly string[]{:ts}`
 
-The files this build wrote or removed, sorted and relative to `outDir`. A build after no source change returns an empty list.
+The files in `outDir` that this build wrote or removed, sorted and relative to `outDir`. The ownership manifest and a `script` outside `outDir` are excluded. A build after no source change returns an empty list.
 
 ```ts
 await host.build()

@@ -193,7 +193,10 @@ describe('/docs/guides/native', () => {
           },
         ],
       })
-      for (const match of authored.matchAll(/^##?#? (.+)$/gm)) {
+      // Shell comments inside fenced code blocks are not headings.
+      for (const match of authored
+        .replace(/```[\s\S]*?```/g, '')
+        .matchAll(/^##?#? (.+)$/gm)) {
         expect(markdown).toContain(match[0])
         expect(
           await article
@@ -207,8 +210,12 @@ describe('/docs/guides/native', () => {
       const blocks = await article.locator('pre code').allTextContents()
       const visibleBlocks = blocks.map((block) => block.trim())
       for (const match of snippets) {
-        expect(markdown).toContain(match[1]!.trim())
-        expect(visibleBlocks).toContain(match[1]!.trim())
+        // The Markdown endpoint and rendered page omit highlight notations.
+        const code = match[1]!
+          .replace(/^\s*\/\/ \[!code [^\]]+\]\n/gm, '')
+          .trim()
+        expect(markdown).toContain(code)
+        expect(visibleBlocks).toContain(code)
       }
     } finally {
       await browser.close()

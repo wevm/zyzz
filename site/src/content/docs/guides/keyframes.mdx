@@ -1,0 +1,101 @@
+# Keyframes
+
+Define named animations beside the components that use them.
+
+## Overview
+
+`keyframes` from `zyzz/web` declares a `@keyframes` rule and returns a reference for `animationName`, so styles never repeat a handwritten animation name. Keep keyframes near the component that owns the animation.
+
+```tsx title="Notice.tsx"
+import { style } from 'zyzz'
+import { keyframes } from 'zyzz/web'
+
+const enter = keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+})
+
+export function Notice() {
+  return <p {...styles.notice()}>Changes saved.</p>
+}
+
+namespace styles {
+  export const notice = style({
+    animationDuration: '160ms',
+    animationName: enter,
+    '@media (prefers-reduced-motion: reduce)': {
+      animationName: 'none',
+    },
+  })
+}
+```
+
+## Reduced Motion
+
+The overview disables its animation under `prefers-reduced-motion: reduce`. Alternatively, apply a nonessential animation only when the user has no motion preference:
+
+```tsx title="Toast.tsx"
+import { style } from 'zyzz'
+import { keyframes } from 'zyzz/web'
+
+const rise = keyframes({
+  from: { translate: '0 1rem' },
+  to: { translate: '0 0' },
+})
+
+export function Toast() {
+  return <output {...styles.toast()}>Copied.</output>
+}
+
+namespace styles {
+  export const toast = style({
+    '@media (prefers-reduced-motion: no-preference)': {
+      animationDuration: '200ms',
+      animationName: rise,
+    },
+  })
+}
+```
+
+## Keyframe Bodies
+
+Keyframe bodies accept declarations only, without nested selectors, queries, or important declarations. Percentage stops follow authored order.
+
+```ts title="src/pulse.ts"
+import { keyframes } from 'zyzz/web'
+
+export const pulse = keyframes({
+  '0%': { opacity: 1 },
+  '50%': { opacity: 0.5 },
+  '100%': { opacity: 1 },
+})
+```
+
+Exported and reachable keyframes keep stable references, while unused local keyframes are omitted.
+
+## Timeline Ranges
+
+Scroll-driven animations can use named timeline-range stops, such as `entry 0%`, alongside ordinary stops.
+
+```ts title="src/reveal.ts"
+import { keyframes } from 'zyzz/web'
+
+export const reveal = keyframes({
+  'entry 0%': { opacity: 0 },
+  'entry 100%': { opacity: 1 },
+})
+```
+
+## More
+
+<Card.Group>
+  <Card title="Conditions" icon="sliders" href="/docs/guides/conditions">
+    Style states, queries, and motion preferences inside style bodies.
+  </Card>
+  <Card title="Fonts & Typography" icon="code" href="/docs/guides/typography">
+    Load fonts and apply font tokens and typography presets in styles.
+  </Card>
+  <Card title="At-Rules" icon="code" href="/docs/guides/at-rules">
+    Emit other named at-rules with typed references.
+  </Card>
+</Card.Group>

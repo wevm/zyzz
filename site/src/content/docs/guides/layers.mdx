@@ -1,0 +1,98 @@
+import { StylesheetTable } from './_components/StylesheetTable.js'
+
+# Layers
+
+Order document defaults, resets, and component styles with cascade layers.
+
+## Overview
+
+Cascade layers decide precedence before specificity is compared. Declare the layer order once in the configuration, then place global rules and component declarations in named layers. The returned `style` helper infers the allowed layer names.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  layers: ['reset', 'base', 'components'],
+})
+```
+
+## Layered Rules
+
+Nest document defaults under a layer key in `global`, and component declarations under a layer key in `style`. The compiler validates raw layer names in `global`, but TypeScript does not infer them from the configuration.
+
+```ts title="src/base.ts"
+import { global } from 'zyzz/web'
+
+global({
+  '@layer base': {
+    'h1, h2, h3': { marginBlock: 0 },
+  },
+})
+```
+
+```tsx title="Card.tsx"
+import { style } from './zyzz.config.js'
+
+export function Card() {
+  return <article {...styles.card()}>Account</article>
+}
+
+namespace styles {
+  export const card = style({
+    '@layer components': { padding: '1rem' },
+  })
+}
+```
+
+## Precedence
+
+The compiler merges layer constraints from the configuration and global modules into one shared `@layer reset, base, components;` prelude, and rejects contradictory orders. For declarations at the same origin, the cascade ranks the layers as follows.
+
+<StylesheetTable label="Cascade layer precedence">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Declarations</th>
+        <th scope="col">Layer precedence, highest first</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Normal</td>
+        <td>Unlayered → components → base → reset</td>
+      </tr>
+      <tr>
+        <td>Important</td>
+        <td>reset → base → components → unlayered</td>
+      </tr>
+    </tbody>
+  </table>
+</StylesheetTable>
+
+Within a layer, specificity and source order still matter. Inline styles, animations, and transitions have their own cascade precedence. See MDN's [cascade layer reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer) for the complete ordering rules.
+
+## Without Config
+
+When only stylesheet ordering is needed, call `layers` at module scope instead of introducing configuration.
+
+```ts title="src/layers.ts"
+import { layers } from 'zyzz/web'
+
+layers(['reset', 'base', 'components'])
+```
+
+This helper records order but does not bind layer names to a `style` import. The compiler merges it with other layer constraints, and CSS cascade rules still determine precedence.
+
+## More
+
+<Card.Group>
+  <Card title="Global Styles" icon="code" href="/docs/guides/global-styles">
+    Style document elements with selector maps beside component styles.
+  </Card>
+  <Card title="Reset" icon="sliders" href="/docs/guides/reset">
+    Opt into a base reset that normalizes browser defaults below styles.
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Compose definitions, override styles, and bind dynamic values.
+  </Card>
+</Card.Group>

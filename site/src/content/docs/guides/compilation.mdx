@@ -98,6 +98,12 @@ Consumers do not need Zyzz compilation for already-transformed library code. If 
 
 The CLI and file host resolve installed package exports and adjacent contracts without executing dependency code. Resolution uses Node import conditions. TypeScript path aliases and browser or native resolver conditions are not inferred. Packed external asset copying remains unsupported.
 
+### Library Stylesheets
+
+Generated `<entry>.zyzz.json` sidecars retain global contributions, fonts, keyframes, and layer constraints across imports and re-exports. Source maps preserve the original authoring content. Identical contributions emit once, while conflicting copies fail compilation.
+
+Keep referenced assets with the published output. Source assets resolve relative to their owning module. The standalone host copies local source assets into its output tree, and Vite resolves assets through its CSS pipeline.
+
 ### Transform Source Modules
 
 For an in-memory integration, use `Transform.compile` to rewrite a module and emit its CSS without executing source or reading files. Pass a stable package-relative `moduleId` for linking and source maps.
@@ -216,9 +222,8 @@ Use [Testing & Troubleshooting](https://github.com/wevm/zyzz/blob/main/docs/guid
   <Card title="CSS Output" icon="boxes" href="/docs/guides/css-output">
     Choose atomic or grouped CSS and keep published classes matched to code.
   </Card>
-  <Card title="Stylesheets" icon="code" href="/docs/guides/stylesheets">
-    Declare global rules, cascade layers, fonts, and keyframes that ship with
-    the build.
+  <Card title="Global Styles" icon="code" href="/docs/guides/global-styles">
+    Style document elements with selector maps that ship with the build.
   </Card>
   <Card
     title="Testing & Troubleshooting"

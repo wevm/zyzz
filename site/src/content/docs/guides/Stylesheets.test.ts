@@ -1,4 +1,4 @@
-/** Verifies stylesheet guide examples and their published documentation. @module */
+/** Verifies the stylesheet guides' examples and their published documentation. @module */
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs'
 import * as Os from 'node:os'
@@ -11,16 +11,39 @@ import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 const origin = 'http://localhost:3184'
-const route = '/docs/guides/stylesheets'
 const site = new URL('../../../..', import.meta.url)
 const root = Fs.realpathSync(new URL('..', site))
-const source = Fs.readFileSync(
-  new URL('./stylesheets.mdx', import.meta.url),
-  'utf8',
-)
-const examples = [
-  ...source.matchAll(/```(?:ts|tsx) title="([^"]+)"\n([\s\S]*?)\n```/g),
-]
+const guides = [
+  { path: 'global-styles', tables: 0, title: 'Global Styles' },
+  { path: 'layers', tables: 1, title: 'Layers' },
+  { path: 'typography', tables: 0, title: 'Fonts & Typography' },
+  { path: 'keyframes', tables: 0, title: 'Keyframes' },
+  { path: 'at-rules', tables: 0, title: 'At-Rules' },
+  { path: 'reset', tables: 0, title: 'Reset' },
+].map((guide) => {
+  const source = Fs.readFileSync(
+    new URL(`./${guide.path}.mdx`, import.meta.url),
+    'utf8',
+  )
+
+  return {
+    ...guide,
+    // Card titles render inside links, while the Markdown route gives each its own paragraph.
+    cards: Array.from(
+      source.matchAll(/<Card\s+title="([^"]+)"/g),
+      (match) => match[1]!,
+    ),
+    examples: [
+      ...source.matchAll(/```(?:ts|tsx) title="([^"]+)"\n([\s\S]*?)\n```/g),
+    ],
+    fences: Array.from(
+      source.matchAll(/```[^\n]*\n([\s\S]*?)\n```/g),
+      (match) => match[1]!,
+    ),
+    route: `/docs/guides/${guide.path}`,
+  }
+})
+const examples = guides.flatMap((guide) => guide.examples)
 let directory: string
 let server: ChildProcess.ChildProcess
 
@@ -30,7 +53,7 @@ function text(node: Nodes): string {
   return ''
 }
 
-describe('Stylesheets', () => {
+describe('stylesheet guides', () => {
   test('type checks and compiles every authored example', () => {
     const fixture = Fs.mkdtempSync(Path.join(root, '.fixture-stylesheets-'))
     const modules: Record<string, string> = {}
@@ -55,6 +78,7 @@ describe('Stylesheets', () => {
           ...parsed.options,
           paths: {
             zyzz: [Path.join(root, 'dist/index.d.ts')],
+            'zyzz/default': [Path.join(root, 'dist/default.d.ts')],
             'zyzz/vite': [Path.join(root, 'dist/vite/index.d.ts')],
             'zyzz/web': [Path.join(root, 'dist/web/index.d.ts')],
           },
@@ -68,6 +92,8 @@ describe('Stylesheets', () => {
         )
 
       expect(diagnostics).toMatchInlineSnapshot('[]')
+
+      expect(Object.keys(modules)).toHaveLength(examples.length)
 
       const output = Graph.compile({ modules })
 
@@ -86,6 +112,9 @@ describe('Stylesheets', () => {
         ),
       ).toMatchInlineSnapshot('true')
       expect(
+        output.sharedCss?.includes('@view-transition{navigation:auto;}'),
+      ).toMatchInlineSnapshot('true')
+      expect(
         output.modules['Notice.tsx']?.css.includes('prefers-reduced-motion'),
       ).toMatchInlineSnapshot('true')
       expect(
@@ -93,6 +122,30 @@ describe('Stylesheets', () => {
           'position-try-fallbacks:',
         ),
       ).toMatchInlineSnapshot('true')
+
+      // Each documented helper's example emits its at-rule.
+      const css = [
+        output.sharedCss ?? '',
+        ...Object.values(output.modules).map((module) => module.css),
+      ].join('\n')
+      expect(
+        [
+          '@color-profile',
+          '@counter-style',
+          '@custom-media',
+          '@font-face',
+          '@font-feature-values',
+          '@font-palette-values',
+          '@function',
+          '@import',
+          '@keyframes',
+          '@namespace',
+          '@page',
+          '@position-try',
+          '@property',
+          '@view-transition',
+        ].filter((rule) => !css.includes(rule)),
+      ).toMatchInlineSnapshot('[]')
     } finally {
       Fs.rmSync(fixture, { recursive: true, force: true })
     }
@@ -146,7 +199,7 @@ describe('Stylesheets', () => {
       for (let attempt = 0; attempt < 720; attempt++) {
         if (server.exitCode !== null) throw new Error(output)
         try {
-          const response = await fetch(`${origin}${route}`, {
+          const response = await fetch(`${origin}${guides[0]!.route}`, {
             signal: AbortSignal.timeout(2000),
           })
           if (response.ok) return
@@ -156,7 +209,7 @@ describe('Stylesheets', () => {
         }
         await new Promise((resolve) => setTimeout(resolve, 250))
       }
-      throw new Error(`Stylesheets page did not start. ${state} ${output}`)
+      throw new Error(`Stylesheet guides did not start. ${state} ${output}`)
     }, 210000)
 
     afterAll(async () => {
@@ -169,78 +222,85 @@ describe('Stylesheets', () => {
     })
 
     test('preserves prose, headings, tables, and examples in HTML and Markdown', async () => {
-      const response = await fetch(`${origin}${route}.md`)
-      const markdown = await response.text()
-      const headings: string[] = []
-      const paragraphs: string[] = []
-      await compile(markdown, {
-        remarkPlugins: [
-          () => (tree: Root) => {
-            for (const node of tree.children) {
-              if (node.type === 'heading') headings.push(text(node))
-              if (node.type === 'paragraph' && !text(node).startsWith('|'))
-                paragraphs.push(text(node))
-            }
-          },
-        ],
-      })
       const browser = await chromium.launch({ headless: true })
       try {
         const page = await browser.newPage()
-        const html = await page.goto(`${origin}${route}`)
-        const article = page.locator('article')
+        for (const guide of guides) {
+          const response = await fetch(`${origin}${guide.route}.md`)
+          const markdown = await response.text()
+          const headings: string[] = []
+          const paragraphs: string[] = []
+          await compile(markdown, {
+            remarkPlugins: [
+              () => (tree: Root) => {
+                for (const node of tree.children) {
+                  if (node.type === 'heading') headings.push(text(node))
+                  if (
+                    node.type === 'paragraph' &&
+                    !text(node).startsWith('|') &&
+                    !guide.cards.includes(text(node))
+                  )
+                    paragraphs.push(text(node))
+                }
+              },
+            ],
+          })
+          const html = await page.goto(`${origin}${guide.route}`)
+          const article = page.locator('article')
 
-        expect(response.status).toMatchInlineSnapshot('200')
-        expect(response.headers.get('content-type')).toMatchInlineSnapshot(
-          '"text/markdown; charset=utf-8"',
-        )
-        expect(html?.status()).toMatchInlineSnapshot('200')
-        expect(await page.title()).toMatchInlineSnapshot('"Stylesheets · Zyzz"')
-        expect(
-          JSON.stringify(
+          expect(response.status, guide.path).toBe(200)
+          expect(response.headers.get('content-type'), guide.path).toBe(
+            'text/markdown; charset=utf-8',
+          )
+          expect(html?.status(), guide.path).toBe(200)
+          expect(await page.title()).toBe(`${guide.title} · Zyzz`)
+          expect(
             await article.locator('h1, h2, h3').allTextContents(),
-          ) === JSON.stringify(headings),
-        ).toMatchInlineSnapshot('true')
-        expect(
-          JSON.stringify(
+            guide.path,
+          ).toEqual(headings)
+          expect(
             await article.locator('p:not(table p)').allTextContents(),
-          ) === JSON.stringify(paragraphs),
-        ).toMatchInlineSnapshot('true')
-        expect(
-          JSON.stringify(
+            guide.path,
+          ).toEqual(paragraphs)
+          expect(
             await article
               .locator('pre code')
               .allTextContents()
               .then((codes) => codes.map((code) => code.trim())),
-          ) === JSON.stringify(examples.map((example) => example[2])),
-        ).toMatchInlineSnapshot('true')
-        expect(await article.locator('table').count()).toMatchInlineSnapshot(
-          '2',
-        )
+            guide.path,
+          ).toEqual(guide.fences)
+          expect(await article.locator('table').count(), guide.path).toBe(
+            guide.tables,
+          )
+          for (const example of guide.examples)
+            expect(markdown.includes(example[2]!), example[1]).toBe(true)
+          expect(
+            await page
+              .getByRole('navigation', { name: 'Documentation' })
+              .getByRole('link', { name: guide.title, exact: true })
+              .getAttribute('aria-current'),
+            guide.path,
+          ).toBe('page')
+          const negotiated = await fetch(`${origin}${guide.route}`, {
+            headers: { accept: 'text/markdown' },
+          })
+          expect(await negotiated.text(), guide.path).toBe(markdown)
+        }
+
+        const layers = await (
+          await fetch(`${origin}/docs/guides/layers.md`)
+        ).text()
+
         expect(
-          markdown.includes('Unlayered → components → base → reset'),
+          layers.includes('Unlayered → components → base → reset'),
         ).toMatchInlineSnapshot('true')
         expect(
-          markdown.includes('reset → base → components → unlayered'),
+          layers.includes('reset → base → components → unlayered'),
         ).toMatchInlineSnapshot('true')
-        for (const example of examples)
-          expect(markdown.includes(example[2]!)).toMatchInlineSnapshot('true')
-        expect(
-          await page
-            .getByRole('navigation', { name: 'Documentation' })
-            .getByRole('link', { name: 'Stylesheets', exact: true })
-            .getAttribute('aria-current'),
-        ).toMatchInlineSnapshot('"page"')
-        const negotiated = await fetch(`${origin}${route}`, {
-          headers: { accept: 'text/markdown' },
-        })
-        expect((await negotiated.text()) === markdown).toMatchInlineSnapshot(
-          'true',
-        )
       } finally {
         await browser.close()
       }
-    }, 30000)
+    }, 60000)
 
     test('fits light and dark layouts at supported viewport widths', async () => {
       const browser = await chromium.launch({ headless: true })
@@ -248,61 +308,63 @@ describe('Stylesheets', () => {
         for (const colorScheme of ['light', 'dark'] as const) {
           const context = await browser.newContext({ colorScheme })
           const page = await context.newPage()
-          await page.goto(`${origin}${route}`)
-          await page.waitForLoadState('networkidle')
-          for (const width of [390, 768, 1440]) {
-            await page.setViewportSize({ width, height: 1000 })
-            expect(
-              await page.evaluate(
-                () => document.documentElement.scrollWidth <= innerWidth,
-              ),
-            ).toMatchInlineSnapshot('true')
-            expect(
-              await page
-                .locator('article')
-                .evaluate(
-                  (article) =>
-                    article.getBoundingClientRect().right <= innerWidth,
+          for (const guide of guides) {
+            await page.goto(`${origin}${guide.route}`)
+            await page.waitForLoadState('networkidle')
+            for (const width of [390, 768, 1440]) {
+              await page.setViewportSize({ width, height: 1000 })
+              expect(
+                await page.evaluate(
+                  () => document.documentElement.scrollWidth <= innerWidth,
                 ),
-            ).toMatchInlineSnapshot('true')
-            expect(
-              await page.locator('article h1').textContent(),
-            ).toMatchInlineSnapshot('"Stylesheets"')
-            expect(
-              await page.locator('article table').evaluateAll((tables) =>
-                tables.every((table) => {
-                  const bounds = table.getBoundingClientRect()
-                  const cells = Array.from(table.querySelectorAll('th, td'))
-                  const bodyCells = Array.from(table.querySelectorAll('td'))
+              ).toMatchInlineSnapshot('true')
+              expect(
+                await page
+                  .locator('article')
+                  .evaluate(
+                    (article) =>
+                      article.getBoundingClientRect().right <= innerWidth,
+                  ),
+              ).toMatchInlineSnapshot('true')
+              expect(await page.locator('article h1').textContent()).toBe(
+                guide.title,
+              )
+              expect(
+                await page.locator('article table').evaluateAll((tables) =>
+                  tables.every((table) => {
+                    const bounds = table.getBoundingClientRect()
+                    const cells = Array.from(table.querySelectorAll('th, td'))
+                    const bodyCells = Array.from(table.querySelectorAll('td'))
 
-                  return (
-                    bounds.left >= 0 &&
-                    bounds.right <= innerWidth &&
-                    cells.every((cell) => {
-                      const style = getComputedStyle(cell)
-                      return (
-                        parseFloat(style.paddingLeft) > 0 &&
-                        parseFloat(style.paddingTop) > 0
+                    return (
+                      bounds.left >= 0 &&
+                      bounds.right <= innerWidth &&
+                      cells.every((cell) => {
+                        const style = getComputedStyle(cell)
+                        return (
+                          parseFloat(style.paddingLeft) > 0 &&
+                          parseFloat(style.paddingTop) > 0
+                        )
+                      }) &&
+                      bodyCells.every(
+                        (cell) =>
+                          parseFloat(getComputedStyle(cell).borderTopWidth) > 0,
+                      ) &&
+                      Array.from(table.querySelectorAll('p')).every(
+                        (paragraph) =>
+                          getComputedStyle(paragraph).margin === '0px',
                       )
-                    }) &&
-                    bodyCells.every(
-                      (cell) =>
-                        parseFloat(getComputedStyle(cell).borderTopWidth) > 0,
-                    ) &&
-                    Array.from(table.querySelectorAll('p')).every(
-                      (paragraph) =>
-                        getComputedStyle(paragraph).margin === '0px',
                     )
-                  )
-                }),
-              ),
-            ).toMatchInlineSnapshot('true')
+                  }),
+                ),
+              ).toMatchInlineSnapshot('true')
+            }
           }
           await context.close()
         }
       } finally {
         await browser.close()
       }
-    }, 30000)
+    }, 120000)
   })
 })

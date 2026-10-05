@@ -1,0 +1,247 @@
+# At-Rules
+
+Emit statement and descriptor at-rules, from stylesheet imports to print pages and custom functions.
+
+## Overview
+
+Dedicated helpers from `zyzz/web` emit at-rules that take descriptors or statements instead of selectors. `global` owns selectors and grouping rules, so `@import`, `@page`, and similar rules each have their own helper.
+
+Nested `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys belong in style bodies instead. Compiler support does not establish browser support, so check [Compatibility](/docs/introduction/compatibility) before depending on newer at-rules.
+
+```ts title="src/document.ts"
+import { global, importCss } from 'zyzz/web'
+
+// Statement rules use a dedicated helper
+importCss({ url: './vendor.css' })
+
+// Selector rules use global
+global({ body: { margin: 0 } })
+```
+
+## Stylesheet Imports
+
+`importCss` emits an `@import` rule with optional `layer`, `media`, and `supports` conditions. Imports precede namespaces and ordinary rules in the generated stylesheet.
+
+```ts title="src/imports.ts"
+import { importCss } from 'zyzz/web'
+
+importCss({ layer: 'reset', url: './normalize.css' })
+importCss({ media: 'print', url: './print.css' })
+```
+
+## Print Pages
+
+`page` emits an `@page` rule from its descriptors, including margin boxes. An optional `selector` targets named pages or page pseudo-classes such as `:first`. Margin-box rendering depends on the browser or print engine.
+
+```ts title="src/print.ts"
+import { page } from 'zyzz/web'
+
+page({
+  descriptors: {
+    size: 'A4',
+    margin: '2cm',
+    '@bottom-center': { content: 'counter(page)' },
+  },
+})
+
+page({ descriptors: { marginTop: '4cm' }, selector: ':first' })
+```
+
+## View Transitions
+
+`viewTransition` emits an `@view-transition` rule. Enable cross-document navigation transitions only when the target browsers support them.
+
+```ts title="src/transitions.ts"
+import { viewTransition } from 'zyzz/web'
+
+viewTransition({ navigation: 'auto' })
+```
+
+## Position Fallbacks
+
+`positionTry` emits an `@position-try` rule and returns a reference for `positionTryFallbacks`. The browser can try the fallback when the initial anchored placement overflows.
+
+```ts title="src/tooltip.ts"
+import { style } from 'zyzz'
+import { positionTry } from 'zyzz/web'
+
+const above = positionTry({
+  positionArea: 'top',
+  marginBottom: '0.5rem',
+})
+
+export namespace styles {
+  export const tooltip = style({
+    position: 'absolute',
+    positionAnchor: '--trigger',
+    positionArea: 'bottom',
+    positionTryFallbacks: above,
+  })
+
+  export const trigger = style({ anchorName: '--trigger' })
+}
+```
+
+Apply `styles.trigger()` to the anchor and `styles.tooltip()` to the positioned element. Anchor positioning requires browser support and an eligible anchor in scope.
+
+## Counter Styles
+
+`counterStyle` emits an `@counter-style` rule and returns a reference for `listStyleType`.
+
+```ts title="src/list.ts"
+import { style } from 'zyzz'
+import { counterStyle } from 'zyzz/web'
+
+const circled = counterStyle({
+  system: 'fixed',
+  symbols: '"①" "②" "③"',
+  suffix: '" "',
+})
+
+export namespace styles {
+  export const steps = style({ listStyleType: circled })
+}
+```
+
+## Custom Media
+
+`customMedia` names a media query once and returns a key for style bodies. Every use shares the same query identity.
+
+```ts title="src/compact.ts"
+import { style } from 'zyzz'
+import { customMedia } from 'zyzz/web'
+
+const compact = customMedia('(width < 40rem)')
+
+export namespace styles {
+  export const panel = style({
+    padding: '1.5rem',
+    [compact]: { padding: '1rem' },
+  })
+}
+```
+
+## Registered Properties
+
+`property` emits an `@property` registration for a custom property, with its syntax, inheritance, and initial value. Registration changes computed-value behavior, such as interpolating a length during a transition.
+
+```ts title="src/properties.ts"
+import { property } from 'zyzz/web'
+
+property({
+  name: '--gap',
+  syntax: '<length>',
+  inherits: false,
+  initialValue: '0px',
+})
+```
+
+Non-universal syntaxes require a computationally independent initial value. For variables declared with `variable()`, pass descriptors to `variable()` instead.
+
+## Font Features
+
+`fontFeatureValues` emits an `@font-feature-values` rule that names alternate glyph features for one or more families.
+
+```ts title="src/features.ts"
+import { fontFeatureValues } from 'zyzz/web'
+
+fontFeatureValues({
+  families: '"App Sans"',
+  features: {
+    '@styleset': { editorial: [1, 3] },
+    '@swash': { decorative: 2 },
+  },
+})
+```
+
+## Font Palettes
+
+`fontPaletteValues` emits an `@font-palette-values` rule and returns a reference for `fontPalette`.
+
+```ts title="src/palette.ts"
+import { style } from 'zyzz'
+import { fontPaletteValues } from 'zyzz/web'
+
+const brand = fontPaletteValues({
+  fontFamily: '"Brand Icons"',
+  basePalette: 0,
+  overrideColors: '0 #ff5500, 1 #111111',
+})
+
+export namespace styles {
+  export const icon = style({ fontPalette: brand })
+}
+```
+
+## CSS Functions
+
+`cssFunction` emits an `@function` rule and returns a callable reference. Calls create CSS expressions, and the browser evaluates the function.
+
+```ts title="src/functions.ts"
+import { style } from 'zyzz'
+import { cssFunction } from 'zyzz/web'
+
+const twice = cssFunction({
+  parameters: [{ name: '--x', syntax: '<length>' }],
+  returns: '<length>',
+  body: { result: 'calc(var(--x) * 2)' },
+})
+
+export namespace styles {
+  export const box = style({ width: twice('8rem') })
+}
+```
+
+## Color Profiles
+
+`colorProfile` emits an `@color-profile` rule and returns a reference for `color()` expressions. Print-engine compatibility and rendering are tracked separately.
+
+```ts title="src/profile.ts"
+import { style } from 'zyzz'
+import { colorProfile } from 'zyzz/web'
+
+const press = colorProfile({ src: 'url("./press.icc")' })
+
+export namespace styles {
+  export const ink = style({ color: `color(${press} 0 0.5 1 0)` })
+}
+```
+
+## Namespaces
+
+`namespace` emits an `@namespace` declaration with stylesheet scope. Omit `prefix` for the default namespace. URI strings are identities and are never fetched.
+
+```ts title="src/svg.ts"
+import { global, namespace } from 'zyzz/web'
+
+namespace({ prefix: 'svg', uri: 'http://www.w3.org/2000/svg' })
+
+global({
+  'svg|a': { fill: 'currentColor' },
+})
+```
+
+## More
+
+<Card.Group>
+  <Card
+    title="At-Rule Reference"
+    icon="code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/web/at-rules.md"
+  >
+    Review each helper's grammar, descriptors, and target limits.
+  </Card>
+  <Card title="Keyframes" icon="code" href="/docs/guides/keyframes">
+    Define named animations with typed references beside components.
+  </Card>
+  <Card title="Fonts & Typography" icon="code" href="/docs/guides/typography">
+    Load fonts and apply font tokens and typography presets in styles.
+  </Card>
+  <Card
+    title="Compatibility"
+    icon="boxes"
+    href="/docs/introduction/compatibility"
+  >
+    Check browser and platform support before adopting newer at-rules.
+  </Card>
+</Card.Group>

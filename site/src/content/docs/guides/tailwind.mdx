@@ -848,7 +848,7 @@ Tailwind plugins do not execute inside Zyzz. Inventory their emitted base rules,
 
 ### Fonts and Motion
 
-Use [`fontFace` and `keyframes`](https://github.com/wevm/zyzz/blob/main/docs/guides/stylesheets.md#fonts-and-motion) where appropriate. A font token selects a font. It does not load it. Preserve full animation timing and reduced-motion behavior.
+Use [`fontFace`](/docs/guides/typography) and [`keyframes`](/docs/guides/keyframes) where appropriate. A font token selects a font. It does not load it. Preserve full animation timing and reduced-motion behavior.
 
 ## Replace Source Scanning
 
@@ -1055,7 +1055,7 @@ Replace Preflight deliberately with an application-owned reset or the optional Z
 import 'zyzz/reset.css'
 ```
 
-Zyzz's reset uses the `reset` layer and is not installed by core imports. Recheck headings, lists, borders, form controls, images, box sizing, and font inheritance. See [Optional Reset](https://github.com/wevm/zyzz/blob/main/docs/guides/stylesheets.md#optional-reset).
+Zyzz's reset uses the `reset` layer and is not installed by core imports. Recheck headings, lists, borders, form controls, images, box sizing, and font inheritance. See [Reset](/docs/guides/reset).
 
 ## More
 
@@ -1073,9 +1073,8 @@ Zyzz's reset uses the `reset` layer and is not installed by core imports. Rechec
   <Card title="Variants" icon="layers" href="/docs/guides/variants">
     Define typed choices such as size and tone, with defaults and compounds.
   </Card>
-  <Card title="Stylesheets" icon="code" href="/docs/guides/stylesheets">
-    Declare global rules, cascade layers, fonts, and keyframes beside
-    components.
+  <Card title="Global Styles" icon="code" href="/docs/guides/global-styles">
+    Style document elements with selector maps beside component styles.
   </Card>
   <Card
     title="Testing & Troubleshooting"

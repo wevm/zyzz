@@ -1,0 +1,51 @@
+# Global Styles
+
+Style document elements with selector maps compiled into the application stylesheet.
+
+## Overview
+
+`global` from `zyzz/web` adds rules that intentionally target the document, such as `body` defaults or media element sizing. Component selectors stay inside `style({ selectors: { … } })`.
+
+Call `global` at module scope with a statically analyzable selector map. Calling it during rendering does not install a stylesheet, and repeated calls preserve distinct rules in authored order.
+
+```ts title="src/globals.ts"
+import { global } from 'zyzz/web'
+
+global({
+  body: { margin: 0 },
+  'img, video': { maxWidth: '100%' },
+})
+```
+
+## Grouping Rules
+
+Nest grouping rules such as `@media` and `@supports` around selectors where CSS permits them. This module hides navigation when printing:
+
+```ts title="src/print-globals.ts"
+import { global } from 'zyzz/web'
+
+global({
+  '@media print': {
+    nav: { display: 'none' },
+  },
+})
+```
+
+Declared `@layer` keys group global rules in the same way. See [Layers](/docs/guides/layers) for ordering document defaults below component styles.
+
+## More
+
+<Card.Group>
+  <Card title="Layers" icon="layers" href="/docs/guides/layers">
+    Order document defaults, resets, and component styles with cascade layers.
+  </Card>
+  <Card title="Fonts & Typography" icon="code" href="/docs/guides/typography">
+    Load fonts and apply font tokens and typography presets in styles.
+  </Card>
+  <Card title="Reset" icon="sliders" href="/docs/guides/reset">
+    Opt into a base reset that normalizes browser defaults below styles.
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/docs/guides/styling">
+    Compose definitions, override styles, and bind dynamic values.
+  </Card>
+</Card.Group>

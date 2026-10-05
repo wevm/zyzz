@@ -1,0 +1,132 @@
+# Fonts & Typography
+
+Load fonts, name font tokens, and apply typography presets in styles.
+
+## Overview
+
+`fontFace` from `zyzz/web` declares a `@font-face` rule from its descriptors. Relative URLs in `src` belong to the declaring module, and the rule ships even when no component imports that module.
+
+Apply the declared family in `global` rules or component styles, with fallbacks for text rendered before the font loads.
+
+```ts title="src/fonts.ts"
+import { fontFace, global } from 'zyzz/web'
+
+fontFace({
+  fontDisplay: 'swap',
+  fontFamily: '"App Sans"',
+  src: 'url("./app.woff2") format("woff2")',
+})
+
+global({
+  body: { fontFamily: '"App Sans", sans-serif' },
+})
+```
+
+## Font Tokens
+
+Font tokens name families, sizes, weights, letter spacing, and line heights. Each font property reads only its own category, so `fontSize: 'body'` looks up a `fontSize` token. A family token selects a font, while `fontFace` still loads it.
+
+```ts title="src/zyzz.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  fontFamily: { sans: '"App Sans", sans-serif' },
+  fontSize: { body: '1rem', small: '0.875rem' },
+  typography: {
+    heading: {
+      fontFamily: '"App Sans", sans-serif',
+      fontSize: '1.5rem',
+      fontWeight: 600,
+      lineHeight: 1.2,
+    },
+  },
+})
+
+export const { style } = defineConfig({ vars: base })
+```
+
+```tsx title="src/Label.tsx"
+import { style } from './zyzz.config.js'
+
+export function Label() {
+  return <span {...styles.label()}>Account</span>
+}
+
+namespace styles {
+  export const label = style({
+    fontFamily: 'sans',
+    fontSize: 'body',
+  })
+}
+```
+
+## Typography Presets
+
+A `typography` token groups font properties under one name. The `typography` field applies the whole group, and a field written beside it overrides the matching preset field, regardless of position.
+
+```tsx title="src/Title.tsx"
+import { style } from './zyzz.config.js'
+
+export function Title() {
+  return <h1 {...styles.title()}>Account</h1>
+}
+
+namespace styles {
+  export const title = style({ fontWeight: 700, typography: 'heading' })
+}
+```
+
+The title uses weight `700` from its own field and the remaining fields from `heading`. Presets also work in selectors, conditions, and variant choices.
+
+## Responsive Presets
+
+Presets accept ordered `@media` and `@container` blocks, so one name can change size across breakpoints. React Native rejects responsive typography blocks.
+
+```ts title="src/responsive.config.ts"
+import { defineConfig, defineVars } from 'zyzz'
+
+const base = defineVars({
+  breakpoint: { tablet: '48rem' },
+  typography: {
+    display: {
+      fontSize: '2rem',
+      lineHeight: 1.1,
+      '@media >=tablet': { fontSize: '3rem' },
+    },
+  },
+})
+
+export const { style } = defineConfig({ vars: base })
+```
+
+## Bundled Presets
+
+The optional `zyzz/default` entrypoint includes Geist typography sets. Each set applies `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight`.
+
+```ts title="src/text.ts"
+import { style } from 'zyzz/default'
+
+export namespace styles {
+  export const title = style({ typography: 'heading.32' })
+
+  export const body = style({ typography: 'copy.14', fontWeight: 'medium' })
+
+  export const code = style({ typography: 'label.14.mono' })
+}
+```
+
+The `heading`, `copy`, `label`, and `button` sets come in several sizes, with `.mono`, `.strong`, and `.subtle` variants on some sizes. The bundled font stacks still need application-owned font loading.
+
+## More
+
+<Card.Group>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Define tokens, switch themes, and share values across components.
+  </Card>
+  <Card title="Global Styles" icon="code" href="/docs/guides/global-styles">
+    Style document elements with selector maps beside component styles.
+  </Card>
+  <Card title="At-Rules" icon="code" href="/docs/guides/at-rules">
+    Declare font feature values, palettes, and other at-rules.
+  </Card>
+</Card.Group>

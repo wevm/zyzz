@@ -142,6 +142,7 @@ Applies to the documentation site and other Markdown documentation. Prose Conven
   - **More:** Links to related guides and API pages as a `Card.Group`, not a bulleted list.
 - When a guide has no recipes, hoist its sections to `##` headings between Overview and More, as the Variants guide does.
 - Group guides by topic, and preserve recipe coverage when consolidating pages.
+- Write migration guides as one `##` section per pattern, each with a before-and-after pair: the other library's code first, then the Zyzz equivalent. Highlight and comment the corresponding lines in both.
 
 ### Navigation
 

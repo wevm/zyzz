@@ -28,7 +28,7 @@ Props.create({ className: 'compiled-card' })
 
 ## Returns
 
-The returned callable accepts the [application parameters](../../core/style.md#application-parameters). The properties below Callable belong to its applied result.
+The returned callable accepts the [application parameters](https://zyzz.sh/docs/api/core/style#application). The properties below Callable belong to its applied result.
 
 ### Callable
 

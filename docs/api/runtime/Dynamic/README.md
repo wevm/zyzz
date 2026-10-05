@@ -8,4 +8,4 @@ Compiler-generated callbacks use `Dynamic` from `zyzz/runtime`. Applications nor
 
 Applying the callable requires all declared scalar inputs and accepts optional `className` and `style` overrides. It returns `style.Props` containing the generated classes and inline private-variable assignments. Empty strings are encoded as whitespace so CSSOM retains an explicit empty value. It generates no CSS rules and does not execute the authoring callback.
 
-Input shapes and CSS values are checked by TypeScript. The runtime helper binds values and merges styling props without validation. Private assignments take precedence over inline overrides. See [style](../../core/style.md) for the authoring and application contracts.
+Input shapes and CSS values are checked by TypeScript. The runtime helper binds values and merges styling props without validation. Private assignments take precedence over inline overrides. See [style](https://zyzz.sh/docs/api/core/style) for the authoring and application contracts.

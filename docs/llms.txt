@@ -37,8 +37,8 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 ## API
 
 - [API](api/README.md): Section index.
-- [zyzz](api/core/README.md): Section index.
-- [style](api/core/style.md): Reference and examples.
+- [zyzz](https://zyzz.sh/docs/api/core.md): Section index.
+- [style](https://zyzz.sh/docs/api/core/style.md): Reference and examples.
 - [Config](api/core/Config/README.md): Section index.
 - [Config.create](api/core/Config/create.md): Reference and examples.
 - [Vars](api/core/Vars/README.md): Section index.
@@ -90,5 +90,4 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Comparisons](introduction/comparisons.md): Reference and examples.
 - [Benchmarks](introduction/benchmarks.md): Reference and examples.
 
-- [selectors](api/core/selectors.md): Scoped selector strings and style references.
 - [variable](api/core/variable.md): Typed CSS variables, static assignments, and inline setters.

@@ -10,7 +10,7 @@ All four examples render a button labeled "Continue" with `#06c` text and `1rem`
 
 ### Zyzz
 
-Definitions stay beside the component in `namespace styles`. Calling a definition returns styling props. Types constrain property names, supported values, tokens, and variant selections. Root imports contain no design tokens. See [Thinking in Zyzz](thinking-in-zyzz.md) and [style](../api/core/style.md).
+Definitions stay beside the component in `namespace styles`. Calling a definition returns styling props. Types constrain property names, supported values, tokens, and variant selections. Root imports contain no design tokens. See [Thinking in Zyzz](thinking-in-zyzz.md) and [style](https://zyzz.sh/docs/api/core/style).
 
 ```tsx
 import { style } from 'zyzz'
@@ -566,7 +566,7 @@ Each `Card` receives `open: boolean`, writes `data-state="open"` or `"closed"` o
 
 ### Zyzz
 
-An empty `style()` supplies the card's selector identity. The label references that definition inside `selectors`. See [selectors](../api/core/selectors.md).
+An empty `style()` supplies the card's selector identity. The label references that definition inside `selectors`. See [selectors](https://zyzz.sh/docs/api/core/style#stylesselectors).
 
 ```tsx
 import { style } from 'zyzz'

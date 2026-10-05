@@ -29,32 +29,24 @@ namespace styles {
 
 ## Signature
 
-`style` takes a declaration object, or a callback that declares typed values supplied on each call. Both forms accept an optional definition `options` object.
-
 ```ts
-// Static declarations, or an empty definition when omitted
-function style(
-  styles?: Style.LiteralProperties,
-  options?: style.DefinitionOptions,
-): style.ReturnType
+// Static declarations
+style(styles?, options?)
 
-// Declarations that read values supplied on each call
-function style<values>(
-  styles: (values: values) => Style.LiteralProperties,
-  options?: style.DefinitionOptions,
-): style.Dynamic<values>
+// Declarations that read values passed on each call
+style((values) => styles, options?)
 ```
 
-`style` is also returned by [`defineConfig`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md), with the same signature. The configured version also accepts the config's token names as values.
+Both forms return a definition, which is applied by calling it. The `style` returned by [`defineConfig`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md) has the same signature and also accepts the config's token names.
 
 ## Parameters
 
 ### styles
 
-- **Type:** `Style.LiteralProperties | ((values: values) => Style.LiteralProperties)`
-- **Default:** `{}`
+- **Type:** `Style.LiteralProperties | ((values: values) => Style.LiteralProperties){:ts}`
+- **Default:** `{}{:ts}`
 
-CSS declarations keyed by camelCase property names. Declarations keep their authored order. [Values](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md) lists the supported properties and literal values.
+CSS declarations keyed by camelCase property names, in authored order. [Values](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md) lists the supported properties and literal values.
 
 ```ts
 import { style } from 'zyzz'
@@ -68,21 +60,7 @@ const card = style({
 })
 ```
 
-A callback receives one parameter with an explicit object type whose fields are strings or numbers. Its body must be an object literal, which compiles to static rules that read each value through a private custom property.
-
-```ts
-import { style } from 'zyzz'
-
-// Each call supplies `amount`, without creating CSS
-const meter = style((values: { amount: `${number}%` }) => ({
-  backgroundColor: 'green',
-  width: values.amount,
-}))
-```
-
-### Conditions
-
-Pseudo-class, pseudo-element, and at-rule keys nest declarations inside `styles`, at any depth. Nested blocks keep authored order and the specificity of the authored selector.
+Pseudo-class, pseudo-element, and at-rule keys nest declarations at any depth, keeping the authored selector's specificity. The [Conditions](/docs/guides/conditions) guide covers query aliases and container queries.
 
 ```ts
 import { style } from 'zyzz'
@@ -96,11 +74,21 @@ const link = style({
 })
 ```
 
-The [Conditions](/docs/guides/conditions) guide covers query aliases, container queries, and `@supports`.
+A callback receives one parameter with an explicit object type whose fields are strings or numbers. Its object body compiles to static rules that read each value through a private custom property.
+
+```ts
+import { style } from 'zyzz'
+
+// Each call supplies `amount`, without creating CSS
+const meter = style((values: { amount: `${number}%` }) => ({
+  backgroundColor: 'green',
+  width: values.amount,
+}))
+```
 
 ### styles.selectors
 
-- **Type:** `{ [selector: string]: Style.LiteralProperties }`
+- **Type:** `{ [selector: string]: Style.LiteralProperties }{:ts}`
 
 Selector strings mapped to nested declarations. `&` marks the styled element, and every branch of a selector list requires it. Template keys interpolate an earlier definition, which styles one element by the state of another.
 
@@ -125,7 +113,7 @@ Specificity follows the authored selector, so wrap a selector in `:where()` to l
 
 ### styles.vars
 
-- **Type:** ``{ [variable: `--${string}`]: string | number }``
+- **Type:** ``{ [variable: `--${string}`]: string | number }{:ts}``
 
 Static assignments for variables declared with [`variable`](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md), keyed by computed reference. Assignments can also appear inside conditions and selectors.
 
@@ -148,7 +136,7 @@ Computed keys lose each variable's value type in TypeScript.
 
 ### styles.targets
 
-- **Type:** `{ android?, ios?, native?, web? }`
+- **Type:** `Style.TargetBranches{:ts}`
 
 Platform branches applied after the shared declarations. Web output reads `targets.web`. Native output reads `targets.native`, then `targets.ios` or `targets.android` for the build platform.
 
@@ -169,8 +157,8 @@ Callback definitions cannot contain target branches. Native branches use React N
 
 ### options.id
 
-- **Type:** `string`
-- **Default:** `undefined`
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
 
 A fixed definition identity, which replaces the identity derived from the declarations. Empty and callback definitions require it when source runs without a compiler transform, such as in tests that compile extracted styles directly.
 
@@ -185,10 +173,17 @@ const card = style({}, { id: 'card' })
 
 Applying a definition returns props for one element. The optional argument accepts only styling overrides, so event handlers, children, and ARIA attributes stay on the element.
 
+A callback definition also requires every declared value on each call. Each call assigns the values to private custom properties without creating CSS.
+
+```ts
+// Width becomes 50% on this element
+styles.meter({ amount: '50%' })
+```
+
 ### options.className
 
-- **Type:** `string`
-- **Default:** `undefined`
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
 
 Classes appended after the generated classes. Their position in the string does not change precedence, which follows the order of the emitted rules.
 
@@ -199,8 +194,8 @@ styles.card({ className: 'external' })
 
 ### options.style
 
-- **Type:** `style.Options['style']`
-- **Default:** `undefined`
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
 
 Inline declarations copied onto the returned `style`. React output accepts strings and numbers. HTML output requires CSS values with units. Inline values are not resolved as tokens or validated at runtime.
 
@@ -211,8 +206,8 @@ styles.card({ style: { padding: '24px' } })
 
 ### options.vars
 
-- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }``
-- **Default:** `undefined`
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
 
 Inline custom-property assignments keyed by variable reference. They merge into the returned `style` before `options.style`. An `undefined` value omits the assignment, and callback values keep precedence over assignments to their private properties.
 
@@ -221,20 +216,11 @@ Inline custom-property assignments keyed by variable reference. They merge into 
 styles.button({ vars: { [variables.accent]: 'crimson' } })
 ```
 
-### Declared Values
-
-Callback definitions require every declared value on each call, alongside the styling overrides. Each call assigns the values to private custom properties.
-
-```ts
-// Width becomes 50% on this element
-styles.meter({ amount: '50%' })
-```
-
 ## Returns
 
 ### className
 
-- **Type:** `string`
+- **Type:** `string{:ts}`
 
 The generated classes, followed by `options.className` when supplied.
 
@@ -245,7 +231,7 @@ The generated classes, followed by `options.className` when supplied.
 
 ### style
 
-- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined`
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
 
 Inline custom properties and overrides, present only when the call assigns one. Configurations with `output: 'html'` return `class` and a serialized `style` string instead.
 
@@ -256,11 +242,11 @@ const props = styles.meter({ amount: '50%' })
 
 ## Types
 
-- **`style.DefinitionOptions`:** The definition's second argument, `{ id? }`.
-- **`style.Dynamic<values>`:** A callback definition, which requires `values` on each call.
-- **`style.Options`:** The styling overrides accepted when applying a definition.
-- **`style.Props`:** The returned props, `className` and an optional `style`.
-- **`style.ReturnType`:** A static definition, called with optional overrides.
+- **`style.DefinitionOptions{:ts}`:** The definition's second argument, `{ id? }`.
+- **`style.Dynamic<values>{:ts}`:** A callback definition, which requires `values` on each call.
+- **`style.Options{:ts}`:** The styling overrides accepted when applying a definition.
+- **`style.Props{:ts}`:** The returned props, `className` and an optional `style`.
+- **`style.ReturnType{:ts}`:** A static definition, called with optional overrides.
 
 ```tsx title="Panel.tsx"
 import type { ReactNode } from 'react'

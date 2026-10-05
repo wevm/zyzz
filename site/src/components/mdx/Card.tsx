@@ -1,14 +1,26 @@
 /** Provides linked next-step cards and responsive card groups for MDX. @module */
 import type { ReactNode } from 'react'
 import BoxesIcon from '~icons/lucide/boxes'
+import BracesIcon from '~icons/lucide/braces'
 import CodeIcon from '~icons/lucide/code'
+import CombineIcon from '~icons/lucide/combine'
+import CopyPlusIcon from '~icons/lucide/copy-plus'
+import FileCodeIcon from '~icons/lucide/file-code'
+import FileTypeIcon from '~icons/lucide/file-type'
 import LayersIcon from '~icons/lucide/layers'
+import ListIcon from '~icons/lucide/list'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PanelsIcon from '~icons/lucide/panels-top-left'
+import Settings2Icon from '~icons/lucide/settings-2'
+import SettingsIcon from '~icons/lucide/settings'
 import SlidersIcon from '~icons/lucide/sliders-horizontal'
 import SmartphoneIcon from '~icons/lucide/smartphone'
+import SunMoonIcon from '~icons/lucide/sun-moon'
+import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
+import VariableIcon from '~icons/lucide/variable'
 import ZapIcon from '~icons/lucide/zap'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import ReactIcon from '~icons/simple-icons/react'
@@ -148,17 +160,29 @@ namespace styles {
 
 const icons = {
   boxes: BoxesIcon,
+  braces: BracesIcon,
   code: CodeIcon,
+  combine: CombineIcon,
+  'copy-plus': CopyPlusIcon,
+  'file-code': FileCodeIcon,
+  'file-type': FileTypeIcon,
   layers: LayersIcon,
+  list: ListIcon,
+  next: NextIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
-  next: NextIcon,
   panels: PanelsIcon,
   react: ReactIcon,
   rollup: RollupIcon,
+  settings: SettingsIcon,
+  'settings-2': Settings2Icon,
   sliders: SlidersIcon,
   smartphone: SmartphoneIcon,
+  'sun-moon': SunMoonIcon,
+  'swatch-book': SwatchBookIcon,
+  tag: TagIcon,
   terminal: TerminalIcon,
+  variable: VariableIcon,
   vite: ViteIcon,
   zap: ZapIcon,
 }

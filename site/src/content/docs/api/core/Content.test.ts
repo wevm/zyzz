@@ -1,4 +1,4 @@
-/** Compiles and type-checks the core API pages' examples through public compiler entrypoints. @module */
+/** Compiles and type-checks the core API reference examples through public compiler entrypoints. @module */
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Module from 'node:module'
@@ -59,98 +59,6 @@ function css(source: string) {
   return Css.compile({ styles: extracted.styles }).css
 }
 
-describe('core API page', () => {
-  test('compiles the overview example', async () => {
-    const [card] = await examples('../core')
-
-    expect(css(card!.source)).toMatchInlineSnapshot(`
-      ".z-border-radius-8px{border-radius:8px;}
-      .z-p-16px{padding:16px;}
-      .z-font-size-\\5b 1\\2e 25rem\\5d {font-size:1.25rem;}
-      .z-m-0{margin:0;}"
-    `)
-  })
-
-  test('compiles the authoring example', async () => {
-    const [tab] = await examples('../core', 'Authoring')
-
-    expect(css(tab!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-styles-tab-text-0{color:gray;}
-      .z-3oDDjY-styles-tab-p-1{padding:8px 12px;}
-      .z-3oDDjY-styles-active-text-0{color:black;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-0-text-0{color:gray;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-0-p-1{padding:8px 12px;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-0{color:gray;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-p-1{padding:8px 12px;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-2{color:black;}"
-    `)
-  })
-
-  test('builds the config module that helpers import from', async () => {
-    const [config] = await examples('../core', 'Configuration')
-    const [preview] = await examples('../core', 'Config Helpers')
-    const directory = Path.join(root, 'config')
-    await Fs.mkdir(directory)
-    await Fs.writeFile(Path.join(directory, config!.name!), config!.source)
-    await Fs.writeFile(Path.join(directory, preview!.name!), preview!.source)
-
-    await using host = await Host.create({
-      outDir: Path.join(directory, 'dist'),
-      packageId: 'core-api',
-      root: directory,
-    })
-    await host.build()
-
-    expect(
-      await Fs.readFile(
-        Path.join(directory, 'dist/zyzz.config.ts.css'),
-        'utf8',
-      ),
-    ).toMatchInlineSnapshot(`
-      ".z_scheme-dark {
-        color-scheme: dark;
-      }
-
-      .z_scheme-light {
-        color-scheme: light;
-      }
-
-      .z_scheme-light-dark {
-        color-scheme: light dark;
-      }
-      "
-    `)
-
-    const helpers = await import(Path.join(directory, 'dist/zyzz.config.ts'))
-    expect(helpers.vars({ colorScheme: 'dark' })).toMatchInlineSnapshot(`
-      {
-        "className": "z-theme-theme z_scheme-dark",
-        "style": {
-          "colorScheme": "dark",
-        },
-      }
-    `)
-  })
-
-  test('compiles the namespaces example', async () => {
-    const [button] = await examples('../core', 'Namespaces')
-
-    expect(css(button!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-styles-button-p-0{&:where([data-size="sm"]){padding:4px;}}
-      .z-3oDDjY-styles-button-p-1{&:where([data-size="lg"]){padding:8px;}}"
-    `)
-  })
-
-  test('compiles the reference example', async () => {
-    const [card] = await examples('../core', 'Reference')
-
-    expect(css(card!.source)).toMatchInlineSnapshot(`
-      ".z-text-\\5b black\\21 important\\5d {color:black!important;}
-      .z-display-\\5b block\\3b display\\3a grid\\5d {display:block;display:grid;}"
-    `)
-  })
-})
-
 describe('style API page', () => {
   test('compiles the overview example', async () => {
     const [card] = await examples('style')
@@ -163,27 +71,25 @@ describe('style API page', () => {
     `)
   })
 
-  test('compiles static and callback declarations', async () => {
-    const [declarations, callback] = await examples('style', 'styles')
+  test('compiles declarations, conditions, and callbacks', async () => {
+    const [declarations, conditions, callback] = await examples(
+      'style',
+      'styles',
+    )
 
     expect(css(declarations!.source)).toMatchInlineSnapshot(`
       ".z-text-\\5b black\\21 important\\5d {color:black!important;}
       .z-display-\\5b block\\3b display\\3a grid\\5d {display:block;display:grid;}
       .z-p-16px{padding:16px;}"
     `)
-    expect(css(callback!.source)).toMatchInlineSnapshot(`
-      ".z-bg-green{background-color:green;}
-      .z-w-\\5b var\\28 --z-3oDDjY-meter-amount\\29 \\5d {width:var(--z-3oDDjY-meter-amount);}"
-    `)
-  })
-
-  test('compiles nested conditions', async () => {
-    const [link] = await examples('style', 'Conditions')
-
-    expect(css(link!.source)).toMatchInlineSnapshot(`
+    expect(css(conditions!.source)).toMatchInlineSnapshot(`
       ".z-3oDDjY-link-text-0{color:blue;}
       .z-3oDDjY-link-text-1{&:hover{color:navy;}}
       @media (width >= 48rem){.z-3oDDjY-link-font-size-2{font-size:1.125rem;}}"
+    `)
+    expect(css(callback!.source)).toMatchInlineSnapshot(`
+      ".z-bg-green{background-color:green;}
+      .z-w-\\5b var\\28 --z-3oDDjY-meter-amount\\29 \\5d {width:var(--z-3oDDjY-meter-amount);}"
     `)
   })
 
@@ -271,24 +177,14 @@ describe('style API page', () => {
 
 describe('core API examples', () => {
   test('type-check against the published declarations', async () => {
-    const [config] = await examples('../core', 'Configuration')
-    const pages = await Promise.all(
-      ['../core', 'style'].map((page) => examples(page)),
-    )
     const files = await Promise.all(
-      pages
-        .flat()
+      (await examples('style'))
         // Twoslash blocks that declare expected errors are checked by the site build.
         .filter((example) => !example.source.includes('// @errors'))
         .map(async (example, index) => {
           const directory = Path.join(root, 'types', String(index))
           const file = Path.join(directory, example.name ?? 'Example.tsx')
           await Fs.mkdir(directory, { recursive: true })
-          // Config helper examples import the documented config module.
-          await Fs.writeFile(
-            Path.join(directory, config!.name!),
-            config!.source,
-          )
           await Fs.writeFile(file, example.source)
           return file
         }),
@@ -320,7 +216,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(16)
+    expect(files).toHaveLength(10)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

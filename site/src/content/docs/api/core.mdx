@@ -2,151 +2,139 @@
 
 Define styles, recipes, variables, and configuration with the root `zyzz` entrypoint.
 
-Root exports carry no design tokens. A config module binds `style` and `variants` to tokens through `defineConfig`, and `zyzz/default` exports a ready-made configuration. The compiler reads every definition at build time and emits its CSS ahead of time.
-
-```tsx title="Card.tsx"
-import { style } from 'zyzz'
-
-export function Card(props: Card.Props) {
-  return (
-    // Each element spreads the props its definition returns
-    <article {...styles.card()}>
-      <h2 {...styles.title()}>{props.title}</h2>
-    </article>
-  )
-}
-
-export declare namespace Card {
-  type Props = { title: string }
-}
-
-namespace styles {
-  export const card = style({ borderRadius: '8px', padding: '16px' })
-
-  export const title = style({ fontSize: '1.25rem', margin: 0 })
-}
-```
-
 ## Authoring
 
-Definitions live at module scope, where the compiler reads them without running application code. Applying a definition returns props for one element and never creates CSS.
-
-- **[`style`](/docs/api/core/style):** Defines a callable style that compiles to static CSS.
-- **[`variants`](https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md):** Defines finite style choices, defaults, and compound rules for one element.
-- **[`cx`](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md):** Combines applied styles in order, keeping variable bindings and recipe attributes.
-- **[`variable`](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md):** Declares a typed CSS variable for static and inline assignments.
-
-```tsx title="Tab.tsx"
-import { cx, style } from 'zyzz'
-
-export function Tab(props: Tab.Props) {
-  // Later styles win conflicting declarations
-  return (
-    <button {...cx(styles.tab(), props.active && styles.active())}>
-      {props.label}
-    </button>
-  )
-}
-
-export declare namespace Tab {
-  type Props = { active: boolean; label: string }
-}
-
-namespace styles {
-  export const tab = style({ color: 'gray', padding: '8px 12px' })
-
-  export const active = style({ color: 'black' })
-}
-```
+<Card.Group>
+  <Card title="style" icon="paintbrush" href="/docs/api/core/style">
+    Define a callable style that compiles to static CSS and returns element
+    props.
+  </Card>
+  <Card
+    title="variants"
+    icon="layers"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md"
+  >
+    Define finite style choices, defaults, and compound rules for one element.
+  </Card>
+  <Card
+    title="cx"
+    icon="combine"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md"
+  >
+    Combine applied styles in order, keeping their variable bindings and recipe
+    attributes.
+  </Card>
+  <Card
+    title="variable"
+    icon="variable"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md"
+  >
+    Declare a typed CSS variable that styles read and assign, statically or when
+    applied.
+  </Card>
+</Card.Group>
 
 ## Configuration
 
-`defineConfig` binds `style` and `variants` to a variable set and returns them with the config helpers. Export the helpers from one config module.
-
-- **[`defineConfig`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md):** Creates token-bound authoring helpers. Alias of `Config.create`.
-- **[`defineVars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md):** Defines a typed variable set without emitting CSS. Alias of `Vars.define`.
-- **[`extendVars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md):** Overrides values in a set while keeping its contract. Alias of `Vars.extend`.
-
-```ts title="zyzz.config.ts"
-import { defineConfig, defineVars } from 'zyzz'
-
-const base = defineVars({
-  color: { foreground: { light: '#171717', dark: '#fafafa' } },
-  spacing: { page: '1rem' },
-})
-
-// Token names become values for the properties they map to
-export const { appearance, script, style, variants, vars } = defineConfig({
-  vars: base,
-})
-```
+<Card.Group>
+  <Card
+    title="defineConfig"
+    icon="settings"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md"
+  >
+    Bind style and recipe helpers to a variable set, and return the config
+    helpers.
+  </Card>
+  <Card
+    title="defineVars"
+    icon="palette"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md"
+  >
+    Define a typed variable set of tokens, color pairs, and conditions without
+    emitting CSS.
+  </Card>
+  <Card
+    title="extendVars"
+    icon="copy-plus"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md"
+  >
+    Override values in an existing variable set while keeping its paths and
+    value types.
+  </Card>
+</Card.Group>
 
 ## Config Helpers
 
-These helpers come from the `defineConfig` result, so applications import them from the config module. `zyzz/default` exports the same set.
-
-- **[`vars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#helpers):** References tokens and selects a variable set or color scheme for a subtree.
-- **[`appearance`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#appearance):** Reads and persists the document's variable set and color scheme.
-- **[`script`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md):** Returns an inline script that restores saved preferences before the first paint.
-
-```tsx title="Preview.tsx"
-import type { ReactNode } from 'react'
-import { vars } from './zyzz.config.js'
-
-export function Preview(props: Preview.Props) {
-  // Fixes the dark scheme for this subtree
-  return <section {...vars({ colorScheme: 'dark' })}>{props.children}</section>
-}
-
-export declare namespace Preview {
-  type Props = { children: ReactNode }
-}
-```
+<Card.Group>
+  <Card
+    title="vars"
+    icon="braces"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#helpers"
+  >
+    Reference tokens, and select a variable set or color scheme for a subtree.
+  </Card>
+  <Card
+    title="appearance"
+    icon="sun-moon"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#appearance"
+  >
+    Read and persist the document's variable set and color scheme across page
+    loads.
+  </Card>
+  <Card
+    title="script"
+    icon="file-code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md"
+  >
+    Return an inline script that restores saved preferences before the first
+    paint.
+  </Card>
+</Card.Group>
 
 ## Namespaces
 
-Namespaces hold the functions behind each alias, plus shared types and errors.
-
-- **[`Config`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/README.md):** `Config.create`, with configuration types and `Config.InvalidError`.
-- **[`Props`](https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md#inferred-props):** Type-only. `Props.Variants` infers component props from a `variants` definition.
-- **[`Style`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/README.md):** `Style.define` for validated style data, with style types and `Style.InvalidError`.
-- **[`Vars`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md):** `Vars.define`, `Vars.extend`, and `Vars.compose`, with variable types and `Vars.InvalidError`.
-
-```tsx title="Button.tsx"
-import { type Props, variants } from 'zyzz'
-
-export function Button(props: Button.Props) {
-  return (
-    <button {...styles.button(props)} type="button">
-      Save
-    </button>
-  )
-}
-
-export declare namespace Button {
-  // Accepts `size` plus the styling overrides
-  type Props = Props.Variants<typeof styles.button>
-}
-
-namespace styles {
-  export const button = variants({
-    defaultVariants: { size: 'sm' },
-    variants: { size: { sm: { padding: '4px' }, lg: { padding: '8px' } } },
-  })
-}
-```
+<Card.Group>
+  <Card
+    title="Config"
+    icon="settings-2"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/README.md"
+  >
+    Configuration types and errors, plus the create function behind
+    defineConfig.
+  </Card>
+  <Card
+    title="Props"
+    icon="tag"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md#inferred-props"
+  >
+    Type-only helpers that infer a component's props from a variants definition.
+  </Card>
+  <Card
+    title="Style"
+    icon="file-type"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/README.md"
+  >
+    Define and validate ordered style data, with the shared style types and
+    errors.
+  </Card>
+  <Card
+    title="Vars"
+    icon="swatch-book"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md"
+  >
+    The functions behind defineVars and extendVars, with variable set types.
+  </Card>
+</Card.Group>
 
 ## Reference
 
-- **[Values](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md):** Supported CSS properties and literal values, including fallbacks and importance.
-
-```ts title="Card.ts"
-import { style } from 'zyzz'
-
-export const card = style({
-  // The suffix marks the declaration as important
-  color: 'black !important',
-  // Arrays emit fallbacks in order
-  display: ['block', 'grid'],
-})
-```
+<Card.Group>
+  <Card
+    title="Values"
+    icon="list"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md"
+  >
+    Supported CSS properties and literal values, including fallbacks and
+    importance.
+  </Card>
+</Card.Group>

@@ -56,7 +56,7 @@ Host.create({ packageId: 'my-app', root: 'src' })
 - **Type:** `string{:ts}`
 - **Default:** `'dist'{:ts}`
 
-The output directory, resolved from the working directory and created when missing. It must not contain `root` or a symbolic link, though it may sit inside `root`. Another host cannot open it until this one closes.
+The output directory, resolved from the working directory and created when missing. It must not contain `root`, though it may sit inside `root`, and neither its path nor any output file's path may pass through a symbolic link. Another host cannot open it until this one closes.
 
 ```ts /outDir: 'out'/
 // Publishes to out/ instead of dist/
@@ -122,7 +122,7 @@ await host.build()
 - **Type:** `readonly string[]{:ts}`
 - **Default:** `[]{:ts}`
 
-Imports left unresolved for downstream tooling. A pattern matches an exact specifier, or a prefix when it ends in `*`. Other bare imports must resolve, and external modules cannot supply compiled styles or variables.
+Imports left unresolved for downstream tooling. A pattern matches an exact specifier, or a prefix when it ends in `*`. Other bare runtime imports must resolve, and external modules cannot supply compiled styles or variables.
 
 ```ts
 import { Host } from 'zyzz/node'
@@ -138,7 +138,7 @@ await using host = await Host.create({
 await host.build()
 ```
 
-Imports of `zyzz` and its subpaths, Node built-ins such as `fs`, URL specifiers, and specifiers with a query are never resolved. `zyzz/default` resolves like any installed module.
+Type-only imports, imports of `zyzz` and its subpaths, Node built-ins such as `fs`, URL specifiers, and specifiers with a query are never resolved. `zyzz/default` resolves like any installed module.
 
 ### options.script
 

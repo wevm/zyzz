@@ -94,6 +94,50 @@ CompositionHtml.create({
 })
 ```
 
+### entries
+
+- **Type:** `readonly (Html.Attributes | false | null | undefined)[]{:ts}`
+
+Attributes in the order of `options.inputs`, with the [`Composition`](/docs/api/runtime/namespaces/Composition#entries) merge rules applied to their retained props. Attributes without retained props contribute nothing.
+
+```ts /card({ style: { padding: '1rem' } })/
+// Merges the retained props of one bound card
+compose(card({ style: { padding: '1rem' } }))
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The selected precompiled class list, followed by external classes in argument order.
+
+```ts /attributes.class/
+// 'z-card-composed'
+attributes.class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The merged inline styles serialized once, present only when a style remains.
+
+```ts /attributes.style/
+// 'padding:1rem'
+attributes.style
+```
+
+### data-[axis]
+
+- **Type:** `string | undefined{:ts}`
+
+Every `data-*` attribute of the retained props, with later arguments winning.
+
+```ts /compose(button())['data-size']/
+// 'large' for a bound recipe whose default size is large
+compose(button())['data-size']
+```
+
 ## CompositionHtml.from
 
 ```ts

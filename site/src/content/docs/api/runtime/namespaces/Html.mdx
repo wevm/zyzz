@@ -131,11 +131,69 @@ Html.create(options)
 
 - **Type:** `string{:ts}`
 
-The complete generated class list. The result equals `Html.bind(Props.create(options))`, with the [`Props.create`](/docs/api/runtime/namespaces/Props) application contract.
+The complete generated class list. The result equals `Html.bind(Props.create(options))`.
 
 ```ts /Html.create({ className: 'z-card' })/
 // card({ style: { padding: '1rem' } }) returns { class: 'z-card', style: 'padding:1rem' }
 const card = Html.create({ className: 'z-card' })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes passed to the callable, appended after the generated class list.
+
+```ts /className: 'wide'/
+// { class: 'z-card wide' }
+card({ className: 'wide' })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments, serialized before `options.style`.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { class: 'z-card', style: '--accent:crimson' }
+card({ vars: { '--accent': 'crimson' } })
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline declarations, serialized after `options.vars`.
+
+```ts /style: { padding: '24px' }/
+// { class: 'z-card', style: '--accent:crimson;padding:24px' }
+card({ style: { padding: '24px' }, vars: { '--accent': 'crimson' } })
+```
+
+### class
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `options.className` when supplied.
+
+```ts /card().class/
+// 'z-card'
+card().class
+```
+
+### style
+
+- **Type:** `string | undefined{:ts}`
+
+The merged declarations serialized as [`Html.from`](#style) serializes them, present only when the call supplies `vars` or `style`.
+
+```ts /card({ style: { padding: '1rem' } }).style/
+// 'padding:1rem'
+card({ style: { padding: '1rem' } }).style
 ```
 
 ## Types

@@ -253,6 +253,21 @@ describe('ConditionalRecipe API page', () => {
       ConditionalRecipe.attribute({ axis: 'size', condition: 1 }),
     ).toMatchInlineSnapshot(`"data-zyzz-condition-1-size"`)
   })
+
+  test('throws for a conditional value without a string form', () => {
+    const button = ConditionalRecipe.create({
+      axes: { size: ['small', 'large'] },
+      className: 'z-button',
+      conditions: ['wide'],
+      defaults: {},
+    })
+
+    expect(() =>
+      button({ conditions: { wide: { size: Symbol('large') } } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot convert a Symbol value to a string]`,
+    )
+  })
 })
 
 describe('PayloadRecipe API page', () => {
@@ -392,6 +407,27 @@ describe('PayloadRecipe API page', () => {
       }
     `)
   })
+
+  test('throws for a null field record', () => {
+    const definition = { axes: { size: ['custom'] }, defaults: {} }
+    const box = PayloadRecipe.create({
+      ...definition,
+      payloads: [
+        {
+          axis: 'size',
+          choice: 'custom',
+          slots: [{ padding: '--box-padding' }],
+        },
+      ],
+      select: Recipe.create({ ...definition, className: 'z-box' }),
+    })
+
+    expect(() =>
+      box({ size: { custom: null } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot read properties of null (reading 'padding')]`,
+    )
+  })
 })
 
 describe('Composition API page', () => {
@@ -475,6 +511,30 @@ describe('Html API page', () => {
       }
     `)
   })
+
+  test('applies Html.create overrides', () => {
+    const card = Html.create({ className: 'z-card' })
+
+    expect(card({ className: 'wide' })).toMatchInlineSnapshot(`
+      {
+        "class": "z-card wide",
+      }
+    `)
+    expect(card({ vars: { '--accent': 'crimson' } })).toMatchInlineSnapshot(`
+      {
+        "class": "z-card",
+        "style": "--accent:crimson",
+      }
+    `)
+    expect(
+      card({ style: { padding: '24px' }, vars: { '--accent': 'crimson' } }),
+    ).toMatchInlineSnapshot(`
+      {
+        "class": "z-card",
+        "style": "--accent:crimson;padding:24px",
+      }
+    `)
+  })
 })
 
 describe('CompositionHtml API page', () => {
@@ -498,6 +558,40 @@ describe('CompositionHtml API page', () => {
       }
     `)
     expect(CompositionHtml.bind(button)()).toMatchInlineSnapshot(`
+      {
+        "class": "z-button",
+        "data-size": "large",
+      }
+    `)
+  })
+
+  test('returns serialized attributes from create', () => {
+    const card = CompositionHtml.bind(Props.create({ className: 'z-card' }))
+    const button = CompositionHtml.bind(
+      Recipe.create({
+        axes: { size: ['large'] },
+        className: 'z-button',
+        defaults: { size: 'large' },
+      }),
+    )
+    const compose = CompositionHtml.create({
+      className: 'z-card-composed',
+      inputs: [{ className: 'z-card', owners: [] }],
+    })
+
+    expect(compose(card({ style: { padding: '1rem' } })))
+      .toMatchInlineSnapshot(`
+      {
+        "class": "z-card-composed",
+        "style": "padding:1rem",
+      }
+    `)
+    expect(
+      CompositionHtml.create({
+        className: 'z-button',
+        inputs: [{ className: 'z-button', owners: [] }],
+      })(button()),
+    ).toMatchInlineSnapshot(`
       {
         "class": "z-button",
         "data-size": "large",

@@ -111,7 +111,7 @@ Individual fields remain available through `vars.typography.heading[32].fontSize
 
 ### Signature
 
-Signature: `style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](./core/style.md) apply; untransformed execution throws `style.MissingTransformError`.
+Signature: `style(styles)`. Accepts a static style object or typed value callback with bundled token inference. Returns a callable producing `className` and optional `style` props. The [style parameters and returns](https://zyzz.sh/docs/api/core/style) apply; untransformed execution throws `style.MissingTransformError`.
 
 ```ts
 const card = style({ padding: 4 })

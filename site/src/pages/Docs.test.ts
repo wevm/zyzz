@@ -231,6 +231,65 @@ describe('/docs', () => {
     }
   })
 
+  test('groups core API exports under labelled sections', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/api/core/style`)
+      const navigation = page.getByRole('navigation', { name: 'Documentation' })
+      const core = navigation.locator('details', {
+        has: page.getByRole('group', { name: 'Authoring' }),
+      })
+
+      // The topic opens because it contains the current page.
+      expect(await core.getAttribute('open')).toMatchInlineSnapshot('""')
+      expect(
+        await core
+          .getByRole('group')
+          .evaluateAll((groups) =>
+            groups.map((group) => group.firstElementChild?.textContent),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "Authoring",
+          "Configuration",
+          "Config Helpers",
+          "Namespaces",
+          "Reference",
+        ]
+      `)
+      expect(
+        await core
+          .getByRole('link', { name: 'Overview', exact: true })
+          .getAttribute('href'),
+      ).toMatchInlineSnapshot('"/docs/api/core"')
+
+      const authoring = core.getByRole('group', { name: 'Authoring' })
+      expect(
+        await authoring
+          .getByRole('link', { name: 'style', exact: true })
+          .getAttribute('aria-current'),
+      ).toMatchInlineSnapshot('"page"')
+      expect(
+        await authoring
+          .getByRole('link', { name: 'variants', exact: false })
+          .getAttribute('aria-disabled'),
+      ).toMatchInlineSnapshot('"true"')
+      expect(await navigation.getByRole('heading').allTextContents())
+        .toMatchInlineSnapshot(`
+        [
+          "Introduction",
+          "Guides",
+          "API",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('spans the viewport and outlines page sections beside the article', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

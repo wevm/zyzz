@@ -1,0 +1,313 @@
+# style
+
+Define a callable style that compiles to static CSS and returns styling props.
+
+The compiler reads each definition at build time, emits its rules, and rewrites the definition into a function that returns class names. Applying it never creates CSS.
+
+```tsx title="Card.tsx"
+import { style } from 'zyzz'
+
+export function Card(props: Card.Props) {
+  return (
+    // [!code hl:3]
+    // Spread each applied definition onto its element
+    <article {...styles.card()}>
+      <h2 {...styles.title()}>{props.title}</h2>
+    </article>
+  )
+}
+
+export declare namespace Card {
+  type Props = { title: string }
+}
+
+namespace styles {
+  export const card = style({ borderRadius: '8px', padding: '16px' })
+
+  export const title = style({ fontSize: '1.25rem', margin: 0 })
+}
+```
+
+## Signature
+
+```ts
+// Static declarations
+style(styles?, options?)
+
+// Declarations that read values passed on each call
+style((values) => styles, options?)
+```
+
+Both forms return a definition, which is applied by calling it. The `style` returned by [`defineConfig`](https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md) has the same signature and also accepts the config's token names.
+
+## Parameters
+
+### styles
+
+- **Type:** `Style.LiteralProperties | ((values: values) => Style.LiteralProperties){:ts}`
+- **Default:** `{}{:ts}`
+
+CSS declarations keyed by camelCase property names, in authored order. [Values](https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md) lists the supported properties and literal values.
+
+```ts
+import { style } from 'zyzz'
+
+const card = style({
+  // [!code hl:4]
+  // The suffix marks the declaration as important
+  color: 'black !important',
+  // Arrays emit fallbacks in order
+  display: ['block', 'grid'],
+  padding: '16px',
+})
+```
+
+Pseudo-class, pseudo-element, and at-rule keys nest declarations at any depth, keeping the authored selector's specificity. The [Conditions](/docs/guides/conditions) guide covers query aliases and container queries.
+
+```ts
+import { style } from 'zyzz'
+
+const link = style({
+  color: 'blue',
+  // [!code hl:4]
+  // Pseudo-classes and pseudo-elements target the styled element
+  ':hover': { color: 'navy' },
+  // At-rules require a complete query
+  '@media (width >= 48rem)': { fontSize: '1.125rem' },
+})
+```
+
+A callback receives one parameter with an explicit object type whose fields are strings or numbers. Its object body compiles to static rules that read each value through a private custom property.
+
+```ts
+import { style } from 'zyzz'
+
+// [!code hl:2]
+// Each call supplies `amount`, without creating CSS
+const meter = style((values: { amount: `${number}%` }) => ({
+  backgroundColor: 'green',
+  width: values.amount, // [!code hl]
+}))
+```
+
+### styles.selectors
+
+- **Type:** `{ [selector: string]: Style.LiteralProperties }{:ts}`
+
+Selector strings mapped to nested declarations. `&` marks the styled element, and every branch of a selector list requires it. Template keys interpolate an earlier definition, which styles one element by the state of another.
+
+```ts
+import { style } from 'zyzz'
+
+namespace styles {
+  // An empty definition supplies a selector identity
+  export const card = style()
+
+  export const label = style({
+    color: 'gray',
+    // [!code hl:4]
+    selectors: {
+      '[data-state="open"] &': { color: 'blue' },
+      [`${card}:hover &`]: { color: 'black' },
+    },
+  })
+}
+```
+
+Specificity follows the authored selector, so wrap a selector in `:where()` to lower it. Express state through data and ARIA attributes. Callback values apply only in selectors that target the styled element, since their private custom properties live on it.
+
+### styles.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number }{:ts}``
+
+Static assignments for variables declared with [`variable`](https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md), keyed by computed reference. Assignments can also appear inside conditions and selectors.
+
+```ts
+import { style, variable } from 'zyzz'
+
+namespace variables {
+  export const accent = variable('color')
+}
+
+const button = style({
+  backgroundColor: variables.accent,
+  // [!code hl:3]
+  // Assigns the variable on the styled element
+  vars: { [variables.accent]: 'royalblue' },
+  ':hover': { vars: { [variables.accent]: 'navy' } },
+})
+```
+
+Computed keys lose each variable's value type in TypeScript.
+
+### styles.targets
+
+- **Type:** `Style.TargetBranches{:ts}`
+
+Platform branches applied after the shared declarations. Web output reads `targets.web`. Native output reads `targets.native`, then `targets.ios` or `targets.android` for the build platform.
+
+```ts
+import { style } from 'zyzz'
+
+const balance = style({
+  fontSize: '16px',
+  // [!code hl:5]
+  // Branch values apply only on their platform
+  targets: {
+    native: { fontVariant: ['tabular-nums'] },
+    web: { fontVariantNumeric: 'tabular-nums' },
+  },
+})
+```
+
+Callback definitions cannot contain target branches. Native branches use React Native property names and values. [Native Styling](/docs/guides/native/styling) covers platform branches in detail.
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A fixed definition identity, which replaces the identity derived from the declarations. Empty and callback definitions require it when source runs without a compiler transform, such as in tests that compile extracted styles directly.
+
+```ts /{ id: 'card' }/
+import { style } from 'zyzz'
+
+// Applies as `z-style-id-card` without a compiler transform
+const card = style({}, { id: 'card' })
+```
+
+## Application
+
+Applying a definition returns props for one element. The optional argument accepts only styling overrides, so event handlers, children, and ARIA attributes stay on the element.
+
+A callback definition also requires every declared value on each call. Each call assigns the values to private custom properties without creating CSS.
+
+```ts /amount: '50%'/
+// Width becomes 50% on this element
+styles.meter({ amount: '50%' })
+```
+
+### options.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated classes. Their position in the string does not change precedence, which follows the order of the emitted rules.
+
+```ts /className: 'external'/
+// Returns the generated classes followed by `external`
+styles.card({ className: 'external' })
+```
+
+### options.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline declarations copied onto the returned `style`. React output accepts strings and numbers. HTML output requires CSS values with units. Inline values are not resolved as tokens or validated at runtime.
+
+```ts /style: { padding: '24px' }/
+// Overrides the compiled padding on this element only
+styles.card({ style: { padding: '24px' } })
+```
+
+### options.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Inline custom-property assignments keyed by variable reference. They merge into the returned `style` before `options.style`. An `undefined` value omits the assignment, and callback values keep precedence over assignments to their private properties.
+
+```ts /vars: { [variables.accent]: 'crimson' }/
+// Overrides the static assignment on this element
+styles.button({ vars: { [variables.accent]: 'crimson' } })
+```
+
+## Returns
+
+### className
+
+- **Type:** `string{:ts}`
+
+The generated classes, followed by `options.className` when supplied.
+
+```tsx /{...styles.card()}/
+// Spreading assigns `className` and `style` together
+<article {...styles.card()} />
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+
+Inline custom properties and overrides, present only when the call assigns one. Configurations with `output: 'html'` return `class` and a serialized `style` string instead.
+
+```ts /props/
+// { className: '…', style: { '--…': '50%' } }
+const props = styles.meter({ amount: '50%' })
+```
+
+## Types
+
+- **`style.DefinitionOptions{:ts}`:** The definition's second argument, `{ id? }`.
+- **`style.Dynamic<values>{:ts}`:** A callback definition, which requires `values` on each call.
+- **`style.Options{:ts}`:** The styling overrides accepted when applying a definition.
+- **`style.Props{:ts}`:** The returned props, `className` and an optional `style`.
+- **`style.ReturnType{:ts}`:** A static definition, called with optional overrides.
+
+```tsx title="Panel.tsx"
+import type { ReactNode } from 'react'
+import { style } from 'zyzz'
+
+export function Panel(props: Panel.Props) {
+  // [!code hl:2]
+  // Forwards caller overrides to the definition
+  return <section {...styles.panel(props.overrides)}>{props.children}</section>
+}
+
+export declare namespace Panel {
+  // [!code hl]
+  type Props = { children: ReactNode; overrides?: style.Options | undefined }
+}
+
+namespace styles {
+  export const panel = style({ padding: '16px' })
+}
+```
+
+## Errors
+
+TypeScript rejects unsupported properties and values in definitions, and unknown keys when applying one.
+
+```ts twoslash
+// @errors: 2353
+import { style } from 'zyzz'
+
+const button = style({ padding: '8px 16px' })
+
+// Event handlers belong on the element
+button({ onClick: () => {} })
+```
+
+The compiler reports unsupported source as `Source.ExtractError` with the source location, such as a selector without `&`. Without a compiler transform, an empty or callback definition without `options.id` throws an `Error`.
+
+## React Native
+
+Applying a definition on native returns `{ style }` with compiled style objects instead of class names. Declarations that native views cannot express fail native compilation with a diagnostic.
+
+```tsx title="Profile.tsx"
+import { Text } from 'react-native'
+import { style } from 'zyzz'
+
+export function Profile() {
+  // [!code hl:2]
+  // Spreads a native `style` prop
+  return <Text {...styles.name()}>Ada</Text>
+}
+
+namespace styles {
+  export const name = style({ color: '#111111', fontSize: '16px' })
+}
+```
+
+[Native Styling](/docs/guides/native/styling) covers units, fonts, and dynamic values on native.

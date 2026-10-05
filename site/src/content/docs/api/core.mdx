@@ -1,0 +1,140 @@
+# Core
+
+Define styles, recipes, variables, and configuration with the root `zyzz` entrypoint.
+
+## Authoring
+
+<Card.Group>
+  <Card title="style" icon="paintbrush" href="/docs/api/core/style">
+    Define a callable style that compiles to static CSS and returns element
+    props.
+  </Card>
+  <Card
+    title="variants"
+    icon="layers"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md"
+  >
+    Define finite style choices, defaults, and compound rules for one element.
+  </Card>
+  <Card
+    title="cx"
+    icon="combine"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md"
+  >
+    Combine applied styles in order, keeping their variable bindings and recipe
+    attributes.
+  </Card>
+  <Card
+    title="variable"
+    icon="variable"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/variable.md"
+  >
+    Declare a typed CSS variable that styles read and assign, statically or when
+    applied.
+  </Card>
+</Card.Group>
+
+## Configuration
+
+<Card.Group>
+  <Card
+    title="defineConfig"
+    icon="settings"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md"
+  >
+    Bind style and recipe helpers to a variable set, and return the config
+    helpers.
+  </Card>
+  <Card
+    title="defineVars"
+    icon="palette"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md"
+  >
+    Define a typed variable set of tokens, color pairs, and conditions without
+    emitting CSS.
+  </Card>
+  <Card
+    title="extendVars"
+    icon="copy-plus"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md"
+  >
+    Override values in an existing variable set while keeping its paths and
+    value types.
+  </Card>
+</Card.Group>
+
+## Config Helpers
+
+<Card.Group>
+  <Card
+    title="vars"
+    icon="braces"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#helpers"
+  >
+    Reference tokens, and select a variable set or color scheme for a subtree.
+  </Card>
+  <Card
+    title="appearance"
+    icon="sun-moon"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/create.md#appearance"
+  >
+    Read and persist the document's variable set and color scheme across page
+    loads.
+  </Card>
+  <Card
+    title="script"
+    icon="file-code"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/script.md"
+  >
+    Return an inline script that restores saved preferences before the first
+    paint.
+  </Card>
+</Card.Group>
+
+## Namespaces
+
+<Card.Group>
+  <Card
+    title="Config"
+    icon="settings-2"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Config/README.md"
+  >
+    Configuration types and errors, plus the create function behind
+    defineConfig.
+  </Card>
+  <Card
+    title="Props"
+    icon="tag"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/variants.md#inferred-props"
+  >
+    Type-only helpers that infer a component's props from a variants definition.
+  </Card>
+  <Card
+    title="Style"
+    icon="file-type"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/README.md"
+  >
+    Define and validate ordered style data, with the shared style types and
+    errors.
+  </Card>
+  <Card
+    title="Vars"
+    icon="swatch-book"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Vars/README.md"
+  >
+    The functions behind defineVars and extendVars, with variable set types.
+  </Card>
+</Card.Group>
+
+## Reference
+
+<Card.Group>
+  <Card
+    title="Values"
+    icon="list"
+    href="https://github.com/wevm/zyzz/blob/main/docs/api/core/Style/literals.md"
+  >
+    Supported CSS properties and literal values, including fallbacks and
+    importance.
+  </Card>
+</Card.Group>

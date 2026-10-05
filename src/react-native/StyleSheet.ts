@@ -278,6 +278,8 @@ export function compile<
                 output[`${property}Right`] = right!
                 output[`${property}Bottom`] = bottom!
                 output[`${property}Left`] = left!
+              } else if (property === 'flex') {
+                Object.assign(output, Scalar.flex(value, options, path))
               } else if (property === 'inset') {
                 const values =
                   typeof value === 'string' ? Calculation.parts(value) : [value]
@@ -629,6 +631,16 @@ type Box4<
   item extends string | number,
   first extends string | number = item,
 > = first extends unknown ? `${first} ${item} ${item} ${item}` : never
+type FlexBasis = Length | `${number}%` | 'auto'
+type Flex =
+  | number
+  | 'initial'
+  | 'none'
+  | FlexBasis
+  | `${number} ${number | FlexBasis}`
+  | `${FlexBasis} ${number}`
+  | `${number} ${number} ${FlexBasis}`
+  | `${FlexBasis} ${number} ${number}`
 type Weight =
   | 'bold'
   | 'normal'
@@ -675,7 +687,9 @@ type Atom<kind> = kind extends readonly string[]
                           ? Box
                           : kind extends 'boxOffset'
                             ? Box<Length | `${number}%`>
-                            : Length
+                            : kind extends 'flex'
+                              ? Flex
+                              : Length
 
 type Reference<property extends keyof typeof properties> = {
   [group in Token.Group]: property extends Token.Properties<group>

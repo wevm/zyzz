@@ -330,6 +330,21 @@ describe('compile', () => {
     expectTypeOf(extra).not.toBeAny()
   })
 
+  test('accepts CSS flex shorthands with native bases', () => {
+    const factor = { flex: 1 } satisfies StyleSheet.Properties
+    const keyword = { flex: 'none' } satisfies StyleSheet.Properties
+    const full = { flex: '1 0 12px' } satisfies StyleSheet.Properties
+    const basisFirst = { flex: '30% 2' } satisfies StyleSheet.Properties
+    // @ts-expect-error Native flex bases have no content keyword.
+    const content = { flex: 'content' } satisfies StyleSheet.Properties
+
+    expectTypeOf(factor).not.toBeAny()
+    expectTypeOf(keyword).not.toBeAny()
+    expectTypeOf(full).not.toBeAny()
+    expectTypeOf(basisFirst).not.toBeAny()
+    expectTypeOf(content).not.toBeAny()
+  })
+
   test('retains style and set labels through native lookup', () => {
     const base = Vars.define({ spacing: { md: '1rem' } })
     const styles = Style.define({

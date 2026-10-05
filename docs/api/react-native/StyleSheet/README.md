@@ -20,15 +20,15 @@ Native interoperability also exports [compose](compose.md), [flatten](flatten.md
 
 ## Capabilities
 
-| Area    | Supported subset                                                                                                                                                                                                                                                                 |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout  | Aspect ratio, box sizing, direction, width/height and min/max sizes, physical offsets, one-to-four-value inset shorthands, explicit flex direction/grow/shrink/basis/wrap, alignment, flex/none/contents display, absolute/relative/static positioning, hidden/visible overflow. |
-| Spacing | Physical margin/padding, one-to-four-value margin/padding shorthands, scalar gap/rowGap/columnGap.                                                                                                                                                                               |
-| Borders | Physical widths/colors and corner radii, scalar borderWidth/borderColor/borderRadius expansion, solid/dotted/dashed style.                                                                                                                                                       |
-| Colors  | CSS named colors, hex RGB/RGBA, and absolute rgb/hsl/hwb functions. Functional colors normalize to RGBA hex.                                                                                                                                                                     |
-| Text    | Explicit font-family mappings, font size/style, numeric 100–900 weights or normal/bold, native-compatible font variants, letter spacing, line height, left/right/center/start/end/justify alignment, decoration color/line/style, case conversion, and selection.                |
-| Images  | objectFit and backface visibility.                                                                                                                                                                                                                                               |
-| Scalars | Opacity in 0–1 and integer zIndex.                                                                                                                                                                                                                                               |
+| Area    | Supported subset                                                                                                                                                                                                                                                                                  |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout  | Aspect ratio, box sizing, direction, width/height and min/max sizes, physical offsets, one-to-four-value inset shorthands, flex shorthands, explicit flex direction/grow/shrink/basis/wrap, alignment, flex/none/contents display, absolute/relative/static positioning, hidden/visible overflow. |
+| Spacing | Physical margin/padding, one-to-four-value margin/padding shorthands, scalar gap/rowGap/columnGap.                                                                                                                                                                                                |
+| Borders | Physical widths/colors and corner radii, scalar borderWidth/borderColor/borderRadius expansion, solid/dotted/dashed style.                                                                                                                                                                        |
+| Colors  | CSS named colors, hex RGB/RGBA, and absolute rgb/hsl/hwb functions. Functional colors normalize to RGBA hex.                                                                                                                                                                                      |
+| Text    | Explicit font-family mappings, font size/style, numeric 100–900 weights or normal/bold, native-compatible font variants, letter spacing, line height, left/right/center/start/end/justify alignment, decoration color/line/style, case conversion, and selection.                                 |
+| Images  | objectFit and backface visibility.                                                                                                                                                                                                                                                                |
+| Scalars | Opacity in 0–1 and integer zIndex.                                                                                                                                                                                                                                                                |
 
 Decimal px/rem lengths convert to native logical units. Only zero is accepted as a unitless length. Dimensions, flex basis, physical offsets, and inset components also accept percentages. Width, height, and flex basis accept auto. Negative lengths are limited to margins, offsets, and letter spacing.
 
@@ -36,7 +36,9 @@ Theme references and portable template expressions resolve against the selected 
 
 Authored shorthand order is preserved by expanding to physical longhands. No browser defaults or inherited font size are synthesized. Numeric CSS line height multiplies the explicit fontSize in the same style. Native text inheritance and layout defaults still belong to the consuming renderer.
 
-Selectors, queries, logical properties, importance, fallback arrays, unresolved CSS expressions, custom properties, web variable references, and dynamic bindings produce errors. The CSS `flex` shorthand is rejected because its native semantics differ. Use explicit flexGrow, flexShrink, and flexBasis.
+The CSS `flex` shorthand expands to `flexGrow`, `flexShrink`, and `flexBasis` with CSS defaults, so `flex: 1` becomes `1 1 0`. React Native's own `flex: 1` does not shrink and matches `flex: '1 0 0'`.
+
+Selectors, queries, logical properties, importance, fallback arrays, unresolved CSS expressions, custom properties, web variable references, and dynamic bindings produce errors.
 
 The subset follows the documented [React Native layout](https://reactnative.dev/docs/layout-props), [text](https://reactnative.dev/docs/text-style-props), and [color](https://reactnative.dev/docs/colors) contracts. Broader platform-specific capabilities require separate acceptance.
 

@@ -998,6 +998,35 @@ describe('compile', () => {
     `)
   })
 
+  test('expands responsive flex shorthands with CSS defaults', async () => {
+    const responsive = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'responsive-flex.ts',
+      source: `import {style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+        const pane=style({flex:1,'@media (width >= 400px)':{flex:'0 0 12px'}});
+        export const results=viewport=>NativeContext.resolve(pane,{colorScheme:'light',viewport});`,
+    })
+    const apply = (await execute(responsive.code)).results as (viewport: {
+      height: number
+      width: number
+    }) => unknown
+    expect(apply({ height: 800, width: 399 })).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 0,
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    `)
+    expect(apply({ height: 800, width: 400 })).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 12,
+        "flexGrow": 0,
+        "flexShrink": 0,
+      }
+    `)
+  })
+
   test('rejects invalid calculated payloads before returning native props', async () => {
     const source = `import {style} from 'zyzz';
       const box=style((input:{gap:string;ratio:number})=>({width:\`calc(\${input.gap} / \${input.ratio})\`}));

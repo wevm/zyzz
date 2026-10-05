@@ -139,7 +139,7 @@ Shared declarations keep CSS value semantics, and native compilation rejects wha
 - **Units:** `px` is one logical unit by default. `rem` requires `units.rem`, and Zyzz does not read screen density.
 - **Fonts:** Zyzz does not load fonts. Map shared families with the Metro `fonts` option, or name an installed family in `targets.native`.
 - **Rejected features:** Selectors, pseudo-classes, container queries, cascade layers, global styles, `!important`, and fallback arrays fail native compilation.
-- **Shorthands:** Use `flexGrow`, `flexShrink`, and `flexBasis` instead of the CSS `flex` shorthand.
+- **Shorthands:** `flex` follows CSS and expands to `flexGrow`, `flexShrink`, and `flexBasis`, so `flex: 1` means `1 1 0`. React Native's own `flex: 1` does not shrink, so write `flex: '1 0 0'` to match it.
 - **Bundled tokens:** `zyzz/default` is not yet available on native, so tokens come from a native `defineConfig`.
 
 ## More

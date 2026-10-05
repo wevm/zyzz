@@ -48,6 +48,7 @@ export const properties = {
   columnGap: 'length',
   direction: ['ltr', 'rtl'],
   display: ['contents', 'flex', 'none'],
+  flex: 'flex',
   flexBasis: 'size',
   flexDirection: ['column', 'column-reverse', 'row', 'row-reverse'],
   flexGrow: 'number',
@@ -207,6 +208,10 @@ export function convert(
       return value
     fail('unsupported_value', 'Invalid native percentage.', path)
   }
+  if (kind === 'flex') {
+    flex(value, options, path)
+    return 0
+  }
   if (kind === 'box' || kind === 'boxOffset' || kind === 'boxSigned') {
     const values =
       typeof value === 'string' ? Calculation.parts(value) : [value]
@@ -218,6 +223,70 @@ export function convert(
     return 0
   }
   return length(value, options, kind === 'signed' || kind === 'offset', path)
+}
+
+/**
+ * Expands the CSS `flex` shorthand to native longhands with CSS semantics.
+ * Omitted factors default to 1 and an omitted basis to 0, unlike the React Native `flex` prop.
+ */
+export function flex(
+  value: number | string,
+  options: Options,
+  path: readonly string[],
+): flex.ReturnType {
+  const keyword = typeof value === 'string' ? value.trim() : undefined
+  if (keyword === 'none')
+    return { flexBasis: 'auto', flexGrow: 0, flexShrink: 0 }
+  if (keyword === 'auto')
+    return { flexBasis: 'auto', flexGrow: 1, flexShrink: 1 }
+  if (keyword === 'initial')
+    return { flexBasis: 'auto', flexGrow: 0, flexShrink: 1 }
+
+  const parts = typeof value === 'string' ? Calculation.parts(value) : [value]
+  const kinds: ('basis' | 'factor')[] = []
+  for (const part of parts) {
+    const numeric =
+      typeof part === 'number' ||
+      /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(part)
+    // A unitless zero after two factors is the basis, as in CSS.
+    const basis =
+      !numeric || (kinds.join(' ') === 'factor factor' && Number(part) === 0)
+    kinds.push(basis ? 'basis' : 'factor')
+  }
+  // Factors stay adjacent, and the basis may precede or follow them.
+  if (
+    ![
+      'basis',
+      'basis factor',
+      'basis factor factor',
+      'factor',
+      'factor basis',
+      'factor factor',
+      'factor factor basis',
+    ].includes(kinds.join(' '))
+  )
+    fail('unsupported_value', 'Invalid flex shorthand.', path)
+
+  const factors = parts
+    .filter((_, index) => kinds[index] === 'factor')
+    .map((part) => convert('number', Number(part), options, path) as number)
+  const basis = parts.find((_, index) => kinds[index] === 'basis')
+
+  return {
+    flexBasis: basis === undefined ? 0 : convert('size', basis, options, path),
+    flexGrow: factors[0] ?? 1,
+    flexShrink: factors[1] ?? 1,
+  }
+}
+
+/** Native longhands produced by the `flex` shorthand. */
+export declare namespace flex {
+  /** Grow and shrink factors with a converted basis. */
+  type ReturnType = {
+    readonly flexBasis: number | string
+    readonly flexGrow: number
+    readonly flexShrink: number
+  }
 }
 
 /** Converts a portable length to logical units. */

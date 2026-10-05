@@ -155,6 +155,7 @@ export function compile(options: compile.Options): Runtime.create.Options {
             if (
               typeof kind === 'string' &&
               [
+                'flex',
                 'fontVariant',
                 'origin',
                 'shadow',

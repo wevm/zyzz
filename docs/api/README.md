@@ -13,7 +13,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/next][next]                           | Connect source transformation, CSS delivery, and watching to Next.js.              |
 | [zyzz/node](node/README.md)                 | Build and watch filesystem sources with explicit output ownership.                 |
 | [zyzz/oxlint][oxlint]                       | Lint web styles, JSX applications, and project conventions.                        |
-| [zyzz/react-native](react-native/README.md) | Compile shared definitions into native tables and select themes and schemes.       |
+| [zyzz/react-native][react-native-reference] | Configure native styles, select themes with React, and compile native tables.      |
 | [zyzz/runtime][runtime]                     | Bind compiled class lists to styling overrides without generating CSS.             |
 | [zyzz/unplugin][unplugin]                   | Compile web styles with Rollup, Webpack, esbuild, or the existing Vite adapter.    |
 | [zyzz/vite][vite]                           | Connect source transformation and CSS delivery to Vite.                            |
@@ -25,6 +25,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 [metro]: https://zyzz.sh/docs/api/metro
 [next]: https://zyzz.sh/docs/api/next
 [oxlint]: https://zyzz.sh/docs/api/oxlint
+[react-native-reference]: https://zyzz.sh/docs/api/react-native
 [runtime]: https://zyzz.sh/docs/api/runtime
 [unplugin]: https://zyzz.sh/docs/api/unplugin
 [vite]: https://zyzz.sh/docs/api/vite

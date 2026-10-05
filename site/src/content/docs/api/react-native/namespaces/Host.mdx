@@ -1,0 +1,311 @@
+# Host
+
+Hold explicit device inputs and rebind compiled callables when those inputs change.
+
+`Host.create` owns one platform's device inputs, the callables bound to them, and the cleanup of device listeners. It imports no React, React Native, or compiler code. Applications that use the [`Provider`](/docs/api/react-native/Provider) do not need a host.
+
+```ts title="attach.ts"
+import { Host, StyleSheet, type Variants } from 'zyzz/react-native'
+import { Native } from 'zyzz/runtime'
+
+export function attach(
+  definition: Variants.Definition,
+  inputs: Host.create.Options,
+) {
+  const host = Host.create(inputs)
+
+  // [!code hl:8]
+  // The callable keeps its identity while each update swaps its table
+  const card = host.bind((context) =>
+    Native.create({
+      axes: definition.axes,
+      defaults: definition.defaults,
+      styles: StyleSheet.select(definition.styles, context),
+    }),
+  )
+
+  return { card, host }
+}
+```
+
+## Host.create
+
+Create a host from resolved inputs. The application reads device preferences before construction, and every input below is required unless it has a default.
+
+```ts
+// A host with fixed platform and capabilities
+Host.create(options)
+```
+
+### options.platform
+
+- **Type:** `'android' | 'ios'{:ts}`
+
+The fixed compilation destination. Switching platforms needs another host and definitions compiled for it.
+
+```ts /platform: 'ios'/
+// Bindings select tables compiled for iOS
+Host.create({ ...inputs, platform: 'ios' })
+```
+
+### options.set
+
+- **Type:** `string{:ts}`
+
+A nonempty set label. Binding factories pass it to `StyleSheet.select`, which rejects labels missing from the tables.
+
+```ts /set: 'base'/
+// Selects the base tables
+Host.create({ ...inputs, set: 'base' })
+```
+
+### options.colorScheme
+
+- **Type:** `'dark' | 'light'{:ts}`
+
+The resolved appearance, with no system sentinel.
+
+```ts /colorScheme: 'dark'/
+// Bindings read the dark tables
+Host.create({ ...inputs, colorScheme: 'dark' })
+```
+
+### options.density
+
+- **Type:** `number{:ts}`
+
+Positive, finite physical pixels per logical unit. It sets `hairlineWidth` and does not rescale compiled lengths.
+
+```ts /density: 3/
+// A 3x screen, with a hairline of one third
+Host.create({ ...inputs, density: 3 })
+```
+
+### options.fontScale
+
+- **Type:** `number{:ts}`
+
+The positive, finite system font scale, available to factories and preprocessors. The host never applies it to compiled sizes.
+
+```ts /fontScale: 1.2/
+// A larger system text size
+Host.create({ ...inputs, fontScale: 1.2 })
+```
+
+### options.highContrast
+
+- **Type:** `boolean{:ts}`
+
+Whether the device requests higher contrast, for factories that select a high-contrast set.
+
+```ts /highContrast: true/
+// Factories can choose a high-contrast set
+Host.create({ ...inputs, highContrast: true })
+```
+
+### options.reducedMotion
+
+- **Type:** `boolean{:ts}`
+
+Whether the device requests reduced motion. Animations stay with the application.
+
+```ts /reducedMotion: true/
+// Factories and animations read this flag
+Host.create({ ...inputs, reducedMotion: true })
+```
+
+### options.rtl
+
+- **Type:** `boolean{:ts}`
+
+Whether layout follows a right-to-left direction.
+
+```ts /rtl: true/
+// A right-to-left layout input
+Host.create({ ...inputs, rtl: true })
+```
+
+### options.capabilities
+
+- **Type:** `{ [name: string]: boolean }{:ts}`
+- **Default:** `{}{:ts}`
+
+Fixed feature flags, copied and frozen at construction, and exposed on every snapshot.
+
+```ts /capabilities: { blur: true }/
+// A feature flag that factories can branch on
+Host.create({ ...inputs, capabilities: { blur: true } })
+```
+
+### options.preprocessors
+
+- **Type:** `{ [property: string]: Host.Preprocessor }{:ts}`
+- **Default:** `{}{:ts}`
+
+Property converters that `host.preprocess` applies. They belong to this host and never replace React Native's global processors.
+
+```ts /preprocessors/
+// Every borderWidth becomes the device hairline
+Host.create({
+  ...inputs,
+  preprocessors: { borderWidth: (_value, context) => context.hairlineWidth },
+})
+```
+
+### options.watch
+
+- **Type:** `(update: (patch: Partial<Host.Inputs>) => void) => () => void{:ts}`
+- **Default:** `undefined{:ts}`
+
+Installs device listeners and returns their cleanup, which `host.dispose` runs once. It can call `update` synchronously for initial values. An error during setup propagates from `Host.create`.
+
+```ts title="watch.ts"
+import { Appearance } from 'react-native'
+import type { Host } from 'zyzz/react-native'
+
+// [!code hl:9]
+// Light is this adapter's choice when the device reports no scheme
+export const watch: NonNullable<Host.create.Options['watch']> = (update) => {
+  const subscription = Appearance.addChangeListener((preferences) => {
+    update({
+      colorScheme: preferences.colorScheme === 'dark' ? 'dark' : 'light',
+    })
+  })
+  return () => subscription.remove()
+}
+```
+
+### host.bind
+
+- **Type:** `(factory: (context: Host.Snapshot) => callable) => callable{:ts}`
+
+Runs a pure factory now and after each changed update, and returns a callable with the factory result's signature. The callable keeps its identity while its implementation changes, so binding happens once per host.
+
+```ts /host.bind/
+// A label callable for the current set and scheme
+const label = host.bind(
+  (context) => () => StyleSheet.select(output.styles, context).label,
+)
+```
+
+### host.update
+
+- **Type:** `(patch: Partial<Host.Inputs>) => void{:ts}`
+
+Prepares every binding with the new inputs, then commits and notifies subscribers. If a factory throws, the previous snapshot and callables stay active. An unchanged patch neither rebinds nor notifies.
+
+```ts /host.update/
+// Rebinds every callable for the dark tables
+host.update({ colorScheme: 'dark' })
+```
+
+### host.getSnapshot
+
+- **Type:** `() => Host.Snapshot{:ts}`
+
+Returns the frozen current inputs, with `platform`, `capabilities`, and `hairlineWidth`. The same object returns until an update changes an input. The hairline follows React Native's rounding, so a density of 3 gives one third.
+
+```ts /host.getSnapshot()/
+// Stays readable after disposal
+const { hairlineWidth } = host.getSnapshot()
+```
+
+### host.subscribe
+
+- **Type:** `(listener: (context: Host.Snapshot) => void) => () => void{:ts}`
+
+Calls the listener after each committed update, not initially, and returns an idempotent unsubscribe function. Listener errors are collected into an `AggregateError` after the others run, and the update stays committed.
+
+```ts /host.subscribe/
+// Rerenders a React tree with useSyncExternalStore(host.subscribe, host.getSnapshot)
+const unsubscribe = host.subscribe((context) =>
+  console.log(context.colorScheme),
+)
+```
+
+### host.preprocess
+
+- **Type:** `(style: object) => object{:ts}`
+
+Shallowly copies a plain style object and converts its own properties that have a preprocessor. Each converter receives the original value and the current snapshot, and untouched values keep their identity.
+
+```ts /host.preprocess/
+// { borderWidth: hairlineWidth, opacity: 1 }
+const converted = host.preprocess({ borderWidth: 1, opacity: 1 })
+```
+
+### host.dispose
+
+- **Type:** `() => void{:ts}`
+
+Removes subscribers and bindings, then runs the device cleanup once. It is idempotent, and later calls to bound callables, `bind`, `preprocess`, `subscribe`, or `update` throw `Host.LifecycleError`.
+
+```ts /host.dispose()/
+// Releases the device listeners from options.watch
+host.dispose()
+```
+
+## Types
+
+- **`Host.create.Options{:ts}`:** The inputs plus `platform`, `capabilities`, `preprocessors`, and `watch`.
+- **`Host.Inputs{:ts}`:** The inputs that `host.update` accepts.
+- **`Host.Preprocessor{:ts}`:** A converter from a property value and snapshot to a native value.
+- **`Host.Snapshot{:ts}`:** The inputs plus `capabilities`, `hairlineWidth`, and `platform`.
+
+```ts title="inputs.ts"
+import type { Host } from 'zyzz/react-native'
+
+// [!code hl:11]
+// Inputs for an iOS phone in the light scheme
+export const inputs = {
+  colorScheme: 'light',
+  density: 3,
+  fontScale: 1,
+  highContrast: false,
+  platform: 'ios',
+  reducedMotion: false,
+  rtl: false,
+  set: 'base',
+} satisfies Host.create.Options
+```
+
+## Errors
+
+### Host.InputError
+
+Thrown for an unknown platform, a missing or empty set, an unresolved scheme, nonpositive or nonfinite scales, non-boolean flags, and a factory that returns no callable. `host.update` throws it for those values and for a `platform` patch.
+
+```ts
+import { Host } from 'zyzz/react-native'
+import { inputs } from './inputs.js'
+
+const host = Host.create(inputs)
+
+try {
+  // Density must be positive
+  host.update({ density: 0 })
+} catch (error) {
+  // [!code hl]
+  if (error instanceof Host.InputError) console.error(error.message)
+}
+```
+
+### Host.LifecycleError
+
+Thrown when an operation runs after `host.dispose`, or when a factory or subscriber calls `bind`, `update`, or `dispose` during an update.
+
+```ts
+import { Host } from 'zyzz/react-native'
+import { inputs } from './inputs.js'
+
+const host = Host.create(inputs)
+host.dispose()
+
+try {
+  host.update({ colorScheme: 'dark' })
+} catch (error) {
+  // [!code hl:2]
+  // The host is disposed
+  if (error instanceof Host.LifecycleError) console.error(error.message)
+}
+```

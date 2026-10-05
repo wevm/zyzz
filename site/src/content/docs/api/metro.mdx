@@ -116,7 +116,7 @@ A source package lists `zyzz` in any dependency field so that authoring behind b
 
 ## Errors
 
-Setup throws when the configuration has no Babel transformer, and when `options` sets `colorScheme`, which the [React provider](/docs/guides/native/themes) selects at runtime. Unsupported native semantics fail compilation with their source location.
+Setup throws when the configuration has no Babel transformer, and when `options` sets `colorScheme`, which the [`Provider`](/docs/api/react-native/Provider) selects at runtime. Unsupported native semantics fail compilation with their source location.
 
 ```ts twoslash title="metro.config.ts"
 // @errors: 2353

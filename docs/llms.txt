@@ -73,10 +73,18 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Metro](https://zyzz.sh/docs/api/metro.md): Metro configuration wrapper.
 - [Unplugin](https://zyzz.sh/docs/api/unplugin.md): esbuild, Rollup, and Webpack plugins.
 - [Babel](https://zyzz.sh/docs/api/babel.md): Babel plugin for web and native compilation.
-- [zyzz/react-native](api/react-native/README.md): Section index.
-- [StyleSheet](api/react-native/StyleSheet/README.md): Section index.
-- [StyleSheet.compile](api/react-native/StyleSheet/compile.md): Reference and examples.
-- [StyleSheet.select](api/react-native/StyleSheet/select.md): Reference and examples.
+- [zyzz/react-native](https://zyzz.sh/docs/api/react-native.md): Section index.
+- [defineConfig](https://zyzz.sh/docs/api/react-native/defineConfig.md): Reference and examples.
+- [Provider](https://zyzz.sh/docs/api/react-native/Provider.md): Reference and examples.
+- [useStyles](https://zyzz.sh/docs/api/react-native/useStyles.md): Reference and examples.
+- [useVars](https://zyzz.sh/docs/api/react-native/useVars.md): Reference and examples.
+- [withStyles](https://zyzz.sh/docs/api/react-native/withStyles.md): Reference and examples.
+- [useAnimatedVars](https://zyzz.sh/docs/api/react-native/useAnimatedVars.md): Reference and examples.
+- [useAnimatedStyleValue](https://zyzz.sh/docs/api/react-native/useAnimatedStyleValue.md): Reference and examples.
+- [StyleSheet](https://zyzz.sh/docs/api/react-native/namespaces/StyleSheet.md): Reference and examples.
+- [Variants](https://zyzz.sh/docs/api/react-native/namespaces/Variants.md): Reference and examples.
+- [Host](https://zyzz.sh/docs/api/react-native/namespaces/Host.md): Reference and examples.
+- [Values](https://zyzz.sh/docs/api/react-native/values.md): Reference and examples.
 - [CLI](https://zyzz.sh/docs/api/cli.md): Reference and examples.
 - [zyzz/compiler](api/compiler/README.md): Section index.
 - [Graph](api/compiler/Graph/README.md): Source graph compilation.

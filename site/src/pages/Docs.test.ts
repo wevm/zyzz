@@ -375,6 +375,69 @@ describe('/docs', () => {
     }
   })
 
+  test('groups React Native API exports under labelled sections', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/api/react-native/useVars`)
+      const navigation = page.getByRole('navigation', { name: 'Documentation' })
+      const native = navigation.locator('details', {
+        has: page.getByRole('group', { name: 'Reanimated' }),
+      })
+
+      // The topic opens because it contains the current page.
+      expect(await native.getAttribute('open')).toMatchInlineSnapshot('""')
+      expect(
+        await native
+          .getByRole('group')
+          .evaluateAll((groups) =>
+            groups.map((group) => group.firstElementChild?.textContent),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "Configuration",
+          "Hooks",
+          "Reanimated",
+          "Namespaces",
+          "Reference",
+        ]
+      `)
+      expect(
+        await native
+          .getByRole('group', { name: 'Hooks' })
+          .getByRole('link', { name: 'useVars', exact: true })
+          .getAttribute('aria-current'),
+      ).toMatchInlineSnapshot('"page"')
+      // Every React Native export has a page, so no entry renders as under construction.
+      expect(
+        await native
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map((link) => link.getAttribute('href') ?? 'disabled'),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "/docs/api/react-native",
+          "/docs/api/react-native/defineConfig",
+          "/docs/api/react-native/Provider",
+          "/docs/api/react-native/useStyles",
+          "/docs/api/react-native/useVars",
+          "/docs/api/react-native/withStyles",
+          "/docs/api/react-native/useAnimatedVars",
+          "/docs/api/react-native/useAnimatedStyleValue",
+          "/docs/api/react-native/namespaces/StyleSheet",
+          "/docs/api/react-native/namespaces/Variants",
+          "/docs/api/react-native/namespaces/Host",
+          "/docs/api/react-native/values",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('spans the viewport and outlines page sections beside the article', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

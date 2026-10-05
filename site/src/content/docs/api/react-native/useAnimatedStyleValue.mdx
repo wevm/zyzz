@@ -1,0 +1,114 @@
+# useAnimatedStyleValue
+
+Publish one numeric or color property of an applied style to a shared value.
+
+`useAnimatedStyleValue` resolves an applied native style for the nearest Provider, flattens style arrays in order, and writes one property to a shared value. Variant choices, media alternatives, dynamic inputs, and caller overrides resolve before the property is read.
+
+```tsx title="Button.tsx"
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { variants } from 'zyzz'
+import { useAnimatedStyleValue } from 'zyzz/react-native/reanimated'
+
+export function Button(props: Button.Props) {
+  // [!code hl:5]
+  // The selected background, as a shared color string
+  const color = useAnimatedStyleValue(
+    styles.button({ active: props.active }).style,
+    'backgroundColor',
+  )
+  const animated = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(color.get()),
+  }))
+  return <Animated.View style={animated} />
+}
+
+export declare namespace Button {
+  type Props = { readonly active: boolean }
+}
+
+namespace styles {
+  export const button = variants({
+    variants: {
+      active: {
+        false: { backgroundColor: '#e5e5e5' },
+        true: { backgroundColor: '#2563eb' },
+      },
+    },
+  })
+}
+```
+
+It is exported from `zyzz/react-native/reanimated`, with the same Reanimated requirement as [`useAnimatedVars`](/docs/api/react-native/useAnimatedVars).
+
+## Signature
+
+```ts
+// A shared value holding one property of the style
+useAnimatedStyleValue(appliedStyle, property)
+```
+
+## Parameters
+
+### appliedStyle
+
+- **Type:** `StyleSheet.StyleProp<object>{:ts}`
+
+The `.style` field of an applied style, a native object, or a style array with caller overrides. Later entries win, as when React Native flattens a style.
+
+```ts /[styles.card().style, { opacity: 0.5 }]/
+// The override wins over the compiled opacity
+useAnimatedStyleValue([styles.card().style, { opacity: 0.5 }], 'opacity')
+```
+
+### property
+
+- **Type:** `useAnimatedStyleValue.Property{:ts}`
+
+A native property with a numeric value, or a color property such as `color` or `borderColor`. Structured properties, such as `transform`, `filter`, and shadows, have no scalar value.
+
+```ts /'opacity'/
+// A shared number between 0 and 1
+const opacity = useAnimatedStyleValue(styles.card().style, 'opacity')
+```
+
+## Returns
+
+### sharedValue
+
+- **Type:** `SharedValue<number> | SharedValue<string>{:ts}`, by property
+
+A shared number for numeric properties, or a shared color string for color properties. Its identity stays stable, and Provider or style input changes write the new value without rerendering the consumer.
+
+```ts /color.get()/
+// Read inside a worklet, such as useAnimatedStyle
+const background = color.get()
+```
+
+## Types
+
+- **`useAnimatedStyleValue.Property{:ts}`:** The accepted property names.
+- **`useAnimatedStyleValue.Value<property>{:ts}`:** `string` for color properties and `number` for the rest.
+
+```ts title="properties.ts"
+import type { useAnimatedStyleValue } from 'zyzz/react-native/reanimated'
+
+// [!code hl:5]
+// Properties that a shared transition helper accepts
+export type Animatable = Extract<
+  useAnimatedStyleValue.Property,
+  'opacity' | 'width'
+>
+```
+
+## Errors
+
+A missing property, a percentage or `auto` length, an invalid color, or a nonfinite number throws when the value is read. Compiled styles that depend on the selection throw `Compiled native styles require a Zyzz Provider.` outside a Provider, while plain native objects work anywhere.
+
+```ts twoslash
+// @customConditions: react-native
+// @errors: 2345
+import { useAnimatedStyleValue } from 'zyzz/react-native/reanimated'
+
+// A transform list has no single scalar value
+useAnimatedStyleValue({ transform: [] }, 'transform')
+```

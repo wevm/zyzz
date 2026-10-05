@@ -1,0 +1,99 @@
+# useVars
+
+Read native token values selected by the nearest Provider, with an optional selector.
+
+`useVars` returns the variable tree as native values for the Provider's scheme, set, and window size. It suits props that take values rather than styles, such as navigation options. The compiler converts the values ahead of time.
+
+```tsx title="Sheet.tsx"
+import { useVars } from 'zyzz/react-native'
+import { vars } from './zyzz.config.js'
+
+export function useSheetOptions() {
+  // [!code hl:2]
+  // A native color string for the current scheme and set
+  const background = useVars(vars, (values) => values.color.ink)
+  return { contentStyle: { backgroundColor: background } }
+}
+```
+
+## Signature
+
+```ts
+// The complete value tree, or one selection
+useVars(vars)
+useVars(vars, selector)
+```
+
+## Parameters
+
+### vars
+
+- **Type:** `Vars.Definition{:ts}`
+
+The `vars` helper from [`defineConfig`](/docs/api/react-native/defineConfig#vars), or a [`defineVars`](/docs/api/core/defineVars) definition. The compiler links it statically through named imports, re-exports, packed packages, and aliased or namespace hook imports.
+
+```ts /config.vars/
+// A member of an imported config object also links
+const values = useVars(config.vars)
+```
+
+### selector
+
+- **Type:** `(values) => selected{:ts}`
+- **Default:** `(values) => values{:ts}`
+
+Selects part of the tree. Results compare with `Object.is`, and equal compiled branches keep their identity across selections, so an unchanged branch skips the update. A selector that allocates a new object returns a new result on each selection change.
+
+```ts /(values) => values.spacing.gap/
+// Rerenders only when the gap value changes
+const gap = useVars(vars, (values) => values.spacing.gap)
+```
+
+## Returns
+
+### values
+
+- **Type:** `NativeVars.Values<Vars.Extract<vars>>{:ts}`, or the selector's result
+
+A readonly tree that follows the authored paths. Lengths are numbers in logical units, colors are native color strings, and font families use the compiler's `fonts` mapping. Numeric typography line heights become absolute lengths.
+
+```ts /values.spacing.gap/
+// `8px` reads as the number 8
+const gap: number = useVars(vars).spacing.gap
+```
+
+## Responsive Values
+
+Values with `@media` conditions select a branch for the Provider's window size. The `default` applies when no condition matches, and conditions keep their authored order.
+
+```tsx title="Gutter.tsx"
+import { defineConfig, useVars } from 'zyzz/react-native'
+
+const { vars } = defineConfig({
+  vars: {
+    breakpoint: { md: '768px' },
+    // [!code hl:2]
+    // 16 below a width of 768, and 24 at or above it
+    spacing: { gutter: { default: '16px', '@media md': '24px' } },
+  },
+})
+
+export function useGutter() {
+  return useVars(vars, (values) => values.spacing.gutter)
+}
+```
+
+## Errors
+
+`useVars` throws `useVars requires a Zyzz Provider.` outside a Provider, and throws for a definition the compiler did not link. A field that cannot convert to native, such as an `oklch()` color, throws when read, and other fields stay readable. Spreading or serializing a branch reads every field in it.
+
+```ts twoslash
+// @customConditions: react-native
+// @errors: 2322
+import { defineConfig, useVars } from 'zyzz/react-native'
+
+const { vars } = defineConfig({ vars: { spacing: { gap: '8px' } } })
+
+// Native lengths read as numbers
+const gap: string = useVars(vars).spacing.gap
+```

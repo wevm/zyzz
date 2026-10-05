@@ -194,4 +194,4 @@ The compiler reports a variable declared outside a module-level constant as `Sou
 
 ## React Native
 
-Native views have no custom properties, so native compilation rejects modules that declare or read variables. Native themes use [`vars`](/docs/api/core/defineConfig/vars) tokens, which resolve to native values.
+Native views have no custom properties, so native compilation rejects modules that declare or read variables. Native themes use [`vars`](/docs/api/core/defineConfig/vars) tokens, which resolve to native values that [`useVars`](/docs/api/react-native/useVars) reads in components.

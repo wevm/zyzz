@@ -1,0 +1,115 @@
+# React Native
+
+Configure native styles, select themes with React, and compile shared definitions into native tables.
+
+Three entrypoints serve native apps. `zyzz/react-native` exports the native configuration, hooks, and table namespaces. The compiler imports its bindings from `zyzz/react-native/react`. The optional `zyzz/react-native/reanimated` publishes selected values to Reanimated shared values.
+
+## Import Paths
+
+The `react-native` export condition decides what an import resolves to. Metro sets it, and TypeScript reads it from `customConditions`, as [Configure TypeScript](/docs/guides/native#configure-typescript) shows.
+
+| Import                         | With `react-native`                                                                    | Without the condition                                         |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `zyzz/react-native`            | `defineConfig`, `useStyles`, `useVars`, `withStyles`, `Host`, `StyleSheet`, `Variants` | `Host`, `StyleSheet`, `Variants`                              |
+| `zyzz/react-native/react`      | The same hooks, plus `Provider` and `useNativeStyles`, with automatic window sizes     | The same exports, with React subscriptions and no window size |
+| `zyzz/react-native/reanimated` | `useAnimatedStyleValue`, `useAnimatedVars`                                             | The same exports                                              |
+
+Applications import from `zyzz/react-native`, as the [native guides](/docs/guides/native) do. Without the condition, compilers, scripts, and tests still reach the table namespaces without loading React Native.
+
+## Configuration
+
+<Card.Group>
+  <Card
+    title="defineConfig"
+    icon="settings"
+    href="/docs/api/react-native/defineConfig"
+  >
+    Bind native style helpers to variables, and return a Provider typed to the
+    config.
+  </Card>
+  <Card title="Provider" icon="sun-moon" href="/docs/api/react-native/Provider">
+    Select the color scheme, variable set, and window size for native styles
+    beneath it.
+  </Card>
+</Card.Group>
+
+## Hooks
+
+<Card.Group>
+  <Card
+    title="useStyles"
+    icon="paintbrush"
+    href="/docs/api/react-native/useStyles"
+  >
+    Resolve compiled native styles for consumers that read style objects outside
+    JSX.
+  </Card>
+  <Card title="useVars" icon="variable" href="/docs/api/react-native/useVars">
+    Read native token values selected by the nearest Provider, with an optional
+    selector.
+  </Card>
+  <Card
+    title="withStyles"
+    icon="boxes"
+    href="/docs/api/react-native/withStyles"
+  >
+    Wrap a component so its style props resolve through the nearest Provider.
+  </Card>
+</Card.Group>
+
+## Reanimated
+
+<Card.Group>
+  <Card
+    title="useAnimatedVars"
+    icon="zap"
+    href="/docs/api/react-native/useAnimatedVars"
+  >
+    Publish selected native token values to a Reanimated shared value for
+    worklets.
+  </Card>
+  <Card
+    title="useAnimatedStyleValue"
+    icon="activity"
+    href="/docs/api/react-native/useAnimatedStyleValue"
+  >
+    Publish one numeric or color property of an applied style to a shared value.
+  </Card>
+</Card.Group>
+
+## Namespaces
+
+<Card.Group>
+  <Card
+    title="StyleSheet"
+    icon="table"
+    href="/docs/api/react-native/namespaces/StyleSheet"
+  >
+    Compile shared definitions into frozen native tables, then select and
+    compose them.
+  </Card>
+  <Card
+    title="Variants"
+    icon="layers"
+    href="/docs/api/react-native/namespaces/Variants"
+  >
+    Compile a static recipe into native tables for every choice combination.
+  </Card>
+  <Card
+    title="Host"
+    icon="smartphone"
+    href="/docs/api/react-native/namespaces/Host"
+  >
+    Hold explicit device inputs and rebind compiled callables when those inputs
+    change.
+  </Card>
+</Card.Group>
+
+## Reference
+
+<Card.Group>
+  <Card title="Values" icon="list" href="/docs/api/react-native/values">
+    Supported native properties, units, colors, and conversions, with rejected
+    values.
+  </Card>
+</Card.Group>

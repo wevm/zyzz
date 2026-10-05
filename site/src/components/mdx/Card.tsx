@@ -1,5 +1,6 @@
 /** Provides linked next-step cards and responsive card groups for MDX. @module */
 import type { ReactNode } from 'react'
+import ActivityIcon from '~icons/lucide/activity'
 import BoxesIcon from '~icons/lucide/boxes'
 import BracesIcon from '~icons/lucide/braces'
 import CodeIcon from '~icons/lucide/code'
@@ -18,6 +19,7 @@ import SlidersIcon from '~icons/lucide/sliders-horizontal'
 import SmartphoneIcon from '~icons/lucide/smartphone'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TableIcon from '~icons/lucide/table'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import VariableIcon from '~icons/lucide/variable'
@@ -159,6 +161,7 @@ namespace styles {
 }
 
 const icons = {
+  activity: ActivityIcon,
   boxes: BoxesIcon,
   braces: BracesIcon,
   code: CodeIcon,
@@ -180,6 +183,7 @@ const icons = {
   smartphone: SmartphoneIcon,
   'sun-moon': SunMoonIcon,
   'swatch-book': SwatchBookIcon,
+  table: TableIcon,
   tag: TagIcon,
   terminal: TerminalIcon,
   variable: VariableIcon,

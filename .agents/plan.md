@@ -60,7 +60,7 @@ The pinned inventory contains 22 rules and 62 descriptor/nested entries. Compile
 
 The accepted scope is the union of web and native capabilities, with one authoring/application model. It is not limited to portable scalar styles. Shared declarations retain documented meanings. Typed target branches handle platform-specific values. Nonportable unqualified declarations must produce diagnostics.
 
-The [universal contract](../docs/api/react-native/universal.md) specifies target resolution and value semantics. The [pinned inventory](../test/conformance/native/inventory.json) retains React Native 0.87.0 legacy declarations and six runtime StyleSheet APIs. The [static audit](../test/conformance/native/README.md) covers the union of legacy and published declarations: 421 component/property pairs across 157 distinct properties.
+The [native Values reference](https://zyzz.sh/docs/api/react-native/values) documents value semantics and conversion. The [pinned inventory](../test/conformance/native/inventory.json) retains React Native 0.87.0 legacy declarations and six runtime StyleSheet APIs. The [static audit](../test/conformance/native/README.md) covers the union of legacy and published declarations: 421 component/property pairs across 157 distinct properties.
 
 Inventory coverage does not establish value-domain or renderer parity.
 
@@ -109,7 +109,7 @@ Implemented through native `style` overrides in [#212](https://github.com/wevm/z
 
 #### PR 3: Explicit native host inputs and lifecycle
 
-Implemented as [`Host.create()`](../docs/api/react-native/Host.md) in [#214](https://github.com/wevm/zyzz/pull/214) at `d133908`. Local lifecycle, prepared-callable switching, published-package execution/declarations, and pinned React Native adapter types pass. Actual device preference delivery and rendering remain unverified.
+Implemented as [`Host.create()`](https://zyzz.sh/docs/api/react-native/namespaces/Host) in [#214](https://github.com/wevm/zyzz/pull/214) at `d133908`. Local lifecycle, prepared-callable switching, published-package execution/declarations, and pinned React Native adapter types pass. Actual device preference delivery and rendering remain unverified.
 
 - Supply theme, color scheme, platform/capabilities, density, font scaling, and accessibility inputs through an explicit native adapter. Define supported runtime updates separately from compile-time platform selection.
 - Cover atomic updates, subscription cleanup, queued events after disposal, and isolation between host instances. Derive hairlines from explicit density. Keep preprocessing instance-local and opt-in, with application-owned native registration lifetime.

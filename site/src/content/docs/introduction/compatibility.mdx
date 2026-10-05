@@ -1,4 +1,7 @@
-import { CompatibilityIcon, CompatibilityMatrix } from './_components/CompatibilityMatrix.js'
+import {
+  CompatibilityIcon,
+  CompatibilityMatrix,
+} from './_components/CompatibilityMatrix.js'
 
 # Compatibility
 
@@ -37,7 +40,11 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Compiled attributes and CSS, lazy delivery, and DOM updates. [HTML tests](https://github.com/wevm/zyzz/blob/main/src/runtime/Html.test.ts) and [lazy delivery tests](https://github.com/wevm/zyzz/blob/main/src/vite/index.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Compiled attributes and CSS,
+lazy delivery, and DOM updates. [HTML
+tests](https://github.com/wevm/zyzz/blob/main/src/runtime/Html.test.ts) and
+[lazy delivery
+tests](https://github.com/wevm/zyzz/blob/main/src/vite/index.test.ts).
 
 </td>
 </tr>
@@ -49,7 +56,10 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Webpack and Turbopack, server and client components, streaming, hydration, navigation, and refresh. [Next.js fixtures](https://github.com/wevm/zyzz/blob/main/test/fixtures/Next.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Webpack and Turbopack,
+server and client components, streaming, hydration, navigation, and refresh.
+[Next.js
+fixtures](https://github.com/wevm/zyzz/blob/main/test/fixtures/Next.ts).
 
 </td>
 </tr>
@@ -61,7 +71,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [React tests](https://github.com/wevm/zyzz/blob/main/src/vite/React.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Vite fixtures cover server
+rendering, hydration, variants, themes, and updates. [React
+tests](https://github.com/wevm/zyzz/blob/main/src/vite/React.test.ts).
 
 </td>
 </tr>
@@ -73,7 +85,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Vite fixtures cover server rendering, hydration, variants, themes, and updates. [Solid tests](https://github.com/wevm/zyzz/blob/main/src/vite/Solid.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Vite fixtures cover server
+rendering, hydration, variants, themes, and updates. [Solid
+tests](https://github.com/wevm/zyzz/blob/main/src/vite/Solid.test.ts).
 
 </td>
 </tr>
@@ -85,7 +99,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Style definitions live in TypeScript modules. Inline Svelte authoring is outside the verified scope. [Svelte tests](https://github.com/wevm/zyzz/blob/main/src/vite/Svelte.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Style definitions live in
+TypeScript modules. Inline Svelte authoring is outside the verified scope.
+[Svelte tests](https://github.com/wevm/zyzz/blob/main/src/vite/Svelte.test.ts).
 
 </td>
 </tr>
@@ -97,7 +113,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="unverified" /> **Unverified.** Vue single-file component integration is outside the verified scope. Framework-independent types do not establish SFC compilation support.
+<CompatibilityIcon name="unverified" /> **Unverified.** Vue single-file
+component integration is outside the verified scope. Framework-independent types
+do not establish SFC compilation support.
 
 </td>
 </tr>
@@ -136,7 +154,8 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Compiler hosts, the CLI, bundler adapters, and server-rendering fixtures run in Node.js.
+<CompatibilityIcon name="verified" /> **Verified.** Compiler hosts, the CLI,
+bundler adapters, and server-rendering fixtures run in Node.js.
 
 </td>
 </tr>
@@ -148,7 +167,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Bundled `Style.define` and `Css.compile` execute in Chromium, a browser worker, and a Node worker. [Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
+<CompatibilityIcon name="verified" /> **Verified.** Bundled `Style.define` and
+`Css.compile` execute in Chromium, a browser worker, and a Node worker.
+[Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
 
 </td>
 </tr>
@@ -160,7 +181,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** The same portability fixture runs without Node or DOM globals. This is embedded-engine evidence, not device rendering evidence.
+<CompatibilityIcon name="verified" /> **Verified.** The same portability fixture
+runs without Node or DOM globals. This is embedded-engine evidence, not device
+rendering evidence.
 
 </td>
 </tr>
@@ -172,7 +195,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="unverified" /> **Unverified integrations.** Pure core code is environment-independent. Node filesystem adapters and complete application deployments need separate host verification.
+<CompatibilityIcon name="unverified" /> **Unverified integrations.** Pure core
+code is environment-independent. Node filesystem adapters and complete
+application deployments need separate host verification.
 
 </td>
 </tr>
@@ -204,12 +229,14 @@ Minimum target
 <tr>
 <th scope="row">
 
-<CompatibilityIcon name="chrome" /> **Chrome** and <CompatibilityIcon name="edge" /> **Edge**
+<CompatibilityIcon name="chrome" /> **Chrome** and
+<CompatibilityIcon name="edge" /> **Edge**
 
 </th>
 <td>
 
-<CompatibilityIcon name="target" /> **123 or newer.** Native `light-dark()` support.
+<CompatibilityIcon name="target" /> **123 or newer.** Native `light-dark()`
+support.
 
 </td>
 </tr>
@@ -221,7 +248,8 @@ Minimum target
 </th>
 <td>
 
-<CompatibilityIcon name="target" /> **120 or newer.** Native `light-dark()` support.
+<CompatibilityIcon name="target" /> **120 or newer.** Native `light-dark()`
+support.
 
 </td>
 </tr>
@@ -233,7 +261,8 @@ Minimum target
 </th>
 <td>
 
-<CompatibilityIcon name="target" /> **17.5 or newer.** Native `light-dark()` support.
+<CompatibilityIcon name="target" /> **17.5 or newer.** Native `light-dark()`
+support.
 
 </td>
 </tr>
@@ -287,7 +316,9 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Implemented and tested.** Native tables, finite variants, scalar bindings, explicit theme and scheme selection, and source-free packages have compiler and callable coverage.
+<CompatibilityIcon name="verified" /> **Implemented and tested.** Native tables,
+finite variants, scalar bindings, explicit theme and scheme selection, and
+source-free packages have compiler and callable coverage.
 
 </td>
 </tr>
@@ -299,7 +330,10 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Implemented and tested for bundling.** Fixtures request iOS and Android bundles and verify imported edits and error recovery. [Metro tests](https://github.com/wevm/zyzz/blob/main/src/metro/index.test.ts).
+<CompatibilityIcon name="verified" /> **Implemented and tested for bundling.**
+Fixtures request iOS and Android bundles and verify imported edits and error
+recovery. [Metro
+tests](https://github.com/wevm/zyzz/blob/main/src/metro/index.test.ts).
 
 </td>
 </tr>
@@ -335,7 +369,7 @@ Native components consume style objects rather than browser CSS. [React Native's
 
 DOM selectors, CSS at-rules, and unresolved CSS variables do not become native capabilities. Shared lengths require explicit conversion scales where needed. Platform-specific declarations belong in `targets.native`, `targets.ios`, or `targets.android`. Animated and device-owned values require their documented host paths.
 
-The [native API documentation](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/README.md) and [StyleSheet capabilities](https://github.com/wevm/zyzz/blob/main/docs/api/react-native/StyleSheet/README.md) describe supported values and diagnostics.
+The [native API documentation](/docs/api/react-native) and [native values reference](/docs/api/react-native/values) describe supported values and diagnostics.
 
 ## Integration Setup
 

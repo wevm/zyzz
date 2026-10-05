@@ -1,0 +1,97 @@
+# useAnimatedVars
+
+Publish selected native token values to a Reanimated shared value for worklets.
+
+`useAnimatedVars` reads the same tree as [`useVars`](/docs/api/react-native/useVars) and writes it to a shared value. Provider changes update the value without rerendering the consumer, and the animation decides how to move toward it.
+
+```tsx title="Tile.tsx"
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { useAnimatedVars } from 'zyzz/react-native/reanimated'
+import { vars } from './zyzz.config.js'
+
+export function Tile() {
+  // [!code hl:2]
+  // A shared color string that follows the Provider's scheme and set
+  const ink = useAnimatedVars(vars, (values) => values.color.ink)
+  const animated = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(ink.get()),
+  }))
+  return <Animated.View style={animated} />
+}
+```
+
+It is exported from `zyzz/react-native/reanimated`, which requires Reanimated 4.5.3 or later within version 4 and its Worklets package. Other Zyzz entrypoints never import Reanimated.
+
+## Signature
+
+```ts
+// A shared value holding the tree, or one selection
+useAnimatedVars(vars)
+useAnimatedVars(vars, selector)
+```
+
+## Parameters
+
+### vars
+
+- **Type:** `Vars.Definition{:ts}`
+
+The `vars` helper from [`defineConfig`](/docs/api/react-native/defineConfig#vars), or a statically linked [`defineVars`](/docs/api/core/defineVars) definition, as with `useVars`.
+
+```ts /vars/
+// The complete native tree in one shared value
+const tree = useAnimatedVars(vars)
+```
+
+### selector
+
+- **Type:** `(values) => useAnimatedVars.Value{:ts}`
+- **Default:** `(values) => values{:ts}`
+
+A pure function that runs on the JavaScript thread. Results compare with `Object.is`, so an unchanged selection skips the shared-value write. Selecting one field also avoids reading unrelated fields that cannot convert to native.
+
+```ts /(values) => values.spacing.gap/
+// A shared number in logical units
+const gap = useAnimatedVars(vars, (values) => values.spacing.gap)
+```
+
+## Returns
+
+### sharedValue
+
+- **Type:** `SharedValue<selected>{:ts}`
+
+A Reanimated shared value whose identity stays stable across renders. Scheme, set, and window changes write the new selection after React commits. Changing the selector or the definition updates the same value.
+
+```ts /ink.get()/
+// Read inside a worklet, such as useAnimatedStyle
+const color = ink.get()
+```
+
+## Types
+
+- **`useAnimatedVars.Value{:ts}`:** A selection that worklets can receive: finite numbers, strings, booleans, `null`, `undefined`, plain objects, and arrays.
+
+```ts title="selection.ts"
+import type { useAnimatedVars } from 'zyzz/react-native/reanimated'
+
+// [!code hl:2]
+// A selection shape shared by several animated components
+export type Metrics = { readonly gap: number } & useAnimatedVars.Value
+```
+
+## Errors
+
+The hook throws `useAnimatedVars requires a Zyzz Provider.` outside a Provider. Functions, class instances, symbols, cycles, and nonfinite numbers in a selection throw, and TypeScript rejects selectors that return them.
+
+```ts twoslash
+// @customConditions: react-native
+// @errors: 2769
+import { defineConfig } from 'zyzz/react-native'
+import { useAnimatedVars } from 'zyzz/react-native/reanimated'
+
+const { vars } = defineConfig({ vars: { spacing: { gap: '8px' } } })
+
+// A function cannot reach a worklet as a selection
+useAnimatedVars(vars, () => () => 1)
+```

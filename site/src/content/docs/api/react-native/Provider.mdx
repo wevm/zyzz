@@ -1,0 +1,181 @@
+# Provider
+
+Select the color scheme, variable set, and window size for native styles beneath it.
+
+The [`defineConfig`](/docs/api/react-native/defineConfig) result includes a `Provider` typed to the config. Compiled styles and [`useVars`](/docs/api/react-native/useVars) read the nearest one, and switching its props selects precompiled alternatives without recompiling.
+
+```tsx title="App.tsx"
+import type { ReactNode } from 'react'
+import { useColorScheme } from 'react-native'
+import { Provider } from './zyzz.config.js'
+
+export function App(props: App.Props) {
+  const scheme = useColorScheme()
+
+  return (
+    // [!code hl:4]
+    // Resolve an absent device preference to light
+    <Provider colorScheme={scheme === 'dark' ? 'dark' : 'light'}>
+      {props.children}
+    </Provider>
+  )
+}
+
+export declare namespace App {
+  type Props = { children: ReactNode }
+}
+```
+
+## Signature
+
+```tsx
+// Selects a scheme and set for its descendants
+<Provider colorScheme={scheme} vars={name}>
+  {children}
+</Provider>
+```
+
+## Parameters
+
+### props.colorScheme
+
+- **Type:** `'dark' | 'light'{:ts}`
+
+The resolved scheme, which picks one value from each color pair. The Provider never reads the device setting, so the application passes React Native's `useColorScheme` result or its own override.
+
+```tsx /colorScheme="dark"/
+// Every descendant resolves the dark half of each pair
+<Provider colorScheme="dark">{children}</Provider>
+```
+
+### props.vars
+
+- **Type:** `string | undefined{:ts}`, narrowed to the config's catalog keys
+- **Default:** `options.defaultVars{:ts}`
+
+The selected variable set. A config with one unnamed set accepts only omission. An unknown name fails type checking and throws when the Provider mounts.
+
+```tsx /vars="alternate"/
+// Descendants read the alternate set
+<Provider colorScheme="light" vars="alternate">
+  {children}
+</Provider>
+```
+
+### props.children
+
+- **Type:** `ReactNode{:ts}`
+- **Default:** `undefined{:ts}`
+
+The components that consume the selection. Each descendant reads the nearest Provider, so a nested Provider overrides its parent for its subtree.
+
+```tsx
+// [!code hl:6]
+// The nested subtree reads the alternate set in the dark scheme
+<Provider colorScheme="light">
+  <Provider colorScheme="dark" vars="alternate">
+    {children}
+  </Provider>
+</Provider>
+```
+
+## Window Size
+
+The Provider reads `useWindowDimensions` and selects the matching `@media` alternatives of styles and variables. Resizing or rotating the window updates them, measured in logical units. Safe-area insets stay with the application, as [Responsive Styles](/docs/guides/native/responsive) shows.
+
+```ts
+import { style } from './zyzz.config.js'
+
+const panel = style({
+  flexDirection: 'column',
+  // [!code hl:2]
+  // Applies while the Provider's window is at least 768 wide
+  '@media (width >= 768px)': { flexDirection: 'row' },
+})
+```
+
+Window sizes come from the `react-native` export condition. Without it, the Provider from `zyzz/react-native/react` supplies no size, and media-conditioned styles and values throw when they resolve.
+
+## Default Selection
+
+Compiled styles outside a Provider use the config's default set, the light scheme, and the window size. Styles applied in the component that renders a Provider resolve the same way, since the hook runs before the Provider exists.
+
+```tsx title="Screen.tsx"
+import type { ReactNode } from 'react'
+import { View } from 'react-native'
+import { Provider, style } from './zyzz.config.js'
+
+export function Screen(props: Screen.Props) {
+  return (
+    <Provider colorScheme="dark">
+      {/* [!code hl:2] */}
+      {/* Resolves for the light scheme, outside this Provider */}
+      <View {...styles.page()}>{props.children}</View>
+    </Provider>
+  )
+}
+
+export declare namespace Screen {
+  type Props = { children: ReactNode }
+}
+
+namespace styles {
+  export const page = style({ backgroundColor: 'ink' })
+}
+```
+
+[`useVars`](/docs/api/react-native/useVars) has no default and throws outside a Provider.
+
+## Standalone Provider
+
+`zyzz/react-native/react` also exports a `Provider` bound to no config. Its `vars` prop accepts any nonempty name, and omission uses each config's `defaultVars`. The config-bound Provider is preferred, since it checks names.
+
+```tsx title="Root.tsx"
+import type { ReactNode } from 'react'
+import { Provider } from 'zyzz/react-native/react'
+
+export function Root(props: Root.Props) {
+  // [!code hl:6]
+  // Names are checked only at render, by the configs that read them
+  return (
+    <Provider colorScheme="light" vars="alternate">
+      {props.children}
+    </Provider>
+  )
+}
+
+export declare namespace Root {
+  type Props = { children: ReactNode }
+}
+```
+
+## Types
+
+- **`Provider.Props{:ts}`:** The standalone Provider's props, from `zyzz/react-native/react`.
+- **`defineConfig.ProviderProps<options>{:ts}`:** A config-bound Provider's props.
+
+```ts title="selection.ts"
+import type { Provider } from 'zyzz/react-native/react'
+
+// [!code hl:2]
+// A selection stored in application state
+export type Selection = Omit<Provider.Props, 'children'>
+```
+
+## Errors
+
+TypeScript rejects a `vars` name outside the config's catalog. At runtime the same Provider throws `Unknown native vars: <name>.`, and every Provider throws for an unresolved scheme or a `set` prop.
+
+```tsx twoslash
+// @customConditions: react-native
+// @errors: 2322
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider } = defineConfig({
+  defaultVars: 'base',
+  vars: { base: { spacing: { gap: '8px' } } },
+})
+
+// `missing` is not a set name
+const root = <Provider colorScheme="light" vars="missing" />
+```

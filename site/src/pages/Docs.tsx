@@ -17,10 +17,12 @@ import {
   useId,
   useState,
 } from 'react'
+import ActivityIcon from '~icons/lucide/activity'
 import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import AtSignIcon from '~icons/lucide/at-sign'
 import BookOpenIcon from '~icons/lucide/book-open'
 import BoxIcon from '~icons/lucide/box'
+import BoxesIcon from '~icons/lucide/boxes'
 import BracesIcon from '~icons/lucide/braces'
 import BrainIcon from '~icons/lucide/brain'
 import CheckIcon from '~icons/lucide/check'
@@ -55,6 +57,7 @@ import SparklesIcon from '~icons/lucide/sparkles'
 import SquareStackIcon from '~icons/lucide/square-stack'
 import SunMoonIcon from '~icons/lucide/sun-moon'
 import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TableIcon from '~icons/lucide/table'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TestTubeIcon from '~icons/lucide/test-tube'
@@ -62,6 +65,7 @@ import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
 import WorkflowIcon from '~icons/lucide/workflow'
 import WrenchIcon from '~icons/lucide/wrench'
+import ZapIcon from '~icons/lucide/zap'
 import BabelIcon from '~icons/simple-icons/babel'
 import HtmlIcon from '~icons/simple-icons/html5'
 import NextIcon from '~icons/simple-icons/nextdotjs'
@@ -99,6 +103,17 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/node': NodeIcon,
   'api/oxlint': ShieldCheckIcon,
   'api/react-native': ReactIcon,
+  'api/react-native/defineConfig': SettingsIcon,
+  'api/react-native/namespaces/Host': SmartphoneIcon,
+  'api/react-native/namespaces/StyleSheet': TableIcon,
+  'api/react-native/namespaces/Variants': LayersIcon,
+  'api/react-native/Provider': SunMoonIcon,
+  'api/react-native/useAnimatedStyleValue': ActivityIcon,
+  'api/react-native/useAnimatedVars': ZapIcon,
+  'api/react-native/useStyles': PaintbrushIcon,
+  'api/react-native/useVars': VariableIcon,
+  'api/react-native/values': ListIcon,
+  'api/react-native/withStyles': BoxesIcon,
   'api/runtime': PlayIcon,
   'api/unplugin': PlugIcon,
   'api/vite': ViteIcon,

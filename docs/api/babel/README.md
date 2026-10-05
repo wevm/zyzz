@@ -45,7 +45,7 @@ const result = transformSync(source, {
 })
 ```
 
-Native output contains executable style tables and bindings, without CSS metadata. `platform` requires `ios` or `android`. `colorScheme` is omitted for runtime selection through the [React provider](../react-native/react.md). An explicit `light` or `dark` retains the standalone fixed-context compilation mode. `units` supplies optional length conversion factors. Omitting `target` preserves existing native configurations.
+Native output contains executable style tables and bindings, without CSS metadata. `platform` requires `ios` or `android`. `colorScheme` is omitted for runtime selection through the [React provider](https://zyzz.sh/docs/api/react-native/Provider). An explicit `light` or `dark` retains the standalone fixed-context compilation mode. `units` supplies optional length conversion factors. Omitting `target` preserves existing native configurations.
 
 `fonts` maps exact authored family strings to registered native names. The application owns font loading and device validation. Shared `lineHeight` numbers multiply the style's font size; values inside native target branches remain absolute logical units.
 

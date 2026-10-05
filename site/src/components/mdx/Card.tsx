@@ -5,13 +5,18 @@ import BracesIcon from '~icons/lucide/braces'
 import CodeIcon from '~icons/lucide/code'
 import CombineIcon from '~icons/lucide/combine'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
+import EyeIcon from '~icons/lucide/eye'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileTypeIcon from '~icons/lucide/file-type'
+import FolderCogIcon from '~icons/lucide/folder-cog'
+import HammerIcon from '~icons/lucide/hammer'
 import LayersIcon from '~icons/lucide/layers'
 import ListIcon from '~icons/lucide/list'
+import LockOpenIcon from '~icons/lucide/lock-open'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaletteIcon from '~icons/lucide/palette'
 import PanelsIcon from '~icons/lucide/panels-top-left'
+import ServerIcon from '~icons/lucide/server'
 import Settings2Icon from '~icons/lucide/settings-2'
 import SettingsIcon from '~icons/lucide/settings'
 import SlidersIcon from '~icons/lucide/sliders-horizontal'
@@ -164,16 +169,21 @@ const icons = {
   code: CodeIcon,
   combine: CombineIcon,
   'copy-plus': CopyPlusIcon,
+  eye: EyeIcon,
   'file-code': FileCodeIcon,
   'file-type': FileTypeIcon,
+  'folder-cog': FolderCogIcon,
+  hammer: HammerIcon,
   layers: LayersIcon,
   list: ListIcon,
+  'lock-open': LockOpenIcon,
   next: NextIcon,
   paintbrush: PaintbrushIcon,
   palette: PaletteIcon,
   panels: PanelsIcon,
   react: ReactIcon,
   rollup: RollupIcon,
+  server: ServerIcon,
   settings: SettingsIcon,
   'settings-2': Settings2Icon,
   sliders: SlidersIcon,

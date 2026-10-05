@@ -11,7 +11,7 @@ Public reference grouped by entrypoint, export, and method. Types and errors sta
 | [zyzz/default](default.md)                  | Default config with appearance controls, a restoration script, and bundled tokens. |
 | [zyzz/metro](metro/README.md)               | Compile native style modules during Metro bundling.                                |
 | [zyzz/next](next/README.md)                 | Connect source transformation, CSS delivery, and watching to Next.js.              |
-| [zyzz/node](node/README.md)                 | Build and watch filesystem sources with explicit output ownership.                 |
+| [zyzz/node](https://zyzz.sh/docs/api/node)  | Build and watch filesystem sources with explicit output ownership.                 |
 | [zyzz/oxlint](oxlint/README.md)             | Lint web styles, JSX applications, and project conventions.                        |
 | [zyzz/react-native](react-native/README.md) | Compile shared definitions into native tables and select themes and schemes.       |
 | [zyzz/runtime](runtime/README.md)           | Bind compiled class lists to styling overrides without generating CSS.             |

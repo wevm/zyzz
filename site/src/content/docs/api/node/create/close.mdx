@@ -1,0 +1,80 @@
+# close
+
+Stop watching, finish queued builds, and release the output directory lock.
+
+`close` comes from [`Host.create`](/docs/api/node/create). It stops every watcher, waits for queued builds, and removes the `.zyzz-lock` file from `outDir`. Calling it again returns the same promise.
+
+```ts title="scripts/build.ts"
+import { Host } from 'zyzz/node'
+
+const host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+try {
+  await host.build()
+} finally {
+  // [!code hl:2]
+  // Releases the lock after a failed build too
+  await host.close()
+}
+```
+
+## Signature
+
+```ts
+// Resolves once the lock is released
+await host.close()
+```
+
+## Returns
+
+- **Type:** `Promise<void>{:ts}`
+
+Resolves after queued builds settle and the lock file is removed. Builds already queued still publish.
+
+```ts
+// Queues a build without awaiting it
+void host.build()
+
+// [!code hl:2]
+// Resolves after the queued build publishes
+await host.close()
+```
+
+## Disposal
+
+The host's `[Symbol.asyncDispose]` is `close` itself, so an `await using` declaration closes the host when its scope exits, including after a thrown error.
+
+```ts
+import { Host } from 'zyzz/node'
+
+{
+  // [!code hl:2]
+  // Closes at the end of this block
+  await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+  await host.build()
+}
+```
+
+## Output After Close
+
+Closing keeps the published files and the `.zyzz.json` manifest, so a later host with the same `packageId` continues from them. A host with another ID rejects the output on its first build until the directory is removed.
+
+```sh /rm -rf dist/
+# Clears output owned by a previous package ID
+rm -rf dist
+```
+
+A process that exits without closing leaves `.zyzz-lock` behind. Later hosts then fail to open the directory with `EEXIST` until the file is removed.
+
+## Errors
+
+After `close`, [`build`](/docs/api/node/create/build) rejects and [`watch`](/docs/api/node/create/watch) throws, both with `Host is closed.` Closing itself rejects only when the lock file cannot be removed.
+
+```ts
+await host.close()
+
+// [!code hl:2]
+// Rejects with `Host is closed.`
+await host.build().catch((error) => console.error(error))
+```

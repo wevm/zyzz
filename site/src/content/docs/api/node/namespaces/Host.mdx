@@ -1,0 +1,77 @@
+# Host
+
+The filesystem host namespace, with its build, event, and runtime types.
+
+`Host` is the only export of `zyzz/node`. It holds [`Host.create`](/docs/api/node/create) and the types of the host it returns, keeping filesystem access and watching out of the pure compiler entrypoints.
+
+```ts title="scripts/build.ts"
+// [!code hl:2]
+// The namespace import that every Node example uses
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+await host.build()
+```
+
+## Members
+
+<Card.Group>
+  <Card title="Host.create" icon="folder-cog" href="/docs/api/node/create">
+    Open a host that compiles a source directory into an owned output directory.
+  </Card>
+  <Card title="build" icon="hammer" href="/docs/api/node/create/build">
+    Scan, compile, and publish the source tree, and list the changed output
+    files.
+  </Card>
+  <Card title="watch" icon="eye" href="/docs/api/node/create/watch">
+    Rebuild after source or dependency changes, and report each build or
+    failure.
+  </Card>
+  <Card title="close" icon="lock-open" href="/docs/api/node/create/close">
+    Stop watching, finish queued builds, and release the output directory lock.
+  </Card>
+</Card.Group>
+
+## Types
+
+- **`Host.Build{:ts}`:** The result of a build, with `changed` and `files`.
+- **`Host.Event{:ts}`:** A watch notification, `{ result }` or `{ error }`.
+- **`Host.Runtime{:ts}`:** The host, with `build`, `watch`, `close`, and `[Symbol.asyncDispose]`.
+- **`Host.create.Options{:ts}`:** The options of `Host.create`.
+- **`Host.watch.Options{:ts}`:** The options of `watch`.
+
+```ts title="scripts/run.ts"
+import { Host } from 'zyzz/node'
+
+// [!code hl:2]
+// Builds once, or watches when the script runs with --watch
+export async function run(host: Host.Runtime) {
+  if (!process.argv.includes('--watch')) return host.build()
+
+  host.watch({ onResult: (event: Host.Event) => console.log(event) })
+}
+```
+
+## Errors
+
+`Host` defines no error class. It throws plain `Error` instances for lock, ownership, and lifecycle failures, and passes compiler errors through unchanged.
+
+- **`Source.ExtractError`:** From `zyzz/compiler`. A source value the compiler cannot read, or an import that does not resolve.
+- **`Native.CompileError`:** From `zyzz/compiler`. A native module that uses web-only features, such as CSS contributions.
+- **`StyleSheet.CompileError`:** From `zyzz/react-native`. A style the native context cannot compile, such as a `rem` length without `units.rem`.
+- **`StyleSheet.SelectionError`:** From `zyzz/react-native`. A `native.set` label missing from the compiled tables.
+
+```ts
+import { Source } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+await host.build().catch((error: unknown) => {
+  // [!code hl:2]
+  // Compiler diagnostics name the module and position
+  if (error instanceof Source.ExtractError) console.error(error.message)
+  else throw error
+})
+```

@@ -1,0 +1,116 @@
+# build
+
+Scan, compile, and publish the source tree, and list the changed output files.
+
+`build` comes from [`Host.create`](/docs/api/node/create). Each call scans `root`, compiles the complete module graph, and writes only the files whose content changed. Calls run one at a time, in call order.
+
+```ts title="scripts/build.ts"
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+// [!code hl:2]
+// Resolves after dist/ holds the new output
+const result = await host.build()
+
+console.log(result.files)
+```
+
+## Signature
+
+```ts
+// The published output files
+await host.build()
+```
+
+## Returns
+
+### result.changed
+
+- **Type:** `readonly string[]{:ts}`
+
+The files this build wrote or removed, sorted and relative to `outDir`. A build after no source change returns an empty list.
+
+```ts
+await host.build()
+
+// [!code hl:2]
+// Empty, since nothing changed after the first build
+const { changed } = await host.build()
+```
+
+### result.files
+
+- **Type:** `readonly string[]{:ts}`
+
+Every output file after this build, sorted and relative to `outDir`. The ownership manifest and lock file are excluded. Files of a deleted source module leave both the list and the directory.
+
+```ts
+const result = await host.build()
+
+// [!code hl:2]
+// The complete stylesheet for the application document
+const stylesheet = result.files.find((file) => file === 'zyzz.css')
+```
+
+[Output Layout](/docs/api/node/create#output-layout) lists the files each source module produces.
+
+## Publication
+
+A build compiles the whole graph and checks ownership before it writes. Each file is written to a temporary path and renamed into place. When a write fails, the host restores the files this build already replaced, so the output never mixes two builds.
+
+```ts
+try {
+  await host.build()
+} catch (error) {
+  // [!code hl:2]
+  // dist/ still holds the last successful build
+  console.error(error)
+}
+```
+
+Each build reads package metadata again, so changed export maps and `.zyzz.json` files take effect on the next build. An unchanged graph reuses its compiled output.
+
+## Ownership
+
+`.zyzz.json` in `outDir` records the package ID and a SHA-256 digest of each published file. A build refuses to replace a file the host did not write or one edited since its last build, and removes owned files that no source produces anymore.
+
+```sh /Button.tsx.css/
+# An edited output blocks the next build until it is restored or deleted
+echo '/* edited */' > dist/Button.tsx.css
+```
+
+## Types
+
+- **`Host.Build{:ts}`:** The resolved result, with `changed` and `files`.
+
+```ts title="report.ts"
+import type { Host } from 'zyzz/node'
+
+// [!code hl:2]
+// Prints the files a build wrote or removed
+export function report(result: Host.Build) {
+  for (const file of result.changed) console.log(file)
+}
+```
+
+## Errors
+
+A build rejects with the compiler's errors, such as `Source.ExtractError` for a value the compiler cannot read or an import that does not resolve. Native builds also reject with `Native.CompileError`, `StyleSheet.CompileError`, or `StyleSheet.SelectionError`.
+
+```ts
+import { Source } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+try {
+  await host.build()
+} catch (error) {
+  // [!code hl:2]
+  // Locates the source the compiler rejected
+  if (error instanceof Source.ExtractError) console.error(error.message)
+}
+```
+
+Ownership conflicts reject with an `Error` naming the file, such as `Refusing to replace an unowned or modified output: Button.tsx.css`. A manifest from another `packageId` rejects with `Invalid output ownership manifest.`, and a build after [`close`](/docs/api/node/create/close) rejects with `Host is closed.`

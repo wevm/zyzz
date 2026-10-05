@@ -80,7 +80,7 @@ Bundlers consuming CLI output need no browser target configuration. Their defaul
 
 Compilation errors preserve the last successful stylesheets and recover after valid edits. Ctrl-C and SIGTERM stop watching and release the output lock. Cleanup removes only unchanged owned artifacts and preserves unrelated files.
 
-See the [CLI reference](../api/cli.md) for flags and structured output. The lower-level [Host API](../api/node/Host/create.md) retains module emission for library publishing and custom build pipelines.
+See the [CLI reference](../api/cli.md) for flags and structured output. The lower-level [Host API](https://zyzz.sh/docs/api/node/create) retains module emission for library publishing and custom build pipelines.
 
 ## Runtime Cost
 

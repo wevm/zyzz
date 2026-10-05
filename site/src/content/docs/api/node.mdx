@@ -1,0 +1,35 @@
+# Node
+
+Build and watch a source directory into owned output with the `zyzz/node` entrypoint.
+
+## Builds
+
+<Card.Group>
+  <Card title="Host.create" icon="folder-cog" href="/docs/api/node/create">
+    Open a host that compiles a source directory into an owned output directory.
+  </Card>
+</Card.Group>
+
+## Lifecycle
+
+<Card.Group>
+  <Card title="build" icon="hammer" href="/docs/api/node/create/build">
+    Scan, compile, and publish the source tree, and list the changed output
+    files.
+  </Card>
+  <Card title="watch" icon="eye" href="/docs/api/node/create/watch">
+    Rebuild after source or dependency changes, and report each build or
+    failure.
+  </Card>
+  <Card title="close" icon="lock-open" href="/docs/api/node/create/close">
+    Stop watching, finish queued builds, and release the output directory lock.
+  </Card>
+</Card.Group>
+
+## Namespaces
+
+<Card.Group>
+  <Card title="Host" icon="server" href="/docs/api/node/namespaces/Host">
+    The filesystem host namespace, with its build, event, and runtime types.
+  </Card>
+</Card.Group>

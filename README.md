@@ -175,7 +175,7 @@ host.watch({
 await once(process, 'SIGINT')
 ```
 
-Watching performs an initial build, then reports rebuilds and errors. `await using` stops watchers, drains pending builds, and releases the output lock when the scope exits. See [Host.create](docs/api/node/Host/create.md).
+Watching performs an initial build, then reports rebuilds and errors. `await using` stops watchers, drains pending builds, and releases the output lock when the scope exits. See [Host.create](https://zyzz.sh/docs/api/node/create).
 
 ## Walkthrough
 

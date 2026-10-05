@@ -37,18 +37,22 @@ import CodeXmlIcon from '~icons/lucide/code-xml'
 import CombineIcon from '~icons/lucide/combine'
 import CopyIcon from '~icons/lucide/copy'
 import CopyPlusIcon from '~icons/lucide/copy-plus'
+import EyeIcon from '~icons/lucide/eye'
 import FileCodeIcon from '~icons/lucide/file-code'
 import FileIcon from '~icons/lucide/file'
 import FileInputIcon from '~icons/lucide/file-input'
 import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
+import FolderCogIcon from '~icons/lucide/folder-cog'
 import GaugeIcon from '~icons/lucide/gauge'
 import GitBranchIcon from '~icons/lucide/git-branch'
 import GlobeIcon from '~icons/lucide/globe'
+import HammerIcon from '~icons/lucide/hammer'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
 import ListIcon from '~icons/lucide/list'
 import ListOrderedIcon from '~icons/lucide/list-ordered'
+import LockOpenIcon from '~icons/lucide/lock-open'
 import MonitorIcon from '~icons/lucide/monitor'
 import MonitorSmartphoneIcon from '~icons/lucide/monitor-smartphone'
 import PackageIcon from '~icons/lucide/package'
@@ -62,6 +66,7 @@ import PrinterIcon from '~icons/lucide/printer'
 import RocketIcon from '~icons/lucide/rocket'
 import RotateCcwIcon from '~icons/lucide/rotate-ccw'
 import ScrollTextIcon from '~icons/lucide/scroll-text'
+import ServerIcon from '~icons/lucide/server'
 import Settings2Icon from '~icons/lucide/settings-2'
 import SettingsIcon from '~icons/lucide/settings'
 import ShieldCheckIcon from '~icons/lucide/shield-check'
@@ -116,6 +121,11 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/metro': SmartphoneIcon,
   'api/next': NextIcon,
   'api/node': NodeIcon,
+  'api/node/create': FolderCogIcon,
+  'api/node/create/build': HammerIcon,
+  'api/node/create/close': LockOpenIcon,
+  'api/node/create/watch': EyeIcon,
+  'api/node/namespaces/Host': ServerIcon,
   'api/oxlint': ShieldCheckIcon,
   'api/react-native': ReactIcon,
   'api/react-native/defineConfig': SettingsIcon,

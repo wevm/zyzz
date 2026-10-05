@@ -564,6 +564,35 @@ export const card = style({ color: 'brand' })
     `)
   })
 
+  test('rejects relative contribution assets', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'app/fonts.ts',
+        source: `import { fontFace } from 'zyzz/web'
+fontFace({ fontFamily: 'Geist', src: 'url(./Geist.woff2)' })
+`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app/fonts.ts:36: Relative contribution assets require Graph.compile and a relocation host.]`,
+    )
+  })
+
+  test('requires explicit ids that extraction accepts without them', () => {
+    const source = `import { variable } from 'zyzz'
+export const accent = variable('color')
+`
+
+    expect(
+      Source.extract({ compiler: false, moduleId: 'app/vars.ts', source })
+        .calls,
+    ).toMatchInlineSnapshot(`[]`)
+    expect(() =>
+      Transform.compile({ compiler: false, moduleId: 'app/vars.ts', source }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: CSS-only output requires an explicit variable id.]`,
+    )
+  })
+
   test('requires explicit ids for dynamic styles without rewriting', () => {
     expect(() =>
       Transform.compile({

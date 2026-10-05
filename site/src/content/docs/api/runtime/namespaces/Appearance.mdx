@@ -108,7 +108,7 @@ Appearance.root(entries, { defaultVars: 'base', storageKey: 'theme' })
 
 ### get
 
-- **Type:** `() => { set: name; colorScheme?: 'light' | 'dark' | 'light dark' }{:ts}`
+- **Type:** `() => Appearance.Selection<name>{:ts}`
 
 Reads the set and scheme classes on the root. An absent scheme class omits `colorScheme`.
 

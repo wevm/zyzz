@@ -79,4 +79,4 @@ const attributes = CompositionHtml.from({ className: 'z-card' })
 
 ## Errors
 
-Attributes without retained props, such as plain `Html.from` output, contribute nothing to a composition. Like [`Composition.create`](/docs/api/runtime/namespaces/Composition#errors), the `create` callable throws a `TypeError` for a retained entry beyond `options.inputs`, which generated calls never pass.
+Attributes without retained props, such as plain `Html.from` output, contribute nothing to a composition. Like [`Composition.create`](/docs/api/runtime/namespaces/Composition#errors), the `create` callable throws a `TypeError` for a retained entry beyond `options.inputs`, which generated calls never pass. A `bind` wrapper propagates any error thrown by the wrapped `fn`.

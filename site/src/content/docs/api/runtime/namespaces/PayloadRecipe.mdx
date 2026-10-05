@@ -155,6 +155,28 @@ box({ conditions: { wide: { size: { custom: { padding: '20px' } } } } })
 
 The `select` delegate's props. When a call assigns slots, `style` is a new object with the delegate's `style` followed by the slot assignments, so slots win over overrides of the same property.
 
+### className
+
+- **Type:** `string{:ts}`
+
+The delegate's generated class list and any `className` override, unchanged. HTML output names it `class`.
+
+```ts /props.className/
+// 'z-box'
+props.className
+```
+
+### data-[axis]
+
+- **Type:** `string{:ts}`
+
+The delegate's attributes for the normalized choice names. A dynamic selection serializes as its choice name, and a [`ConditionalRecipe`](/docs/api/runtime/namespaces/ConditionalRecipe#data-zyzz-condition-index-axis) delegate adds conditional attributes.
+
+```ts /props['data-size']/
+// 'custom'
+props['data-size']
+```
+
 ### style
 
 - **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`

@@ -61,6 +61,54 @@ ConditionalRecipe.create({
 })
 ```
 
+### input[axis]
+
+- **Type:** `string | boolean | null | undefined{:ts}`
+- **Default:** `options.defaults[axis]{:ts}`
+
+The unconditional choice, serialized as [`Recipe.create`](/docs/api/runtime/namespaces/Recipe#optionsaxis) serializes it. `null` clears the axis outside every condition.
+
+```ts /size: 'large'/
+// { className: 'z-button', 'data-size': 'large' }
+button({ size: 'large' })
+```
+
+### input.className
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+Classes appended after the generated class list.
+
+```ts /className: 'wide'/
+// 'z-button wide'
+button({ className: 'wide' }).className
+```
+
+### input.vars
+
+- **Type:** ``{ [variable: `--${string}`]: string | number | undefined }{:ts}``
+- **Default:** `undefined{:ts}`
+
+Custom-property assignments merged into a new `style` before `input.style`.
+
+```ts /vars: { '--accent': 'crimson' }/
+// { '--accent': 'crimson' }
+button({ vars: { '--accent': 'crimson' } }).style
+```
+
+### input.style
+
+- **Type:** `style.Options['style']{:ts}`
+- **Default:** `undefined{:ts}`
+
+Inline overrides, copied after `input.vars`.
+
+```ts /style: { padding: '24px' }/
+// { padding: '24px' }
+button({ style: { padding: '24px' } }).style
+```
+
 ### input.conditions
 
 - **Type:** `{ [condition: string]: { [axis: string]: string | boolean | null | undefined } }{:ts}`
@@ -71,6 +119,39 @@ Selections that apply inside each named condition. A choice serializes with an `
 ```ts /wide: { size: null }/
 // Adds 'data-zyzz-condition-0-size': 'n'
 button({ size: 'large', conditions: { wide: { size: null } } })
+```
+
+### className
+
+- **Type:** `string{:ts}`
+
+The generated class list, followed by `input.className`. HTML output names it `class`.
+
+```ts /props.className/
+// 'z-button'
+props.className
+```
+
+### data-[axis]
+
+- **Type:** `string{:ts}`
+
+The unconditional choice of each selected axis. A cleared or unselected axis has no attribute.
+
+```ts /props['data-size']/
+// 'small'
+props['data-size']
+```
+
+### style
+
+- **Type:** `Readonly<Record<string, string | number | undefined>> | undefined{:ts}`
+
+The merged inline styles, present only when the call supplies overrides. HTML output serializes it to a string.
+
+```ts /style/
+// { '--accent': 'crimson', padding: '24px' }
+button({ style: { padding: '24px' }, vars: { '--accent': 'crimson' } }).style
 ```
 
 ### data-zyzz-condition-[index]-[axis]

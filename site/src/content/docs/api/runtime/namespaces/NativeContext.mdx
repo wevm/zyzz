@@ -41,7 +41,7 @@ NativeContext.create({ default: { dark: card, light: card } }, 'default')
 
 ### defaultVars
 
-- **Type:** `string{:ts}`
+- **Type:** `keyof tables & string{:ts}`
 
 The set used when the context omits `set`.
 
@@ -175,6 +175,8 @@ NativeContext.key(value, context)
 - **Type:** `unknown{:ts}`
 
 A style value or props. The result lists the selected compiled callables, which the adapter compares between renders to update only when an alternative changes.
+
+Plain values return `[]`. So does a definition whose sets and schemes all share one callable, since no context change can select another alternative.
 
 ```ts /NativeContext.key/
 // One selected table

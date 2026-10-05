@@ -235,6 +235,17 @@ describe('ConditionalRecipe API page', () => {
         "data-zyzz-condition-0-size": "n",
       }
     `)
+    expect(
+      example.button({
+        style: { padding: '24px' },
+        vars: { '--accent': 'crimson' },
+      }).style,
+    ).toMatchInlineSnapshot(`
+      {
+        "--accent": "crimson",
+        "padding": "24px",
+      }
+    `)
   })
 
   test('names conditional attributes by condition index', () => {
@@ -803,6 +814,9 @@ describe('NativeContext API page', () => {
     expect(
       NativeContext.key(example.ink(), { colorScheme: 'dark' }).length,
     ).toMatchInlineSnapshot(`1`)
+    expect(
+      NativeContext.key({ color: 'red' }, { colorScheme: 'dark' }),
+    ).toMatchInlineSnapshot(`[]`)
     expect(() =>
       NativeContext.resolve(example.ink().style, undefined),
     ).toThrowErrorMatchingInlineSnapshot(

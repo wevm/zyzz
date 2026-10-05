@@ -169,4 +169,4 @@ export const payload = {
 
 ## Errors
 
-`Recipe.create` throws no errors and adds no runtime validation. Unknown choices are rejected by TypeScript and the compiler before the callable runs.
+`Recipe.create` throws no errors and adds no runtime validation. Its own callable accepts any record, so an unknown choice serializes as given. Generated code casts the callable to `variants.ReturnType`, which is how TypeScript rejects unknown axes and choices.

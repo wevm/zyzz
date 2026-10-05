@@ -151,7 +151,7 @@ export type Spacing = NativeVars.Values<
 
 ## Errors
 
-`read` throws an `Error` when the value was not created by `NativeVars.create` or names a set that was not compiled. Reading a diagnostic leaf throws its message.
+`read` throws an `Error` when the value was not created by `NativeVars.create`, names a set that was not compiled, or selects media alternatives with a negative or nonfinite `viewport`. Reading a diagnostic leaf throws its message.
 
 ```ts title="invalid.ts"
 import { NativeVars } from 'zyzz/runtime'

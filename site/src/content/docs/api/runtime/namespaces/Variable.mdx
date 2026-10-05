@@ -67,7 +67,7 @@ Variable.create({ name: '--accent', type: 'color', variable: true })
 
 - **Type:** `variable.Reference<kind>{:ts}`
 
-A frozen object holding the slot fields. It converts to `slot.name` as a string or property key.
+A frozen object holding the slot fields. It converts to `slot.name` as a string or property key. TypeScript widens a computed key, so a `vars` entry keyed by the reference loses its domain check. `set` keeps it.
 
 ```ts /[accent]/
 // Assigns --accent when applying a style

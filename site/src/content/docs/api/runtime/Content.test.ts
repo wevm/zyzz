@@ -462,10 +462,13 @@ describe('Appearance API page', () => {
       response.setHeader('Content-Type', 'text/html')
       response.end(markup)
     })
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-    const browser = await chromium.launch({ headless: true })
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
 
     try {
+      await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve),
+      )
+      browser = await chromium.launch({ headless: true })
       const page = await browser.newPage()
       await page.goto(
         `http://127.0.0.1:${(server.address() as { port: number }).port}/`,
@@ -510,8 +513,8 @@ describe('Appearance API page', () => {
         ),
       ).toMatchInlineSnapshot(`"TypeError: Invalid set selection."`)
     } finally {
-      await browser.close()
-      server.close()
+      await browser?.close()
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 
@@ -765,6 +768,37 @@ describe('NativeContext API page', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Compiled native styles require a Zyzz Provider.]`,
     )
+  })
+
+  test('passes application input to the selected table', () => {
+    const table = (padding: number) =>
+      Native.create({
+        axes: { size: ['small', 'large'] },
+        defaults: { size: 'small' },
+        styles: { 0: { padding }, 1: { padding: padding * 2 }, 2: {} },
+      })
+    const badge = NativeContext.create(
+      { base: { dark: table(4), light: table(3) } },
+      'base',
+    )
+
+    expect(
+      NativeContext.resolve(badge, { colorScheme: 'dark' }, { size: 'large' }),
+    ).toMatchInlineSnapshot(`
+      {
+        "padding": 8,
+      }
+    `)
+    expect(
+      NativeContext.resolve(
+        NativeContext.application(badge, { size: 'large' }),
+        { colorScheme: 'light' },
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "padding": 6,
+      }
+    `)
   })
 
   test('selects media alternatives from the viewport', () => {

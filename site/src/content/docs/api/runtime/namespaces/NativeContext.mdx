@@ -90,6 +90,18 @@ The resolved `colorScheme`, an optional `set`, and optional `viewport` dimension
 NativeContext.resolve(ink().style, { colorScheme: 'light', set: 'base' })
 ```
 
+### input
+
+- **Type:** `unknown{:ts}`
+- **Default:** `undefined{:ts}`
+
+The application input for a context callable passed as `value`. The selected set and scheme's callable receives it, so variant choices and callback values reach the deferred table.
+
+```ts /{ size: 'large' }/
+// Applies `badge({ size: 'large' })` from the dark table
+NativeContext.resolve(badge, { colorScheme: 'dark' }, { size: 'large' })
+```
+
 ## NativeContext.responsive
 
 ```ts
@@ -137,6 +149,18 @@ A style value or context callable. The native adapter wraps a component's `style
 ```ts /NativeContext.application(ink)/
 // { color: '#fafafa' }
 NativeContext.resolve(NativeContext.application(ink), { colorScheme: 'dark' })
+```
+
+### input
+
+- **Type:** `unknown{:ts}`
+- **Default:** `undefined{:ts}`
+
+The application input retained with `value` and passed to `resolve` once the view selects its context.
+
+```ts /{ size: 'large' }/
+// Resolves later as badge({ size: 'large' })
+NativeContext.application(badge, { size: 'large' })
 ```
 
 ## NativeContext.key

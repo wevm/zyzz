@@ -2,7 +2,7 @@
 
 Apply compiled class names, variant attributes, theme scopes, and native tables without generating CSS.
 
-The compiler rewrites each definition into a call to one of these helpers and imports it from `zyzz/runtime`. Applications normally do not import them. They author with [`style`](/docs/api/core/style), [`variants`](/docs/api/core/variants), and [`defineConfig`](/docs/api/core/defineConfig) instead.
+The compiler rewrites definitions into calls to these helpers, imported from `zyzz/runtime`. Callback styles compile to equivalent inline functions instead. Applications normally do not import them. They author with [`style`](/docs/api/core/style), [`variants`](/docs/api/core/variants), and [`defineConfig`](/docs/api/core/defineConfig) instead.
 
 ## Web
 

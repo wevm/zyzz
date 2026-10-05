@@ -146,4 +146,4 @@ export const owner = {
 
 ## Errors
 
-`Composition.create` throws no errors. The compiler reports a `cx` call it cannot resolve as `Source.ExtractError`.
+`Composition.create` throws no errors. Its callable throws a `TypeError` when it receives a truthy entry beyond `options.inputs`, which generated calls never pass. The compiler reports a `cx` call it cannot resolve as `Source.ExtractError`.

@@ -123,7 +123,7 @@ Graph.compile({ modules, reset: resetCss })
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Whether to rewrite authoring calls, as in [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscompiler). Native graphs require rewriting.
+Whether to rewrite authoring calls, as in [`Transform.compile`](/docs/api/compiler/namespaces/Transform#optionscompiler). With `false`, every module needs the same explicit IDs, so a graph with an ID-less config throws. Native graphs require rewriting.
 
 ```ts /compiler: false/
 // Emits CSS while the calls run unchanged
@@ -230,8 +230,9 @@ const css = [
 A version 3 source map from `sharedCss` to the contributions that produced it. It is present whenever `sharedCss` is.
 
 ```ts /output.sharedCssMap/
-// Writes the map beside the shared stylesheet
-await Fs.writeFile('shared.css.map', JSON.stringify(output.sharedCssMap))
+// Writes the map only when the graph has shared CSS
+if (output.sharedCssMap)
+  await Fs.writeFile('shared.css.map', JSON.stringify(output.sharedCssMap))
 ```
 
 ### sharedAssets

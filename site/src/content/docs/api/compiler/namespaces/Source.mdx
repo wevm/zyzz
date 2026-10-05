@@ -128,9 +128,9 @@ const result = Css.compile({ styles: output.styles, vars: output.vars })
 
 ### themeCalls
 
-- **Type:** `readonly { end: number; start: number }[]{:ts}`
+- **Type:** `readonly { end: number; name: string; start: number; tokenType: string }[]{:ts}`
 
-The spans of local `defineConfig`, `defineVars`, and `extendVars` calls, with the scope keys their helpers resolve to. A rewriter replaces each span with compiled scope data.
+The spans of local `defineConfig`, `defineVars`, and `extendVars` calls, with each call's scope key in `name` and its token type text in `tokenType`. A rewriter replaces each span with compiled scope data.
 
 ```ts /output.themeCalls/
 // One entry per local config or variable set

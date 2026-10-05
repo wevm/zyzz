@@ -184,6 +184,15 @@ export const button = variants({ variants: { tone: { loud: { opacity: 1 } } } })
       }
     `)
     expect(module.output.themeCalls.length).toMatchInlineSnapshot(`1`)
+    expect(module.output.themeCalls.map((call) => [call.name, call.tokenType]))
+      .toMatchInlineSnapshot(`
+      [
+        [
+          "src-Card-8E7ByFdvK6e-style-theme",
+          "{readonly "color":{readonly "brand":"#06c"}}",
+        ],
+      ]
+    `)
   })
 
   test('returns contributions and variable calls', () => {
@@ -573,6 +582,46 @@ describe('Graph.compile', () => {
         ],
       }
     `)
+  })
+
+  test('exports native profiles from the defining module', () => {
+    const output = Graph.compile({
+      modules: {
+        'app/Gap.tsx': `import { useVars } from 'zyzz/react-native/react'
+import { vars } from './vars.js'
+
+export function Gap() {
+  return useVars(vars).spacing.gap
+}
+`,
+        'app/vars.ts': `import { defineVars } from 'zyzz'
+
+export const vars = defineVars({ spacing: { gap: '4px' } })
+`,
+      },
+      native: { colorScheme: 'light' },
+    })
+
+    expect(
+      output.modules['app/vars.ts']?.code.includes(
+        'export const __zyzzProfile',
+      ),
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      /import \{__zyzzProfile\w+\} from "\.\/vars\.js"/.test(
+        output.modules['app/Gap.tsx']?.code ?? '',
+      ),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('requires explicit ids for configs without rewriting', async () => {
+    const modules = templates(await example('namespaces/Graph'))
+
+    expect(() =>
+      Graph.compile({ compiler: false, modules }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: CSS-only themes require an explicit id on Config.create or Vars.define.]`,
+    )
   })
 
   test('links the overview example', async () => {
@@ -980,6 +1029,43 @@ export const label = style({ opacity: 0.5 })
     expect(output.code.includes('"missing"')).toMatchInlineSnapshot(`true`)
   })
 
+  test('compiles useVars arguments to native profiles', async () => {
+    const source = await example('namespaces/Native', 'Variable Reads')
+    const output = Native.compile({
+      colorScheme: 'light',
+      moduleId: 'app/Gap.tsx',
+      source,
+    })
+
+    const profile = output.code.match(
+      /__zyzzNativeVars\.create\(JSON\.parse\((".*?")\)\)/,
+    )?.[1]
+
+    expect(JSON.parse(JSON.parse(profile ?? '"null"'))).toMatchInlineSnapshot(`
+      {
+        "defaultVars": "default",
+        "profiles": {
+          "default": {
+            "dark": {
+              "spacing": {
+                "gap": 4,
+              },
+            },
+            "light": {
+              "spacing": {
+                "gap": 4,
+              },
+            },
+          },
+        },
+        "unnamed": true,
+      }
+    `)
+    expect(
+      output.code.includes('useVars((__zyzzNativeVars0 as typeof vars))'),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
   test('runs the compiled callables', async () => {
     const source = await example('namespaces/Native', 'Callables')
     const output = Native.compile({
@@ -1115,7 +1201,7 @@ describe('compiler API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files.length).toMatchInlineSnapshot(`25`)
+    expect(files.length).toMatchInlineSnapshot(`26`)
     // The diagnostics are empty when every example type-checks.
     expect(checked.stdout + checked.stderr).toMatchInlineSnapshot(`""`)
     expect(checked.status).toMatchInlineSnapshot(`0`)

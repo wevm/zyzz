@@ -1,4 +1,5 @@
 /** Groups concepts source files and rendered examples in accessible tabs. @module */
+import * as Content from '../../../Content.js'
 import { vars } from '../../../zyzz.config.js'
 import {
   Children,
@@ -118,7 +119,7 @@ export function Tabs(props: Tabs.Props) {
                 if (active.source === undefined) return
                 // The highlighted text omits notation comments such as `// [!code hl]`.
                 await navigator.clipboard.writeText(
-                  __DOCS__.code[active.source]?.text ?? active.source,
+                  Content.docs.code[active.source]?.text ?? active.source,
                 )
                 if (request === copyRequest.current) setCopyState('copied')
               } catch {
@@ -157,10 +158,10 @@ export function Tabs(props: Tabs.Props) {
             tab.content
           ) : (
             <pre {...styles.code()}>
-              {Object.hasOwn(__DOCS__.code, tab.source) ? (
+              {Object.hasOwn(Content.docs.code, tab.source) ? (
                 <code
                   dangerouslySetInnerHTML={{
-                    __html: __DOCS__.code[tab.source]!.html,
+                    __html: Content.docs.code[tab.source]!.html,
                   }}
                 />
               ) : (

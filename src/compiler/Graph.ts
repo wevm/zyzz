@@ -1106,6 +1106,34 @@ function build(options: compile.Options, cache?: Cache): Cache {
       }
       return value
     }
+
+    function encode(read: Omit<Themes.VarsRead, 'end' | 'start'>) {
+      try {
+        return JSON.stringify(
+          NativeVars.compile({
+            ...read,
+            fonts: native.fonts,
+            units: native.units,
+          }),
+        )
+      } catch (error) {
+        throw new Native.CompileError((error as Error).message)
+      }
+    }
+
+    function define(owner: string, value: string) {
+      const definitions = profile(owner).definitions
+      let name = definitions.get(value)
+      if (!name) {
+        // Hashing the owner keeps names independent of which modules share the graph.
+        name = `__zyzzProfile${Identity.hash(owner + value)}`
+        while (reserved.has(name)) name += '_'
+        reserved.add(name)
+        definitions.set(value, name)
+      }
+      return name
+    }
+
     if (ids.some((id) => extracted.get(id)!.nativeVars?.length))
       NativeStyleSheet.compile({
         fonts: native.fonts,
@@ -1113,57 +1141,80 @@ function build(options: compile.Options, cache?: Cache): Cache {
         units: native.units,
         styles: { styles: [] },
       })
+
+    // Single-file adapters compile each owner without its consumers, so owners publish every exported profile.
+    if (native[Edits.runtime])
+      for (const moduleId of ids)
+        for (const link of Object.values(
+          extracted.get(moduleId)!.themeExports ?? {},
+        )) {
+          if (
+            owners[link.call.name]?.moduleId !== moduleId ||
+            !(
+              link.call.variableSet ||
+              (link.kind === 'config' &&
+                link.call.variableConfig &&
+                !link.call.initialization &&
+                !link.call.root)
+            )
+          )
+            continue
+          const value = (() => {
+            try {
+              return encode(Themes.varsRead(link))
+            } catch {
+              // Consumers that read this profile report the same error.
+              return undefined
+            }
+          })()
+          if (value !== undefined) define(moduleId, value)
+        }
+
     for (const moduleId of ids) {
       for (const read of extracted.get(moduleId)!.nativeVars ?? []) {
         const owner = owners[read.owner]?.moduleId
-        // Single-file adapters cannot publish changes to dependency modules.
-        // Packed catalogs without source also retain their local fallback.
-        if (
-          native[Edits.runtime] ||
-          !owner ||
-          !Object.hasOwn(options.modules, owner)
-        )
-          continue
-        let value: string
-        try {
-          value = JSON.stringify(
-            NativeVars.compile({
-              ...read,
-              fonts: native.fonts,
-              units: native.units,
-            }),
+        // Packed catalogs without source retain their local fallback.
+        if (!owner || !Object.hasOwn(options.modules, owner)) continue
+
+        const value = encode(read)
+        const name = native[Edits.runtime]
+          ? profiles.get(owner)?.definitions.get(value)
+          : define(owner, value)
+        if (!name) continue
+
+        const source = (() => {
+          if (owner === moduleId) return undefined
+
+          // Host identities are opaque, so reuse the consumer's own resolved specifier.
+          if (native[Edits.runtime] && options.imports) {
+            const imports = options.imports[moduleId] ?? {}
+            return Object.keys(imports).find((key) => imports[key] === owner)
+          }
+
+          const from = moduleId.split('/').slice(0, -1)
+          const to = owner.split('/')
+          while (from.length && from[0] === to[0]) {
+            from.shift()
+            to.shift()
+          }
+          return (
+            (from.length ? '../'.repeat(from.length) : './') +
+            to.join('/').replace(/\.([cm]?)tsx?$/, '.$1js')
           )
-        } catch (error) {
-          throw new Native.CompileError((error as Error).message)
-        }
-        const definitions = profile(owner).definitions
-        let name = definitions.get(value)
-        if (!name) {
-          name = `__zyzzProfile${Identity.hash(value)}`
-          while (reserved.has(name)) name += '_'
-          reserved.add(name)
-          definitions.set(value, name)
-        }
-        const from = moduleId.split('/').slice(0, -1)
-        const to = owner.split('/')
-        while (from.length && from[0] === to[0]) {
-          from.shift()
-          to.shift()
-        }
-        const source =
-          (from.length ? '../'.repeat(from.length) : './') +
-          to.join('/').replace(/\.([cm]?)tsx?$/, '.$1js')
+        })()
+        if (owner !== moduleId && !source) continue
         profile(moduleId).reads.set(read.start, {
           name,
-          ...(owner !== moduleId ? { source } : {}),
+          ...(source ? { source } : {}),
         })
       }
     }
     const modules = Object.fromEntries(
       ids.map((moduleId) => {
+        // Single-file profiles derive only from this module's extraction and its dependencies.
         if (
           previous &&
-          !profiles.size &&
+          (native[Edits.runtime] || !profiles.size) &&
           extracted.get(moduleId) === previous.extracted.get(moduleId)
         )
           return [moduleId, previous.result.modules[moduleId]!]

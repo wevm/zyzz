@@ -26,7 +26,9 @@ Source graphs use Metro's resolver, including package exports, subpaths, applica
 
 Shared packages can publish source authoring or source-free JavaScript with adjacent `.zyzz.json` contracts. The adapter discovers Zyzz imports and authoring re-exports, then supplies their source or contracts to the compiler. Application modules are never evaluated during compilation. Assets and ordinary dependencies retain Metro's handling.
 
-Source packages must declare their Zyzz dependency to discover authoring behind barrels and indirect helper imports. Direct entry imports and packed contracts are detected independently. This declaration bounds discovery so unrelated package graphs stay outside native compilation.
+Source packages must declare their Zyzz dependency to discover authoring behind barrels and indirect helper imports. Direct `zyzz` imports, `defineConfig` imports from `zyzz/react-native` or `zyzz/react-native/react`, and packed contracts are detected independently. This declaration bounds discovery so unrelated package graphs stay outside native compilation.
+
+Each module that exports a configuration or variable set also exports its native `useVars` profile. Consumers that import that module directly share the profile. Reads through re-exporting modules or packed contracts compile a local copy.
 
 ## Updates and caching
 

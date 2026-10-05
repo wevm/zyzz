@@ -8,7 +8,7 @@ Select compiled native styles and readonly variable values through the `Provider
 | `Provider`                        | Select configured variables and a resolved scheme for a subtree. |
 | `useStyles()`                     | Resolve compiled bindings for explicit style consumers.          |
 | `useVars(vars, selector?)`        | Read native values from the nearest Provider.                    |
-| `withStyles(Component, options?)` | Resolve compiled style props for third-party components.         |
+| `withStyles(Component, options?)` | Resolve compiled style props outside function component JSX.     |
 
 Export the native configuration's helpers:
 
@@ -64,7 +64,7 @@ On native, Provider reads window width and height automatically with React Nativ
 
 In custom native builds, compiled styles on supported native components update directly when their selected alternatives change. `useVars` and explicit `useStyles` calls remain reactive. Static styles do not subscribe. Expo Go and callback styles use React subscriptions.
 
-Compiled styles outside a Provider use their configuration's default variables, the light scheme, and automatic window dimensions. Use a Provider to select another scheme or catalog. `useVars` and explicit `useStyles` still require a Provider for context-dependent reads.
+Compiled styles outside a Provider use their configuration's default variables, the light scheme, and automatic window dimensions. Styles applied in the component that renders a Provider also use these defaults. Use a Provider to select another scheme or catalog. `useVars` still requires one.
 
 ### children
 
@@ -163,23 +163,36 @@ namespace styles {
 }
 ```
 
-Metro's Babel pass resolves native bindings in JSX `style` expressions and prop spreads. Arrays, scalar payloads, variant choices, and native style callbacks retain their application inputs. Applied props can be declared outside rendering; selection remains local to the consuming render.
+Metro's Babel pass resolves native bindings in JSX `style` expressions, prop spreads, and props whose names end in `Style` on any component. Other props, such as `tintColor`, pass through unchanged.
 
-This automatic path supports function components and custom hooks that render JSX, including `memo` and `forwardRef` declarations. For class consumers, wrap the receiving component with `withStyles`. Components preserve their state when selection changes.
+```tsx
+function Feed() {
+  // contentContainerStyle resolves like style, without a wrapper
+  return <ScrollView contentContainerStyle={styles.content().style} />
+}
+```
+
+Arrays, scalar payloads, variant choices, and native style callbacks retain their application inputs. Applied props can be declared outside rendering; selection remains local to the consuming render.
+
+This automatic path supports function components and custom hooks that render JSX, including `memo` and `forwardRef` declarations. For class components, module-scope JSX, and `React.createElement` callers, wrap the receiving component with `withStyles`. Components preserve their state when selection changes.
 
 ## withStyles
 
-`withStyles(Component, options?)` returns a component that resolves compiled native styles through the nearest Provider. Define the wrapper at module scope. The wrapper preserves the component's required props and ref type.
+`withStyles(Component, options?)` returns a component that resolves compiled native styles through the nearest Provider. Function components and custom hooks need no wrapper. Use it for class components, module-scope JSX, and `React.createElement` callers. Define the wrapper at module scope. The wrapper preserves the component's required props and ref type.
 
 ```tsx
+import { Component } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { withStyles } from 'zyzz/react-native'
 import { panel } from './styles.js'
 
+// Class render methods are outside Metro's automatic resolution
 const SafeView = withStyles(SafeAreaView)
 
-function Screen() {
-  return <SafeView style={panel().style} />
+class Screen extends Component {
+  render() {
+    return <SafeView style={panel().style} />
+  }
 }
 ```
 
@@ -191,11 +204,27 @@ const StyledCard = withStyles(Card, { styleProps: ['bodyStyle'] })
 
 Style arrays retain authored order, including caller overrides. Plain native objects and caller-owned animated styles pass through unchanged. Other props and refs are forwarded unchanged. Resolve non-style values with `useVars` and pass them as ordinary component props.
 
-Wrappers support function components, class components, and `React.createElement` callers. The wrapper subscribes through React when the Provider selection changes. Direct native updates remain available on supported native primitives. Plain styles work without a Provider; compiled context-dependent bindings require one.
+Wrappers support function components, class components, and `React.createElement` callers. The wrapper subscribes through React when the Provider selection changes. Direct native updates remain available on supported native primitives. Outside a Provider, compiled bindings use the defaults described under [Provider](#provider).
 
 For a class JSX caller, declare the `withStyles` wrapper in the caller's module so Metro can recognize it. Imported wrappers work with `React.createElement` callers.
 
 Use [`zyzz/react-native/reanimated`](reanimated.md) for shared animation targets. When combining a compiled style with Reanimated-owned styles, wrap the animated component with `withStyles` so the wrapper resolves only the compiled bindings.
+
+### Generic Components
+
+Function, `memo`, and `forwardRef` wrappers keep the component's call signature, including declared ref unions such as Reanimated's animated refs. Class wrappers keep the instance ref type. A generic function component keeps its type parameters when `styleProps` is omitted.
+
+TypeScript carries type parameters only through a single signature, and React class components declare two constructors. Instantiate a generic class, such as `FlatList`, before wrapping it.
+
+```tsx
+import { FlatList } from 'react-native'
+import { withStyles } from 'zyzz/react-native'
+
+type Row = { readonly id: string }
+
+// Rows accepts FlatList<Row> props and a FlatList<Row> ref
+const Rows = withStyles(FlatList<Row>)
+```
 
 ## useStyles
 
@@ -204,6 +233,21 @@ Use [`zyzz/react-native/reanimated`](reanimated.md) for shared animation targets
 ```tsx
 const current = useStyles()
 const selected = current.style(styles.label().style)
+```
+
+`style(value)` returns the type of its input. Native applications always carry a style, so an applied style resolves without `undefined` and is assignable to React Native style props and `ViewStyle` or `TextStyle` values. Native objects, arrays, and callbacks keep their types. `props(props)` returns the props type.
+
+```tsx
+import type { TextStyle, ViewStyle } from 'react-native'
+
+type ToastOptions = { style: ViewStyle; titleStyle: TextStyle }
+
+const current = useStyles()
+// Resolved styles satisfy typed style options without assertions
+const options: ToastOptions = {
+  style: current.style(styles.toast().style),
+  titleStyle: current.style(styles.title().style),
+}
 ```
 
 With Metro, `zyzz/react-native` requires React 19 and React Native 0.86 or later. The native package condition loads automatic window subscriptions. Portable compiler and web entrypoints keep device APIs outside their imports. The existing `zyzz/react-native/react` entrypoint remains available for `useStyles`, `useVars`, and the standalone `Provider`, which also reads native dimensions automatically.

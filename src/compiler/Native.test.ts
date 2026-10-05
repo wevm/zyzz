@@ -832,6 +832,84 @@ describe('compile', () => {
     `)
   })
 
+  test('selects theme references in shadow templates for each native set and scheme', async () => {
+    const source = `import {defineConfig} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+      const {style,vars}=defineConfig({vars:{base:{color:{shadow:{light:'#112233',dark:'#334455'}},shadow:{soft:'0 1px 2px red'},spacing:{lift:'4px'}},compact:{color:{shadow:{light:'#445566',dark:'#556677'}},shadow:{soft:'0 1px 2px red'},spacing:{lift:'2px'}}},defaultVars:'base'});
+      const card=style({boxShadow:\`0px \${vars.spacing.lift} 24px \${vars.color.shadow} !custom\`,textShadow:\`0px 1px 2px \${vars.color.shadow}\`});
+      export const results=(set,colorScheme)=>NativeContext.resolve(card,{set,colorScheme});`
+    const output = Native.compile({
+      source,
+      moduleId: 'shadow-tokens.ts',
+      colorScheme: 'light',
+      contextual: true,
+    })
+    const apply = (await execute(output.code)).results as (
+      set: string,
+      scheme: string,
+    ) => unknown
+
+    expect(apply('base', 'light')).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 24,
+            "color": "#112233",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 4,
+            "spreadDistance": 0,
+          },
+        ],
+        "textShadowColor": "#112233",
+        "textShadowOffset": {
+          "height": 1,
+          "width": 0,
+        },
+        "textShadowRadius": 2,
+      }
+    `)
+    expect(apply('base', 'dark')).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 24,
+            "color": "#334455",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 4,
+            "spreadDistance": 0,
+          },
+        ],
+        "textShadowColor": "#334455",
+        "textShadowOffset": {
+          "height": 1,
+          "width": 0,
+        },
+        "textShadowRadius": 2,
+      }
+    `)
+    expect(apply('compact', 'dark')).toMatchInlineSnapshot(`
+      {
+        "boxShadow": [
+          {
+            "blurRadius": 24,
+            "color": "#556677",
+            "inset": false,
+            "offsetX": 0,
+            "offsetY": 2,
+            "spreadDistance": 0,
+          },
+        ],
+        "textShadowColor": "#556677",
+        "textShadowOffset": {
+          "height": 1,
+          "width": 0,
+        },
+        "textShadowRadius": 2,
+      }
+    `)
+  })
+
   test('converts nested callback calculations, shorthand lengths, and typography together', async () => {
     const source = `import {style} from 'zyzz';
       const box=style((input:{gap:string;ratio:number})=>({width:\`CaLc(\${input.gap} / \${input.ratio})\`,padding:\`1rem calc(\${input.gap} * 2)\`,marginLeft:\`calc(\${input.gap} - 10px)\`,fontSize:\`calc(1rem + \${input.gap})\`,lineHeight:1.5}));
@@ -854,6 +932,97 @@ describe('compile', () => {
           "paddingTop": 20,
           "width": 4,
         },
+      }
+    `)
+  })
+
+  test('expands dynamic and responsive inset offsets in authored order', async () => {
+    const dynamic = Native.compile({
+      colorScheme: 'light',
+      moduleId: 'dynamic-inset.ts',
+      source: `import {style} from 'zyzz';
+        const overlay=style((input:{edge:string})=>({inset:input.edge,left:'4px',position:'absolute'}));
+        export const results=[overlay({edge:'10%'}),overlay({edge:'calc(1px + 2px) 10%'})];`,
+    })
+    expect((await execute(dynamic.code)).results).toMatchInlineSnapshot(`
+      [
+        {
+          "style": {
+            "bottom": "10%",
+            "left": 4,
+            "position": "absolute",
+            "right": "10%",
+            "top": "10%",
+          },
+        },
+        {
+          "style": {
+            "bottom": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": "10%",
+            "top": 3,
+          },
+        },
+      ]
+    `)
+
+    const responsive = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'responsive-inset.ts',
+      source: `import {style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+        const panel=style({inset:0,'@media (width >= 400px)':{inset:'10% 1rem'}});
+        export const results=viewport=>NativeContext.resolve(panel,{colorScheme:'light',viewport});`,
+      units: { rem: 16 },
+    })
+    const apply = (await execute(responsive.code)).results as (viewport: {
+      height: number
+      width: number
+    }) => unknown
+    expect(apply({ height: 800, width: 399 })).toMatchInlineSnapshot(`
+      {
+        "bottom": 0,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+      }
+    `)
+    expect(apply({ height: 800, width: 400 })).toMatchInlineSnapshot(`
+      {
+        "bottom": "10%",
+        "left": 16,
+        "right": 16,
+        "top": "10%",
+      }
+    `)
+  })
+
+  test('expands responsive flex shorthands with CSS defaults', async () => {
+    const responsive = Native.compile({
+      colorScheme: 'light',
+      contextual: true,
+      moduleId: 'responsive-flex.ts',
+      source: `import {style} from 'zyzz';import {NativeContext} from 'zyzz/runtime';
+        const pane=style({flex:1,'@media (width >= 400px)':{flex:'0 0 12px'}});
+        export const results=viewport=>NativeContext.resolve(pane,{colorScheme:'light',viewport});`,
+    })
+    const apply = (await execute(responsive.code)).results as (viewport: {
+      height: number
+      width: number
+    }) => unknown
+    expect(apply({ height: 800, width: 399 })).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 0,
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    `)
+    expect(apply({ height: 800, width: 400 })).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 12,
+        "flexGrow": 0,
+        "flexShrink": 0,
       }
     `)
   })
@@ -1586,6 +1755,41 @@ describe('compile', () => {
     expect((await execute(output.code)).results).toEqual({
       style: { width: 24 },
     })
+  })
+
+  test('executes positive literal ratio bindings and rejects degenerate ratios', async () => {
+    const output = Native.compile({
+      moduleId: 'ratio.ts',
+      colorScheme: 'light',
+      source:
+        "import {style} from 'zyzz'; const media=style((values:{ratio:1|1.5})=>({aspectRatio:values.ratio})); export const results=[media({ratio:1}),media({ratio:1.5})];",
+    })
+
+    expect((await execute(output.code)).results).toMatchInlineSnapshot(`
+      [
+        {
+          "style": {
+            "aspectRatio": 1,
+          },
+        },
+        {
+          "style": {
+            "aspectRatio": 1.5,
+          },
+        },
+      ]
+    `)
+
+    expect(() =>
+      Native.compile({
+        moduleId: 'invalid.ts',
+        colorScheme: 'light',
+        source:
+          "import {style} from 'zyzz'; style((values:{ratio:0|1})=>({aspectRatio:values.ratio}));",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:70: Variable domain is incompatible with this property.]`,
+    )
   })
 
   test('executes imported and packed dynamic contracts without publisher source', async () => {

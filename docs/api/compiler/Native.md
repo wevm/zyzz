@@ -4,6 +4,8 @@
 
 Native compilation also rewrites linked `useVars(vars, selector?)` arguments into readonly native profiles using the same font and unit mappings. The [React adapter](../react-native/react.md) selects those profiles through the nearest Provider.
 
+Graph compilation emits each profile once, as an export of the module that defines the variables, and consumers import it. Packed definitions without source compile a local copy in each consumer.
+
 `defineConfig` from `zyzz/react-native` retains an ordinary React `Provider` export alongside the linked authoring helpers. Configuration modules require a native target. Packed publishers supply the native context with `contextual: true` to `Graph.compile` for Provider selection, and consumers retain the Provider through normal package imports.
 
 ```ts
@@ -77,7 +79,7 @@ const artwork = style((input: { aspectRatio: number }) => ({
 artwork({ aspectRatio: 2 }) // Native width: 440, height: 220.
 ```
 
-Calculations support finite numbers, px/rem lengths, parentheses, unary signs, addition, subtraction, multiplication, and division. Addition and subtraction require matching dimensions; multiplication permits one length operand, and division requires a nonzero number. `units.rem` is required for rem lengths. Calculated padding and margin shorthands preserve spaces within each expression.
+Calculations support finite numbers, px/rem lengths, parentheses, unary signs, addition, subtraction, multiplication, and division. Addition and subtraction require matching dimensions; multiplication permits one length operand, and division requires a nonzero number. `units.rem` is required for rem lengths. Calculated padding, margin, and inset shorthands preserve spaces within each expression.
 
 Native application rejects percentages and relative units within calculations, unresolved CSS variables, nonfinite results, and negative lengths on unsigned properties. Expressions are limited to 512 tokens and 64 nested operations. Use variants for finite conditional choices; JavaScript arithmetic and conditional callback expressions remain unsupported.
 

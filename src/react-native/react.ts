@@ -1,16 +1,12 @@
 /** React subscriptions for compiled native styles and variable values. @module */
 import * as Config from '../Config.js'
-import * as NativeContext from '../runtime/NativeContext.js'
+import type * as NativeContext from '../runtime/NativeContext.js'
 import * as NativeVars from '../runtime/NativeVars.js'
 import * as React from 'react'
 import type * as Vars from '../Vars.js'
 import * as Store from './internal/Store.js'
+import * as Styles from './internal/Styles.js'
 import * as Viewport from './internal/Viewport.js'
-
-const unbound = {
-  getSnapshot: () => undefined,
-  subscribe: () => () => {},
-}
 
 /** Creates native authoring helpers and a Provider typed to the configured variables. */
 export function defineConfig<const options extends Config.create.Options = {}>(
@@ -113,15 +109,39 @@ export declare namespace Provider {
   }
 }
 
-/** Compiler-inserted subscription for resolving native style applications. */
-export function useStyles() {
-  const store = React.useContext(Store.context) ?? unbound
-  const value = React.useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot,
+/**
+ * Compiler-inserted subscription for resolving native style applications.
+ * Outside a Provider, selections use default variables and the light scheme.
+ */
+export function useStyles(): useStyles.ReturnType {
+  const [fallback] = React.useState(() =>
+    Store.create({ colorScheme: 'light' }),
   )
-  return React.useMemo(() => styles(value), [value])
+  return Styles.use(React.useContext(Store.context) ?? fallback)
+}
+
+/** Resolver types for Provider-selected native styles. */
+export declare namespace useStyles {
+  /** Resolvers bound to the nearest Provider selection. */
+  type ReturnType = {
+    /** Resolves the `style` prop of applied props and preserves other props. */
+    readonly props: <
+      props extends Readonly<Record<string, unknown>> | null | undefined,
+    >(
+      props: props,
+    ) => props
+    /** Resolves an applied style, native style, style array, or style callback. */
+    readonly style: <style>(style: style, input?: unknown) => Style<style>
+  }
+  /**
+   * Resolved style type. Caller-owned values keep their types. Native applications
+   * always carry `style`, so an applied style drops the `undefined` allowed by the shared props type.
+   */
+  type Style<style> = [
+    style extends object ? (string extends keyof style ? style : never) : never,
+  ] extends [never]
+    ? style
+    : Exclude<style, undefined>
 }
 
 /** Compiler fallback for native view bindings when no native adapter is installed. */
@@ -171,46 +191,37 @@ export function useVars(
 }
 
 /**
- * Resolves compiled style props for components using React updates.
- * @param Component - Function, class, or ref-forwarding component receiving native styles.
+ * Resolves compiled style props for function components using React updates.
+ * @param Component - Function, memo, or ref-forwarding component receiving native styles.
  * @param options - Additional style-bearing prop names.
- * @returns A component preserving the original props and ref.
- * @throws For invalid style prop names or unresolved native selections.
+ * @returns A component with the original call signature and ref. Type parameters remain when `styleProps` is omitted.
+ * @throws For invalid style prop names.
+ */
+export function withStyles<
+  props extends object,
+  result extends React.ReactNode,
+>(
+  Component: (props: props) => result,
+  options?: NoInfer<withStyles.Options<(props: props) => result>>,
+): (props: props) => result
+/**
+ * Resolves compiled style props for class and host components using React updates.
+ * @param Component - Class component or host element type receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component preserving the original props and instance ref.
+ * @throws For invalid style prop names.
  */
 export function withStyles<const component extends React.ElementType>(
   Component: component,
-  options: withStyles.Options<component> = {},
-) {
-  const additional = options.styleProps ?? []
-  if (
-    !Array.isArray(additional) ||
-    additional.some(
-      (name) =>
-        typeof name !== 'string' || !name || name === 'key' || name === 'ref',
-    )
-  )
-    throw new Error(
-      'withStyles requires style prop names excluding key and ref.',
-    )
-
-  const names = [...new Set(['style', 'contentContainerStyle', ...additional])]
-  const Wrapped = React.forwardRef<
-    React.ComponentRef<component>,
-    React.ComponentPropsWithoutRef<component>
-  >((props, ref) => {
-    const selected = useStyles()
-    const resolved: Record<string, unknown> = { ...props, ref }
-    for (const name of names)
-      if (Object.hasOwn(props, name))
-        resolved[name] = selected.style(
-          (props as Record<string, unknown>)[name],
-        )
-
-    return React.createElement(Component, resolved)
-  })
-  Wrapped.displayName = `withStyles(${typeof Component === 'string' ? Component : Component.displayName || Component.name || 'Component'})`
-
-  return Wrapped
+  options?: withStyles.Options<component>,
+): React.ForwardRefExoticComponent<React.ComponentPropsWithRef<component>>
+export function withStyles(
+  Component: React.ElementType,
+  options: withStyles.Options<
+    (props: Readonly<Record<string, unknown>>) => React.ReactNode
+  > = {},
+): React.ElementType {
+  return Styles.wrap(Component, options, useStyles)
 }
 
 /** Style-bearing component properties resolved by the wrapper. */
@@ -224,16 +235,5 @@ export declare namespace withStyles {
           'key' | 'ref'
         >[]
       | undefined
-  }
-}
-
-function styles(value: NativeContext.Context | undefined) {
-  return {
-    props: (props: Record<string, unknown> | null | undefined) =>
-      props && Object.hasOwn(props, 'style')
-        ? { ...props, style: NativeContext.resolve(props.style, value) }
-        : props,
-    style: (style: unknown, input?: unknown) =>
-      NativeContext.resolve(style, value, input),
   }
 }

@@ -278,6 +278,14 @@ export function compile<
                 output[`${property}Right`] = right!
                 output[`${property}Bottom`] = bottom!
                 output[`${property}Left`] = left!
+              } else if (property === 'flex') {
+                Object.assign(output, Scalar.flex(value, options, path))
+              } else if (property === 'inset') {
+                const values =
+                  typeof value === 'string' ? Calculation.parts(value) : [value]
+                const [top, right = top, bottom = top, left = right] =
+                  values.map((value) => convert('offset', value, options, path))
+                Object.assign(output, { top, right, bottom, left })
               } else if (
                 property === 'borderColor' ||
                 property === 'borderWidth'
@@ -613,15 +621,26 @@ type Length =
   | `${number}px`
   | `${number}rem`
   | `${'c' | 'C'}${'a' | 'A'}${'l' | 'L'}${'c' | 'C'}(${string})`
-type Box =
-  | Length
-  | `${Length} ${Length}`
-  | `${Length} ${Length} ${Length}`
-  | Box4
+type Box<item extends string | number = Length> =
+  | item
+  | `${item} ${item}`
+  | `${item} ${item} ${item}`
+  | Box4<item>
 // Distribute the first item to keep case-insensitive calculations below the template expansion limit.
-type Box4<first extends string | number = Length> = first extends unknown
-  ? `${first} ${Length} ${Length} ${Length}`
-  : never
+type Box4<
+  item extends string | number,
+  first extends string | number = item,
+> = first extends unknown ? `${first} ${item} ${item} ${item}` : never
+type FlexBasis = Length | `${number}%` | 'auto'
+type Flex =
+  | number
+  | 'initial'
+  | 'none'
+  | FlexBasis
+  | `${number} ${number | FlexBasis}`
+  | `${FlexBasis} ${number}`
+  | `${number} ${number} ${FlexBasis}`
+  | `${FlexBasis} ${number} ${number}`
 type Weight =
   | 'bold'
   | 'normal'
@@ -666,7 +685,11 @@ type Atom<kind> = kind extends readonly string[]
                         ? Length | number
                         : kind extends 'box' | 'boxSigned'
                           ? Box
-                          : Length
+                          : kind extends 'boxOffset'
+                            ? Box<Length | `${number}%`>
+                            : kind extends 'flex'
+                              ? Flex
+                              : Length
 
 type Reference<property extends keyof typeof properties> = {
   [group in Token.Group]: property extends Token.Properties<group>

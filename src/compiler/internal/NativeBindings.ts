@@ -157,6 +157,7 @@ export function prepare(
         if (
           !Object.hasOwn(Scalar.properties, property) ||
           [
+            'flex',
             'transform',
             'origin',
             'shadow',

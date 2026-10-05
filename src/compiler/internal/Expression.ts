@@ -21,7 +21,7 @@ export function acceptsColor(
       return 'var(--zyzz-reference)'
     })
     .join('')
-    .replace(/ !important$/, '')
+    .replace(/(?: !custom)?(?: !important)?$/, '')
 
   try {
     return (
@@ -61,7 +61,7 @@ export function acceptsVariables(
       (value) =>
         Tree.lexer.matchProperty(
           Literal.name(property),
-          value.replace(/ !important$/, ''),
+          value.replace(/(?: !custom)?(?: !important)?$/, ''),
         ).error === null,
     )
   } catch {

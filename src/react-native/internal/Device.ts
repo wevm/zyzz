@@ -5,6 +5,7 @@ import NativeZyzz from './NativeZyzz.js'
 import * as React from 'react'
 import * as ReactNative from 'react-native'
 import * as Store from './Store.js'
+import * as Styles from './Styles.js'
 import * as Subscription from '../react.js'
 import * as Viewport from './Viewport.js'
 
@@ -22,7 +23,72 @@ export function defineConfig<const options extends Config.create.Options = {}>(
 /** Provides selected variables, appearance, and automatic native dimensions. */
 export const Provider = dimensions(Subscription.Provider)
 
-export { useStyles, useVars, withStyles } from '../react.js'
+/**
+ * Compiler-inserted subscription for resolving native style applications.
+ * Outside a Provider, selections use default variables, the light scheme, and window dimensions.
+ */
+export function useStyles(): Subscription.useStyles.ReturnType {
+  const owner = React.useContext(Store.context)
+  const [fallback] = React.useState(() =>
+    Store.create({
+      colorScheme: 'light',
+      viewport: ReactNative.Dimensions.get('window'),
+    }),
+  )
+  React.useLayoutEffect(() => {
+    if (owner) return
+    const update = () =>
+      fallback.update({
+        colorScheme: 'light',
+        viewport: ReactNative.Dimensions.get('window'),
+      })
+    // Dimensions can change between render and commit.
+    update()
+    const subscription = ReactNative.Dimensions.addEventListener(
+      'change',
+      update,
+    )
+    return () => subscription.remove()
+  }, [fallback, owner])
+
+  return Styles.use(owner ?? fallback)
+}
+
+export { useVars } from '../react.js'
+
+/**
+ * Resolves compiled style props for function components using React updates.
+ * @param Component - Function, memo, or ref-forwarding component receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component with the original call signature and ref. Type parameters remain when `styleProps` is omitted.
+ * @throws For invalid style prop names.
+ */
+export function withStyles<
+  props extends object,
+  result extends React.ReactNode,
+>(
+  Component: (props: props) => result,
+  options?: NoInfer<Subscription.withStyles.Options<(props: props) => result>>,
+): (props: props) => result
+/**
+ * Resolves compiled style props for class and host components using React updates.
+ * @param Component - Class component or host element type receiving native styles.
+ * @param options - Additional style-bearing prop names.
+ * @returns A component preserving the original props and instance ref.
+ * @throws For invalid style prop names.
+ */
+export function withStyles<const component extends React.ElementType>(
+  Component: component,
+  options?: Subscription.withStyles.Options<component>,
+): React.ForwardRefExoticComponent<React.ComponentPropsWithRef<component>>
+export function withStyles(
+  Component: React.ElementType,
+  options: Subscription.withStyles.Options<
+    (props: Readonly<Record<string, unknown>>) => React.ReactNode
+  > = {},
+): React.ElementType {
+  return Styles.wrap(Component, options, useStyles)
+}
 
 function dimensions<props extends Subscription.Provider.Props>(
   Component: React.FunctionComponent<props>,

@@ -156,6 +156,32 @@ describe('zyzz', () => {
           `export {platformStyle,style} from '@shared-theme';`,
         )
         await Fs.writeFile(Path.join(root, 'Style.ts'), source(123))
+        const palette = (color: string) =>
+          `import {defineConfig} from 'zyzz/react-native';export const {vars}=defineConfig({defaultVars:'base',vars:{base:{color:{accent:{light:'${color}',dark:'#0f0e0d'}}},night:{color:{accent:{light:'#0d0e0f',dark:'#0e0f0d'}}}}});`
+        await Fs.writeFile(Path.join(root, 'Palette.ts'), palette('#a1b2c3'))
+        for (const name of ['First', 'Second'])
+          await Fs.writeFile(
+            Path.join(root, `${name}.ts`),
+            `import {useVars} from 'zyzz/react-native';import {vars} from './Palette';export function read(){return useVars(vars)}`,
+          )
+        await Fs.writeFile(
+          Path.join(root, 'Readers.ts'),
+          `export {read as first} from './First';export {read as second} from './Second';`,
+        )
+        const outside = Path.join(directory, 'packages/palette')
+        await Fs.mkdir(outside)
+        await Fs.writeFile(
+          Path.join(outside, 'package.json'),
+          JSON.stringify({ name: 'palette', private: true }),
+        )
+        await Fs.writeFile(
+          Path.join(outside, 'Palette.ts'),
+          `import {defineConfig} from 'zyzz/react-native';export const {vars}=defineConfig({vars:{color:{accent:{light:'#5e6f70',dark:'#706f5e'}}}});`,
+        )
+        await Fs.writeFile(
+          Path.join(root, 'Outside.ts'),
+          `import {useVars} from 'zyzz/react-native';import {vars} from '../packages/palette/Palette';export function read(){return useVars(vars)}`,
+        )
 
         await Fs.writeFile(
           Path.join(root, 'Tokens.ts'),
@@ -332,11 +358,12 @@ describe('zyzz', () => {
         async function bundle(
           platform: string,
           expected?: (result: { ok: boolean; text: string }) => boolean,
+          entry = 'index',
         ) {
           const deadline = Date.now() + 15_000
           while (true) {
             const response = await fetch(
-              `http://localhost:${port}/index.bundle?platform=${platform}&dev=true&minify=false`,
+              `http://localhost:${port}/${entry}.bundle?platform=${platform}&dev=true&minify=false`,
               { signal: AbortSignal.timeout(60_000) },
             )
             const result = { ok: response.ok, text: await response.text() }
@@ -453,6 +480,43 @@ describe('zyzz', () => {
               "base.mjs",
             ]
           `)
+
+        const readers = await bundle('ios', undefined, 'Readers')
+        if (!readers.ok) throw new Error(readers.text)
+        const profiles = new Set(readers.text.match(/__zyzzProfile\w+/g))
+        expect(profiles.size).toMatchInlineSnapshot(`1`)
+        expect(
+          readers.text.split('\\"#a1b2c3\\"').length - 1,
+        ).toMatchInlineSnapshot(`1`)
+
+        const outsider = await bundle('ios', undefined, 'Outside')
+        if (!outsider.ok) throw new Error(outsider.text)
+        expect(
+          new Set(outsider.text.match(/__zyzzProfile\w+/g)).size,
+        ).toMatchInlineSnapshot(`1`)
+        expect(
+          outsider.text.split('\\"#5e6f70\\"').length - 1,
+        ).toMatchInlineSnapshot(`1`)
+
+        await Fs.writeFile(Path.join(root, 'Palette.ts'), palette('#d4e5f6'))
+        const repainted = await bundle(
+          'ios',
+          (result) => result.text.includes('\\"#d4e5f6\\"'),
+          'Readers',
+        )
+        const repaintedProfiles = new Set(
+          repainted.text.match(/__zyzzProfile\w+/g),
+        )
+        expect(repaintedProfiles.size).toMatchInlineSnapshot(`1`)
+        expect(
+          repaintedProfiles.isDisjointFrom(profiles),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          repainted.text.split('\\"#d4e5f6\\"').length - 1,
+        ).toMatchInlineSnapshot(`1`)
+        expect(repainted.text.includes('#a1b2c3')).toMatchInlineSnapshot(
+          `false`,
+        )
 
         await Fs.writeFile(
           Path.join(root, 'Tokens.ts'),

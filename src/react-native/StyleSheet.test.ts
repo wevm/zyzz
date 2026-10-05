@@ -1321,6 +1321,164 @@ describe('compile', () => {
     ).toMatchInlineSnapshot('true')
   })
 
+  test('expands inset shorthands to physical offsets in authored order', () => {
+    const base = Vars.define({ spacing: { edge: '1rem' } })
+    const styles = Style.define({
+      edges: { inset: '-1px 10% calc(1rem + 2px)' },
+      fill: { inset: 0, position: 'absolute' },
+      insetFirst: { inset: base.spacing.edge, left: '4px' },
+      leftFirst: { left: '4px', inset: '1px 2px' },
+    })
+    const output = StyleSheet.compile({
+      styles,
+      units: { px: 2, rem: 20 },
+      vars: { base },
+    })
+
+    expect(output.styles.base.light.fill).toMatchInlineSnapshot(`
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    `)
+    expect(output.styles.base.light.edges).toMatchInlineSnapshot(`
+      {
+        "bottom": 24,
+        "left": "10%",
+        "right": "10%",
+        "top": -2,
+      }
+    `)
+    expect(output.styles.base.light.insetFirst).toMatchInlineSnapshot(`
+      {
+        "bottom": 20,
+        "left": 8,
+        "right": 20,
+        "top": 20,
+      }
+    `)
+    expect(output.styles.base.light.leftFirst).toMatchInlineSnapshot(`
+      {
+        "bottom": 2,
+        "left": 4,
+        "right": 4,
+        "top": 2,
+      }
+    `)
+    expect(
+      Css.compile({ styles }).css.includes('inset:0'),
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('expands flex shorthands to native longhands with CSS defaults', () => {
+    const styles = Style.define({
+      auto: { flex: 'auto' },
+      basisFirst: { flex: '30% 2' },
+      factor: { flex: 1 },
+      factors: { flex: '2 0' },
+      initial: { flex: 'initial' },
+      length: { flex: '1 24px' },
+      none: { flex: 'none' },
+      shrinkAfter: { flex: 1, flexShrink: 0 },
+      zeroBasis: { flex: '1 0 0' },
+    })
+    const output = StyleSheet.compile({ styles, units: { px: 2 } })
+    const light = output.styles.default.light
+
+    expect(light.factor).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 0,
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    `)
+    expect(light.factors).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 0,
+        "flexGrow": 2,
+        "flexShrink": 0,
+      }
+    `)
+    expect(light.zeroBasis).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 0,
+        "flexGrow": 1,
+        "flexShrink": 0,
+      }
+    `)
+    expect(light.length).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 48,
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    `)
+    expect(light.basisFirst).toMatchInlineSnapshot(`
+      {
+        "flexBasis": "30%",
+        "flexGrow": 2,
+        "flexShrink": 1,
+      }
+    `)
+    expect(light.none).toMatchInlineSnapshot(`
+      {
+        "flexBasis": "auto",
+        "flexGrow": 0,
+        "flexShrink": 0,
+      }
+    `)
+    expect(light.auto).toMatchInlineSnapshot(`
+      {
+        "flexBasis": "auto",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    `)
+    expect(light.initial).toMatchInlineSnapshot(`
+      {
+        "flexBasis": "auto",
+        "flexGrow": 0,
+        "flexShrink": 1,
+      }
+    `)
+    expect(light.shrinkAfter).toMatchInlineSnapshot(`
+      {
+        "flexBasis": 0,
+        "flexGrow": 1,
+        "flexShrink": 0,
+      }
+    `)
+    expect(
+      Css.compile({ styles }).css.includes('flex:1'),
+    ).toMatchInlineSnapshot(`true`)
+
+    expect(() =>
+      StyleSheet.compile({
+        styles: Style.define({ split: { flex: '1 auto 1' } }),
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["default","light","split","flex"]: Invalid flex shorthand.
+      ["default","dark","split","flex"]: Invalid flex shorthand.]
+    `)
+    expect(() =>
+      StyleSheet.compile({ styles: Style.define({ negative: { flex: -1 } }) }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["default","light","negative","flex"]: Unsupported native numeric value.
+      ["default","dark","negative","flex"]: Unsupported native numeric value.]
+    `)
+    expect(() =>
+      StyleSheet.compile({
+        styles: Style.define({ content: { flex: 'content' } }),
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [StyleSheet.CompileError: ["default","light","content","flex"]: Use zero, px, or rem with an explicit rem conversion.
+      ["default","dark","content","flex"]: Use zero, px, or rem with an explicit rem conversion.]
+    `)
+  })
+
   test('does not substitute unrelated token contracts with matching paths', () => {
     const base = Vars.define({ color: { ink: 'red' } })
     const unrelated = Vars.define({ color: { ink: 'blue' } })
@@ -1350,7 +1508,7 @@ describe('compile', () => {
     { fontFamily: 'sans-serif' },
     { lineHeight: 1.5 },
     { width: 'calc(100% - 1px)' },
-    { flex: 1 },
+    { flex: 'content' },
   ])('rejects unsupported native semantics: %j', (input) => {
     const styles = Style.define({ card: input } as never)
 

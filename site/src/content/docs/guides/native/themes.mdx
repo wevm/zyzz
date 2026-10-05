@@ -49,7 +49,7 @@ namespace styles {
 }
 ```
 
-Compiled styles outside a Provider use the light scheme and the config's default tokens. `colorScheme` takes a resolved `'dark'` or `'light'`, so an absent device preference needs an application fallback.
+Compiled styles outside a Provider use the light scheme and the config's default tokens. Styles applied in the component that renders a Provider also use these defaults. `colorScheme` takes a resolved `'dark'` or `'light'`, so an absent device preference needs an application fallback.
 
 ## Named Themes
 

@@ -597,7 +597,7 @@ export declare namespace Screen {
 
 namespace styles {
   export const screen = style((values: { top: `${number}px` }) => ({
-    flexGrow: 1,
+    flex: '1 0 0',
     paddingTop: values.top,
   }))
 }
@@ -636,7 +636,7 @@ export function Loading() {
 
 ## Third-Party Components
 
-`withUnistyles` becomes `withStyles`, which resolves compiled styles on a component's `style` and `contentContainerStyle` props. Other style props are named with `styleProps`.
+Inside function components, style props need no `withUnistyles` wrapper. Metro resolves `style` and every prop ending in `Style`, such as `contentContainerStyle`. Class components and module-scope JSX use `withStyles` instead.
 
 ```tsx title="Feed.tsx"
 import { ScrollView, Text } from 'react-native'
@@ -660,17 +660,14 @@ const styles = StyleSheet.create({ content: { gap: 12, padding: 16 } })
 ```tsx title="Feed.tsx"
 import { ScrollView, Text } from 'react-native'
 import { style } from 'zyzz'
-import { withStyles } from 'zyzz/react-native'
-
-// [!code hl:2]
-// Resolves the same two props for the nearest Provider
-const Scroll = withStyles(ScrollView)
 
 export function Feed() {
   return (
-    <Scroll contentContainerStyle={styles.content().style}>
+    // [!code hl:2]
+    // Metro resolves contentContainerStyle without a wrapper
+    <ScrollView contentContainerStyle={styles.content().style}>
       <Text>First post</Text>
-    </Scroll>
+    </ScrollView>
   )
 }
 

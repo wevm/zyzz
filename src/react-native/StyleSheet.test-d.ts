@@ -313,6 +313,38 @@ describe('compile', () => {
     expectTypeOf(invalid).not.toBeAny()
   })
 
+  test('accepts one to four inset offsets with percentages and tokens', () => {
+    const base = Vars.define({ spacing: { edge: '1rem' } })
+    const declarations = {
+      inset: '-1px 10% calc(1rem + 2px) 0',
+    } satisfies StyleSheet.Properties
+    const token = { inset: base.spacing.edge } satisfies StyleSheet.Properties
+    // @ts-expect-error Native offsets have no automatic value.
+    const automatic = { inset: 'auto' } satisfies StyleSheet.Properties
+    // @ts-expect-error Inset shorthands accept at most four offsets.
+    const extra = { inset: '0 0 0 0 0' } satisfies StyleSheet.Properties
+
+    expectTypeOf(declarations).not.toBeAny()
+    expectTypeOf(token).not.toBeAny()
+    expectTypeOf(automatic).not.toBeAny()
+    expectTypeOf(extra).not.toBeAny()
+  })
+
+  test('accepts CSS flex shorthands with native bases', () => {
+    const factor = { flex: 1 } satisfies StyleSheet.Properties
+    const keyword = { flex: 'none' } satisfies StyleSheet.Properties
+    const full = { flex: '1 0 12px' } satisfies StyleSheet.Properties
+    const basisFirst = { flex: '30% 2' } satisfies StyleSheet.Properties
+    // @ts-expect-error Native flex bases have no content keyword.
+    const content = { flex: 'content' } satisfies StyleSheet.Properties
+
+    expectTypeOf(factor).not.toBeAny()
+    expectTypeOf(keyword).not.toBeAny()
+    expectTypeOf(full).not.toBeAny()
+    expectTypeOf(basisFirst).not.toBeAny()
+    expectTypeOf(content).not.toBeAny()
+  })
+
   test('retains style and set labels through native lookup', () => {
     const base = Vars.define({ spacing: { md: '1rem' } })
     const styles = Style.define({

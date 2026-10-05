@@ -148,7 +148,10 @@ export function read(
     seen.add(filename)
     const source = snapshot.readSync(filename)
     const file = manifest(filename)
-    if (file && !/['"]zyzz(?:\/default)?['"]/.test(source)) {
+    if (
+      file &&
+      !/['"]zyzz(?:\/default|\/react-native(?:\/react)?)?['"]/.test(source)
+    ) {
       const data = JSON.parse(snapshot.readSync(file)) as Record<
         string,
         unknown
@@ -174,7 +177,19 @@ export function read(
     for (const node of snapshot.parse({ moduleId: identity(filename), source })
       .program.body) {
       const name = specifier(node)
-      if (name === 'zyzz' || name === 'zyzz/default') {
+      // Consumers import vars profiles from defineConfig modules, so those modules must compile.
+      const native =
+        (name === 'zyzz/react-native' || name === 'zyzz/react-native/react') &&
+        node.type === 'ImportDeclaration' &&
+        node.specifiers.some(
+          (entry) =>
+            entry.type === 'ImportSpecifier' &&
+            entry.importKind !== 'type' &&
+            (entry.imported.type === 'Identifier'
+              ? entry.imported.name
+              : entry.imported.value) === 'defineConfig',
+        )
+      if (name === 'zyzz' || name === 'zyzz/default' || native) {
         authored.add(filename)
         return true
       }

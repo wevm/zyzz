@@ -65,7 +65,7 @@ describe('withStyles', () => {
             React.createElement(Provider,{colorScheme:'light',vars:'base'},React.createElement(Wrapped,{id:'nested',bodyStyle:card().style}))) }
         createRoot(document.getElementById('app')).render(React.createElement(App));
         createRoot(document.getElementById('plain')).render(React.createElement(Wrapped,{id:'plain-value',bodyStyle:{height:10}}));
-        createRoot(document.getElementById('error'),{onUncaughtError:error=>{document.getElementById('error').textContent=error.message}}).render(React.createElement(Wrapped,{bodyStyle:card().style}));
+        createRoot(document.getElementById('unprovided')).render(React.createElement(Wrapped,{id:'unprovided-value',bodyStyle:card().style}));
         export const inspect=()=>({refs,releases,rendered:renders>0,value:instance?.read()});
         export const invalid=()=>{try{withStyles(Card,{styleProps:['ref']})}catch(error){return error.message}};`,
         },
@@ -92,7 +92,7 @@ describe('withStyles', () => {
       try {
         const page = await browser.newPage()
         await page.setContent(
-          '<div id="app"></div><div id="plain"></div><div id="error"></div>',
+          '<div id="app"></div><div id="plain"></div><div id="unprovided"></div>',
         )
         await page.addScriptTag({ content: code })
         await expect
@@ -196,9 +196,11 @@ describe('withStyles', () => {
         expect(
           await page.locator('#plain-value').textContent(),
         ).toMatchInlineSnapshot(`"{"body":{"height":10}}"`)
-        await expect
-          .poll(() => page.locator('#error').textContent())
-          .toBe('Compiled native styles require a Zyzz Provider.')
+        expect(
+          await page.locator('#unprovided-value').textContent(),
+        ).toMatchInlineSnapshot(
+          `"{"body":{"backgroundColor":"#ff0000","width":100}}"`,
+        )
         expect(await page.evaluate('Fixture.invalid()')).toMatchInlineSnapshot(
           `"withStyles requires style prop names excluding key and ref."`,
         )

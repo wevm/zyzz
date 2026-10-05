@@ -90,12 +90,12 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Native](https://zyzz.sh/docs/api/compiler/namespaces/Native.md): Native callable compilation.
 - [Source](https://zyzz.sh/docs/api/compiler/namespaces/Source.md): Static extraction from source text.
 - [Transform](https://zyzz.sh/docs/api/compiler/namespaces/Transform.md): Module rewriting with CSS and source maps.
-- [zyzz/node](api/node/README.md): Section index.
-- [Host](api/node/Host/README.md): Section index.
-- [Host.build](api/node/Host/build.md): Reference and examples.
-- [Host.close](api/node/Host/close.md): Reference and examples.
-- [Host.create](api/node/Host/create.md): Reference and examples.
-- [Host.watch](api/node/Host/watch.md): Reference and examples.
+- [zyzz/node](https://zyzz.sh/docs/api/node.md): Section index.
+- [Host](https://zyzz.sh/docs/api/node/namespaces/Host.md): Section index.
+- [Host.create](https://zyzz.sh/docs/api/node/create.md): Reference and examples.
+- [build](https://zyzz.sh/docs/api/node/create/build.md): Reference and examples.
+- [watch](https://zyzz.sh/docs/api/node/create/watch.md): Reference and examples.
+- [close](https://zyzz.sh/docs/api/node/create/close.md): Reference and examples.
 - [zyzz/oxlint](https://zyzz.sh/docs/api/oxlint.md): Lint web styles and JSX applications.
 - [zyzz/runtime](https://zyzz.sh/docs/api/runtime.md): Section index.
 - [Props](https://zyzz.sh/docs/api/runtime/namespaces/Props.md): Reference and examples.

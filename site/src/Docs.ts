@@ -298,7 +298,28 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
           },
         ],
       },
-      { path: 'api/node', title: 'Node' },
+      {
+        title: 'Node',
+        children: [
+          { path: 'api/node', title: 'Overview' },
+          {
+            title: 'Builds',
+            items: [{ path: 'api/node/create', title: 'Host.create' }],
+          },
+          {
+            title: 'Lifecycle',
+            items: [
+              { path: 'api/node/create/build', title: 'build' },
+              { path: 'api/node/create/watch', title: 'watch' },
+              { path: 'api/node/create/close', title: 'close' },
+            ],
+          },
+          {
+            title: 'Namespaces',
+            items: [{ path: 'api/node/namespaces/Host', title: 'Host' }],
+          },
+        ],
+      },
       { path: 'api/oxlint', title: 'Oxlint' },
     ],
   },

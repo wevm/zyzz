@@ -931,7 +931,7 @@ There is no direct Zyzz `@source` directive. With Vite, authoring lives in eligi
 
 ### Source Exclusions
 
-`@source not`, `source(none)`, and per-stylesheet scanning configurations do not translate into invented `include` or `exclude` options on the Zyzz Vite plugin. Its discovery excludes tests, generated output, and raw dependency authoring. See [Vite Setup](../introduction/vite.md) and [Host.create](../api/node/Host/create.md) for the actual boundaries.
+`@source not`, `source(none)`, and per-stylesheet scanning configurations do not translate into invented `include` or `exclude` options on the Zyzz Vite plugin. Its discovery excludes tests, generated output, and raw dependency authoring. See [Vite Setup](../introduction/vite.md) and [Host.create](https://zyzz.sh/docs/api/node/create) for the actual boundaries.
 
 For multiple Tailwind entry stylesheets, plan each entry's CSS delivery through the bundler. Do not assume a source-scan boundary is equivalent to a route or chunk boundary. Globals are eager, while the integration controls component CSS splitting.
 

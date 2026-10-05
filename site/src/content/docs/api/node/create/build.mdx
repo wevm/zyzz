@@ -1,0 +1,117 @@
+# build
+
+Scan, compile, and publish the source tree, and list the changed output files.
+
+`build` comes from [`Host.create`](/docs/api/node/create). Each call scans `root`, compiles the complete module graph, and writes only the files whose content changed. Calls run one at a time, in call order.
+
+```ts title="scripts/build.ts"
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+// [!code hl:2]
+// Resolves after dist/ holds the new output
+const result = await host.build()
+
+console.log(result.files)
+```
+
+## Signature
+
+```ts
+// The published output files
+await host.build()
+```
+
+## Returns
+
+### result.changed
+
+- **Type:** `readonly string[]{:ts}`
+
+The files in `outDir` that this build wrote or removed, sorted and relative to `outDir`. The ownership manifest and a `script` outside `outDir` are excluded. A build after no source change returns an empty list.
+
+```ts
+await host.build()
+
+// [!code hl:2]
+// Empty, since nothing changed after the first build
+const { changed } = await host.build()
+```
+
+### result.files
+
+- **Type:** `readonly string[]{:ts}`
+
+Every file the host owns in `outDir` after this build, sorted and relative to `outDir`. Control files and files the host did not write are excluded. Files of a deleted source module leave both the list and the directory.
+
+```ts
+const result = await host.build()
+
+// [!code hl:2]
+// The complete stylesheet for the application document
+const stylesheet = result.files.find((file) => file === 'zyzz.css')
+```
+
+[Output Layout](/docs/api/node/create#output-layout) lists the files each source module produces.
+
+## Publication
+
+A build compiles the whole graph and checks ownership before it writes. Each file is written to a temporary path and renamed into place, so no file is ever partially written. Files are renamed one at a time, so a concurrent reader can briefly see files from two builds.
+
+```ts
+try {
+  await host.build()
+} catch (error) {
+  // [!code hl:2]
+  // dist/ still holds the last successful build
+  console.error(error)
+}
+```
+
+When a write fails, the host restores the files this build already replaced. Each build reads package metadata again, so changed export maps and `.zyzz.json` files take effect on the next build. An unchanged graph reuses its compiled output.
+
+## Ownership
+
+`.zyzz.json` in `outDir` records the package ID and a SHA-256 digest of each file the host owns there. Builds refuse to replace files the host did not write or that changed since, and remove owned files no source produces. A `script` outside `outDir` is tracked by its banner instead.
+
+```sh /Button.tsx.css/
+# An edited output blocks the next build until it is restored or deleted
+echo '/* edited */' > dist/Button.tsx.css
+```
+
+## Types
+
+- **`Host.Build{:ts}`:** The resolved result, with `changed` and `files`.
+
+```ts title="report.ts"
+import type { Host } from 'zyzz/node'
+
+// [!code hl:2]
+// Prints the files a build wrote or removed
+export function report(result: Host.Build) {
+  for (const file of result.changed) console.log(file)
+}
+```
+
+## Errors
+
+A build rejects with the compiler's errors, such as `Source.ExtractError` for a value the compiler cannot read or an import that does not resolve. `Css.CompileError` reports conflicting web rules, such as two modules emitting one class with different declarations. Native builds also reject with `Native.CompileError`, `StyleSheet.CompileError`, `StyleSheet.SelectionError`, or `Variants.CompileError`.
+
+```ts
+import { Source } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({ packageId: 'my-app', root: 'src' })
+
+try {
+  await host.build()
+} catch (error) {
+  // [!code hl:2]
+  // Locates the source the compiler rejected
+  if (error instanceof Source.ExtractError) console.error(error.message)
+  else throw error
+}
+```
+
+Ownership conflicts reject with an `Error` naming the file, such as `Refusing to replace an unowned or modified output: Button.tsx.css`. A manifest from another `packageId` rejects with `Invalid output ownership manifest.`, and a build after [`close`](/docs/api/node/create/close) rejects with `Host is closed.`

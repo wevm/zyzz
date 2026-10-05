@@ -21,7 +21,7 @@ The compiler turns every style into CSS ahead of time, and `cssOutput` decides h
         <td>
           <code>atomic</code> (default)
         </td>
-        <td>One per declaration, shared by every style that repeats it.</td>
+        <td>One per declaration or fallback array, shared by every style that repeats it.</td>
       </tr>
       <tr>
         <td>
@@ -40,14 +40,14 @@ import { defineConfig } from 'zyzz'
 
 export const { style, variants } = defineConfig({
   // [!code hl:2]
-  // Emit one class per style instead of one per declaration
-  cssOutput: 'grouped',
+  // Atomic output is the default, so this option is optional
+  cssOutput: 'atomic',
 })
 ```
 
 ## Atomic Output
 
-Each declaration becomes its own class. The card and label below both declare `color: red`, so they share one class.
+Each declaration becomes its own class, and a fallback array, such as `display: ['block', 'grid']`, stays together in one class. The card and label below both declare `color: red`, so they share one class.
 
 ```tsx title="Card.tsx"
 import { style } from './zyzz.config.js'
@@ -85,7 +85,19 @@ namespace styles {
 
 ## Grouped Output
 
-Each style becomes one class. Names combine a hash of the module path with the member path, so modules can reuse member names without collisions.
+Each style becomes one class. Switch the config to grouped output, and the same card compiles to one class per style.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style, variants } = defineConfig({
+  // [!code hl:2]
+  // Emit one class per style instead of one per declaration
+  cssOutput: 'grouped',
+})
+```
+
+Names combine a hash of the module path with the member path, so modules can reuse member names without collisions.
 
 ```css title="grouped.css"
 /* [!code hl:5] */

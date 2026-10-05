@@ -1,41 +1,6 @@
 /** Indexes authored MDX pages for navigation and route rendering. @module */
 import type { ComponentType, ElementType, ReactPromise } from 'react'
 
-/** Compiled MDX component for one documentation page. */
-export type Content = ComponentType<{
-  components?: Record<string, ElementType>
-}>
-
-// Lazy imports give each page its own chunk, keeping every asset under the Workers size limit.
-const modules = import.meta.glob<Content>('./content/docs/**/*.mdx', {
-  import: 'default',
-})
-const loads = new Map<string, ReactPromise<Content>>()
-
-/** Loads a page's compiled MDX once, marking the promise fulfilled so `use` reads it without suspending again. */
-export function load(path: string): ReactPromise<Content> {
-  const previous = loads.get(path)
-  if (previous) return previous
-
-  const module = modules[`./content/docs/${path}.mdx`]
-  if (!module) throw new Error(`Missing documentation page: ${path}`)
-
-  const promise: Promise<Content> = module().then(
-    (content) => {
-      Object.assign(promise, { status: 'fulfilled', value: content })
-      return content
-    },
-    (error: unknown) => {
-      // A failed chunk request must not stay cached, so a later attempt can retry it.
-      loads.delete(path)
-      throw error
-    },
-  )
-  loads.set(path, promise)
-
-  return promise
-}
-
 /** Authored sidebar order, including pages awaiting migration. */
 export const groups: readonly { pages: readonly Item[]; title: string }[] = [
   {
@@ -214,6 +179,36 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
   ],
 }))
 
+// Lazy imports give each page its own chunk, keeping every asset under the Workers size limit.
+const modules = import.meta.glob<Content>('./content/docs/**/*.mdx', {
+  import: 'default',
+})
+const loads = new Map<string, ReactPromise<Content>>()
+
+/** Loads a page's compiled MDX once, marking the promise fulfilled so `use` reads it without suspending again. */
+export function load(path: string): ReactPromise<Content> {
+  const previous = loads.get(path)
+  if (previous) return previous
+
+  const module = modules[`./content/docs/${path}.mdx`]
+  if (!module) throw new Error(`Missing documentation page: ${path}`)
+
+  const promise: Promise<Content> = module().then(
+    (content) => {
+      Object.assign(promise, { status: 'fulfilled', value: content })
+      return content
+    },
+    (error: unknown) => {
+      // A failed chunk request must not stay cached, so a later attempt can retry it.
+      loads.delete(path)
+      throw error
+    },
+  )
+  loads.set(path, promise)
+
+  return promise
+}
+
 /** Lists an item's path and every path nested beneath it. */
 export function paths(item: Item): readonly string[] {
   return [
@@ -222,6 +217,12 @@ export function paths(item: Item): readonly string[] {
     ...(item.items ?? []).flatMap(paths),
   ]
 }
+
+/** Compiled MDX component for one documentation page. */
+export type Content = ComponentType<{
+  /** Elements and MDX components that replace the defaults while rendering. */
+  components?: Record<string, ElementType>
+}>
 
 /** A page, nested topic, or labelled section in documentation navigation. */
 export type Item = {

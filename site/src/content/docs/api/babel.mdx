@@ -64,7 +64,7 @@ const plugins = [[zyzz, { cssOutput: 'grouped', target: 'web' }]]
 
 - **Type:** `string{:ts}`
 
-The portable identity used for class names and stylesheet ownership. Web transforms default to the filename relative to Babel's `root`. Files outside that root need an explicit stable, package-relative ID without traversal segments.
+The portable identity used for class names and stylesheet ownership. Web transforms default to the filename relative to Babel's `root`. Files outside that root need an explicit stable, package-relative ID. Native graph compilation requires an ID that [`options.modules`](#optionsmodules) contains.
 
 ```ts
 // [!code hl:2]
@@ -135,6 +135,59 @@ Native only. Positive scales that convert authored lengths to logical units. `re
 const plugins = [[zyzz, { platform: 'ios', units: { rem: 16 } }]]
 ```
 
+### options.modules
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+Native only. The closed source graph, keyed by package-relative module ID, including the transformed module. Without `colorScheme`, styles that read configured helpers from other graph modules compile. A fixed scheme compiles only modules that import `zyzz` directly.
+
+```ts
+// [!code hl:2]
+// Sources keyed by module ID, including the transformed module
+const modules = { 'app/Card.ts': card, 'app/zyzz.config.ts': config }
+const plugins = [[zyzz, { moduleId: 'app/Card.ts', modules, platform: 'ios' }]]
+```
+
+### options.imports
+
+- **Type:** `Readonly<Record<string, Readonly<Record<string, string | null>>>>{:ts}`
+
+Native only. The host's resolution of every static import in [`options.modules`](#optionsmodules), keyed by importing module ID and then by specifier. Each specifier maps to a module ID, or to `null` for an external package such as `zyzz`.
+
+```ts title="build.ts"
+import { transformSync } from '@babel/core'
+import { zyzz } from 'zyzz/babel'
+
+const card = "import { style } from './zyzz.config.js'\nexport const card = style({ padding: 'md' })"
+const config = "import { defineConfig } from 'zyzz'\nexport const { style } = defineConfig({ vars: { spacing: { md: '16px' } } })"
+const modules = { 'app/Card.ts': card, 'app/zyzz.config.ts': config }
+// [!code hl:5]
+// Resolves the relative import and leaves `zyzz` external
+const imports = {
+  'app/Card.ts': { './zyzz.config.js': 'app/zyzz.config.ts' },
+  'app/zyzz.config.ts': { zyzz: null },
+}
+
+const result = transformSync(card, {
+  filename: 'Card.ts',
+  plugins: [[zyzz, { imports, moduleId: 'app/Card.ts', modules, platform: 'ios' }]],
+  presets: ['@babel/preset-typescript'],
+})
+```
+
+### options.contracts
+
+- **Type:** `Readonly<Record<string, string>>{:ts}`
+
+Native only. Serialized `.zyzz.json` contracts keyed by host-resolved module ID, for packages that publish compiled JavaScript. [`options.imports`](#optionsimports) maps specifiers to these IDs, and the compiled modules stay external.
+
+```ts
+// [!code hl:2]
+// The contract published beside a package's compiled entry
+const contracts = { 'ui/index.js': uiContract }
+const plugins = [[zyzz, { contracts, imports, modules, moduleId, platform: 'ios' }]]
+```
+
 ## Returns
 
 ### metadata.zyzz
@@ -165,9 +218,9 @@ Babel's JavaScript map and `cssMap` are separate, and both point to the authored
 
 Authoring modules require a filename, and unsupported target semantics fail compilation.
 
-Without a supplied module graph, web and fixed-scheme native transforms compile one module at a time. A configuration must then stay local to its module, and `Config` imports and re-exported helpers are rejected. Every mode rejects `zyzz/default`.
+Without a supplied [module graph](#optionsmodules), web and fixed-scheme native transforms compile one module at a time. A configuration must then stay local to its module, and `Config` imports and re-exported helpers are rejected. Every mode rejects `zyzz/default`.
 
-Native transforms also accept `modules`, `imports`, and `contracts`, through which a host supplies the source graph, resolved imports, and packed contracts for shared configurations. [Metro](/docs/api/metro) supplies them during bundling.
+A graph import without an [`options.imports`](#optionsimports) entry fails with a missing host resolution. [Metro](/docs/api/metro) supplies the graph options during bundling.
 
 ```ts title="build.ts"
 import { transformSync } from '@babel/core'

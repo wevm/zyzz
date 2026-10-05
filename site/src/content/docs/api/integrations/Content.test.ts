@@ -936,6 +936,17 @@ describe('Babel API page', () => {
     )
   })
 
+  test('compiles a configuration read through the module graph', async () => {
+    const graph = await example('babel', 'options.imports')
+    const path = await directory('babel-graph', {
+      'example.ts': `${graph.source}\nexport const code = result?.code?.replace(/\\s+/g, ' ')\n`,
+    })
+
+    expect(table(babel(path, 'code') as string)).toMatchInlineSnapshot(
+      `"{ "0": { "paddingTop": 16, "paddingRight": 16, "paddingBottom": 16, "paddingLeft": 16 } }"`,
+    )
+  })
+
   test('returns stylesheet metadata', async () => {
     const metadata = await example('babel', 'metadata.zyzz')
     const path = await directory('babel-metadata', {
@@ -1050,7 +1061,18 @@ async function shell(
   })
   const exited = new Promise((resolve) => child.once('exit', resolve))
 
-  // The watcher stops on every path, so a missing event cannot leave it running.
+  // A stuck publication can hold shutdown open, so every stop is bounded.
+  async function stop() {
+    if (child.exitCode === null && child.signalCode === null)
+      child.kill('SIGTERM')
+    const timer = setTimeout(() => child.kill('SIGKILL'), 10_000)
+    try {
+      return await exited
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
   try {
     const output = await new Promise<string>((resolve, reject) => {
       let text = ''
@@ -1065,17 +1087,11 @@ async function shell(
         resolve(text.split('\n')[0]!)
       })
     })
-    child.kill('SIGTERM')
 
-    return { output, path, status: await exited }
-  } finally {
-    if (child.exitCode === null && child.signalCode === null) {
-      child.kill('SIGTERM')
-      // A stuck publication can hold shutdown open, so the wait is bounded.
-      const timer = setTimeout(() => child.kill('SIGKILL'), 10_000)
-      await exited
-      clearTimeout(timer)
-    }
+    return { output, path, status: await stop() }
+  } catch (error) {
+    await stop()
+    throw error
   }
 }
 
@@ -1432,7 +1448,7 @@ describe('integration API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 60_000 },
     )
 
-    expect(checked.length).toMatchInlineSnapshot(`32`)
+    expect(checked.length).toMatchInlineSnapshot(`33`)
     expect(result.stdout + result.stderr).toMatchInlineSnapshot(`""`)
     expect(result.status).toMatchInlineSnapshot(`0`)
   }, 120_000)

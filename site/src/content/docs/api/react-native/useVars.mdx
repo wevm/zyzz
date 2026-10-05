@@ -57,7 +57,7 @@ const gap = useVars(vars, (values) => values.spacing.gap)
 
 A readonly tree that follows the authored paths. Lengths are numbers in logical units, colors are native color strings, and font families use the compiler's `fonts` mapping. Numeric typography line heights become absolute lengths.
 
-```ts /values.spacing.gap/
+```ts /useVars(vars).spacing.gap/
 // `8px` reads as the number 8
 const gap: number = useVars(vars).spacing.gap
 ```

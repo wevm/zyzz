@@ -6,7 +6,7 @@ Three entrypoints serve native apps. `zyzz/react-native` exports the native conf
 
 ## Import Paths
 
-The `react-native` export condition decides what an import resolves to. Metro sets it, and TypeScript reads it from `customConditions`, as [Configure TypeScript](/docs/guides/native#configure-typescript) shows.
+The `react-native` export condition decides what an import resolves to. Metro sets it, and TypeScript reads it from `customConditions`, as the [native setup walkthrough](/docs/guides/native#walkthrough) shows.
 
 | Import                         | With `react-native`                                                                    | Without the condition                                         |
 | ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
@@ -41,8 +41,7 @@ Applications import from `zyzz/react-native`, as the [native guides](/docs/guide
     icon="paintbrush"
     href="/docs/api/react-native/useStyles"
   >
-    Resolve compiled native styles for consumers that read style objects outside
-    JSX.
+    Resolve compiled native styles for consumers that read style objects.
   </Card>
   <Card title="useVars" icon="variable" href="/docs/api/react-native/useVars">
     Read native token values selected by the nearest Provider, with an optional
@@ -100,8 +99,7 @@ Applications import from `zyzz/react-native`, as the [native guides](/docs/guide
     icon="smartphone"
     href="/docs/api/react-native/namespaces/Host"
   >
-    Hold explicit device inputs and rebind compiled callables when those inputs
-    change.
+    Hold explicit device inputs and rebind compiled callables on each change.
   </Card>
 </Card.Group>
 

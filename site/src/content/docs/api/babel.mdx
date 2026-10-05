@@ -165,7 +165,9 @@ Babel's JavaScript map and `cssMap` are separate, and both point to the authored
 
 Authoring modules require a filename, and unsupported target semantics fail compilation.
 
-Web and fixed-scheme native transforms compile one module at a time, so a configuration must stay local to its module, and `Config` imports and re-exported authoring helpers are rejected. Every mode rejects `zyzz/default`. [Metro](/docs/api/metro) supplies the module graph that shared configurations need.
+Without a supplied module graph, web and fixed-scheme native transforms compile one module at a time. A configuration must then stay local to its module, and `Config` imports and re-exported helpers are rejected. Every mode rejects `zyzz/default`.
+
+Native transforms also accept `modules`, `imports`, and `contracts`, through which a host supplies the source graph, resolved imports, and packed contracts for shared configurations. [Metro](/docs/api/metro) supplies them during bundling.
 
 ```ts title="build.ts"
 import { transformSync } from '@babel/core'

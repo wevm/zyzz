@@ -72,7 +72,7 @@ npx zyzz build --target native --color-scheme dark
 - **Type:** `boolean{:ts}`
 - **Default:** `false{:ts}`
 
-Emits CSS, CSS maps, and the initialization script without transformed modules or packed contracts. The original source runs as authored, so identity-bearing declarations need explicit identities.
+Emits CSS and CSS maps without transformed modules or packed contracts, plus the [initialization script](#output) when a configuration produces one. The original source runs as authored, so identity-bearing declarations need explicit identities.
 
 ```sh /--css-only/
 # Emits only stylesheets for source that runs uncompiled

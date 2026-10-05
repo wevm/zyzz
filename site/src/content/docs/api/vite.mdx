@@ -169,4 +169,4 @@ export default defineConfig({
 })
 ```
 
-A failed development rebuild keeps the previous complete output until the source is fixed. Virtual modules and authoring inside framework single-file components are not compiled.
+A failed development rebuild keeps the previous complete output until the source is fixed. Circular static imports between authored modules fail compilation, and virtual modules and authoring inside framework single-file components are not compiled.

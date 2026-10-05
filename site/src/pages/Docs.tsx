@@ -21,18 +21,24 @@ import ArrowLeftRightIcon from '~icons/lucide/arrow-left-right'
 import AtSignIcon from '~icons/lucide/at-sign'
 import BookOpenIcon from '~icons/lucide/book-open'
 import BoxIcon from '~icons/lucide/box'
+import BracesIcon from '~icons/lucide/braces'
 import BrainIcon from '~icons/lucide/brain'
 import CheckIcon from '~icons/lucide/check'
 import ChevronRightIcon from '~icons/lucide/chevron-right'
 import CircleHelpIcon from '~icons/lucide/circle-help'
 import CodeXmlIcon from '~icons/lucide/code-xml'
+import CombineIcon from '~icons/lucide/combine'
 import CopyIcon from '~icons/lucide/copy'
+import CopyPlusIcon from '~icons/lucide/copy-plus'
+import FileCodeIcon from '~icons/lucide/file-code'
 import FileIcon from '~icons/lucide/file'
+import FileTypeIcon from '~icons/lucide/file-type'
 import FilmIcon from '~icons/lucide/film'
 import GaugeIcon from '~icons/lucide/gauge'
 import GlobeIcon from '~icons/lucide/globe'
 import LayersIcon from '~icons/lucide/layers'
 import LightbulbIcon from '~icons/lucide/lightbulb'
+import ListIcon from '~icons/lucide/list'
 import MonitorIcon from '~icons/lucide/monitor'
 import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
@@ -41,13 +47,19 @@ import PlayIcon from '~icons/lucide/play'
 import PlugIcon from '~icons/lucide/plug'
 import RocketIcon from '~icons/lucide/rocket'
 import RotateCcwIcon from '~icons/lucide/rotate-ccw'
+import Settings2Icon from '~icons/lucide/settings-2'
+import SettingsIcon from '~icons/lucide/settings'
 import ShieldCheckIcon from '~icons/lucide/shield-check'
 import SmartphoneIcon from '~icons/lucide/smartphone'
 import SparklesIcon from '~icons/lucide/sparkles'
 import SquareStackIcon from '~icons/lucide/square-stack'
+import SunMoonIcon from '~icons/lucide/sun-moon'
+import SwatchBookIcon from '~icons/lucide/swatch-book'
+import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TestTubeIcon from '~icons/lucide/test-tube'
 import TypeIcon from '~icons/lucide/type'
+import VariableIcon from '~icons/lucide/variable'
 import WorkflowIcon from '~icons/lucide/workflow'
 import WrenchIcon from '~icons/lucide/wrench'
 import BabelIcon from '~icons/simple-icons/babel'
@@ -66,7 +78,22 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/babel': BabelIcon,
   'api/cli': TerminalIcon,
   'api/compiler': WrenchIcon,
-  'api/core': BoxIcon,
+  'api/core': BookOpenIcon,
+  'api/core/cx': CombineIcon,
+  'api/core/defineConfig': SettingsIcon,
+  'api/core/defineConfig/appearance': SunMoonIcon,
+  'api/core/defineConfig/script': FileCodeIcon,
+  'api/core/defineConfig/vars': BracesIcon,
+  'api/core/defineVars': PaletteIcon,
+  'api/core/extendVars': CopyPlusIcon,
+  'api/core/namespaces/Config': Settings2Icon,
+  'api/core/namespaces/Props': TagIcon,
+  'api/core/namespaces/Style': FileTypeIcon,
+  'api/core/namespaces/Vars': SwatchBookIcon,
+  'api/core/style': PaintbrushIcon,
+  'api/core/values': ListIcon,
+  'api/core/variable': VariableIcon,
+  'api/core/variants': LayersIcon,
   'api/metro': SmartphoneIcon,
   'api/next': NextIcon,
   'api/node': NodeIcon,
@@ -99,6 +126,7 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'guides/themes': PaletteIcon,
   'guides/typography': TypeIcon,
   'guides/variants': LayersIcon,
+  Core: BoxIcon,
   Integrations: PlugIcon,
   'React Native': ReactIcon,
   'introduction/agents': SparklesIcon,
@@ -255,6 +283,21 @@ function SidebarItem(props: SidebarItem.Props) {
   const { item, path } = props
   const enabled =
     item.path !== undefined && Object.hasOwn(__DOCS__.pages, item.path)
+  const labelId = useId()
+
+  // A section labels a run of pages inside a topic without adding another disclosure level.
+  if (item.items)
+    return (
+      <div aria-labelledby={labelId} role="group" {...styles.section()}>
+        <span id={labelId} {...styles.sectionLabel()}>
+          {item.title}
+        </span>
+        {item.items.map((child) => (
+          <SidebarItem item={child} key={child.title} path={path} />
+        ))}
+      </div>
+    )
+
   const Icon = sidebarIcons[item.path ?? item.title] ?? BookOpenIcon
   const content = (
     <>
@@ -703,6 +746,16 @@ namespace styles {
   })
 
   export const nestedLinks = style({ paddingLeft: 6 })
+
+  export const section = style({ marginTop: 3 })
+
+  export const sectionLabel = style({
+    typography: 'label.12',
+    color: 'gray.700',
+    display: 'block',
+    paddingBlock: 1,
+    paddingInline: 3,
+  })
 
   export const topic = style({
     selectors: {

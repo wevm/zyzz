@@ -130,7 +130,7 @@ const result = Css.compile({ styles: output.styles, vars: output.vars })
 
 - **Type:** `readonly { end: number; start: number }[]{:ts}`
 
-The spans of local `defineConfig` and `defineVars` calls, with the scope keys their helpers resolve to. A rewriter replaces each span with compiled scope data.
+The spans of local `defineConfig`, `defineVars`, and `extendVars` calls, with the scope keys their helpers resolve to. A rewriter replaces each span with compiled scope data.
 
 ```ts /output.themeCalls/
 // One entry per local config or variable set
@@ -152,10 +152,10 @@ output.themeAliases.length
 
 - **Type:** `readonly { end: number; start: number }[]{:ts}`
 
-Scope reads, such as `vars({ set: 'roomy' })`, that a rewriter replaces with class constants.
+Direct theme `.className` reads, which a rewriter replaces with class constants. Scope selections through `vars` are not listed here.
 
 ```ts /output.themeReferences/
-// One entry per scope selection in the module
+// One entry per direct theme className read
 output.themeReferences.length
 ```
 
@@ -163,7 +163,7 @@ output.themeReferences.length
 
 - **Type:** `readonly Css.Contribution[] | undefined{:ts}`
 
-Stylesheet contributions from `global`, `fontFace`, `keyframes`, and `layers`, in source order. The field is absent when the module declares none.
+Stylesheet contributions from `zyzz/web` functions, such as `global`, `fontFace`, `keyframes`, and `layers`, in source order. The field is absent when the module declares none.
 
 ```ts /output.contributions/
 // [{ kind: 'rule', selector: 'body', … }] for global({ body: { margin: 0 } })

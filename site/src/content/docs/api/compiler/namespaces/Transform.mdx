@@ -54,7 +54,7 @@ Transform.compile({ moduleId: 'app/Card.tsx', source: text })
 - **Type:** `boolean{:ts}`
 - **Default:** `true{:ts}`
 
-Whether to rewrite authoring calls. With `false`, `code` is the unchanged source and `css` matches the classes that runtime `style` calls compute.
+Whether to rewrite authoring calls. With `false`, `code` is the unchanged source and `css` matches the classes that runtime `style` calls compute. Dynamic styles, variants, compositions, and variable sets then need explicit IDs, or the call throws.
 
 ```ts /compiler: false/
 // Emits CSS while the calls run unchanged
@@ -129,7 +129,7 @@ Transform.compile({ moduleId: 'app/Card.tsx', schemes: true, source })
 
 - **Type:** `string{:ts}`
 
-The rewritten module. Each definition becomes a call to the runtime `Props` helper with its compiled class list, and a direct application inlines its props.
+The rewritten module. A static style becomes a `Props` helper call with its compiled class list, and a direct application inlines its props. Variants, dynamic styles, and variable sets use their own `zyzz/runtime` helpers.
 
 ```ts
 // Output for the overview example

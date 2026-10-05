@@ -50,7 +50,7 @@ Graph.compile({ modules: { 'app/Card.tsx': source } })
 - **Type:** `Readonly<Record<string, Readonly<Record<string, string | null>>>>{:ts}`
 - **Default:** `undefined{:ts}`
 
-Host-resolved static imports, keyed by importing module ID and then by specifier. A target names a module in `modules` or `contracts`, and `null` marks an external import. Once supplied, every static import needs an entry, and the host owns dynamic imports.
+Host-resolved static imports, keyed by importing module ID and then by specifier. A target names a module in `modules` or `contracts`, and `null` marks an external import. Once supplied, every static runtime import needs an entry, while type-only imports need none. The host owns dynamic imports.
 
 ```ts
 import { Graph } from 'zyzz/compiler'

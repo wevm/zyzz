@@ -6,6 +6,7 @@ import * as Path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { defineVars, extendVars } from 'zyzz'
 import { Graph, Native, Source, Transform } from 'zyzz/compiler'
+import type { Css } from 'zyzz/web'
 
 const project = Path.resolve(import.meta.dirname, '../../../../../..')
 const require = Module.createRequire(import.meta.url)
@@ -88,28 +89,31 @@ function exported(code: string) {
     .join('\n')
 }
 
-/** Imports an example module with its module-level `const` bindings exported. */
-async function run(code: string) {
+/** Imports an example module, with its module-level `const` bindings exported, as the shape a test reads. */
+async function run<module>(code: string): Promise<module> {
   const file = Path.join(root, `example-${count++}.ts`)
   await Fs.writeFile(file, exported(code))
 
-  return (await import(file)) as Record<string, any>
+  return (await import(file)) as module
 }
 
 /** Writes compiled module code and imports it, so its callables run against `zyzz/runtime`. */
-async function load(code: string) {
+async function load<module>(code: string): Promise<module> {
   const file = Path.join(root, `compiled-${count++}.ts`)
   await Fs.writeFile(file, code)
 
-  return (await import(file)) as Record<string, any>
+  return (await import(file)) as module
 }
 
 describe('Source API page', () => {
   test('extracts the overview example', async () => {
-    const module = await run(await example('namespaces/Source'))
+    const module = await run<{
+      css: string
+      output: Source.extract.ReturnType
+    }>(await example('namespaces/Source'))
 
     expect(module.css).toMatchInlineSnapshot(`".z-p-1rem{padding:1rem;}"`)
-    expect(module.output.styles.styles[0].declarations).toMatchInlineSnapshot(`
+    expect(module.output.styles.styles[0]?.declarations).toMatchInlineSnapshot(`
       [
         {
           "property": "padding",
@@ -163,7 +167,10 @@ export const button = variants({ variants: { tone: { loud: { opacity: 1 } } } })
   })
 
   test('compiles extracted variable sets', async () => {
-    const module = await run(await example('namespaces/Source', 'vars'))
+    const module = await run<{
+      output: Source.extract.ReturnType
+      result: Css.compile.ReturnType
+    }>(await example('namespaces/Source', 'vars'))
 
     expect(module.result.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;}
@@ -174,7 +181,7 @@ export const button = variants({ variants: { tone: { loud: { opacity: 1 } } } })
         "src-Card-8E7ByFdvK6e-style-theme": "z-theme-theme",
       }
     `)
-    expect(module.output.themeCalls).toHaveLength(1)
+    expect(module.output.themeCalls.length).toMatchInlineSnapshot(`1`)
   })
 
   test('returns contributions and variable calls', () => {
@@ -272,7 +279,9 @@ export const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
 
 describe('Transform API page', () => {
   test('compiles the overview example', async () => {
-    const module = await run(await example('namespaces/Transform'))
+    const module = await run<{ output: Transform.compile.ReturnType }>(
+      await example('namespaces/Transform'),
+    )
 
     expect(module.output.code).toMatchInlineSnapshot(`
       "
@@ -311,8 +320,8 @@ describe('Transform API page', () => {
         compiler: false,
         moduleId: 'app/Card.tsx',
         source: source!,
-      }).code,
-    ).toBe(source)
+      }).code === source,
+    ).toMatchInlineSnapshot(`true`)
     expect(
       Transform.compile({
         cssOutput: 'grouped',
@@ -332,6 +341,20 @@ describe('Transform API page', () => {
       .z_scheme-light-dark{color-scheme:light dark;}
       .z-p-1rem{padding:1rem;}"
     `)
+  })
+
+  test('requires explicit ids for dynamic styles without rewriting', () => {
+    expect(() =>
+      Transform.compile({
+        compiler: false,
+        moduleId: 'app/Bar.tsx',
+        source: `import { style } from 'zyzz'
+export const bar = style((values: { alpha: number }) => ({ opacity: values.alpha }))
+`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: CSS-only output requires an explicit id for dynamic styles, variants, and compositions.]`,
+    )
   })
 
   test('keeps unreached definitions in development', () => {
@@ -355,7 +378,7 @@ export const card = style({ padding: '1rem' })
   })
 
   test('reuses rules with independent composition', async () => {
-    const module = await run(
+    const module = await run<{ output: Transform.compile.ReturnType }>(
       await example('namespaces/Transform', 'options.composition'),
     )
     const { source } = templates(
@@ -408,7 +431,9 @@ export const card = style({ padding: '1rem' })
 
 describe('Graph API page', () => {
   test('links the overview example', async () => {
-    const module = await run(await example('namespaces/Graph'))
+    const module = await run<{ output: Graph.compile.ReturnType }>(
+      await example('namespaces/Graph'),
+    )
 
     expect(module.output.dependencies).toMatchInlineSnapshot(`
       {
@@ -418,7 +443,7 @@ describe('Graph API page', () => {
         "app/zyzz.config.ts": [],
       }
     `)
-    expect(module.output.modules['app/Card.tsx'].code).toMatchInlineSnapshot(`
+    expect(module.output.modules['app/Card.tsx']?.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style } from './zyzz.config.js'
@@ -426,7 +451,7 @@ describe('Graph API page', () => {
       export const card = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-FdvK6e-card"})
       "
     `)
-    expect(module.output.modules['app/Card.tsx'].css).toMatchInlineSnapshot(`
+    expect(module.output.modules['app/Card.tsx']?.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-color-brand:#06c;}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
@@ -437,7 +462,7 @@ describe('Graph API page', () => {
   })
 
   test('consumes a library contract', async () => {
-    const { library } = await run(
+    const { library } = await run<{ library: Graph.compile.ReturnType }>(
       await example('namespaces/Graph', 'Library Contracts'),
     )
     const modules = templates(
@@ -445,7 +470,7 @@ describe('Graph API page', () => {
     )
     const output = Graph.compile({
       contracts: {
-        'library/index.js': library.contracts['library/index.ts'],
+        'library/index.js': library.contracts['library/index.ts']!,
       },
       imports: { 'app/Card.tsx': { '@acme/theme': 'library/index.js' } },
       modules: { 'app/Card.tsx': modules['app/Card.tsx']! },
@@ -478,6 +503,24 @@ describe('Graph API page', () => {
     })
 
     expect(output.contracts).toMatchInlineSnapshot(`{}`)
+  })
+
+  test('needs no host resolution for type-only imports', () => {
+    const output = Graph.compile({
+      imports: { 'app/Card.tsx': { zyzz: null } },
+      modules: {
+        'app/Card.tsx': `import type { ReactNode } from 'react'
+import { style } from 'zyzz'
+export const card = style({ color: 'red' })
+`,
+      },
+    })
+
+    expect(output.dependencies).toMatchInlineSnapshot(`
+      {
+        "app/Card.tsx": [],
+      }
+    `)
   })
 
   test('requires host resolution for every import', () => {
@@ -589,7 +632,9 @@ global({ body: { margin: 0 } })
       compiler.compile({
         modules: { ...modules, 'app/Card.tsx': 'export const = 1' },
       }),
-    ).toThrow(Source.ExtractError)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app/Card.tsx:13: Unexpected token]`,
+    )
     // The failed snapshot leaves the last successful one in place.
     expect(
       compiler.compile({ modules: edited }) === next,
@@ -637,7 +682,9 @@ export const card = style({ color: 'brand' })
 
 describe('Native API page', () => {
   test('compiles the overview example', async () => {
-    const module = await run(await example('namespaces/Native'))
+    const module = await run<{ output: Native.compile.ReturnType }>(
+      await example('namespaces/Native'),
+    )
 
     expect(module.output.code).toMatchInlineSnapshot(`
       "
@@ -793,7 +840,10 @@ export const label = style({ opacity: 0.5 })
       moduleId: 'app/Button.tsx',
       source: exported(source),
     })
-    const module = await load(output.code)
+    const module = await load<{
+      bar: (values: { alpha: number }) => unknown
+      button: (options?: object) => unknown
+    }>(output.code)
 
     expect(module.button({ tone: 'loud' })).toMatchInlineSnapshot(`
       {
@@ -830,15 +880,17 @@ export const label = style({ opacity: 0.5 })
         },
       }
     `)
-    expect(() => module.bar({})).toThrowErrorMatchingInlineSnapshot(
+    expect(() => module.bar({} as never)).toThrowErrorMatchingInlineSnapshot(
       `[Native.SelectionError: Missing or invalid native payload: alpha.]`,
     )
   })
 
   test('compiles the graph output example', async () => {
-    const module = await run(await example('namespaces/Native', 'Graph Output'))
+    const module = await run<{ output: Graph.compile.ReturnType }>(
+      await example('namespaces/Native', 'Graph Output'),
+    )
 
-    expect(module.output.modules['app/card.ts'].code).toMatchInlineSnapshot(`
+    expect(module.output.modules['app/card.ts']?.code).toMatchInlineSnapshot(`
       "
       import {Native as __zyzzNative} from 'zyzz/runtime';
 
@@ -850,8 +902,10 @@ export const label = style({ opacity: 0.5 })
       export const card = (__zyzzNative.create({"axes":{},"defaults":{},"styles":{"0":{"opacity":0.5}}}) as import('zyzz/runtime').Native.Callable<{}>)
       "
     `)
-    expect(module.output.modules['app/card.ts'].css).toMatchInlineSnapshot(`""`)
-    expect(module.output.modules['app/card.ts'].classes).toMatchInlineSnapshot(
+    expect(module.output.modules['app/card.ts']?.css).toMatchInlineSnapshot(
+      `""`,
+    )
+    expect(module.output.modules['app/card.ts']?.classes).toMatchInlineSnapshot(
       `{}`,
     )
     expect(module.output.dependencies).toMatchInlineSnapshot(`
@@ -947,7 +1001,9 @@ describe('compiler API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(25)
-    expect(checked.status, checked.stdout + checked.stderr).toBe(0)
+    expect(files.length).toMatchInlineSnapshot(`25`)
+    // The diagnostics are empty when every example type-checks.
+    expect(checked.stdout + checked.stderr).toMatchInlineSnapshot(`""`)
+    expect(checked.status).toMatchInlineSnapshot(`0`)
   }, 60_000)
 })

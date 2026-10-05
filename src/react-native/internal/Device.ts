@@ -199,7 +199,8 @@ function useBindings() {
               if (store.getSnapshot() !== snapshot) render()
               return unsubscribe
             }
-            const id = NativeZyzz!.attach(node, nativeProps(selected))
+            // Most views never change selection, so attach on the first patch.
+            let id: number | undefined
             let previous = initial
             const read = (context: NativeContext.Context) => {
               const keys = NativeContext.key(props.style, context)
@@ -208,15 +209,16 @@ function useBindings() {
                 keys.every((key, index) => Object.is(key, previous[index]))
               )
                 return { commit: () => {} }
-              const selected = NativeContext.resolve(props.style, context)
-              if (!selective(selected)) return { commit: render }
+              const next = NativeContext.resolve(props.style, context)
+              if (!selective(next)) return { commit: render }
+              id ??= NativeZyzz!.attach(node, nativeProps(selected))
               return {
                 commit: () => {
                   previous = keys
                 },
                 patch: {
                   id,
-                  props: nativeProps(selected),
+                  props: nativeProps(next),
                 },
               }
             }
@@ -227,7 +229,7 @@ function useBindings() {
             const unbind = store.bind(read, write)
             return () => {
               unbind()
-              NativeZyzz!.detach(id)
+              if (id !== undefined) NativeZyzz!.detach(id)
             }
           })()
           const update = () =>

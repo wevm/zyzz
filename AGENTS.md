@@ -115,7 +115,7 @@ Applies to the documentation site and other Markdown documentation. Prose Conven
 ### Voice and Terms
 
 - Write for developers who already know CSS. Use standard CSS terms, such as cascade, specificity, custom properties, and container queries, without defining them or replacing them with informal descriptions.
-- Explain behavior through authored styles and the emitted CSS. Leave compiler internals to the pages that document them, such as Build & Delivery and the Compiler API.
+- Explain behavior through authored styles and the emitted CSS. Leave compiler internals to the pages that document them, such as the Compiler API.
 - Keep guides integration-neutral. When setup differs by integration, show every integration, such as in tabs, rather than assuming one bundler or framework.
 - Do not state the obvious, such as "Animations are a web feature." When a feature differs on React Native, state that limit directly.
 - Do not mention other styling libraries in guides. Name them only on the Comparisons and Benchmarks pages and in the migration guides. Other libraries' documentation can inform a draft without appearing in its text.

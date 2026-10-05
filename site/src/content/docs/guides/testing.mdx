@@ -2,15 +2,13 @@ import { Tab, Tabs } from '../../../components/mdx/concepts/Tabs.js'
 
 # Testing & Troubleshooting
 
-Test rendered styles, trace compilation failures, and check CSS delivery in an application.
+Test compiled styles in a browser, and diagnose missing transforms, styles, and overrides.
 
 ## Overview
 
-Test components through a working [build integration](/docs/introduction/getting-started), so each test exercises source transforms and stylesheet delivery. Pair TypeScript checks with browser assertions for layout, states, and themes.
+Test styles through the same compiler integration as the application. Tests then run transformed modules and load the generated stylesheet, so assertions can check computed styles instead of generated class names.
 
-Use a component with a visible state change. `SaveButton` has fixed padding and a gray background when disabled. Render `<SaveButton disabled />` at `/testing`, then check the compiled result with Playwright while the development server runs.
-
-The test assumes an existing `@playwright/test` setup with its browser installed. Adapt the URL to the application. Expected values come from the component's intended appearance rather than generated class names.
+This Playwright test renders `<SaveButton disabled />` at `/testing` while the development server runs, then checks the button's computed padding and background.
 
 <Tabs label="Component test">
 <Tab title="SaveButton.tsx">
@@ -37,6 +35,8 @@ namespace styles {
     backgroundColor: 'blue',
     color: 'white',
     padding: '8px 16px',
+    // [!code hl:4]
+    // The test checks this disabled state
     selectors: {
       '&:disabled': { backgroundColor: 'gray' },
     },
@@ -45,7 +45,7 @@ namespace styles {
 ```
 
 </Tab>
-<Tab title="save-button.spec.ts">
+<Tab title="SaveButton.test.ts">
 
 ```ts
 import { expect, test } from '@playwright/test'
@@ -55,6 +55,8 @@ test('renders the disabled button styles', async (context) => {
   const button = context.page.getByRole('button', { name: 'Save' })
 
   await expect(button).toBeDisabled()
+  // [!code hl:4]
+  // Assert computed values, which stay stable across builds and output modes
   await expect(button).toHaveCSS('padding-top', '8px')
   await expect(button).toHaveCSS('padding-inline-start', '16px')
   await expect(button).toHaveCSS('background-color', 'rgb(128, 128, 128)')
@@ -64,9 +66,26 @@ test('renders the disabled button styles', async (context) => {
 </Tab>
 </Tabs>
 
-## Test Compiler Output
+## Vitest
 
-Calling an untransformed `style()` definition in a Node test does not substitute for compilation. For a compiler pipeline or library build, use the pure `Style.define` and `Css.compile` APIs, and load the returned CSS and class map together in a real browser:
+Vitest runs test modules through the Vite config, so the `zyzz()` plugin transforms style definitions as it does in the application build. Node tests can then render components and call styles without a missing-transform error.
+
+```ts title="vitest.config.ts"
+import { defineConfig } from 'vitest/config'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Transform style definitions in test modules
+  plugins: [zyzz()],
+})
+```
+
+A Node environment applies no CSS, so it cannot check layout, cascade, or computed values. Run those assertions in a real browser.
+
+## Compiler Output
+
+A compiler pipeline or library build can test compiled CSS directly. `Css.compile` returns CSS and class names without browser or filesystem side effects, so load both into a browser page and check the result.
 
 ```ts title="card.test.ts"
 import { chromium } from 'playwright'
@@ -75,12 +94,16 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 test('renders compiled card padding', async () => {
-  const styles = Style.define({ card: { padding: '16px' } })
-  const output = Css.compile({ styles })
+  // [!code hl:2]
+  // Compile style data to CSS and class names
+  const output = Css.compile({
+    styles: Style.define({ card: { padding: '16px' } }),
+  })
   const browser = await chromium.launch()
 
   try {
     const page = await browser.newPage()
+    // Apply the class and load the matching CSS
     await page.setContent(
       `<article class="${output.classes.card}">Card</article>`,
     )
@@ -97,48 +120,56 @@ test('renders compiled card padding', async () => {
 })
 ```
 
-This example uses Vitest and Playwright. `Css.compile` has no browser or filesystem side effects. A CSS snapshot can check emitted declarations, but it cannot establish cascade, layout, or application stylesheet delivery.
+A CSS snapshot can check emitted declarations, but it cannot establish cascade, layout, or stylesheet delivery. `Style.define` tests style data, not the source rewriting of callable `style()` definitions.
 
-`Style.define` tests the data API. It does not test source rewriting of callable `style()` definitions. When maintaining a source integration, test its transformed modules and emitted CSS together. See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md).
+## Coverage
 
-## Cover Shipped Behavior
-
-Keep assertions tied to observable component behavior. Use the same configuration and build mode as the application under test.
+Tie assertions to observable behavior, and use the same configuration and build mode as the application:
 
 - **States:** Exercise relevant hover, focus, disabled, and data or ARIA states.
-- **Breakpoints:** Resize across the component's responsive breakpoints and check layout.
-- **Themes:** Switch supported themes and light or dark schemes. Check computed colors and token-dependent dimensions.
-- **Updates:** Change variants and dynamic values. Check that replaced values and overrides stop affecting the element.
-- **Server rendering:** Check the initial HTML, hydration, and subsequent navigation in server-rendered applications.
-- **Production builds:** Run a production build test as well as development tests to catch stylesheet delivery failures in split routes.
+- **Breakpoints:** Resize across the component's breakpoints and check layout.
+- **Themes:** Switch themes and color schemes, then check computed colors and token-dependent sizes.
+- **Updates:** Change variants and dynamic values, then check that replaced values stop applying.
+- **Server rendering:** Check the initial HTML, hydration, and later navigation.
+- **Production builds:** Run a production build to catch stylesheet delivery failures in split routes.
 
-When an application supports both atomic and grouped CSS output, run the same behavioral assertions in each mode. Match only genuinely nondeterministic snapshot fields. Avoid replacing the compiler or renderer with mocks when testing their integration.
+When an application supports both CSS output modes, run the same assertions in each. Avoid mocking the compiler or renderer when testing their integration.
 
-The repository's [web acceptance record](https://github.com/wevm/zyzz/blob/main/docs/guides/web-acceptance.md) links compiler, composition, framework, and delivery fixtures. Its results describe a dated run, not current CI status. [Compatibility](/docs/introduction/compatibility) describes the verified platform boundaries, including pending native rendering acceptance.
+## Troubleshooting
 
-## Diagnose a Failure
-
-First identify where the behavior diverges. Check the diagnostic and transformed module, then the matching stylesheet, then the element's computed styles. Browser developer tools show which declaration wins and which stylesheet supplies it.
+Find where behavior diverges: the diagnostic and transformed module first, then the stylesheet, then the element's computed styles. Browser developer tools show which declaration wins and which stylesheet supplies it.
 
 ### Missing Transform
 
-An error named `style.MissingTransformError` means untransformed authoring source reached execution. The constructor is not a property of the exported `style` function. `variants.MissingTransformError` and `variable.MissingTransformError` identify the corresponding untransformed authoring calls.
+`style.MissingTransformError` means untransformed authoring source reached execution. `variants.MissingTransformError` and `variable.MissingTransformError` report the same problem for those calls.
 
-Confirm that the bundler integration transforms the failing module, including test fixtures and imported library source. Inspect the module reported by the error. Importing configuration or extracting CSS alone does not rewrite callable authoring code.
+```ts
+import { style } from 'zyzz'
 
-For a published library, check whether consumers receive transformed modules and the matching stylesheet. See [Getting Started](/docs/introduction/getting-started) for adapter setup and [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md) for library artifacts.
+// Throws when no integration transformed this module
+export const card = style({ padding: '16px' })
+```
+
+Confirm that the integration transforms the reported module, including test fixtures and imported library source. Importing a config or extracting CSS does not rewrite callable authoring code.
 
 ### Missing Styles
 
-Inspect the element's applied props and the loaded stylesheet. Confirm that the generated class appears in CSS from the same compilation. Check network failures, stylesheet imports, and lazy-route CSS delivery in the production build.
+Inspect the element's applied props and the loaded stylesheets. Confirm that the generated class appears in CSS from the same compilation, and check stylesheet requests in the production build.
 
-With standalone output, load `zyzz.css`, or load `zyzz.shared.css` before the module stylesheets. Deliver the emitted initialization script when the setup uses saved theme selections. Keep generated modules, CSS, and initialization artifacts together.
+```html
+<!-- Standalone builds load the combined stylesheet beside the compiled modules -->
+<link rel="stylesheet" href="/dist/zyzz.css" />
+```
+
+With split stylesheets, load `zyzz.shared.css` before the module stylesheets. Deliver the initialization script when the application saves theme selections.
 
 ### Rejected Tokens
 
-Root `style` from `zyzz` accepts literal CSS values without built-in design tokens. Use the helper from the project configuration, or import from `zyzz/default` for its bundled tokens:
+Root `style` from `zyzz` accepts literal CSS values and has no design tokens. Use the helper from the project config, or `zyzz/default` for its bundled tokens.
 
 ```ts
+// [!code hl:2]
+// Token-aware helper with the bundled tokens
 import { style } from 'zyzz/default'
 
 namespace styles {
@@ -150,44 +181,53 @@ namespace styles {
 }
 ```
 
-Check that the token belongs to the property's domain. If a theme is optional, narrow it before using a shorthand name that depends on that theme. See [Themes & Tokens](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for configuration and token references.
+Check that each token belongs to the property's category. See [Themes & Tokens](/docs/guides/themes) for configured tokens.
 
 ### Ignored Overrides
 
-Inspect cascade layers, importance, conditions, specificity, and rule order. Moving a generated class within a class string does not change CSS precedence. External CSS keeps its authored cascade behavior.
-
-For Zyzz style composition, use `cx` with applied styles. For an external class or inline value, pass styling overrides to the style application. Separate JSX `className` or `style` props can overwrite spread props:
+Inspect cascade layers, importance, conditions, specificity, and rule order. Moving a class within a class string does not change precedence, and separate JSX `className` or `style` props can replace spread props.
 
 ```tsx
 import { cx, style } from 'zyzz'
 
 export function Card() {
   return (
+    // [!code hl:2]
+    // Later arguments win, so the selected color replaces the card's
     <article {...cx(styles.card(), styles.selected())}>Selected card</article>
   )
 }
 
 namespace styles {
   export const card = style({ color: 'black', padding: '16px' })
+
   export const selected = style({ color: 'blue' })
 }
 ```
 
-For example, `styles.card({ className: 'external' })` retains the applied style props while adding the external class. See the [`cx` contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) for ordering and dynamic bindings.
+To add an external class, pass it to the style call, such as `styles.card({ className: 'external' })`. See the [`cx` contract](https://github.com/wevm/zyzz/blob/main/docs/api/core/cx.md) for ordering and dynamic bindings.
 
 ### Watch Mode Failures
 
-Read the located diagnostic and correct the failing source or dependency. The filesystem host retains successful output when a rebuild fails. That output can therefore reflect the previous source until the error is resolved.
+When a rebuild fails, the watching host keeps the last successful output, so the browser can show stale styles. Read the located diagnostic, fix the source, and confirm a successful rebuild before checking again.
 
-Confirm a successful rebuild before checking the browser again. Avoid deleting unrelated output files, because the host tracks the artifacts it owns. Reproduce persistent failures with a one-shot build and the smallest module that triggers the diagnostic.
+```sh
+# Reproduce a persistent failure with a one-shot build
+npx zyzz build
+```
+
+Avoid deleting unrelated output files, since the host tracks the artifacts it owns.
 
 ## Catch Mistakes Earlier
 
-Run TypeScript checks to verify inferred tokens, variants, and dynamic inputs. Use the [Oxlint integration](/docs/api/oxlint) to catch invalid styles and conflicting JSX props. Registering the plugin enables no rules by itself, so choose the rules the project needs.
+Type checks verify inferred tokens, variants, and dynamic inputs. The [Oxlint plugin](/docs/api/oxlint) reports invalid styles, conflicting JSX props, and unused definitions before a build.
 
-Linting and type checks complement browser tests. They do not prove that the application loads the generated stylesheet or renders correctly on every supported platform.
+```sh
+# Run the type checker and linter with the tests
+npx tsc --noEmit && npx oxlint .
+```
 
-When migrating existing components, preserve layout, states, themes, and delivery one component at a time. Continue with [Migrating from Tailwind](https://github.com/wevm/zyzz/blob/main/docs/guides/tailwind.md) or [Migrating from StyleX](https://github.com/wevm/zyzz/blob/main/docs/guides/stylex.md).
+Linting and type checks complement browser tests. They cannot show whether the application loads the stylesheet or renders correctly on every supported platform.
 
 ## More
 
@@ -195,8 +235,12 @@ When migrating existing components, preserve layout, states, themes, and deliver
   <Card title="Linting" icon="zap" href="/docs/api/oxlint">
     Report invalid styles, conflicting JSX props, and unused definitions.
   </Card>
-  <Card title="Build & Delivery" icon="boxes" href="/docs/guides/compilation">
-    Compile matching code and CSS, and publish library artifacts.
+  <Card
+    title="Getting Started"
+    icon="terminal"
+    href="/docs/introduction/getting-started"
+  >
+    Connect the integration that transforms styles and delivers CSS.
   </Card>
   <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
     Bind token sets to typed style helpers through a project config.

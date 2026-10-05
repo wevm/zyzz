@@ -1,5 +1,26 @@
 # zyzz
 
+## 0.0.23
+
+### Patch Changes
+
+- b29016b: Fixed theme references in `!custom` compound templates such as `boxShadow`, which failed extraction and now resolve per native set and scheme.
+  
+  ```ts
+  style({ boxShadow: `0px 2px 24px ${vars.color.shadow} !custom` })
+  ```
+- b29016b: Expanded the CSS `flex` shorthand into native `flexGrow`, `flexShrink`, and `flexBasis` with CSS defaults instead of rejecting it.
+  
+  ```ts
+  style({ flex: 1 }) // flexGrow 1, flexShrink 1, flexBasis 0
+  ```
+- b29016b: Expanded `inset` into native `top`, `right`, `bottom`, and `left` offsets with one-to-four-value CSS semantics.
+- b29016b: Made `useStyles` resolver results assignable to React Native style props, and preserved animated ref unions and generic function signatures in `withStyles` wrappers.
+- b29016b: Resolved compiled styles in JSX props ending in `Style`, such as `contentContainerStyle`, inside function components and custom hooks without `withStyles`.
+- b29016b: Fixed `useStyles` and `withStyles` throwing outside a Provider, including Metro-compiled third-party style props in the component that renders the Provider.
+- b29016b: Fixed style callbacks rejecting `aspectRatio` bindings from positive numeric literal unions, such as `values: { ratio: 1 | 1.5 }`, during compilation.
+- b29016b: Deduplicated compiled `useVars` profiles in Metro and Babel native builds to one export per variable definition, including `defineConfig` modules outside the project root.
+
 ## 0.0.22
 
 ### Patch Changes

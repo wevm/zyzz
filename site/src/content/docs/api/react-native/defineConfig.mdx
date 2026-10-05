@@ -68,11 +68,86 @@ defineConfig({ defaultVars: 'base', vars: { base, roomy } })
 - **Type:** `{ [category: string]: readonly string[] } | false{:ts}`
 - **Default:** `undefined{:ts}`
 
-Category-to-property mappings for token names, as in the [Core option](/docs/api/core/defineConfig#optionsmappings). `shorthands` and `id` also follow the Core page. `layers`, `defaultLayer`, and `output: 'html'` fail native compilation, and `cssOutput` has no native effect.
+Category-to-property mappings for token names, as in the [Core option](/docs/api/core/defineConfig#optionsmappings). Native compilation resolves the mapped names to native values.
 
 ```ts /mappings: { spacing: ['padding', 'gap'] }/
 // Spacing names apply only to padding and gap
 defineConfig({ mappings: { spacing: ['padding', 'gap'] }, vars: base })
+```
+
+### options.shorthands
+
+- **Type:** `{ [alias: string]: readonly string[] }{:ts}`
+- **Default:** `undefined{:ts}`
+
+Local property aliases, as in the [Core option](/docs/api/core/defineConfig#optionsshorthands). Each expanded property compiles to its native longhands.
+
+```ts /shorthands: { px: ['paddingLeft', 'paddingRight'] }/
+// `px: 'md'` sets both horizontal paddings
+defineConfig({
+  shorthands: { px: ['paddingLeft', 'paddingRight'] },
+  vars: base,
+})
+```
+
+### options.id
+
+- **Type:** `string{:ts}`
+- **Default:** `undefined{:ts}`
+
+A namespace for the config's generated identities, as in the [Core option](/docs/api/core/defineConfig#optionsid). Give each independently compiled config a distinct ID.
+
+```ts /id: 'acme'/
+// Keeps this config's bindings separate from other packages
+defineConfig({ id: 'acme', vars: base })
+```
+
+### options.layers
+
+- **Type:** `readonly string[]{:ts}`
+- **Default:** `undefined{:ts}`
+
+Cascade layer names, which native views cannot express. A native config with `layers` or `defaultLayer` fails native compilation.
+
+```ts /layers: ['components']/
+// Fails native compilation
+defineConfig({ layers: ['components'], vars: base })
+```
+
+### options.output
+
+- **Type:** `'react' | 'html'{:ts}`
+- **Default:** `'react'{:ts}`
+
+The props shape for web applications. Native applications always return `{ style }`, and `output: 'html'` fails native compilation.
+
+```ts /output: 'html'/
+// Fails native compilation
+defineConfig({ output: 'html', vars: base })
+```
+
+### options.cssOutput
+
+- **Type:** `'atomic' | 'grouped'{:ts}`
+- **Default:** `'atomic'{:ts}`
+
+The emitted CSS shape for web builds. Native compilation emits no CSS, so the option has no native effect.
+
+```ts /cssOutput: 'grouped'/
+// Ignored by native compilation
+defineConfig({ cssOutput: 'grouped', vars: base })
+```
+
+### options.storageKey
+
+- **Type:** `string{:ts}`
+- **Default:** `'zyzz'{:ts}`
+
+The localStorage key read by `appearance` and `script`. Native apps keep the selection in application state, so the key has no native effect.
+
+```ts /storageKey: 'acme-appearance'/
+// Used only by the web-only appearance helpers
+defineConfig({ storageKey: 'acme-appearance', vars: base })
 ```
 
 ## Returns

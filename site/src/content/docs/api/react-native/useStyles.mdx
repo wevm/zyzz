@@ -95,7 +95,7 @@ namespace styles {
 const label = <Text {...styles.label()}>Saved</Text>
 ```
 
-In custom native builds, those elements update in place when their selected alternatives change. Expo Go has no native module, so they rerender through React subscriptions.
+In custom native builds, those elements update in place when their selected alternatives change. Style callbacks and styles with `aspectRatio`, background images, `boxShadow`, `filter`, `fontVariant`, `transform`, or `transformOrigin` rerender through React instead, as every style does in Expo Go.
 
 ## Types
 

@@ -1301,6 +1301,31 @@ describe('NativeDynamic API page', () => {
     )
   })
 
+  test('assigns flex: 0 for a bound flex value', () => {
+    const row = NativeDynamic.create({
+      axes: {},
+      defaults: {},
+      program: {
+        rules: [
+          {
+            matches: [],
+            steps: [{ parts: [{ slot: '--row-flex' }], property: 'flex' }],
+          },
+        ],
+        slots: { flex: '--row-flex' },
+      },
+      styles: {},
+    }) as unknown as (input: { flex: string }) => unknown
+
+    expect(row({ flex: '1 0 auto' })).toMatchInlineSnapshot(`
+      {
+        "style": {
+          "flex": 0,
+        },
+      }
+    `)
+  })
+
   test('requires exactly one choice in a payload object', () => {
     const box = NativeDynamic.create({
       axes: { size: ['custom', 'other'] },

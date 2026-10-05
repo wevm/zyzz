@@ -196,6 +196,17 @@ The selection to read dependencies for. Its set and scheme pick the table, and r
 NativeContext.key(ink(), { colorScheme: 'light', set: 'base' })
 ```
 
+### dependencies
+
+- **Type:** `readonly unknown[]{:ts}`
+
+A new array of the selected compiled callables and responsive profiles, in resolution order. Adapters compare it element by element with `Object.is`. A missing responsive alternative appears as `undefined`.
+
+```ts /.length/
+// 1
+NativeContext.key(ink(), { colorScheme: 'dark' }).length
+```
+
 ## Types
 
 - **`NativeContext.Context{:ts}`:** The `{ colorScheme, set?, viewport? }` selection.

@@ -202,9 +202,11 @@ NativeDynamic.create({
 
 - **Type:** `string | number{:ts}`
 
-A required callback field. Generated code casts the callable to `NativeDynamic.Callable<input>` with the authored fields, while the helper's own return type accepts any record. Bound values convert with the same scalar rules as static native compilation.
+A required callback field. Generated code casts the callable to `NativeDynamic.Callable<input>` with the authored fields, while the helper's own return type accepts any record. Bound values convert with the scalar rules of static native compilation, except `flex`.
 
 Shorthands expand to longhands. `padding`, `margin`, and `inset` assign each side, `borderColor`, `borderWidth`, and `borderRadius` assign every side or corner, and `gap` assigns `columnGap` and `rowGap`. Later steps overwrite earlier longhands.
+
+`flex` is the exception. A bound `flex` value is validated, but the step always assigns `flex: 0` instead of the `flexGrow`, `flexShrink`, and `flexBasis` that static compilation emits.
 
 ```ts /width: '50%'/
 // { style: { width: '50%' } }

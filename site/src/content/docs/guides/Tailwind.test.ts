@@ -16,7 +16,11 @@ const guide = await Fs.readFile(
 const examples = [
   ...guide.matchAll(/```(tsx|ts)(?: title="([^"]+)")?\n([\s\S]*?)```/g),
 ]
-const config = examples.find((entry) => entry[2] === 'zyzz.config.ts')![3]!
+// The bundled config ships as a packed contract that the graph links by import identity.
+const contract = await Fs.readFile(
+  Path.join(root, 'dist/default.js.zyzz.json'),
+  'utf8',
+)
 const origin = 'http://localhost:34159'
 const route = '/docs/guides/tailwind'
 let server: ChildProcess.ChildProcess
@@ -32,7 +36,6 @@ describe('Tailwind migration examples', () => {
         await Fs.mkdir(folder)
         const path = Path.join(folder, `example.${entry[1]}`)
         await Fs.writeFile(path, entry[3]!)
-        await Fs.writeFile(Path.join(folder, 'zyzz.config.ts'), config)
         files.push(path)
       }
       const settings = Ts.readConfigFile(
@@ -46,6 +49,7 @@ describe('Tailwind migration examples', () => {
       )
       const program = Ts.createProgram(files, {
         ...parsed.options,
+        paths: { 'zyzz/default': [Path.join(root, 'dist/default.d.ts')] },
         types: ['node', 'vite/client'],
       })
       const diagnostics = [
@@ -71,7 +75,7 @@ describe('Tailwind migration examples', () => {
     }
   }, 120000)
 
-  test('compiles all authored definitions, including config imports and relationships', () => {
+  test('compiles all authored definitions against the bundled config', () => {
     const results = examples
       .filter(
         (entry) =>
@@ -80,11 +84,22 @@ describe('Tailwind migration examples', () => {
           entry[3]!.includes('global('),
       )
       .map((entry, index) => {
+        const id = `example-${index}.${entry[1]}`
+        const specifiers = Array.from(
+          entry[3]!.matchAll(/from '([^']+)'/g),
+          (match) => match[1]!,
+        )
         const output = Graph.compile({
-          modules: {
-            [`example-${index}.${entry[1]}`]: entry[3]!,
-            'zyzz.config.ts': config,
+          contracts: { 'zyzz/default': contract },
+          imports: {
+            [id]: Object.fromEntries(
+              specifiers.map((specifier) => [
+                specifier,
+                specifier === 'zyzz/default' ? specifier : null,
+              ]),
+            ),
           },
+          modules: { [id]: entry[3]! },
         })
         return [
           output.sharedCss,
@@ -97,7 +112,15 @@ describe('Tailwind migration examples', () => {
     expect(
       results.every((result) => result.trim().length > 0),
     ).toMatchInlineSnapshot('true')
-    expect(css.includes('padding:1.5rem')).toMatchInlineSnapshot('true')
+    expect(css.includes('--z-default-spacing-6:1.5rem')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(css.includes('@media (width >= 48rem)')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(css.includes('width:calc(100% - 2rem)')).toMatchInlineSnapshot(
+      'true',
+    )
     expect(css.includes('@media (hover: hover)')).toMatchInlineSnapshot('true')
     expect(css.includes(':invalid ~')).toMatchInlineSnapshot('true')
     expect(css.includes('@container (width >= 28rem)')).toMatchInlineSnapshot(

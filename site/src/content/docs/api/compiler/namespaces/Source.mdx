@@ -103,7 +103,7 @@ output.calls[0]
 
 ### vars
 
-- **Type:** `Readonly<Record<string, object>>{:ts}`
+- **Type:** `Source.extract.ReturnType['vars']{:ts}`
 
 The module's local variable sets, keyed by stable scope keys. Pass them to `Css.compile` with `styles` to emit the custom properties and scope classes.
 
@@ -172,9 +172,9 @@ output.contributions
 
 ### variableCalls
 
-- **Type:** `readonly { end: number; slots: object; start: number }[] | undefined{:ts}`
+- **Type:** `readonly { end: number; explicit?: boolean; slots: Readonly<Record<string, { name: string; type: string; variable: true }>>; start: number }[] | undefined{:ts}`
 
-The spans of module-owned [`variable`](/docs/api/core/variable) calls, each with its fixed custom-property slots. The field is absent when the module declares no variables.
+The spans of module-owned [`variable`](/docs/api/core/variable) calls, each with its fixed custom-property slots and whether the call supplied an explicit `id`. The field is absent when the module declares no variables.
 
 ```ts /output.variableCalls/
 // [{ slots: { value: { name: '--z-accent', type: 'color' } }, … }]

@@ -201,7 +201,7 @@ output.dependencies['app/Card.tsx']
 
 - **Type:** `Readonly<Record<string, string>>{:ts}`
 
-Versioned contract JSON, keyed by module ID, for modules that export configs, definitions, or their re-exports, or, in web graphs, that read a private config's `appearance` or `script`. Other modules have no entry. A library publishes the contract of each entrypoint beside its JavaScript, as `index.js.zyzz.json` for `index.js`.
+Versioned contract JSON, keyed by module ID, for modules that export configs, definitions, or their re-exports, and for modules that carry stylesheet contributions or import one that does. In web graphs, modules that read a private config's `appearance` or `script` also get one. Other modules have no entry. A library publishes the contract of each entrypoint beside its JavaScript, as `index.js.zyzz.json` for `index.js`.
 
 ```ts /output.contracts['library/index.ts']/
 // Published as index.js.zyzz.json after lowering index.ts

@@ -6,6 +6,7 @@ import * as Path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { defineVars, extendVars } from 'zyzz'
 import { Graph, Native, Source, Transform } from 'zyzz/compiler'
+import { NativeContext } from 'zyzz/runtime'
 import type { Css } from 'zyzz/web'
 
 const project = Path.resolve(import.meta.dirname, '../../../../../..')
@@ -224,6 +225,7 @@ global({ body: { margin: 0 } })
         },
       ]
     `)
+    expect(output.variableCalls?.[0]?.explicit).toMatchInlineSnapshot(`false`)
     expect(output.variableCalls?.[0]?.slots).toMatchInlineSnapshot(`
       {
         "value": {
@@ -907,6 +909,28 @@ export const size = 1
     `)
   })
 
+  test('emits contracts for stylesheet contributions and their importers', () => {
+    const output = Graph.compile({
+      modules: {
+        'app/global.ts': `import { global } from 'zyzz/web'
+global({ body: { margin: 0 } })
+`,
+        'app/index.ts': `import './global.js'
+export const size = 1
+`,
+        'app/plain.ts': `export const size = 2
+`,
+      },
+    })
+
+    expect(Object.keys(output.contracts)).toMatchInlineSnapshot(`
+      [
+        "app/global.ts",
+        "app/index.ts",
+      ]
+    `)
+  })
+
   test('needs no host resolution for type-only imports', () => {
     const output = Graph.compile({
       imports: { 'app/Card.tsx': { zyzz: null } },
@@ -1265,7 +1289,7 @@ export const label = style({ opacity: 0.5 })
     )
   })
 
-  test('defers set validation in contextual output', () => {
+  test('defers set validation in contextual output', async () => {
     const output = Native.compile({
       colorScheme: 'light',
       contextual: true,
@@ -1277,6 +1301,24 @@ export const label = style({ opacity: 0.5 })
     })
 
     expect(output.code.includes('"missing"')).toMatchInlineSnapshot(`true`)
+
+    const module = await load<{ label: () => { style: unknown } }>(output.code)
+
+    expect(() =>
+      NativeContext.resolve(module.label().style, { colorScheme: 'light' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Unknown native set: missing.]`,
+    )
+    expect(
+      NativeContext.resolve(module.label().style, {
+        colorScheme: 'light',
+        set: 'default',
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "opacity": 0.5,
+      }
+    `)
   })
 
   test('compiles useVars arguments to native profiles', async () => {

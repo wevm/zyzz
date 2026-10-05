@@ -1132,6 +1132,35 @@ export const panel = style({ opacity: 0.2, '@media (width >= 768px)': { opacity:
     ).toMatchInlineSnapshot(`{}`)
   })
 
+  test('accepts appearance and script reads only in contextual output', () => {
+    const source = `import { defineConfig } from 'zyzz'
+
+const { appearance, script, style } = defineConfig({
+  vars: { color: { ink: { light: '#171717', dark: '#fafafa' } } },
+})
+
+export const label = style({ color: 'ink' })
+`
+
+    expect(() =>
+      Native.compile({
+        colorScheme: 'light',
+        moduleId: 'app/Label.tsx',
+        source,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Native.CompileError: Native static modules do not support CSS contributions, variables, or web set controls.]`,
+    )
+    expect(
+      typeof Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'app/Label.tsx',
+        source,
+      }).code,
+    ).toMatchInlineSnapshot(`"string"`)
+  })
+
   test('runs the compiled callables', async () => {
     const source = await example('namespaces/Native', 'Callables')
     const output = Native.compile({

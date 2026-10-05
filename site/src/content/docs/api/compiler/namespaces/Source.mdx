@@ -183,9 +183,9 @@ output.variableCalls
 
 ### contributionCalls
 
-- **Type:** `readonly { end: number; kind: string; start: number }[] | undefined{:ts}`
+- **Type:** `readonly { argument: object; end: number; kind: string; start: number }[] | undefined{:ts}`
 
-The span and function name of each contribution call, such as `'global'` or `'namespace'`. A rewriter removes these calls, since their CSS is emitted ahead of time.
+The span, function name, and argument AST node of each contribution call, such as `'global'` or `'namespace'`. A rewriter removes these calls, since their CSS is emitted ahead of time.
 
 ```ts /output.contributionCalls/
 // [{ kind: 'global', start: …, end: … }]
@@ -205,12 +205,12 @@ output.contributionStarts
 
 ### namespaces
 
-- **Type:** `readonly { kind: 'namespace'; name: string; prefix?: string; uri: string }[] | undefined{:ts}`
+- **Type:** `readonly { name: string; prefix?: string; uri: string }[] | undefined{:ts}`
 
 The module's `namespace` declarations, with their prefixes and URIs.
 
 ```ts /output.namespaces/
-// [{ kind: 'namespace', prefix: 'svg', uri: 'http://www.w3.org/2000/svg', … }]
+// [{ name: 'z-…', prefix: 'svg', uri: 'http://www.w3.org/2000/svg' }]
 output.namespaces
 ```
 

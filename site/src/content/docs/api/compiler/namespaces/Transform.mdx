@@ -61,6 +61,18 @@ Whether to rewrite authoring calls. With `false`, `code` is the unchanged source
 Transform.compile({ compiler: false, moduleId: 'app/Card.tsx', source })
 ```
 
+### options.target
+
+- **Type:** `'web' | 'native'{:ts}`
+- **Default:** `'web'{:ts}`
+
+Inherited from [`Source.extract`](/docs/api/compiler/namespaces/Source#optionstarget). Only `'web'` is supported, and `'native'` throws a plain `Error` that points to [`Native.compile`](/docs/api/compiler/namespaces/Native).
+
+```ts /target: 'native'/
+// Throws: Use Native.compile for native source output.
+Transform.compile({ moduleId: 'app/Card.tsx', source, target: 'native' })
+```
+
 ### options.cssOutput
 
 - **Type:** `'atomic' | 'grouped'{:ts}`

@@ -102,7 +102,7 @@ export type Animatable = Extract<
 
 ## Errors
 
-A missing property, a percentage or `auto` length, an invalid color, or a nonfinite number throws when the value is read. Compiled styles that depend on the selection throw `Compiled native styles require a Zyzz Provider.` outside a Provider, while plain native objects work anywhere.
+A missing property, a percentage or `auto` length, an invalid color, or a nonfinite number throws when the value is read. Every compiled style throws `Compiled native styles require a Zyzz Provider.` outside a Provider, since compiled styles resolve through the selection. Only plain native objects work anywhere.
 
 ```ts twoslash
 // @customConditions: react-native

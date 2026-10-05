@@ -82,7 +82,7 @@ export type Metrics = { readonly gap: number } & useAnimatedVars.Value
 
 ## Errors
 
-The hook throws `useAnimatedVars requires a Zyzz Provider.` outside a Provider. Functions, class instances, symbols, cycles, and nonfinite numbers in a selection throw, and TypeScript rejects selectors that return them.
+The hook throws `useAnimatedVars requires a Zyzz Provider.` outside a Provider. Functions, class instances, symbols, cycles, and nonfinite numbers in a selection throw at runtime. TypeScript rejects return types outside `useAnimatedVars.Value`, such as functions, but cannot detect cycles or `NaN`.
 
 ```ts twoslash
 // @customConditions: react-native

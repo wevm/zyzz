@@ -344,6 +344,51 @@ describe('defineConfig', () => {
     },
   )
 
+  test('defers runtime authoring helpers with the eager configuration contract', async () => {
+    const { Config } = await import('zyzz')
+    const { defineConfig } = await import('zyzz/react-native/react')
+    const options = {
+      defaultVars: 'base',
+      vars: {
+        alternate: { spacing: { gap: '8px' } },
+        base: { spacing: { gap: '4px' } },
+      },
+    } as const
+    const eager = Config.create(options)
+    const deferred = defineConfig(options)
+    const outcome = (run: () => unknown) => {
+      try {
+        return { value: run() }
+      } catch (error) {
+        return { error: String(error) }
+      }
+    }
+
+    expect(Object.keys(deferred).sort()).toMatchInlineSnapshot(`
+      [
+        "Provider",
+        "appearance",
+        "script",
+        "style",
+        "variants",
+        "vars",
+      ]
+    `)
+    expect(Reflect.ownKeys(deferred.vars)).toEqual(Reflect.ownKeys(eager.vars))
+    expect(JSON.stringify(deferred.vars.spacing.gap)).toEqual(
+      JSON.stringify(eager.vars.spacing.gap),
+    )
+    expect(Object.isFrozen(deferred.vars)).toEqual(Object.isFrozen(eager.vars))
+    for (const run of [
+      (config: typeof eager) => config.vars({ set: 'alternate' }),
+      (config: typeof eager) => config.style({ padding: 'gap' }),
+      (config: typeof eager) => config.variants({ base: { padding: 'gap' } }),
+    ])
+      expect(outcome(() => run(deferred as never))).toEqual(
+        outcome(() => run(eager)),
+      )
+  })
+
   test('requires native compilation for native configuration authoring', () => {
     expect(() =>
       Graph.compile({
@@ -724,7 +769,7 @@ describe('useVars', () => {
             ['unknown', {colorScheme:'light',vars:'missing'}],
             ['inherited', {colorScheme:'light',vars:'toString'}],
             ['blank', {colorScheme:'light',vars:' '}],
-            ['scheme', {colorScheme:'system'}],
+            ['scheme', {colorScheme:'auto'}],
             ['old', {colorScheme:'light',set:'base'}],
             ['uncompiled', {colorScheme:'light'}],
             ['condition', {colorScheme:'light'}],
@@ -817,10 +862,10 @@ describe('useVars', () => {
         await page.locator('#inherited').textContent(),
       ).toMatchInlineSnapshot('"Unknown native vars: toString."')
       expect(await page.locator('#blank').textContent()).toMatchInlineSnapshot(
-        '"Native appearance requires a resolved light/dark scheme and a nonempty vars name."',
+        '"Native appearance requires a light, dark, or system scheme and a nonempty vars name."',
       )
       expect(await page.locator('#scheme').textContent()).toMatchInlineSnapshot(
-        '"Native appearance requires a resolved light/dark scheme and a nonempty vars name."',
+        '"Native appearance requires a light, dark, or system scheme and a nonempty vars name."',
       )
       expect(await page.locator('#old').textContent()).toMatchInlineSnapshot(
         '"Provider uses vars instead of set."',

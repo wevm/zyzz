@@ -39,13 +39,20 @@ export declare namespace App {
 
 ### props.colorScheme
 
-- **Type:** `'dark' | 'light'{:ts}`
+- **Type:** `'dark' | 'light' | 'system'{:ts}`
 
-The resolved scheme, which picks one value from each color pair. The Provider never reads the device setting, so the application passes React Native's `useColorScheme` result or its own override.
+The scheme, which picks one value from each color pair. `'dark'` and `'light'` apply as given, such as an application override. `'system'` follows the device appearance and falls back to light when the device reports no preference.
 
 ```tsx /colorScheme="dark"/
 // Every descendant resolves the dark half of each pair
 <Provider colorScheme="dark">{children}</Provider>
+```
+
+On iOS, `'system'` renders styles whose light and dark values differ only in color with platform dynamic colors. A device scheme change then updates them without React renders or native style writes.
+
+```tsx /colorScheme="system"/
+// Follows the device, with color-only differences switched by iOS
+<Provider colorScheme="system">{children}</Provider>
 ```
 
 ### props.vars

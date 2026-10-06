@@ -15,7 +15,6 @@ class NativeZyzz : public NativeZyzzCxxSpec<NativeZyzz>, public UIManagerCommitH
   explicit NativeZyzz(std::shared_ptr<CallInvoker> invoker);
   ~NativeZyzz() override;
 
-  double attach(jsi::Runtime &runtime, jsi::Object node, jsi::Object props);
   void detach(jsi::Runtime &runtime, double id);
   jsi::Object inspect(jsi::Runtime &runtime);
   void update(jsi::Runtime &runtime, std::vector<jsi::Object> updates);
@@ -33,8 +32,6 @@ class NativeZyzz : public NativeZyzzCxxSpec<NativeZyzz>, public UIManagerCommitH
     folly::dynamic rendered;
     folly::dynamic selected;
     folly::dynamic overlay;
-    Props::Shared authored;
-    Props::Shared applied;
   };
 
   void write(std::unordered_map<Tag, folly::dynamic> patches);
@@ -44,7 +41,6 @@ class NativeZyzz : public NativeZyzzCxxSpec<NativeZyzz>, public UIManagerCommitH
   UIManager *manager_ = nullptr;
   std::unordered_map<double, Entry> entries_;
   std::mutex mutex_;
-  double nextId_ = 0;
   double batches_ = 0;
   double writes_ = 0;
 };

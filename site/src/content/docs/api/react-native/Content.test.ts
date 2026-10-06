@@ -346,9 +346,9 @@ describe('Provider API page', () => {
       ),
     ).toMatchInlineSnapshot(`"Provider uses vars instead of set."`)
     expect(
-      rendering(createElement(Provider, { colorScheme: 'system' } as never)),
+      rendering(createElement(Provider, { colorScheme: 'auto' } as never)),
     ).toMatchInlineSnapshot(
-      `"Native appearance requires a resolved light/dark scheme and a nonempty vars name."`,
+      `"Native appearance requires a light, dark, or system scheme and a nonempty vars name."`,
     )
   })
 })

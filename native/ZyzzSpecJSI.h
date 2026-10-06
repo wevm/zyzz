@@ -22,22 +22,12 @@ public:
 
 protected:
   NativeZyzzCxxSpec(std::shared_ptr<CallInvoker> jsInvoker) : TurboModule(std::string{NativeZyzzCxxSpec::kModuleName}, jsInvoker) {
-    methodMap_["attach"] = MethodMetadata {.argCount = 2, .invoker = __attach};
     methodMap_["detach"] = MethodMetadata {.argCount = 1, .invoker = __detach};
     methodMap_["inspect"] = MethodMetadata {.argCount = 0, .invoker = __inspect};
     methodMap_["update"] = MethodMetadata {.argCount = 1, .invoker = __update};
   }
 
 private:
-  static jsi::Value __attach(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
-    static_assert(
-      bridging::getParameterCount(&T::attach) == 3,
-      "Expected attach(...) to have 3 parameters");
-    return bridging::callFromJs<double>(rt, &T::attach,  static_cast<NativeZyzzCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
-      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt),
-      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt));
-  }
-
   static jsi::Value __detach(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
     static_assert(
       bridging::getParameterCount(&T::detach) == 2,

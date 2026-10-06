@@ -66,7 +66,7 @@ pnpm exec vp test src/react-native/internal/Device.test.ts --run --no-file-paral
 
 Android uses `ZYZZ_NATIVE_ANDROID_APP` for the APK and `ZYZZ_NATIVE_ANDROID_DEVICE` for the emulator serial. The default project remains `examples/react-native`. Both platforms can run in one invocation when both app paths and device identifiers are provided.
 
-The suite starts Metro with the selected project's installed dependencies and compiles fixtures that import `zyzz/react-native`. It verifies geometry, screenshot colors, scoped catalog/scheme changes, render counts, variant choices, animation bindings, refs, cleanup, and errors against the actual native adapter.
+The suite starts Metro with the selected project's installed dependencies and compiles fixtures that import `zyzz/react-native`. It verifies geometry, screenshot colors, scoped catalog/scheme changes, system appearance changes, render counts, variant choices, animation bindings, refs, cleanup, and errors against the actual native adapter.
 
 The consumer acceptance matrix pins React 19.2.3, RN 0.86.0, Expo 57.0.8, Reanimated 4.5.3, Worklets 0.10.3, safe-area-context 5.7.0, and babel-preset-expo 57.0.4. This matrix covers the styling integrations. Complete application migration, physical devices, wider RN versions, and performance remain separate gates.
 

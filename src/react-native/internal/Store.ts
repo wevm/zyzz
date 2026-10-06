@@ -6,8 +6,12 @@ import * as React from 'react'
 export type Patch = {
   /** Runtime-local mounted view identifier. */
   readonly id: number
+  /** Mounted Fabric node, sent until the binding's first patch commits. */
+  readonly node?: object | undefined
   /** Processed native style properties. */
   readonly props: Record<string, unknown>
+  /** Processed style React rendered, sent with `node`. */
+  readonly rendered?: Record<string, unknown> | undefined
 }
 
 type Selection = {

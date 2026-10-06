@@ -158,8 +158,9 @@ describe('defineConfig', () => {
     Provider({ colorScheme: 'dark', vars: 'green' })
     // @ts-expect-error Provider names belong to its configuration.
     Provider({ colorScheme: 'light', vars: 'missing' })
-    // @ts-expect-error The scheme must be resolved.
     Provider({ colorScheme: 'system' })
+    // @ts-expect-error Schemes are light, dark, or system.
+    Provider({ colorScheme: 'auto' })
     style({ color: 'ink' })
     // @ts-expect-error Native configuration retains the shared style contract.
     style({ color: 'missing' })
@@ -189,12 +190,13 @@ describe('defineConfig', () => {
 })
 
 describe('Provider', () => {
-  test('accepts vars and resolved schemes', () => {
+  test('accepts vars and light, dark, or system schemes', () => {
     const props: Provider.Props = { colorScheme: 'dark', vars: 'blue' }
     expectTypeOf(props.vars).toEqualTypeOf<string | undefined>()
     // @ts-expect-error The selection prop is vars.
     Provider({ colorScheme: 'light', set: 'blue' })
-    // @ts-expect-error Native appearance must be resolved.
+    // @ts-expect-error Schemes are light, dark, or system.
+    Provider({ colorScheme: 'auto' })
     Provider({ colorScheme: 'system' })
     Provider({ colorScheme: 'light' })
   })

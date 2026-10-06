@@ -49,7 +49,36 @@ namespace styles {
 }
 ```
 
-Compiled styles outside a Provider use the light scheme and the config's default tokens. Styles applied in the component that renders a Provider also use these defaults. `colorScheme` takes a resolved `'dark'` or `'light'`, so an absent device preference needs an application fallback.
+Compiled styles outside a Provider use the light scheme and the config's default tokens. Styles applied in the component that renders a Provider also use these defaults. `colorScheme` also takes `'system'`, which follows the device and falls back to light when it reports no preference.
+
+## Follow the Device
+
+`colorScheme="system"` follows the device appearance through React Native's `useColorScheme`. On iOS, styles whose light and dark values differ only in color render platform dynamic colors, so a scheme change updates them without React renders or native style writes.
+
+Other styles still switch through the Provider. A nested Provider with an explicit scheme keeps that scheme for its subtree.
+
+```tsx title="App.tsx"
+import { Text } from 'react-native'
+import { defineConfig } from 'zyzz/react-native'
+
+const { Provider, style } = defineConfig({
+  vars: { color: { ink: { dark: '#eeeeee', light: '#111111' } } },
+})
+
+export function App() {
+  return (
+    // [!code hl:2]
+    // iOS switches the ink color itself when the device scheme changes
+    <Provider colorScheme="system">
+      <Text {...styles.label()}>Hello</Text>
+    </Provider>
+  )
+}
+
+namespace styles {
+  export const label = style({ color: 'ink', fontSize: '16px' })
+}
+```
 
 ## Named Themes
 

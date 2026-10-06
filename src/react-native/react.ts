@@ -12,7 +12,6 @@ import * as Viewport from './internal/Viewport.js'
 export function defineConfig<const options extends Config.create.Options = {}>(
   options: options & Parameters<typeof Config.create<options>>[0] = {} as never,
 ): defineConfig.ReturnType<options> {
-  const config = Config.create<options>(options)
   const defaultVars = (options as Config.VariableOptions).defaultVars
   const names =
     defaultVars === undefined
@@ -29,10 +28,71 @@ export function defineConfig<const options extends Config.create.Options = {}>(
     })
   }
 
+  if ((options as Config.VariableOptions).vars === undefined)
+    return Object.freeze({
+      ...Config.create<options>(options),
+      Provider: BoundProvider,
+    }) as defineConfig.ReturnType<options>
+
+  // Compiled native styles and `useVars` read precompiled tables, so variable
+  // configurations build their authoring helpers on first runtime use.
+  let config: Helpers | undefined
+  const create = () =>
+    (config ??= (Config.create as (options: object) => Helpers)(options))
   return Object.freeze({
-    ...config,
+    get appearance() {
+      return create().appearance
+    },
     Provider: BoundProvider,
-  }) as defineConfig.ReturnType<options>
+    get script() {
+      return create().script
+    },
+    style: (...args: never[]) => create().style(...args),
+    variants: (...args: never[]) => create().variants(...args),
+    vars: deferred(() => create().vars),
+  }) as unknown as defineConfig.ReturnType<options>
+}
+
+/** Untyped view of a variable configuration's helpers. */
+type Helpers = {
+  readonly appearance: unknown
+  readonly script: unknown
+  readonly style: (...args: never[]) => unknown
+  readonly variants: (...args: never[]) => unknown
+  readonly vars: object
+}
+
+/** Forwards every operation to a value built on first use, mirroring it onto the proxy target so invariants hold. */
+function deferred<value extends object>(create: () => value): value {
+  const target = (() => {}) as unknown as value
+  let ready = false
+  function resolve() {
+    if (ready) return target
+    const value = create()
+    Object.defineProperties(target, Object.getOwnPropertyDescriptors(value))
+    Object.setPrototypeOf(target, Object.getPrototypeOf(value))
+    if (Object.isFrozen(value)) Object.freeze(target)
+    ready = true
+    return target
+  }
+  return new Proxy(target, {
+    apply: (_, self, args) =>
+      Reflect.apply(create() as (...args: unknown[]) => unknown, self, args),
+    defineProperty: (_, key, descriptor) =>
+      Reflect.defineProperty(resolve(), key, descriptor),
+    deleteProperty: (_, key) => Reflect.deleteProperty(resolve(), key),
+    get: (_, key) => Reflect.get(resolve(), key),
+    getOwnPropertyDescriptor: (_, key) =>
+      Reflect.getOwnPropertyDescriptor(resolve(), key),
+    getPrototypeOf: () => Reflect.getPrototypeOf(resolve()),
+    has: (_, key) => Reflect.has(resolve(), key),
+    isExtensible: () => Reflect.isExtensible(resolve()),
+    ownKeys: () => Reflect.ownKeys(resolve()),
+    preventExtensions: () => Reflect.preventExtensions(resolve()),
+    set: (_, key, value) => Reflect.set(resolve(), key, value),
+    setPrototypeOf: (_, prototype) =>
+      Reflect.setPrototypeOf(resolve(), prototype),
+  })
 }
 
 /** Native configuration helpers and inferred Provider props. */
@@ -62,23 +122,30 @@ export function Provider(props: Provider.Props) {
   if (Object.hasOwn(props, 'set'))
     throw new Error('Provider uses vars instead of set.')
   if (
-    (props.colorScheme !== 'light' && props.colorScheme !== 'dark') ||
+    (props.colorScheme !== 'light' &&
+      props.colorScheme !== 'dark' &&
+      props.colorScheme !== 'system') ||
     (props.vars !== undefined &&
       (typeof props.vars !== 'string' || !props.vars.trim()))
   )
     throw new Error(
-      'Native appearance requires a resolved light/dark scheme and a nonempty vars name.',
+      'Native appearance requires a light, dark, or system scheme and a nonempty vars name.',
     )
 
   const viewport = React.useContext(Viewport.context)
+  const system = React.useContext(Viewport.appearance)
+  const colorScheme =
+    props.colorScheme === 'system' ? system.colorScheme : props.colorScheme
+  const adaptive = props.colorScheme === 'system' ? system.adaptive : undefined
   const [store] = React.useState(() =>
-    Store.create({ colorScheme: props.colorScheme, set: props.vars, viewport }),
+    Store.create({ adaptive, colorScheme, set: props.vars, viewport }),
   )
   const [, publish] = React.useReducer((version: number) => version + 1, 0)
   const committed = React.useRef(props.children)
   const snapshot = store.getSnapshot()
   const pending =
-    snapshot.colorScheme !== props.colorScheme ||
+    snapshot.adaptive !== adaptive ||
+    snapshot.colorScheme !== colorScheme ||
     snapshot.set !== props.vars ||
     snapshot.viewport?.width !== viewport?.width ||
     snapshot.viewport?.height !== viewport?.height
@@ -89,9 +156,9 @@ export function Provider(props: Provider.Props) {
     // Keep the committed subtree until its selection is published. This avoids
     // rendering new application props with the previous store snapshot, without
     // mutating an external store during a potentially abandoned React render.
-    store.update({ colorScheme: props.colorScheme, set: props.vars, viewport })
+    store.update({ adaptive, colorScheme, set: props.vars, viewport })
     publish()
-  }, [children, pending, props.colorScheme, props.vars, store, viewport])
+  }, [adaptive, children, colorScheme, pending, props.vars, store, viewport])
 
   return React.createElement(Store.context.Provider, { value: store }, children)
 }
@@ -102,8 +169,11 @@ export declare namespace Provider {
   type Props = {
     /** Components that consume compiled native styling or values. */
     readonly children?: React.ReactNode | undefined
-    /** Resolved device scheme or an application override. */
-    readonly colorScheme: 'dark' | 'light'
+    /**
+     * Resolved device scheme, an application override, or `system` to follow the device.
+     * On iOS, `system` styles whose schemes differ only in color switch without updates.
+     */
+    readonly colorScheme: 'dark' | 'light' | 'system'
     /** Selected variables. Omission uses each configuration's default. */
     readonly vars?: string | undefined
   }

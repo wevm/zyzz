@@ -7,6 +7,14 @@ const dependency = Symbol('zyzz.native.dependency')
 
 /** Render-local set and resolved appearance. */
 export type Context = {
+  /**
+   * Builds a color that follows the platform appearance. When present, styles whose
+   * light and dark selections differ only in color use it and need no scheme update.
+   * Must be stable, since adapted styles are cached per selection pair.
+   */
+  readonly adaptive?:
+    | ((light: string | number, dark: string | number) => unknown)
+    | undefined
   /** Resolved system appearance or an explicit override. */
   readonly colorScheme: 'dark' | 'light'
   /** Named compiled set; omission uses each configuration default. */
@@ -37,7 +45,15 @@ export function create<const tables extends Tables>(
     const set = context.set ?? defaultVars
     const table = tables[set] ?? fallback
     if (!table) throw new Error(`Unknown native set: ${set}.`)
-    return table[context.colorScheme](input!).style
+    const style = table[context.colorScheme](input!).style
+    if (!context.adaptive) return style
+    return (
+      adapt(
+        table.light(input!).style,
+        table.dark(input!).style,
+        context.adaptive,
+      ) ?? style
+    )
   }
   return bind(select, (context) => {
     const table = tables[context.set ?? defaultVars] ?? fallback
@@ -94,10 +110,10 @@ export function responsive<
 export function application(value: unknown, input?: unknown): unknown {
   return {
     [binding]: (context: Context) => resolve(value, context, input),
-    [dependency]: (context: Context) => [
-      ...key(value, context),
-      ...key(input, context),
-    ],
+    [dependency]: (context: Context) =>
+      input === undefined
+        ? key(value, context)
+        : [...key(value, context), ...key(input, context)],
   }
 }
 
@@ -117,6 +133,64 @@ export function key(value: unknown, context: Context): readonly unknown[] {
   return []
 }
 
+const adapted = new WeakMap<object, WeakMap<object, object | null>>()
+
+/** Merges selections that differ only in color, or returns undefined. Results keep their identity across schemes. */
+function adapt(
+  light: unknown,
+  dark: unknown,
+  color: NonNullable<Context['adaptive']>,
+): unknown {
+  if (light === dark) return light
+  if (!record(light) || !record(dark)) return undefined
+  let pairs = adapted.get(light)
+  if (!pairs) adapted.set(light, (pairs = new WeakMap()))
+  if (pairs.has(dark)) return pairs.get(dark) ?? undefined
+  const result: Record<string, unknown> | null = (() => {
+    const keys = Object.keys(light)
+    if (keys.length !== Object.keys(dark).length) return null
+    const merged: Record<string, unknown> = {}
+    for (const key of keys) {
+      if (!Object.hasOwn(dark, key)) return null
+      const [first, second] = [light[key], dark[key]]
+      if (equal(first, second)) merged[key] = first
+      else if (
+        (key === 'color' || key.endsWith('Color')) &&
+        (typeof first === 'string' || typeof first === 'number') &&
+        (typeof second === 'string' || typeof second === 'number')
+      )
+        merged[key] = color(first, second)
+      else return null
+    }
+    return merged
+  })()
+  const value = result && Object.freeze(result)
+  pairs.set(dark, value)
+  return value ?? undefined
+}
+
+function equal(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left))
+    return (
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => equal(value, right[index]))
+    )
+  if (!record(left) || !record(right)) return false
+  const keys = Object.keys(left)
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every(
+      (key) => Object.hasOwn(right, key) && equal(left[key], right[key]),
+    )
+  )
+}
+
+function record(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 function bind(
   select: (context: Context, input?: never) => unknown,
   read: (context: Context) => readonly unknown[],
@@ -125,10 +199,10 @@ function bind(
     return {
       style: {
         [binding]: (context: Context) => select(context, input),
-        [dependency]: (context: Context) => [
-          ...read(context),
-          ...key(input, context),
-        ],
+        [dependency]: (context: Context) =>
+          input === undefined
+            ? read(context)
+            : [...read(context), ...key(input, context)],
       },
     }
   }

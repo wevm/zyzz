@@ -10,6 +10,7 @@ import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import type { Report as MotionErrorsReport } from '../../../test/fixtures/native/MotionErrors.js'
 import type { Report as MotionReport } from '../../../test/fixtures/native/MotionUpdates.js'
+import type { Report as SystemReport } from '../../../test/fixtures/native/SystemUpdates.js'
 import type { Report as UpdatesReport } from '../../../test/fixtures/native/Updates.js'
 import type { Report as VariantsReport } from '../../../test/fixtures/native/VariantUpdates.js'
 import { describe, expect, test } from 'vite-plus/test'
@@ -20,7 +21,12 @@ const project = Path.resolve(
 )
 const require = Module.createRequire(Path.join(project, 'package.json'))
 const application = 'xyz.wevm.zyzz.updates'
-type Report = MotionErrorsReport | MotionReport | UpdatesReport | VariantsReport
+type Report =
+  | MotionErrorsReport
+  | MotionReport
+  | SystemReport
+  | UpdatesReport
+  | VariantsReport
 
 describe('defineConfig', () => {
   for (const platform of ['ios', 'android'] as const) {
@@ -28,7 +34,13 @@ describe('defineConfig', () => {
     const app = process.env[`ZYZZ_NATIVE_${platform.toUpperCase()}_APP`]
     test
       .runIf(!!device && !!app)
-      .each(['Updates', 'VariantUpdates', 'MotionUpdates', 'MotionErrors'])(
+      .each([
+        'Updates',
+        'VariantUpdates',
+        'MotionUpdates',
+        'MotionErrors',
+        'SystemUpdates',
+      ])(
       `${platform}: updates native views for %s`,
       async (fixture) => {
         const root = await Fs.mkdtemp(Path.resolve('.fixture-native-render-'))
@@ -519,6 +531,64 @@ describe('defineConfig', () => {
                   "motion": "#0000ffff",
                   "nested": "#ff0000ff",
                   "safe": "#0000ffff",
+                },
+              ]
+            `)
+            return
+          }
+          if (fixture === 'SystemUpdates') {
+            expect(frames.map((frame) => frame.name)).toMatchInlineSnapshot(`
+              [
+                "initial",
+                "dark",
+                "commit",
+              ]
+            `)
+            expect(frames.map((frame) => frame.native)).toMatchInlineSnapshot(`
+              [
+                {
+                  "batches": 0,
+                  "bindings": 0,
+                  "writes": 0,
+                },
+                {
+                  "batches": 0,
+                  "bindings": 1,
+                  "writes": 0,
+                },
+                {
+                  "batches": 0,
+                  "bindings": 1,
+                  "writes": 0,
+                },
+              ]
+            `)
+            expect(frames.map((frame) => frame.renders)).toMatchInlineSnapshot(`
+              [
+                {
+                  "box": 2,
+                },
+                {
+                  "box": 2,
+                },
+                {
+                  "box": 2,
+                },
+              ]
+            `)
+            expect(colors).toMatchInlineSnapshot(`
+              [
+                {
+                  "adaptive": "#ff0000ff",
+                  "forced": "#ff0000ff",
+                },
+                {
+                  "adaptive": "#00ff00ff",
+                  "forced": "#ff0000ff",
+                },
+                {
+                  "adaptive": "#ff0000ff",
+                  "forced": "#ff0000ff",
                 },
               ]
             `)

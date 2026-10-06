@@ -34,3 +34,9 @@ declare const __DOCS__: {
     }
   >
 }
+
+/** Serialized MiniSearch index of documentation pages and sections, built from the MDX sources. */
+declare module 'virtual:search-index' {
+  const index: string
+  export default index
+}

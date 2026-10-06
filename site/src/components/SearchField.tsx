@@ -1,6 +1,7 @@
 /** Provides the shared documentation and variables search field. @module */
 import type { ComponentProps } from 'react'
 import { style } from '../zyzz.config.js'
+import { Kbd } from './Kbd.js'
 
 /** Renders a search input with the shared keyboard shortcut hint. */
 export function SearchField(props: SearchField.Props) {
@@ -14,7 +15,9 @@ export function SearchField(props: SearchField.Props) {
           style: props.style,
         })}
       />
-      <kbd {...styles.shortcut()}>⌘K</kbd>
+      <span {...styles.shortcut()}>
+        <Kbd>⌘K</Kbd>
+      </span>
     </div>
   )
 }
@@ -53,12 +56,7 @@ namespace styles {
   })
 
   export const shortcut = style({
-    typography: 'label.12',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: 'sm',
-    color: 'gray.900',
-    padding: 1,
+    display: 'flex',
     pointerEvents: 'none',
     position: 'absolute',
     right: 2,

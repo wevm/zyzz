@@ -7,7 +7,7 @@ import { Callout } from '../components/mdx/Callout.js'
 import { Card } from '../components/mdx/Card.js'
 import { FrameworkSetup } from '../components/mdx/FrameworkSetup.js'
 import { Steps } from '../components/mdx/Steps.js'
-import { SearchField } from '../components/SearchField.js'
+import { SearchDialog } from '../components/SearchDialog.js'
 import * as Docs from '../Docs.js'
 import * as Manifest from '../Manifest.js'
 import { style, variants, vars } from '../zyzz.config.js'
@@ -228,16 +228,11 @@ export function Page(props: Page.Props) {
   const { path } = props
 
   const page = Manifest.pages[path]!
+  const [searching, setSearching] = useState(false)
   return (
     <DocumentationShell
       mobileMenu
-      search={
-        <SearchField
-          aria-label="Search docs"
-          disabled
-          placeholder="Search docs..."
-        />
-      }
+      search={<SearchDialog.Trigger onClick={() => setSearching(true)} />}
       navigation={
         <Link href="/vars" {...styles.variables()}>
           Variables
@@ -257,7 +252,8 @@ export function Page(props: Page.Props) {
       }
     >
       <div {...styles.columns()}>
-        <article {...styles.article()}>
+        {/* The AI Search content selector targets this attribute, so indexed chunks leave out the header and navigation. */}
+        <article data-docs-content="" {...styles.article()}>
           <header {...styles.heading()}>
             <h1>{page.title}</h1>
             <p>{page.description}</p>
@@ -269,6 +265,7 @@ export function Page(props: Page.Props) {
         </article>
         <Outline headings={page.headings} />
       </div>
+      <SearchDialog onOpenChange={setSearching} open={searching} />
     </DocumentationShell>
   )
 }

@@ -16,6 +16,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import type { Code, Nodes, Root } from 'mdast'
 import { defaultHandlers, toMarkdown } from 'mdast-util-to-markdown'
+import MiniSearch from 'minisearch'
 import {
   bundledLanguages,
   type BundledLanguage,
@@ -29,6 +30,7 @@ import Icons from 'unplugin-icons/vite'
 import { defineConfig, type ViteDevServer } from 'vite'
 import { zyzz } from 'zyzz/vite'
 import { files, lightTheme, theme } from './src/Example.js'
+import * as Search from './src/Search.js'
 
 export default defineConfig(async () => {
   const examples = await Promise.all(
@@ -53,6 +55,7 @@ export default defineConfig(async () => {
     }),
   )
   const docs: typeof __DOCS__ = { pages: {}, code: {} }
+  const documents: Search.Document[] = []
   // TypeScript 7 has no JavaScript API, so these numbers mirror the TypeScript 6 enums that Twoslash runs.
   const twoslasher = createTwoslasher({
     compilerOptions: {
@@ -158,12 +161,11 @@ export default defineConfig(async () => {
           }
           await highlight(tree)
 
-          docs.pages[
-            path
-              .replace(/\.mdx$/, '')
-              .split(Path.sep)
-              .join('/')
-          ] = {
+          const page = path
+            .replace(/\.mdx$/, '')
+            .split(Path.sep)
+            .join('/')
+          docs.pages[page] = {
             title: plain(heading),
             description: plain(paragraph),
             headings: headings(tree),
@@ -273,10 +275,19 @@ export default defineConfig(async () => {
               },
             }).replace(escapedAlert, '$1[!$2]'),
           }
+
+          // Runs after `headings` assigns the anchor IDs that section results link to.
+          documents.push(
+            ...sections({ code: docs.code, page, title: plain(heading), tree }),
+          )
         },
       ],
     })
   }
+  const index = new MiniSearch(Search.options)
+  index.addAll(documents)
+  // A virtual module lets the dialog import the index lazily as its own chunk.
+  const searchIndex = `export default ${JSON.stringify(JSON.stringify(index))}`
   return {
     define: {
       __DOCS__: JSON.stringify(docs),
@@ -287,7 +298,11 @@ export default defineConfig(async () => {
       }),
     },
     plugins: [
-      cloudflare({ viteEnvironment: { name: 'ssr' } }),
+      cloudflare({
+        // AI Search bindings only run on Cloudflare, so local servers reach them only with credentials. Without them, search keeps keyword results.
+        remoteBindings: Boolean(process.env.CLOUDFLARE_API_TOKEN),
+        viteEnvironment: { name: 'ssr' },
+      }),
       zyzz(),
       mdx({
         remarkPlugins: [
@@ -367,6 +382,13 @@ export default defineConfig(async () => {
           })
           server.httpServer?.on('close', () => clearTimeout(timer))
         },
+      },
+      {
+        name: 'docs-search',
+        load: (id: string) =>
+          id === '\0virtual:search-index' ? searchIndex : undefined,
+        resolveId: (id: string) =>
+          id === 'virtual:search-index' ? '\0virtual:search-index' : undefined,
       },
       Icons({ compiler: 'jsx', jsx: 'react' }),
       tanstackStart({ server: { entry: './entry.server.ts' } }),
@@ -563,6 +585,72 @@ function plain(node: Nodes | undefined): string {
   if ('value' in node) return node.value
   if (node.type === 'image') return node.alt ?? ''
   return ''
+}
+
+/** Splits a page into a search entry for its introduction and one for each `##` and `###` section. */
+function sections(options: sections.Options): Search.Document[] {
+  const { code, page, title, tree } = options
+  type Entry = Omit<Search.Document, 'text'> & { parts: string[] }
+  const entries: Entry[] = [
+    { href: `/docs/${page}`, parts: [], title, titles: [], type: 'page' },
+  ]
+  let parent: string | undefined
+
+  function visit(node: Nodes) {
+    if (
+      node.type === 'mdxjsEsm' ||
+      node.type === 'mdxFlowExpression' ||
+      node.type === 'mdxTextExpression'
+    )
+      return
+
+    const entry = entries.at(-1)!
+    if (node.type === 'heading' && node.depth === 1) return
+    // Only headings with anchors start sections. Step and deeper headings stay in their section's text.
+    const id = node.type === 'heading' ? node.data?.hProperties?.id : undefined
+    if (node.type === 'heading' && typeof id === 'string') {
+      const heading = plain(node)
+      if (node.depth === 2) parent = heading
+      entries.push({
+        href: `/docs/${page}#${id}`,
+        parts: [],
+        title: heading,
+        titles: node.depth === 3 && parent ? [title, parent] : [title],
+        type: 'section',
+      })
+      return
+    }
+
+    if (node.type === 'code') {
+      entry.parts.push(code[node.value]?.text ?? node.value)
+      return
+    }
+    if (node.type === 'text' || node.type === 'inlineCode') {
+      entry.parts.push(node.value)
+      return
+    }
+    if ('children' in node) for (const child of node.children) visit(child)
+  }
+
+  for (const node of tree.children) visit(node)
+
+  return entries.map((entry) => {
+    const { parts, ...document } = entry
+    return { ...document, text: parts.join(' ').replace(/\s+/g, ' ').trim() }
+  })
+}
+
+declare namespace sections {
+  type Options = {
+    /** Highlighted code fences, read for their displayed source. */
+    code: (typeof __DOCS__)['code']
+    /** Documentation path, such as `guides/styling`. */
+    page: string
+    /** Page title from the `#` heading. */
+    title: string
+    /** Page tree after `headings` assigned section anchors. */
+    tree: Root
+  }
 }
 
 /** Reads displayed text, without completion popups. */

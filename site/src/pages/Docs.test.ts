@@ -13,6 +13,7 @@ const directory = Fs.realpathSync(
 const site = new URL('../..', import.meta.url)
 const fixture = `${directory}/src/content/docs/guides/navigation-review-fixture.mdx`
 const outlineFixture = `${directory}/src/content/docs/guides/outline-review-fixture.mdx`
+const searchFixture = `${directory}/src/content/docs/guides/search-review-fixture.mdx`
 const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fixture.mdx`
 
 describe('/docs', () => {
@@ -87,6 +88,23 @@ describe('/docs', () => {
         '> ```ts',
         '> const tip = true',
         '> ```',
+        '',
+      ].join('\n'),
+    )
+    Fs.writeFileSync(
+      searchFixture,
+      [
+        '# Search Fixture',
+        '',
+        'Pages about quokkas verify documentation search.',
+        '',
+        '## Quokka Habitat',
+        '',
+        'Quokkas shelter in dense scrub on Rottnest Island.',
+        '',
+        '### Burrow Depth',
+        '',
+        'Shallow burrows keep the marsupials cool.',
         '',
       ].join('\n'),
     )
@@ -765,6 +783,233 @@ describe('/docs', () => {
     }
   }, 90000)
 
+  test('searches pages and sections from the keyboard', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      const dialog = page.getByRole('dialog', { name: 'Search documentation' })
+      const input = dialog.getByRole('combobox', {
+        name: 'Search documentation',
+      })
+
+      // The shortcut opens the dialog with the query focused.
+      await page.keyboard.press('Control+k')
+      await input.waitFor()
+      expect(
+        await input.evaluate((node) => node === document.activeElement),
+      ).toMatchInlineSnapshot('true')
+
+      // A section result shows its sidebar trail and parent headings, with the match marked.
+      await input.fill('rottnest')
+      await dialog.getByRole('option').first().waitFor()
+      expect(
+        await dialog
+          .getByRole('option')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => [
+              node.querySelector('a')?.getAttribute('href'),
+              (node as HTMLElement).innerText,
+            ]),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          [
+            "/docs/guides/search-review-fixture#quokka-habitat",
+            "Guides › Search Fixture
+        Quokka Habitat
+        Quokkas shelter in dense scrub on Rottnest Island.",
+          ],
+        ]
+      `)
+      expect(await dialog.locator('mark').allTextContents())
+        .toMatchInlineSnapshot(`
+        [
+          "Rottnest",
+        ]
+      `)
+
+      // Arrow keys move the active option, and plurals match their singular.
+      await input.fill('quokka')
+      await dialog.getByRole('option').nth(1).waitFor()
+      expect(
+        await dialog
+          .getByRole('option')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => node.querySelector('a')?.getAttribute('href')),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "/docs/guides/search-review-fixture#quokka-habitat",
+          "/docs/guides/search-review-fixture",
+          "/docs/guides/search-review-fixture#burrow-depth",
+        ]
+      `)
+      await page.keyboard.press('ArrowDown')
+      expect(
+        await dialog
+          .locator('[role="option"][aria-selected="true"] a')
+          .getAttribute('href'),
+      ).toMatchInlineSnapshot(`"/docs/guides/search-review-fixture"`)
+      expect(
+        (await input.getAttribute('aria-activedescendant')) ===
+          (await dialog
+            .locator('[role="option"][aria-selected="true"]')
+            .getAttribute('id')),
+      ).toMatchInlineSnapshot('true')
+
+      // Enter opens the active result at its heading and closes the dialog.
+      await input.fill('burrow depth')
+      await dialog.getByRole('option', { name: /Burrow Depth/ }).waitFor()
+      await page.keyboard.press('Enter')
+      await page
+        .getByRole('heading', { level: 3, name: 'Burrow Depth' })
+        .waitFor()
+      expect(new URL(page.url()).hash).toMatchInlineSnapshot(`"#burrow-depth"`)
+      // The dialog unmounts after its exit transition.
+      await dialog.waitFor({ state: 'hidden' })
+
+      // The trigger reopens an empty dialog, and Escape returns focus to it.
+      await page.getByRole('button', { name: 'Search docs' }).click()
+      await input.waitFor()
+      expect(await input.inputValue()).toMatchInlineSnapshot('""')
+      await page.keyboard.press('Escape')
+      await dialog.waitFor({ state: 'hidden' })
+      expect(
+        await page.evaluate(() =>
+          document.activeElement?.getAttribute('aria-label'),
+        ),
+      ).toMatchInlineSnapshot(`"Search docs"`)
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
+  test('opens search from the mobile menu', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 390, height: 844 },
+      })
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      await page.getByRole('button', { name: 'Open menu' }).click()
+      const menu = page.getByRole('dialog', { name: 'Documentation menu' })
+
+      // The modal menu closes first, since it would otherwise stay above the search dialog.
+      await menu.getByRole('button', { name: 'Search docs' }).click()
+      const input = page.getByRole('combobox', { name: 'Search documentation' })
+      await input.waitFor()
+      expect(await menu.isVisible()).toMatchInlineSnapshot('false')
+      await page.keyboard.type('rottnest')
+      await page.getByRole('option').first().waitFor()
+      expect(
+        await page
+          .getByRole('option')
+          .locator('a')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => node.getAttribute('href')),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "/docs/guides/search-review-fixture#quokka-habitat",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
+  test('rejects invalid AI Search queries and reports an unreachable instance', async () => {
+    const post = (body: string) =>
+      fetch(`${origin}/api/search`, {
+        body,
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      })
+
+    const invalid = await post('{}')
+    expect(invalid.status).toMatchInlineSnapshot(`400`)
+    expect(await invalid.json()).toMatchInlineSnapshot(`
+      {
+        "error": "Expected a query of 1 to 512 characters.",
+      }
+    `)
+
+    // Local servers without remote bindings cannot reach AI Search, so the dialog keeps keyword results.
+    const unreachable = await post(JSON.stringify({ query: 'theme scopes' }))
+    expect(unreachable.status).toMatchInlineSnapshot(`503`)
+    expect(await unreachable.json()).toMatchInlineSnapshot(`
+      {
+        "error": "AI Search is unavailable.",
+      }
+    `)
+  })
+
+  test('publishes sitemap.xml, robots.txt, and one indexable article per page', async () => {
+    const response = await fetch(`${origin}/sitemap.xml`)
+    expect(response.status).toMatchInlineSnapshot(`200`)
+    expect(response.headers.get('content-type')).toMatchInlineSnapshot(
+      `"application/xml; charset=utf-8"`,
+    )
+    const xml = await response.text()
+
+    // The sitemap opens with the protocol namespace and the home page.
+    expect(xml.split('\n').slice(0, 4)).toMatchInlineSnapshot(`
+      [
+        "<?xml version="1.0" encoding="UTF-8"?>",
+        "<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">",
+        "  <url><loc>http://localhost:3157/</loc></url>",
+        "  <url><loc>http://localhost:3157/vars</loc></url>",
+      ]
+    `)
+
+    // Every authored page appears once, as an absolute URL on the requested origin.
+    const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+      (match) => match[1],
+    )
+    const pages = Fs.readdirSync(`${directory}/src/content/docs`, {
+      recursive: true,
+    })
+      .map(String)
+      .filter((path) => path.endsWith('.mdx'))
+      .map((path) => `${origin}/docs/${path.replace(/\.mdx$/, '')}`)
+    expect(
+      JSON.stringify([...locations].sort()) ===
+        JSON.stringify([`${origin}/`, `${origin}/vars`, ...pages].sort()),
+    ).toMatchInlineSnapshot('true')
+
+    const head = await fetch(`${origin}/sitemap.xml`, { method: 'HEAD' })
+    expect(head.status).toMatchInlineSnapshot(`200`)
+    expect(await head.text()).toMatchInlineSnapshot(`""`)
+
+    // robots.txt points crawlers, including the AI Search website crawl, to the sitemap.
+    const robots = await fetch(`${origin}/robots.txt`)
+    expect(robots.headers.get('content-type')).toMatchInlineSnapshot(
+      `"text/plain; charset=utf-8"`,
+    )
+    expect(await robots.text()).toMatchInlineSnapshot(`
+      "User-agent: *
+      Allow: /
+
+      Sitemap: http://localhost:3157/sitemap.xml
+      "
+    `)
+
+    // The server-rendered page marks exactly one element for the AI Search content selector.
+    const html = await (
+      await fetch(`${origin}/docs/guides/search-review-fixture`)
+    ).text()
+    expect(html.match(/data-docs-content/g)?.length).toMatchInlineSnapshot(`1`)
+  })
+
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })
     try {
@@ -1350,9 +1595,7 @@ describe('/docs', () => {
           await page.getByRole('button', { name: 'Open menu' }).isVisible(),
         ).toMatchInlineSnapshot('true')
         expect(
-          await page
-            .getByRole('searchbox', { name: 'Search docs' })
-            .isVisible(),
+          await page.getByRole('button', { name: 'Search docs' }).isVisible(),
         ).toMatchInlineSnapshot('false')
         expect(
           await page
@@ -1377,9 +1620,7 @@ describe('/docs', () => {
           await menu.evaluate((node) => node.getBoundingClientRect().height),
         ).toMatchInlineSnapshot('900')
         expect(
-          await menu
-            .getByRole('searchbox', { name: 'Search docs' })
-            .isVisible(),
+          await menu.getByRole('button', { name: 'Search docs' }).isVisible(),
         ).toMatchInlineSnapshot('true')
         expect(
           await menu.getByRole('link', { name: 'Getting Started' }).isVisible(),
@@ -1418,7 +1659,7 @@ describe('/docs', () => {
         await page.getByRole('button', { name: 'Open menu' }).isVisible(),
       ).toMatchInlineSnapshot('false')
       expect(
-        await page.getByRole('searchbox', { name: 'Search docs' }).isVisible(),
+        await page.getByRole('button', { name: 'Search docs' }).isVisible(),
       ).toMatchInlineSnapshot('true')
     } finally {
       await browser.close()

@@ -21,3 +21,9 @@ pnpm --dir site preview
 ```
 
 After authenticating with `pnpm --dir site exec wrangler login`, build and deploy with `pnpm --dir site deploy`. The Worker name is `zyzz-site`.
+
+## Search
+
+The docs dialog searches a MiniSearch index of every page and `##` or `###` section, built from the MDX sources and loaded on first use. `POST /api/search` adds Cloudflare AI Search results from the `zyzz-docs` instance bound as `AI_SEARCH` in `wrangler.jsonc`, and the dialog merges them with the keyword results.
+
+Create the `zyzz-docs` instance in the Cloudflare dashboard, with the published site as its data source. Local servers reach it only when `CLOUDFLARE_API_TOKEN` is set. Without it, the route answers 503 and the dialog keeps its keyword results.

@@ -189,19 +189,19 @@ export function DocumentationShell(props: DocumentationShell.Props) {
               {menuIcon}
             </button>
           </div>
-          <div {...styles.menuContent()}>
+          <div
+            onClick={(event) => {
+              // Links navigate away, and the modal menu would stay above any dialog a control opens.
+              if (
+                event.target instanceof Element &&
+                event.target.closest('a, [aria-haspopup="dialog"]')
+              )
+                menuRef.current?.close()
+            }}
+            {...styles.menuContent()}
+          >
             {search}
-            <div
-              onClick={(event) => {
-                if (
-                  event.target instanceof Element &&
-                  event.target.closest('a')
-                )
-                  menuRef.current?.close()
-              }}
-            >
-              {sidebar}
-            </div>
+            <div>{sidebar}</div>
             {schemeControl}
           </div>
         </dialog>

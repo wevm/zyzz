@@ -376,6 +376,31 @@ export function paths(item: Item): readonly string[] {
   ]
 }
 
+/**
+ * Lists the sidebar group and topics above a page, outermost first, such as `['API', 'Core']`.
+ * Labelled sections are left out, and pages outside the sidebar return an empty list.
+ */
+export function trail(path: string): readonly string[] {
+  function find(items: readonly Item[]): readonly string[] | undefined {
+    for (const item of items) {
+      if (item.path === path) return []
+
+      const children = item.children && find(item.children)
+      if (children) return [item.title, ...children]
+
+      const section = item.items && find(item.items)
+      if (section) return section
+    }
+    return undefined
+  }
+
+  for (const group of groups) {
+    const titles = find(group.pages)
+    if (titles) return [group.title, ...titles]
+  }
+  return []
+}
+
 /** Compiled MDX component for one documentation page. */
 export type Content = ComponentType<{
   /** Elements and MDX components that replace the defaults while rendering. */

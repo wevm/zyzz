@@ -14,10 +14,17 @@ export function defineConfig<const options extends Config.create.Options = {}>(
   options: options & Parameters<typeof Config.create<options>>[0] = {} as never,
 ): Subscription.defineConfig.ReturnType<options> {
   const config = Subscription.defineConfig<options>(options)
-  return Object.freeze({
-    ...config,
-    Provider: dimensions(config.Provider),
-  }) as Subscription.defineConfig.ReturnType<options>
+  // Copy descriptors rather than spreading, so deferred helpers stay deferred.
+  return Object.freeze(
+    Object.defineProperties(
+      { Provider: dimensions(config.Provider) } as Record<string, unknown>,
+      Object.fromEntries(
+        Object.entries(Object.getOwnPropertyDescriptors(config)).filter(
+          ([name]) => name !== 'Provider',
+        ),
+      ),
+    ),
+  ) as unknown as Subscription.defineConfig.ReturnType<options>
 }
 
 /** Provides selected variables, appearance, and automatic native dimensions. */

@@ -769,7 +769,7 @@ describe('useVars', () => {
             ['unknown', {colorScheme:'light',vars:'missing'}],
             ['inherited', {colorScheme:'light',vars:'toString'}],
             ['blank', {colorScheme:'light',vars:' '}],
-            ['scheme', {colorScheme:'system'}],
+            ['scheme', {colorScheme:'auto'}],
             ['old', {colorScheme:'light',set:'base'}],
             ['uncompiled', {colorScheme:'light'}],
             ['condition', {colorScheme:'light'}],
@@ -862,10 +862,10 @@ describe('useVars', () => {
         await page.locator('#inherited').textContent(),
       ).toMatchInlineSnapshot('"Unknown native vars: toString."')
       expect(await page.locator('#blank').textContent()).toMatchInlineSnapshot(
-        '"Native appearance requires a resolved light/dark scheme and a nonempty vars name."',
+        '"Native appearance requires a light, dark, or system scheme and a nonempty vars name."',
       )
       expect(await page.locator('#scheme').textContent()).toMatchInlineSnapshot(
-        '"Native appearance requires a resolved light/dark scheme and a nonempty vars name."',
+        '"Native appearance requires a light, dark, or system scheme and a nonempty vars name."',
       )
       expect(await page.locator('#old').textContent()).toMatchInlineSnapshot(
         '"Provider uses vars instead of set."',

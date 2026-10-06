@@ -102,17 +102,39 @@ function dimensions<props extends Subscription.Provider.Props>(
 ): React.FunctionComponent<props> {
   return function WindowProvider(props: props) {
     const window = ReactNative.useWindowDimensions()
+    const scheme = ReactNative.useColorScheme()
     const viewport = React.useMemo(
       () => ({ height: window.height, width: window.width }),
       [window.height, window.width],
     )
+    const appearance = React.useMemo(
+      () => ({
+        adaptive,
+        colorScheme: scheme === 'dark' ? ('dark' as const) : ('light' as const),
+      }),
+      [scheme],
+    )
     return React.createElement(
       Viewport.context.Provider,
       { value: viewport },
-      React.createElement(Component, props),
+      React.createElement(
+        Viewport.appearance.Provider,
+        { value: appearance },
+        React.createElement(Component, props),
+      ),
     )
   }
 }
+
+// iOS resolves these colors from the window's appearance, so scheme changes need no Fabric update.
+const adaptive =
+  ReactNative.Platform.OS === 'ios'
+    ? (light: string | number, dark: string | number) =>
+        ReactNative.DynamicColorIOS({
+          dark: dark as ReactNative.ColorValue,
+          light: light as ReactNative.ColorValue,
+        })
+    : undefined
 
 /** Compiler-only binding path, with React subscriptions for Expo Go. */
 export const useNativeStyles = useBindings

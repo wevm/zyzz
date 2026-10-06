@@ -133,14 +133,19 @@ export function Provider(props: Provider.Props) {
     )
 
   const viewport = React.useContext(Viewport.context)
+  const system = React.useContext(Viewport.appearance)
+  const colorScheme =
+    props.colorScheme === 'system' ? system.colorScheme : props.colorScheme
+  const adaptive = props.colorScheme === 'system' ? system.adaptive : undefined
   const [store] = React.useState(() =>
-    Store.create({ colorScheme: props.colorScheme, set: props.vars, viewport }),
+    Store.create({ adaptive, colorScheme, set: props.vars, viewport }),
   )
   const [, publish] = React.useReducer((version: number) => version + 1, 0)
   const committed = React.useRef(props.children)
   const snapshot = store.getSnapshot()
   const pending =
-    snapshot.colorScheme !== props.colorScheme ||
+    snapshot.adaptive !== adaptive ||
+    snapshot.colorScheme !== colorScheme ||
     snapshot.set !== props.vars ||
     snapshot.viewport?.width !== viewport?.width ||
     snapshot.viewport?.height !== viewport?.height
@@ -151,9 +156,9 @@ export function Provider(props: Provider.Props) {
     // Keep the committed subtree until its selection is published. This avoids
     // rendering new application props with the previous store snapshot, without
     // mutating an external store during a potentially abandoned React render.
-    store.update({ colorScheme: props.colorScheme, set: props.vars, viewport })
+    store.update({ adaptive, colorScheme, set: props.vars, viewport })
     publish()
-  }, [children, pending, props.colorScheme, props.vars, store, viewport])
+  }, [adaptive, children, colorScheme, pending, props.vars, store, viewport])
 
   return React.createElement(Store.context.Provider, { value: store }, children)
 }
@@ -164,8 +169,11 @@ export declare namespace Provider {
   type Props = {
     /** Components that consume compiled native styling or values. */
     readonly children?: React.ReactNode | undefined
-    /** Resolved device scheme or an application override. */
-    readonly colorScheme: 'dark' | 'light'
+    /**
+     * Resolved device scheme, an application override, or `system` to follow the device.
+     * On iOS, `system` styles whose schemes differ only in color switch without updates.
+     */
+    readonly colorScheme: 'dark' | 'light' | 'system'
     /** Selected variables. Omission uses each configuration's default. */
     readonly vars?: string | undefined
   }

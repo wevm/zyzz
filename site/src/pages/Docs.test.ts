@@ -1765,9 +1765,7 @@ describe('/docs', () => {
         markdown.includes('[Explore Variables](/vars)'),
       ).toMatchInlineSnapshot('true')
       expect(
-        markdown.includes(
-          '[Style Components](https://github.com/wevm/zyzz/blob/main/docs/guides/styling.md#style-components)',
-        ),
+        markdown.includes('[Style Components](/docs/guides/styling)'),
       ).toMatchInlineSnapshot('true')
       expect(
         markdown.includes('For literal values without a theme'),

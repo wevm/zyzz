@@ -23,7 +23,7 @@ namespace styles {
 
 Use `defineConfig` when you need project-specific variables, themes, or cascade layers. The returned helpers infer those contracts. For bundled tokens, import from `zyzz/default`.
 
-See [Getting Started](/docs/introduction/getting-started) for setup and [Themes & Tokens](https://github.com/wevm/zyzz/blob/main/docs/guides/themes.md) for custom configuration.
+See [Getting Started](/docs/introduction/getting-started) for setup and [Themes & Tokens](/docs/guides/themes) for custom configuration.
 
 ## Does Configuration Compile?
 
@@ -63,7 +63,7 @@ Yes. Publish transformed modules, declarations, and the matching CSS from the sa
 
 Keep generated `.zyzz.json` compiler metadata beside the published entry modules when other Zyzz sources need to link their contracts. The CLI and filesystem host resolve those files without executing dependency code. Packed external asset copying remains unsupported.
 
-See [Build & Delivery](https://github.com/wevm/zyzz/blob/main/docs/guides/compilation.md#publish-libraries) for the publishing workflow.
+See [CLI Output](/docs/api/cli#output) for the files each build publishes.
 
 ## Is Native Feature-Complete?
 
@@ -76,4 +76,4 @@ Web compilation or TypeScript inference alone does not establish native renderin
 > within their target limits. iOS and Android rendering acceptance remains
 > pending.
 
-See the [React Native API](/docs/api/react-native) and [Compatibility](https://github.com/wevm/zyzz/blob/main/docs/introduction/compatibility.md) for platform boundaries.
+See the [React Native API](/docs/api/react-native) and [Compatibility](/docs/introduction/compatibility) for platform boundaries.

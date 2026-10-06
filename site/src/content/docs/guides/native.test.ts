@@ -74,7 +74,7 @@ test('compiles every Zyzz example in the native guides for iOS and Android', () 
     }
   }
 
-  expect(compiled).toMatchInlineSnapshot('45')
+  expect(compiled).toMatchInlineSnapshot('46')
 })
 
 describe('/docs/guides/native', () => {

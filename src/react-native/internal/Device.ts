@@ -121,55 +121,68 @@ type Instance = {
 
 function useBindings() {
   const owner = React.useContext(Store.context)
-  const [fallback] = React.useState(() =>
-    Store.create({
+  // Views inside a Provider never read the fallback, so it is created only outside one.
+  const fallbackRef = React.useRef<ReturnType<typeof Store.create> | undefined>(
+    undefined,
+  )
+  if (!owner)
+    fallbackRef.current ??= Store.create({
       colorScheme: 'light',
       viewport: ReactNative.Dimensions.get('window'),
-    }),
-  )
-  const store = owner ?? fallback
+    })
+  const fallback = fallbackRef.current
+  const store = (owner ?? fallback)!
   const [, render] = React.useReducer((count: number) => count + 1, 0)
-  const [refs] = React.useState(
-    () =>
-      new Map<
-        Instance,
-        {
-          active: boolean
-          ref: React.Ref<Instance> | undefined
-          release: () => void
-        }
-      >(),
-  )
-  React.useLayoutEffect(() => {
-    for (const [instance, entry] of refs) {
-      if (entry.active) continue
-      entry.release()
-      refs.delete(instance)
+  const [refs] = React.useState(() => {
+    const entries = new Map<
+      Instance,
+      {
+        active: boolean
+        ref: React.Ref<Instance> | undefined
+        release: () => void
+      }
+    >()
+    let scheduled = false
+    return {
+      entries,
+      // Runs after the commit, once every cleanup and re-attachment has settled, without a layout effect per render.
+      sweep() {
+        if (scheduled) return
+        scheduled = true
+        queueMicrotask(() => {
+          scheduled = false
+          for (const [instance, entry] of entries) {
+            if (entry.active) continue
+            entry.release()
+            entries.delete(instance)
+          }
+        })
+      },
     }
   })
-  React.useLayoutEffect(
-    () => () => {
-      for (const entry of refs.values()) entry.release()
-      refs.clear()
-    },
-    [refs],
-  )
   return {
     style: NativeContext.application,
     view: (props: Record<string, unknown>) => {
       const snapshot = store.getSnapshot()
       const selected = NativeContext.resolve(props.style, snapshot)
       const initial = NativeContext.key(props.style, snapshot)
+      // A context-free style never needs a binding, so React keeps a stable element without a ref wrapper.
+      if (
+        !initial.length &&
+        typeof selected !== 'function' &&
+        props.ref == null
+      )
+        return { ...props, style: selected }
 
       return {
         ...props,
         ref: (value: Instance | null) => {
           const ref = props.ref as React.Ref<Instance> | undefined
           if (!value) return
-          let entry = refs.get(value)
+          let entry = refs.entries.get(value)
           if (entry && entry.ref !== ref) {
             entry.release()
-            refs.delete(value)
+            refs.entries.delete(value)
             entry = undefined
           }
           if (!entry) {
@@ -184,7 +197,7 @@ function useBindings() {
                 else if (ref) ref.current = null
               },
             }
-            refs.set(value, entry)
+            refs.entries.set(value, entry)
           }
           entry.active = true
           const attached = entry
@@ -233,7 +246,7 @@ function useBindings() {
             }
           })()
           const update = () =>
-            fallback.update({
+            fallback!.update({
               colorScheme: 'light',
               viewport: ReactNative.Dimensions.get('window'),
             })
@@ -248,6 +261,7 @@ function useBindings() {
             detach()
             subscription?.remove()
             attached.active = false
+            refs.sweep()
           }
         },
         style: selected,

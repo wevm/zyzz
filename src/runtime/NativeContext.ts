@@ -94,10 +94,10 @@ export function responsive<
 export function application(value: unknown, input?: unknown): unknown {
   return {
     [binding]: (context: Context) => resolve(value, context, input),
-    [dependency]: (context: Context) => [
-      ...key(value, context),
-      ...key(input, context),
-    ],
+    [dependency]: (context: Context) =>
+      input === undefined
+        ? key(value, context)
+        : [...key(value, context), ...key(input, context)],
   }
 }
 
@@ -125,10 +125,10 @@ function bind(
     return {
       style: {
         [binding]: (context: Context) => select(context, input),
-        [dependency]: (context: Context) => [
-          ...read(context),
-          ...key(input, context),
-        ],
+        [dependency]: (context: Context) =>
+          input === undefined
+            ? read(context)
+            : [...read(context), ...key(input, context)],
       },
     }
   }

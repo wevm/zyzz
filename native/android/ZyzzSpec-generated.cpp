@@ -12,11 +12,6 @@
 
 namespace facebook::react {
 
-static facebook::jsi::Value __hostFunction_NativeZyzzSpecJSI_attach(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
-  static jmethodID cachedMethodId = nullptr;
-  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, NumberKind, "attach", "(Lcom/facebook/react/bridge/ReadableMap;Lcom/facebook/react/bridge/ReadableMap;)D", args, count, cachedMethodId);
-}
-
 static facebook::jsi::Value __hostFunction_NativeZyzzSpecJSI_detach(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
   static jmethodID cachedMethodId = nullptr;
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "detach", "(D)V", args, count, cachedMethodId);
@@ -34,7 +29,6 @@ static facebook::jsi::Value __hostFunction_NativeZyzzSpecJSI_update(facebook::js
 
 NativeZyzzSpecJSI::NativeZyzzSpecJSI(const JavaTurboModule::InitParams &params)
   : JavaTurboModule(params) {
-  methodMap_["attach"] = MethodMetadata {2, __hostFunction_NativeZyzzSpecJSI_attach};
   methodMap_["detach"] = MethodMetadata {1, __hostFunction_NativeZyzzSpecJSI_detach};
   methodMap_["inspect"] = MethodMetadata {0, __hostFunction_NativeZyzzSpecJSI_inspect};
   methodMap_["update"] = MethodMetadata {1, __hostFunction_NativeZyzzSpecJSI_update};

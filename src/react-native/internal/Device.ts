@@ -219,8 +219,9 @@ function useBindings() {
               if (store.getSnapshot() !== snapshot) render()
               return unsubscribe
             }
-            // Most views never change selection, so attach on the first patch.
+            // Most views never change selection, so they bind on their first patch.
             let id: number | undefined
+            let bound = false
             let previous = initial
             const read = (context: NativeContext.Context) => {
               const keys = NativeContext.key(props.style, context)
@@ -231,25 +232,32 @@ function useBindings() {
                 return { commit: () => {} }
               const next = NativeContext.resolve(props.style, context)
               if (!selective(next)) return { commit: render }
-              id ??= NativeZyzz!.attach(node, nativeProps(selected))
+              id ??= ++bindings
               return {
                 commit: () => {
                   previous = keys
+                  bound = true
                 },
-                patch: {
-                  id,
-                  props: nativeProps(next),
-                },
+                patch: bound
+                  ? { id, props: nativeProps(next) }
+                  : {
+                      id,
+                      node,
+                      props: nativeProps(next),
+                      rendered: nativeProps(selected),
+                    },
               }
             }
             // Context can change between render and committing the host ref.
-            const current = read(store.getSnapshot())
-            if (current.patch) write([current.patch])
-            current.commit()
+            if (store.getSnapshot() !== snapshot) {
+              const current = read(store.getSnapshot())
+              if (current.patch) write([current.patch])
+              current.commit()
+            }
             const unbind = store.bind(read, write)
             return () => {
               unbind()
-              if (id !== undefined) NativeZyzz!.detach(id)
+              if (bound) NativeZyzz!.detach(id!)
             }
           })()
           const update = () =>
@@ -279,6 +287,21 @@ function useBindings() {
 
 function selective(style: unknown): boolean {
   if (typeof style === 'function') return false
+  const shared =
+    typeof style === 'object' &&
+    style !== null &&
+    !Array.isArray(style) &&
+    Object.isFrozen(style)
+  const cached = shared ? patchable.get(style) : undefined
+  if (cached !== undefined) return cached
+  const result = writable(style)
+  if (shared) patchable.set(style, result)
+  return result
+}
+
+const patchable = new WeakMap<object, boolean>()
+
+function writable(style: unknown): boolean {
   const value = ReactNative.StyleSheet.flatten(
     style as ReactNative.StyleProp<ReactNative.ViewStyle>,
   )
@@ -302,7 +325,16 @@ function selective(style: unknown): boolean {
   )
 }
 
+// Compiled styles are frozen and shared by every view that selects them.
+const converted = new WeakMap<object, Record<string, unknown>>()
 function nativeProps(style: unknown): Record<string, unknown> {
+  const shared =
+    typeof style === 'object' &&
+    style !== null &&
+    !Array.isArray(style) &&
+    Object.isFrozen(style)
+  const cached = shared ? converted.get(style) : undefined
+  if (cached) return cached
   const flattened =
     ReactNative.StyleSheet.flatten(
       style as ReactNative.StyleProp<ReactNative.ViewStyle>,
@@ -312,8 +344,12 @@ function nativeProps(style: unknown): Record<string, unknown> {
     if (name === 'color' || name.endsWith('Color'))
       result[name] = ReactNative.processColor(value as ReactNative.ColorValue)
   }
+  if (shared) converted.set(style, result)
   return result
 }
+
+// Binding identifiers are unique per JavaScript runtime, like the native module.
+let bindings = 0
 
 function write(patches: readonly Store.Patch[]) {
   NativeZyzz!.update(patches)

@@ -11,10 +11,14 @@ This suite compares Zyzz, React Native `StyleSheet`, and Unistyles 3 using the s
 | Edited module        | The same transform after changing a literal; full module recompilation with no Metro cache, not incremental graph timing |
 | Native mount/remount | State request until all expected native views report validated layout                                                    |
 | Native update        | Dynamic width, variant width, or theme padding request until every native view reports the expected new layout           |
+| Native re-render     | Re-render request with unchanged styles until the parent React commit, after refs and layout effects                     |
+| Native cold start    | iOS only: JavaScript bundle execution in a fresh process, loading one 1,000-view lane, until every view reports layout   |
 
 Compiler lanes author 10, 100, and 1,000 definitions per module. Native render lanes mount 10, 100, and 1,000 views with repeated styles, unique styles, dynamic values, variants, and theme changes. Repeated, dynamic, variant, and theme render lanes reuse one style definition; the unique lane authors one per view. Static lanes measure mount/remount only. All views remain mounted without virtualization and use identical layout listeners and non-collapsable native views. Layout checks are independent numeric expectations in the app, not values computed from the transformed styles.
 
-Native time includes React scheduling, Fabric/Yoga work, and event delivery back to JavaScript. It is **not GPU presentation time**, pure React CPU time, or physical-device performance. Theme changes use each library's normal mechanism; Unistyles updates its native nodes without forcing a React render. All libraries are loaded in one app, with their authoring transforms restricted to their own fixture directories. This suite does not measure package startup or compare binary sizes.
+Theme lanes configure the same 400 extra theme values in both libraries, so cold starts include realistic configuration work. Zyzz and Unistyles both switch themes without re-rendering cells. Fixture modules load lazily, so each cold start evaluates only its own lane and the first warmup absorbs module evaluation.
+
+Native time includes React scheduling, Fabric/Yoga work, and event delivery back to JavaScript. It is **not GPU presentation time**, pure React CPU time, or physical-device performance. Theme changes use each library's normal mechanism; Unistyles updates its native nodes without forcing a React render. All libraries are loaded in one app, with their authoring transforms restricted to their own fixture directories. This suite does not compare binary sizes.
 
 Release builds use Hermes and the New Architecture. Each lane discards three warmup iterations and retains 20 iterations in each of two library orders. Reports retain both passes, median, p95, and coefficient of variation. Cold transforms retain at least ten fresh-process samples. Do not infer a speed ranking from one shared-runner result. There are no timing gates until a stable baseline is available.
 
@@ -44,6 +48,12 @@ For render measurements, prebuild `bench/native/app` with Expo and install a Rel
 ```sh
 node bench/results/native/tools/Run.mjs ios "$SIMULATOR_UDID"
 node bench/results/native/tools/Run.mjs android emulator-5554
+```
+
+Measure iOS cold starts with the same installed app. Each sample relaunches the app with a `-benchCold` launch argument:
+
+```sh
+node bench/results/native/tools/ColdRun.mjs "$SIMULATOR_UDID"
 ```
 
 The collector listens only on the host loopback address. The benchmark Android app allows HTTP for the emulator host connection. These settings belong only to this benchmark app. Results remain under ignored `bench/results/native/`; preserve raw samples and machine metadata when sharing measurements.

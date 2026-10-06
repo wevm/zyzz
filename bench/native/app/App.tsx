@@ -1,18 +1,25 @@
 /** Measures release-mode requests through validated native layout notifications. @module */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Dimensions, PixelRatio, Platform, Text, View } from 'react-native'
 import { UnistylesRuntime } from 'react-native-unistyles'
 import { fixtures } from './generated/index.js'
 
 type Library = 'stylesheet' | 'unistyles' | 'zyzz'
 type Kind = 'repeated' | 'unique' | 'dynamic' | 'variants' | 'theme'
-type Operation = 'mount' | 'update' | 'remount'
+type Operation = 'mount' | 'rerender' | 'update' | 'remount'
 type Scene = {
   library: Library
   kind: Kind
   count: 10 | 100 | 1000
   active: boolean
   key: number
+  tick: number
 }
 type Sample = {
   library: Library
@@ -39,10 +46,25 @@ export default function App() {
   const pending = useRef<Pending | null>(null)
   const cleared = useRef<(() => void) | null>(null)
   const started = useRef(false)
+  const committed = useRef<{
+    tick: number
+    start: number
+    resolve: (value: number) => void
+  } | null>(null)
+  const theme = useRef<((active: boolean) => void) | null>(null)
+  const onTheme = useCallback((update: (active: boolean) => void) => {
+    theme.current = update
+  }, [])
   useLayoutEffect(() => {
     if (!scene) {
       cleared.current?.()
       cleared.current = null
+    }
+    // Children commit their refs and layout effects before this parent effect.
+    const current = committed.current
+    if (current && scene?.tick === current.tick) {
+      committed.current = null
+      current.resolve(performance.now() - current.start)
     }
   }, [scene])
 
@@ -94,7 +116,20 @@ export default function App() {
           }
           if (next.kind === 'theme' && next.library === 'unistyles')
             UnistylesRuntime.setTheme(next.active ? 'alternate' : 'base')
+          if (nativeThemeOnly && next.library === 'zyzz')
+            theme.current!(next.active)
           if (!nativeThemeOnly) setScene(next)
+        })
+      }
+      async function commit(next: Scene) {
+        await frame()
+        return new Promise<number>((resolve) => {
+          committed.current = {
+            tick: next.tick,
+            start: performance.now(),
+            resolve,
+          }
+          setScene(next)
         })
       }
       for (const pass of [1, 2]) {
@@ -122,6 +157,7 @@ export default function App() {
                   count,
                   active: false,
                   key: ++key,
+                  tick: 0,
                 }
                 const mount = await measure(base)
                 if (iteration >= 0)
@@ -132,13 +168,24 @@ export default function App() {
                     iteration,
                     milliseconds: mount,
                   })
+                // Re-renders every cell with unchanged styles.
+                const rendered = { ...base, tick: 1 }
+                const rerender = await commit(rendered)
+                if (iteration >= 0)
+                  samples.push({
+                    ...rendered,
+                    operation: 'rerender',
+                    pass,
+                    iteration,
+                    milliseconds: rerender,
+                  })
                 const updates =
                   kind === 'dynamic' || kind === 'variants' || kind === 'theme'
-                const next = { ...base, active: updates }
+                const next = { ...rendered, active: updates }
                 if (updates) {
                   const update = await measure(
                     next,
-                    kind === 'theme' && library === 'unistyles',
+                    kind === 'theme' && library !== 'stylesheet',
                   )
                   if (iteration >= 0)
                     samples.push({
@@ -195,7 +242,7 @@ export default function App() {
   }, [])
 
   const fixture = scene
-    ? fixtures[`${scene.library}/${scene.kind}/${scene.count}`]
+    ? fixtures[`${scene.library}/${scene.kind}/${scene.count}`]()
     : null
   const Cell = fixture?.Cell
   const Scope = fixture?.Scope
@@ -203,7 +250,7 @@ export default function App() {
     <View style={{ flex: 1, paddingTop: 60 }}>
       <Text>{status}</Text>
       {scene && Cell && Scope ? (
-        <Scope active={scene.active}>
+        <Scope active={scene.active} onTheme={onTheme}>
           <View
             key={scene.key}
             style={{

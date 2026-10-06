@@ -1,12 +1,12 @@
 /** Applies scoped style changes and preserves them through Fabric commits. */
 #include "NativeZyzz.h"
 #include <functional>
+#include <optional>
 #include <unordered_set>
 #include <jsi/JSIDynamic.h>
 #include <react/renderer/bridging/bridging.h>
 #include <react/renderer/core/PropsParserContext.h>
 #include <react/renderer/mounting/ShadowTree.h>
-#include <react/renderer/mounting/ShadowTreeRegistry.h>
 
 namespace facebook::react {
 
@@ -19,48 +19,11 @@ NativeZyzz::~NativeZyzz() {
   if (manager_) manager_->unregisterCommitHook(*this);
 }
 
-double NativeZyzz::attach(jsi::Runtime &runtime, jsi::Object node, jsi::Object props) {
-  auto shadowNode = Bridging<std::shared_ptr<const ShadowNode>>::fromJs(
-      runtime, jsi::Value(runtime, node));
-  auto values = jsi::dynamicFromValue(runtime, jsi::Value(runtime, props));
-  if (!values.isObject()) throw jsi::JSError(runtime, "Native styles must be an object.");
-
-  if (!binding_) {
-    binding_ = UIManagerBinding::getBinding(runtime);
-    if (!binding_) throw jsi::JSError(runtime, "Zyzz requires Fabric.");
-    manager_ = &binding_->getUIManager();
-    manager_->registerCommitHook(*this);
-  }
-
-  std::lock_guard<std::mutex> lock(mutex_);
-  const auto id = ++nextId_;
-  entries_.emplace(id, Entry{shadowNode->getFamilyShared(), values, values,
-                             folly::dynamic::object(), shadowNode->getProps(), nullptr});
-  return id;
-}
-
 void NativeZyzz::detach(jsi::Runtime &, double id) {
-  std::shared_ptr<ShadowNodeFamily> family;
-  Props::Shared authored;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    const auto entry = entries_.find(id);
-    if (entry == entries_.end()) return;
-    if (!entry->second.overlay.empty()) {
-      family = entry->second.family.lock();
-      authored = entry->second.authored;
-    }
-    entries_.erase(entry);
-  }
-  if (!family || !authored) return;
-  // The React commit has already passed through the overlay hook when an old
-  // ref is detached. Restore that commit's authored props, not the old style.
-  manager_->getShadowTreeRegistry().visit(family->getSurfaceId(), [&](const ShadowTree &tree) {
-    tree.commit([&](const RootShadowNode &root) {
-      return std::static_pointer_cast<RootShadowNode>(root.cloneTree(*family,
-          [&](const ShadowNode &node) { return node.clone({.props = authored}); }));
-    }, {.mountSynchronously = true});
-  });
+  // React detaches refs before completing the root in the same commit, so its
+  // own props replace the overlay without a separate restoring commit.
+  std::lock_guard<std::mutex> lock(mutex_);
+  entries_.erase(id);
 }
 
 jsi::Object NativeZyzz::inspect(jsi::Runtime &runtime) {
@@ -73,18 +36,55 @@ jsi::Object NativeZyzz::inspect(jsi::Runtime &runtime) {
 }
 
 void NativeZyzz::update(jsi::Runtime &runtime, std::vector<jsi::Object> updates) {
-  std::vector<std::pair<double, folly::dynamic>> selections;
+  struct Selection {
+    double id;
+    folly::dynamic props;
+    ShadowNodeFamily::Shared family;
+    folly::dynamic rendered;
+  };
+  struct Converted {
+    std::optional<jsi::Object> source;
+    folly::dynamic value;
+  };
+  // Views sharing a compiled style pass the same object, so reuse its last conversion.
+  Converted props, rendered;
+  const auto read = [&](const jsi::Object &update, const char *name, Converted &cache) {
+    auto value = update.getProperty(runtime, name);
+    if (!value.isObject()) throw jsi::JSError(runtime, "Native styles must be an object.");
+    auto object = value.asObject(runtime);
+    if (!cache.source || !jsi::Object::strictEquals(runtime, *cache.source, object)) {
+      cache.value = jsi::dynamicFromValue(runtime, value);
+      cache.source = std::move(object);
+    }
+    return cache.value;
+  };
+
+  std::vector<Selection> selections;
+  selections.reserve(updates.size());
   for (const auto &update : updates) {
-    auto id = update.getProperty(runtime, "id").asNumber();
-    auto props = jsi::dynamicFromValue(runtime, update.getProperty(runtime, "props"));
-    if (!props.isObject()) throw jsi::JSError(runtime, "Native styles must be an object.");
-    selections.emplace_back(id, std::move(props));
+    Selection selection{update.getProperty(runtime, "id").asNumber(),
+                        read(update, "props", props), nullptr, nullptr};
+    // A first update binds its mounted node to the style React rendered.
+    if (update.hasProperty(runtime, "node")) {
+      if (!binding_) {
+        binding_ = UIManagerBinding::getBinding(runtime);
+        if (!binding_) throw jsi::JSError(runtime, "Zyzz requires Fabric.");
+        manager_ = &binding_->getUIManager();
+        manager_->registerCommitHook(*this);
+      }
+      selection.family = Bridging<std::shared_ptr<const ShadowNode>>::fromJs(
+          runtime, update.getProperty(runtime, "node"))->getFamilyShared();
+      selection.rendered = read(update, "rendered", rendered);
+    }
+    selections.push_back(std::move(selection));
   }
 
   std::unordered_map<Tag, folly::dynamic> patches;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (auto &[id, selected] : selections) {
+    for (auto &[id, selected, bound, initial] : selections) {
+      if (bound)
+        entries_.try_emplace(id, Entry{bound, initial, initial, folly::dynamic::object()});
       auto entry = entries_.find(id);
       if (entry == entries_.end()) continue;
       auto family = entry->second.family.lock();
@@ -135,10 +135,12 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
     const ShadowTree &tree,
     const std::shared_ptr<const RootShadowNode> &,
     const std::shared_ptr<RootShadowNode> &next) noexcept {
+  // Our own patch commit already carries every selection, and other overlays
+  // persist from the committed tree it clones.
+  if (writing_ == this) return next;
   struct Overlay {
     std::shared_ptr<ShadowNodeFamily> family;
     folly::dynamic props;
-    double id;
   };
   std::unordered_map<const ShadowNodeFamily *, Overlay> overlays;
   {
@@ -151,7 +153,7 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
       }
       if (family->getSurfaceId() == tree.getSurfaceId() &&
           !entry->second.overlay.empty())
-        overlays.emplace(family.get(), Overlay{family, entry->second.overlay, entry->first});
+        overlays.emplace(family.get(), Overlay{family, entry->second.overlay});
       ++entry;
     }
   }
@@ -188,16 +190,6 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
         ? node->getProps()
         : node->getComponentDescriptor().cloneProps(
               context, node->getProps(), RawProps(overlay->second.props));
-    if (overlay != overlays.end()) {
-      std::lock_guard<std::mutex> lock(mutex_);
-      const auto entry = entries_.find(overlay->second.id);
-      if (entry != entries_.end()) {
-        // Skip our own native patches and nodes reused from an earlier overlay.
-        if (writing_ != this && node->getProps() != entry->second.applied)
-          entry->second.authored = node->getProps();
-        entry->second.applied = props;
-      }
-    }
     return std::shared_ptr<const ShadowNode>(node->clone({
         .props = props,
         .children = children ? children : ShadowNodeFragment::childrenPlaceholder(),

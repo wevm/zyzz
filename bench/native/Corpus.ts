@@ -12,6 +12,20 @@ export type Kind = (typeof kinds)[number]
 export const counts = [10, 100, 1000] as const
 export type Case = { count: number; kind: Kind }
 
+/** Matches the 400 theme values `app/Setup.ts` gives Unistyles, so cold starts include realistic config work. */
+function tokens(cell: string) {
+  const color = Object.fromEntries(
+    Array.from({ length: 200 }, (_, index) => [
+      `c${index}`,
+      `#${((index + 1) * 7919).toString(16).padStart(6, '0')}`,
+    ]),
+  )
+  const spacing = Object.fromEntries(
+    Array.from({ length: 199 }, (_, index) => [`s${index}`, `${index}px`]),
+  )
+  return JSON.stringify({ color, spacing: { cell, ...spacing } })
+}
+
 /** Emits ordinary component source using each library's public authoring API. */
 export function source(library: Library, workload: Case, edited = false) {
   const height = edited ? 5 : 4
@@ -22,9 +36,10 @@ export function source(library: Library, workload: Case, edited = false) {
   const header =
     library === 'zyzz'
       ? themed
-        ? `import { Config } from 'zyzz';
-       const { style: themedStyle } = Config.create({defaultTheme:'base',themes:{base:{spacing:{cell:'2px'}},alternate:{spacing:{cell:'6px'}}}});`
-        : `import { ${variants ? 'variants' : 'style'} } from 'zyzz';`
+        ? `import { defineConfig } from 'zyzz/react-native';
+       const { Provider, style: themedStyle } = defineConfig({defaultVars:'base',vars:{base:${tokens('2px')},alternate:${tokens('6px')}}});`
+        : `import { ${variants ? 'variants' : 'style'} } from 'zyzz';
+       import { Provider } from 'zyzz/react-native/react';`
       : `import { StyleSheet } from '${library === 'unistyles' ? 'react-native-unistyles' : 'react-native'}';`
   const styles = Array.from({ length: definitions }, (_, index) => {
     const width = 12 + (workload.kind === 'unique' ? index % 13 : 0)
@@ -40,7 +55,7 @@ export function source(library: Library, workload: Case, edited = false) {
       if (variants)
         return `const s${index} = variants({base:${JSON.stringify(literal)},variants:{active:{false:{width:'12px'},true:{width:'24px'}}}});`
       if (themed)
-        return `const s${index} = themedStyle({padding:'cell',backgroundColor:'#2563eb',width:'${edited ? 25 : 24}px'});`
+        return `const s${index} = themedStyle({padding:'cell',backgroundColor:'#2563eb !custom',width:'${edited ? 25 : 24}px !custom'});`
       return `const s${index} = style(${JSON.stringify(literal)});`
     }
     if (dynamic)
@@ -70,7 +85,6 @@ export function source(library: Library, workload: Case, edited = false) {
     return `styles.s${index}${dynamic ? '(active ? 24 : 12)' : ''}`
   })
   return `${header}
-    ${library === 'zyzz' ? "import { Provider } from 'zyzz/react-native/react';" : ''}
     import React from 'react';
     import { View } from 'react-native';
     ${declaration}
@@ -81,8 +95,15 @@ export function source(library: Library, workload: Case, edited = false) {
       }
       throw new Error('Invalid native fixture index');
     }
-    export function Scope({active,children}: {active:boolean;children:React.ReactNode}) {
-      return ${library === 'zyzz' ? `<Provider ${themed ? 'theme={active ? "alternate" : "base"}' : ''} colorScheme="light">{children}</Provider>` : '<>{children}</>'};
+    export function Scope({active,children,onTheme}: {active:boolean;children:React.ReactNode;onTheme:(update:(active:boolean)=>void)=>void}) {
+      ${
+        library === 'zyzz' && themed
+          ? `// Owns the selection so a theme change updates native views without re-rendering cells, as Unistyles does.
+      const [current, setCurrent] = React.useState(active);
+      React.useLayoutEffect(() => onTheme(setCurrent), [onTheme]);
+      return <Provider vars={current ? 'alternate' : 'base'} colorScheme="light">{children}</Provider>;`
+          : `return ${library === 'zyzz' ? '<Provider colorScheme="light">{children}</Provider>' : '<>{children}</>'};`
+      }
     }
   `
 }

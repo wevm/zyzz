@@ -6,6 +6,7 @@ await Esbuild.build({
     'bench/native/Profile.ts',
     'bench/native/CompileReport.ts',
     'bench/native/Collect.ts',
+    'bench/native/ColdRun.ts',
     'bench/native/Run.ts',
     'bench/native/Report.ts',
   ],

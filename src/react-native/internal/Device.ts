@@ -14,10 +14,17 @@ export function defineConfig<const options extends Config.create.Options = {}>(
   options: options & Parameters<typeof Config.create<options>>[0] = {} as never,
 ): Subscription.defineConfig.ReturnType<options> {
   const config = Subscription.defineConfig<options>(options)
-  return Object.freeze({
-    ...config,
-    Provider: dimensions(config.Provider),
-  }) as Subscription.defineConfig.ReturnType<options>
+  // Copy descriptors rather than spreading, so deferred helpers stay deferred.
+  return Object.freeze(
+    Object.defineProperties(
+      { Provider: dimensions(config.Provider) } as Record<string, unknown>,
+      Object.fromEntries(
+        Object.entries(Object.getOwnPropertyDescriptors(config)).filter(
+          ([name]) => name !== 'Provider',
+        ),
+      ),
+    ),
+  ) as unknown as Subscription.defineConfig.ReturnType<options>
 }
 
 /** Provides selected variables, appearance, and automatic native dimensions. */
@@ -95,17 +102,39 @@ function dimensions<props extends Subscription.Provider.Props>(
 ): React.FunctionComponent<props> {
   return function WindowProvider(props: props) {
     const window = ReactNative.useWindowDimensions()
+    const scheme = ReactNative.useColorScheme()
     const viewport = React.useMemo(
       () => ({ height: window.height, width: window.width }),
       [window.height, window.width],
     )
+    const appearance = React.useMemo(
+      () => ({
+        adaptive,
+        colorScheme: scheme === 'dark' ? ('dark' as const) : ('light' as const),
+      }),
+      [scheme],
+    )
     return React.createElement(
       Viewport.context.Provider,
       { value: viewport },
-      React.createElement(Component, props),
+      React.createElement(
+        Viewport.appearance.Provider,
+        { value: appearance },
+        React.createElement(Component, props),
+      ),
     )
   }
 }
+
+// iOS resolves these colors from the window's appearance, so scheme changes need no Fabric update.
+const adaptive =
+  ReactNative.Platform.OS === 'ios'
+    ? (light: string | number, dark: string | number) =>
+        ReactNative.DynamicColorIOS({
+          dark: dark as ReactNative.ColorValue,
+          light: light as ReactNative.ColorValue,
+        })
+    : undefined
 
 /** Compiler-only binding path, with React subscriptions for Expo Go. */
 export const useNativeStyles = useBindings
@@ -121,55 +150,68 @@ type Instance = {
 
 function useBindings() {
   const owner = React.useContext(Store.context)
-  const [fallback] = React.useState(() =>
-    Store.create({
+  // Views inside a Provider never read the fallback, so it is created only outside one.
+  const fallbackRef = React.useRef<ReturnType<typeof Store.create> | undefined>(
+    undefined,
+  )
+  if (!owner)
+    fallbackRef.current ??= Store.create({
       colorScheme: 'light',
       viewport: ReactNative.Dimensions.get('window'),
-    }),
-  )
-  const store = owner ?? fallback
+    })
+  const fallback = fallbackRef.current
+  const store = (owner ?? fallback)!
   const [, render] = React.useReducer((count: number) => count + 1, 0)
-  const [refs] = React.useState(
-    () =>
-      new Map<
-        Instance,
-        {
-          active: boolean
-          ref: React.Ref<Instance> | undefined
-          release: () => void
-        }
-      >(),
-  )
-  React.useLayoutEffect(() => {
-    for (const [instance, entry] of refs) {
-      if (entry.active) continue
-      entry.release()
-      refs.delete(instance)
+  const [refs] = React.useState(() => {
+    const entries = new Map<
+      Instance,
+      {
+        active: boolean
+        ref: React.Ref<Instance> | undefined
+        release: () => void
+      }
+    >()
+    let scheduled = false
+    return {
+      entries,
+      // Runs after the commit, once every cleanup and re-attachment has settled, without a layout effect per render.
+      sweep() {
+        if (scheduled) return
+        scheduled = true
+        queueMicrotask(() => {
+          scheduled = false
+          for (const [instance, entry] of entries) {
+            if (entry.active) continue
+            entry.release()
+            entries.delete(instance)
+          }
+        })
+      },
     }
   })
-  React.useLayoutEffect(
-    () => () => {
-      for (const entry of refs.values()) entry.release()
-      refs.clear()
-    },
-    [refs],
-  )
   return {
     style: NativeContext.application,
     view: (props: Record<string, unknown>) => {
       const snapshot = store.getSnapshot()
       const selected = NativeContext.resolve(props.style, snapshot)
       const initial = NativeContext.key(props.style, snapshot)
+      // A context-free style never needs a binding, so React keeps a stable element without a ref wrapper.
+      if (
+        !initial.length &&
+        typeof selected !== 'function' &&
+        props.ref == null
+      )
+        return { ...props, style: selected }
 
       return {
         ...props,
         ref: (value: Instance | null) => {
           const ref = props.ref as React.Ref<Instance> | undefined
           if (!value) return
-          let entry = refs.get(value)
+          let entry = refs.entries.get(value)
           if (entry && entry.ref !== ref) {
             entry.release()
-            refs.delete(value)
+            refs.entries.delete(value)
             entry = undefined
           }
           if (!entry) {
@@ -184,7 +226,7 @@ function useBindings() {
                 else if (ref) ref.current = null
               },
             }
-            refs.set(value, entry)
+            refs.entries.set(value, entry)
           }
           entry.active = true
           const attached = entry
@@ -199,8 +241,9 @@ function useBindings() {
               if (store.getSnapshot() !== snapshot) render()
               return unsubscribe
             }
-            // Most views never change selection, so attach on the first patch.
+            // Most views never change selection, so they bind on their first patch.
             let id: number | undefined
+            let bound = false
             let previous = initial
             const read = (context: NativeContext.Context) => {
               const keys = NativeContext.key(props.style, context)
@@ -211,29 +254,36 @@ function useBindings() {
                 return { commit: () => {} }
               const next = NativeContext.resolve(props.style, context)
               if (!selective(next)) return { commit: render }
-              id ??= NativeZyzz!.attach(node, nativeProps(selected))
+              id ??= ++bindings
               return {
                 commit: () => {
                   previous = keys
+                  bound = true
                 },
-                patch: {
-                  id,
-                  props: nativeProps(next),
-                },
+                patch: bound
+                  ? { id, props: nativeProps(next) }
+                  : {
+                      id,
+                      node,
+                      props: nativeProps(next),
+                      rendered: nativeProps(selected),
+                    },
               }
             }
             // Context can change between render and committing the host ref.
-            const current = read(store.getSnapshot())
-            if (current.patch) write([current.patch])
-            current.commit()
+            if (store.getSnapshot() !== snapshot) {
+              const current = read(store.getSnapshot())
+              if (current.patch) write([current.patch])
+              current.commit()
+            }
             const unbind = store.bind(read, write)
             return () => {
               unbind()
-              if (id !== undefined) NativeZyzz!.detach(id)
+              if (bound) NativeZyzz!.detach(id!)
             }
           })()
           const update = () =>
-            fallback.update({
+            fallback!.update({
               colorScheme: 'light',
               viewport: ReactNative.Dimensions.get('window'),
             })
@@ -248,6 +298,7 @@ function useBindings() {
             detach()
             subscription?.remove()
             attached.active = false
+            refs.sweep()
           }
         },
         style: selected,
@@ -258,6 +309,21 @@ function useBindings() {
 
 function selective(style: unknown): boolean {
   if (typeof style === 'function') return false
+  const shared =
+    typeof style === 'object' &&
+    style !== null &&
+    !Array.isArray(style) &&
+    Object.isFrozen(style)
+  const cached = shared ? patchable.get(style) : undefined
+  if (cached !== undefined) return cached
+  const result = writable(style)
+  if (shared) patchable.set(style, result)
+  return result
+}
+
+const patchable = new WeakMap<object, boolean>()
+
+function writable(style: unknown): boolean {
   const value = ReactNative.StyleSheet.flatten(
     style as ReactNative.StyleProp<ReactNative.ViewStyle>,
   )
@@ -281,7 +347,16 @@ function selective(style: unknown): boolean {
   )
 }
 
+// Compiled styles are frozen and shared by every view that selects them.
+const converted = new WeakMap<object, Record<string, unknown>>()
 function nativeProps(style: unknown): Record<string, unknown> {
+  const shared =
+    typeof style === 'object' &&
+    style !== null &&
+    !Array.isArray(style) &&
+    Object.isFrozen(style)
+  const cached = shared ? converted.get(style) : undefined
+  if (cached) return cached
   const flattened =
     ReactNative.StyleSheet.flatten(
       style as ReactNative.StyleProp<ReactNative.ViewStyle>,
@@ -291,8 +366,12 @@ function nativeProps(style: unknown): Record<string, unknown> {
     if (name === 'color' || name.endsWith('Color'))
       result[name] = ReactNative.processColor(value as ReactNative.ColorValue)
   }
+  if (shared) converted.set(style, result)
   return result
 }
+
+// Binding identifiers are unique per JavaScript runtime, like the native module.
+let bindings = 0
 
 function write(patches: readonly Store.Patch[]) {
   NativeZyzz!.update(patches)

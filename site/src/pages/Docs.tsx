@@ -61,6 +61,7 @@ import PackageIcon from '~icons/lucide/package'
 import PaintbrushIcon from '~icons/lucide/paintbrush'
 import PaintBucketIcon from '~icons/lucide/paint-bucket'
 import PaletteIcon from '~icons/lucide/palette'
+import PencilIcon from '~icons/lucide/pencil'
 import PipetteIcon from '~icons/lucide/pipette'
 import PlayIcon from '~icons/lucide/play'
 import PlugIcon from '~icons/lucide/plug'
@@ -83,6 +84,7 @@ import TableIcon from '~icons/lucide/table'
 import TagIcon from '~icons/lucide/tag'
 import TerminalIcon from '~icons/lucide/terminal'
 import TestTubeIcon from '~icons/lucide/test-tube'
+import TextAlignStartIcon from '~icons/lucide/text-align-start'
 import TypeIcon from '~icons/lucide/type'
 import VariableIcon from '~icons/lucide/variable'
 import WandSparklesIcon from '~icons/lucide/wand-sparkles'
@@ -90,7 +92,9 @@ import WorkflowIcon from '~icons/lucide/workflow'
 import WrenchIcon from '~icons/lucide/wrench'
 import ZapIcon from '~icons/lucide/zap'
 import BabelIcon from '~icons/simple-icons/babel'
+import GitHubIcon from '~icons/simple-icons/github'
 import HtmlIcon from '~icons/simple-icons/html5'
+import MarkdownIcon from '~icons/simple-icons/markdown'
 import NextIcon from '~icons/simple-icons/nextdotjs'
 import NodeIcon from '~icons/simple-icons/nodedotjs'
 import NpmIcon from '~icons/simple-icons/npm'
@@ -262,7 +266,13 @@ export function Page(props: Page.Props) {
             <PageContent path={path} />
           </Suspense>
         </article>
-        <Outline headings={page.headings} />
+        <Outline headings={page.headings}>
+          <PageActions
+            markdown={page.markdown}
+            path={path}
+            title={page.title}
+          />
+        </Outline>
       </div>
       <SearchDialog onOpenChange={setSearching} open={searching} />
     </DocumentationShell>
@@ -300,7 +310,7 @@ declare namespace PageContent {
 
 /** Lists the page's sections and marks the one scrolled beneath the header. */
 function Outline(props: Outline.Props) {
-  const { headings } = props
+  const { children, headings } = props
   const [current, setCurrent] = useState<string | undefined>(undefined)
   const labelId = useId()
 
@@ -345,33 +355,125 @@ function Outline(props: Outline.Props) {
 
   return (
     <aside {...styles.outline()}>
-      {headings.length > 0 && (
-        <nav aria-labelledby={labelId} {...styles.outlineNavigation()}>
-          <h2 id={labelId} {...styles.groupHeading()}>
-            On this page
-          </h2>
-          <ul>
-            {headings.map((heading) => (
-              <li key={heading.id}>
-                <a
-                  aria-current={heading.id === current ? 'location' : undefined}
-                  data-depth={heading.depth}
-                  href={`#${heading.id}`}
-                  {...styles.outlineLink()}
-                >
-                  {heading.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <div {...styles.outlineContent()}>
+        {headings.length > 0 && (
+          <nav aria-labelledby={labelId} {...styles.outlineNavigation()}>
+            <h2 id={labelId} {...styles.outlineHeading()}>
+              <TextAlignStartIcon aria-hidden="true" {...styles.icon()} />
+              On this page
+            </h2>
+            <ul {...styles.outlineList()}>
+              {headings.map((heading) => (
+                <li key={heading.id}>
+                  <a
+                    aria-current={
+                      heading.id === current ? 'location' : undefined
+                    }
+                    data-depth={heading.depth}
+                    href={`#${heading.id}`}
+                    {...styles.outlineLink()}
+                  >
+                    {heading.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+        {headings.length > 0 && <hr {...styles.outlineDivider()} />}
+        {children}
+      </div>
     </aside>
   )
 }
 
 declare namespace Outline {
-  type Props = { headings: (typeof __DOCS__.pages)[string]['headings'] }
+  type Props = {
+    /** Rendered below the sections, after a divider when the page has sections. */
+    children: ReactNode
+    headings: (typeof __DOCS__.pages)[string]['headings']
+  }
+}
+
+/** Copies or opens the page's Markdown, and links to a new GitHub issue and the page source. */
+function PageActions(props: PageActions.Props) {
+  const { markdown, path, title } = props
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
+    'idle',
+  )
+
+  useEffect(() => {
+    if (copyState === 'idle') return
+    const timer = window.setTimeout(() => setCopyState('idle'), 2000)
+    return () => window.clearTimeout(timer)
+  }, [copyState])
+
+  const issue = new URLSearchParams({
+    body: `Page: https://zyzz.sh/docs/${path}\n\n`,
+    title: `Docs: ${title}`,
+  })
+  const label = {
+    copied: 'Copied',
+    failed: 'Copy failed',
+    idle: 'Copy page',
+  }[copyState]
+  const links = [
+    { href: `/docs/${path}.md`, icon: MarkdownIcon, label: 'View markdown' },
+    {
+      href: `https://github.com/wevm/zyzz/issues/new?${issue}`,
+      icon: GitHubIcon,
+      label: 'Report issue',
+    },
+    {
+      href: `https://github.com/wevm/zyzz/edit/main/site/src/content/docs/${path}.mdx`,
+      icon: PencilIcon,
+      label: 'Edit page',
+    },
+  ]
+
+  return (
+    <ul aria-label="Page actions" {...styles.actions()}>
+      <li>
+        <button
+          onClick={async () => {
+            try {
+              // The copied text matches the Markdown twin served at `/docs/<path>.md`.
+              await navigator.clipboard.writeText(markdown)
+              setCopyState('copied')
+            } catch {
+              setCopyState('failed')
+            }
+          }}
+          type="button"
+          {...styles.action()}
+        >
+          {copyState === 'copied' ? (
+            <CheckIcon aria-hidden="true" {...styles.icon()} />
+          ) : (
+            <CopyIcon aria-hidden="true" {...styles.icon()} />
+          )}
+          <span aria-live="polite">{label}</span>
+        </button>
+      </li>
+      {links.map((link) => (
+        <li key={link.label}>
+          <a
+            href={link.href}
+            rel="noreferrer"
+            target="_blank"
+            {...styles.action()}
+          >
+            <link.icon aria-hidden="true" {...styles.icon()} />
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+declare namespace PageActions {
+  type Props = { markdown: string; path: string; title: string }
 }
 
 function SidebarItem(props: SidebarItem.Props) {
@@ -551,6 +653,34 @@ declare namespace Code {
 }
 
 namespace styles {
+  export const action = style({
+    typography: 'label.14',
+    alignItems: 'center',
+    backgroundColor: 'transparent !custom',
+    border: 'none',
+    color: 'gray.900',
+    cursor: 'pointer',
+    display: 'flex',
+    gap: 2,
+    paddingBlock: 1,
+    paddingInline: 3,
+    textDecoration: 'none',
+    width: '100% !custom',
+    ':hover': { color: 'foreground' },
+    ':focus-visible': {
+      outline: '2px solid',
+      outlineColor: 'blue.900',
+      outlineOffset: '-2px',
+    },
+  })
+
+  export const actions = style({
+    flexShrink: 0,
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+  })
+
   export const article = style({
     typography: 'copy.16',
     padding: 12,
@@ -819,6 +949,8 @@ namespace styles {
     },
   })
 
+  export const icon = style({ flexShrink: 0, height: 4, width: 4 })
+
   export const link = style({
     typography: 'label.14',
     alignItems: 'center',
@@ -886,14 +1018,49 @@ namespace styles {
     '&[data-depth="3"]': { paddingLeft: 6 },
   })
 
-  export const outlineNavigation = style({
-    maxHeight: 'calc(100dvh - 64px) !custom',
+  export const outlineList = style({
+    listStyle: 'none',
+    margin: 0,
+    minHeight: 0,
     overflowY: 'auto',
+    padding: 0,
+  })
+
+  export const outlineNavigation = style({
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  })
+
+  // Keeps the page actions in view, while a long section list scrolls above them.
+  export const outlineContent = style({
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: 'calc(100dvh - 64px) !custom',
     paddingBottom: 4,
     paddingInline: 2,
     paddingTop: 4,
     position: 'sticky',
     top: 16,
+  })
+
+  export const outlineDivider = style({
+    border: 'none',
+    borderTop: '1px solid',
+    borderTopColor: 'gray.400',
+    flexShrink: 0,
+    marginBlock: 4,
+    marginInline: 3,
+  })
+
+  export const outlineHeading = style({
+    typography: 'label.14',
+    alignItems: 'center',
+    display: 'flex',
+    fontWeight: 'semibold',
+    gap: 2,
+    marginBottom: 3,
+    paddingInline: 3,
   })
 
   export const variables = style({

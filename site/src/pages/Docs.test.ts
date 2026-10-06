@@ -555,6 +555,165 @@ describe('/docs', () => {
     }
   })
 
+  test('copies the page Markdown and links its source from the outline', async () => {
+    const markdown = await (
+      await fetch(`${origin}/docs/guides/outline-review-fixture.md`)
+    ).text()
+
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const context = await browser.newContext({
+        permissions: ['clipboard-read', 'clipboard-write'],
+        viewport: { width: 1400, height: 900 },
+      })
+      const page = await context.newPage()
+      await page.goto(`${origin}/docs/guides/outline-review-fixture`)
+      await page.waitForLoadState('networkidle')
+      const outline = page.locator('article + aside')
+      const actions = outline.getByRole('list', { name: 'Page actions' })
+
+      // An icon leads the outline heading, and a divider separates the sections from the actions.
+      expect(
+        await outline
+          .getByRole('heading', { name: 'On this page' })
+          .locator('svg')
+          .count(),
+      ).toMatchInlineSnapshot('1')
+      expect(
+        await outline.locator('nav + hr + ul').count(),
+      ).toMatchInlineSnapshot('1')
+
+      expect(
+        await actions
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map(
+              (link) =>
+                `${link.textContent} ${link.getAttribute('href')} ${link.getAttribute('target')}`,
+            ),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "View markdown /docs/guides/outline-review-fixture.md _blank",
+          "Report issue https://github.com/wevm/zyzz/issues/new?body=Page%3A+https%3A%2F%2Fzyzz.sh%2Fdocs%2Fguides%2Foutline-review-fixture%0A%0A&title=Docs%3A+Outline+Fixture _blank",
+          "Edit page https://github.com/wevm/zyzz/edit/main/site/src/content/docs/guides/outline-review-fixture.mdx _blank",
+        ]
+      `)
+
+      // The edit link opens the authored source of the page.
+      const edit = await actions
+        .getByRole('link', { name: 'Edit page' })
+        .getAttribute('href')
+      expect(
+        Fs.existsSync(
+          `${directory}/${new URL(edit ?? '').pathname.replace('/wevm/zyzz/edit/main/site/', '')}`,
+        ),
+      ).toMatchInlineSnapshot(`true`)
+
+      // Copy page writes the Markdown that the `.md` twin serves.
+      await actions.getByRole('button', { name: 'Copy page' }).click()
+      await actions.getByRole('button', { name: 'Copied' }).waitFor()
+      expect(
+        (await page.evaluate(() => navigator.clipboard.readText())) ===
+          markdown,
+      ).toMatchInlineSnapshot(`true`)
+      await actions.getByRole('button', { name: 'Copy page' }).waitFor()
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('links community channels and switches color schemes from the sidebar footer', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        colorScheme: 'light',
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/docs/guides/navigation-review-fixture`)
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      const sidebar = page.locator('main aside').first()
+      const schemes = sidebar.getByRole('radiogroup', { name: 'Color scheme' })
+      const state = () =>
+        schemes
+          .getByRole('radio')
+          .evaluateAll((radios) =>
+            radios.map(
+              (radio) =>
+                `${radio.getAttribute('aria-label')} ${radio.getAttribute('aria-checked')}`,
+            ),
+          )
+      const computed = () =>
+        page.locator('main').evaluate((node) => {
+          const frame = getComputedStyle(node.parentElement ?? node)
+          return `${getComputedStyle(document.documentElement).colorScheme} ${frame.backgroundColor}`
+        })
+
+      expect(
+        await sidebar
+          .getByRole('list', { name: 'Community' })
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links.map(
+              (link) =>
+                `${link.getAttribute('aria-label')} ${link.getAttribute('href')} ${link.getAttribute('target')}`,
+            ),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "GitHub https://github.com/wevm/zyzz _blank",
+          "X https://x.com/wevm_dev _blank",
+          "Discord https://discord.gg/JUrRkGweXV _blank",
+        ]
+      `)
+
+      // System follows the light browser preference until a scheme is chosen.
+      expect(await state()).toMatchInlineSnapshot(`
+        [
+          "Light false",
+          "Dark false",
+          "System true",
+        ]
+      `)
+      expect(await computed()).toMatchInlineSnapshot(
+        `"light dark rgb(255, 255, 255)"`,
+      )
+
+      await schemes.getByRole('radio', { name: 'Dark' }).click()
+      expect(await state()).toMatchInlineSnapshot(`
+        [
+          "Light false",
+          "Dark true",
+          "System false",
+        ]
+      `)
+      expect(await computed()).toMatchInlineSnapshot(`"dark rgb(10, 10, 10)"`)
+
+      // The chosen scheme survives a reload.
+      await page.reload()
+      await page
+        .locator('[data-navigation-ready="true"]')
+        .waitFor({ state: 'attached' })
+      expect(await state()).toMatchInlineSnapshot(`
+        [
+          "Light false",
+          "Dark true",
+          "System false",
+        ]
+      `)
+      expect(await computed()).toMatchInlineSnapshot(`"dark rgb(10, 10, 10)"`)
+
+      await schemes.getByRole('radio', { name: 'System' }).click()
+      expect(await computed()).toMatchInlineSnapshot(
+        `"light dark rgb(255, 255, 255)"`,
+      )
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('switches documentation pages without reloading and restores shared setup through history', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

@@ -4,7 +4,6 @@ import * as Path from 'node:path'
 import * as Corpus from './Corpus.js'
 
 const app = Path.resolve('bench/native/app')
-const imports: string[] = []
 const entries: string[] = []
 for (const library of Corpus.libraries)
   for (const kind of Corpus.kinds)
@@ -16,10 +15,12 @@ for (const library of Corpus.libraries)
         Path.join(directory, `${name}.tsx`),
         Corpus.source(library, { kind, count: kind === 'unique' ? count : 1 }),
       )
-      imports.push(`import * as ${name} from './${library}/${name}.js';`)
-      entries.push(`'${library}/${kind}/${count}':${name}`)
+      // Lazy loaders keep each cold launch to its own lane's modules.
+      entries.push(
+        `'${library}/${kind}/${count}':() => require('./${library}/${name}.js') as typeof import('./${library}/${name}.js')`,
+      )
     }
 await Fs.writeFile(
   Path.join(app, 'generated/index.ts'),
-  `${imports.join('\n')}\nexport const fixtures = {${entries.join(',\n')}};`,
+  `export const fixtures = {${entries.join(',\n')}};`,
 )

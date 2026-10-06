@@ -23,7 +23,7 @@ const result = JSON.parse(
 const lines = [
   `## Native renders: ${platform}`,
   '',
-  'Request to all validated native layout events. Includes React scheduling, Fabric/Yoga layout, and event delivery; excludes GPU presentation. Times are informational.',
+  'Mount, update, and remount: request to all validated native layout events, including React scheduling, Fabric/Yoga layout, and event delivery. Re-render: request to the parent React commit with unchanged styles. Excludes GPU presentation. Times are informational.',
   '',
   '| Library | Workload | Nodes | Operation | Pass | Samples | Median ms | p95 ms | CV % |',
   '| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |',
@@ -33,8 +33,8 @@ for (const library of Corpus.libraries)
   for (const kind of Corpus.kinds)
     for (const count of Corpus.counts)
       for (const operation of kind === 'repeated' || kind === 'unique'
-        ? ['mount', 'remount']
-        : ['mount', 'update', 'remount'])
+        ? ['mount', 'rerender', 'remount']
+        : ['mount', 'rerender', 'update', 'remount'])
         for (const pass of [1, 2]) {
           const group = result.samples.filter(
             (s) =>

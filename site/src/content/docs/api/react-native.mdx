@@ -1,3 +1,5 @@
+import { ImportTable } from './react-native/_components/ImportTable.js'
+
 # React Native
 
 Configure native styles, select themes with React, and compile shared definitions into native tables.
@@ -10,11 +12,74 @@ Native entrypoints require React 19 and React Native 0.86 or later. The Reanimat
 
 The `react-native` export condition decides what an import resolves to. Metro sets it, and TypeScript reads it from `customConditions`, as the [native setup walkthrough](/docs/guides/native#walkthrough) shows.
 
-| Import                         | With `react-native`                                                                    | Without the condition                                         |
-| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `zyzz/react-native`            | `defineConfig`, `useStyles`, `useVars`, `withStyles`, `Host`, `StyleSheet`, `Variants` | `Host`, `StyleSheet`, `Variants`                              |
-| `zyzz/react-native/react`      | The same hooks, plus `Provider` and `useNativeStyles`, with automatic window sizes     | The same exports, with React subscriptions and no window size |
-| `zyzz/react-native/reanimated` | `useAnimatedStyleValue`, `useAnimatedVars`                                             | The same exports                                              |
+<ImportTable label="Import paths">
+<table>
+<thead>
+<tr>
+<th scope="col">Import</th>
+<th scope="col">
+
+With `react-native`
+
+</th>
+<th scope="col">Without the condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+`zyzz/react-native`
+
+</td>
+<td>
+
+`defineConfig`, `useStyles`, `useVars`, `withStyles`, `Host`, `StyleSheet`, `Variants`
+
+</td>
+<td>
+
+`Host`, `StyleSheet`, `Variants`
+
+</td>
+</tr>
+<tr>
+<td>
+
+`zyzz/react-native/react`
+
+</td>
+<td>
+
+The same hooks, plus `Provider` and `useNativeStyles`, with automatic window sizes
+
+</td>
+<td>
+
+The same exports, with React subscriptions and no window size
+
+</td>
+</tr>
+<tr>
+<td>
+
+`zyzz/react-native/reanimated`
+
+</td>
+<td>
+
+`useAnimatedStyleValue`, `useAnimatedVars`
+
+</td>
+<td>
+
+The same exports
+
+</td>
+</tr>
+</tbody>
+</table>
+</ImportTable>
 
 Applications import from `zyzz/react-native`, as the [native guides](/docs/guides/native) do. Without the condition, compilers, scripts, and tests still reach the table namespaces without loading React Native.
 

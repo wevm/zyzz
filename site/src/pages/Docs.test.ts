@@ -595,7 +595,7 @@ describe('/docs', () => {
       ).toMatchInlineSnapshot(`
         [
           "View markdown /docs/guides/outline-review-fixture.md _blank",
-          "Report issue https://github.com/wevm/zyzz/issues/new?body=Page%3A+https%3A%2F%2Fzyzz.sh%2Fdocs%2Fguides%2Foutline-review-fixture%0A%0A&title=Docs%3A+Outline+Fixture _blank",
+          "Report issue https://github.com/wevm/zyzz/issues/new?body=Page%3A+https%3A%2F%2Fzyzz.style%2Fdocs%2Fguides%2Foutline-review-fixture%0A%0A&title=Docs%3A+Outline+Fixture _blank",
           "Edit page https://github.com/wevm/zyzz/edit/main/site/src/content/docs/guides/outline-review-fixture.mdx _blank",
         ]
       `)
@@ -1613,7 +1613,7 @@ describe('/docs', () => {
       expect(
         await page.evaluate(() => navigator.clipboard.readText()),
       ).toMatchInlineSnapshot(
-        '"Read zyzz.sh and help me build my project with Zyzz."',
+        '"Read zyzz.style and help me build my project with Zyzz."',
       )
       expect(
         await page
@@ -1917,7 +1917,7 @@ describe('/docs', () => {
       expect(markdown.includes('<Steps>')).toMatchInlineSnapshot('false')
       expect(
         markdown.includes(
-          'Read zyzz.sh and help me build my project with Zyzz.',
+          'Read zyzz.style and help me build my project with Zyzz.',
         ),
       ).toMatchInlineSnapshot('true')
       expect(

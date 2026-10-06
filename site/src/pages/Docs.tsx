@@ -409,7 +409,7 @@ function PageActions(props: PageActions.Props) {
   }, [copyState])
 
   const issue = new URLSearchParams({
-    body: `Page: https://zyzz.sh/docs/${path}\n\n`,
+    body: `Page: https://zyzz.style/docs/${path}\n\n`,
     title: `Docs: ${title}`,
   })
   const label = {

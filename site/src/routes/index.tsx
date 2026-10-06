@@ -148,11 +148,11 @@ function Index() {
 Install with: ${Install.commands[manager]}
 
 Read the documentation before implementation:
-- Getting started: https://zyzz.sh/docs/introduction/getting-started.md
-- Documentation index: https://zyzz.sh/sitemap.xml
-- Vite: https://zyzz.sh/docs/api/vite.md
-- Next.js: https://zyzz.sh/docs/api/next.md
-- CLI: https://zyzz.sh/docs/api/cli.md
+- Getting started: https://zyzz.style/docs/introduction/getting-started.md
+- Documentation index: https://zyzz.style/sitemap.xml
+- Vite: https://zyzz.style/docs/api/vite.md
+- Next.js: https://zyzz.style/docs/api/next.md
+- CLI: https://zyzz.style/docs/api/cli.md
 
 Choose the compilation integration that matches the project. Importing styles alone does not emit CSS. Preserve existing framework plugins.
 

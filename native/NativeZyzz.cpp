@@ -6,11 +6,8 @@
 #include <react/renderer/bridging/bridging.h>
 #include <react/renderer/core/PropsParserContext.h>
 #include <react/renderer/mounting/ShadowTree.h>
-#include <react/renderer/mounting/ShadowTreeRegistry.h>
 
 namespace facebook::react {
-
-thread_local const NativeZyzz *NativeZyzz::writing_ = nullptr;
 
 NativeZyzz::NativeZyzz(std::shared_ptr<CallInvoker> invoker)
     : NativeZyzzCxxSpec(std::move(invoker)) {}
@@ -35,32 +32,15 @@ double NativeZyzz::attach(jsi::Runtime &runtime, jsi::Object node, jsi::Object p
   std::lock_guard<std::mutex> lock(mutex_);
   const auto id = ++nextId_;
   entries_.emplace(id, Entry{shadowNode->getFamilyShared(), values, values,
-                             folly::dynamic::object(), shadowNode->getProps(), nullptr});
+                             folly::dynamic::object()});
   return id;
 }
 
 void NativeZyzz::detach(jsi::Runtime &, double id) {
-  std::shared_ptr<ShadowNodeFamily> family;
-  Props::Shared authored;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    const auto entry = entries_.find(id);
-    if (entry == entries_.end()) return;
-    if (!entry->second.overlay.empty()) {
-      family = entry->second.family.lock();
-      authored = entry->second.authored;
-    }
-    entries_.erase(entry);
-  }
-  if (!family || !authored) return;
-  // The React commit has already passed through the overlay hook when an old
-  // ref is detached. Restore that commit's authored props, not the old style.
-  manager_->getShadowTreeRegistry().visit(family->getSurfaceId(), [&](const ShadowTree &tree) {
-    tree.commit([&](const RootShadowNode &root) {
-      return std::static_pointer_cast<RootShadowNode>(root.cloneTree(*family,
-          [&](const ShadowNode &node) { return node.clone({.props = authored}); }));
-    }, {.mountSynchronously = true});
-  });
+  // React detaches refs before completing the root in the same commit, so its
+  // own props replace the overlay without a separate restoring commit.
+  std::lock_guard<std::mutex> lock(mutex_);
+  entries_.erase(id);
 }
 
 jsi::Object NativeZyzz::inspect(jsi::Runtime &runtime) {
@@ -120,15 +100,7 @@ void NativeZyzz::update(jsi::Runtime &runtime, std::vector<jsi::Object> updates)
 }
 
 void NativeZyzz::write(std::unordered_map<Tag, folly::dynamic> patches) {
-  const auto previous = writing_;
-  writing_ = this;
-  try {
-    manager_->updateShadowTree(std::move(patches));
-  } catch (...) {
-    writing_ = previous;
-    throw;
-  }
-  writing_ = previous;
+  manager_->updateShadowTree(std::move(patches));
 }
 
 std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
@@ -138,7 +110,6 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
   struct Overlay {
     std::shared_ptr<ShadowNodeFamily> family;
     folly::dynamic props;
-    double id;
   };
   std::unordered_map<const ShadowNodeFamily *, Overlay> overlays;
   {
@@ -151,7 +122,7 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
       }
       if (family->getSurfaceId() == tree.getSurfaceId() &&
           !entry->second.overlay.empty())
-        overlays.emplace(family.get(), Overlay{family, entry->second.overlay, entry->first});
+        overlays.emplace(family.get(), Overlay{family, entry->second.overlay});
       ++entry;
     }
   }
@@ -188,16 +159,6 @@ std::shared_ptr<RootShadowNode> NativeZyzz::shadowTreeWillCommit(
         ? node->getProps()
         : node->getComponentDescriptor().cloneProps(
               context, node->getProps(), RawProps(overlay->second.props));
-    if (overlay != overlays.end()) {
-      std::lock_guard<std::mutex> lock(mutex_);
-      const auto entry = entries_.find(overlay->second.id);
-      if (entry != entries_.end()) {
-        // Skip our own native patches and nodes reused from an earlier overlay.
-        if (writing_ != this && node->getProps() != entry->second.applied)
-          entry->second.authored = node->getProps();
-        entry->second.applied = props;
-      }
-    }
     return std::shared_ptr<const ShadowNode>(node->clone({
         .props = props,
         .children = children ? children : ShadowNodeFragment::childrenPlaceholder(),

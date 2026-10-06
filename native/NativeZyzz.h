@@ -33,12 +33,9 @@ class NativeZyzz : public NativeZyzzCxxSpec<NativeZyzz>, public UIManagerCommitH
     folly::dynamic rendered;
     folly::dynamic selected;
     folly::dynamic overlay;
-    Props::Shared authored;
-    Props::Shared applied;
   };
 
   void write(std::unordered_map<Tag, folly::dynamic> patches);
-  static thread_local const NativeZyzz *writing_;
 
   std::shared_ptr<UIManagerBinding> binding_;
   UIManager *manager_ = nullptr;

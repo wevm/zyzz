@@ -9,6 +9,12 @@ import { bench, describe } from 'vite-plus/test'
 import * as Compilation from './Compilation.js'
 import * as Corpus from './Corpus.js'
 
+// Zyzz lanes record their representation, while competitors have one fixed output.
+const modes: Readonly<Record<string, 'atomic' | 'grouped'>> = {
+  zyzz: 'grouped',
+  'zyzz-source': 'atomic',
+}
+
 for (const workload of Corpus.cases) {
   describe(`fresh compilation / ${workload.name}`, () => {
     for (const [library, compile] of Object.entries(Compilation.compilers)) {
@@ -60,7 +66,7 @@ for (const workload of Corpus.cases) {
                     application: 'independent',
                     components: workload.count,
                     css,
-                    cssOutput: library === 'zyzz' ? 'grouped' : undefined,
+                    cssOutput: modes[library],
                     declarations: fixture.zyzz.styles.reduce(
                       (total, style) => total + style.declarations.length,
                       0,

@@ -12,6 +12,7 @@ export type Case = {
   name: string
   /** Workload distribution. */
   pattern:
+    | 'app'
     | 'components'
     | 'independent'
     | 'palette'
@@ -31,7 +32,33 @@ export const cases = [
   { count: 100, name: 'independent', pattern: 'independent' },
   { count: 100, name: 'sparse', pattern: 'sparse' },
   { count: 60, name: 'components', pattern: 'components' },
+  { count: 300, name: 'app', pattern: 'app' },
 ] as const satisfies readonly Case[]
+
+// A shared design scale: most values repeat across components, as in applications.
+const scale = {
+  colors: [
+    '#111827',
+    '#6b7280',
+    '#ffffff',
+    '#f3f4f6',
+    '#e5e7eb',
+    '#2563eb',
+    '#1d4ed8',
+    '#dc2626',
+    '#16a34a',
+    '#d97706',
+  ],
+  radius: ['4px', '8px', '12px', '9999px'],
+  sizes: ['12px', '14px', '16px', '20px', '24px', '32px'],
+  space: ['4px', '8px', '12px', '16px', '24px', '32px'],
+  weights: [400, 500, 600, 700],
+} as const
+
+/** Picks a scale value from independent bits of one mixed seed. */
+function pick<const value>(list: readonly value[], seed: number): value {
+  return list[seed % list.length]!
+}
 
 /** Creates literal data; fixed integer mixing avoids clocks and random globals. */
 export function styles(workload: Case): readonly Style.LiteralDeclarations[] {
@@ -52,6 +79,124 @@ export function styles(workload: Case): readonly Style.LiteralDeclarations[] {
     }
 
     switch (workload.pattern) {
+      case 'app':
+        return (() => {
+          const s = (shift: number) => value >>> shift
+          const { colors, radius, sizes, space, weights } = scale
+          // Twelve UI shapes: button, input, card, stack, row, heading, text,
+          // badge, avatar, divider, link, and page container.
+          const shapes: readonly (() => Style.LiteralDeclarations)[] = [
+            () => ({
+              alignItems: 'center',
+              backgroundColor: pick(colors, s(1)),
+              borderRadius: pick(radius, s(3)),
+              color: pick(colors, s(5)),
+              display: 'inline-flex',
+              fontSize: pick(sizes.slice(0, 3), s(7)),
+              fontWeight: pick(weights.slice(1), s(9)),
+              gap: pick(space.slice(0, 3), s(11)),
+              paddingBlock: pick(space.slice(0, 3), s(13)),
+              paddingInline: pick(space.slice(1, 5), s(15)),
+            }),
+            () => ({
+              backgroundColor: pick(colors, s(1)),
+              borderColor: pick(colors, s(3)),
+              borderRadius: pick(radius.slice(0, 3), s(5)),
+              borderStyle: 'solid',
+              borderWidth: '1px',
+              boxSizing: 'border-box',
+              color: pick(colors, s(7)),
+              display: 'block',
+              fontSize: pick(sizes.slice(1, 3), s(9)),
+              paddingBlock: pick(space.slice(1, 3), s(11)),
+              paddingInline: pick(space.slice(2, 4), s(13)),
+              width: '100%',
+            }),
+            () => ({
+              backgroundColor: pick(colors, s(1)),
+              borderColor: pick(colors, s(3)),
+              borderRadius: pick(radius.slice(1, 3), s(5)),
+              borderStyle: 'solid',
+              borderWidth: '1px',
+              display: 'grid',
+              gap: pick(space, s(7)),
+              padding: pick(space.slice(3), s(9)),
+            }),
+            () => ({
+              display: 'flex',
+              flexDirection: 'column',
+              gap: pick(space, s(1)),
+            }),
+            () => ({
+              alignItems: 'center',
+              display: 'flex',
+              gap: pick(space, s(1)),
+              justifyContent: pick(
+                ['flex-start', 'space-between', 'center', 'flex-end'],
+                s(3),
+              ),
+            }),
+            () => ({
+              color: pick(colors.slice(0, 2), s(1)),
+              fontSize: pick(sizes.slice(3), s(3)),
+              fontWeight: pick(weights.slice(2), s(5)),
+              lineHeight: 1.25,
+              margin: '0px',
+            }),
+            () => ({
+              color: pick(colors, s(1)),
+              fontSize: pick(sizes.slice(0, 3), s(3)),
+              lineHeight: pick([1.25, 1.5], s(5)),
+              margin: '0px',
+            }),
+            () => ({
+              alignItems: 'center',
+              backgroundColor: pick(colors, s(1)),
+              borderRadius: '9999px',
+              color: pick(colors, s(3)),
+              display: 'inline-flex',
+              fontSize: '12px',
+              fontWeight: 500,
+              paddingBlock: '4px',
+              paddingInline: pick(space.slice(1, 3), s(5)),
+            }),
+            () => {
+              const dimension = pick(['24px', '32px', '40px', '48px'], s(1))
+
+              return {
+                backgroundColor: pick(colors, s(3)),
+                borderRadius: '9999px',
+                height: dimension,
+                overflow: 'hidden',
+                width: dimension,
+              }
+            },
+            () => ({
+              backgroundColor: pick(colors.slice(3, 5), s(1)),
+              height: '1px',
+              marginBlock: pick(space.slice(1, 5), s(3)),
+              width: '100%',
+            }),
+            () => ({
+              color: pick(colors.slice(5, 7), s(1)),
+              fontSize: pick(sizes.slice(1, 3), s(3)),
+              fontWeight: pick(weights.slice(0, 3), s(5)),
+              textDecoration: pick(['none', 'underline'], s(7)),
+            }),
+            () => ({
+              marginInline: 'auto',
+              maxWidth: pick(['640px', '768px', '1024px', '1280px'], s(1)),
+              paddingInline: pick(space.slice(3), s(3)),
+              width: '100%',
+            }),
+          ]
+          const style = shapes[s(17) % shapes.length]!()
+
+          // About 5% carry one off-scale value, as configured apps mark with !custom.
+          return value % 20 === 0
+            ? { ...style, minHeight: `${((value >>> 19) % 200) + 20}px` }
+            : style
+        })()
       case 'components':
         return [
           { ...base, borderRadius: '6px', fontSize: '14px', fontWeight: 600 },

@@ -26,4 +26,17 @@ After authenticating with `pnpm --dir site exec wrangler login`, build and deplo
 
 The docs dialog searches a MiniSearch index of every page and `##` or `###` section, built from the MDX sources and loaded on first use. `POST /api/search` adds Cloudflare AI Search results from the `zyzz-docs` instance bound as `AI_SEARCH` in `wrangler.jsonc`, and the dialog merges them with the keyword results.
 
-Create the `zyzz-docs` instance in the Cloudflare dashboard, with the published site as its data source. Local servers reach it only when `CLOUDFLARE_API_TOKEN` is set. Without it, the route answers 503 and the dialog keeps its keyword results.
+Local servers reach the instance only when `CLOUDFLARE_API_TOKEN` is set. Without it, the route answers 503 and the dialog keeps its keyword results.
+
+### AI Search Setup
+
+Cloudflare rejects a deploy whose `AI_SEARCH` binding names a missing instance, so `zyzz-docs` must exist before the Worker deploys. The site's domain must be on the same Cloudflare account.
+
+```sh
+# Crawls the pages that /sitemap.xml lists, keeping only documentation paths
+pnpm --dir site exec wrangler ai-search create zyzz-docs --type web-crawler --source https://zyzz.sh --parse-type sitemap --include-items '**/docs/**'
+```
+
+- **Content selector:** In the instance's website settings, add `[data-docs-content]` for `**/docs/**`, so chunks hold the article without the header and navigation.
+- **Discovery:** `/robots.txt` points to `/sitemap.xml`, which lists the home page, the variables explorer, and every documentation page.
+- **Sync:** AI Search re-crawls every 6 hours by default. `pnpm --dir site exec wrangler ai-search jobs create zyzz-docs` starts a crawl after a deploy.

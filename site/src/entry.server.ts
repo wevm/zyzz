@@ -1,10 +1,11 @@
-/** Answers AI Search queries, and negotiates documentation Markdown for agents and HTML for browsers. @module */
+/** Answers AI Search queries, robots.txt, and the sitemap, and negotiates documentation Markdown for agents and HTML for browsers. @module */
 import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
 import * as AiSearch from './AiSearch.js'
 import * as Manifest from './Manifest.js'
+import * as Sitemap from './Sitemap.js'
 
 // Representation precedence follows wevm/vocs src/internal/markdown-negotiation.ts.
 const handle = createStartHandler(defaultStreamHandler)
@@ -18,6 +19,10 @@ export default {
     const url = new URL(request.url)
     if (url.pathname === '/api/search' && request.method === 'POST')
       return AiSearch.respond(request, options.AI_SEARCH)
+    if (['GET', 'HEAD'].includes(request.method)) {
+      if (url.pathname === '/robots.txt') return Sitemap.robots(request)
+      if (url.pathname === '/sitemap.xml') return Sitemap.respond(request)
+    }
     if (!url.pathname.startsWith('/docs/')) return handle(request, options)
     const path = url.pathname
       .slice('/docs/'.length)

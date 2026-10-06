@@ -953,6 +953,63 @@ describe('/docs', () => {
     `)
   })
 
+  test('publishes sitemap.xml, robots.txt, and one indexable article per page', async () => {
+    const response = await fetch(`${origin}/sitemap.xml`)
+    expect(response.status).toMatchInlineSnapshot(`200`)
+    expect(response.headers.get('content-type')).toMatchInlineSnapshot(
+      `"application/xml; charset=utf-8"`,
+    )
+    const xml = await response.text()
+
+    // The sitemap opens with the protocol namespace and the home page.
+    expect(xml.split('\n').slice(0, 4)).toMatchInlineSnapshot(`
+      [
+        "<?xml version="1.0" encoding="UTF-8"?>",
+        "<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">",
+        "  <url><loc>http://localhost:3157/</loc></url>",
+        "  <url><loc>http://localhost:3157/vars</loc></url>",
+      ]
+    `)
+
+    // Every authored page appears once, as an absolute URL on the requested origin.
+    const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+      (match) => match[1],
+    )
+    const pages = Fs.readdirSync(`${directory}/src/content/docs`, {
+      recursive: true,
+    })
+      .map(String)
+      .filter((path) => path.endsWith('.mdx'))
+      .map((path) => `${origin}/docs/${path.replace(/\.mdx$/, '')}`)
+    expect(
+      JSON.stringify([...locations].sort()) ===
+        JSON.stringify([`${origin}/`, `${origin}/vars`, ...pages].sort()),
+    ).toMatchInlineSnapshot('true')
+
+    const head = await fetch(`${origin}/sitemap.xml`, { method: 'HEAD' })
+    expect(head.status).toMatchInlineSnapshot(`200`)
+    expect(await head.text()).toMatchInlineSnapshot(`""`)
+
+    // robots.txt points crawlers, including the AI Search website crawl, to the sitemap.
+    const robots = await fetch(`${origin}/robots.txt`)
+    expect(robots.headers.get('content-type')).toMatchInlineSnapshot(
+      `"text/plain; charset=utf-8"`,
+    )
+    expect(await robots.text()).toMatchInlineSnapshot(`
+      "User-agent: *
+      Allow: /
+
+      Sitemap: http://localhost:3157/sitemap.xml
+      "
+    `)
+
+    // The server-rendered page marks exactly one element for the AI Search content selector.
+    const html = await (
+      await fetch(`${origin}/docs/guides/search-review-fixture`)
+    ).text()
+    expect(html.match(/data-docs-content/g)?.length).toMatchInlineSnapshot(`1`)
+  })
+
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

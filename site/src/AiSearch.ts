@@ -93,7 +93,7 @@ export type Binding = {
 
 /** Worker bindings that search reads, declared in `wrangler.jsonc`. */
 export type Env = {
-  /** The `zyzz-docs` AI Search instance, absent while the binding is disabled. Calls throw on local servers without remote bindings. */
+  /** The `zyzz-search` AI Search instance. Calls throw on local servers without remote bindings. */
   AI_SEARCH?: Binding | undefined
 }
 

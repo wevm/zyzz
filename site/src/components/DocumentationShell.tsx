@@ -246,7 +246,6 @@ namespace styles {
     gap: 2,
     justifyContent: 'space-between',
     paddingInline: 3,
-    paddingTop: 4,
   })
 
   export const header = style({
@@ -457,10 +456,31 @@ namespace styles {
     },
   })
 
+  // Sticky fades sit in flow as top and bottom spacing, then stay pinned over links scrolling beneath them.
   export const sidebarNavigation = style({
     flex: 1,
     minHeight: 0,
     overflowY: 'auto',
+    '&::before': {
+      backgroundImage: `linear-gradient(${vars.color.background.surface}, transparent) !custom`,
+      content: '""',
+      display: 'block',
+      height: 4,
+      pointerEvents: 'none',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1,
+    },
+    '&::after': {
+      backgroundImage: `linear-gradient(transparent, ${vars.color.background.surface}) !custom`,
+      bottom: 0,
+      content: '""',
+      display: 'block',
+      height: 4,
+      pointerEvents: 'none',
+      position: 'sticky',
+      zIndex: 1,
+    },
   })
 
   export const sidebar = style({
@@ -470,7 +490,6 @@ namespace styles {
     overflow: 'hidden',
     paddingBottom: 4,
     paddingInline: 2,
-    paddingTop: 4,
     position: 'sticky',
     top: 16,
     '@media (max-width: 700px)': {

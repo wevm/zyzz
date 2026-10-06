@@ -38,7 +38,7 @@ const links = [
 ] as const
 
 namespace styles {
-  export const icon = style({ height: 5, width: 5 })
+  export const icon = style({ height: 4, width: 4 })
 
   export const link = style({
     alignItems: 'center',

@@ -1,5 +1,23 @@
 # zyzz
 
+## 0.0.24
+
+### Patch Changes
+
+- b174e48: Fixed `defineConfig` scanning every CSS property for each variable token when no `mappings` are configured, which slowed module evaluation for large token sets.
+- b174e48: Fixed React Native views committing their shadow tree on every mount and re-render by attaching native style bindings only when a Provider change first patches them.
+- 9ee8432: Improved React Native startup by building `defineConfig` authoring helpers on first runtime use, since compiled styles and `useVars` read precompiled tables.
+- 9ee8432: Fixed React Native views committing the shadow tree once per styled view when unmounting or re-rendering after a theme change, which took seconds for 1,000 views.
+- 9ee8432: Improved React Native re-renders by skipping binding refs for styles that never change and removing per-render layout effects from compiled components.
+- 9ee8432: Added `colorScheme="system"` to the native Provider, following the device appearance and switching color-only scheme differences on iOS through dynamic colors without updates.
+  
+  ```tsx
+  <Provider colorScheme="system">{children}</Provider>
+  ```
+- 9ee8432: Improved React Native theme switches by binding views inside the update batch, converting each shared style once, and skipping overlay reapplication during zyzz's own patch commit.
+- 18cc713: Fixed repeated color-scheme rules in complete stylesheets from Host builds and the esbuild, Rollup, and webpack plugins.
+- 0c34bf1: Fixed `variants` inference failing on inline dynamic choice callbacks when `defaultVariants` precedes `variants` in the recipe definition.
+
 ## 0.0.23
 
 ### Patch Changes

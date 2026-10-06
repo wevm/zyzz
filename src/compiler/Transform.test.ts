@@ -10879,6 +10879,64 @@ describe('performance', () => {
       }
     })
 
+    test('erases namespaces whose applications all follow initialization', async () => {
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
+      namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}
+      export const classes=[styles.card().className,styles.label().className]`)
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+              declare namespace styles {export const card: import('zyzz').style.ReturnType;export const label: import('zyzz').style.ReturnType}
+              export const classes=[({className:"z-iFQJXQ-styles-card-text-0"}).className,({className:"z-iFQJXQ-styles-label-text-0"}).className]"
+      `)
+      expect(consumer.classes).toMatchInlineSnapshot(`
+        [
+          "z-iFQJXQ-styles-card-text-0",
+          "z-iFQJXQ-styles-label-text-0",
+        ]
+      `)
+    })
+
+    test('keeps guarded definitions without repeating their class lists', async () => {
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
+      export function apply(){return [styles.card(),styles.label()]}
+      export let failed=false;
+      try {apply()} catch(error){failed=error instanceof TypeError}
+      namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}
+      export const classes=[styles.label().className]
+      const button=style({padding:'2px'});
+      export const padding=button().className`)
+
+      // The guarded card keeps a truthy definition, while the label and button follow initialization.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+              export function apply(){return [(styles.card?{className:"z-iFQJXQ-styles-card-text-0"}:styles.card()),(styles.label?{className:"z-iFQJXQ-styles-label-text-0"}:styles.label())]}
+              export let failed=false;
+              try {apply()} catch(error){failed=error instanceof TypeError}
+              namespace styles {export const card=(1 as unknown as import('zyzz').style.ReturnType);export const label=(1 as unknown as import('zyzz').style.ReturnType)}
+              export const classes=[({className:"z-iFQJXQ-styles-label-text-0"}).className]
+              const button=(void 0 as unknown as import('zyzz').style.ReturnType);
+              export const padding=({className:"z-p-2px"}).className"
+      `)
+      expect(consumer.failed).toMatchInlineSnapshot(`true`)
+      expect(consumer.apply()).toMatchInlineSnapshot(`
+        [
+          {
+            "className": "z-iFQJXQ-styles-card-text-0",
+          },
+          {
+            "className": "z-iFQJXQ-styles-label-text-0",
+          },
+        ]
+      `)
+      expect(consumer.classes).toMatchInlineSnapshot(`
+        [
+          "z-iFQJXQ-styles-label-text-0",
+        ]
+      `)
+      expect(consumer.padding).toMatchInlineSnapshot(`"z-p-2px"`)
+    })
+
     test('folds local calls into fresh props while preserving initialization errors', async () => {
       const { consumer, output } = await execute(`import {style} from 'zyzz';
       export function early(){return card()}

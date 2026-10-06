@@ -319,6 +319,56 @@ export function compile(options: compile.Options): compile.ReturnType {
     ),
   )
 
+  const found = localApplications?.find() ?? []
+  const folded = new Set(
+    found.filter(
+      (application) =>
+        !extracted.calls.some(
+          (call) =>
+            (call.output === 'html' &&
+              call.runtimeComposition?.some(
+                (input) => input.applicationStart === application.start,
+              )) ||
+            ((call.composition || call.runtimeComposition) &&
+              call.start < application.start &&
+              application.end <= call.end),
+        ),
+    ),
+  )
+
+  // Definitions read only through folded applications need no class list of
+  // their own. True marks definitions whose every read follows initialization.
+  const reads =
+    portable || options.development
+      ? undefined
+      : localApplications?.definitions()
+  const unread = new Map(
+    [...(reads?.values ?? [])].filter(([name]) =>
+      found.every(
+        (application) => application.name !== name || folded.has(application),
+      ),
+    ),
+  )
+  const namespaces = (reads?.namespaces ?? []).filter((namespace) =>
+    [...namespace.ends.keys()].every((name) => unread.get(name)),
+  )
+
+  const erased = new Map(namespaces.flatMap((namespace) => [...namespace.ends]))
+
+  // An ambient namespace keeps member types without runtime initialization.
+  for (const namespace of namespaces)
+    module.prependRight(namespace.start, 'declare ')
+
+  for (const call of extracted.calls) {
+    const end = erased.get(call.name)
+    if (end !== undefined)
+      module.overwrite(
+        end,
+        call.start,
+        `: import('zyzz').style.ReturnType${call.output === 'html' ? "<'html'>" : ''}`,
+      )
+  }
+
   let callable = false
 
   const composed = (node: Span) =>
@@ -438,6 +488,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         return typed ? `(${result} as ${type})` : result
       }
 
+      const initialized = unread.get(call.name)
+      if (initialized !== undefined) {
+        if (erased.has(call.name)) return ''
+
+        // Guards read only truthiness, and failures before initialization still call it.
+        const value = initialized ? 'void 0' : '1'
+        return /\.[cm]?tsx?$/.test(options.moduleId)
+          ? `(${value} as unknown as import('zyzz').style.ReturnType${call.output === 'html' ? "<'html'>" : ''})`
+          : value
+      }
+
       if (application.folded)
         return composeHtml
           ? `${compositionHtml}.from({className:${JSON.stringify(classes[call.name])}})`
@@ -463,31 +524,13 @@ export function compile(options: compile.Options): compile.ReturnType {
       !call.slots &&
       !call.runtimeComposition &&
       !application.folded &&
+      !unread.has(call.name) &&
       call.output !== 'html'
     )
       callable = true
   }
 
-  for (const application of localApplications?.find() ?? []) {
-    if (
-      extracted.calls.some(
-        (call) =>
-          call.output === 'html' &&
-          call.runtimeComposition?.some(
-            (input) => input.applicationStart === application.start,
-          ),
-      )
-    )
-      continue
-    if (
-      extracted.calls.some(
-        (call) =>
-          (call.composition || call.runtimeComposition) &&
-          call.start < application.start &&
-          application.end <= call.end,
-      )
-    )
-      continue
+  for (const application of folded) {
     const className = JSON.stringify(classes[application.name])
 
     const key =
@@ -495,12 +538,18 @@ export function compile(options: compile.Options): compile.ReturnType {
       'html'
         ? 'class'
         : 'className'
+    const callee = options.source.slice(
+      application.start,
+      application.calleeEnd,
+    )
 
-    // Keep a callable guard so bundlers also retain failures before initialization.
     module.overwrite(
       application.start,
       application.end,
-      `(${options.source.slice(application.start, application.calleeEnd)}?{${key}:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
+      application.initialized
+        ? `({${key}:${className}})`
+        : // Keep a callable guard so bundlers also retain failures before initialization.
+          `(${callee}?{${key}:${className}}:${callee}())`,
     )
   }
 

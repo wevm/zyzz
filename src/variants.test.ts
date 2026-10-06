@@ -224,8 +224,9 @@ const button = variants({
       export function recipe(input?: object) { return styles.button(input) };
       export const empty = variants({ variants: { size: { sm: {} } }, defaultVariants: { size: undefined } });`,
     })
+    // The application follows the namespace, so it folds without a guard.
     expect(
-      result.code.includes('styles.card?{className:'),
+      result.code.includes('export const props = ({className:'),
     ).toMatchInlineSnapshot(`true`)
     const output = await Esbuild.build({
       stdin: { contents: result.code, loader: 'ts', resolveDir: process.cwd() },

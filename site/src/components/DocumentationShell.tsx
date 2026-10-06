@@ -1,11 +1,10 @@
-/** Shares the bordered documentation frame and appearance controls. @module */
+/** Shares the bordered documentation frame, community links, and appearance controls. @module */
 import { type ReactNode, type Ref, useEffect, useRef, useState } from 'react'
 import { appearance } from 'zyzz/default'
-import MonitorIcon from '~icons/lucide/monitor'
-import MoonIcon from '~icons/lucide/moon'
-import SunIcon from '~icons/lucide/sun'
 import { style, vars } from '../zyzz.config.js'
 import { Link } from './Link.js'
+import { Socials } from './Socials.js'
+import { ThemeToggle } from './ThemeToggle.js'
 
 /** Renders the common Docs and Variables frame. */
 export function DocumentationShell(props: DocumentationShell.Props) {
@@ -22,9 +21,8 @@ export function DocumentationShell(props: DocumentationShell.Props) {
     sidebar,
   } = props
 
-  const [colorScheme, setColorScheme] = useState<
-    'light' | 'dark' | 'light dark'
-  >('light dark')
+  const [colorScheme, setColorScheme] =
+    useState<ThemeToggle.Scheme>('light dark')
 
   const menuRef = useRef<HTMLDialogElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -82,35 +80,17 @@ export function DocumentationShell(props: DocumentationShell.Props) {
     )
   }, [])
 
-  const schemeControl = (
-    <div role="group" aria-label="Color scheme" {...styles.schemeControl()}>
-      {(
-        [
-          {
-            label: 'System',
-            value: 'light dark',
-            icon: MonitorIcon,
-          },
-          { label: 'Light', value: 'light', icon: SunIcon },
-          { label: 'Dark', value: 'dark', icon: MoonIcon },
-        ] as const
-      ).map((scheme) => (
-        <button
-          aria-label={scheme.label}
-          aria-pressed={colorScheme === scheme.value}
-          key={scheme.value}
-          onClick={() => {
-            appearance.set({ colorScheme: scheme.value })
-            setColorScheme(scheme.value)
-            onSchemeChange?.(scheme.value)
-          }}
-          title={`${scheme.label} color scheme`}
-          type="button"
-          {...styles.schemeButton()}
-        >
-          <scheme.icon aria-hidden="true" height="14" width="14" />
-        </button>
-      ))}
+  const footer = (
+    <div {...styles.footer()}>
+      <Socials />
+      <ThemeToggle
+        onValueChange={(scheme) => {
+          appearance.set({ colorScheme: scheme })
+          setColorScheme(scheme)
+          onSchemeChange?.(scheme)
+        }}
+        value={colorScheme}
+      />
     </div>
   )
   const brand = (
@@ -202,7 +182,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
           >
             {search}
             <div>{sidebar}</div>
-            {schemeControl}
+            {footer}
           </div>
         </dialog>
       )}
@@ -210,7 +190,7 @@ export function DocumentationShell(props: DocumentationShell.Props) {
         <div {...styles.layout()}>
           <aside {...styles.sidebar()}>
             <div {...styles.sidebarNavigation()}>{sidebar}</div>
-            <div {...styles.sidebarFooter()}>{schemeControl}</div>
+            {footer}
           </aside>
           <div ref={contentRef} {...styles.sections()}>
             {children}
@@ -232,9 +212,7 @@ export declare namespace DocumentationShell {
     /** Collapses documentation navigation below the tablet breakpoint. */
     mobileMenu?: boolean | undefined
     navigation?: ReactNode
-    onSchemeChange?:
-      | ((scheme: 'light' | 'dark' | 'light dark') => void)
-      | undefined
+    onSchemeChange?: ((scheme: ThemeToggle.Scheme) => void) | undefined
     search?: ReactNode
     sidebar: ReactNode
   }
@@ -258,6 +236,17 @@ namespace styles {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  })
+
+  // Sits below the scrolling sidebar navigation, and at the end of the mobile menu.
+  export const footer = style({
+    alignItems: 'center',
+    display: 'flex',
+    flexShrink: 0,
+    gap: 2,
+    justifyContent: 'space-between',
+    paddingInline: 3,
+    paddingTop: 4,
   })
 
   export const header = style({
@@ -370,10 +359,7 @@ namespace styles {
     padding: 4,
     '& > div:first-child': { maxWidth: 'none !custom' },
     '& input': { fontSize: '16px !custom' },
-    '& > div:last-child': {
-      alignSelf: 'flex-start',
-      marginTop: 'auto !custom',
-    },
+    '& > div:last-child': { marginTop: 'auto !custom' },
   })
 
   export const menuHeader = style({
@@ -459,36 +445,6 @@ namespace styles {
     },
   })
 
-  export const schemeButton = style({
-    alignItems: 'center',
-    backgroundColor: 'transparent !custom',
-    border: '1px solid transparent',
-    borderRadius: '9999px !custom',
-    color: 'gray.900',
-    cursor: 'pointer',
-    display: 'flex',
-    height: 6,
-    justifyContent: 'center',
-    width: 6,
-    ':hover': { color: 'foreground' },
-    '&[aria-pressed="true"]': { borderColor: 'gray.400', color: 'foreground' },
-    ':focus-visible': {
-      outline: '2px solid',
-      outlineColor: 'blue.900',
-      outlineOffset: '2px',
-    },
-  })
-
-  export const schemeControl = style({
-    backgroundColor: 'background.surface',
-    border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: '9999px !custom',
-    display: 'flex',
-    padding: '2px !custom',
-    flexShrink: 0,
-  })
-
   export const sections = style({
     borderLeft: '1px solid',
     borderColor: 'gray.400',
@@ -499,14 +455,6 @@ namespace styles {
       borderTop: '1px solid',
       borderColor: 'gray.400',
     },
-  })
-
-  export const sidebarFooter = style({
-    alignItems: 'center',
-    display: 'flex',
-    flexShrink: 0,
-    paddingInline: 3,
-    paddingTop: 4,
   })
 
   export const sidebarNavigation = style({

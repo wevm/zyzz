@@ -1137,6 +1137,115 @@ describe('/docs', () => {
     `)
   })
 
+  test('publishes llms.txt and llms-full.txt and answers agents at the home page', async () => {
+    const index = await fetch(`${origin}/llms.txt`)
+    expect(index.headers.get('content-type')).toMatchInlineSnapshot(
+      `"text/plain; charset=utf-8"`,
+    )
+    const text = await index.text()
+    const lines = text.split('\n')
+
+    // The index opens with the llms.txt title and summary.
+    expect(lines.slice(0, 7)).toMatchInlineSnapshot(`
+      [
+        "# Zyzz",
+        "",
+        "> Type-safe styles, variables, and themes. Compile to static CSS with Zyzz.",
+        "",
+        "Each link opens a page's Markdown. [llms-full.txt](http://localhost:3157/llms-full.txt) holds every page in one file.",
+        "",
+        "## Introduction",
+      ]
+    `)
+
+    // Sections follow the sidebar groups, which also list published pages missing from the authored navigation, such as these fixtures.
+    expect(lines.filter((line) => line.startsWith('## ')))
+      .toMatchInlineSnapshot(`
+      [
+        "## Introduction",
+        "## Guides",
+        "## API",
+      ]
+    `)
+    expect(
+      lines.find((line) =>
+        line.includes('/docs/guides/navigation-review-fixture.md)'),
+      ),
+    ).toMatchInlineSnapshot(
+      `"- [Navigation Fixture](http://localhost:3157/docs/guides/navigation-review-fixture.md): A guide used to verify published navigation."`,
+    )
+    expect(
+      lines.find((line) => line.includes('/docs/guides/native.md)')),
+    ).toMatchInlineSnapshot(
+      `"- [React Native › Overview](http://localhost:3157/docs/guides/native.md): Compile typed styles with Metro, and select themes and window sizes as the app renders."`,
+    )
+
+    // Every published page appears once, linked to its Markdown twin.
+    const links = [...text.matchAll(/\]\(([^)]+)\.md\)/g)].map(
+      (match) => match[1],
+    )
+    const pages = Fs.readdirSync(`${directory}/src/content/docs`, {
+      recursive: true,
+    })
+      .map(String)
+      .filter((path) => path.endsWith('.mdx'))
+      .map((path) => `${origin}/docs/${path.replace(/\.mdx$/, '')}`)
+    expect(
+      JSON.stringify([...links].sort()) === JSON.stringify([...pages].sort()),
+    ).toMatchInlineSnapshot(`true`)
+
+    // The full text holds each page's Markdown twin after its source URL.
+    const full = await fetch(`${origin}/llms-full.txt`)
+    expect(full.headers.get('content-type')).toMatchInlineSnapshot(
+      `"text/plain; charset=utf-8"`,
+    )
+    const body = await full.text()
+    const styling = await (
+      await fetch(`${origin}/docs/guides/styling.md`)
+    ).text()
+    expect(
+      body.includes(
+        `Source: ${origin}/docs/guides/styling\n\n${styling.trim()}\n`,
+      ),
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      body.match(/^Source: /gm)?.length === pages.length,
+    ).toMatchInlineSnapshot(`true`)
+
+    // Agents, terminal clients, and text Accept rankings receive the index at the home page. Previews and search engines keep HTML.
+    for (const [agent, accept, type] of [
+      ['Mozilla/5.0', 'text/html,application/xhtml+xml,*/*;q=0.8', 'text/html'],
+      ['curl/8.7.1', '*/*', 'text/markdown'],
+      ['ClaudeBot/1.0', '*/*', 'text/markdown'],
+      ['Mozilla/5.0', 'text/markdown', 'text/markdown'],
+      ['Mozilla/5.0', 'text/plain', 'text/plain'],
+      ['Mozilla/5.0', 'text/plain;q=0.5, text/html', 'text/html'],
+      ['Googlebot/2.1', 'text/markdown', 'text/html'],
+      ['Slackbot-LinkExpanding 1.0', 'text/markdown', 'text/html'],
+    ] as const) {
+      const response = await fetch(`${origin}/`, {
+        headers: { accept, 'user-agent': agent },
+      })
+      expect(
+        response.headers.get('content-type')?.split(';')[0] === type,
+      ).toMatchInlineSnapshot(`true`)
+      expect(response.headers.get('vary')).toMatchInlineSnapshot(
+        `"Accept, User-Agent"`,
+      )
+      if (type !== 'text/html')
+        expect((await response.text()) === text).toMatchInlineSnapshot(`true`)
+    }
+
+    // Documentation pages honor a plain-text Accept ranking with their Markdown twin.
+    const plain = await fetch(`${origin}/docs/guides/styling`, {
+      headers: { accept: 'text/plain', 'user-agent': 'Mozilla/5.0' },
+    })
+    expect(plain.headers.get('content-type')).toMatchInlineSnapshot(
+      `"text/plain; charset=utf-8"`,
+    )
+    expect((await plain.text()) === styling).toMatchInlineSnapshot(`true`)
+  })
+
   test('reserves two lines and clips overflow for every documentation card', async () => {
     const browser = await chromium.launch({ headless: true })
     try {

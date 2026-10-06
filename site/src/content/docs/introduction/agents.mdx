@@ -15,10 +15,16 @@ Include the requested change and ask the agent to read the existing config, buil
 The site serves readable Markdown at documentation URLs ending in `.md`. Fetch a page directly when an agent needs its text:
 
 ```sh
+# One page as Markdown
 curl https://zyzz.style/docs/introduction/agents.md
+
+# The documentation index, which the home page also returns to agents
+curl https://zyzz.style/llms.txt
 ```
 
-Use the [sitemap](https://zyzz.style/sitemap.xml) to find the relevant guide and API contract. Copy the owning config and build setup alongside examples, since token names and compilation targets are project-specific.
+[llms.txt](https://zyzz.style/llms.txt) links the Markdown of every guide and API page, grouped as in the sidebar. [llms-full.txt](https://zyzz.style/llms-full.txt) holds all pages in one file. The home page returns the index to agents and to `Accept` headers that prefer Markdown or plain text.
+
+Copy the owning config and build setup alongside examples, since token names and compilation targets are project-specific.
 
 ## Add Project Instructions
 

@@ -422,7 +422,7 @@ describe('/docs/api/oxlint', () => {
           if (width < 1024)
             await page.getByRole('button', { name: 'Open menu' }).click()
           await page
-            .getByRole('button', {
+            .getByRole('radio', {
               name: scheme === 'light' ? 'Light' : 'Dark',
               exact: true,
             })

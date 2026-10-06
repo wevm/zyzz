@@ -149,7 +149,7 @@ Install with: ${Install.commands[manager]}
 
 Read the documentation before implementation:
 - Getting started: https://zyzz.style/docs/introduction/getting-started.md
-- Documentation index: https://zyzz.style/sitemap.xml
+- Documentation index: https://zyzz.style/llms.txt
 - Vite: https://zyzz.style/docs/api/vite.md
 - Next.js: https://zyzz.style/docs/api/next.md
 - CLI: https://zyzz.style/docs/api/cli.md

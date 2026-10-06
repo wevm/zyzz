@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="#overview">Overview</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#documentation">Documentation</a> · <a href="https://zyzz.style/docs/guides/styling">Guides</a> · <a href="https://zyzz.style/docs/api/core">API Reference</a>
+  <a href="#overview">Overview</a> · <a href="#agent-prompt">Agent Prompt</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#documentation">Documentation</a> · <a href="https://zyzz.style/docs/guides/styling">Guides</a> · <a href="https://zyzz.style/docs/api/core">API Reference</a>
 </p>
 
 ## Overview
@@ -32,6 +32,14 @@ export function Card() {
     </article>
   )
 }
+```
+
+## Agent Prompt
+
+Paste this prompt into a coding agent:
+
+```txt
+Read zyzz.style and help me build my project with Zyzz.
 ```
 
 ## Philosophy

@@ -927,33 +927,7 @@ describe('/docs', () => {
     }
   }, 60000)
 
-  test('rejects invalid AI Search queries and reports an unreachable instance', async () => {
-    const post = (body: string) =>
-      fetch(`${origin}/api/search`, {
-        body,
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      })
-
-    const invalid = await post('{}')
-    expect(invalid.status).toMatchInlineSnapshot(`400`)
-    expect(await invalid.json()).toMatchInlineSnapshot(`
-      {
-        "error": "Expected a query of 1 to 512 characters.",
-      }
-    `)
-
-    // Local servers without remote bindings cannot reach AI Search, so the dialog keeps keyword results.
-    const unreachable = await post(JSON.stringify({ query: 'theme scopes' }))
-    expect(unreachable.status).toMatchInlineSnapshot(`503`)
-    expect(await unreachable.json()).toMatchInlineSnapshot(`
-      {
-        "error": "AI Search is unavailable.",
-      }
-    `)
-  })
-
-  test('publishes sitemap.xml, robots.txt, and one indexable article per page', async () => {
+  test('publishes sitemap.xml and robots.txt', async () => {
     const response = await fetch(`${origin}/sitemap.xml`)
     expect(response.status).toMatchInlineSnapshot(`200`)
     expect(response.headers.get('content-type')).toMatchInlineSnapshot(
@@ -990,7 +964,7 @@ describe('/docs', () => {
     expect(head.status).toMatchInlineSnapshot(`200`)
     expect(await head.text()).toMatchInlineSnapshot(`""`)
 
-    // robots.txt points crawlers, including the AI Search website crawl, to the sitemap.
+    // robots.txt points crawlers to the sitemap.
     const robots = await fetch(`${origin}/robots.txt`)
     expect(robots.headers.get('content-type')).toMatchInlineSnapshot(
       `"text/plain; charset=utf-8"`,
@@ -1002,12 +976,6 @@ describe('/docs', () => {
       Sitemap: http://localhost:3157/sitemap.xml
       "
     `)
-
-    // The server-rendered page marks exactly one element for the AI Search content selector.
-    const html = await (
-      await fetch(`${origin}/docs/guides/search-review-fixture`)
-    ).text()
-    expect(html.match(/data-docs-content/g)?.length).toMatchInlineSnapshot(`1`)
   })
 
   test('reserves two lines and clips overflow for every documentation card', async () => {

@@ -252,8 +252,7 @@ export function Page(props: Page.Props) {
       }
     >
       <div {...styles.columns()}>
-        {/* The AI Search content selector targets this attribute, so indexed chunks leave out the header and navigation. */}
-        <article data-docs-content="" {...styles.article()}>
+        <article {...styles.article()}>
           <header {...styles.heading()}>
             <h1>{page.title}</h1>
             <p>{page.description}</p>

@@ -1,4 +1,4 @@
-/** Searches the documentation in a modal dialog, blending keyword results with AI Search results. @module */
+/** Searches the documentation in a modal dialog. @module */
 import { Dialog } from '@base-ui/react/dialog'
 import { useNavigate } from '@tanstack/react-router'
 import MiniSearch, { type SearchResult } from 'minisearch'
@@ -13,28 +13,20 @@ import {
 } from 'react'
 import FileIcon from '~icons/lucide/file-text'
 import HashIcon from '~icons/lucide/hash'
-import LoaderIcon from '~icons/lucide/loader-circle'
 import SearchIcon from '~icons/lucide/search'
-import { keyframes } from 'zyzz/web'
 import * as Docs from '../Docs.js'
 import * as Search from '../Search.js'
 import { style } from '../zyzz.config.js'
 import { Kbd } from './Kbd.js'
 import { Link } from './Link.js'
 
-/**
- * Searches documentation pages and sections, toggled by the parent or by ⌘K and Ctrl+K.
- * Keyword results appear as the query changes, and AI Search results merge in once the `/api/search` route answers.
- */
+/** Searches documentation pages and sections as the query changes, toggled by the parent or by ⌘K and Ctrl+K. */
 export function SearchDialog(props: SearchDialog.Props) {
   const { onOpenChange, open } = props
 
-  type Semantic = { query: string; results: readonly Search.Match[] }
   const [index, setIndex] = useState<MiniSearch<Search.Document>>()
-  const [pending, setPending] = useState(false)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
-  const [semantic, setSemantic] = useState<Semantic>()
   const id = useId()
   const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLUListElement>(null)
@@ -69,39 +61,7 @@ export function SearchDialog(props: SearchDialog.Props) {
     }
   }, [index, open])
 
-  useEffect(() => {
-    if (!open || !value) return
-
-    const controller = new AbortController()
-    const timer = setTimeout(async () => {
-      setPending(true)
-      try {
-        const response = await fetch('/api/search', {
-          body: JSON.stringify({ query: value }),
-          headers: { 'Content-Type': 'application/json' },
-          method: 'POST',
-          signal: controller.signal,
-        })
-        // The route answers 503 where AI Search is unreachable, which leaves the keyword results in place.
-        if (!response.ok) return
-
-        const body = (await response.json()) as Search.Matches
-        setSemantic({ query: value, results: body.results })
-      } catch {
-        // A newer query aborted this request.
-      } finally {
-        if (!controller.signal.aborted) setPending(false)
-      }
-    }, 250)
-
-    return () => {
-      controller.abort()
-      clearTimeout(timer)
-      setPending(false)
-    }
-  }, [open, value])
-
-  const keyword = useMemo((): readonly Result[] => {
+  const results = useMemo((): readonly Result[] => {
     if (!index || !value) return []
 
     // An exact title match leads, with matching case first, so typing a page or export name opens it.
@@ -126,15 +86,6 @@ export function SearchDialog(props: SearchDialog.Props) {
       })
       .sort((a, b) => rank(b) - rank(a))
   }, [index, value])
-
-  const results = useMemo(() => {
-    if (semantic?.query !== value || !semantic.results.length) return keyword
-
-    return Search.fuse<Result>({
-      keyword,
-      semantic: semantic.results.map((result) => ({ ...result, terms: [] })),
-    })
-  }, [keyword, semantic, value])
   const active = Math.min(selected, results.length - 1)
 
   useEffect(() => {
@@ -145,7 +96,6 @@ export function SearchDialog(props: SearchDialog.Props) {
     if (!next) {
       setQuery('')
       setSelected(0)
-      setSemantic(undefined)
     }
     onOpenChange(next)
   }
@@ -205,12 +155,6 @@ export function SearchDialog(props: SearchDialog.Props) {
               value={query}
               {...styles.input()}
             />
-            {pending && (
-              <span role="status" {...styles.status()}>
-                Enhancing results
-                <LoaderIcon aria-hidden="true" {...styles.spinner()} />
-              </span>
-            )}
           </div>
           {results.length > 0 ? (
             <ul
@@ -295,9 +239,9 @@ export namespace SearchDialog {
   }
 }
 
-/** A keyword or AI Search result, with the index terms it matched. */
+/** A search result, with the index terms it matched. */
 type Result = Search.Document & {
-  /** Index terms that matched the query. AI Search results have none. */
+  /** Index terms that matched the query. */
   terms: readonly string[]
 }
 
@@ -391,8 +335,6 @@ function snippet(text: string, terms: readonly string[]): string {
   const to = Math.min(text.length, start + 140)
   return `${from > 0 ? '…' : ''}${text.slice(from, to)}${to < text.length ? '…' : ''}`
 }
-
-const spin = keyframes({ to: { transform: 'rotate(360deg)' } })
 
 namespace styles {
   export const backdrop = style({
@@ -563,25 +505,6 @@ namespace styles {
     // Two 20px lines of `copy.14`. Snippets are already cut to a short window around the match.
     maxHeight: 10,
     overflow: 'hidden',
-  })
-
-  export const spinner = style({
-    animationDuration: '1s',
-    animationIterationCount: 'infinite',
-    animationName: spin,
-    animationTimingFunction: 'linear',
-    height: 4,
-    width: 4,
-    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-  })
-
-  export const status = style({
-    typography: 'label.12',
-    alignItems: 'center',
-    color: 'gray.900',
-    display: 'flex',
-    flexShrink: 0,
-    gap: 2,
   })
 
   export const title = style({

@@ -1,9 +1,8 @@
-/** Answers AI Search queries, robots.txt, and the sitemap, and negotiates documentation Markdown for agents and HTML for browsers. @module */
+/** Answers robots.txt and the sitemap, and negotiates documentation Markdown for agents and HTML for browsers. @module */
 import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
-import * as AiSearch from './AiSearch.js'
 import * as Manifest from './Manifest.js'
 import * as Sitemap from './Sitemap.js'
 
@@ -11,14 +10,8 @@ import * as Sitemap from './Sitemap.js'
 const handle = createStartHandler(defaultStreamHandler)
 
 export default {
-  // Workers passes the environment bindings as the second argument, which continues on to TanStack Start.
-  async fetch(
-    request: Request,
-    options: AiSearch.Env & NonNullable<Parameters<typeof handle>[1]>,
-  ) {
+  async fetch(request: Request, options?: Parameters<typeof handle>[1]) {
     const url = new URL(request.url)
-    if (url.pathname === '/api/search' && request.method === 'POST')
-      return AiSearch.respond(request, options.AI_SEARCH)
     if (['GET', 'HEAD'].includes(request.method)) {
       if (url.pathname === '/robots.txt') return Sitemap.robots(request)
       if (url.pathname === '/sitemap.xml') return Sitemap.respond(request)

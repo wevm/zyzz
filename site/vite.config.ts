@@ -298,11 +298,7 @@ export default defineConfig(async () => {
       }),
     },
     plugins: [
-      cloudflare({
-        // AI Search bindings only run on Cloudflare, so local servers reach them only with credentials. Without them, search keeps keyword results.
-        remoteBindings: Boolean(process.env.CLOUDFLARE_API_TOKEN),
-        viteEnvironment: { name: 'ssr' },
-      }),
+      cloudflare({ viteEnvironment: { name: 'ssr' } }),
       zyzz(),
       mdx({
         remarkPlugins: [

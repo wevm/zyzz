@@ -1,4 +1,4 @@
-/** Lists the site's pages for crawlers, including the AI Search website crawl. @module */
+/** Lists the site's pages for crawlers. @module */
 import * as Manifest from './Manifest.js'
 
 /** Answers `GET /robots.txt`, allowing every crawler and pointing it to the sitemap. */

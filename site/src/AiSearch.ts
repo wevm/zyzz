@@ -5,7 +5,7 @@ import type * as Search from './Search.js'
 /** Answers `POST /api/search` with up to ten matching pages, or 503 when AI Search is unreachable. */
 export async function respond(
   request: Request,
-  binding: Binding,
+  binding: Binding | undefined,
 ): Promise<Response> {
   const query = await (async () => {
     try {
@@ -29,6 +29,8 @@ export async function respond(
     )
 
   const chunks = await (async () => {
+    // Deployments without the binding answer as if AI Search were unreachable.
+    if (!binding) return undefined
     try {
       const response = await binding.search({
         ai_search_options: { retrieval: { max_num_results: 10 } },
@@ -91,8 +93,8 @@ export type Binding = {
 
 /** Worker bindings that search reads, declared in `wrangler.jsonc`. */
 export type Env = {
-  /** The `zyzz-docs` AI Search instance. Calls throw on local servers without remote bindings. */
-  AI_SEARCH: Binding
+  /** The `zyzz-docs` AI Search instance, absent while the binding is disabled. Calls throw on local servers without remote bindings. */
+  AI_SEARCH?: Binding | undefined
 }
 
 /** Reads a published documentation path from a source URL or object key, such as `https://zyzz.sh/docs/guides/styling.md`. */

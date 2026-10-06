@@ -1,14 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "zyzz-site",
-  // Semantic results for documentation search. The instance is created in the Cloudflare dashboard.
-  "ai_search": [
-    {
-      "binding": "AI_SEARCH",
-      "instance_name": "zyzz-docs",
-      "remote": true,
-    },
-  ],
+  // Semantic results for documentation search. Cloudflare rejects a binding to a missing instance, so this stays disabled until `zyzz-docs` exists.
+  // "ai_search": [
+  //   {
+  //     "binding": "AI_SEARCH",
+  //     "instance_name": "zyzz-docs",
+  //     "remote": true,
+  //   },
+  // ],
   "compatibility_date": "2026-09-21",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./src/entry.server.ts",

@@ -30,7 +30,7 @@ Local servers reach the instance only when `CLOUDFLARE_API_TOKEN` is set. Withou
 
 ### AI Search Setup
 
-Cloudflare rejects a deploy whose `AI_SEARCH` binding names a missing instance, so `zyzz-docs` must exist before the Worker deploys. The site's domain must be on the same Cloudflare account.
+Cloudflare rejects a deploy whose `AI_SEARCH` binding names a missing instance, so the binding in `wrangler.jsonc` stays commented out until `zyzz-docs` exists. Uncomment it after creating the instance. The site's domain must be on the same Cloudflare account.
 
 ```sh
 # Crawls the pages that /sitemap.xml lists, keeping only documentation paths

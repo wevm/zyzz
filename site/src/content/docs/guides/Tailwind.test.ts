@@ -299,7 +299,7 @@ describe('Tailwind migration page', () => {
             await page
               .getByRole('button', { name: 'Open menu', exact: true })
               .click()
-          await page.getByRole('button', { name: scheme, exact: true }).click()
+          await page.getByRole('radio', { name: scheme, exact: true }).click()
           if (width < 1024) {
             await page
               .getByRole('button', { name: 'Close menu', exact: true })

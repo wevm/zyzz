@@ -26,4 +26,8 @@ After authenticating with `pnpm --dir site exec wrangler login`, build and deplo
 
 The docs dialog searches a MiniSearch index of every page and `##` or `###` section, built from the MDX sources and loaded on first use.
 
+## Crawlers & Agents
+
 `/robots.txt` points crawlers to `/sitemap.xml`, which lists the home page, the variables explorer, and every documentation page.
+
+`/llms.txt` links every documentation page's Markdown in sidebar order, and `/llms-full.txt` concatenates the pages. The home page returns `/llms.txt` to agents, terminal clients, and `Accept` headers that prefer Markdown or plain text.

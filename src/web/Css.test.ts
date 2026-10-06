@@ -963,22 +963,22 @@ describe('compile', () => {
     expect(output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "-1": "z--1-text-0 z-block z--1-p-1",
-          "1": "z-1-text-0 z-block z-1-p-2",
-          "_31_": "z-_5f_31_5f_-text-0 z-block z-_5f_31_5f_-p-1",
-          "again": "z-1-text-0 z-block z-1-p-2",
-          "base_0": "z-base_5f_0-text-0 z-block z-base_5f_0-p-1",
+          "-1": "z_3 z_1 z_4",
+          "1": "z_0 z_1 z_2",
+          "_31_": "z_5 z_1 z_6",
+          "again": "z_0 z_1 z_2",
+          "base_0": "z_7 z_1 z_8",
           "empty": "",
         },
-        "css": ".z-1-text-0{color:#000;}
-      .z-block{display:block;}
-      .z-1-p-2{padding:8px;}
-      .z--1-text-0{color:#fff;}
-      .z--1-p-1{padding:3px;}
-      .z-_5f_31_5f_-text-0{color:#333;}
-      .z-_5f_31_5f_-p-1{padding:4px;}
-      .z-base_5f_0-text-0{color:#555;}
-      .z-base_5f_0-p-1{padding:5px;}",
+        "css": ".z_0{color:#000;}
+      .z_1{display:block;}
+      .z_2{padding:8px;}
+      .z_3{color:#fff;}
+      .z_4{padding:3px;}
+      .z_5{color:#333;}
+      .z_6{padding:4px;}
+      .z_7{color:#555;}
+      .z_8{padding:5px;}",
         "vars": {},
       }
     `)
@@ -1032,6 +1032,74 @@ describe('compile', () => {
         },
       ]
     `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('independent atomic styles share equal domain declarations in authored order', async () => {
+    // Opposing padding orders form distinct domain units, while equal colors share one rule.
+    const output = Css.compile({
+      composition: 'independent',
+      styles: Style.define({
+        card: { color: 'red', padding: '8px', paddingLeft: '2px' },
+        label: { color: 'red', paddingLeft: '2px', padding: '8px' },
+        title: { color: 'blue', padding: '8px', paddingLeft: '2px' },
+      }),
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "card": "z_0 z_1",
+        "label": "z_0 z_2",
+        "title": "z_3 z_1",
+      }
+    `)
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_0{color:red;}
+      .z_1{padding:8px;padding-left:2px;}
+      .z_2{padding-left:2px;padding:8px;}
+      .z_3{color:blue;}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style>${Object.values(output.classes)
+          .map((className) => `<div class="${className}"></div>`)
+          .join('')}`,
+      )
+
+      expect(
+        await page.locator('div').evaluateAll((elements) =>
+          elements.map((element) => {
+            const style = getComputedStyle(element)
+
+            return [style.color, style.paddingLeft, style.paddingRight]
+          }),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(255, 0, 0)",
+            "2px",
+            "8px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "8px",
+            "8px",
+          ],
+          [
+            "rgb(0, 0, 255)",
+            "2px",
+            "8px",
+          ],
+        ]
+      `)
     } finally {
       await browser.close()
     }

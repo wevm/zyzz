@@ -9,6 +9,7 @@ import type * as Ast from '@oxc-project/types'
 import * as Css from '../web/Css.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Expression from './internal/Expression.js'
+import * as Identity from '../internal/Identity.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
@@ -196,6 +197,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     [ThemeRules.shared]: options[ThemeRules.shared],
     development: options.development,
     [ClassName.labels]: extracted.styles[ClassName.labels],
+    [ClassName.units]:
+      options[ClassName.units] ??
+      ClassName.registry().scope({
+        owner: options.moduleId,
+        qualifier: Identity.compact(options.moduleId).slice(-6),
+      }),
     composition: options.composition,
     cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
@@ -1184,6 +1191,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       ? { [ThemeRules.shared]: emitted[ThemeRules.shared] }
       : {}),
     [ClassName.rules]: emitted[ClassName.rules],
+    [ClassName.units]: emitted[ClassName.units],
     classes,
     code: portable ? options.source : module.toString(),
     css: namespaced.css,
@@ -1199,6 +1207,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     vars: emitted.vars,
   }
   Object.defineProperty(result, ClassName.rules, { enumerable: false })
+  Object.defineProperty(result, ClassName.units, { enumerable: false })
   return Object.freeze(result)
 }
 
@@ -1210,6 +1219,8 @@ export declare namespace compile {
   type Options = Source.extract.Options & {
     /** Separates generated token definitions for independently loaded modules. */
     readonly [ThemeRules.shared]?: 'all' | 'defaults' | undefined
+    /** Names shared independent atomic rules, with one name table across a graph's modules. */
+    readonly [ClassName.units]?: ClassName.Units | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
@@ -1237,6 +1248,8 @@ export declare namespace compile {
     readonly code: string
     /** Exact emitted rules retained for collision diagnostics. */
     readonly [ClassName.rules]: Readonly<Record<string, string>>
+    /** Shared rule names chosen by this module, for graph cache validation. */
+    readonly [ClassName.units]?: ClassName.Units['used'] | undefined
     /** Ordered, unminified stylesheet text. */
     readonly css: string
     /** Standard stylesheet map with authored selector/declaration locations. */

@@ -138,6 +138,40 @@ namespace styles {
 
 Class-string order does not determine precedence. `cx` also preserves variable bindings and variant attributes, and dynamic values bind to precompiled custom properties.
 
+## Independent Composition
+
+Set `composition: 'independent'` when styles combine only through `cx`. Atomic styles then share one short-named rule for each repeated declaration, so the card and label below share their color rule even though another style sets a different color.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({
+  // [!code hl:2]
+  // Styles combine only through cx, so repeated declarations share rules
+  composition: 'independent',
+})
+```
+
+```css title="independent.css"
+/* [!code hl:4] */
+/* Shared by the card and label */
+.z_X8T0-w0 {
+  color: red;
+}
+
+/* Used by the card only */
+.z_X8T0-w1 {
+  padding: 8px;
+}
+
+/* Used by a title with color: blue */
+.z_X8T0-w2 {
+  color: blue;
+}
+```
+
+Ordered output resolves conflicts between combined class lists in definition order, so an override class from a consuming module wins over the component's own style. Independent output drops that guarantee, while `cx` and the declarations inside each style keep their authored order. Development builds skip the sharing so names survive edits.
+
 ## Generated Names
 
 Common atomic declarations use readable names, and variables follow authored paths, such as `--z-color-brand`. Apply returned props rather than copying class names. When combining independent configs, give each a distinct `id`.

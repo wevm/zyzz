@@ -3971,16 +3971,14 @@ describe('atomicReview', () => {
 
       expect(output.classes).toMatchInlineSnapshot(`
         {
-          "a": "z-a-p-0 z-a-pl-1",
-          "again": "z-a-p-0 z-a-pl-1",
-          "b": "z-b-pl-0 z-b-p-1",
+          "a": "z_0",
+          "again": "z_0",
+          "b": "z_1",
         }
       `)
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-a-p-0{padding:10px;}
-        .z-a-pl-1{padding-left:1px;}
-        .z-b-pl-0{padding-left:1px;}
-        .z-b-p-1{padding:10px;}"
+        ".z_0{padding:10px;padding-left:1px;}
+        .z_1{padding-left:1px;padding:10px;}"
       `)
 
       const browser = await chromium.launch()
@@ -10300,6 +10298,114 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
         `[Source.ExtractError: app.ts:42: cssOutput must be atomic or grouped.]`,
       )
     })
+    test('rejects unsupported composition options through config and extraction', () => {
+      expect(() =>
+        Config.create({ composition: 'shared' } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Config.InvalidError: composition must be independent or ordered.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'app.ts',
+          source:
+            "import {Config} from 'zyzz';const {style}=Config.create({composition:'shared'});const card=style({color:'red'});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:42: composition must be independent or ordered.]`,
+      )
+    })
+
+    test('configured independent composition shares rules with bound styles only', async () => {
+      // The config's styles share equal declarations, while root helpers stay ordered.
+      const source = `import {Config,cx,style} from 'zyzz';
+const independent=Config.create({composition:'independent'});
+namespace styles {
+  export const card=independent.style({color:'red',padding:'8px'});
+  export const label=independent.style({color:'red',padding:'4px'});
+  export const plain=style({color:'red',padding:'8px'});
+}
+export const composed=cx(styles.card(),styles.label());
+export const classes=[styles.card().className,styles.label().className,styles.plain().className,composed.className];`
+      const output = Transform.compile({ moduleId: 'app.ts', source })
+
+      expect(output.classes).toMatchInlineSnapshot(`
+        {
+          "composition-1e8a67z1uaws1j-337": "z_Zf5JrJ3 z_Zf5JrJ4",
+          "style-1e8a67z1uaws1j-139": "z_Zf5JrJ0 z_Zf5JrJ1",
+          "style-1e8a67z1uaws1j-208": "z_Zf5JrJ0 z_Zf5JrJ2",
+          "style-1e8a67z1uaws1j-277": "z-Zf5JrJ-styles-plain-text-0 z-Zf5JrJ-styles-plain-p-1",
+        }
+      `)
+      expect(output.css).toMatchInlineSnapshot(`
+        ".z_Zf5JrJ0{color:red;}
+        .z_Zf5JrJ1{padding:8px;}
+        .z_Zf5JrJ2{padding:4px;}
+        .z-Zf5JrJ-styles-plain-text-0{color:red;}
+        .z-Zf5JrJ-styles-plain-p-1{padding:8px;}
+        .z_Zf5JrJ3{color:red;color:red;}
+        .z_Zf5JrJ4{padding:8px;padding:4px;}"
+      `)
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        format: 'iife',
+        globalName: 'fixture',
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(`<style>${output.css}</style>`)
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+
+        expect(
+          await page.evaluate(() =>
+            (
+              window as unknown as { fixture: { classes: string[] } }
+            ).fixture.classes.map((className) => {
+              const element = document.createElement('div')
+
+              element.className = className
+              document.body.append(element)
+
+              const style = getComputedStyle(element)
+
+              return [style.color, style.padding]
+            }),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "rgb(255, 0, 0)",
+              "8px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "4px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "8px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "4px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('preserves immutable configured output across extraction and composition', () => {
       for (const cssOutput of ['atomic', 'grouped'] as const) {
         const source = `import {Config,cx} from 'zyzz';const {style}=Config.create({cssOutput:'${cssOutput}'});const a=style({color:'red',padding:'8px'});const b=style({paddingLeft:'2px'});export const props=cx(a(),b());`

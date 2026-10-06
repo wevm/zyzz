@@ -150,6 +150,7 @@ export function create(
   for (const key of Object.keys(input))
     if (
       ![
+        'composition',
         'cssOutput',
         'id',
         'defaultLayer',
@@ -189,6 +190,13 @@ export function create(
     input.cssOutput !== 'grouped'
   )
     throw new InvalidError('cssOutput must be atomic or grouped.')
+
+  if (
+    input.composition !== undefined &&
+    input.composition !== 'independent' &&
+    input.composition !== 'ordered'
+  )
+    throw new InvalidError('composition must be independent or ordered.')
 
   if (input.theme !== undefined && input.themes !== undefined)
     throw new InvalidError('Use either theme or themes, not both.')
@@ -253,6 +261,9 @@ export function create(
 
   const contract = Object.freeze({
     ...(variableMode ? { variableSet: true, mappings: variableMappings } : {}),
+    ...(input.composition !== undefined
+      ? { composition: input.composition as 'independent' | 'ordered' }
+      : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer as string }
       : {}),
@@ -452,6 +463,11 @@ export function create(
 export declare namespace create {
   /** Optional layer names and mutually exclusive theme modes. */
   type Options = {
+    /**
+     * Whether bound styles' class lists may combine. Independent atomic styles
+     * share rules for repeated declarations, so combine them only with `cx`.
+     */
+    readonly composition?: 'independent' | 'ordered' | undefined
     /** CSS representation inherited by bound helpers; atomic by default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     /** Fallback CSS layer for bound styles and variants; unlayered when omitted. */
@@ -837,6 +853,11 @@ type Validated<options> = Record<
 
 /** Vars, optional named alternatives, and category-to-property mappings. */
 export type VariableOptions = {
+  /**
+   * Whether bound styles' class lists may combine. Independent atomic styles
+   * share rules for repeated declarations, so combine them only with `cx`.
+   */
+  readonly composition?: 'independent' | 'ordered' | undefined
   /** CSS representation inherited by bound helpers; atomic by default. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Fallback CSS layer for bound styles and variants; unlayered when omitted. */

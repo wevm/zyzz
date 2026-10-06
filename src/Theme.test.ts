@@ -704,18 +704,18 @@ export const body=style({
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "other": "z-other-text-0",
-        "t_0": "z-t_5f_0-text-0",
-        "z_theme-base": "z-z_5f_theme-base-text-0",
+        "other": "z_0",
+        "t_0": "z_1",
+        "z_theme-base": "z_2",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
       ".z0{--z0:#000;--z1:#fff;}
       .z1{--z0:#f00;--z1:#06c;}
       .z2{--z0:#000;--z1:#fff;}
-      .z-other-text-0{color:var(--z0,#000);}
-      .z-t_5f_0-text-0{color:#175;}
-      .z-z_5f_theme-base-text-0{color:var(--z1,#fff);}"
+      .z_0{color:var(--z0,#000);}
+      .z_1{color:#175;}
+      .z_2{color:var(--z1,#fff);}"
     `)
     expect(output.vars).toMatchInlineSnapshot(`
       {

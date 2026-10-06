@@ -12,6 +12,7 @@ import { ResolverFactory } from 'oxc-resolver'
 import * as Graph from '../compiler/Graph.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
+import * as ClassName from '../web/internal/ClassName.js'
 import * as Relative from '../compiler/internal/Relative.js'
 import * as Scheme from '../internal/Scheme.js'
 import * as Snapshot from './internal/Snapshot.js'
@@ -460,6 +461,7 @@ export async function create(options: create.Options): Promise<Runtime> {
     }
 
     const graph = compiler.compile({
+      [ClassName.complete]: true,
       [ThemeRules.shared]:
         options.modules === false && !native ? 'all' : undefined,
       [Syntax.cache]: snapshot.programs(modules),
@@ -675,10 +677,11 @@ export async function create(options: create.Options): Promise<Runtime> {
     // cascade over the rules of the modules it imports.
     if (shared || moduleStylesheets.size) {
       const parts = shared ? [shared] : []
+      const units = new Set<string>()
       let schemes = false
 
-      // Each module stylesheet declares the scheme classes to load alone. The
-      // complete stylesheet keeps the first declaration.
+      // Each module stylesheet declares the scheme classes and shared rules it
+      // uses to load alone. The complete stylesheet keeps the first declaration.
       for (const id of order(graph.dependencies, [
         ...moduleStylesheets.keys(),
       ])) {
@@ -686,6 +689,9 @@ export async function create(options: create.Options): Promise<Runtime> {
         const declares = Object.values(Scheme.classes).some((className) =>
           stylesheet.code.includes(`.${className}`),
         )
+        const names = [
+          ...(graph.modules[id]![ClassName.units]?.values() ?? []),
+        ].map((decision) => decision.name)
 
         parts.push(
           rebase(
@@ -693,9 +699,11 @@ export async function create(options: create.Options): Promise<Runtime> {
             name,
             css === false ? false : css.minify,
             schemes && declares,
+            new Set(names.filter((name) => units.has(name))),
           ),
         )
         schemes ||= declares
+        for (const name of names) units.add(name)
       }
 
       const complete = concatenate(parts)
@@ -1199,10 +1207,15 @@ function rebase(
   name: string,
   minify: boolean,
   schemes: boolean,
+  emitted: ReadonlySet<string>,
 ) {
   const directory = Path.posix.dirname(name)
 
-  if (!schemes && (directory === '.' || !stylesheet.code.includes('url(')))
+  if (
+    !schemes &&
+    !emitted.size &&
+    (directory === '.' || !stylesheet.code.includes('url('))
+  )
     return stylesheet
 
   const classes = Object.values(Scheme.classes)
@@ -1220,11 +1233,11 @@ function rebase(
           const [component, ...rest] = selector ?? []
 
           if (
-            schemes &&
             !others.length &&
             !rest.length &&
             component?.type === 'class' &&
-            classes.includes(component.name)
+            ((schemes && classes.includes(component.name)) ||
+              emitted.has(component.name))
           )
             return []
         },

@@ -21,7 +21,8 @@ export type Contribution = Contributions.Definition
 /**
  * Emits atomic or grouped CSS without reading files or generating runtime code.
  * Shares only nonconflicting declaration domains; conflicting rules retain authored
- * order by default. Independent composition deduplicates complete applications.
+ * order by default. Independent composition deduplicates complete applications and
+ * shares equal atomic domain declarations under short names.
  * Class lists are scoped to the complete compilation input. Empty styles
  * return an empty class list and no rule.
  * @param options - Validated, ordered definitions from Style.define.
@@ -35,6 +36,9 @@ export function compile<
   options: compile.Options<name, themeName>,
 ): compile.ReturnType<name, themeName> {
   const labels = options[ClassName.labels] ?? options.styles[ClassName.labels]
+  const units =
+    options[ClassName.units] ??
+    ClassName.registry().scope({ owner: '', qualifier: '' })
   options = {
     ...options,
     styles: { styles: options.styles.styles.map(Targets.web) },
@@ -406,6 +410,13 @@ export function compile<
       | undefined
   }
 
+  function compositionMode(style: Style.NamedStyle) {
+    const mode = Object.getOwnPropertyDescriptor(style, 'composition')
+      ?.value as 'independent' | 'ordered' | undefined
+
+    return mode ?? options.composition ?? 'ordered'
+  }
+
   function representation(style: Style.NamedStyle): unknown {
     return [
       outputMode(style),
@@ -446,6 +457,8 @@ export function compile<
 
   for (const [styleIndex, style] of options.styles.styles.entries()) {
     const mode = outputMode(style) ?? defaultMode
+    const independent =
+      compositionMode(style) === 'independent' && !options.development
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
         code: 'invalid_name',
@@ -473,9 +486,7 @@ export function compile<
     }
 
     const application =
-      explicit === undefined &&
-      options.composition === 'independent' &&
-      !options.development
+      explicit === undefined && independent
         ? `${mode}:${style.rules ? JSON.stringify(representation(style)) : ''}:${nested(canonicalStyles[styleIndex]!)}`
         : undefined
     if (application !== undefined && applications.has(application)) {
@@ -504,12 +515,9 @@ export function compile<
     ) {
       if (!body) return
 
-      const independent =
-        mode === 'grouped' &&
-        !options.development &&
-        output === mode &&
-        options.composition === 'independent'
-      const reusable = explicit === undefined && (shared || independent)
+      const reusable =
+        explicit === undefined &&
+        (shared || (independent && mode === 'grouped' && output === mode))
       const previous = reusable ? sharedRules![output].get(body) : undefined
       if (previous && !names.includes(previous)) {
         names.push(previous)
@@ -623,6 +631,96 @@ export function compile<
       }
     }
 
+    // Independent class lists never combine, so only declarations within one
+    // conflict domain need relative order. Equal domain bodies share one rule.
+    function share(style: Style.NamedStyle) {
+      type Item = {
+        readonly conditions: readonly string[]
+        readonly property: string
+        readonly value: string
+      }
+
+      function flatten(
+        style: Style.NamedStyle,
+        conditions: readonly string[],
+      ): Item[] | undefined {
+        if (outputMode(style) === 'grouped') return undefined
+
+        if (style.rules) {
+          const items: Item[] = []
+          for (const rule of style.rules) {
+            if (rule.condition?.trim() === '@layer') return undefined
+
+            const nested = flatten(
+              rule.style,
+              rule.condition === undefined
+                ? conditions
+                : [...conditions, rule.condition],
+            )
+            if (!nested) return undefined
+
+            items.push(...nested)
+          }
+          return items
+        }
+
+        const items: Item[] = []
+        for (let index = 0; index < style.declarations.length; ) {
+          const property = style.declarations[index]!.property
+          let value = ''
+          // Keep same-property fallbacks ordered; they form one semantic value.
+          while (style.declarations[index]?.property === property) {
+            const declaration = style.declarations[index++]!
+            value += `${Literal.name(property)}:${serialize(declaration.value)}${declaration.important ? '!important' : ''};`
+          }
+          items.push({ conditions, property, value })
+        }
+        return items
+      }
+
+      const items = flatten(style, [])
+      if (!items) return atoms(style)
+
+      const domains = new Map<string, Item[]>()
+      for (const item of items) {
+        const key = conflict(item.property)
+        const domain = domains.get(key)
+        if (domain) domain.push(item)
+        else domains.set(key, [item])
+      }
+
+      for (const domain of domains.values()) {
+        // Conditional rules stay contextual to keep their order against base declarations.
+        if (domain.some((item) => item.conditions.length)) {
+          for (const item of domain)
+            emit(
+              item.conditions.reduceRight(
+                (body, condition) => `${condition}{${body}}`,
+                item.value,
+              ),
+              item.property,
+              false,
+              mode,
+              item,
+            )
+          continue
+        }
+
+        const body = domain.map((item) => item.value).join('')
+        const identity = units.name(body, cssNamespace)
+        if (rules.has(identity) && rules.get(identity) !== body)
+          diagnostics.push({
+            code: 'identity_collision',
+            message:
+              'Generated class names conflict. Supply distinct config or style ids.',
+            path: [style.name],
+          })
+
+        rules.set(identity, body)
+        names.push(identity)
+      }
+    }
+
     try {
       if (mode === 'grouped') {
         const shared: Style.Declaration[] = []
@@ -631,7 +729,7 @@ export function compile<
           const key = conflict(declaration.property)
           const reusable =
             !style.rules &&
-            options.composition === 'independent' &&
+            independent &&
             groups.get(key) !== false &&
             (occurrences.get(key) ?? 0) > 1
           if (reusable) shared.push(declaration)
@@ -641,7 +739,8 @@ export function compile<
           emit(shared.map(declarationBody).join(''), 'shared', false)
           emit(local.map(declarationBody).join(''), 'style', false)
         } else emit(nested(style), 'style', false)
-      } else atoms(style)
+      } else if (explicit === undefined && independent) share(style)
+      else atoms(style)
     } catch (error) {
       diagnostics.push({
         code: 'invalid_declaration',
@@ -730,6 +829,7 @@ export function compile<
   const result = {
     ...(scopes.resources.length ? { [Themes.shared]: scopes.resources } : {}),
     ...(contributionCss ? { contributionCss, scopedCss } : {}),
+    [ClassName.units]: units.used,
     [ClassName.rules]: Object.freeze({
       ...Object.fromEntries(rules),
       ...Object.fromEntries(
@@ -744,6 +844,7 @@ export function compile<
     vars: scopes.classes as Readonly<Record<themeName, string>>,
   }
   Object.defineProperty(result, ClassName.rules, { enumerable: false })
+  Object.defineProperty(result, ClassName.units, { enumerable: false })
   return Object.freeze(result)
 }
 
@@ -761,18 +862,20 @@ export declare namespace compile {
     readonly [Themes.shared]?: 'all' | 'defaults' | undefined
     /** Readable source bindings and consumer-owned configuration namespaces. */
     readonly [ClassName.labels]?: ClassName.Labels | undefined
+    /** Names shared independent atomic rules, with one name table across a graph's modules. */
+    readonly [ClassName.units]?: ClassName.Units | undefined
     /** Fixed class identities used by CSS-only consumers. */
     readonly names?: Readonly<Record<string, string>> | undefined
     /**
-     * Defaults to ordered, preserving stylesheet precedence across combined class lists.
-     * Independent deduplicates complete applications; its class lists must not be
-     * combined with each other. Resolve composition before compiling in this mode.
+     * Ordered by default, preserving precedence across combined class lists.
+     * Independent shares applications and atomic declarations, so resolve
+     * composition first and never combine its lists.
      */
+    readonly composition?: 'independent' | 'ordered' | undefined
     /** Eager module-level stylesheet contributions, supplied as static data. */
     readonly contributions?: readonly Contribution[] | undefined
     /** CSS representation; atomic declarations are the default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
-    readonly composition?: 'independent' | 'ordered' | undefined
     /** Retains live definitions for development updates. */
     readonly development?: boolean | undefined
     /**
@@ -797,6 +900,8 @@ export declare namespace compile {
   > = {
     /** Exact emitted rule bodies retained for graph-wide collision diagnostics. */
     readonly [ClassName.rules]: Readonly<Record<string, string>>
+    /** Shared rule names chosen by this compilation, for graph cache validation. */
+    readonly [ClassName.units]: ClassName.Units['used']
     /** Shared token resources omitted from this module's stylesheet. */
     readonly [Themes.shared]?: readonly Themes.Resource[] | undefined
     /** Contribution text separated for graph-wide hoisting. */

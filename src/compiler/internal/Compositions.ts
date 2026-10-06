@@ -405,7 +405,15 @@ export function collect(options: collect.Options) {
         node,
       )
     const name = `composition-${options.identity}-${node.start}`
+    // A composition of independent styles keeps their sharing contract.
+    const independent = (calls: readonly Source.Call[]) =>
+      calls.every(
+        (call) => styles.get(call.name)!.composition === 'independent',
+      )
+        ? ({ composition: 'independent' } as const)
+        : {}
     const style: Style.NamedStyle = {
+      ...independent(selected),
       cssOutput: 'atomic',
       name,
       declarations: [],
@@ -580,6 +588,7 @@ export function collect(options: collect.Options) {
             .join(' '),
         },
         style: {
+          ...independent(included),
           cssOutput: 'atomic',
           name,
           declarations: [],

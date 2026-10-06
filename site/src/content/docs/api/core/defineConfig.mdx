@@ -163,6 +163,18 @@ The emitted CSS shape. Atomic output emits one rule per declaration and conditio
 defineConfig({ cssOutput: 'grouped', vars: base })
 ```
 
+### options.composition
+
+- **Type:** `'ordered' | 'independent'{:ts}`
+- **Default:** `'ordered'{:ts}`
+
+Whether the bound styles' class lists may combine on one element. Ordered class lists resolve conflicts in definition order. Independent atomic styles share one rule per repeated declaration, so combine them only with [`cx`](/docs/api/core/cx). [CSS Output](/docs/guides/css-output#independent-composition) shows the emitted rules.
+
+```ts /composition: 'independent'/
+// Repeated declarations share one short rule across styles
+defineConfig({ composition: 'independent', vars: base })
+```
+
 ### options.storageKey
 
 - **Type:** `string{:ts}`

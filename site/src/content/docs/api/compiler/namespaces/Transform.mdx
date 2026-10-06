@@ -90,7 +90,7 @@ Transform.compile({ cssOutput: 'grouped', moduleId: 'app/Card.tsx', source })
 - **Type:** `'ordered' | 'independent'{:ts}`
 - **Default:** `'ordered'{:ts}`
 
-How class lists combine. Ordered output keeps authored precedence when applications are combined, so a later style that repeats an overridden declaration gets its own rule. Independent output reuses the first rule, and its class lists must not be combined.
+How class lists combine. Ordered output keeps authored precedence when applications are combined, so a later style that repeats an overridden declaration gets its own rule. Independent output reuses the first rule, and its class lists must not be combined. Styles bound to a config with [`composition`](/docs/api/core/defineConfig#optionscomposition) use its mode instead.
 
 ```ts
 import { Transform } from 'zyzz/compiler'

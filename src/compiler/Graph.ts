@@ -46,6 +46,8 @@ export declare namespace compile {
     readonly [ThemeRules.shared]?: 'all' | 'defaults' | undefined
     /** Host entrypoints emit owned stylesheet effects without packed contracts. */
     readonly [Stylesheets.entry]?: string | undefined
+    /** Lets modules reuse shared rule names from unrelated modules of this one graph. */
+    readonly [ClassName.complete]?: boolean | undefined
     /** Host syntax from the same immutable source snapshot. */
     readonly [Syntax.cache]?:
       | ReadonlyMap<string, Parser.ParseResult>
@@ -1682,6 +1684,37 @@ function build(options: compile.Options, cache?: Cache): Cache {
   )
 
   const ownerSignature = JSON.stringify(owners)
+  const units = ClassName.registry()
+  const closures = new Map<string, ReadonlySet<string>>()
+
+  function closure(moduleId: string): ReadonlySet<string> {
+    const cached = closures.get(moduleId)
+    if (cached) return cached
+
+    const result = new Set<string>()
+    closures.set(moduleId, result)
+    for (const dependency of dependencies[moduleId] ?? []) {
+      result.add(dependency)
+      for (const nested of closure(dependency)) result.add(nested)
+    }
+
+    return result
+  }
+
+  // Hosts that compile a module within several graphs must name it the same in
+  // each, so it may reuse only names its dependencies introduce.
+  function visible(moduleId: string) {
+    if (options[ClassName.complete]) return undefined
+    return (owner: string) => closure(moduleId).has(owner)
+  }
+
+  function restore(moduleId: string, output: Transform.compile.ReturnType) {
+    return units.restore({
+      owner: moduleId,
+      used: output[ClassName.units] ?? new Map(),
+      visible: visible(moduleId),
+    })
+  }
 
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
@@ -1695,14 +1728,21 @@ function build(options: compile.Options, cache?: Cache): Cache {
       Object.entries(cached.classes).every(
         ([name, value]) => styleClasses[name] === value,
       ) &&
-      cached.owners === ownerSignature
+      cached.owners === ownerSignature &&
+      restore(moduleId, cached.output)
     modules[moduleId] = reusable
       ? cached.output
       : sameThemes &&
           previous!.schemes === schemes &&
-          extracted.get(moduleId) === previous!.extracted.get(moduleId)
+          extracted.get(moduleId) === previous!.extracted.get(moduleId) &&
+          restore(moduleId, previous!.result.modules[moduleId]!)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
+            [ClassName.units]: units.scope({
+              owner: moduleId,
+              qualifier: Identity.compact(moduleId).slice(-6),
+              visible: visible(moduleId),
+            }),
             [ThemeRules.shared]:
               options[Stylesheets.entry] === undefined
                 ? (options[ThemeRules.shared] ?? 'defaults')

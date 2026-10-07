@@ -355,7 +355,7 @@ describe('/docs/api/oxlint', () => {
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toContain('text/markdown')
-      expect(await page.title()).toBe('Linting · Zyzz')
+      expect(await page.title()).toBe('Linting · Guides · Zyzz')
       expect(await article.locator('h1, h2, h3').allTextContents()).toEqual(
         headings,
       )

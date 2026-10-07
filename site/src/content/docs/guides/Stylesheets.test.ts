@@ -253,7 +253,7 @@ describe('stylesheet guides', () => {
             'text/markdown; charset=utf-8',
           )
           expect(html?.status(), guide.path).toBe(200)
-          expect(await page.title()).toBe(`${guide.title} · Zyzz`)
+          expect(await page.title()).toBe(`${guide.title} · Guides · Zyzz`)
           expect(
             await article.locator('h1, h2, h3').allTextContents(),
             guide.path,

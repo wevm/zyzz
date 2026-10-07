@@ -267,11 +267,7 @@ export function Page(props: Page.Props) {
           </Suspense>
         </article>
         <Outline headings={page.headings}>
-          <PageActions
-            markdown={page.markdown}
-            path={path}
-            title={page.title}
-          />
+          <PageActions path={path} title={page.title} />
         </Outline>
       </div>
       <SearchDialog onOpenChange={setSearching} open={searching} />
@@ -397,7 +393,7 @@ declare namespace Outline {
 
 /** Copies or opens the page's Markdown, and links to a new GitHub issue and the page source. */
 function PageActions(props: PageActions.Props) {
-  const { markdown, path, title } = props
+  const { path, title } = props
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
     'idle',
   )
@@ -437,8 +433,22 @@ function PageActions(props: PageActions.Props) {
         <button
           onClick={async () => {
             try {
-              // The copied text matches the Markdown twin served at `/docs/<path>.md`.
-              await navigator.clipboard.writeText(markdown)
+              // Fetching inside the `ClipboardItem` keeps the click's user activation, which Safari requires for asynchronous copies.
+              await navigator.clipboard.write([
+                new ClipboardItem({
+                  'text/plain': fetch(`/docs/${path}.md`).then(
+                    async (response) => {
+                      if (!response.ok)
+                        throw new Error(
+                          `Markdown request failed with ${response.status}.`,
+                        )
+                      return new Blob([await response.text()], {
+                        type: 'text/plain',
+                      })
+                    },
+                  ),
+                }),
+              ])
               setCopyState('copied')
             } catch {
               setCopyState('failed')
@@ -473,7 +483,7 @@ function PageActions(props: PageActions.Props) {
 }
 
 declare namespace PageActions {
-  type Props = { markdown: string; path: string; title: string }
+  type Props = { path: string; title: string }
 }
 
 function SidebarItem(props: SidebarItem.Props) {
@@ -565,9 +575,7 @@ function Code(input: Code.Props) {
     return () => window.clearTimeout(timer)
   }, [copyState])
 
-  if (
-    !isValidElement<{ children?: string; 'data-filename'?: string }>(children)
-  )
+  if (!isValidElement<Code.Element>(children))
     return <pre {...styles.code()}>{children}</pre>
   const filename = children.props['data-filename']
   const Icon = (() => {
@@ -582,10 +590,8 @@ function Code(input: Code.Props) {
   })()
 
   const source = children.props.children?.replace(/\n$/, '') ?? ''
-  const code = Object.hasOwn(Manifest.code, source)
-    ? Manifest.code[source]
-    : undefined
-  const text = code?.text ?? source
+  const html = children.props['data-html']
+  const text = children.props['data-text'] ?? source
   const copyButton = (
     <button
       aria-label={
@@ -636,9 +642,9 @@ function Code(input: Code.Props) {
         </p>
       )}
       <pre {...styles.code()}>
-        {code ? (
+        {html ? (
           // Shiki renders highlighted lines, notations, and Twoslash annotations during the build.
-          <code dangerouslySetInnerHTML={{ __html: code.html }} />
+          <code dangerouslySetInnerHTML={{ __html: html }} />
         ) : (
           <code>{source}</code>
         )}
@@ -650,6 +656,14 @@ function Code(input: Code.Props) {
 declare namespace Code {
   /** Properties for the Code component. */
   type Props = { children?: ReactNode }
+
+  /** Properties of the `<code>` element that MDX renders inside `<pre>`, with the build's highlighting. */
+  type Element = {
+    children?: string
+    'data-filename'?: string | undefined
+    'data-html'?: string | undefined
+    'data-text'?: string | undefined
+  }
 }
 
 namespace styles {

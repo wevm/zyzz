@@ -1,6 +1,7 @@
 /** Lists the documentation for language models in the llms.txt format, linking each page's Markdown twin. @module */
 import * as Docs from './Docs.js'
 import * as Manifest from './Manifest.js'
+import * as Markdown from './Markdown.js'
 
 // Opens both files with the llms.txt title and summary.
 const header = [
@@ -96,7 +97,8 @@ function sections() {
         {
           description: page.description,
           label: [...topics, item.title].join(' › '),
-          markdown: page.markdown,
+          // The build writes a Markdown twin for every page in the manifest.
+          markdown: Markdown.pages[path]!,
           path,
         },
       ]
@@ -114,7 +116,7 @@ function sections() {
       (entry): Entry => ({
         description: entry[1].description,
         label: entry[1].title,
-        markdown: entry[1].markdown,
+        markdown: Markdown.pages[entry[0]]!,
         path: entry[0],
       }),
     )

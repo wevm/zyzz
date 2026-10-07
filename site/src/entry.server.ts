@@ -4,7 +4,7 @@ import {
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
 import * as Llms from './Llms.js'
-import * as Manifest from './Manifest.js'
+import * as Markdown from './Markdown.js'
 import * as Sitemap from './Sitemap.js'
 
 // Representation precedence follows wevm/vocs src/internal/markdown-negotiation.ts.
@@ -54,8 +54,8 @@ export default {
       .slice('/docs/'.length)
       .replace(/\.md$/, '')
       .replace(/\/$/, '')
-    const page = Manifest.pages[path]
-    if (!Object.hasOwn(Manifest.pages, path) || !page)
+    const markdown = Markdown.pages[path]
+    if (!Object.hasOwn(Markdown.pages, path) || markdown === undefined)
       return handle(request, options)
 
     const explicit = url.pathname.endsWith('.md')
@@ -65,7 +65,7 @@ export default {
       (explicit || (!client.search && client.type))
     ) {
       const type = explicit ? 'text/markdown' : (client.type ?? 'text/markdown')
-      return new Response(request.method === 'HEAD' ? null : page.markdown, {
+      return new Response(request.method === 'HEAD' ? null : markdown, {
         headers: {
           'Content-Type': `${type}; charset=utf-8`,
           Vary: 'Accept, User-Agent',

@@ -578,7 +578,7 @@ describe('Transform.compile', () => {
     `)
   })
 
-  test('keeps config factory imports', () => {
+  test('prunes replaced config factory imports', () => {
     const output = Transform.compile({
       moduleId: 'app/Card.tsx',
       source: `import { defineConfig } from 'zyzz'
@@ -591,7 +591,6 @@ export const card = style({ color: 'brand' })
       .toMatchInlineSnapshot(`
       [
         "import { Props as __zyzzProps } from 'zyzz/runtime';",
-        "import { defineConfig } from 'zyzz'",
       ]
     `)
   })

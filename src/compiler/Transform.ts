@@ -688,7 +688,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'cx', 'style', 'Vars', 'variable', 'variants']
+            ? [
+                'Config',
+                'cx',
+                'defineConfig',
+                'defineVars',
+                'extendVars',
+                'style',
+                'Vars',
+                'variable',
+                'variants',
+              ]
             : [
                 'Css',
                 'cssFunction',

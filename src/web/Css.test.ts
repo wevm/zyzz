@@ -763,6 +763,43 @@ describe('compile', () => {
     }
   })
 
+  test('ordered atomic styles keep their own rules after a conditional shorthand in the browser', async () => {
+    // b's border resets the border color, so c cannot reuse a's earlier rule.
+    const output = Css.compile({
+      styles: Style.define({
+        a: { '@media (min-width: 0px)': { borderColor: 'red' } },
+        b: { '@media (min-width: 0px)': { border: '2px solid blue' } },
+        c: { '@media (min-width: 0px)': { borderColor: 'red' } },
+      }),
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "a": "z-a-border-color-0",
+        "b": "z-b-border-0",
+        "c": "z-c-border-color-0",
+      }
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.b} ${output.classes.c}"></div>`,
+      )
+
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).borderLeftColor),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('logical boxes match native controls across authored writing modes in the browser', async () => {
     const output = Css.compile({
       styles: Style.define({
@@ -1182,6 +1219,44 @@ describe('compile', () => {
           ],
         ]
       `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('independent atomic styles keep conditional resets after the declarations they reset in the browser', async () => {
+    // The query's reset conflicts with the base color, so it stays after it.
+    const output = Css.compile({
+      composition: 'independent',
+      styles: Style.define({
+        card: {
+          all: 'unset',
+          color: 'red',
+          '@media (min-width: 0px)': { all: 'initial' },
+        },
+      }),
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-card-all-0{all:unset;}
+      .z-card-text-1{color:red;}
+      @media (min-width: 0px){.z-card-all-2{all:initial;}}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.card}"></div>`,
+      )
+
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
     } finally {
       await browser.close()
     }

@@ -101,8 +101,12 @@ export function compile<
   )
 
   const properties = new Set<Style.Declaration['property']>()
-  for (const style of analyzed)
+  // Conditional and composed declarations join the same conflict domains.
+  function collect(style: Style.NamedStyle): void {
     for (const { property } of style.declarations) properties.add(property)
+    for (const rule of style.rules ?? []) collect(rule.style)
+  }
+  for (const style of analyzed) collect(style)
 
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.

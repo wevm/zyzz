@@ -31,7 +31,12 @@ export const Route = createFileRoute('/vars')({
       }
     }
   },
-  head: () => ({ meta: [{ title: 'Variables · Zyzz' }] }),
+  head: () => ({
+    meta: [
+      { title: 'Variables · Zyzz' },
+      { property: 'og:title', content: 'Variables · Zyzz' },
+    ],
+  }),
 })
 
 function Page() {

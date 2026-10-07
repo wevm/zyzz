@@ -35,11 +35,15 @@ export const Route = createFileRoute('/docs/$')({
   },
   head: (entry) => {
     const { loaderData } = entry
+    const description = loaderData?.description ?? ''
+    const title = `${loaderData?.title ?? 'Docs'} · Zyzz`
 
     return {
       meta: [
-        { title: `${loaderData?.title ?? 'Docs'} · Zyzz` },
-        { name: 'description', content: loaderData?.description ?? '' },
+        { title },
+        { name: 'description', content: description },
+        { property: 'og:description', content: description },
+        { property: 'og:title', content: title },
       ],
     }
   },

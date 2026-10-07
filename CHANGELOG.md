@@ -1,5 +1,12 @@
 # zyzz
 
+## 0.0.26
+
+### Patch Changes
+
+- 5ffdde5: Allowed `extendVars` to add variables and derived values, name a new linked set with `id`, and keep sibling extensions distinct in emitted CSS.
+- 866f37c: Fixed Vite failing to load relative font and image URLs from packed contracts installed under scoped or pnpm paths containing `@` or `+`.
+
 ## 0.0.25
 
 ### Patch Changes

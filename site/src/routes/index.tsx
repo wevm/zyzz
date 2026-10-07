@@ -6,6 +6,7 @@ import { AgentPrompt } from '../components/AgentPrompt.js'
 import { Button } from '../components/Button.js'
 import { Install } from '../components/Install.js'
 import { Link } from '../components/Link.js'
+import * as Head from '../Head.js'
 import { style } from '../zyzz.config.js'
 
 /** Renders the landing page. */
@@ -13,6 +14,26 @@ export const Route = createFileRoute('/')({
   // Keep the style namespace with the component; the route splitter drops it.
   codeSplitGroupings: [],
   component: Index,
+  head: () => ({
+    ...Head.page({
+      description:
+        'Bring structure to your styles and consistency to your interfaces. Write type-safe styles in TypeScript, compiled to static CSS.',
+      path: '/',
+      title: 'Zyzz · Type-safe styling for Web and React Native',
+    }),
+    // Google reads the site name in results from `WebSite` data on the home page.
+    scripts: [
+      {
+        children: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Zyzz',
+          url: `${Head.origin}/`,
+        }),
+        type: 'application/ld+json',
+      },
+    ],
+  }),
 })
 
 const examples = __EXAMPLE__

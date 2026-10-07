@@ -227,7 +227,7 @@ describe('Tailwind migration page', () => {
         ]
       `)
       expect(await page.title()).toMatchInlineSnapshot(
-        '"Migrating from Tailwind · Zyzz"',
+        '"Migrating from Tailwind · Guides · Zyzz"',
       )
       const headings = await page
         .locator('main article h2, main article h3')

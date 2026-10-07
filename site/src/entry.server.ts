@@ -3,6 +3,7 @@ import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
+import * as Head from './Head.js'
 import * as Llms from './Llms.js'
 import * as Markdown from './Markdown.js'
 import * as Sitemap from './Sitemap.js'
@@ -68,6 +69,8 @@ export default {
       return new Response(request.method === 'HEAD' ? null : markdown, {
         headers: {
           'Content-Type': `${type}; charset=utf-8`,
+          // Search engines index the HTML page rather than its Markdown twin.
+          Link: `<${Head.origin}/docs/${path}>; rel="canonical"`,
           Vary: 'Accept, User-Agent',
         },
       })

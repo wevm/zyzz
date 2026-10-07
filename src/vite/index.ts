@@ -5,6 +5,7 @@
 import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
+import * as Contracts from '../node/internal/Contracts.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
@@ -51,6 +52,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const removed = new WeakMap<Environment, Set<string>>()
   const reads = new WeakMap<Environment, Map<string, string>>()
   const compilers = new WeakMap<Environment, Graph.create.ReturnType>()
+  const packages = Contracts.create()
 
   function compiler(environment: Environment) {
     let value = compilers.get(environment)
@@ -414,6 +416,16 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     const lazy: Record<string, ReadonlySet<string>> = Object.create(null)
     const modules: Record<string, string> = Object.create(null)
     const files = new Set<string>()
+    const contractHost: Contracts.read.Options = {
+      read: async (file) => {
+        const source = await snapshot(entry.environment).read(file)
+        host.watch(file)
+        files.add(file)
+        return source
+      },
+      resolve: async (specifier, importer) =>
+        (await resolve(specifier, importer))?.id.split(/[?#]/)[0],
+    }
 
     async function visit(file: string, source?: string) {
       if (files.has(file)) return
@@ -512,19 +524,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
         if (resolved.external || !eligible(resolved.id)) {
           const physical = resolved.id.split('?')[0]!.split('#')[0]!
-          const sidecar = `${physical}.zyzz.json`
+          const contract =
+            Path.isAbsolute(physical) && /\.[cm]?[jt]sx?$/.test(physical)
+              ? await packages.read(physical, contractHost)
+              : undefined
 
-          if (Path.isAbsolute(physical) && /\.[cm]?[jt]sx?$/.test(physical)) {
-            try {
-              contracts[resolved.id] = await Fs.readFile(sidecar, 'utf8')
-              host.watch(sidecar)
-              files.add(sidecar)
-              resolutions[specifier] = resolved.id
-              continue
-            } catch (error) {
-              if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
-                throw error
-            }
+          if (contract !== undefined) {
+            contracts[resolved.id] = contract
+            resolutions[specifier] = resolved.id
+            continue
           }
 
           resolutions[specifier] = null
@@ -649,25 +657,19 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           if (!Path.isAbsolute(physical) || !/\.[cm]?[jt]sx?$/.test(physical))
             continue
 
-          try {
-            const sidecar = `${physical}.zyzz.json`
+          const contract = await packages.read(physical, contractHost)
+          if (contract === undefined) continue
 
-            contracts[resolved.id] = await Fs.readFile(sidecar, 'utf8')
-            host.watch(sidecar)
-            files.add(sidecar)
+          contracts[resolved.id] = contract
 
-            // Discover the package contribution without compiling unrelated authoring
-            // expressions in an otherwise unreachable source file.
-            const discovery = `${sourceId(file)}.zyzz-discovery`
+          // Discover the package contribution without compiling unrelated authoring
+          // expressions in an otherwise unreachable source file.
+          const discovery = `${sourceId(file)}.zyzz-discovery`
 
-            modules[discovery] =
-              (modules[discovery] ?? '') +
-              `import ${JSON.stringify(specifier)};\n`
-            ;(imports[discovery] ??= Object.create(null))[specifier] =
-              resolved.id
-          } catch (error) {
-            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-          }
+          modules[discovery] =
+            (modules[discovery] ?? '') +
+            `import ${JSON.stringify(specifier)};\n`
+          ;(imports[discovery] ??= Object.create(null))[specifier] = resolved.id
         }
       }
 
@@ -713,13 +715,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           imports[owner] ??= Object.create(null)
           imports[owner]![specifier] = target.id
 
-          if (!Object.hasOwn(contracts, target.id)) {
-            const sidecar = `${target.id.split(/[?#]/)[0]}.zyzz.json`
-
-            contracts[target.id] = await Fs.readFile(sidecar, 'utf8')
-            host.watch(sidecar)
-            files.add(sidecar)
-          }
+          contracts[target.id] ??= (await packages.read(
+            target.id.split(/[?#]/)[0]!,
+            { ...contractHost, required: true },
+          ))!
 
           await dependencies(target.id)
           owner = target.id

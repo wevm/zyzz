@@ -13,6 +13,7 @@ import * as Graph from '../compiler/Graph.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as ClassName from '../web/internal/ClassName.js'
+import * as Contracts from './internal/Contracts.js'
 import * as Relative from '../compiler/internal/Relative.js'
 import * as Scheme from '../internal/Scheme.js'
 import * as Snapshot from './internal/Snapshot.js'
@@ -136,6 +137,7 @@ export async function create(options: create.Options): Promise<Runtime> {
   const manifestPath = Path.join(outDir, '.zyzz.json')
 
   const compiler = Graph.create()
+  const packages = Contracts.create()
   const snapshot = Snapshot.create()
   const stylesheets = new WeakMap<Transform.compile.ReturnType, Stylesheet>()
   let closed = false
@@ -317,18 +319,16 @@ export async function create(options: create.Options): Promise<Runtime> {
     async function contract(file: string, required = false): Promise<boolean> {
       if (Object.hasOwn(contracts, file)) return true
 
-      observe(`${file}.zyzz.json`)
-      try {
-        contracts[file] = await snapshot.read(`${file}.zyzz.json`)
-      } catch (error) {
-        if (
-          !required &&
-          !previousContracts.has(file) &&
-          (error as NodeJS.ErrnoException).code === 'ENOENT'
-        )
-          return false
-        throw error
-      }
+      const source = await packages.read(file, {
+        read(path) {
+          observe(path)
+          return snapshot.read(path)
+        },
+        required: required || previousContracts.has(file),
+        resolve: async (specifier, importer) => resolve(specifier, importer),
+      })
+      if (source === undefined) return false
+      contracts[file] = source
 
       const metadata = (() => {
         try {
@@ -472,13 +472,7 @@ export async function create(options: create.Options): Promise<Runtime> {
       imports,
     })
 
-    snapshot.retain(
-      new Set([
-        ...inputs,
-        ...Object.keys(contracts).map((file) => `${file}.zyzz.json`),
-      ]),
-      modules,
-    )
+    snapshot.retain(new Set([...inputs, ...observed]), modules)
 
     const artifactNames = [
       'zyzz.css',

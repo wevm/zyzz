@@ -13,6 +13,7 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Contract from '../compiler/internal/Contract.js'
+import * as Contracts from '../node/internal/Contracts.js'
 import * as Vite from '../vite/index.js'
 import * as ThemeRules from '../web/internal/Themes.js'
 
@@ -33,6 +34,7 @@ const portable = createUnplugin<Options | undefined, false>(
   (options = {}, meta) => {
     const root = Path.resolve(options.root ?? process.cwd())
     const compiler = Graph.create()
+    const packages = Contracts.create()
     const snapshot = Snapshot.create()
     let graph: Graph.compile.ReturnType | undefined
     let pending: Promise<void> | undefined
@@ -205,20 +207,17 @@ const portable = createUnplugin<Options | undefined, false>(
             required = false,
           ): Promise<boolean> {
             if (Object.hasOwn(contracts, file)) return true
-            const sidecar = `${file}.zyzz.json`
 
-            files.add(sidecar)
-            try {
-              contracts[file] = await snapshot.read(sidecar)
-            } catch (error) {
-              if (
-                !required &&
-                (error as NodeJS.ErrnoException).code === 'ENOENT'
-              )
-                return false
-
-              throw error
-            }
+            const source = await packages.read(file, {
+              read(path) {
+                files.add(path)
+                return snapshot.read(path)
+              },
+              required,
+              resolve,
+            })
+            if (source === undefined) return false
+            contracts[file] = source
             const metadata = Contract.read(contracts[file]!, new Map(), file)
             for (const section of metadata.stylesheets) {
               let owner = file

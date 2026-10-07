@@ -10,6 +10,7 @@ import * as GroupingRules from '../../test/fixtures/GroupingRules.js'
 import * as NamedDescriptors from '../../test/fixtures/NamedDescriptors.js'
 import * as Margins from '../../test/fixtures/PageMargins.js'
 import * as Pages from '../../test/fixtures/Pages.js'
+import * as PlainPackage from '../../test/fixtures/PlainPackage.js'
 import * as Registrations from '../../test/fixtures/Registrations.js'
 import * as Statements from '../../test/fixtures/Statements.js'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
@@ -2779,6 +2780,217 @@ describe('namespace', () => {
         expect(updated.includes('"urn:other"')).toMatchInlineSnapshot('true')
         expect(updated.includes('color: red')).toMatchInlineSnapshot('true')
         expect(updated.includes('color: #00f')).toMatchInlineSnapshot('true')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('packageContracts', () => {
+  describe('create', () => {
+    test('derives missing contracts from plain package JavaScript', async () => {
+      const root = await Fs.mkdtemp(
+        Path.join(project, '.fixture-host-derived-'),
+      )
+      try {
+        const library = await PlainPackage.install(root)
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.writeFile(
+          Path.join(root, 'src/card.ts'),
+          `import {style} from '@acme/tokens';export const card=style({padding:'16'})();`,
+        )
+        await Fs.writeFile(
+          Path.join(root, 'src/global.ts'),
+          `import {global} from 'zyzz/web';import {vars} from '@acme/tokens';global({':root':{'--gap':vars.spacing['16']}});`,
+        )
+        await Fs.writeFile(
+          Path.join(root, 'src/view.ts'),
+          `import {cx} from 'zyzz';import {style} from '@acme/tokens';export function view(active:boolean){return cx(styles.one(),active&&styles.two())}namespace styles{export const one=style({padding:'16'});export const two=style({color:'ink'})}`,
+        )
+        await using host = await Host.create({
+          css: false,
+          outDir: Path.join(root, 'dist'),
+          packageId: 'app',
+          root: Path.join(root, 'src'),
+        })
+
+        await host.build()
+
+        const card = await Fs.readFile(Path.join(root, 'dist/card.ts'), 'utf8')
+        expect(card).toMatchInlineSnapshot(
+          `"import {style} from '@acme/tokens';export const card=({className:"z-acme-p-[var(--z-acme-spacing-16,16px)]"});"`,
+        )
+        expect(await Fs.readFile(Path.join(root, 'dist/card.ts.css'), 'utf8'))
+          .toMatchInlineSnapshot(`
+          ".z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
+          .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}
+          .z-acme-p-\\5b var\\28 --z-acme-spacing-16\\2c 16px\\29 \\5d {padding:var(--z-acme-spacing-16,16px);}"
+        `)
+        expect(await Fs.readFile(Path.join(root, 'dist/view.ts'), 'utf8'))
+          .toMatchInlineSnapshot(`
+          "
+          const __zyzzComposition103=/*#__PURE__*/__zyzzComposition.create({"className":"z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0 z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0","cases":["z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0","z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0 z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0"],"inputs":[{"className":"z_acme-u3iffL0","owners":[{"identity":"style-i08hjs5dvj5-175","attributes":[],"slots":[]}]},{"className":"z_acme-u3iffL1","condition":0,"owners":[{"identity":"style-i08hjs5dvj5-214","attributes":[],"slots":[]}]}]});
+
+          import { Composition as __zyzzComposition, Props as __zyzzProps } from 'zyzz/runtime';
+          import {style} from '@acme/tokens';export function view(active:boolean){return __zyzzComposition103(styles.one(),active&&styles.two())}namespace styles{export const one=__zyzzProps.create({className:"z_acme-u3iffL0"});export const two=__zyzzProps.create({className:"z_acme-u3iffL1"})}"
+        `)
+        expect(await Fs.readFile(Path.join(root, 'dist/view.ts.css'), 'utf8'))
+          .toMatchInlineSnapshot(`
+          ".z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
+          .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}
+          .z_acme-u3iffL0{padding:var(--z-acme-spacing-16,16px);}
+          .z_acme-u3iffL1{color:var(--z-acme-color-ink,#123456);}
+          .z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0{padding:var(--z-acme-spacing-16,16px);}
+          .z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0{color:var(--z-acme-color-ink,#123456);}"
+        `)
+        expect(
+          await Fs.readFile(Path.join(root, 'dist/zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`":root{--gap:var(--z-acme-spacing-16,16px);}"`)
+
+        await Fs.writeFile(
+          Path.join(library, 'dist/vars.js'),
+          PlainPackage.files['dist/vars.js'].replace('16px', '18px'),
+        )
+        await host.build()
+
+        expect(
+          await Fs.readFile(Path.join(root, 'dist/zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`":root{--gap:var(--z-acme-spacing-16,18px);}"`)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+
+    test('prefers shipped contracts and watches their removal', async () => {
+      const root = await Fs.mkdtemp(
+        Path.join(project, '.fixture-host-derived-sidecar-'),
+      )
+      try {
+        const library = await PlainPackage.install(root)
+        const sidecar = Path.join(library, 'dist/global.js.zyzz.json')
+        await Fs.writeFile(
+          sidecar,
+          Graph.compile({
+            modules: {
+              'global.ts': `import {global} from 'zyzz/web';global({body:{color:'red'}});`,
+            },
+          }).contracts['global.ts']!,
+        )
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.writeFile(
+          Path.join(root, 'src/app.ts'),
+          `import '@acme/tokens/global';`,
+        )
+        const outDir = Path.join(root, 'dist')
+        await using host = await Host.create({
+          css: false,
+          outDir,
+          packageId: 'app',
+          root: Path.join(root, 'src'),
+        })
+
+        await host.build()
+
+        expect(
+          await Fs.readFile(Path.join(outDir, 'zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`"body{color:red;}"`)
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() => Fs.rm(sidecar))
+
+        expect(
+          await Fs.readFile(Path.join(outDir, 'zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`"body{color:blue;}"`)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+
+    test('keeps packages outside Zyzz authoring as runtime imports', async () => {
+      const root = await Fs.mkdtemp(
+        Path.join(project, '.fixture-host-derived-runtime-'),
+      )
+      try {
+        await PlainPackage.install(root)
+        // Without a declared zyzz dependency, the package is never parsed for authoring.
+        const plain = Path.join(root, 'node_modules/plain')
+        await Fs.mkdir(plain, { recursive: true })
+        await Fs.writeFile(
+          Path.join(plain, 'package.json'),
+          JSON.stringify({
+            name: 'plain',
+            type: 'module',
+            exports: './index.js',
+          }),
+        )
+        await Fs.writeFile(
+          Path.join(plain, 'index.js'),
+          `import {global} from 'zyzz/web';global({body:{color:'red'}});export const version=1;`,
+        )
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.writeFile(
+          Path.join(root, 'src/app.ts'),
+          `import {add} from '@acme/tokens/utils';import {version} from 'plain';import {Button} from '@acme/tokens';export const value=[add(1,version),Button];`,
+        )
+        await using host = await Host.create({
+          css: false,
+          outDir: Path.join(root, 'dist'),
+          packageId: 'app',
+          root: Path.join(root, 'src'),
+        })
+
+        expect((await host.build()).files).toMatchInlineSnapshot(`
+          [
+            "app.ts",
+            "app.ts.css",
+            "app.ts.css.map",
+            "app.ts.map",
+            "zyzz.css",
+            "zyzz.css.map",
+            "zyzz.js",
+          ]
+        `)
+        expect(
+          await Fs.readFile(Path.join(root, 'dist/app.ts'), 'utf8'),
+        ).toMatchInlineSnapshot(
+          `"import {add} from '@acme/tokens/utils';import {version} from 'plain';import {Button} from '@acme/tokens';export const value=[add(1,version),Button];"`,
+        )
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+
+    test('names the package file when derivation fails', async () => {
+      const root = await Fs.mkdtemp(
+        Path.join(project, '.fixture-host-derived-error-'),
+      )
+      try {
+        await PlainPackage.install(root, {
+          'dist/index.js': `import {style} from './config.js';export const card=style({color:globalThis.color});`,
+        })
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.writeFile(
+          Path.join(root, 'src/app.ts'),
+          `import {card} from '@acme/tokens';export const props=card();`,
+        )
+        await using host = await Host.create({
+          css: false,
+          outDir: Path.join(root, 'dist'),
+          packageId: 'app',
+          root: Path.join(root, 'src'),
+        })
+
+        const error = await host.build().catch((error: Error) => error)
+
+        expect(
+          error instanceof Error
+            ? error.message.replaceAll(root, '<root>')
+            : error,
+        ).toMatchInlineSnapshot(
+          `"app/app.ts:0: Unable to derive the Zyzz contract of <root>/node_modules/@acme/tokens/dist/index.js: @acme/tokens/dist/index.js:65: Expected a literal string or number; expressions are not evaluated."`,
+        )
       } finally {
         await Fs.rm(root, { recursive: true, force: true })
       }

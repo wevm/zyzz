@@ -77,7 +77,7 @@ import { zyzz } from 'zyzz/unplugin'
 const plugin = zyzz.webpack({ root: 'src' })
 ```
 
-Keep other generated output outside the root. Dependencies are not compiled from source, so packed libraries need adjacent `.zyzz.json` contracts.
+Keep other generated output outside the root. Dependencies are not compiled from source. A packed library supplies adjacent `.zyzz.json` contracts, or the plugin derives them from its JavaScript when the package declares a `zyzz` dependency.
 
 ## Returns
 

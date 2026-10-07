@@ -907,15 +907,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           url += target.slice(raw.length)
         }
       } else {
-        const pathname = file
-          .replaceAll('\\', '/')
-          .split('/')
-          .map((part, index) =>
-            index === 0 && /^[a-z]:$/i.test(part)
-              ? part
-              : encodeURIComponent(part),
-          )
-          .join('/')
+        // Vite reads `/@fs/` URLs with `decodeURI`, which keeps reserved escapes
+        // such as `%40` in scoped package paths, so those characters stay raw.
+        const pathname = encodeURI(file.replaceAll('\\', '/'))
 
         url = `/@fs/${pathname}${target.slice(raw.length)}`
       }

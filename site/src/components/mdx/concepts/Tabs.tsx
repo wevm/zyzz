@@ -1,5 +1,4 @@
 /** Groups concepts source files and rendered examples in accessible tabs. @module */
-import * as Manifest from '../../../Manifest.js'
 import { vars } from '../../../zyzz.config.js'
 import {
   Children,
@@ -32,14 +31,19 @@ export function Tabs(props: Tabs.Props) {
       const block = Children.toArray(tab.props.children).find(
         isValidElement<{ children?: ReactNode }>,
       )
-      const source = (() => {
+      const code = (() => {
         if (
           !block ||
-          !isValidElement<{ children?: string }>(block.props.children)
+          !isValidElement<{
+            children?: string
+            'data-html'?: string | undefined
+            'data-text'?: string | undefined
+          }>(block.props.children)
         )
           return undefined
-        return block.props.children.props.children?.replace(/\n$/, '')
+        return block.props.children.props
       })()
+      const source = code?.children?.replace(/\n$/, '')
       const Icon = (() => {
         if (tab.props.title === 'Rendered') return PlayIcon
         if (tab.props.title.endsWith('.tsx')) return ReactIcon
@@ -49,9 +53,11 @@ export function Tabs(props: Tabs.Props) {
 
       return {
         content: tab,
+        html: code?.['data-html'],
         Icon,
         key: tab.key,
         source,
+        text: code?.['data-text'] ?? source,
         title: tab.props.title,
       }
     })
@@ -116,11 +122,9 @@ export function Tabs(props: Tabs.Props) {
             onClick={async () => {
               const request = ++copyRequest.current
               try {
-                if (active.source === undefined) return
+                if (active.text === undefined) return
                 // The highlighted text omits notation comments such as `// [!code hl]`.
-                await navigator.clipboard.writeText(
-                  Manifest.code[active.source]?.text ?? active.source,
-                )
+                await navigator.clipboard.writeText(active.text)
                 if (request === copyRequest.current) setCopyState('copied')
               } catch {
                 if (request === copyRequest.current) setCopyState('failed')
@@ -158,12 +162,8 @@ export function Tabs(props: Tabs.Props) {
             tab.content
           ) : (
             <pre {...styles.code()}>
-              {Object.hasOwn(Manifest.code, tab.source) ? (
-                <code
-                  dangerouslySetInnerHTML={{
-                    __html: Manifest.code[tab.source]!.html,
-                  }}
-                />
+              {tab.html ? (
+                <code dangerouslySetInnerHTML={{ __html: tab.html }} />
               ) : (
                 <code>{tab.source}</code>
               )}

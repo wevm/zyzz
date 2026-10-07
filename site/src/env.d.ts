@@ -11,7 +11,7 @@ declare const __EXAMPLE__: {
   }[]
 }
 
-/** MDX page content and syntax highlighting prepared during the build. */
+/** MDX page metadata prepared during the build. Each page chunk carries its own highlighted code. */
 declare const __DOCS__: {
   pages: Record<
     string,
@@ -20,20 +20,12 @@ declare const __DOCS__: {
       description: string
       /** Section `##` and `###` headings in document order, with their anchor IDs. Step headings are excluded. */
       headings: readonly { depth: 2 | 3; id: string; title: string }[]
-      markdown: string
-    }
-  >
-  /** Highlighted code fences, keyed by authored source. */
-  code: Record<
-    string,
-    {
-      /** Shiki markup for the lines inside `<code>`, including notation and Twoslash annotations. */
-      html: string
-      /** Displayed source without notation, used for copying. */
-      text: string
     }
   >
 }
+
+/** Markdown twins prepared during the build, keyed by documentation path. Only server modules read them. */
+declare const __MARKDOWN__: Record<string, string>
 
 /** Serialized MiniSearch index of documentation pages and sections, built from the MDX sources. */
 declare module 'virtual:search-index' {

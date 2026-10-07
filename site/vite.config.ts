@@ -54,8 +54,10 @@ export default defineConfig(async () => {
       }
     }),
   )
-  const docs: typeof __DOCS__ = { pages: {}, code: {} }
+  const docs: typeof __DOCS__ = { pages: {} }
   const documents: Search.Document[] = []
+  const fences: Fences = {}
+  const markdowns: typeof __MARKDOWN__ = {}
   // TypeScript 7 has no JavaScript API, so these numbers mirror the TypeScript 6 enums that Twoslash runs.
   const twoslasher = createTwoslasher({
     compilerOptions: {
@@ -152,7 +154,7 @@ export default defineConfig(async () => {
               throw new Error(`Shiki returned no code element in ${path}.`)
 
             highlighted.set(node, code)
-            docs.code[node.value] = {
+            fences[node.value] = {
               html: hastToHtml({ type: 'root', children: code.children }),
               text: lines(code)
                 .map((line) => line.text)
@@ -169,116 +171,116 @@ export default defineConfig(async () => {
             title: plain(heading),
             description: plain(paragraph),
             headings: headings(tree),
-            markdown: toMarkdown(tree, {
-              handlers: {
-                code: (node, parent, state, info) => {
-                  const code = highlighted.get(node)
-                  return defaultHandlers.code(
-                    code ? markdown(node, code) : node,
-                    parent,
-                    state,
-                    info,
-                  )
-                },
-                mdxjsEsm: () => '',
-                mdxFlowExpression: () => '',
-                mdxTextExpression: () => '',
-                mdxJsxFlowElement: (node, _parent, state, info) => {
-                  if (node.name === 'Install')
-                    return '```sh\nnpm install zyzz\n```'
-
-                  if (node.name === 'table') {
-                    function rows(parent: typeof node): string[][] {
-                      if (parent.name === 'tr')
-                        return [
-                          parent.children
-                            .filter(
-                              (child: typeof node) =>
-                                child.name === 'th' || child.name === 'td',
-                            )
-                            .map((cell: typeof node) =>
-                              state
-                                .containerFlow(cell, info)
-                                .trim()
-                                .replace(/\|/g, '\\|')
-                                .replace(/\n+/g, '<br />'),
-                            ),
-                        ]
-                      return parent.children.flatMap((child: typeof node) =>
-                        child.type === 'mdxJsxFlowElement' ? rows(child) : [],
-                      )
-                    }
-                    const [header, ...body] = rows(node)
-                    if (!header) return ''
-                    return [header, header.map(() => '---'), ...body]
-                      .map((row) => `| ${row.join(' | ')} |`)
-                      .join('\n')
-                  }
-
-                  const content = state.containerFlow(node, info)
-                  if (node.name === 'FrameworkSetup.Mode') {
-                    const name = node.attributes.find(
-                      (attribute: {
-                        type: string
-                        name?: string
-                        value?: unknown
-                      }) =>
-                        attribute.type === 'mdxJsxAttribute' &&
-                        attribute.name === 'name',
-                    )
-                    return `#### ${name?.value === 'default' ? 'Default Variables (Quick)' : 'Custom Variables (Advanced)'}\n\n${content}`
-                  }
-
-                  if (
-                    node.name !== 'Card' &&
-                    node.name !== 'FrameworkSetup.Target'
-                  )
-                    return content
-
-                  const title = node.attributes.find(
-                    (attribute: {
-                      type: string
-                      name?: string
-                      value?: unknown
-                    }) =>
-                      attribute.type === 'mdxJsxAttribute' &&
-                      attribute.name === 'title',
-                  )
-                  const href = node.attributes.find(
-                    (attribute: {
-                      type: string
-                      name?: string
-                      value?: unknown
-                    }) =>
-                      attribute.type === 'mdxJsxAttribute' &&
-                      attribute.name === 'href',
-                  )
-                  if (
-                    node.name === 'FrameworkSetup.Target' &&
-                    title?.type === 'mdxJsxAttribute' &&
-                    typeof title.value === 'string'
-                  )
-                    return `### ${title.value}\n\n${content}`
-
-                  if (
-                    title?.type !== 'mdxJsxAttribute' ||
-                    typeof title.value !== 'string' ||
-                    href?.type !== 'mdxJsxAttribute' ||
-                    typeof href.value !== 'string'
-                  )
-                    return content
-
-                  return `[${title.value}](${href.value})\n\n${content}`
-                },
-                mdxJsxTextElement: (node, _parent, state, info) =>
-                  state.containerPhrasing(node, info),
-              },
-            }).replace(escapedAlert, '$1[!$2]'),
           }
+          markdowns[page] = toMarkdown(tree, {
+            handlers: {
+              code: (node, parent, state, info) => {
+                const code = highlighted.get(node)
+                return defaultHandlers.code(
+                  code ? markdown(node, code) : node,
+                  parent,
+                  state,
+                  info,
+                )
+              },
+              mdxjsEsm: () => '',
+              mdxFlowExpression: () => '',
+              mdxTextExpression: () => '',
+              mdxJsxFlowElement: (node, _parent, state, info) => {
+                if (node.name === 'Install')
+                  return '```sh\nnpm install zyzz\n```'
+
+                if (node.name === 'table') {
+                  function rows(parent: typeof node): string[][] {
+                    if (parent.name === 'tr')
+                      return [
+                        parent.children
+                          .filter(
+                            (child: typeof node) =>
+                              child.name === 'th' || child.name === 'td',
+                          )
+                          .map((cell: typeof node) =>
+                            state
+                              .containerFlow(cell, info)
+                              .trim()
+                              .replace(/\|/g, '\\|')
+                              .replace(/\n+/g, '<br />'),
+                          ),
+                      ]
+                    return parent.children.flatMap((child: typeof node) =>
+                      child.type === 'mdxJsxFlowElement' ? rows(child) : [],
+                    )
+                  }
+                  const [header, ...body] = rows(node)
+                  if (!header) return ''
+                  return [header, header.map(() => '---'), ...body]
+                    .map((row) => `| ${row.join(' | ')} |`)
+                    .join('\n')
+                }
+
+                const content = state.containerFlow(node, info)
+                if (node.name === 'FrameworkSetup.Mode') {
+                  const name = node.attributes.find(
+                    (attribute: {
+                      type: string
+                      name?: string
+                      value?: unknown
+                    }) =>
+                      attribute.type === 'mdxJsxAttribute' &&
+                      attribute.name === 'name',
+                  )
+                  return `#### ${name?.value === 'default' ? 'Default Variables (Quick)' : 'Custom Variables (Advanced)'}\n\n${content}`
+                }
+
+                if (
+                  node.name !== 'Card' &&
+                  node.name !== 'FrameworkSetup.Target'
+                )
+                  return content
+
+                const title = node.attributes.find(
+                  (attribute: {
+                    type: string
+                    name?: string
+                    value?: unknown
+                  }) =>
+                    attribute.type === 'mdxJsxAttribute' &&
+                    attribute.name === 'title',
+                )
+                const href = node.attributes.find(
+                  (attribute: {
+                    type: string
+                    name?: string
+                    value?: unknown
+                  }) =>
+                    attribute.type === 'mdxJsxAttribute' &&
+                    attribute.name === 'href',
+                )
+                if (
+                  node.name === 'FrameworkSetup.Target' &&
+                  title?.type === 'mdxJsxAttribute' &&
+                  typeof title.value === 'string'
+                )
+                  return `### ${title.value}\n\n${content}`
+
+                if (
+                  title?.type !== 'mdxJsxAttribute' ||
+                  typeof title.value !== 'string' ||
+                  href?.type !== 'mdxJsxAttribute' ||
+                  typeof href.value !== 'string'
+                )
+                  return content
+
+                return `[${title.value}](${href.value})\n\n${content}`
+              },
+              mdxJsxTextElement: (node, _parent, state, info) =>
+                state.containerPhrasing(node, info),
+            },
+          }).replace(escapedAlert, '$1[!$2]')
 
           // Runs after `headings` assigns the anchor IDs that section results link to.
           documents.push(
-            ...sections({ code: docs.code, page, title: plain(heading), tree }),
+            ...sections({ code: fences, page, title: plain(heading), tree }),
           )
         },
       ],
@@ -296,6 +298,7 @@ export default defineConfig(async () => {
         fg: `light-dark(${lightTheme.fg}, ${theme.fg})`,
         files: examples,
       }),
+      __MARKDOWN__: JSON.stringify(markdowns),
     },
     plugins: [
       cloudflare({ viteEnvironment: { name: 'ssr' } }),
@@ -331,14 +334,17 @@ export default defineConfig(async () => {
 
               if (node.type !== 'code') return
               const filename = node.meta?.match(/(?:^|\s)title="([^"]+)"/)?.[1]
-              if (filename)
-                node.data = {
-                  ...node.data,
-                  hProperties: {
-                    ...node.data?.hProperties,
-                    'data-filename': filename,
-                  },
-                }
+              const highlighted = fences[node.value]
+              // The page chunk carries its own highlighted markup, so browsers load only the code they display.
+              node.data = {
+                ...node.data,
+                hProperties: {
+                  ...node.data?.hProperties,
+                  'data-filename': filename,
+                  'data-html': highlighted?.html,
+                  'data-text': highlighted?.text,
+                },
+              }
             }
 
             annotate(tree)
@@ -411,6 +417,17 @@ const twoslashMeta = /(?:^|\s)twoslash(?=\s|$)/
 
 /** Matches `/word/` highlights in a code fence's metadata. */
 const wordMeta = /(?:^|\s)\/(?:\\.|[^/])+\//g
+
+/** Highlighted code fences, keyed by authored source. */
+type Fences = Record<
+  string,
+  {
+    /** Shiki markup for the lines inside `<code>`, including notation and Twoslash annotations. */
+    html: string
+    /** Displayed source without notation, used for copying. */
+    text: string
+  }
+>
 
 /** Highlighted HAST element produced by Shiki. */
 type Element = Extract<
@@ -639,7 +656,7 @@ function sections(options: sections.Options): Search.Document[] {
 declare namespace sections {
   type Options = {
     /** Highlighted code fences, read for their displayed source. */
-    code: (typeof __DOCS__)['code']
+    code: Fences
     /** Documentation path, such as `guides/styling`. */
     page: string
     /** Page title from the `#` heading. */

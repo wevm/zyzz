@@ -308,7 +308,7 @@ namespace styles {
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-border-radius-8px{border-radius:8px}
+      ".z_nhSIc30{border-radius:8px}
       "
     `)
   })

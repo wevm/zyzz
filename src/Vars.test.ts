@@ -1890,11 +1890,33 @@ describe('extend', () => {
     })
     const css = `${result.sharedCss ?? ''}${result.modules['index.ts']!.css}`
 
+    expect(css).not.toMatch(/--z-extend_2f_site(_2d_vars)?-spacing-12:/)
     expect(css).toMatch(
-      /--z-extend_2f_site_2d_vars-spacing-12:var\(--z-extend_2f_core-spacing-12[,)]/,
+      /padding:var\(--z-extend_2f_site-spacing-12,var\(--z-extend_2f_core-spacing-12,12px\)\)/,
     )
     expect(css).toMatch(/--z-extend_2f_site_2d_vars-color-content:/)
     expect(css).not.toMatch(/--z-extend_2f_core-color-content/)
+  })
+
+  test('declares inherited paths that a sibling set overrides', () => {
+    const result = Graph.compile({
+      modules: {
+        'index.ts': `import {Config,Vars} from 'zyzz';
+          const core = Vars.define({spacing:{'12':'12px'}},{id:'extend/core'});
+          const base = Vars.extend(core,{spacing:{page:'24px'}},{id:'extend/site-vars'});
+          const roomy = Vars.extend(base,{spacing:{'12':'16px'}});
+          export const {style} = Config.create({defaultVars:'base',id:'extend/site',vars:{base,roomy}});
+          export const card = style({padding:'12'});`,
+      },
+    })
+    const css = result.modules['index.ts']!.css
+
+    expect(css).toMatch(
+      /\.z-theme-extend_2f_site-base\{[^}]*--z-extend_2f_site-spacing-12:var\(--z-extend_2f_core-spacing-12/,
+    )
+    expect(css).toMatch(
+      /\.z-theme-extend_2f_site-roomy\{[^}]*--z-extend_2f_site-spacing-12:16px/,
+    )
   })
 
   test.each([false, true])(
@@ -1930,8 +1952,9 @@ describe('extend', () => {
       )
       const css = `${result.sharedCss ?? ''}${result.modules['app.ts']!.css}`
 
+      expect(css).not.toMatch(/--z-extend_2f_app(_2d_vars)?-spacing-12:/)
       expect(css).toMatch(
-        /--z-extend_2f_app_2d_vars-spacing-12:var\(--z-extend_2f_library-spacing-12[,)]/,
+        /padding:var\(--z-extend_2f_app-spacing-12,var\(--z-extend_2f_library-spacing-12[,)]/,
       )
       expect(css).toMatch(/--z-extend_2f_app_2d_vars-spacing-page:24px/)
     },

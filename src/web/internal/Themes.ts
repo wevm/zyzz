@@ -70,6 +70,7 @@ export function create() {
     const completeDefaults = new Set<Token.Contract>()
     const empty: string[] = []
     const rules: Rule[] = []
+    const varied = variedPaths(themes)
 
     for (const [name, theme] of Object.entries(themes)) {
       if (!name) throw new Error('Theme names must be nonempty.')
@@ -132,6 +133,12 @@ export function create() {
         const value = data.values[path]
         // A set sharing its contract with an extension lacks the extension's added paths.
         if (value === undefined) continue
+        // An inherited base reference resolves through its fallback, unless a sibling set overrides it.
+        if (
+          inherited(value, path, data.contract) &&
+          !varied.get(data.contract)?.has(path)
+        )
+          continue
 
         const label = path
         declarations.push({
@@ -408,6 +415,44 @@ export const shared = Symbol('shared token rules')
 export function scope(value: string, identity?: string): string {
   const namespace = identity?.startsWith('id-') ? `${identity.slice(3)}-` : ''
   return `z-theme-${namespace}${Identity.name(value)}`
+}
+
+/** Whether a set's value is its base's own reference at the same path, as named extensions inherit. */
+function inherited(value: Token.Value, path: string, contract: Token.Contract) {
+  return Token.is(value) && value.path === path && value.contract !== contract
+}
+
+/** Paths whose values differ between sets that share a contract. */
+function variedPaths(
+  themes: Readonly<Record<string, Theme.Definition | Vars.Definition>>,
+) {
+  const seen = new Map<Token.Contract, Map<string, string>>()
+  const varied = new Map<Token.Contract, Set<string>>()
+
+  for (const theme of Object.values(themes)) {
+    const data = Object.getOwnPropertyDescriptor(theme, Token.definition)
+      ?.value as Token.Metadata | undefined
+    if (!data) continue
+
+    const values = seen.get(data.contract) ?? new Map<string, string>()
+    seen.set(data.contract, values)
+
+    for (const [path, value] of Object.entries(data.values)) {
+      const key = Token.is(value)
+        ? JSON.stringify([value.contract[Token.identity], value.path])
+        : JSON.stringify(value)
+      const previous = values.get(path)
+
+      if (previous === undefined) values.set(path, key)
+      else if (previous !== key) {
+        const paths = varied.get(data.contract) ?? new Set<string>()
+        paths.add(path)
+        varied.set(data.contract, paths)
+      }
+    }
+  }
+
+  return varied
 }
 
 function variable(identity: string | undefined, path: string): string {

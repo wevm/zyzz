@@ -773,12 +773,12 @@ describe('defineVars API page', () => {
 
     expect(await intro('zyzz.css')).toMatchInlineSnapshot(`
       ":where(*) {
-        --z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_: 1rem;
+        --z-spacing-page-fallback-135haxo1frqfdi: 1rem;
       }
 
       @media (width >= 48rem) {
         :where(*) {
-          --z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_: 2rem;
+          --z-spacing-page-fallback-135haxo1frqfdi: 2rem;
         }
       }
       .z_scheme-dark {
@@ -794,7 +794,7 @@ describe('defineVars API page', () => {
       }
       .z-theme-theme {
         --z-color-foreground: light-dark(#171717, #fafafa);
-        --z-spacing-page: var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_);
+        --z-spacing-page: var(--z-spacing-page-fallback-135haxo1frqfdi);
       }
 
       @media (width >= 48rem) {
@@ -807,14 +807,14 @@ describe('defineVars API page', () => {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_1rem_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_width_5f_20_5f__5f_3e_5f__5f_3d_5f__5f_20_5f_48rem_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_2rem_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\)\\)\\] {
-        padding: var(--z-spacing-page, var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_));
+      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
+        padding: var(--z-spacing-page, var(--z-spacing-page-fallback-135haxo1frqfdi));
       }
       "
     `)
     expect(await aliased('conditional.ts.css')).toMatchInlineSnapshot(`
       ".z-theme-theme {
-        --z-spacing-page: var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_);
+        --z-spacing-page: var(--z-spacing-page-fallback-135haxo1frqfdi);
       }
 
       @media (width >= 48rem) {
@@ -823,8 +823,8 @@ describe('defineVars API page', () => {
         }
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_1rem_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_width_5f_20_5f__5f_3e_5f__5f_3d_5f__5f_20_5f_48rem_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_2rem_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\)\\)\\] {
-        padding: var(--z-spacing-page, var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_1rem_3b__7d__40_media_20__28_width_20__3e__3d__20_48rem_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_2rem_3b__7d__7d_));
+      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
+        padding: var(--z-spacing-page, var(--z-spacing-page-fallback-135haxo1frqfdi));
       }
       "
     `)

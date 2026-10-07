@@ -258,9 +258,9 @@ export function create() {
     if ('default' in value) {
       // Separate fallback properties preserve extensions and resolve references within each scope.
       const base = literal(value.default, label, owner)
-      // Rule consolidation must not change existing variable identities.
+      // Rule consolidation must not change existing variable identities, so the name hashes the fallback's CSS.
       const css = `:where(*){--fallback:${base};}${conditionalCss(value, '--fallback', ':where(*)', label, owner)}`
-      const name = `${owner ? property(owner, label ?? 'value') : variable(undefined, label ?? 'value')}-fallback-${Identity.name(css)}`
+      const name = `${owner ? property(owner, label ?? 'value') : variable(undefined, label ?? 'value')}-fallback-${Identity.hash(css)}`
       const emitted: Rule[] = [
         { conditions: [], property: name, selector: ':where(*)', value: base },
       ]

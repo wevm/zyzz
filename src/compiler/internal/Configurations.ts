@@ -334,7 +334,10 @@ export function type(value: unknown): string {
     .join(';')}}`
 }
 
-function values(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
+/** Reads the authored leaf values of a reference tree. */
+export function values(
+  tree: Theme.References<Theme.Tokens>,
+): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(tree).map(([key, value]) => [
       key,

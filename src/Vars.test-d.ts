@@ -187,8 +187,14 @@ describe('define', () => {
     } as const
     // @ts-expect-error sets must share scalar domains
     Config.create(wrongDomain)
-    // @ts-expect-error extensions cannot add paths
-    Vars.extend(base, { color: { other: '#fff' } })
+    // @ts-expect-error extensions cannot replace a category with a leaf
+    Vars.extend(base, { color: '#fff' })
+    const grown = {
+      vars: { base, other: Vars.extend(base, { color: { other: '#fff' } }) },
+      defaultVars: 'base',
+    } as const
+    // @ts-expect-error sets must share paths, including added ones
+    Config.create(grown)
   })
 })
 
@@ -431,7 +437,28 @@ describe('extendVars', () => {
     expectTypeOf(extended).toEqualTypeOf(base)
     // @ts-expect-error Overrides must keep the original value domain.
     extendVars(base, { color: { brand: '8px' } })
-    // @ts-expect-error Overrides cannot introduce new paths.
-    extendVars(base, { color: { missing: '#654321' } })
+    const grown = extendVars(base, {
+      color: { accent: '#654321' },
+      spacing: { md: '8px' },
+    })
+    expectTypeOf(grown.color.accent).toEqualTypeOf<
+      Vars.Reference<'color', '#654321'>
+    >()
+    expectTypeOf(grown.spacing.md).toEqualTypeOf<
+      Vars.Reference<'spacing', '8px'>
+    >()
+    // @ts-expect-error Extensions cannot replace a leaf with a category.
+    extendVars(base, { color: { brand: { shade: '#000' } } })
+    const named = extendVars(base, { spacing: { md: '8px' } }, { id: 'site' })
+    expectTypeOf(named.spacing.md).toEqualTypeOf<
+      Vars.Reference<'spacing', '8px'>
+    >()
+    const derived = extendVars(
+      base,
+      { spacing: { md: '8px' } },
+      (vars) => ({ spacing: { lg: vars.spacing.md } }),
+      { id: 'site' },
+    )
+    expectTypeOf(derived.spacing).toHaveProperty('lg')
   })
 })

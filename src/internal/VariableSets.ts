@@ -55,19 +55,30 @@ export function from(metadata: Token.Metadata): Vars.Definition {
   ) as Vars.Definition
 }
 
-/** Validates and freezes a complete set or compatible partial override. */
+/**
+ * Validates and freezes a complete set, or grows a base set with compatible
+ * overrides and new leaves.
+ */
 export function build(
   input: unknown,
   contract: Token.Contract,
-  base?: Token.Metadata['values'],
-  baseQueries?: Query.Metadata,
-  basePaths?: Token.Metadata['paths'],
+  options: build.Options = {},
 ): Vars.Definition {
+  const base = options.base
   const values: Record<string, Token.Value> = Object.assign(
     Object.create(null),
-    base,
+    base?.values,
   )
-  const paths = { ...basePaths }
+  const paths = { ...base?.paths }
+  // Segment keys keep dotted typography conditions distinct from nested paths.
+  const leaves = new Set<string>()
+  const categories = new Set<string>()
+  for (const path of Object.keys(base?.values ?? {})) {
+    const parts = base!.paths?.[path] ?? path.split('.')
+    leaves.add(JSON.stringify(parts))
+    for (let index = 1; index < parts.length; index++)
+      categories.add(JSON.stringify(parts.slice(0, index)))
+  }
   const conditions: string[][] = []
   const active = new Set<object>()
   function visit(input: unknown, path: string[]) {
@@ -86,14 +97,31 @@ export function build(
     ) {
       if (!path.length)
         throw new Vars.InvalidError(path, 'Expected a variable record.')
-      const value = read(input, path, queryData)
-      const name = path.join('.')
-      if (base && !Object.hasOwn(base, name))
+      if (categories.has(JSON.stringify(path)))
         throw new Vars.InvalidError(
           path,
-          'Extensions cannot add variable paths.',
+          'Extensions cannot replace a variable category with a leaf.',
         )
-      if (base && domain(base[name]!) !== domain(value))
+      const name = path.join('.')
+      const previous =
+        base && Object.hasOwn(base.values, name) ? base.values[name] : undefined
+      if (previous !== undefined && options.derived)
+        throw new Vars.InvalidError(
+          path,
+          'Derived variables cannot replace existing paths.',
+        )
+      // Restating the base reference would make the variable reference itself.
+      if (
+        previous !== undefined &&
+        Token.is(input) &&
+        input.path === name &&
+        (input.contract === contract ||
+          (contract[Token.identity] !== undefined &&
+            input.contract[Token.identity] === contract[Token.identity]))
+      )
+        return
+      const value = read(input, path, queryData)
+      if (previous !== undefined && domain(previous) !== domain(value))
         throw new Vars.InvalidError(
           path,
           'Variable overrides must preserve their domain.',
@@ -103,11 +131,19 @@ export function build(
       values[name] = value
       return
     }
+    if (leaves.has(JSON.stringify(path)))
+      throw new Vars.InvalidError(
+        path,
+        'Extensions cannot replace a variable leaf with a category.',
+      )
     const entries = record(input, path)
     if (active.has(input as object))
       throw new Vars.InvalidError(path, 'Cyclic variables are not supported.')
     active.add(input as object)
-    if (!entries.length && !base)
+    if (
+      !entries.length &&
+      (!base || (path.length > 0 && !categories.has(JSON.stringify(path))))
+    )
       throw new Vars.InvalidError(path, 'Variable records cannot be empty.')
     for (const [key, value] of entries) {
       const query = path[0] === 'typography' && Typography.condition(key)
@@ -122,34 +158,29 @@ export function build(
     active.delete(input as object)
   }
   const fields = Object.fromEntries(record(input, []))
-  const queries = { ...baseQueries }
+  const queries = { ...base?.queries }
   for (const key of ['breakpoint', 'container', 'containerNames'] as const) {
     if (Object.hasOwn(fields, key)) {
       const value = fields[key]
       if (base) {
         if (key === 'containerNames') {
           if (
-            JSON.stringify(value) !==
-            JSON.stringify(baseQueries?.containerNames ?? [])
+            !Array.isArray(value) ||
+            (base.queries?.containerNames ?? []).some(
+              (name) => !value.includes(name),
+            )
           )
             throw new Vars.InvalidError(
               [key],
-              'Extensions cannot change container identities.',
+              'Extensions cannot remove container identities.',
             )
-        } else {
-          for (const [name] of record(value, [key]))
-            if (!Object.hasOwn(baseQueries?.[key] ?? {}, name))
-              throw new Vars.InvalidError(
-                [key, name],
-                'Extensions cannot add query thresholds.',
-              )
-        }
+        } else record(value, [key])
       }
       Object.assign(queries, {
         [key]:
           key === 'containerNames'
             ? value
-            : { ...baseQueries?.[key], ...value },
+            : { ...base?.queries?.[key], ...value },
       })
       if (key !== 'container' || Object.keys(value as object).length === 0)
         delete fields[key]
@@ -176,6 +207,55 @@ export function build(
     queryData,
     Object.keys(paths).length ? Object.freeze(paths) : undefined,
   ) as Vars.Definition
+}
+
+/** Set construction inputs. */
+export declare namespace build {
+  /** Base set metadata and how its existing paths may change. */
+  type Options = {
+    /** Set whose leaves the input overrides or extends. */
+    readonly base?:
+      | Pick<Token.Metadata, 'paths' | 'queries' | 'values'>
+      | undefined
+    /** Rejects existing paths, as derived leaves only add to the set. */
+    readonly derived?: boolean | undefined
+  }
+}
+
+/**
+ * Reads a set's references as values for a named extension. Typography presets
+ * keep their base values, since presets expand at each use.
+ */
+export function references(
+  variables: object,
+  metadata: Pick<Token.Metadata, 'paths' | 'queries' | 'values'>,
+): Vars.Values {
+  const tree: Record<string, unknown> = Object.create(null)
+
+  for (const [path, value] of Object.entries(metadata.values)) {
+    const parts = metadata.paths?.[path] ?? path.split('.')
+    let target = tree
+    let source: unknown = variables
+
+    for (const part of parts.slice(0, -1)) {
+      target = (target[part] ??= Object.create(null)) as Record<string, unknown>
+      source = (source as Record<string, unknown>)[part]
+    }
+
+    const name = parts.at(-1)!
+    target[name] =
+      parts[0] === 'typography'
+        ? value
+        : (source as Record<string, unknown>)[name]
+  }
+
+  for (const key of ['breakpoint', 'container'] as const)
+    if (Object.keys(metadata.queries?.[key] ?? {}).length)
+      tree[key] = metadata.queries![key]
+  if (metadata.queries?.containerNames?.length)
+    tree.containerNames = metadata.queries.containerNames
+
+  return tree as Vars.Values
 }
 
 function buildTree(

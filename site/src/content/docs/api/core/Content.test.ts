@@ -912,13 +912,16 @@ describe('extendVars API page', () => {
     `)
   })
 
-  test('rejects new paths and changed value types', () => {
+  test('adds paths and rejects conflicts and changed value types', () => {
     const base = defineVars({ spacing: { page: '1rem' } })
 
+    expect(
+      extendVars(base, { spacing: { section: '2rem' } }).spacing.section.value,
+    ).toBe('2rem')
     expect(() =>
-      extendVars(base, { spacing: { section: '2rem' } } as never),
+      extendVars(base, { spacing: '2rem' } as never),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Vars.InvalidError: ["spacing","section"]: Extensions cannot add variable paths.]`,
+      `[Vars.InvalidError: ["spacing"]: Extensions cannot replace a variable category with a leaf.]`,
     )
     expect(() =>
       extendVars(base, { spacing: { page: '#ffffff' } } as never),
@@ -1246,7 +1249,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(79)
+    expect(files).toHaveLength(80)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

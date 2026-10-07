@@ -137,11 +137,12 @@ export function create(
       appearance: result.appearance,
       script: result.script,
       style: result.style,
+      // The default set's metadata lets Vars.extend grow configured vars.
       vars: Object.freeze(
-        Object.defineProperties(
-          vars,
-          Object.getOwnPropertyDescriptors(theme.tokens),
-        ),
+        Object.defineProperties(vars, {
+          ...Object.getOwnPropertyDescriptors(theme.tokens),
+          [Token.definition]: { value: theme[Token.definition] },
+        }),
       ),
       variants: result.variants,
     })

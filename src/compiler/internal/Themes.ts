@@ -633,6 +633,68 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return result
   }
 
+  /** Reads a derived-variables callback as one parameter name and a literal body. */
+  function derivation(argument: Ast.Node | undefined) {
+    const callback = argument && Expression.unwrap(argument)
+    if (
+      callback?.type !== 'ArrowFunctionExpression' &&
+      callback?.type !== 'FunctionExpression'
+    )
+      return undefined
+
+    const parameter = callback.params[0]
+    const body = (() => {
+      if (callback.body?.type !== 'BlockStatement') return callback.body
+      if (
+        callback.body.body.length === 1 &&
+        callback.body.body[0]?.type === 'ReturnStatement'
+      )
+        return callback.body.body[0].argument
+      return undefined
+    })()
+    if (
+      callback.async ||
+      callback.generator ||
+      callback.params.length !== 1 ||
+      parameter?.type !== 'Identifier' ||
+      !body
+    )
+      fail(
+        'Derived variables require one named parameter and a literal return value.',
+        callback,
+      )
+
+    return { body, name: parameter.name }
+  }
+
+  /** Authored values of an extension, keeping base values at existing paths as `Vars.extend` types do. */
+  function extendedValues(base: Theme.Definition, extension: Theme.Definition) {
+    const metadata = extension[Token.definition]
+    const known = base[Token.definition].values
+    const tree: Record<string, unknown> = Object.create(null)
+
+    for (const path of Object.keys(metadata.values)) {
+      const parts = metadata.paths?.[path] ?? path.split('.')
+      const source = Object.hasOwn(known, path) ? base : extension
+      let target = tree
+      let token: unknown = source.tokens
+
+      for (const part of parts.slice(0, -1)) {
+        target = (target[part] ??= Object.create(null)) as Record<
+          string,
+          unknown
+        >
+        token = (token as Record<string, unknown>)[part]
+      }
+
+      const name = parts.at(-1)!
+      // Every metadata path has a reference in its own token tree.
+      target[name] = (token as Record<string, Token.Reference>)[name]!.value
+    }
+
+    return tree
+  }
+
   function fail(message: string, node: Pick<Ast.Node, 'end' | 'start'>): never {
     throw new InvalidError(message, node)
   }
@@ -767,6 +829,18 @@ export function collect(program: Ast.Program, options: collect.Options) {
             : 1,
         )
         if (id !== undefined) name = Identity.requireId(id, 'Vars.define')
+      }
+      if (!config && method === 'extend') {
+        const argument = expression.arguments[2]
+        const callback = argument && Expression.unwrap(argument)
+        const id = Identifiers.explicit(
+          expression,
+          callback?.type === 'ArrowFunctionExpression' ||
+            callback?.type === 'FunctionExpression'
+            ? 3
+            : 2,
+        )
+        if (id !== undefined) name = Identity.requireId(id, 'Vars.extend')
       }
 
       if (config) {
@@ -949,42 +1023,17 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           tokenType = type(expression.arguments[0]!)
 
-          const argument = expression.arguments[1]
-          const callback = argument && Expression.unwrap(argument)
-          if (
-            variableSet &&
-            (callback?.type === 'ArrowFunctionExpression' ||
-              callback?.type === 'FunctionExpression')
-          ) {
-            const parameter = callback.params[0]
-            const body = (() => {
-              if (callback.body?.type !== 'BlockStatement') return callback.body
-              if (
-                callback.body.body.length === 1 &&
-                callback.body.body[0]?.type === 'ReturnStatement'
-              )
-                return callback.body.body[0].argument
-              return undefined
-            })()
-            if (
-              callback.async ||
-              callback.generator ||
-              callback.params.length !== 1 ||
-              parameter?.type !== 'Identifier' ||
-              !body
-            )
-              fail(
-                'Derived variables require one named parameter and a literal return value.',
-                callback,
-              )
-
+          const derive = variableSet
+            ? derivation(expression.arguments[1])
+            : undefined
+          if (derive) {
             const base = VariableSets.build(
               input,
               Object.freeze({ variableSet: true, [Token.identity]: name }),
             )
             input = VariableSets.merge(
               input,
-              data(body, { name: parameter.name, vars: base }),
+              data(derive.body, { name: derive.name, vars: base }),
             )
             tokenType = Configurations.type(input)
           } else if (expression.arguments.length > 2)
@@ -1012,33 +1061,88 @@ export function collect(program: Ast.Program, options: collect.Options) {
         } else {
           const base = expression.arguments[0]
           const parent = base ? resolve(base)?.call : undefined
+          const derive = variableSet
+            ? derivation(expression.arguments[2])
+            : undefined
 
-          if (expression.arguments.length !== 2 || !parent)
+          const arity = derive ? 3 : 2
+          // A trailing options object names a new set over the base's variables.
+          const id =
+            expression.arguments.length === arity + 1
+              ? Identifiers.explicit(expression, arity)
+              : undefined
+          const named = id !== undefined
+          if (
+            (expression.arguments.length !== arity && !named) ||
+            !parent
+          )
             fail(
               'Vars.extend requires a preceding variable set and literal overrides.',
               expression,
             )
 
           factoryReferences.add(base!.start)
-          definition = variableSet
-            ? VariableSets.theme(
-                Vars.extend(
-                  VariableSets.from(themes[parent.name]![Token.definition]),
-                  data(expression.arguments[1]!) as Vars.Overrides<Vars.Values>,
-                ),
-              )
-            : Theme.extend(
-                themes[parent.name]!,
-                data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
-              )
+          tokenType = parent.tokenType
+          output = parent.output
+
+          if (variableSet) {
+            const theme = themes[parent.name]!
+            const original = VariableSets.from(theme[Token.definition])
+            const extend = Vars.extend as (
+              variables: Vars.Definition,
+              values: Vars.Values,
+              derive: (vars: Vars.References<Vars.Values>) => Vars.Values,
+              options: { readonly id?: string | undefined },
+            ) => Vars.Definition
+            const extended = extend(
+              original,
+              data(expression.arguments[1]!) as Vars.Values,
+              (vars) =>
+                derive
+                  ? (data(derive.body, {
+                      name: derive.name,
+                      vars: vars as Vars.Definition,
+                    }) as Vars.Values)
+                  : {},
+              { id },
+            )
+            definition = named
+              ? Token.bind(
+                  VariableSets.theme(extended),
+                  Object.freeze({
+                    ...extended[Token.definition].contract,
+                    [Token.identity]: name,
+                  }),
+                )
+              : VariableSets.theme(extended)
+
+            const metadata = definition[Token.definition]
+            // Additions grow the token contract; overridden leaves keep their base types, as in `Vars.extend`.
+            if (
+              named ||
+              Object.keys(metadata.values).length !==
+                Object.keys(theme[Token.definition].values).length ||
+              JSON.stringify(metadata.queries) !==
+                JSON.stringify(theme[Token.definition].queries)
+            )
+              tokenType = Configurations.type({
+                ...extendedValues(theme, definition),
+                ...metadata.queries,
+              })
+          } else
+            definition = Theme.extend(
+              themes[parent.name]!,
+              data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
+            )
+
+          // Extensions share their base identity, so the binding keeps sibling sets distinct.
           if (
+            !named &&
             definition[Token.definition].contract[Token.identity]?.startsWith(
               'id-',
             )
           )
-            name = definition.className.slice('z-theme-'.length)
-          tokenType = parent.tokenType
-          output = parent.output
+            name = `${definition.className.slice('z-theme-'.length)}-${binding}`
         }
       } catch (error) {
         if (error instanceof InvalidError) throw error

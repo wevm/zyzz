@@ -1,5 +1,12 @@
 # zyzz
 
+## 0.0.27
+
+### Patch Changes
+
+- b7b7f67: Stopped emitting variable declarations that only forward a base set's variable, unless another set with the same identity overrides the path.
+- b7b7f67: Shortened responsive fallback variable names to a hash of their CSS, shrinking emitted stylesheets with responsive variables.
+
 ## 0.0.26
 
 ### Patch Changes

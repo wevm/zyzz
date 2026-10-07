@@ -194,7 +194,7 @@ A build fails when the source directory is missing, when an option conflicts wit
 npx zyzz build --platform ios
 ```
 
-Bare imports resolve from `node_modules` with the `node` and `import` conditions. Installed packages supply compiled styles through adjacent `.zyzz.json` contracts, and an import that resolves to no file fails the build unless it is marked [external](#--external).
+Bare imports resolve from `node_modules` with the `node` and `import` conditions. Installed packages supply compiled styles through adjacent `.zyzz.json` contracts, or through contracts derived from their JavaScript when they declare a `zyzz` dependency. An import that resolves to no file fails the build unless it is marked [external](#--external).
 
 ## React Native
 

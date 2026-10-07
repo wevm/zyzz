@@ -6,6 +6,7 @@ import { chromium } from 'playwright'
 import { expect, test } from 'vite-plus/test'
 import webpack from 'webpack'
 import { Graph } from 'zyzz/compiler'
+import * as PlainPackage from '../../test/fixtures/PlainPackage.js'
 
 const require = Module.createRequire(import.meta.url)
 
@@ -227,3 +228,62 @@ test.each([false, true])(
   },
   30_000,
 )
+
+test('derives contracts for installed packages without sidecars', async () => {
+  const root = await Fs.mkdtemp(Path.resolve('.fixture-next-derived-'))
+  const compiler = webpack({
+    cache: false,
+    context: root,
+    devtool: false,
+    entry: './entry.mjs',
+    experiments: { css: true },
+    // The package runtime is not under test, so its zyzz import stays unbundled.
+    externals: { zyzz: 'zyzz' },
+    mode: 'development',
+    module: {
+      rules: [
+        {
+          include: root,
+          test: /\.mjs$/,
+          use: [
+            {
+              loader: require.resolve('zyzz/next/loader'),
+              options: { bundler: 'webpack', root },
+            },
+          ],
+        },
+      ],
+    },
+    output: { cssFilename: 'styles.css', path: Path.join(root, 'dist') },
+  })
+  try {
+    await PlainPackage.install(root)
+    await Fs.writeFile(
+      Path.join(root, 'entry.mjs'),
+      `import {global} from 'zyzz/web';import {style,vars} from '@acme/tokens';global({':root':{'--gap':vars.spacing['16']}});export const card=style({padding:'16'})();`,
+    )
+
+    await new Promise<void>((resolve, reject) =>
+      compiler.run((error, stats) => {
+        if (error || !stats || stats.hasErrors())
+          reject(error ?? new Error(stats?.toString('errors-only')))
+        else resolve()
+      }),
+    )
+
+    const css = await Fs.readFile(Path.join(root, 'dist/styles.css'), 'utf8')
+
+    // Embedded source maps carry temporary paths, so only the rules are compared.
+    expect(css.match(/--gap:[^;]+/)?.[0]).toMatchInlineSnapshot(
+      `"--gap: var(--z-acme-spacing-16, 16px)"`,
+    )
+    expect(css.match(/padding:[^;]+/)?.[0]).toMatchInlineSnapshot(
+      `"padding:var(--z-acme-spacing-16,16px)"`,
+    )
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      compiler.close((error) => (error ? reject(error) : resolve())),
+    )
+    await Fs.rm(root, { force: true, recursive: true })
+  }
+}, 30_000)

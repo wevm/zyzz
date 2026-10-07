@@ -494,13 +494,31 @@ export function collect(program: Ast.Program, options: collect.Options) {
       root = root.object
     }
     if (root.type !== 'Identifier') return undefined
-    const local = derived?.name === root.name
-    const call = names.get(root.name)
-    if (!local && !call) return undefined
-    let value: unknown = local ? derived.vars : themes[call!.name]?.tokens
-    if (!local && !call!.variableSet && !call!.directVariables) {
-      if (!['vars', 'tokens'].includes(path.shift()!)) return undefined
-    }
+    const name = root.name
+    let value: unknown = (() => {
+      if (derived?.name === name) return derived.vars
+
+      const call = names.get(name)
+      if (call) {
+        if (
+          !call.variableSet &&
+          !call.directVariables &&
+          !['vars', 'tokens'].includes(path.shift()!)
+        )
+          return undefined
+        return themes[call.name]?.tokens
+      }
+
+      // Config-bound vars read the configured variables, so they follow set scoping.
+      const config = configs.get(name)
+      if (
+        !config?.call.variableConfig ||
+        (!config.call.selection && path.shift() !== 'vars')
+      )
+        return undefined
+      return themes[config.call.name]?.tokens
+    })()
+    if (value === undefined) return undefined
     for (const key of path)
       value =
         value && typeof value === 'object'

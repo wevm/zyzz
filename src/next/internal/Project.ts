@@ -1,5 +1,6 @@
 /** Retains filesystem snapshots and an incremental graph within a Next.js loader worker. @module */
 import * as Contract from '../../compiler/internal/Contract.js'
+import * as Contracts from '../../node/internal/Contracts.js'
 import * as Fs from 'node:fs/promises'
 import * as Graph from '../../compiler/Graph.js'
 import * as Path from 'node:path'
@@ -26,6 +27,7 @@ export type Context = {
 /** Creates project state owned by a loader configuration in one worker process. */
 export function create(options: create.Options) {
   let compiler = Graph.create()
+  const packages = Contracts.create()
   const files = new Map<string, { source: string; version: string }>()
   const libraries = new Map<
     string,
@@ -121,6 +123,20 @@ export function create(options: create.Options) {
         resolutions.set(key, pending)
       }
       return pending
+    }
+    // Files behind package contracts stay dependencies even when the module is unchanged.
+    const inputs = new Set<string>()
+    const host: Contracts.read.Options = {
+      read: async (file) => {
+        const source = await read(file)
+        // Next ignores node_modules edits, and tracked manifests stalled webpack rebuilds after a failed compile.
+        if (Path.basename(file) === 'package.json') return source
+        track(file)
+        inputs.add(file)
+        return source
+      },
+      resolve: async (specifier, importer) =>
+        (await resolve(Path.dirname(importer), specifier)) || undefined,
     }
     const id = (file: string) =>
       `app/${Path.relative(root, file).split(Path.sep).join('/')}`
@@ -322,14 +338,10 @@ export function create(options: create.Options) {
           await visit(resolved)
           continue
         }
-        const sidecar = `${resolved}.zyzz.json`
-        try {
-          contracts[resolved] = await read(sidecar)
-          track(sidecar)
-          links[specifier] = resolved
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-        }
+        const contract = await packages.read(resolved, host)
+        if (contract === undefined) continue
+        contracts[resolved] = contract
+        links[specifier] = resolved
       }
     }
 
@@ -360,11 +372,10 @@ export function create(options: create.Options) {
 
           const links = (imports[owner] ??= Object.create(null))
           links[specifier] = target
-          if (!Object.hasOwn(contracts, target)) {
-            const sidecar = `${target}.zyzz.json`
-            contracts[target] = await read(sidecar)
-            track(sidecar)
-          }
+          contracts[target] ??= (await packages.read(target, {
+            ...host,
+            required: true,
+          }))!
           await dependencies(target)
           owner = target
         }
@@ -388,16 +399,10 @@ export function create(options: create.Options) {
     if (output.code === source && !output.css) {
       context.addDependency(context.resourcePath)
       for (const file of runtime) context.addDependency(file)
-      for (const file of tracked)
-        if (file.endsWith('.zyzz.json')) context.addDependency(file)
-      for (const target of Object.values(imports[entry] ?? {})) {
-        if (!target) continue
-        context.addDependency(
-          target.startsWith('app/')
-            ? Path.join(root, target.slice(4))
-            : `${target}.zyzz.json`,
-        )
-      }
+      for (const file of inputs) context.addDependency(file)
+      for (const target of Object.values(imports[entry] ?? {}))
+        if (target?.startsWith('app/'))
+          context.addDependency(Path.join(root, target.slice(4)))
     } else {
       for (const file of tracked) context.addDependency(file)
     }

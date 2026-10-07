@@ -70,7 +70,7 @@ The host watches every directory under `root` except `node_modules`, `.git`, and
 mkdir src/forms && echo "export const id = 'field'" > src/forms/Field.ts
 ```
 
-Imports add the `package.json` files and `node_modules` directories that resolution searched, the resolved package directory, its entry, and the entry's `.zyzz.json` file. Polling every 250 ms catches removed packages, replaced files, and retargeted symbolic links.
+Imports add the `package.json` files and `node_modules` directories that resolution searched, the resolved package directory, its entry, and the entry's `.zyzz.json` file. A derived contract also adds the package modules and manifests it reads. Polling every 250 ms catches removed packages, replaced files, and retargeted symbolic links.
 
 ## Recovery
 
@@ -88,7 +88,7 @@ host.watch({
 })
 ```
 
-A successful build stops watching paths it no longer reads. A failed build keeps them, so restoring a missing dependency triggers the next build. A dependency whose `.zyzz.json` file disappears fails the build rather than compiling as plain JavaScript.
+A successful build stops watching paths it no longer reads. A failed build keeps them, so restoring a missing dependency triggers the next build. A dependency whose `.zyzz.json` file disappears falls back to a contract derived from its JavaScript, and fails the build when none can be derived rather than compiling as plain JavaScript.
 
 ## Types
 

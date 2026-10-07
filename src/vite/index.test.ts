@@ -20,6 +20,7 @@ import * as Library from '../../test/fixtures/Library.js'
 import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
 import * as Font from '../../test/fixtures/AtRuleFont.js'
+import * as PlainPackage from '../../test/fixtures/PlainPackage.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 
 async function create(files: Readonly<Record<string, string>> = Fixture.files) {
@@ -1474,6 +1475,43 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       expect(
         javascript.includes('authoring was executed'),
       ).toMatchInlineSnapshot(`false`)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('derives contracts for installed packages without sidecars', async () => {
+    const { config, root } = await create({
+      'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
+      'main.ts': `import {global} from 'zyzz/web';import {style,vars} from '@acme/tokens';global({':root':{'--gap':vars.spacing['16']}});document.body.className=style({padding:'16'})().className;`,
+    })
+
+    try {
+      await PlainPackage.install(root)
+      await Fs.symlink(
+        process.cwd(),
+        Path.join(root, 'node_modules/zyzz'),
+        'dir',
+      )
+
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false, write: false },
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const sheet = result.output.find(
+        (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+      )
+      if (!sheet || sheet.type !== 'asset')
+        throw new Error('No stylesheet emitted')
+
+      expect(String(sheet.source)).toMatchInlineSnapshot(`
+        ":root{--gap:var(--z-acme-spacing-16,16px);}
+        .z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
+        .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}.z-acme-p-\\5b var\\28 --z-acme-spacing-16\\2c 16px\\29 \\5d {padding:var(--z-acme-spacing-16,16px);}"
+      `)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

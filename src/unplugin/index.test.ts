@@ -8,6 +8,7 @@ import * as Rollup from 'rollup'
 import * as Vite from 'vite'
 import * as Watch from '../../test/fixtures/Watch.js'
 import * as Library from '../../test/fixtures/Library.js'
+import * as PlainPackage from '../../test/fixtures/PlainPackage.js'
 import * as Responsive from '../../test/fixtures/Responsive.js'
 import { describe, expect, test, vi } from 'vite-plus/test'
 import Webpack from 'webpack'
@@ -422,6 +423,58 @@ describe('zyzz', () => {
       `)
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
+    }
+  }, 30000)
+
+  test('esbuild derives contracts for installed packages without sidecars', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-unplugin-derived-'))
+    try {
+      await PlainPackage.install(root)
+      await Fs.symlink(
+        process.cwd(),
+        Path.join(root, 'node_modules/zyzz'),
+        'dir',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import {global} from 'zyzz/web';import {style,vars} from '@acme/tokens';global({':root':{'--gap':vars.spacing['16']}});export const props=style({padding:'16'})();`,
+      )
+
+      await Esbuild.build({
+        absWorkingDir: root,
+        bundle: true,
+        entryPoints: [Path.join(root, 'main.ts')],
+        entryNames: 'app',
+        format: 'esm',
+        outdir: Path.join(root, 'dist'),
+        plugins: [zyzz.esbuild({ root })],
+      })
+
+      expect(await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ":root {
+          --gap: var(--z-acme-spacing-16, 16px);
+        }
+
+        .z-theme-acme_2f_variables-variables {
+          --z-acme_2f_variables-color-ink: #123456;
+          --z-acme_2f_variables-spacing-16: 16px;
+        }
+
+        .z-theme-acme-theme {
+          --z-acme-spacing-16: 16px;
+          --z-acme-color-ink: #123456;
+        }
+
+        .z-acme-p-\\[var\\(--z-acme-spacing-16\\,16px\\)\\] {
+          padding: var(--z-acme-spacing-16, 16px);
+        }
+
+        /*# sourceMappingURL=zyzz.css.map */
+        "
+      `)
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
     }
   }, 30000)
 

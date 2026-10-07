@@ -408,6 +408,14 @@ node_modules/my-library/theme.js.zyzz.json
 
 A library that transpiles its published modules copies each metadata file to match, such as `theme.ts.zyzz.json` to `theme.js.zyzz.json`. TypeScript path aliases and browser or native conditions are not applied.
 
+When an entry has no metadata file and its package declares a `zyzz` dependency, the host derives the contract from the published JavaScript without running it. Modules imported only for function or class exports stay runtime code. A shipped `.zyzz.json` file still takes precedence.
+
+```sh /theme.js/
+# A package that publishes plain compiled authoring needs no metadata file
+node_modules/my-library/package.json
+node_modules/my-library/theme.js
+```
+
 ## Types
 
 - **`Host.create.Options{:ts}`:** The accepted options.

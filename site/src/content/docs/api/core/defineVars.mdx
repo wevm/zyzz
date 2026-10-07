@@ -34,7 +34,7 @@ defineVars(values, derive, options?)
 
 - **Type:** `Vars.Values{:ts}`
 
-Nested categories of values. A leaf is a string, a finite number, a reference to another set, a light and dark color pair, or conditional values. Keys cannot contain dots, conditions, or `!`.
+Nested categories of values. A leaf is a string, a finite number, a reference to another set or to the `vars` of a configuration, a light and dark color pair, or conditional values. A configuration reference follows that configuration's selected set. Keys cannot contain dots, conditions, or `!`.
 
 ```ts
 import { defineVars } from 'zyzz'

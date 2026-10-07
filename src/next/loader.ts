@@ -161,7 +161,8 @@ async function compile(context: Context, source: string) {
         placeholder,
         Path.relative(directory, file)
           .split(Path.sep)
-          .map(encodeURIComponent)
+          // Bundlers resolve url() paths without decoding, so escape only characters that change URL parsing.
+          .map((part) => part.replace(/[%#?]/g, encodeURIComponent))
           .join('/') + target.slice(raw.length),
       )
     }

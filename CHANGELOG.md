@@ -1,5 +1,21 @@
 # zyzz
 
+## 0.0.25
+
+### Patch Changes
+
+- c521550: Accepted references from the `vars` returned by `Config.create` in `Vars.define` and `Vars.extend` values, resolving them to the configured variables.
+- c521550: Derived missing package contracts from published JavaScript when a package depends on Zyzz, while shipped `.zyzz.json` contracts still take precedence.
+- e48b6fe: Removed repeated class lists from local definitions whose applications all fold, and folded top-level reads after a definition without initialization guards.
+- e48b6fe: Added `composition` to `defineConfig`, so independent atomic styles share one short-named rule per repeated declaration across modules.
+  
+  ```ts
+  export const { style } = defineConfig({ composition: 'independent' })
+  ```
+- c521550: Fixed Next.js builds failing to resolve packed font and image assets installed under scoped or pnpm paths containing `@` or `+`.
+- 6953bf4: Fixed compiled modules keeping `defineConfig`, `defineVars`, and `extendVars` imports from `zyzz` after the compiler replaced every call.
+- e48b6fe: Shared atomic rules in production builds between local styles applied only alone to DOM elements or inside `cx`, and between consecutive ordered styles with equal declarations.
+
 ## 0.0.24
 
 ### Patch Changes

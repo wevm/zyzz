@@ -26,7 +26,7 @@ export function read(
   if (
     ![
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
     ].includes(data.version as number)
   )
     throw new Error('Unsupported Zyzz contract version.')
@@ -149,6 +149,22 @@ export function read(
       | 'grouped'
       | undefined
 
+    if (entry.composition !== undefined) {
+      if ((data.version as number) < 34)
+        throw new Error(
+          'Composition modes require contract version 34 or later.',
+        )
+      if (
+        entry.composition !== 'independent' &&
+        entry.composition !== 'ordered'
+      )
+        throw new Error('Invalid packed composition mode.')
+    }
+    const composition = entry.composition as
+      | 'independent'
+      | 'ordered'
+      | undefined
+
     if (entry.defaultLayer !== undefined) {
       if ((data.version as number) < 27)
         throw new Error('Default layers require contract version 27 or later.')
@@ -182,6 +198,14 @@ export function read(
 
     if (
       contract &&
+      (contract.composition ?? 'ordered') !== (composition ?? 'ordered')
+    )
+      throw new Error(
+        'Conflicting packed composition modes for one theme identity.',
+      )
+
+    if (
+      contract &&
       (contract.cssOutput ?? 'atomic') !== (cssOutput ?? 'atomic')
     )
       throw new Error(
@@ -204,6 +228,7 @@ export function read(
         ...(entry.shorthands !== undefined
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
+        ...(composition ? { composition } : {}),
         ...(cssOutput ? { cssOutput } : {}),
         ...(defaultLayer !== undefined ? { defaultLayer } : {}),
         [Token.complete]: true,
@@ -333,7 +358,7 @@ export function read(
       if (
         ![
           9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-          27, 28, 29, 30, 31, 32, 33,
+          27, 28, 29, 30, 31, 32, 33, 34,
         ].includes(data.version as number) ||
         ![
           'cssFunction',
@@ -512,6 +537,14 @@ export function read(
       )
         throw new Error(
           'Configuration CSS output disagrees with linked theme metadata.',
+        )
+
+      if (
+        (options.composition ?? 'ordered') !==
+        (definition[Token.definition].contract.composition ?? 'ordered')
+      )
+        throw new Error(
+          'Configuration composition disagrees with linked theme metadata.',
         )
 
       if (
@@ -829,6 +862,9 @@ export function write(
           ...(theme[Token.definition].contract.defaultLayer !== undefined
             ? { defaultLayer: theme[Token.definition].contract.defaultLayer }
             : {}),
+          ...(theme[Token.definition].contract.composition
+            ? { composition: theme[Token.definition].contract.composition }
+            : {}),
           ...(theme[Token.definition].contract.cssOutput
             ? { cssOutput: theme[Token.definition].contract.cssOutput }
             : {}),
@@ -843,12 +879,28 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(nativeCatalog)
-      ? 33
-      : Object.values(links).some(nativeProvider)
-        ? 32
-        : 31,
+    version: (() => {
+      if (
+        Object.values(themes).some(
+          (theme) => theme[Token.definition].contract.composition,
+        ) ||
+        Object.values(links).some(composed)
+      )
+        return 34
+
+      if (Object.values(links).some(nativeCatalog)) return 33
+      if (Object.values(links).some(nativeProvider)) return 32
+
+      return 31
+    })(),
   })
+
+  function composed(link: Themes.Link): boolean {
+    return (
+      Boolean(link.style?.style.composition) ||
+      Object.values(link.members ?? {}).some(composed)
+    )
+  }
 
   function nativeProvider(link: Themes.Link): boolean {
     return (

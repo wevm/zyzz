@@ -160,7 +160,16 @@ export function read(
       item.cssOutput !== 'grouped'
     )
       throw new Error('Invalid packed style CSS output mode.')
+    if (
+      item.composition !== undefined &&
+      (version < 34 ||
+        (item.composition !== 'independent' && item.composition !== 'ordered'))
+    )
+      throw new Error('Invalid packed style composition mode.')
     return {
+      ...(item.composition
+        ? { composition: item.composition as 'independent' | 'ordered' }
+        : {}),
       ...(item.cssOutput
         ? { cssOutput: item.cssOutput as 'atomic' | 'grouped' }
         : {}),

@@ -56,7 +56,7 @@ namespace styles {
 
 </Tabs>
 
-Definitions sit at module scope, and the compiler reads literals, local constant records, and typed callbacks statically without evaluating arbitrary application code. Compiling `Card.tsx` emits each rule before rendering. With the default atomic output, every declaration becomes one class, and `styles.card()` returns `{ className: 'z-p-1rem' }`:
+Definitions sit at module scope, and the compiler reads literals, local constant records, and typed callbacks statically without evaluating arbitrary application code. Compiling `Card.tsx` emits each rule before rendering. With the default atomic output, every declaration becomes one class, and in development `styles.card()` returns `{ className: 'z-p-1rem' }`:
 
 ```css
 .z-p-1rem {

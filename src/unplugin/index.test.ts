@@ -468,6 +468,54 @@ describe('zyzz', () => {
     }
   }, 30000)
 
+  test('esbuild publishes shared independent rules once across modules', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-unplugin-units-'))
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'config.ts'),
+        `import { defineConfig } from 'zyzz'; export const { style } = defineConfig({ composition: 'independent' });`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'card.ts'),
+        `import { style } from './config.js'; const card = style({ color: 'red', padding: '8px' }); export const props = card();`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import { style } from './config.js'; import { props as card } from './card.js'; const label = style({ color: 'red', padding: '4px' }); export const props = [card, label()];`,
+      )
+      await Esbuild.build({
+        alias: { 'zyzz/runtime': runtime },
+        bundle: true,
+        entryPoints: [Path.join(root, 'main.ts')],
+        entryNames: 'app',
+        format: 'iife',
+        globalName: 'App',
+        outdir: Path.join(root, 'dist'),
+        plugins: [zyzz.esbuild({ root })],
+      })
+      // The consumer reuses the dependency's color rule, published once.
+      expect(await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_rnRBDm0 {
+          color: red;
+        }
+
+        .z_rnRBDm1 {
+          padding: 8px;
+        }
+
+        .z_YiE3S91 {
+          padding: 4px;
+        }
+
+        /*# sourceMappingURL=zyzz.css.map */
+        "
+      `)
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30000)
+
   test('rollup invalidates cached transforms after a shared theme edit', async () => {
     const root = await fixture()
     const plugin = rollup({ root })

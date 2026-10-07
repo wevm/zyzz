@@ -149,6 +149,9 @@ export function collect(options: collect.Options): Themes.Link {
       : {}),
     [Token.identity]: identity,
     ...(input.id !== undefined ? { [Token.complete]: true } : {}),
+    ...(input.composition !== undefined
+      ? { composition: input.composition }
+      : {}),
     cssOutput: input.cssOutput ?? 'atomic',
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer }
@@ -243,6 +246,7 @@ export function collect(options: collect.Options): Themes.Link {
       return {}
     })(),
     ...(input.id !== undefined ? { id: input.id } : {}),
+    ...(input.composition ? { composition: input.composition } : {}),
     ...(input.cssOutput ? { cssOutput: input.cssOutput } : {}),
     ...(input.defaultLayer !== undefined
       ? { defaultLayer: input.defaultLayer }

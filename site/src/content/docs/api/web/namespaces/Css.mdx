@@ -62,7 +62,7 @@ const output = Css.compile({ cssOutput: 'grouped', styles })
 - **Type:** `'independent' | 'ordered'{:ts}`
 - **Default:** `'ordered'{:ts}`
 
-`ordered` keeps precedence correct when class lists combine on one element. `independent` deduplicates identical styles and factors shared grouped declarations, so its class lists must never combine with each other.
+`ordered` keeps precedence correct when class lists combine on one element. `independent` deduplicates identical styles, shares one rule per repeated atomic declaration, and factors shared grouped declarations, so its class lists must never combine with each other. A style's own `composition` takes precedence.
 
 ```ts
 import { Style } from 'zyzz'
@@ -106,7 +106,7 @@ const output = Css.compile({
 - **Type:** `boolean{:ts}`
 - **Default:** `false{:ts}`
 
-Disables the application deduplication and grouped factoring of `composition: 'independent'`. Atomic output still shares identical declarations across styles. Integrations enable it in development servers.
+Disables the application deduplication, atomic sharing, and grouped factoring of `composition: 'independent'`. Atomic output still shares identical declarations across styles. Integrations enable it in development servers.
 
 ```ts /development: true/
 // Replace the class map and CSS together after each edit

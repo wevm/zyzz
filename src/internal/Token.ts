@@ -393,6 +393,8 @@ export type Contract = {
   readonly variableSet?: boolean | undefined
   /** Configuration-local category-to-property mappings. */
   readonly mappings?: VariableSets.Mappings | false | undefined
+  /** Whether bound styles' class lists combine, retained by configuration-bound handles. */
+  readonly composition?: 'independent' | 'ordered' | undefined
   /** Web emission mode retained by configuration-bound theme handles. */
   readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Fallback layer for declarations without an explicit layer. */

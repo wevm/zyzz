@@ -62,6 +62,11 @@ const workloads = [
     group: `fresh compilation / ${name}`,
     lanes: ['zyzz'],
   })),
+  {
+    directory: 'app',
+    group: 'fresh compilation / app',
+    lanes: ['zyzz-source'],
+  },
   ...[10, 100].map((count) => ({
     directory: `theme-comparison/${count}`,
     group: `theme comparison / ${count} styles`,
@@ -69,12 +74,16 @@ const workloads = [
   })),
 ]
 
+// Source lanes parse and rewrite modules, which the other lanes' boundaries exclude.
+const untimed = new Set(['zyzz-source'])
+
 const names: Record<string, string> = {
   panda: 'Panda CSS',
   stylex: 'StyleX',
   tailwind: 'Tailwind',
   'vanilla-extract': 'vanilla-extract',
   zyzz: 'Zyzz',
+  'zyzz-source': 'Zyzz (source transform)',
   'zyzz-tokens': 'Zyzz (token resolution included)',
 }
 const titles: Record<string, string> = {
@@ -86,6 +95,7 @@ const titles: Record<string, string> = {
   independent: '100 Components — Independent Values',
   sparse: '100 Components — Sparse Properties',
   components: '60 Components — Mixed Shapes',
+  app: '300 Components — Application Scale',
   'theme-comparison/10': 'Themes — 10 Components',
   'theme-comparison/100': 'Themes — 100 Components',
 }
@@ -95,10 +105,10 @@ console.log(
   'Summaries show observed build-time winners and ratios versus the runner-up. Small leads may fall within measurement uncertainty; size gates are separate.\n',
 )
 console.log(
-  '🟢 Zyzz beats every other framework · 🔴 Zyzz fails, or another framework beats a Zyzz result on speed or size. Both build time and total gzip must pass; ties fail. Total gzip includes CSS + required JavaScript.\n',
+  '🟢 Zyzz beats every other framework · 🔴 Zyzz fails, or another framework beats a Zyzz result on speed or size. Both build time and total gzip must pass; ties fail. The source transform gates total gzip only. Total gzip includes CSS + required JavaScript.\n',
 )
 console.log(
-  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. Source parsing is measured separately. See bench/README.md for each compiler’s measurement boundary.\n',
+  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. The application workload compiles one authored module through the source transform, including parsing. See bench/README.md for each compiler’s measurement boundary.\n',
 )
 
 for (const workload of workloads) {
@@ -180,15 +190,20 @@ for (const workload of workloads) {
           const wins = workload.lanes.some((name) => {
             const zyzz = measurements.get(name)!
 
-            return result.mean < zyzz.mean || result.size < zyzz.size
+            return (
+              (!untimed.has(name) && result.mean < zyzz.mean) ||
+              result.size < zyzz.size
+            )
           })
 
           return wins ? '🔴 ' : ''
         }
 
-        const faster = competitors.every(
-          (name) => result.mean < measurements.get(name)!.mean,
-        )
+        const faster =
+          untimed.has(library) ||
+          competitors.every(
+            (name) => result.mean < measurements.get(name)!.mean,
+          )
         const smaller = competitors.every(
           (name) => result.size < measurements.get(name)!.size,
         )

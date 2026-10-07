@@ -34,6 +34,10 @@ export function create(
     }
     direct: Source.Call | undefined
     members: Map<string, Source.Call>
+    /** Namespace statement start and member identifier ends by extracted name. */
+    namespace?: Namespace | undefined
+    /** Offset after which top-level reads observe an initialized binding. */
+    ready: number
   }[] = []
 
   for (const statement of program.body) {
@@ -43,6 +47,7 @@ export function create(
       statement.body?.type === 'TSModuleBlock'
     ) {
       const members = new Map<string, Source.Call>()
+      const ends = new Map<string, number>()
       let valid = true
 
       for (const member of statement.body.body) {
@@ -71,6 +76,7 @@ export function create(
           }
 
           members.set(declaration.id.name, call)
+          ends.set(call.name, declaration.id.end)
           memberBindings.set(declaration.id.start, call.name)
         }
       }
@@ -80,6 +86,8 @@ export function create(
           declaration: { id: statement.id },
           direct: undefined,
           members,
+          namespace: { ends, start: statement.start },
+          ready: statement.end,
         })
 
       continue
@@ -142,6 +150,7 @@ export function create(
         declaration: { ...declaration, id: declaration.id },
         direct,
         members,
+        ready: declaration.end,
       })
     }
   }
@@ -149,6 +158,9 @@ export function create(
   if (!candidates.length) return undefined
 
   const lexical = new Set<Ast.Node>()
+  // Reads inside functions, classes, or namespaces may run before initialization.
+  const deferred = new Set<Ast.Node>()
+  const terminals = new Set<Ast.Node>()
   const scope = new Scope.Tracker({ preserveExitedScopes: true })
   Walker.walk(program, { scopeTracker: scope })
   scope.freeze()
@@ -185,8 +197,23 @@ export function create(
         candidates.some(
           (candidate) => candidate.declaration.id.start === id.start,
         )
-      )
+      ) {
         lexical.add(node)
+        if (terminal(ancestors)) terminals.add(node)
+        if (
+          ancestors.some((node) =>
+            [
+              'ArrowFunctionExpression',
+              'ClassDeclaration',
+              'ClassExpression',
+              'FunctionDeclaration',
+              'FunctionExpression',
+              'TSModuleDeclaration',
+            ].includes(node.type),
+          )
+        )
+          deferred.add(node)
+      }
     },
     leave() {
       ancestors.pop()
@@ -199,6 +226,80 @@ export function create(
     Extract<Ast.Node, { type: 'Identifier' }>[]
   >(candidates.map(({ declaration }) => [declaration.id.name, []]))
   let evaluation = false
+
+  // Returns undefined when any read escapes. Recipes, dynamic styles, and
+  // applications with overrides keep their runtime calls.
+  function collect(candidate: (typeof candidates)[number]):
+    | {
+        readonly applications: readonly Application[]
+        readonly called: ReadonlySet<string>
+      }
+    | undefined {
+    const { declaration, direct, members } = candidate
+    const applications: Application[] = []
+    const called = new Set<string>()
+
+    for (const reference of references.get(declaration.id.name) ?? []) {
+      if (reference === declaration.id) continue
+
+      let callee: Ast.Node = reference
+      let call = direct
+
+      if (!direct) {
+        const member = parents.get(reference)
+
+        if (
+          member?.type !== 'MemberExpression' ||
+          member.object !== reference ||
+          member.computed ||
+          member.optional ||
+          member.property.type !== 'Identifier'
+        )
+          return undefined
+
+        call = members.get(member.property.name)
+        callee = member
+      }
+
+      if (
+        call?.composition ||
+        call?.runtimeComposition ||
+        (!options.dynamic && (call?.slots || call?.recipe))
+      )
+        continue
+
+      const application = parents.get(callee)
+
+      if (
+        !call ||
+        application?.type !== 'CallExpression' ||
+        application.callee !== callee ||
+        application.optional
+      )
+        return undefined
+
+      // An override needs the runtime callable, but exposes no other definition.
+      if (!options.dynamic && application.arguments.length) {
+        called.add(call.name)
+        continue
+      }
+
+      applications.push({
+        calleeEnd: callee.end,
+        end: application.end,
+        initialized:
+          !deferred.has(reference) &&
+          reference.start >= candidate.ready &&
+          (!candidate.namespace ||
+            namespaceCounts.get(declaration.id.name) === 1),
+        name: call.name,
+        start: application.start,
+        terminal: terminals.has(reference),
+      })
+    }
+
+    return { applications, called }
+  }
 
   return {
     dead() {
@@ -255,6 +356,58 @@ export function create(
 
       return result
     },
+    definitions() {
+      const namespaces: Namespace[] = []
+      const values = new Map<string, boolean>()
+
+      if (evaluation) return { namespaces, values }
+
+      const counts = new Map<string, number>()
+
+      for (const { declaration } of candidates)
+        counts.set(
+          declaration.id.name,
+          (counts.get(declaration.id.name) ?? 0) + 1,
+        )
+
+      for (const candidate of candidates) {
+        const name = candidate.declaration.id.name
+        if (counts.get(name)! > 1 || (namespaceCounts.get(name) ?? 0) > 1)
+          continue
+
+        const result = collect(candidate)
+        if (!result) continue
+
+        let erased = !!candidate.namespace
+
+        for (const call of candidate.direct
+          ? [candidate.direct]
+          : candidate.members.values()) {
+          if (
+            call.composition ||
+            call.runtimeComposition ||
+            call.slots ||
+            call.recipe ||
+            result.called.has(call.name)
+          ) {
+            erased = false
+            continue
+          }
+
+          const initialized = result.applications.every(
+            (application) =>
+              application.name !== call.name || application.initialized,
+          )
+
+          values.set(call.name, initialized)
+          erased &&= initialized
+        }
+
+        if (erased) namespaces.push(candidate.namespace!)
+      }
+
+      return { namespaces, values }
+    },
     enter(node, parent) {
       if (
         node.type === 'MemberExpression' &&
@@ -280,68 +433,9 @@ export function create(
     find() {
       if (evaluation) return []
 
-      const result: Application[] = []
-
-      for (const { declaration, direct, members } of candidates) {
-        const applications: Application[] = []
-        let valid = true
-
-        for (const reference of references.get(declaration.id.name) ?? []) {
-          if (reference === declaration.id) continue
-
-          let callee: Ast.Node = reference
-          let call = direct
-
-          if (!direct) {
-            const member = parents.get(reference)
-
-            if (
-              member?.type !== 'MemberExpression' ||
-              member.object !== reference ||
-              member.computed ||
-              member.optional ||
-              member.property.type !== 'Identifier'
-            ) {
-              valid = false
-              break
-            }
-
-            call = members.get(member.property.name)
-            callee = member
-          }
-
-          if (
-            call?.composition ||
-            call?.runtimeComposition ||
-            (!options.dynamic && (call?.slots || call?.recipe))
-          )
-            continue
-
-          const application = parents.get(callee)
-
-          if (
-            !call ||
-            application?.type !== 'CallExpression' ||
-            application.callee !== callee ||
-            application.optional ||
-            (!options.dynamic && application.arguments.length)
-          ) {
-            valid = false
-            break
-          }
-
-          applications.push({
-            calleeEnd: callee.end,
-            end: application.end,
-            name: call.name,
-            start: application.start,
-          })
-        }
-
-        if (valid) result.push(...applications)
-      }
-
-      return result
+      return candidates.flatMap(
+        (candidate) => collect(candidate)?.applications ?? [],
+      )
     },
   }
 }
@@ -352,9 +446,21 @@ type Application = {
   readonly calleeEnd: number
   /** End of the application. */
   readonly end: number
+  /** Whether the read runs at top level after its definition initializes. */
+  readonly initialized: boolean
   /** Extracted class identity. */
   readonly name: string
   /** Start of the application. */
+  readonly start: number
+  /** Whether a DOM element receives the props alone, so its classes meet no other style's. */
+  readonly terminal: boolean
+}
+
+/** A top-level namespace whose members are all static definitions. */
+type Namespace = {
+  /** Member identifier ends keyed by extracted name. */
+  readonly ends: ReadonlyMap<string, number>
+  /** Start of the namespace statement. */
   readonly start: number
 }
 
@@ -362,6 +468,15 @@ type Application = {
 type Collector = {
   /** Definitions with no observable value reads, retaining escaped containers. */
   dead: () => ReadonlySet<string>
+  /**
+   * Static definitions whose every read is a found application, keyed by
+   * extracted name with whether every read is initialized. Namespaces list
+   * those whose definitions all qualify with initialized reads.
+   */
+  definitions: () => {
+    readonly namespaces: readonly Namespace[]
+    readonly values: ReadonlyMap<string, boolean>
+  }
   /** Records relevant reads and their immediate parents. */
   enter: (node: Ast.Node, parent: Ast.Node | null | undefined) => void
   /** Resolves applications after traversal completes. */
@@ -375,4 +490,65 @@ export declare namespace create {
     /** Includes recipe/value applications while preserving their runtime calls. */
     readonly dynamic?: boolean | undefined
   }
+}
+
+// Matches a no-argument application spread onto, or read as the class of, a DOM element.
+function terminal(path: readonly Ast.Node[]): boolean {
+  let index = path.length - 1
+  let node = path[index]
+  const member = path[index - 1]
+  if (member?.type === 'MemberExpression' && member.object === node)
+    node = path[--index]
+
+  const call = path[--index]
+  if (
+    call?.type !== 'CallExpression' ||
+    call.callee !== node ||
+    call.arguments.length
+  )
+    return false
+
+  const parent = path[--index]
+  if (parent?.type === 'JSXSpreadAttribute')
+    return parent.argument === call && alone(path[index - 1], parent)
+
+  if (
+    parent?.type !== 'MemberExpression' ||
+    parent.object !== call ||
+    parent.computed ||
+    parent.property.type !== 'Identifier' ||
+    !/^class(?:Name)?$/.test(parent.property.name)
+  )
+    return false
+
+  const container = path[--index]
+  const attribute = path[--index]
+  return (
+    container?.type === 'JSXExpressionContainer' &&
+    container.expression === parent &&
+    attribute?.type === 'JSXAttribute' &&
+    attribute.value === container &&
+    attribute.name.type === 'JSXIdentifier' &&
+    /^class(?:Name)?$/.test(attribute.name.name) &&
+    alone(path[index - 1], attribute)
+  )
+}
+
+// Other spreads or class attributes could add another style's classes.
+function alone(element: Ast.Node | undefined, own: Ast.Node): boolean {
+  return (
+    element?.type === 'JSXOpeningElement' &&
+    element.name.type === 'JSXIdentifier' &&
+    /^[a-z]/.test(element.name.name) &&
+    element.attributes.every(
+      (attribute) =>
+        attribute === own ||
+        (attribute.type === 'JSXAttribute' &&
+          !(
+            attribute.name.type === 'JSXIdentifier'
+              ? attribute.name.name
+              : attribute.name.namespace.name
+          ).startsWith('class')),
+    )
+  )
 }

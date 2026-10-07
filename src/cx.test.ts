@@ -237,7 +237,7 @@ describe('cx', () => {
     const output = Transform.compile({ moduleId: 'mapped.ts', source })
     expect(
       output.css.includes('padding-left:8px;padding-right:8px'),
-    ).toMatchInlineSnapshot(`false`)
+    ).toMatchInlineSnapshot(`true`)
     const prefix = output.css
       .slice(0, output.css.lastIndexOf('padding-right:8px'))
       .split('\n')
@@ -636,12 +636,12 @@ describe('bindings', () => {
       )
       expect(module.exports.apply(false)).toMatchInlineSnapshot(`
         {
-          "className": "z-apply-1-bCW_kc-b-bCW_kc-a-0-p-0",
+          "className": "z-apply-inner-0-bCW_kc-b-p-0",
         }
       `)
       expect(module.exports.apply(true)).toMatchInlineSnapshot(`
         {
-          "className": "z-apply-1-bCW_kc-b-bCW_kc-a-p-0 z-apply-1-bCW_kc-b-bCW_kc-a-text-1",
+          "className": "z-apply-inner-0-bCW_kc-b-p-0 z-bCW_kc-a-text-0",
         }
       `)
     })

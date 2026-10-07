@@ -3327,13 +3327,13 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       })
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
-        .z-first_2d_local-opacity-0{opacity:0.5;}
+        .z_ZYrHvJ0{opacity:0.5;}
         .z-props-0-z-style-zugwnm-base-first_2d_local-style-0{color:red;padding:8px;}
         .z-props-0-z-style-zugwnm-base-first_2d_local-opacity-1{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
-        .z-second_2d_local-opacity-0{opacity:1;}
+        .z_hYrPIe0{opacity:1;}
         .z-props-0-z-style-zugwnm-base-second_2d_local-style-0{color:red;padding:8px;}
         .z-props-0-z-style-zugwnm-base-second_2d_local-opacity-1{opacity:1;}"
       `)
@@ -3409,6 +3409,87 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       expect(
         consumer.modules['app.ts']!.css.includes('color:red;padding:8px;'),
       ).toMatchInlineSnapshot('true')
+    })
+
+    test('carries configured composition through library contracts', async () => {
+      // The helper and its styles keep the independent mode across a re-export.
+      const library = Graph.compile({
+        modules: {
+          'config.ts':
+            "import {defineConfig} from 'zyzz'; export const {style}=defineConfig({composition:'independent'}); export const badge=style({color:'red'})",
+        },
+      })
+      const contract = library.contracts['config.ts']!
+
+      expect(JSON.parse(contract).version).toMatchInlineSnapshot(`34`)
+
+      const barrel = Graph.compile({
+        contracts: { 'config.js': contract },
+        imports: { 'barrel.ts': { './config.js': 'config.js' } },
+        modules: { 'barrel.ts': "export {badge,style} from './config.js'" },
+      })
+
+      expect(
+        JSON.parse(barrel.contracts['barrel.ts']!).exports.badge.style.style
+          .composition,
+      ).toMatchInlineSnapshot(`"independent"`)
+
+      const consumer = Graph.compile({
+        contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
+        imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
+        modules: {
+          'app.ts':
+            "import {style} from './barrel.js'; export const card=style({color:'red',padding:'8px'}); export const label=style({color:'red'})",
+        },
+      })
+      const app = consumer.modules['app.ts']!
+
+      expect(Object.values(app.classes)).toMatchInlineSnapshot(`
+        [
+          "z_Zf5JrJ0 z_Zf5JrJ1 z-style-Zf5JrJ-card",
+          "z_Zf5JrJ0 z-style-Zf5JrJ-label",
+        ]
+      `)
+      expect(app.css).toMatchInlineSnapshot(`
+        ".z-theme-src_2d_config_2d_6Q0EnEZaLq6_2d_style{}
+        .z_Zf5JrJ0{color:red;}
+        .z_Zf5JrJ1{padding:8px;}"
+      `)
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${app.css}</style>${Object.values(app.classes)
+            .map((className) => `<div class="${className}"></div>`)
+            .join('')}`,
+        )
+
+        expect(
+          await page.locator('div').evaluateAll((elements) =>
+            elements.map((element) => {
+              const style = getComputedStyle(element)
+
+              return [style.color, style.paddingLeft]
+            }),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "rgb(255, 0, 0)",
+              "8px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "0px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
     })
   })
 })

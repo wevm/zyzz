@@ -151,16 +151,21 @@ describe('create', () => {
         }
 
         {
-          const zyzz = sizes.get('zyzz')!
+          // Authored source gates the application workload, and prepared definitions gate the rest.
+          const source = workload.pattern === 'app'
+          const zyzz = sizes.get(source ? 'zyzz-source' : 'zyzz')!
 
           for (const [library, size] of sizes) {
-            if (library === 'zyzz') continue
+            if (library.startsWith('zyzz')) continue
 
             const label = `${library} / ${workload.name} transfer`
 
-            expect(zyzz.raw < size.raw, `${label} / raw`).toMatchInlineSnapshot(
-              `true`,
-            )
+            // Module-qualified source names add raw bytes that compression removes.
+            if (!source)
+              expect(
+                zyzz.raw < size.raw,
+                `${label} / raw`,
+              ).toMatchInlineSnapshot(`true`)
             expect(
               zyzz.gzip < size.gzip,
               `${label} / gzip`,

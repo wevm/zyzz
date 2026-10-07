@@ -172,6 +172,14 @@ describe('create', () => {
     Config.create({ cssOutput: 'automatic' })
   })
 
+  test('accepts ordered or independent composition', () => {
+    const { style } = Config.create({ composition: 'independent' })
+    expectTypeOf(style({ color: 'red' })().className).toEqualTypeOf<string>()
+    Config.create({ composition: 'ordered', cssOutput: 'grouped' })
+    // @ts-expect-error Unsupported composition mode.
+    Config.create({ composition: 'shared' })
+  })
+
   test('checks configured callback domains', () => {
     const { style } = Config.create()
 

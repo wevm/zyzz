@@ -53,20 +53,20 @@ describe('CSS Output examples', () => {
 
     expect(rules(card.css)).toMatchInlineSnapshot(`
       [
-        ".z-text-red{color:red}",
-        ".z-p-8px{padding:8px}",
+        ".z_X8T0-w0{color:red}",
+        ".z_X8T0-w1{padding:8px}",
       ]
     `)
     expect(documented('atomic.css')).toMatchInlineSnapshot(`
       [
-        ".z-text-red{color:red}",
-        ".z-p-8px{padding:8px}",
+        ".z_X8T0-w0{color:red}",
+        ".z_X8T0-w1{padding:8px}",
       ]
     `)
     expect(Object.values(card.classes)).toMatchInlineSnapshot(`
       [
-        "z-text-red z-p-8px",
-        "z-text-red",
+        "z_X8T0-w0 z_X8T0-w1",
+        "z_X8T0-w0",
       ]
     `)
     expect(
@@ -76,8 +76,8 @@ describe('CSS Output examples', () => {
       ),
     ).toMatchInlineSnapshot(`
       [
-        "z-text-red z-p-8px",
-        "z-text-red",
+        "z_X8T0-w0 z_X8T0-w1",
+        "z_X8T0-w0",
       ]
     `)
     expect(

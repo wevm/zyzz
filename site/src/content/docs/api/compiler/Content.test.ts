@@ -674,8 +674,8 @@ export const c = style({ color: 'red' })
       }).css
 
     expect(css(false)).toMatchInlineSnapshot(`
-      ".z-JJZ3wD-a-text-0{color:red;}
-      .z-JJZ3wD-b-text-0{color:blue;}"
+      ".z_JJZ3wD0{color:red;}
+      .z_JJZ3wD1{color:blue;}"
     `)
     expect(css(true)).toMatchInlineSnapshot(`
       ".z-JJZ3wD-a-text-0{color:red;}
@@ -713,9 +713,9 @@ export const element = React
 
     expect(module.output.classes).toMatchInlineSnapshot(`
       {
-        "style-1ykuc7f14p42q1-132": "z-JJZ3wD-a-text-0 z-style-JJZ3wD-c",
-        "style-1ykuc7f14p42q1-47": "z-JJZ3wD-a-text-0 z-style-JJZ3wD-a",
-        "style-1ykuc7f14p42q1-89": "z-JJZ3wD-b-text-0 z-style-JJZ3wD-b",
+        "style-1ykuc7f14p42q1-132": "z_JJZ3wD0 z-style-JJZ3wD-c",
+        "style-1ykuc7f14p42q1-47": "z_JJZ3wD0 z-style-JJZ3wD-a",
+        "style-1ykuc7f14p42q1-89": "z_JJZ3wD1 z-style-JJZ3wD-b",
       }
     `)
     expect(Transform.compile({ moduleId: 'app/Text.tsx', source: source! }).css)

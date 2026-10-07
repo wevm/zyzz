@@ -681,6 +681,125 @@ describe('compile', () => {
     }
   })
 
+  test('ordered atomic styles reuse the previous equal domain rules in the browser', async () => {
+    // b repeats a's domains and reuses their rules. c sets other values between
+    // a and d, so d keeps its own color rule after c's.
+    const output = Css.compile({
+      styles: Style.define({
+        a: { color: 'red', padding: '8px' },
+        b: { color: 'red', padding: '8px' },
+        c: { color: 'blue', padding: '2px' },
+        d: { color: 'red' },
+      }),
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "a": "z-a-text-0 z-a-p-1",
+        "b": "z-a-text-0 z-a-p-1",
+        "c": "z-c-text-0 z-c-p-1",
+        "d": "z-d-text-0",
+      }
+    `)
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a-text-0{color:red;}
+      .z-a-p-1{padding:8px;}
+      .z-c-text-0{color:blue;}
+      .z-c-p-1{padding:2px;}
+      .z-d-text-0{color:red;}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+      const combinations = [
+        ['a', 'b'],
+        ['b', 'c'],
+        ['c', 'd'],
+        ['b', 'c', 'd'],
+      ] as const
+
+      await page.setContent(
+        `<style>${output.css}</style>${combinations
+          .map(
+            (names) =>
+              `<div class="${names.map((name) => output.classes[name]).join(' ')}"></div>`,
+          )
+          .join('')}`,
+      )
+
+      // The latest definition in each combination wins its conflicts.
+      expect(
+        await page.locator('div').evaluateAll((elements) =>
+          elements.map((element) => {
+            const style = getComputedStyle(element)
+
+            return [style.color, style.paddingLeft]
+          }),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(255, 0, 0)",
+            "8px",
+          ],
+          [
+            "rgb(0, 0, 255)",
+            "2px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "2px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "2px",
+          ],
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('ordered atomic styles keep their own rules after a conditional shorthand in the browser', async () => {
+    // b's border resets the border color, so c cannot reuse a's earlier rule.
+    const output = Css.compile({
+      styles: Style.define({
+        a: { '@media (min-width: 0px)': { borderColor: 'red' } },
+        b: { '@media (min-width: 0px)': { border: '2px solid blue' } },
+        c: { '@media (min-width: 0px)': { borderColor: 'red' } },
+      }),
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "a": "z-a-border-color-0",
+        "b": "z-b-border-0",
+        "c": "z-c-border-color-0",
+      }
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.b} ${output.classes.c}"></div>`,
+      )
+
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).borderLeftColor),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('logical boxes match native controls across authored writing modes in the browser', async () => {
     const output = Css.compile({
       styles: Style.define({
@@ -963,22 +1082,22 @@ describe('compile', () => {
     expect(output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "-1": "z--1-text-0 z-block z--1-p-1",
-          "1": "z-1-text-0 z-block z-1-p-2",
-          "_31_": "z-_5f_31_5f_-text-0 z-block z-_5f_31_5f_-p-1",
-          "again": "z-1-text-0 z-block z-1-p-2",
-          "base_0": "z-base_5f_0-text-0 z-block z-base_5f_0-p-1",
+          "-1": "z_3 z_1 z_4",
+          "1": "z_0 z_1 z_2",
+          "_31_": "z_5 z_1 z_6",
+          "again": "z_0 z_1 z_2",
+          "base_0": "z_7 z_1 z_8",
           "empty": "",
         },
-        "css": ".z-1-text-0{color:#000;}
-      .z-block{display:block;}
-      .z-1-p-2{padding:8px;}
-      .z--1-text-0{color:#fff;}
-      .z--1-p-1{padding:3px;}
-      .z-_5f_31_5f_-text-0{color:#333;}
-      .z-_5f_31_5f_-p-1{padding:4px;}
-      .z-base_5f_0-text-0{color:#555;}
-      .z-base_5f_0-p-1{padding:5px;}",
+        "css": ".z_0{color:#000;}
+      .z_1{display:block;}
+      .z_2{padding:8px;}
+      .z_3{color:#fff;}
+      .z_4{padding:3px;}
+      .z_5{color:#333;}
+      .z_6{padding:4px;}
+      .z_7{color:#555;}
+      .z_8{padding:5px;}",
         "vars": {},
       }
     `)
@@ -1032,6 +1151,112 @@ describe('compile', () => {
         },
       ]
     `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('independent atomic styles share equal domain declarations in authored order', async () => {
+    // Opposing padding orders form distinct domain units, while equal colors share one rule.
+    const output = Css.compile({
+      composition: 'independent',
+      styles: Style.define({
+        card: { color: 'red', padding: '8px', paddingLeft: '2px' },
+        label: { color: 'red', paddingLeft: '2px', padding: '8px' },
+        title: { color: 'blue', padding: '8px', paddingLeft: '2px' },
+      }),
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "card": "z_0 z_1",
+        "label": "z_0 z_2",
+        "title": "z_3 z_1",
+      }
+    `)
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_0{color:red;}
+      .z_1{padding:8px;padding-left:2px;}
+      .z_2{padding-left:2px;padding:8px;}
+      .z_3{color:blue;}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style>${Object.values(output.classes)
+          .map((className) => `<div class="${className}"></div>`)
+          .join('')}`,
+      )
+
+      expect(
+        await page.locator('div').evaluateAll((elements) =>
+          elements.map((element) => {
+            const style = getComputedStyle(element)
+
+            return [style.color, style.paddingLeft, style.paddingRight]
+          }),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(255, 0, 0)",
+            "2px",
+            "8px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "8px",
+            "8px",
+          ],
+          [
+            "rgb(0, 0, 255)",
+            "2px",
+            "8px",
+          ],
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('independent atomic styles keep conditional resets after the declarations they reset in the browser', async () => {
+    // The query's reset conflicts with the base color, so it stays after it.
+    const output = Css.compile({
+      composition: 'independent',
+      styles: Style.define({
+        card: {
+          all: 'unset',
+          color: 'red',
+          '@media (min-width: 0px)': { all: 'initial' },
+        },
+      }),
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-card-all-0{all:unset;}
+      .z-card-text-1{color:red;}
+      @media (min-width: 0px){.z-card-all-2{all:initial;}}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.card}"></div>`,
+      )
+
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
     } finally {
       await browser.close()
     }

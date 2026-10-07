@@ -1479,6 +1479,99 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('names independent rules consistently across per-module graphs', async () => {
+    // Vite compiles each module within several graphs, so siblings never borrow each other's names.
+    const { config, root } = await create({
+      'card.ts': `import { style } from './config.js'
+export namespace styles {
+  export const card = style({ color: 'red', padding: '8px' })
+}
+`,
+      'config.ts': `import { defineConfig } from 'zyzz'
+export const { style } = defineConfig({ composition: 'independent' })
+`,
+      'index.html': '<script type="module" src="./main.ts"></script>',
+      'label.ts': `import { style } from './config.js'
+namespace styles {
+  export const label = style({ color: 'red', padding: '4px' })
+}
+export const label = styles.label().className
+`,
+      'main.ts': `import { cx } from 'zyzz'
+import { label } from './label.js'
+import { styles as shared } from './card.js'
+import { style } from './config.js'
+namespace styles {
+  export const local = style({ color: 'blue' })
+}
+export function props(flag: boolean) {
+  return cx(flag && shared.card(), styles.local())
+}
+Object.assign(globalThis, { fixture: { card: shared.card().className, label, props } })
+`,
+    })
+
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false, write: false },
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const css = result.output
+        .flatMap((file) =>
+          file.type === 'asset' && file.fileName.endsWith('.css')
+            ? [String(file.source)]
+            : [],
+        )
+        .join('\n')
+      const javascript = result.output
+        .flatMap((file) => (file.type === 'chunk' ? [file.code] : []))
+        .join('\n')
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(`<style>${css}</style>`)
+        await page.addScriptTag({ content: javascript, type: 'module' })
+
+        const fixture = await page.waitForFunction(() => {
+          const value = (
+            globalThis as unknown as {
+              fixture?: {
+                card: string
+                label: string
+                props: (flag: boolean) => { className: string }
+              }
+            }
+          ).fixture
+          return (
+            value && {
+              card: value.card,
+              composed: value.props(true).className,
+              label: value.label,
+            }
+          )
+        })
+
+        // The label keeps its own names, and the consumer's composition strips the card's classes.
+        expect(await fixture.jsonValue()).toMatchInlineSnapshot(`
+          {
+            "card": "z_rnRBDm0 z_rnRBDm1 z-style-rnRBDm-styles-card",
+            "composed": "z_YiE3S91 z_rnRBDm1 z-style-rnRBDm-styles-card",
+            "label": "z_ya-T9A0 z_ya-T9A1",
+          }
+        `)
+      } finally {
+        await browser.close()
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('ignores Node builtins in unreachable server files during browser discovery', async () => {
     const { config, root } = await create({
       ...Fixture.files,

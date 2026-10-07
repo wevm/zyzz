@@ -1103,6 +1103,164 @@ export function Preview() {
     }
   })
 
+  test('shares independent rules across modules and rebuilds them like a fresh build', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(project, '.fixture-independent-host-'),
+    )
+    const fresh = await Fs.mkdtemp(
+      Path.join(project, '.fixture-independent-fresh-'),
+    )
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'x', root })
+    const module = (name: string, style: string) =>
+      `import { style } from './zyzz.config.js'
+
+namespace styles {
+  export const card = style(${style})
+}
+
+export const ${name} = styles.card().className
+`
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'zyzz.config.ts'),
+        `import { defineConfig } from 'zyzz'
+
+export const { style } = defineConfig({ composition: 'independent' })
+`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'a.ts'),
+        module('a', `{ color: 'red', padding: '8px' }`),
+      )
+      await Fs.writeFile(
+        Path.join(root, 'b.ts'),
+        module('b', `{ color: 'red', padding: '4px' }`),
+      )
+      await host.build()
+
+      // Each module stylesheet loads alone, and the complete stylesheet keeps one rule per name.
+      expect(await Fs.readFile(Path.join(outDir, 'b.ts.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_q7GXvW0 {
+          color: red;
+        }
+
+        .z_S7Ghdp1 {
+          padding: 4px;
+        }
+        "
+      `)
+      expect(await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_q7GXvW0 {
+          color: red;
+        }
+
+        .z_q7GXvW1 {
+          padding: 8px;
+        }
+        .z_S7Ghdp1 {
+          padding: 4px;
+        }
+        "
+      `)
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+        const classes = await Promise.all(
+          ['a', 'b'].map(async (name) => {
+            const code = await Fs.readFile(
+              Path.join(outDir, `${name}.ts`),
+              'utf8',
+            )
+
+            return /className:"([^"]+)"/.exec(code)![1]!
+          }),
+        )
+
+        await page.setContent(
+          `<style>${await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8')}</style>${classes.map((className) => `<div class="${className}"></div>`).join('')}`,
+        )
+
+        expect(
+          await page.locator('div').evaluateAll((elements) =>
+            elements.map((element) => {
+              const style = getComputedStyle(element)
+
+              return [style.color, style.padding]
+            }),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "rgb(255, 0, 0)",
+              "8px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "4px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+
+      // Removing the lender's rule makes the cached borrower name it itself.
+      await Fs.writeFile(
+        Path.join(root, 'a.ts'),
+        module('a', `{ padding: '8px' }`),
+      )
+      await host.build()
+
+      for (const name of ['zyzz.config.ts', 'a.ts', 'b.ts'])
+        await Fs.copyFile(Path.join(root, name), Path.join(fresh, name))
+
+      const freshOutput = Path.join(fresh, 'output')
+      const rebuilt = await Host.create({
+        outDir: freshOutput,
+        packageId: 'x',
+        root: fresh,
+      })
+
+      try {
+        await rebuilt.build()
+
+        for (const name of ['a.ts', 'b.ts', 'zyzz.css'])
+          expect(
+            (await Fs.readFile(Path.join(outDir, name), 'utf8')) ===
+              (await Fs.readFile(Path.join(freshOutput, name), 'utf8')),
+            name,
+          ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await rebuilt.close()
+      }
+
+      expect(await Fs.readFile(Path.join(outDir, 'zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_q7GXvW0 {
+          padding: 8px;
+        }
+        .z_S7Ghdp0 {
+          color: red;
+        }
+
+        .z_S7Ghdp1 {
+          padding: 4px;
+        }
+        "
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+      await Fs.rm(fresh, { force: true, recursive: true })
+    }
+  })
+
   test('publishes initialization for configurations kept local to a module', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-local-config-'))
     const outDir = Path.join(root, 'output')

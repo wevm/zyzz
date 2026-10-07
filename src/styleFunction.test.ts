@@ -1965,13 +1965,12 @@ export {card,other,nested};`,
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         const card=__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-card"}); const alias=card;
-        const other=__zyzzProps.create({className:"z-NRugqy-other-text-0 z-style-NRugqy-other"});
+        const other=__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-other"});
         function nested(){ const card=other; return __zyzzProps.create({className:"z-NRugqy-nested-text-0"}) }
         export {card,other,nested};"
       `)
       expect(result.modules['scoped.ts']!.css).toMatchInlineSnapshot(`
         ".z-NRugqy-card-text-0{color:red;}
-        .z-NRugqy-other-text-0{color:red;}
         .z-NRugqy-nested-text-0{.z-style-NRugqy-card:hover &{color:blue;}}"
       `)
     })

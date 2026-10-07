@@ -1291,11 +1291,19 @@ export function extract(options: extract.Options): extract.ReturnType {
 
       if (diagnostics.length !== before) continue
 
-      const cssOutput = themes?.styles.get(call.start)?.theme[Token.definition]
-        .contract.cssOutput
+      const contract = themes?.styles.get(call.start)?.theme[Token.definition]
+        .contract
+      const composition = contract?.composition
+      const cssOutput = contract?.cssOutput
       styles.push(
         ...definition.styles.map((style) =>
-          cssOutput ? Object.freeze({ ...style, cssOutput }) : style,
+          composition || cssOutput
+            ? Object.freeze({
+                ...style,
+                ...(composition ? { composition } : {}),
+                ...(cssOutput ? { cssOutput } : {}),
+              })
+            : style,
         ),
       )
 

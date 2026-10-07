@@ -11,6 +11,7 @@ import type { UnpluginBuildContext } from 'unplugin'
 import * as Graph from '../compiler/Graph.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
+import * as ClassName from '../web/internal/ClassName.js'
 import * as Contract from '../compiler/internal/Contract.js'
 import * as Vite from '../vite/index.js'
 import * as ThemeRules from '../web/internal/Themes.js'
@@ -287,6 +288,7 @@ const portable = createUnplugin<Options | undefined, false>(
 
           // Only the combined stylesheet is emitted, so generated theme rules are shared once.
           const result = compiler.compile({
+            [ClassName.complete]: true,
             [ThemeRules.shared]: 'all',
             [Syntax.cache]: snapshot.programs(modules),
             compiler: options.compiler,
@@ -354,6 +356,7 @@ const portable = createUnplugin<Options | undefined, false>(
             boundary: string,
             outputDirectory = '.',
             targets?: Readonly<Record<string, string>>,
+            emitted: ReadonlySet<string> = new Set(),
           ) {
             const urls = new Set<string>()
             AtRules.transform({
@@ -405,6 +408,18 @@ const portable = createUnplugin<Options | undefined, false>(
                 : { inputSourceMap: map, sourceMap: true }),
               visitor: {
                 Rule(rule) {
+                  // Shared rules repeat in each module that uses them, so keep the first.
+                  if (rule.type === 'style') {
+                    const [selector, ...others] = rule.value.selectors
+                    const [component, ...rest] = selector ?? []
+                    if (
+                      !others.length &&
+                      !rest.length &&
+                      component?.type === 'class' &&
+                      emitted.has(component.name)
+                    )
+                      return []
+                  }
                   if (rule.type !== 'import') return
                   const url = replacements.get(rule.value.url)
                   if (url) return AtRules.relocateImport(rule.value, url)
@@ -435,6 +450,7 @@ const portable = createUnplugin<Options | undefined, false>(
             },
           ]
           const seen = new Set<string>()
+          const units = new Set<string>()
           async function visit(id: string): Promise<void> {
             if (seen.has(id)) return
             seen.add(id)
@@ -442,12 +458,19 @@ const portable = createUnplugin<Options | undefined, false>(
               await visit(dependency)
             const output = result.modules[id]
             if (output) {
+              const names = [...(output[ClassName.units]?.values() ?? [])].map(
+                (decision) => decision.name,
+              )
               const processed = await stylesheet(
                 output.css,
                 JSON.stringify(output.cssMap),
                 Path.join(root, id.slice(4)),
                 await Fs.realpath(root),
+                '.',
+                undefined,
+                new Set(names.filter((name) => units.has(name))),
               )
+              for (const name of names) units.add(name)
               chunks.push({
                 code: Buffer.from(processed.code).toString(),
                 map: Buffer.from(processed.map!).toString(),

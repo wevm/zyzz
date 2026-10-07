@@ -92,6 +92,8 @@ Transform.compile({ cssOutput: 'grouped', moduleId: 'app/Card.tsx', source })
 
 How class lists combine. Ordered output keeps authored precedence when applications are combined, so a later style that repeats an overridden declaration gets its own rule. Independent output reuses the first rule, and its class lists must not be combined.
 
+Styles bound to a config with [`composition`](/docs/api/core/defineConfig#optionscomposition) use its mode instead. Outside development, local atomic styles applied only alone to DOM elements, or only inside `cx`, compile as independent.
+
 ```ts
 import { Transform } from 'zyzz/compiler'
 

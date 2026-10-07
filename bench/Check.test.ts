@@ -20,6 +20,8 @@ describe('framework gate', () => {
     'missing competitor',
     'no samples',
     'invalid size',
+    'slower source',
+    'source size loss',
   ])('%s', async (scenario) => {
     const directory = await Fs.mkdtemp(Path.resolve('.fixture-framework-'))
 
@@ -39,6 +41,11 @@ describe('framework gate', () => {
           group: `fresh compilation / ${name}`,
           lanes: ['zyzz'],
         })),
+        {
+          directory: 'app',
+          group: 'fresh compilation / app',
+          lanes: ['zyzz-source'],
+        },
         ...[10, 100].map((count) => ({
           directory: `theme-comparison/${count}`,
           group: `theme comparison / ${count} styles`,
@@ -67,6 +74,7 @@ describe('framework gate', () => {
           const target =
             workload.directory === 'theme-comparison/100' &&
             library === 'zyzz-tokens'
+          const source = library === 'zyzz-source'
 
           if (
             !(
@@ -79,6 +87,8 @@ describe('framework gate', () => {
               mean: (() => {
                 if (target && scenario === 'speed loss') return 3
                 if (target && scenario === 'tie') return 2
+                // Source timing is reported without gating.
+                if (source && scenario === 'slower source') return 3
 
                 return zyzz ? 1 : 2
               })(),
@@ -87,7 +97,11 @@ describe('framework gate', () => {
               sampleCount: target && scenario === 'no samples' ? 0 : 10,
             })
 
-          const css = target && scenario === 'size loss' ? 30 : 10
+          const css =
+            (target && scenario === 'size loss') ||
+            (source && scenario === 'source size loss')
+              ? 30
+              : 10
           const javascript = zyzz ? 5 : 10
 
           await Fs.writeFile(
@@ -132,15 +146,20 @@ describe('framework gate', () => {
         }),
       )
 
-      if (scenario === 'win') {
+      if (scenario === 'win' || scenario === 'slower source') {
         expect(result.code).toMatchInlineSnapshot('0')
         expect(
           result.stdout
             .split('\n')
             .filter((line) => line.startsWith('| ') && line.includes('🟢'))
             .length,
-        ).toMatchInlineSnapshot('12')
+        ).toMatchInlineSnapshot('13')
         expect(result.stdout.includes('| 🔴')).toMatchInlineSnapshot('false')
+      } else if (scenario === 'source size loss') {
+        expect(result.code).toMatchInlineSnapshot('1')
+        expect(
+          result.stdout.includes('| 🔴 Zyzz (source transform) |'),
+        ).toMatchInlineSnapshot('true')
       } else {
         expect(result.code).toMatchInlineSnapshot('1')
 

@@ -76,6 +76,8 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
+import * as React from 'react'
+import * as Server from 'react-dom/server'
 import { beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Config, Style } from 'zyzz'
 import { Graph, Source, Transform } from 'zyzz/compiler'
@@ -491,12 +493,10 @@ describe('compile', () => {
       .z-7sxPYh-editable-pointer-events-1{pointer-events:auto;}
       .z-7sxPYh-editable-resize-2{resize:both;}
       .z-7sxPYh-editable-user-select-3{user-select:text;}
-      .z-7sxPYh-editable-visibility-4{visibility:visible;}
       .z-7sxPYh-hidden-cursor-0{cursor:default;}
-      .z-7sxPYh-hidden-pointer-events-1{pointer-events:auto;}
-      .z-7sxPYh-hidden-resize-2{resize:none;}
-      .z-7sxPYh-hidden-user-select-3{user-select:auto;}
-      .z-7sxPYh-hidden-visibility-4{visibility:hidden;}"
+      .z-7sxPYh-hidden-resize-1{resize:none;}
+      .z-7sxPYh-hidden-user-select-2{user-select:auto;}
+      .z-7sxPYh-hidden-visibility-3{visibility:hidden;}"
     `)
 
     const lines = output.css.split('\n')
@@ -663,8 +663,7 @@ describe('compile', () => {
       .z-FG6gl6-zero-border-collapse-0{border-collapse:separate;}
       .z-FG6gl6-zero-border-spacing-1{border-spacing:0;}
       .z-FG6gl6-zero-caption-side-2{caption-side:top;}
-      .z-FG6gl6-zero-empty-cells-3{empty-cells:show;}
-      .z-FG6gl6-zero-table-layout-4{table-layout:fixed;}"
+      .z-FG6gl6-zero-empty-cells-3{empty-cells:show;}"
     `)
 
     const lines = output.css.split('\n')
@@ -964,9 +963,8 @@ describe('compile', () => {
       .z-xcRSGS-truncate-white-space-2{white-space:pre;white-space:nowrap!important;}
       .z-text-overflow-ellipsis{text-overflow:ellipsis;}
       .z-word-spacing-3px{word-spacing:3px;}
-      .z-xcRSGS-wrap-w-0{width:65px;}
       .z-overflow-wrap-anywhere{overflow-wrap:anywhere;}
-      .z-xcRSGS-wrap-white-space-2{white-space:normal;}"
+      .z-xcRSGS-wrap-white-space-1{white-space:normal;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1110,10 +1108,8 @@ describe('compile', () => {
       .z-lahY7n-horizontal-scroll-padding-5{scroll-padding:var(--z-spacing-edge,10px);}
       .z-lahY7n-horizontal-scroll-snap-type-6{scroll-snap-type:x proximity;scroll-snap-type:x mandatory!important;}
       .z-flex-direction-column{flex-direction:column;}
-      .z-lahY7n-vertical-w-1{width:100px;}
-      .z-lahY7n-vertical-h-2{height:100px;}
-      .z-lahY7n-vertical-scroll-padding-3{scroll-padding:10px;}
-      .z-lahY7n-vertical-scroll-snap-type-4{scroll-snap-type:y mandatory;}
+      .z-lahY7n-vertical-scroll-padding-1{scroll-padding:10px;}
+      .z-lahY7n-vertical-scroll-snap-type-2{scroll-snap-type:y mandatory;}
       .z-lahY7n-item-w-0{width:60px;}
       .z-lahY7n-item-h-1{height:60px;}
       .z-flex-shrink-0{flex-shrink:0;}
@@ -1377,9 +1373,7 @@ describe('compile', () => {
       .z-tWUOQH-content-w-1{width:5px;}
       .z-flex-shrink-0{flex-shrink:0;}
       .z-tWUOQH-content-min-width-3{min-width:0;}
-      .z-tWUOQH-automatic-flex-basis-0{flex-basis:auto;}
-      .z-tWUOQH-automatic-w-1{width:5px;}
-      .z-tWUOQH-automatic-min-width-2{min-width:0;}"
+      .z-tWUOQH-automatic-flex-basis-0{flex-basis:auto;}"
     `)
 
     const lines = output.css.split('\n')
@@ -1599,11 +1593,9 @@ describe('compile', () => {
       .z-MhD43s-clip-h-1{height:40px;}
       .z-MhD43s-clip-overflow-2{overflow:hidden;overflow:clip!important;}
       .z-MhD43s-clip-overflow-x-3{overflow-x:visible;}
-      .z-MhD43s-scroll-w-0{width:40px;}
-      .z-MhD43s-scroll-h-1{height:40px;}
-      .z-MhD43s-scroll-overflow-x-2{overflow-x:clip;}
-      .z-MhD43s-scroll-overflow-3{overflow:hidden;}
-      .z-MhD43s-scroll-overflow-y-4{overflow-y:scroll;}"
+      .z-MhD43s-scroll-overflow-x-0{overflow-x:clip;}
+      .z-MhD43s-scroll-overflow-1{overflow:hidden;}
+      .z-MhD43s-scroll-overflow-y-2{overflow-y:scroll;}"
     `)
 
     const lines = output.css.split('\n')
@@ -4029,16 +4021,14 @@ describe('atomicReview', () => {
 
       expect(output.classes).toMatchInlineSnapshot(`
         {
-          "a": "z-a-p-0 z-a-pl-1",
-          "again": "z-a-p-0 z-a-pl-1",
-          "b": "z-b-pl-0 z-b-p-1",
+          "a": "z_0",
+          "again": "z_0",
+          "b": "z_1",
         }
       `)
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-a-p-0{padding:10px;}
-        .z-a-pl-1{padding-left:1px;}
-        .z-b-pl-0{padding-left:1px;}
-        .z-b-p-1{padding:10px;}"
+        ".z_0{padding:10px;padding-left:1px;}
+        .z_1{padding-left:1px;padding:10px;}"
       `)
 
       const browser = await chromium.launch()
@@ -10259,8 +10249,8 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
 
             import { styled, variants, theme } from './pkg/index.js';
             export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-card-text-0 z-Zf5JrJ-card-p-1 z-style-Zf5JrJ-card"})) as import('zyzz').style.ReturnType<'html'>);
-            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-other-text-0 z-Zf5JrJ-other-p-1 z-style-Zf5JrJ-other"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-Zf5JrJ-button-text-0 z-Zf5JrJ-button-p-1 z-Zf5JrJ-button-p-2 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-Zf5JrJ-card-text-0 z-Zf5JrJ-card-p-1 z-style-Zf5JrJ-other"})) as import('zyzz').style.ReturnType<'html'>);
+            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-Zf5JrJ-card-text-0 z-Zf5JrJ-button-p-0 z-Zf5JrJ-button-p-1 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`
@@ -10270,11 +10260,8 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             .z_scheme-light-dark{color-scheme:light dark;}
             .z-Zf5JrJ-card-text-0{color:var(--z-color-brand,red);}
             .z-Zf5JrJ-card-p-1{padding:8px;}
-            .z-Zf5JrJ-other-text-0{color:var(--z-color-brand,red);}
-            .z-Zf5JrJ-other-p-1{padding:8px;}
-            .z-Zf5JrJ-button-text-0{color:var(--z-color-brand,red);}
-            .z-Zf5JrJ-button-p-1{padding:8px;}
-            .z-Zf5JrJ-button-p-2{&:where([data-size="large"]){padding:12px;}}"
+            .z-Zf5JrJ-button-p-0{padding:8px;}
+            .z-Zf5JrJ-button-p-1{&:where([data-size="large"]){padding:12px;}}"
           `)
         } else {
           expect(app.code).toMatchInlineSnapshot(`
@@ -10358,6 +10345,233 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
         `[Source.ExtractError: app.ts:42: cssOutput must be atomic or grouped.]`,
       )
     })
+    test('rejects unsupported composition options through config and extraction', () => {
+      expect(() =>
+        Config.create({ composition: 'shared' } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Config.InvalidError: composition must be independent or ordered.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'app.ts',
+          source:
+            "import {Config} from 'zyzz';const {style}=Config.create({composition:'shared'});const card=style({color:'red'});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:42: composition must be independent or ordered.]`,
+      )
+    })
+
+    test('configured independent composition shares rules with bound styles only', async () => {
+      // The config's styles share equal declarations, while root helpers stay ordered.
+      const source = `import {Config,cx,style} from 'zyzz';
+const independent=Config.create({composition:'independent'});
+namespace styles {
+  export const card=independent.style({color:'red',padding:'8px'});
+  export const label=independent.style({color:'red',padding:'4px'});
+  export const plain=style({color:'red',padding:'8px'});
+}
+export const composed=cx(styles.card(),styles.label());
+export const classes=[styles.card().className,styles.label().className,styles.plain().className,composed.className];`
+      const output = Transform.compile({ moduleId: 'app.ts', source })
+
+      expect(output.classes).toMatchInlineSnapshot(`
+        {
+          "composition-1e8a67z1uaws1j-337": "z_Zf5JrJ3 z_Zf5JrJ4",
+          "style-1e8a67z1uaws1j-139": "z_Zf5JrJ0 z_Zf5JrJ1",
+          "style-1e8a67z1uaws1j-208": "z_Zf5JrJ0 z_Zf5JrJ2",
+          "style-1e8a67z1uaws1j-277": "z-text-red z-p-8px",
+        }
+      `)
+      expect(output.css).toMatchInlineSnapshot(`
+        ".z_Zf5JrJ0{color:red;}
+        .z_Zf5JrJ1{padding:8px;}
+        .z_Zf5JrJ2{padding:4px;}
+        .z-text-red{color:red;}
+        .z-p-8px{padding:8px;}
+        .z_Zf5JrJ3{color:red;color:red;}
+        .z_Zf5JrJ4{padding:8px;padding:4px;}"
+      `)
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        format: 'iife',
+        globalName: 'fixture',
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(`<style>${output.css}</style>`)
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+
+        expect(
+          await page.evaluate(() =>
+            (
+              window as unknown as { fixture: { classes: string[] } }
+            ).fixture.classes.map((className) => {
+              const element = document.createElement('div')
+
+              element.className = className
+              document.body.append(element)
+
+              const style = getComputedStyle(element)
+
+              return [style.color, style.padding]
+            }),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "rgb(255, 0, 0)",
+              "8px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "4px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "8px",
+            ],
+            [
+              "rgb(255, 0, 0)",
+              "4px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('shares atomic rules of styles that render alone and keeps combined styles ordered', async () => {
+      // title and body render alone on DOM elements, and base and accent compose
+      // only through cx. card takes an override, wide reaches a component, and
+      // note and muted join in a template, so they keep definition order.
+      const source = `import {cx,style} from 'zyzz';
+function Card(props:{children:unknown,className:string}){return <article {...styles.card({className:props.className})}>{props.children}</article>}
+export function App(){return <main>
+<Card className={styles.wide().className}><h2 {...styles.title()}>Title</h2></Card>
+<p className={styles.body().className}>Body</p>
+<p className={\`\${styles.note().className} \${styles.muted().className}\`}>Joined</p>
+<span {...cx(styles.base(),styles.accent())}>Accent</span>
+</main>}
+namespace styles {
+export const title=style({padding:'24px'});
+export const card=style({color:'red',padding:'8px'});
+export const wide=style({padding:'24px'});
+export const body=style({color:'blue',padding:'24px'});
+export const note=style({padding:'8px'});
+export const muted=style({padding:'24px'});
+export const base=style({color:'red'});
+export const accent=style({color:'blue'});
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      expect(output.css).toMatchInlineSnapshot(`
+        ".z_l0kPgl0{padding:24px;}
+        .z-l0kPgl-styles-card-text-0{color:red;}
+        .z-l0kPgl-styles-card-p-1{padding:8px;}
+        .z-l0kPgl-styles-wide-p-0{padding:24px;}
+        .z_l0kPgl1{color:blue;}
+        .z-l0kPgl-styles-note-p-0{padding:8px;}
+        .z-l0kPgl-styles-muted-p-0{padding:24px;}
+        .z_l0kPgl2{color:red;}
+        .z-App-0-l0kPgl-styles-base-l0kPgl-styles-accent-text-0{color:red;}
+        .z-App-0-l0kPgl-styles-base-l0kPgl-styles-accent-text-1{color:blue;}"
+      `)
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        external: ['react'],
+        format: 'cjs',
+        jsx: 'automatic',
+        platform: 'node',
+        stdin: {
+          contents: output.code,
+          loader: 'tsx',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const module = { exports: {} as { App: () => React.ReactNode } }
+
+      new Function('module', 'exports', 'require', bundle.outputFiles[0]!.text)(
+        module,
+        module.exports,
+        Module.createRequire(import.meta.url),
+      )
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style>${Server.renderToStaticMarkup(React.createElement(module.exports.App))}`,
+        )
+
+        // Wide and muted are defined after the rules they override.
+        expect(
+          await page.locator('article, h2, p, span').evaluateAll((elements) =>
+            elements.map((element) => {
+              const style = getComputedStyle(element)
+
+              return [element.localName, style.color, style.paddingLeft]
+            }),
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "article",
+              "rgb(255, 0, 0)",
+              "24px",
+            ],
+            [
+              "h2",
+              "rgb(255, 0, 0)",
+              "24px",
+            ],
+            [
+              "p",
+              "rgb(0, 0, 255)",
+              "24px",
+            ],
+            [
+              "p",
+              "rgb(0, 0, 0)",
+              "24px",
+            ],
+            [
+              "span",
+              "rgb(0, 0, 255)",
+              "0px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+
+      expect(
+        Transform.compile({
+          development: true,
+          moduleId: 'App.tsx',
+          source,
+        }).css.includes('.z_'),
+      ).toMatchInlineSnapshot(`false`)
+    })
+
     test('preserves immutable configured output across extraction and composition', () => {
       for (const cssOutput of ['atomic', 'grouped'] as const) {
         const source = `import {Config,cx} from 'zyzz';const {style}=Config.create({cssOutput:'${cssOutput}'});const a=style({color:'red',padding:'8px'});const b=style({paddingLeft:'2px'});export const props=cx(a(),b());`
@@ -10403,9 +10617,9 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
         })
         if (cssOutput === 'atomic') {
           expect(output.css).toMatchInlineSnapshot(`
-            ".z-EZaLq6-a-text-0{color:red;}
-            .z-EZaLq6-a-p-1{padding:8px;}
-            .z-EZaLq6-b-pl-0{padding-left:2px;}
+            ".z_EZaLq60{color:red;}
+            .z_EZaLq61{padding:8px;}
+            .z_EZaLq62{padding-left:2px;}
             .z-props-0-EZaLq6-a-EZaLq6-b-text-0{color:red;}
             .z-props-0-EZaLq6-a-EZaLq6-b-p-1{padding:8px;}
             .z-props-0-EZaLq6-a-EZaLq6-b-pl-2{padding-left:2px;}"
@@ -10414,9 +10628,8 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             ".z-EZaLq6-a-text-0{color:red;}
             .z-EZaLq6-a-p-1{padding:8px;}
             .z-EZaLq6-b-pl-0{padding-left:2px;}
-            .z-props-0-EZaLq6-a-EZaLq6-b-text-0{color:red;}
-            .z-props-0-EZaLq6-a-EZaLq6-b-p-1{padding:8px;}
-            .z-props-0-EZaLq6-a-EZaLq6-b-pl-2{padding-left:2px;}"
+            .z-props-0-EZaLq6-a-EZaLq6-b-p-0{padding:8px;}
+            .z-props-0-EZaLq6-a-EZaLq6-b-pl-1{padding-left:2px;}"
           `)
         } else {
           expect(output.css).toMatchInlineSnapshot(`
@@ -10935,6 +11148,64 @@ describe('performance', () => {
           'false',
         )
       }
+    })
+
+    test('erases namespaces whose applications all follow initialization', async () => {
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
+      namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}
+      export const classes=[styles.card().className,styles.label().className]`)
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+              declare namespace styles {export const card: import('zyzz').style.ReturnType;export const label: import('zyzz').style.ReturnType}
+              export const classes=[({className:"z-iFQJXQ-styles-card-text-0"}).className,({className:"z-iFQJXQ-styles-label-text-0"}).className]"
+      `)
+      expect(consumer.classes).toMatchInlineSnapshot(`
+        [
+          "z-iFQJXQ-styles-card-text-0",
+          "z-iFQJXQ-styles-label-text-0",
+        ]
+      `)
+    })
+
+    test('keeps guarded definitions without repeating their class lists', async () => {
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
+      export function apply(){return [styles.card(),styles.label()]}
+      export let failed=false;
+      try {apply()} catch(error){failed=error instanceof TypeError}
+      namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}
+      export const classes=[styles.label().className]
+      const button=style({padding:'2px'});
+      export const padding=button().className`)
+
+      // The guarded card keeps a truthy definition, while the label and button follow initialization.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+              export function apply(){return [(styles.card?{className:"z-iFQJXQ-styles-card-text-0"}:styles.card()),(styles.label?{className:"z-iFQJXQ-styles-label-text-0"}:styles.label())]}
+              export let failed=false;
+              try {apply()} catch(error){failed=error instanceof TypeError}
+              namespace styles {export const card=(1 as unknown as import('zyzz').style.ReturnType);export const label=(1 as unknown as import('zyzz').style.ReturnType)}
+              export const classes=[({className:"z-iFQJXQ-styles-label-text-0"}).className]
+              const button=(void 0 as unknown as import('zyzz').style.ReturnType);
+              export const padding=({className:"z-p-2px"}).className"
+      `)
+      expect(consumer.failed).toMatchInlineSnapshot(`true`)
+      expect(consumer.apply()).toMatchInlineSnapshot(`
+        [
+          {
+            "className": "z-iFQJXQ-styles-card-text-0",
+          },
+          {
+            "className": "z-iFQJXQ-styles-label-text-0",
+          },
+        ]
+      `)
+      expect(consumer.classes).toMatchInlineSnapshot(`
+        [
+          "z-iFQJXQ-styles-label-text-0",
+        ]
+      `)
+      expect(consumer.padding).toMatchInlineSnapshot(`"z-p-2px"`)
     })
 
     test('folds local calls into fresh props while preserving initialization errors', async () => {

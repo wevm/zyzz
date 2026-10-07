@@ -9,6 +9,7 @@ import type * as Ast from '@oxc-project/types'
 import * as Css from '../web/Css.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Expression from './internal/Expression.js'
+import * as Identity from '../internal/Identity.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
@@ -183,6 +184,47 @@ export function compile(options: compile.Options): compile.ReturnType {
     },
   })
 
+  const found = localApplications?.find() ?? []
+  // Compositions supersede their inputs' classes, so those reads stay unfolded.
+  const composing = (application: Span) =>
+    extracted.calls.some(
+      (call) =>
+        (call.composition || call.runtimeComposition) &&
+        call.start < application.start &&
+        application.end <= call.end,
+    )
+  const folded = new Set(
+    found.filter(
+      (application) =>
+        !composing(application) &&
+        !extracted.calls.some(
+          (call) =>
+            call.output === 'html' &&
+            call.runtimeComposition?.some(
+              (input) => input.applicationStart === application.start,
+            ),
+        ),
+    ),
+  )
+
+  const local =
+    portable || options.development
+      ? undefined
+      : localApplications?.definitions()
+
+  // Styles applied only alone to DOM elements, or inside cx, never meet another
+  // style's classes. Atomic ones share rules like independent styles.
+  const standalone = new Set(
+    [...(local?.values.keys() ?? [])].filter((name) =>
+      found.every(
+        (application) =>
+          application.name !== name ||
+          application.terminal ||
+          composing(application),
+      ),
+    ),
+  )
+
   // Scheme rules accompany modules whose runtime helpers can apply a scheme class.
   const schemes =
     options.schemes ??
@@ -196,6 +238,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     [ThemeRules.shared]: options[ThemeRules.shared],
     development: options.development,
     [ClassName.labels]: extracted.styles[ClassName.labels],
+    [ClassName.units]:
+      options[ClassName.units] ??
+      ClassName.registry().scope({
+        owner: options.moduleId,
+        qualifier: Identity.compact(options.moduleId).slice(-6),
+      }),
     composition: options.composition,
     cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
@@ -206,14 +254,23 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (portable || options.development) return extracted.styles
 
       const dead = localApplications?.dead()
-      if (!dead?.size) return extracted.styles
+      if (!dead?.size && !standalone.size) return extracted.styles
 
       return {
-        styles: extracted.styles.styles.map((style) =>
-          dead.has(style.name)
-            ? { cssOutput: style.cssOutput, declarations: [], name: style.name }
-            : style,
-        ),
+        styles: extracted.styles.styles.map((style) => {
+          if (dead?.has(style.name))
+            return {
+              cssOutput: style.cssOutput,
+              declarations: [],
+              name: style.name,
+            }
+
+          // Grouped output keeps one class per style.
+          return standalone.has(style.name) &&
+            (style.cssOutput ?? options.cssOutput ?? 'atomic') === 'atomic'
+            ? { ...style, composition: 'independent' as const }
+            : style
+        }),
       }
     })(),
     contributions: extracted.contributions,
@@ -318,6 +375,35 @@ export function compile(options: compile.Options): compile.ReturnType {
       ]),
     ),
   )
+
+  // Definitions read only through folded applications need no class list of
+  // their own. True marks definitions whose every read follows initialization.
+  const unread = new Map(
+    [...(local?.values ?? [])].filter(([name]) =>
+      found.every(
+        (application) => application.name !== name || folded.has(application),
+      ),
+    ),
+  )
+  const namespaces = (local?.namespaces ?? []).filter((namespace) =>
+    [...namespace.ends.keys()].every((name) => unread.get(name)),
+  )
+
+  const erased = new Map(namespaces.flatMap((namespace) => [...namespace.ends]))
+
+  // An ambient namespace keeps member types without runtime initialization.
+  for (const namespace of namespaces)
+    module.prependRight(namespace.start, 'declare ')
+
+  for (const call of extracted.calls) {
+    const end = erased.get(call.name)
+    if (end !== undefined)
+      module.overwrite(
+        end,
+        call.start,
+        `: import('zyzz').style.ReturnType${call.output === 'html' ? "<'html'>" : ''}`,
+      )
+  }
 
   let callable = false
 
@@ -438,6 +524,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         return typed ? `(${result} as ${type})` : result
       }
 
+      const initialized = unread.get(call.name)
+      if (initialized !== undefined) {
+        if (erased.has(call.name)) return ''
+
+        // Guards read only truthiness, and failures before initialization still call it.
+        const value = initialized ? 'void 0' : '1'
+        return /\.[cm]?tsx?$/.test(options.moduleId)
+          ? `(${value} as unknown as import('zyzz').style.ReturnType${call.output === 'html' ? "<'html'>" : ''})`
+          : value
+      }
+
       if (application.folded)
         return composeHtml
           ? `${compositionHtml}.from({className:${JSON.stringify(classes[call.name])}})`
@@ -463,31 +560,13 @@ export function compile(options: compile.Options): compile.ReturnType {
       !call.slots &&
       !call.runtimeComposition &&
       !application.folded &&
+      !unread.has(call.name) &&
       call.output !== 'html'
     )
       callable = true
   }
 
-  for (const application of localApplications?.find() ?? []) {
-    if (
-      extracted.calls.some(
-        (call) =>
-          call.output === 'html' &&
-          call.runtimeComposition?.some(
-            (input) => input.applicationStart === application.start,
-          ),
-      )
-    )
-      continue
-    if (
-      extracted.calls.some(
-        (call) =>
-          (call.composition || call.runtimeComposition) &&
-          call.start < application.start &&
-          application.end <= call.end,
-      )
-    )
-      continue
+  for (const application of folded) {
     const className = JSON.stringify(classes[application.name])
 
     const key =
@@ -495,12 +574,18 @@ export function compile(options: compile.Options): compile.ReturnType {
       'html'
         ? 'class'
         : 'className'
+    const callee = options.source.slice(
+      application.start,
+      application.calleeEnd,
+    )
 
-    // Keep a callable guard so bundlers also retain failures before initialization.
     module.overwrite(
       application.start,
       application.end,
-      `(${options.source.slice(application.start, application.calleeEnd)}?{${key}:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
+      application.initialized
+        ? `({${key}:${className}})`
+        : // Keep a callable guard so bundlers also retain failures before initialization.
+          `(${callee}?{${key}:${className}}:${callee}())`,
     )
   }
 
@@ -1145,6 +1230,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       ? { [ThemeRules.shared]: emitted[ThemeRules.shared] }
       : {}),
     [ClassName.rules]: emitted[ClassName.rules],
+    [ClassName.units]: emitted[ClassName.units],
     classes,
     code: portable ? options.source : module.toString(),
     css: namespaced.css,
@@ -1160,6 +1246,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     vars: emitted.vars,
   }
   Object.defineProperty(result, ClassName.rules, { enumerable: false })
+  Object.defineProperty(result, ClassName.units, { enumerable: false })
   return Object.freeze(result)
 }
 
@@ -1171,6 +1258,8 @@ export declare namespace compile {
   type Options = Source.extract.Options & {
     /** Separates generated token definitions for independently loaded modules. */
     readonly [ThemeRules.shared]?: 'all' | 'defaults' | undefined
+    /** Names shared independent atomic rules, with one name table across a graph's modules. */
+    readonly [ClassName.units]?: ClassName.Units | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
@@ -1198,6 +1287,8 @@ export declare namespace compile {
     readonly code: string
     /** Exact emitted rules retained for collision diagnostics. */
     readonly [ClassName.rules]: Readonly<Record<string, string>>
+    /** Shared rule names chosen by this module, for graph cache validation. */
+    readonly [ClassName.units]?: ClassName.Units['used'] | undefined
     /** Ordered, unminified stylesheet text. */
     readonly css: string
     /** Standard stylesheet map with authored selector/declaration locations. */

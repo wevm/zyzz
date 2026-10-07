@@ -2,7 +2,7 @@
 
 Compiler, runtime, React render, theme, and type-instantiation benchmarks, with comparison adapters for Panda CSS, StyleX, Tailwind, and vanilla-extract. Comparison workloads are defined in `Corpus.ts`; pipeline benchmarks live beside their modules as `src/**/*.bench.ts`. Reports are written under the ignored `bench/results/` directory.
 
-Zyzz comparison lanes use `cssOutput: 'grouped'`. Atomic output stays the application default and keeps its browser correctness coverage.
+Zyzz comparison lanes use `cssOutput: 'grouped'`, except the source lane, which compiles authored modules with atomic output and `composition: 'independent'`. Atomic output with ordered composition stays the application default and keeps its browser correctness coverage.
 
 ## Commands
 
@@ -35,12 +35,12 @@ The Benchmarks workflow runs four parallel jobs: fixture checks with Next.js com
 
 PR runs benchmark the event's pinned main commit first, then the PR merge commit, using each checkout's locked dependencies. Manual runs compare main with the selected ref. Baseline failures fail the job. Results and environment metadata upload as 30-day artifacts.
 
-| Gate                        | Rule                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------ |
-| `BENCH_SIZE_THRESHOLD: 105` | Fails PR and manual runs above 5% gzip growth against main                                       |
-| `BENCH_TIME_THRESHOLD: 110` | Marks timing deltas above 10%; informational, since one sequential pair does not remove noise    |
-| Framework gate              | Zyzz must beat every competitor on build time and total gzip for all matched workloads           |
-| Size gate                   | Zyzz CSS plus client JavaScript must be smaller in raw, gzip, and Brotli bytes for all workloads |
+| Gate                        | Rule                                                                                                                                    |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `BENCH_SIZE_THRESHOLD: 105` | Fails PR and manual runs above 5% gzip growth against main                                                                              |
+| `BENCH_TIME_THRESHOLD: 110` | Marks timing deltas above 10%; informational, since one sequential pair does not remove noise                                           |
+| Framework gate              | Zyzz must beat every competitor on build time and total gzip for all matched workloads. The source lane gates total gzip                |
+| Size gate                   | Zyzz CSS plus client JavaScript must be smaller in raw, gzip, and Brotli bytes for all workloads. The source lane gates gzip and Brotli |
 
 Main pushes publish results without a second suite or baseline thresholds. Reports and artifacts publish before a gate fails. Measured means near a tie can fluctuate; the framework gate treats ties, missing lanes, invalid sizes, and unavailable samples as failures.
 
@@ -48,7 +48,11 @@ The Verify workflow runs application correctness tests and TypeScript checks sep
 
 ## Compilation and Bundle Size
 
-`Compilation.bench.ts` compiles eight literal workloads: three components, 1,000 repeated components, 1,000 components with unique padding, and five expanded workloads covering partial sharing, a 16-value palette, independently varying fields, sparse properties, and mixed component shapes. Values use fixed integer mixing. All components stay in the browser bundle; no reset, preset theme, responsive rules, or unused components are included.
+`Compilation.bench.ts` compiles the nine literal workloads in `Corpus.ts`, from three to 1,000 components, covering repeated, unique, partially shared, palette, independent, sparse, and mixed shapes. Values use fixed integer mixing. All components stay in the browser bundle; no reset, preset theme, responsive rules, or unused components are included.
+
+The application workload draws 300 components from 12 UI shapes on one design scale, and about 5% carry one off-scale value. Its `zyzz-source` lane compiles one authored module with `Transform.compile`, atomic output, and `composition: 'independent'`, then bundles the rewritten module. The module's private `namespace styles` matches the other fixtures' private definitions.
+
+The source lane runs for every workload but gates only the application workload, on total gzip. Parsing and module rewriting fall outside the other lanes' timing boundaries, and module-qualified names add raw bytes that compression removes.
 
 Adapters use [StyleX's Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/), Tailwind's `compile(...).build(candidates)` with arbitrary-property utilities, [vanilla-extract's esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/), and Panda v2's `@pandacss/dev/node` driver for config loading, code generation, extraction, and emission with the base utility preset and preflight disabled. Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
 
@@ -57,7 +61,7 @@ Timing boundaries:
 - Each sample includes a compiler build and a minified esbuild browser bundle. Modules, filesystem caches, and esbuild are warm.
 - Fixture preparation, browser checks, compression, and report writes are outside timing.
 - Panda applies its official esbuild source transformer, equivalent to `transform: true` in its bundler plugins. Source rewriting is timed, and required runtime helpers remain in measured client output.
-- Tailwind excludes content scanning; StyleX includes Babel parsing; vanilla-extract includes source loading and evaluation; Zyzz excludes definition validation.
+- Tailwind excludes content scanning; StyleX includes Babel parsing; vanilla-extract includes source loading and evaluation; Zyzz excludes definition validation, while the source lane includes parsing, extraction, and rewriting.
 
 All CSS passes through the same Lightning CSS minifier targeting Chrome 120, Firefox 128, and Safari 17, with source maps disabled. These are benchmark settings, not package support requirements. License comments count toward CSS size; no adapter strips them. Reports under `bench/results/{small,repeated,unique}/` record raw, gzip, and Brotli bytes for CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed assets without recounting class strings already in JavaScript.
 

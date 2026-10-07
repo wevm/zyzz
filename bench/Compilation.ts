@@ -16,6 +16,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Tailwind from 'tailwindcss'
 import { Style } from 'zyzz'
+import { Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 import * as Corpus from './Corpus.js'
 
@@ -34,6 +35,7 @@ export const compilers = {
   tailwind,
   'vanilla-extract': vanillaExtract,
   zyzz,
+  'zyzz-source': zyzzSource,
 }
 
 /** Writes real compiler inputs from a shared deterministic literal workload. */
@@ -77,6 +79,15 @@ export async function create(
   return {
     count: workload.count,
     directory,
+    // Private definitions match the other fixtures, and the reads follow initialization.
+    source: `import { style } from 'zyzz'\n\nnamespace styles {\n${styles
+      .map(
+        (style, index) =>
+          `  export const ${names[index]} = style(${JSON.stringify(style)})`,
+      )
+      .join(
+        '\n\n',
+      )}\n}\n\nexport const classes = [${names.map((name) => `styles.${name}().className`).join(', ')}]\n`,
     stylex: `import * as stylex from '@stylexjs/stylex';
       const styles = stylex.create(${JSON.stringify(Object.fromEntries(styles.map((style, index) => [names[index], style])))});
       export const classes = [${names.map((name) => `stylex.props(styles.${name}).className`).join(',')}];`,
@@ -110,6 +121,8 @@ export type Fixture = {
   count: number
   /** Real temporary source directory. */
   directory: string
+  /** Authored Zyzz module with private definitions and applied class names. */
+  source: string
   /** Literal StyleX source. */
   stylex: string
   /** Tailwind candidates, including repeated uses. */
@@ -136,7 +149,18 @@ export async function javascript(
     legalComments: 'none',
     minify: true,
     platform: 'browser',
-    plugins: options.plugins ?? [],
+    plugins: [
+      ...(options.plugins ?? []),
+      // Compiled Zyzz modules import helpers from source, so no package build is required.
+      {
+        name: 'zyzz-runtime',
+        setup(build) {
+          build.onResolve({ filter: /^zyzz\/runtime$/ }, () => ({
+            path: Path.resolve('src/runtime/index.ts'),
+          }))
+        },
+      },
+    ],
     resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
     stdin: {
       contents: source,
@@ -288,5 +312,19 @@ export async function zyzz(fixture: Fixture): Promise<Bundle> {
     javascript: await javascript(
       `export const classes = ${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};`,
     ),
+  }
+}
+
+/** Transforms the authored module with independent atomic output and bundles its client code. */
+export async function zyzzSource(fixture: Fixture): Promise<Bundle> {
+  const output = Transform.compile({
+    composition: 'independent',
+    moduleId: 'app/styles.ts',
+    source: fixture.source,
+  })
+
+  return {
+    css: minify(output.css, { targets: fixture.targets }),
+    javascript: await javascript(output.code),
   }
 }

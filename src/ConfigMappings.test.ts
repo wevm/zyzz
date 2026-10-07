@@ -465,6 +465,7 @@ describe('create', () => {
     ).toMatchInlineSnapshot('true')
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-library-theme{--z-library-spacing-sm:4px;}
+      .z-theme-library-extended{--z-library-spacing-sm:8px;}
       .z-theme-library-next{--z-library-spacing-sm:12px;}
       .z-theme-app-theme{--z-app-spacing-sm:12px;}
       .z-app-Zf5JrJ-card-pl-0{padding-left:var(--z-app-spacing-sm,12px);}

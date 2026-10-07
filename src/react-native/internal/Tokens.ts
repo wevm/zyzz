@@ -32,12 +32,11 @@ export function resolve(
           (metadata.contract[Token.identity] !== undefined &&
             metadata.contract[Token.identity] ===
               value.contract[Token.identity]))
-      const next = shared
-        ? Object.hasOwn(metadata.values, value.path)
-          ? metadata.values[value.path]
-          : undefined
-        : value.value
-      if (next === undefined) throw new Error('Theme is missing a live token.')
+      // A set sharing its contract with an extension lacks the extension's added paths.
+      const next =
+        shared && Object.hasOwn(metadata.values, value.path)
+          ? metadata.values[value.path]!
+          : value.value
       active.add(value)
       const result = scalar(next)
       active.delete(value)

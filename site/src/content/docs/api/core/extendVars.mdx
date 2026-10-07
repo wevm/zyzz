@@ -1,8 +1,8 @@
 # extendVars
 
-Override values in an existing variable set while keeping its paths and value types.
+Override or add values in an existing variable set.
 
-An extension shares the base set's references, so styles written against the base read the extension's values inside its scope. Pass both sets to [`defineConfig`](/docs/api/core/defineConfig) as named alternatives.
+An extension shares the base set's references, so styles written against the base read the extension's values inside its scope. Pass both sets to [`defineConfig`](/docs/api/core/defineConfig) as named alternatives. Named alternatives must keep the default set's paths, so add new values to the default set and override them in the others.
 
 ```ts title="zyzz.config.ts"
 import { defineConfig, defineVars, extendVars } from 'zyzz'
@@ -26,8 +26,12 @@ export const { style, vars } = defineConfig({
 ## Signature
 
 ```ts
-// A compatible set with some values replaced
-extendVars(base, overrides)
+// A set with some values replaced or added
+extendVars(base, values)
+// Derived values computed from the extended set
+extendVars(base, values, derive)
+// A new set with its own variables, linked to the base's
+extendVars(base, values, derive?, { id })
 ```
 
 ## Parameters
@@ -36,17 +40,17 @@ extendVars(base, overrides)
 
 - **Type:** `Vars.Definition{:ts}`
 
-The set to extend, from [`defineVars`](/docs/api/core/defineVars) or another extension.
+The set to extend, from [`defineVars`](/docs/api/core/defineVars), another extension, or the `vars` returned by [`defineConfig`](/docs/api/core/defineConfig).
 
 ```ts /base/
 const brand = extendVars(base, { color: { accent: '#9333ea' } })
 ```
 
-### overrides
+### values
 
-- **Type:** `Vars.Overrides<values>{:ts}`
+- **Type:** `Vars.Values{:ts}`
 
-Replacement values at existing paths. Each override replaces a whole leaf, including conditional values and color pairs, and omitted paths keep their base values. Derived values in the base follow the overrides they reference.
+Replacement values at existing paths and new values at new paths. Restating a base reference at its own path, such as `base.spacing.page` at `spacing.page`, keeps the base value. Each override replaces a whole leaf, including conditional values and color pairs, and omitted paths keep their base values. Derived values in the base follow the overrides they reference.
 
 ```ts
 import { defineVars, extendVars } from 'zyzz'
@@ -60,13 +64,48 @@ const base = defineVars({ color: { palette: { ink: '#171717' } } }, (vars) => ({
 const blue = extendVars(base, { color: { palette: { ink: '#2563eb' } } })
 ```
 
+### derive
+
+- **Type:** `(vars: Vars.References<values>) => Vars.Values{:ts}`
+
+Optional values computed from the extended set's references, such as typography presets. Derived values can only add paths.
+
+### options.id
+
+- **Type:** `string{:ts}`
+
+Makes the extension a new set with its own variables instead of an alternative to the base. Its inherited values reference the base's variables, so they stay linked, and its overrides and additions use its own names. Use it to build one set on another, such as a surface on shared primitives, and omit it for alternatives like a dark or brand set.
+
+## Extend a package config
+
+A package can export the `vars` of its config. Extend them to author with the package's tokens and your own.
+
+```ts title="zyzz.config.ts"
+import { defineConfig, defineVars, extendVars } from 'zyzz'
+
+// Usually imported, such as `import { vars as site } from 'design-system'`
+const { vars: site } = defineConfig({
+  id: 'site',
+  vars: defineVars({ spacing: { page: '24px' } }),
+})
+
+// [!code hl]
+const app = extendVars(
+  site,
+  { spacing: { gutter: '20px' } },
+  { id: 'app/vars' },
+)
+
+export const { style, vars } = defineConfig({ id: 'app', vars: app })
+```
+
 ## Returns
 
 ### set
 
 - **Type:** `Vars.Definition<values>{:ts}`
 
-A set with the base set's paths and references. Select it with [`vars`](/docs/api/core/defineConfig/vars) for a subtree, or with [`appearance`](/docs/api/core/defineConfig/appearance) for the document.
+A set with the base set's paths and references plus any added paths. Select it with [`vars`](/docs/api/core/defineConfig/vars) for a subtree, or with [`appearance`](/docs/api/core/defineConfig/appearance) for the document.
 
 ```tsx /vars({ set: 'brand' })/
 // Elements inside read the brand accent
@@ -75,19 +114,19 @@ A set with the base set's paths and references. Select it with [`vars`](/docs/ap
 
 ## Errors
 
-TypeScript rejects new paths and values outside a path's type. At runtime, the same input throws `Vars.InvalidError` with the path of the invalid override.
+TypeScript rejects values outside a path's type and additions that replace a category with a value or a value with a category. At runtime, the same input throws `Vars.InvalidError` with the path of the invalid value.
 
 ```ts twoslash
-// @errors: 2353
+// @errors: 2322
 import { defineVars, extendVars } from 'zyzz'
 
 const base = defineVars({ spacing: { page: '1rem' } })
 
-// Extensions cannot add paths
-extendVars(base, { spacing: { section: '2rem' } })
+// Overrides keep the path's value type
+extendVars(base, { spacing: { page: '#ffffff' } })
 ```
 
-An override that creates a reference cycle also throws `Vars.InvalidError`.
+An override that creates a reference cycle or a derived value at an existing path also throws `Vars.InvalidError`.
 
 ## React Native
 

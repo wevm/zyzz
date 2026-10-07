@@ -130,8 +130,8 @@ export function create() {
       const paths = [...contract.paths]
       for (const [path, name] of paths) {
         const value = data.values[path]
-        if (value === undefined)
-          throw new Error('Theme scope is missing a live token.')
+        // A set sharing its contract with an extension lacks the extension's added paths.
+        if (value === undefined) continue
 
         const label = path
         declarations.push({
@@ -144,15 +144,16 @@ export function create() {
 
       rules.push(...declarations)
       for (const [path, name] of contract.paths)
-        conditional(
-          data.values[path]!,
-          name,
-          `.${className}`,
-          rules,
-          path,
-          [],
-          data.contract,
-        )
+        if (Object.hasOwn(data.values, path))
+          conditional(
+            data.values[path]!,
+            name,
+            `.${className}`,
+            rules,
+            path,
+            [],
+            data.contract,
+          )
     }
 
     for (const rule of rules) {

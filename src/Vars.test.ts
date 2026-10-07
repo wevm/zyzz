@@ -1665,19 +1665,20 @@ test('preserves root leaf-shaped names and query contracts', () => {
       containerNames: ['card'],
     }),
   ).not.toThrow()
-  for (const overrides of [
+  for (const additions of [
     { breakpoint: { desktop: '80rem' } },
     { container: { wide: '40rem' } },
-    { containerNames: ['other'] },
+    { containerNames: ['card', 'other'] },
   ])
-    expect(() => Vars.extend(vars, overrides as never)).toThrow(
-      'Extensions cannot',
-    )
+    expect(() => Vars.extend(vars, additions)).not.toThrow()
+  expect(() => Vars.extend(vars, { containerNames: ['other'] })).toThrow(
+    'Extensions cannot remove container identities.',
+  )
   expect(() =>
     Vars.extend(Vars.define({ ink: '#fff' }), {
       breakpoint: { desktop: '80rem' },
-    } as never),
-  ).toThrow('Extensions cannot add query thresholds.')
+    }),
+  ).not.toThrow()
   expect(() => Vars.define({ spacing: { scale: ['4px'] } } as never)).toThrow()
 })
 
@@ -1815,6 +1816,212 @@ test('keeps extended reference fallbacks distinct in source and packed scopes', 
   } finally {
     await browser.close()
   }
+})
+
+describe('extend', () => {
+  const core = Vars.define(
+    { color: { ink: '#111111' }, spacing: { '12': '12px' } },
+    { id: 'extend/core' },
+  )
+
+  test('adds leaves, categories, and derived values to the base set', () => {
+    const site = Vars.extend(
+      core,
+      {
+        color: { content: { primary: core.color.ink } },
+        spacing: { '12': core.spacing['12'], page: '24px' },
+      },
+      (vars) => ({ spacing: { section: vars.spacing.page } }),
+    )
+
+    expect(site.spacing['12'].path).toBe('spacing.12')
+    expect(site.spacing['12'].value).toBe('12px')
+    expect(site.spacing.page.value).toBe('24px')
+    expect(site.spacing.section.value).toMatchObject({ path: 'spacing.page' })
+    expect(site.color.content.primary.value).toMatchObject({
+      path: 'color.ink',
+    })
+  })
+
+  test('rejects leaf and category conflicts and derived replacements', () => {
+    expect(() => Vars.extend(core, { spacing: '4px' } as never)).toThrow(
+      'Extensions cannot replace a variable category with a leaf.',
+    )
+    expect(() =>
+      Vars.extend(core, { color: { ink: { shade: '#000000' } } } as never),
+    ).toThrow('Extensions cannot replace a variable leaf with a category.')
+    expect(() =>
+      Vars.extend(core, { spacing: { page: '24px' } }, () => ({
+        spacing: { page: '32px' },
+      })),
+    ).toThrow('Derived variables cannot replace existing paths.')
+  })
+
+  test('grows Config-bound vars', () => {
+    const { vars } = Config.create({ id: 'extend/config', vars: core })
+    const grown = Vars.extend(vars, { spacing: { page: '24px' } })
+
+    expect(grown.spacing.page.value).toBe('24px')
+    expect(grown.spacing['12'].value).toBe('12px')
+  })
+
+  test('names a new set over the base references', () => {
+    const site = Vars.extend(
+      core,
+      { color: { content: core.color.ink }, spacing: { page: '24px' } },
+      { id: 'extend/site' },
+    )
+
+    expect(site.spacing['12'].value).toMatchObject({ path: 'spacing.12' })
+    expect(site.spacing.page.value).toBe('24px')
+    expect(site.color.content.value).toMatchObject({ path: 'color.ink' })
+  })
+
+  test('compiles named extensions in their own namespace', () => {
+    const result = Graph.compile({
+      modules: {
+        'index.ts': `import {Config,Vars} from 'zyzz';
+          const core = Vars.define({color:{ink:'#111111'},spacing:{'12':'12px'}},{id:'extend/core'});
+          const base = Vars.extend(core,{color:{content:core.color.ink},spacing:{'12':core.spacing['12']}},{id:'extend/site-vars'});
+          const inverse = Vars.extend(base,{color:{content:'#ffffff'}});
+          export const {style,vars} = Config.create({defaultVars:'base',id:'extend/site',vars:{base,inverse}});
+          export const card = style({color:'content',padding:'12'});`,
+      },
+    })
+    const css = `${result.sharedCss ?? ''}${result.modules['index.ts']!.css}`
+
+    expect(css).toMatch(
+      /--z-extend_2f_site_2d_vars-spacing-12:var\(--z-extend_2f_core-spacing-12[,)]/,
+    )
+    expect(css).toMatch(/--z-extend_2f_site_2d_vars-color-content:/)
+    expect(css).not.toMatch(/--z-extend_2f_core-color-content/)
+  })
+
+  test.each([false, true])(
+    'compiles named extensions of package config vars (packed: %s)',
+    (packed) => {
+      const library = `import {Config,Vars} from 'zyzz';
+        const base = Vars.define({color:{ink:'#111111'},spacing:{'12':'12px'}},{id:'extend/library-vars'});
+        export const {style,vars} = Config.create({id:'extend/library',vars:base});`
+      const app = `import {Config,Vars} from 'zyzz';
+        import {vars as library} from 'library';
+        const grown = Vars.extend(library,{spacing:{page:'24px'}},{id:'extend/app-vars'});
+        export const {style} = Config.create({id:'extend/app',vars:grown});
+        export const card = style({padding:'12',paddingInline:'page'});`
+      const compiled = Graph.compile({ modules: { 'index.ts': library } })
+      const result = Graph.compile(
+        packed
+          ? {
+              contracts: {
+                'library/index.js': compiled.contracts['index.ts']!,
+              },
+              imports: {
+                'app.ts': { library: 'library/index.js', zyzz: null },
+              },
+              modules: { 'app.ts': app },
+            }
+          : {
+              imports: {
+                'app.ts': { library: 'index.ts', zyzz: null },
+                'index.ts': { zyzz: null },
+              },
+              modules: { 'app.ts': app, 'index.ts': library },
+            },
+      )
+      const css = `${result.sharedCss ?? ''}${result.modules['app.ts']!.css}`
+
+      expect(css).toMatch(
+        /--z-extend_2f_app_2d_vars-spacing-12:var\(--z-extend_2f_library-spacing-12[,)]/,
+      )
+      expect(css).toMatch(/--z-extend_2f_app_2d_vars-spacing-page:24px/)
+    },
+  )
+
+  test('keeps named sets on matching paths', () => {
+    const base = Vars.extend(core, { spacing: { page: '24px' } })
+
+    expect(() =>
+      Config.create({
+        defaultVars: 'base',
+        id: 'extend/sets',
+        vars: {
+          base,
+          other: Vars.extend(base, { color: { muted: '#999999' } }),
+        },
+      } as never),
+    ).toThrow("must have the default theme's complete token paths and domains")
+  })
+
+  test.each([false, true])(
+    'compiles Config-bound package vars grown by an app (packed: %s)',
+    (packed) => {
+      const library = `import {Config,Vars} from 'zyzz';
+        const base = Vars.define({color:{ink:'#111111'},spacing:{'12':'12px'}},{id:'extend/library-vars'});
+        export const {style,vars} = Config.create({id:'extend/library',vars:base});`
+      const app = `import {Config,Vars} from 'zyzz';
+        import {vars as library} from 'library';
+        const grown = Vars.extend(library,{spacing:{page:'24px'}});
+        export const {style} = Config.create({id:'extend/app',vars:grown});
+        export const card = style({color:'ink',padding:'12',paddingInline:'page'});`
+      const compiled = Graph.compile({ modules: { 'index.ts': library } })
+      const result = Graph.compile(
+        packed
+          ? {
+              contracts: {
+                'library/index.js': compiled.contracts['index.ts']!,
+              },
+              imports: {
+                'app.ts': { library: 'library/index.js', zyzz: null },
+              },
+              modules: { 'app.ts': app },
+            }
+          : {
+              imports: {
+                'app.ts': { library: 'index.ts', zyzz: null },
+                'index.ts': { zyzz: null },
+              },
+              modules: { 'app.ts': app, 'index.ts': library },
+            },
+      )
+      const css = `${result.sharedCss ?? ''}${result.modules['app.ts']!.css}`
+
+      expect(css).toMatch(/--z-extend_2f_app-spacing-12:12px/)
+      expect(css).toMatch(/--z-extend_2f_app-spacing-page:24px/)
+    },
+  )
+
+  test('keeps sibling extensions of one base distinct', () => {
+    const result = Graph.compile({
+      modules: {
+        'index.ts': `import {Config,Vars} from 'zyzz';
+          const {vars:theme} = Config.create({id:'extend/siblings',vars:{spacing:{sm:'4px'}}});
+          export const a = Vars.extend(theme,{spacing:{sm:'8px'}});
+          export const b = Vars.extend(theme,{spacing:{sm:'16px'}});`,
+      },
+    })
+    const css = result.modules['index.ts']!.css
+
+    expect(css).toMatch(/\.z-theme-extend_2f_siblings-a\{[^}]*sm:8px/)
+    expect(css).toMatch(/\.z-theme-extend_2f_siblings-b\{[^}]*sm:16px/)
+  })
+
+  test('compiles restated base references without self-references', () => {
+    const result = Graph.compile({
+      modules: {
+        'index.ts': `import {Config,Vars} from 'zyzz';
+          const core = Vars.define({color:{ink:'#111111'},spacing:{'12':'12px'}},{id:'extend/core'});
+          const base = Vars.extend(core,{color:{content:core.color.ink},spacing:{'12':core.spacing['12'],page:'24px'}});
+          const inverse = Vars.extend(base,{color:{content:'#ffffff'}});
+          export const {style,vars} = Config.create({defaultVars:'base',id:'extend/site',vars:{base,inverse}});
+          export const card = style({color:'content',padding:'12',paddingInline:'page'});`,
+      },
+    })
+    const css = `${result.sharedCss ?? ''}${result.modules['index.ts']!.css}`
+
+    expect(css).not.toMatch(/--([\w-]+-spacing-12):var\(--\1[,)]/)
+    expect(css).toMatch(/spacing-page/)
+    expect(css).toMatch(/#ffffff/)
+  })
 })
 
 describe('defineVars', () => {

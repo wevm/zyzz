@@ -183,22 +183,114 @@ type Merge<base, derived> = {
       : never
 }
 
-/** Replaces existing leaves while preserving paths, domains, and reference identity. */
-export function extend<const values extends Values>(
-  variables: Definition<values>,
-  overrides: Overrides<values>,
-): Definition<values> {
+/**
+ * Overrides existing leaves and adds new ones. Without an id, the extension is an
+ * alternative set sharing the base's identity; with one, it is a new set whose
+ * inherited leaves reference the base's variables. Restating a base leaf, such as
+ * `base.spacing.md` at `spacing.md`, keeps it.
+ * @throws {InvalidError} If an override changes a domain or an addition replaces a leaf with a category, or the reverse.
+ */
+export function extend<const base extends Values, const values extends Values>(
+  variables: Definition<base>,
+  values: values & NoInfer<Extension<base, values>>,
+  options?: style.DefinitionOptions,
+): Definition<Extended<base, values>>
+/** Deeply merges derived leaves over the extended set, rejecting existing paths. */
+export function extend<
+  const base extends Values,
+  const values extends Values,
+  const derived extends Values,
+>(
+  variables: Definition<base>,
+  values: values & NoInfer<Extension<base, values>>,
+  derive: ((vars: References<Extended<base, values>>) => derived) &
+    NoInfer<
+      (
+        vars: References<Extended<base, values>>,
+      ) => Validated<derived, false, true>
+    >,
+  options?: style.DefinitionOptions,
+): Definition<Extended<Extended<base, values>, derived>>
+export function extend(
+  variables: Definition,
+  values: Values,
+  derive: style.DefinitionOptions | ((vars: References<Values>) => Values) = {},
+  options: style.DefinitionOptions = {},
+): Definition {
+  if (typeof derive !== 'function') options = derive
+
   const metadata = Object.getOwnPropertyDescriptor(variables, Token.definition)
     ?.value as Token.Metadata | undefined
   if (!metadata?.contract.variableSet)
     throw new InvalidError([], 'Expected a variable set.')
-  return VariableSets.build(
-    overrides,
-    metadata.contract,
-    metadata.values,
-    metadata.queries,
-    metadata.paths,
-  ) as Definition<values>
+
+  // A named extension owns its paths and reads inherited ones through the base's variables.
+  const contract =
+    options.id === undefined
+      ? metadata.contract
+      : Object.freeze({
+          variableSet: true,
+          [Token.identity]: Identity.requireId(options.id, 'Vars.extend'),
+          [Token.complete]: true,
+        })
+  const base =
+    options.id === undefined
+      ? metadata
+      : VariableSets.build(
+          VariableSets.references(variables, metadata),
+          contract,
+        )[Token.definition]
+  const extended = VariableSets.build(values, contract, { base })
+  if (typeof derive !== 'function') return extended
+
+  return VariableSets.build(derive(extended as References<Values>), contract, {
+    base: extended[Token.definition],
+    derived: true,
+  })
+}
+
+/** Base values grown by an extension; overridden leaves keep their base types. Unexported so declarations inline it. */
+type Extended<base, values> = {
+  readonly [key in keyof base | keyof values]: key extends keyof base
+    ? key extends keyof values
+      ? base[key] extends Value
+        ? base[key]
+        : base[key] extends readonly string[]
+          ? values[key]
+          : Extended<base[key], values[key]>
+      : base[key]
+    : key extends keyof values
+      ? values[key]
+      : never
+}
+
+/** Compatible overrides at existing leaves, plus new leaves and categories. */
+type Extension<base, values, typography extends boolean = false> = {
+  readonly [key in keyof values]: key extends keyof base
+    ? base[key] extends Value
+      ? Conditional<Compatible<Scalar<base[key]>>>
+      : base[key] extends readonly string[]
+        ? readonly string[]
+        : values[key] extends Value
+          ? never
+          : Extension<
+              base[key],
+              values[key],
+              key extends 'typography' ? true : typography
+            >
+    : key extends 'containerNames'
+      ? readonly string[]
+      : key extends
+            | `${string}.${string}`
+            | `${string}!${string}`
+            | `@${string}`
+            | ''
+        ? typography extends true
+          ? key extends Typography.Condition
+            ? Validated<values[key], true>
+            : never
+          : never
+        : Validated<values[key], key extends 'typography' ? true : typography>
 }
 
 /** Partial compatible overrides. Conditional leaves are replaced in full. */

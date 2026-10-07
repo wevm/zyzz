@@ -1273,6 +1273,84 @@ void [color, length, wrongLength]
       await browser.close()
     }
   })
+  test.each(['source', 'packed'] as const)(
+    'resolves config-bound references to scoped variables (%s)',
+    async (mode) => {
+      const library = `import { Config, Vars } from 'zyzz'
+        const base = Vars.define({ spacing: { gap: '16px' } }, { id: 'lib/vars' })
+        const wide = Vars.extend(base, { spacing: { gap: '24px' } })
+        export const { vars } = Config.create({ id: 'lib', vars: { base, wide }, defaultVars: 'base' })`
+      const app = (specifier: string) => `import { Config, Vars } from 'zyzz'
+        import { vars as lib } from '${specifier}'
+        const tokens = Vars.define({ spacing: { gutter: lib.spacing.gap } }, { id: 'app/vars' })
+        export const { style } = Config.create({ id: 'app', vars: tokens })
+        export const card = style({ padding: 'gutter' })
+        export const wide = lib({ set: 'wide' })`
+      const compiled = (() => {
+        if (mode === 'source') {
+          const graph = Graph.compile({
+            modules: { 'app.ts': app('./lib.js'), 'lib.ts': library },
+          })
+          return {
+            css: `${graph.sharedCss ?? ''}${graph.modules['lib.ts']!.css}${graph.modules['app.ts']!.css}`,
+            modules: {
+              'app.ts': graph.modules['app.ts']!.code,
+              'lib.ts': graph.modules['lib.ts']!.code,
+            },
+            packages: {},
+          }
+        }
+
+        const packed = Graph.compile({ modules: { 'index.ts': library } })
+        const graph = Graph.compile({
+          contracts: { 'library/index.js': packed.contracts['index.ts']! },
+          imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
+          modules: { 'app.ts': app('library') },
+        })
+        return {
+          css: `${packed.sharedCss ?? ''}${packed.modules['index.ts']!.css}${graph.sharedCss ?? ''}${graph.modules['app.ts']!.css}`,
+          modules: { 'app.ts': graph.modules['app.ts']!.code },
+          packages: {
+            library: { 'index.ts': packed.modules['index.ts']!.code },
+          },
+        }
+      })()
+
+      expect(
+        compiled.css.match(/--z-app-spacing-gutter:[^;]+/)?.[0],
+      ).toMatchInlineSnapshot(
+        `"--z-app-spacing-gutter:var(--z-lib-spacing-gap,16px)"`,
+      )
+
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: compiled.modules,
+        packages: compiled.packages,
+      })
+      const fixture = Vm.runInNewContext(`${code};Fixture;`)
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${compiled.css}</style><div id="base" class="${fixture.card().className}"></div><div class="${fixture.wide.className}"><div id="wide" class="${fixture.card().className}"></div></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#base')
+            .evaluate((node) => getComputedStyle(node).padding),
+        ).toMatchInlineSnapshot(`"16px"`)
+        expect(
+          await page
+            .locator('#wide')
+            .evaluate((node) => getComputedStyle(node).padding),
+        ).toMatchInlineSnapshot(`"24px"`)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+
   test('selects nested sets and ordered media color pairs', async () => {
     const graph = Graph.compile({
       modules: {

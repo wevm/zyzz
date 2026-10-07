@@ -2862,6 +2862,38 @@ describe('packageContracts', () => {
       }
     })
 
+    test('resolves config-bound package references in application variables', async () => {
+      const root = await Fs.mkdtemp(
+        Path.join(project, '.fixture-host-derived-bound-'),
+      )
+      try {
+        await PlainPackage.install(root)
+        await Fs.mkdir(Path.join(root, 'src'))
+        await Fs.writeFile(
+          Path.join(root, 'src/config.ts'),
+          `import {Config,Vars} from 'zyzz';import {vars as acme} from '@acme/tokens';const tokens=Vars.define({spacing:{gutter:acme.spacing['16']}},{id:'app/vars'});export const {style}=Config.create({id:'app',vars:tokens});export const card=style({padding:'gutter'})();`,
+        )
+        await using host = await Host.create({
+          css: false,
+          outDir: Path.join(root, 'dist'),
+          packageId: 'app',
+          root: Path.join(root, 'src'),
+        })
+
+        await host.build()
+
+        expect(await Fs.readFile(Path.join(root, 'dist/config.ts.css'), 'utf8'))
+          .toMatchInlineSnapshot(`
+          ".z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
+          .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}
+          .z-theme-app-theme{--z-app-spacing-gutter:var(--z-acme-spacing-16,16px);}
+          .z-app-p-\\5b var\\28 --z-app-spacing-gutter\\2c var\\28 --z-acme-spacing-16\\2c 16px\\29 \\29 \\5d {padding:var(--z-app-spacing-gutter,var(--z-acme-spacing-16,16px));}"
+        `)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+
     test('prefers shipped contracts and watches their removal', async () => {
       const root = await Fs.mkdtemp(
         Path.join(project, '.fixture-host-derived-sidecar-'),

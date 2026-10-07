@@ -74,7 +74,7 @@ Optional values computed from the extended set's references, such as typography 
 
 - **Type:** `string{:ts}`
 
-Makes the extension a new set with its own variables instead of an alternative to the base. Its inherited values reference the base's variables, so they stay linked, and its overrides and additions use its own names. Use it to build one set on another, such as a surface on shared primitives, and omit it for alternatives like a dark or brand set.
+Makes the extension a new set with its own variables instead of an alternative to the base. Its inherited values reference the base's variables, so they stay linked, and its overrides and additions use its own names. Inherited values emit no CSS of their own unless another set with the same identity overrides them. Use it to build one set on another, such as a surface on shared primitives, and omit it for alternatives like a dark or brand set.
 
 ## Extend a package config
 

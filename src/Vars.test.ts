@@ -1163,16 +1163,16 @@ void [color, length, wrongLength]
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-theme-base{--z-color-accent:#2563eb;--z-spacing-page:var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_);--z-surface-panel:#fff;}
+      ".z-theme-base{--z-color-accent:#2563eb;--z-spacing-page:var(--z-spacing-page-fallback-1i8tofc19dwsq);--z-surface-panel:#fff;}
       @media (min-width: 768px){.z-theme-base{--z-spacing-page:32px;}}
-      .z-theme-alternate{--z-color-accent:#9333ea;--z-spacing-page:var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_);--z-surface-panel:#fff;}
+      .z-theme-alternate{--z-color-accent:#9333ea;--z-spacing-page:var(--z-spacing-page-fallback-1i8tofc19dwsq);--z-surface-panel:#fff;}
       @media (min-width: 768px){.z-theme-alternate{--z-spacing-page:32px;}}
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
       .z-text-\\5b var\\28 --z-color-accent\\2c \\23 2563eb\\29 \\5d {color:var(--z-color-accent,#2563eb);}
-      .z-p-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_16px_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_min_5f_2d_5f_width_5f_3a_5f__5f_20_5f_768px_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_32px_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\29 \\29 \\5d {padding:var(--z-spacing-page,var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_));}
-      .z-w-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-_5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_16px_5f_3b_5f__5f_7d_5f__5f_40_5f_media_5f_20_5f__5f_28_5f_min_5f_2d_5f_width_5f_3a_5f__5f_20_5f_768px_5f_29_5f__5f_7b_5f__5f_3a_5f_where_5f_28_5f__5f_2a_5f__5f_29_5f__5f_7b_5f__5f_2d_5f__5f_2d_5f_fallback_5f_3a_5f_32px_5f_3b_5f__5f_7d_5f__5f_7d_5f_\\29 \\29 \\5d {width:var(--z-spacing-page,var(--z-spacing-page-fallback-_3a_where_28__2a__29__7b__2d__2d_fallback_3a_16px_3b__7d__40_media_20__28_min_2d_width_3a__20_768px_29__7b__3a_where_28__2a__29__7b__2d__2d_fallback_3a_32px_3b__7d__7d_));}
+      .z-p-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-1i8tofc19dwsq\\29 \\29 \\5d {padding:var(--z-spacing-page,var(--z-spacing-page-fallback-1i8tofc19dwsq));}
+      .z-w-\\5b var\\28 --z-spacing-page\\2c var\\28 --z-spacing-page-fallback-1i8tofc19dwsq\\29 \\29 \\5d {width:var(--z-spacing-page,var(--z-spacing-page-fallback-1i8tofc19dwsq));}
       .z-bg-\\5b var\\28 --z-surface-panel\\2c \\23 fff\\29 \\5d {background-color:var(--z-surface-panel,#fff);}"
     `)
     const code = await Packed.bundle({
@@ -1890,11 +1890,33 @@ describe('extend', () => {
     })
     const css = `${result.sharedCss ?? ''}${result.modules['index.ts']!.css}`
 
+    expect(css).not.toMatch(/--z-extend_2f_site(_2d_vars)?-spacing-12:/)
     expect(css).toMatch(
-      /--z-extend_2f_site_2d_vars-spacing-12:var\(--z-extend_2f_core-spacing-12[,)]/,
+      /padding:var\(--z-extend_2f_site-spacing-12,var\(--z-extend_2f_core-spacing-12,12px\)\)/,
     )
     expect(css).toMatch(/--z-extend_2f_site_2d_vars-color-content:/)
     expect(css).not.toMatch(/--z-extend_2f_core-color-content/)
+  })
+
+  test('declares inherited paths that a sibling set overrides', () => {
+    const result = Graph.compile({
+      modules: {
+        'index.ts': `import {Config,Vars} from 'zyzz';
+          const core = Vars.define({spacing:{'12':'12px'}},{id:'extend/core'});
+          const base = Vars.extend(core,{spacing:{page:'24px'}},{id:'extend/site-vars'});
+          const roomy = Vars.extend(base,{spacing:{'12':'16px'}});
+          export const {style} = Config.create({defaultVars:'base',id:'extend/site',vars:{base,roomy}});
+          export const card = style({padding:'12'});`,
+      },
+    })
+    const css = result.modules['index.ts']!.css
+
+    expect(css).toMatch(
+      /\.z-theme-extend_2f_site-base\{[^}]*--z-extend_2f_site-spacing-12:var\(--z-extend_2f_core-spacing-12/,
+    )
+    expect(css).toMatch(
+      /\.z-theme-extend_2f_site-roomy\{[^}]*--z-extend_2f_site-spacing-12:16px/,
+    )
   })
 
   test.each([false, true])(
@@ -1930,8 +1952,9 @@ describe('extend', () => {
       )
       const css = `${result.sharedCss ?? ''}${result.modules['app.ts']!.css}`
 
+      expect(css).not.toMatch(/--z-extend_2f_app(_2d_vars)?-spacing-12:/)
       expect(css).toMatch(
-        /--z-extend_2f_app_2d_vars-spacing-12:var\(--z-extend_2f_library-spacing-12[,)]/,
+        /padding:var\(--z-extend_2f_app-spacing-12,var\(--z-extend_2f_library-spacing-12[,)]/,
       )
       expect(css).toMatch(/--z-extend_2f_app_2d_vars-spacing-page:24px/)
     },

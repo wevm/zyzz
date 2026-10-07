@@ -6,7 +6,7 @@ import reset from 'zyzz/reset.css?url'
 import { vars } from '../zyzz.config.js'
 
 const description =
-  'Type-safe styles, variables, and themes. Compile to static CSS with Zyzz.'
+  'Bring structure to your styles and consistency to your interfaces. Write type-safe styles in TypeScript, compiled to static CSS.'
 
 /** Defines the document shell and page metadata. */
 export const Route = createRootRoute({

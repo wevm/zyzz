@@ -627,6 +627,97 @@ describe('zyzz', () => {
     }
   }, 30000)
 
+  test('loads relative font URLs from scoped packed contracts in development and production', async () => {
+    const { config, root } = await create({
+      'index.html': '<script type="module" src="/main.ts"></script><p>AAA</p>',
+      'main.ts': `import '@acme/ds/core';import {global} from 'zyzz/web';global({p:{fontFamily:'Evidence',fontSize:'20px'}});`,
+    })
+    const browser = await chromium.launch()
+    let server: Vite.ViteDevServer | Vite.PreviewServer | undefined
+    try {
+      // The scope places `@` in the installed path that the relative URL resolves against.
+      const directory = Path.join(root, 'node_modules/@acme/ds')
+      const compiled = Graph.compile({
+        modules: {
+          'dist/core/index.ts': `import {fontFace} from 'zyzz/web';fontFace({fontFamily:'Evidence',src:"url('../fonts/Evidence.ttf') format('truetype')"});`,
+        },
+      })
+
+      await Fs.mkdir(Path.join(directory, 'dist/core'), { recursive: true })
+      await Fs.mkdir(Path.join(directory, 'dist/fonts'), { recursive: true })
+      await Fs.writeFile(
+        Path.join(directory, 'package.json'),
+        JSON.stringify({
+          exports: { './core': './dist/core/index.js' },
+          name: '@acme/ds',
+          type: 'module',
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(directory, 'dist/core/index.js'),
+        Esbuild.transformSync(compiled.modules['dist/core/index.ts']!.code, {
+          format: 'esm',
+          loader: 'ts',
+        }).code,
+      )
+      await Fs.writeFile(
+        Path.join(directory, 'dist/core/index.js.zyzz.json'),
+        compiled.contracts['dist/core/index.ts']!,
+      )
+      await Fs.writeFile(
+        Path.join(directory, 'dist/fonts/Evidence.ttf'),
+        Buffer.from(Font.url.split(',')[1]!, 'base64'),
+      )
+
+      for (const production of [false, true]) {
+        if (production) {
+          await Vite.build(config)
+          server = await Vite.preview({
+            ...config,
+            preview: { host: '127.0.0.1', port: 0 },
+          })
+        } else {
+          server = await Vite.createServer(config)
+          await server.listen()
+        }
+
+        const page = await browser.newPage()
+
+        await page.goto(server.resolvedUrls!.local[0]!)
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('p')!).fontFamily ===
+            'Evidence',
+        )
+
+        expect(
+          await page.evaluate(async () => {
+            await document.fonts.load('20px Evidence', 'AAA')
+            const range = document.createRange()
+            range.selectNodeContents(document.querySelector('p')!)
+            return {
+              loaded: document.fonts.check('20px Evidence', 'AAA'),
+              width: range.getBoundingClientRect().width,
+            }
+          }),
+        ).toMatchInlineSnapshot(`
+          {
+            "loaded": true,
+            "width": 36,
+          }
+        `)
+
+        await page.close()
+        await server.close()
+        server = undefined
+      }
+    } finally {
+      await server?.close()
+      await browser.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
+
   for (const reset of [undefined, false, true])
     test(`delivers optional reset in development and production (${reset})`, async () => {
       const { config, root } = await create({

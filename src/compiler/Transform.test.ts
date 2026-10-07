@@ -3166,6 +3166,64 @@ style({ color: 'md' });
     `)
   })
 
+  test('prunes replaced defineConfig, defineVars, and extendVars imports', () => {
+    const imports = (source: string) =>
+      Transform.compile({ moduleId: 'app/card.ts', source })
+        .code.split('\n')
+        .filter((line) => line.startsWith('import'))
+
+    expect(
+      imports(`import { defineConfig } from 'zyzz'
+const { style } = defineConfig({ cssOutput: 'grouped' })
+export const card = style({ color: 'red' })
+`),
+    ).toMatchInlineSnapshot(`
+      [
+        "import { Props as __zyzzProps } from 'zyzz/runtime';",
+      ]
+    `)
+
+    expect(
+      imports(`import { defineConfig, defineVars, extendVars } from 'zyzz'
+const base = defineVars({ color: { brand: '#06c' } })
+const dark = extendVars(base, { color: { brand: '#9cf' } })
+const { style } = defineConfig({ defaultVars: 'base', vars: { base, dark } })
+export const card = style({ color: 'brand' })
+`),
+    ).toMatchInlineSnapshot(`
+      [
+        "import { Props as __zyzzProps } from 'zyzz/runtime';",
+      ]
+    `)
+
+    // Type queries and shadowed names are references outside replaced calls.
+    expect(
+      imports(`import { defineConfig } from 'zyzz'
+export type Factory = typeof defineConfig
+const { style } = defineConfig({})
+export const card = style({ color: 'red' })
+`),
+    ).toMatchInlineSnapshot(`
+      [
+        "import { Props as __zyzzProps } from 'zyzz/runtime';",
+        "import { defineConfig } from 'zyzz'",
+      ]
+    `)
+
+    expect(
+      imports(`import { defineConfig } from 'zyzz'
+const { style } = defineConfig({})
+export const card = style({ color: 'red' })
+export function f() { var defineConfig = 1; return defineConfig }
+`),
+    ).toMatchInlineSnapshot(`
+      [
+        "import { Props as __zyzzProps } from 'zyzz/runtime';",
+        "import { defineConfig } from 'zyzz'",
+      ]
+    `)
+  })
+
   test('separately transformed modules render without class collisions in Chromium', async () => {
     const browser = await chromium.launch()
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-transform-'))

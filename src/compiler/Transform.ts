@@ -184,6 +184,47 @@ export function compile(options: compile.Options): compile.ReturnType {
     },
   })
 
+  const found = localApplications?.find() ?? []
+  // Compositions supersede their inputs' classes, so those reads stay unfolded.
+  const composing = (application: Span) =>
+    extracted.calls.some(
+      (call) =>
+        (call.composition || call.runtimeComposition) &&
+        call.start < application.start &&
+        application.end <= call.end,
+    )
+  const folded = new Set(
+    found.filter(
+      (application) =>
+        !composing(application) &&
+        !extracted.calls.some(
+          (call) =>
+            call.output === 'html' &&
+            call.runtimeComposition?.some(
+              (input) => input.applicationStart === application.start,
+            ),
+        ),
+    ),
+  )
+
+  const local =
+    portable || options.development
+      ? undefined
+      : localApplications?.definitions()
+
+  // Styles applied only alone to DOM elements, or inside cx, never meet another
+  // style's classes. Atomic ones share rules like independent styles.
+  const standalone = new Set(
+    [...(local?.values.keys() ?? [])].filter((name) =>
+      found.every(
+        (application) =>
+          application.name !== name ||
+          application.terminal ||
+          composing(application),
+      ),
+    ),
+  )
+
   // Scheme rules accompany modules whose runtime helpers can apply a scheme class.
   const schemes =
     options.schemes ??
@@ -213,14 +254,23 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (portable || options.development) return extracted.styles
 
       const dead = localApplications?.dead()
-      if (!dead?.size) return extracted.styles
+      if (!dead?.size && !standalone.size) return extracted.styles
 
       return {
-        styles: extracted.styles.styles.map((style) =>
-          dead.has(style.name)
-            ? { cssOutput: style.cssOutput, declarations: [], name: style.name }
-            : style,
-        ),
+        styles: extracted.styles.styles.map((style) => {
+          if (dead?.has(style.name))
+            return {
+              cssOutput: style.cssOutput,
+              declarations: [],
+              name: style.name,
+            }
+
+          // Grouped output keeps one class per style.
+          return standalone.has(style.name) &&
+            (style.cssOutput ?? options.cssOutput ?? 'atomic') === 'atomic'
+            ? { ...style, composition: 'independent' as const }
+            : style
+        }),
       }
     })(),
     contributions: extracted.contributions,
@@ -326,37 +376,16 @@ export function compile(options: compile.Options): compile.ReturnType {
     ),
   )
 
-  const found = localApplications?.find() ?? []
-  const folded = new Set(
-    found.filter(
-      (application) =>
-        !extracted.calls.some(
-          (call) =>
-            (call.output === 'html' &&
-              call.runtimeComposition?.some(
-                (input) => input.applicationStart === application.start,
-              )) ||
-            ((call.composition || call.runtimeComposition) &&
-              call.start < application.start &&
-              application.end <= call.end),
-        ),
-    ),
-  )
-
   // Definitions read only through folded applications need no class list of
   // their own. True marks definitions whose every read follows initialization.
-  const reads =
-    portable || options.development
-      ? undefined
-      : localApplications?.definitions()
   const unread = new Map(
-    [...(reads?.values ?? [])].filter(([name]) =>
+    [...(local?.values ?? [])].filter(([name]) =>
       found.every(
         (application) => application.name !== name || folded.has(application),
       ),
     ),
   )
-  const namespaces = (reads?.namespaces ?? []).filter((namespace) =>
+  const namespaces = (local?.namespaces ?? []).filter((namespace) =>
     [...namespace.ends.keys()].every((name) => unread.get(name)),
   )
 

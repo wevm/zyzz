@@ -160,6 +160,7 @@ export function create(
   const lexical = new Set<Ast.Node>()
   // Reads inside functions, classes, or namespaces may run before initialization.
   const deferred = new Set<Ast.Node>()
+  const terminals = new Set<Ast.Node>()
   const scope = new Scope.Tracker({ preserveExitedScopes: true })
   Walker.walk(program, { scopeTracker: scope })
   scope.freeze()
@@ -198,6 +199,7 @@ export function create(
         )
       ) {
         lexical.add(node)
+        if (terminal(ancestors)) terminals.add(node)
         if (
           ancestors.some((node) =>
             [
@@ -225,12 +227,17 @@ export function create(
   >(candidates.map(({ declaration }) => [declaration.id.name, []]))
   let evaluation = false
 
-  // Returns undefined when any read escapes. Recipes and dynamic styles keep their calls.
-  function collect(
-    candidate: (typeof candidates)[number],
-  ): readonly Application[] | undefined {
+  // Returns undefined when any read escapes. Recipes, dynamic styles, and
+  // applications with overrides keep their runtime calls.
+  function collect(candidate: (typeof candidates)[number]):
+    | {
+        readonly applications: readonly Application[]
+        readonly called: ReadonlySet<string>
+      }
+    | undefined {
     const { declaration, direct, members } = candidate
     const applications: Application[] = []
+    const called = new Set<string>()
 
     for (const reference of references.get(declaration.id.name) ?? []) {
       if (reference === declaration.id) continue
@@ -267,10 +274,15 @@ export function create(
         !call ||
         application?.type !== 'CallExpression' ||
         application.callee !== callee ||
-        application.optional ||
-        (!options.dynamic && application.arguments.length)
+        application.optional
       )
         return undefined
+
+      // An override needs the runtime callable, but exposes no other definition.
+      if (!options.dynamic && application.arguments.length) {
+        called.add(call.name)
+        continue
+      }
 
       applications.push({
         calleeEnd: callee.end,
@@ -282,10 +294,11 @@ export function create(
             namespaceCounts.get(declaration.id.name) === 1),
         name: call.name,
         start: application.start,
+        terminal: terminals.has(reference),
       })
     }
 
-    return applications
+    return { applications, called }
   }
 
   return {
@@ -362,8 +375,8 @@ export function create(
         if (counts.get(name)! > 1 || (namespaceCounts.get(name) ?? 0) > 1)
           continue
 
-        const applications = collect(candidate)
-        if (!applications) continue
+        const result = collect(candidate)
+        if (!result) continue
 
         let erased = !!candidate.namespace
 
@@ -374,13 +387,14 @@ export function create(
             call.composition ||
             call.runtimeComposition ||
             call.slots ||
-            call.recipe
+            call.recipe ||
+            result.called.has(call.name)
           ) {
             erased = false
             continue
           }
 
-          const initialized = applications.every(
+          const initialized = result.applications.every(
             (application) =>
               application.name !== call.name || application.initialized,
           )
@@ -419,7 +433,9 @@ export function create(
     find() {
       if (evaluation) return []
 
-      return candidates.flatMap((candidate) => collect(candidate) ?? [])
+      return candidates.flatMap(
+        (candidate) => collect(candidate)?.applications ?? [],
+      )
     },
   }
 }
@@ -436,6 +452,8 @@ type Application = {
   readonly name: string
   /** Start of the application. */
   readonly start: number
+  /** Whether a DOM element receives the props alone, so its classes meet no other style's. */
+  readonly terminal: boolean
 }
 
 /** A top-level namespace whose members are all static definitions. */
@@ -472,4 +490,65 @@ export declare namespace create {
     /** Includes recipe/value applications while preserving their runtime calls. */
     readonly dynamic?: boolean | undefined
   }
+}
+
+// Matches a no-argument application spread onto, or read as the class of, a DOM element.
+function terminal(path: readonly Ast.Node[]): boolean {
+  let index = path.length - 1
+  let node = path[index]
+  const member = path[index - 1]
+  if (member?.type === 'MemberExpression' && member.object === node)
+    node = path[--index]
+
+  const call = path[--index]
+  if (
+    call?.type !== 'CallExpression' ||
+    call.callee !== node ||
+    call.arguments.length
+  )
+    return false
+
+  const parent = path[--index]
+  if (parent?.type === 'JSXSpreadAttribute')
+    return parent.argument === call && alone(path[index - 1], parent)
+
+  if (
+    parent?.type !== 'MemberExpression' ||
+    parent.object !== call ||
+    parent.computed ||
+    parent.property.type !== 'Identifier' ||
+    !/^class(?:Name)?$/.test(parent.property.name)
+  )
+    return false
+
+  const container = path[--index]
+  const attribute = path[--index]
+  return (
+    container?.type === 'JSXExpressionContainer' &&
+    container.expression === parent &&
+    attribute?.type === 'JSXAttribute' &&
+    attribute.value === container &&
+    attribute.name.type === 'JSXIdentifier' &&
+    /^class(?:Name)?$/.test(attribute.name.name) &&
+    alone(path[index - 1], attribute)
+  )
+}
+
+// Other spreads or class attributes could add another style's classes.
+function alone(element: Ast.Node | undefined, own: Ast.Node): boolean {
+  return (
+    element?.type === 'JSXOpeningElement' &&
+    element.name.type === 'JSXIdentifier' &&
+    /^[a-z]/.test(element.name.name) &&
+    element.attributes.every(
+      (attribute) =>
+        attribute === own ||
+        (attribute.type === 'JSXAttribute' &&
+          !(
+            attribute.name.type === 'JSXIdentifier'
+              ? attribute.name.name
+              : attribute.name.namespace.name
+          ).startsWith('class')),
+    )
+  )
 }

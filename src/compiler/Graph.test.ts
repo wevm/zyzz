@@ -3327,13 +3327,13 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       })
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
-        .z-first_2d_local-opacity-0{opacity:0.5;}
+        .z_ZYrHvJ0{opacity:0.5;}
         .z-props-0-z-style-zugwnm-base-first_2d_local-style-0{color:red;padding:8px;}
         .z-props-0-z-style-zugwnm-base-first_2d_local-opacity-1{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
-        .z-second_2d_local-opacity-0{opacity:1;}
+        .z_hYrPIe0{opacity:1;}
         .z-props-0-z-style-zugwnm-base-second_2d_local-style-0{color:red;padding:8px;}
         .z-props-0-z-style-zugwnm-base-second_2d_local-opacity-1{opacity:1;}"
       `)

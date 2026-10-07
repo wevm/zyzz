@@ -681,6 +681,88 @@ describe('compile', () => {
     }
   })
 
+  test('ordered atomic styles reuse the previous equal domain rules in the browser', async () => {
+    // b repeats a's domains and reuses their rules. c sets other values between
+    // a and d, so d keeps its own color rule after c's.
+    const output = Css.compile({
+      styles: Style.define({
+        a: { color: 'red', padding: '8px' },
+        b: { color: 'red', padding: '8px' },
+        c: { color: 'blue', padding: '2px' },
+        d: { color: 'red' },
+      }),
+    })
+
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "a": "z-a-text-0 z-a-p-1",
+        "b": "z-a-text-0 z-a-p-1",
+        "c": "z-c-text-0 z-c-p-1",
+        "d": "z-d-text-0",
+      }
+    `)
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a-text-0{color:red;}
+      .z-a-p-1{padding:8px;}
+      .z-c-text-0{color:blue;}
+      .z-c-p-1{padding:2px;}
+      .z-d-text-0{color:red;}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+      const combinations = [
+        ['a', 'b'],
+        ['b', 'c'],
+        ['c', 'd'],
+        ['b', 'c', 'd'],
+      ] as const
+
+      await page.setContent(
+        `<style>${output.css}</style>${combinations
+          .map(
+            (names) =>
+              `<div class="${names.map((name) => output.classes[name]).join(' ')}"></div>`,
+          )
+          .join('')}`,
+      )
+
+      // The latest definition in each combination wins its conflicts.
+      expect(
+        await page.locator('div').evaluateAll((elements) =>
+          elements.map((element) => {
+            const style = getComputedStyle(element)
+
+            return [style.color, style.paddingLeft]
+          }),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(255, 0, 0)",
+            "8px",
+          ],
+          [
+            "rgb(0, 0, 255)",
+            "2px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "2px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "2px",
+          ],
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('logical boxes match native controls across authored writing modes in the browser', async () => {
     const output = Css.compile({
       styles: Style.define({

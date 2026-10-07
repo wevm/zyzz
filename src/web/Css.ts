@@ -96,7 +96,9 @@ export function compile<
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
-  const nestedComposition = options.styles.styles.some((style) => style.rules)
+  const nestedComposition = options.styles.styles.some(
+    (style) => style.rules && !isolated(style),
+  )
 
   const properties = new Set<Style.Declaration['property']>()
   for (const style of analyzed)
@@ -365,32 +367,39 @@ export function compile<
 
   // Sharing is safe only when every use of a conflict domain has the same
   // declaration sequence. Conditions conservatively retain contextual identities.
+  // Isolated class lists never combine, so atomic sharing considers ordered styles only.
+  const ordered = new Map<string, false | string>()
+  const combinable = new Set<Style.NamedStyle>()
+  for (const [index, style] of options.styles.styles.entries())
+    if (!isolated(style)) combinable.add(canonicalStyles[index]!)
+
   for (const style of analyzed) {
-    const domains = new Map<string, { body: string; property: string }>()
+    const domains = new Map<
+      string,
+      { body: string; mixed: boolean; property: string }
+    >()
 
     for (const item of style.declarations) {
       const property = item.property
       const key = conflict(property)
-      const declaration = declarationBody(item)
-      if (groups.get(key) === false) continue
-      const entry = domains.get(key) ?? {
-        body: '',
-        property,
-      }
-      entry.body += declaration
-      if (entry.property !== property) groups.set(key, false)
+      const entry = domains.get(key) ?? { body: '', mixed: false, property }
+      entry.body += declarationBody(item)
+      entry.mixed ||= entry.property !== property
       domains.set(key, entry)
     }
 
-    for (const [key, entry] of domains) {
-      const value = entry.body
-
-      const previous = groups.get(key)
-      groups.set(
-        key,
-        previous === undefined || previous === value ? value : false,
-      )
-    }
+    for (const [key, entry] of domains)
+      for (const map of combinable.has(style) ? [groups, ordered] : [groups]) {
+        const previous = map.get(key)
+        map.set(
+          key,
+          previous === false ||
+            entry.mixed ||
+            (previous !== undefined && previous !== entry.body)
+            ? false
+            : entry.body,
+        )
+      }
   }
 
   const defaultMode = options.cssOutput ?? 'atomic'
@@ -415,6 +424,68 @@ export function compile<
       ?.value as 'independent' | 'ordered' | undefined
 
     return mode ?? options.composition ?? 'ordered'
+  }
+
+  // Development keeps every style ordered so names survive value edits.
+  function isolated(style: Style.NamedStyle) {
+    return compositionMode(style) === 'independent' && !options.development
+  }
+
+  type Item = {
+    readonly conditions: readonly string[]
+    readonly property: string
+    readonly value: string
+  }
+
+  // Lists declaration groups in authored order; undefined marks styles whose
+  // nested grouped output or anonymous layers emit one opaque rule.
+  function flatten(
+    style: Style.NamedStyle,
+    conditions: readonly string[] = [],
+  ): Item[] | undefined {
+    if (outputMode(style) === 'grouped') return undefined
+
+    if (style.rules) {
+      const items: Item[] = []
+      for (const rule of style.rules) {
+        if (rule.condition?.trim() === '@layer') return undefined
+
+        const nested = flatten(
+          rule.style,
+          rule.condition === undefined
+            ? conditions
+            : [...conditions, rule.condition],
+        )
+        if (!nested) return undefined
+
+        items.push(...nested)
+      }
+      return items
+    }
+
+    const items: Item[] = []
+    for (let index = 0; index < style.declarations.length; ) {
+      const property = style.declarations[index]!.property
+      let value = ''
+      // Keep same-property fallbacks ordered; they form one semantic value.
+      while (style.declarations[index]?.property === property) {
+        const declaration = style.declarations[index++]!
+        value += `${Literal.name(property)}:${serialize(declaration.value)}${declaration.important ? '!important' : ''};`
+      }
+      items.push({ conditions, property, value })
+    }
+    return items
+  }
+
+  function byDomain(items: readonly Item[]) {
+    const result = new Map<string, Item[]>()
+    for (const item of items) {
+      const key = conflict(item.property)
+      const domain = result.get(key)
+      if (domain) domain.push(item)
+      else result.set(key, [item])
+    }
+    return result
   }
 
   function representation(style: Style.NamedStyle): unknown {
@@ -454,6 +525,44 @@ export function compile<
       const key = conflict(declaration.property)
       occurrences.set(key, (occurrences.get(key) ?? 0) + 1)
     }
+
+  // An ordered atomic style reuses the rules of the previous style that set a
+  // domain to the same sequence: no differing rule sits between them.
+  const runs = new Map<number, Map<string, number>>()
+  const owned = new Map<number, Map<string, string[]>>()
+  if (!options.development) {
+    const last = new Map<string, { key: string; owner: number }>()
+
+    for (const [index, style] of options.styles.styles.entries()) {
+      if (isolated(style)) continue
+
+      const items =
+        (outputMode(style) ?? defaultMode) === 'atomic' &&
+        options.names?.[style.name] === undefined
+          ? flatten(style)
+          : undefined
+      // Grouped, explicit, and opaque rules may set any domain.
+      if (!items) {
+        last.clear()
+        continue
+      }
+
+      for (const [domain, list] of byDomain(items)) {
+        const key = JSON.stringify(
+          list.map((item) => [item.conditions, item.value]),
+        )
+        const previous = last.get(domain)
+        if (previous?.key !== key) {
+          last.set(domain, { key, owner: index })
+          continue
+        }
+
+        const reuse = runs.get(index) ?? new Map<string, number>()
+        reuse.set(domain, previous.owner)
+        runs.set(index, reuse)
+      }
+    }
+  }
 
   for (const [styleIndex, style] of options.styles.styles.entries()) {
     const mode = outputMode(style) ?? defaultMode
@@ -512,8 +621,8 @@ export function compile<
       shared: boolean,
       output = mode,
       conditional?: ConditionalRule,
-    ) {
-      if (!body) return
+    ): string | undefined {
+      if (!body) return undefined
 
       const reusable =
         explicit === undefined &&
@@ -521,7 +630,7 @@ export function compile<
       const previous = reusable ? sharedRules![output].get(body) : undefined
       if (previous && !names.includes(previous)) {
         names.push(previous)
-        return
+        return previous
       }
 
       if (previous) shared = false
@@ -570,6 +679,8 @@ export function compile<
         if (reusable) sharedRules![output].set(body, identity)
         names.push(identity)
       }
+
+      return identity
     }
 
     function atoms(
@@ -613,6 +724,16 @@ export function compile<
         while (style.declarations[index]?.property === property)
           values.push(style.declarations[index++]!)
 
+        const domain = conflict(property)
+        const owner = runs.get(styleIndex)?.get(domain)
+        const reused =
+          owner === undefined ? undefined : owned.get(owner)?.get(domain)
+        if (reused) {
+          for (const identity of reused)
+            if (!names.includes(identity)) names.push(identity)
+          continue
+        }
+
         const value = values
           .map(
             ({ important, value }) =>
@@ -626,70 +747,26 @@ export function compile<
         const shared =
           !nestedComposition &&
           !conditions.length &&
-          groups.get(conflict(property)) !== false
-        emit(body, property, shared, mode, { conditions, value })
+          ordered.get(domain) !== false
+        const identity = emit(body, property, shared, mode, {
+          conditions,
+          value,
+        })
+        if (identity === undefined) continue
+
+        const domains = owned.get(styleIndex) ?? new Map<string, string[]>()
+        domains.set(domain, [...(domains.get(domain) ?? []), identity])
+        owned.set(styleIndex, domains)
       }
     }
 
     // Independent class lists never combine, so only declarations within one
     // conflict domain need relative order. Equal domain bodies share one rule.
     function share(style: Style.NamedStyle) {
-      type Item = {
-        readonly conditions: readonly string[]
-        readonly property: string
-        readonly value: string
-      }
-
-      function flatten(
-        style: Style.NamedStyle,
-        conditions: readonly string[],
-      ): Item[] | undefined {
-        if (outputMode(style) === 'grouped') return undefined
-
-        if (style.rules) {
-          const items: Item[] = []
-          for (const rule of style.rules) {
-            if (rule.condition?.trim() === '@layer') return undefined
-
-            const nested = flatten(
-              rule.style,
-              rule.condition === undefined
-                ? conditions
-                : [...conditions, rule.condition],
-            )
-            if (!nested) return undefined
-
-            items.push(...nested)
-          }
-          return items
-        }
-
-        const items: Item[] = []
-        for (let index = 0; index < style.declarations.length; ) {
-          const property = style.declarations[index]!.property
-          let value = ''
-          // Keep same-property fallbacks ordered; they form one semantic value.
-          while (style.declarations[index]?.property === property) {
-            const declaration = style.declarations[index++]!
-            value += `${Literal.name(property)}:${serialize(declaration.value)}${declaration.important ? '!important' : ''};`
-          }
-          items.push({ conditions, property, value })
-        }
-        return items
-      }
-
-      const items = flatten(style, [])
+      const items = flatten(style)
       if (!items) return atoms(style)
 
-      const domains = new Map<string, Item[]>()
-      for (const item of items) {
-        const key = conflict(item.property)
-        const domain = domains.get(key)
-        if (domain) domain.push(item)
-        else domains.set(key, [item])
-      }
-
-      for (const domain of domains.values()) {
+      for (const domain of byDomain(items).values()) {
         // Conditional rules stay contextual to keep their order against base declarations.
         if (domain.some((item) => item.conditions.length)) {
           for (const item of domain)

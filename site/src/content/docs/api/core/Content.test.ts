@@ -435,10 +435,8 @@ describe('cx API page', () => {
       .z-3oDDjY-styles-tab-p-1{padding:8px 12px;}
       .z-3oDDjY-styles-active-text-0{color:black;}
       .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-0-text-0{color:gray;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-0-p-1{padding:8px 12px;}
       .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-0{color:gray;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-p-1{padding:8px 12px;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-2{color:black;}"
+      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-1{color:black;}"
     `)
   })
 
@@ -478,7 +476,7 @@ describe('cx API page', () => {
         color-scheme: light dark;
       }
 
-      .z-SlmzrP-styles-page-text-0, .z-Root-0-SlmzrP-styles-page-text-0 {
+      .z_SlmzrP0, .z-Root-0-SlmzrP-styles-page-text-0 {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
       "
@@ -994,7 +992,7 @@ describe('vars API page', () => {
         color-scheme: light dark;
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+      .z_CcF--v0 {
         padding: var(--z-spacing-page, 1rem);
       }
       "

@@ -325,10 +325,10 @@ describe('positionTry API page', () => {
       `"@position-try --z-positiontry-above{margin-bottom:0.5rem;position-area:top;}"`,
     )
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-position-absolute{position:absolute;}
-      .z-position-anchor---trigger{position-anchor:--trigger;}
-      .z-position-area-bottom{position-area:bottom;}
-      .z-position-try-fallbacks---z-positiontry-above{position-try-fallbacks:--z-positiontry-above;}"
+      ".z_A9MjQ10{position:absolute;}
+      .z_A9MjQ11{position-anchor:--trigger;}
+      .z_A9MjQ12{position-area:bottom;}
+      .z_A9MjQ13{position-try-fallbacks:--z-positiontry-above;}"
     `)
   })
 
@@ -360,7 +360,7 @@ describe('counterStyle API page', () => {
       `"@counter-style z-counterstyle-circled{suffix:" ";symbols:"①" "②" "③";system:fixed;}"`,
     )
     expect(output.css).toMatchInlineSnapshot(
-      `".z-list-style-type-z-counterstyle-circled{list-style-type:z-counterstyle-circled;}"`,
+      `".z_QvnI2l0{list-style-type:z-counterstyle-circled;}"`,
     )
   })
 
@@ -485,8 +485,8 @@ describe('fontPaletteValues API page', () => {
       `"@font-palette-values --z-fontpalettevalues-brand{base-palette:0;font-family:"Brand Icons";override-colors:0 #ff5500, 1 #111111;}"`,
     )
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-font-family-\\5b _22_Brand_20_Icons_22_\\5d {font-family:"Brand Icons";}
-      .z-font-palette-\\5b --z-fontpalettevalues-brand\\5d {font-palette:--z-fontpalettevalues-brand;}"
+      ".z_AfPZ6v0{font-family:"Brand Icons";}
+      .z_AfPZ6v1{font-palette:--z-fontpalettevalues-brand;}"
     `)
     expect(compile(accent!).shared).toMatchInlineSnapshot(
       `"@font-palette-values --z-fontpalettevalues-accent{font-family:"Brand Icons";override-colors:0 crimson;}"`,
@@ -512,7 +512,7 @@ describe('cssFunction API page', () => {
       `"@function --z-cssfunction-double(--size <length>) returns <length>{result:calc(var(--size) * 2);}"`,
     )
     expect(output.css).toMatchInlineSnapshot(
-      `".z-w-\\5b --z-cssfunction-double\\28 2rem\\29 \\5d {width:--z-cssfunction-double(2rem);}"`,
+      `".z_emUaHx0{width:--z-cssfunction-double(2rem);}"`,
     )
   })
 

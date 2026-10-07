@@ -47,7 +47,7 @@ export const { style, variants } = defineConfig({
 
 ## Atomic Output
 
-Each declaration becomes its own class, and a fallback array, such as `display: ['block', 'grid']`, stays together in one class. Styles share a class when reuse keeps precedence, so the card and label below share `color: red`.
+Each declaration becomes its own class, and a fallback array, such as `display: ['block', 'grid']`, stays together in one class. Styles share a class when reuse keeps precedence. The card and label below are each spread alone onto an element, so their classes never combine and they share `color: red`.
 
 ```tsx title="Card.tsx"
 import { style } from './zyzz.config.js'
@@ -62,10 +62,10 @@ export function Card() {
 
 namespace styles {
   // [!code hl:5]
-  // Atomic classes: z-text-red z-p-8px
+  // Atomic classes: z_X8T0-w0 z_X8T0-w1
   export const card = style({ color: 'red', padding: '8px' })
 
-  // Atomic classes: z-text-red
+  // Atomic classes: z_X8T0-w0
   export const label = style({ color: 'red' })
 }
 ```
@@ -73,15 +73,19 @@ namespace styles {
 ```css title="atomic.css"
 /* [!code hl:4] */
 /* Shared by the card and label */
-.z-text-red {
+.z_X8T0-w0 {
   color: red;
 }
 
 /* Used by the card only */
-.z-p-8px {
+.z_X8T0-w1 {
   padding: 8px;
 }
 ```
+
+Production builds name these rules with a module hash and a counter, and development builds use readable names, such as `z-text-red`. Styles whose classes can combine, such as exported styles, share a class only when no style defined between them sets that property differently.
+
+The compiler proves from source that these classes never combine. Classes added to the same element through DOM APIs, such as `classList.add`, can therefore lose definition order, so combine styles with `cx` instead.
 
 ## Grouped Output
 
@@ -140,7 +144,7 @@ Class-string order does not determine precedence. `cx` also preserves variable b
 
 ## Independent Composition
 
-Set `composition: 'independent'` when styles combine only through `cx`. Atomic styles then share one short-named rule for each repeated declaration, so the card and label below share their color rule even though another style sets a different color.
+Set `composition: 'independent'` when every style combines only through `cx`, including exported styles and styles passed to other components. Their atomic rules then share short names as well, even when another style sets a different value.
 
 ```ts title="zyzz.config.ts"
 import { defineConfig } from 'zyzz'
@@ -152,29 +156,11 @@ export const { style } = defineConfig({
 })
 ```
 
-```css title="independent.css"
-/* [!code hl:4] */
-/* Shared by the card and label */
-.z_X8T0-w0 {
-  color: red;
-}
-
-/* Used by the card only */
-.z_X8T0-w1 {
-  padding: 8px;
-}
-
-/* Used by a title with color: blue */
-.z_X8T0-w2 {
-  color: blue;
-}
-```
-
 Ordered output resolves conflicts between combined class lists in definition order, so an override class from a consuming module wins over the component's own style. Independent output drops that guarantee, while `cx` and the declarations inside each style keep their authored order. Development builds skip the sharing so names survive edits.
 
 ## Generated Names
 
-Common atomic declarations use readable names, and variables follow authored paths, such as `--z-color-brand`. Apply returned props rather than copying class names. When combining independent configs, give each a distinct `id`.
+Common atomic declarations use readable names unless their rules are shared by short name, and variables follow authored paths, such as `--z-color-brand`. Apply returned props rather than copying class names. When combining independent configs, give each a distinct `id`.
 
 ```ts title="admin.config.ts"
 import { defineConfig } from 'zyzz'

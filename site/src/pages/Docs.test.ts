@@ -189,7 +189,7 @@ describe('/docs', () => {
         ]
       `)
       expect(await page.title()).toMatchInlineSnapshot(
-        '"Navigation Fixture · Zyzz"',
+        '"Navigation Fixture · Guides · Zyzz"',
       )
       expect(
         await page.locator('meta[name="description"]').getAttribute('content'),
@@ -765,7 +765,9 @@ describe('/docs', () => {
       await page
         .getByRole('heading', { level: 1, name: 'Why Zyzz', exact: true })
         .waitFor()
-      expect(await page.title()).toMatchInlineSnapshot('"Why Zyzz · Zyzz"')
+      expect(await page.title()).toMatchInlineSnapshot(
+        '"Why Zyzz · Introduction · Zyzz"',
+      )
       expect(
         await page
           .locator('aside')
@@ -1561,16 +1563,22 @@ describe('/docs', () => {
   })
 
   test('renders the MDX page and shared documentation navigation', async () => {
-    const response = await fetch(`${origin}/docs/introduction/getting-started`)
+    const response = await fetch(
+      `${origin}/docs/introduction/getting-started`,
+      {
+        redirect: 'manual',
+      },
+    )
     const html = await response.text()
 
+    // The page renders at its own address without redirecting to default search values.
     expect(response.status).toMatchInlineSnapshot('200')
     expect(
       response.headers.get('content-type')?.includes('text/html'),
     ).toMatchInlineSnapshot('true')
-    expect(html.includes('Getting Started · Zyzz')).toMatchInlineSnapshot(
-      'true',
-    )
+    expect(
+      html.includes('Getting Started · Introduction · Zyzz'),
+    ).toMatchInlineSnapshot('true')
     expect(html.includes('Introduction')).toMatchInlineSnapshot('true')
     expect(html.includes('>Guides</h2>')).toMatchInlineSnapshot('true')
     expect(html.includes('>API</h2>')).toMatchInlineSnapshot('true')
@@ -1928,7 +1936,8 @@ describe('/docs', () => {
           exact: false,
         })
         .click()
-      await page.waitForURL('**mode=default')
+      // The default mode leaves the URL.
+      await page.waitForURL((url) => !url.searchParams.has('mode'))
       expect(
         new URL(page.url()).searchParams.get('framework'),
       ).toMatchInlineSnapshot('"nextjs"')
@@ -1987,7 +1996,7 @@ describe('/docs', () => {
     const installation = await fetch(`${origin}/docs/introduction/installation`)
     const markdown = await fetch(`${origin}/docs/introduction/installation.md`)
 
-    expect(response.status).toMatchInlineSnapshot('307')
+    expect(response.status).toMatchInlineSnapshot('308')
     expect(response.headers.get('location')).toMatchInlineSnapshot(
       '"/docs/introduction/getting-started"',
     )
@@ -2015,6 +2024,9 @@ describe('/docs', () => {
       )
       expect(response.headers.get('vary')).toMatchInlineSnapshot(
         '"Accept, User-Agent"',
+      )
+      expect(response.headers.get('link')).toMatchInlineSnapshot(
+        `"<https://zyzz.style/docs/introduction/getting-started>; rel="canonical""`,
       )
       expect(markdown.startsWith('# Getting Started')).toMatchInlineSnapshot(
         'true',

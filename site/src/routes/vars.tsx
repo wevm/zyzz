@@ -1,5 +1,6 @@
 /** Displays serialized configuration variables or the defaults. @module */
 import { createFileRoute } from '@tanstack/react-router'
+import * as Head from '../Head.js'
 import { Page as VariablesPage } from '../pages/Variables.js'
 import * as Variables from '../Variables.js'
 
@@ -31,12 +32,14 @@ export const Route = createFileRoute('/vars')({
       }
     }
   },
-  head: () => ({
-    meta: [
-      { title: 'Variables · Zyzz' },
-      { property: 'og:title', content: 'Variables · Zyzz' },
-    ],
-  }),
+  // Shared configurations in `?v=` point their canonical URL at the default variables.
+  head: () =>
+    Head.page({
+      description:
+        'Browse the Zyzz default theme variables, from colors and spacing to typography, shadows, and easing.',
+      path: '/vars',
+      title: 'Variables · Zyzz',
+    }),
 })
 
 function Page() {

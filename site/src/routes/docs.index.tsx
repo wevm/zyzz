@@ -4,8 +4,9 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 export const Route = createFileRoute('/docs/')({
   beforeLoad: () => {
     throw redirect({
-      to: '/docs/$',
       params: { _splat: 'introduction/getting-started' },
+      statusCode: 308,
+      to: '/docs/$',
     })
   },
 })

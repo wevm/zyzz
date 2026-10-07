@@ -3,10 +3,8 @@ import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { script } from 'zyzz/default'
 import reset from 'zyzz/reset.css?url'
+import * as Head from '../Head.js'
 import { vars } from '../zyzz.config.js'
-
-const description =
-  'Bring structure to your styles and consistency to your interfaces. Write type-safe styles in TypeScript, compiled to static CSS.'
 
 /** Defines the document shell and page metadata. */
 export const Route = createRootRoute({
@@ -39,24 +37,12 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
         name: 'viewport',
       },
+      // Pages set their own title and description with `Head.page`.
       {
         title: 'Zyzz',
       },
       {
-        content: description,
-        name: 'description',
-      },
-      {
-        content: 'Zyzz',
-        property: 'og:title',
-      },
-      {
-        content: description,
-        property: 'og:description',
-      },
-      // Crawlers require an absolute image URL, so previews of every deployment use the production image.
-      {
-        content: 'https://zyzz.style/og.png',
+        content: `${Head.origin}/og.png`,
         property: 'og:image',
       },
       {

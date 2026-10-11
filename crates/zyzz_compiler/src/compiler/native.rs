@@ -146,7 +146,7 @@ pub fn compile<'a>(
         module: if graph.is_some() {
             FxHashSet::default()
         } else {
-            identifiers(parsed)
+            identifiers(parsed, PREFIX)
         },
     };
     let mut helper = PREFIX.to_owned();
@@ -367,9 +367,9 @@ fn prelude_offset(source: &str, program: &oxc_ast::ast::Program<'_>) -> u32 {
     offset
 }
 
-/// Module identifiers ESTree spells `Identifier`, limited to those that can collide with a
-/// generated binding.
-fn identifiers<'a>(parsed: &Parsed<'a>) -> FxHashSet<&'a str> {
+/// Module identifiers ESTree spells `Identifier` that start with `prefix`, the only ones that can
+/// collide with a generated binding sharing it.
+pub(crate) fn identifiers<'a>(parsed: &Parsed<'a>, prefix: &str) -> FxHashSet<&'a str> {
     let nodes = parsed.semantic.nodes();
 
     nodes
@@ -395,7 +395,7 @@ fn identifiers<'a>(parsed: &Parsed<'a>) -> FxHashSet<&'a str> {
                 _ => return None,
             };
 
-            name.starts_with(PREFIX).then_some(name)
+            name.starts_with(prefix).then_some(name)
         })
         .collect()
 }

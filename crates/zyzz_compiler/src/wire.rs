@@ -552,9 +552,9 @@ impl Decoder {
         let targets = match raw.targets {
             None => None,
             Some(targets) => Some(Targets {
-                android: targets.android.map(data),
-                ios: targets.ios.map(data),
-                native: targets.native.map(data),
+                android: targets.android.map(|data| data.0),
+                ios: targets.ios.map(|data| data.0),
+                native: targets.native.map(|data| data.0),
                 web: match targets.web {
                     None => None,
                     Some(web) => Some(self.style(*web, validate)?),
@@ -706,21 +706,81 @@ fn scalars(entries: Vec<(Arc<str>, RawScalar)>) -> Vec<(Arc<str>, Scalar)> {
         .collect()
 }
 
-/// Converts static target data into evaluated values.
-fn data(value: serde_json::Value) -> Data {
-    match value {
-        serde_json::Value::Null => Data::Null,
-        serde_json::Value::Bool(value) => Data::Bool(value),
-        serde_json::Value::Number(number) => Data::Number(number.as_f64().unwrap_or(f64::NAN)),
-        serde_json::Value::String(text) => Data::from(text),
-        serde_json::Value::Array(items) => {
-            Data::Array(Arc::new(items.into_iter().map(data).collect()))
+/// Static target data decoded straight into evaluated values. Objects keep JSON document
+/// order, which is JavaScript property order, and no hashed map is built.
+struct JsonData(Data);
+
+impl<'de> Deserialize<'de> for JsonData {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+        struct DataVisitor;
+
+        impl<'de> Visitor<'de> for DataVisitor {
+            type Value = JsonData;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("static JSON data")
+            }
+
+            fn visit_unit<E: de::Error>(self) -> std::result::Result<Self::Value, E> {
+                Ok(JsonData(Data::Null))
+            }
+
+            fn visit_bool<E: de::Error>(self, value: bool) -> std::result::Result<Self::Value, E> {
+                Ok(JsonData(Data::Bool(value)))
+            }
+
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "JavaScript numbers are doubles."
+            )]
+            fn visit_u64<E: de::Error>(self, value: u64) -> std::result::Result<Self::Value, E> {
+                Ok(JsonData(Data::Number(value as f64)))
+            }
+
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "JavaScript numbers are doubles."
+            )]
+            fn visit_i64<E: de::Error>(self, value: i64) -> std::result::Result<Self::Value, E> {
+                Ok(JsonData(Data::Number(value as f64)))
+            }
+
+            fn visit_f64<E: de::Error>(self, value: f64) -> std::result::Result<Self::Value, E> {
+                Ok(JsonData(Data::Number(value)))
+            }
+
+            fn visit_str<E: de::Error>(self, value: &str) -> std::result::Result<Self::Value, E> {
+                Ok(JsonData(Data::from(value)))
+            }
+
+            fn visit_seq<A: SeqAccess<'de>>(
+                self,
+                mut seq: A,
+            ) -> std::result::Result<Self::Value, A::Error> {
+                let mut items = Vec::new();
+
+                while let Some(JsonData(item)) = seq.next_element()? {
+                    items.push(item);
+                }
+
+                Ok(JsonData(Data::Array(Arc::new(items))))
+            }
+
+            fn visit_map<A: MapAccess<'de>>(
+                self,
+                mut map: A,
+            ) -> std::result::Result<Self::Value, A::Error> {
+                let mut object = Object::new();
+
+                while let Some((key, JsonData(value))) = map.next_entry::<Arc<str>, JsonData>()? {
+                    object.insert(key, value);
+                }
+
+                Ok(JsonData(Data::from(object)))
+            }
         }
-        serde_json::Value::Object(entries) => Data::from(Object::from_entries(
-            entries
-                .into_iter()
-                .map(|(key, value)| (Arc::from(key), data(value))),
-        )),
+
+        deserializer.deserialize_any(DataVisitor)
     }
 }
 
@@ -1629,9 +1689,9 @@ impl<'de> Visitor<'de> for TargetsSeed<'_> {
 
         while let Some(key) = map.next_key::<Text<'de>>()? {
             match &*key.0 {
-                "android" => targets.android = Some(data(map.next_value()?)),
-                "ios" => targets.ios = Some(data(map.next_value()?)),
-                "native" => targets.native = Some(data(map.next_value()?)),
+                "android" => targets.android = Some(map.next_value::<JsonData>()?.0),
+                "ios" => targets.ios = Some(map.next_value::<JsonData>()?.0),
+                "native" => targets.native = Some(map.next_value::<JsonData>()?.0),
                 "web" => {
                     let (web, found) = map.next_value_seed(StyleSeed {
                         decoder: &mut *decoder,
@@ -1706,11 +1766,11 @@ struct RawStyle<'a> {
 #[derive(Deserialize)]
 struct RawTargets<'a> {
     #[serde(default)]
-    android: Option<serde_json::Value>,
+    android: Option<JsonData>,
     #[serde(default)]
-    ios: Option<serde_json::Value>,
+    ios: Option<JsonData>,
     #[serde(default)]
-    native: Option<serde_json::Value>,
+    native: Option<JsonData>,
     #[serde(borrow, default)]
     web: Option<Box<RawStyle<'a>>>,
 }
@@ -1766,10 +1826,6 @@ struct RawContribution<'a> {
 
 #[derive(Deserialize)]
 #[serde(tag = "kind")]
-#[expect(
-    clippy::large_enum_variant,
-    reason = "Contributions decode once per compilation."
-)]
 enum RawKind<'a> {
     #[serde(rename = "block")]
     Block {

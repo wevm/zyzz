@@ -1,6 +1,6 @@
 # Benchmarks
 
-Compiler, runtime, React render, theme, and type-instantiation benchmarks, with comparison adapters for Panda CSS, StyleX, Tailwind, and vanilla-extract. Comparison workloads are defined in `Corpus.ts`; pipeline benchmarks live beside their modules as `src/**/*.bench.ts`. Reports are written under the ignored `bench/results/` directory.
+Compiler, runtime, React render, theme, and type-instantiation benchmarks, with comparison adapters for Panda CSS, StyleX, Tailwind, Tamagui, and vanilla-extract. Tamagui joins the literal compiler workloads only. Comparison workloads are defined in `Corpus.ts`; pipeline benchmarks live beside their modules as `src/**/*.bench.ts`. Reports are written under the ignored `bench/results/` directory.
 
 Zyzz comparison lanes use `cssOutput: 'grouped'`, except the source lane, which compiles authored modules with atomic output and `composition: 'independent'`. Atomic output with ordered composition stays the application default and keeps its browser correctness coverage.
 
@@ -54,7 +54,14 @@ The application workload draws 300 components from 12 UI shapes on one design sc
 
 The source lane runs for every workload but gates only the application workload, on total gzip. Parsing and module rewriting fall outside the other lanes' timing boundaries, and module-qualified names add raw bytes that compression removes.
 
-Adapters use [StyleX's Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/), Tailwind's `compile(...).build(candidates)` with arbitrary-property utilities, [vanilla-extract's esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/), and Panda v2's `@pandacss/dev/node` driver for config loading, code generation, extraction, and emission with the base utility preset and preflight disabled. Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
+Each adapter runs the library's official compiler path:
+
+- **Panda:** v2's `@pandacss/dev/node` driver for config loading, code generation, extraction, and emission, with the base utility preset and preflight disabled.
+- **StyleX:** [the Babel plugin and rule processor](https://stylexjs.com/docs/api/configuration/babel-plugin/).
+- **Tailwind:** `compile(...).build(candidates)` with arbitrary-property utilities.
+- **Tamagui:** the `@tamagui/static` `CompilerFrontend` that its Vite and webpack plugins drive. Literal styles are inline props on `View` elements, which flatten to host elements with atomic classes. The bundle exports each element's `className`, so React's JSX runtime remains in client output.
+- **vanilla-extract:** [the esbuild plugin](https://vanilla-extract.style/documentation/integrations/esbuild/).
+- **Zyzz:** `Css.compile` from `zyzz/web` on prepared `Style.define` data with `composition: 'independent'`.
 
 Timing boundaries:
 
@@ -62,6 +69,7 @@ Timing boundaries:
 - Fixture preparation, browser checks, compression, and report writes are outside timing.
 - Panda applies its official esbuild source transformer, equivalent to `transform: true` in its bundler plugins. Source rewriting is timed, and required runtime helpers remain in measured client output.
 - Tailwind excludes content scanning; StyleX includes Babel parsing; vanilla-extract includes source loading and evaluation; Zyzz excludes definition validation, while the source lane includes parsing, extraction, and rewriting.
+- Tamagui excludes config bundling and evaluation. Each sample uses a fresh `CompilerFrontend` with the persisted plan cache disabled. Its design-system base CSS, such as the `:where(.is_View)` flex defaults, is a reset and stays out of measured CSS.
 
 All CSS passes through the same Lightning CSS minifier targeting Chrome 120, Firefox 128, and Safari 17, with source maps disabled. These are benchmark settings, not package support requirements. License comments count toward CSS size; no adapter strips them. Reports under `bench/results/{small,repeated,unique}/` record raw, gzip, and Brotli bytes for CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed assets without recounting class strings already in JavaScript.
 
@@ -210,7 +218,7 @@ The corpus adapts ideas from these suites without copying implementation code:
 - [Emotion](https://github.com/emotion-js/emotion/tree/main/scripts/benchmarks), [styled-components](https://github.com/styled-components/styled-components/tree/main/packages/benchmarks), [Stitches](https://stitches.dev/docs/benchmarks), and [Tamagui](https://tamagui.dev/docs/intro/benchmarks): deep and wide mounting, prop updates, and dynamic cardinality.
 - [css-in-js-bench](https://github.com/jantimon/css-in-js-bench): shared inputs, production payloads, and independent browser parity checks.
 
-Tamagui is excluded from the PR matrix because its extraction cost dominates CI time. Short CI samples are regression signals, not speed rankings; run longer quiet-machine measurements before making latency claims.
+Tamagui joins only the literal compiler comparison. Theme comparisons exclude it, since its theme variables ship only in `getCSS()` with its design-system reset. Its extraction cost keeps it out of render and runtime matrices. Short CI samples are regression signals, not speed rankings; run longer quiet-machine measurements before making latency claims.
 
 ## Native compiler and renders
 

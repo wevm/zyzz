@@ -37,7 +37,13 @@ const thresholds = {
   B: threshold('BENCH_SIZE_THRESHOLD', 105),
   ms: threshold('BENCH_TIME_THRESHOLD', 110),
 }
-const competitors = new Set(['panda', 'stylex', 'tailwind', 'vanilla-extract'])
+const competitors = new Set([
+  'panda',
+  'stylex',
+  'tailwind',
+  'tamagui',
+  'vanilla-extract',
+])
 if (!candidate || !output)
   throw new Error(
     'Usage: node bench/Compare.ts <results> <baseline-or-empty> <action-output>',

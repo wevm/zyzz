@@ -46,7 +46,15 @@ const report: Report = JSON.parse(
   Fs.readFileSync(Path.join(directory, 'timings.json'), 'utf8'),
 )
 const groups = report.files.flatMap((file) => file.groups)
-const competitors = ['panda', 'stylex', 'tailwind', 'vanilla-extract']
+const competitors = [
+  'panda',
+  'stylex',
+  'tailwind',
+  'tamagui',
+  'vanilla-extract',
+]
+// Tamagui theme CSS ships only with its design-system reset, so it has no matched theme lane.
+const themeCompetitors = competitors.filter((name) => name !== 'tamagui')
 const workloads = [
   ...[
     'small',
@@ -58,16 +66,19 @@ const workloads = [
     'sparse',
     'components',
   ].map((name) => ({
+    competitors,
     directory: name,
     group: `fresh compilation / ${name}`,
     lanes: ['zyzz'],
   })),
   {
+    competitors,
     directory: 'app',
     group: 'fresh compilation / app',
     lanes: ['zyzz-source'],
   },
   ...[10, 100].map((count) => ({
+    competitors: themeCompetitors,
     directory: `theme-comparison/${count}`,
     group: `theme comparison / ${count} styles`,
     lanes: ['zyzz', 'zyzz-tokens'],
@@ -81,6 +92,7 @@ const names: Record<string, string> = {
   panda: 'Panda CSS',
   stylex: 'StyleX',
   tailwind: 'Tailwind',
+  tamagui: 'Tamagui',
   'vanilla-extract': 'vanilla-extract',
   zyzz: 'Zyzz',
   'zyzz-source': 'Zyzz (source transform)',
@@ -108,7 +120,7 @@ console.log(
   '🟢 Zyzz beats every other framework · 🔴 Zyzz fails, or another framework beats a Zyzz result on speed or size. Both build time and total gzip must pass; ties fail. The source transform gates total gzip only. Total gzip includes CSS + required JavaScript.\n',
 )
 console.log(
-  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. The application workload compiles one authored module through the source transform, including parsing. See bench/README.md for each compiler’s measurement boundary.\n',
+  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. The application workload compiles one authored module through the source transform, including parsing. Tamagui runs the literal workloads only. See bench/README.md for each compiler’s measurement boundary.\n',
 )
 
 for (const workload of workloads) {
@@ -126,7 +138,7 @@ for (const workload of workloads) {
       { mean: number; size: number; sizes: Sizes; timing: Timing }
     >()
 
-    for (const library of [...workload.lanes, ...competitors]) {
+    for (const library of [...workload.lanes, ...workload.competitors]) {
       const timings = matches[0]!.benchmarks.filter(
         (entry) => entry.name === library,
       )
@@ -201,10 +213,10 @@ for (const workload of workloads) {
 
         const faster =
           untimed.has(library) ||
-          competitors.every(
+          workload.competitors.every(
             (name) => result.mean < measurements.get(name)!.mean,
           )
-        const smaller = competitors.every(
+        const smaller = workload.competitors.every(
           (name) => result.size < measurements.get(name)!.size,
         )
 

@@ -34,6 +34,8 @@
     "@pandacss/transformer": "catalog:",
     "@stylexjs/babel-plugin": "catalog:",
     "@stylexjs/stylex": "catalog:",
+    "@tamagui/core": "catalog:",
+    "@tamagui/static": "catalog:",
     "@types/babel__core": "catalog:",
     "@types/css-tree": "catalog:",
     "@types/node": "catalog:",

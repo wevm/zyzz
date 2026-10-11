@@ -18,6 +18,7 @@ describe('framework gate', () => {
     'tie',
     'missing group',
     'missing competitor',
+    'missing literal competitor',
     'no samples',
     'invalid size',
     'slower source',
@@ -26,6 +27,15 @@ describe('framework gate', () => {
     const directory = await Fs.mkdtemp(Path.resolve('.fixture-framework-'))
 
     try {
+      const competitors = [
+        'panda',
+        'stylex',
+        'tailwind',
+        'tamagui',
+        'vanilla-extract',
+      ]
+      // Theme workloads have no Tamagui lane, so passing results omit it.
+      const themeCompetitors = competitors.filter((name) => name !== 'tamagui')
       const workloads = [
         ...[
           'small',
@@ -37,16 +47,19 @@ describe('framework gate', () => {
           'sparse',
           'components',
         ].map((name) => ({
+          competitors,
           directory: name,
           group: `fresh compilation / ${name}`,
           lanes: ['zyzz'],
         })),
         {
+          competitors,
           directory: 'app',
           group: 'fresh compilation / app',
           lanes: ['zyzz-source'],
         },
         ...[10, 100].map((count) => ({
+          competitors: themeCompetitors,
           directory: `theme-comparison/${count}`,
           group: `theme comparison / ${count} styles`,
           lanes: ['zyzz', 'zyzz-tokens'],
@@ -62,13 +75,7 @@ describe('framework gate', () => {
           recursive: true,
         })
 
-        for (const library of [
-          ...workload.lanes,
-          'panda',
-          'stylex',
-          'tailwind',
-          'vanilla-extract',
-        ]) {
+        for (const library of [...workload.lanes, ...workload.competitors]) {
           const zyzz = workload.lanes.includes(library)
           // Exercise the last lane so an earlier passing workload cannot mask a loss.
           const target =
@@ -81,6 +88,11 @@ describe('framework gate', () => {
               scenario === 'missing competitor' &&
               workload.directory === 'theme-comparison/100' &&
               library === 'tailwind'
+            ) &&
+            !(
+              scenario === 'missing literal competitor' &&
+              workload.directory === 'app' &&
+              library === 'tamagui'
             )
           )
             benchmarks.push({
@@ -160,6 +172,16 @@ describe('framework gate', () => {
         expect(
           result.stdout.includes('| 🔴 Zyzz (source transform) |'),
         ).toMatchInlineSnapshot('true')
+      } else if (scenario === 'missing literal competitor') {
+        expect(result.code).toMatchInlineSnapshot('1')
+        // Only the literal workload fails, since theme workloads never require Tamagui.
+        expect(
+          result.stdout.split('\n').filter((line) => line.startsWith('🔴 ')),
+        ).toMatchInlineSnapshot(`
+          [
+            "🔴 300 Components — Application Scale: Missing or invalid measurements. See workflow logs.",
+          ]
+        `)
       } else {
         expect(result.code).toMatchInlineSnapshot('1')
 

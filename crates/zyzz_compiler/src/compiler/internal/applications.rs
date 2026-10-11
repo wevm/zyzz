@@ -6,6 +6,7 @@
 
 use std::sync::Arc;
 
+use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
     Declaration, Expression, JSXAttributeItem, JSXAttributeName, JSXElementName,
@@ -15,7 +16,7 @@ use oxc_ast::ast::{
 use oxc_ast_visit::Visit;
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use crate::compiler::internal::scope::{self, Mode};
 use crate::compiler::source::Call;
@@ -62,11 +63,15 @@ pub struct Options {
     pub dynamic: bool,
 }
 
+/// Definition calls by member name, in authored order.
+type Members<'c, 'a> = IndexMap<Arc<str>, &'c Call<'a>, FxBuildHasher>;
+
 struct Candidate<'c, 'a> {
     /// Span of the binding identifier.
     binding: Span,
     direct: Option<&'c Call<'a>>,
-    members: Vec<(Arc<str>, &'c Call<'a>)>,
+    /// Object or namespace members in authored order, by member name.
+    members: Members<'c, 'a>,
     name: Arc<str>,
     namespace: Option<Namespace>,
     ready: u32,
@@ -142,7 +147,7 @@ pub fn create<'c, 'a>(
         if let Statement::TSNamespaceDeclaration(namespace) = statement
             && let TSNamespaceDeclarationBody::TSModuleBlock(block) = &namespace.body
         {
-            let mut members: Vec<(Arc<str>, &'c Call<'a>)> = Vec::new();
+            let mut members = Members::default();
             let mut ends = crate::js::Record::new();
             let mut bindings = Vec::new();
             let mut valid = true;
@@ -173,8 +178,8 @@ pub fn create<'c, 'a>(
                         .init
                         .as_ref()
                         .and_then(|init| is_call_of(&definitions, init));
-                    let Some(call) = call
-                        .filter(|_| !members.iter().any(|(name, _)| **name == *identifier.name))
+                    let Some(call) =
+                        call.filter(|_| !members.contains_key(identifier.name.as_str()))
                     else {
                         valid = false;
                         break 'members;
@@ -185,7 +190,7 @@ pub fn create<'c, 'a>(
                         .as_ref()
                         .map_or(identifier.span.end, |annotation| annotation.span.end);
 
-                    members.push((Arc::from(identifier.name.as_str()), call));
+                    members.insert(Arc::from(identifier.name.as_str()), call);
                     ends.insert(Arc::clone(&call.name), end);
                     bindings.push((identifier.span.start, Arc::clone(&call.name)));
                 }
@@ -228,7 +233,7 @@ pub fn create<'c, 'a>(
                 continue;
             };
             let direct = is_call_of(&definitions, init);
-            let mut members: Vec<(Arc<str>, &'c Call<'a>)> = Vec::new();
+            let mut members = Members::default();
 
             if direct.is_none() {
                 let Expression::ObjectExpression(object) = init else {
@@ -257,12 +262,12 @@ pub fn create<'c, 'a>(
                         break;
                     };
 
-                    if key == "__proto__" || members.iter().any(|(name, _)| **name == *key) {
+                    if key == "__proto__" || members.contains_key(key) {
                         valid = false;
                         break;
                     }
 
-                    members.push((Arc::from(key), call));
+                    members.insert(Arc::from(key), call);
                 }
 
                 if !valid || members.is_empty() {
@@ -468,11 +473,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                 let (name, member) = member_name(reference.parent, reference.span)?;
 
                 (
-                    candidate
-                        .members
-                        .iter()
-                        .find(|(key, _)| **key == *name)
-                        .map(|(_, call)| *call),
+                    candidate.members.get(name).copied(),
                     member,
                     reference.grandparent,
                 )
@@ -607,6 +608,11 @@ impl<'c, 'a> Applications<'c, 'a> {
                 continue;
             };
             let mut erased = candidate.namespace.is_some();
+            let uninitialized: FxHashSet<&str> = applications
+                .iter()
+                .filter(|application| !application.initialized)
+                .map(|application| &*application.name)
+                .collect();
             let calls: Vec<&Call<'a>> = match candidate.direct {
                 Some(direct) => vec![direct],
                 None => candidate.members.iter().map(|(_, call)| *call).collect(),
@@ -623,9 +629,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                     continue;
                 }
 
-                let initialized = applications
-                    .iter()
-                    .all(|application| application.name != call.name || application.initialized);
+                let initialized = !uninitialized.contains(&*call.name);
 
                 output.values.insert(Arc::clone(&call.name), initialized);
                 erased &= initialized;

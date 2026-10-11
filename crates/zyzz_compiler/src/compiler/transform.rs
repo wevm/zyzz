@@ -695,14 +695,15 @@ pub fn compile<'a>(
     };
     // Styles applied only alone to DOM elements, or inside cx, never meet another style's
     // classes, so atomic ones share rules like independent styles.
+    let combined: FxHashSet<&str> = found
+        .iter()
+        .filter(|application| !application.terminal && !composing(application))
+        .map(|application| &*application.name)
+        .collect();
     let standalone: FxHashSet<Arc<str>> = local
         .iter()
         .flat_map(|local| local.values.keys())
-        .filter(|name| {
-            found.iter().all(|application| {
-                application.name != **name || application.terminal || composing(application)
-            })
-        })
+        .filter(|name| !combined.contains(&***name))
         .cloned()
         .collect();
     let schemes = options.schemes.unwrap_or(
@@ -805,13 +806,18 @@ pub fn compile<'a>(
     let mut state =
         generator.rewrite(&mut module, &walker, local.as_ref(), &found, &folded_starts)?;
 
+    // The first call of each definition decides its output, as a search in source order would.
+    let mut outputs: FxHashMap<&str, bool> = FxHashMap::default();
+
+    for call in &extracted.calls {
+        outputs
+            .entry(&call.name)
+            .or_insert(call.output == Some(ThemeOutput::Html));
+    }
+
     for application in &folded {
         let class_name = json_class(&classes, &application.name);
-        let html = extracted
-            .calls
-            .iter()
-            .find(|call| call.name == application.name)
-            .is_some_and(|call| call.output == Some(ThemeOutput::Html));
+        let html = outputs.get(&*application.name).copied().unwrap_or_default();
         let key = if html { "class" } else { "className" };
         let callee = source
             .get(application.start as usize..application.callee_end as usize)
@@ -1295,14 +1301,15 @@ impl<'a> Generator<'_, 'a> {
 
         // Definitions read only through folded applications need no class list of their own. True
         // marks definitions whose every read follows initialization.
+        let read: FxHashSet<&str> = found
+            .iter()
+            .filter(|application| !folded.contains(&application.start))
+            .map(|application| &*application.name)
+            .collect();
         let unread: FxHashMap<Arc<str>, bool> = local
             .iter()
             .flat_map(|local| local.values.iter())
-            .filter(|(name, _)| {
-                found.iter().all(|application| {
-                    application.name != **name || folded.contains(&application.start)
-                })
-            })
+            .filter(|(name, _)| !read.contains(&***name))
             .map(|(name, initialized)| (Arc::clone(name), *initialized))
             .collect();
         let namespaces: Vec<&applications::Namespace> = local

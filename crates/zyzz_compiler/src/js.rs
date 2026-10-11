@@ -677,18 +677,28 @@ impl Utf16Index {
 ///
 /// Array-index keys come first in ascending order, then other keys in insertion order, as
 /// `Object.entries` and `JSON.stringify` report them. Assigning an existing key keeps its position.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Record<V> {
-    entries: Vec<(std::sync::Arc<str>, V)>,
-    indexes: usize,
+    /// Array-index keys in ascending index order.
+    indexed: Vec<(u32, std::sync::Arc<str>, V)>,
+    /// Other keys in insertion order.
+    named: IndexMap<std::sync::Arc<str>, V, FxBuildHasher>,
 }
 
 impl<V> Default for Record<V> {
     fn default() -> Self {
         Self {
-            entries: Vec::new(),
-            indexes: 0,
+            indexed: Vec::new(),
+            named: IndexMap::default(),
         }
+    }
+}
+
+// Records are equal when they enumerate equal entries in the same order, as JavaScript objects
+// serialize them.
+impl<V: PartialEq> PartialEq for Record<V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.len() == other.len() && self.iter().eq(other.iter())
     }
 }
 
@@ -700,85 +710,94 @@ impl<V> Record<V> {
 
     /// Number of entries.
     pub fn len(&self) -> usize {
-        self.entries.len()
+        self.indexed.len() + self.named.len()
     }
 
     /// Whether the record is empty.
     pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
+        self.indexed.is_empty() && self.named.is_empty()
+    }
+
+    fn position(&self, index: u32) -> Result<usize, usize> {
+        self.indexed
+            .binary_search_by_key(&index, |(other, _, _)| *other)
     }
 
     /// Sets a key, keeping the position of an existing key.
     pub fn insert(&mut self, key: impl Into<std::sync::Arc<str>>, value: V) {
         let key = key.into();
-
-        if let Some(entry) = self.entries.iter_mut().find(|(name, _)| *name == key) {
-            entry.1 = value;
+        let Some(index) = array_index(&key) else {
+            self.named.insert(key, value);
             return;
-        }
+        };
 
-        match array_index(&key) {
-            Some(index) => {
-                let position = self
-                    .entries
-                    .get(..self.indexes)
-                    .unwrap_or_default()
-                    .iter()
-                    .position(|(name, _)| array_index(name).is_some_and(|other| other > index))
-                    .unwrap_or(self.indexes);
-
-                self.entries.insert(position, (key, value));
-                self.indexes += 1;
+        match self.position(index) {
+            Ok(position) => {
+                if let Some(entry) = self.indexed.get_mut(position) {
+                    entry.2 = value;
+                }
             }
-            None => self.entries.push((key, value)),
+            Err(position) => self.indexed.insert(position, (index, key, value)),
         }
     }
 
     /// Reads a key.
     pub fn get(&self, key: &str) -> Option<&V> {
-        self.entries
-            .iter()
-            .find(|(name, _)| &**name == key)
-            .map(|(_, value)| value)
+        match array_index(key) {
+            Some(index) => self
+                .position(index)
+                .ok()
+                .and_then(|position| self.indexed.get(position))
+                .map(|(_, _, value)| value),
+            None => self.named.get(key),
+        }
     }
 
     /// Reads a key mutably.
     pub fn get_mut(&mut self, key: &str) -> Option<&mut V> {
-        self.entries
-            .iter_mut()
-            .find(|(name, _)| &**name == key)
-            .map(|(_, value)| value)
+        match array_index(key) {
+            Some(index) => {
+                let position = self.position(index).ok()?;
+
+                self.indexed.get_mut(position).map(|(_, _, value)| value)
+            }
+            None => self.named.get_mut(key),
+        }
     }
 
     /// Whether a key exists, like `Object.hasOwn`.
     pub fn contains_key(&self, key: &str) -> bool {
-        self.entries.iter().any(|(name, _)| &**name == key)
+        self.get(key).is_some()
     }
 
     /// Removes a key.
     pub fn remove(&mut self, key: &str) -> Option<V> {
-        let position = self.entries.iter().position(|(name, _)| &**name == key)?;
+        match array_index(key) {
+            Some(index) => {
+                let position = self.position(index).ok()?;
 
-        if position < self.indexes {
-            self.indexes -= 1;
+                Some(self.indexed.remove(position).2)
+            }
+            None => self.named.shift_remove(key),
         }
-
-        Some(self.entries.remove(position).1)
     }
 
     /// Iterates entries in JavaScript order.
     pub fn iter(&self) -> impl Iterator<Item = (&std::sync::Arc<str>, &V)> {
-        self.entries.iter().map(|(key, value)| (key, value))
+        self.indexed
+            .iter()
+            .map(|(_, key, value)| (key, value))
+            .chain(self.named.iter())
     }
 
     /// Iterates keys in JavaScript order.
     pub fn keys(&self) -> impl Iterator<Item = &std::sync::Arc<str>> {
-        self.entries.iter().map(|(key, _)| key)
+        self.iter().map(|(key, _)| key)
     }
 
     /// Iterates values in JavaScript order.
     pub fn values(&self) -> impl Iterator<Item = &V> {
-        self.entries.iter().map(|(_, value)| value)
+        self.iter().map(|(_, value)| value)
     }
 }
 

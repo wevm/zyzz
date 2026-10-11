@@ -1820,6 +1820,22 @@ export namespace styles {
   export const button = style([base, focusRing, { color: 'white', '@media (width >= 600px)': { padding: '8px' } }])
 }`
 
+  // Bundles one module with its own copy of the public entrypoints.
+  async function bundle(contents: string) {
+    const result = await Esbuild.build({
+      bundle: true,
+      conditions: ['src'],
+      format: 'iife',
+      globalName: 'Module',
+      platform: 'neutral',
+      stdin: { contents, loader: 'ts', resolveDir: process.cwd() },
+      write: false,
+    })
+    return new Function(
+      `${result.outputFiles[0]!.text}; return Module`,
+    )() as Record<string, unknown>
+  }
+
   describe('style', () => {
     test('compiles definitions and literal objects into ordered declarations', () => {
       const result = Graph.compile({ modules: { 'app.ts': source } })
@@ -1945,21 +1961,6 @@ export const second = style([dynamic])`,
     })
 
     test('composes definitions created by another bundled runtime copy', async () => {
-      async function bundle(contents: string) {
-        const result = await Esbuild.build({
-          bundle: true,
-          conditions: ['src'],
-          format: 'iife',
-          globalName: 'Module',
-          platform: 'neutral',
-          stdin: { contents, resolveDir: process.cwd() },
-          write: false,
-        })
-        return new Function(
-          `${result.outputFiles[0]!.text}; return Module`,
-        )() as Record<string, unknown>
-      }
-
       const library = await bundle(
         "import { style } from 'zyzz'; export const base = style({ padding: '4px' })",
       )
@@ -1970,6 +1971,68 @@ export const second = style([dynamic])`,
 
       expect((app.compose as (base: unknown) => string)(library.base)).toBe(
         style([base, { color: 'blue' }])().className,
+      )
+    })
+
+    test('names compositions of compiled package definitions with an explicit id', async () => {
+      const publisher = Graph.compile({
+        modules: {
+          'shared.ts': `import { style } from 'zyzz'
+export const base = style({ padding: '4px' })`,
+        },
+      })
+      const output = Graph.compile({
+        compiler: false,
+        modules: {
+          'app.ts': `import { style } from 'zyzz'
+import { base } from './shared.js'
+export const card = style([base, { color: 'blue' }], { id: 'card' })`,
+        },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { zyzz: null, './shared.js': 'shared.ts' } },
+      })
+      const library = await bundle(publisher.modules['shared.ts']!.code)
+
+      expect(Object.values(output.modules['app.ts']!.classes)).toContain(
+        style([library.base as never, { color: 'blue' }], { id: 'card' })()
+          .className,
+      )
+      expect(() =>
+        style([library.base as never, { color: 'blue' }]),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Style.InvalidError: ["0"]: Composition entries require literal objects or static style definitions. Compositions of compiled definitions require an explicit id, and variants and dynamic styles are applied with cx.]`,
+      )
+    })
+
+    test('rejects native entries from another variable catalog', () => {
+      const source = (helper: string) => `import { Config } from 'zyzz'
+const { style: a } = Config.create({ vars: { base: { spacing: { cell: '2px' } }, alternate: { spacing: { cell: '6px' } } }, defaultVars: 'base' })
+const { style: b } = Config.create({ vars: { base: { spacing: { cell: '4px' } }, alternate: { spacing: { cell: '8px' } } }, defaultVars: 'base' })
+const width = a({ width: 'cell' })
+export const card = ${helper}([width, { height: 'cell' }])`
+
+      expect(() =>
+        Native.compile({
+          colorScheme: 'light',
+          contextual: true,
+          moduleId: 'app.ts',
+          source: source('b'),
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:382: Native composition entries require the variable catalog of the composing style.]`,
+      )
+
+      const output = Native.compile({
+        colorScheme: 'light',
+        contextual: true,
+        moduleId: 'app.ts',
+        source: source('a'),
+      })
+
+      expect(
+        output.code.slice(output.code.indexOf('export const card =')),
+      ).toMatchInlineSnapshot(
+        `"export const card = __zyzzNativeContextFactory0((__zyzzNative.create({"axes":{},"defaults":{},"styles":{"0":{"width":2,"height":2}}}) as import('zyzz/runtime').Native.Callable<{}>),(__zyzzNative.create({"axes":{},"defaults":{},"styles":{"0":{"width":6,"height":6}}}) as import('zyzz/runtime').Native.Callable<{}>))"`,
       )
     })
 
@@ -2041,7 +2104,7 @@ style([style({ color: 'red' })])`,
           }) as never,
         ]),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["0"]: Composition entries require literal objects or static style definitions; apply variants and dynamic styles with cx.]`,
+        `[Style.InvalidError: ["0"]: Composition entries require literal objects or static style definitions. Compositions of compiled definitions require an explicit id, and variants and dynamic styles are applied with cx.]`,
       )
     })
 

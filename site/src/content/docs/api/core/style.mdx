@@ -105,6 +105,8 @@ const button = style({ color: 'black', padding: '8px 16px' })
 const primary = style([button, { color: 'white' }])
 ```
 
+On React Native, entries must use the composing style's variable catalog, so Provider selections resolve each copied token. Without a compiler transform, a composition that includes a definition from a compiled package requires `options.id`, because compiled definitions carry only their class names.
+
 ### styles.selectors
 
 - **Type:** `{ [selector: string]: Style.LiteralProperties }{:ts}`

@@ -97,27 +97,35 @@ export function create(
     if (!Array.isArray(input)) return define(input)
 
     // Mirrors compiled composition: each entry is one ordered declaration segment.
-    return {
-      name: 'style',
-      declarations: [],
-      rules: input.map((entry: unknown, index) => {
-        if (typeof entry !== 'function') return { style: define(entry) }
+    const rules: Style.Rule[] = []
+    for (const [index, entry] of (input as readonly unknown[]).entries()) {
+      if (typeof entry !== 'function') {
+        rules.push({ style: define(entry) })
+        continue
+      }
 
-        const style = Object.getOwnPropertyDescriptor(entry, data)?.value as
-          | Style.NamedStyle
-          | undefined
-        if (style) return { style }
+      const style = Object.getOwnPropertyDescriptor(entry, data)?.value as
+        | Style.NamedStyle
+        | undefined
+      if (style) {
+        rules.push({ style })
+        continue
+      }
 
-        throw new Style.InvalidError([
-          {
-            code: 'invalid_structure',
-            message:
-              'Composition entries require literal objects or static style definitions; apply variants and dynamic styles with cx.',
-            path: [String(index)],
-          },
-        ])
-      }),
-    } satisfies Style.NamedStyle
+      // Compiled callables carry only class names, so an explicit id names the composite.
+      if (id) return undefined
+
+      throw new Style.InvalidError([
+        {
+          code: 'invalid_structure',
+          message:
+            'Composition entries require literal objects or static style definitions. Compositions of compiled definitions require an explicit id, and variants and dynamic styles are applied with cx.',
+          path: [String(index)],
+        },
+      ])
+    }
+
+    return { name: 'style', declarations: [], rules } satisfies Style.NamedStyle
   })()
 
   const className = id ? `z-style-${id}` : Identity.style(style!, namespace)

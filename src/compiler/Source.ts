@@ -1317,6 +1317,24 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
 
+        // Native tables select variable alternatives from one context per call.
+        if (
+          options.target === 'native' &&
+          !context(
+            local
+              ? themes?.nativeContext(local.start, local.end)
+              : packed?.nativeContext,
+            themes?.nativeContext(call.start, call.end),
+          )
+        ) {
+          report(
+            'unsupported_syntax',
+            'Native composition entries require the variable catalog of the composing style.',
+            entry!,
+          )
+          continue
+        }
+
         // The composing configuration decides output for every copied entry.
         parts.push(
           Object.fromEntries(
@@ -1909,6 +1927,31 @@ export class ExtractError extends Error {
   readonly diagnostics: readonly Diagnostic[]
   /** Stable namespaced error identifier. */
   override name = 'Source.ExtractError'
+}
+
+/** Accepts an entry context that the composing call selects identically. */
+function context(
+  entry: Call['nativeContext'],
+  composite: Call['nativeContext'],
+): boolean {
+  if (!entry || entry === composite) return true
+  if (!composite || entry.defaultVars !== composite.defaultVars) return false
+
+  const names = Object.keys(entry.vars)
+  return (
+    names.length === Object.keys(composite.vars).length &&
+    names.every((name) => {
+      const left = entry.vars[name]?.[Token.definition].contract
+      const right = composite.vars[name]?.[Token.definition].contract
+      return (
+        !!left &&
+        !!right &&
+        (left === right ||
+          (left[Token.identity] !== undefined &&
+            left[Token.identity] === right[Token.identity]))
+      )
+    })
+  )
 }
 
 /** Lists declarations in emitted order, through conditions and segments. */

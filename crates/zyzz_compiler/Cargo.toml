@@ -11,7 +11,6 @@ version.workspace = true
 [dependencies]
 compact_str = { workspace = true }
 indexmap = { workspace = true }
-libm = { workspace = true }
 lightningcss = { workspace = true }
 memchr = { workspace = true }
 oxc_allocator = { workspace = true }

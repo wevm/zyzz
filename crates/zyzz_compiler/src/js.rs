@@ -10,6 +10,10 @@ use indexmap::IndexMap;
 use oxc_syntax::number::ToJsString;
 use rustc_hash::FxBuildHasher;
 
+mod math;
+
+pub use math::{cos, sin, tan};
+
 /// Formats a number like ECMAScript `Number.prototype.toString()`.
 pub fn number(value: f64) -> String {
     if value == 0.0 {

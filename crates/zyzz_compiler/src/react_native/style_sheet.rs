@@ -1388,8 +1388,8 @@ impl Context<'_> {
                         };
 
                     match key {
-                        "skewX" => matrix[4] = tan(angle),
-                        "skewY" => matrix[1] = tan(angle),
+                        "skewX" => matrix[4] = js::tan(angle),
+                        "skewY" => matrix[1] = js::tan(angle),
                         _ => {
                             let (a, b) = match key {
                                 "rotateX" => (1, 2),
@@ -1397,10 +1397,10 @@ impl Context<'_> {
                                 _ => (0, 1),
                             };
 
-                            matrix[a * 4 + a] = cos(angle);
-                            matrix[b * 4 + b] = cos(angle);
-                            matrix[a * 4 + b] = sin(angle);
-                            matrix[b * 4 + a] = -sin(angle);
+                            matrix[a * 4 + a] = js::cos(angle);
+                            matrix[b * 4 + b] = js::cos(angle);
+                            matrix[a * 4 + b] = js::sin(angle);
+                            matrix[b * 4 + a] = -js::sin(angle);
                         }
                     }
                 }
@@ -1632,23 +1632,4 @@ fn function_letters(text: &str) -> Option<(&str, &str, usize)> {
         text.get(name + 1..name + 1 + body)?,
         name + body + 2,
     ))
-}
-
-// Trigonometry uses the portable fdlibm algorithms rather than the platform's libm, so output is
-// identical on every target. V8 computes `Math.tan` with fdlibm too. Its x64 `Math.sin` and
-// `Math.cos` use glibc's algorithms, which differ in the last bit for about one angle in a hundred.
-
-/// `Math.sin`.
-fn sin(value: f64) -> f64 {
-    libm::sin(value)
-}
-
-/// `Math.cos`.
-fn cos(value: f64) -> f64 {
-    libm::cos(value)
-}
-
-/// `Math.tan`.
-fn tan(value: f64) -> f64 {
-    libm::tan(value)
 }

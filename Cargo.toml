@@ -14,7 +14,6 @@ version = "0.0.0"
 compact_str = "0.9"
 indexmap = "2"
 insta = "1"
-libm = "0.2"
 lightningcss = { version = "=1.0.0-alpha.72", default-features = false, features = ["visitor"] }
 memchr = "2"
 mimalloc = "0.1"

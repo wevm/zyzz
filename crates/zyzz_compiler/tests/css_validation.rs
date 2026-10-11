@@ -697,3 +697,38 @@ fn stylesheets_render_rejects_conflicts() {
 
     insta::assert_snapshot!(rendered(&[section("a.ts", ".a { background: url(../../x.png) }")]), @"Error: Asset path escapes the supplied graph.");
 }
+
+/// Host stylesheet transport through the JSON operation `AtRules.transform` calls.
+mod transport {
+    use zyzz_compiler::api;
+
+    #[test]
+    fn renamed_at_keywords() {
+        insta::assert_snapshot!(
+            api::call(
+                "css.transport",
+                r#"{"code":"@font-feature-values Inter{font-display:swap;@styleset{nice:1}}","visitor":false}"#,
+            ),
+            @r#"{"code":"@-zyzz-ffv-000000000 Inter{font-display:swap;@styleset{nice:1}}","features":"-zyzz-ffv-000000000","import":"zyzz-anonymous-import","palette":"-zyzz-fpv-000000000","property":"zyzz-property"}"#
+        );
+    }
+
+    #[test]
+    fn unchanged_stylesheets() {
+        insta::assert_snapshot!(
+            api::call("css.transport", r#"{"code":"@media print{a{color:red}}","visitor":false}"#),
+            @"null"
+        );
+    }
+
+    #[test]
+    fn invalid_descriptors() {
+        insta::assert_snapshot!(
+            api::call(
+                "css.transport",
+                r#"{"code":"@font-feature-values Inter{font-display:soon}","visitor":false}"#,
+            ),
+            @r#"{"error":{"name":"Error","message":"Invalid font-display descriptor."}}"#
+        );
+    }
+}

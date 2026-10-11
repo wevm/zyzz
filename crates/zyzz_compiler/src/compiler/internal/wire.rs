@@ -1345,6 +1345,7 @@ fn error_name(error: &Error) -> &'static str {
         Error::Style(_) => "Style.InvalidError",
         Error::StyleSheet(_) => "StyleSheet.CompileError",
         Error::StyleSheetSelection(_) => "StyleSheet.SelectionError",
+        Error::Syntax(_) => "SyntaxError",
         Error::Themes { .. } => "Source.ThemeInvalidError",
         Error::Theme { .. } => "Theme.InvalidError",
         Error::Variants(_) => "Variants.CompileError",

@@ -87,7 +87,7 @@ impl TraceMap {
     /// Returns an error for invalid JSON or a map without string `mappings` and a `sources` list.
     pub fn from_json(json: &str) -> Result<Self> {
         let value: Json = serde_json::from_str(json).map_err(|error| {
-            Error::Message(crate::js::json_error(json).unwrap_or_else(|| error.to_string()))
+            Error::Syntax(crate::js::json_error(json).unwrap_or_else(|| error.to_string()))
         })?;
         let strings = |key: &str| -> Option<Vec<Option<String>>> {
             value.get(key)?.as_array().map(|items| {

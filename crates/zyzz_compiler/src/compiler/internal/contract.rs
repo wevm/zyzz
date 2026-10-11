@@ -552,7 +552,7 @@ pub fn read(
     hooks: &Hooks<'_>,
 ) -> Result<Library> {
     let parsed: serde_json::Value = serde_json::from_str(source).map_err(|error| {
-        Error::Message(js::json_error(source).unwrap_or_else(|| error.to_string()))
+        Error::Syntax(js::json_error(source).unwrap_or_else(|| error.to_string()))
     })?;
     let parsed = Data::from_json(&parsed);
     let data = record(&parsed)?;

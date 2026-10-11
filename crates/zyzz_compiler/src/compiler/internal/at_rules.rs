@@ -249,18 +249,28 @@ pub fn relocate_import(rule: &mut ImportRule<'_>, url: &str) {
 }
 
 /// Renamed source and the markers to restore in the output.
-struct Transport {
-    code: String,
-    features: String,
-    import: String,
-    palette: String,
-    property: String,
+pub struct Transport {
+    /// The stylesheet with transported at-keywords renamed.
+    pub code: String,
+    /// Marker standing in for `font-feature-values`.
+    pub features: String,
+    /// Temporary name of anonymous import layers, marked for visitors.
+    pub import: String,
+    /// Marker standing in for `font-palette-values`.
+    pub palette: String,
+    /// Marker standing in for `property`.
+    pub property: String,
 }
 
 impl Transport {
     /// Validates the source and renames transported at-keywords. Returns `None` when the
-    /// original code transforms unchanged.
-    fn prepare(code: &str, visitor: bool) -> Result<Option<Self>> {
+    /// original code transforms unchanged. `visitor` marks anonymous import layers, which the
+    /// visitor binding cannot round-trip.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first validation failure.
+    pub fn prepare(code: &str, visitor: bool) -> Result<Option<Self>> {
         // Stylesheets without an @ byte cannot require at-keyword transport.
         if !code.contains('@') {
             return Ok(None);
@@ -622,10 +632,15 @@ fn features(source: &str, masked: &[u8], start: usize) -> Result<()> {
 
     plain.push_str(source.get(cursor..end).unwrap_or_default());
 
+    // The JavaScript binding reports parse failures as `SyntaxError`.
     lightning::parse(&Options {
         code: &plain,
         filename: "font-feature-values.css",
         ..Options::default()
+    })
+    .map_err(|error| match error {
+        Error::Message(message) => Error::Syntax(message),
+        error => error,
     })?;
 
     Ok(())

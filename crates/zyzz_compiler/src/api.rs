@@ -105,6 +105,7 @@ pub fn error_json(error: &Error) -> String {
         Error::StyleSheetSelection(_) => {
             js::write_string(&mut output, "StyleSheet.SelectionError");
         }
+        Error::Syntax(_) => js::write_string(&mut output, "SyntaxError"),
         Error::Variants(_) => js::write_string(&mut output, "Variants.CompileError"),
         _ => js::write_string(&mut output, "Error"),
     }
@@ -128,6 +129,10 @@ pub fn call(operation: &str, input: &str) -> String {
             .and_then(|input| handles::dependencies(&input))
             .unwrap_or_else(|error| error_json(&error)),
         "css.compile" => crate::wire::compile(input),
+        #[cfg(feature = "compiler")]
+        "css.transport" => json(input)
+            .and_then(|input| handles::transport(&input))
+            .unwrap_or_else(|error| error_json(&error)),
         #[cfg(feature = "compiler")]
         "graph.compile" => json(input)
             .and_then(|input| handles::compile(&input))

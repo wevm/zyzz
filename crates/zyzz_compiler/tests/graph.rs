@@ -153,6 +153,14 @@ mod dependencies {
     }
 
     #[test]
+    fn malformed_contracts() {
+        insta::assert_snapshot!(
+            api::call("contract.dependencies", r#"{"moduleId":"lib","contract":"{"}"#),
+            @r#"{"error":{"name":"SyntaxError","message":"Expected property name or '}' in JSON at position 1 (line 1 column 2)"}}"#
+        );
+    }
+
+    #[test]
     fn invalid_contracts() {
         insta::assert_snapshot!(
             api::call("contract.dependencies", r#"{"moduleId":"lib","contract":"{}"}"#),

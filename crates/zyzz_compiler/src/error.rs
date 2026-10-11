@@ -32,6 +32,8 @@ pub enum Error {
     StyleSheet(Vec<crate::react_native::style_sheet::Diagnostic>),
     /// `StyleSheet.SelectionError`: a lookup of a missing precompiled table.
     StyleSheetSelection(String),
+    /// `SyntaxError`: text that `JSON.parse` rejects, with its message.
+    Syntax(String),
     /// `Source.ThemeInvalidError`: unsupported source syntax with its UTF-8 source span.
     Themes {
         /// Explanation of the unsupported syntax.
@@ -72,6 +74,7 @@ impl Error {
             | Self::Message(message)
             | Self::Native(message)
             | Self::StyleSheetSelection(message)
+            | Self::Syntax(message)
             | Self::Themes { message, .. }
             | Self::Variants(message) => message.clone(),
             Self::Css(diagnostics) => crate::web::css::error_message(diagnostics),

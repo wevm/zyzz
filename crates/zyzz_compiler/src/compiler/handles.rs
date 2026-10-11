@@ -715,3 +715,40 @@ pub fn transform(input: &Value) -> Result<String> {
 
     Ok(written)
 }
+
+/// Validates a host stylesheet and renames the at-keywords the host's Lightning CSS binding
+/// cannot round-trip, as `AtRules.transform` does before that binding parses it.
+///
+/// The input holds `code` and `visitor`, which marks anonymous import layers. The result is
+/// `null` when the original code parses unchanged, or the renamed `code` with the `features`,
+/// `import`, `palette`, and `property` markers that restore the parsed output.
+///
+/// # Errors
+///
+/// Returns the first validation failure.
+pub fn transport(input: &Value) -> Result<String> {
+    let code = input
+        .get("code")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let visitor = input.get("visitor").and_then(Value::as_bool) == Some(true);
+    let Some(transport) = crate::compiler::internal::at_rules::Transport::prepare(code, visitor)?
+    else {
+        return Ok("null".to_owned());
+    };
+    let mut output = String::with_capacity(transport.code.len() + 128);
+
+    output.push_str("{\"code\":");
+    js::write_string(&mut output, &transport.code);
+    output.push_str(",\"features\":");
+    js::write_string(&mut output, &transport.features);
+    output.push_str(",\"import\":");
+    js::write_string(&mut output, &transport.import);
+    output.push_str(",\"palette\":");
+    js::write_string(&mut output, &transport.palette);
+    output.push_str(",\"property\":");
+    js::write_string(&mut output, &transport.property);
+    output.push('}');
+
+    Ok(output)
+}

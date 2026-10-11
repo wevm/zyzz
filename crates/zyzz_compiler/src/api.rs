@@ -102,6 +102,9 @@ pub fn call(operation: &str, input: &str) -> String {
 
             "{}".to_owned()
         }
+        "transform.compile" => json(input)
+            .and_then(|input| handles::transform(&input))
+            .unwrap_or_else(|error| error_json(&error)),
         "version" => crate::js::quote(env!("CARGO_PKG_VERSION")),
         _ => error_json(&Error::Message(format!("Unknown operation: {operation}"))),
     }

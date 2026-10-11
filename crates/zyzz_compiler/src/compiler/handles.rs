@@ -415,3 +415,60 @@ pub fn compile(input: &Value) -> Result<String> {
 
     written
 }
+
+/// Compiles one module outside a graph, as `Transform.compile` does.
+///
+/// # Errors
+///
+/// Returns extraction and emission errors, and the TypeScript message for native targets.
+pub fn transform(input: &Value) -> Result<String> {
+    let field = |name: &str| input.get(name).filter(|value| !value.is_null());
+
+    if field("target").and_then(Value::as_str) == Some("native") {
+        return Err(Error::Message(
+            "Use Native.compile for native source output.".to_owned(),
+        ));
+    }
+
+    let module_id = field("moduleId")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let source = field("source").and_then(Value::as_str).unwrap_or_default();
+    let compiler = field("compiler").and_then(Value::as_bool);
+    let options = options(input)?;
+    let allocator = oxc_allocator::Allocator::default();
+    let parsed = crate::compiler::internal::syntax::parse(&allocator, source, module_id);
+    let extracted = crate::compiler::source::extract(
+        &allocator,
+        &crate::compiler::source::Options {
+            compiler,
+            context: None,
+            module_id,
+            parsed: Some(&parsed),
+            source,
+            target: crate::compiler::source::Target::Web,
+        },
+    )?;
+    let output = transform::compile(
+        &transform::Options {
+            compiler: compiler != Some(false),
+            composition: options.composition,
+            css_output: options.css_output,
+            development: options.development,
+            module_id,
+            owners: None,
+            schemes: field("schemes").and_then(Value::as_bool),
+            shared: options.shared,
+            source,
+            style_classes: None,
+        },
+        &extracted,
+        &parsed,
+        None,
+    )?;
+    let mut written = String::new();
+
+    write_module(&mut written, &output);
+
+    Ok(written)
+}

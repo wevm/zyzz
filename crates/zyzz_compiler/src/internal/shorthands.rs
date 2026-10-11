@@ -93,7 +93,7 @@ pub fn signature(value: &Data) -> Result<String> {
     } else {
         read(value)?
     };
-    let mut entries: Vec<(&Arc<str>, &Arc<[Arc<str>]>)> = map.iter().collect();
+    let mut entries: Vec<_> = map.iter().collect();
 
     // `<` compares UTF-16 code units.
     entries.sort_by(|(left, _), (right, _)| left.encode_utf16().cmp(right.encode_utf16()));

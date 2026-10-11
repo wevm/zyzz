@@ -160,19 +160,18 @@ impl Themes {
             .paths
             .get(&token.path)
             .cloned();
-        let name = match existing {
-            Some(name) => name,
-            None => {
-                let name = self.property(id, &token.contract, &token.path);
+        let name = if let Some(name) = existing {
+            name
+        } else {
+            let name = self.property(id, &token.contract, &token.path);
 
-                if let Some(entry) = self.contracts.get_mut(&id) {
-                    entry
-                        .paths
-                        .insert(Arc::clone(&token.path), Arc::clone(&name));
-                }
-
-                name
+            if let Some(entry) = self.contracts.get_mut(&id) {
+                entry
+                    .paths
+                    .insert(Arc::clone(&token.path), Arc::clone(&name));
             }
+
+            name
         };
         let fallback = self.literal(&token.value, Some(&token.path), Some(&token.contract));
         let mut output = String::with_capacity(name.len() + fallback.len() + 6);
@@ -804,18 +803,15 @@ pub fn render(rules: &[Rule]) -> String {
             }
         }
 
-        let index = match target {
-            Some(index) => index,
-            None => {
-                groups.push(Group {
-                    conditions: &rule.conditions,
-                    declarations: Vec::new(),
-                    latest: FxHashMap::default(),
-                    selector: &rule.selector,
-                });
-                groups.len() - 1
-            }
-        };
+        let index = target.unwrap_or_else(|| {
+            groups.push(Group {
+                conditions: &rule.conditions,
+                declarations: Vec::new(),
+                latest: FxHashMap::default(),
+                selector: &rule.selector,
+            });
+            groups.len() - 1
+        });
         let Some(group) = groups.get_mut(index) else {
             continue;
         };

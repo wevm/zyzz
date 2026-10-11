@@ -120,8 +120,5 @@ fn main() {
         println!("{name}: {count}");
     }
 
-    println!(
-        "rust time: decode {:?}, compile {:?}, encode {:?}",
-        decode, compile, encode
-    );
+    println!("rust time: decode {decode:?}, compile {compile:?}, encode {encode:?}");
 }

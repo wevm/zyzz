@@ -531,7 +531,7 @@ impl Decoder {
                 name,
                 value: value.into(),
             },
-            RawEntry::Style { style } => Entry::Style(self.style(style, false)?),
+            RawEntry::Style { style } => Entry::Style(self.style(*style, false)?),
         })
     }
 
@@ -662,7 +662,7 @@ struct RawInput {
     #[serde(default)]
     development: bool,
     #[serde(default)]
-    labels: Option<Vec<(Arc<str>, Option<Arc<str>>, Option<Arc<str>>)>>,
+    labels: Option<Vec<RawLabel>>,
     #[serde(default)]
     names: Option<Vec<(Arc<str>, Arc<str>)>>,
     #[serde(default)]
@@ -680,6 +680,9 @@ struct RawInput {
     #[serde(default)]
     vars: Option<Vec<(Arc<str>, ThemeReference)>>,
 }
+
+/// A style name with its readable name and namespace.
+type RawLabel = (Arc<str>, Option<Arc<str>>, Option<Arc<str>>);
 
 #[derive(Deserialize)]
 struct RawUnits {
@@ -1242,7 +1245,7 @@ enum RawEntry {
     #[serde(rename = "descriptor")]
     Descriptor { name: Arc<str>, value: RawScalar },
     #[serde(rename = "style")]
-    Style { style: RawStyle },
+    Style { style: Box<RawStyle> },
 }
 
 #[derive(Deserialize)]
@@ -1255,6 +1258,10 @@ struct RawContribution {
 
 #[derive(Deserialize)]
 #[serde(tag = "kind")]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "Contributions decode once per compilation."
+)]
 enum RawKind {
     #[serde(rename = "block")]
     Block {

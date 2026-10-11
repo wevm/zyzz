@@ -164,15 +164,14 @@ pub fn error_message(diagnostics: &[Diagnostic]) -> String {
 ///
 /// Returns [`Error::Css`] if declarations or themes are invalid, or class identities collide.
 pub fn compile(options: &Options<'_>, units: Option<&mut Units<'_>>) -> Result<Output> {
-    match units {
-        Some(units) => compile_with(options, units),
-        None => {
-            let mut registry = Registry::new();
-            let mut units = registry.scope("", "", Visibility::All);
-
-            compile_with(options, &mut units)
-        }
+    if let Some(units) = units {
+        return compile_with(options, units);
     }
+
+    let mut registry = Registry::new();
+    let mut units = registry.scope("", "", Visibility::All);
+
+    compile_with(options, &mut units)
 }
 
 /// One group of same-property declarations under nested conditions, in authored order.
@@ -288,10 +287,15 @@ struct Application<'a> {
     ordinal: usize,
 }
 
+/// Line shorthands whose longhands share one conflict domain once any of them is authored.
+#[derive(Debug, Default)]
+struct Lines {
+    border: bool,
+    column_rule: bool,
+    outline: bool,
+}
+
 struct Compiler<'a> {
-    combined_border: bool,
-    combined_column_rule: bool,
-    combined_outline: bool,
     conditional_rules: FxHashMap<String, Conditional>,
     conflicts: FxHashMap<&'a str, u32>,
     css_names: FxHashMap<&'a str, Box<str>>,
@@ -300,6 +304,7 @@ struct Compiler<'a> {
     groups: FxHashMap<u32, Shareable>,
     identical: FxHashMap<Option<Arc<str>>, SharedRules>,
     identities: FxHashMap<String, (Arc<str>, usize)>,
+    lines: Lines,
     logical_sizing: bool,
     nested_composition: bool,
     ordered: FxHashMap<u32, Shareable>,
@@ -452,11 +457,11 @@ impl<'a> Compiler<'a> {
             return fixed("backgroundPosition");
         }
 
-        if self.combined_column_rule && property.starts_with("columnRule") {
+        if self.lines.column_rule && property.starts_with("columnRule") {
             return fixed("columnRule");
         }
 
-        if self.combined_outline && property.starts_with("outline") {
+        if self.lines.outline && property.starts_with("outline") {
             return fixed("outline");
         }
 
@@ -465,7 +470,7 @@ impl<'a> Compiler<'a> {
         }
 
         if property.starts_with("border") {
-            if self.combined_border {
+            if self.lines.border {
                 return fixed("border");
             }
 
@@ -1080,9 +1085,6 @@ pub fn invalid_output(path: Vec<Arc<str>>) -> Error {
 fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> {
     let styles: Vec<Arc<NamedStyle>> = options.styles.iter().map(targets::web).collect();
     let mut compiler = Compiler {
-        combined_border: false,
-        combined_column_rule: false,
-        combined_outline: false,
         conditional_rules: FxHashMap::default(),
         conflicts: FxHashMap::default(),
         css_names: FxHashMap::default(),
@@ -1091,6 +1093,7 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
         groups: FxHashMap::default(),
         identical: FxHashMap::default(),
         identities: FxHashMap::default(),
+        lines: Lines::default(),
         logical_sizing: false,
         nested_composition: styles
             .iter()
@@ -1143,11 +1146,11 @@ fn run<'a>(
             let name = canonical(property);
 
             if name.starts_with("border") {
-                compiler.combined_border = true;
+                compiler.lines.border = true;
             } else if name == "columnRule" {
-                compiler.combined_column_rule = true;
+                compiler.lines.column_rule = true;
             } else if name == "outline" {
-                compiler.combined_outline = true;
+                compiler.lines.outline = true;
             }
         }
     }

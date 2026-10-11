@@ -9,13 +9,14 @@ import type * as Ast from '@oxc-project/types'
 import * as Css from '../web/Css.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Expression from './internal/Expression.js'
+import * as Extraction from './internal/Extraction.js'
 import * as Identity from '../internal/Identity.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
 import * as Scheme from '../internal/Scheme.js'
 import * as Syntax from './internal/Syntax.js'
-import * as Source from './Source.js'
+import type * as Source from './Source.js'
 import type * as Style from '../Style.js'
 import * as ThemeRules from '../web/internal/Themes.js'
 import * as Themes from './internal/Themes.js'
@@ -33,8 +34,9 @@ import * as Walker from 'oxc-walker'
 export function compile(options: compile.Options): compile.ReturnType {
   if (options.target === 'native')
     throw new Error('Use Native.compile for native source output.')
+  // Declaration source maps read the normalized call bodies that only the TypeScript analysis retains.
   const extracted =
-    options[Themes.context]?.extracted ?? Source.extract(options)
+    options[Themes.context]?.extracted ?? Extraction.extract(options)
 
   const portable = options.compiler === false
   const portableNames: Record<string, string> = {}

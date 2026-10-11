@@ -3,6 +3,7 @@
 //! Composition reads `cx(...)` arguments as a single forward walk resolves them, without
 //! evaluating expressions or changing binding reads.
 
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use indexmap::IndexMap;
@@ -540,7 +541,7 @@ impl<'a> Synthesizer<'_, 'a> {
                 let key = match &original.key {
                     PropertyKey::StaticIdentifier(identifier) => identifier.name.to_string(),
                     PropertyKey::Identifier(identifier) => identifier.name.to_string(),
-                    key => key_literal(key).unwrap_or_default(),
+                    key => key_literal(key).map(Cow::into_owned).unwrap_or_default(),
                 };
                 let span = original.key.span();
                 let keys: Vec<Arc<str>> = call

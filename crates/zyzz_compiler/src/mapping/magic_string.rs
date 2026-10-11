@@ -418,7 +418,7 @@ impl<'a> MagicString<'a> {
         self.write_mappings(&mut mappings, Some(0));
 
         SourceMap {
-            mappings: codec::encode(&mappings.raw),
+            mappings: mappings.encoder.finish(),
             names: Vec::new(),
             // `getRelativePath("", source)` splits on both separators and joins with `/`.
             sources: vec![options.source.map_or_else(String::new, |source| {
@@ -654,7 +654,7 @@ impl<'a> Bundle<'a> {
         }
 
         SourceMap {
-            mappings: codec::encode(&mappings.raw),
+            mappings: mappings.encoder.finish(),
             names: Vec::new(),
             sources: self.unique.iter().map(|(name, _)| name.clone()).collect(),
             sources_content: Some(
@@ -716,34 +716,24 @@ impl Locator {
     }
 }
 
-/// Raw mappings accumulated in generated order, as `magic-string`'s `Mappings` class builds them.
+/// Mappings encoded in generated order, as `magic-string`'s `Mappings` class builds them.
 struct Mappings {
     column: i64,
+    encoder: codec::Encoder,
     hires: bool,
-    raw: Vec<Vec<Segment>>,
 }
 
 impl Mappings {
     fn new(hires: bool) -> Self {
         Self {
             column: 0,
+            encoder: codec::Encoder::default(),
             hires,
-            raw: vec![Vec::new()],
         }
-    }
-
-    fn segments(&mut self) -> &mut Vec<Segment> {
-        if self.raw.is_empty() {
-            self.raw.push(Vec::new());
-        }
-
-        let last = self.raw.len() - 1;
-
-        &mut self.raw[last]
     }
 
     fn new_line(&mut self) {
-        self.raw.push(Vec::new());
+        self.encoder.new_line();
         self.column = 0;
     }
 
@@ -761,16 +751,14 @@ impl Mappings {
                 break;
             }
 
-            let segment = Segment::mapped(self.column, source, line, column);
-
-            self.segments().push(segment);
+            self.encoder
+                .push(Segment::mapped(self.column, source, line, column));
             self.new_line();
             previous = Some(newline);
         }
 
-        let segment = Segment::mapped(self.column, source, line, column);
-
-        self.segments().push(segment);
+        self.encoder
+            .push(Segment::mapped(self.column, source, line, column));
         self.advance(
             content
                 .get(previous.map_or(0, |index| index + 1)..)
@@ -780,29 +768,29 @@ impl Mappings {
 
     /// Maps original text unit by unit, or only at line starts without `hires`.
     fn add_unedited(&mut self, source: i64, text: &str, mut line: i64, mut column: i64) {
-        let mut first = true;
-
-        for character in text.chars() {
-            if character == '\n' {
+        for (index, text) in text.split('\n').enumerate() {
+            if index > 0 {
                 line += 1;
                 column = 0;
                 self.new_line();
-                first = true;
-                continue;
             }
 
             // An astral character is two code units, each with its own segment.
-            for _ in 0..character.len_utf16() {
-                if self.hires || first {
-                    let segment = Segment::mapped(self.column, source, line, column);
+            let units = i64::try_from(js::utf16_len(text)).unwrap_or(i64::MAX);
 
-                    self.segments().push(segment);
-                }
-
-                column += 1;
-                self.column += 1;
-                first = false;
+            if units == 0 {
+                continue;
             }
+
+            self.encoder
+                .push(Segment::mapped(self.column, source, line, column));
+
+            if self.hires {
+                self.encoder.advance(units - 1);
+            }
+
+            column += units;
+            self.column += units;
         }
     }
 
@@ -817,7 +805,7 @@ impl Mappings {
         let mut multiline = false;
 
         for line in lines {
-            self.raw.push(Vec::new());
+            self.encoder.new_line();
             last = line;
             multiline = true;
         }

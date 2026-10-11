@@ -291,35 +291,81 @@ pub fn quote(value: &str) -> String {
     output
 }
 
+/// The escape letter `JSON.stringify` writes after a backslash for each byte, `u` for a
+/// hexadecimal escape, or zero for a byte it copies.
+const ESCAPES: [u8; 256] = {
+    let mut table = [0; 256];
+    let mut byte = 0;
+
+    while byte < 0x20 {
+        table[byte] = b'u';
+        byte += 1;
+    }
+
+    table[0x08] = b'b';
+    table[0x09] = b't';
+    table[0x0a] = b'n';
+    table[0x0c] = b'f';
+    table[0x0d] = b'r';
+    table[b'"' as usize] = b'"';
+    table[b'\\' as usize] = b'\\';
+    table
+};
+
+/// Whether eight bytes need no escape: none is a control character, a quote, or a backslash.
+const fn is_plain(word: u64) -> bool {
+    const ONES: u64 = 0x0101_0101_0101_0101;
+    const HIGH: u64 = 0x8080_8080_8080_8080;
+
+    let quote = word ^ (ONES * b'"' as u64);
+    let backslash = word ^ (ONES * b'\\' as u64);
+
+    // A term flags a high bit only when some byte matches, so an empty union proves the word plain.
+    let found = (word.wrapping_sub(ONES * 0x20) & !word)
+        | (quote.wrapping_sub(ONES) & !quote)
+        | (backslash.wrapping_sub(ONES) & !backslash);
+
+    found & HIGH == 0
+}
+
 /// Appends a string quoted like `JSON.stringify(value)`.
 pub fn write_string(output: &mut String, value: &str) {
+    output.reserve(value.len() + 2);
     output.push('"');
 
     let bytes = value.as_bytes();
     let mut start = 0;
+    let mut index = 0;
 
-    for (index, byte) in bytes.iter().enumerate() {
-        let escape = match byte {
-            b'"' => "\\\"",
-            b'\\' => "\\\\",
-            b'\n' => "\\n",
-            b'\r' => "\\r",
-            b'\t' => "\\t",
-            0x08 => "\\b",
-            0x0c => "\\f",
-            0x00..=0x1f => "",
-            _ => continue,
-        };
-
-        output.push_str(value.get(start..index).unwrap_or_default());
-
-        if escape.is_empty() {
-            let _ = write!(output, "\\u{byte:04x}");
-        } else {
-            output.push_str(escape);
+    while let Some(&byte) = bytes.get(index) {
+        // Long runs without escapes, such as embedded sources, advance a word at a time.
+        if let Some(word) = bytes
+            .get(index..index + 8)
+            .and_then(|chunk| <[u8; 8]>::try_from(chunk).ok())
+            && is_plain(u64::from_le_bytes(word))
+        {
+            index += 8;
+            continue;
         }
 
-        start = index + 1;
+        let escape = ESCAPES[usize::from(byte)];
+
+        index += 1;
+
+        if escape == 0 {
+            continue;
+        }
+
+        output.push_str(value.get(start..index - 1).unwrap_or_default());
+        output.push('\\');
+
+        if escape == b'u' {
+            let _ = write!(output, "u{byte:04x}");
+        } else {
+            output.push(char::from(escape));
+        }
+
+        start = index;
     }
 
     output.push_str(value.get(start..).unwrap_or_default());

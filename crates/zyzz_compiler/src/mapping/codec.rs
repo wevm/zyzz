@@ -75,46 +75,85 @@ const CHAR_TO_INT: [u8; 128] = {
 
 /// Encodes decoded mappings into a VLQ string.
 pub fn encode(mappings: &[Vec<Segment>]) -> String {
-    let mut output = String::new();
-    let mut source = 0_i64;
-    let mut source_line = 0_i64;
-    let mut source_column = 0_i64;
-    let mut name = 0_i64;
+    let mut encoder = Encoder::default();
 
     for (index, line) in mappings.iter().enumerate() {
         if index > 0 {
-            output.push(';');
+            encoder.new_line();
         }
 
-        let mut column = 0_i64;
-
-        for (position, segment) in line.iter().enumerate() {
-            if position > 0 {
-                output.push(',');
-            }
-
-            write_integer(&mut output, segment.column - column);
-            column = segment.column;
-
-            let Some(original) = segment.original else {
-                continue;
-            };
-
-            write_integer(&mut output, original.source - source);
-            write_integer(&mut output, original.line - source_line);
-            write_integer(&mut output, original.column - source_column);
-            source = original.source;
-            source_line = original.line;
-            source_column = original.column;
-
-            if let Some(index) = original.name {
-                write_integer(&mut output, index - name);
-                name = index;
-            }
+        for segment in line {
+            encoder.push(*segment);
         }
     }
 
-    output
+    encoder.finish()
+}
+
+/// Encodes segments as they are produced in generated order, keeping the running deltas
+/// [`encode`] keeps, so producers need not buffer every segment.
+#[derive(Debug, Default)]
+pub struct Encoder {
+    column: i64,
+    name: i64,
+    output: String,
+    segments: bool,
+    source: i64,
+    source_column: i64,
+    source_line: i64,
+}
+
+impl Encoder {
+    /// Starts the next generated line.
+    pub fn new_line(&mut self) {
+        self.output.push(';');
+        self.column = 0;
+        self.segments = false;
+    }
+
+    /// Appends a segment on the current line.
+    pub fn push(&mut self, segment: Segment) {
+        if self.segments {
+            self.output.push(',');
+        }
+
+        self.segments = true;
+        write_integer(&mut self.output, segment.column - self.column);
+        self.column = segment.column;
+
+        let Some(original) = segment.original else {
+            return;
+        };
+
+        write_integer(&mut self.output, original.source - self.source);
+        write_integer(&mut self.output, original.line - self.source_line);
+        write_integer(&mut self.output, original.column - self.source_column);
+        self.source = original.source;
+        self.source_line = original.line;
+        self.source_column = original.column;
+
+        if let Some(index) = original.name {
+            write_integer(&mut self.output, index - self.name);
+            self.name = index;
+        }
+    }
+
+    /// Appends `count` segments after a mapped one, each one generated and original column
+    /// further along the same lines, as unedited text maps unit by unit.
+    pub fn advance(&mut self, count: i64) {
+        // Deltas of one column, zero sources, and zero lines encode as `CAAC`.
+        for _ in 0..count {
+            self.output.push_str(",CAAC");
+        }
+
+        self.column += count;
+        self.source_column += count;
+    }
+
+    /// Returns the encoded mappings.
+    pub fn finish(self) -> String {
+        self.output
+    }
 }
 
 /// Appends one signed integer as base64 VLQ digits.

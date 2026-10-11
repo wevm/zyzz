@@ -3,6 +3,7 @@
 //! [`collect`] reads `variable()` declarations, their object groups and namespaces, and imported
 //! variable links. The extraction walk passes each identifier read to [`Variables::reference`].
 
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use indexmap::IndexMap;
@@ -354,7 +355,9 @@ pub fn collect<'a>(
 
                 let key = match &entry.key {
                     PropertyKey::StaticIdentifier(identifier) => identifier.name.to_string(),
-                    key => statics::key_literal(key).unwrap_or_default(),
+                    key => statics::key_literal(key)
+                        .map(Cow::into_owned)
+                        .unwrap_or_default(),
                 };
                 let input = expression::unwrap(&entry.value);
 
@@ -1052,7 +1055,7 @@ impl<'a> Resolver<'a> {
 
                     let key = match &property.key {
                         PropertyKey::StaticIdentifier(identifier) => {
-                            Some(identifier.name.to_string())
+                            Some(Cow::Borrowed(identifier.name.as_str()))
                         }
                         key => statics::key_literal(key),
                     };

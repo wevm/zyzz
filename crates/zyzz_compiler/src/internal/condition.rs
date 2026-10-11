@@ -17,6 +17,13 @@ pub fn is(key: &str) -> bool {
         return false;
     }
 
+    // Property names start with neither prefix and nest nothing, so they skip the scan.
+    if !matches!(key.as_bytes().first(), Some(b':' | b'@'))
+        && memchr::memchr(b'&', key.as_bytes()).is_none()
+    {
+        return false;
+    }
+
     if nested(key) || key.starts_with(':') || matches!(key, "@starting-style" | "@scope" | "@layer")
     {
         return true;

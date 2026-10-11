@@ -4,6 +4,7 @@
 //! module's CSS keeps ordered composition with module-scoped class identities. Containment tests
 //! over call ranges use sorted interval tables, so rewriting stays linear in the number of calls.
 
+use std::borrow::Cow;
 use std::fmt::Write as _;
 use std::sync::Arc;
 
@@ -176,7 +177,7 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                     && pattern.rest.is_none()
                     && pattern.properties.iter().all(|property| {
                         let name = match &property.key {
-                            PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.to_string()),
+                            PropertyKey::StaticIdentifier(identifier) => Some(Cow::Borrowed(identifier.name.as_str())),
                             key => key_literal(key),
                         };
                         let variables =
@@ -844,16 +845,16 @@ pub fn compile<'a>(
         module_id,
         (!vars.is_empty()).then_some(vars.as_slice()),
     )?;
-    let map_source = if portable {
-        MagicString::new(source)
-    } else {
-        module.clone()
-    };
-    let map = map_source.generate_map(&MapOptions {
+    let map_options = MapOptions {
         hires: true,
         include_content: true,
         source: Some(module_id),
-    });
+    };
+    let map = if portable {
+        MagicString::new(source).generate_map(&map_options)
+    } else {
+        module.generate_map(&map_options)
+    };
     let (css, css_map) = rewrite_namespaces(&css, &extracted.namespaces, css_map)?;
 
     Ok(Output {
@@ -2696,8 +2697,10 @@ fn locations(
         let value = unwrap(&property.value);
         // ESTree spells computed identifier keys as `Identifier` too.
         let key = match &property.key {
-            PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.to_string()),
-            PropertyKey::Identifier(identifier) => Some(identifier.name.to_string()),
+            PropertyKey::StaticIdentifier(identifier) => {
+                Some(Cow::Borrowed(identifier.name.as_str()))
+            }
+            PropertyKey::Identifier(identifier) => Some(Cow::Borrowed(identifier.name.as_str())),
             key => key_literal(key),
         };
 
@@ -2742,7 +2745,7 @@ fn locations(
         let count = call
             .shorthands
             .as_ref()
-            .and_then(|shorthands| shorthands.get(key.as_str()))
+            .and_then(|shorthands| shorthands.get(&*key))
             .map_or(1, |names| names.len());
 
         for _ in 0..count {

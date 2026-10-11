@@ -4,6 +4,7 @@
 //! copies share identity with the source nodes they replace. Synthesized nodes are allocated in
 //! the module's arena with their source spans and semantic ids.
 
+use std::borrow::Cow;
 use std::cell::{OnceCell, RefCell};
 
 use oxc_allocator::{Allocator, Box as ArenaBox, CloneIn, Vec as ArenaVec};
@@ -310,33 +311,40 @@ pub fn is_literal(node: &Expression<'_>) -> bool {
 }
 
 /// The `String(value)` spelling of a literal property key, or `None` for other keys.
-pub fn key_literal(key: &PropertyKey<'_>) -> Option<String> {
+pub fn key_literal<'a>(key: &PropertyKey<'a>) -> Option<Cow<'a, str>> {
     match key {
-        PropertyKey::StringLiteral(literal) => Some(literal.value.to_string()),
-        PropertyKey::NumericLiteral(literal) => Some(js::number(literal.value)),
-        PropertyKey::BooleanLiteral(literal) => Some(literal.value.to_string()),
-        PropertyKey::NullLiteral(_) => Some("null".to_owned()),
-        PropertyKey::BigIntLiteral(literal) => Some(literal.value.to_string()),
-        PropertyKey::RegExpLiteral(literal) => Some(
-            literal
-                .raw
-                .as_ref()
-                .map_or_else(String::new, ToString::to_string),
-        ),
+        PropertyKey::StringLiteral(literal) => Some(Cow::Borrowed(literal.value.as_str())),
+        PropertyKey::NumericLiteral(literal) => Some(Cow::Owned(js::number(literal.value))),
+        PropertyKey::BooleanLiteral(literal) => {
+            Some(Cow::Borrowed(if literal.value { "true" } else { "false" }))
+        }
+        PropertyKey::NullLiteral(_) => Some(Cow::Borrowed("null")),
+        PropertyKey::BigIntLiteral(literal) => Some(Cow::Borrowed(literal.value.as_str())),
+        PropertyKey::RegExpLiteral(literal) => Some(Cow::Borrowed(
+            literal.raw.as_ref().map_or("", |raw| raw.as_str()),
+        )),
         _ => None,
     }
 }
 
 /// Whether a property key is an ESTree `Literal`.
 pub fn key_is_literal(key: &PropertyKey<'_>) -> bool {
-    key_literal(key).is_some()
+    matches!(
+        key,
+        PropertyKey::StringLiteral(_)
+            | PropertyKey::NumericLiteral(_)
+            | PropertyKey::BooleanLiteral(_)
+            | PropertyKey::NullLiteral(_)
+            | PropertyKey::BigIntLiteral(_)
+            | PropertyKey::RegExpLiteral(_)
+    )
 }
 
 /// The name of a non-computed identifier key or the spelling of a literal key.
-pub fn key_name(property: &ObjectProperty<'_>) -> Option<String> {
+pub fn key_name<'a>(property: &ObjectProperty<'a>) -> Option<Cow<'a, str>> {
     match &property.key {
         PropertyKey::StaticIdentifier(identifier) if !property.computed => {
-            Some(identifier.name.to_string())
+            Some(Cow::Borrowed(identifier.name.as_str()))
         }
         key => key_literal(key),
     }
@@ -835,11 +843,50 @@ impl<'a> Static<'a> {
         node: &'a ObjectExpression<'a>,
         allowed: &FxHashSet<u32>,
     ) -> Result<Vec<Property<'a>>> {
-        let mut result: indexmap::IndexMap<String, Property<'a>, rustc_hash::FxBuildHasher> =
+        let mut result: indexmap::IndexMap<Cow<'a, str>, Property<'a>, rustc_hash::FxBuildHasher> =
             indexmap::IndexMap::default();
+        let mut insert = |entry: Property<'a>| -> Result<()> {
+            let prototype = !entry.computed
+                && (matches!(&entry.key, PropertyKey::StaticIdentifier(identifier) if identifier.name == "__proto__")
+                    || matches!(&entry.key, PropertyKey::StringLiteral(literal) if literal.value == "__proto__"));
+
+            if prototype {
+                return Err(invalid(
+                    "Static object prototypes are unsupported.",
+                    entry.span,
+                ));
+            }
+
+            if entry.computed && !key_is_literal(&entry.key) {
+                result.insert(Cow::Owned(format!("computed:{}", entry.span.start)), entry);
+                return Ok(());
+            }
+
+            let key = key_name(entry);
+
+            let Some(key) = key.filter(|_| !entry.method && entry.kind == PropertyKind::Init)
+            else {
+                return Err(invalid(
+                    "Static data requires literal property keys without methods.",
+                    entry.span,
+                ));
+            };
+
+            let entry = if entry.shorthand {
+                let mut copy = entry.clone_in_with_semantic_ids(self.allocator);
+                copy.shorthand = false;
+                &*self.allocator.alloc(copy)
+            } else {
+                entry
+            };
+
+            result.insert(key, entry);
+
+            Ok(())
+        };
 
         for property in &node.properties {
-            let entries: Vec<Property<'a>> = match property {
+            match property {
                 ObjectPropertyKind::SpreadProperty(spread) => {
                     let value = self.resolve(&spread.argument, allowed, &mut Vec::new())?;
                     let Expression::ObjectExpression(value) = value else {
@@ -849,47 +896,11 @@ impl<'a> Static<'a> {
                         ));
                     };
 
-                    self.properties(value, allowed)?
+                    for entry in self.properties(value, allowed)? {
+                        insert(entry)?;
+                    }
                 }
-                ObjectPropertyKind::ObjectProperty(property) => vec![property],
-            };
-
-            for entry in entries {
-                let prototype = !entry.computed
-                    && (matches!(&entry.key, PropertyKey::StaticIdentifier(identifier) if identifier.name == "__proto__")
-                        || matches!(&entry.key, PropertyKey::StringLiteral(literal) if literal.value == "__proto__"));
-
-                if prototype {
-                    return Err(invalid(
-                        "Static object prototypes are unsupported.",
-                        entry.span,
-                    ));
-                }
-
-                if entry.computed && !key_is_literal(&entry.key) {
-                    result.insert(format!("computed:{}", entry.span.start), entry);
-                    continue;
-                }
-
-                let key = key_name(entry);
-
-                let Some(key) = key.filter(|_| !entry.method && entry.kind == PropertyKind::Init)
-                else {
-                    return Err(invalid(
-                        "Static data requires literal property keys without methods.",
-                        entry.span,
-                    ));
-                };
-
-                let entry = if entry.shorthand {
-                    let mut copy = entry.clone_in_with_semantic_ids(self.allocator);
-                    copy.shorthand = false;
-                    &*self.allocator.alloc(copy)
-                } else {
-                    entry
-                };
-
-                result.insert(key, entry);
+                ObjectPropertyKind::ObjectProperty(property) => insert(property)?,
             }
         }
 
@@ -1015,7 +1026,7 @@ impl<'a> Static<'a> {
                     {
                         match &signature.key {
                             PropertyKey::StaticIdentifier(identifier) => {
-                                Some(identifier.name.to_string())
+                                Some(Cow::Borrowed(identifier.name.as_str()))
                             }
                             key => key_literal(key),
                         }
@@ -1026,7 +1037,7 @@ impl<'a> Static<'a> {
                 let index = key.as_ref().and_then(|key| {
                     members
                         .iter()
-                        .position(|value| signature_key(value).as_deref() == Some(key.as_str()))
+                        .position(|value| signature_key(value).as_deref() == Some(&**key))
                 });
 
                 let (Some(index), TSSignature::TSPropertySignature(signature)) = (index, member)

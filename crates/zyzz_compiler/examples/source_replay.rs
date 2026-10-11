@@ -183,7 +183,9 @@ fn properties(node: &ObjectExpression<'_>, bindings: &Payloads<'_, '_>) -> Value
                 ObjectPropertyKind::ObjectProperty(property) => {
                     let key = match &property.key {
                         PropertyKey::StaticIdentifier(identifier) => identifier.name.to_string(),
-                        key => statics::key_literal(key).unwrap_or_default(),
+                        key => statics::key_literal(key)
+                            .map(std::borrow::Cow::into_owned)
+                            .unwrap_or_default(),
                     };
 
                     json!([

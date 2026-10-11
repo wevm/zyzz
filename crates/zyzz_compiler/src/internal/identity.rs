@@ -75,6 +75,13 @@ pub fn label(value: &str) -> String {
 pub fn name(value: &str) -> String {
     let mut output = String::with_capacity(value.len());
 
+    write_name(&mut output, value);
+
+    output
+}
+
+/// Appends a value encoded like [`name`].
+pub fn write_name(output: &mut String, value: &str) {
     for character in value.chars() {
         if character.is_ascii_alphanumeric() {
             output.push(character);
@@ -84,8 +91,6 @@ pub fn name(value: &str) -> String {
             output.push('_');
         }
     }
-
-    output
 }
 
 /// Converts an explicit id into a contract identity.

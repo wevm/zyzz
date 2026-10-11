@@ -709,7 +709,9 @@ pub fn transform(input: &Value) -> Result<String> {
         &parsed,
         None,
     )?;
-    let mut written = String::new();
+    // Both maps embed the source, so the result is about twice its code, map, and source.
+    let mut written =
+        String::with_capacity(2 * (output.code.len() + output.map.len() + source.len()));
 
     write_module(&mut written, &output);
 

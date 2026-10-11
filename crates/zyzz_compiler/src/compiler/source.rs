@@ -6,6 +6,7 @@
 //! convert them to UTF-16 at the JSON boundary. Diagnostics report UTF-16 offsets, as the public
 //! error does.
 
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use indexmap::IndexMap;
@@ -749,10 +750,10 @@ struct Converter<'c, 'm, 'p, 'a> {
 }
 
 /// A key: an identifier name or literal spelling.
-fn property_key(key: &PropertyKey<'_>) -> Option<String> {
+fn property_key<'a>(key: &PropertyKey<'a>) -> Option<Cow<'a, str>> {
     match key {
-        PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.to_string()),
-        PropertyKey::Identifier(identifier) => Some(identifier.name.to_string()),
+        PropertyKey::StaticIdentifier(identifier) => Some(Cow::Borrowed(identifier.name.as_str())),
+        PropertyKey::Identifier(identifier) => Some(Cow::Borrowed(identifier.name.as_str())),
         key => statics::key_literal(key),
     }
 }
@@ -772,12 +773,12 @@ impl<'a> Converter<'_, '_, '_, 'a> {
         }
     }
 
-    fn path(&self, prefix: &[Arc<str>], key: &str) -> Vec<Arc<str>> {
+    fn path(&self, prefix: &[Arc<str>], key: &Arc<str>) -> Vec<Arc<str>> {
         let mut path = Vec::with_capacity(prefix.len() + 2);
 
         path.push(Arc::clone(&self.name));
         path.extend(prefix.iter().cloned());
-        path.push(Arc::from(key));
+        path.push(Arc::clone(key));
         path
     }
 
@@ -1022,12 +1023,18 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 continue;
             }
 
-            let targets: Vec<Arc<str>> = self
+            let targets = self
                 .shorthands()
                 .and_then(|shorthands| shorthands.get(&key))
-                .map_or_else(|| vec![Arc::clone(&key)], |targets| targets.to_vec());
+                .map(Arc::clone);
             let path = self.path(prefix, &key);
-            let value = self.value(&property.value, &path, prefix, depth, &targets);
+            let value = self.value(
+                &property.value,
+                path,
+                prefix,
+                depth,
+                targets.as_deref().unwrap_or(std::slice::from_ref(&key)),
+            );
 
             values.insert(key, value);
         }
@@ -1150,7 +1157,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
     fn value(
         &mut self,
         node: &'a Expression<'a>,
-        path: &[Arc<str>],
+        path: Vec<Arc<str>>,
         prefix: &[Arc<str>],
         depth: usize,
         targets: &[Arc<str>],
@@ -1193,7 +1200,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
 
         let template = match node {
             Expression::TemplateLiteral(template) => {
-                self.template(template, path, prefix, depth, targets)
+                self.template(template, &path, prefix, depth, targets)
             }
             _ => None,
         };
@@ -1317,10 +1324,10 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                             values.push(Data::Undefined);
                             continue;
                         };
-                        let mut nested = path.to_vec();
+                        let mut nested = path.clone();
 
                         nested.push(Arc::from(index.to_string()));
-                        values.push(self.value(element, &nested, prefix, depth, targets));
+                        values.push(self.value(element, nested, prefix, depth, targets));
                     }
 
                     Data::Array(Arc::new(values))
@@ -1334,7 +1341,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 }
             }
         };
-        let location = self.location(span, path.to_vec());
+        let location = self.location(span, path);
 
         self.locations.push(location);
 

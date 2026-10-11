@@ -3,6 +3,7 @@
 //! The expanded body is a synthesized object whose grouping keys carry the spans of the authored
 //! nodes they come from, so declaration mapping still points at authored source.
 
+use std::borrow::Cow;
 use std::fmt::Write as _;
 use std::sync::Arc;
 
@@ -95,7 +96,9 @@ fn entries<'a>(node: &'a Expression<'a>) -> Result<Entries<'a>> {
             ));
         }
 
-        let Some(key) = key_name(property).filter(|key| result.iter().all(|(seen, _)| seen != key))
+        let Some(key) = key_name(property)
+            .map(Cow::into_owned)
+            .filter(|key| result.iter().all(|(seen, _)| seen != key))
         else {
             return Err(invalid("Recipe keys must be unique.", property.span));
         };

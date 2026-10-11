@@ -40,6 +40,9 @@
 //!
 //! `objects` and `strings` precede `styles`, which decodes in place against them.
 //!
+//! Native compilation reads only `vars` from the same input, through [`definitions`], so a host
+//! encodes its native sets as it encodes `Css.compile` scopes, with an empty `styles` list.
+//!
 //! Objects, records, and option lists keep JavaScript own-property order, which already lists
 //! array-index keys first. `Mode` carries an own property's raw value: `false` stands for a
 //! present non-string value. `vars` entries name a metadata object, `false` for a value without
@@ -65,18 +68,18 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::Deserialize;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::internal::binding::{self, Domain};
-use crate::internal::query;
 use crate::internal::token::{
     self, Composition, Contract, ContractKey, CssOutput, Expression, Mappings, Metadata, Part,
     Reference,
 };
+use crate::internal::{query, theme};
 use crate::js;
 use crate::style::{self, Declaration, Label, Labels, NamedStyle, Rule, Targets};
 use crate::web::css::{self, Names, Output};
@@ -192,21 +195,7 @@ fn malformed(message: impl fmt::Display) -> Error {
 /// Returns a plain error for malformed JSON, and `Css.CompileError` for an output mode that is
 /// neither atomic nor grouped, matching the first diagnostic `Css.compile` reports.
 pub fn decode(input: &str) -> Result<Input> {
-    let mut decoder = Decoder {
-        invalid: None,
-        objects: Vec::new(),
-        shared: FxHashSet::default(),
-        table: Vec::new(),
-    };
-    let mut deserializer = serde_json::Deserializer::from_str(input);
-    let raw = InputSeed {
-        decoder: &mut decoder,
-    }
-    .deserialize(&mut deserializer)
-    .map_err(malformed)?;
-
-    deserializer.end().map_err(malformed)?;
-
+    let (mut decoder, raw) = read(input)?;
     let styles = raw.styles;
 
     let css_output = match &raw.css_output {
@@ -304,6 +293,73 @@ pub fn decode(input: &str) -> Result<Input> {
         units,
         vars,
     })
+}
+
+/// A labeled `vars` entry, `None` for a value without definition metadata.
+pub type Set = (Arc<str>, Option<Arc<theme::Definition>>);
+
+/// Decodes the `vars` of wire input as set definitions for native compilation.
+///
+/// Entries that name the same metadata object share one definition, so identity comparisons
+/// match the JavaScript values the encoder read. Entries without definition metadata decode as
+/// `None`. The other input fields are read and ignored.
+///
+/// # Errors
+///
+/// Returns a plain error for malformed JSON or a `vars` entry that names no metadata object.
+pub fn definitions(input: &str) -> Result<Vec<Set>> {
+    let (decoder, raw) = read(input)?;
+    let mut shared: FxHashMap<usize, Arc<theme::Definition>> = FxHashMap::default();
+    let mut definitions = Vec::new();
+
+    for (name, reference) in raw.vars.unwrap_or_default() {
+        let definition = match reference {
+            ThemeReference::Index(index) => {
+                if let Some(definition) = shared.get(&index) {
+                    Some(Arc::clone(definition))
+                } else {
+                    let Some(Resolved::Theme(metadata)) = decoder.objects.get(index) else {
+                        return Err(malformed("vars must refer to theme metadata"));
+                    };
+                    // Native compilation reads only the metadata of a set.
+                    let definition = Arc::new(theme::Definition {
+                        class_name: theme::ClassName::Contract,
+                        metadata: metadata.clone(),
+                        tokens: Data::Undefined,
+                        vars: Data::Undefined,
+                    });
+
+                    shared.insert(index, Arc::clone(&definition));
+                    Some(definition)
+                }
+            }
+            ThemeReference::Invalid | ThemeReference::Nullish => None,
+        };
+
+        definitions.push((name, definition));
+    }
+
+    Ok(definitions)
+}
+
+/// Reads the tables and top-level fields of wire input.
+fn read(input: &str) -> Result<(Decoder, RawInput<'_>)> {
+    let mut decoder = Decoder {
+        invalid: None,
+        objects: Vec::new(),
+        shared: FxHashSet::default(),
+        table: Vec::new(),
+    };
+    let mut deserializer = serde_json::Deserializer::from_str(input);
+    let raw = InputSeed {
+        decoder: &mut decoder,
+    }
+    .deserialize(&mut deserializer)
+    .map_err(malformed)?;
+
+    deserializer.end().map_err(malformed)?;
+
+    Ok((decoder, raw))
 }
 
 /// A resolved identity table entry.

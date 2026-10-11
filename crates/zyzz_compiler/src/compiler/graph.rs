@@ -25,8 +25,9 @@ use crate::compiler::internal::contract::{self, Configuration, Library};
 use crate::compiler::internal::contributions::FACTORIES;
 use crate::compiler::internal::stylesheets::{self, Rendered, Section};
 use crate::compiler::internal::syntax::{self, Parsed};
-use crate::compiler::internal::themes::{self, Link, LinkKind, Owner};
-use crate::compiler::internal::{identifiers, relative, statics, vars};
+use crate::compiler::internal::themes::{self, Link, LinkKind, Owner, VarsRead};
+use crate::compiler::internal::{identifiers, native_vars, relative, statics, vars};
+use crate::compiler::native;
 use crate::compiler::source::{self, Code, Diagnostic, ExtractError, Extracted, Target};
 use crate::compiler::transform::{self, Owners};
 use crate::data::Data;
@@ -35,6 +36,8 @@ use crate::internal::theme::Definition;
 use crate::internal::token::{Composition, CssOutput};
 use crate::internal::{identity, variable_sets};
 use crate::js::{self, Record, Utf16Index};
+use crate::react_native::internal::scalar;
+use crate::react_native::style_sheet;
 use crate::style::{self, NamedStyle};
 use crate::web::css;
 use crate::web::internal::class_name::{Registry, Visibility};
@@ -67,10 +70,81 @@ pub struct Options {
     pub imports: Option<Map<Map<Option<Arc<str>>>>>,
     /// Complete source graph keyed by stable package-relative module identities.
     pub modules: Map<Arc<str>>,
+    /// Native output context. `None` compiles web modules and CSS.
+    pub native: Option<NativeOptions>,
     /// Reset stylesheet supplied by the host, ordered before authored layers.
     pub reset: Option<Arc<str>>,
     /// Publishes variable scopes once with shared rules, for CSS-only hosts.
     pub shared: Option<Shared>,
+}
+
+/// The native target of a graph: every `Native.compile` option except the module identity and
+/// source.
+///
+/// Optional fields record whether the host supplied the option, since a different set of
+/// supplied options invalidates the incremental cache as it does in TypeScript.
+#[derive(Clone, Debug)]
+pub struct NativeOptions {
+    /// Scheme compiled into each module's callables.
+    pub color_scheme: Option<Arc<str>>,
+    /// Retains every set and scheme for render-local selection.
+    pub contextual: Option<bool>,
+    /// Authored `fonts` option, `Data::Undefined` when omitted.
+    pub fonts: Data,
+    /// Authored `platform` option, `Data::Undefined` when omitted.
+    pub platform: Data,
+    /// Babel emission: omits type annotations, and owners publish every exported profile.
+    pub runtime: bool,
+    /// Label selected from `vars`.
+    pub set: Option<Arc<str>>,
+    /// Authored `units` option, `Data::Undefined` when omitted.
+    pub units: Data,
+    /// Compatible sets by label. Entries compare by identity across compilations.
+    pub vars: Option<Record<Arc<Definition>>>,
+}
+
+impl Default for NativeOptions {
+    fn default() -> Self {
+        Self {
+            color_scheme: None,
+            contextual: None,
+            fonts: Data::Undefined,
+            platform: Data::Undefined,
+            runtime: false,
+            set: None,
+            units: Data::Undefined,
+            vars: None,
+        }
+    }
+}
+
+/// One compiled module of a graph.
+#[derive(Clone, Debug)]
+pub enum Compiled {
+    /// Native source with adapter edits.
+    Native(Arc<native::Output>),
+    /// Web source with its stylesheet.
+    Web(Arc<transform::Output>),
+}
+
+impl Compiled {
+    /// Whether both hold the same output value, which unchanged modules keep across
+    /// compilations.
+    pub fn same(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Native(left), Self::Native(right)) => Arc::ptr_eq(left, right),
+            (Self::Web(left), Self::Web(right)) => Arc::ptr_eq(left, right),
+            _ => false,
+        }
+    }
+
+    /// The web transform output, absent for native modules.
+    pub fn web(&self) -> Option<&Arc<transform::Output>> {
+        match self {
+            Self::Native(_) => None,
+            Self::Web(output) => Some(output),
+        }
+    }
 }
 
 /// A packed or reset stylesheet resource loaded independently of module CSS.
@@ -91,7 +165,7 @@ pub struct Output {
     pub dependencies: Map<Arc<[Arc<str>]>>,
     /// Rewritten modules and their stylesheets, in module identity order. Unchanged modules keep
     /// the output of the compilation that produced them.
-    pub modules: Map<Arc<transform::Output>>,
+    pub modules: Map<Compiled>,
     /// Packed resources deduplicated by the host across scoped source outputs.
     pub packed: Vec<Resource>,
     /// Independently loaded reset for module-based hosts.
@@ -105,7 +179,8 @@ pub struct Output {
 /// # Errors
 ///
 /// Returns `Source.ExtractError` for unsupported graphs and source, and `Css.CompileError` from
-/// emission.
+/// emission. Native graphs return `Native.CompileError` for a reset, disabled rewriting, or
+/// unsupported native source, and the table errors of [`native::compile`].
 pub fn compile(options: &Options) -> Result<Arc<Output>> {
     Graph::default().compile(options)
 }
@@ -147,6 +222,7 @@ struct Module {
     contribution_starts: Vec<u32>,
     contributions: Vec<Contribution>,
     namespaces: Vec<namespace::Definition>,
+    native_vars: Vec<VarsRead>,
     styles: style::Definition,
     theme_appearances: Vec<Arc<str>>,
     theme_calls: Vec<themes::Call>,
@@ -192,6 +268,7 @@ impl Module {
             contribution_starts: extracted.contribution_starts.clone(),
             contributions: extracted.contributions.clone(),
             namespaces: extracted.namespaces.clone(),
+            native_vars: extracted.native_vars.clone(),
             styles: extracted.styles.clone(),
             theme_appearances: extracted.theme_appearances.clone(),
             theme_calls: extracted.theme_calls.clone(),
@@ -238,6 +315,7 @@ struct Cache {
     entry: Option<Arc<str>>,
     extracted: Map<Arc<Module>>,
     libraries: Map<Arc<Library>>,
+    native: Option<NativeOptions>,
     reset: Option<Arc<str>>,
     resolutions: Map<String>,
     result: Arc<Output>,
@@ -280,7 +358,95 @@ fn signature<'v>(entries: impl Iterator<Item = (&'v str, Option<&'v str>)>) -> S
     output
 }
 
+/// JavaScript truthiness, as `Boolean(value)` reads it.
+fn truthy(value: &Data) -> bool {
+    match value {
+        Data::Bool(value) => *value,
+        Data::Null | Data::Undefined => false,
+        Data::Number(value) => *value != 0.0 && !value.is_nan(),
+        Data::String(value) => !value.is_empty(),
+        _ => true,
+    }
+}
+
+/// Whether a nested native mapping is unchanged, comparing presence, key count, and each entry
+/// with `===`, as the TypeScript cache compares `fonts` and `units`.
+fn same_mapping(previous: &Data, next: &Data) -> bool {
+    let entries = |value: &Data| -> Vec<(Arc<str>, Data)> {
+        match value {
+            Data::Object(object) => object
+                .iter()
+                .map(|(key, value)| (Arc::clone(key), value.clone()))
+                .collect(),
+            Data::Array(items) => items
+                .iter()
+                .enumerate()
+                .map(|(index, value)| (Arc::from(index.to_string()), value.clone()))
+                .collect(),
+            _ => Vec::new(),
+        }
+    };
+    let previous_entries = entries(previous);
+    let next_entries = entries(next);
+
+    truthy(previous) == truthy(next)
+        && previous_entries.len() == next_entries.len()
+        && previous_entries.iter().all(|(name, entry)| {
+            next_entries
+                .iter()
+                .find(|(key, _)| key == name)
+                .is_some_and(|(_, value)| value.same(entry))
+        })
+}
+
+/// Whether a cache built for `previous` native options can serve `next`, comparing supplied
+/// options with `===` and nested mappings and sets by entry.
+fn same_native(previous: Option<&NativeOptions>, next: Option<&NativeOptions>) -> bool {
+    let (Some(previous), Some(next)) = (previous, next) else {
+        return previous.is_none() && next.is_none();
+    };
+    let same_vars = match (&previous.vars, &next.vars) {
+        (None, None) => true,
+        (Some(left), Some(right)) => {
+            left.len() == right.len()
+                && left.iter().all(|(name, definition)| {
+                    right
+                        .get(name)
+                        .is_some_and(|other| Arc::ptr_eq(definition, other))
+                })
+        }
+        _ => false,
+    };
+
+    previous.runtime == next.runtime
+        && previous.color_scheme == next.color_scheme
+        && previous.contextual == next.contextual
+        && previous.set == next.set
+        && previous.platform.same(&next.platform)
+        && previous.fonts.is_undefined() == next.fonts.is_undefined()
+        && same_mapping(&previous.fonts, &next.fonts)
+        && previous.units.is_undefined() == next.units.is_undefined()
+        && same_mapping(&previous.units, &next.units)
+        && same_vars
+}
+
 fn build(options: &Options, cache: Option<&Cache>) -> Result<Option<Cache>> {
+    let cache = cache.filter(|cache| same_native(cache.native.as_ref(), options.native.as_ref()));
+
+    if options.native.is_some() {
+        if options.reset.is_some() {
+            return Err(Error::Native(
+                "The CSS reset is only supported by web builds.".to_owned(),
+            ));
+        }
+
+        if options.compiler == Some(false) {
+            return Err(Error::Native(
+                "Native graph compilation requires source rewriting.".to_owned(),
+            ));
+        }
+    }
+
     let rewrite = options.compiler != Some(false);
     let cache = cache.filter(|cache| {
         cache.rewrite == rewrite
@@ -366,6 +532,7 @@ fn build(options: &Options, cache: Option<&Cache>) -> Result<Option<Cache>> {
         emitted_rules: FxHashMap::default(),
         extracted: Map::default(),
         fresh: FxHashMap::default(),
+        identifiers: FxHashMap::default(),
         indexes: ids
             .iter()
             .enumerate()
@@ -392,7 +559,10 @@ fn build(options: &Options, cache: Option<&Cache>) -> Result<Option<Cache>> {
         graph.visit(id)?;
     }
 
-    graph.web(&ids, rewrite, contracts).map(Some)
+    match &options.native {
+        Some(native) => graph.native(native, &ids, contracts).map(Some),
+        None => graph.web(&ids, rewrite, contracts).map(Some),
+    }
 }
 
 struct Slot {
@@ -408,6 +578,8 @@ struct Build<'p, 'a> {
     emitted_rules: FxHashMap<String, (String, Arc<str>)>,
     extracted: Map<Arc<Module>>,
     fresh: FxHashMap<Arc<str>, Extracted<'a>>,
+    /// Generated-prefix identifiers of the modules this compilation extracted, for native naming.
+    identifiers: FxHashMap<Arc<str>, FxHashSet<Arc<str>>>,
     indexes: FxHashMap<Arc<str>, usize>,
     libraries: Map<Arc<Library>>,
     offsets: &'p [OnceCell<Utf16Index>],
@@ -1529,7 +1701,11 @@ impl<'p, 'a> Build<'p, 'a> {
                 module_id,
                 parsed: Some(parsed),
                 source,
-                target: Target::Web,
+                target: if options.native.is_some() {
+                    Target::Native
+                } else {
+                    Target::Web
+                },
             },
         )?;
         let mut exports = forwarded;
@@ -1651,6 +1827,18 @@ impl<'p, 'a> Build<'p, 'a> {
         let linked = self.link(module_id)?;
         let module = Arc::new(Module::detach(&linked.extracted));
 
+        // Only extracted modules contribute names, as the TypeScript graph walks only those.
+        if options.native.is_some()
+            && let Some(parsed) = self.parse(module_id)
+        {
+            let names = native::identifiers(parsed, "__zyzz")
+                .into_iter()
+                .map(Arc::from)
+                .collect();
+
+            self.identifiers.insert(Arc::clone(module_id), names);
+        }
+
         self.fresh.insert(Arc::clone(module_id), linked.extracted);
         self.retain(module_id, module, linked.imports)
     }
@@ -1757,6 +1945,111 @@ impl<'p, 'a> Build<'p, 'a> {
 
         Ok(module)
     }
+}
+
+/// Publishes a link for a native contract, whose packed styles carry no compiled classes.
+fn packed_link(link: &Link) -> Link {
+    let mut link = link.clone();
+
+    if let Some(style) = &link.style {
+        let mut packed = (**style).clone();
+
+        packed.class_name = Some(packed.class_name.unwrap_or_else(|| Arc::from("")));
+        link.style = Some(Arc::new(packed));
+    }
+
+    if let Some(members) = &link.members {
+        let mut packed = Record::new();
+
+        for (name, member) in members.iter() {
+            packed.insert(Arc::clone(name), packed_link(member));
+        }
+
+        link.members = Some(packed);
+    }
+
+    link
+}
+
+/// Native variable profiles a graph assigns to modules, and the names they reserve.
+struct Profiles {
+    /// Identifiers of the extracted modules and every generated profile name.
+    reserved: FxHashSet<String>,
+    /// Profiles by module identity, created when a module defines or reads one.
+    shared: FxHashMap<Arc<str>, native_vars::Shared>,
+}
+
+impl Profiles {
+    /// Names the serialized profile `value` that `owner` exports, once per owner and value.
+    fn define(&mut self, owner: &Arc<str>, value: String) -> String {
+        let definitions = &mut self
+            .shared
+            .entry(Arc::clone(owner))
+            .or_default()
+            .definitions;
+
+        if let Some(name) = definitions.get(&value) {
+            return name.clone();
+        }
+
+        let mut key = String::with_capacity(owner.len() + value.len());
+
+        key.push_str(owner);
+        key.push_str(&value);
+
+        // Hashing the owner keeps names independent of which modules share the graph.
+        let mut name = format!("__zyzzProfile{}", identity::hash(&key));
+
+        while self.reserved.contains(&name) {
+            name.push('_');
+        }
+
+        self.reserved.insert(name.clone());
+        definitions.insert(value, name.clone());
+        name
+    }
+}
+
+/// Replaces a trailing `.ts`, `.tsx`, `.cts`, or `.mts` extension with its JavaScript form, as
+/// `/\.([cm]?)tsx?$/` with `.$1js` does.
+fn script_output(path: &str) -> String {
+    for (extension, output) in [
+        (".ctsx", ".cjs"),
+        (".mtsx", ".mjs"),
+        (".cts", ".cjs"),
+        (".mts", ".mjs"),
+        (".tsx", ".js"),
+        (".ts", ".js"),
+    ] {
+        if let Some(stem) = path.strip_suffix(extension) {
+            return format!("{stem}{output}");
+        }
+    }
+
+    path.to_owned()
+}
+
+/// The relative specifier from a module to the module that owns a profile.
+fn relative_specifier(module_id: &str, owner: &str) -> String {
+    let mut from: Vec<&str> = module_id.split('/').collect();
+
+    from.pop();
+
+    let to: Vec<&str> = owner.split('/').collect();
+    let common = from
+        .iter()
+        .zip(&to)
+        .take_while(|(left, right)| left == right)
+        .count();
+    let up = from.len() - common;
+    let mut specifier = if up == 0 {
+        "./".to_owned()
+    } else {
+        "../".repeat(up)
+    };
+
+    specifier.push_str(&to.get(common..).unwrap_or_default().join("/"));
+    script_output(&specifier)
 }
 
 /// Publishes a link with the class names its style compiled to in this graph.
@@ -2178,6 +2471,334 @@ impl Build<'_, '_> {
         result
     }
 
+    /// The specifier a module imports another module's profile constants with, if any.
+    fn profile_source(
+        &self,
+        native: &NativeOptions,
+        module_id: &str,
+        owner: &str,
+    ) -> Option<String> {
+        // Host identities are opaque, so reuse the consumer's own resolved specifier.
+        if native.runtime
+            && let Some(imports) = &self.options.imports
+        {
+            return imports.get(module_id).and_then(|imports| {
+                imports
+                    .iter()
+                    .find(|(_, target)| target.as_deref() == Some(owner))
+                    .map(|(specifier, _)| specifier.to_string())
+            });
+        }
+
+        Some(relative_specifier(module_id, owner))
+    }
+
+    /// Packed library links by the specifiers of a module's value imports and re-exports.
+    fn imported_libraries(
+        &self,
+        module_id: &str,
+        parsed: &Parsed<'_>,
+    ) -> Result<Record<Record<Link>>> {
+        let mut libraries = Record::new();
+
+        for statement in &parsed.program.body {
+            let (specifier, span) = match statement {
+                Statement::ImportDeclaration(declaration) => {
+                    if declaration.import_kind == ImportOrExportKind::Type || type_only(declaration)
+                    {
+                        continue;
+                    }
+
+                    (&declaration.source.value, declaration.span)
+                }
+                Statement::ExportFromDeclaration(declaration) => {
+                    if declaration.export_kind == ImportOrExportKind::Type
+                        || (!declaration.specifiers.is_empty()
+                            && declaration
+                                .specifiers
+                                .iter()
+                                .all(|specifier| specifier.export_kind == ImportOrExportKind::Type))
+                    {
+                        continue;
+                    }
+
+                    (&declaration.source.value, declaration.span)
+                }
+                Statement::ExportAllDeclaration(declaration) => {
+                    if declaration.export_kind == ImportOrExportKind::Type {
+                        continue;
+                    }
+
+                    (&declaration.source.value, declaration.span)
+                }
+                _ => continue,
+            };
+
+            if let Some(target) = self.resolve(module_id, specifier, span)?
+                && let Some(library) = self.libraries.get(&target)
+            {
+                libraries.insert(specifier.as_str(), library.links.clone());
+            }
+        }
+
+        Ok(libraries)
+    }
+
+    /// Rewrites every module for an explicit native target, with the native variable profiles
+    /// that owning modules export to their readers, and publishes contracts of packed links.
+    fn native(
+        mut self,
+        native: &NativeOptions,
+        ids: &[Arc<str>],
+        contracts: String,
+    ) -> Result<Cache> {
+        let options = self.options;
+        let previous = self.previous;
+        let scalar = scalar::Options::read(&native.fonts, &native.units);
+        let encode = |read: &VarsRead| -> Result<String> {
+            native_vars::compile(&native_vars::Options {
+                default_vars: &read.default_vars,
+                scalar: &scalar,
+                unnamed: read.unnamed,
+                vars: &read.vars,
+            })
+            .map(|profiles| profiles.to_json())
+            .map_err(|error| Error::Native(error.text()))
+        };
+        let mut profiles = Profiles {
+            reserved: self
+                .identifiers
+                .values()
+                .flatten()
+                .map(ToString::to_string)
+                .collect(),
+            shared: FxHashMap::default(),
+        };
+
+        if ids.iter().any(|id| {
+            self.extracted
+                .get(id)
+                .is_some_and(|module| !module.native_vars.is_empty())
+        }) {
+            style_sheet::compile(
+                &style::Definition::default(),
+                &style_sheet::Options {
+                    fonts: native.fonts.clone(),
+                    platform: native.platform.clone(),
+                    units: native.units.clone(),
+                    vars: Data::Undefined,
+                },
+            )?;
+        }
+
+        // Single-file adapters compile each owner without its consumers, so owners publish every
+        // exported profile.
+        if native.runtime {
+            for id in ids {
+                let Some(module) = self.extracted.get(id) else {
+                    continue;
+                };
+
+                for link in module.theme_exports.values() {
+                    let owned = self
+                        .owners
+                        .get(&link.call.name)
+                        .is_some_and(|owner| owner.module_id == *id);
+                    let profiled = link.call.variable_set
+                        || (link.kind == LinkKind::Config
+                            && link.call.variable_config
+                            && !link.call.initialization
+                            && !link.call.root);
+
+                    if !owned || !profiled {
+                        continue;
+                    }
+
+                    let read = themes::vars_read(
+                        &link.call,
+                        &link.definition,
+                        link.members.as_ref(),
+                        0,
+                        0,
+                    );
+
+                    // Consumers that read this profile report the same error.
+                    if let Ok(value) = encode(&read) {
+                        profiles.define(id, value);
+                    }
+                }
+            }
+        }
+
+        for id in ids {
+            let Some(module) = self.extracted.get(id).cloned() else {
+                continue;
+            };
+
+            for read in &module.native_vars {
+                // Packed catalogs without source retain their local fallback.
+                let Some(owner) = self
+                    .owners
+                    .get(&read.owner)
+                    .map(|owner| Arc::clone(&owner.module_id))
+                    .filter(|owner| options.modules.contains_key(owner))
+                else {
+                    continue;
+                };
+                let value = encode(read)?;
+                let name = if native.runtime {
+                    profiles
+                        .shared
+                        .get(&owner)
+                        .and_then(|shared| shared.definitions.get(&value))
+                        .cloned()
+                } else {
+                    Some(profiles.define(&owner, value))
+                };
+                let Some(name) = name else {
+                    continue;
+                };
+                let source = if owner == *id {
+                    None
+                } else {
+                    let source = self
+                        .profile_source(native, id, &owner)
+                        .filter(|source| !source.is_empty());
+
+                    if source.is_none() {
+                        continue;
+                    }
+
+                    source
+                };
+
+                profiles
+                    .shared
+                    .entry(Arc::clone(id))
+                    .or_default()
+                    .reads
+                    .insert(read.start, native_vars::Import { name, source });
+            }
+        }
+
+        let mut modules: Map<Compiled> = Map::default();
+
+        for id in ids {
+            let Some(module) = self.extracted.get(id).cloned() else {
+                continue;
+            };
+
+            // Single-file profiles derive only from this module's extraction and its
+            // dependencies.
+            if let Some(previous) = previous
+                && (native.runtime || profiles.shared.is_empty())
+                && previous
+                    .extracted
+                    .get(id)
+                    .is_some_and(|extracted| Arc::ptr_eq(extracted, &module))
+                && let Some(output) = previous.result.modules.get(id)
+            {
+                modules.insert(Arc::clone(id), output.clone());
+                continue;
+            }
+
+            let Some(parsed) = self.parse(id) else {
+                continue;
+            };
+            let libraries = self.imported_libraries(id, parsed)?;
+            let extracted = match self.fresh.remove(id) {
+                Some(extracted) => extracted,
+                None => self.link(id)?.extracted,
+            };
+            let context = themes::Context {
+                identifiers: self.identifiers.get(id).cloned(),
+                libraries: Some(libraries),
+                ..themes::Context::default()
+            };
+            let output = native::compile(
+                &native::Options {
+                    color_scheme: native.color_scheme.as_deref(),
+                    context: Some(&context),
+                    contextual: native.contextual == Some(true),
+                    fonts: native.fonts.clone(),
+                    module_id: id,
+                    platform: native.platform.clone(),
+                    runtime: native.runtime,
+                    set: native.set.as_deref(),
+                    shared: profiles.shared.get(id),
+                    source: parsed.source,
+                    units: native.units.clone(),
+                    vars: native.vars.as_ref(),
+                },
+                &extracted,
+                parsed,
+            )?;
+
+            modules.insert(Arc::clone(id), Compiled::Native(Arc::new(output)));
+        }
+
+        let mut published: Map<String> = Map::default();
+
+        for id in ids {
+            let Some(module) = self.extracted.get(id) else {
+                continue;
+            };
+
+            if module.theme_exports.is_empty() {
+                continue;
+            }
+
+            let mut links = Record::new();
+
+            for (name, link) in module.theme_exports.iter() {
+                links.insert(Arc::clone(name), packed_link(link));
+            }
+
+            published.insert(
+                Arc::clone(id),
+                contract::write(&contract::Write {
+                    class_rules: &[],
+                    configurations: &[],
+                    links: &links,
+                    module_id: id,
+                    stylesheets: &[],
+                    themes: &self.themes,
+                })?,
+            );
+        }
+
+        Ok(Cache {
+            composition: options.composition,
+            contracts,
+            css_output: options.css_output,
+            development: options.development,
+            entry: options.entry.clone(),
+            extracted: self.extracted,
+            libraries: self.libraries,
+            native: Some(native.clone()),
+            reset: options.reset.clone(),
+            resolutions: self.resolutions,
+            result: Arc::new(Output {
+                contracts: published,
+                dependencies: self.dependencies,
+                modules,
+                packed: Vec::new(),
+                reset: None,
+                shared: None,
+            }),
+            retained: self.retained,
+            rewrite: true,
+            schemes: false,
+            // The TypeScript native cache records no shared mode, so supplying one invalidates it.
+            shared: None,
+            sources: options.modules.clone(),
+            themes: self.themes,
+            transformed: previous
+                .map(|previous| previous.transformed.clone())
+                .unwrap_or_default(),
+        })
+    }
+
     /// Emits module CSS, shared stylesheets, and contracts for a web graph.
     #[expect(
         clippy::too_many_lines,
@@ -2538,6 +3159,7 @@ impl Build<'_, '_> {
                                 .is_some_and(|extracted| Arc::ptr_eq(extracted, &module))
                     })
                     .and_then(|previous| previous.result.modules.get(module_id))
+                    .and_then(Compiled::web)
                     .filter(|output| registry.restore(module_id, &output.units, &visible))
                     .cloned(),
             };
@@ -2766,7 +3388,7 @@ impl Build<'_, '_> {
                 .filter_map(|id| {
                     modules
                         .get(id)
-                        .map(|output| (Arc::clone(id), Arc::clone(output)))
+                        .map(|output| (Arc::clone(id), Compiled::Web(Arc::clone(output))))
                 })
                 .collect(),
             packed,
@@ -2782,6 +3404,7 @@ impl Build<'_, '_> {
             entry: options.entry.clone(),
             extracted: self.extracted,
             libraries: self.libraries,
+            native: None,
             reset: options.reset.clone(),
             resolutions: self.resolutions,
             result: Arc::new(output),

@@ -3,24 +3,46 @@
 //! Hosts create a compiler, compile snapshots with it, and release it, so each handle owns the
 //! cache of one host lifecycle. A compilation result marks modules whose output is the same value
 //! the previous result of that handle returned, which lets hosts keep their decoded objects.
+//!
+//! Graph options mirror `Graph.compile.Options` as JSON. The `native` object holds `platform`,
+//! `fonts`, `units`, `set`, `colorScheme`, `contextual`, `runtime` (the Babel emission mode), and
+//! `vars`. `vars` is the text `Wire.encode` writes for `{ styles: { styles: [] }, vars }`, or the
+//! same JSON as an object. A web module serializes as its transform output, and a native module as
+//! `{"code","edits":[{"start","end","code","expression"}],"map"}` with UTF-16 edit offsets and
+//! the source map as JSON.
 
+use std::fmt::Write as _;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use rustc_hash::FxHashMap;
 use serde_json::Value;
 
-use crate::compiler::graph::{self, Graph, Map, Output, Resource};
+use crate::compiler::graph::{self, Compiled, Graph, Map, NativeOptions, Output, Resource};
+use crate::compiler::internal::edits::Edit;
 use crate::compiler::internal::stylesheets::Rendered;
-use crate::compiler::transform;
+use crate::compiler::internal::{syntax, themes};
+use crate::compiler::{native, source, transform};
+use crate::data::Data;
 use crate::error::{Error, Result};
+use crate::internal::theme::Definition;
 use crate::internal::token::{Composition, CssOutput};
-use crate::js;
+use crate::js::{self, Record};
 use crate::web::internal::themes::Shared;
 
 struct Entry {
     graph: Graph,
     previous: Option<Arc<Output>>,
+    /// The native sets of the last compilation, reused while their text is unchanged so the
+    /// graph compares them by identity as it compares JavaScript values.
+    vars: Option<Vars>,
+}
+
+/// Decoded native sets and the text they came from.
+#[derive(Clone)]
+struct Vars {
+    record: Record<Arc<Definition>>,
+    text: String,
 }
 
 /// Live compilers by handle. Only the host adapters' explicit create and release calls change
@@ -53,12 +75,81 @@ fn text(value: Option<&Value>) -> Option<Arc<str>> {
     value.and_then(Value::as_str).map(Arc::from)
 }
 
+/// Decodes native sets from `Wire.encode` text.
+fn definitions(text: &str) -> Result<Record<Arc<Definition>>> {
+    let mut record = Record::new();
+
+    for (name, definition) in crate::wire::definitions(text)? {
+        record.insert(name, definition.ok_or_else(|| malformed("native.vars"))?);
+    }
+
+    Ok(record)
+}
+
+/// Decodes native options, reusing `previous` sets when their text is unchanged.
+fn native_options(
+    input: &serde_json::Map<String, Value>,
+    previous: Option<&Vars>,
+) -> Result<(NativeOptions, Option<Vars>)> {
+    let field = |name: &str| input.get(name).filter(|value| !value.is_null());
+    let string = |name: &str| match field(name) {
+        None => Ok(None),
+        Some(Value::String(value)) => Ok(Some(Arc::from(value.as_str()))),
+        Some(_) => Err(malformed(name)),
+    };
+    let data = |name: &str| input.get(name).map_or(Data::Undefined, Data::from_json);
+    let contextual = match field("contextual") {
+        None => None,
+        Some(Value::Bool(value)) => Some(*value),
+        Some(_) => return Err(malformed("contextual")),
+    };
+    let vars = match field("vars") {
+        None => None,
+        Some(value) => {
+            let text = match value {
+                Value::String(text) => text.clone(),
+                Value::Object(_) => value.to_string(),
+                _ => return Err(malformed("native.vars")),
+            };
+
+            match previous {
+                Some(previous) if previous.text == text => Some(previous.clone()),
+                _ => Some(Vars {
+                    record: definitions(&text)?,
+                    text,
+                }),
+            }
+        }
+    };
+
+    Ok((
+        NativeOptions {
+            color_scheme: string("colorScheme")?,
+            contextual,
+            fonts: data("fonts"),
+            platform: data("platform"),
+            runtime: field("runtime")
+                .and_then(Value::as_bool)
+                .unwrap_or_default(),
+            set: string("set")?,
+            units: data("units"),
+            vars: vars.as_ref().map(|vars| vars.record.clone()),
+        },
+        vars,
+    ))
+}
+
 /// Decodes graph options from their JSON form.
 ///
 /// # Errors
 ///
 /// Returns a plain error for malformed input.
 pub fn options(input: &Value) -> Result<graph::Options> {
+    decode(input, None).map(|(options, _)| options)
+}
+
+/// Decodes graph options, reusing `previous` native sets when their text is unchanged.
+fn decode(input: &Value, previous: Option<&Vars>) -> Result<(graph::Options, Option<Vars>)> {
     let field = |name: &str| input.get(name).filter(|value| !value.is_null());
     let imports = match field("imports") {
         None => None,
@@ -101,8 +192,16 @@ pub fn options(input: &Value) -> Result<graph::Options> {
         Some("defaults") => Some(Shared::Defaults),
         Some(_) => return Err(malformed("shared")),
     };
+    let (native, vars) = match field("native") {
+        None => (None, None),
+        Some(Value::Object(native)) => {
+            let (native, vars) = native_options(native, previous)?;
 
-    Ok(graph::Options {
+            (Some(native), vars)
+        }
+        Some(_) => return Err(malformed("native")),
+    };
+    let options = graph::Options {
         complete: field("complete")
             .and_then(Value::as_bool)
             .unwrap_or_default(),
@@ -116,9 +215,12 @@ pub fn options(input: &Value) -> Result<graph::Options> {
         entry: text(field("entry")),
         imports,
         modules: strings(field("modules"), "modules")?.unwrap_or_default(),
+        native,
         reset: text(field("reset")),
         shared,
-    })
+    };
+
+    Ok((options, vars))
 }
 
 fn write_record<'r>(output: &mut String, entries: impl Iterator<Item = (&'r str, &'r str)>) {
@@ -261,6 +363,41 @@ pub fn write_module(output: &mut String, module: &transform::Output) {
     output.push('}');
 }
 
+fn write_edits(output: &mut String, edits: &[Edit]) {
+    output.push('[');
+
+    for (index, edit) in edits.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        let _ = write!(
+            output,
+            "{{\"start\":{},\"end\":{},\"code\":",
+            edit.start, edit.end
+        );
+        js::write_string(output, &edit.code);
+        output.push_str(if edit.expression {
+            ",\"expression\":true}"
+        } else {
+            ",\"expression\":false}"
+        });
+    }
+
+    output.push(']');
+}
+
+/// Appends one native module: its code, adapter edits, and source map.
+pub fn write_native_module(output: &mut String, module: &native::Output) {
+    output.push_str("{\"code\":");
+    js::write_string(output, &module.code);
+    output.push_str(",\"edits\":");
+    write_edits(output, &module.edits);
+    output.push_str(",\"map\":");
+    output.push_str(&module.map);
+    output.push('}');
+}
+
 /// Serializes a graph result. Modules whose output is the value `previous` holds become `0`.
 pub fn write_output(result: &Output, previous: Option<&Output>) -> String {
     let mut output = String::from("{\"contracts\":");
@@ -303,12 +440,12 @@ pub fn write_output(result: &Output, previous: Option<&Output>) -> String {
         |output, (id, module)| {
             let same = previous
                 .and_then(|previous| previous.modules.get(&**id))
-                .is_some_and(|previous| Arc::ptr_eq(previous, module));
+                .is_some_and(|previous| previous.same(module));
 
-            if same {
-                output.push('0');
-            } else {
-                write_module(output, module);
+            match module {
+                _ if same => output.push('0'),
+                Compiled::Native(module) => write_native_module(output, module),
+                Compiled::Web(module) => write_module(output, module),
             }
         },
     );
@@ -352,6 +489,7 @@ pub fn create() -> u32 {
         Entry {
             graph: Graph::default(),
             previous: None,
+            vars: None,
         },
     );
 
@@ -374,13 +512,12 @@ pub fn release(handle: u32) {
 ///
 /// Returns the graph's compilation errors, and a plain error for an unknown handle.
 pub fn compile(input: &Value) -> Result<String> {
-    let options = options(input)?;
     let Some(handle) = input
         .get("handle")
         .and_then(Value::as_u64)
         .and_then(|handle| u32::try_from(handle).ok())
     else {
-        return Ok(write_output(&*graph::compile(&options)?, None));
+        return Ok(write_output(&*graph::compile(&options(input)?)?, None));
     };
 
     // Compile outside the lock, so compilers of other handles stay usable meanwhile.
@@ -392,7 +529,12 @@ pub fn compile(input: &Value) -> Result<String> {
             .and_then(|graphs| graphs.remove(&handle))
             .ok_or_else(|| Error::Message(format!("Unknown graph compiler: {handle}")))?
     };
-    let result = entry.graph.compile(&options);
+    let result = decode(input, entry.vars.as_ref()).and_then(|(options, vars)| {
+        let result = entry.graph.compile(&options)?;
+
+        entry.vars = vars;
+        Ok(result)
+    });
     let written = result.map(|result| {
         let same = entry
             .previous
@@ -469,6 +611,77 @@ pub fn transform(input: &Value) -> Result<String> {
     let mut written = String::new();
 
     write_module(&mut written, &output);
+
+    Ok(written)
+}
+
+/// Compiles one module for an explicit native target, as `Native.compile` does.
+///
+/// The input holds `moduleId`, `source`, and the native options of a graph. `context: true`
+/// extracts with an empty graph context, as the Babel adapter supplies one. The output is
+/// `{"code","edits","map","recipes"}`: `map` is the source map text and `recipes` the
+/// `JSON.stringify` form of the recipe tables.
+///
+/// # Errors
+///
+/// Returns extraction errors, `Native.CompileError` for unsupported native source, and the
+/// table errors of [`native::compile`].
+pub fn native_compile(input: &Value) -> Result<String> {
+    let Value::Object(object) = input else {
+        return Err(malformed("native"));
+    };
+    let field = |name: &str| object.get(name).filter(|value| !value.is_null());
+    let module_id = field("moduleId")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let source = field("source").and_then(Value::as_str).unwrap_or_default();
+    let (native, _) = native_options(object, None)?;
+    let context = themes::Context::default();
+    let context = (field("context").and_then(Value::as_bool) == Some(true)).then_some(&context);
+    let allocator = oxc_allocator::Allocator::default();
+    let parsed = syntax::parse(&allocator, source, module_id);
+    let extracted = source::extract(
+        &allocator,
+        &source::Options {
+            compiler: None,
+            context,
+            module_id,
+            parsed: Some(&parsed),
+            source,
+            target: source::Target::Native,
+        },
+    )?;
+    let output = native::compile(
+        &native::Options {
+            color_scheme: native.color_scheme.as_deref(),
+            context,
+            contextual: native.contextual == Some(true),
+            fonts: native.fonts,
+            module_id,
+            platform: native.platform,
+            runtime: native.runtime,
+            set: native.set.as_deref(),
+            shared: None,
+            source,
+            units: native.units,
+            vars: native.vars.as_ref(),
+        },
+        &extracted,
+        &parsed,
+    )?;
+    let mut written = String::with_capacity(output.code.len() * 2 + output.map.len() * 2);
+
+    written.push_str("{\"code\":");
+    js::write_string(&mut written, &output.code);
+    written.push_str(",\"edits\":");
+    write_edits(&mut written, &output.edits);
+    written.push_str(",\"map\":");
+    js::write_string(&mut written, &output.map);
+    written.push_str(",\"recipes\":");
+    js::write_object(&mut written, output.recipes.iter(), |output, definition| {
+        definition.write_json(output);
+    });
+    written.push('}');
 
     Ok(written)
 }

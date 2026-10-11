@@ -7,6 +7,13 @@ use std::fmt;
 pub enum Error {
     /// `Config.InvalidError` for invalid configuration options or incompatible named sets.
     Config(String),
+    /// `Stylesheets.ConflictError`: packed stylesheet contributions that disagree.
+    Conflict {
+        /// Explanation of the conflict.
+        message: String,
+        /// Trusted graph owner or source of the conflicting section.
+        source: std::sync::Arc<str>,
+    },
     /// `Css.CompileError` with every compilation diagnostic.
     Css(Vec<crate::web::css::Diagnostic>),
     /// `Source.ExtractError` with every source diagnostic, in source order.
@@ -57,6 +64,7 @@ impl Error {
     pub fn text(&self) -> String {
         match self {
             Self::Config(message)
+            | Self::Conflict { message, .. }
             | Self::Message(message)
             | Self::StyleSheetSelection(message)
             | Self::Themes { message, .. }

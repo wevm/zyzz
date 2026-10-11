@@ -44,8 +44,10 @@ pub struct Options<'s, 'a> {
     pub compiler: bool,
     /// Composition for styles without their own mode.
     pub composition: Option<CssComposition>,
-    /// Graph context: linked owners and imported style classes.
-    pub context: Option<&'s themes::Context<'a>>,
+    /// Defining calls of the graph's theme scopes, by scope key.
+    pub owners: Option<&'s Owners>,
+    /// Class names of styles compiled elsewhere in the graph, by style identity.
+    pub style_classes: Option<&'s FxHashMap<Arc<str>, Arc<str>>>,
     /// Default CSS representation for styles without their own mode.
     pub css_output: Option<CssOutput>,
     /// Keeps live definitions for development updates.
@@ -59,6 +61,9 @@ pub struct Options<'s, 'a> {
     /// Complete module text.
     pub source: &'a str,
 }
+
+/// Defining calls of theme scopes, by scope key, in registration order.
+pub type Owners = IndexMap<Arc<str>, themes::Owner, FxBuildHasher>;
 
 /// Composition mode for compiled applications.
 pub type CssComposition = Composition;
@@ -779,7 +784,8 @@ pub fn compile<'a>(
     };
     let generator = Generator {
         classes: classes(extracted, &emitted, portable, &portable_names),
-        context: options.context,
+        owners: options.owners,
+        style_classes: options.style_classes,
         emitted: &emitted,
         extracted,
         identifiers: &walker.identifiers,
@@ -1207,7 +1213,8 @@ struct State {
 
 struct Generator<'g, 'a> {
     classes: IndexMap<Arc<str>, String, FxBuildHasher>,
-    context: Option<&'g themes::Context<'a>>,
+    owners: Option<&'g Owners>,
+    style_classes: Option<&'g FxHashMap<Arc<str>, Arc<str>>>,
     emitted: &'g css::Output,
     extracted: &'g Extracted<'a>,
     identifiers: &'g FxHashMap<&'a str, Vec<Span>>,
@@ -1409,8 +1416,7 @@ impl<'a> Generator<'_, 'a> {
                         .get(&input.name)
                         .map(String::as_str)
                         .or_else(|| {
-                            self.context
-                                .and_then(|context| context.style_classes.as_ref())
+                            self.style_classes
                                 .and_then(|classes| classes.get(&input.name))
                                 .map(|class| &**class)
                         })
@@ -2302,12 +2308,7 @@ impl<'a> Generator<'_, 'a> {
 
         let mut linked_owners: FxHashMap<&str, &themes::Owner> = FxHashMap::default();
 
-        for (key, owner) in self
-            .context
-            .and_then(|context| context.owners.as_ref())
-            .iter()
-            .flat_map(|owners| owners.iter())
-        {
+        for (key, owner) in self.owners.iter().flat_map(|owners| owners.iter()) {
             if let Some(class) = emitted.vars.get(key) {
                 linked_owners.insert(class, owner);
             }

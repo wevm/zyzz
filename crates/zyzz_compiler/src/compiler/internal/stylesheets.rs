@@ -6,6 +6,7 @@ use rustc_hash::FxHashMap;
 
 use crate::data::Data;
 use crate::error::{Error, Result};
+use crate::mapping::gen_mapping::EncodedSourceMap;
 use crate::web::internal::contributions;
 use crate::web::internal::namespace;
 
@@ -316,4 +317,46 @@ pub fn write(sections: &[Section]) -> Vec<Section> {
             copy
         })
         .collect()
+}
+
+/// Combined reachable sections with their layer order, source map, and relocated assets.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Rendered {
+    /// Portable asset targets keyed by emitted placeholders.
+    pub assets: Vec<(String, String)>,
+    /// Combined stylesheet text.
+    pub css: String,
+    /// Source map of the combined stylesheet.
+    pub map: EncodedSourceMap,
+    /// Trusted owner of each asset placeholder.
+    pub owners: Vec<(String, String)>,
+}
+
+/// Combines reachable sections, layer constraints, source maps, and asset identities.
+///
+/// # Errors
+///
+/// Returns [`Error::Conflict`] for contributions that disagree, and CSS parse failures.
+// Placeholder until the at-rule port lands. Sections without CSS still order their layers.
+pub fn render(sections: &[Section]) -> Result<Rendered> {
+    if sections.iter().any(|section| !section.css.is_empty()) {
+        return Err(Error::Message(
+            "Stylesheet rendering is not available in this build.".to_owned(),
+        ));
+    }
+
+    let lists: Vec<&[Arc<str>]> = sections
+        .iter()
+        .flat_map(|section| section.layers.iter().map(Vec::as_slice))
+        .collect();
+    let layers = contributions::order(&lists).map_err(Error::Message)?;
+
+    Ok(Rendered {
+        css: if layers.is_empty() {
+            String::new()
+        } else {
+            format!("@layer {};", layers.join(","))
+        },
+        ..Rendered::default()
+    })
 }

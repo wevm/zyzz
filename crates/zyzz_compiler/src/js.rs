@@ -584,3 +584,124 @@ impl Utf16Index {
         }
     }
 }
+
+/// A string-keyed record that enumerates in JavaScript own-property order.
+///
+/// Array-index keys come first in ascending order, then other keys in insertion order, as
+/// `Object.entries` and `JSON.stringify` report them. Assigning an existing key keeps its position.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Record<V> {
+    entries: Vec<(std::sync::Arc<str>, V)>,
+    indexes: usize,
+}
+
+impl<V> Default for Record<V> {
+    fn default() -> Self {
+        Self {
+            entries: Vec::new(),
+            indexes: 0,
+        }
+    }
+}
+
+impl<V> Record<V> {
+    /// Creates an empty record.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Number of entries.
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Whether the record is empty.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    /// Sets a key, keeping the position of an existing key.
+    pub fn insert(&mut self, key: impl Into<std::sync::Arc<str>>, value: V) {
+        let key = key.into();
+
+        if let Some(entry) = self.entries.iter_mut().find(|(name, _)| *name == key) {
+            entry.1 = value;
+            return;
+        }
+
+        match array_index(&key) {
+            Some(index) => {
+                let position = self
+                    .entries
+                    .get(..self.indexes)
+                    .unwrap_or_default()
+                    .iter()
+                    .position(|(name, _)| array_index(name).is_some_and(|other| other > index))
+                    .unwrap_or(self.indexes);
+
+                self.entries.insert(position, (key, value));
+                self.indexes += 1;
+            }
+            None => self.entries.push((key, value)),
+        }
+    }
+
+    /// Reads a key.
+    pub fn get(&self, key: &str) -> Option<&V> {
+        self.entries
+            .iter()
+            .find(|(name, _)| &**name == key)
+            .map(|(_, value)| value)
+    }
+
+    /// Reads a key mutably.
+    pub fn get_mut(&mut self, key: &str) -> Option<&mut V> {
+        self.entries
+            .iter_mut()
+            .find(|(name, _)| &**name == key)
+            .map(|(_, value)| value)
+    }
+
+    /// Whether a key exists, like `Object.hasOwn`.
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.entries.iter().any(|(name, _)| &**name == key)
+    }
+
+    /// Removes a key.
+    pub fn remove(&mut self, key: &str) -> Option<V> {
+        let position = self.entries.iter().position(|(name, _)| &**name == key)?;
+
+        if position < self.indexes {
+            self.indexes -= 1;
+        }
+
+        Some(self.entries.remove(position).1)
+    }
+
+    /// Iterates entries in JavaScript order.
+    pub fn iter(&self) -> impl Iterator<Item = (&std::sync::Arc<str>, &V)> {
+        self.entries.iter().map(|(key, value)| (key, value))
+    }
+
+    /// Iterates keys in JavaScript order.
+    pub fn keys(&self) -> impl Iterator<Item = &std::sync::Arc<str>> {
+        self.entries.iter().map(|(key, _)| key)
+    }
+
+    /// Iterates values in JavaScript order.
+    pub fn values(&self) -> impl Iterator<Item = &V> {
+        self.entries.iter().map(|(_, value)| value)
+    }
+}
+
+impl<V> FromIterator<(std::sync::Arc<str>, V)> for Record<V> {
+    fn from_iter<T: IntoIterator<Item = (std::sync::Arc<str>, V)>>(iter: T) -> Self {
+        let mut record = Self::new();
+
+        for (key, value) in iter {
+            record.insert(key, value);
+        }
+
+        record
+    }
+}

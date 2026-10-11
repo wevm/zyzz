@@ -8,6 +8,7 @@ pub mod identity;
 pub mod lexical;
 pub mod literal;
 pub mod query;
+pub mod recipe;
 pub mod rule_reference;
 pub mod scheme;
 pub mod targets;

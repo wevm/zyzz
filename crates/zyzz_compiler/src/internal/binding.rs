@@ -59,6 +59,8 @@ pub struct Reference {
     pub name: String,
     /// Accepted value domain.
     pub domain: Domain,
+    /// Whether an empty string binds as zero, for string-typed numeric slots.
+    pub zero: bool,
 }
 
 /// Whether a custom property name is a valid binding name.

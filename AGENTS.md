@@ -82,7 +82,8 @@ The compiler is written in Rust and reaches Node through a napi-rs binding with 
 ### Memory and Data Layout
 
 - Parse into an `oxc_allocator::Allocator` owned by the compile instance and `reset()` it between modules. Arena values never need `Drop`, so they hold `&'a str`, `oxc_allocator::Vec`, or `Box`, never `String` or `std::vec::Vec`.
-- Link records by index, not by reference or pointer. Store styles, rules, declarations, modules, and themes in `IndexVec` arenas addressed by `oxc_index` newtypes, so `Option<Id>` stays four bytes. Key AST side tables by `NodeId` or `SymbolId`, never by `Span` or address.
+- Link mutable records by index, not by reference or pointer. Store growing collections in `IndexVec` arenas addressed by `oxc_index` newtypes, so `Option<Id>` stays four bytes. Key AST side tables by `NodeId` or `SymbolId`, or by span start where a synthesized copy must share identity with the source node it replaces, as static normalization does.
+- Share immutable definitions such as contracts, token references, and themes through `Arc`, and compare identity with `Arc::ptr_eq`, as frozen objects compare in TypeScript. Interior mutability is limited to private caches.
 
   ```rust
   // `oxc_index` with its `nonmax` feature.

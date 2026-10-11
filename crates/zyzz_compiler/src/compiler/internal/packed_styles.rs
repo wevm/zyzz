@@ -44,6 +44,9 @@ pub struct Definition {
     pub native_context: Option<NativeContext>,
     /// `html` when the style emits HTML attributes.
     pub output: Option<Output>,
+    /// Whether the definition was read from a contract, which lists `className` after
+    /// `attributes` rather than last.
+    pub packed: bool,
     /// Variable slots.
     pub slots: Vec<Arc<str>>,
     /// Static recipe alternatives.
@@ -120,6 +123,7 @@ pub fn create(call: &Call<'_>, style: Arc<NamedStyle>) -> Definition {
         dynamic,
         native_context: call.native_context.clone(),
         output: call.output,
+        packed: false,
         slots,
         static_recipe,
         style,
@@ -217,7 +221,8 @@ fn encode_expression(output: &mut String, expression: &token::Expression) {
     output.push_str("]}");
 }
 
-fn encode_binding(output: &mut String, binding: &binding::Reference) {
+/// Appends a binding reference as `JSON.stringify` writes it.
+pub(crate) fn encode_binding(output: &mut String, binding: &binding::Reference) {
     output.push_str("{\"name\":");
     js::write_string(output, &binding.name);
     output.push_str(",\"type\":");
@@ -653,6 +658,7 @@ pub fn read(
         dynamic,
         native_context: None,
         output: output.as_str().map(|_| Output::Html),
+        packed: true,
         slots,
         static_recipe,
         style: reader.style(get(item, "style"), 0)?,
@@ -808,5 +814,307 @@ impl Reader<'_> {
             recipe,
             slots: inputs,
         })
+    }
+}
+
+/// Appends a packed style as `PackedStyles.write` serializes it. Token references, expressions,
+/// and bindings become data, and the style's CSS output defaults to `atomic`.
+///
+/// Style objects list their properties in one canonical order, since contract readers never
+/// depend on it.
+pub fn write(output: &mut String, definition: &Definition) {
+    output.push('{');
+
+    if let Some(dynamic) = &definition.dynamic {
+        output.push_str("\"dynamic\":{\"recipe\":");
+        write_recipe(output, &dynamic.recipe);
+        output.push_str(",\"slots\":");
+        js::write_object(
+            output,
+            dynamic.slots.iter().map(|(key, slot)| (&**key, slot)),
+            |output, slot| encode_binding(output, slot),
+        );
+
+        if let Some(payloads) = &dynamic.payloads {
+            output.push_str(",\"payloads\":");
+            write_payloads(output, payloads);
+        }
+
+        if let Some(defaults) = &dynamic.default_payloads {
+            output.push_str(",\"defaultPayloads\":");
+            js::write_object(
+                output,
+                defaults.iter().map(|(axis, values)| (&**axis, values)),
+                |output, values| {
+                    js::write_object(
+                        output,
+                        values.iter().map(|(field, value)| (&**field, value)),
+                        write_scalar,
+                    );
+                },
+            );
+        }
+
+        output.push_str("},");
+    }
+
+    output.push_str("\"attributes\":");
+    recipe::write_strings(output, &definition.attributes);
+
+    let class_name = |output: &mut String| {
+        if let Some(class_name) = &definition.class_name {
+            output.push_str(",\"className\":");
+            js::write_string(output, class_name);
+        }
+    };
+
+    if definition.packed {
+        class_name(output);
+    }
+
+    if definition.output == Some(Output::Html) {
+        output.push_str(",\"output\":\"html\"");
+    }
+
+    output.push_str(",\"slots\":");
+    recipe::write_strings(output, &definition.slots);
+
+    if let Some(recipe) = &definition.static_recipe {
+        output.push_str(",\"staticRecipe\":");
+        write_recipe(output, recipe);
+    }
+
+    output.push_str(",\"style\":");
+    write_style(output, &definition.style, Some(CssOutput::Atomic));
+
+    if !definition.packed {
+        class_name(output);
+    }
+
+    output.push('}');
+}
+
+fn write_scalar(output: &mut String, value: &runtime::Scalar) {
+    match value {
+        runtime::Scalar::Number(number) if number.is_finite() => js::write_number(output, *number),
+        runtime::Scalar::Number(_) => output.push_str("null"),
+        runtime::Scalar::String(text) => js::write_string(output, text),
+    }
+}
+
+fn write_payloads(output: &mut String, payloads: &[runtime::Payload]) {
+    output.push('[');
+
+    for (index, payload) in payloads.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        output.push_str("{\"axis\":");
+        js::write_string(output, &payload.axis);
+        output.push_str(",\"choice\":");
+        js::write_string(output, &payload.choice);
+        output.push_str(",\"slots\":[");
+
+        for (index, slots) in payload.slots.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            js::write_object(
+                output,
+                slots.iter().map(|(field, slot)| (&**field, slot)),
+                |output, slot| js::write_string(output, slot),
+            );
+        }
+
+        output.push_str("]}");
+    }
+
+    output.push(']');
+}
+
+fn write_recipe(output: &mut String, definition: &recipe::Definition) {
+    output.push_str("{\"axes\":");
+    recipe::write_axes(output, &definition.axes);
+    output.push_str(",\"defaults\":");
+    recipe::write_defaults(output, &definition.defaults);
+    output.push_str(",\"rules\":[");
+
+    for (index, rule) in definition.rules.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        output.push_str("{\"matches\":");
+        recipe::write_matches(output, &rule.matches);
+        output.push_str(",\"value\":{\"styles\":[");
+
+        for (index, style) in rule.value.styles.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            write_style(output, style, None);
+        }
+
+        output.push_str("]}}");
+    }
+
+    output.push_str("]}");
+}
+
+/// Appends a style with encoded values. `css_output` replaces a missing CSS output.
+///
+/// `Style.define` names conditional styles before their declarations and plain styles after
+/// them. Target branches keep one canonical order, since their authored order is not retained.
+fn write_style(output: &mut String, style: &NamedStyle, css_output: Option<CssOutput>) {
+    let name = |output: &mut String| {
+        output.push_str("\"name\":");
+        js::write_string(output, &style.name);
+    };
+
+    output.push('{');
+
+    if style.rules.is_some() {
+        name(output);
+        output.push(',');
+    }
+
+    output.push_str("\"declarations\":[");
+
+    for (index, declaration) in style.declarations.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        output.push('{');
+
+        if declaration.important {
+            output.push_str("\"important\":true,");
+        }
+
+        output.push_str("\"property\":");
+        js::write_string(output, &declaration.property);
+        output.push_str(",\"value\":");
+
+        match &declaration.value {
+            Value::Binding(binding) => encode_binding(output, binding),
+            Value::Expression(expression) => encode_expression(output, expression),
+            Value::Number(number) if number.is_finite() => js::write_number(output, *number),
+            Value::Number(_) => output.push_str("null"),
+            Value::String(text) => js::write_string(output, text),
+            Value::Token(reference) => encode_reference(output, reference),
+        }
+
+        output.push('}');
+    }
+
+    output.push(']');
+
+    if style.rules.is_none() {
+        output.push(',');
+        name(output);
+    }
+
+    if let Some(rules) = &style.rules {
+        output.push_str(",\"rules\":[");
+
+        for (index, rule) in rules.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            output.push('{');
+
+            if let Some(condition) = &rule.condition {
+                output.push_str("\"condition\":");
+                js::write_string(output, condition);
+                output.push(',');
+            }
+
+            output.push_str("\"style\":");
+            write_style(output, &rule.style, None);
+            output.push('}');
+        }
+
+        output.push(']');
+    }
+
+    if let Some(targets) = &style.targets {
+        output.push_str(",\"targets\":{");
+
+        let mut first = true;
+        let mut key = |output: &mut String, name: &str| {
+            if !first {
+                output.push(',');
+            }
+
+            first = false;
+            js::write_string(output, name);
+            output.push(':');
+        };
+
+        if let Some(web) = &targets.web {
+            key(output, "web");
+            write_style(output, web, None);
+        }
+
+        for (name, branch) in [
+            ("native", &targets.native),
+            ("android", &targets.android),
+            ("ios", &targets.ios),
+        ] {
+            if let Some(branch) = branch.as_ref().filter(|branch| !branch.is_undefined()) {
+                key(output, name);
+                write_data(output, branch);
+            }
+        }
+
+        output.push('}');
+    }
+
+    if let Some(composition) = style.composition {
+        output.push_str(",\"composition\":");
+        js::write_string(output, composition.as_str());
+    }
+
+    if let Some(css_output) = style.css_output.or(css_output) {
+        output.push_str(",\"cssOutput\":");
+        js::write_string(output, css_output.as_str());
+    }
+
+    output.push('}');
+}
+
+/// Appends static data as `JSON.stringify` writes it with the packed-style replacer.
+pub(crate) fn write_data(output: &mut String, value: &Data) {
+    match value {
+        Data::Array(items) => {
+            output.push('[');
+
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                if item.is_undefined() {
+                    output.push_str("null");
+                } else {
+                    write_data(output, item);
+                }
+            }
+
+            output.push(']');
+        }
+        Data::Binding(binding) => encode_binding(output, binding),
+        Data::Expression(expression) => encode_expression(output, expression),
+        Data::Object(object) => js::write_object(
+            output,
+            object.iter().filter(|(_, value)| !value.is_undefined()),
+            write_data,
+        ),
+        Data::Token(reference) => encode_reference(output, reference),
+        value => js::write_data(output, value),
     }
 }

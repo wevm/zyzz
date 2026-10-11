@@ -138,6 +138,9 @@ fn replay(case: &Value) -> Value {
         }
         Some("recipes") => recipe(source, module_id),
         Some("contract-text") => contract(case["contract"].as_str().unwrap_or_default(), module_id),
+        Some("contract-roundtrip") => {
+            contract_roundtrip(case["contract"].as_str().unwrap_or_default(), module_id)
+        }
         kind => json!({ "error": format!("unknown kind {kind:?}") }),
     }
 }
@@ -412,7 +415,9 @@ fn data_json(output: &mut String, value: &zyzz_compiler::data::Data) {
     use zyzz_compiler::data::Data;
 
     match value {
-        Data::Token(reference) => zyzz_compiler::js::write_string(output, &format!("token:{}", reference.path)),
+        Data::Token(reference) => {
+            zyzz_compiler::js::write_string(output, &format!("token:{}", reference.path));
+        }
         Data::Expression(expression) => {
             output.push('{');
 
@@ -430,11 +435,18 @@ fn data_json(output: &mut String, value: &zyzz_compiler::data::Data) {
                 }
 
                 match part {
-                    zyzz_compiler::internal::token::Part::Text(text) => zyzz_compiler::js::write_string(output, text),
-                    zyzz_compiler::internal::token::Part::Reference(reference) => {
-                        zyzz_compiler::js::write_string(output, &format!("token:{}", reference.path));
+                    zyzz_compiler::internal::token::Part::Text(text) => {
+                        zyzz_compiler::js::write_string(output, text);
                     }
-                    zyzz_compiler::internal::token::Part::Binding(binding) => zyzz_compiler::js::write_string(output, &binding.name),
+                    zyzz_compiler::internal::token::Part::Reference(reference) => {
+                        zyzz_compiler::js::write_string(
+                            output,
+                            &format!("token:{}", reference.path),
+                        );
+                    }
+                    zyzz_compiler::internal::token::Part::Binding(binding) => {
+                        zyzz_compiler::js::write_string(output, &binding.name);
+                    }
                 }
             }
 
@@ -494,7 +506,10 @@ fn link_summary(link: &zyzz_compiler::compiler::internal::themes::Link) -> Value
     let options = call.options.as_ref().map(|options| {
         let mut output = String::new();
 
-        data_json(&mut output, &zyzz_compiler::data::Data::from(options.clone()));
+        data_json(
+            &mut output,
+            &zyzz_compiler::data::Data::from(options.clone()),
+        );
         output
     });
     let function = call.function.as_ref().map(|function| {
@@ -518,7 +533,8 @@ fn link_summary(link: &zyzz_compiler::compiler::internal::themes::Link) -> Value
             })
             .collect();
 
-        serde_json::to_string(&json!({ "parameters": parameters, "returns": &*function.returns })).unwrap_or_default()
+        serde_json::to_string(&json!({ "parameters": parameters, "returns": &*function.returns }))
+            .unwrap_or_default()
     });
     let style = link.style.as_ref().map(|style| {
         json!({
@@ -561,14 +577,21 @@ fn contract(text: &str, module_id: &str) -> Value {
     use zyzz_compiler::compiler::internal::{contract, identifiers};
 
     let validate = |filename: &str, css: &str| -> zyzz_compiler::error::Result<()> {
-        let options = lightningcss::stylesheet::ParserOptions { filename: filename.to_owned(), error_recovery: false, ..Default::default() };
+        let options = lightningcss::stylesheet::ParserOptions {
+            filename: filename.to_owned(),
+            error_recovery: false,
+            ..Default::default()
+        };
 
         lightningcss::stylesheet::StyleSheet::parse(css, options)
             .map(|_| ())
             .map_err(|error| zyzz_compiler::error::Error::Message(error.to_string()))
     };
     let identifier = |value: &str| identifiers::read(value);
-    let hooks = contract::Hooks { identifier: &identifier, validate: &validate };
+    let hooks = contract::Hooks {
+        identifier: &identifier,
+        validate: &validate,
+    };
     let mut identities = rustc_hash::FxHashMap::default();
     let library = match contract::read(text, &mut identities, module_id, &hooks) {
         Ok(library) => library,
@@ -594,6 +617,40 @@ fn contract(text: &str, module_id: &str) -> Value {
             "variableSet": theme.metadata.contract.variable_set,
         }))).collect()),
     })
+}
+
+fn contract_roundtrip(text: &str, module_id: &str) -> Value {
+    use zyzz_compiler::compiler::internal::{contract, identifiers};
+
+    let validate = |_: &str, _: &str| -> zyzz_compiler::error::Result<()> { Ok(()) };
+    let identifier = |value: &str| identifiers::read(value);
+    let hooks = contract::Hooks {
+        identifier: &identifier,
+        validate: &validate,
+    };
+    let mut identities = rustc_hash::FxHashMap::default();
+    let library = match contract::read(text, &mut identities, module_id, &hooks) {
+        Ok(library) => library,
+        Err(error) => return json!({ "error": error.text() }),
+    };
+    let class_rules: Vec<_> = library
+        .class_rules
+        .iter()
+        .map(|(name, rule)| (std::sync::Arc::clone(name), std::sync::Arc::clone(rule)))
+        .collect();
+    let written = contract::write(&contract::Write {
+        class_rules: &class_rules,
+        configurations: &[],
+        links: &library.links,
+        module_id,
+        stylesheets: &library.stylesheets,
+        themes: &library.themes,
+    });
+
+    match written {
+        Ok(text) => json!({ "text": text }),
+        Err(error) => json!({ "error": error.text() }),
+    }
 }
 
 #[expect(

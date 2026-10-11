@@ -12,6 +12,9 @@ use crate::web::internal::namespace;
 /// Ordered CSS owned by one portable source module.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Section {
+    /// Whether `namespaces` holds extracted `@namespace` contributions, which serialize with
+    /// their contribution `kind` first.
+    pub authored_namespaces: bool,
     /// Original source text, for source maps.
     pub content: Option<Arc<str>>,
     /// Ordered emitted CSS before host asset relocation.
@@ -266,6 +269,7 @@ pub fn read(
         };
 
         sections.push(Section {
+            authored_namespaces: false,
             content,
             css,
             dependency,

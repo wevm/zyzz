@@ -71,6 +71,10 @@ name = "contract"
 required-features = ["compiler"]
 
 [[test]]
+name = "graph"
+required-features = ["compiler"]
+
+[[test]]
 name = "native_bindings"
 required-features = ["compiler"]
 

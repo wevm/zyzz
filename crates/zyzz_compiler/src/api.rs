@@ -3,6 +3,7 @@
 //! The native addon and the WebAssembly module expose this one dispatcher, so both runtimes
 //! accept the same inputs and produce the same results.
 
+#[cfg(feature = "compiler")]
 use crate::compiler::handles;
 use crate::error::Error;
 use crate::js;
@@ -40,6 +41,7 @@ pub fn error_json(error: &Error) -> String {
 
             output.push(']');
         }
+        #[cfg(feature = "compiler")]
         Error::Extract(extract) => {
             js::write_string(&mut output, "Source.ExtractError");
             output.push_str(",\"diagnostics\":[");
@@ -78,6 +80,7 @@ pub fn error_json(error: &Error) -> String {
     output
 }
 
+#[cfg(feature = "compiler")]
 fn json(input: &str) -> Result<serde_json::Value, Error> {
     serde_json::from_str(input).map_err(|error| Error::Message(error.to_string()))
 }
@@ -86,10 +89,13 @@ fn json(input: &str) -> Result<serde_json::Value, Error> {
 pub fn call(operation: &str, input: &str) -> String {
     match operation {
         "css.compile" => crate::wire::compile(input),
+        #[cfg(feature = "compiler")]
         "graph.compile" => json(input)
             .and_then(|input| handles::compile(&input))
             .unwrap_or_else(|error| error_json(&error)),
+        #[cfg(feature = "compiler")]
         "graph.create" => format!("{{\"handle\":{}}}", handles::create()),
+        #[cfg(feature = "compiler")]
         "graph.release" => {
             if let Ok(input) = json(input)
                 && let Some(handle) = input
@@ -102,6 +108,7 @@ pub fn call(operation: &str, input: &str) -> String {
 
             "{}".to_owned()
         }
+        #[cfg(feature = "compiler")]
         "transform.compile" => json(input)
             .and_then(|input| handles::transform(&input))
             .unwrap_or_else(|error| error_json(&error)),

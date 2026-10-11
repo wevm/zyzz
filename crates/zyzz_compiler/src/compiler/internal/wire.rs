@@ -1300,6 +1300,7 @@ fn error_name(error: &Error) -> &'static str {
         Error::Css(_) => "Css.CompileError",
         Error::Extract(_) => "Source.ExtractError",
         Error::MissingTransform => "MissingTransformError",
+        Error::Native(_) => "Native.CompileError",
         Error::Style(_) => "Style.InvalidError",
         Error::StyleSheet(_) => "StyleSheet.CompileError",
         Error::StyleSheetSelection(_) => "StyleSheet.SelectionError",

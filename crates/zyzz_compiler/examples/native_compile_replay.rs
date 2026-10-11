@@ -738,6 +738,7 @@ fn packed_style<'j>(
         dynamic,
         native_context,
         output: output(present(decoder, node, "output"))?,
+        packed: true,
         slots,
         static_recipe,
         style: Arc::new(NamedStyle::default()),

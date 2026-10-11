@@ -71,6 +71,8 @@ pub fn error_json(error: &Error) -> String {
             output.push_str(",\"source\":");
             js::write_string(&mut output, source);
         }
+        #[cfg(feature = "compiler")]
+        Error::Native(_) => js::write_string(&mut output, "Native.CompileError"),
         _ => js::write_string(&mut output, "Error"),
     }
 

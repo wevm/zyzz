@@ -55,6 +55,10 @@ name = "extract_replay"
 required-features = ["compiler"]
 
 [[example]]
+name = "native_compile_replay"
+required-features = ["compiler"]
+
+[[example]]
 name = "native_replay"
 required-features = ["compiler"]
 
@@ -80,6 +84,10 @@ required-features = ["compiler"]
 
 [[test]]
 name = "graph"
+required-features = ["compiler"]
+
+[[test]]
+name = "native"
 required-features = ["compiler"]
 
 [[test]]

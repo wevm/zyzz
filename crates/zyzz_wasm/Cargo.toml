@@ -1,0 +1,18 @@
+[package]
+name = "zyzz_wasm"
+description = "WebAssembly entrypoint that exposes the Zyzz compiler to hosts without the native addon."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+zyzz_compiler = { workspace = true }
+
+[lints]
+workspace = true

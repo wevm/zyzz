@@ -353,6 +353,8 @@ impl Decoder {
                         .ok_or_else(|| malformed(format_args!("unknown binding type {kind}")))?,
                     dynamic,
                     name: name.to_string(),
+                    // Only compiler-extracted callback slots accept zero for empty strings.
+                    zero: false,
                 }))
             }
             RawObject::Contract(raw) => Resolved::Contract(Arc::new(Contract {

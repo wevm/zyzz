@@ -8,6 +8,7 @@ use crate::internal::literal;
 use crate::internal::token::Map;
 use crate::js;
 
+/// Names the authoring surface reserves, so they cannot alias properties.
 const RESERVED: [&str; 7] = [
     "style",
     "theme",
@@ -18,11 +19,12 @@ const RESERVED: [&str; 7] = [
     "__proto__",
 ];
 
-/// Copies validated configuration data, each alias expanding in its declared target order.
+/// Copies validated aliases, each expanding to its declared target order.
 ///
 /// # Errors
 ///
-/// Returns the TypeScript message for non-records, invalid alias names, and invalid targets.
+/// Returns a plain error for non-records, reserved or property names, and targets that are not
+/// unique standard properties.
 pub fn read(value: &Data) -> Result<Map<Arc<[Arc<str>]>>> {
     let Data::Object(object) = value else {
         return Err(Error::message(
@@ -36,7 +38,7 @@ pub fn read(value: &Data) -> Result<Map<Arc<[Arc<str>]>>> {
         ));
     }
 
-    let mut output = Map::default();
+    let mut result = Map::default();
 
     for (name, property) in object.properties() {
         if name.is_empty()
@@ -50,77 +52,74 @@ pub fn read(value: &Data) -> Result<Map<Arc<[Arc<str>]>>> {
             return Err(Error::message(format!("Invalid shorthand name: {name}")));
         }
 
-        let targets = match property {
-            Property::Value(Data::Array(targets)) if !targets.is_empty() => targets,
-            _ => {
-                return Err(Error::message(format!(
-                    "Shorthand {name} requires a nonempty property tuple."
-                )));
-            }
+        let Property::Value(Data::Array(targets)) = property else {
+            return Err(tuple(name));
         };
-        let mut result: Vec<Arc<str>> = Vec::with_capacity(targets.len());
 
-        for target in targets.iter() {
-            match target {
-                Data::String(target)
-                    if literal::rule(target).is_some()
-                        && !result.iter().any(|existing| existing == target) =>
-                {
-                    result.push(Arc::clone(target));
-                }
-                _ => {
-                    return Err(Error::message(format!(
-                        "Shorthand {name} requires unique standard properties."
-                    )));
-                }
-            }
+        if targets.is_empty() {
+            return Err(tuple(name));
         }
 
-        output.insert(Arc::clone(name), result.into());
+        let mut properties: Vec<Arc<str>> = Vec::with_capacity(targets.len());
+
+        for target in targets.iter() {
+            let Some(target) = target.as_str() else {
+                return Err(unique(name));
+            };
+
+            if literal::rule(target).is_none() || properties.iter().any(|seen| &**seen == target) {
+                return Err(unique(name));
+            }
+
+            properties.push(Arc::from(target));
+        }
+
+        result.insert(Arc::clone(name), properties.into());
     }
 
-    Ok(output)
+    Ok(result)
+}
+
+#[cold]
+fn tuple(name: &str) -> Error {
+    Error::message(format!(
+        "Shorthand {name} requires a nonempty property tuple."
+    ))
+}
+
+#[cold]
+fn unique(name: &str) -> Error {
+    Error::message(format!(
+        "Shorthand {name} requires unique standard properties."
+    ))
 }
 
 /// Canonicalizes alias names while preserving each ordered target tuple.
 ///
 /// # Errors
 ///
-/// Returns the [`read`] errors.
+/// Returns the [`read`] error for invalid aliases.
 pub fn signature(value: &Data) -> Result<String> {
-    let map = if value.is_undefined() {
-        Map::default()
-    } else {
-        read(value)?
-    };
+    let empty = Data::from(crate::data::Object::new());
+    let map = read(if value.is_undefined() { &empty } else { value })?;
     let mut entries: Vec<_> = map.iter().collect();
 
-    // `<` compares UTF-16 code units.
-    entries.sort_by(|(left, _), (right, _)| left.encode_utf16().cmp(right.encode_utf16()));
+    entries.sort_by(|left, right| js::code_units(left.0).cmp(js::code_units(right.0)));
 
-    let mut output = String::from("[");
-
-    for (index, (name, targets)) in entries.iter().enumerate() {
-        if index > 0 {
-            output.push(',');
-        }
-
-        output.push('[');
-        js::write_string(&mut output, name);
-        output.push_str(",[");
-
-        for (position, target) in targets.iter().enumerate() {
-            if position > 0 {
-                output.push(',');
-            }
-
-            js::write_string(&mut output, target);
-        }
-
-        output.push_str("]]");
-    }
-
-    output.push(']');
-
-    Ok(output)
+    Ok(js::stringify(&js::Value::Array(
+        entries
+            .into_iter()
+            .map(|(name, targets)| {
+                js::Value::Array(vec![
+                    js::Value::from(&**name),
+                    js::Value::Array(
+                        targets
+                            .iter()
+                            .map(|target| js::Value::from(&**target))
+                            .collect(),
+                    ),
+                ])
+            })
+            .collect(),
+    )))
 }

@@ -10,6 +10,10 @@ use indexmap::IndexMap;
 use oxc_syntax::number::ToJsString;
 use rustc_hash::FxBuildHasher;
 
+mod math;
+
+pub use math::{cos, sin, tan};
+
 /// Formats a number like ECMAScript `Number.prototype.toString()`.
 pub fn number(value: f64) -> String {
     if value == 0.0 {
@@ -320,6 +324,88 @@ pub fn write_string(output: &mut String, value: &str) {
     output.push('"');
 }
 
+/// Appends statically evaluated data serialized like `JSON.stringify(value)`.
+///
+/// Object properties holding `undefined` are omitted, and array entries holding `undefined` print
+/// as `null`, as does a non-finite number. Compiler-owned references never reach static data, so
+/// they print as `null`.
+pub fn write_data(output: &mut String, value: &crate::data::Data) {
+    use crate::data::Data;
+
+    match value {
+        Data::Array(items) => {
+            output.push('[');
+
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                if item.is_undefined() {
+                    output.push_str("null");
+                } else {
+                    write_data(output, item);
+                }
+            }
+
+            output.push(']');
+        }
+        Data::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
+        Data::Number(value) if value.is_finite() => write_number(output, *value),
+        Data::Object(object) => write_object(
+            output,
+            object.iter().filter(|(_, value)| !value.is_undefined()),
+            write_data,
+        ),
+        Data::String(value) => write_string(output, value),
+        Data::Binding(_)
+        | Data::Expression(_)
+        | Data::Null
+        | Data::Number(_)
+        | Data::Theme(_)
+        | Data::Token(_)
+        | Data::Undefined => output.push_str("null"),
+    }
+}
+
+/// Appends an object serialized like `JSON.stringify`, listing array-index keys first in ascending
+/// order and other keys in the given order, as JavaScript enumerates own properties.
+pub fn write_object<K: AsRef<str>, V>(
+    output: &mut String,
+    entries: impl IntoIterator<Item = (K, V)>,
+    mut write: impl FnMut(&mut String, V),
+) {
+    let mut indexes: Vec<(u32, K, V)> = Vec::new();
+    let mut names: Vec<(K, V)> = Vec::new();
+
+    for (key, value) in entries {
+        match array_index(key.as_ref()) {
+            Some(index) => indexes.push((index, key, value)),
+            None => names.push((key, value)),
+        }
+    }
+
+    indexes.sort_by_key(|entry| entry.0);
+    output.push('{');
+
+    let entries = indexes
+        .into_iter()
+        .map(|(_, key, value)| (key, value))
+        .chain(names);
+
+    for (index, (key, value)) in entries.enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        write_string(output, key.as_ref());
+        output.push(':');
+        write(output, value);
+    }
+
+    output.push('}');
+}
+
 /// Whether a character matches the JavaScript regular expression class `\s`.
 pub fn is_whitespace(character: char) -> bool {
     matches!(
@@ -528,4 +614,180 @@ pub fn locale_compare(left: &str, right: &str) -> std::cmp::Ordering {
             left.bytes().map(case).cmp(right.bytes().map(case))
         })
         .then_with(|| left.cmp(right))
+}
+
+/// Converts UTF-8 byte offsets into the UTF-16 offsets JavaScript strings use.
+///
+/// ASCII sources need no table. Otherwise each non-ASCII character records the cumulative
+/// difference, and lookups binary search it, so conversions need no ordering.
+#[derive(Clone, Debug, Default)]
+pub struct Utf16Index {
+    /// UTF-8 offsets just after each non-ASCII character, with the UTF-16 offset at that point.
+    marks: Vec<(u32, u32)>,
+}
+
+impl Utf16Index {
+    /// Indexes a source text.
+    pub fn new(source: &str) -> Self {
+        if source.is_ascii() {
+            return Self::default();
+        }
+
+        let mut marks = Vec::new();
+        let mut units: u32 = 0;
+
+        for (offset, character) in source.char_indices() {
+            units += u32::try_from(character.len_utf16()).unwrap_or(0);
+
+            if !character.is_ascii() {
+                let end = u32::try_from(offset + character.len_utf8()).unwrap_or(u32::MAX);
+                marks.push((end, units));
+            }
+        }
+
+        Self { marks }
+    }
+
+    /// Converts a UTF-8 offset to a UTF-16 offset.
+    pub fn utf16(&self, offset: u32) -> u32 {
+        match self.marks.partition_point(|(end, _)| *end <= offset) {
+            0 => offset,
+            index => self
+                .marks
+                .get(index - 1)
+                .map_or(offset, |(end, units)| units + (offset - end)),
+        }
+    }
+
+    /// Converts a UTF-16 offset back to a UTF-8 offset.
+    pub fn utf8(&self, offset: u32) -> u32 {
+        match self.marks.partition_point(|(_, units)| *units <= offset) {
+            0 => offset,
+            index => self
+                .marks
+                .get(index - 1)
+                .map_or(offset, |(end, units)| end + (offset - units)),
+        }
+    }
+}
+
+/// A string-keyed record that enumerates in JavaScript own-property order.
+///
+/// Array-index keys come first in ascending order, then other keys in insertion order, as
+/// `Object.entries` and `JSON.stringify` report them. Assigning an existing key keeps its position.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Record<V> {
+    entries: Vec<(std::sync::Arc<str>, V)>,
+    indexes: usize,
+}
+
+impl<V> Default for Record<V> {
+    fn default() -> Self {
+        Self {
+            entries: Vec::new(),
+            indexes: 0,
+        }
+    }
+}
+
+impl<V> Record<V> {
+    /// Creates an empty record.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Number of entries.
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Whether the record is empty.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    /// Sets a key, keeping the position of an existing key.
+    pub fn insert(&mut self, key: impl Into<std::sync::Arc<str>>, value: V) {
+        let key = key.into();
+
+        if let Some(entry) = self.entries.iter_mut().find(|(name, _)| *name == key) {
+            entry.1 = value;
+            return;
+        }
+
+        match array_index(&key) {
+            Some(index) => {
+                let position = self
+                    .entries
+                    .get(..self.indexes)
+                    .unwrap_or_default()
+                    .iter()
+                    .position(|(name, _)| array_index(name).is_some_and(|other| other > index))
+                    .unwrap_or(self.indexes);
+
+                self.entries.insert(position, (key, value));
+                self.indexes += 1;
+            }
+            None => self.entries.push((key, value)),
+        }
+    }
+
+    /// Reads a key.
+    pub fn get(&self, key: &str) -> Option<&V> {
+        self.entries
+            .iter()
+            .find(|(name, _)| &**name == key)
+            .map(|(_, value)| value)
+    }
+
+    /// Reads a key mutably.
+    pub fn get_mut(&mut self, key: &str) -> Option<&mut V> {
+        self.entries
+            .iter_mut()
+            .find(|(name, _)| &**name == key)
+            .map(|(_, value)| value)
+    }
+
+    /// Whether a key exists, like `Object.hasOwn`.
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.entries.iter().any(|(name, _)| &**name == key)
+    }
+
+    /// Removes a key.
+    pub fn remove(&mut self, key: &str) -> Option<V> {
+        let position = self.entries.iter().position(|(name, _)| &**name == key)?;
+
+        if position < self.indexes {
+            self.indexes -= 1;
+        }
+
+        Some(self.entries.remove(position).1)
+    }
+
+    /// Iterates entries in JavaScript order.
+    pub fn iter(&self) -> impl Iterator<Item = (&std::sync::Arc<str>, &V)> {
+        self.entries.iter().map(|(key, value)| (key, value))
+    }
+
+    /// Iterates keys in JavaScript order.
+    pub fn keys(&self) -> impl Iterator<Item = &std::sync::Arc<str>> {
+        self.entries.iter().map(|(key, _)| key)
+    }
+
+    /// Iterates values in JavaScript order.
+    pub fn values(&self) -> impl Iterator<Item = &V> {
+        self.entries.iter().map(|(_, value)| value)
+    }
+}
+
+impl<V> FromIterator<(std::sync::Arc<str>, V)> for Record<V> {
+    fn from_iter<T: IntoIterator<Item = (std::sync::Arc<str>, V)>>(iter: T) -> Self {
+        let mut record = Self::new();
+
+        for (key, value) in iter {
+            record.insert(key, value);
+        }
+
+        record
+    }
 }

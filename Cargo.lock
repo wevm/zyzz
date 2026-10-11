@@ -1573,6 +1573,7 @@ dependencies = [
  "oxc_allocator",
  "oxc_ast",
  "oxc_ast_visit",
+ "oxc_diagnostics",
  "oxc_ecmascript",
  "oxc_index",
  "oxc_parser",
@@ -1593,5 +1594,11 @@ dependencies = [
  "insta",
  "memchr",
  "rustc-hash",
- "smallvec",
+]
+
+[[package]]
+name = "zyzz_wasm"
+version = "0.0.0"
+dependencies = [
+ "zyzz_compiler",
 ]

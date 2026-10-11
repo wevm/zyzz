@@ -2,4 +2,4 @@
 channel = "1.97.0"
 components = ["clippy", "rustfmt"]
 profile = "minimal"
-targets = ["wasm32-wasip1-threads"]
+targets = ["wasm32-wasip1", "wasm32-wasip1-threads"]

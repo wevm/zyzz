@@ -21,6 +21,7 @@ use zyzz_compiler::internal::identity;
 use zyzz_compiler::internal::theme::Definition;
 use zyzz_compiler::internal::token::{self, Contract, Mappings};
 use zyzz_compiler::js::{self, Record};
+use zyzz_compiler::web::internal::contributions::{Kind, Scalar};
 
 /// Assigns contract ids by first appearance, as the oracle does.
 #[derive(Default)]
@@ -592,16 +593,29 @@ fn module(
     let registrations: Vec<Value> = variables
         .registrations
         .iter()
-        .map(|registration| {
-            let initial = writer.data(&registration.initial_value);
+        .filter_map(|registration| {
+            let Kind::Property {
+                inherits,
+                initial_value,
+                name,
+                syntax,
+            } = &registration.kind
+            else {
+                return None;
+            };
+            let initial = match initial_value {
+                Some(Scalar::Number(number)) => writer.data(&Data::Number(*number)),
+                Some(Scalar::String(text)) => writer.data(&Data::String(Arc::clone(text))),
+                None => writer.data(&Data::Undefined),
+            };
 
-            json!({ "obj": [
+            Some(json!({ "obj": [
                 ["kind", "property"],
-                ["name", registration.name],
-                ["syntax", registration.syntax],
-                ["inherits", registration.inherits],
+                ["name", &**name],
+                ["syntax", &**syntax],
+                ["inherits", inherits],
                 ["initialValue", initial],
-            ] })
+            ] }))
         })
         .collect();
 

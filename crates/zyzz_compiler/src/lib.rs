@@ -10,6 +10,7 @@ pub mod error;
 pub mod generated;
 pub mod internal;
 pub mod js;
+pub mod mapping;
 pub mod react_native;
 pub mod runtime;
 pub mod style;

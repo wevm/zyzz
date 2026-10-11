@@ -11,7 +11,6 @@ import * as Util from 'node:util'
 import * as Vm from 'node:vm'
 import * as Worker from 'node:worker_threads'
 import { chromium } from 'playwright'
-import { getQuickJS } from 'quickjs-emscripten'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import * as Theme from './internal/Theme.js'
@@ -800,9 +799,16 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     return bundle.outputFiles[0]!.text
   }
 
-  test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', async () => {
+  test('the browser compilation pipeline agrees in a Node context and a worker', async () => {
     const code = await portableBundle()
-    const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
+    // A bare context holds only ECMAScript built-ins, so the encoding globals browsers define are passed in.
+    const server = Vm.runInNewContext(
+      `${code}; JSON.stringify(fixture.result)`,
+      {
+        TextDecoder,
+        TextEncoder,
+      },
+    )
 
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
       {
@@ -839,35 +845,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     } finally {
       await worker.terminate()
     }
-
-    const engine = await getQuickJS()
-    const context = engine.newContext()
-
-    try {
-      const result = context.unwrapResult(
-        context.evalCode(`${code}; JSON.stringify(fixture.result)`),
-      )
-
-      try {
-        expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
-          {
-            "classes": {
-              "button": "z-text-[#f00] z-p-0",
-            },
-            "css": ".z-text-\\5b \\23 f00\\5d {color:#f00;}
-          .z-p-0{padding:0;}",
-            "vars": {},
-          }
-        `)
-      } finally {
-        result.dispose()
-      }
-    } finally {
-      context.dispose()
-    }
   })
 
-  test('the pure compilation pipeline runs in Chromium and a browser worker', async () => {
+  test('the browser compilation pipeline runs in Chromium and a browser worker', async () => {
     const code = await portableBundle()
     const browser = await chromium.launch()
 

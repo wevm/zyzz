@@ -13,17 +13,3 @@ export type Entry =
       readonly header: string
       readonly entries: readonly Entry[]
     }
-/** Renders a structured block while delegating ordinary property serialization to the CSS compiler. */
-export function render(
-  entries: readonly Entry[],
-  style: (value: Style.NamedStyle) => string,
-): string {
-  return entries
-    .map((entry) => {
-      if (entry.kind === 'style') return style(entry.style)
-      if (entry.kind === 'block')
-        return `${entry.header}{${render(entry.entries, style)}}`
-      return `${entry.name}:${entry.value};`
-    })
-    .join('')
-}

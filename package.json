@@ -5,7 +5,8 @@
     "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
     "build": "pnpm build:binding && zile && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts",
-    "build:binding": "napi build --platform --release --package-json-path crates/zyzz_binding/package.json --manifest-path crates/zyzz_binding/Cargo.toml --output-dir binding --no-js",
+    "build:binding": "napi build --platform --release --package-json-path crates/zyzz_binding/package.json --manifest-path crates/zyzz_binding/Cargo.toml --output-dir binding --no-js && node scripts/build-wasm.ts",
+    "build:wasm": "node scripts/build-wasm.ts",
     "changeset:publish": "zile publish:prepare && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "check": "vp check --fix",
@@ -135,6 +136,11 @@
   },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "browser": {
+    "./dist/web/internal/Engine.js": "./dist/web/internal/Engine.browser.js",
+    "./src/web/internal/Engine.js": "./src/web/internal/Engine.browser.ts",
+    "./src/web/internal/Engine.ts": "./src/web/internal/Engine.browser.ts"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",
@@ -247,6 +253,13 @@
       "src": "./src/webpack/index.ts",
       "types": "./dist/webpack/index.d.ts",
       "default": "./dist/webpack/index.js"
+    }
+  },
+  "imports": {
+    "#wasm": {
+      "types": "./src/web/internal/Wasm.generated.ts",
+      "src": "./src/web/internal/Wasm.generated.ts",
+      "default": "./dist/web/internal/Wasm.generated.js"
     }
   },
   "dependencies": {

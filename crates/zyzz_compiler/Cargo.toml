@@ -8,19 +8,36 @@ repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
+[features]
+default = ["compiler"]
+# Source extraction, module rewriting, and React Native emission. Web CSS emission and the wire
+# format need none of these parsers, so browser builds disable the feature.
+compiler = [
+  "dep:lightningcss",
+  "dep:oxc_allocator",
+  "dep:oxc_ast",
+  "dep:oxc_ast_visit",
+  "dep:oxc_diagnostics",
+  "dep:oxc_ecmascript",
+  "dep:oxc_index",
+  "dep:oxc_parser",
+  "dep:oxc_semantic",
+  "dep:zyzz_css_syntax",
+]
+
 [dependencies]
 compact_str = { workspace = true }
 indexmap = { workspace = true }
-lightningcss = { workspace = true }
+lightningcss = { workspace = true, optional = true }
 memchr = { workspace = true }
-oxc_allocator = { workspace = true }
-oxc_ast = { workspace = true }
-oxc_ast_visit = { workspace = true }
-oxc_diagnostics = { workspace = true }
-oxc_ecmascript = { workspace = true }
-oxc_index = { workspace = true }
-oxc_parser = { workspace = true }
-oxc_semantic = { workspace = true }
+oxc_allocator = { workspace = true, optional = true }
+oxc_ast = { workspace = true, optional = true }
+oxc_ast_visit = { workspace = true, optional = true }
+oxc_diagnostics = { workspace = true, optional = true }
+oxc_ecmascript = { workspace = true, optional = true }
+oxc_index = { workspace = true, optional = true }
+oxc_parser = { workspace = true, optional = true }
+oxc_semantic = { workspace = true, optional = true }
 oxc_span = { workspace = true }
 oxc_syntax = { workspace = true }
 rustc-hash = { workspace = true }
@@ -28,10 +45,50 @@ rustc-hash = { workspace = true }
 serde = { workspace = true, features = ["rc"] }
 serde_json = { workspace = true, features = ["float_roundtrip"] }
 smallvec = { workspace = true }
-zyzz_css_syntax = { workspace = true }
+zyzz_css_syntax = { workspace = true, optional = true }
 
 [dev-dependencies]
 insta = { workspace = true }
+
+[[example]]
+name = "native_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "source_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "themes_replay"
+required-features = ["compiler"]
+
+[[test]]
+name = "compiler"
+required-features = ["compiler"]
+
+[[test]]
+name = "contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_bindings"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_media"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_vars"
+required-features = ["compiler"]
+
+[[test]]
+name = "react_native"
+required-features = ["compiler"]
+
+[[test]]
+name = "themes"
+required-features = ["compiler"]
 
 [lints]
 workspace = true

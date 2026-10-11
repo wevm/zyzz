@@ -109,7 +109,7 @@ Arbitrary imported object records passed to `style(record)` are outside the veri
 
 ## Runtimes
 
-Build-time adapters and application runtime helpers have different requirements. Browser portability of the pure compiler does not make a filesystem host portable.
+Build-time adapters and application runtime helpers have different requirements. `Css.compile` runs the Rust compiler: Node.js loads its native addon, and browser bundles inline its WebAssembly build. Browser portability of the compiler does not make a filesystem host portable.
 
 <CompatibilityMatrix label="Runtime evidence">
 <table aria-label="Runtime evidence">
@@ -136,7 +136,7 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Compiler hosts, the CLI, bundler adapters, and server-rendering fixtures run in Node.js.
+<CompatibilityIcon name="verified" /> **Verified.** Compiler hosts, the CLI, bundler adapters, and server-rendering fixtures run in Node.js. `Css.compile` runs in the native addon.
 
 </td>
 </tr>
@@ -148,19 +148,7 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="verified" /> **Verified.** Bundled `Style.define` and `Css.compile` execute in Chromium, a browser worker, and a Node worker. [Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
-
-</td>
-</tr>
-<tr>
-<th scope="row">
-
-**QuickJS**
-
-</th>
-<td>
-
-<CompatibilityIcon name="verified" /> **Verified.** The same portability fixture runs without Node or DOM globals. This is embedded-engine evidence, not device rendering evidence.
+<CompatibilityIcon name="verified" /> **Verified.** Bundled `Style.define` and `Css.compile` execute in Chromium, a browser worker, a Node worker, and a Node `vm` context given `TextEncoder` and `TextDecoder`. The bundle instantiates the inlined WebAssembly compiler synchronously and needs no network request. [Portability tests](https://github.com/wevm/zyzz/blob/main/src/Style.test.ts).
 
 </td>
 </tr>
@@ -172,7 +160,7 @@ Support and scope
 </th>
 <td>
 
-<CompatibilityIcon name="unverified" /> **Unverified integrations.** Pure core code is environment-independent. Node filesystem adapters and complete application deployments need separate host verification.
+<CompatibilityIcon name="unverified" /> **Unverified integrations.** Core authoring is environment-independent, and `Css.compile` needs Node-API or WebAssembly. Node filesystem adapters and complete application deployments need separate host verification.
 
 </td>
 </tr>

@@ -17,6 +17,7 @@ pub enum Error {
     /// `Css.CompileError` with every compilation diagnostic.
     Css(Vec<crate::web::css::Diagnostic>),
     /// `Source.ExtractError` with every source diagnostic, in source order.
+    #[cfg(feature = "compiler")]
     Extract(crate::compiler::source::ExtractError),
     /// A plain `Error` with a caller-visible message.
     Message(String),
@@ -25,6 +26,7 @@ pub enum Error {
     /// `Style.InvalidError` with every validation diagnostic.
     Style(Vec<crate::style::Diagnostic>),
     /// `StyleSheet.CompileError` with every native capability diagnostic.
+    #[cfg(feature = "compiler")]
     StyleSheet(Vec<crate::react_native::style_sheet::Diagnostic>),
     /// `StyleSheet.SelectionError`: a lookup of a missing precompiled table.
     StyleSheetSelection(String),
@@ -70,9 +72,11 @@ impl Error {
             | Self::Themes { message, .. }
             | Self::Variants(message) => message.clone(),
             Self::Css(diagnostics) => crate::web::css::error_message(diagnostics),
+            #[cfg(feature = "compiler")]
             Self::Extract(error) => error.message(),
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
             Self::Style(diagnostics) => crate::style::error_message(diagnostics),
+            #[cfg(feature = "compiler")]
             Self::StyleSheet(diagnostics) => {
                 crate::react_native::style_sheet::error_message(diagnostics)
             }

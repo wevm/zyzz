@@ -83,8 +83,7 @@ pub fn create(call: &Call<'_>, style: Arc<NamedStyle>) -> Definition {
             .keys()
             .flat_map(|axis| {
                 std::iter::once(Arc::from(format!("data-{axis}"))).chain(
-                    (0..conditions)
-                        .map(|condition| Arc::from(recipes::attribute(axis, condition))),
+                    (0..conditions).map(|condition| Arc::from(recipes::attribute(axis, condition))),
                 )
             })
             .collect()

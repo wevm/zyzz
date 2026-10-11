@@ -419,6 +419,8 @@ pub fn create(options: &Data) -> Result<Configuration> {
         value => Some(shorthands::read(value).map_err(|error| invalid(error.text()))?),
     };
     let contract = Arc::new(Contract {
+        // Configuration.ts builds contracts in the default property order.
+        keys: None,
         complete: id.is_some(),
         composition,
         css_output: Some(css_output.unwrap_or(CssOutput::Atomic)),

@@ -1,0 +1,12 @@
+disallowed-methods = [
+  { path = "std::env::var", reason = "The compiler core reads no environment. Pass options from the binding." },
+  { path = "std::fs::read", reason = "The compiler core reads no files. Hosts supply source text." },
+  { path = "std::fs::read_to_string", reason = "The compiler core reads no files. Hosts supply source text." },
+  { path = "std::fs::write", reason = "The compiler core writes no files. Hosts publish artifacts." },
+  { path = "std::time::Instant::now", reason = "Output never depends on the clock." },
+  { path = "std::time::SystemTime::now", reason = "Output never depends on the clock." },
+]
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "Use rustc_hash::FxHashMap, or indexmap::IndexMap when order is observable." },
+  { path = "std::collections::HashSet", reason = "Use rustc_hash::FxHashSet, or indexmap::IndexSet when order is observable." },
+]

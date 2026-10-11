@@ -1,0 +1,489 @@
+//! Reproduces the JavaScript string, number, and JSON semantics that reach compiler output.
+//!
+//! The TypeScript compiler formats numbers with `Number.prototype.toString`, serializes data with
+//! `JSON.stringify`, and measures strings in UTF-16 code units. Output identity depends on every one
+//! of these behaviors, so all Rust code formats through this module.
+
+use std::fmt::Write as _;
+
+use indexmap::IndexMap;
+use oxc_syntax::number::ToJsString;
+use rustc_hash::FxBuildHasher;
+
+/// Formats a number like ECMAScript `Number.prototype.toString()`.
+pub fn number(value: f64) -> String {
+    if value == 0.0 {
+        // `-0` prints as `0`.
+        return "0".to_owned();
+    }
+
+    value.to_js_string()
+}
+
+/// Appends a number formatted like ECMAScript `Number.prototype.toString()`.
+pub fn write_number(output: &mut String, value: f64) {
+    if value == 0.0 {
+        output.push('0');
+        return;
+    }
+
+    output.push_str(&value.to_js_string());
+}
+
+/// Formats a non-negative integer like `Number.prototype.toString(radix)`.
+pub fn radix(mut value: u64, radix: u32) -> String {
+    const DIGITS: &[u8; 36] = b"0123456789abcdefghijklmnopqrstuvwxyz";
+
+    debug_assert!((2..=36).contains(&radix), "radix must be within 2..=36");
+
+    if value == 0 {
+        return "0".to_owned();
+    }
+
+    let mut digits = Vec::with_capacity(16);
+    let base = u64::from(radix);
+
+    while value > 0 {
+        let digit = usize::try_from(value % base).unwrap_or_default();
+        digits.push(DIGITS.get(digit).copied().unwrap_or(b'0'));
+        value /= base;
+    }
+
+    digits.reverse();
+
+    String::from_utf8(digits).unwrap_or_default()
+}
+
+/// Counts UTF-16 code units, the length JavaScript reports for a string.
+pub fn utf16_len(value: &str) -> usize {
+    if value.is_ascii() {
+        return value.len();
+    }
+
+    value.encode_utf16().count()
+}
+
+/// Converts a UTF-16 code-unit index into a byte index, clamping to the string length.
+///
+/// An index inside a surrogate pair rounds up to the end of that character, since Rust strings
+/// cannot hold the lone surrogate JavaScript would produce.
+pub fn utf16_to_byte(value: &str, index: usize) -> usize {
+    if value.is_ascii() {
+        return index.min(value.len());
+    }
+
+    let mut units = 0;
+
+    for (offset, character) in value.char_indices() {
+        if units >= index {
+            return offset;
+        }
+
+        units += character.len_utf16();
+    }
+
+    value.len()
+}
+
+/// Slices by UTF-16 code units like `String.prototype.slice(start, end)` with non-negative bounds.
+pub fn slice(value: &str, start: usize, end: usize) -> &str {
+    let start = utf16_to_byte(value, start);
+    let end = utf16_to_byte(value, end).max(start);
+
+    value.get(start..end).unwrap_or_default()
+}
+
+/// Iterates UTF-16 code units, the values `String.prototype.charCodeAt` returns.
+pub fn code_units(value: &str) -> impl Iterator<Item = u16> + '_ {
+    value.encode_utf16()
+}
+
+/// A JSON-compatible value whose objects follow JavaScript own-property order.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Value {
+    /// An array in element order.
+    Array(Vec<Value>),
+    /// A boolean.
+    Bool(bool),
+    /// `null`.
+    Null,
+    /// A number, printed with JavaScript formatting.
+    Number(f64),
+    /// An object, printed in JavaScript own-property order.
+    Object(Object),
+    /// A string.
+    String(String),
+}
+
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_owned())
+    }
+}
+
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
+
+impl From<bool> for Value {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+
+impl From<Object> for Value {
+    fn from(value: Object) -> Self {
+        Self::Object(value)
+    }
+}
+
+impl From<Vec<Value>> for Value {
+    fn from(value: Vec<Value>) -> Self {
+        Self::Array(value)
+    }
+}
+
+/// Object entries in insertion order. Serialization lists array-index keys first, ascending, as
+/// JavaScript enumerates own properties.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Object {
+    entries: IndexMap<String, Value, FxBuildHasher>,
+}
+
+impl Object {
+    /// Creates an empty object.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets a property. An existing key keeps its position, as assignment does in JavaScript.
+    pub fn insert(&mut self, key: impl Into<String>, value: impl Into<Value>) {
+        self.entries.insert(key.into(), value.into());
+    }
+
+    /// Reads a property.
+    pub fn get(&self, key: &str) -> Option<&Value> {
+        self.entries.get(key)
+    }
+
+    /// Whether the object has no properties.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    /// Lists entries in JavaScript own-property order.
+    pub fn entries(&self) -> Vec<(&str, &Value)> {
+        let mut indexes: Vec<(u32, &str, &Value)> = Vec::new();
+        let mut names: Vec<(&str, &Value)> = Vec::with_capacity(self.entries.len());
+
+        for (key, value) in &self.entries {
+            match array_index(key) {
+                Some(index) => indexes.push((index, key, value)),
+                None => names.push((key, value)),
+            }
+        }
+
+        if indexes.is_empty() {
+            return names;
+        }
+
+        indexes.sort_unstable_by_key(|entry| entry.0);
+
+        indexes
+            .into_iter()
+            .map(|(_, key, value)| (key, value))
+            .chain(names)
+            .collect()
+    }
+}
+
+/// Parses a canonical array index, the keys JavaScript enumerates before other strings.
+pub fn array_index(key: &str) -> Option<u32> {
+    let bytes = key.as_bytes();
+
+    if bytes.is_empty() || bytes.len() > 10 || (bytes.len() > 1 && bytes.first() == Some(&b'0')) {
+        return None;
+    }
+
+    if !bytes.iter().all(u8::is_ascii_digit) {
+        return None;
+    }
+
+    let index: u64 = key.parse().ok()?;
+
+    // 2^32 - 1 is not an array index.
+    u32::try_from(index).ok().filter(|index| *index != u32::MAX)
+}
+
+/// Serializes like `JSON.stringify(value)` without indentation.
+pub fn stringify(value: &Value) -> String {
+    let mut output = String::new();
+
+    write_value(&mut output, value);
+
+    output
+}
+
+/// Appends a value serialized like `JSON.stringify(value)`.
+pub fn write_value(output: &mut String, value: &Value) {
+    match value {
+        Value::Array(items) => {
+            output.push('[');
+
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                write_value(output, item);
+            }
+
+            output.push(']');
+        }
+        Value::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
+        Value::Null => output.push_str("null"),
+        Value::Number(value) => {
+            if value.is_finite() {
+                write_number(output, *value);
+            } else {
+                output.push_str("null");
+            }
+        }
+        Value::Object(object) => {
+            output.push('{');
+
+            for (index, (key, value)) in object.entries().into_iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                write_string(output, key);
+                output.push(':');
+                write_value(output, value);
+            }
+
+            output.push('}');
+        }
+        Value::String(value) => write_string(output, value),
+    }
+}
+
+/// Quotes a string like `JSON.stringify(value)`.
+pub fn quote(value: &str) -> String {
+    let mut output = String::with_capacity(value.len() + 2);
+
+    write_string(&mut output, value);
+
+    output
+}
+
+/// Appends a string quoted like `JSON.stringify(value)`.
+pub fn write_string(output: &mut String, value: &str) {
+    output.push('"');
+
+    let bytes = value.as_bytes();
+    let mut start = 0;
+
+    for (index, byte) in bytes.iter().enumerate() {
+        let escape = match byte {
+            b'"' => "\\\"",
+            b'\\' => "\\\\",
+            b'\n' => "\\n",
+            b'\r' => "\\r",
+            b'\t' => "\\t",
+            0x08 => "\\b",
+            0x0c => "\\f",
+            0x00..=0x1f => "",
+            _ => continue,
+        };
+
+        output.push_str(value.get(start..index).unwrap_or_default());
+
+        if escape.is_empty() {
+            let _ = write!(output, "\\u{byte:04x}");
+        } else {
+            output.push_str(escape);
+        }
+
+        start = index + 1;
+    }
+
+    output.push_str(value.get(start..).unwrap_or_default());
+    output.push('"');
+}
+
+/// Whether a character matches the JavaScript regular expression class `\s`.
+pub fn is_whitespace(character: char) -> bool {
+    matches!(
+        character,
+        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
+            ..='\u{200a}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202f}'
+                | '\u{205f}'
+                | '\u{3000}'
+                | '\u{feff}'
+    )
+}
+
+/// Trims like `String.prototype.trim`.
+pub fn trim(value: &str) -> &str {
+    value.trim_matches(is_whitespace)
+}
+
+/// Whether a character matches the JavaScript regular expression class `\w`.
+pub fn is_word(character: char) -> bool {
+    character.is_ascii_alphanumeric() || character == '_'
+}
+
+/// Parses a leading decimal number like `Number.parseFloat`, returning `NaN` when none exists.
+pub fn parse_float(value: &str) -> f64 {
+    let text = value.trim_start_matches(is_whitespace);
+
+    for infinity in ["Infinity", "+Infinity", "-Infinity"] {
+        if text.starts_with(infinity) {
+            return if infinity.starts_with('-') {
+                f64::NEG_INFINITY
+            } else {
+                f64::INFINITY
+            };
+        }
+    }
+
+    let length = decimal_prefix(text);
+
+    text.get(..length)
+        .and_then(|number| number.parse().ok())
+        .unwrap_or(f64::NAN)
+}
+
+/// Measures the longest decimal literal prefix: sign, digits, fraction, and exponent.
+pub fn decimal_prefix(text: &str) -> usize {
+    let bytes = text.as_bytes();
+    let mut index = 0;
+
+    if matches!(bytes.first(), Some(b'+' | b'-')) {
+        index += 1;
+    }
+
+    let integer = bytes
+        .get(index..)
+        .unwrap_or_default()
+        .iter()
+        .take_while(|byte| byte.is_ascii_digit())
+        .count();
+    index += integer;
+
+    let mut fraction = 0;
+
+    if bytes.get(index) == Some(&b'.') {
+        fraction = bytes
+            .get(index + 1..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count();
+
+        if fraction > 0 || integer > 0 {
+            index += 1 + fraction;
+        }
+    }
+
+    if integer == 0 && fraction == 0 {
+        return 0;
+    }
+
+    if matches!(bytes.get(index), Some(b'e' | b'E')) {
+        let sign = usize::from(matches!(bytes.get(index + 1), Some(b'+' | b'-')));
+        let digits = bytes
+            .get(index + 1 + sign..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count();
+
+        if digits > 0 {
+            index += 1 + sign + digits;
+        }
+    }
+
+    index
+}
+
+/// Matches the regular expression `[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?` at the start of a string.
+///
+/// Unlike [`decimal_prefix`], a trailing `.` without fraction digits is not consumed.
+pub fn css_number_prefix(text: &str, signs: &[u8]) -> usize {
+    let bytes = text.as_bytes();
+    let mut index = usize::from(bytes.first().is_some_and(|byte| signs.contains(byte)));
+    let integer = bytes
+        .get(index..)
+        .unwrap_or_default()
+        .iter()
+        .take_while(|byte| byte.is_ascii_digit())
+        .count();
+    let fraction = if bytes.get(index + integer) == Some(&b'.') {
+        bytes
+            .get(index + integer + 1..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count()
+    } else {
+        0
+    };
+
+    if fraction > 0 {
+        index += integer + 1 + fraction;
+    } else if integer > 0 {
+        index += integer;
+    } else {
+        return 0;
+    }
+
+    if matches!(bytes.get(index), Some(b'e' | b'E')) {
+        let sign = usize::from(matches!(bytes.get(index + 1), Some(b'+' | b'-')));
+        let digits = bytes
+            .get(index + 1 + sign..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count();
+
+        if digits > 0 {
+            index += 1 + sign + digits;
+        }
+    }
+
+    index
+}
+
+/// Converts a string to a number like `Number(value)` for decimal spellings.
+pub fn to_number(value: &str) -> f64 {
+    let text = trim(value);
+
+    if text.is_empty() {
+        return 0.0;
+    }
+
+    match text {
+        "Infinity" | "+Infinity" => return f64::INFINITY,
+        "-Infinity" => return f64::NEG_INFINITY,
+        _ => {}
+    }
+
+    if css_number_prefix(text, b"+-") == text.len() || decimal_prefix(text) == text.len() {
+        return text.parse().unwrap_or(f64::NAN);
+    }
+
+    f64::NAN
+}

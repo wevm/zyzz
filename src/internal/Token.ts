@@ -11,8 +11,8 @@ import type * as VariableSets from '../Vars.js'
 import * as Literal from './Literal.js'
 import * as VariableData from './VariableSets.js'
 
-// Ordered category fallbacks shared by runtime lookup and inferred token names.
-const propertyGroups = {
+/** Ordered category fallbacks shared by runtime lookup and inferred token names. */
+export const propertyGroups = {
   accentColor: ['accentColor', 'color'],
   animation: ['animate'],
   aspectRatio: ['aspect'],

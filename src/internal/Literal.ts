@@ -528,7 +528,8 @@ const fragmentation = {
     'verso',
   ],
 } as const
-const globals = new Set<string>([
+/** CSS-wide keywords accepted by every property. */
+export const globals = new Set<string>([
   'inherit',
   'initial',
   'revert',
@@ -744,7 +745,8 @@ export const namedColors = [
   'yellow',
   'yellowgreen',
 ] as const
-const systemColors = [
+/** Deprecated and current system color keywords. */
+export const systemColors = [
   'ActiveBorder',
   'ActiveCaption',
   'AppWorkspace',

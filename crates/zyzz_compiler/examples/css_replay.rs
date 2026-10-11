@@ -22,6 +22,11 @@ struct Capture {
     encode_error: Option<String>,
     #[serde(default)]
     input: Option<String>,
+    /// `Identity.style` names expected for each style, in identity mode.
+    #[serde(default)]
+    names: Option<Vec<String>>,
+    #[serde(default)]
+    namespace: Option<String>,
     output: String,
 }
 
@@ -79,6 +84,50 @@ fn main() {
 
                 continue;
             };
+            if let Some(names) = capture.names {
+                // Identity names ignore output modes, which decoding validates for compilation.
+                let Ok(decoded) = zyzz_compiler::wire::decode(&input) else {
+                    *counts
+                        .entry("identity excluded: invalid output mode")
+                        .or_default() += 1;
+                    continue;
+                };
+                let actual: Vec<String> = decoded
+                    .styles
+                    .iter()
+                    .map(|style| {
+                        zyzz_compiler::internal::identity::style(
+                            style,
+                            capture.namespace.as_deref(),
+                        )
+                    })
+                    .collect();
+
+                *counts.entry("identity compared").or_default() += 1;
+
+                if actual == names {
+                    *counts.entry("identity equal").or_default() += 1;
+                } else {
+                    *counts.entry("identity mismatch").or_default() += 1;
+
+                    if let Some(report) = &mut report {
+                        writeln!(
+                            report,
+                            "{}",
+                            serde_json::json!({
+                                "actual": actual,
+                                "category": "identity",
+                                "expected": names,
+                                "input": input,
+                            })
+                        )
+                        .expect("report");
+                    }
+                }
+
+                continue;
+            }
+
             let start = Instant::now();
             let decoded = zyzz_compiler::wire::decode(&input);
             let decoded_at = Instant::now();

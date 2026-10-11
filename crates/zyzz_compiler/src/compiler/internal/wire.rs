@@ -193,22 +193,23 @@ impl<'o> Encoder<'o> {
 
         value.insert("complete".into(), json!(contract.complete));
         value.insert("identity".into(), json!(contract.identity.as_deref()));
-        // Present properties enumerate in creation order, or the configuration order without one.
-        let keys: Vec<&str> = contract
-            .keys
-            .as_deref()
-            .unwrap_or(&ContractKey::ORDER)
-            .iter()
-            .filter(|key| match key {
-                ContractKey::Composition => contract.composition.is_some(),
-                ContractKey::CssOutput => contract.css_output.is_some(),
-                ContractKey::DefaultLayer => contract.default_layer.is_some(),
-                ContractKey::Mappings => contract.mappings.is_some(),
-                ContractKey::Shorthands => contract.shorthands.is_some(),
-                ContractKey::VariableSet => contract.variable_set,
-            })
-            .map(|key| key.as_str())
-            .collect();
+        // Recorded keys are the own properties in creation order. Without them, present
+        // properties enumerate in the configuration order.
+        let keys: Vec<&str> = match &contract.keys {
+            Some(keys) => keys.iter().map(|key| key.as_str()).collect(),
+            None => ContractKey::ORDER
+                .iter()
+                .filter(|key| match key {
+                    ContractKey::Composition => contract.composition.is_some(),
+                    ContractKey::CssOutput => contract.css_output.is_some(),
+                    ContractKey::DefaultLayer => contract.default_layer.is_some(),
+                    ContractKey::Mappings => contract.mappings.is_some(),
+                    ContractKey::Shorthands => contract.shorthands.is_some(),
+                    ContractKey::VariableSet => contract.variable_set,
+                })
+                .map(|key| key.as_str())
+                .collect(),
+        };
 
         value.insert("keys".into(), strings(keys));
         value.insert("variableSet".into(), json!(contract.variable_set));
@@ -620,11 +621,20 @@ impl<'o> Encoder<'o> {
             "cssName",
             call.css_name.as_deref().map(|value| json!(value)),
         );
-        optional(
-            &mut object,
-            "cssNamespace",
-            call.css_namespace.as_deref().map(|value| json!(value)),
-        );
+        // Definition calls always carry a namespace field, which compositions omit when absent.
+        let composed = call.composition.is_some()
+            || call.runtime_composition.is_some()
+            || call.composition_case;
+
+        if composed {
+            optional(
+                &mut object,
+                "cssNamespace",
+                call.css_namespace.as_deref().map(|value| json!(value)),
+            );
+        } else {
+            object.insert("cssNamespace".into(), json!(call.css_namespace.as_deref()));
+        }
         optional(
             &mut object,
             "portableInputs",
@@ -1251,6 +1261,8 @@ impl<'o> Encoder<'o> {
         );
 
         object.insert("vars".into(), vars);
+        // Collected themes are keyed by a null-prototype record, unlike the empty fallback.
+        object.insert("collectedThemes".into(), json!(extracted.collected_themes));
 
         Value::Object(object)
     }
@@ -1282,6 +1294,35 @@ pub fn error(error: &Error) -> Value {
                 "name": "Source.ExtractError",
                 "message": error.message(),
                 "diagnostics": diagnostics(&error.diagnostics),
+            }
+        }),
+        Error::Theme { message, path } | Error::Vars { message, path } => json!({
+            "error": {
+                "name": error_name(error),
+                "message": error.text(),
+                "path": path,
+                "reason": message,
+            }
+        }),
+        Error::Style(diagnostics) => json!({
+            "error": {
+                "name": "Style.InvalidError",
+                "message": error.text(),
+                "diagnostics": diagnostics.iter().map(|diagnostic| {
+                    let mut object = Map::new();
+
+                    object.insert("code".into(), json!(diagnostic.code.as_str()));
+                    optional(&mut object, "location", diagnostic.location.as_ref().map(|location| json!({
+                        "end": location.end,
+                        "path": strings(location.path.iter()),
+                        "source": &*location.source,
+                        "start": location.start,
+                    })));
+                    object.insert("message".into(), json!(diagnostic.message));
+                    object.insert("path".into(), strings(diagnostic.path.iter()));
+
+                    Value::Object(object)
+                }).collect::<Vec<_>>(),
             }
         }),
         error => json!({

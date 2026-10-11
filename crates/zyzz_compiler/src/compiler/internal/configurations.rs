@@ -241,16 +241,30 @@ pub fn collect<'a>(
     };
     let shorthands_input = field("shorthands");
     let html = field("output").as_str() == Some("html");
+    // Configurations.ts creates these own properties in this order, and variable mode always
+    // creates `mappings`, even when it is undefined.
+    let mut keys = Vec::with_capacity(6);
+
+    if variable_mode {
+        keys.extend([ContractKey::VariableSet, ContractKey::Mappings]);
+    }
+
+    if !field("composition").is_undefined() {
+        keys.push(ContractKey::Composition);
+    }
+
+    keys.push(ContractKey::CssOutput);
+
+    if !field("defaultLayer").is_undefined() {
+        keys.push(ContractKey::DefaultLayer);
+    }
+
+    if !shorthands_input.is_undefined() {
+        keys.push(ContractKey::Shorthands);
+    }
+
     let contract = Arc::new(Contract {
-        // Configurations.ts spreads cssOutput before defaultLayer.
-        keys: Some(Arc::from([
-            ContractKey::VariableSet,
-            ContractKey::Mappings,
-            ContractKey::Composition,
-            ContractKey::CssOutput,
-            ContractKey::DefaultLayer,
-            ContractKey::Shorthands,
-        ])),
+        keys: Some(Arc::from(keys)),
         complete: !id.is_undefined(),
         composition: field("composition")
             .as_str()

@@ -257,6 +257,8 @@ pub struct Options<'s, 'a> {
 pub struct Extracted<'a> {
     /// Direct calls in source order.
     pub calls: Vec<Call<'a>>,
+    /// Whether theme collection ran, which needs a theme factory import or graph links.
+    pub collected_themes: bool,
     /// Stylesheet factory calls and their source replacements.
     pub contribution_calls: Vec<contributions::Call<'a>>,
     /// Call starts of each contribution, in contribution order.
@@ -2756,6 +2758,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let Some(themes) = themes else {
         return Ok(Extracted {
             calls,
+            collected_themes: false,
             contribution_calls: contributions.calls,
             contribution_starts,
             contributions: contribution_data,
@@ -2798,6 +2801,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
 
     Ok(Extracted {
         calls,
+        collected_themes: true,
         contribution_calls: contributions.calls,
         contribution_starts,
         contributions: contribution_data,

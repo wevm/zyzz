@@ -1322,3 +1322,679 @@ fn shorthand_data(map: Option<&Map<Arc<[Arc<str>]>>>) -> Data {
         })
     })))
 }
+
+/// Catalog of one configuration call, published whether or not the call is exported.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Configuration {
+    /// Configuration identity that prefixes every theme scope key.
+    pub identity: Arc<str>,
+    /// `localStorage` key the configuration's script and root controls share.
+    pub storage_key: Option<Arc<str>>,
+    /// Named theme keys of the configuration's catalog.
+    pub themes: Vec<Arc<str>>,
+}
+
+/// Inputs of [`write`].
+#[derive(Clone, Copy)]
+pub struct Write<'w> {
+    /// Exact emitted rules by class name.
+    pub class_rules: &'w [(Arc<str>, Arc<str>)],
+    /// Local configuration catalogs.
+    pub configurations: &'w [Configuration],
+    /// Exported authoring values by export name.
+    pub links: &'w Record<Link>,
+    /// Portable identity of the module that publishes the contract.
+    pub module_id: &'w str,
+    /// Owned stylesheet sections.
+    pub stylesheets: &'w [Section],
+    /// Theme and variable-set definitions by scope key.
+    pub themes: &'w Record<Arc<theme::Definition>>,
+}
+
+/// Emits compiler-only metadata without adding it to the runtime module.
+///
+/// # Errors
+///
+/// Returns the TypeScript message when a native style catalog has no packed theme.
+pub fn write(options: &Write<'_>) -> Result<String> {
+    let mut output = String::from("{");
+
+    if !options.class_rules.is_empty() {
+        output.push_str("\"classRules\":");
+        js::write_object(
+            &mut output,
+            options
+                .class_rules
+                .iter()
+                .map(|(name, rule)| (&**name, rule)),
+            |output, rule| js::write_string(output, rule),
+        );
+        output.push(',');
+    }
+
+    if !options.stylesheets.is_empty() {
+        output.push_str("\"stylesheets\":[");
+
+        for (index, section) in stylesheets::write(options.stylesheets).iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            write_section(&mut output, section);
+        }
+
+        output.push_str("],");
+    }
+
+    // Local configurations publish their catalogs so documents restore selections for modules
+    // that export styles but not the configuration.
+    if !options.configurations.is_empty() {
+        output.push_str("\"configurations\":[");
+
+        for (index, configuration) in options.configurations.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            output.push_str("{\"identity\":");
+            js::write_string(&mut output, &configuration.identity);
+
+            if let Some(storage_key) = &configuration.storage_key {
+                output.push_str(",\"storageKey\":");
+                js::write_string(&mut output, storage_key);
+            }
+
+            output.push_str(",\"themes\":");
+            write_strings(&mut output, &configuration.themes);
+            output.push('}');
+        }
+
+        output.push_str("],");
+    }
+
+    output.push_str("\"exports\":{");
+
+    for (index, (name, link)) in options.links.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        js::write_string(&mut output, name);
+        output.push(':');
+        write_entry(&mut output, link, options)?;
+    }
+
+    output.push_str("},\"themes\":{");
+
+    for (index, (name, theme)) in options.themes.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        js::write_string(&mut output, name);
+        output.push(':');
+        write_theme(&mut output, theme);
+    }
+
+    output.push_str("},\"version\":");
+
+    let version = if options
+        .themes
+        .values()
+        .any(|theme| theme.metadata.contract.composition.is_some())
+        || options.links.values().any(composed)
+    {
+        34
+    } else if options.links.values().any(native_catalog) {
+        33
+    } else if options.links.values().any(native_provider) {
+        32
+    } else {
+        31
+    };
+
+    output.push_str(&version.to_string());
+    output.push('}');
+
+    Ok(output)
+}
+
+fn composed(link: &Link) -> bool {
+    link.style
+        .as_ref()
+        .is_some_and(|style| style.style.composition.is_some())
+        || link.members.iter().flat_map(Record::values).any(composed)
+}
+
+fn native_provider(link: &Link) -> bool {
+    link.call.native_provider
+        || link
+            .members
+            .iter()
+            .flat_map(Record::values)
+            .any(native_provider)
+}
+
+fn native_catalog(link: &Link) -> bool {
+    link.style
+        .as_ref()
+        .is_some_and(|style| style.native_context.is_some())
+        || link
+            .members
+            .iter()
+            .flat_map(Record::values)
+            .any(native_catalog)
+}
+
+fn write_strings(output: &mut String, values: &[Arc<str>]) {
+    output.push('[');
+
+    for (index, value) in values.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        js::write_string(output, value);
+    }
+
+    output.push(']');
+}
+
+/// The TypeScript spelling of a link kind.
+const fn kind_name(kind: LinkKind) -> &'static str {
+    match kind {
+        LinkKind::Animation => "animation",
+        LinkKind::Config => "config",
+        LinkKind::RuleReference => "rule-reference",
+        LinkKind::Style => "style",
+        LinkKind::StyleReference => "style-reference",
+        LinkKind::Theme => "theme",
+        LinkKind::Variables => "variables",
+    }
+}
+
+/// The TypeScript spelling of a rule reference kind.
+const fn reference_name(kind: rule_reference::Kind) -> &'static str {
+    match kind {
+        rule_reference::Kind::ColorProfile => "colorProfile",
+        rule_reference::Kind::CounterStyle => "counterStyle",
+        rule_reference::Kind::CssFunction => "cssFunction",
+        rule_reference::Kind::CustomMedia => "customMedia",
+        rule_reference::Kind::FontPaletteValues => "fontPaletteValues",
+        rule_reference::Kind::PositionTry => "positionTry",
+    }
+}
+
+fn write_members(output: &mut String, link: &Link, options: &Write<'_>) -> Result<()> {
+    let Some(members) = &link.members else {
+        return Ok(());
+    };
+
+    output.push_str(",\"members\":{");
+
+    for (index, (name, member)) in members.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        js::write_string(output, name);
+        output.push(':');
+        write_entry(output, member, options)?;
+    }
+
+    output.push('}');
+
+    Ok(())
+}
+
+fn write_entry(output: &mut String, link: &Link, options: &Write<'_>) -> Result<()> {
+    let call = &link.call;
+    let head = |output: &mut String| {
+        output.push_str("\"binding\":");
+        js::write_string(output, &link.binding);
+        output.push_str(",\"kind\":");
+        js::write_string(output, kind_name(link.kind));
+    };
+
+    output.push('{');
+
+    match link.kind {
+        LinkKind::Variables => {
+            head(output);
+
+            if let Some(variables) = &call.variables {
+                output.push_str(",\"variables\":");
+                js::write_object(
+                    output,
+                    variables.iter().map(|(name, binding)| (&**name, binding)),
+                    |output, binding| packed_styles::encode_binding(output, binding),
+                );
+            }
+
+            write_members(output, link, options)?;
+
+            if let Some(owner) = call
+                .variable_owner
+                .as_deref()
+                .filter(|owner| !owner.is_empty())
+            {
+                output.push_str(",\"source\":");
+                js::write_string(output, &stylesheets::relative(options.module_id, owner));
+            }
+        }
+        LinkKind::RuleReference => {
+            head(output);
+            output.push_str(",\"name\":");
+            js::write_string(output, &call.name);
+
+            if let Some(reference) = call.reference {
+                output.push_str(",\"reference\":");
+                js::write_string(output, reference_name(reference));
+            }
+
+            if let Some(function) = &call.function {
+                output.push_str(",\"function\":");
+                write_function(output, function);
+            }
+        }
+        LinkKind::Animation => {
+            head(output);
+            output.push_str(",\"name\":");
+            js::write_string(output, &call.name);
+        }
+        LinkKind::StyleReference => {
+            head(output);
+
+            if let Some(context) = link
+                .style
+                .as_ref()
+                .and_then(|style| style.native_context.as_ref())
+            {
+                output.push_str(",\"nativeContext\":{\"defaultVars\":");
+                js::write_string(output, &context.default_vars);
+                output.push_str(",\"vars\":{");
+
+                for (index, (name, definition)) in context.vars.iter().enumerate() {
+                    let expected = input_json(definition);
+                    let Some((theme, _)) = options.themes.iter().find(|(_, candidate)| {
+                        Arc::ptr_eq(&candidate.metadata.contract, &definition.metadata.contract)
+                            && input_json(candidate) == expected
+                    }) else {
+                        return Err(message("Missing packed native style catalog."));
+                    };
+
+                    if index > 0 {
+                        output.push(',');
+                    }
+
+                    js::write_string(output, name);
+                    output.push(':');
+                    js::write_string(output, theme);
+                }
+
+                output.push_str("}}");
+            }
+
+            if let Some(style) = &link.style {
+                output.push_str(",\"style\":");
+                packed_styles::write(output, style);
+            }
+
+            write_members(output, link, options)?;
+        }
+        LinkKind::Config | LinkKind::Style | LinkKind::Theme => {
+            let config = link.kind == LinkKind::Config;
+            let flag = |output: &mut String, name: &str, enabled: bool| {
+                if enabled {
+                    js::write_string(output, name);
+                    output.push_str(":true,");
+                }
+            };
+
+            flag(output, "variableSet", call.variable_set);
+            flag(output, "nativeProvider", call.native_provider);
+            flag(output, "directVariables", call.direct_variables);
+
+            if call.variable_config {
+                output.push_str("\"variableConfig\":true,");
+
+                if let Some(mappings) = &call.variable_mappings {
+                    output.push_str("\"variableMappings\":");
+                    output.push_str(&mappings_json(Some(mappings)));
+                    output.push(',');
+                }
+            }
+
+            flag(output, "recipe", call.recipe);
+
+            if call.output == Some(Output::Html) {
+                output.push_str("\"output\":\"html\",");
+            }
+
+            flag(
+                output,
+                "script",
+                call.script && (config || call.initialization),
+            );
+            flag(
+                output,
+                "appearance",
+                call.appearance && (config || call.root),
+            );
+            head(output);
+            output.push_str(",\"theme\":");
+            js::write_string(output, &call.name);
+            output.push(',');
+            flag(output, "catalogOnly", call.catalog_only);
+            flag(output, "selection", call.selection);
+            flag(output, "initialization", call.initialization);
+            flag(output, "root", call.root);
+
+            // Flags end with a separator, which the last one gives back.
+            output.pop();
+
+            if let Some(options) = &call.options {
+                output.push_str(",\"options\":");
+                write_encoded(output, &Data::Object(Arc::new(options.clone())));
+            }
+
+            write_members(output, link, options)?;
+        }
+    }
+
+    output.push('}');
+
+    Ok(())
+}
+
+fn write_function(output: &mut String, function: &FunctionSignature) {
+    output.push_str("{\"parameters\":[");
+
+    for (index, parameter) in function.parameters.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        output.push_str("{\"name\":");
+        js::write_string(output, &parameter.name);
+
+        if let Some(syntax) = &parameter.syntax {
+            output.push_str(",\"syntax\":");
+            js::write_string(output, syntax);
+        }
+
+        match &parameter.default {
+            Some(Scalar::Number(number)) => {
+                output.push_str(",\"default\":");
+
+                if number.is_finite() {
+                    js::write_number(output, *number);
+                } else {
+                    output.push_str("null");
+                }
+            }
+            Some(Scalar::String(text)) => {
+                output.push_str(",\"default\":");
+                js::write_string(output, text);
+            }
+            None => {}
+        }
+
+        output.push('}');
+    }
+
+    output.push_str("],\"returns\":");
+    js::write_string(output, &function.returns);
+    output.push('}');
+}
+
+/// `JSON.stringify(input(theme))`, which compares native catalog alternatives.
+fn input_json(theme: &theme::Definition) -> String {
+    let mut output = String::new();
+
+    packed_styles::write_data(&mut output, &input(theme));
+    output
+}
+
+fn write_theme(output: &mut String, theme: &theme::Definition) {
+    let metadata = &theme.metadata;
+    let contract = &metadata.contract;
+
+    output.push('{');
+
+    if let Some(css_name) = &metadata.css_name {
+        output.push_str("\"cssName\":");
+        js::write_string(output, css_name);
+        output.push(',');
+    }
+
+    if let Some(shorthands) = &contract.shorthands {
+        output.push_str("\"shorthands\":");
+        js::write_object(
+            output,
+            shorthands.iter().map(|(name, targets)| (&**name, targets)),
+            |output, targets| write_strings(output, targets),
+        );
+        output.push(',');
+    }
+
+    if let Some(layer) = &contract.default_layer {
+        output.push_str("\"defaultLayer\":");
+        js::write_string(output, layer);
+        output.push(',');
+    }
+
+    if let Some(composition) = contract.composition {
+        output.push_str("\"composition\":");
+        js::write_string(output, composition.as_str());
+        output.push(',');
+    }
+
+    if let Some(css_output) = contract.css_output {
+        output.push_str("\"cssOutput\":");
+        js::write_string(output, css_output.as_str());
+        output.push(',');
+    }
+
+    if contract.variable_set {
+        output.push_str("\"variableSet\":true,");
+
+        if let Some(mappings) = &contract.mappings {
+            output.push_str("\"mappings\":");
+            output.push_str(&mappings_json(Some(mappings)));
+            output.push(',');
+        }
+    }
+
+    if let Some(identity) = &contract.identity {
+        output.push_str("\"identity\":");
+        js::write_string(output, identity);
+        output.push(',');
+    }
+
+    output.push_str("\"tokens\":");
+    write_encoded(output, &input(theme));
+    output.push('}');
+}
+
+/// Appends a section in the order graph emission creates its properties.
+fn write_section(output: &mut String, section: &Section) {
+    output.push_str("{\"source\":");
+    js::write_string(output, &section.source);
+
+    if let Some(namespaces) = &section.namespaces {
+        output.push_str(",\"namespaces\":[");
+
+        for (index, namespace) in namespaces.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            if section.authored_namespaces {
+                output.push_str("{\"kind\":\"namespace\",\"uri\":");
+                js::write_string(output, &namespace.uri);
+
+                if let Some(prefix) = &namespace.prefix {
+                    output.push_str(",\"prefix\":");
+                    js::write_string(output, prefix);
+                }
+
+                output.push_str(",\"name\":");
+                js::write_string(output, &namespace.name);
+            } else {
+                output.push_str("{\"name\":");
+                js::write_string(output, &namespace.name);
+                output.push_str(",\"uri\":");
+                js::write_string(output, &namespace.uri);
+
+                if let Some(prefix) = &namespace.prefix {
+                    output.push_str(",\"prefix\":");
+                    js::write_string(output, prefix);
+                }
+            }
+
+            output.push('}');
+        }
+
+        output.push(']');
+    }
+
+    if let Some(owner) = &section.owner {
+        output.push_str(",\"owner\":");
+        js::write_string(output, owner);
+    }
+
+    if let Some(dependency) = &section.dependency {
+        output.push_str(",\"dependency\":");
+        write_strings(output, dependency);
+    }
+
+    if let Some(key) = &section.key {
+        output.push_str(",\"key\":");
+        js::write_string(output, key);
+    }
+
+    output.push_str(",\"css\":");
+    js::write_string(output, &section.css);
+    output.push_str(",\"layers\":[");
+
+    for (index, layers) in section.layers.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        write_strings(output, layers);
+    }
+
+    output.push(']');
+
+    if let Some(start) = section.start {
+        output.push_str(",\"start\":");
+        output.push_str(&start.to_string());
+    }
+
+    // `Stylesheets.write` moves retained source text after the other properties.
+    if let Some(content) = &section.content {
+        output.push_str(",\"content\":");
+        js::write_string(output, content);
+    }
+
+    output.push('}');
+}
+
+/// Appends a value as `Contract.ts` encodes it: compositions and token references become
+/// `$composition` and `$variable` records, and objects that already use those keys are wrapped in
+/// `$object`.
+fn write_encoded(output: &mut String, value: &Data) {
+    match value {
+        Data::Array(items) => {
+            output.push('[');
+
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                if item.is_undefined() {
+                    output.push_str("null");
+                } else {
+                    write_encoded(output, item);
+                }
+            }
+
+            output.push(']');
+        }
+        Data::Binding(binding) => packed_styles::encode_binding(output, binding),
+        Data::Expression(expression) => write_expression(output, expression),
+        Data::Object(object) => {
+            let wrapped = ["$composition", "$variable", "$object"]
+                .iter()
+                .any(|key| object.has(key));
+
+            if wrapped {
+                output.push_str("{\"$object\":");
+            }
+
+            js::write_object(
+                output,
+                object.iter().filter(|(_, value)| !value.is_undefined()),
+                write_encoded,
+            );
+
+            if wrapped {
+                output.push('}');
+            }
+        }
+        Data::Token(reference) => write_variable(output, reference),
+        value => js::write_data(output, value),
+    }
+}
+
+fn write_expression(output: &mut String, expression: &token::Expression) {
+    let write_parts = |output: &mut String| {
+        output.push_str("\"parts\":[");
+
+        for (index, part) in expression.parts.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            match part {
+                token::Part::Binding(binding) => packed_styles::encode_binding(output, binding),
+                token::Part::Reference(reference) => write_variable(output, reference),
+                token::Part::Text(text) => js::write_string(output, text),
+            }
+        }
+
+        output.push(']');
+    };
+
+    if let Some(group) = &expression.group {
+        output.push_str("{\"$composition\":{\"group\":");
+        js::write_string(output, group);
+        output.push(',');
+        write_parts(output);
+        output.push_str("}}");
+    } else {
+        // A declaration expression encodes as its plain `parts` record.
+        output.push('{');
+        write_parts(output);
+        output.push('}');
+    }
+}
+
+fn write_variable(output: &mut String, reference: &token::Reference) {
+    output.push_str("{\"$variable\":{");
+
+    if let Some(identity) = &reference.contract.identity {
+        output.push_str("\"identity\":");
+        js::write_string(output, identity);
+        output.push(',');
+    }
+
+    output.push_str("\"path\":");
+    js::write_string(output, &reference.path);
+    output.push_str(",\"value\":");
+    write_encoded(output, &variable_sets::value_data(&reference.value));
+    output.push_str("}}");
+}

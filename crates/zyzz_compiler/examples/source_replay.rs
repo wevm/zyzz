@@ -138,6 +138,9 @@ fn replay(case: &Value) -> Value {
         }
         Some("recipes") => recipe(source, module_id),
         Some("contract-text") => contract(case["contract"].as_str().unwrap_or_default(), module_id),
+        Some("contract-roundtrip") => {
+            contract_roundtrip(case["contract"].as_str().unwrap_or_default(), module_id)
+        }
         kind => json!({ "error": format!("unknown kind {kind:?}") }),
     }
 }
@@ -614,6 +617,40 @@ fn contract(text: &str, module_id: &str) -> Value {
             "variableSet": theme.metadata.contract.variable_set,
         }))).collect()),
     })
+}
+
+fn contract_roundtrip(text: &str, module_id: &str) -> Value {
+    use zyzz_compiler::compiler::internal::{contract, identifiers};
+
+    let validate = |_: &str, _: &str| -> zyzz_compiler::error::Result<()> { Ok(()) };
+    let identifier = |value: &str| identifiers::read(value);
+    let hooks = contract::Hooks {
+        identifier: &identifier,
+        validate: &validate,
+    };
+    let mut identities = rustc_hash::FxHashMap::default();
+    let library = match contract::read(text, &mut identities, module_id, &hooks) {
+        Ok(library) => library,
+        Err(error) => return json!({ "error": error.text() }),
+    };
+    let class_rules: Vec<_> = library
+        .class_rules
+        .iter()
+        .map(|(name, rule)| (std::sync::Arc::clone(name), std::sync::Arc::clone(rule)))
+        .collect();
+    let written = contract::write(&contract::Write {
+        class_rules: &class_rules,
+        configurations: &[],
+        links: &library.links,
+        module_id,
+        stylesheets: &library.stylesheets,
+        themes: &library.themes,
+    });
+
+    match written {
+        Ok(text) => json!({ "text": text }),
+        Err(error) => json!({ "error": error.text() }),
+    }
 }
 
 #[expect(

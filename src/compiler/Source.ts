@@ -1300,8 +1300,14 @@ export function extract(options: extract.Options): extract.ReturnType {
         if (
           local?.recipe ||
           local?.slots ||
-          packed?.attributes.length ||
-          packed?.slots.length
+          packed?.dynamic ||
+          (packed?.staticRecipe &&
+            !(
+              packed.staticRecipe.rules.length === 1 &&
+              packed.staticRecipe.rules[0]!.value.styles.length === 1 &&
+              packed.staticRecipe.rules[0]!.value.styles[0]!.name ===
+                packed.style.name
+            ))
         ) {
           report(
             'unsupported_syntax',
@@ -1311,7 +1317,14 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
 
-        parts.push(style)
+        // The composing configuration decides output for every copied entry.
+        parts.push(
+          Object.fromEntries(
+            Object.entries(style).filter(
+              ([key]) => key !== 'composition' && key !== 'cssOutput',
+            ),
+          ) as Style.NamedStyle,
+        )
 
         if (local) {
           properties.push(...(bodies.get(local.start)?.properties ?? []))

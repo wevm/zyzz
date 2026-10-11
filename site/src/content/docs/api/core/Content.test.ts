@@ -1255,7 +1255,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(80)
+    expect(files).toHaveLength(81)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

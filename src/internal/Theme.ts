@@ -40,11 +40,7 @@ export type StyleFactory<tokens extends Tokens> = {
   ): style.Dynamic<values>
   <const entries>(
     styles: entries & {
-      readonly [index in keyof entries]: entries[index] extends (
-        ...args: never
-      ) => unknown
-        ? style.Composable<entries[index]>
-        : entries[index] & NoInfer<Style.Accepted<entries[index], tokens>>
+      readonly [index in keyof entries]: Entry<entries[index], tokens>
     },
     ...options: entries extends readonly unknown[]
       ? [options?: style.DefinitionOptions]
@@ -67,6 +63,13 @@ export type StyleFactory<tokens extends Tokens> = {
     options?: style.DefinitionOptions,
   ): style.ReturnType
 }
+
+// Distributes over mixed element unions so each member keeps its own contract.
+type Entry<entry, tokens extends Tokens> = entry extends (
+  ...args: never
+) => unknown
+  ? style.Composable<entry>
+  : entry & NoInfer<Style.Accepted<entry, tokens>>
 
 /**
  * Defines scalar tokens and typography sets without defaults or environment access.

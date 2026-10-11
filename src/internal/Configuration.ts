@@ -647,14 +647,25 @@ type Entries<
   layers extends string,
   mappings extends Shorthands.Map,
 > = {
-  readonly [index in keyof entries]: entries[index] extends (
-    ...args: never
-  ) => unknown
-    ? style.Composable<entries[index]>
-    : entries[index] &
-        NoInfer<Body<entries[index], tokens, layers, mappings>> &
-        Completion.Properties<tokens>
+  readonly [index in keyof entries]: Entry<
+    entries[index],
+    tokens,
+    layers,
+    mappings
+  >
 }
+
+// Distributes over mixed element unions so each member keeps its own contract.
+type Entry<
+  entry,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> = entry extends (...args: never) => unknown
+  ? style.Composable<entry>
+  : entry &
+      NoInfer<Body<entry, tokens, layers, mappings>> &
+      Completion.Properties<tokens>
 
 type Keys<styles> = styles extends unknown ? keyof styles : never
 

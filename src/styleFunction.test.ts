@@ -1899,6 +1899,80 @@ export const card = style([shared.base, { color: 'blue' }])`,
       `)
     })
 
+    test('applies the composing configuration output to every entry', () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import { defineConfig } from 'zyzz'
+const grouped = defineConfig({ cssOutput: 'grouped', vars: {} })
+const atomic = defineConfig({ vars: {} })
+const base = grouped.style({ color: 'black', padding: '4px' })
+export const card = atomic.style([base, { color: 'white' }])`,
+        },
+      })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+        ".z-Zf5JrJ-base{color:black;padding:4px;}
+        .z-Zf5JrJ-card-text-0{color:black;}
+        .z-Zf5JrJ-card-p-1{padding:4px;}
+        .z-Zf5JrJ-card-text-2{color:white;}"
+      `)
+    })
+
+    test('rejects packed variants and dynamic definitions without owned attributes', () => {
+      const publisher = Graph.compile({
+        modules: {
+          'shared.ts': `import { style, variants } from 'zyzz'
+export const tone = variants({ base: { color: 'red' } }, { id: 'tone' })
+export const dynamic = style((input: { opacity: number }) => ({ opacity: 0.5 }), { id: 'dynamic' })`,
+        },
+      })
+
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import { style } from 'zyzz'
+import { dynamic, tone } from './shared.js'
+export const first = style([tone])
+export const second = style([dynamic])`,
+          },
+          contracts: publisher.contracts,
+          imports: { 'app.ts': { zyzz: null, './shared.js': 'shared.ts' } },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+        [Source.ExtractError: app.ts:101: Composition entries cannot be variants or dynamic styles; apply them with cx.
+        app.ts:137: Composition entries cannot be variants or dynamic styles; apply them with cx.]
+      `)
+    })
+
+    test('composes definitions created by another bundled runtime copy', async () => {
+      async function bundle(contents: string) {
+        const result = await Esbuild.build({
+          bundle: true,
+          conditions: ['src'],
+          format: 'iife',
+          globalName: 'Module',
+          platform: 'neutral',
+          stdin: { contents, resolveDir: process.cwd() },
+          write: false,
+        })
+        return new Function(
+          `${result.outputFiles[0]!.text}; return Module`,
+        )() as Record<string, unknown>
+      }
+
+      const library = await bundle(
+        "import { style } from 'zyzz'; export const base = style({ padding: '4px' })",
+      )
+      const app = await bundle(
+        "import { style } from 'zyzz'; export const compose = (base) => style([base, { color: 'blue' }])().className",
+      )
+      const base = style({ padding: '4px' })
+
+      expect((app.compose as (base: unknown) => string)(library.base)).toBe(
+        style([base, { color: 'blue' }])().className,
+      )
+    })
+
     test('flattens composed entries and target branches into native styles', () => {
       const output = Native.compile({
         colorScheme: 'light',

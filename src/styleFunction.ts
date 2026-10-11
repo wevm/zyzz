@@ -31,14 +31,13 @@ type VariableOptions<input> = input extends {
 
 // Composition entries are static definitions or exact literal objects.
 type Entries<entries> = {
-  readonly [index in keyof entries]: entries[index] extends (
-    ...args: never
-  ) => unknown
-    ? style.Composable<entries[index]>
-    : entries[index] &
-        NoInfer<Style.Accepted<entries[index], {}, true>> &
-        Completion.Properties
+  readonly [index in keyof entries]: Entry<entries[index]>
 }
+
+// Distributes over mixed element unions so each member keeps its own contract.
+type Entry<entry> = entry extends (...args: never) => unknown
+  ? style.Composable<entry>
+  : entry & NoInfer<Style.Accepted<entry, {}, true>> & Completion.Properties
 
 /**
  * Declares literal styles for source extraction. Requires a compile-time transform.

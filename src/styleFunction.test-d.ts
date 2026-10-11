@@ -183,6 +183,16 @@ describe('composition', () => {
       style([{ display: 'unknown-display' }])
     })
 
+    test('accepts predeclared arrays that mix definitions and objects', () => {
+      const base = style({ padding: '8px' })
+      const entries: readonly (typeof base | { readonly color: 'red' })[] = [
+        base,
+        { color: 'red' },
+      ]
+
+      expectTypeOf(style(entries)()).toEqualTypeOf<style.Props>()
+    })
+
     test('rejects dynamic definitions and variants as entries', () => {
       const dynamic = style((values: { opacity: number }) => ({
         opacity: values.opacity,

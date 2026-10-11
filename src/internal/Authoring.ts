@@ -10,8 +10,9 @@ import type * as Theme from './Theme.js'
 /** Private ownership used by uncompiled composition; never spread onto DOM props. */
 export const metadata = Symbol.for('zyzz.authoring')
 
-// Static definitions retain their style data so later compositions can read it.
-const data = Symbol('zyzz.style')
+// Static definitions retain their style data so later compositions can read it,
+// including definitions created by another bundled copy of the runtime.
+const data = Symbol.for('zyzz.style')
 
 /** Identity and replaceable attribute/slot ownership for an applied definition. */
 export type Owner = {

@@ -37,6 +37,10 @@ pub struct FunctionParameter {
 
 /// A configuration, theme, or variable-set authoring call.
 #[derive(Clone, Debug, Default)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "Each flag is an independent property of the authored call."
+)]
 pub struct Call {
     /// Whether the configuration only names a catalog of sets.
     pub catalog_only: bool,

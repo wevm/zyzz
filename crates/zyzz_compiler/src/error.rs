@@ -44,10 +44,9 @@ impl Error {
     /// The caller-visible message, as `error.message` reads in TypeScript.
     pub fn text(&self) -> String {
         match self {
-            Self::Message(message) => message.clone(),
+            Self::Message(message) | Self::Themes { message, .. } => message.clone(),
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
             Self::Style(diagnostics) => crate::style::error_message(diagnostics),
-            Self::Themes { message, .. } => message.clone(),
             Self::Theme { message, path } | Self::Vars { message, path } => {
                 format!("{}: {message}", crate::internal::theme::path_json(path))
             }

@@ -1,100 +1,222 @@
-/**
- * Loads the Rust compiler binding for the current platform, falling back to its WebAssembly build.
- * @module
- */
-import * as Fs from 'node:fs'
-import * as Module from 'node:module'
-import * as Path from 'node:path'
-import * as Url from 'node:url'
+/** Describes fixed custom-property slots shared by explicit and callback bindings. @module */
+import type * as Literal from './Literal.js'
+import type * as Token from './Token.js'
+import * as BindingDomains from './BindingDomains.js'
 
-/** Functions the Rust binding exports. Structured values cross as JSON strings. */
-export type Binding = {
-  /** Version of the compiler crate, which also proves the binding loaded. */
-  readonly version: () => string
+/** Explicit scalar domains or an unconstrained custom property. */
+export type Domain = Kind | '*'
+
+/** Supported runtime scalar domains. */
+export type Kind =
+  | 'color'
+  | 'length'
+  | 'number'
+  | 'percentage'
+  | 'signedLength'
+  | 'signedPercentage'
+
+/** Marks callback inputs that require an explicit custom token escape. */
+export const dynamic = Symbol('zyzz.binding.dynamic')
+
+/** A compiler-assigned web custom property with its scalar domain. */
+export type Reference<kind extends Domain = Domain> = {
+  /** Fixed CSS custom-property name. */
+  readonly name: `--${string}`
+  /** Internal callback provenance, independent of the emitted variable name. */
+  readonly [dynamic]?: true | undefined
+  /** Scalar domain used by authoring types and runtime primitive checks. */
+  readonly type: kind
+  /** Distinguishes slots from theme references. */
+  readonly variable: true
 }
 
-/** Thrown when no binding loads for the current platform. */
-export class LoadError extends Error {
-  /** Lists every candidate and why it failed. */
-  constructor(failures: readonly (readonly [string, unknown])[]) {
-    super(
-      `Unable to load the Zyzz compiler binding for ${process.platform}-${process.arch}. Tried:\n${failures
-        .map(
-          ([candidate, error]) =>
-            `- ${candidate}: ${error instanceof Error ? error.message : String(error)}`,
-        )
-        .join('\n')}`,
-    )
-  }
-  /** Stable namespaced error identifier. */
-  override name = 'Binding.LoadError'
+/** Scalar inputs accepted by a slot. CSS semantics remain statically checked. */
+export type Value<kind extends Domain> = kind extends '*'
+  ? string | number
+  : kind extends 'number'
+    ? number
+    : kind extends 'color'
+      ? Literal.Color
+      : kind extends 'signedPercentage'
+        ? `${number}%`
+        : kind extends 'signedLength'
+          ? Exclude<Literal.Length, `${number}%`>
+          : kind extends 'percentage'
+            ? `${number}%` & NonNegative
+            : Exclude<Literal.Length, `${number}%`> & (NonNegative | 0)
+
+type NonNegative =
+  `${'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | '+'}${string}`
+
+/** Property domains that accept each scalar reference. */
+export type Properties<kind extends Kind> = {
+  [property in keyof Literal.Properties]: Property<kind, property>
+}[keyof Literal.Properties]
+
+/** Checks one property's binding domain without enumerating every CSS grammar. */
+export type Property<
+  kind extends Kind,
+  property extends keyof Literal.Properties,
+> = property extends `--${string}`
+  ? property
+  : property extends keyof typeof Literal.rules
+    ? (typeof Literal.rules)[property] extends { kind: 'compound' }
+      ? never
+      : kind extends 'percentage' | 'signedPercentage'
+        ? (typeof Literal.rules)[property] extends { kind: 'number' }
+          ? (typeof Literal.rules)[property] extends { percentage: true }
+            ? Compatible<kind, property>
+            : never
+          : Compatible<kind, property>
+        : Compatible<kind, property>
+    : never
+
+type Compatible<
+  kind extends Kind,
+  property extends keyof Literal.Properties,
+> = kind extends 'color'
+  ? property extends Token.Properties<'color'>
+    ? property
+    : never
+  : kind extends 'number'
+    ? number extends Literal.Properties[property]
+      ? property extends keyof typeof Literal.rules
+        ? property extends
+            | 'opacity'
+            | 'fillOpacity'
+            | 'floodOpacity'
+            | 'stopOpacity'
+            | 'strokeOpacity'
+          ? property
+          : (typeof Literal.rules)[property] extends
+                | { kind: 'grid-line' | 'ratio' }
+                | { integer: true }
+                | { min: number }
+                | { max: number }
+                | { negative: false }
+            ? never
+            : property
+        : property
+      : never
+    : Extract<
+          Literal.Properties[property],
+          kind extends 'percentage' | 'signedPercentage'
+            ? `${number}%`
+            : `${number}px`
+        > extends never
+      ? never
+      : kind extends 'signedLength' | 'signedPercentage'
+        ? property extends keyof typeof Literal.rules
+          ? (typeof Literal.rules)[property] extends
+              | { negative: false }
+              | { kind: 'line' | 'grid-tracks' }
+              | { min: number }
+              | { max: number }
+            ? never
+            : property
+          : property
+        : property
+
+/** Rejects broad numeric callback values where a property requires a narrower domain. */
+export type Checked<style> = {
+  [property in keyof style]: property extends 'targets'
+    ? never
+    : property extends keyof Literal.Properties
+      ? number extends style[property]
+        ? property extends Property<'number', property>
+          ? unknown
+          : never
+        : unknown
+      : style[property] extends Record<string, unknown>
+        ? Checked<style[property]>
+        : unknown
 }
 
-// Node caches native modules per process, so one resolved handle serves every caller.
-let loaded: Binding | undefined
-
-/**
- * Returns the binding, resolving it on first use.
- * Candidates are the repository's local build, the platform package, then the WebAssembly package.
- * @returns The binding exports.
- * @throws {LoadError} If no candidate loads.
- */
-export function load(): Binding {
-  loaded ??= resolve()
-
-  return loaded
+/** Excludes token-name slots, which cannot resolve token names during application. */
+export type TokenSlots<style, values, tokens, mappings = {}> = {
+  [property in keyof style]: property extends keyof Literal.Properties
+    ? SlotValue<
+        style[property],
+        values[keyof values],
+        Token.Names<tokens, property>
+      >
+    : property extends keyof mappings
+      ? mappings[property] extends readonly (infer target extends
+          keyof Literal.Properties)[]
+        ? SlotValue<
+            style[property],
+            values[keyof values],
+            Token.Names<tokens, target>
+          >
+        : unknown
+      : property extends 'vars'
+        ? unknown
+        : style[property] extends Record<string, unknown>
+          ? TokenSlots<style[property], values, tokens, mappings>
+          : unknown
 }
 
-function resolve(): Binding {
-  const require = Module.createRequire(import.meta.url)
-  const directory = Path.dirname(Url.fileURLToPath(import.meta.url))
-  const failures: [string, unknown][] = []
+type SlotValue<value, inputs, names> = value extends readonly unknown[]
+  ? { [key in keyof value]: SlotValue<value[key], inputs, names> }
+  : Extract<Extract<value, inputs>, names> extends never
+    ? unknown
+    : never
 
-  for (const target of targets()) {
-    // Source and built modules both sit two levels below the package root.
-    const local = Path.resolve(directory, '../../binding', `zyzz.${target}.node`)
-
-    for (const candidate of [local, `@zyzz/binding-${target}`]) {
-      if (candidate === local && !Fs.existsSync(local)) continue
-
-      try {
-        return require(candidate) as Binding
-      } catch (error) {
-        failures.push([candidate, error])
-      }
-    }
-  }
-
-  try {
-    return require('@zyzz/binding-wasm32-wasi') as Binding
-  } catch (error) {
-    failures.push(['@zyzz/binding-wasm32-wasi', error])
-  }
-
-  throw new LoadError(failures)
+/** Rejects reserved callback field names and importance-bearing value domains. */
+export type Inputs<values> = {
+  [key in keyof values]: key extends
+    | 'class'
+    | 'className'
+    | 'key'
+    | 'ref'
+    | 'style'
+    | 'vars'
+    | '__proto__'
+    ? never
+    : Extract<values[key], `${string}!${string}`> extends never
+      ? Extract<
+          Lowercase<Extract<values[key], string>>,
+          'initial' | 'inherit' | 'unset' | 'revert' | 'revert-layer'
+        > extends never
+        ? values[key]
+        : never
+      : never
 }
 
-/** Lists the napi-rs platform suffixes this process can load, most specific first. */
-function targets(): readonly string[] {
-  const { arch, platform } = process
+/** Recognizes fixed slot data without invoking consumer accessors. */
+export function is(value: unknown): value is Reference {
+  if (typeof value !== 'object' || value === null || !Object.isFrozen(value))
+    return false
 
-  if (platform === 'darwin') return [`darwin-${arch}`, 'darwin-universal']
-  if (platform === 'win32') return [`win32-${arch}-msvc`]
-  if (platform === 'linux') return [`linux-${arch}-${musl() ? 'musl' : 'gnu'}`]
+  const fields = Object.getOwnPropertyDescriptors(value)
 
-  return [`${platform}-${arch}`]
+  return (
+    ['name', 'type', 'variable'].every(
+      (key) => fields[key] && 'value' in fields[key]!,
+    ) &&
+    fields.variable!.value === true &&
+    typeof fields.name!.value === 'string' &&
+    /^--[a-zA-Z0-9_-]+$/.test(fields.name!.value) &&
+    [
+      '*',
+      'color',
+      'length',
+      'number',
+      'percentage',
+      'signedLength',
+      'signedPercentage',
+    ].includes(fields.type!.value)
+  )
 }
 
-/** Detects musl libc, whose binaries differ from glibc builds. */
-function musl(): boolean {
-  const report = process.report?.getReport() as
-    | { header?: { glibcVersionRuntime?: string } }
-    | undefined
-  if (report?.header?.glibcVersionRuntime) return false
+/** Checks template reference domains against declaration shapes. */
+export function accepts(
+  kind: Domain,
+  property: keyof Literal.Properties,
+): boolean {
+  if (kind === '*' || property.startsWith('--')) return true
 
-  try {
-    return Fs.readFileSync('/usr/bin/ldd', 'utf8').includes('musl')
-  } catch {
-    return true
-  }
+  return (BindingDomains.properties[kind] as readonly string[]).includes(
+    property,
+  )
 }

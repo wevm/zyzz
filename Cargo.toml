@@ -52,6 +52,8 @@ pedantic = { level = "warn", priority = -1 }
 allow_attributes = "warn"
 dbg_macro = "warn"
 get_unwrap = "warn"
+# FxHash is the only hasher, since clippy.toml disallows the std map types.
+implicit_hasher = "allow"
 iter_over_hash_type = "warn"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"

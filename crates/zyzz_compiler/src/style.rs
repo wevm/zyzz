@@ -401,7 +401,11 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                         }));
                     }
                     None => {
-                        properties.push((Arc::clone(property), input.clone(), Arc::clone(property)))
+                        properties.push((
+                            Arc::clone(property),
+                            input.clone(),
+                            Arc::clone(property),
+                        ));
                     }
                 }
                 continue;

@@ -93,24 +93,97 @@ pub fn lookup<'a>(
     let mut current = Some(scope);
 
     while let Some(scope) = current {
-        if let Some(symbol) = scoping.get_binding(scope, name.into()) {
-            let flags = scoping.symbol_flags(symbol);
-            let matches = match mode {
-                Mode::Type => flags.intersects(SymbolFlags::Type),
-                Mode::Value => {
-                    flags.intersects(SymbolFlags::Value) || flags.contains(SymbolFlags::Import)
-                }
-            };
-
-            if matches {
-                return declaration(semantic, symbol);
-            }
+        if let Some(symbol) = scoping.get_binding(scope, name.into())
+            && matches(scoping.symbol_flags(symbol), mode)
+        {
+            return declaration(semantic, symbol);
         }
 
         current = scoping.scope_parent_id(scope);
     }
 
     None
+}
+
+/// Looks up a name as a single forward walk sees it at `position`.
+///
+/// oxc-walker's `ScopeTracker` declares bindings when the walk enters their declaring statement,
+/// so an earlier read skips a later declaration and resolves outward instead.
+pub fn lookup_before<'a>(
+    semantic: &Semantic<'a>,
+    name: &str,
+    scope: ScopeId,
+    position: u32,
+    mode: Mode,
+) -> Option<Declaration<'a>> {
+    let scoping = semantic.scoping();
+    let mut current = Some(scope);
+
+    while let Some(scope) = current {
+        if let Some(symbol) = scoping.get_binding(scope, name.into())
+            && matches(scoping.symbol_flags(symbol), mode)
+            && declared_at(semantic, symbol) <= position
+        {
+            return declaration(semantic, symbol);
+        }
+
+        current = scoping.scope_parent_id(scope);
+    }
+
+    None
+}
+
+fn matches(flags: SymbolFlags, mode: Mode) -> bool {
+    match mode {
+        Mode::Type => flags.intersects(SymbolFlags::Type),
+        Mode::Value => flags.intersects(SymbolFlags::Value) || flags.contains(SymbolFlags::Import),
+    }
+}
+
+/// Start of the node whose entry declares a symbol in a forward walk.
+pub fn declared_at(semantic: &Semantic<'_>, symbol: SymbolId) -> u32 {
+    let nodes = semantic.nodes();
+    let node = semantic.scoping().symbol_declaration(symbol);
+
+    std::iter::once(nodes.kind(node))
+        .chain(nodes.ancestor_kinds(node))
+        .find(|kind| {
+            matches!(
+                kind,
+                AstKind::ArrowFunctionExpression(_)
+                    | AstKind::CatchClause(_)
+                    | AstKind::Class(_)
+                    | AstKind::ForInStatement(_)
+                    | AstKind::ForOfStatement(_)
+                    | AstKind::ForStatement(_)
+                    | AstKind::Function(_)
+                    | AstKind::ImportDeclaration(_)
+                    | AstKind::TSEnumBody(_)
+                    | AstKind::TSEnumDeclaration(_)
+                    | AstKind::TSNamespaceDeclaration(_)
+                    | AstKind::VariableDeclaration(_)
+            )
+        })
+        .map_or_else(
+            || semantic.scoping().symbol_span(symbol).start,
+            |kind| kind.span().start,
+        )
+}
+
+/// Whether an identifier reference reads a value, as oxc-walker's `isReferenceIdentifier` decides.
+///
+/// ESTree represents JSX element names as `JSXIdentifier`, so they never read a value here.
+pub fn is_value_reference(parent: AstKind<'_>) -> bool {
+    !matches!(
+        parent,
+        AstKind::JSXClosingElement(_)
+            | AstKind::JSXMemberExpression(_)
+            | AstKind::JSXOpeningElement(_)
+            | AstKind::TSClassImplements(_)
+            | AstKind::TSInterfaceHeritage(_)
+            | AstKind::TSQualifiedName(_)
+            | AstKind::TSTypeReference(_)
+    )
 }
 
 /// Describes the declaration of a symbol.

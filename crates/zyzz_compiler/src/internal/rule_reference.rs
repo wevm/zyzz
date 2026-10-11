@@ -17,6 +17,33 @@ pub enum Kind {
     PositionTry,
 }
 
+impl Kind {
+    /// Reads the factory name of a rule kind.
+    pub fn parse(value: &str) -> Option<Self> {
+        Some(match value {
+            "colorProfile" => Self::ColorProfile,
+            "counterStyle" => Self::CounterStyle,
+            "cssFunction" => Self::CssFunction,
+            "customMedia" => Self::CustomMedia,
+            "fontPaletteValues" => Self::FontPaletteValues,
+            "positionTry" => Self::PositionTry,
+            _ => return None,
+        })
+    }
+
+    /// The factory name of the rule kind.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::ColorProfile => "colorProfile",
+            Self::CounterStyle => "counterStyle",
+            Self::CssFunction => "cssFunction",
+            Self::CustomMedia => "customMedia",
+            Self::FontPaletteValues => "fontPaletteValues",
+            Self::PositionTry => "positionTry",
+        }
+    }
+}
+
 /// Whether a property can reference a rule of this kind.
 pub fn accepts(kind: Kind, property: &str) -> bool {
     match kind {

@@ -109,6 +109,8 @@ pub fn call(operation: &str, input: &str) -> String {
             "{}".to_owned()
         }
         #[cfg(feature = "compiler")]
+        "source.extract" => crate::compiler::internal::wire::extract(input),
+        #[cfg(feature = "compiler")]
         "transform.compile" => json(input)
             .and_then(|input| handles::transform(&input))
             .unwrap_or_else(|error| error_json(&error)),

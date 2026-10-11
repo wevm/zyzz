@@ -51,6 +51,10 @@ zyzz_css_syntax = { workspace = true, optional = true }
 insta = { workspace = true }
 
 [[example]]
+name = "extract_replay"
+required-features = ["compiler"]
+
+[[example]]
 name = "native_replay"
 required-features = ["compiler"]
 
@@ -68,6 +72,10 @@ required-features = ["compiler"]
 
 [[test]]
 name = "contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "extract"
 required-features = ["compiler"]
 
 [[test]]

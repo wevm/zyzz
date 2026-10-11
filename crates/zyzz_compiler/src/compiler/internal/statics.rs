@@ -57,6 +57,10 @@ fn invalid(message: &str, span: Span) -> Error {
 /// Collects static bindings for a parsed module.
 ///
 /// `imports` maps local import names to constant values resolved from other modules.
+#[expect(
+    clippy::implicit_hasher,
+    reason = "Static data uses the crate's one internal hasher."
+)]
 pub fn collect<'a>(
     allocator: &'a Allocator,
     program: &'a Program<'a>,

@@ -137,6 +137,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         target: options.target,
       }),
     ),
+    { compiler: options.compiler },
   )
 }
 

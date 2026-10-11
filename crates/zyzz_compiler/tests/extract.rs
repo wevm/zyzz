@@ -215,7 +215,8 @@ export namespace styles {
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -381,7 +382,8 @@ export const card = style({ animationName: fade, gap })
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -486,7 +488,8 @@ namespace styles {
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -514,7 +517,7 @@ export const text = style({ color: vars.color.text })
             {
               "complete": false,
               "identity": "src-native-2rTliMKwCGU-style",
-              "keys": ["variableSet","cssOutput"],
+              "keys": ["variableSet","mappings","cssOutput"],
               "variableSet": true,
               "cssOutput": "atomic"
             }
@@ -757,7 +760,8 @@ export const text = style({ color: vars.color.text })
                   }
                 }
               ]
-            ]
+            ],
+            "collectedThemes": true
           }
         }
         "#);
@@ -824,7 +828,8 @@ export const empty = style({})
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -1024,7 +1029,8 @@ export const panel = style({ animationName: fade, selectors: { [`${card} &`]: { 
               "themeAliases": [],
               "themeCalls": [],
               "themeReferences": [],
-              "vars": []
+              "vars": [],
+              "collectedThemes": false
             },
             {
               "namespaces": [],
@@ -1165,7 +1171,8 @@ export const panel = style({ animationName: fade, selectors: { [`${card} &`]: { 
               "themeAliases": [],
               "themeCalls": [],
               "themeReferences": [],
-              "vars": []
+              "vars": [],
+              "collectedThemes": true
             }
           ]
         }

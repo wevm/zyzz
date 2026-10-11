@@ -9,14 +9,12 @@ import type * as Ast from '@oxc-project/types'
 import * as AtRules from './AtRules.js'
 import * as Binding from '../../internal/Binding.js'
 import * as Condition from '../../internal/Condition.js'
-import type * as Composition from '../../runtime/Composition.js'
 import * as Compositions from './Compositions.js'
 import * as Contributions from './Contributions.js'
 import * as Css from '../../web/Css.js'
 import * as Dynamic from './Dynamic.js'
 import * as Expression from './Expression.js'
 import * as Selectors from './Selectors.js'
-import type * as Namespace from '../../web/internal/Namespace.js'
 import * as Syntax from './Syntax.js'
 import * as RuleReference from '../../internal/RuleReference.js'
 import type * as Recipe from '../../runtime/Recipe.js'
@@ -25,10 +23,8 @@ import type * as RecipePayloads from './RecipePayloads.js'
 import * as Recipes from './Recipes.js'
 import * as PackedStyles from './PackedStyles.js'
 import * as Scope from './Scope.js'
-import type * as Shorthands from '../../internal/Shorthands.js'
 import * as Static from './Static.js'
 import * as Style from '../../Style.js'
-import type * as Theme from '../../internal/Theme.js'
 import * as Themes from './Themes.js'
 import * as ThemeValues from '../../web/internal/Themes.js'
 import * as Token from '../../internal/Token.js'
@@ -55,7 +51,9 @@ const define = Style.define as unknown as (
  * @returns Frozen style/theme definitions and rewrite spans. Source text is unchanged.
  * @throws {Source.ExtractError} For syntax errors, unsupported imported references, or invalid literals.
  */
-export function extract(options: Source.extract.Options): Source.extract.ReturnType {
+export function extract(
+  options: Source.extract.Options,
+): Source.extract.ReturnType {
   const calls: Source.Call[] = []
   const diagnostics: Source.Diagnostic[] = []
   const pending: Ast.CallExpression[] = []

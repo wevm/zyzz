@@ -386,6 +386,7 @@ fn extracted<'a, 'j>(
 
     Ok(Extracted {
         calls,
+        collected_themes: false,
         contribution_calls: Vec::new(),
         contribution_starts: Vec::new(),
         contributions: Vec::new(),

@@ -3,24 +3,30 @@
  * The format is documented in `crates/zyzz_compiler/src/compiler/internal/wire.rs`.
  * @module
  */
-import * as Binding from '../../internal/Binding.js'
 import * as Authoring from '../../internal/Authoring.js'
-import * as Configuration from '../../internal/Configuration.js'
-import * as Identity from '../../internal/Identity.js'
-import type * as Query from '../../internal/Query.js'
-import * as Theme from '../../internal/Theme.js'
-import * as Token from '../../internal/Token.js'
-import * as Source from '../Source.js'
-import * as Style from '../../Style.js'
-import { MissingTransformError } from '../../styleFunction.js'
-import * as Vars from '../../Vars.js'
-import type * as Css from '../../web/Css.js'
+import * as Binding from '../../internal/Binding.js'
 import type * as Block from '../../web/internal/Block.js'
 import * as ClassName from '../../web/internal/ClassName.js'
+import * as Configuration from '../../internal/Configuration.js'
 import type * as Contributions from './Contributions.js'
+import type * as Css from '../../web/Css.js'
+import * as Identity from '../../internal/Identity.js'
+import { MissingTransformError } from '../../styleFunction.js'
+import type * as Query from '../../internal/Query.js'
+import * as Source from '../Source.js'
+import * as Style from '../../Style.js'
+import * as Theme from '../../internal/Theme.js'
 import type * as Themes from './Themes.js'
+import * as Token from '../../internal/Token.js'
+import * as Vars from '../../Vars.js'
 
-type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json }
+type Json =
+  | null
+  | boolean
+  | number
+  | string
+  | readonly Json[]
+  | { readonly [key: string]: Json }
 type Pairs = readonly (readonly [string, Json])[]
 type Fields = { readonly [key: string]: Json }
 
@@ -39,7 +45,10 @@ type Failure = {
  * @returns Frozen calls, styles, theme data, and contributions.
  * @throws {Source.ExtractError} With every source diagnostic of a failed extraction.
  */
-export function decode(text: string): Source.extract.ReturnType {
+export function decode(
+  text: string,
+  options: decode.Options = {},
+): Source.extract.ReturnType {
   const output = JSON.parse(text) as {
     readonly contracts?: readonly Fields[]
     readonly error?: Failure
@@ -49,9 +58,18 @@ export function decode(text: string): Source.extract.ReturnType {
   if (output.error) throw failure(output.error)
 
   const contracts = (output.contracts ?? []).map(contract)
-  const decoder = create(contracts)
+  const decoder = create(contracts, options)
 
   return decoder.result(output.result ?? {})
+}
+
+/** Extraction options that shape the decoded result. */
+export declare namespace decode {
+  /** The options passed to the extraction. */
+  type Options = {
+    /** `false` when the extraction collected portable identities without source rewriting. */
+    readonly compiler?: boolean | undefined
+  }
 }
 
 /** Reconstructs the error class a TypeScript extraction throws. */
@@ -72,9 +90,15 @@ function failure(error: Failure): Error {
     case 'Config.InvalidError':
       return new Configuration.InvalidError(error.message)
     case 'Theme.InvalidError':
-      return new Theme.InvalidError(error.path ?? [], error.reason ?? error.message)
+      return new Theme.InvalidError(
+        error.path ?? [],
+        error.reason ?? error.message,
+      )
     case 'Vars.InvalidError':
-      return new Vars.InvalidError(error.path ?? [], error.reason ?? error.message)
+      return new Vars.InvalidError(
+        error.path ?? [],
+        error.reason ?? error.message,
+      )
     case 'Style.InvalidError':
       return new Style.InvalidError(
         (error.diagnostics ?? []).map((diagnostic) => {
@@ -117,7 +141,7 @@ function contract(input: Fields): Token.Contract {
         return properties(input.mappings as Pairs)
       })()
     else if (key === 'shorthands')
-      value.shorthands = properties(input.shorthands as Pairs)
+      value.shorthands = shorthands(input.shorthands)
     else value[key] = input[key]
   }
 
@@ -127,11 +151,21 @@ function contract(input: Fields): Token.Contract {
   return Object.freeze(value) as Token.Contract
 }
 
+/** Shorthand mappings are frozen null-prototype records, as `Shorthands.read` returns them. */
+function shorthands(
+  input: Json | undefined,
+): Readonly<Record<string, readonly string[]>> {
+  return Object.freeze(lookup(input, strings))
+}
+
 /** A frozen record of frozen string lists. */
 function properties(input: Pairs): Readonly<Record<string, readonly string[]>> {
   return Object.freeze(
     Object.fromEntries(
-      input.map(([key, value]) => [key, Object.freeze([...(value as string[])])]),
+      input.map(([key, value]) => [
+        key,
+        Object.freeze([...(value as string[])]),
+      ]),
     ),
   )
 }
@@ -148,7 +182,10 @@ function number(input: Json | undefined): number {
 function isNumber(input: Json | undefined): boolean {
   return (
     typeof input === 'number' ||
-    (typeof input === 'object' && input !== null && !Array.isArray(input) && 'n' in input)
+    (typeof input === 'object' &&
+      input !== null &&
+      !Array.isArray(input) &&
+      'n' in input)
   )
 }
 
@@ -161,7 +198,9 @@ function record<value>(
   decode: (value: Json) => value,
 ): Readonly<Record<string, value>> {
   return Object.freeze(
-    Object.fromEntries((input as Pairs).map(([key, value]) => [key, decode(value)])),
+    Object.fromEntries(
+      (input as Pairs).map(([key, value]) => [key, decode(value)]),
+    ),
   )
 }
 
@@ -178,12 +217,14 @@ function lookup<value>(
 ): Record<string, value> {
   return Object.assign(
     Object.create(null) as Record<string, value>,
-    Object.fromEntries((input as Pairs).map(([key, value]) => [key, decode(value)])),
+    Object.fromEntries(
+      (input as Pairs).map(([key, value]) => [key, decode(value)]),
+    ),
   )
 }
 
 /** Creates a decoder that shares one contract table. */
-function create(contracts: readonly Token.Contract[]) {
+function create(contracts: readonly Token.Contract[], options: decode.Options) {
   function binding(input: Fields): Binding.Reference {
     const value = {
       name: input.name as `--${string}`,
@@ -208,7 +249,10 @@ function create(contracts: readonly Token.Contract[]) {
     })
 
     return input.w
-      ? (Object.freeze({ ...value, [Token.web]: true as const }) as Token.Reference)
+      ? (Object.freeze({
+          ...value,
+          [Token.web]: true as const,
+        }) as Token.Reference)
       : value
   }
 
@@ -240,7 +284,11 @@ function create(contracts: readonly Token.Contract[]) {
 
   function data(input: Json | undefined): unknown {
     if (input === undefined) return undefined
-    if (input === null || typeof input === 'string' || typeof input === 'boolean')
+    if (
+      input === null ||
+      typeof input === 'string' ||
+      typeof input === 'boolean'
+    )
       return input
     if (typeof input === 'number') return input
     if (Array.isArray(input)) return Object.freeze(input.map(data))
@@ -267,10 +315,15 @@ function create(contracts: readonly Token.Contract[]) {
   // A group is never a value, so an object with scheme or condition keys is one.
   function tree(input: Json | undefined): unknown {
     const fields = input as Fields | null
-    const entries = fields !== null && typeof fields === 'object' ? (fields.obj as Pairs) : undefined
+    const entries =
+      fields !== null && typeof fields === 'object'
+        ? (fields.obj as Pairs)
+        : undefined
     if (
       !entries ||
-      entries.some(([key]) => key === 'default' || key === 'light' || key === 'dark')
+      entries.some(
+        ([key]) => key === 'default' || key === 'light' || key === 'dark',
+      )
     )
       return data(input)
     return Object.fromEntries(entries.map(([key, value]) => [key, tree(value)]))
@@ -297,7 +350,10 @@ function create(contracts: readonly Token.Contract[]) {
           return [
             key,
             Object.fromEntries(
-              ((value as Fields).obj as Pairs).map(([name, theme]) => [name, themeValues(theme)]),
+              ((value as Fields).obj as Pairs).map(([name, theme]) => [
+                name,
+                themeValues(theme),
+              ]),
             ),
           ]
         return [key, authored(value)]
@@ -311,7 +367,9 @@ function create(contracts: readonly Token.Contract[]) {
     const metadata = Object.freeze({
       contract,
       ...(input.cssName !== null ? { cssName: input.cssName as string } : {}),
-      ...(input.paths !== null ? { paths: properties(input.paths as Pairs) } : {}),
+      ...(input.paths !== null
+        ? { paths: properties(input.paths as Pairs) }
+        : {}),
       values: record(input.values, tokenValue) as Token.Metadata['values'],
       // Variable sets always record their query metadata, even when it is empty.
       ...(contract.variableSet && !queries ? { queries: undefined } : {}),
@@ -338,11 +396,16 @@ function create(contracts: readonly Token.Contract[]) {
           style: (styles?: unknown, options: Record<string, unknown> = {}) => {
             if (!contract[Token.identity])
               Identity.requireId(undefined, 'Theme.define')
-            return Authoring.create(styles, { ...options, theme: value } as never)
+            return Authoring.create(styles, {
+              ...options,
+              theme: value,
+            } as never)
           },
           tokens: data(input.tokens),
-          variants: (styles: Record<string, unknown>, options: Record<string, unknown> = {}) =>
-            Authoring.variants(styles, options as never),
+          variants: (
+            styles: Record<string, unknown>,
+            options: Record<string, unknown> = {},
+          ) => Authoring.variants(styles, options as never),
           vars: data(input.vars),
         },
         Token.definition,
@@ -376,7 +439,9 @@ function create(contracts: readonly Token.Contract[]) {
           rules: Object.freeze(
             rules.map(([condition, child]) =>
               Object.freeze({
-                ...(condition !== null ? { condition: condition as string } : {}),
+                ...(condition !== null
+                  ? { condition: condition as string }
+                  : {}),
                 style: style(child as Fields),
               }),
             ),
@@ -389,16 +454,34 @@ function create(contracts: readonly Token.Contract[]) {
       ...(targets
         ? {
             targets: Object.freeze({
-              ...(targets.native !== undefined ? { native: data(targets.native) } : {}),
-              ...(targets.ios !== undefined ? { ios: data(targets.ios) } : {}),
-              ...(targets.android !== undefined ? { android: data(targets.android) } : {}),
-              ...(targets.web !== undefined ? { web: style(targets.web as Fields) } : {}),
+              ...(targets.native !== undefined
+                ? { native: target(targets.native) }
+                : {}),
+              ...(targets.ios !== undefined
+                ? { ios: target(targets.ios) }
+                : {}),
+              ...(targets.android !== undefined
+                ? { android: target(targets.android) }
+                : {}),
+              ...(targets.web !== undefined
+                ? { web: style(targets.web as Fields) }
+                : {}),
             }),
           }
         : {}),
-      ...(input.composition !== undefined ? { composition: input.composition } : {}),
+      ...(input.composition !== undefined
+        ? { composition: input.composition }
+        : {}),
       ...(input.cssOutput !== undefined ? { cssOutput: input.cssOutput } : {}),
     }) as Style.NamedStyle
+  }
+
+  // Native target data is copied into frozen null-prototype records, as `Targets.copy` does.
+  function target(input: Json | undefined): unknown {
+    if (Array.isArray(input)) return Object.freeze(input.map(target))
+    if (input === null || typeof input !== 'object' || !('obj' in input))
+      return data(input)
+    return Object.freeze(lookup((input as Fields).obj, target))
   }
 
   function styles(input: Fields): Style.Definition {
@@ -407,9 +490,63 @@ function create(contracts: readonly Token.Contract[]) {
     })
   }
 
+  // Compositions copy the styles they combine, and a copy differs from its source in content.
+  function composed(
+    input: Fields,
+    sources: ReadonlyMap<string, string>,
+  ): Style.NamedStyle {
+    const decoded = style(input)
+    const rules = input.rules as Json[][] | undefined
+    const name = input.name as string
+
+    if (!rules || !decoded.rules) return decoded
+
+    const copied = (child: Fields) =>
+      sources.get(child.name as string) !== JSON.stringify(child)
+
+    // Runtime compositions copy each conditional rule with the output mode of its source.
+    if (name.startsWith('composition-'))
+      return Object.freeze({
+        ...decoded,
+        rules: Object.freeze(
+          decoded.rules.map((rule, index) => {
+            const child = rules[index]![1] as Fields
+            return copied(child) && !('cssOutput' in rule.style)
+              ? Object.freeze({
+                  ...rule,
+                  style: Object.freeze({ ...rule.style, cssOutput: undefined }),
+                })
+              : rule
+          }),
+        ),
+      })
+
+    // Static compositions copy referenced styles mutably beside their inline parts.
+    if (
+      decoded.declarations.length ||
+      rules.some(([condition]) => condition !== null)
+    )
+      return decoded
+
+    return Object.freeze({
+      ...decoded,
+      rules: Object.freeze(
+        decoded.rules.map((rule) =>
+          rule.style.name === name
+            ? rule
+            : Object.freeze({ ...rule, style: { ...rule.style } }),
+        ),
+      ),
+    })
+  }
+
   function labelled(input: Fields): Style.Definition {
+    const inputs = input.styles as Fields[]
+    const sources = new Map(
+      inputs.map((entry) => [entry.name as string, JSON.stringify(entry)]),
+    )
     const definition: Record<string | symbol, unknown> = {
-      styles: Object.freeze((input.styles as Fields[]).map(style)),
+      styles: Object.freeze(inputs.map((entry) => composed(entry, sources))),
     }
     const labels = input.labels as Json[][] | undefined
 
@@ -429,9 +566,14 @@ function create(contracts: readonly Token.Contract[]) {
   }
 
   // A call's lowered recipe shares the axes and defaults of its recipe metadata.
-  function staticRecipe(input: Fields, shared: ReturnType<typeof recipe> | undefined) {
+  function staticRecipe(
+    input: Fields,
+    shared: ReturnType<typeof recipe> | undefined,
+  ) {
     return {
-      axes: shared?.axes ?? lookup(input.axes, (choices) => [...(choices as string[])]),
+      axes:
+        shared?.axes ??
+        lookup(input.axes, (choices) => [...(choices as string[])]),
       defaults: shared?.defaults ?? lookup(input.defaults, (value) => value),
       rules: (input.rules as Fields[]).map((rule) => ({
         matches: (rule.matches as Pairs).map(([axis, choices]) => [
@@ -453,10 +595,14 @@ function create(contracts: readonly Token.Contract[]) {
             payloads: (input.payloads as Fields[]).map((payload) => ({
               axis: payload.axis as string,
               choice: payload.choice as string,
-              slots: (payload.slots as Pairs[]).map((slots) => Object.fromEntries(slots)),
+              slots: (payload.slots as Pairs[]).map((slots) =>
+                Object.fromEntries(slots),
+              ),
             })),
             defaultPayloads: lookup(input.defaultPayloads, (fields) =>
-              lookup(fields, (value) => (isNumber(value) ? number(value) : value)),
+              lookup(fields, (value) =>
+                isNumber(value) ? number(value) : value,
+              ),
             ),
           }
         : {}),
@@ -476,7 +622,10 @@ function create(contracts: readonly Token.Contract[]) {
       Object.assign(
         Object.create(null) as Record<string, Binding.Reference>,
         Object.fromEntries(
-          (input as Pairs).map(([key, value]) => [key, binding(value as Fields)]),
+          (input as Pairs).map(([key, value]) => [
+            key,
+            binding(value as Fields),
+          ]),
         ),
       ),
     )
@@ -498,12 +647,24 @@ function create(contracts: readonly Token.Contract[]) {
   }
 
   function counts(input: Json | undefined): ReadonlyMap<number, number> {
-    return new Map((input as [number, number][]).map(([start, count]) => [start, count]))
+    return new Map(
+      (input as [number, number][]).map(([start, count]) => [start, count]),
+    )
   }
 
   function call(input: Fields): Source.Call {
     const value: Record<string, unknown> = {}
-    const shared = input.recipe !== undefined ? recipe(input.recipe as Fields) : undefined
+    const shared =
+      input.recipe !== undefined ? recipe(input.recipe as Fields) : undefined
+
+    // Without source rewriting, every definition call records its portable identity, if any.
+    if (
+      options.compiler === false &&
+      input.composition === undefined &&
+      input.runtimeComposition === undefined &&
+      input.compositionCase === undefined
+    )
+      value.portable = undefined
 
     for (const [key, entry] of Object.entries(input)) {
       switch (key) {
@@ -513,29 +674,35 @@ function create(contracts: readonly Token.Contract[]) {
         case 'cssNamespace':
           value[key] = entry ?? undefined
           break
+        case 'portable':
+          value[key] = entry ?? undefined
+          break
+        // Composition metadata is assembled as mutable lists.
         case 'portableInputs':
         case 'compositionCases':
         case 'composition':
-          value[key] = strings(entry)
+          value[key] = [...(entry as string[])]
           break
         case 'ownership':
           value[key] = owner(entry as Fields)
           break
         case 'runtimeComposition':
-          value[key] = Object.freeze(
-            (entry as Fields[]).map((input) =>
-              Object.freeze({
-                ...(input.applicationStart !== undefined
-                  ? { applicationStart: input.applicationStart as number }
-                  : {}),
-                ...(input.condition !== undefined ? { condition: input.condition as number } : {}),
-                end: input.end as number,
-                name: input.name as string,
-                owners: Object.freeze((input.owners as Fields[]).map(owner)),
-                start: input.start as number,
-              }),
-            ),
-          )
+          value[key] = (entry as Fields[]).map((input) => ({
+            ...(input.applicationStart !== undefined
+              ? { applicationStart: input.applicationStart as number }
+              : {}),
+            ...(input.condition !== undefined
+              ? { condition: input.condition as number }
+              : {}),
+            end: input.end as number,
+            name: input.name as string,
+            owners: (input.owners as Fields[]).map((owner) => ({
+              attributes: [...(owner.attributes as string[])],
+              identity: owner.identity as string,
+              slots: [...(owner.slots as string[])],
+            })),
+            start: input.start as number,
+          }))
           break
         case 'recipe':
           value[key] = shared
@@ -548,7 +715,7 @@ function create(contracts: readonly Token.Contract[]) {
           value[key] = lookup(entry, (choices) => lookup(choices, String))
           break
         case 'shorthands':
-          value[key] = properties(entry as Pairs)
+          value[key] = shorthands(entry)
           break
         case 'typography':
         case 'typographyQueries':
@@ -578,17 +745,22 @@ function create(contracts: readonly Token.Contract[]) {
               }
             : {}),
           name: parameter.name,
-          ...(parameter.syntax !== undefined ? { syntax: parameter.syntax } : {}),
+          ...(parameter.syntax !== undefined
+            ? { syntax: parameter.syntax }
+            : {}),
         }),
       ),
       returns: input.returns,
     }
   }
 
-  function mappings(input: Json | undefined) {
+  // Authored variable mappings stay the mutable null-prototype literal the configuration read.
+  function mappings(input: Json | undefined): Themes.Call['variableMappings'] {
     if (input === null || input === undefined) return undefined
     if (input === false) return false
-    return properties(input as Pairs)
+    return lookup(input, (properties) => [
+      ...(properties as string[]),
+    ]) as NonNullable<Themes.Call['variableMappings']>
   }
 
   // Configuration calls carry `appearance` and stay mutable. Factory calls are frozen.
@@ -597,7 +769,10 @@ function create(contracts: readonly Token.Contract[]) {
 
     for (const [key, entry] of Object.entries(input)) {
       // Variable configurations always record their mappings, even when none were authored.
-      if (key === 'variableMappings' && (input.variableConfig || entry === false)) {
+      if (
+        key === 'variableMappings' &&
+        (input.variableConfig || entry === false)
+      ) {
         value[key] = mappings(entry)
         continue
       }
@@ -640,7 +815,8 @@ function create(contracts: readonly Token.Contract[]) {
         start: call.start as number,
         tokenType: call.tokenType as string,
         type: (call.type ?? undefined) as string | undefined,
-        options: call.options === null ? undefined : configOptions(call.options),
+        options:
+          call.options === null ? undefined : configOptions(call.options),
         variableConfig: call.variableConfig ? true : undefined,
         variableMappings: mappings(call.variableMappings),
         output: (call.output ?? undefined) as 'html' | undefined,
@@ -655,14 +831,19 @@ function create(contracts: readonly Token.Contract[]) {
   }
 
   function varsRead(input: Fields): Themes.VarsRead {
-    return Object.freeze({
+    return {
       defaultVars: input.defaultVars as string,
       end: input.end as number,
       owner: input.owner as string,
       start: input.start as number,
       unnamed: input.unnamed as boolean,
-      vars: record(input.vars, (value) => definition(value as Fields)),
-    })
+      vars: Object.fromEntries(
+        (input.vars as Pairs).map(([key, value]) => [
+          key,
+          definition(value as Fields),
+        ]),
+      ),
+    }
   }
 
   // Contribution data is mutable. Only the styles `Style.define` produces inside it are frozen.
@@ -677,14 +858,19 @@ function create(contracts: readonly Token.Contract[]) {
       return {
         kind: 'descriptor',
         name: input.name as string,
-        value: (isNumber(input.value!) ? number(input.value!) : input.value) as string | number,
+        value: (isNumber(input.value!) ? number(input.value!) : input.value) as
+          | string
+          | number,
       }
     return { kind: 'style', style: style(input.style as Fields) }
   }
 
   function scalarRecord(input: Json | undefined) {
     return Object.fromEntries(
-      (input as Pairs).map(([key, value]) => [key, isNumber(value) ? number(value) : value]),
+      (input as Pairs).map(([key, value]) => [
+        key,
+        isNumber(value) ? number(value) : value,
+      ]),
     ) as Record<string, string | number>
   }
 
@@ -695,10 +881,12 @@ function create(contracts: readonly Token.Contract[]) {
     return {
       name: 'global',
       declarations: [],
-      rules: ((input.rules as Json[][] | undefined) ?? []).map(([condition, child]) => ({
-        condition: condition as string,
-        style: ruleStyle(child as Fields),
-      })),
+      rules: ((input.rules as Json[][] | undefined) ?? []).map(
+        ([condition, child]) => ({
+          condition: condition as string,
+          style: ruleStyle(child as Fields),
+        }),
+      ),
     }
   }
 
@@ -719,7 +907,10 @@ function create(contracts: readonly Token.Contract[]) {
             declarations: scalarRecord(input.declarations),
           }
         case 'font-face':
-          return { kind: 'font-face', declarations: scalarRecord(input.declarations) }
+          return {
+            kind: 'font-face',
+            declarations: scalarRecord(input.declarations),
+          }
         case 'keyframes':
           return {
             kind: 'keyframes',
@@ -738,12 +929,16 @@ function create(contracts: readonly Token.Contract[]) {
             style: ruleStyle(input.style as Fields),
           }
         default:
-          return Object.fromEntries(Object.entries(input).filter(([key]) => key !== 'within'))
+          return Object.fromEntries(
+            Object.entries(input).filter(([key]) => key !== 'within'),
+          )
       }
     })()
 
     return (
-      input.within !== undefined ? { ...value, within: [...(input.within as string[])] } : value
+      input.within !== undefined
+        ? { ...value, within: [...(input.within as string[])] }
+        : value
     ) as Css.Contribution
   }
 
@@ -752,7 +947,9 @@ function create(contracts: readonly Token.Contract[]) {
       kind: input.kind,
       start: input.start,
       end: input.end,
-      ...(input.function !== undefined ? { function: signature(input.function as Fields) } : {}),
+      ...(input.function !== undefined
+        ? { function: signature(input.function as Fields) }
+        : {}),
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.binding !== undefined ? { binding: input.binding } : {}),
       ...(input.exported !== undefined ? { exported: input.exported } : {}),
@@ -760,9 +957,9 @@ function create(contracts: readonly Token.Contract[]) {
   }
 
   function result(input: Fields): Source.extract.ReturnType {
-    const contributions = ((input.contributions as Fields[] | undefined) ?? []).map(
-      contribution,
-    )
+    const contributions = (
+      (input.contributions as Fields[] | undefined) ?? []
+    ).map(contribution)
     // Namespaces are the namespace contributions themselves, as a filtered list.
     const value: Record<string, unknown> = {
       namespaces: contributions.filter((entry) => entry.kind === 'namespace'),
@@ -774,7 +971,9 @@ function create(contracts: readonly Token.Contract[]) {
     }
 
     if (input.contributionCalls !== undefined)
-      value.contributionCalls = (input.contributionCalls as Fields[]).map(contributionCall)
+      value.contributionCalls = (input.contributionCalls as Fields[]).map(
+        contributionCall,
+      )
 
     value.calls = Object.freeze((input.calls as Fields[]).map(call))
     value.styles = labelled(input.styles as Fields)
@@ -791,31 +990,41 @@ function create(contracts: readonly Token.Contract[]) {
         ),
       )
 
-    value.themeAliases = Object.freeze((input.themeAliases as Fields[]).map(alias))
+    value.themeAliases = Object.freeze(
+      (input.themeAliases as Fields[]).map(alias),
+    )
 
     for (const key of ['themeAppearances', 'themeScripts', 'themeSelections'])
       if (input[key] !== undefined) value[key] = strings(input[key]!)
 
-    value.themeCalls = Object.freeze((input.themeCalls as Fields[]).map(themeCall))
+    value.themeCalls = Object.freeze(
+      (input.themeCalls as Fields[]).map(themeCall),
+    )
 
     if (input.staticThemeReferences !== undefined)
       value.staticThemeReferences = Object.freeze(
-        (input.staticThemeReferences as Fields[]).map((entry) => Object.freeze({ ...entry })),
+        (input.staticThemeReferences as Fields[]).map((entry) => ({
+          ...entry,
+        })),
       )
 
     value.themeReferences = Object.freeze(
-      (input.themeReferences as Fields[]).map((entry) => Object.freeze({ ...entry })),
+      (input.themeReferences as Fields[]).map((entry) =>
+        Object.freeze({ ...entry }),
+      ),
     )
     // Collected themes are keyed by a null-prototype record. A module without theme
     // imports collects none and returns an ordinary empty record.
     value.vars = Object.freeze(
-      (input.vars as Pairs).length
+      input.collectedThemes
         ? lookup(input.vars, (entry) => definition(entry as Fields))
         : {},
     )
 
     if (input.nativeVars !== undefined)
-      value.nativeVars = Object.freeze((input.nativeVars as Fields[]).map(varsRead))
+      value.nativeVars = Object.freeze(
+        (input.nativeVars as Fields[]).map(varsRead),
+      )
 
     return Object.freeze(value) as unknown as Source.extract.ReturnType
   }

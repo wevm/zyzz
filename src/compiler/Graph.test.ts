@@ -690,7 +690,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       Path.resolve('.fixture-native-retention-'),
     )
     try {
-      const outfile = Path.join(directory, 'retention.mjs')
+      // The bundle sits two levels below the root, as source modules do, so it finds the addon.
+      const outfile = Path.join(directory, 'dist', 'retention.mjs')
       await Esbuild.build({
         bundle: true,
         entryPoints: [

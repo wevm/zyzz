@@ -1634,17 +1634,21 @@ fn function_letters(text: &str) -> Option<(&str, &str, usize)> {
     ))
 }
 
+// Trigonometry uses the portable fdlibm algorithms rather than the platform's libm, so output is
+// identical on every target. V8 computes `Math.tan` with fdlibm too. Its x64 `Math.sin` and
+// `Math.cos` use glibc's algorithms, which differ in the last bit for about one angle in a hundred.
+
 /// `Math.sin`.
 fn sin(value: f64) -> f64 {
-    value.sin()
+    libm::sin(value)
 }
 
 /// `Math.cos`.
 fn cos(value: f64) -> f64 {
-    value.cos()
+    libm::cos(value)
 }
 
 /// `Math.tan`.
 fn tan(value: f64) -> f64 {
-    value.tan()
+    libm::tan(value)
 }

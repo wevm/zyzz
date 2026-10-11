@@ -42,7 +42,8 @@ let loaded: Exports | undefined
 
 /**
  * Returns the addon, resolving it on first use.
- * Candidates are the repository's local build, the platform package, then the WebAssembly package.
+ * Candidates are the repository's local build, the platform package, then the local and packaged
+ * WebAssembly builds.
  * @returns The addon exports.
  * @throws {LoadError} If no candidate loads.
  */
@@ -76,10 +77,16 @@ function resolve(): Exports {
     }
   }
 
-  try {
-    return require('@zyzz/binding-wasm32-wasi') as Exports
-  } catch (error) {
-    failures.push(['@zyzz/binding-wasm32-wasi', error])
+  const wasi = Path.resolve(directory, '../../binding/wasi/zyzz.wasi.cjs')
+
+  for (const candidate of [wasi, '@zyzz/binding-wasm32-wasi']) {
+    if (candidate === wasi && !Fs.existsSync(wasi)) continue
+
+    try {
+      return require(candidate) as Exports
+    } catch (error) {
+      failures.push([candidate, error])
+    }
   }
 
   throw new LoadError(failures)

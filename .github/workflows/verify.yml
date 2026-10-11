@@ -100,6 +100,26 @@ jobs:
       - name: Test crates
         run: cargo test --workspace
     timeout-minutes: 30
+  wasi:
+    name: WebAssembly binding
+    needs: [binding]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+        with:
+          rust: 'true'
+      - name: Download compiler binding
+        uses: actions/download-artifact@v4
+        with:
+          name: binding
+      - name: Build WebAssembly binding
+        run: pnpm build:binding:wasi
+      - name: Compare with the native addon
+        run: pnpm check:wasi
+    timeout-minutes: 30
   test-shards:
     name: Test (${{ matrix.shard }}/16)
     needs: [binding]

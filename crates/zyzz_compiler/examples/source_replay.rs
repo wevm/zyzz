@@ -137,6 +137,7 @@ fn replay(case: &Value) -> Value {
             json!({ "dead": dead, "definitions": { "namespaces": namespaces, "values": values }, "find": find })
         }
         Some("recipes") => recipe(source, module_id),
+        Some("contract-text") => contract(case["contract"].as_str().unwrap_or_default(), module_id),
         kind => json!({ "error": format!("unknown kind {kind:?}") }),
     }
 }
@@ -404,6 +405,194 @@ fn recipe(source: &str, module_id: &str) -> Value {
         "rules": rules,
         "slots": slots,
         "types": types,
+    })
+}
+
+fn data_json(output: &mut String, value: &zyzz_compiler::data::Data) {
+    use zyzz_compiler::data::Data;
+
+    match value {
+        Data::Token(reference) => zyzz_compiler::js::write_string(output, &format!("token:{}", reference.path)),
+        Data::Expression(expression) => {
+            output.push('{');
+
+            if let Some(group) = &expression.group {
+                output.push_str("\"group\":");
+                zyzz_compiler::js::write_string(output, group);
+                output.push(',');
+            }
+
+            output.push_str("\"parts\":[");
+
+            for (index, part) in expression.parts.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                match part {
+                    zyzz_compiler::internal::token::Part::Text(text) => zyzz_compiler::js::write_string(output, text),
+                    zyzz_compiler::internal::token::Part::Reference(reference) => {
+                        zyzz_compiler::js::write_string(output, &format!("token:{}", reference.path));
+                    }
+                    zyzz_compiler::internal::token::Part::Binding(binding) => zyzz_compiler::js::write_string(output, &binding.name),
+                }
+            }
+
+            output.push_str("]}");
+        }
+        Data::Object(object) => zyzz_compiler::js::write_object(
+            output,
+            object.iter().filter(|(_, value)| !value.is_undefined()),
+            data_json,
+        ),
+        Data::Array(items) => {
+            output.push('[');
+
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                data_json(output, item);
+            }
+
+            output.push(']');
+        }
+        value => zyzz_compiler::js::write_data(output, value),
+    }
+}
+
+fn link_summary(link: &zyzz_compiler::compiler::internal::themes::Link) -> Value {
+    use zyzz_compiler::compiler::internal::themes::LinkKind;
+
+    let call = &link.call;
+    let kind = match link.kind {
+        LinkKind::Animation => "animation",
+        LinkKind::Config => "config",
+        LinkKind::RuleReference => "rule-reference",
+        LinkKind::Style => "style",
+        LinkKind::StyleReference => "style-reference",
+        LinkKind::Theme => "theme",
+        LinkKind::Variables => "variables",
+    };
+    let flags: Vec<&str> = [
+        ("appearance", call.appearance),
+        ("catalogOnly", call.catalog_only),
+        ("directVariables", call.direct_variables),
+        ("initialization", call.initialization),
+        ("nativeProvider", call.native_provider),
+        ("recipe", call.recipe),
+        ("root", call.root),
+        ("script", call.script),
+        ("selection", call.selection),
+        ("variableConfig", call.variable_config),
+        ("variableSet", call.variable_set),
+    ]
+    .into_iter()
+    .filter_map(|(name, set)| set.then_some(name))
+    .collect();
+    let options = call.options.as_ref().map(|options| {
+        let mut output = String::new();
+
+        data_json(&mut output, &zyzz_compiler::data::Data::from(options.clone()));
+        output
+    });
+    let function = call.function.as_ref().map(|function| {
+        let parameters: Vec<Value> = function
+            .parameters
+            .iter()
+            .map(|parameter| {
+                let mut value = Map::new();
+
+                value.insert("name".to_owned(), json!(&*parameter.name));
+
+                if let Some(syntax) = &parameter.syntax {
+                    value.insert("syntax".to_owned(), json!(&**syntax));
+                }
+
+                if let Some(default) = &parameter.default {
+                    value.insert("default".to_owned(), scalar(default));
+                }
+
+                Value::Object(value)
+            })
+            .collect();
+
+        serde_json::to_string(&json!({ "parameters": parameters, "returns": &*function.returns })).unwrap_or_default()
+    });
+    let style = link.style.as_ref().map(|style| {
+        json!({
+            "attributes": style.attributes.iter().map(|value| &**value).collect::<Vec<_>>(),
+            "className": style.class_name.as_deref(),
+            "slots": style.slots.iter().map(|value| &**value).collect::<Vec<_>>(),
+            "output": style.output.map(|_| "html"),
+            "name": &*style.style.name,
+            "declarations": style.style.declarations.len(),
+            "rules": style.style.rules.as_ref().map(Vec::len),
+            "staticRecipe": style.static_recipe.as_ref().map(|recipe| recipe.rules.len()),
+            "dynamic": style.dynamic.as_ref().map(|dynamic| dynamic.slots.keys().map(|key| &**key).collect::<Vec<_>>()),
+            "nativeContext": style.native_context.as_ref().map(|context| context.vars.keys().map(|key| &**key).collect::<Vec<_>>()),
+        })
+    });
+
+    json!({
+        "binding": &*link.binding,
+        "kind": kind,
+        "call": {
+            "name": &*call.name,
+            "tokenType": &*call.token_type,
+            "type": call.type_text.as_deref(),
+            "members": call.members.as_ref().map(|members| Value::Object(members.iter().map(|(key, value)| (key.to_string(), json!(&**value))).collect())),
+            "options": options,
+            "variables": call.variables.as_ref().map(|variables| Value::Object(variables.iter().map(|(key, value)| (key.to_string(), json!(format!("{}:{}", value.name, value.domain.as_str())))).collect())),
+            "variableOwner": call.variable_owner.as_deref(),
+            "reference": call.reference.map(|kind| { let name = format!("{kind:?}"); let mut characters = name.chars(); characters.next().map(|first| first.to_ascii_lowercase().to_string() + characters.as_str()).unwrap_or_default() }),
+            "function": function,
+            "flags": flags,
+            "output": call.output.map(|_| "html"),
+        },
+        "definition": link.definition.metadata.contract.identity.as_deref(),
+        "style": style,
+        "members": link.members.as_ref().map(|members| Value::Object(members.iter().map(|(key, value)| (key.to_string(), link_summary(value))).collect())),
+    })
+}
+
+fn contract(text: &str, module_id: &str) -> Value {
+    use zyzz_compiler::compiler::internal::{contract, identifiers};
+
+    let validate = |filename: &str, css: &str| -> zyzz_compiler::error::Result<()> {
+        let options = lightningcss::stylesheet::ParserOptions { filename: filename.to_owned(), error_recovery: false, ..Default::default() };
+
+        lightningcss::stylesheet::StyleSheet::parse(css, options)
+            .map(|_| ())
+            .map_err(|error| zyzz_compiler::error::Error::Message(error.to_string()))
+    };
+    let identifier = |value: &str| identifiers::read(value);
+    let hooks = contract::Hooks { identifier: &identifier, validate: &validate };
+    let mut identities = rustc_hash::FxHashMap::default();
+    let library = match contract::read(text, &mut identities, module_id, &hooks) {
+        Ok(library) => library,
+        Err(error) => return json!({ "error": error.text() }),
+    };
+
+    json!({
+        "classRules": Value::Object(library.class_rules.iter().map(|(key, value)| (key.to_string(), json!(&**value))).collect()),
+        "links": Value::Object(library.links.iter().map(|(key, value)| (key.to_string(), link_summary(value))).collect()),
+        "stylesheets": library.stylesheets.iter().map(|section| json!({
+            "source": &*section.source,
+            "css": &*section.css,
+            "layers": section.layers.iter().map(|list| list.iter().map(|name| &**name).collect::<Vec<_>>()).collect::<Vec<_>>(),
+            "key": section.key.as_deref(),
+            "dependency": section.dependency.as_ref().map(|chain| chain.iter().map(|value| &**value).collect::<Vec<_>>()),
+            "start": section.start,
+            "content": section.content.is_some(),
+        })).collect::<Vec<_>>(),
+        "themes": Value::Object(library.themes.iter().map(|(key, theme)| (key.to_string(), json!({
+            "identity": theme.metadata.contract.identity.as_deref(),
+            "cssName": theme.metadata.css_name.as_deref(),
+            "paths": theme.metadata.values.keys().map(|path| &**path).collect::<Vec<_>>(),
+            "variableSet": theme.metadata.contract.variable_set,
+        }))).collect()),
     })
 }
 

@@ -529,3 +529,58 @@ pub fn locale_compare(left: &str, right: &str) -> std::cmp::Ordering {
         })
         .then_with(|| left.cmp(right))
 }
+
+/// Converts UTF-8 byte offsets into the UTF-16 offsets JavaScript strings use.
+///
+/// ASCII sources need no table. Otherwise each non-ASCII character records the cumulative
+/// difference, and lookups binary search it, so conversions need no ordering.
+#[derive(Clone, Debug, Default)]
+pub struct Utf16Index {
+    /// UTF-8 offsets just after each non-ASCII character, with the UTF-16 offset at that point.
+    marks: Vec<(u32, u32)>,
+}
+
+impl Utf16Index {
+    /// Indexes a source text.
+    pub fn new(source: &str) -> Self {
+        if source.is_ascii() {
+            return Self::default();
+        }
+
+        let mut marks = Vec::new();
+        let mut units: u32 = 0;
+
+        for (offset, character) in source.char_indices() {
+            units += u32::try_from(character.len_utf16()).unwrap_or(0);
+
+            if !character.is_ascii() {
+                let end = u32::try_from(offset + character.len_utf8()).unwrap_or(u32::MAX);
+                marks.push((end, units));
+            }
+        }
+
+        Self { marks }
+    }
+
+    /// Converts a UTF-8 offset to a UTF-16 offset.
+    pub fn utf16(&self, offset: u32) -> u32 {
+        match self.marks.partition_point(|(end, _)| *end <= offset) {
+            0 => offset,
+            index => self
+                .marks
+                .get(index - 1)
+                .map_or(offset, |(end, units)| units + (offset - end)),
+        }
+    }
+
+    /// Converts a UTF-16 offset back to a UTF-8 offset.
+    pub fn utf8(&self, offset: u32) -> u32 {
+        match self.marks.partition_point(|(_, units)| *units <= offset) {
+            0 => offset,
+            index => self
+                .marks
+                .get(index - 1)
+                .map_or(offset, |(end, units)| end + (offset - units)),
+        }
+    }
+}

@@ -23,6 +23,7 @@ napi-derive = "3"
 oxc_allocator = "=0.148.0"
 oxc_ast = "=0.148.0"
 oxc_ast_visit = "=0.148.0"
+oxc_diagnostics = "=0.148.0"
 oxc_ecmascript = "=0.148.0"
 oxc_index = { version = "=5.0.0", features = ["nonmax"] }
 oxc_parser = "=0.148.0"

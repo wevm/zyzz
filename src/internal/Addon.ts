@@ -9,6 +9,8 @@ import * as Url from 'node:url'
 
 /** Functions the Rust addon exports. Structured values cross as JSON strings. */
 export type Exports = {
+  /** Runs a named compiler operation on UTF-8 JSON input and returns its UTF-8 JSON result. */
+  readonly call: (operation: string, input: string) => string
   /** Version of the compiler crate, which also proves the addon loaded. */
   readonly version: () => string
 }

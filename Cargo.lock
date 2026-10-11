@@ -1595,3 +1595,10 @@ dependencies = [
  "memchr",
  "rustc-hash",
 ]
+
+[[package]]
+name = "zyzz_wasm"
+version = "0.0.0"
+dependencies = [
+ "zyzz_compiler",
+]

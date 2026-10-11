@@ -2,8 +2,9 @@
 //!
 //! Modules mirror the TypeScript tree under `src/`. The crate reads no files, environment, or
 //! clock, so identical inputs always produce identical output. Hosts reach it through
-//! `zyzz_binding`.
+//! `zyzz_binding` and `zyzz_wasm`.
 
+pub mod api;
 pub mod compiler;
 pub mod data;
 pub mod error;

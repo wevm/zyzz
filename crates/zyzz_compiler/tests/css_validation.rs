@@ -1,8 +1,11 @@
-//! Exercises CSS validation and at-rule transport, from authored stylesheets to transformed
-//! output and the diagnostics the TypeScript compiler reports.
+//! Exercises CSS validation, at-rule transport, namespace rewriting, and stylesheet rendering,
+//! from authored stylesheets to transformed output and the diagnostics the TypeScript compiler
+//! reports.
 //!
 //! Snapshots record the TypeScript functions' results for the same inputs, including the
 //! lightningcss npm binding's error messages.
+
+use std::fmt::Write as _;
 
 use lightningcss::rules::CssRule;
 use lightningcss::targets::Browsers;
@@ -610,11 +613,11 @@ fn rendered(sections: &[stylesheets::Section]) -> String {
             let mut output = rendered.css;
 
             for (key, target) in &rendered.assets {
-                output.push_str(&format!("\nasset {key} -> {target}"));
+                let _ = write!(output, "\nasset {key} -> {target}");
             }
 
             for (key, owner) in &rendered.owners {
-                output.push_str(&format!("\nowner {key} -> {owner}"));
+                let _ = write!(output, "\nowner {key} -> {owner}");
             }
 
             output.push('\n');

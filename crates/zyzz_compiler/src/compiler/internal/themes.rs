@@ -413,14 +413,14 @@ pub struct Themes<'a> {
     pub tokens: IndexMap<u32, TokenRead, FxBuildHasher>,
     /// Readonly variable arguments of native React hooks.
     pub vars_reads: Vec<VarsRead>,
-    alias_bindings: FxHashMap<u32, Alias>,
+    alias_bindings: FxHashMap<u32, Arc<Alias>>,
     alias_names: IndexMap<Arc<str>, Alias, FxBuildHasher>,
     alias_references: FxHashSet<u32>,
-    config_bindings: FxHashMap<u32, Link>,
+    config_bindings: FxHashMap<u32, Arc<Link>>,
     config_imports: FxHashSet<u32>,
     config_namespaces: FxHashSet<Arc<str>>,
     configs: IndexMap<Arc<str>, Link, FxBuildHasher>,
-    definitions: FxHashMap<u32, Call>,
+    definitions: FxHashMap<u32, Arc<Call>>,
     export_references: FxHashSet<u32>,
     factories: FxHashSet<u32>,
     factory_functions: FxHashMap<Arc<str>, Factory>,
@@ -1371,10 +1371,10 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
                     };
 
                     themes.configs.insert(Arc::from(local), imported.clone());
-                    themes.config_bindings.insert(start, imported);
+                    themes.config_bindings.insert(start, Arc::new(imported));
                 }
                 LinkKind::Theme => {
-                    themes.definitions.insert(start, call.clone());
+                    themes.definitions.insert(start, Arc::new(call.clone()));
                     themes.names.insert(Arc::from(local), call);
                 }
                 _ => {
@@ -1383,7 +1383,7 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
                         ..Alias::default()
                     };
 
-                    themes.alias_bindings.insert(start, alias.clone());
+                    themes.alias_bindings.insert(start, Arc::new(alias.clone()));
                     themes.alias_names.insert(Arc::from(local), alias);
                 }
             }
@@ -1549,7 +1549,8 @@ impl<'a> Themes<'a> {
                     ..Alias::default()
                 };
 
-                self.alias_bindings.insert(id.span.start, alias.clone());
+                self.alias_bindings
+                    .insert(id.span.start, Arc::new(alias.clone()));
                 self.alias_names
                     .insert(Arc::from(id.name.as_str()), alias.clone());
 
@@ -1619,7 +1620,7 @@ impl<'a> Themes<'a> {
                 self.configs
                     .insert(Arc::from(id.name.as_str()), selection.clone());
                 self.config_bindings
-                    .insert(id.span.start, selection.clone());
+                    .insert(id.span.start, Arc::new(selection.clone()));
 
                 if exported {
                     self.exports.insert(id.name.as_str(), selection);
@@ -1644,7 +1645,8 @@ impl<'a> Themes<'a> {
                 );
             };
 
-            self.definitions.insert(id.span.start, member.call.clone());
+            self.definitions
+                .insert(id.span.start, Arc::new(member.call.clone()));
             self.names
                 .insert(Arc::from(id.name.as_str()), member.call.clone());
 
@@ -1732,11 +1734,13 @@ impl<'a> Themes<'a> {
             if linked.kind == LinkKind::Config {
                 self.configs
                     .insert(Arc::from(id.name.as_str()), linked.clone());
-                self.config_bindings.insert(id.span.start, linked.clone());
+                self.config_bindings
+                    .insert(id.span.start, Arc::new(linked.clone()));
             } else {
                 self.names
                     .insert(Arc::from(id.name.as_str()), linked.call.clone());
-                self.definitions.insert(id.span.start, linked.call.clone());
+                self.definitions
+                    .insert(id.span.start, Arc::new(linked.call.clone()));
             }
 
             self.aliases.push(Alias {
@@ -1899,7 +1903,8 @@ impl<'a> Themes<'a> {
                 });
             }
 
-            self.alias_bindings.insert(id.span.start, alias.clone());
+            self.alias_bindings
+                .insert(id.span.start, Arc::new(alias.clone()));
             self.alias_names
                 .insert(Arc::from(id.name.as_str()), alias.clone());
 
@@ -2129,7 +2134,8 @@ impl<'a> Themes<'a> {
         };
 
         self.calls.push(call.clone());
-        self.definitions.insert(id.span.start, call.clone());
+        self.definitions
+            .insert(id.span.start, Arc::new(call.clone()));
         self.factories.insert(expression.span.start);
         self.names.insert(Arc::clone(&binding), call.clone());
         self.themes
@@ -2172,7 +2178,8 @@ impl<'a> Themes<'a> {
         if let BindingPattern::BindingIdentifier(id) = &variable.id {
             self.configs
                 .insert(Arc::from(id.name.as_str()), link.clone());
-            self.config_bindings.insert(id.span.start, link.clone());
+            self.config_bindings
+                .insert(id.span.start, Arc::new(link.clone()));
 
             if exported {
                 self.exports.insert(id.name.as_str(), link.clone());

@@ -1,4 +1,4 @@
-/** Observes source reuse through real adapter builds without timing assertions or compiler replacements. @module */
+/** Observes module reuse through real adapter builds without timing assertions or compiler replacements. @module */
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Inspector from 'node:inspector/promises'
@@ -43,21 +43,30 @@ try {
   async function run() {
     const code = await build()
     const { result } = await session.post('Profiler.takePreciseCoverage')
-    const calls = (file: string, name: string) => {
+    const calls = (file: string, ...names: readonly string[]) => {
       const script = result.find(
         (script) =>
           script.url === Url.pathToFileURL(require.resolve(file)).href,
       )
-      const fn = script?.functions.find((fn) => fn.functionName === name)
-      const key = `${file}:${name}`
-      if (fn) observed.add(key)
-      if (!observed.has(key)) throw new Error(`Missing V8 coverage for ${key}`)
-      return fn?.ranges[0]?.count ?? 0
+      let count = 0
+      for (const name of names) {
+        const fn = script?.functions.find((fn) => fn.functionName === name)
+        if (fn) observed.add(`${file}:${name}`)
+        count += fn?.ranges[0]?.count ?? 0
+      }
+      if (!names.some((name) => observed.has(`${file}:${name}`)))
+        throw new Error(`Missing V8 coverage for ${file}:${names.join('|')}`)
+      return count
     }
     return {
       code,
       parses: calls('oxc-parser', 'parseSync'),
-      extractions: calls('../../dist/compiler/Source.js', 'extract'),
+      // The engine reports unchanged modules, whose decoded results the host keeps.
+      modules: calls(
+        '../../dist/compiler/internal/Results.js',
+        'module',
+        'nativeModule',
+      ),
     }
   }
   const cold = await run()

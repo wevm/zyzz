@@ -55,6 +55,31 @@ mod create {
         );
         insta::assert_snapshot!(compiler.compile(input), @r#"{"same":true}"#);
     }
+
+    #[test]
+    fn alternating_snapshots() {
+        let mut compiler = Compiler::default();
+        let button =
+            r#""button.ts":"import {style} from 'zyzz';export const button=style({color:'red'});""#;
+        let card =
+            r#""card.ts":"import {style} from 'zyzz';export const card=style({opacity:0.5});""#;
+        let mut compile = |modules: &str| -> serde_json::Value {
+            // Host-resolved imports keep the cache while modules enter and leave the graph.
+            serde_json::from_str(
+                &compiler.compile(&format!(
+                    r#"{{"imports":{{"button.ts":{{"zyzz":null}},"card.ts":{{"zyzz":null}}}},"modules":{{{modules}}}}}"#
+                )),
+            )
+            .unwrap_or_default()
+        };
+        let both = format!("{button},{card}");
+
+        assert!(compile(&both)["modules"]["card.ts"].is_object());
+        insta::assert_snapshot!(compile(button)["modules"]["button.ts"].to_string(), @"0");
+
+        // The card output is the one the host decoded before the snapshot without it.
+        insta::assert_snapshot!(compile(&both)["modules"]["card.ts"].to_string(), @"0");
+    }
 }
 
 mod transform {

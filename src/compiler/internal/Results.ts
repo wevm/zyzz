@@ -62,12 +62,16 @@ type Rendered = {
   readonly owners: Readonly<Record<string, string>>
 }
 
-/** A graph result as the engine encodes it. Unchanged modules are `0`. */
+/**
+ * A graph result as the engine encodes it. Modules whose output the host last decoded are `0`,
+ * and `prune` drops every other decoded module.
+ */
 export type Output = {
   readonly contracts: Readonly<Record<string, string>>
   readonly dependencies: Readonly<Record<string, readonly string[]>>
   readonly modules: Readonly<Record<string, Module | NativeModule | 0>>
   readonly packed?: readonly Rendered[] | undefined
+  readonly prune?: true | undefined
   readonly reset?: Rendered | undefined
   readonly same?: true | undefined
   readonly shared?: Rendered | undefined
@@ -145,15 +149,17 @@ export function frozen(value: unknown): unknown {
 }
 
 /**
- * Rebuilds a frozen graph result, keeping the module objects of `previous` that the engine
- * reports unchanged.
+ * Rebuilds a frozen graph result, keeping the decoded module objects the engine reports
+ * unchanged.
  * @param value - The encoded graph result.
  * @param previous - The result of the same compiler's previous call.
+ * @param decoded - The same compiler's last decoded module per identity, updated in place.
  * @returns The output `Graph.compile` returns.
  */
 export function graph(
   value: Output,
   previous?: Graph.compile.ReturnType | undefined,
+  decoded?: Map<string, Transform.compile.ReturnType> | undefined,
 ): Graph.compile.ReturnType {
   if (value.same && previous) return previous
 
@@ -161,13 +167,20 @@ export function graph(
     Object.entries(value.modules).map(([id, encoded]) => [
       id,
       (() => {
-        if (encoded === 0) return previous!.modules[id]!
+        if (encoded === 0) return decoded!.get(id)!
         if ('edits' in encoded) return nativeModule(encoded)
 
         return module(encoded)
       })(),
     ]),
   )
+
+  if (decoded) {
+    for (const [id, output] of Object.entries(modules)) decoded.set(id, output)
+    if (value.prune)
+      for (const id of decoded.keys())
+        if (!Object.hasOwn(modules, id)) decoded.delete(id)
+  }
 
   return Object.freeze({
     ...(value.reset

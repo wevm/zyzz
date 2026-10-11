@@ -385,8 +385,9 @@ pub fn write_native_module(output: &mut String, module: &native::Output) {
     output.push('}');
 }
 
-/// Serializes a graph result. Modules whose output is the value `previous` holds become `0`.
-pub fn write_output(result: &Output, previous: Option<&Output>) -> String {
+/// Serializes a graph result. Modules whose output is the value `written` holds for their
+/// identity become `0`.
+pub fn write_output(result: &Output, written: Option<&FxHashMap<Arc<str>, Compiled>>) -> String {
     let mut output = String::from("{\"contracts\":");
 
     write_record(
@@ -425,9 +426,9 @@ pub fn write_output(result: &Output, previous: Option<&Output>) -> String {
             .iter()
             .map(|(id, module)| (&**id, (id, module))),
         |output, (id, module)| {
-            let same = previous
-                .and_then(|previous| previous.modules.get(&**id))
-                .is_some_and(|previous| previous.same(module));
+            let same = written
+                .and_then(|written| written.get(&**id))
+                .is_some_and(|written| written.same(module));
 
             match module {
                 _ if same => output.push('0'),
@@ -475,6 +476,9 @@ pub fn compile(input: &Value) -> Result<String> {
     Ok(write_output(&*graph::compile(&options(input)?)?, None))
 }
 
+/// The bound on module outputs a host keeps decoded across snapshots.
+const WRITTEN: usize = 256;
+
 /// An incremental graph compiler with the result of its previous snapshot.
 #[derive(Default)]
 pub struct Compiler {
@@ -483,11 +487,18 @@ pub struct Compiler {
     /// The native sets of the last compilation, reused while their text is unchanged so the
     /// graph compares them by identity as it compares JavaScript values.
     vars: Option<Vars>,
+    /// The last output written for each module identity. Hosts keep the decoded value of each,
+    /// since alternating snapshots of one graph share most modules.
+    written: FxHashMap<Arc<str>, Compiled>,
 }
 
 impl Compiler {
     /// Compiles a snapshot of JSON graph options. A result identical to the previous one
     /// serializes as `{"same":true}`, and failures as an error result.
+    ///
+    /// A module whose output was the last one written for its identity serializes as `0`. Past
+    /// [`WRITTEN`] identities, the result carries `"prune":true` and only its own modules stay
+    /// written, so hosts drop the other decoded modules.
     pub fn compile(&mut self, input: &str) -> String {
         let result = serde_json::from_str::<Value>(input)
             .map_err(|error| Error::Message(error.to_string()))
@@ -505,11 +516,22 @@ impl Compiler {
                     .previous
                     .as_ref()
                     .is_some_and(|previous| Arc::ptr_eq(previous, &result));
-                let written = if same {
-                    "{\"same\":true}".to_owned()
-                } else {
-                    write_output(&result, self.previous.as_deref())
-                };
+                if same {
+                    return "{\"same\":true}".to_owned();
+                }
+
+                let mut written = write_output(&result, Some(&self.written));
+
+                for (id, module) in &result.modules {
+                    self.written.insert(Arc::clone(id), module.clone());
+                }
+
+                if self.written.len() > WRITTEN {
+                    self.written
+                        .retain(|id, _| result.modules.contains_key(&**id));
+                    written.pop();
+                    written.push_str(",\"prune\":true}");
+                }
 
                 self.previous = Some(result);
                 written

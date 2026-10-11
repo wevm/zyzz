@@ -7,25 +7,25 @@ describe('zyzz', () => {
     '%s reuses unchanged compilation and updates edited dependencies',
     async (adapter) => {
       expect(await CompilerCache.verify(adapter)).toMatchInlineSnapshot(`
-      {
-        "cold": {
-          "extractions": 4,
-          "parses": 4,
-        },
-        "edited": {
-          "extractions": 4,
-          "parses": 3,
-        },
-        "settled": {
-          "extractions": 0,
-          "parses": 0,
-        },
-        "warm": {
-          "extractions": 0,
-          "parses": 0,
-        },
-      }
-    `)
+        {
+          "cold": {
+            "modules": 2,
+            "parses": 2,
+          },
+          "edited": {
+            "modules": 2,
+            "parses": 1,
+          },
+          "settled": {
+            "modules": 0,
+            "parses": 0,
+          },
+          "warm": {
+            "modules": 0,
+            "parses": 0,
+          },
+        }
+      `)
     },
     60_000,
   )

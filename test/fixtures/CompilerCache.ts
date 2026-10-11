@@ -12,7 +12,7 @@ export async function verify(adapter: string) {
   )
   const result = JSON.parse(stdout) as Record<
     'cold' | 'edited' | 'settled' | 'warm',
-    { code: string; extractions: number; parses: number }
+    { code: string; modules: number; parses: number }
   >
   expect(result.warm.code).toBe(result.cold.code)
   expect(result.edited.code).not.toBe(result.cold.code)

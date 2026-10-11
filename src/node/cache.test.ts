@@ -9,19 +9,19 @@ describe('create', () => {
       expect(await CompilerCache.verify(adapter)).toMatchInlineSnapshot(`
         {
           "cold": {
-            "extractions": 6,
-            "parses": 6,
-          },
-          "edited": {
-            "extractions": 4,
+            "modules": 3,
             "parses": 3,
           },
+          "edited": {
+            "modules": 3,
+            "parses": 1,
+          },
           "settled": {
-            "extractions": 0,
+            "modules": 0,
             "parses": 0,
           },
           "warm": {
-            "extractions": 0,
+            "modules": 0,
             "parses": 0,
           },
         }

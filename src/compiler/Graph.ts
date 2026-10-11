@@ -113,9 +113,10 @@ export declare namespace compile {
 
 /** Creates an isolated compiler with bounded extraction reuse across source graphs. */
 export function create(): create.ReturnType {
-  let result: compile.ReturnType | undefined
+  const decoded = new Map<string, Transform.compile.ReturnType>()
   // The engine compiler owns the caches, and collecting this object releases them.
   let engine: InstanceType<Addon.Exports['Graph']> | undefined
+  let result: compile.ReturnType | undefined
 
   return Object.freeze({
     compile(options: compile.Options): compile.ReturnType {
@@ -125,6 +126,7 @@ export function create(): create.ReturnType {
           engine.compile(JSON.stringify(encode(options))),
         ),
         result,
+        decoded,
       )
 
       return result

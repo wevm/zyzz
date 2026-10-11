@@ -74,6 +74,10 @@ required-features = ["compiler"]
 name = "themes_replay"
 required-features = ["compiler"]
 
+[[example]]
+name = "transform_bench"
+required-features = ["compiler"]
+
 [[test]]
 name = "compiler"
 required-features = ["compiler"]

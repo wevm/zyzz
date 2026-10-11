@@ -8,6 +8,7 @@ pub fn call(operation: &str, input: &str) -> String {
     let _ = input;
 
     match operation {
+        "css.compile" => crate::wire::compile(input),
         "version" => crate::js::quote(env!("CARGO_PKG_VERSION")),
         _ => format!(
             "{{\"error\":{{\"name\":\"Error\",\"message\":{}}}}}",

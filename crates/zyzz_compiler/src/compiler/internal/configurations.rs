@@ -14,7 +14,7 @@ use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::internal::configuration::{self, Catalog};
 use crate::internal::theme::{self, Definition};
-use crate::internal::token::{self, Contract, CssOutput, Metadata};
+use crate::internal::token::{self, Contract, ContractKey, CssOutput, Metadata};
 use crate::internal::{identity, shorthands, variable_sets};
 use crate::js::{self, Record};
 use crate::vars;
@@ -242,6 +242,15 @@ pub fn collect<'a>(
     let shorthands_input = field("shorthands");
     let html = field("output").as_str() == Some("html");
     let contract = Arc::new(Contract {
+        // Configurations.ts spreads cssOutput before defaultLayer.
+        keys: Some(Arc::from([
+            ContractKey::VariableSet,
+            ContractKey::Mappings,
+            ContractKey::Composition,
+            ContractKey::CssOutput,
+            ContractKey::DefaultLayer,
+            ContractKey::Shorthands,
+        ])),
         complete: !id.is_undefined(),
         composition: field("composition")
             .as_str()

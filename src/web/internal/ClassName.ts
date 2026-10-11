@@ -108,8 +108,33 @@ export const complete = Symbol('zyzz.css.complete')
 export type Units = {
   /** Names a declaration unit, reusing a visible earlier name for an equal body. */
   readonly name: (body: string, namespace: string | undefined) => string
+  /** Shared table access for compilers outside this JavaScript realm. */
+  readonly [state]?: State | undefined
   /** Names chosen so far, keyed by namespace and body, and whether each was reused. */
   readonly used: ReadonlyMap<string, Decision>
+}
+
+/** Exposes a scope's shared name table to compilers outside this JavaScript realm. */
+export const state = Symbol('zyzz.css.units.state')
+
+/** Reads and updates one scope's shared name table without naming units. */
+export type State = {
+  /** Snapshots every registered name, this scope's identity, and the owners it may borrow from. */
+  readonly read: () => Snapshot
+  /** Applies decisions made outside this realm, as if this scope had named each unit. */
+  readonly record: (used: ReadonlyMap<string, Decision>) => void
+}
+
+/** A scope's view of the shared name table. */
+export type Snapshot = {
+  /** Registered names as `[key, name, owner]`, in registration order. */
+  readonly names: readonly (readonly [string, string, string])[]
+  /** Compilation identity recorded on the names it introduces. */
+  readonly owner: string
+  /** Fixed prefix distinguishing this compilation's new names. */
+  readonly qualifier: string
+  /** Owners whose names this scope may reuse, or `undefined` for every owner. */
+  readonly visible: readonly string[] | undefined
 }
 
 /** A naming decision recorded so cached output can be validated against a later build. */
@@ -170,6 +195,32 @@ export function registry(): registry.ReturnType {
           used.set(key, { borrowed: borrowed !== undefined, name })
 
           return name
+        },
+        [state]: {
+          read() {
+            const owners = new Set([
+              options.owner,
+              ...[...names.values()].map((entry) => entry.owner),
+            ])
+
+            return {
+              names: [...names].map(
+                ([key, entry]) => [key, entry.name, entry.owner] as const,
+              ),
+              owner: options.owner,
+              qualifier: options.qualifier,
+              visible: options.visible
+                ? [...owners].filter(options.visible)
+                : undefined,
+            }
+          },
+          record(decisions) {
+            for (const [key, decision] of decisions) {
+              if (!names.has(key))
+                names.set(key, { name: decision.name, owner: options.owner })
+              used.set(key, decision)
+            }
+          },
         },
         used,
       }

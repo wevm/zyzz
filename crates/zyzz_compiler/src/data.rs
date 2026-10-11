@@ -97,6 +97,24 @@ impl Data {
         }
     }
 
+    /// Converts parsed JSON as `JSON.parse` would, with array-index keys first in objects.
+    pub fn from_json(value: &serde_json::Value) -> Self {
+        match value {
+            serde_json::Value::Null => Self::Null,
+            serde_json::Value::Bool(value) => Self::Bool(*value),
+            serde_json::Value::Number(number) => Self::Number(number.as_f64().unwrap_or(f64::NAN)),
+            serde_json::Value::String(text) => Self::string(text.as_str()),
+            serde_json::Value::Array(items) => {
+                Self::Array(Arc::new(items.iter().map(Self::from_json).collect()))
+            }
+            serde_json::Value::Object(object) => {
+                Self::from(Object::from_entries(object.iter().map(|(key, value)| {
+                    (Arc::from(key.as_str()), Self::from_json(value))
+                })))
+            }
+        }
+    }
+
     /// Converts a scalar like `String(value)`.
     pub fn to_js_string(&self) -> String {
         match self {

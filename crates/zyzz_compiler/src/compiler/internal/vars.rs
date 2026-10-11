@@ -27,6 +27,7 @@ use crate::internal::binding::{self, Domain};
 use crate::internal::identity;
 use crate::internal::theme::{self, Definition};
 use crate::js::{self, Record};
+use crate::web::internal::contributions::{self, Scalar};
 
 /// One `variable()` call replaced with immutable compiler-assigned slot data.
 #[derive(Clone, Debug)]
@@ -39,19 +40,6 @@ pub struct Call {
     pub slots: Record<Arc<binding::Reference>>,
     /// Inclusive offset.
     pub start: u32,
-}
-
-/// A registered custom property: the `property` stylesheet contribution a registration emits.
-#[derive(Clone, Debug)]
-pub struct Registration {
-    /// Whether the property inherits.
-    pub inherits: bool,
-    /// The initial value.
-    pub initial_value: Data,
-    /// Custom property name, including `--`.
-    pub name: String,
-    /// Registered syntax, such as `<length>`.
-    pub syntax: String,
 }
 
 /// A variable read, by the start of the read.
@@ -76,8 +64,8 @@ pub struct Variables<'a> {
     pub references: IndexMap<u32, VariableRead, FxBuildHasher>,
     /// Calls of registered variables, in registration order.
     pub registration_locations: Vec<Span>,
-    /// Registrations in walk order.
-    pub registrations: Vec<Registration>,
+    /// `property` stylesheet contributions of registered variables, in walk order.
+    pub registrations: Vec<contributions::Definition>,
     /// Starts of registered calls, in registration order.
     pub registration_starts: Vec<u32>,
     resolver: Resolver<'a>,
@@ -481,13 +469,22 @@ pub fn collect<'a>(
                 }
             }
 
+            let initial_value = match initial_value {
+                Data::Number(number) => Scalar::Number(*number),
+                other => Scalar::String(other.to_js_string().into()),
+            };
+
             registration_starts.push(call.span.start);
             registration_locations.push(call.span);
-            registrations.push(Registration {
-                inherits: *inherits,
-                initial_value: initial_value.clone(),
-                name: name.clone(),
-                syntax,
+
+            registrations.push(contributions::Definition {
+                kind: contributions::Kind::Property {
+                    inherits: *inherits,
+                    initial_value: Some(initial_value),
+                    name: Arc::from(name.as_str()),
+                    syntax: Arc::from(syntax),
+                },
+                within: Vec::new(),
             });
         }
 

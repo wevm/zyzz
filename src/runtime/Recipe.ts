@@ -37,25 +37,32 @@ export type Payload = {
  */
 export function create(options: create.Options) {
   const props = Props.create({ className: options.className })
-  const axes = Object.keys(options.axes)
+  // Attribute names and defaults are fixed, so calls only read the selection.
+  const axes = Object.keys(options.axes).map((axis) => ({
+    attribute: `data-${axis}` as const,
+    axis,
+    fallback: Object.hasOwn(options.defaults, axis)
+      ? options.defaults[axis]
+      : undefined,
+  }))
 
   return (input: Record<string, unknown> & style.Options = {}) => {
     const overrides: style.Options = input
-    const result: style.Props & Record<`data-${string}`, string> = {
-      ...props(overrides),
-    }
+    // Props are fresh on every call, so selection attributes extend them in place.
+    const result = props(overrides) as style.Props &
+      Record<`data-${string}`, string>
 
-    for (const axis of axes) {
-      const selected = Object.hasOwn(input, axis) ? input[axis] : undefined
-      const value = (
-        selected === undefined
-          ? Object.hasOwn(options.defaults, axis)
-            ? options.defaults[axis]
-            : undefined
-          : selected
-      ) as string | boolean | null | undefined
+    for (const entry of axes) {
+      const selected = Object.hasOwn(input, entry.axis)
+        ? input[entry.axis]
+        : undefined
+      const value = (selected === undefined ? entry.fallback : selected) as
+        | string
+        | boolean
+        | null
+        | undefined
       if (value !== null && value !== undefined)
-        result[`data-${axis}`] = String(value)
+        result[entry.attribute] = String(value)
     }
 
     return options.html ? Html.from(result) : result

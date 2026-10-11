@@ -29,39 +29,62 @@ export function create(options: create.Options) {
     ...input,
     classes: new Set(input.className.split(/\s+/).filter(Boolean)),
   }))
+  // Only conditional arguments select a precompiled case.
+  const conditional = inputs.some((input) => input.condition !== undefined)
 
   return (...entries: readonly Entry[]) => {
     let mask = 0
-    for (const [index, input] of inputs.entries())
-      if (input.condition !== undefined && entries[index])
-        mask |= 1 << input.condition
+    if (conditional)
+      for (let index = 0; index < inputs.length; index++) {
+        const condition = inputs[index]!.condition
+        if (condition !== undefined && entries[index]) mask |= 1 << condition
+      }
     const className = options.cases?.[mask] ?? options.className
-    const result: style.Props & Record<string, unknown> = {
-      className,
-    }
-    const external: string[] = []
-    const style: Record<string, string | number | undefined> = {}
-    for (const [index, entry] of entries.entries()) {
+    // Mutable while entries merge, then returned as immutable props.
+    const result: {
+      className: string
+      style?: Record<string, string | number | undefined>
+    } & Record<string, unknown> = { className }
+    let attributes = false
+    let external: string[] | undefined
+    let style: Record<string, string | number | undefined> | undefined
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index]
       if (!entry) continue
       const input = inputs[index]!
-      for (const owner of input.owners) {
-        for (const attribute of owner.attributes) delete result[attribute]
-        for (const slot of owner.slots) delete style[slot]
-      }
-      for (const name of entry.className.split(/\s+/))
-        if (name && !input.classes.has(name)) external.push(name)
-      for (const [name, value] of Object.entries(entry))
-        if (name.startsWith('data-')) result[name] = value
-      for (const [name, value] of Object.entries(entry.style ?? {})) {
-        // Reinsert overwritten keys so inline shorthand/longhand ordering follows arguments.
-        delete style[name]
-        style[name] = value
+      // Owners replace only what earlier entries added, so the first contributions skip deletion.
+      if (attributes || style)
+        for (const owner of input.owners) {
+          if (attributes)
+            for (const attribute of owner.attributes) delete result[attribute]
+          if (style) for (const slot of owner.slots) delete style[slot]
+        }
+      // An application's own class list adds nothing beyond the composition class.
+      if (entry.className !== input.className)
+        for (const name of entry.className.split(/\s+/))
+          if (name && !input.classes.has(name)) (external ??= []).push(name)
+      for (const name in entry)
+        if (name.startsWith('data-') && Object.hasOwn(entry, name)) {
+          result[name] = entry[name as `data-${string}`]
+          attributes = true
+        }
+      const inline = entry.style
+      if (inline) {
+        style ??= {}
+        for (const name in inline) {
+          if (!Object.hasOwn(inline, name)) continue
+          // Reinsert overwritten keys so inline shorthand/longhand ordering follows arguments.
+          delete style[name]
+          style[name] = inline[name as keyof typeof inline]
+        }
       }
     }
-    return {
-      ...result,
-      className: [className, ...external].filter(Boolean).join(' '),
-      ...(Object.keys(style).length ? { style } : {}),
+    result.className = external
+      ? [className, ...external].filter(Boolean).join(' ')
+      : className || ''
+    if (style && Object.keys(style).length) result.style = style
+    return result as style.Props & {
+      readonly [name: `data-${string}`]: string | undefined
     }
   }
 }

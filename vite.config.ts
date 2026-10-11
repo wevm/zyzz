@@ -14,6 +14,7 @@ export default defineConfig({
       'pnpm-lock.yaml',
       'src/internal/NativeProperties.ts',
       'src/react-native/internal/NativeSchema.ts',
+      'src/web/internal/Wasm.generated.ts',
     ],
     printWidth: 80,
     semi: false,
@@ -28,6 +29,7 @@ export default defineConfig({
       'node_modules/**',
       'src/internal/NativeProperties.ts',
       'src/react-native/internal/NativeSchema.ts',
+      'src/web/internal/Wasm.generated.ts',
     ],
     // Formatting and linting stay syntax-only; check:types checks types.
     options: { typeAware: false, typeCheck: false },
@@ -50,6 +52,8 @@ export default defineConfig({
       reporter: ['json', 'json-summary', 'text'],
       reportOnFailure: true,
     },
+    // Integration tests run the Rust compiler, so its addon and WebAssembly build come first.
+    globalSetup: ['./scripts/setup-tests.ts'],
     globals: true,
     include: [
       'scripts/**/*.test.ts',

@@ -7,17 +7,28 @@ use std::fmt;
 pub enum Error {
     /// `Config.InvalidError` for invalid configuration options or incompatible named sets.
     Config(String),
+    /// `Stylesheets.ConflictError`: packed stylesheet contributions that disagree.
+    Conflict {
+        /// Explanation of the conflict.
+        message: String,
+        /// Trusted graph owner or source of the conflicting section.
+        source: std::sync::Arc<str>,
+    },
     /// `Css.CompileError` with every compilation diagnostic.
     Css(Vec<crate::web::css::Diagnostic>),
     /// `Source.ExtractError` with every source diagnostic, in source order.
+    #[cfg(feature = "compiler")]
     Extract(crate::compiler::source::ExtractError),
     /// A plain `Error` with a caller-visible message.
     Message(String),
     /// `MissingTransformError`: authoring that only the compiler can evaluate.
     MissingTransform,
+    /// `Native.CompileError`: a native source feature outside the static source boundary.
+    Native(String),
     /// `Style.InvalidError` with every validation diagnostic.
     Style(Vec<crate::style::Diagnostic>),
     /// `StyleSheet.CompileError` with every native capability diagnostic.
+    #[cfg(feature = "compiler")]
     StyleSheet(Vec<crate::react_native::style_sheet::Diagnostic>),
     /// `StyleSheet.SelectionError`: a lookup of a missing precompiled table.
     StyleSheetSelection(String),
@@ -57,14 +68,18 @@ impl Error {
     pub fn text(&self) -> String {
         match self {
             Self::Config(message)
+            | Self::Conflict { message, .. }
             | Self::Message(message)
+            | Self::Native(message)
             | Self::StyleSheetSelection(message)
             | Self::Themes { message, .. }
             | Self::Variants(message) => message.clone(),
             Self::Css(diagnostics) => crate::web::css::error_message(diagnostics),
+            #[cfg(feature = "compiler")]
             Self::Extract(error) => error.message(),
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
             Self::Style(diagnostics) => crate::style::error_message(diagnostics),
+            #[cfg(feature = "compiler")]
             Self::StyleSheet(diagnostics) => {
                 crate::react_native::style_sheet::error_message(diagnostics)
             }

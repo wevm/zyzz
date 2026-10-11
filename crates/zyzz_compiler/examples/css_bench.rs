@@ -42,9 +42,37 @@ fn time(mut operation: impl FnMut()) -> (Duration, Duration, usize) {
 }
 
 fn main() {
+    let mut arguments: Vec<String> = std::env::args().skip(1).collect();
+
+    // `--profile <stage> <iterations>` repeats one stage without timing, for instruction profilers.
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--profile")
+    {
+        let stage = arguments.get(1).cloned().unwrap_or_default();
+        let iterations: usize = arguments
+            .get(2)
+            .and_then(|count| count.parse().ok())
+            .unwrap_or(10);
+
+        for path in arguments.drain(3..) {
+            let input = std::fs::read_to_string(&path).expect("wire input");
+            let mut decoded = wire::decode(&input).expect("decoded input");
+
+            for _ in 0..iterations {
+                match stage.as_str() {
+                    "decode" => drop(std::hint::black_box(wire::decode(&input).expect("decoded"))),
+                    _ => drop(std::hint::black_box(decoded.compile().expect("compiled"))),
+                }
+            }
+        }
+
+        return;
+    }
+
     println!("name\tdecode median\tcompile median\tencode median\ttotal median\tsamples");
 
-    for path in std::env::args().skip(1) {
+    for path in arguments {
         let input = std::fs::read_to_string(&path).expect("wire input");
         let expected = std::fs::read_to_string(path.replace(".json", ".expected.json")).ok();
         let mut decoded = wire::decode(&input).expect("decoded input");

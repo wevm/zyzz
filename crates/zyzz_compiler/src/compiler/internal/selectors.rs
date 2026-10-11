@@ -26,7 +26,7 @@ use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::scope::{self, Mode};
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Link, LinkKind};
-use crate::compiler::internal::{identifiers, lightning, names};
+use crate::compiler::internal::{css_hooks, identifiers, names};
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::internal::{condition, identity, theme};
@@ -394,9 +394,9 @@ fn locality(selector: &str) -> std::result::Result<bool, String> {
         Ok(())
     };
 
-    lightning::transform(
+    css_hooks::transform(
         &code,
-        lightning::Hooks {
+        css_hooks::Hooks {
             rule: Some(&mut visit),
             url: None,
         },

@@ -21,6 +21,19 @@ import * as Themes from './Themes.js'
 export function encode(options: Css.compile.Options): string {
   const indexes = new Map<object, number>()
   const objects: unknown[] = []
+  const strings: string[] = []
+  const stringIndexes = new Map<string, number>()
+
+  // Repeated property names and values are written once.
+  function string(value: string): number {
+    const previous = stringIndexes.get(value)
+    if (previous !== undefined) return previous
+
+    stringIndexes.set(value, strings.length)
+    strings.push(value)
+
+    return strings.length - 1
+  }
 
   // Dependencies are encoded first, so every entry refers only to earlier entries.
   function add(key: object, entry: () => unknown): number {
@@ -112,15 +125,33 @@ export function encode(options: Css.compile.Options): string {
     return String(input)
   }
 
-  // Values outside the declaration contract serialize as their template-literal text.
-  function declarationValue(input: unknown): unknown {
-    if (typeof input === 'string') return input
-    if (typeof input === 'number') return number(input)
+  // Flat triples of property, value, and flags: bit 0 marks importance, and the remaining
+  // bits select a string, finite number, object, or non-finite number value.
+  function declarations(input: readonly Style.Declaration[]): number[] {
+    const output: number[] = []
 
-    if (Binding.is(input) || Token.is(input) || Token.isExpression(input))
-      return [reference(input)]
+    for (const declaration of input) {
+      const value: unknown = declaration.value
+      const important = declaration.important ? 1 : 0
 
-    return String(input)
+      output.push(string(declaration.property))
+
+      if (typeof value === 'string') output.push(string(value), important)
+      else if (typeof value === 'number' && Number.isFinite(value))
+        output.push(value, 2 | important)
+      else if (typeof value === 'number')
+        output.push(Number.isNaN(value) ? 0 : Math.sign(value), 6 | important)
+      else if (
+        Binding.is(value) ||
+        Token.is(value) ||
+        Token.isExpression(value)
+      )
+        output.push(reference(value), 4 | important)
+      // Values outside the declaration contract serialize as their template-literal text.
+      else output.push(string(String(value)), important)
+    }
+
+    return output
   }
 
   function theme(value: Token.Metadata): number {
@@ -143,11 +174,7 @@ export function encode(options: Css.compile.Options): string {
 
   function style(input: Style.NamedStyle): unknown {
     const output: Record<string, unknown> = {
-      d: input.declarations.map((declaration) => [
-        declaration.property,
-        declarationValue(declaration.value),
-        declaration.important ? 1 : 0,
-      ]),
+      d: declarations(input.declarations),
       n: input.name,
     }
 
@@ -311,7 +338,10 @@ export function encode(options: Css.compile.Options): string {
   const composition = mode(options.composition, true)
   const cssOutput = mode(options.cssOutput, true)
 
+  // The decoder resolves the object and string tables before it reads styles.
   return JSON.stringify({
+    objects,
+    strings,
     ...(composition === undefined ? {} : { composition }),
     ...(contributions.length ? { contributions } : {}),
     ...(cssOutput === undefined ? {} : { cssOutput }),
@@ -332,7 +362,6 @@ export function encode(options: Css.compile.Options): string {
           ),
         }
       : {}),
-    objects,
     ...(options.schemes ? { schemes: true } : {}),
     ...(typeof options.scope === 'string' && options.scope
       ? { scope: options.scope }

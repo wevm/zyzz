@@ -120,7 +120,7 @@ Second paragraph with a [link](/docs).
       .toMatchInlineSnapshot(`
       [
         8,
-        6,
+        5,
         5,
         6,
       ]

@@ -1337,9 +1337,11 @@ pub fn error(error: &Error) -> Value {
 fn error_name(error: &Error) -> &'static str {
     match error {
         Error::Config(_) => "Config.InvalidError",
+        Error::Conflict { .. } => "Stylesheets.ConflictError",
         Error::Css(_) => "Css.CompileError",
         Error::Extract(_) => "Source.ExtractError",
         Error::MissingTransform => "MissingTransformError",
+        Error::Native(_) => "Native.CompileError",
         Error::Style(_) => "Style.InvalidError",
         Error::StyleSheet(_) => "StyleSheet.CompileError",
         Error::StyleSheetSelection(_) => "StyleSheet.SelectionError",

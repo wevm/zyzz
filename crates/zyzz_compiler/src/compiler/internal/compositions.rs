@@ -230,6 +230,7 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                         ownership: Some(Owner {
                             attributes: style.attributes.clone(),
                             identity: Arc::clone(&name),
+                            identity_first: false,
                             slots: style.slots.clone(),
                         }),
                         portable: style.class_name.clone(),
@@ -372,6 +373,7 @@ fn owners(call: &Call<'_>) -> Vec<Owner> {
         }));
 
     vec![Owner {
+        identity_first: true,
         attributes: attributes.collect(),
         identity: Arc::clone(&call.name),
         slots: slots.collect(),

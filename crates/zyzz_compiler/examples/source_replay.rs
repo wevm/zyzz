@@ -313,7 +313,7 @@ fn recipe(source: &str, module_id: &str) -> Value {
                 definition
                     .default_payloads
                     .iter()
-                    .flat_map(|payloads| payloads.iter())
+                    .flat_map(zyzz_compiler::js::Record::iter)
                     .map(|(axis, values)| {
                         (
                             axis.to_string(),

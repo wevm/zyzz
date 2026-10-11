@@ -90,6 +90,10 @@ fn json(input: &str) -> Result<serde_json::Value, Error> {
 /// Runs a named operation. Unknown operations return an error result rather than failing.
 pub fn call(operation: &str, input: &str) -> String {
     match operation {
+        #[cfg(feature = "compiler")]
+        "contract.dependencies" => json(input)
+            .and_then(|input| handles::dependencies(&input))
+            .unwrap_or_else(|error| error_json(&error)),
         "css.compile" => crate::wire::compile(input),
         #[cfg(feature = "compiler")]
         "graph.compile" => json(input)

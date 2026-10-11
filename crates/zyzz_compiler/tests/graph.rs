@@ -94,3 +94,26 @@ mod repack {
         );
     }
 }
+
+mod dependencies {
+    use super::api;
+
+    #[test]
+    fn repacked_sections() {
+        insta::assert_snapshot!(
+            api::call(
+                "contract.dependencies",
+                r#"{"moduleId":"lib/index.js","contract":"{\"stylesheets\":[{\"source\":\"a.ts\",\"dependency\":[\"dep\"],\"css\":\"\",\"layers\":[]},{\"source\":\"b.ts\",\"css\":\"\",\"layers\":[]}],\"exports\":{},\"themes\":{},\"version\":31}"}"#,
+            ),
+            @r#"{"dependencies":[["dep"],[]]}"#
+        );
+    }
+
+    #[test]
+    fn invalid_contracts() {
+        insta::assert_snapshot!(
+            api::call("contract.dependencies", r#"{"moduleId":"lib","contract":"{}"}"#),
+            @r#"{"error":{"name":"Error","message":"Unsupported Zyzz contract version."}}"#
+        );
+    }
+}

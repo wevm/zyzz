@@ -472,3 +472,49 @@ pub fn transform(input: &Value) -> Result<String> {
 
     Ok(written)
 }
+
+/// Reads a library contract and lists each packed stylesheet section's import chain, which hosts
+/// resolve before compiling the graph.
+///
+/// # Errors
+///
+/// Returns the contract reader's validation errors.
+pub fn dependencies(input: &Value) -> Result<String> {
+    let field = |name: &str| input.get(name).and_then(Value::as_str).unwrap_or_default();
+    let identifier = |value: &str| crate::compiler::internal::identifiers::read(value);
+    let validate =
+        |filename: &str, css: &str| crate::compiler::internal::at_rules::validate(css, filename);
+    let hooks = crate::compiler::internal::contract::Hooks {
+        identifier: &identifier,
+        validate: &validate,
+    };
+    let library = crate::compiler::internal::contract::read(
+        field("contract"),
+        &mut FxHashMap::default(),
+        field("moduleId"),
+        &hooks,
+    )?;
+    let mut output = String::from("{\"dependencies\":[");
+
+    for (index, section) in library.stylesheets.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        output.push('[');
+
+        for (index, specifier) in section.dependency.iter().flatten().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            js::write_string(&mut output, specifier);
+        }
+
+        output.push(']');
+    }
+
+    output.push_str("]}");
+
+    Ok(output)
+}

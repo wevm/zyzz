@@ -72,7 +72,9 @@ fn parse_as<'a>(allocator: &'a Allocator, source: &'a str, source_type: SourceTy
         .with_options(options)
         .parse();
     let program = allocator.alloc(parsed.program);
+    // Scope resolution reads declaring nodes and node scopes from the node store.
     let semantic = SemanticBuilder::new()
+        .with_build_nodes(true)
         .with_check_syntax_error(true)
         .build(program);
     let offsets = Utf16Index::new(source);

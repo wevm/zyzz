@@ -11,7 +11,7 @@ use lightningcss::visitor::{Visit, VisitTypes, Visitor};
 use zyzz_compiler::compiler::internal::lightning::Options;
 use zyzz_compiler::compiler::internal::{
     at_rules, color_profiles, descriptors, expression, functions, keyframes, namespaces,
-    properties, view_transitions,
+    properties, stylesheets, view_transitions,
 };
 use zyzz_compiler::error::{Error, Result};
 use zyzz_compiler::mapping::gen_mapping::{GenMapping, Mapping, Position};
@@ -594,4 +594,103 @@ fn namespaces_rewrite_composes_maps() {
     "#);
 
     insta::assert_snapshot!(map.map(|map| map.to_json()).unwrap_or_default(), @r#"{"version":3,"file":"module.ts.css","names":[],"sources":["module.ts"],"sourcesContent":["export {}"],"mappings":";AAIU;;;;AACA","ignoreList":[]}"#);
+}
+
+fn section(source: &str, css: &str) -> stylesheets::Section {
+    stylesheets::Section {
+        css: css.into(),
+        source: source.into(),
+        ..stylesheets::Section::default()
+    }
+}
+
+fn rendered(sections: &[stylesheets::Section]) -> String {
+    match stylesheets::render(sections) {
+        Ok(rendered) => {
+            let mut output = rendered.css;
+
+            for (key, target) in &rendered.assets {
+                output.push_str(&format!("\nasset {key} -> {target}"));
+            }
+
+            for (key, owner) in &rendered.owners {
+                output.push_str(&format!("\nowner {key} -> {owner}"));
+            }
+
+            output.push('\n');
+            output.push_str(&rendered.map.to_json());
+            output
+        }
+        Err(Error::Conflict { message, source }) => format!("Conflict from {source}: {message}"),
+        Err(error) => format!("Error: {}", error.text()),
+    }
+}
+
+#[test]
+fn stylesheets_render_relocates_assets() {
+    let mut first = section(
+        "app/main.ts",
+        "@import \"./base.css\" layer;\n.a { background: url(\"./img/é x.png\") }",
+    );
+
+    first.content = Some("const a = 1\nconst b = style({})".into());
+    first.layers = vec![vec!["base".into(), "theme".into()]];
+    first.owner = Some("pkg/contract.json".into());
+    first.start = Some(18);
+
+    let second = section("app/nested/deep.ts", "@import \"https://x.test/a.css\";");
+
+    insta::assert_snapshot!(rendered(&[first.clone(), second, first]), @r#"
+    @layer base,theme;
+    @import "zyzz-asset:app%2Fbase.css" layer;
+
+    .a {
+      background: url("zyzz-asset:app%2Fimg%2F%C3%A9%20x.png");
+    }
+    @import "https://x.test/a.css";
+    asset zyzz-asset:app%2Fbase.css -> app/base.css
+    asset zyzz-asset:app%2Fimg%2F%C3%A9%20x.png -> app/img/é x.png
+    owner zyzz-asset:app%2Fbase.css -> pkg/contract.json
+    owner zyzz-asset:app%2Fimg%2F%C3%A9%20x.png -> pkg/contract.json
+    {"version":3,"file":"zyzz.shared.css","names":[],"sources":["app/main.ts","app/nested/deep.ts"],"sourcesContent":["const a = 1\nconst b = style({})",null],"mappings":";AACM;AAAA;AAAA;AAAA;AAAA;ACDN","ignoreList":[]}
+    "#);
+}
+
+#[test]
+fn stylesheets_render_rejects_conflicts() {
+    let mut first = section("a.ts", ".a { color: red }");
+    let mut second = section("a.ts", ".a { color: blue }");
+
+    first.key = Some("k".into());
+    second.key = Some("k".into());
+
+    insta::assert_snapshot!(rendered(&[first, second]), @"Conflict from a.ts: Conflicting packed stylesheet contributions.");
+
+    insta::assert_snapshot!(rendered(&[
+        section("a.ts", "@keyframes spin { to { rotate: 1turn } }"),
+        section("b.ts", "@keyframes spin { to { rotate: 1turn } }"),
+    ]), @"Conflict from b.ts: Conflicting animation identity: spin; supply distinct declaration ids.");
+
+    let mut palette = section("a.ts", "@font-palette-values --p { font-family: A; }");
+    let mut changed = section("a.ts", "@font-palette-values --p { font-family: B; }");
+
+    palette.key = Some("one".into());
+    changed.key = Some("two".into());
+
+    insta::assert_snapshot!(rendered(&[palette, changed]), @"Conflict from a.ts: Conflicting stylesheet identity: --p; supply distinct declaration ids.");
+
+    let mut svg = section("a.ts", "rect { fill: red }");
+    let mut other = section("b.ts", "circle { fill: blue }");
+
+    svg.namespaces = Some(vec![definition(
+        "z-nsvg",
+        None,
+        "http://www.w3.org/2000/svg",
+    )]);
+    other.namespaces = Some(vec![definition("z-nsvg", None, "urn:other")]);
+    other.owner = Some("pkg/contract.json".into());
+
+    insta::assert_snapshot!(rendered(&[svg, other]), @"Conflict from pkg/contract.json: Conflicting namespace identity.");
+
+    insta::assert_snapshot!(rendered(&[section("a.ts", ".a { background: url(../../x.png) }")]), @"Error: Asset path escapes the supplied graph.");
 }

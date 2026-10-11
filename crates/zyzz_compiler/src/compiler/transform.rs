@@ -903,7 +903,8 @@ fn write_module_map(map: &crate::mapping::magic_string::SourceMap, module_id: &s
     output
 }
 
-/// Rewrites namespace-sensitive selectors. Modules without namespaces keep their CSS and map.
+/// Rewrites namespace-sensitive selectors with declarations, composing the CSS map. Modules
+/// without namespaces keep their CSS and map.
 fn rewrite_namespaces(
     css: &str,
     namespaces: &[crate::web::internal::namespace::Definition],
@@ -913,9 +914,10 @@ fn rewrite_namespaces(
         return Ok((css.to_owned(), map));
     }
 
-    Err(message(
-        "Namespace selector rewriting is not available in this build.",
-    ))
+    let (css, rewritten) =
+        crate::compiler::internal::namespaces::rewrite(css, namespaces, Some(&map), true)?;
+
+    Ok((css, rewritten.unwrap_or(map)))
 }
 
 fn check_portable(

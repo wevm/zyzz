@@ -445,18 +445,10 @@ pub fn render(sections: &[Section]) -> Result<Rendered> {
             section.css.to_string()
         };
 
-        let content = section.content.as_deref().unwrap_or_default();
-        let start = section
-            .start
-            .map_or(0, |start| usize::try_from(start).unwrap_or(usize::MAX));
-        let before = js::slice(content, 0, start);
-        let original = Position {
-            column: u32::try_from(js::utf16_len(
-                before.rsplit('\n').next().unwrap_or_default(),
-            ))
-            .unwrap_or(u32::MAX),
-            line: u32::try_from(before.split('\n').count()).unwrap_or(u32::MAX),
-        };
+        let original = contribution(
+            section.content.as_deref().unwrap_or_default(),
+            section.start.unwrap_or_default(),
+        );
         let count = u32::try_from(css.split('\n').count()).unwrap_or(u32::MAX);
 
         map.set_source_content(&section.source, section.content.as_deref());
@@ -483,6 +475,26 @@ pub fn render(sections: &[Section]) -> Result<Rendered> {
         map: map.to_encoded_map(),
         owners: state.owners,
     })
+}
+
+/// The line count and last line length of `content.slice(0, start)`, in UTF-16 code units, which
+/// a start inside a surrogate pair splits as JavaScript does.
+fn contribution(content: &str, start: u32) -> Position {
+    let mut position = Position { column: 0, line: 1 };
+
+    for unit in content
+        .encode_utf16()
+        .take(usize::try_from(start).unwrap_or(usize::MAX))
+    {
+        if unit == u16::from(b'\n') {
+            position.line += 1;
+            position.column = 0;
+        } else {
+            position.column += 1;
+        }
+    }
+
+    position
 }
 
 /// The values whose `JSON.stringify` deduplicates sections with one source and key.

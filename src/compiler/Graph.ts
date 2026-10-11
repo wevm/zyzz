@@ -3,7 +3,6 @@
  * @module
  */
 import type * as Mapping from '@jridgewell/gen-mapping'
-import type * as Parser from 'oxc-parser'
 import * as Addon from '../internal/Addon.js'
 import type * as Css from '../web/Css.js'
 import * as ClassName from '../web/internal/ClassName.js'
@@ -11,10 +10,9 @@ import * as ThemeRules from '../web/internal/Themes.js'
 import type * as Native from './Native.js'
 import type * as Source from './Source.js'
 import type * as Transform from './Transform.js'
+import type * as Context from './internal/Context.js'
 import * as Results from './internal/Results.js'
 import * as Stylesheets from './internal/Stylesheets.js'
-import type * as Syntax from './internal/Syntax.js'
-import type * as Themes from './internal/Themes.js'
 
 /** Compiles supplied modules with shared theme contracts and dependency metadata. */
 export function compile(options: compile.Options): compile.ReturnType {
@@ -23,7 +21,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 }
 
-/** The engine's graph input. Host syntax caches stay host-side, since the engine parses. */
+/** The engine's graph input. */
 function encode(options: compile.Options) {
   return {
     complete: options[ClassName.complete],
@@ -57,10 +55,6 @@ export declare namespace compile {
     readonly [Stylesheets.entry]?: string | undefined
     /** Lets modules reuse shared rule names from unrelated modules of this one graph. */
     readonly [ClassName.complete]?: boolean | undefined
-    /** Host syntax from the same immutable source snapshot. */
-    readonly [Syntax.cache]?:
-      | ReadonlyMap<string, Parser.ParseResult>
-      | undefined
     /** Rewrite authoring calls. False emits CSS for unchanged source. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
@@ -77,10 +71,7 @@ export declare namespace compile {
       | undefined
     /** Native output context. Omit to compile web modules and CSS. */
     readonly native?:
-      | Omit<
-          Native.compile.Options,
-          'moduleId' | 'source' | typeof Themes.context
-        >
+      | Omit<Native.compile.Options, 'moduleId' | 'source' | typeof Context.key>
       | undefined
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>

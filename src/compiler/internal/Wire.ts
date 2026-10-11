@@ -8,7 +8,6 @@ import * as Binding from '../../internal/Binding.js'
 import type * as Block from '../../web/internal/Block.js'
 import * as ClassName from '../../web/internal/ClassName.js'
 import * as Configuration from '../../internal/Configuration.js'
-import type * as Contributions from './Contributions.js'
 import type * as Css from '../../web/Css.js'
 import * as Identity from '../../internal/Identity.js'
 import { MissingTransformError } from '../../styleFunction.js'
@@ -16,7 +15,6 @@ import type * as Query from '../../internal/Query.js'
 import * as Source from '../Source.js'
 import * as Style from '../../Style.js'
 import * as Theme from '../../internal/Theme.js'
-import type * as Themes from './Themes.js'
 import * as Token from '../../internal/Token.js'
 import * as Vars from '../../Vars.js'
 
@@ -755,16 +753,22 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
   }
 
   // Authored variable mappings stay the mutable null-prototype literal the configuration read.
-  function mappings(input: Json | undefined): Themes.Call['variableMappings'] {
+  function mappings(
+    input: Json | undefined,
+  ): Source.extract.ReturnType['themeCalls'][number]['variableMappings'] {
     if (input === null || input === undefined) return undefined
     if (input === false) return false
     return lookup(input, (properties) => [
       ...(properties as string[]),
-    ]) as NonNullable<Themes.Call['variableMappings']>
+    ]) as NonNullable<
+      Source.extract.ReturnType['themeCalls'][number]['variableMappings']
+    >
   }
 
   // Configuration calls carry `appearance` and stay mutable. Factory calls are frozen.
-  function themeCall(input: Fields): Themes.Call {
+  function themeCall(
+    input: Fields,
+  ): Source.extract.ReturnType['themeCalls'][number] {
     const value: Record<string, unknown> = {}
 
     for (const [key, entry] of Object.entries(input)) {
@@ -799,10 +803,14 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
       }
     }
 
-    return (input.appearance ? value : Object.freeze(value)) as Themes.Call
+    return (
+      input.appearance ? value : Object.freeze(value)
+    ) as Source.extract.ReturnType['themeCalls'][number]
   }
 
-  function alias(input: Fields): Themes.Alias {
+  function alias(
+    input: Fields,
+  ): Source.extract.ReturnType['themeAliases'][number] {
     const call = input.call as Fields
 
     // A style alias copies a fixed set of the theme call's fields, defined or not.
@@ -827,10 +835,12 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
       ...themeCall(call),
       destructured: input.destructured as boolean,
       ...(input.retained ? { retained: true } : {}),
-    } as Themes.Alias
+    } as Source.extract.ReturnType['themeAliases'][number]
   }
 
-  function varsRead(input: Fields): Themes.VarsRead {
+  function varsRead(
+    input: Fields,
+  ): NonNullable<Source.extract.ReturnType['nativeVars']>[number] {
     return {
       defaultVars: input.defaultVars as string,
       end: input.end as number,
@@ -942,7 +952,9 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
     ) as Css.Contribution
   }
 
-  function contributionCall(input: Fields): Contributions.Call {
+  function contributionCall(
+    input: Fields,
+  ): NonNullable<Source.extract.ReturnType['contributionCalls']>[number] {
     return {
       kind: input.kind,
       start: input.start,
@@ -953,7 +965,7 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.binding !== undefined ? { binding: input.binding } : {}),
       ...(input.exported !== undefined ? { exported: input.exported } : {}),
-    } as unknown as Contributions.Call
+    } as NonNullable<Source.extract.ReturnType['contributionCalls']>[number]
   }
 
   function result(input: Fields): Source.extract.ReturnType {

@@ -29,14 +29,6 @@ export function create() {
       syntax.delete(moduleId)
     },
     parse,
-    programs(modules: Readonly<Record<string, string>>) {
-      return new Map(
-        Object.entries(modules).map(([moduleId, source]) => [
-          moduleId,
-          parse({ moduleId, source }),
-        ]),
-      )
-    },
     async read(file: string) {
       try {
         const stat = await Fs.promises.stat(file, { bigint: true })

@@ -106,6 +106,25 @@ export function decode<result>(json: string): result {
   return output as result
 }
 
+/**
+ * Lists each packed stylesheet section's import chain of a library contract, which hosts
+ * resolve before compiling the graph.
+ * @param contract - Serialized library contract.
+ * @param moduleId - Host-resolved identity of the contract's module.
+ * @returns One specifier chain per stylesheet section, in section order.
+ * @throws {SyntaxError} For malformed contract JSON.
+ * @throws {Error} For unsupported or invalid contract metadata.
+ */
+export function dependencies(
+  contract: string,
+  moduleId: string,
+): readonly (readonly string[])[] {
+  return call<{ readonly dependencies: readonly (readonly string[])[] }>(
+    'contract.dependencies',
+    { contract, moduleId },
+  ).dependencies
+}
+
 function failure(error: Failure): Error {
   if (error.name === 'Source.ExtractError')
     return new Source.ExtractError(
@@ -125,6 +144,7 @@ function failure(error: Failure): Error {
     return new Stylesheets.ConflictError(error.source ?? '', error.message)
   if (error.name === 'Variants.CompileError')
     return new Variants.CompileError(error.message)
+  if (error.name === 'SyntaxError') return new SyntaxError(error.message)
 
   return new Error(error.message)
 }

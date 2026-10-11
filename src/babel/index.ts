@@ -3,13 +3,13 @@ import * as Compilation from './internal/Compilation.js'
 import type * as Babel from '@babel/core'
 import type * as Ast from '@oxc-project/types'
 import * as Syntax from '../compiler/internal/Syntax.js'
-import * as Themes from '../compiler/internal/Themes.js'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Graph from '../compiler/Graph.js'
 import * as Native from '../compiler/Native.js'
 import * as NativeJsx from './NativeJsx.js'
 import * as NativeEdits from './NativeEdits.js'
+import * as Context from '../compiler/internal/Context.js'
 import * as Edits from '../compiler/internal/Edits.js'
 import * as Transform from '../compiler/Transform.js'
 
@@ -188,9 +188,6 @@ export function zyzz(
             'Native Babel graph compilation requires a moduleId present in modules.',
           )
         return (options[Compilation.key]?.compile ?? Graph.compile)({
-          [Syntax.cache]:
-            options[Compilation.key]?.programs ??
-            (parsed ? new Map([[moduleId, parsed]]) : undefined),
           modules: { ...options.modules, [moduleId]: file.code },
           contracts: options.contracts,
           imports: options.imports,
@@ -205,7 +202,7 @@ export function zyzz(
         }).modules[moduleId]!
       }
       return Native.compile({
-        [Themes.context]: parsed ? { parsed, links: {} } : undefined,
+        [Context.key]: parsed ? true : undefined,
         [Edits.runtime]: true,
         fonts: options.fonts,
         platform: options.platform,

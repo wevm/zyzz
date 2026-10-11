@@ -1,8 +1,8 @@
 /** Rewrites shared authoring to native tables and ordered runtime bindings. @module */
 import type * as Source from './Source.js'
+import * as Context from './internal/Context.js'
 import * as Edits from './internal/Edits.js'
 import * as Results from './internal/Results.js'
-import * as Themes from './internal/Themes.js'
 import type * as StyleSheet from '../react-native/StyleSheet.js'
 import type * as Variants from '../react-native/Variants.js'
 
@@ -17,8 +17,7 @@ import type * as Variants from '../react-native/Variants.js'
 export function compile(options: compile.Options): compile.ReturnType {
   const output = Results.call<Results.NativeOutput>('native.compile', {
     ...Results.native(options),
-    // A host-parsed program marks an adapter graph context, which links nothing.
-    context: options[Themes.context] !== undefined,
+    context: options[Context.key] === true,
     moduleId: options.moduleId,
     source: options.source,
   })
@@ -45,8 +44,8 @@ export declare namespace compile {
   type Options = Omit<StyleSheet.compile.Options, 'styles'> & {
     /** Internal Babel emission mode; authoring types are still validated. */
     readonly [Edits.runtime]?: boolean | undefined
-    /** Compiler-owned graph context. */
-    readonly [Themes.context]?: Themes.Context | undefined
+    /** Compiles the module as a member of an adapter-owned graph. */
+    readonly [Context.key]?: true | undefined
     /** Retain every set and scheme for render-local selection. */
     readonly contextual?: boolean | undefined
     /** Scheme compiled into this module's callables. Recompile to select another scheme. */

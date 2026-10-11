@@ -685,7 +685,7 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
     }
   })
 
-  test('releases native parser trees while retaining lazy source maps', async () => {
+  test('releases native graph inputs while retaining source maps', async () => {
     const directory = await Fs.mkdtemp(
       Path.resolve('.fixture-native-retention-'),
     )

@@ -2,7 +2,7 @@
 import * as Crypto from 'node:crypto'
 import * as Path from 'node:path'
 import * as Graph from '../../compiler/Graph.js'
-import * as Contract from '../../compiler/internal/Contract.js'
+import * as Results from '../../compiler/internal/Results.js'
 import * as Syntax from '../../compiler/internal/Syntax.js'
 
 /** Creates a reader whose derived contracts persist across the builds of one adapter instance. */
@@ -50,7 +50,6 @@ export function create() {
       Record<string, string | null>
     > = Object.create(null)
     const modules: Record<string, string> = Object.create(null)
-    const programs = new Map<string, ReturnType<typeof Syntax.parse>>()
     const next = new Set(active).add(file)
     let authored = false
 
@@ -67,10 +66,9 @@ export function create() {
       if (contract === undefined) return undefined
 
       contracts[target] = contract
-      for (const section of Contract.read(contract, new Map(), target)
-        .stylesheets) {
+      for (const dependency of Results.dependencies(contract, target)) {
         let owner = target
-        for (const specifier of section.dependency ?? []) {
+        for (const specifier of dependency) {
           const resolved = await options.resolve(specifier, owner)
           if (!resolved)
             throw new Error(
@@ -191,7 +189,6 @@ export function create() {
 
       const entry = await parse(path)
       modules[moduleId] = entry.source
-      programs.set(moduleId, entry.parsed)
       const links: Record<string, string | null> = Object.create(null)
       imports[moduleId] = links
 
@@ -290,7 +287,6 @@ export function create() {
     const graph = (() => {
       try {
         return Graph.compile({
-          [Syntax.cache]: programs,
           compiler: false,
           contracts,
           imports,

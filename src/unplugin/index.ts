@@ -5,15 +5,14 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
 import * as Snapshot from '../node/internal/Snapshot.js'
-import * as Syntax from '../compiler/internal/Syntax.js'
 import { createUnplugin } from 'unplugin'
 import type { UnpluginBuildContext } from 'unplugin'
 import * as Graph from '../compiler/Graph.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as ClassName from '../web/internal/ClassName.js'
-import * as Contract from '../compiler/internal/Contract.js'
 import * as Contracts from '../node/internal/Contracts.js'
+import * as Results from '../compiler/internal/Results.js'
 import * as Vite from '../vite/index.js'
 import * as ThemeRules from '../web/internal/Themes.js'
 
@@ -218,10 +217,12 @@ const portable = createUnplugin<Options | undefined, false>(
             })
             if (source === undefined) return false
             contracts[file] = source
-            const metadata = Contract.read(contracts[file]!, new Map(), file)
-            for (const section of metadata.stylesheets) {
+            for (const dependency of Results.dependencies(
+              contracts[file]!,
+              file,
+            )) {
               let owner = file
-              for (const specifier of section.dependency ?? []) {
+              for (const specifier of dependency) {
                 const target = await resolve(specifier, owner)
                 if (!target)
                   throw new Error(
@@ -289,7 +290,6 @@ const portable = createUnplugin<Options | undefined, false>(
           const result = compiler.compile({
             [ClassName.complete]: true,
             [ThemeRules.shared]: 'all',
-            [Syntax.cache]: snapshot.programs(modules),
             compiler: options.compiler,
             reset: options.reset ? Reset.read() : undefined,
             contracts,

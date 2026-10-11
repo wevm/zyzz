@@ -1,10 +1,10 @@
 /** Retains filesystem snapshots and an incremental graph within a Next.js loader worker. @module */
-import * as Contract from '../../compiler/internal/Contract.js'
 import * as Contracts from '../../node/internal/Contracts.js'
 import * as Fs from 'node:fs/promises'
 import * as Graph from '../../compiler/Graph.js'
 import * as Path from 'node:path'
 import * as Reset from '../../node/Reset.js'
+import * as Results from '../../compiler/internal/Results.js'
 import * as Stylesheets from '../../compiler/internal/Stylesheets.js'
 import * as Syntax from '../../compiler/internal/Syntax.js'
 
@@ -80,7 +80,6 @@ export function create(options: create.Options) {
       if (tracked.has(file)) return
       tracked.add(file)
     }
-    const programs = new Map<string, ReturnType<typeof Syntax.parse>>()
     const reads = new Map<string, Promise<string>>()
     function read(file: string) {
       let pending = reads.get(file)
@@ -266,7 +265,6 @@ export function create(options: create.Options) {
       const links: Record<string, string | null> = Object.create(null)
       imports[name] = links
       const parsed = parse(name, modules[name]!)
-      programs.set(name, parsed)
 
       const resolutions = await Promise.all(
         parsed.program.body.map(async (node) => {
@@ -355,11 +353,7 @@ export function create(options: create.Options) {
       if (!library || library.source !== contracts[file]) {
         library = {
           source: contracts[file]!,
-          dependencies: Contract.read(
-            contracts[file]!,
-            new Map(),
-            file,
-          ).stylesheets.map((section) => section.dependency ?? []),
+          dependencies: Results.dependencies(contracts[file]!, file),
         }
         libraries.set(file, library)
       }
@@ -384,7 +378,6 @@ export function create(options: create.Options) {
     for (const file of Object.keys(contracts)) await dependencies(file)
 
     const graph = compiler.compile({
-      [Syntax.cache]: programs,
       [Stylesheets.entry]: id(context.resourcePath),
       contracts,
       development: options.development,

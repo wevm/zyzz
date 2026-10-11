@@ -16,7 +16,6 @@ import { isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Snapshot from '../node/internal/Snapshot.js'
-import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Scope from '../compiler/internal/Scope.js'
 import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
@@ -750,7 +749,6 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     const result = entry.compiler.compile({
       [ThemeRules.shared]: native ? undefined : 'all',
-      [Syntax.cache]: snapshot(entry.environment).programs(modules),
       compiler: options.compiler,
       reset: options.reset ? Reset.read() : undefined,
       native,

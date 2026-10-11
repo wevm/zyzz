@@ -3,20 +3,18 @@
  * @module
  */
 import * as Addon from '../internal/Addon.js'
-import type * as Ast from '@oxc-project/types'
-import type * as Composition from '../runtime/Composition.js'
-import type * as Contributions from './internal/Contributions.js'
-import type * as Css from '../web/Css.js'
-import type * as Dynamic from './internal/Dynamic.js'
-import * as Extraction from './internal/Extraction.js'
-import type * as Namespace from '../web/internal/Namespace.js'
-import type * as Recipe from '../runtime/Recipe.js'
-import type * as Shorthands from '../internal/Shorthands.js'
+import type * as Binding from '../internal/Binding.js'
 import type * as StaticRecipe from '../internal/Recipe.js'
-import type * as Style from '../Style.js'
+import type * as RuleReference from '../internal/RuleReference.js'
+import type * as Shorthands from '../internal/Shorthands.js'
 import type * as Theme from '../internal/Theme.js'
-import * as Themes from './internal/Themes.js'
-import type * as Vars from './internal/Vars.js'
+import type * as Composition from '../runtime/Composition.js'
+import type * as Recipe from '../runtime/Recipe.js'
+import type * as Style from '../Style.js'
+import type * as Vars from '../Vars.js'
+import type * as Css from '../web/Css.js'
+import type { cssFunction } from '../web/cssFunction.js'
+import type * as Namespace from '../web/internal/Namespace.js'
 import * as Wire from './internal/Wire.js'
 
 /** A direct definition call available for a later source rewriter. */
@@ -75,8 +73,6 @@ export type Call = {
     | undefined
   /** Stable selector identity retained independently of declaration deduplication. */
   readonly identity?: string | undefined
-  /** Expanded immutable source data retained for declaration mapping. */
-  readonly body?: Ast.ObjectExpression | undefined
   /** Alias targets retained for declaration source locations. */
   readonly shorthands?: Shorthands.Map | undefined
   /** Emitted typography field counts keyed by authored property offsets. */
@@ -86,7 +82,7 @@ export type Call = {
   /** Native HTML attribute output selected by the bound configuration. */
   readonly output?: 'html' | undefined
   /** Typed runtime slots for callback definitions. */
-  readonly slots?: Dynamic.Slots | undefined
+  readonly slots?: Readonly<Record<string, Binding.Reference>> | undefined
   /** Authored scalar input type retained in packed declarations. */
   readonly valuesType?: string | undefined
   /** Exclusive UTF-16 offset of the complete call. */
@@ -115,18 +111,123 @@ export type Diagnostic = {
   readonly start: number
 }
 
+/** A static stylesheet effect call replaced by its compiled data. */
+type ContributionCall = {
+  /** Exported binding offset of a named factory result. */
+  readonly binding?: number | undefined
+  /** Exclusive UTF-16 offset of the complete call. */
+  readonly end: number
+  /** Whether the factory result is exported. */
+  readonly exported?: boolean | undefined
+  /** CSS function signature of a `cssFunction` call. */
+  readonly function?: ThemeCall['function']
+  /** Stylesheet factory that created the effect. */
+  readonly kind: string
+  /** Authored binding of a named factory result. */
+  readonly name?: string | undefined
+  /** Inclusive UTF-16 offset of the complete call. */
+  readonly start: number
+}
+
+/** Local bound-authoring initializer replaced while retaining its inferred type. */
+type ThemeAlias = ThemeCall & {
+  /** Ordered authoring members replaced in a shared destructuring initializer. */
+  readonly bindings?: readonly ('style' | 'variants')[] | undefined
+  /** Whether the initializer supplies destructured authoring bindings. */
+  readonly destructured: boolean
+  /** Retains an immutable theme/configuration alias value with an explicit type. */
+  readonly retained?: boolean | undefined
+}
+
+/** Theme factory span and generated scope key. */
+type ThemeCall = {
+  /** Whether the compiled configuration supplies root controls. */
+  readonly appearance?: boolean | undefined
+  /** Legacy packed catalog exposes members but lacks callable-selection capability. */
+  readonly catalogOnly?: boolean | undefined
+  readonly directVariables?: boolean | undefined
+  /** Exclusive source offset. */
+  readonly end: number
+  /** Static CSS function signature shared during extraction and packed serialization. */
+  readonly function?:
+    | {
+        parameters: readonly cssFunction.Parameter[]
+        returns: cssFunction.Syntax
+      }
+    | undefined
+  /** Bound root initialization script export. */
+  readonly initialization?: boolean | undefined
+  /** JSON-encoded member path tuples and their compiled scope keys. */
+  readonly members?: Readonly<Record<string, string>> | undefined
+  /** Stable module/binding scope key. */
+  readonly name: string
+  /** Whether native defineConfig retains a typed React Provider. */
+  readonly nativeProvider?: boolean | undefined
+  /** Validated inline configuration options retained for packed declarations. */
+  readonly options?: Readonly<Record<string, unknown>> | undefined
+  readonly output?: 'html' | undefined
+  /** Whether this bound authoring alias declares recipes. */
+  readonly recipe?: boolean | undefined
+  /** Named stylesheet identity domain. */
+  readonly reference?: RuleReference.Kind | undefined
+  /** Bound root controls export. */
+  readonly root?: boolean | undefined
+  /** Whether the compiled configuration supplies initialization. */
+  readonly script?: boolean | undefined
+  /** Config helper represented by this linked binding. */
+  readonly selection?: boolean | undefined
+  /** Inclusive source offset. */
+  readonly start: number
+  /** Literal token contract retained in rewritten TypeScript type assertions. */
+  readonly tokenType: string
+  /** Complete authoring type retained for configuration declarations. */
+  readonly type?: string | undefined
+  readonly variableConfig?: boolean | undefined
+  readonly variableMappings?: Vars.Mappings | false | undefined
+  /** Canonical defining module for multi-entry variable contracts. */
+  readonly variableOwner?: string | undefined
+  /** Portable explicit variable references. */
+  readonly variables?: Readonly<Record<string, Binding.Reference>> | undefined
+  readonly variableSet?: boolean | undefined
+}
+
+/** An explicit variable contract replaced by fixed slot data. */
+type VariableCall = {
+  /** Exclusive source offset. */
+  readonly end: number
+  /** Whether the consumer supplied a portable variable identity. */
+  readonly explicit?: boolean | undefined
+  /** Fixed scalar reference retained in portable metadata. */
+  readonly slots: Readonly<Record<string, Binding.Reference>>
+  /** Inclusive source offset. */
+  readonly start: number
+}
+
+/** A readonly variable argument consumed by a native React hook. */
+type VarsRead = {
+  /** Owning configuration fallback. */
+  readonly defaultVars: string
+  /** Exclusive source offset. */
+  readonly end: number
+  /** Stable configuration identity for graph-owned native profiles. */
+  readonly owner: string
+  /** Inclusive source offset. */
+  readonly start: number
+  /** A standalone definition that does not select a named catalog entry. */
+  readonly unnamed: boolean
+  /** Complete compatible variable alternatives. */
+  readonly vars: Readonly<Record<string, Theme.Definition>>
+}
+
 /**
  * Extracts direct style calls and local Theme definitions imported from zyzz.
  * Parses TypeScript and JSX in the Rust compiler without reading files, loading config, or
- * evaluating source. Source graph contexts, which carry another module's syntax, use the
- * TypeScript analysis. The returned calls carry no syntax trees.
+ * evaluating source. The returned calls carry no syntax trees.
  * @param options - Source text and a portable package-relative module identity.
  * @returns Frozen style/theme definitions and rewrite spans. Source text is unchanged.
  * @throws {ExtractError} For syntax errors, unsupported imported references, or invalid literals.
  */
 export function extract(options: extract.Options): extract.ReturnType {
-  if (options[Themes.context]) return Extraction.extract(options)
-
   return Wire.decode(
     Addon.load().call(
       'source.extract',
@@ -154,8 +255,6 @@ export declare namespace extract {
     readonly compiler?: boolean | undefined
     /** Portable identity including package and module path; no filesystem access occurs. */
     readonly moduleId: string
-    /** Compiler-owned graph context. */
-    readonly [Themes.context]?: Themes.Context | undefined
     /** Complete module text, parsed as TypeScript with JSX. */
     readonly source: string
   }
@@ -163,21 +262,21 @@ export declare namespace extract {
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
     /** Readonly native variable arguments and their complete catalogs. */
-    readonly nativeVars?: readonly Themes.VarsRead[] | undefined
+    readonly nativeVars?: readonly VarsRead[] | undefined
     /** Module-owned namespace bindings retained when contributions are shared. */
     readonly namespaces?: readonly Namespace.Definition[] | undefined
     /** Static stylesheet effects and their source replacements. */
     readonly contributionStarts?: readonly number[] | undefined
     readonly contributions?: readonly Css.Contribution[] | undefined
-    readonly contributionCalls?: readonly Contributions.Call[] | undefined
+    readonly contributionCalls?: readonly ContributionCall[] | undefined
     /** Explicit variable contracts replaced by fixed slot data. */
-    readonly variableCalls?: readonly Vars.Call[] | undefined
+    readonly variableCalls?: readonly VariableCall[] | undefined
     /** Direct calls in source order. */
     readonly calls: readonly Call[]
     /** Validated definitions accepted by Css.compile. */
     readonly styles: Style.Definition
     /** Local bound-authoring initializers and their retained token types. */
-    readonly themeAliases: readonly Themes.Alias[]
+    readonly themeAliases: readonly ThemeAlias[]
     /** Configuration identities retaining their root controls. */
     readonly themeAppearances?: readonly string[] | undefined
     /** Configuration identities retaining their initialization helper. */
@@ -185,7 +284,7 @@ export declare namespace extract {
     /** Configuration identities whose theme selector is called, passed, or bound. */
     readonly themeSelections?: readonly string[] | undefined
     /** Local factory spans replaced by compiled scope data. */
-    readonly themeCalls: readonly Themes.Call[]
+    readonly themeCalls: readonly ThemeCall[]
     /** Scope reads replaced by class constants. */
     readonly staticThemeReferences?:
       | readonly {
@@ -194,9 +293,10 @@ export declare namespace extract {
           readonly value: string
         }[]
       | undefined
-    readonly themeReferences: readonly Themes.Reference[]
-    /** Resolved authoring exports when extracted as part of a source graph. */
-    readonly themeExports?: Readonly<Record<string, Themes.Link>> | undefined
+    readonly themeReferences: readonly Pick<
+      ThemeCall,
+      'end' | 'name' | 'start'
+    >[]
     /** Stable scope keys and validated local theme definitions. */
     readonly vars: Readonly<Record<string, Theme.Definition>>
   }

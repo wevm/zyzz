@@ -17,7 +17,6 @@ import * as Contracts from './internal/Contracts.js'
 import * as Relative from '../compiler/internal/Relative.js'
 import * as Scheme from '../internal/Scheme.js'
 import * as Snapshot from './internal/Snapshot.js'
-import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Source from '../compiler/Source.js'
 import * as Transform from '../compiler/Transform.js'
 import * as ThemeRules from '../web/internal/Themes.js'
@@ -464,7 +463,6 @@ export async function create(options: create.Options): Promise<Runtime> {
       [ClassName.complete]: true,
       [ThemeRules.shared]:
         options.modules === false && !native ? 'all' : undefined,
-      [Syntax.cache]: snapshot.programs(modules),
       compiler: options.compiler,
       native,
       modules,

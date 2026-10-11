@@ -120,7 +120,6 @@ export function create(
               [Compilation.key]: {
                 compile: compiler.compile,
                 parse: snapshot.parse,
-                programs: snapshot.programs(graph.modules),
               },
             },
           ],

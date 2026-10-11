@@ -9,5 +9,4 @@ export const key = Symbol('native compilation')
 export type Context = {
   readonly compile: typeof Graph.compile
   readonly parse: typeof Syntax.parse
-  readonly programs: ReadonlyMap<string, ReturnType<typeof Syntax.parse>>
 }

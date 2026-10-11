@@ -4,8 +4,141 @@ use std::sync::Arc;
 
 use oxc_ast::ast::{Expression, TemplateLiteral, UnaryOperator};
 
-use crate::internal::token::{self, Part};
+use crate::internal::binding::Domain;
+use crate::internal::literal;
+use crate::internal::token::{self, Part, Value};
 use crate::js;
+
+/// Matches a CSS value against a property grammar, as css-tree's `lexer.matchProperty` does.
+///
+/// Arguments are the CSS property name, such as `box-shadow`, and the value text. The matcher
+/// returns whether the match reports no error, and `false` where css-tree would throw. The
+/// grammar lexer lives in `zyzz_css_syntax`; callers pass its matcher here, so these checks
+/// never depend on a particular lexer instance.
+pub type Matcher<'m> = &'m dyn Fn(&str, &str) -> bool;
+
+/// Removes a trailing ` !custom`, ` !important`, or both, like
+/// `.replace(/(?: !custom)?(?: !important)?$/, '')`.
+fn declaration_value(value: &str) -> &str {
+    value
+        .strip_suffix(" !custom !important")
+        .or_else(|| value.strip_suffix(" !important"))
+        .or_else(|| value.strip_suffix(" !custom"))
+        .unwrap_or(value)
+}
+
+/// Checks color substitutions inside compound CSS values without widening direct reference
+/// domains.
+pub fn accepts_color(expression: &token::Expression, property: &str, matches: Matcher<'_>) -> bool {
+    let mut value = String::new();
+
+    for part in &expression.parts {
+        match part {
+            Part::Text(text) => value.push_str(text),
+            Part::Binding(binding) if binding.domain == Domain::Color => {
+                value.push_str("rgb(1 2 3)");
+            }
+            Part::Reference(reference) if reference.group == "color" => {
+                value.push_str("rgb(1 2 3)");
+            }
+            _ => value.push_str("var(--zyzz-reference)"),
+        }
+    }
+
+    matches(&literal::name(property), declaration_value(&value))
+}
+
+/// The text alternatives of a token value: every conditional branch, as `Object.values` lists
+/// them.
+fn alternatives(value: &Value, output: &mut Vec<String>) {
+    match value {
+        Value::Reference(reference) => alternatives(&reference.value, output),
+        Value::Record(entries) => {
+            for (_, entry) in entries.iter() {
+                alternatives(entry, output);
+            }
+        }
+        Value::Composition(expression) => {
+            if let Some(group) = &expression.group {
+                output.push(group.to_string());
+            }
+
+            for part in &expression.parts {
+                match part {
+                    Part::Text(text) => output.push(text.to_string()),
+                    Part::Reference(reference) => alternatives(&reference.value, output),
+                    Part::Binding(binding) => {
+                        output.push(binding.name.clone());
+                        output.push(binding.domain.as_str().to_owned());
+                        output.push("true".to_owned());
+                    }
+                }
+            }
+        }
+        Value::Number(number) => output.push(js::number(*number)),
+        Value::String(text) => output.push(text.to_string()),
+    }
+}
+
+/// Validates explicit variable substitutions in compound values, including every conditional
+/// fallback.
+pub fn accepts_variables(
+    expression: &token::Expression,
+    property: &str,
+    matches: Matcher<'_>,
+) -> bool {
+    if !matches!(
+        property,
+        "filter" | "backdropFilter" | "boxShadow" | "textShadow"
+    ) {
+        return false;
+    }
+
+    let mut candidates = vec![String::new()];
+
+    for part in &expression.parts {
+        let options = match part {
+            Part::Binding(_) => return false,
+            Part::Text(text) => vec![text.to_string()],
+            Part::Reference(reference) => {
+                let mut output = Vec::new();
+
+                alternatives(&reference.value, &mut output);
+                output
+            }
+        };
+
+        // Bound combinations of independent responsive variables before grammar checks.
+        if candidates.len() * options.len() > 256 {
+            return false;
+        }
+
+        candidates = candidates
+            .iter()
+            .flat_map(|prefix| options.iter().map(move |value| format!("{prefix}{value}")))
+            .collect();
+    }
+
+    let name = literal::name(property);
+
+    candidates
+        .iter()
+        .all(|value| matches(&name, declaration_value(value)))
+}
+
+/// Checks every identifier-token branch before its value becomes a CSS variable.
+pub fn accepts_identifier(
+    reference: &token::Reference,
+    property: &str,
+    matches: Matcher<'_>,
+) -> bool {
+    let name = literal::name(property);
+    let mut values = Vec::new();
+
+    alternatives(&reference.value, &mut values);
+
+    values.iter().all(|value| matches(&name, value))
+}
 
 /// Removes `as`, `satisfies`, non-null, and angle-bracket assertions.
 pub fn unwrap<'b, 'a>(mut node: &'b Expression<'a>) -> &'b Expression<'a> {

@@ -10,7 +10,7 @@ use crate::internal::token::{Contract, Expression};
 use crate::internal::variable_sets::{self, BuildOptions};
 
 /// A statically evaluated derive callback that receives the base set's variables.
-pub type Derive<'a> = &'a dyn Fn(&Definition) -> Result<Data>;
+pub type Derive<'a> = &'a mut dyn FnMut(&Definition) -> Result<Data>;
 
 /// Composes CSS text, numbers, and references into one color or spacing variable value.
 ///

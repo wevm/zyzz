@@ -546,3 +546,56 @@ pub fn variables(tree: &Data) -> Data {
         other => other.clone(),
     }
 }
+
+/// Rebinds a definition's references to a contract, as `Token.bind` does.
+///
+/// Internal references owned by the original contract re-resolve against the new one. The class
+/// name stays the original's, and `css_name` names generated variables when supplied.
+///
+/// # Errors
+///
+/// Returns `Vars.InvalidError` when an internal reference is missing or cyclic.
+pub fn bind(
+    original: &theme::Definition,
+    contract: &Arc<Contract>,
+    css_name: Option<&str>,
+) -> crate::error::Result<theme::Definition> {
+    fn rebind(tree: &Data, contract: &Arc<Contract>, values: &Map<Value>) -> Data {
+        match tree {
+            Data::Token(reference) => Data::Token(create(
+                contract,
+                reference.group.clone(),
+                Arc::clone(&reference.path),
+                values
+                    .get(&reference.path)
+                    .cloned()
+                    .unwrap_or_else(|| reference.value.clone()),
+            )),
+            Data::Object(object) => {
+                Data::from(Object::from_entries(object.iter().map(|(key, value)| {
+                    (Arc::clone(key), rebind(value, contract, values))
+                })))
+            }
+            other => other.clone(),
+        }
+    }
+
+    let metadata = &original.metadata;
+    let values = crate::internal::variable_sets::rebind(metadata, contract)?;
+    let tokens = rebind(&original.tokens, contract, &values);
+
+    Ok(theme::Definition {
+        class_name: theme::ClassName::Fixed(original.class_name().map(Arc::from)),
+        metadata: Metadata {
+            contract: Arc::clone(contract),
+            css_name: css_name
+                .map(Arc::from)
+                .or_else(|| metadata.css_name.clone()),
+            paths: metadata.paths.clone(),
+            queries: metadata.queries.clone(),
+            values: Arc::new(values),
+        },
+        vars: variables(&tokens),
+        tokens,
+    })
+}

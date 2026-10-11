@@ -2,6 +2,7 @@
 
 pub mod binding;
 pub mod condition;
+pub mod configuration;
 pub mod corner;
 pub mod function_syntax;
 pub mod identity;
@@ -11,6 +12,7 @@ pub mod query;
 pub mod recipe;
 pub mod rule_reference;
 pub mod scheme;
+pub mod shorthands;
 pub mod targets;
 pub mod theme;
 pub mod token;

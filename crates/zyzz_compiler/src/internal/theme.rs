@@ -17,6 +17,9 @@ use crate::js;
 pub enum ClassName {
     /// From the contract identity, failing for definitions that need the compiler.
     Contract,
+    /// Fixed when the definition was rebound: rebinding keeps the original class name, or its
+    /// failure, as the `className` getter closes over the original definition.
+    Fixed(std::result::Result<Arc<str>, Error>),
     /// From a compiler-assigned scope.
     Scope(Arc<str>),
     /// From a variable set's contract identity, falling back to the contract rule.
@@ -56,6 +59,10 @@ impl Definition {
         };
 
         match &self.class_name {
+            ClassName::Fixed(class_name) => class_name
+                .as_ref()
+                .map(ToString::to_string)
+                .map_err(Clone::clone),
             ClassName::Scope(scope) => Ok(format!("z-theme-{scope}")),
             ClassName::Contract => contract_class(),
             ClassName::VariableSet => match self.metadata.contract.identity.as_deref() {

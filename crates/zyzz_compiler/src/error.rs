@@ -5,6 +5,8 @@ use std::fmt;
 /// A compiler failure. Each variant corresponds to an error class callers distinguish.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
+    /// `Config.InvalidError` for invalid configuration options or incompatible named sets.
+    Config(String),
     /// A plain `Error` with a caller-visible message.
     Message(String),
     /// `MissingTransformError`: authoring that only the compiler can evaluate.
@@ -44,10 +46,11 @@ impl Error {
     /// The caller-visible message, as `error.message` reads in TypeScript.
     pub fn text(&self) -> String {
         match self {
-            Self::Message(message) => message.clone(),
+            Self::Config(message) | Self::Message(message) | Self::Themes { message, .. } => {
+                message.clone()
+            }
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
             Self::Style(diagnostics) => crate::style::error_message(diagnostics),
-            Self::Themes { message, .. } => message.clone(),
             Self::Theme { message, path } | Self::Vars { message, path } => {
                 format!("{}: {message}", crate::internal::theme::path_json(path))
             }

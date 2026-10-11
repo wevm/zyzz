@@ -187,6 +187,9 @@ ${rules
   .join('\n')}
 ];
 
+/// Rule names in \`Object.keys(Literal.rules)\` order, for scans whose first match is observable.
+pub static RULE_ORDER: &[&str] = ${strings(Object.keys(tables.Literal.rules))};
+
 /// Canonical conflict domains for legacy and vendor spellings, sorted for binary search.
 pub static ALIASES: &[(&str, &str)] = &[
 ${sorted(Object.entries(tables.Literal.aliases as Record<string, string>))

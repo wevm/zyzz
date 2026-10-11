@@ -4,6 +4,7 @@ pub mod applications;
 pub mod composition_bindings;
 pub mod compositions;
 pub mod configurations;
+pub mod contributions;
 pub mod dynamic;
 pub mod edits;
 pub mod expression;

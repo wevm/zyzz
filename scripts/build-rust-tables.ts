@@ -273,6 +273,7 @@ const files = {
 
 pub mod binding_domains;
 pub mod cascade;
+#[expect(clippy::unreadable_literal, reason = "Numeric bounds mirror their TypeScript source spelling.")]
 pub mod literal;
 pub mod token;
 `,

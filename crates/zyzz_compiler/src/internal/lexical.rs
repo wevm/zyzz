@@ -10,14 +10,14 @@ pub fn normalize(text: &str) -> String {
     let mut index = 0;
 
     while let Some(&byte) = bytes.get(index) {
-        if byte == b'/' && bytes.get(index + 1) == Some(&b'*') {
-            if let Some(end) =
+        if byte == b'/'
+            && bytes.get(index + 1) == Some(&b'*')
+            && let Some(end) =
                 memchr::memmem::find(bytes.get(index + 2..).unwrap_or_default(), b"*/")
-            {
-                output.push(' ');
-                index += end + 4;
-                continue;
-            }
+        {
+            output.push(' ');
+            index += end + 4;
+            continue;
         }
 
         if byte == b'\\' {

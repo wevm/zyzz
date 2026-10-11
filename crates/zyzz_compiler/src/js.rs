@@ -487,3 +487,45 @@ pub fn to_number(value: &str) -> f64 {
 
     f64::NAN
 }
+
+/// Primary collation weight of an ASCII character in the ICU root collation `localeCompare` uses.
+///
+/// Punctuation and symbols sort before digits, and digits before letters. Letters compare without
+/// case at this level.
+fn collation_weight(byte: u8) -> u16 {
+    const PUNCTUATION: &[u8] = b"\t\n\x0b\x0c\r _-,;:!?.'\"()[]{}@*/\\&#%`^+<=>|~$";
+
+    if let Some(index) = PUNCTUATION.iter().position(|candidate| *candidate == byte) {
+        return u16::try_from(index).unwrap_or(u16::MAX);
+    }
+
+    if byte.is_ascii_digit() {
+        return 100 + u16::from(byte - b'0');
+    }
+
+    if byte.is_ascii_alphabetic() {
+        return 200 + u16::from(byte.to_ascii_lowercase() - b'a');
+    }
+
+    1000 + u16::from(byte)
+}
+
+/// Orders strings like `String.prototype.localeCompare` under the ICU root collation.
+///
+/// ASCII text follows the collation's primary order with lowercase before uppercase as the
+/// tie-breaker. Non-ASCII text falls back to code point order after the ASCII prefix.
+pub fn locale_compare(left: &str, right: &str) -> std::cmp::Ordering {
+    let primary = left
+        .bytes()
+        .map(collation_weight)
+        .cmp(right.bytes().map(collation_weight));
+
+    primary
+        .then_with(|| {
+            // Tertiary differences: lowercase sorts before uppercase.
+            let case = |byte: u8| u8::from(byte.is_ascii_uppercase());
+
+            left.bytes().map(case).cmp(right.bytes().map(case))
+        })
+        .then_with(|| left.cmp(right))
+}

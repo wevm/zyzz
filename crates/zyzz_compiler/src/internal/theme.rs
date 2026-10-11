@@ -153,7 +153,7 @@ pub fn extend(theme: &Definition, overrides: &Data) -> Result<Definition> {
 fn invalid(path: &[Arc<str>], message: &str) -> Error {
     Error::Theme {
         message: message.to_owned(),
-        path: path.iter().map(|part| part.to_string()).collect(),
+        path: path.iter().map(std::string::ToString::to_string).collect(),
     }
 }
 
@@ -612,7 +612,7 @@ fn record(value: &Data, path: &[Arc<str>]) -> Result<Vec<(Arc<str>, Data)>> {
 
         match property {
             Property::Value(value) if !key.is_empty() && !dotted => {
-                entries.push((Arc::clone(key), value.clone()))
+                entries.push((Arc::clone(key), value.clone()));
             }
             _ => {
                 return Err(invalid(

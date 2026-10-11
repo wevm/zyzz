@@ -9,6 +9,8 @@ pub enum Error {
     Message(String),
     /// `MissingTransformError`: authoring that only the compiler can evaluate.
     MissingTransform,
+    /// `Style.InvalidError` with every validation diagnostic.
+    Style(Vec<crate::style::Diagnostic>),
     /// `Theme.InvalidError` with the failing token path.
     Theme {
         /// Explanation of the failure.
@@ -37,6 +39,7 @@ impl Error {
         match self {
             Self::Message(message) => message.clone(),
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
+            Self::Style(diagnostics) => crate::style::error_message(diagnostics),
             Self::Theme { message, path } | Self::Vars { message, path } => {
                 format!("{}: {message}", crate::internal::theme::path_json(path))
             }

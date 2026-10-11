@@ -435,7 +435,7 @@ pub fn resolve(value: &Data, property: &str, theme: &theme::Definition) -> Data 
             categories
                 .iter()
                 .position(|candidate| *candidate == category)
-                .map_or(-1, |index| index.cast_signed())
+                .map_or(-1, usize::cast_signed)
         };
         let mut entries: Vec<(&Arc<str>, &Value)> = data.values.iter().collect();
 

@@ -1,6 +1,6 @@
-/** Pure ordered stylesheet contribution data and layer ordering. @module */
-import * as Block from './Block.js'
-import * as Namespace from './Namespace.js'
+/** Ordered stylesheet contribution data and layer ordering. @module */
+import type * as Block from './Block.js'
+import type * as Namespace from './Namespace.js'
 import type * as Style from '../../Style.js'
 
 /** Explicit stylesheet data supplied by source adapters or in-memory callers. */
@@ -160,60 +160,4 @@ export function order(
   emit('')
 
   return result
-}
-
-/** Renders static contributions without registration or environment access. */
-export function render(
-  definitions: readonly Definition[],
-  style: (value: Style.NamedStyle) => string,
-): string {
-  const layers = order(
-    definitions.flatMap((value) =>
-      value.kind === 'layers' ? [value.names] : [],
-    ),
-  )
-
-  return [
-    layers.length ? `@layer ${layers.join(',')};` : '',
-    ...definitions
-      .toSorted((a, b) => rank(a) - rank(b))
-      .map((value) => {
-        if (value.kind === 'layers') return ''
-        const css = (() => {
-          if (value.kind === 'namespace') return Namespace.statement(value)
-          if (value.kind === 'custom-media')
-            return `@custom-media ${value.name} ${value.query};`
-          if (value.kind === 'import')
-            return `@import url(${JSON.stringify(value.url)})${value.layer === true ? ' layer' : value.layer ? ` layer(${value.layer})` : ''}${value.supports ? ` supports(${value.supports})` : ''}${value.media ? ` ${value.media}` : ''};`
-          if (value.kind === 'block')
-            return `${value.header}{${Block.render(value.entries, style)}}`
-          if (value.kind === 'rule')
-            return `${value.selector}{${style(value.style)}}`
-          if (value.kind === 'property')
-            return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};${value.initialValue === undefined ? '' : `initial-value:${value.initialValue};`}}`
-          if (value.kind === 'font-face' || value.kind === 'descriptor')
-            return `@${value.kind === 'font-face' ? 'font-face' : `${value.rule} ${value.name}`}{${Object.entries(
-              value.declarations,
-            )
-              .map(
-                ([key, value]) =>
-                  `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
-              )
-              .join('')}}`
-          return `@keyframes ${value.name}{${value.frames.map((frame) => `${frame.stop}{${style(frame.style)}}`).join('')}}`
-        })()
-        return (value.within ?? []).reduceRight(
-          (body, header) => `${header}{${body}}`,
-          css,
-        )
-      }),
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
-
-function rank(value: Definition): number {
-  if (value.kind === 'import') return 0
-  if (value.kind === 'namespace') return 1
-  return 2
 }

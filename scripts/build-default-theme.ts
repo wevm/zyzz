@@ -17,12 +17,13 @@ const result = await (async () => {
       bundle: true,
       entryPoints: [Path.join(root, 'src/compiler/Graph.ts')],
       format: 'esm',
-      outdir: temporary,
+      // The compiler loads the local addon from two levels below the package root, as in `src` and `dist`.
+      outdir: Path.join(temporary, 'compiler'),
       packages: 'external',
       platform: 'node',
     })
     const compiler = (await import(
-      Url.pathToFileURL(Path.join(temporary, 'Graph.js')).href
+      Url.pathToFileURL(Path.join(temporary, 'compiler/Graph.js')).href
     )) as typeof Graph
     return compiler.compile({ modules: { [moduleId]: source } })
   } finally {

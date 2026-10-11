@@ -9,7 +9,8 @@
 //! # Input
 //!
 //! ```text
-//! Input        := { "objects"?: [Object], "styles": [Style], "contributions"?: [Contribution],
+//! Input        := { "objects"?: [Object], "strings"?: [string], "styles": [Style],
+//!                   "contributions"?: [Contribution],
 //!                   "labels"?: [[style, name | null, namespace | null]], "names"?: [[style, id]],
 //!                   "vars"?: [[name, index | false | null]], "units"?: Units,
 //!                   "composition"?: Mode, "cssOutput"?: Mode, "development"?: bool,
@@ -22,15 +23,22 @@
 //!                   "composition"?: string, "cssOutput"?: string, "defaultLayer"?: string,
 //!                   "shorthands"?: {name: [property]} }
 //! Value        := string | number | [index] | {"n": "NaN" | "Infinity" | "-Infinity"}
-//!               | {"r": [[key, Value]]}
+//!               | {"r": [[key, Value]]}                      (token values only)
 //! Part         := string | [index]
-//! Style        := { "n": name, "d": [[property, Value, 0 | 1]], "r"?: [[condition | null, Style]],
+//! Style        := { "n": name, "d": [property, value, flags, ...], "r"?: [[condition | null, Style]],
 //!                   "o"?: Mode, "c"?: Mode, "t"?: {"native"?, "ios"?, "android"?: JSON,
 //!                   "web"?: Style} }
 //! Mode         := string | false
 //! Units        := { "owner": string, "qualifier": string, "visible": [owner] | null,
 //!                   "names": [[key, name, owner]] }
 //! ```
+//!
+//! Declarations are flat triples, which keep the hot path free of string parsing. `property` is
+//! an index into `strings`. Bit 0 of `flags` marks `!important`, and `flags >> 1` selects the
+//! value kind: 0 for a string index, 1 for a finite number, 2 for an object index, and 3 for a
+//! non-finite number (`0` for `NaN`, `1` for `Infinity`, `-1` for `-Infinity`).
+//!
+//! `objects` and `strings` precede `styles`, which decodes in place against them.
 //!
 //! Objects, records, and option lists keep JavaScript own-property order, which already lists
 //! array-index keys first. `Mode` carries an own property's raw value: `false` stands for a
@@ -52,12 +60,14 @@
 //! Diagnostic := { "code": string, "message": string, "path": [string] }
 //! ```
 
+use std::borrow::Cow;
 use std::fmt;
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use rustc_hash::FxHashSet;
 use serde::Deserialize;
-use serde::de::{self, Deserializer, MapAccess, SeqAccess, Visitor};
+use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
@@ -182,23 +192,22 @@ fn malformed(message: impl fmt::Display) -> Error {
 /// Returns a plain error for malformed JSON, and `Css.CompileError` for an output mode that is
 /// neither atomic nor grouped, matching the first diagnostic `Css.compile` reports.
 pub fn decode(input: &str) -> Result<Input> {
-    let raw: RawInput = serde_json::from_str(input).map_err(malformed)?;
     let mut decoder = Decoder {
         invalid: None,
-        objects: Vec::with_capacity(raw.objects.len()),
+        objects: Vec::new(),
+        shared: FxHashSet::default(),
+        table: Vec::new(),
     };
-
-    for object in raw.objects {
-        let resolved = decoder.object(object)?;
-
-        decoder.objects.push(resolved);
+    let mut deserializer = serde_json::Deserializer::from_str(input);
+    let raw = InputSeed {
+        decoder: &mut decoder,
     }
+    .deserialize(&mut deserializer)
+    .map_err(malformed)?;
 
-    let mut styles = Vec::with_capacity(raw.styles.len());
+    deserializer.end().map_err(malformed)?;
 
-    for style in raw.styles {
-        styles.push(decoder.style(style, true)?);
-    }
+    let styles = raw.styles;
 
     let css_output = match &raw.css_output {
         None => None,
@@ -311,9 +320,24 @@ struct Decoder {
     /// Path of the first invalid output mode, in `Css.compile` validation order.
     invalid: Option<Vec<Arc<str>>>,
     objects: Vec<Resolved>,
+    /// Shares repeated conditions and token values.
+    shared: FxHashSet<Arc<str>>,
+    /// The input string table.
+    table: Vec<Arc<str>>,
 }
 
 impl Decoder {
+    fn intern(&mut self, text: Text<'_>) -> Arc<str> {
+        if let Some(shared) = self.shared.get(&*text.0) {
+            return Arc::clone(shared);
+        }
+
+        let shared: Arc<str> = text.0.into();
+
+        self.shared.insert(Arc::clone(&shared));
+        shared
+    }
+
     fn contract(&self, index: usize) -> Result<Arc<Contract>> {
         match self.objects.get(index) {
             Some(Resolved::Contract(contract)) => Ok(Arc::clone(contract)),
@@ -321,7 +345,7 @@ impl Decoder {
         }
     }
 
-    fn object(&self, object: RawObject) -> Result<Resolved> {
+    fn object(&mut self, object: RawObject<'_>) -> Result<Resolved> {
         Ok(match object {
             RawObject::Binding(name, kind, dynamic) => {
                 Resolved::Binding(Arc::new(binding::Reference {
@@ -378,7 +402,9 @@ impl Decoder {
                 let mut map = token::Map::default();
 
                 for (path, value) in values {
-                    map.insert(path, self.token_value(value)?);
+                    let value = self.token_value(value)?;
+
+                    map.insert(path, value);
                 }
 
                 Resolved::Theme(Metadata {
@@ -396,21 +422,24 @@ impl Decoder {
                 })
             }
             RawObject::Token(contract, group, path, value, web) => {
+                let contract = self.contract(contract)?;
+                let value = self.token_value(value)?;
+
                 Resolved::Token(Arc::new(Reference {
-                    contract: self.contract(contract)?,
+                    contract,
                     group: token::Group::from(&*group),
                     path,
-                    value: self.token_value(value)?,
+                    value,
                     web,
                 }))
             }
         })
     }
 
-    fn token_value(&self, value: RawValue) -> Result<token::Value> {
+    fn token_value(&mut self, value: RawValue<'_>) -> Result<token::Value> {
         Ok(match value {
             RawValue::Number(number) => token::Value::Number(number),
-            RawValue::String(text) => token::Value::String(text),
+            RawValue::String(text) => token::Value::String(self.intern(text)),
             RawValue::Reference(index) => match self.objects.get(index) {
                 Some(Resolved::Token(reference)) => token::Value::Reference(Arc::clone(reference)),
                 Some(Resolved::Expression(expression)) => {
@@ -426,7 +455,9 @@ impl Decoder {
                 let mut record = Vec::with_capacity(entries.len());
 
                 for (key, entry) in entries {
-                    record.push((key, self.token_value(entry)?));
+                    let entry = self.token_value(entry)?;
+
+                    record.push((key, entry));
                 }
 
                 token::Value::Record(record.into())
@@ -434,11 +465,31 @@ impl Decoder {
         })
     }
 
-    fn declaration_value(&self, value: RawValue) -> Result<style::Value> {
-        Ok(match value {
-            RawValue::Number(number) => style::Value::Number(number),
-            RawValue::String(text) => style::Value::String(text),
-            RawValue::Reference(index) => match self.objects.get(index) {
+    fn string(&self, index: f64) -> Result<Arc<str>> {
+        index_of(index)
+            .and_then(|index| self.table.get(index))
+            .cloned()
+            .ok_or_else(|| malformed(format_args!("string {index} is out of range")))
+    }
+
+    /// Converts one flat declaration triple.
+    fn declaration(&self, property: f64, value: f64, flags: f64) -> Result<Declaration> {
+        let flags = index_of(flags)
+            .and_then(|flags| u8::try_from(flags).ok())
+            .ok_or_else(|| malformed("declaration flags must be small integers"))?;
+
+        Ok(Declaration {
+            important: flags & 1 == 1,
+            property: self.string(property)?,
+            value: self.declaration_value(flags >> 1, value)?,
+        })
+    }
+
+    fn declaration_value(&self, kind: u8, value: f64) -> Result<style::Value> {
+        Ok(match kind {
+            0 => style::Value::String(self.string(value)?),
+            1 => style::Value::Number(value),
+            2 => match index_of(value).and_then(|index| self.objects.get(index)) {
                 Some(Resolved::Token(reference)) => style::Value::Token(Arc::clone(reference)),
                 Some(Resolved::Expression(expression)) => {
                     style::Value::Expression(Arc::clone(expression))
@@ -446,13 +497,19 @@ impl Decoder {
                 Some(Resolved::Binding(binding)) => style::Value::Binding(Arc::clone(binding)),
                 _ => return Err(malformed("declaration values must refer to values")),
             },
-            RawValue::Record(_) => return Err(malformed("declaration values cannot be records")),
+            _ => style::Value::Number(if value > 0.0 {
+                f64::INFINITY
+            } else if value < 0.0 {
+                f64::NEG_INFINITY
+            } else {
+                f64::NAN
+            }),
         })
     }
 
     /// Converts a style. Compiled styles validate their own mode before their rules and web
     /// branch, as `Css.compile` does after selecting web targets.
-    fn style(&mut self, raw: RawStyle, validate: bool) -> Result<Arc<NamedStyle>> {
+    fn style(&mut self, raw: RawStyle<'_>, validate: bool) -> Result<Arc<NamedStyle>> {
         let css_output = match &raw.css_output {
             None => None,
             Some(mode) => {
@@ -465,14 +522,14 @@ impl Decoder {
                 output
             }
         };
-        let mut declarations = Vec::with_capacity(raw.declarations.len());
+        let mut declarations = Vec::with_capacity(raw.declarations.len() / 3);
 
-        for (property, value, important) in raw.declarations {
-            declarations.push(Declaration {
-                important: important != 0,
-                property,
-                value: self.declaration_value(value)?,
-            });
+        for triple in raw.declarations.chunks(3) {
+            let &[property, value, flags] = triple else {
+                return Err(malformed("declarations must be triples"));
+            };
+
+            declarations.push(self.declaration(property, value, flags)?);
         }
 
         let rules = match raw.rules {
@@ -482,7 +539,7 @@ impl Decoder {
 
                 for (condition, style) in rules {
                     output.push(Rule {
-                        condition,
+                        condition: condition.map(|condition| self.intern(condition)),
                         style: self.style(style, validate)?,
                     });
                 }
@@ -513,7 +570,7 @@ impl Decoder {
         }))
     }
 
-    fn entry(&mut self, raw: RawEntry) -> Result<Entry> {
+    fn entry(&mut self, raw: RawEntry<'_>) -> Result<Entry> {
         Ok(match raw {
             RawEntry::Block { entries, header } => {
                 let mut output = Vec::with_capacity(entries.len());
@@ -535,7 +592,7 @@ impl Decoder {
         })
     }
 
-    fn contribution(&mut self, raw: RawContribution) -> Result<contributions::Definition> {
+    fn contribution(&mut self, raw: RawContribution<'_>) -> Result<contributions::Definition> {
         let kind = match raw.kind {
             RawKind::Block { entries, header } => {
                 let mut output = Vec::with_capacity(entries.len());
@@ -619,6 +676,20 @@ impl Decoder {
     }
 }
 
+/// Reads a nonnegative integer index written as a JSON number.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::float_cmp,
+    reason = "A saturating cast that converts back exactly is a nonnegative integer index."
+)]
+fn index_of(value: f64) -> Option<usize> {
+    let index = value as usize;
+
+    (index as f64 == value).then_some(index)
+}
+
 fn lists(entries: Vec<(Arc<str>, Vec<Arc<str>>)>) -> token::Map<Arc<[Arc<str>]>> {
     entries
         .into_iter()
@@ -651,34 +722,104 @@ fn data(value: serde_json::Value) -> Data {
     }
 }
 
-#[derive(Deserialize)]
-struct RawInput {
-    #[serde(default)]
+/// Top-level input fields other than the resolved tables.
+#[derive(Default)]
+struct RawInput<'a> {
     composition: Option<RawMode>,
-    #[serde(default)]
-    contributions: Vec<RawContribution>,
-    #[serde(default, rename = "cssOutput")]
+    contributions: Vec<RawContribution<'a>>,
     css_output: Option<RawMode>,
-    #[serde(default)]
     development: bool,
-    #[serde(default)]
     labels: Option<Vec<RawLabel>>,
-    #[serde(default)]
     names: Option<Vec<(Arc<str>, Arc<str>)>>,
-    #[serde(default)]
-    objects: Vec<RawObject>,
-    #[serde(default)]
     schemes: bool,
-    #[serde(default)]
     scope: Option<Arc<str>>,
-    #[serde(default)]
     shared: Option<Box<str>>,
-    #[serde(default)]
-    styles: Vec<RawStyle>,
-    #[serde(default)]
+    styles: Vec<Arc<NamedStyle>>,
     units: Option<RawUnits>,
-    #[serde(default)]
     vars: Option<Vec<(Arc<str>, ThemeReference)>>,
+}
+
+/// Visits top-level keys in document order. The tables precede `styles`, so compiled styles
+/// decode in place with every string and object already resolved.
+struct InputSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for InputSeed<'_> {
+    type Value = RawInput<'de>;
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_map(self)
+    }
+}
+
+impl<'de> Visitor<'de> for InputSeed<'_> {
+    type Value = RawInput<'de>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("compiler input")
+    }
+
+    fn visit_map<A: MapAccess<'de>>(
+        self,
+        mut map: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let decoder = self.decoder;
+        let mut raw = RawInput::default();
+        let mut styled = false;
+
+        while let Some(key) = map.next_key::<Text<'de>>()? {
+            match &*key.0 {
+                "composition" => raw.composition = map.next_value()?,
+                "contributions" => raw.contributions = map.next_value()?,
+                "cssOutput" => raw.css_output = map.next_value()?,
+                "development" => raw.development = map.next_value()?,
+                "labels" => raw.labels = map.next_value()?,
+                "names" => raw.names = map.next_value()?,
+                "objects" | "strings" if styled => {
+                    return Err(de::Error::custom("objects and strings must precede styles"));
+                }
+                "objects" => {
+                    for object in map.next_value::<Vec<RawObject<'de>>>()? {
+                        let resolved = decoder
+                            .object(object)
+                            .map_err(|error| de::Error::custom(error.text()))?;
+
+                        decoder.objects.push(resolved);
+                    }
+                }
+                "schemes" => raw.schemes = map.next_value()?,
+                "scope" => raw.scope = map.next_value()?,
+                "shared" => raw.shared = map.next_value()?,
+                "strings" => {
+                    decoder.table = map
+                        .next_value::<Vec<Text<'de>>>()?
+                        .into_iter()
+                        .map(|text| text.0.into())
+                        .collect();
+                }
+                "styles" => {
+                    let (styles, invalid) = map.next_value_seed(StylesSeed {
+                        decoder: &mut *decoder,
+                    })?;
+
+                    styled = true;
+                    raw.styles = styles;
+                    decoder.invalid = invalid;
+                }
+                "units" => raw.units = map.next_value()?,
+                "vars" => raw.vars = map.next_value()?,
+                _ => {
+                    map.next_value::<de::IgnoredAny>()?;
+                }
+            }
+        }
+
+        Ok(raw)
+    }
 }
 
 /// A style name with its readable name and namespace.
@@ -933,23 +1074,23 @@ impl<'de> Deserialize<'de> for EntriesField {
     }
 }
 
-enum RawObject {
+enum RawObject<'a> {
     Binding(Arc<str>, Box<str>, bool),
     Contract(Box<RawContractFields>),
     Expression(Option<Arc<str>>, Vec<RawPart>),
     Theme(
         usize,
         Option<Arc<str>>,
-        Vec<(Arc<str>, RawValue)>,
+        Vec<(Arc<str>, RawValue<'a>)>,
         Option<Entries>,
         Option<RawQueries>,
     ),
-    Token(usize, Arc<str>, Arc<str>, RawValue, bool),
+    Token(usize, Arc<str>, Arc<str>, RawValue<'a>, bool),
 }
 
-impl<'de> Deserialize<'de> for RawObject {
+impl<'de: 'a, 'a> Deserialize<'de> for RawObject<'a> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
-        struct ObjectVisitor;
+        struct ObjectVisitor<'a>(PhantomData<&'a ()>);
 
         fn next<'de, T: Deserialize<'de>, A: SeqAccess<'de>>(
             seq: &mut A,
@@ -958,8 +1099,8 @@ impl<'de> Deserialize<'de> for RawObject {
                 .ok_or_else(|| de::Error::custom("truncated object entry"))
         }
 
-        impl<'de> Visitor<'de> for ObjectVisitor {
-            type Value = RawObject;
+        impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
+            type Value = RawObject<'a>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a tagged object entry")
@@ -1006,7 +1147,7 @@ impl<'de> Deserialize<'de> for RawObject {
             }
         }
 
-        deserializer.deserialize_seq(ObjectVisitor)
+        deserializer.deserialize_seq(ObjectVisitor(PhantomData))
     }
 }
 
@@ -1102,26 +1243,33 @@ impl<'de> Deserialize<'de> for RawPart {
     }
 }
 
-enum RawValue {
+enum RawValue<'a> {
     Number(f64),
-    Record(Vec<(Arc<str>, RawValue)>),
+    Record(Vec<(Arc<str>, RawValue<'a>)>),
     Reference(usize),
-    String(Arc<str>),
+    String(Text<'a>),
 }
 
-impl<'de> Deserialize<'de> for RawValue {
+impl<'de: 'a, 'a> Deserialize<'de> for RawValue<'a> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
-        struct ValueVisitor;
+        struct ValueVisitor<'a>(PhantomData<&'a ()>);
 
-        impl<'de> Visitor<'de> for ValueVisitor {
-            type Value = RawValue;
+        impl<'de: 'a, 'a> Visitor<'de> for ValueVisitor<'a> {
+            type Value = RawValue<'a>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a declaration or token value")
             }
 
+            fn visit_borrowed_str<E: de::Error>(
+                self,
+                value: &'de str,
+            ) -> std::result::Result<Self::Value, E> {
+                Ok(RawValue::String(Text(Cow::Borrowed(value))))
+            }
+
             fn visit_str<E: de::Error>(self, value: &str) -> std::result::Result<Self::Value, E> {
-                Ok(RawValue::String(value.into()))
+                Ok(RawValue::String(Text(Cow::Owned(value.to_owned()))))
             }
 
             #[expect(
@@ -1179,36 +1327,390 @@ impl<'de> Deserialize<'de> for RawValue {
             }
         }
 
-        deserializer.deserialize_any(ValueVisitor)
+        deserializer.deserialize_any(ValueVisitor(PhantomData))
+    }
+}
+
+/// The first invalid output mode in a style subtree, in `Css.compile` validation order.
+type Invalid = Option<Vec<Arc<str>>>;
+
+/// Decodes the compiled style list, reporting its first invalid output mode.
+struct StylesSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for StylesSeed<'_> {
+    type Value = (Vec<Arc<NamedStyle>>, Invalid);
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_seq(self)
+    }
+}
+
+impl<'de> Visitor<'de> for StylesSeed<'_> {
+    type Value = (Vec<Arc<NamedStyle>>, Invalid);
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a style list")
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(
+        self,
+        mut seq: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let decoder = self.decoder;
+        let mut styles = Vec::with_capacity(seq.size_hint().unwrap_or(64));
+        let mut invalid = None;
+
+        while let Some((style, found)) = seq.next_element_seed(StyleSeed {
+            decoder: &mut *decoder,
+        })? {
+            invalid = invalid.or(found);
+            styles.push(style);
+        }
+
+        Ok((styles, invalid))
+    }
+}
+
+/// Decodes one compiled style directly into its definition.
+struct StyleSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for StyleSeed<'_> {
+    type Value = (Arc<NamedStyle>, Invalid);
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_map(self)
+    }
+}
+
+impl<'de> Visitor<'de> for StyleSeed<'_> {
+    type Value = (Arc<NamedStyle>, Invalid);
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a style")
+    }
+
+    fn visit_map<A: MapAccess<'de>>(
+        self,
+        mut map: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let decoder = self.decoder;
+        let mut composition = None;
+        let mut css_output = None;
+        let mut declarations = Vec::new();
+        let mut name: Option<Arc<str>> = None;
+        let mut rules = None;
+        let mut rules_invalid = None;
+        let mut targets = None;
+        let mut web_invalid = None;
+
+        while let Some(key) = map.next_key::<Text<'de>>()? {
+            match &*key.0 {
+                "c" => composition = Some(map.next_value::<RawMode>()?.composition()),
+                "d" => {
+                    declarations = map.next_value_seed(DeclarationsSeed {
+                        decoder: &mut *decoder,
+                    })?;
+                }
+                "n" => name = Some(map.next_value()?),
+                "o" => css_output = Some(map.next_value::<RawMode>()?),
+                "r" => {
+                    let (list, found) = map.next_value_seed(RulesSeed {
+                        decoder: &mut *decoder,
+                    })?;
+
+                    rules = Some(list);
+                    rules_invalid = found;
+                }
+                "t" => {
+                    let (branches, found) = map.next_value_seed(TargetsSeed {
+                        decoder: &mut *decoder,
+                    })?;
+
+                    targets = Some(branches);
+                    web_invalid = found;
+                }
+                _ => {
+                    map.next_value::<de::IgnoredAny>()?;
+                }
+            }
+        }
+
+        let name = name.ok_or_else(|| de::Error::missing_field("n"))?;
+        let output = css_output.as_ref().and_then(RawMode::output);
+        let own = (css_output.is_some() && output.is_none())
+            .then(|| vec![Arc::clone(&name), Arc::from("cssOutput")]);
+
+        Ok((
+            Arc::new(NamedStyle {
+                composition,
+                css_output: output,
+                declarations,
+                name,
+                rules,
+                targets,
+            }),
+            own.or(rules_invalid).or(web_invalid),
+        ))
+    }
+}
+
+/// Decodes flat declaration triples.
+struct DeclarationsSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for DeclarationsSeed<'_> {
+    type Value = Vec<Declaration>;
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_seq(self)
+    }
+}
+
+impl<'de> Visitor<'de> for DeclarationsSeed<'_> {
+    type Value = Vec<Declaration>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("declaration triples")
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(
+        self,
+        mut seq: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let mut declarations = Vec::with_capacity(seq.size_hint().map_or(8, |hint| hint / 3));
+
+        while let Some(property) = seq.next_element::<f64>()? {
+            let (Some(value), Some(flags)) =
+                (seq.next_element::<f64>()?, seq.next_element::<f64>()?)
+            else {
+                return Err(de::Error::custom("declarations must be triples"));
+            };
+
+            declarations.push(
+                self.decoder
+                    .declaration(property, value, flags)
+                    .map_err(|error| de::Error::custom(error.text()))?,
+            );
+        }
+
+        Ok(declarations)
+    }
+}
+
+/// Decodes `[condition, style]` rule pairs.
+struct RulesSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for RulesSeed<'_> {
+    type Value = (Vec<Rule>, Invalid);
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_seq(self)
+    }
+}
+
+impl<'de> Visitor<'de> for RulesSeed<'_> {
+    type Value = (Vec<Rule>, Invalid);
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("rule pairs")
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(
+        self,
+        mut seq: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let decoder = self.decoder;
+        let mut rules = Vec::new();
+        let mut invalid = None;
+
+        while let Some((rule, found)) = seq.next_element_seed(RuleSeed {
+            decoder: &mut *decoder,
+        })? {
+            invalid = invalid.or(found);
+            rules.push(rule);
+        }
+
+        Ok((rules, invalid))
+    }
+}
+
+struct RuleSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for RuleSeed<'_> {
+    type Value = (Rule, Invalid);
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_seq(self)
+    }
+}
+
+impl<'de> Visitor<'de> for RuleSeed<'_> {
+    type Value = (Rule, Invalid);
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a condition and a style")
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(
+        self,
+        mut seq: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let decoder = self.decoder;
+        let condition: Option<Text<'de>> = seq
+            .next_element()?
+            .ok_or_else(|| de::Error::custom("rules must be pairs"))?;
+        let condition = condition.map(|condition| decoder.intern(condition));
+        let (style, invalid) = seq
+            .next_element_seed(StyleSeed {
+                decoder: &mut *decoder,
+            })?
+            .ok_or_else(|| de::Error::custom("rules must be pairs"))?;
+
+        Ok((Rule { condition, style }, invalid))
+    }
+}
+
+/// Decodes target branches: static native data and a web style.
+struct TargetsSeed<'d> {
+    decoder: &'d mut Decoder,
+}
+
+impl<'de> DeserializeSeed<'de> for TargetsSeed<'_> {
+    type Value = (Targets, Invalid);
+
+    fn deserialize<D: Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> std::result::Result<Self::Value, D::Error> {
+        deserializer.deserialize_map(self)
+    }
+}
+
+impl<'de> Visitor<'de> for TargetsSeed<'_> {
+    type Value = (Targets, Invalid);
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("target branches")
+    }
+
+    fn visit_map<A: MapAccess<'de>>(
+        self,
+        mut map: A,
+    ) -> std::result::Result<Self::Value, A::Error> {
+        let decoder = self.decoder;
+        let mut targets = Targets::default();
+        let mut invalid = None;
+
+        while let Some(key) = map.next_key::<Text<'de>>()? {
+            match &*key.0 {
+                "android" => targets.android = Some(data(map.next_value()?)),
+                "ios" => targets.ios = Some(data(map.next_value()?)),
+                "native" => targets.native = Some(data(map.next_value()?)),
+                "web" => {
+                    let (web, found) = map.next_value_seed(StyleSeed {
+                        decoder: &mut *decoder,
+                    })?;
+
+                    targets.web = Some(web);
+                    invalid = found;
+                }
+                _ => {
+                    map.next_value::<de::IgnoredAny>()?;
+                }
+            }
+        }
+
+        Ok((targets, invalid))
+    }
+}
+
+/// A string borrowed from the wire input when it needs no unescaping.
+struct Text<'a>(Cow<'a, str>);
+
+impl<'de: 'a, 'a> Deserialize<'de> for Text<'a> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+        struct TextVisitor<'a>(PhantomData<&'a ()>);
+
+        impl<'de: 'a, 'a> Visitor<'de> for TextVisitor<'a> {
+            type Value = Text<'a>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a string")
+            }
+
+            fn visit_borrowed_str<E: de::Error>(
+                self,
+                value: &'de str,
+            ) -> std::result::Result<Self::Value, E> {
+                Ok(Text(Cow::Borrowed(value)))
+            }
+
+            fn visit_str<E: de::Error>(self, value: &str) -> std::result::Result<Self::Value, E> {
+                Ok(Text(Cow::Owned(value.to_owned())))
+            }
+
+            fn visit_string<E: de::Error>(
+                self,
+                value: String,
+            ) -> std::result::Result<Self::Value, E> {
+                Ok(Text(Cow::Owned(value)))
+            }
+        }
+
+        deserializer.deserialize_str(TextVisitor(PhantomData))
     }
 }
 
 #[derive(Deserialize)]
-struct RawStyle {
+struct RawStyle<'a> {
     #[serde(default, rename = "c")]
     composition: Option<RawMode>,
     #[serde(default, rename = "o")]
     css_output: Option<RawMode>,
     #[serde(default, rename = "d")]
-    declarations: Vec<(Arc<str>, RawValue, u8)>,
+    declarations: Vec<f64>,
     #[serde(rename = "n")]
     name: Arc<str>,
-    #[serde(default, rename = "r")]
-    rules: Option<Vec<(Option<Arc<str>>, RawStyle)>>,
-    #[serde(default, rename = "t")]
-    targets: Option<RawTargets>,
+    #[serde(borrow, default, rename = "r")]
+    rules: Option<Vec<(Option<Text<'a>>, RawStyle<'a>)>>,
+    #[serde(borrow, default, rename = "t")]
+    targets: Option<RawTargets<'a>>,
 }
 
 #[derive(Deserialize)]
-struct RawTargets {
+struct RawTargets<'a> {
     #[serde(default)]
     android: Option<serde_json::Value>,
     #[serde(default)]
     ios: Option<serde_json::Value>,
     #[serde(default)]
     native: Option<serde_json::Value>,
-    #[serde(default)]
-    web: Option<Box<RawStyle>>,
+    #[serde(borrow, default)]
+    web: Option<Box<RawStyle<'a>>>,
 }
 
 #[derive(Deserialize)]
@@ -1236,22 +1738,26 @@ enum RawLayer {
 
 #[derive(Deserialize)]
 #[serde(tag = "kind")]
-enum RawEntry {
+enum RawEntry<'a> {
     #[serde(rename = "block")]
     Block {
-        entries: Vec<RawEntry>,
+        #[serde(borrow)]
+        entries: Vec<RawEntry<'a>>,
         header: Arc<str>,
     },
     #[serde(rename = "descriptor")]
     Descriptor { name: Arc<str>, value: RawScalar },
     #[serde(rename = "style")]
-    Style { style: Box<RawStyle> },
+    Style {
+        #[serde(borrow)]
+        style: Box<RawStyle<'a>>,
+    },
 }
 
 #[derive(Deserialize)]
-struct RawContribution {
-    #[serde(flatten)]
-    kind: RawKind,
+struct RawContribution<'a> {
+    #[serde(borrow, flatten)]
+    kind: RawKind<'a>,
     #[serde(default)]
     within: Vec<Arc<str>>,
 }
@@ -1262,10 +1768,11 @@ struct RawContribution {
     clippy::large_enum_variant,
     reason = "Contributions decode once per compilation."
 )]
-enum RawKind {
+enum RawKind<'a> {
     #[serde(rename = "block")]
     Block {
-        entries: Vec<RawEntry>,
+        #[serde(borrow)]
+        entries: Vec<RawEntry<'a>>,
         header: Arc<str>,
     },
     #[serde(rename = "custom-media")]
@@ -1292,7 +1799,8 @@ enum RawKind {
     },
     #[serde(rename = "keyframes")]
     Keyframes {
-        frames: Vec<(Arc<str>, RawStyle)>,
+        #[serde(borrow)]
+        frames: Vec<(Arc<str>, RawStyle<'a>)>,
         name: Arc<str>,
     },
     #[serde(rename = "layers")]
@@ -1313,7 +1821,11 @@ enum RawKind {
         syntax: Arc<str>,
     },
     #[serde(rename = "rule")]
-    Rule { selector: Arc<str>, style: RawStyle },
+    Rule {
+        selector: Arc<str>,
+        #[serde(borrow)]
+        style: RawStyle<'a>,
+    },
 }
 
 /// Encodes a compilation result or failure.

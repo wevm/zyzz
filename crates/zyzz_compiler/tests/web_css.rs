@@ -351,7 +351,8 @@ fn compile_reports_names_and_explicit_identity_collisions() {
 
 #[test]
 fn compile_round_trips_the_wire_format() {
-    let input = r#"{"objects":[["c",{"keys":["variableSet"],"variableSet":true}],["t",0,"color","color.ink","red",false],["m",0,null,[["color.ink","green"]],null,null]],"styles":[{"d":[["color",[1],0],["padding",8,1]],"n":"0"},{"d":[],"n":"card","o":"grouped"}],"vars":[["first",2]]}"#;
+    // `color` refers to object 1 (flags 4) and `padding` is an important number (flags 3).
+    let input = r#"{"objects":[["c",{"keys":["variableSet"],"variableSet":true}],["t",0,"color","color.ink","red",false],["m",0,null,[["color.ink","green"]],null,null]],"strings":["color","padding"],"styles":[{"d":[0,1,4,1,8,3],"n":"0"},{"d":[],"n":"card","o":"grouped"}],"vars":[["first",2]]}"#;
 
     insta::assert_snapshot!(wire::compile(input), @r#"{"classes":{"0":"z-text-[var(--z0,red)] z-p-[8!important]","card":""},"css":".z0{--z0:green;}\n.z-text-\\5b var\\28 --z0\\2c red\\29 \\5d {color:var(--z0,red);}\n.z-p-\\5b 8\\21 important\\5d {padding:8!important;}","vars":{"first":"z0"},"rules":{"z-text-[var(--z0,red)]":"color:var(--z0,red);","z-p-[8!important]":"padding:8!important;","@scope:z0:_2d__2d_z0:_5b__5d_":"green"},"units":[]}"#);
     insta::assert_snapshot!(

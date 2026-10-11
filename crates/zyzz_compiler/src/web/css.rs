@@ -739,7 +739,7 @@ impl<'a> Compiler<'a> {
 
         while let Some(first) = declarations.get(index) {
             let property = &*first.property;
-            let mut value = String::new();
+            let mut value = String::with_capacity(32);
 
             // Same-property fallbacks stay ordered; they form one semantic value.
             while let Some(declaration) = declarations
@@ -978,7 +978,7 @@ impl<'a> Compiler<'a> {
                 continue;
             }
 
-            let mut value = String::new();
+            let mut value = String::with_capacity(32);
 
             for declaration in declarations.get(start..index).unwrap_or_default() {
                 self.write_declaration(&mut value, declaration);
@@ -1172,32 +1172,31 @@ fn run<'a>(
     // Sharing is safe only when every use of a conflict domain has the same declaration
     // sequence. Conditions conservatively retain contextual identities, and isolated class
     // lists never combine, so atomic sharing considers ordered styles only.
-    for style in styles {
-        let mut domains: FxHashMap<u32, (String, bool, &str)> = FxHashMap::default();
-        let mut order: Vec<u32> = Vec::new();
+    // Styles have few domains, so one reused list beats a map per style.
+    let mut domains: Vec<(u32, String, bool, &str)> = Vec::new();
+    let mut spare: Vec<String> = Vec::new();
 
+    for style in styles {
         for item in &style.declarations {
             let property = &*item.property;
             let key = compiler.conflict(property);
-            let mut body = String::new();
+            let index = domains
+                .iter()
+                .position(|entry| entry.0 == key)
+                .unwrap_or_else(|| {
+                    domains.push((key, spare.pop().unwrap_or_default(), false, property));
+                    domains.len() - 1
+                });
 
-            compiler.write_declaration(&mut body, item);
-
-            let entry = domains.entry(key).or_insert_with(|| {
-                order.push(key);
-                (String::new(), false, property)
-            });
-
-            entry.0.push_str(&body);
-            entry.1 |= entry.2 != property;
+            if let Some(entry) = domains.get_mut(index) {
+                compiler.write_declaration(&mut entry.1, item);
+                entry.2 |= entry.3 != property;
+            }
         }
 
         let combinable = !isolated(style, options);
 
-        for key in order {
-            let Some((body, mixed, _)) = domains.get(&key) else {
-                continue;
-            };
+        for (key, body, mixed, _) in domains.drain(..) {
             let maps: &mut [&mut FxHashMap<u32, Shareable>] = if combinable {
                 &mut [&mut compiler.groups, &mut compiler.ordered]
             } else {
@@ -1205,15 +1204,27 @@ fn run<'a>(
             };
 
             for map in maps.iter_mut() {
-                let next = match map.get(&key) {
-                    Some(Shareable::Conflicting) => Shareable::Conflicting,
-                    _ if *mixed => Shareable::Conflicting,
-                    Some(Shareable::Body(previous)) if previous != body => Shareable::Conflicting,
-                    _ => Shareable::Body(body.clone()),
-                };
-
-                map.insert(key, next);
+                match map.get_mut(&key) {
+                    Some(Shareable::Conflicting) => {}
+                    Some(state) if mixed => *state = Shareable::Conflicting,
+                    Some(state @ Shareable::Body(_)) => {
+                        if !matches!(state, Shareable::Body(previous) if *previous == body) {
+                            *state = Shareable::Conflicting;
+                        }
+                    }
+                    None if mixed => {
+                        map.insert(key, Shareable::Conflicting);
+                    }
+                    None => {
+                        map.insert(key, Shareable::Body(body.clone()));
+                    }
+                }
             }
+
+            let mut body = body;
+
+            body.clear();
+            spare.push(body);
         }
     }
 
@@ -1289,6 +1300,7 @@ fn run<'a>(
     let mut explicit_bodies: FxHashMap<Arc<str>, String> = FxHashMap::default();
     let mut explicit_modes: FxHashSet<(Arc<str>, &'static str)> = FxHashSet::default();
     let mut applications: FxHashMap<String, String> = FxHashMap::default();
+    let mut key = String::with_capacity(256);
 
     for (index, style) in styles.iter().enumerate() {
         let mode = style.css_output.unwrap_or(default_mode);
@@ -1328,9 +1340,10 @@ fn run<'a>(
             }
         }
 
+        // The key buffer is reused across styles; it ends with the style's nested body.
         let application = (explicit.is_none() && independent).then(|| {
-            let mut key = String::from(mode.as_str());
-
+            key.clear();
+            key.push_str(mode.as_str());
             key.push(':');
 
             if style.rules.is_some() {
@@ -1338,12 +1351,15 @@ fn run<'a>(
             }
 
             key.push(':');
+
+            let offset = key.len();
+
             compiler.write_nested(&mut key, style);
-            key
+            offset
         });
 
-        if let Some(application) = &application
-            && let Some(class) = applications.get(application)
+        if application.is_some()
+            && let Some(class) = applications.get(key.as_str())
         {
             classes.insert(Arc::clone(&style.name), class.clone());
             continue;
@@ -1389,7 +1405,7 @@ fn run<'a>(
                 }
 
                 if !shared.is_empty() && !local.is_empty() {
-                    let mut body = String::new();
+                    let mut body = String::with_capacity(shared.len() * 32);
 
                     for declaration in shared {
                         compiler.write_declaration(&mut body, declaration);
@@ -1397,7 +1413,7 @@ fn run<'a>(
 
                     compiler.emit(&mut state, body, "shared", false, mode, None);
 
-                    let mut body = String::new();
+                    let mut body = String::with_capacity(local.len() * 32);
 
                     for declaration in local {
                         compiler.write_declaration(&mut body, declaration);
@@ -1405,7 +1421,10 @@ fn run<'a>(
 
                     compiler.emit(&mut state, body, "style", false, mode, None);
                 } else {
-                    let body = compiler.nested(style);
+                    let body = match application {
+                        Some(offset) => key.get(offset..).unwrap_or_default().to_owned(),
+                        None => compiler.nested(style),
+                    };
 
                     compiler.emit(&mut state, body, "style", false, mode, None);
                 }
@@ -1416,21 +1435,27 @@ fn run<'a>(
             CssOutput::Atomic => compiler.atoms(&mut state, style, &[]),
         }
 
-        let mut seen: FxHashSet<&str> = FxHashSet::default();
-        let mut list = String::new();
+        let mut list = String::with_capacity(state.names.iter().map(|name| name.len() + 1).sum());
 
-        for name in &state.names {
-            if seen.insert(name) {
-                if !list.is_empty() {
-                    list.push(' ');
-                }
-
-                list.push_str(name);
+        // Class lists are short, so a scan of earlier names dedupes them without hashing.
+        for (index, name) in state.names.iter().enumerate() {
+            if state
+                .names
+                .get(..index)
+                .is_some_and(|earlier| earlier.contains(name))
+            {
+                continue;
             }
+
+            if !list.is_empty() {
+                list.push(' ');
+            }
+
+            list.push_str(name);
         }
 
-        if let Some(application) = application {
-            applications.insert(application, list.clone());
+        if application.is_some() {
+            applications.insert(key.clone(), list.clone());
         }
 
         classes.insert(Arc::clone(&style.name), list);

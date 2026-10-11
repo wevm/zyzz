@@ -135,6 +135,11 @@ impl<'a> Payloads<'_, 'a> {
     /// Returns `Themes.InvalidError` for invalid callbacks, undeclared reads, and failed static
     /// resolution.
     pub fn read(&mut self, node: &'a Expression<'a>, identity: &str) -> Result<Option<usize>> {
+        // Only callbacks have payloads, so other values skip the copy.
+        if !matches!(unwrap(node), Expression::ArrowFunctionExpression(_)) {
+            return Ok(None);
+        }
+
         let allocator = self.options.allocator;
         let copy: &'a Expression<'a> = allocator.alloc(node.clone_in_with_semantic_ids(allocator));
         let options = self.options;

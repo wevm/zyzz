@@ -123,8 +123,8 @@ const fn is_space(character: char) -> bool {
     matches!(character, ' ' | '\t' | '\n' | '\r' | '\u{c}')
 }
 
-/// Replaces each `/* ... */` comment, matched lazily, with one space.
-fn strip_comments(key: &str) -> String {
+/// Replaces each `/* */` comment with one space, like `replace(/\/\*[\s\S]*?\*\//g, ' ')`.
+pub fn strip_comments(key: &str) -> String {
     let mut output = String::with_capacity(key.len());
     let mut rest = key;
 

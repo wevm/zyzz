@@ -483,6 +483,9 @@ const WRITTEN: usize = 256;
 #[derive(Default)]
 pub struct Compiler {
     graph: Graph,
+    /// The snapshot text that produced `previous`. The graph is deterministic, so the same text
+    /// answers before decoding.
+    input: Option<Box<str>>,
     previous: Option<Arc<Output>>,
     /// The native sets of the last compilation, reused while their text is unchanged so the
     /// graph compares them by identity as it compares JavaScript values.
@@ -500,6 +503,10 @@ impl Compiler {
     /// [`WRITTEN`] identities, the result carries `"prune":true` and only its own modules stay
     /// written, so hosts drop the other decoded modules.
     pub fn compile(&mut self, input: &str) -> String {
+        if self.previous.is_some() && self.input.as_deref() == Some(input) {
+            return "{\"same\":true}".to_owned();
+        }
+
         let result = serde_json::from_str::<Value>(input)
             .map_err(|error| Error::Message(error.to_string()))
             .and_then(|input| decode(&input, self.vars.as_ref()))
@@ -516,6 +523,9 @@ impl Compiler {
                     .previous
                     .as_ref()
                     .is_some_and(|previous| Arc::ptr_eq(previous, &result));
+
+                self.input = Some(input.into());
+
                 if same {
                     return "{\"same\":true}".to_owned();
                 }
@@ -536,7 +546,10 @@ impl Compiler {
                 self.previous = Some(result);
                 written
             }
-            Err(error) => crate::api::error_json(&error),
+            Err(error) => {
+                self.input = None;
+                crate::api::error_json(&error)
+            }
         }
     }
 }

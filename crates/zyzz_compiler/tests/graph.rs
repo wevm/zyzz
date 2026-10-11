@@ -57,6 +57,26 @@ mod create {
     }
 
     #[test]
+    fn repeated_failures() {
+        let mut compiler = Compiler::default();
+        let valid = r#"{"modules":{}}"#;
+        let invalid = r#"{"contracts":{"lib":"{}"},"modules":{}}"#;
+
+        compiler.compile(valid);
+
+        // A failing snapshot reports its error again rather than the earlier success.
+        insta::assert_snapshot!(
+            compiler.compile(invalid),
+            @r#"{"error":{"name":"Source.ExtractError","diagnostics":[{"code":"unsupported_syntax","end":0,"message":"Invalid library contract: Unsupported Zyzz contract version.","source":"lib","start":0}],"message":"lib:0: Invalid library contract: Unsupported Zyzz contract version."}}"#
+        );
+        insta::assert_snapshot!(
+            compiler.compile(invalid),
+            @r#"{"error":{"name":"Source.ExtractError","diagnostics":[{"code":"unsupported_syntax","end":0,"message":"Invalid library contract: Unsupported Zyzz contract version.","source":"lib","start":0}],"message":"lib:0: Invalid library contract: Unsupported Zyzz contract version."}}"#
+        );
+        insta::assert_snapshot!(compiler.compile(valid), @r#"{"same":true}"#);
+    }
+
+    #[test]
     fn alternating_snapshots() {
         let mut compiler = Compiler::default();
         let button =

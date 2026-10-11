@@ -436,10 +436,11 @@ export function decode(
           scopedCss: output.scopedCss,
         }),
     [ClassName.units]: units?.used ?? used,
-    [ClassName.rules]: Object.freeze({ ...output.rules }),
-    classes: Object.freeze(Object.assign(Object.create(null), output.classes)),
+    // Parsed records are fresh, so they freeze in place rather than as copies.
+    [ClassName.rules]: Object.freeze(output.rules),
+    classes: Object.freeze(Object.setPrototypeOf(output.classes, null)),
     css: output.css,
-    vars: Object.freeze(Object.assign(Object.create(null), output.vars)),
+    vars: Object.freeze(Object.setPrototypeOf(output.vars, null)),
   }
 
   Object.defineProperty(result, ClassName.rules, { enumerable: false })

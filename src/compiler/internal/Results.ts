@@ -257,7 +257,8 @@ export function module(value: Module): Transform.compile.ReturnType {
           ),
         }
       : {}),
-    [ClassName.rules]: Object.freeze({ ...value.rules }),
+    // Parsed records are fresh, so they freeze in place rather than as copies.
+    [ClassName.rules]: Object.freeze(value.rules),
     [ClassName.units]: new Map(
       value.units.map(([key, borrowed, name]) => [key, { borrowed, name }]),
     ),
@@ -266,7 +267,7 @@ export function module(value: Module): Transform.compile.ReturnType {
     css: value.css,
     cssMap: value.cssMap,
     map: value.map,
-    vars: Object.freeze(Object.assign(Object.create(null), value.vars)),
+    vars: Object.freeze(Object.setPrototypeOf(value.vars, null)),
   }
 
   Object.defineProperty(result, ClassName.rules, { enumerable: false })

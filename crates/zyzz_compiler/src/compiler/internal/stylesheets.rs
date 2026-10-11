@@ -14,7 +14,7 @@ use crate::compiler::internal::lightning::Options;
 use crate::compiler::internal::{at_rules, namespaces};
 use crate::data::Data;
 use crate::error::{Error, Result};
-use crate::js::{self, Record};
+use crate::js;
 use crate::mapping::gen_mapping::{EncodedSourceMap, GenMapping, Mapping, Position};
 use crate::web::internal::contributions;
 use crate::web::internal::namespace;
@@ -328,18 +328,17 @@ pub fn write(sections: &[Section]) -> Vec<Section> {
         .collect()
 }
 
-/// Combined stylesheet output of reachable sections.
+/// Combined reachable sections with their layer order, source map, and relocated assets.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Rendered {
-    /// Relocated asset targets keyed by `zyzz-asset:` placeholder, in first-use order.
-    pub assets: Record<String>,
-    /// Combined CSS: the layer order statement, then each section in import, namespace, and
-    /// rule rank order.
+    /// Portable asset targets keyed by emitted placeholders.
+    pub assets: Vec<(String, String)>,
+    /// Combined stylesheet text.
     pub css: String,
-    /// Line-level map from each section's output to its contribution in source text.
+    /// Source map of the combined stylesheet.
     pub map: EncodedSourceMap,
-    /// Owning contract or source of each asset placeholder.
-    pub owners: Record<String>,
+    /// Trusted owner of each asset placeholder.
+    pub owners: Vec<(String, String)>,
 }
 
 /// Combines reachable sections, layer constraints, source maps, and asset identities.
@@ -350,7 +349,7 @@ pub struct Rendered {
 ///
 /// # Errors
 ///
-/// Returns [`Error::StylesheetConflict`] for conflicting sections, namespace URIs, or rule
+/// Returns [`Error::Conflict`] for conflicting sections, namespace URIs, or rule
 /// identities, and the at-rule transport's, layer order's, or asset resolution's messages.
 pub fn render(sections: &[Section]) -> Result<Rendered> {
     let mut seen: Vec<((&str, Option<&str>), Signature<'_>)> = Vec::new();
@@ -526,13 +525,18 @@ fn rank(css: &str) -> u8 {
 
 #[cold]
 fn conflict(section: &Section, message: impl Into<String>) -> Error {
-    Error::StylesheetConflict {
+    Error::Conflict {
         message: message.into(),
-        source: section
-            .owner
-            .as_ref()
-            .unwrap_or(&section.source)
-            .to_string(),
+        source: Arc::clone(section.owner.as_ref().unwrap_or(&section.source)),
+    }
+}
+
+/// Assigns a record entry, keeping the position of an existing key as object assignment does.
+/// Placeholder keys are never array indexes, so insertion order is the enumeration order.
+fn assign(records: &mut Vec<(String, String)>, key: &str, value: String) {
+    match records.iter_mut().find(|(existing, _)| existing == key) {
+        Some(entry) => entry.1 = value,
+        None => records.push((key.to_owned(), value)),
     }
 }
 
@@ -546,11 +550,11 @@ struct Identity {
 #[derive(Default)]
 struct Relocation {
     animations: FxHashMap<String, Identity>,
-    assets: Record<String>,
+    assets: Vec<(String, String)>,
     changed: bool,
     identities: FxHashMap<String, Identity>,
     owner: String,
-    owners: Record<String>,
+    owners: Vec<(String, String)>,
     source: String,
 }
 
@@ -566,8 +570,8 @@ impl Relocation {
         let target = resolve(&self.source, url)?;
         let key = format!("zyzz-asset:{}", encode_uri_component(&target));
 
-        self.assets.insert(key.as_str(), target);
-        self.owners.insert(key.as_str(), self.owner.clone());
+        assign(&mut self.assets, &key, target);
+        assign(&mut self.owners, &key, self.owner.clone());
 
         Ok(Some(key))
     }
@@ -589,9 +593,9 @@ impl Relocation {
                 format!("Conflicting stylesheet identity: {name}; supply distinct declaration ids.")
             };
 
-            return Err(Error::StylesheetConflict {
+            return Err(Error::Conflict {
                 message,
-                source: self.owner.clone(),
+                source: Arc::from(self.owner.as_str()),
             });
         }
 

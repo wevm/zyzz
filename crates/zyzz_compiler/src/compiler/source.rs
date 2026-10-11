@@ -259,3 +259,18 @@ pub struct Extracted<'a> {
     /// Stable scope keys and validated local theme definitions.
     pub vars: Record<Arc<Definition>>,
 }
+
+/// Extracts one module's styles, themes, and rewrite spans.
+///
+/// # Errors
+///
+/// Returns `Source.ExtractError` for invalid module identities and unsupported source.
+// Placeholder for the extraction port, which replaces this definition.
+pub fn extract<'a>(
+    _allocator: &'a oxc_allocator::Allocator,
+    _options: &Options<'_, 'a>,
+) -> crate::error::Result<Extracted<'a>> {
+    Err(crate::error::Error::Message(
+        "Source extraction is not available in this build.".to_owned(),
+    ))
+}

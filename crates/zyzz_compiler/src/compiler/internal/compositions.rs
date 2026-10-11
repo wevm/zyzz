@@ -180,7 +180,7 @@ impl<'o, 'a> Walker<'o, 'a> {
     }
 }
 
-impl<'o, 'a> Visit<'a> for Walker<'o, 'a> {
+impl<'a> Visit<'a> for Walker<'_, 'a> {
     fn enter_node(&mut self, kind: AstKind<'a>) {
         let parent = self.ancestors.last().copied();
 

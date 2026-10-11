@@ -19,6 +19,13 @@ pub enum Error {
     Style(Vec<crate::style::Diagnostic>),
     /// `StyleSheet.CompileError` with every native capability diagnostic.
     StyleSheet(Vec<crate::react_native::style_sheet::Diagnostic>),
+    /// `Stylesheets.ConflictError`: conflicting packed stylesheet output and its owner.
+    StylesheetConflict {
+        /// Explanation of the conflict.
+        message: String,
+        /// Contract or source identity that owns the conflicting section.
+        source: String,
+    },
     /// `StyleSheet.SelectionError`: a lookup of a missing precompiled table.
     StyleSheetSelection(String),
     /// `Source.ThemeInvalidError`: unsupported source syntax with its UTF-8 source span.
@@ -59,6 +66,7 @@ impl Error {
             Self::Config(message)
             | Self::Message(message)
             | Self::StyleSheetSelection(message)
+            | Self::StylesheetConflict { message, .. }
             | Self::Themes { message, .. }
             | Self::Variants(message) => message.clone(),
             Self::Css(diagnostics) => crate::web::css::error_message(diagnostics),

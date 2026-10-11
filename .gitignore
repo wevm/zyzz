@@ -17,3 +17,5 @@ node_modules/
 src/web/internal/Wasm.generated.ts
 target/
 test-results/
+*.pending-snap
+*.snap.new

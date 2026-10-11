@@ -1,11 +1,10 @@
-//! Incremental graph compilers that hosts address by handle across the JSON boundary.
+//! The JSON boundary of graph and module compilation.
 //!
-//! Hosts create a compiler, compile snapshots with it, and release it, so each handle owns the
-//! cache of one host lifecycle. A compilation result marks modules whose output is the same value
-//! the previous result of that handle returned, which lets hosts keep their decoded objects.
+//! A [`Compiler`] belongs to one host compiler object, so its caches live exactly as long as the
+//! host references it. Its results mark modules whose output is the value its previous result
+//! held, which lets hosts keep their decoded objects.
 
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::Arc;
 
 use rustc_hash::FxHashMap;
 use serde_json::Value;
@@ -17,16 +16,6 @@ use crate::error::{Error, Result};
 use crate::internal::token::{Composition, CssOutput};
 use crate::js;
 use crate::web::internal::themes::Shared;
-
-struct Entry {
-    graph: Graph,
-    previous: Option<Arc<Output>>,
-}
-
-/// Live compilers by handle. Only the host adapters' explicit create and release calls change
-/// membership, so a handle's cache lives exactly as long as the host compiler that owns it.
-static GRAPHS: Mutex<Option<FxHashMap<u32, Entry>>> = Mutex::new(None);
-static NEXT: AtomicU32 = AtomicU32::new(1);
 
 fn malformed(message: &str) -> Error {
     Error::Message(format!("Malformed graph input: {message}"))
@@ -342,78 +331,49 @@ pub fn write_output(result: &Output, previous: Option<&Output>) -> String {
     output
 }
 
-/// Creates an incremental compiler and returns its handle.
-pub fn create() -> u32 {
-    let handle = NEXT.fetch_add(1, Ordering::Relaxed);
-    let mut graphs = GRAPHS.lock().unwrap_or_else(PoisonError::into_inner);
-
-    graphs.get_or_insert_with(FxHashMap::default).insert(
-        handle,
-        Entry {
-            graph: Graph::default(),
-            previous: None,
-        },
-    );
-
-    handle
-}
-
-/// Releases a compiler and its cache. Unknown handles are ignored.
-pub fn release(handle: u32) {
-    let mut graphs = GRAPHS.lock().unwrap_or_else(PoisonError::into_inner);
-
-    if let Some(graphs) = graphs.as_mut() {
-        graphs.remove(&handle);
-    }
-}
-
-/// Compiles a snapshot, with the compiler of `handle` when one is given. A result identical to
-/// the handle's previous result serializes as `{"same":true}`.
+/// Compiles a snapshot without retained state.
 ///
 /// # Errors
 ///
-/// Returns the graph's compilation errors, and a plain error for an unknown handle.
+/// Returns the graph's compilation errors and malformed input.
 pub fn compile(input: &Value) -> Result<String> {
-    let options = options(input)?;
-    let Some(handle) = input
-        .get("handle")
-        .and_then(Value::as_u64)
-        .and_then(|handle| u32::try_from(handle).ok())
-    else {
-        return Ok(write_output(&*graph::compile(&options)?, None));
-    };
+    Ok(write_output(&*graph::compile(&options(input)?)?, None))
+}
 
-    // Compile outside the lock, so compilers of other handles stay usable meanwhile.
-    let mut entry = {
-        let mut graphs = GRAPHS.lock().unwrap_or_else(PoisonError::into_inner);
+/// An incremental graph compiler with the result of its previous snapshot.
+#[derive(Default)]
+pub struct Compiler {
+    graph: Graph,
+    previous: Option<Arc<Output>>,
+}
 
-        graphs
-            .as_mut()
-            .and_then(|graphs| graphs.remove(&handle))
-            .ok_or_else(|| Error::Message(format!("Unknown graph compiler: {handle}")))?
-    };
-    let result = entry.graph.compile(&options);
-    let written = result.map(|result| {
-        let same = entry
-            .previous
-            .as_ref()
-            .is_some_and(|previous| Arc::ptr_eq(previous, &result));
-        let written = if same {
-            "{\"same\":true}".to_owned()
-        } else {
-            write_output(&result, entry.previous.as_deref())
-        };
+impl Compiler {
+    /// Compiles a snapshot of JSON graph options. A result identical to the previous one
+    /// serializes as `{"same":true}`, and failures as an error result.
+    pub fn compile(&mut self, input: &str) -> String {
+        let result = serde_json::from_str::<Value>(input)
+            .map_err(|error| Error::Message(error.to_string()))
+            .and_then(|input| options(&input))
+            .and_then(|options| self.graph.compile(&options));
 
-        entry.previous = Some(result);
-        written
-    });
-    let mut graphs = GRAPHS.lock().unwrap_or_else(PoisonError::into_inner);
+        match result {
+            Ok(result) => {
+                let same = self
+                    .previous
+                    .as_ref()
+                    .is_some_and(|previous| Arc::ptr_eq(previous, &result));
+                let written = if same {
+                    "{\"same\":true}".to_owned()
+                } else {
+                    write_output(&result, self.previous.as_deref())
+                };
 
-    graphs
-        .get_or_insert_with(FxHashMap::default)
-        .insert(handle, entry);
-
-    written
+                self.previous = Some(result);
+                written
+            }
+            Err(error) => crate::api::error_json(&error),
+        }
+    }
 }
 
 /// Compiles one module outside a graph, as `Transform.compile` does.

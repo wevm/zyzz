@@ -100,21 +100,6 @@ pub fn call(operation: &str, input: &str) -> String {
             .and_then(|input| handles::compile(&input))
             .unwrap_or_else(|error| error_json(&error)),
         #[cfg(feature = "compiler")]
-        "graph.create" => format!("{{\"handle\":{}}}", handles::create()),
-        #[cfg(feature = "compiler")]
-        "graph.release" => {
-            if let Ok(input) = json(input)
-                && let Some(handle) = input
-                    .get("handle")
-                    .and_then(serde_json::Value::as_u64)
-                    .and_then(|handle| u32::try_from(handle).ok())
-            {
-                handles::release(handle);
-            }
-
-            "{}".to_owned()
-        }
-        #[cfg(feature = "compiler")]
         "source.extract" => crate::compiler::internal::wire::extract(input),
         #[cfg(feature = "compiler")]
         "transform.compile" => json(input)

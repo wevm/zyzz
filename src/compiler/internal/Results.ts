@@ -64,9 +64,19 @@ export type Output = {
  * @throws {Native.CompileError} For native features outside the static boundary.
  */
 export function call<result>(operation: string, input: unknown): result {
-  const output = JSON.parse(Engine.call(operation, JSON.stringify(input))) as {
-    readonly error?: Failure | undefined
-  }
+  return decode(Engine.call(operation, JSON.stringify(input)))
+}
+
+/**
+ * Parses an engine result, throwing the failure it encodes.
+ * @param json - The engine's JSON result.
+ * @returns The parsed result.
+ * @throws {Source.ExtractError} For source the compiler does not support.
+ * @throws {Css.CompileError} For CSS emission failures.
+ * @throws {Native.CompileError} For native features outside the static boundary.
+ */
+export function decode<result>(json: string): result {
+  const output = JSON.parse(json) as { readonly error?: Failure | undefined }
 
   if (output.error) throw failure(output.error)
 

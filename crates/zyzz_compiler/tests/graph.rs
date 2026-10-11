@@ -34,27 +34,18 @@ mod compile {
 }
 
 mod create {
-    use super::api;
+    use zyzz_compiler::compiler::handles::Compiler;
 
     #[test]
     fn unchanged_snapshots() {
-        let created = api::call("graph.create", "");
-        let handle: serde_json::Value = serde_json::from_str(&created).unwrap_or_default();
-        let handle = handle["handle"].as_u64().unwrap_or_default();
-        let input = format!(r#"{{"handle":{handle},"modules":{{}}}}"#);
+        let mut compiler = Compiler::default();
+        let input = r#"{"modules":{}}"#;
 
         insta::assert_snapshot!(
-            api::call("graph.compile", &input),
+            compiler.compile(input),
             @r#"{"contracts":{},"dependencies":{},"modules":{}}"#
         );
-        insta::assert_snapshot!(api::call("graph.compile", &input), @r#"{"same":true}"#);
-
-        api::call("graph.release", &format!(r#"{{"handle":{handle}}}"#));
-
-        insta::assert_snapshot!(
-            api::call("graph.compile", &input),
-            @r#"{"error":{"name":"Error","message":"Unknown graph compiler: 1"}}"#
-        );
+        insta::assert_snapshot!(compiler.compile(input), @r#"{"same":true}"#);
     }
 }
 

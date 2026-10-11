@@ -11,6 +11,11 @@ import * as Url from 'node:url'
 export type Exports = {
   /** Runs a named compiler operation on UTF-8 JSON input and returns its UTF-8 JSON result. */
   readonly call: (operation: string, input: string) => string
+  /** An incremental graph compiler whose caches live as long as the instance. */
+  readonly Graph: new () => {
+    /** Compiles one JSON graph snapshot and returns its JSON result. */
+    readonly compile: (input: string) => string
+  }
   /** Version of the compiler crate, which also proves the addon loaded. */
   readonly version: () => string
 }
@@ -54,7 +59,11 @@ function resolve(): Exports {
 
   for (const target of targets()) {
     // Source and built modules both sit two levels below the package root.
-    const local = Path.resolve(directory, '../../binding', `zyzz.${target}.node`)
+    const local = Path.resolve(
+      directory,
+      '../../binding',
+      `zyzz.${target}.node`,
+    )
 
     for (const candidate of [local, `@zyzz/binding-${target}`]) {
       if (candidate === local && !Fs.existsSync(local)) continue

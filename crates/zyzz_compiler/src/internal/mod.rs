@@ -10,6 +10,7 @@ pub mod literal;
 pub mod query;
 pub mod rule_reference;
 pub mod scheme;
+pub mod shorthands;
 pub mod targets;
 pub mod theme;
 pub mod token;

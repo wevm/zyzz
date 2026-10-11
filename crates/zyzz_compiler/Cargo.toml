@@ -23,8 +23,9 @@ oxc_semantic = { workspace = true }
 oxc_span = { workspace = true }
 oxc_syntax = { workspace = true }
 rustc-hash = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
+# Arc deserialization keeps wire strings shared; float_roundtrip parses numbers exactly.
+serde = { workspace = true, features = ["rc"] }
+serde_json = { workspace = true, features = ["float_roundtrip"] }
 smallvec = { workspace = true }
 zyzz_css_syntax = { workspace = true }
 

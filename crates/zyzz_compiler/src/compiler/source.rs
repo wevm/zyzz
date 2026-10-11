@@ -34,8 +34,8 @@ use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
 use crate::compiler::internal::vars::{self, Variables};
 use crate::compiler::internal::{
-    at_rules, compositions, contributions, identifiers, packed_styles, recipe_payloads,
-    recipes, selectors,
+    at_rules, compositions, contributions, identifiers, packed_styles, recipe_payloads, recipes,
+    selectors,
 };
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};

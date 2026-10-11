@@ -2,7 +2,9 @@
 
 Compile ordered style data into CSS text, class names, and variable set scopes.
 
-`Css` holds the pure web CSS compiler, with its types and errors. It reads data and returns strings without touching the filesystem, the DOM, or a bundler. Bundler integrations call it for each module, and custom pipelines and tests can call it directly.
+`Css` holds the web CSS compiler, with its types and errors. It reads data and returns strings without touching the filesystem, the DOM, or a bundler. Bundler integrations call it for each module, and custom pipelines and tests can call it directly.
+
+The Rust compiler emits the CSS. Node.js loads its native addon, and browser bundles inline its WebAssembly build, which instantiates synchronously.
 
 ```ts title="compile.ts"
 import { Style } from 'zyzz'

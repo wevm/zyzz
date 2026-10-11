@@ -6,9 +6,15 @@
 use std::sync::Arc;
 
 use oxc_allocator::Allocator;
+use oxc_ast::AstKind;
+use oxc_ast::ast::{Expression, ObjectExpression, ObjectPropertyKind, PropertyKey};
+use oxc_span::GetSpan;
+use rustc_hash::FxHashSet;
 use serde_json::{Map, Value, json};
-use zyzz_compiler::compiler::internal::{applications, names, relative, syntax};
+use zyzz_compiler::compiler::internal::recipe_payloads::{self, Payloads};
+use zyzz_compiler::compiler::internal::{applications, names, recipes, relative, statics, syntax};
 use zyzz_compiler::compiler::source::Call;
+use zyzz_compiler::runtime::recipe as runtime;
 
 fn calls<'a>(case: &Value) -> Vec<Call<'a>> {
     case["calls"]
@@ -130,8 +136,275 @@ fn replay(case: &Value) -> Value {
 
             json!({ "dead": dead, "definitions": { "namespaces": namespaces, "values": values }, "find": find })
         }
+        Some("recipes") => recipe(source, module_id),
         kind => json!({ "error": format!("unknown kind {kind:?}") }),
     }
+}
+
+fn estree(node: &Expression<'_>) -> &'static str {
+    match node {
+        Expression::StringLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::BooleanLiteral(_)
+        | Expression::NullLiteral(_) => "Literal",
+        Expression::Identifier(_) => "Identifier",
+        Expression::StaticMemberExpression(_) | Expression::ComputedMemberExpression(_) => {
+            "MemberExpression"
+        }
+        Expression::TemplateLiteral(_) => "TemplateLiteral",
+        Expression::CallExpression(_) => "CallExpression",
+        Expression::ArrowFunctionExpression(_) => "ArrowFunctionExpression",
+        Expression::UnaryExpression(_) => "UnaryExpression",
+        Expression::ArrayExpression(_) => "ArrayExpression",
+        _ => "Other",
+    }
+}
+
+fn value(node: &Expression<'_>, bindings: &Payloads<'_, '_>) -> Value {
+    if let Some(slot) = bindings.resolve(node) {
+        return Value::String(format!("slot:{}", slot.name));
+    }
+
+    match node {
+        Expression::ObjectExpression(object) => properties(object, bindings),
+        node => json!([estree(node), node.span().start, node.span().end]),
+    }
+}
+
+fn properties(node: &ObjectExpression<'_>, bindings: &Payloads<'_, '_>) -> Value {
+    Value::Array(
+        node.properties
+            .iter()
+            .map(|property| match property {
+                ObjectPropertyKind::ObjectProperty(property) => {
+                    let key = match &property.key {
+                        PropertyKey::StaticIdentifier(identifier) => identifier.name.to_string(),
+                        key => statics::key_literal(key).unwrap_or_default(),
+                    };
+
+                    json!([
+                        key,
+                        property.span.start,
+                        property.span.end,
+                        value(&property.value, bindings)
+                    ])
+                }
+                ObjectPropertyKind::SpreadProperty(spread) => {
+                    json!(["spread", spread.span.start, spread.span.end])
+                }
+            })
+            .collect(),
+    )
+}
+
+fn scalar(value: &runtime::Scalar) -> Value {
+    match value {
+        runtime::Scalar::Number(number) => json!(number),
+        runtime::Scalar::String(text) => json!(&**text),
+    }
+}
+
+fn recipe(source: &str, module_id: &str) -> Value {
+    let allocator = Allocator::default();
+    let parsed = syntax::parse(&allocator, source, module_id);
+    let statics = statics::collect(
+        &allocator,
+        parsed.program,
+        &parsed.semantic,
+        rustc_hash::FxHashMap::default(),
+    );
+    let Some(call) = parsed.semantic.nodes().iter().find_map(|node| match node.kind() {
+        AstKind::CallExpression(call)
+            if matches!(&call.callee, Expression::Identifier(callee) if callee.name == "variants") =>
+        {
+            Some(call)
+        }
+        _ => None,
+    }) else {
+        return json!({ "error": "no variants call" });
+    };
+    let allowed: FxHashSet<u32> = std::iter::once(call.span.start).collect();
+    let opaque = FxHashSet::default();
+    let Some(argument) = call
+        .arguments
+        .first()
+        .and_then(|argument| argument.as_expression())
+    else {
+        return json!({ "error": "no argument" });
+    };
+    let expanded = statics
+        .normalize(argument, &allowed, &opaque, false)
+        .and_then(|argument| {
+            recipes::expand(
+                argument,
+                recipes::Options {
+                    identity: "id",
+                    payloads: recipe_payloads::Options {
+                        allocator: &allocator,
+                        allowed: &allowed,
+                        opaque: &opaque,
+                        statics: &statics,
+                    },
+                    queries: None,
+                    source,
+                },
+            )
+        });
+    let expanded = match expanded {
+        Ok(expanded) => expanded,
+        Err(error) => return json!({ "error": error.text() }),
+    };
+    let bindings = &expanded.bindings;
+    let definition = &expanded.recipe;
+    let mut recipe = Map::new();
+
+    recipe.insert(
+        "axes".to_owned(),
+        Value::Object(
+            definition
+                .axes
+                .iter()
+                .map(|(axis, choices)| {
+                    (
+                        axis.to_string(),
+                        json!(choices.iter().map(|choice| &**choice).collect::<Vec<_>>()),
+                    )
+                })
+                .collect(),
+        ),
+    );
+    recipe.insert(
+        "defaults".to_owned(),
+        Value::Object(
+            definition
+                .defaults
+                .iter()
+                .map(|(axis, choice)| {
+                    (
+                        axis.to_string(),
+                        choice
+                            .as_deref()
+                            .map_or(Value::Null, |choice| json!(choice)),
+                    )
+                })
+                .collect(),
+        ),
+    );
+
+    if let Some(payloads) = &definition.payloads {
+        recipe.insert(
+            "payloads".to_owned(),
+            Value::Array(
+                payloads
+                    .iter()
+                    .map(|payload| {
+                        json!({
+                            "axis": &*payload.axis,
+                            "choice": &*payload.choice,
+                            "slots": payload.slots.iter().map(|slots| Value::Object(slots.iter().map(|(field, slot)| (field.to_string(), json!(&**slot))).collect())).collect::<Vec<_>>(),
+                        })
+                    })
+                    .collect(),
+            ),
+        );
+        recipe.insert(
+            "defaultPayloads".to_owned(),
+            Value::Object(
+                definition
+                    .default_payloads
+                    .iter()
+                    .flat_map(|payloads| payloads.iter())
+                    .map(|(axis, values)| {
+                        (
+                            axis.to_string(),
+                            Value::Object(
+                                values
+                                    .iter()
+                                    .map(|(field, value)| (field.to_string(), scalar(value)))
+                                    .collect(),
+                            ),
+                        )
+                    })
+                    .collect(),
+            ),
+        );
+    }
+
+    if let Some(conditions) = &definition.conditions {
+        recipe.insert(
+            "conditions".to_owned(),
+            json!(
+                conditions
+                    .iter()
+                    .map(|condition| &**condition)
+                    .collect::<Vec<_>>()
+            ),
+        );
+    }
+
+    let alternatives = expanded
+        .static_recipe
+        .as_ref()
+        .or(expanded.dynamic_recipe.as_ref());
+    let kind = if expanded.static_recipe.is_some() {
+        "static"
+    } else if expanded.dynamic_recipe.is_some() {
+        "dynamic"
+    } else {
+        "none"
+    };
+    let rules = alternatives.map(|alternatives| {
+        alternatives
+            .rules
+            .iter()
+            .map(|rule| {
+                let matches: Vec<Value> = rule
+                    .matches
+                    .iter()
+                    .map(|(axis, choices)| {
+                        json!([
+                            &**axis,
+                            choices.iter().map(|choice| &**choice).collect::<Vec<_>>()
+                        ])
+                    })
+                    .collect();
+
+                json!([
+                    matches,
+                    rule.value.span.start,
+                    rule.value.span.end,
+                    properties(rule.value, bindings)
+                ])
+            })
+            .collect::<Vec<_>>()
+    });
+    let types: Map<String, Value> = expanded
+        .types
+        .iter()
+        .map(|(axis, choices)| {
+            (
+                axis.to_string(),
+                Value::Object(
+                    choices
+                        .iter()
+                        .map(|(choice, text)| (choice.to_string(), json!(&**text)))
+                        .collect(),
+                ),
+            )
+        })
+        .collect();
+    let mut slots: Vec<&str> = bindings.slots.keys().map(|slot| &**slot).collect();
+
+    slots.sort_unstable();
+
+    json!({
+        "body": [expanded.body.span.start, expanded.body.span.end, properties(expanded.body, bindings)],
+        "kind": kind,
+        "recipe": recipe,
+        "rules": rules,
+        "slots": slots,
+        "types": types,
+    })
 }
 
 #[expect(

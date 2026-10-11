@@ -15,6 +15,8 @@ pub enum Error {
     Message(String),
     /// `MissingTransformError`: authoring that only the compiler can evaluate.
     MissingTransform,
+    /// `Native.CompileError`: a native source feature outside the static source boundary.
+    Native(String),
     /// `Style.InvalidError` with every validation diagnostic.
     Style(Vec<crate::style::Diagnostic>),
     /// `StyleSheet.CompileError` with every native capability diagnostic.
@@ -58,6 +60,7 @@ impl Error {
         match self {
             Self::Config(message)
             | Self::Message(message)
+            | Self::Native(message)
             | Self::StyleSheetSelection(message)
             | Self::Themes { message, .. }
             | Self::Variants(message) => message.clone(),

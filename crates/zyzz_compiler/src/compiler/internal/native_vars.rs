@@ -3,8 +3,12 @@
 //! Every set produces a light and a dark tree of converted leaves. A leaf that cannot convert holds
 //! its diagnostic as a one-element string array, so reading it reports the failure while the rest
 //! of the profile stays usable. Media-conditioned values add one profile set per media selection.
+//! [`Shared`] carries the profiles a source graph assigns to one module.
 
 use std::sync::Arc;
+
+use indexmap::IndexMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 
 use crate::compiler::internal::native_media;
 use crate::data::{Data, Object};
@@ -30,6 +34,24 @@ pub struct Options<'a> {
     pub unnamed: bool,
     /// Compatible authored sets by name.
     pub vars: &'a Record<Arc<Definition>>,
+}
+
+/// Static profile artifacts of one source module, owned by the graph that compiles it.
+#[derive(Clone, Debug, Default)]
+pub struct Shared {
+    /// Exported profile constant names by serialized profile, in definition order.
+    pub definitions: IndexMap<String, String, FxBuildHasher>,
+    /// Profiles another module defines, by the UTF-8 start offset of the reading argument.
+    pub reads: FxHashMap<u32, Import>,
+}
+
+/// A profile constant a read takes from its defining module.
+#[derive(Clone, Debug, Default)]
+pub struct Import {
+    /// Exported constant name.
+    pub name: String,
+    /// Specifier of the defining module, absent when the reading module defines the profile.
+    pub source: Option<String>,
 }
 
 /// Resolves every variable of every set and scheme with the style compiler's unit and font

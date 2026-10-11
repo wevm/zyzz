@@ -9,6 +9,9 @@
 use std::sync::Arc;
 
 use indexmap::IndexMap;
+use lightningcss::rules::CssRule;
+use lightningcss::values::url::Url;
+use lightningcss::visitor::{Visit as _, VisitTypes, Visitor};
 use oxc_allocator::{Allocator, CloneIn, GetAddress, UnstableAddress, Vec as ArenaVec};
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
@@ -23,13 +26,14 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::compiler::internal::dynamic::{self, Slots};
 use crate::compiler::internal::expression::{self, Template, unwrap};
+use crate::compiler::internal::lightning::Options as Transform;
 use crate::compiler::internal::scope::{self, Declaration, Mode};
 use crate::compiler::internal::statics::{self, Static};
 use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
 use crate::compiler::internal::vars::{self, Variables};
 use crate::compiler::internal::{
-    compositions, contributions, css_hooks, identifiers, names, packed_styles, recipe_payloads,
+    at_rules, compositions, contributions, identifiers, names, packed_styles, recipe_payloads,
     recipes, selectors,
 };
 use crate::data::{Data, Object};
@@ -659,13 +663,6 @@ impl<'a> Visit<'a> for SelectorKeys<'_> {
     }
 }
 
-/// Matches a value against a property grammar with css-tree's lexer.
-fn css_tree(property: &str, value: &str) -> bool {
-    zyzz_css_syntax::Lexer::get()
-        .match_property(property, value)
-        .is_ok_and(|result| result.error.is_none())
-}
-
 /// Dynamic slots of a typed callback or of recipe payload contexts.
 #[derive(Clone, Copy)]
 enum Bindings<'d, 'a> {
@@ -1211,7 +1208,11 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                             || targets.iter().all(|target| {
                                 binding::accepts(binding.domain, target)
                                     || (binding.domain == Domain::Color
-                                        && expression::accepts_color(expression, target, &css_tree))
+                                        && expression::accepts_color(
+                                            expression,
+                                            target,
+                                            &expression::matcher(),
+                                        ))
                             }),
                         "Variable domain is incompatible with this property.",
                     ),
@@ -1219,9 +1220,17 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                         targets.iter().all(|target| {
                             token::accepts_reference(reference, target)
                                 || (reference.contract.variable_set
-                                    && expression::accepts_variables(expression, target, &css_tree))
+                                    && expression::accepts_variables(
+                                        expression,
+                                        target,
+                                        &expression::matcher(),
+                                    ))
                                 || (reference.group == "color"
-                                    && expression::accepts_color(expression, target, &css_tree))
+                                    && expression::accepts_color(
+                                        expression,
+                                        target,
+                                        &expression::matcher(),
+                                    ))
                         }),
                         "Theme variable domain is incompatible with this property.",
                     ),
@@ -1650,7 +1659,11 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 && reference.contract.variable_set
                 && literal::rule(&declaration.property)
                     .is_some_and(|rule| rule.kind == LiteralKind::Identifier)
-                && !expression::accepts_identifier(reference, &declaration.property, &css_tree)
+                && !expression::accepts_identifier(
+                    reference,
+                    &declaration.property,
+                    &expression::matcher(),
+                )
             {
                 self.reporter.report(
                     Code::InvalidLiteral,
@@ -1687,12 +1700,12 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                     .copied()
                     .unwrap_or(self.call.span);
 
-                if let Err(message) = css_hooks::transform(
+                if let Err(error) = at_rules::validate(
                     &format!(".z{{{condition}{{color:red;}}}}"),
-                    css_hooks::Hooks::default(),
+                    &self.reporter.module_id,
                 ) {
                     self.report(
-                        format!("Invalid selector or condition: {message}"),
+                        format!("Invalid selector or condition: {}", error.text()),
                         location,
                     );
                 }
@@ -2587,8 +2600,8 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             .map_err(|error| invalid(&error.text(), span))?
             .css;
 
-            css_hooks::transform(&css, css_hooks::Hooks::default())
-                .map_err(|message| invalid(&message, span))?;
+            at_rules::validate(&css, options.module_id)
+                .map_err(|error| invalid(&error.text(), span))?;
         }
 
         let mut data = variables.registrations.clone();
@@ -2638,37 +2651,19 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             )
             .map_err(|error| Error::message(error.text()))?
             .css;
-            let relative = || {
-                Err(
-                    "Relative contribution assets require Graph.compile and a relocation host."
-                        .to_owned(),
-                )
-            };
-            let mut rule = |rule: &lightningcss::rules::CssRule<'_>| match rule {
-                lightningcss::rules::CssRule::Import(import)
-                    if !import.url.is_empty() && !absolute(&import.url) =>
-                {
-                    relative()
-                }
-                _ => Ok(()),
-            };
-            let mut url = |url: &str| {
-                if !url.is_empty() && !absolute(url) {
-                    return relative();
-                }
-
-                Ok(())
-            };
-            let hooks = if context.is_none() {
-                css_hooks::Hooks {
-                    rule: Some(&mut rule),
-                    url: Some(&mut url),
-                }
+            // Without a graph, no host relocates relative assets.
+            if context.is_none() {
+                at_rules::transform_with(
+                    &Transform {
+                        code: &rendered,
+                        filename: options.module_id,
+                        ..Transform::default()
+                    },
+                    &mut Relative,
+                )?;
             } else {
-                css_hooks::Hooks::default()
-            };
-
-            css_hooks::transform(&rendered, hooks).map_err(Error::message)?;
+                at_rules::validate(&rendered, options.module_id)?;
+            }
         }
 
         Ok(data)
@@ -2822,6 +2817,42 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         variable_calls: variables.calls,
         vars: themes.themes,
     })
+}
+
+/// Rejects relative import and `url()` assets, which only a graph host can relocate.
+struct Relative;
+
+impl Relative {
+    /// Fails for a nonempty URL that is neither root-relative, a fragment or query, nor absolute.
+    fn check(url: &str) -> Result<()> {
+        if url.is_empty() || absolute(url) {
+            return Ok(());
+        }
+
+        Err(Error::message(
+            "Relative contribution assets require Graph.compile and a relocation host.",
+        ))
+    }
+}
+
+impl<'i> Visitor<'i> for Relative {
+    type Error = Error;
+
+    fn visit_types(&self) -> VisitTypes {
+        VisitTypes::RULES | VisitTypes::URLS
+    }
+
+    fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<()> {
+        if let CssRule::Import(import) = &*rule {
+            Self::check(&import.url)?;
+        }
+
+        rule.visit_children(self)
+    }
+
+    fn visit_url(&mut self, url: &mut Url<'i>) -> Result<()> {
+        Self::check(&url.url)
+    }
 }
 
 /// Reports `Style.InvalidError` diagnostics as invalid literals at their locations.

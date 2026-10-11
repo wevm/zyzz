@@ -11,6 +11,7 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use lightningcss::rules::CssRule;
 use lightningcss::selector::{Combinator, Component};
+use lightningcss::visitor::{Visit as _, VisitTypes, Visitor};
 use oxc_allocator::{Address, GetAddress};
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
@@ -23,10 +24,11 @@ use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use crate::compiler::internal::expression::unwrap;
+use crate::compiler::internal::lightning;
 use crate::compiler::internal::scope::{self, Mode};
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Link, LinkKind};
-use crate::compiler::internal::{css_hooks, identifiers, names};
+use crate::compiler::internal::{at_rules, identifiers, names};
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::internal::{condition, identity, theme};
@@ -373,36 +375,46 @@ fn local(selector: &lightningcss::selector::Selector<'_>) -> bool {
 
 /// Validates a normalized selector and reports whether every selector of its list selects the
 /// styled element itself.
-fn locality(selector: &str) -> std::result::Result<bool, String> {
-    let mut result = false;
-    let code = format!(".z{{{selector}{{color:red}}}}");
+fn locality(selector: &str) -> Result<bool> {
+    let mut locality = Locality(false);
 
-    let mut visit = |rule: &CssRule<'_>| {
-        let CssRule::Style(rule) = rule else {
-            return Ok(());
-        };
-        let selectors = &rule.selectors.0;
-
-        if selectors.iter().any(|selector| {
-            selector
-                .iter_raw_match_order()
-                .any(|component| matches!(component, Component::Nesting))
-        }) {
-            result = selectors.iter().all(local);
-        }
-
-        Ok(())
-    };
-
-    css_hooks::transform(
-        &code,
-        css_hooks::Hooks {
-            rule: Some(&mut visit),
-            url: None,
+    at_rules::transform_with(
+        &lightning::Options {
+            code: &format!(".z{{{selector}{{color:red}}}}"),
+            filename: "selectors.css",
+            ..lightning::Options::default()
         },
+        &mut locality,
     )?;
 
-    Ok(result)
+    Ok(locality.0)
+}
+
+/// Records whether the selector list of the last nesting style rule is local.
+struct Locality(bool);
+
+impl<'i> Visitor<'i> for Locality {
+    type Error = Error;
+
+    fn visit_types(&self) -> VisitTypes {
+        VisitTypes::RULES
+    }
+
+    fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<()> {
+        if let CssRule::Style(style) = &*rule {
+            let selectors = &style.selectors.0;
+
+            if selectors.iter().any(|selector| {
+                selector
+                    .iter_raw_match_order()
+                    .any(|component| matches!(component, Component::Nesting))
+            }) {
+                self.0 = selectors.iter().all(local);
+            }
+        }
+
+        rule.visit_children(self)
+    }
 }
 
 /// Builds a selector from an authored key, interpolating referenced definitions.
@@ -699,7 +711,7 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
             }
 
             let normalized = condition::normalize(&authored).map_err(|error| error.text())?;
-            let local = locality(&normalized)?;
+            let local = locality(&normalized).map_err(|error| error.text())?;
 
             Ok((normalized, local))
         })();

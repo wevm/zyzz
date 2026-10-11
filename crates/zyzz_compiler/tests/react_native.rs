@@ -126,6 +126,17 @@ mod compile {
     }
 
     #[test]
+    fn composes_rotations_and_skews_with_engine_trigonometry() {
+        // These angles round differently in common libm implementations than in V8.
+        let styles = define(&data(
+            r#"{"card":{"transform":"matrix(1,0,0,1,5,6) rotate(-705.6deg) rotateX(-663.8deg) skewY(-20deg) perspective(500px)"}}"#,
+        ));
+        let output = style_sheet::compile(&styles, &Options::default()).expect("native styles");
+
+        insta::assert_snapshot!(style(&table(&output, "default", "light"), "card"), @r#"{"transform":[{"matrix":[1.0189366573464582,0.05257596754973373,-0.3024536119533534,0,-0.13834509384907342,0.5388185657832816,0.8309844692743291,0,0.19665743389957888,-0.8168775640985277,0.5562956155003035,-0.002,5,6,0,1]}]}"#);
+    }
+
+    #[test]
     fn compiles_set_and_scheme_tables_with_shared_identities() {
         let set = vars::define(
             &data(r##"{"color":{"ink":{"light":"#000","dark":"#fff"},"paper":"white"}}"##),

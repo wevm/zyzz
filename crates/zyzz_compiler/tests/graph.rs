@@ -53,6 +53,25 @@ mod transform {
     use super::api;
 
     #[test]
+    fn invalid_output_modes() {
+        insta::assert_snapshot!(
+            api::call(
+                "transform.compile",
+                r#"{"cssOutput":"nested","moduleId":"card.ts","source":"import {style} from 'zyzz';export const card=style({color:'red'});"}"#,
+            ),
+            @r#"{"error":{"name":"Css.CompileError","diagnostics":[{"code":"invalid_output","message":"cssOutput must be atomic or grouped.","path":["cssOutput"]}],"message":"[\"cssOutput\"]: cssOutput must be atomic or grouped."}}"#
+        );
+
+        let output: serde_json::Value = serde_json::from_str(&api::call(
+            "transform.compile",
+            r#"{"composition":"mixed","moduleId":"card.ts","source":"import {style} from 'zyzz';export const card=style({color:'red'});"}"#,
+        ))
+        .unwrap_or_default();
+
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
+    }
+
+    #[test]
     fn variable_slots() {
         let output: serde_json::Value = serde_json::from_str(&api::call(
             "transform.compile",

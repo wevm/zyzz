@@ -53,6 +53,9 @@ pub struct Options<'s, 'a> {
     pub css_output: Option<CssOutput>,
     /// Keeps live definitions for development updates.
     pub development: bool,
+    /// An untyped host supplied a default CSS output that is neither atomic nor grouped, which
+    /// the module's CSS compilation reports.
+    pub invalid_css_output: bool,
     /// Portable module identity.
     pub module_id: &'s str,
     /// Emits the color-scheme selection classes. Defaults to the module's own scheme helpers.
@@ -760,6 +763,10 @@ pub fn compile<'a>(
         .iter()
         .map(|(name, class)| (Arc::clone(name), Arc::clone(class)))
         .collect();
+    if options.invalid_css_output {
+        return Err(css::invalid_output(vec![Arc::from("cssOutput")]));
+    }
+
     let css_options = css::Options {
         composition: options.composition,
         contributions: &extracted.contributions,

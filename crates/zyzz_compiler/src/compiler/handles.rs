@@ -164,14 +164,14 @@ fn decode(input: &Value, previous: Option<&Vars>) -> Result<(graph::Options, Opt
         ),
         Some(_) => return Err(malformed("imports")),
     };
-    let composition = match field("composition").and_then(Value::as_str) {
-        None => None,
-        Some(value) => Some(Composition::parse(value).ok_or_else(|| malformed("composition"))?),
-    };
-    let css_output = match field("cssOutput").and_then(Value::as_str) {
-        None => None,
-        Some(value) => Some(CssOutput::parse(value).ok_or_else(|| malformed("cssOutput"))?),
-    };
+    // `Css.compile` orders every present composition other than `independent`.
+    let composition = field("composition").map(|value| {
+        value
+            .as_str()
+            .and_then(Composition::parse)
+            .unwrap_or(Composition::Ordered)
+    });
+    let css_output = field("cssOutput").map(|value| value.as_str().and_then(CssOutput::parse));
     let shared = match field("shared").and_then(Value::as_str) {
         None => None,
         Some("all") => Some(Shared::All),
@@ -194,12 +194,13 @@ fn decode(input: &Value, previous: Option<&Vars>) -> Result<(graph::Options, Opt
         compiler: field("compiler").and_then(Value::as_bool),
         composition,
         contracts: strings(field("contracts"), "contracts")?,
-        css_output,
+        css_output: css_output.flatten(),
         development: field("development")
             .and_then(Value::as_bool)
             .unwrap_or_default(),
         entry: text(field("entry")),
         imports,
+        invalid_css_output: css_output == Some(None),
         modules: strings(field("modules"), "modules")?.unwrap_or_default(),
         native,
         reset: text(field("reset")),
@@ -674,6 +675,7 @@ pub fn transform(input: &Value) -> Result<String> {
             composition: options.composition,
             css_output: options.css_output,
             development: options.development,
+            invalid_css_output: options.invalid_css_output,
             module_id,
             owners: None,
             schemes: field("schemes").and_then(Value::as_bool),

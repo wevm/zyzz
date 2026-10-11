@@ -68,6 +68,9 @@ pub struct Options {
     /// Host-resolved static imports keyed by module identity and specifier. `None` targets are
     /// externals. Omit for closed relative-graph resolution.
     pub imports: Option<Map<Map<Option<Arc<str>>>>>,
+    /// An untyped host supplied a default CSS output that is neither atomic nor grouped. Each
+    /// web module's CSS compilation reports it, as `Css.compile` validates the option first.
+    pub invalid_css_output: bool,
     /// Complete source graph keyed by stable package-relative module identities.
     pub modules: Map<Arc<str>>,
     /// Native output context. `None` compiles web modules and CSS.
@@ -452,6 +455,7 @@ fn build(options: &Options, cache: Option<&Cache>) -> Result<Option<Cache>> {
         cache.rewrite == rewrite
             && cache.reset == options.reset
             && cache.css_output == options.css_output
+            && !options.invalid_css_output
             && cache.composition == options.composition
             && cache.shared == options.shared
             && cache.entry.is_none() == options.entry.is_none()
@@ -3188,6 +3192,7 @@ impl Build<'_, '_> {
                         composition: options.composition,
                         css_output: options.css_output,
                         development: options.development,
+                        invalid_css_output: options.invalid_css_output,
                         module_id,
                         owners: Some(&self.owners),
                         schemes: Some(schemes),

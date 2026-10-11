@@ -97,12 +97,70 @@ pub struct Contract {
     pub default_layer: Option<Arc<str>>,
     /// Stable identity for generated names, such as `id-brand` or a compiler scope.
     pub identity: Option<Arc<str>>,
+    /// Creation order of the enumerable properties, which `JSON.stringify` follows. `None`
+    /// lists present properties in [`ContractKey::ORDER`].
+    pub keys: Option<Arc<[ContractKey]>>,
     /// Category mappings for variable sets.
     pub mappings: Option<Mappings>,
     /// Shorthand names that expand to several properties.
     pub shorthands: Option<Map<Arc<[Arc<str>]>>>,
     /// Whether the contract belongs to a variable set rather than a legacy theme.
     pub variable_set: bool,
+}
+
+/// An enumerable string-keyed contract property. Symbol-keyed identity and completeness never
+/// reach `JSON.stringify`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ContractKey {
+    /// `composition`
+    Composition,
+    /// `cssOutput`
+    CssOutput,
+    /// `defaultLayer`
+    DefaultLayer,
+    /// `mappings`
+    Mappings,
+    /// `shorthands`
+    Shorthands,
+    /// `variableSet`
+    VariableSet,
+}
+
+impl ContractKey {
+    /// The property order of a configuration contract, used when a contract records none.
+    pub const ORDER: [Self; 6] = [
+        Self::VariableSet,
+        Self::Mappings,
+        Self::Composition,
+        Self::DefaultLayer,
+        Self::CssOutput,
+        Self::Shorthands,
+    ];
+
+    /// Parses the TypeScript property name.
+    pub fn parse(value: &str) -> Option<Self> {
+        Some(match value {
+            "composition" => Self::Composition,
+            "cssOutput" => Self::CssOutput,
+            "defaultLayer" => Self::DefaultLayer,
+            "mappings" => Self::Mappings,
+            "shorthands" => Self::Shorthands,
+            "variableSet" => Self::VariableSet,
+            _ => return None,
+        })
+    }
+
+    /// The TypeScript property name.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Composition => "composition",
+            Self::CssOutput => "cssOutput",
+            Self::DefaultLayer => "defaultLayer",
+            Self::Mappings => "mappings",
+            Self::Shorthands => "shorthands",
+            Self::VariableSet => "variableSet",
+        }
+    }
 }
 
 /// A token category name, such as `color`, `spacing`, or a variable-set domain.

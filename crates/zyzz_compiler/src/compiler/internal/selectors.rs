@@ -28,7 +28,7 @@ use crate::compiler::internal::lightning;
 use crate::compiler::internal::scope::{self, Mode};
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Link, LinkKind};
-use crate::compiler::internal::{at_rules, identifiers, names};
+use crate::compiler::internal::{at_rules, identifiers};
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::internal::{condition, identity, theme};
@@ -206,7 +206,7 @@ fn reference(binding: Arc<str>, start: u32, end: u32) -> Result<Link> {
 }
 
 struct Resolver<'s, 'a> {
-    authored: FxHashMap<u32, String>,
+    authored: &'s FxHashMap<u32, String>,
     bindings: FxHashMap<u32, &'a Expression<'a>>,
     definitions: FxHashMap<u32, u32>,
     identities: FxHashMap<u32, Arc<str>>,
@@ -630,7 +630,7 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
         ..
     } = collector;
     let mut resolver = Resolver {
-        authored: names::collect(program),
+        authored: parsed.names(),
         bindings,
         definitions: options
             .calls

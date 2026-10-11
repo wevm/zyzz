@@ -34,7 +34,7 @@ use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
 use crate::compiler::internal::vars::{self, Variables};
 use crate::compiler::internal::{
-    at_rules, compositions, contributions, identifiers, names, packed_styles, recipe_payloads,
+    at_rules, compositions, contributions, identifiers, packed_styles, recipe_payloads,
     recipes, selectors,
 };
 use crate::data::{Data, Object};
@@ -1916,7 +1916,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let context = options.context;
     let empty = Record::new();
     let links = context.map_or(&empty, |context| &context.links);
-    let authored_names = names::collect(program);
+    let authored_names = parsed.names();
     let constants: FxHashMap<String, &'a Expression<'a>> = context
         .and_then(|context| context.constants.as_ref())
         .map(|constants| {

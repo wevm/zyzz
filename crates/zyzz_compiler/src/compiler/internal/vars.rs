@@ -21,7 +21,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use crate::compiler::internal::scope::{self, Declaration, Kind, Mode};
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{Call as LinkCall, Link, LinkKind, estree_ancestors};
-use crate::compiler::internal::{expression, names, statics};
+use crate::compiler::internal::{expression, statics};
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::internal::binding::{self, Domain};
@@ -268,7 +268,7 @@ pub fn collect<'a>(
         return Ok(empty);
     }
 
-    let authored = names::collect(program);
+    let authored = parsed.names();
     let mut scan = Scan {
         ancestors: Vec::new(),
         error: None,

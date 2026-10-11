@@ -57,3 +57,40 @@ mod create {
         );
     }
 }
+
+mod transform {
+    use super::api;
+
+    #[test]
+    fn variable_slots() {
+        let output: serde_json::Value = serde_json::from_str(&api::call(
+            "transform.compile",
+            r#"{"moduleId":"library.ts","source":"import {variable} from 'zyzz';export const gap=variable('length');"}"#,
+        ))
+        .unwrap_or_default();
+
+        insta::assert_snapshot!(output["code"].as_str().unwrap_or_default(), @r#"
+
+        import { Variable as __zyzzVariable } from 'zyzz/runtime';
+        export const gap=__zyzzVariable.create({"name":"--z-gap","type":"length","variable":true});
+        "#);
+    }
+}
+
+mod repack {
+    use super::api;
+
+    #[test]
+    fn dependency_chains() {
+        let output: serde_json::Value = serde_json::from_str(&api::call(
+            "graph.compile",
+            r#"{"modules":{"wrapper/index.ts":"import 'dep';export const loaded=true;"},"contracts":{"dep/index.js":"{\"stylesheets\":[{\"source\":\"index.ts\",\"namespaces\":[],\"key\":\"0\",\"css\":\"body{background-image:url(./pixel.svg);}\",\"layers\":[],\"start\":32,\"content\":\"import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});\"}],\"exports\":{},\"themes\":{},\"version\":31}"},"imports":{"wrapper/index.ts":{"dep":"dep/index.js"}}}"#,
+        ))
+        .unwrap_or_default();
+
+        insta::assert_snapshot!(
+            output["contracts"]["wrapper/index.ts"].as_str().unwrap_or_default(),
+            @r#"{"stylesheets":[{"source":"index.ts","namespaces":[],"key":"0","css":"body{background-image:url(./pixel.svg);}","layers":[],"start":32,"dependency":["dep"],"content":"import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});"}],"exports":{},"themes":{},"version":31}"#
+        );
+    }
+}

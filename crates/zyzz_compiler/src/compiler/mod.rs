@@ -1,6 +1,7 @@
 //! Static source extraction, module rewriting, and graph compilation without a file host.
 
 pub mod graph;
+pub mod handles;
 pub mod internal;
 pub mod source;
 pub mod transform;

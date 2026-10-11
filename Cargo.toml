@@ -86,6 +86,11 @@ opt-level = 3
 panic = "unwind"
 strip = "symbols"
 
+# The browser WebAssembly module inlines into bundles, so it trades peak speed for size.
+[profile.wasm]
+inherits = "release"
+opt-level = "z"
+
 [profile.profiling]
 debug = "full"
 inherits = "release"

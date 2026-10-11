@@ -12,7 +12,8 @@ version.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-zyzz_compiler = { workspace = true }
+# Browsers compile web CSS only, so the parser-backed compiler stays out of the module.
+zyzz_compiler = { path = "../zyzz_compiler", default-features = false }
 
 [lints]
 workspace = true

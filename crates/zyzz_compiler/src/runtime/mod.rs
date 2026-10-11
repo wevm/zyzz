@@ -6,8 +6,12 @@
 pub mod appearance;
 pub mod composition;
 pub mod internal;
+#[cfg(feature = "compiler")]
 pub mod native;
+#[cfg(feature = "compiler")]
 pub mod native_dynamic;
+#[cfg(feature = "compiler")]
 pub mod native_static;
+#[cfg(feature = "compiler")]
 pub mod native_vars;
 pub mod recipe;

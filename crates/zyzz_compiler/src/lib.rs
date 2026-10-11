@@ -5,6 +5,7 @@
 //! `zyzz_binding` and `zyzz_wasm`.
 
 pub mod api;
+#[cfg(feature = "compiler")]
 pub mod compiler;
 pub mod config;
 pub mod data;
@@ -12,6 +13,7 @@ pub mod error;
 pub mod generated;
 pub mod internal;
 pub mod js;
+#[cfg(feature = "compiler")]
 pub mod react_native;
 pub mod runtime;
 pub mod style;

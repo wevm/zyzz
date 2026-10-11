@@ -73,10 +73,15 @@ pub enum Catalog {
 pub struct Configuration {
     /// Bound theme handles.
     pub catalog: Catalog,
-    /// The contract every handle and bound helper shares.
+    /// The contract every handle and bound helper shares. It carries the composition, CSS
+    /// output, default layer, shorthands, and identity.
     pub contract: Arc<Contract>,
+    /// The consumer-owned id.
+    pub id: Option<Arc<str>>,
     /// The options after variable sets become theme or themes entries, in authored order.
     pub input: Object,
+    /// Ordered layer names.
+    pub layers: Option<Vec<Arc<str>>>,
     /// Renderer props format.
     pub output: Option<Output>,
     /// Shorthands validated by [`shorthands::read`].
@@ -521,10 +526,22 @@ pub fn create(options: &Data) -> Result<Configuration> {
         }
     };
 
+    let layers = match get(&input, "layers") {
+        Data::Array(layers) => Some(
+            layers
+                .iter()
+                .filter_map(|layer| layer.as_str().map(Arc::from))
+                .collect(),
+        ),
+        _ => None,
+    };
+
     Ok(Configuration {
         catalog,
         contract,
+        id,
         input: Object::from_entries(input),
+        layers,
         output,
         shorthands,
         storage_key,

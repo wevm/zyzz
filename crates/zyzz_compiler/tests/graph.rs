@@ -25,6 +25,14 @@ mod compile {
     }
 
     #[test]
+    fn malformed_contracts() {
+        insta::assert_snapshot!(
+            api::call("graph.compile", r#"{"contracts":{"lib":"{"},"modules":{}}"#),
+            @r#"{"error":{"name":"Source.ExtractError","diagnostics":[{"code":"unsupported_syntax","end":0,"message":"Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)","source":"lib","start":0}],"message":"lib:0: Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)"}}"#
+        );
+    }
+
+    #[test]
     fn invalid_contracts() {
         insta::assert_snapshot!(
             api::call("graph.compile", r#"{"contracts":{"lib":"{}"},"modules":{}}"#),

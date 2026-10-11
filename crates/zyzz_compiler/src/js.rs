@@ -10,8 +10,10 @@ use indexmap::IndexMap;
 use oxc_syntax::number::ToJsString;
 use rustc_hash::FxBuildHasher;
 
+mod json;
 mod math;
 
+pub use json::json_error;
 pub use math::{cos, sin, tan};
 
 /// Formats a number like ECMAScript `Number.prototype.toString()`.

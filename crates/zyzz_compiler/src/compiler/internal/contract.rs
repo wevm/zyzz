@@ -551,8 +551,9 @@ pub fn read(
     module_id: &str,
     hooks: &Hooks<'_>,
 ) -> Result<Library> {
-    let parsed: serde_json::Value =
-        serde_json::from_str(source).map_err(|error| Error::Message(error.to_string()))?;
+    let parsed: serde_json::Value = serde_json::from_str(source).map_err(|error| {
+        Error::Message(js::json_error(source).unwrap_or_else(|| error.to_string()))
+    })?;
     let parsed = Data::from_json(&parsed);
     let data = record(&parsed)?;
     let Some(version) = supported(get(data, "version")) else {

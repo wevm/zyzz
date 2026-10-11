@@ -9,6 +9,9 @@ pub enum Error {
     Config(String),
     /// `Css.CompileError` with every compilation diagnostic.
     Css(Vec<crate::web::css::Diagnostic>),
+    /// `Source.ExtractError` with every source diagnostic, in source order.
+    #[cfg(feature = "compiler")]
+    Extract(crate::compiler::source::ExtractError),
     /// A plain `Error` with a caller-visible message.
     Message(String),
     /// `MissingTransformError`: authoring that only the compiler can evaluate.
@@ -61,6 +64,8 @@ impl Error {
             | Self::Themes { message, .. }
             | Self::Variants(message) => message.clone(),
             Self::Css(diagnostics) => crate::web::css::error_message(diagnostics),
+            #[cfg(feature = "compiler")]
+            Self::Extract(error) => error.message(),
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
             Self::Style(diagnostics) => crate::style::error_message(diagnostics),
             #[cfg(feature = "compiler")]

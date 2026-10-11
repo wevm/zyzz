@@ -13,6 +13,7 @@ pub mod error;
 pub mod generated;
 pub mod internal;
 pub mod js;
+pub mod mapping;
 #[cfg(feature = "compiler")]
 pub mod react_native;
 pub mod runtime;

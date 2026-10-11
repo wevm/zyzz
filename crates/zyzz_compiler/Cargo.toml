@@ -67,6 +67,22 @@ name = "compiler"
 required-features = ["compiler"]
 
 [[test]]
+name = "contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_bindings"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_media"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_vars"
+required-features = ["compiler"]
+
+[[test]]
 name = "react_native"
 required-features = ["compiler"]
 

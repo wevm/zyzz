@@ -17,6 +17,7 @@ use zyzz_compiler::compiler::internal::{statics, vars};
 use zyzz_compiler::error::Error;
 use zyzz_compiler::internal::identity;
 use zyzz_compiler::js::Record;
+use zyzz_compiler::web::internal::contributions::Kind;
 
 /// The source adapter's namespace hash for variable bindings.
 fn namespace(value: &str) -> String {
@@ -231,13 +232,24 @@ fn render(module_id: &str, source: &str, native: bool) -> String {
     }
 
     for registration in &variables.registrations {
+        let Kind::Property {
+            inherits,
+            initial_value,
+            name,
+            syntax,
+        } = &registration.kind
+        else {
+            continue;
+        };
+        let mut initial = String::new();
+
+        if let Some(value) = initial_value {
+            value.write(&mut initial);
+        }
+
         let _ = writeln!(
             output,
-            "registration {} {} inherits={} initial={}",
-            registration.name,
-            registration.syntax,
-            registration.inherits,
-            registration.initial_value.to_js_string()
+            "registration {name} {syntax} inherits={inherits} initial={initial}"
         );
     }
 

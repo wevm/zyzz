@@ -99,9 +99,11 @@ export function call<result>(operation: string, input: unknown): result {
  * @throws {Native.CompileError} For native features outside the static boundary.
  */
 export function decode<result>(json: string): result {
-  const output = JSON.parse(json) as { readonly error?: Failure | undefined }
+  const output = JSON.parse(json) as {
+    readonly error?: Failure | undefined
+  } | null
 
-  if (output.error) throw failure(output.error)
+  if (output?.error) throw failure(output.error)
 
   return output as result
 }

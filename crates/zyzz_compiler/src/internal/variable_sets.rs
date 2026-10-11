@@ -157,7 +157,7 @@ pub fn build(
                 if queries.container_names.iter().any(|name| {
                     !names
                         .iter()
-                        .any(|candidate| candidate.as_str() == Some(name))
+                        .any(|candidate| candidate.as_str() == Some(name.as_str()))
                 }) {
                     return Err(invalid_strings(
                         &[key.to_owned()],

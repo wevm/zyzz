@@ -1,21 +1,29 @@
 //! Compiler stages shared by source extraction, transforms, and graph compilation.
 
 pub mod applications;
+pub mod at_rules;
+pub mod color_profiles;
 pub mod composition_bindings;
 pub mod compositions;
 pub mod configurations;
 pub mod contract;
 pub mod contributions;
+pub mod css_hooks;
+pub mod descriptors;
 pub mod dynamic;
 pub mod edits;
 pub mod expression;
+pub mod functions;
 pub mod identifiers;
+pub mod keyframes;
 pub mod lightning;
 pub mod names;
+pub mod namespaces;
 pub mod native_bindings;
 pub mod native_media;
 pub mod native_vars;
 pub mod packed_styles;
+pub mod properties;
 pub mod recipe_conditions;
 pub mod recipe_payloads;
 pub mod recipes;
@@ -27,4 +35,5 @@ pub mod stylesheets;
 pub mod syntax;
 pub mod themes;
 pub mod vars;
+pub mod view_transitions;
 pub mod wire;

@@ -1,12 +1,21 @@
 //! Carries source-owned stylesheet sections across packed boundaries and rebases their assets.
 
+use std::fmt::Write as _;
 use std::sync::Arc;
 
+use lightningcss::properties::custom::{Token, TokenOrValue};
+use lightningcss::rules::CssRule;
+use lightningcss::rules::keyframes::KeyframesName;
+use lightningcss::values::url::Url;
+use lightningcss::visitor::{Visit, VisitTypes, Visitor};
 use rustc_hash::FxHashMap;
 
+use crate::compiler::internal::lightning::Options;
+use crate::compiler::internal::{at_rules, namespaces};
 use crate::data::Data;
 use crate::error::{Error, Result};
-use crate::mapping::gen_mapping::EncodedSourceMap;
+use crate::js;
+use crate::mapping::gen_mapping::{EncodedSourceMap, GenMapping, Mapping, Position};
 use crate::web::internal::contributions;
 use crate::web::internal::namespace;
 
@@ -334,29 +343,465 @@ pub struct Rendered {
 
 /// Combines reachable sections, layer constraints, source maps, and asset identities.
 ///
+/// Duplicate sections with one source and key collapse. Namespaces and relative assets are
+/// rewritten per section, and named rules (counter styles, position fallbacks, palettes, color
+/// profiles, functions, custom media, and keyframes) must agree across sources.
+///
 /// # Errors
 ///
-/// Returns [`Error::Conflict`] for contributions that disagree, and CSS parse failures.
-// Placeholder until the at-rule port lands. Sections without CSS still order their layers.
+/// Returns [`Error::Conflict`] for conflicting sections, namespace URIs, or rule
+/// identities, and the at-rule transport's, layer order's, or asset resolution's messages.
 pub fn render(sections: &[Section]) -> Result<Rendered> {
-    if sections.iter().any(|section| !section.css.is_empty()) {
-        return Err(Error::Message(
-            "Stylesheet rendering is not available in this build.".to_owned(),
-        ));
+    let mut seen: Vec<((&str, Option<&str>), Signature<'_>)> = Vec::new();
+    let mut ordered: Vec<&Section> = Vec::new();
+
+    for section in sections {
+        let identity = (&*section.source, section.key.as_deref());
+        let signature = Signature::of(section);
+
+        match seen.iter().find(|(prior, _)| *prior == identity) {
+            Some((_, prior)) if *prior != signature => {
+                return Err(conflict(
+                    section,
+                    "Conflicting packed stylesheet contributions.",
+                ));
+            }
+            Some(_) => {}
+            None => {
+                seen.push((identity, signature));
+                ordered.push(section);
+            }
+        }
     }
 
-    let lists: Vec<&[Arc<str>]> = sections
+    ordered.sort_by_key(|section| rank(&section.css));
+
+    let mut uris: FxHashMap<&str, &str> = FxHashMap::default();
+
+    for section in &ordered {
+        for entry in section.namespaces.iter().flatten() {
+            if uris
+                .insert(&entry.name, &entry.uri)
+                .is_some_and(|previous| previous != &*entry.uri)
+            {
+                return Err(conflict(section, "Conflicting namespace identity."));
+            }
+        }
+    }
+
+    let lists: Vec<&[Arc<str>]> = ordered
         .iter()
         .flat_map(|section| section.layers.iter().map(Vec::as_slice))
         .collect();
     let layers = contributions::order(&lists).map_err(Error::Message)?;
+    let mut map = GenMapping::new(Some("zyzz.shared.css"));
+    let mut state = Relocation::default();
+    let mut chunks: Vec<String> = Vec::new();
+
+    if !layers.is_empty() {
+        chunks.push(format!("@layer {};", layers.join(",")));
+    }
+
+    let mut line = u32::try_from(chunks.len()).unwrap_or(u32::MAX) + 1;
+
+    for section in ordered {
+        if section.css.is_empty() {
+            continue;
+        }
+
+        let (namespaced, _) = namespaces::rewrite(
+            &section.css,
+            section.namespaces.as_deref().unwrap_or_default(),
+            None,
+            false,
+        )?;
+
+        state.changed = namespaced != *section.css;
+        state.owner = section
+            .owner
+            .as_ref()
+            .unwrap_or(&section.source)
+            .to_string();
+        state.source = section.source.to_string();
+
+        let rewritten = at_rules::transform_with(
+            &Options {
+                code: &namespaced,
+                filename: &section.source,
+                ..Options::default()
+            },
+            &mut state,
+        )?;
+
+        let css = if state.changed {
+            // Decoding the transformed bytes drops a leading byte order mark.
+            let code = rewritten
+                .code
+                .strip_prefix('\u{feff}')
+                .unwrap_or(&rewritten.code);
+
+            code.trim_end_matches(js::is_whitespace).to_owned()
+        } else {
+            section.css.to_string()
+        };
+
+        let original = contribution(
+            section.content.as_deref().unwrap_or_default(),
+            section.start.unwrap_or_default(),
+        );
+        let count = u32::try_from(css.split('\n').count()).unwrap_or(u32::MAX);
+
+        map.set_source_content(&section.source, section.content.as_deref());
+
+        for index in 0..count {
+            map.add_mapping(&Mapping {
+                generated: Position {
+                    column: 0,
+                    line: line.saturating_add(index),
+                },
+                name: None,
+                original: Some(original),
+                source: Some(&section.source),
+            });
+        }
+
+        chunks.push(css);
+        line = line.saturating_add(count);
+    }
 
     Ok(Rendered {
-        css: if layers.is_empty() {
-            String::new()
-        } else {
-            format!("@layer {};", layers.join(","))
-        },
-        ..Rendered::default()
+        assets: state.assets,
+        css: chunks.join("\n"),
+        map: map.to_encoded_map(),
+        owners: state.owners,
     })
+}
+
+/// The line count and last line length of `content.slice(0, start)`, in UTF-16 code units, which
+/// a start inside a surrogate pair splits as JavaScript does.
+fn contribution(content: &str, start: u32) -> Position {
+    let mut position = Position { column: 0, line: 1 };
+
+    for unit in content
+        .encode_utf16()
+        .take(usize::try_from(start).unwrap_or(usize::MAX))
+    {
+        if unit == u16::from(b'\n') {
+            position.line += 1;
+            position.column = 0;
+        } else {
+            position.column += 1;
+        }
+    }
+
+    position
+}
+
+/// The values whose `JSON.stringify` deduplicates sections with one source and key.
+#[derive(PartialEq)]
+struct Signature<'s> {
+    content: Option<&'s str>,
+    css: &'s str,
+    layers: &'s [Vec<Arc<str>>],
+    // Extracted entries serialize with a leading `kind`, so they differ from packed entries
+    // unless the list is empty.
+    namespaces: Option<(&'s [namespace::Definition], bool)>,
+    start: Option<u32>,
+}
+
+impl<'s> Signature<'s> {
+    fn of(section: &'s Section) -> Self {
+        Self {
+            content: section.content.as_deref(),
+            css: &section.css,
+            layers: &section.layers,
+            namespaces: section
+                .namespaces
+                .as_deref()
+                .map(|list| (list, section.authored_namespaces && !list.is_empty())),
+            start: section.start,
+        }
+    }
+}
+
+/// Orders imports, then namespace statements, before other rules.
+fn rank(css: &str) -> u8 {
+    if css.starts_with("@import ") {
+        0
+    } else if css.starts_with("@namespace ") {
+        1
+    } else {
+        2
+    }
+}
+
+#[cold]
+fn conflict(section: &Section, message: impl Into<String>) -> Error {
+    Error::Conflict {
+        message: message.into(),
+        source: Arc::clone(section.owner.as_ref().unwrap_or(&section.source)),
+    }
+}
+
+/// Assigns a record entry, keeping the position of an existing key as object assignment does.
+/// Placeholder keys are never array indexes, so insertion order is the enumeration order.
+fn assign(records: &mut Vec<(String, String)>, key: &str, value: String) {
+    match records.iter_mut().find(|(existing, _)| existing == key) {
+        Some(entry) => entry.1 = value,
+        None => records.push((key.to_owned(), value)),
+    }
+}
+
+/// A named rule's first source and signature.
+struct Identity {
+    signature: String,
+    source: String,
+}
+
+/// Relocation and identity state shared across sections while rendering.
+#[derive(Default)]
+struct Relocation {
+    animations: FxHashMap<String, Identity>,
+    assets: Vec<(String, String)>,
+    changed: bool,
+    identities: FxHashMap<String, Identity>,
+    owner: String,
+    owners: Vec<(String, String)>,
+    source: String,
+}
+
+impl Relocation {
+    /// Returns the placeholder for a relative asset, recording its target and owner.
+    fn relocate(&mut self, url: &str) -> Result<Option<String>> {
+        if url.is_empty() || absolute(url) {
+            return Ok(None);
+        }
+
+        self.changed = true;
+
+        let target = resolve(&self.source, url)?;
+        let key = format!("zyzz-asset:{}", encode_uri_component(&target));
+
+        assign(&mut self.assets, &key, target);
+        assign(&mut self.owners, &key, self.owner.clone());
+
+        Ok(Some(key))
+    }
+
+    /// Records a named rule, failing when another source or a different rule claimed it.
+    fn claim(&mut self, animation: bool, key: String, name: &str, signature: String) -> Result<()> {
+        let claims = if animation {
+            &mut self.animations
+        } else {
+            &mut self.identities
+        };
+
+        if claims.get(&key).is_some_and(|previous| {
+            previous.source != self.source || previous.signature != signature
+        }) {
+            let message = if animation {
+                format!("Conflicting animation identity: {name}; supply distinct declaration ids.")
+            } else {
+                format!("Conflicting stylesheet identity: {name}; supply distinct declaration ids.")
+            };
+
+            return Err(Error::Conflict {
+                message,
+                source: Arc::from(self.owner.as_str()),
+            });
+        }
+
+        claims.insert(
+            key,
+            Identity {
+                signature,
+                source: self.source.clone(),
+            },
+        );
+
+        Ok(())
+    }
+}
+
+impl<'i> Visitor<'i> for Relocation {
+    type Error = Error;
+
+    fn visit_types(&self) -> VisitTypes {
+        VisitTypes::RULES | VisitTypes::URLS
+    }
+
+    fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<()> {
+        match rule {
+            CssRule::Import(import) => {
+                if let Some(url) = self.relocate(&import.url)? {
+                    at_rules::relocate_import(import, &url);
+                }
+            }
+            CssRule::Keyframes(keyframes) => {
+                let name = match &keyframes.name {
+                    KeyframesName::Custom(name) => name.to_string(),
+                    KeyframesName::Ident(name) => name.0.to_string(),
+                };
+
+                self.claim(true, name.clone(), &name, signature(&keyframes.keyframes))?;
+            }
+            CssRule::CounterStyle(counter) => {
+                let name = counter.name.0.to_string();
+
+                self.claim(
+                    false,
+                    format!("counter-style:{name}"),
+                    &name,
+                    signature(&counter.declarations),
+                )?;
+            }
+            CssRule::FontPaletteValues(palette) => {
+                let name = palette.name.0.to_string();
+
+                self.claim(
+                    false,
+                    format!("font-palette-values:{name}"),
+                    &name,
+                    signature(&palette.properties),
+                )?;
+            }
+            CssRule::PositionTry(position) => {
+                let name = position.name.0.to_string();
+
+                self.claim(
+                    false,
+                    format!("position-try:{name}"),
+                    &name,
+                    signature(&position.declarations),
+                )?;
+            }
+            CssRule::Unknown(unknown) => {
+                let palette = unknown.name.starts_with("-zyzz-fpv-");
+                let named = palette
+                    || ["color-profile", "function", "custom-media"].contains(&&*unknown.name);
+                let name = match unknown.prelude.0.first() {
+                    Some(TokenOrValue::DashedIdent(name)) if named => Some(name.0.to_string()),
+                    Some(TokenOrValue::Function(function))
+                        if named && &*unknown.name == "function" =>
+                    {
+                        Some(function.name.0.to_string())
+                    }
+                    _ => None,
+                };
+
+                if let Some(name) = name {
+                    let kind = if palette {
+                        "font-palette-values"
+                    } else {
+                        &unknown.name
+                    };
+                    // Debug renderings escape NUL, so the separator keeps the pair unambiguous.
+                    let data = format!(
+                        "{}\0{}",
+                        signature(&unknown.prelude),
+                        signature(&unknown.block)
+                    );
+
+                    self.claim(false, format!("{kind}:{name}"), &name, data)?;
+                }
+            }
+            _ => {}
+        }
+
+        rule.visit_children(self)
+    }
+
+    fn visit_url(&mut self, url: &mut Url<'i>) -> Result<()> {
+        if let Some(value) = self.relocate(&url.url)? {
+            url.url = value.into();
+        }
+
+        Ok(())
+    }
+}
+
+/// An equality key for a rule node, standing in for `JSON.stringify` of the binding's AST.
+///
+/// The `Debug` rendering covers every field the JSON form has, including source locations of
+/// URLs. Token sign flags and integer values, which the JSON form omits, are cleared first. The
+/// keys differ from JSON equality only where negative zero meets zero.
+fn signature<'i, R, T>(node: &T) -> String
+where
+    Detach: Visitor<'i, R, Error = std::convert::Infallible>,
+    R: Visit<'i, R, Detach>,
+    T: Clone + std::fmt::Debug + Visit<'i, R, Detach>,
+{
+    let mut node = node.clone();
+    let Ok(()) = node.visit(&mut Detach);
+
+    format!("{node:?}")
+}
+
+/// Clears the number token fields the binding's JSON form omits.
+struct Detach;
+
+impl<'i> Visitor<'i> for Detach {
+    type Error = std::convert::Infallible;
+
+    fn visit_types(&self) -> VisitTypes {
+        VisitTypes::TOKENS
+    }
+
+    fn visit_token(
+        &mut self,
+        token: &mut TokenOrValue<'i>,
+    ) -> std::result::Result<(), Self::Error> {
+        if let TokenOrValue::Token(
+            Token::Number {
+                has_sign,
+                int_value,
+                ..
+            }
+            | Token::Percentage {
+                has_sign,
+                int_value,
+                ..
+            }
+            | Token::Dimension {
+                has_sign,
+                int_value,
+                ..
+            },
+        ) = token
+        {
+            *has_sign = false;
+            *int_value = None;
+        }
+
+        token.visit_children(self)
+    }
+}
+
+/// Matches `/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i`.
+fn absolute(url: &str) -> bool {
+    let mut bytes = url.bytes();
+
+    match bytes.next() {
+        Some(b'/' | b'?' | b'#') => true,
+        Some(first) if first.is_ascii_alphabetic() => {
+            bytes.find(|byte| !(byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'.' | b'-')))
+                == Some(b':')
+        }
+        _ => false,
+    }
+}
+
+/// Percent-encodes UTF-8 bytes like `encodeURIComponent`, keeping `A-Za-z0-9-_.!~*'()`.
+fn encode_uri_component(value: &str) -> String {
+    let mut output = String::with_capacity(value.len());
+
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&byte) {
+            output.push(char::from(byte));
+        } else {
+            let _ = write!(output, "%{byte:02X}");
+        }
+    }
+
+    output
 }

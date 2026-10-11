@@ -29,7 +29,7 @@ use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
 use crate::compiler::internal::vars::{self, Variables};
 use crate::compiler::internal::{
-    compositions, contributions, identifiers, lightning, names, packed_styles, recipe_payloads,
+    compositions, contributions, css_hooks, identifiers, names, packed_styles, recipe_payloads,
     recipes, selectors,
 };
 use crate::data::{Data, Object};
@@ -1685,9 +1685,9 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                     .copied()
                     .unwrap_or(self.call.span);
 
-                if let Err(message) = lightning::transform(
+                if let Err(message) = css_hooks::transform(
                     &format!(".z{{{condition}{{color:red;}}}}"),
-                    lightning::Hooks::default(),
+                    css_hooks::Hooks::default(),
                 ) {
                     self.report(
                         format!("Invalid selector or condition: {message}"),
@@ -2585,7 +2585,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             .map_err(|error| invalid(&error.text(), span))?
             .css;
 
-            lightning::transform(&css, lightning::Hooks::default())
+            css_hooks::transform(&css, css_hooks::Hooks::default())
                 .map_err(|message| invalid(&message, span))?;
         }
 
@@ -2658,15 +2658,15 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
                 Ok(())
             };
             let hooks = if context.is_none() {
-                lightning::Hooks {
+                css_hooks::Hooks {
                     rule: Some(&mut rule),
                     url: Some(&mut url),
                 }
             } else {
-                lightning::Hooks::default()
+                css_hooks::Hooks::default()
             };
 
-            lightning::transform(&rendered, hooks).map_err(Error::message)?;
+            css_hooks::transform(&rendered, hooks).map_err(Error::message)?;
         }
 
         Ok(data)

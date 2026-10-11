@@ -30,6 +30,8 @@ oxc_parser = "=0.148.0"
 oxc_semantic = "=0.148.0"
 oxc_span = "=0.148.0"
 oxc_syntax = { version = "=0.148.0", features = ["to_js_string"] }
+parcel_selectors = "=0.28.3"
+parcel_sourcemap = { version = "=2.1.1", features = ["json"] }
 rustc-hash = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }

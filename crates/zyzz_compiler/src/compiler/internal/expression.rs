@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use oxc_ast::ast::{Expression, TemplateLiteral, UnaryOperator};
+use zyzz_css_syntax::Lexer;
 
 use crate::internal::binding::Domain;
 use crate::internal::literal;
@@ -12,10 +13,21 @@ use crate::js;
 /// Matches a CSS value against a property grammar, as css-tree's `lexer.matchProperty` does.
 ///
 /// Arguments are the CSS property name, such as `box-shadow`, and the value text. The matcher
-/// returns whether the match reports no error, and `false` where css-tree would throw. The
-/// grammar lexer lives in `zyzz_css_syntax`; callers pass its matcher here, so these checks
-/// never depend on a particular lexer instance.
+/// returns whether the match reports no error, and `false` where css-tree would throw.
+/// [`matcher`] supplies the css-tree grammar from `zyzz_css_syntax`.
 pub type Matcher<'m> = &'m dyn Fn(&str, &str) -> bool;
+
+/// Returns the [`Matcher`] backed by the css-tree property grammar.
+///
+/// A lexer exception, such as a grammar referencing an unknown type, counts as a mismatch, as
+/// the TypeScript `try`/`catch` around `lexer.matchProperty` does.
+pub fn matcher() -> impl Fn(&str, &str) -> bool {
+    |property, value| {
+        Lexer::get()
+            .match_property(property, value)
+            .is_ok_and(|result| result.error.is_none())
+    }
+}
 
 /// Removes a trailing ` !custom`, ` !important`, or both, like
 /// `.replace(/(?: !custom)?(?: !important)?$/, '')`.

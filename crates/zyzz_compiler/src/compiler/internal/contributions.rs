@@ -25,7 +25,7 @@ use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{
     self, FunctionParameter, FunctionSignature, Link, LinkKind, TokenRead,
 };
-use crate::compiler::internal::{lightning, statics};
+use crate::compiler::internal::{css_hooks, statics};
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::generated::literal::LENGTH_UNITS;
@@ -2507,9 +2507,9 @@ fn feature_values(input: &Data, result: &mut Vec<Kind>) -> std::result::Result<(
     };
 
     // Validate the native prelude before shielding newer body descriptors.
-    lightning::transform(
+    css_hooks::transform(
         &format!("@font-feature-values {list} {{}}"),
-        lightning::Hooks::default(),
+        css_hooks::Hooks::default(),
     )?;
 
     let mut entries = Vec::new();

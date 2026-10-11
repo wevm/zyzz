@@ -608,16 +608,9 @@ fn strip_script_extension(module_id: &str) -> &str {
     }
 }
 
+/// Validates packed CSS as `AtRules.transform` with `errorRecovery: false` does.
 fn validate_css(filename: &str, css: &str) -> Result<()> {
-    let options = lightningcss::stylesheet::ParserOptions {
-        error_recovery: false,
-        filename: filename.to_owned(),
-        ..lightningcss::stylesheet::ParserOptions::default()
-    };
-
-    lightningcss::stylesheet::StyleSheet::parse(css, options)
-        .map(|_| ())
-        .map_err(|error| Error::Message(error.kind.to_string()))
+    crate::compiler::internal::at_rules::validate(css, filename)
 }
 
 /// `JSON.stringify` of token values, which identifies explicit theme ids.

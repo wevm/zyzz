@@ -57,15 +57,16 @@ fn invalid(message: &str, span: Span) -> Error {
 /// Collects static bindings for a parsed module.
 ///
 /// `imports` maps local import names to constant values resolved from other modules.
+#[expect(
+    clippy::implicit_hasher,
+    reason = "Static data uses the crate's one internal hasher."
+)]
 pub fn collect<'a>(
     allocator: &'a Allocator,
     program: &'a Program<'a>,
     semantic: &Semantic<'a>,
     imports: FxHashMap<String, &'a Expression<'a>>,
 ) -> Static<'a> {
-    let mut values: FxHashMap<u32, &'a Expression<'a>> = FxHashMap::default();
-    let mut order = Vec::new();
-
     fn collect_values<'a>(
         statements: &'a [Statement<'a>],
         values: &mut FxHashMap<u32, &'a Expression<'a>>,
@@ -105,6 +106,9 @@ pub fn collect<'a>(
             }
         }
     }
+
+    let mut values: FxHashMap<u32, &'a Expression<'a>> = FxHashMap::default();
+    let mut order = Vec::new();
 
     collect_values(&program.body, &mut values, &mut order);
 
@@ -575,9 +579,6 @@ impl<'a> Static<'a> {
                 crate::compiler::internal::expression::literal_text(&member.expression)
                     .filter(|_| is_literal(&member.expression)),
             ),
-            AstKind::StaticMemberExpression(_)
-            | AstKind::ComputedMemberExpression(_)
-            | AstKind::PrivateFieldExpression(_) => return false,
             _ => return false,
         };
         let value = self.initial_member(object, key, &mut FxHashSet::default());
@@ -1130,7 +1131,7 @@ impl<'a> Static<'a> {
         for property in expanded {
             let value = self.normalize(&property.value, allowed, opaque, omit_undefined)?;
 
-            if std::ptr::eq(value, &property.value) {
+            if std::ptr::eq(value, &raw const property.value) {
                 normalized.push(property);
             } else {
                 let mut copy = property.clone_in_with_semantic_ids(self.allocator);
@@ -1141,7 +1142,7 @@ impl<'a> Static<'a> {
 
         let unchanged = normalized.len() == object.properties.len()
             && normalized.iter().zip(&object.properties).all(|(property, original)| {
-                matches!(original, ObjectPropertyKind::ObjectProperty(original) if std::ptr::eq(*property, &**original))
+                matches!(original, ObjectPropertyKind::ObjectProperty(original) if std::ptr::eq(*property, &raw const **original))
             });
 
         if unchanged {

@@ -122,7 +122,7 @@ pub fn template<'a>(
                 match template(nested, depth + 1, resolve, &prefix)? {
                     Template::Text(text) => parts.push(Part::Text(text.into())),
                     Template::Expression(expression) => {
-                        parts.extend(expression.parts.iter().cloned())
+                        parts.extend(expression.parts.iter().cloned());
                     }
                 }
             }

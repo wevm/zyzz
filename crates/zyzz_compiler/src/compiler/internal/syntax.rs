@@ -55,6 +55,10 @@ pub fn parse<'a>(allocator: &'a Allocator, source: &'a str, module_id: &str) -> 
 }
 
 /// Matches `/\.[cm]?ts$/`.
+#[expect(
+    clippy::case_sensitive_file_extension_comparisons,
+    reason = "Module ids match case-sensitively, as the TypeScript host does."
+)]
 fn typescript(module_id: &str) -> bool {
     module_id.ends_with(".ts") || module_id.ends_with(".mts") || module_id.ends_with(".cts")
 }
@@ -91,8 +95,8 @@ fn parse_as<'a>(allocator: &'a Allocator, source: &'a str, source_type: SourceTy
 fn error(diagnostic: &OxcDiagnostic, offsets: &Utf16Index) -> SyntaxError {
     let span = diagnostic.labels.first();
     let (start, end) = span.map_or((0, 0), |label| {
-        let start = u32::try_from(label.offset()).unwrap_or(0);
-        let end = start + u32::try_from(label.len()).unwrap_or(0);
+        let start = label.offset();
+        let end = start + label.len();
 
         (offsets.utf16(start), offsets.utf16(end))
     });

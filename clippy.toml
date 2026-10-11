@@ -1,3 +1,4 @@
+doc-valid-idents = ["ESTree", "JavaScript", "TypeScript", "WebAssembly", ".."]
 disallowed-methods = [
   { path = "std::env::var", reason = "The compiler core reads no environment. Pass options from the binding." },
   { path = "std::fs::read", reason = "The compiler core reads no files. Hosts supply source text." },

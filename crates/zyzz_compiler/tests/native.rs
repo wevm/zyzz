@@ -72,6 +72,7 @@ fn extracted<'a>(source: &str, definitions: &[(&str, &str, &str)]) -> Extracted<
 
     Extracted {
         calls,
+        collected_themes: false,
         contribution_calls: Vec::new(),
         contribution_starts: Vec::new(),
         contributions: Vec::new(),

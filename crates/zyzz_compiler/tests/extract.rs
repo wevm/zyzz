@@ -143,6 +143,7 @@ export namespace styles {
             "calls": [
               {
                 "cssName": "7Zcbld-styles-card",
+                "cssNamespace": null,
                 "identity": "z-style-7Zcbld-styles-card",
                 "end": 156,
                 "name": "style-aohfip19p1g4b-88",
@@ -150,6 +151,7 @@ export namespace styles {
               },
               {
                 "cssName": "7Zcbld-styles-button",
+                "cssNamespace": null,
                 "recipe": {"axes":[["size",["small"]]],"defaults":[["size","small"]]},
                 "staticRecipe": {
                   "axes": [["size",["small"]]],
@@ -213,7 +215,8 @@ export namespace styles {
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -345,6 +348,7 @@ export const card = style({ animationName: fade, gap })
             "calls": [
               {
                 "cssName": "POmH9e-card",
+                "cssNamespace": null,
                 "identity": "z-style-POmH9e-card",
                 "end": 500,
                 "name": "style-19frzcc1owwamk-465",
@@ -378,7 +382,8 @@ export const card = style({ animationName: fade, gap })
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -420,9 +425,27 @@ namespace styles {
                 "name": "composition-1bsvjez17nl8f7-77",
                 "start": 77
               },
-              {"cssName":"IqYpBh-styles-base","end":181,"name":"style-1bsvjez17nl8f7-158","start":158},
-              {"cssName":"IqYpBh-styles-tone","end":241,"name":"style-1bsvjez17nl8f7-205","start":205},
-              {"cssName":"IqYpBh-styles-merged","end":295,"name":"style-1bsvjez17nl8f7-267","start":267}
+              {
+                "cssName": "IqYpBh-styles-base",
+                "cssNamespace": null,
+                "end": 181,
+                "name": "style-1bsvjez17nl8f7-158",
+                "start": 158
+              },
+              {
+                "cssName": "IqYpBh-styles-tone",
+                "cssNamespace": null,
+                "end": 241,
+                "name": "style-1bsvjez17nl8f7-205",
+                "start": 205
+              },
+              {
+                "cssName": "IqYpBh-styles-merged",
+                "cssNamespace": null,
+                "end": 295,
+                "name": "style-1bsvjez17nl8f7-267",
+                "start": 267
+              }
             ],
             "styles": {
               "styles": [
@@ -465,7 +488,8 @@ namespace styles {
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -493,7 +517,7 @@ export const text = style({ color: vars.color.text })
             {
               "complete": false,
               "identity": "src-native-2rTliMKwCGU-style",
-              "keys": ["variableSet","cssOutput"],
+              "keys": ["variableSet","mappings","cssOutput"],
               "variableSet": true,
               "cssOutput": "atomic"
             }
@@ -594,6 +618,7 @@ export const text = style({ color: vars.color.text })
                   ]
                 },
                 "cssName": "MKwCGU-text",
+                "cssNamespace": null,
                 "identity": "z-style-MKwCGU-text",
                 "end": 242,
                 "name": "style-at7zn01485b3q-209",
@@ -735,7 +760,8 @@ export const text = style({ color: vars.color.text })
                   }
                 }
               ]
-            ]
+            ],
+            "collectedThemes": true
           }
         }
         "#);
@@ -763,6 +789,7 @@ export const empty = style({})
               {
                 "portable": "z-content-_5b__5b__22_color_22__2c__22_red_22__2c_false_5d__5d_",
                 "cssName": "MHp5yO-card",
+                "cssNamespace": null,
                 "identity": "z-style-MHp5yO-card",
                 "end": 73,
                 "name": "style-725sqk1ijmgmw-50",
@@ -771,6 +798,7 @@ export const empty = style({})
               {
                 "portable": "z-style-id-named",
                 "cssName": "named",
+                "cssNamespace": null,
                 "identity": "z-style-id-named",
                 "end": 136,
                 "name": "style-725sqk1ijmgmw-95",
@@ -778,6 +806,7 @@ export const empty = style({})
               },
               {
                 "cssName": "MHp5yO-empty",
+                "cssNamespace": null,
                 "identity": "z-style-MHp5yO-empty",
                 "end": 167,
                 "name": "style-725sqk1ijmgmw-158",
@@ -799,7 +828,8 @@ export const empty = style({})
             "themeAliases": [],
             "themeCalls": [],
             "themeReferences": [],
-            "vars": []
+            "vars": [],
+            "collectedThemes": false
           }
         }
         "#);
@@ -985,6 +1015,7 @@ export const panel = style({ animationName: fade, selectors: { [`${card} &`]: { 
               "calls": [
                 {
                   "cssName": "1dmAZw-card",
+                  "cssNamespace": null,
                   "identity": "z-style-1dmAZw-card",
                   "end": 110,
                   "name": "style-hhtd0018jbf1a-87",
@@ -998,7 +1029,8 @@ export const panel = style({ animationName: fade, selectors: { [`${card} &`]: { 
               "themeAliases": [],
               "themeCalls": [],
               "themeReferences": [],
-              "vars": []
+              "vars": [],
+              "collectedThemes": false
             },
             {
               "namespaces": [],
@@ -1107,6 +1139,7 @@ export const panel = style({ animationName: fade, selectors: { [`${card} &`]: { 
               "calls": [
                 {
                   "cssName": "JdmrF3-panel",
+                  "cssNamespace": null,
                   "identity": "z-style-JdmrF3-panel",
                   "end": 166,
                   "name": "style-1ueoqjf18jbcq5-87",
@@ -1138,7 +1171,8 @@ export const panel = style({ animationName: fade, selectors: { [`${card} &`]: { 
               "themeAliases": [],
               "themeCalls": [],
               "themeReferences": [],
-              "vars": []
+              "vars": [],
+              "collectedThemes": true
             }
           ]
         }

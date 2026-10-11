@@ -18,14 +18,16 @@ use oxc_ast_visit::Visit;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
+use crate::compiler::internal::descriptors::{self, Descriptor};
 use crate::compiler::internal::expression::{self, Template, unwrap};
 use crate::compiler::internal::identifiers::{self, Separator};
+use crate::compiler::internal::lightning::{self, Options};
 use crate::compiler::internal::scope::{self, Declaration, Mode};
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{
     self, FunctionParameter, FunctionSignature, Link, LinkKind, TokenRead,
 };
-use crate::compiler::internal::{css_hooks, statics};
+use crate::compiler::internal::{functions, keyframes, properties, statics};
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
 use crate::generated::literal::LENGTH_UNITS;
@@ -1512,49 +1514,8 @@ fn identifier(value: &str) -> bool {
 }
 
 /// Checks one descriptor grammar, as `Descriptors.check` does.
-///
-/// The descriptor grammars belong to the CSS validation port; until it lands, descriptors pass.
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "The CSS validation port fills this check with failures."
-)]
-fn check_descriptor(_rule: &str, _name: &str, _value: &str) -> std::result::Result<(), String> {
-    Ok(())
-}
-
-/// Checks a custom-media query, as `Descriptors.media` does. Pending the CSS validation port.
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "The CSS validation port fills this check with failures."
-)]
-fn check_media(_query: &str) -> std::result::Result<(), String> {
-    Ok(())
-}
-
-/// Checks a static `@function` value against a syntax, as `Functions.value` does. Pending the
-/// CSS validation port.
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "The CSS validation port fills this check with failures."
-)]
-fn check_function_value(_syntax: &str, _value: &str) -> std::result::Result<(), String> {
-    Ok(())
-}
-
-/// Checks a registered initial value, as `Properties.initial` does. Pending the CSS validation
-/// port.
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "The CSS validation port fills this check with failures."
-)]
-fn check_initial(_value: &str) -> std::result::Result<(), String> {
-    Ok(())
-}
-
-/// Whether a keyframe stop is valid, as `Keyframes.accepts` decides. Pending the CSS validation
-/// port.
-fn accepts_stop(_stop: &str) -> bool {
-    true
+fn check_descriptor(rule: &str, name: &str, value: &str) -> std::result::Result<(), String> {
+    descriptors::check(&Descriptor { name, rule, value }).map_err(|error| error.text())
 }
 
 /// The text after the numeric prefix that
@@ -1843,7 +1804,7 @@ impl Extraction<'_, '_> {
             Factory::CustomMedia => {
                 let query: Arc<str> = match input {
                     Data::String(query) => {
-                        check_media(query)?;
+                        descriptors::media(query).map_err(|error| error.text())?;
                         Arc::clone(query)
                     }
                     Data::Bool(value) => Arc::from(if *value { "true" } else { "false" }),
@@ -1945,7 +1906,7 @@ impl Extraction<'_, '_> {
                 }
 
                 if let Some(initial) = initial {
-                    check_initial(&initial.to_js_string())?;
+                    properties::initial(&initial.to_js_string()).map_err(|error| error.text())?;
                 }
 
                 result.push(Kind::Property {
@@ -2034,7 +1995,7 @@ impl Extraction<'_, '_> {
                         }
                     }
 
-                    check_function_value("*", text)?;
+                    functions::value("*", text).map_err(|error| error.text())?;
                     entries.push(Entry::Descriptor {
                         name: Arc::clone(key),
                         value: Scalar::String(Arc::from(text)),
@@ -2081,7 +2042,7 @@ impl Extraction<'_, '_> {
                 let mut frames = Vec::new();
 
                 for (stop, input) in record(input)?.iter() {
-                    if !accepts_stop(stop) {
+                    if !keyframes::accepts(stop) {
                         return Err("Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.".to_owned());
                     }
 
@@ -2170,7 +2131,8 @@ impl Extraction<'_, '_> {
             let syntax = syntax.and_then(Data::as_str);
 
             if let Some(default) = default {
-                check_function_value(syntax.unwrap_or("*"), &default.to_js_string())?;
+                functions::value(syntax.unwrap_or("*"), &default.to_js_string())
+                    .map_err(|error| error.text())?;
             }
 
             let mut text = name.to_owned();
@@ -2404,7 +2366,7 @@ fn function_body(input: &Data) -> std::result::Result<Vec<Entry>, String> {
             );
         };
 
-        check_function_value("*", &value.to_js_string())?;
+        functions::value("*", &value.to_js_string()).map_err(|error| error.text())?;
         entries.push(Entry::Descriptor {
             name: Arc::clone(key),
             value: scalar,
@@ -2507,10 +2469,12 @@ fn feature_values(input: &Data, result: &mut Vec<Kind>) -> std::result::Result<(
     };
 
     // Validate the native prelude before shielding newer body descriptors.
-    css_hooks::transform(
-        &format!("@font-feature-values {list} {{}}"),
-        css_hooks::Hooks::default(),
-    )?;
+    lightning::transform(&Options {
+        code: &format!("@font-feature-values {list} {{}}"),
+        filename: "font-feature-values.css",
+        ..Options::default()
+    })
+    .map_err(|error| error.text())?;
 
     let mut entries = Vec::new();
 
@@ -2760,8 +2724,8 @@ pub fn extract<'a>(
                 .and_then(|parameter| parameter.syntax.as_deref())
                 .unwrap_or("*");
 
-            check_function_value(syntax, value)
-                .map_err(|message| invalid(&message, input.node.span))?;
+            functions::value(syntax, value)
+                .map_err(|error| invalid(&error.text(), input.node.span))?;
         }
     }
 

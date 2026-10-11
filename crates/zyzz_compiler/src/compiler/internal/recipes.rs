@@ -155,7 +155,7 @@ fn predicate(attribute: &str, value: &str) -> String {
 }
 
 /// Selectors that exclude every later condition of an axis.
-fn excluded(axis: &str, sources: &[Option<u32>]) -> String {
+fn excluded(axis: &str, sources: &[Option<usize>]) -> String {
     let mut output = String::new();
 
     for condition in sources.iter().flatten() {
@@ -166,7 +166,7 @@ fn excluded(axis: &str, sources: &[Option<u32>]) -> String {
 }
 
 /// The data attribute of a conditional choice, as `ConditionalRecipe.attribute` names it.
-pub fn attribute(axis: &str, condition: u32) -> String {
+pub fn attribute(axis: &str, condition: usize) -> String {
     format!("data-zyzz-condition-{condition}-{axis}")
 }
 
@@ -672,7 +672,7 @@ pub fn expand<'s, 'a>(
             target = target.group(&rule.rule, rule.span);
         }
 
-        let sources: Vec<Option<u32>> = std::iter::once(None)
+        let sources: Vec<Option<usize>> = std::iter::once(None)
             .chain(region.active.iter().copied().map(Some))
             .collect();
 
@@ -691,7 +691,7 @@ pub fn expand<'s, 'a>(
                     let excluded = excluded(axis, sources.get(index + 1..).unwrap_or_default());
                     let value = condition.map_or_else(|| first.to_owned(), |_| format!("s{first}"));
                     let selector = format!("&:where({}{excluded})", predicate(&name, &value));
-                    let model = condition.map_or(0, |condition| condition as usize + 1);
+                    let model = condition.map_or(0, |condition| condition + 1);
                     let Some(body) = bodies
                         .get(model)
                         .copied()

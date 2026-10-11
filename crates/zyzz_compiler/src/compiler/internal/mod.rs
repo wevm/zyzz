@@ -4,6 +4,7 @@ pub mod applications;
 pub mod composition_bindings;
 pub mod dynamic;
 pub mod expression;
+pub mod names;
 pub mod packed_styles;
 pub mod recipe_conditions;
 pub mod recipe_payloads;

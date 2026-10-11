@@ -215,7 +215,7 @@ pub struct RegionRule {
 #[derive(Clone, Debug, Default)]
 pub struct Region {
     /// Active condition indexes in authored priority order.
-    pub active: Vec<u32>,
+    pub active: Vec<usize>,
     /// Nested grouping rules that define the region.
     pub rules: Vec<RegionRule>,
 }
@@ -236,7 +236,7 @@ pub fn regions(conditions: &[Condition]) -> Result<Vec<Region>> {
 
     let mut result = vec![Region::default()];
 
-    for (index, condition) in (0_u32..).zip(conditions) {
+    for (index, condition) in conditions.iter().enumerate() {
         result = result
             .into_iter()
             .flat_map(|region| {

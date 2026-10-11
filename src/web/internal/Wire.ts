@@ -21,6 +21,8 @@ import * as Themes from './Themes.js'
 export function encode(options: Css.compile.Options): string {
   const indexes = new Map<object, number>()
   const objects: unknown[] = []
+  // Declarations share reference objects, which are classified once per encoding.
+  const references = new Map<object, number | undefined>()
   const strings: string[] = []
   const stringIndexes = new Map<string, number>()
 
@@ -125,6 +127,20 @@ export function encode(options: Css.compile.Options): string {
     return String(input)
   }
 
+  // The encoded index of a binding, token reference, or expression, classified once per object.
+  function known(value: object): number | undefined {
+    if (references.has(value)) return references.get(value)
+
+    const index =
+      Binding.is(value) || Token.is(value) || Token.isExpression(value)
+        ? reference(value)
+        : undefined
+
+    references.set(value, index)
+
+    return index
+  }
+
   // Flat triples of property, value, and flags: bit 0 marks importance, and the remaining
   // bits select a string, finite number, object, or non-finite number value.
   function declarations(input: readonly Style.Declaration[]): number[] {
@@ -141,14 +157,14 @@ export function encode(options: Css.compile.Options): string {
         output.push(value, 2 | important)
       else if (typeof value === 'number')
         output.push(Number.isNaN(value) ? 0 : Math.sign(value), 6 | important)
-      else if (
-        Binding.is(value) ||
-        Token.is(value) ||
-        Token.isExpression(value)
-      )
-        output.push(reference(value), 4 | important)
-      // Values outside the declaration contract serialize as their template-literal text.
-      else output.push(string(String(value)), important)
+      else {
+        const index =
+          typeof value === 'object' && value !== null ? known(value) : undefined
+
+        // Values outside the declaration contract serialize as their template-literal text.
+        if (index === undefined) output.push(string(String(value)), important)
+        else output.push(index, 4 | important)
+      }
     }
 
     return output

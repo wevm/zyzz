@@ -5,6 +5,7 @@
 
 use std::sync::Arc;
 
+use indexmap::IndexMap;
 use oxc_allocator::{Allocator, CloneIn, Vec as ArenaVec};
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
@@ -17,7 +18,7 @@ use oxc_ast_visit::Visit;
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use oxc_syntax::symbol::SymbolId;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use crate::compiler::internal::applications::{self, Application};
 use crate::compiler::internal::composition_bindings::{self, Bindings};
@@ -25,7 +26,7 @@ use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::recipes;
 use crate::compiler::internal::scope::{self, Kind, Mode};
 use crate::compiler::internal::statics::key_literal;
-use crate::compiler::internal::themes::{Link, Output};
+use crate::compiler::internal::themes::{Link, Output, ScopeApplication};
 use crate::compiler::source::{Call, RuntimeInput};
 use crate::error::{Error, Result};
 use crate::internal::identity;
@@ -33,15 +34,6 @@ use crate::internal::token::{Composition, CssOutput};
 use crate::js::{self, Record, Utf16Index};
 use crate::runtime::composition::Owner;
 use crate::style::{Declaration, NamedStyle, Rule};
-
-/// A validated variable scope application preserved as runtime props.
-#[derive(Clone, Copy, Debug)]
-pub struct ScopeApplication {
-    /// Exclusive offset of the application.
-    pub end: u32,
-    /// HTML attribute output.
-    pub output: Option<Output>,
-}
 
 /// Static composition extraction inputs.
 #[derive(Clone, Copy)]
@@ -59,7 +51,7 @@ pub struct Options<'o, 'a> {
     /// The parsed module.
     pub program: &'a Program<'a>,
     /// Validated variable scope applications, by start.
-    pub scopes: Option<&'o FxHashMap<u32, ScopeApplication>>,
+    pub scopes: Option<&'o IndexMap<u32, ScopeApplication, FxBuildHasher>>,
     /// Scopes and symbols of the module.
     pub semantic: &'o Semantic<'a>,
     /// Module source, for initialization-sensitive binding reads.

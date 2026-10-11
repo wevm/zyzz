@@ -9,6 +9,7 @@ pub fn call(operation: &str, input: &str) -> String {
 
     match operation {
         "css.compile" => crate::wire::compile(input),
+        "source.extract" => crate::compiler::internal::wire::extract(input),
         "version" => crate::js::quote(env!("CARGO_PKG_VERSION")),
         _ => format!(
             "{{\"error\":{{\"name\":\"Error\",\"message\":{}}}}}",

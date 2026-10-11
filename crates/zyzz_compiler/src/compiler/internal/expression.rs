@@ -181,9 +181,9 @@ pub fn literal_text(node: &Expression<'_>) -> Option<String> {
 /// `resolve` maps an interpolated expression and the CSS text before it to a reference part. A
 /// reference must stand as a whole CSS token outside quotes and comments.
 pub fn template<'a>(
-    node: &TemplateLiteral<'a>,
+    node: &'a TemplateLiteral<'a>,
     depth: usize,
-    resolve: &mut dyn FnMut(&Expression<'a>, &str) -> Option<Part>,
+    resolve: &mut dyn FnMut(&'a Expression<'a>, &str) -> Option<Part>,
     context: &str,
 ) -> Option<Template> {
     if depth >= 128 {

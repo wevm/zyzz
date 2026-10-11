@@ -8,21 +8,52 @@
 
 use std::sync::Arc;
 
-use oxc_ast::ast::ObjectExpression;
-use rustc_hash::FxHashMap;
+use indexmap::IndexMap;
+use oxc_allocator::{Allocator, CloneIn, GetAddress, UnstableAddress, Vec as ArenaVec};
+use oxc_ast::AstKind;
+use oxc_ast::ast::{
+    Argument, ArrayExpressionElement, BindingPattern, CallExpression, Expression,
+    ImportDeclarationSpecifier, ObjectExpression, ObjectPropertyKind, PropertyKey, PropertyKind,
+    Statement, TemplateLiteral, UnaryOperator,
+};
+use oxc_ast::builder::AstBuilder;
+use oxc_ast_visit::Visit;
+use oxc_span::{GetSpan, Span};
+use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::compiler::internal::contributions;
-use crate::compiler::internal::dynamic::Slots;
-use crate::compiler::internal::syntax::Parsed;
-use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, VarsRead};
-use crate::compiler::internal::vars;
-use crate::internal::recipe;
+use crate::compiler::internal::dynamic::{self, Slots};
+use crate::compiler::internal::expression::{self, Template, unwrap};
+use crate::compiler::internal::scope::{self, Declaration, Mode};
+use crate::compiler::internal::statics::{self, Static};
+use crate::compiler::internal::syntax::{self, Parsed};
+use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
+use crate::compiler::internal::vars::{self, Variables};
+use crate::compiler::internal::{
+    compositions, contributions, identifiers, lightning, names, packed_styles, recipe_payloads,
+    recipes, selectors,
+};
+use crate::data::{Data, Object};
+use crate::error::{Error, Result};
+use crate::generated::literal::Kind as LiteralKind;
+use crate::internal::binding::{self, Domain};
 use crate::internal::theme::Definition;
-use crate::js::Record;
+use crate::internal::token::{self, Part};
+use crate::internal::{condition, identity, literal, recipe, rule_reference, typography, value};
+use crate::js::{self, Record, Utf16Index};
 use crate::runtime::composition::Owner;
 use crate::runtime::recipe as runtime;
-use crate::style;
+use crate::style::{self, NamedStyle, SourceLocation};
+use crate::web::css;
+use crate::web::internal::themes::{self as web_themes, Scope};
 use crate::web::internal::{contributions as web, namespace};
+
+#[cold]
+fn invalid(message: &str, span: Span) -> Error {
+    Error::Themes {
+        message: message.to_owned(),
+        span,
+    }
+}
 
 /// Native alternatives of an authoring contract.
 #[derive(Clone, Debug)]
@@ -258,4 +289,2635 @@ pub struct Extracted<'a> {
     pub variable_calls: Vec<vars::Call>,
     /// Stable scope keys and validated local theme definitions.
     pub vars: Record<Arc<Definition>>,
+}
+
+/// Collects diagnostics with UTF-16 offsets.
+struct Reporter<'p> {
+    diagnostics: Vec<Diagnostic>,
+    module_id: Arc<str>,
+    offsets: &'p Utf16Index,
+}
+
+impl Reporter<'_> {
+    /// Reports a diagnostic at a UTF-8 span, or at offset zero without one.
+    fn report(&mut self, code: Code, message: impl Into<String>, span: Option<Span>) {
+        let (start, end) = span.map_or((0, 0), |span| {
+            (self.offsets.utf16(span.start), self.offsets.utf16(span.end))
+        });
+
+        self.diagnostics.push(Diagnostic {
+            code,
+            end,
+            message: message.into(),
+            source: Arc::clone(&self.module_id),
+            start,
+        });
+    }
+
+    /// Reports `Source.ThemeInvalidError` as unsupported syntax and passes other errors on.
+    fn unsupported(&mut self, error: Error) -> Result<()> {
+        match error {
+            Error::Themes { message, span } => {
+                self.report(Code::UnsupportedSyntax, message, Some(span));
+                Ok(())
+            }
+            error => Err(error),
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.diagnostics.len()
+    }
+
+    fn fail(&mut self) -> Error {
+        Error::Extract(ExtractError::new(std::mem::take(&mut self.diagnostics)))
+    }
+}
+
+/// Whether a node is a type subtree the extraction walk skips.
+fn type_node(kind: AstKind<'_>, parent: Option<AstKind<'_>>) -> bool {
+    let annotation = match parent {
+        Some(AstKind::TSAsExpression(parent)) => Some(&parent.expression),
+        Some(AstKind::TSSatisfiesExpression(parent)) => Some(&parent.expression),
+        Some(AstKind::TSTypeAssertion(parent)) => Some(&parent.expression),
+        _ => None,
+    }
+    .is_some_and(|expression: &Expression<'_>| expression.address() != kind.address());
+
+    annotation
+        || matches!(
+            kind,
+            AstKind::TSInterfaceDeclaration(_)
+                | AstKind::TSTypeAliasDeclaration(_)
+                | AstKind::TSTypeAnnotation(_)
+                | AstKind::TSTypeParameterDeclaration(_)
+                | AstKind::TSTypeParameterInstantiation(_)
+                | AstKind::TSTypeQuery(_)
+                | AstKind::ExportFromDeclaration(_)
+        )
+        || matches!(kind, AstKind::ExportNamedDeclaration(export) if export.export_kind.is_type())
+        || matches!(kind, AstKind::ExportSpecifier(specifier) if specifier.export_kind.is_type())
+}
+
+/// Authoring names a namespace import cannot call.
+const NAMESPACE_AUTHORING: [&str; 10] = [
+    "Config",
+    "cx",
+    "defineConfig",
+    "defineVars",
+    "extendVars",
+    "style",
+    "Theme",
+    "Vars",
+    "variable",
+    "variants",
+];
+
+/// The identifier walk: theme, variable, and stylesheet reads, and direct `style` calls.
+struct Walker<'w, 'p, 'a> {
+    ancestors: Vec<AstKind<'a>>,
+    contributions: &'w mut contributions::Contributions<'a>,
+    fatal: Option<Error>,
+    parsed: &'w Parsed<'a>,
+    pending: Vec<&'a CallExpression<'a>>,
+    recipes: FxHashSet<u32>,
+    reporter: &'w mut Reporter<'p>,
+    themes: Option<&'w mut Themes<'a>>,
+    types: Vec<bool>,
+    variables: &'w Variables<'a>,
+}
+
+impl<'a> Visit<'a> for Walker<'_, '_, 'a> {
+    fn enter_node(&mut self, kind: AstKind<'a>) {
+        let parent = self.ancestors.last().copied();
+        let typed = type_node(kind, parent);
+
+        self.ancestors.push(kind);
+        self.types.push(typed);
+
+        if self.fatal.is_none()
+            && let Err(error) = self.read(kind, parent)
+        {
+            self.fatal = Some(error);
+        }
+    }
+
+    fn leave_node(&mut self, _: AstKind<'a>) {
+        self.ancestors.pop();
+        self.types.pop();
+    }
+}
+
+impl<'a> Walker<'_, '_, 'a> {
+    fn read(&mut self, kind: AstKind<'a>, parent: Option<AstKind<'a>>) -> Result<()> {
+        let semantic = &self.parsed.semantic;
+        let lookup = |name: &str| {
+            scope::lookup(
+                semantic,
+                name,
+                scope::scope_of(semantic, kind.node_id()),
+                Mode::Value,
+            )
+        };
+        let binding: Option<Declaration<'a>> = match kind {
+            AstKind::IdentifierReference(identifier) => match parent {
+                Some(
+                    AstKind::TSTypeReference(_)
+                    | AstKind::TSQualifiedName(_)
+                    | AstKind::TSClassImplements(_)
+                    | AstKind::TSInterfaceHeritage(_),
+                ) => return Ok(()),
+                // ESTree reads JSX element names as `JSXIdentifier`, resolved by name.
+                Some(
+                    AstKind::JSXOpeningElement(_)
+                    | AstKind::JSXClosingElement(_)
+                    | AstKind::JSXMemberExpression(_),
+                ) => lookup(&identifier.name),
+                _ => scope::resolve(semantic, identifier),
+            },
+            AstKind::BindingIdentifier(identifier) => {
+                let nested = match parent {
+                    Some(
+                        AstKind::BindingProperty(_)
+                        | AstKind::ArrayPattern(_)
+                        | AstKind::AssignmentPattern(_)
+                        | AstKind::BindingRestElement(_),
+                    ) => true,
+                    Some(AstKind::FormalParameter(parameter)) => {
+                        parameter.initializer.is_some()
+                            && matches!(parameter.pattern, BindingPattern::BindingIdentifier(_))
+                    }
+                    _ => false,
+                };
+
+                if !nested {
+                    return Ok(());
+                }
+
+                lookup(&identifier.name)
+            }
+            _ => return Ok(()),
+        };
+
+        // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
+        if self.types.iter().any(|typed| *typed) {
+            return Ok(());
+        }
+
+        self.contributions.read(kind, parent, binding.as_ref());
+
+        match self
+            .variables
+            .reference(kind, &self.ancestors, binding.as_ref())
+        {
+            Ok(true) => return Ok(()),
+            Ok(false) => {}
+            Err(error) => return self.reporter.unsupported(error),
+        }
+
+        if let Some(themes) = self.themes.as_deref_mut() {
+            match themes.reference(kind, &self.ancestors, binding.as_ref(), &lookup) {
+                Ok(true) => return Ok(()),
+                Ok(false) => {}
+                Err(error) => return self.reporter.unsupported(error),
+            }
+        }
+
+        let Some(binding) = binding else {
+            return Ok(());
+        };
+        let Some(import) = binding.import.filter(|import| {
+            binding.kind == scope::Kind::Import
+                && import.source.value == "zyzz"
+                && !import.import_kind.is_type()
+        }) else {
+            return Ok(());
+        };
+        let Some(specifier) = import
+            .specifiers
+            .iter()
+            .flatten()
+            .find(|specifier| specifier.span().start == binding.start())
+        else {
+            return Ok(());
+        };
+
+        match specifier {
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => {
+                let name = match parent {
+                    Some(AstKind::StaticMemberExpression(member))
+                        if member.object.address() == kind.address() =>
+                    {
+                        Some(member.property.name.as_str())
+                    }
+                    Some(AstKind::ComputedMemberExpression(member))
+                        if member.object.address() == kind.address() =>
+                    {
+                        match &member.expression {
+                            Expression::StringLiteral(literal) => Some(literal.value.as_str()),
+                            _ => None,
+                        }
+                    }
+                    _ => None,
+                };
+
+                if let (Some(name), Some(parent)) = (name, parent)
+                    && NAMESPACE_AUTHORING.contains(&name)
+                {
+                    self.reporter.report(
+                        Code::UnsupportedSyntax,
+                        format!(
+                            "Import {name} by name; namespace authoring calls are not supported yet."
+                        ),
+                        Some(parent.span()),
+                    );
+                }
+
+                Ok(())
+            }
+            ImportDeclarationSpecifier::ImportSpecifier(specifier)
+                if !specifier.import_kind.is_type()
+                    && matches!(specifier.imported.name().as_str(), "style" | "variants") =>
+            {
+                self.style(kind, parent, specifier.imported.name() == "variants");
+
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+
+    /// Records a direct `style` or `variants` call, rejecting writes and indirect reads.
+    fn style(&mut self, kind: AstKind<'a>, parent: Option<AstKind<'a>>, recipe: bool) {
+        // Follow only assignment targets; computed keys and default values are reads.
+        let mut target = kind.address();
+        let mut write = None;
+
+        for ancestor in self.ancestors.iter().rev().skip(1) {
+            let assigned = match ancestor {
+                AstKind::AssignmentExpression(assignment) => assignment.left.address() == target,
+                AstKind::UpdateExpression(update) => update.argument.address() == target,
+                AstKind::ForInStatement(statement) => statement.left.address() == target,
+                AstKind::ForOfStatement(statement) => statement.left.address() == target,
+                _ => false,
+            };
+
+            if assigned {
+                write = Some(ancestor.span());
+                break;
+            }
+
+            let pattern = match ancestor {
+                AstKind::ObjectProperty(property) => property.value.address() == target,
+                AstKind::BindingProperty(property) => property.value.address() == target,
+                AstKind::AssignmentTargetPropertyProperty(property) => {
+                    property.binding.address() == target
+                }
+                AstKind::AssignmentTargetPropertyIdentifier(property) => {
+                    property.binding.unstable_address() == target
+                }
+                AstKind::ObjectPattern(_)
+                | AstKind::ArrayPattern(_)
+                | AstKind::ObjectAssignmentTarget(_)
+                | AstKind::ArrayAssignmentTarget(_) => true,
+                AstKind::BindingRestElement(rest) => rest.argument.address() == target,
+                AstKind::AssignmentTargetRest(rest) => rest.target.address() == target,
+                AstKind::AssignmentPattern(pattern) => pattern.left.address() == target,
+                AstKind::AssignmentTargetWithDefault(pattern) => {
+                    pattern.binding.address() == target
+                }
+                _ => false,
+            };
+
+            if !pattern {
+                break;
+            }
+
+            target = ancestor.address();
+        }
+
+        if let Some(write) = write {
+            self.reporter.report(
+                Code::UnsupportedSyntax,
+                "Imported style bindings cannot be reassigned.",
+                Some(write),
+            );
+            return;
+        }
+
+        if let Some(AstKind::CallExpression(call)) = parent
+            && call.callee.address() == kind.address()
+            && !call.optional
+        {
+            self.pending.push(call);
+
+            if recipe {
+                self.recipes.insert(call.span.start);
+            }
+
+            return;
+        }
+
+        self.reporter.report(
+            Code::UnsupportedSyntax,
+            "Use a direct style call; aliases, re-exports, and indirect references are not supported yet.",
+            Some(kind.span()),
+        );
+    }
+}
+
+/// Collects the key starts of properties inside `selectors` objects.
+struct SelectorKeys<'k> {
+    keys: &'k mut FxHashSet<u32>,
+}
+
+impl<'a> Visit<'a> for SelectorKeys<'_> {
+    fn enter_node(&mut self, kind: AstKind<'a>) {
+        let AstKind::ObjectProperty(property) = kind else {
+            return;
+        };
+        let named = match &property.key {
+            PropertyKey::StaticIdentifier(key) => key.name == "selectors",
+            PropertyKey::StringLiteral(key) => key.value == "selectors",
+            _ => false,
+        };
+        let Expression::ObjectExpression(object) = &property.value else {
+            return;
+        };
+
+        if property.computed || !named {
+            return;
+        }
+
+        for entry in &object.properties {
+            if let ObjectPropertyKind::ObjectProperty(entry) = entry {
+                self.keys.insert(entry.key.span().start);
+            }
+        }
+    }
+}
+
+/// Matches a value against a property grammar with css-tree's lexer.
+fn css_tree(property: &str, value: &str) -> bool {
+    zyzz_css_syntax::Lexer::get()
+        .match_property(property, value)
+        .is_ok_and(|result| result.error.is_none())
+}
+
+/// Dynamic slots of a typed callback or of recipe payload contexts.
+#[derive(Clone, Copy)]
+enum Bindings<'d, 'a> {
+    Payloads(&'d recipe_payloads::Payloads<'d, 'a>),
+    Read(&'d dynamic::Read<'a>),
+}
+
+impl<'a> Bindings<'_, 'a> {
+    fn resolve(&self, node: &Expression<'a>) -> Result<Option<Arc<binding::Reference>>> {
+        match self {
+            Self::Payloads(payloads) => Ok(payloads.resolve(node)),
+            Self::Read(read) => read.resolve(node),
+        }
+    }
+
+    fn accepts(&self, reference: &binding::Reference, property: &str) -> bool {
+        match self {
+            Self::Payloads(payloads) => payloads.accepts(reference, property),
+            Self::Read(read) => read.accepts(reference, property),
+        }
+    }
+
+    /// Whether a reference is one of these slots, by identity.
+    fn contains(&self, reference: &Arc<binding::Reference>) -> bool {
+        let slots = match self {
+            Self::Payloads(payloads) => &payloads.slots,
+            Self::Read(read) => &read.slots,
+        };
+
+        slots.values().any(|slot| Arc::ptr_eq(slot, reference))
+    }
+}
+
+/// A token or variable read that a declaration value names.
+#[derive(Clone)]
+enum Read {
+    Binding(Arc<binding::Reference>),
+    Token(Arc<token::Reference>),
+}
+
+impl Read {
+    fn data(&self) -> Data {
+        match self {
+            Self::Binding(reference) => Data::Binding(Arc::clone(reference)),
+            Self::Token(reference) => Data::Token(Arc::clone(reference)),
+        }
+    }
+
+    fn part(&self) -> Part {
+        match self {
+            Self::Binding(reference) => Part::Binding(Arc::clone(reference)),
+            Self::Token(reference) => Part::Reference(Arc::clone(reference)),
+        }
+    }
+}
+
+/// Module data shared by every call conversion.
+struct Module<'m, 'a> {
+    allocator: &'a Allocator,
+    bodies: &'m FxHashMap<u32, &'a ObjectExpression<'a>>,
+    calls: &'m [Call<'a>],
+    contributions: &'m contributions::Contributions<'a>,
+    native: bool,
+    offsets: &'m Utf16Index,
+    selectors: &'m selectors::Selectors<'m, 'a>,
+    statics: &'m Static<'a>,
+    styles: &'m [Arc<NamedStyle>],
+    variables: &'m Variables<'a>,
+}
+
+/// Converts one call's literal body into style data, reporting unsupported syntax.
+struct Converter<'c, 'm, 'p, 'a> {
+    call: &'a CallExpression<'a>,
+    condition_keys: FxHashMap<String, Span>,
+    dynamic: Option<Bindings<'c, 'a>>,
+    locations: Vec<SourceLocation>,
+    module: &'c Module<'m, 'a>,
+    name: Arc<str>,
+    reporter: &'c mut Reporter<'p>,
+    theme: Option<Arc<Definition>>,
+    themes: Option<&'c mut Themes<'a>>,
+    typography: FxHashMap<u32, u32>,
+    typography_queries: FxHashMap<u32, u32>,
+}
+
+/// A key: an identifier name or literal spelling.
+fn property_key(key: &PropertyKey<'_>) -> Option<String> {
+    match key {
+        PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.to_string()),
+        PropertyKey::Identifier(identifier) => Some(identifier.name.to_string()),
+        key => statics::key_literal(key),
+    }
+}
+
+impl<'a> Converter<'_, '_, '_, 'a> {
+    fn report(&mut self, message: impl Into<String>, span: Span) {
+        self.reporter
+            .report(Code::UnsupportedSyntax, message, Some(span));
+    }
+
+    fn location(&self, span: Span, path: Vec<Arc<str>>) -> SourceLocation {
+        SourceLocation {
+            end: self.module.offsets.utf16(span.end),
+            path,
+            source: Arc::clone(&self.reporter.module_id),
+            start: self.module.offsets.utf16(span.start),
+        }
+    }
+
+    fn path(&self, prefix: &[Arc<str>], key: &str) -> Vec<Arc<str>> {
+        let mut path = Vec::with_capacity(prefix.len() + 2);
+
+        path.push(Arc::clone(&self.name));
+        path.extend(prefix.iter().cloned());
+        path.push(Arc::from(key));
+        path
+    }
+
+    fn token(&self, start: u32) -> Option<(u32, Read)> {
+        if let Some(read) = self.module.variables.references.get(&start) {
+            return Some((read.end, Read::Binding(Arc::clone(&read.reference))));
+        }
+
+        self.themes
+            .as_deref()
+            .and_then(|themes| themes.tokens.get(&start))
+            .map(|token| (token.end, Read::Token(Arc::clone(&token.reference))))
+    }
+
+    fn resolve_dynamic(&mut self, node: &Expression<'a>) -> Option<Arc<binding::Reference>> {
+        let dynamic = self.dynamic?;
+
+        match dynamic.resolve(node) {
+            Ok(slot) => slot,
+            Err(Error::Themes { message, span }) => {
+                self.report(message, span);
+                None
+            }
+            Err(_) => None,
+        }
+    }
+
+    fn local_slot(
+        &mut self,
+        node: &Expression<'a>,
+        prefix: &[Arc<str>],
+    ) -> Option<Arc<binding::Reference>> {
+        let slot = self.resolve_dynamic(node)?;
+
+        if prefix.iter().any(|key| {
+            !condition::local(key) && !self.module.selectors.local_conditions.contains(key)
+        }) {
+            self.report(
+                "Dynamic values require conditions that select the styled element.",
+                node.span(),
+            );
+
+            return None;
+        }
+
+        Some(slot)
+    }
+
+    fn shorthands(&self) -> Option<&token::Map<Arc<[Arc<str>]>>> {
+        self.theme
+            .as_ref()
+            .and_then(|theme| theme.metadata.contract.shorthands.as_ref())
+    }
+
+    /// Converts a literal style object.
+    fn object(&mut self, argument: &'a ObjectExpression<'a>, prefix: &[Arc<str>]) -> Data {
+        let mut values = Object::new();
+        let target = prefix.iter().rposition(|key| &**key == "targets");
+
+        if target.is_some() && prefix.len() > 64 {
+            self.report("Target nesting exceeds 64 levels.", argument.span);
+            return Data::from(values);
+        }
+
+        let depth = prefix.len() + 2;
+        let mut properties: Vec<&'a ObjectPropertyKind<'a>> = Vec::new();
+
+        for entry in &argument.properties {
+            let key = match entry {
+                ObjectPropertyKind::ObjectProperty(property) if !property.computed => {
+                    match &property.key {
+                        PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.as_str()),
+                        PropertyKey::StringLiteral(literal) => Some(literal.value.as_str()),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+            let Some(key @ ("selectors" | "vars")) = key else {
+                properties.push(entry);
+                continue;
+            };
+            let object = match entry {
+                ObjectPropertyKind::ObjectProperty(property)
+                    if property.kind == PropertyKind::Init
+                        && !property.method
+                        && !property.shorthand =>
+                {
+                    match &property.value {
+                        Expression::ObjectExpression(object) => Some(object),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+            let Some(object) = object else {
+                self.report(
+                    format!("{key} requires an explicit literal object."),
+                    entry.span(),
+                );
+                continue;
+            };
+
+            for property in &object.properties {
+                let valid = match property {
+                    ObjectPropertyKind::ObjectProperty(property) => {
+                        let start = property.key.span().start;
+
+                        if key == "selectors" {
+                            self.module.selectors.conditions.contains_key(&start)
+                        } else {
+                            property.computed
+                                && self.module.variables.references.contains_key(&start)
+                        }
+                    }
+                    ObjectPropertyKind::SpreadProperty(_) => false,
+                };
+
+                if !valid {
+                    self.report(
+                        if key == "selectors" {
+                            "Selectors require explicit & targets."
+                        } else {
+                            "Variable assignments require declared variable keys."
+                        },
+                        property.span(),
+                    );
+                    continue;
+                }
+
+                properties.push(property);
+            }
+        }
+
+        for entry in &properties {
+            let ObjectPropertyKind::ObjectProperty(property) = entry else {
+                self.report(
+                    "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",
+                    entry.span(),
+                );
+                continue;
+            };
+            let start = property.key.span().start;
+            let condition = self.module.selectors.conditions.get(&start);
+            let variable = self.module.variables.references.get(&start);
+            let query = self.module.contributions.query_keys.get(&start);
+            let identifier = matches!(
+                property.key,
+                PropertyKey::StaticIdentifier(_) | PropertyKey::Identifier(_)
+            );
+            let string = matches!(property.key, PropertyKey::StringLiteral(_));
+
+            if property.kind != PropertyKind::Init
+                || property.method
+                || (property.computed
+                    && condition.is_none()
+                    && variable.is_none()
+                    && query.is_none())
+                || property.shorthand
+                || (condition.is_none() && variable.is_none() && !identifier && !string)
+            {
+                self.report(
+                    "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",
+                    property.span,
+                );
+                continue;
+            }
+
+            let key: Arc<str> = match (variable, condition, query) {
+                (Some(variable), _, _) => Arc::from(variable.reference.name.as_str()),
+                (None, Some(condition), _) => Arc::clone(condition),
+                (None, None, Some(query)) => Arc::clone(query),
+                (None, None, None) => Arc::from(property_key(&property.key).unwrap_or_default()),
+            };
+
+            if values.has(&key) {
+                self.report(
+                    "Duplicate properties are not supported in source definitions yet.",
+                    property.span,
+                );
+                continue;
+            }
+
+            if (&*key == "targets" || target.is_some())
+                && self.module.statics.absent(&property.value)
+            {
+                continue;
+            }
+
+            if &*key == "targets" || prefix.last().is_some_and(|last| &**last == "targets") {
+                let input = unwrap(&property.value);
+                let Expression::ObjectExpression(input) = input else {
+                    self.report(
+                        "Target branches require static declaration objects.",
+                        input.span(),
+                    );
+                    continue;
+                };
+                let nested = [prefix, &[Arc::clone(&key)]].concat();
+                let value = self.object(input, &nested);
+
+                values.insert(key, value);
+                continue;
+            }
+
+            if let Some(target) = target
+                && prefix
+                    .get(target + 1)
+                    .is_none_or(|branch| &**branch != "web")
+            {
+                let nested = [prefix, &[Arc::clone(&key)]].concat();
+                let value = self.native(&property.value, &nested, 0);
+
+                values.insert(key, value);
+                continue;
+            }
+
+            if condition::is(&key) {
+                let path = self.path(prefix, &key);
+                let encoded = js::stringify(&js::Value::Array(
+                    path.iter().map(|part| js::Value::from(&**part)).collect(),
+                ));
+
+                self.condition_keys.insert(encoded, property.key.span());
+
+                let input = unwrap(&property.value);
+                let Expression::ObjectExpression(input) = input else {
+                    self.report(
+                        "Conditions require literal declaration objects.",
+                        input.span(),
+                    );
+                    continue;
+                };
+                let location = self.location(property.span, path);
+
+                self.locations.push(location);
+
+                let nested = [prefix, &[Arc::clone(&key)]].concat();
+                let value = self.object(input, &nested);
+
+                values.insert(key, value);
+                continue;
+            }
+
+            let targets: Vec<Arc<str>> = self
+                .shorthands()
+                .and_then(|shorthands| shorthands.get(&key))
+                .map_or_else(|| vec![Arc::clone(&key)], |targets| targets.to_vec());
+            let path = self.path(prefix, &key);
+            let value = self.value(&property.value, &path, prefix, depth, &targets);
+
+            values.insert(key, value);
+        }
+
+        if let Some(Data::String(typography)) = values.get("typography") {
+            let theme = self.theme.clone();
+            let mappings = self.shorthands();
+            let mut explicit: Vec<Arc<str>> = Vec::new();
+
+            for key in values.keys() {
+                match mappings.and_then(|mappings| mappings.get(key)) {
+                    Some(targets) => explicit.extend(targets.iter().cloned()),
+                    None => explicit.push(Arc::clone(key)),
+                }
+            }
+
+            let explicit: Vec<&str> = explicit.iter().map(|key| &**key).collect();
+            let authored = Data::String(Arc::clone(typography));
+            let name = match value::parse(&authored, "fontFamily") {
+                Some(value::Parsed::Marked { value, .. }) => value,
+                _ => authored,
+            };
+            let keys = typography::keys(theme.as_deref(), &name, &explicit);
+            let queries = keys.iter().filter(|key| typography::condition(key)).count();
+
+            for entry in &properties {
+                let ObjectPropertyKind::ObjectProperty(property) = entry else {
+                    continue;
+                };
+                let key = match &property.key {
+                    PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.as_str()),
+                    PropertyKey::Identifier(identifier) => Some(identifier.name.as_str()),
+                    PropertyKey::StringLiteral(literal) => Some(literal.value.as_str()),
+                    _ => None,
+                };
+
+                if key == Some("typography") {
+                    self.typography.insert(
+                        property.span.start,
+                        u32::try_from(keys.len() - queries).unwrap_or(u32::MAX),
+                    );
+
+                    if queries > 0 {
+                        self.typography_queries.insert(
+                            property.span.start,
+                            u32::try_from(queries).unwrap_or(u32::MAX),
+                        );
+                    }
+                }
+            }
+        }
+
+        Data::from(values)
+    }
+
+    /// Converts a native target branch value.
+    fn native(&mut self, input: &'a Expression<'a>, prefix: &[Arc<str>], depth: usize) -> Data {
+        let node = unwrap(input);
+
+        if depth > 64 {
+            self.report("Native value nesting exceeds 64 levels.", node.span());
+            return Data::Undefined;
+        }
+
+        match node {
+            Expression::ObjectExpression(object) => return self.object(object, prefix),
+            Expression::ArrayExpression(array) => {
+                let mut values = Vec::with_capacity(array.elements.len());
+
+                for element in &array.elements {
+                    if let Some(element) = element.as_expression() {
+                        values.push(self.native(element, prefix, depth + 1));
+                    } else {
+                        self.report("Native arrays require dense static entries.", array.span);
+                        values.push(Data::Undefined);
+                    }
+                }
+
+                return Data::Array(Arc::new(values));
+            }
+            Expression::NullLiteral(_) => return Data::Null,
+            Expression::BooleanLiteral(literal) => return Data::Bool(literal.value),
+            Expression::NumericLiteral(literal) => return Data::Number(literal.value),
+            Expression::StringLiteral(literal) => return Data::string(literal.value.as_str()),
+            Expression::UnaryExpression(unary)
+                if matches!(
+                    unary.operator,
+                    UnaryOperator::UnaryNegation | UnaryOperator::UnaryPlus
+                ) =>
+            {
+                if let Expression::NumericLiteral(literal) = &unary.argument {
+                    let sign = if unary.operator == UnaryOperator::UnaryNegation {
+                        -1.0
+                    } else {
+                        1.0
+                    };
+
+                    return Data::Number(sign * literal.value);
+                }
+            }
+            Expression::TemplateLiteral(template) => {
+                if let Some(Template::Text(text)) =
+                    expression::template(template, 0, &mut |_, _| None, "")
+                {
+                    return Data::from(text);
+                }
+            }
+            _ => {}
+        }
+
+        self.report(
+            "Native branches require static literal values.",
+            node.span(),
+        );
+
+        Data::Undefined
+    }
+
+    /// Converts a declaration value, validating its domain against every target property.
+    fn value(
+        &mut self,
+        node: &'a Expression<'a>,
+        path: &[Arc<str>],
+        prefix: &[Arc<str>],
+        depth: usize,
+        targets: &[Arc<str>],
+    ) -> Data {
+        let unwrapped = unwrap(node);
+        let span = unwrapped.span();
+        let token = self.token(span.start);
+        let reference = match self.local_slot(node, prefix) {
+            Some(slot) => Some(Read::Binding(slot)),
+            None => token
+                .filter(|(end, _)| *end == span.end)
+                .map(|(_, read)| read),
+        };
+
+        if let (Some(dynamic), Some(Read::Binding(slot))) = (self.dynamic, &reference)
+            && dynamic.contains(slot)
+            && path.len() > depth
+        {
+            self.report("Dynamic fallback entries are not supported.", node.span());
+            return Data::Undefined;
+        }
+
+        let node = unwrapped;
+
+        if let Some(animation) = self.module.contributions.references.get(&span.start) {
+            if let Some(kind) = self.module.contributions.kinds.get(animation)
+                && targets
+                    .iter()
+                    .any(|target| !rule_reference::accepts(*kind, target))
+            {
+                self.report(
+                    "Named stylesheet reference is incompatible with this property.",
+                    span,
+                );
+                return Data::Undefined;
+            }
+
+            return Data::String(Arc::clone(animation));
+        }
+
+        let template = match node {
+            Expression::TemplateLiteral(template) => {
+                self.template(template, path, prefix, depth, targets)
+            }
+            _ => None,
+        };
+
+        if let Some(Template::Expression(expression)) = &template {
+            for part in &expression.parts {
+                let (accepted, message) = match part {
+                    Part::Text(_) => continue,
+                    Part::Binding(binding) => (
+                        self.dynamic
+                            .is_some_and(|dynamic| dynamic.contains(binding))
+                            || targets.iter().all(|target| {
+                                binding::accepts(binding.domain, target)
+                                    || (binding.domain == Domain::Color
+                                        && expression::accepts_color(expression, target, &css_tree))
+                            }),
+                        "Variable domain is incompatible with this property.",
+                    ),
+                    Part::Reference(reference) => (
+                        targets.iter().all(|target| {
+                            token::accepts_reference(reference, target)
+                                || (reference.contract.variable_set
+                                    && expression::accepts_variables(expression, target, &css_tree))
+                                || (reference.group == "color"
+                                    && expression::accepts_color(expression, target, &css_tree))
+                        }),
+                        "Theme variable domain is incompatible with this property.",
+                    ),
+                };
+
+                if !accepted {
+                    self.report(message, span);
+                    return Data::Undefined;
+                }
+            }
+        }
+
+        if let Some(Read::Token(reference)) = &reference
+            && !targets
+                .iter()
+                .all(|target| token::accepts_reference(reference, target))
+        {
+            self.report(
+                "Theme variable domain is incompatible with this property.",
+                span,
+            );
+            return Data::Undefined;
+        }
+
+        if let Some(Read::Binding(reference)) = &reference {
+            let slot = self
+                .dynamic
+                .is_some_and(|dynamic| dynamic.contains(reference))
+                && reference.domain != Domain::Number;
+            let accepted = targets.iter().all(|target| {
+                binding::accepts(reference.domain, target)
+                    || self
+                        .dynamic
+                        .is_some_and(|dynamic| dynamic.accepts(reference, target))
+            });
+
+            if !slot && !accepted {
+                self.report("Variable domain is incompatible with this property.", span);
+                return Data::Undefined;
+            }
+        }
+
+        let result = if let Some(reference) = &reference {
+            reference.data()
+        } else if let Some(template) = template {
+            match template {
+                Template::Text(text) => Data::from(text),
+                Template::Expression(expression) => Data::Expression(expression),
+            }
+        } else {
+            match node {
+                Expression::StringLiteral(literal) => Data::string(literal.value.as_str()),
+                Expression::NumericLiteral(literal) => Data::Number(literal.value),
+                Expression::UnaryExpression(unary)
+                    if matches!(
+                        unary.operator,
+                        UnaryOperator::UnaryNegation | UnaryOperator::UnaryPlus
+                    ) && matches!(unary.argument, Expression::NumericLiteral(_)) =>
+                {
+                    let Expression::NumericLiteral(literal) = &unary.argument else {
+                        return Data::Undefined;
+                    };
+
+                    Data::Number(if unary.operator == UnaryOperator::UnaryNegation {
+                        -literal.value
+                    } else {
+                        literal.value
+                    })
+                }
+                Expression::ArrayExpression(array) if path.len() == depth => {
+                    let mut values = Vec::with_capacity(array.elements.len());
+
+                    for (index, element) in array.elements.iter().enumerate() {
+                        let Some(element) = element.as_expression() else {
+                            let span = match element {
+                                ArrayExpressionElement::Elision(_) => array.span,
+                                element => element.span(),
+                            };
+
+                            self.report(
+                                "Fallback arrays require dense literal entries without spreads.",
+                                span,
+                            );
+                            values.push(Data::Undefined);
+                            continue;
+                        };
+                        let mut nested = path.to_vec();
+
+                        nested.push(Arc::from(index.to_string()));
+                        values.push(self.value(element, &nested, prefix, depth, targets));
+                    }
+
+                    Data::Array(Arc::new(values))
+                }
+                _ => {
+                    self.report(
+                        "Expected a literal string or number; expressions are not evaluated.",
+                        span,
+                    );
+                    return Data::Undefined;
+                }
+            }
+        };
+        let location = self.location(span, path.to_vec());
+
+        self.locations.push(location);
+
+        result
+    }
+
+    fn template(
+        &mut self,
+        node: &'a TemplateLiteral<'a>,
+        path: &[Arc<str>],
+        prefix: &[Arc<str>],
+        depth: usize,
+        targets: &[Arc<str>],
+    ) -> Option<Template> {
+        expression::template(
+            node,
+            0,
+            &mut |expression, before| {
+                let unwrapped = unwrap(expression);
+                let contributions = self.module.contributions;
+
+                if let Some(animation) = contributions.references.get(&unwrapped.span().start) {
+                    if let Some(kind) = contributions.kinds.get(animation)
+                        && targets.iter().any(|target| {
+                            !rule_reference::accepts_expression(*kind, target, before)
+                        })
+                    {
+                        self.report(
+                            "Named stylesheet reference is incompatible with this property.",
+                            expression.span(),
+                        );
+                        return None;
+                    }
+
+                    return Some(Part::Text(Arc::clone(animation)));
+                }
+
+                let span = expression.span();
+                let token = self.token(span.start);
+
+                if let Some(slot) = self.local_slot(expression, prefix) {
+                    if path.len() > depth {
+                        self.report("Dynamic fallback entries are not supported.", span);
+                        return None;
+                    }
+
+                    return Some(Part::Binding(slot));
+                }
+
+                token
+                    .filter(|(end, _)| *end == span.end)
+                    .map(|(_, read)| read.part())
+            },
+            "",
+        )
+    }
+}
+
+/// Accepts an entry context that the composing call selects identically.
+fn same_context(entry: Option<&NativeContext>, composite: Option<&NativeContext>) -> bool {
+    let Some(entry) = entry else {
+        return true;
+    };
+    let Some(composite) = composite else {
+        return false;
+    };
+
+    if entry.default_vars != composite.default_vars || entry.vars.len() != composite.vars.len() {
+        return false;
+    }
+
+    entry.vars.iter().all(|(name, left)| {
+        composite.vars.get(name).is_some_and(|right| {
+            let left = &left.metadata.contract;
+            let right = &right.metadata.contract;
+
+            Arc::ptr_eq(left, right) || (left.identity.is_some() && left.identity == right.identity)
+        })
+    })
+}
+
+/// Lists declarations in emitted order, through conditions and segments.
+fn declarations(style: &NamedStyle) -> Vec<&style::Declaration> {
+    match &style.rules {
+        Some(rules) => rules
+            .iter()
+            .flat_map(|rule| declarations(&rule.style))
+            .collect(),
+        None => style.declarations.iter().collect(),
+    }
+}
+
+/// A composed definition and its synthesized declaration body.
+struct Composite<'a> {
+    body: &'a ObjectExpression<'a>,
+    definition: style::Definition,
+}
+
+impl<'a> Converter<'_, '_, '_, 'a> {
+    fn define(&self, values: Data, name: &Arc<str>) -> Result<style::Definition> {
+        let mut styles = Object::new();
+
+        styles.insert(Arc::clone(name), values);
+
+        style::define(
+            &Data::from(styles),
+            &style::Options {
+                locations: &self.locations,
+                vars: self.theme.as_deref().map(style::Vars::Theme),
+            },
+        )
+    }
+
+    /// Composes ordered entries; later entries win as authored declarations do.
+    fn compose(
+        &mut self,
+        elements: &'a ArenaVec<'a, ArrayExpressionElement<'a>>,
+        before: usize,
+    ) -> Result<Composite<'a>> {
+        let builder = AstBuilder::new(self.module.allocator);
+        let mut parts: Vec<Arc<NamedStyle>> = Vec::new();
+        let mut properties = ArenaVec::new_in(&self.module.allocator);
+
+        for element in elements {
+            let entry = element.as_expression().map(unwrap);
+
+            if let Some(Expression::ObjectExpression(object)) = entry {
+                let values = self.object(object, &[]);
+
+                if self.reporter.len() != before {
+                    continue;
+                }
+
+                let name = Arc::clone(&self.name);
+                let definition = self.define(values, &name)?;
+
+                parts.extend(definition.styles.into_iter().take(1));
+
+                for property in &object.properties {
+                    properties.push(property.clone_in_with_semantic_ids(self.module.allocator));
+                }
+
+                continue;
+            }
+
+            let target = entry.and_then(|entry| {
+                self.module
+                    .selectors
+                    .compositions
+                    .get(&entry.span().start)
+                    .copied()
+            });
+            let local = match target {
+                Some(selectors::Target::Call(call)) => self
+                    .module
+                    .calls
+                    .iter()
+                    .find(|value| value.start == call.span.start),
+                _ => None,
+            };
+            let packed = match target {
+                Some(selectors::Target::Link(link)) => link.style.as_deref(),
+                _ => None,
+            };
+            let style = match (local, packed) {
+                (Some(local), _) => self
+                    .module
+                    .styles
+                    .iter()
+                    .find(|style| style.name == local.name)
+                    .cloned(),
+                (None, Some(packed)) => Some(Arc::clone(&packed.style)),
+                (None, None) => None,
+            };
+            let span = match element {
+                ArrayExpressionElement::Elision(_) => self.call.span,
+                element => element.span(),
+            };
+            let Some(style) = style else {
+                self.report(
+                    "Composition entries require literal objects or previously declared style definitions.",
+                    span,
+                );
+                continue;
+            };
+            let entry_span = entry.map_or(span, GetSpan::span);
+            let variant =
+                local.is_some_and(|local| local.recipe.is_some() || local.slots.is_some())
+                    || packed.is_some_and(|packed| {
+                        packed.dynamic.is_some()
+                            || packed.static_recipe.as_ref().is_some_and(|recipe| {
+                                !(recipe.rules.len() == 1
+                                    && recipe.rules.first().is_some_and(|rule| {
+                                        rule.value.styles.len() == 1
+                                            && rule.value.styles.first().is_some_and(|value| {
+                                                value.name == packed.style.name
+                                            })
+                                    }))
+                            })
+                    });
+
+            if variant {
+                self.report(
+                    "Composition entries cannot be variants or dynamic styles; apply them with cx.",
+                    entry_span,
+                );
+                continue;
+            }
+
+            // Native tables select variable alternatives from one context per call.
+            if self.module.native {
+                let call = self.call.span;
+                let (entry_context, composite) = match self.themes.as_deref_mut() {
+                    Some(themes) => {
+                        let entry_context = match local {
+                            Some(local) => themes.native_context(local.start, local.end)?,
+                            None => packed.and_then(|packed| packed.native_context.clone()),
+                        };
+
+                        (entry_context, themes.native_context(call.start, call.end)?)
+                    }
+                    None => (
+                        packed
+                            .filter(|_| local.is_none())
+                            .and_then(|packed| packed.native_context.clone()),
+                        None,
+                    ),
+                };
+
+                if !same_context(entry_context.as_ref(), composite.as_ref()) {
+                    self.report(
+                        "Native composition entries require the variable catalog of the composing style.",
+                        entry_span,
+                    );
+                    continue;
+                }
+            }
+
+            // The composing configuration decides output for every copied entry.
+            parts.push(Arc::new(NamedStyle {
+                composition: None,
+                css_output: None,
+                ..(*style).clone()
+            }));
+
+            if let Some(local) = local {
+                if let Some(body) = self.module.bodies.get(&local.start) {
+                    for property in &body.properties {
+                        properties.push(property.clone_in_with_semantic_ids(self.module.allocator));
+                    }
+                }
+
+                for (start, count) in local.typography.iter().flatten() {
+                    self.typography.insert(*start, *count);
+                }
+
+                for (start, count) in local.typography_queries.iter().flatten() {
+                    self.typography_queries.insert(*start, *count);
+                }
+
+                continue;
+            }
+
+            // Packed declarations have no authored source here, so they map to the entry.
+            for declaration in declarations(&style) {
+                let allocator = self.module.allocator;
+                let raw: &'a str = allocator.alloc_str(&js::quote(&declaration.property));
+                let key = PropertyKey::new_string_literal(
+                    entry_span,
+                    allocator.alloc_str(&declaration.property),
+                    Some(raw.into()),
+                    &builder,
+                );
+                let value =
+                    Expression::new_string_literal(entry_span, "", Some("\"\"".into()), &builder);
+
+                properties.push(ObjectPropertyKind::new_object_property(
+                    entry_span,
+                    PropertyKind::Init,
+                    key,
+                    value,
+                    false,
+                    false,
+                    false,
+                    &builder,
+                ));
+            }
+        }
+
+        let body: &'a ObjectExpression<'a> = self.module.allocator.alloc(ObjectExpression::new(
+            self.call.span,
+            properties,
+            &builder,
+        ));
+
+        Ok(Composite {
+            body,
+            definition: style::Definition {
+                labels: None,
+                styles: vec![Arc::new(NamedStyle {
+                    declarations: Vec::new(),
+                    name: Arc::clone(&self.name),
+                    rules: Some(
+                        parts
+                            .into_iter()
+                            .map(|style| style::Rule {
+                                condition: None,
+                                style,
+                            })
+                            .collect(),
+                    ),
+                    ..NamedStyle::default()
+                })],
+            },
+        })
+    }
+
+    /// Checks variable values and conditions of a validated style.
+    fn validate(&mut self, style: &NamedStyle, path: &[Arc<str>]) {
+        for declaration in &style.declarations {
+            if let style::Value::Token(reference) = &declaration.value
+                && reference.contract.variable_set
+                && literal::rule(&declaration.property)
+                    .is_some_and(|rule| rule.kind == LiteralKind::Identifier)
+                && !expression::accepts_identifier(reference, &declaration.property, &css_tree)
+            {
+                self.reporter.report(
+                    Code::InvalidLiteral,
+                    "Variable value is incompatible with this property.",
+                    Some(self.call.span),
+                );
+            }
+        }
+
+        if let Some(web) = style
+            .targets
+            .as_ref()
+            .and_then(|targets| targets.web.as_ref())
+        {
+            let mut nested = path.to_vec();
+
+            nested.push(Arc::from("targets"));
+            nested.push(Arc::from("web"));
+            self.validate(web, &nested);
+        }
+
+        for rule in style.rules.iter().flatten() {
+            let mut nested = path.to_vec();
+
+            if let Some(condition) = &rule.condition {
+                nested.push(Arc::clone(condition));
+
+                let encoded = js::stringify(&js::Value::Array(
+                    nested.iter().map(|part| js::Value::from(&**part)).collect(),
+                ));
+                let location = self
+                    .condition_keys
+                    .get(&encoded)
+                    .copied()
+                    .unwrap_or(self.call.span);
+
+                if let Err(message) = lightning::transform(
+                    &format!(".z{{{condition}{{color:red;}}}}"),
+                    lightning::Hooks::default(),
+                ) {
+                    self.report(
+                        format!("Invalid selector or condition: {message}"),
+                        location,
+                    );
+                }
+            }
+
+            self.validate(&rule.style, &nested);
+        }
+    }
+}
+
+/// The module namespace: paired 32-bit FNV hashes of the UTF-16 module identity in base 36.
+fn namespace(value: &str) -> String {
+    let mut first: u32 = 2_166_136_261;
+    let mut second: u32 = 2_246_822_507;
+
+    for code in js::code_units(value) {
+        first = (first ^ u32::from(code)).wrapping_mul(16_777_619);
+        second = (second ^ u32::from(code)).wrapping_mul(3_266_489_909);
+    }
+
+    format!(
+        "{}{}",
+        js::radix(u64::from(first), 36),
+        js::radix(u64::from(second), 36)
+    )
+}
+
+/// Whether a module identity is portable: package-relative, without absolute paths,
+/// backslashes, or traversal segments.
+fn portable(module_id: &str) -> bool {
+    !module_id.is_empty()
+        && !module_id.contains('\\')
+        && !module_id.contains(':')
+        && module_id
+            .split('/')
+            .all(|part| !part.is_empty() && part != "." && part != "..")
+}
+
+/// Strips `/\.[cm]?[jt]sx?$/` from a file name.
+fn stem(name: &str) -> &str {
+    for extension in [
+        ".cjs", ".cjsx", ".cts", ".ctsx", ".js", ".jsx", ".mjs", ".mjsx", ".mts", ".mtsx", ".ts",
+        ".tsx",
+    ] {
+        if let Some(stem) = name.strip_suffix(extension) {
+            return stem;
+        }
+    }
+
+    name
+}
+
+/// Whether a contribution asset URL is absolute, scheme-qualified, or a fragment or query.
+fn absolute(url: &str) -> bool {
+    let bytes = url.as_bytes();
+
+    if matches!(bytes.first(), Some(b'/' | b'?' | b'#')) {
+        return true;
+    }
+
+    let Some(first) = bytes.first() else {
+        return false;
+    };
+
+    if !first.is_ascii_alphabetic() {
+        return false;
+    }
+
+    for byte in bytes.get(1..).unwrap_or_default() {
+        if *byte == b':' {
+            return true;
+        }
+
+        if !(byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'.' | b'-')) {
+            return false;
+        }
+    }
+
+    false
+}
+
+/// The packed style of an exported style reference, and of its members.
+fn exported_style(
+    link: &Link,
+    calls: &[Call<'_>],
+    styles: &[Arc<NamedStyle>],
+    themes: &mut Option<Themes<'_>>,
+) -> Result<Link> {
+    let mut link = link.clone();
+    let call = calls
+        .iter()
+        .find(|call| call.identity.as_deref() == Some(&*link.binding));
+    let style = call.and_then(|call| styles.iter().find(|style| style.name == call.name));
+
+    if let (Some(call), Some(style)) = (call, style) {
+        let mut call = call.clone();
+
+        call.native_context = match themes.as_mut() {
+            Some(themes) => themes.native_context(call.start, call.end)?,
+            None => None,
+        };
+        link.style = Some(Arc::new(packed_styles::create(&call, Arc::clone(style))));
+    }
+
+    if let Some(members) = &link.members {
+        let mut packed = Record::new();
+
+        for (name, member) in members.iter() {
+            packed.insert(
+                Arc::clone(name),
+                exported_style(member, calls, styles, themes)?,
+            );
+        }
+
+        link.members = Some(packed);
+    }
+
+    Ok(link)
+}
+
+/// Extracts direct style calls and local theme definitions imported from `zyzz`.
+///
+/// Parses TypeScript and JSX without reading files, loading configuration, or evaluating
+/// source. The source text is unchanged.
+///
+/// # Errors
+///
+/// Returns [`Error::Extract`] for syntax errors, unsupported imported references, and invalid
+/// literals, with every diagnostic. Other errors are the failures the TypeScript compiler
+/// rethrows, such as invalid configuration options.
+pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Result<Extracted<'a>> {
+    let module_id: Arc<str> = Arc::from(options.module_id);
+
+    if !portable(options.module_id) {
+        return Err(Error::Extract(ExtractError::new(vec![Diagnostic {
+            code: Code::InvalidModule,
+            end: 0,
+            message: "Expected a portable package-relative module ID without absolute paths, backslashes, or traversal segments.".to_owned(),
+            source: module_id,
+            start: 0,
+        }])));
+    }
+
+    let namespace = namespace(options.module_id);
+    let owned;
+    let parsed = if let Some(parsed) = options.parsed {
+        parsed
+    } else {
+        owned = syntax::parse(allocator, options.source, options.module_id);
+        &owned
+    };
+    let program = parsed.program;
+
+    for statement in &program.body {
+        let Statement::ImportDeclaration(import) = statement else {
+            continue;
+        };
+
+        if import.source.value != "zyzz" {
+            continue;
+        }
+
+        for specifier in import.specifiers.iter().flatten() {
+            let ImportDeclarationSpecifier::ImportSpecifier(specifier) = specifier else {
+                continue;
+            };
+            let name = specifier.imported.name();
+
+            if name == "Theme" || name == "Variables" {
+                return Err(Error::Extract(ExtractError::new(vec![Diagnostic {
+                    code: Code::UnsupportedSyntax,
+                    end: parsed.utf16(specifier.span.end),
+                    message: format!("Import Vars instead of {name}."),
+                    source: module_id,
+                    start: parsed.utf16(specifier.span.start),
+                }])));
+            }
+        }
+    }
+
+    let mut reporter = Reporter {
+        diagnostics: Vec::new(),
+        module_id: Arc::clone(&module_id),
+        offsets: &parsed.offsets,
+    };
+
+    if !parsed.errors.is_empty() {
+        for error in &parsed.errors {
+            reporter.diagnostics.push(Diagnostic {
+                code: Code::SyntaxError,
+                end: error.end,
+                message: error.message.clone(),
+                source: Arc::clone(&module_id),
+                start: error.start,
+            });
+        }
+
+        return Err(reporter.fail());
+    }
+
+    let context = options.context;
+    let empty = Record::new();
+    let links = context.map_or(&empty, |context| &context.links);
+    let authored_names = names::collect(program);
+    let constants: FxHashMap<String, &'a Expression<'a>> = context
+        .and_then(|context| context.constants.as_ref())
+        .map(|constants| {
+            constants
+                .iter()
+                .map(|(name, value)| (name.to_string(), *value))
+                .collect()
+        })
+        .unwrap_or_default();
+    let statics = statics::collect(allocator, program, &parsed.semantic, constants);
+    let mut contributions = match contributions::scan(
+        parsed,
+        &namespace,
+        links,
+        context.and_then(|context| context.factories.as_ref()),
+    ) {
+        Ok(contributions) => contributions,
+        Err(error) => {
+            reporter.unsupported(error)?;
+            return Err(reporter.fail());
+        }
+    };
+    let variables = match vars::collect(parsed, &namespace, links, options.module_id) {
+        Ok(variables) => variables,
+        Err(error) => {
+            reporter.unsupported(error)?;
+            return Err(reporter.fail());
+        }
+    };
+    let file = options.module_id.rsplit('/').next().unwrap_or_default();
+    let mut themes = match themes::collect(
+        parsed,
+        themes::Options {
+            contribution_calls: contributions.calls.iter().map(|call| call.start).collect(),
+            linked: context.is_some(),
+            links: links.clone(),
+            namespace: Arc::from(format!(
+                "src-{}-{}",
+                identity::label(stem(file)),
+                identity::compact(options.module_id)
+            )),
+            native: options.target == Target::Native,
+            static_bindings: statics.bindings().collect(),
+        },
+    ) {
+        Ok(themes) => themes,
+        Err(error) => {
+            reporter.unsupported(error)?;
+            return Err(reporter.fail());
+        }
+    };
+    let mut walker = Walker {
+        ancestors: Vec::new(),
+        contributions: &mut contributions,
+        fatal: None,
+        parsed,
+        pending: Vec::new(),
+        recipes: FxHashSet::default(),
+        reporter: &mut reporter,
+        themes: themes.as_mut(),
+        types: Vec::new(),
+        variables: &variables,
+    };
+
+    walker.visit_program(program);
+
+    let Walker {
+        fatal,
+        mut pending,
+        mut recipes,
+        ..
+    } = walker;
+
+    if let Some(error) = fatal {
+        return Err(error);
+    }
+
+    contributions.resolve();
+
+    // Imports and reference lists can have a different order from authored calls.
+    if let Some(themes) = &themes {
+        for entry in themes.styles.values() {
+            pending.push(entry.call);
+
+            if entry.recipe {
+                recipes.insert(entry.call.span.start);
+            }
+        }
+    }
+
+    pending.sort_by_key(|call| call.span.start);
+
+    let static_calls: FxHashSet<u32> = pending
+        .iter()
+        .map(|call| call.span.start)
+        .chain(contributions.calls.iter().map(|call| call.start))
+        .collect();
+    let opaque: FxHashSet<u32> = variables.references.keys().copied().collect();
+    let mut normalized: FxHashMap<u32, std::result::Result<&'a Expression<'a>, Error>> =
+        FxHashMap::default();
+    let mut selector_keys = FxHashSet::default();
+    let mut composed: Vec<&'a Expression<'a>> = Vec::new();
+
+    for call in &pending {
+        // A spread argument has no static value, and the call reports it below.
+        let Some(argument) = call.arguments.first().and_then(Argument::as_expression) else {
+            continue;
+        };
+        let value = match statics.normalize(argument, &static_calls, &opaque, false) {
+            Ok(value) => value,
+            Err(error @ Error::Themes { .. }) => {
+                normalized.insert(call.span.start, Err(error));
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
+
+        if let Expression::ArrayExpression(array) = value {
+            for element in &array.elements {
+                if let Some(entry) = element.as_expression().map(unwrap)
+                    && matches!(
+                        entry,
+                        Expression::Identifier(_)
+                            | Expression::StaticMemberExpression(_)
+                            | Expression::ComputedMemberExpression(_)
+                            | Expression::PrivateFieldExpression(_)
+                    )
+                {
+                    composed.push(entry);
+                }
+            }
+        }
+
+        let mut keys = SelectorKeys {
+            keys: &mut selector_keys,
+        };
+
+        match value {
+            Expression::ArrowFunctionExpression(arrow) => match arrow.get_expression() {
+                Some(body) => match statics.normalize(body, &static_calls, &opaque, false) {
+                    Ok(body) => keys.visit_expression(body),
+                    Err(error @ Error::Themes { .. }) => {
+                        normalized.insert(call.span.start, Err(error));
+                        continue;
+                    }
+                    Err(error) => return Err(error),
+                },
+                None => keys.visit_arrow_function_body(&arrow.body),
+            },
+            value => keys.visit_expression(value),
+        }
+
+        normalized.insert(call.span.start, Ok(value));
+    }
+
+    for call in &pending {
+        if let Err(error) = identifiers::explicit(call, 1) {
+            reporter.report(Code::UnsupportedSyntax, error.text(), Some(call.span));
+        }
+    }
+
+    if reporter.len() > 0 {
+        return Err(reporter.fail());
+    }
+
+    let css_namespaces: FxHashMap<u32, Arc<str>> = themes
+        .iter()
+        .flat_map(|themes| themes.styles.iter())
+        .filter_map(|(start, entry)| {
+            entry
+                .theme
+                .metadata
+                .contract
+                .identity
+                .as_deref()
+                .and_then(|identity| identity.strip_prefix("id-"))
+                .map(|identity| (*start, Arc::from(identity)))
+        })
+        .collect();
+    let selectors = match selectors::scan(
+        parsed,
+        selectors::Options {
+            calls: &pending,
+            composed: &composed,
+            css_namespaces: &css_namespaces,
+            links,
+            module_id: options.module_id,
+            namespace: &namespace,
+            selector_keys: &selector_keys,
+        },
+    ) {
+        Ok(selectors) => selectors,
+        Err(error) => {
+            reporter.unsupported(error)?;
+            return Err(reporter.fail());
+        }
+    };
+    let builder = AstBuilder::new(allocator);
+    let compact = identity::compact(options.module_id);
+    let suffix = compact.get(compact.len().saturating_sub(6)..).unwrap_or("");
+    let mut calls: Vec<Call<'a>> = Vec::new();
+    let mut styles: Vec<Arc<NamedStyle>> = Vec::new();
+    let mut bodies: FxHashMap<u32, &'a ObjectExpression<'a>> = FxHashMap::default();
+    let mut name_counts: FxHashMap<&str, usize> = FxHashMap::default();
+    let mut name_indices: FxHashMap<&str, usize> = FxHashMap::default();
+    let style_name = |call: &CallExpression<'_>| {
+        authored_names
+            .get(&call.span.start)
+            .map_or("style", String::as_str)
+    };
+
+    for call in &pending {
+        *name_counts.entry(style_name(call)).or_default() += 1;
+    }
+
+    for (index, call) in pending.iter().copied().enumerate() {
+        let explicit = match identifiers::explicit(call, 1) {
+            Ok(explicit) => explicit,
+            Err(error) => {
+                reporter.report(Code::UnsupportedSyntax, error.text(), Some(call.span));
+                None
+            }
+        };
+        let bound = themes
+            .as_ref()
+            .and_then(|themes| themes.styles.get(&call.span.start))
+            .map(|entry| (Arc::clone(&entry.theme), entry.output));
+        let theme = bound.as_ref().map(|(theme, _)| Arc::clone(theme));
+        let css_namespace: Option<Arc<str>> = theme
+            .as_ref()
+            .and_then(|theme| theme.metadata.contract.identity.as_deref())
+            .and_then(|identity| identity.strip_prefix("id-"))
+            .map(Arc::from);
+        let authored = style_name(call);
+        let position = name_indices.entry(authored).or_default();
+        let name_index = *position;
+
+        *position += 1;
+
+        let css_name: Arc<str> = Arc::from(match &explicit {
+            Some(explicit) => identity::name(explicit),
+            None if authored == "style" => format!("{suffix}-style-{index}"),
+            None if name_counts.get(authored).copied().unwrap_or_default() > 1 => {
+                format!("{suffix}-{authored}-{name_index}")
+            }
+            None => format!("{suffix}-{authored}"),
+        });
+        let prefix = css_namespace
+            .as_ref()
+            .map_or_else(String::new, |namespace| format!("{namespace}-"));
+        let definition_id = match &explicit {
+            None => format!("{prefix}{css_name}"),
+            Some(explicit) => format!(
+                "id-{prefix}{}",
+                identity::require_id(Some(explicit), "style")?
+                    .get(3..)
+                    .unwrap_or_default()
+            ),
+        };
+        let mut argument: Option<&'a Expression<'a>> =
+            call.arguments.first().and_then(Argument::as_expression);
+
+        if call.arguments.is_empty() {
+            let at = Span::new(call.span.end - 1, call.span.end - 1);
+
+            argument = Some(allocator.alloc(Expression::new_object_expression(
+                at,
+                ArenaVec::new_in(&allocator),
+                &builder,
+            )));
+        }
+
+        loop {
+            argument = match argument {
+                Some(Expression::TSAsExpression(inner)) => Some(&inner.expression),
+                Some(Expression::TSSatisfiesExpression(inner)) => Some(&inner.expression),
+                _ => break,
+            };
+        }
+
+        let original = argument;
+
+        match normalized.remove(&call.span.start) {
+            Some(Ok(value)) => argument = Some(value),
+            Some(Err(error)) => {
+                reporter.unsupported(error)?;
+                continue;
+            }
+            None => {}
+        }
+
+        let count = reporter.len();
+        let dynamic = match argument {
+            Some(argument) => match dynamic::read(argument, &definition_id, &mut |node| {
+                statics.type_of(node, &mut Vec::new())
+            }) {
+                Ok(read) => read,
+                Err(error) => {
+                    reporter.unsupported(error)?;
+                    None
+                }
+            },
+            None => None,
+        };
+
+        if reporter.len() != count {
+            continue;
+        }
+
+        if let Some(read) = &dynamic {
+            match statics.normalize(read.expression, &static_calls, &opaque, false) {
+                Ok(value) => argument = Some(value),
+                Err(error) => {
+                    reporter.unsupported(error)?;
+                    continue;
+                }
+            }
+        }
+
+        let entries = match argument {
+            Some(Expression::ArrayExpression(array))
+                if dynamic.is_none() && !recipes.contains(&call.span.start) =>
+            {
+                Some(&array.elements)
+            }
+            _ => None,
+        };
+
+        if call.arguments.len() > 2
+            || (!matches!(argument, Some(Expression::ObjectExpression(_))) && entries.is_none())
+        {
+            reporter.report(
+                Code::UnsupportedSyntax,
+                "Expected one literal object, typed callback, or array of style definitions and literal objects; spreads are not supported.",
+                Some(call.span),
+            );
+            continue;
+        }
+
+        let before = reporter.len();
+        let mut expanded = None;
+
+        if recipes.contains(&call.span.start)
+            && let Some(object @ Expression::ObjectExpression(_)) = argument
+        {
+            if dynamic.is_some() {
+                reporter.report(
+                    Code::UnsupportedSyntax,
+                    "Recipes require static top-level objects.",
+                    Some(original.map_or(call.span, GetSpan::span)),
+                );
+                continue;
+            }
+
+            match recipes::expand(
+                object,
+                recipes::Options {
+                    identity: &definition_id,
+                    payloads: recipe_payloads::Options {
+                        allocator,
+                        allowed: &static_calls,
+                        opaque: &opaque,
+                        statics: &statics,
+                    },
+                    queries: theme
+                        .as_ref()
+                        .and_then(|theme| theme.metadata.queries.as_deref()),
+                    source: options.source,
+                },
+            ) {
+                Ok(value) => expanded = Some(value),
+                Err(error) => {
+                    reporter.unsupported(error)?;
+                    continue;
+                }
+            }
+        }
+
+        let body_argument: Option<&'a ObjectExpression<'a>> = match &expanded {
+            Some(expanded) => Some(expanded.body),
+            None => match argument {
+                Some(Expression::ObjectExpression(object)) => Some(object),
+                _ => None,
+            },
+        };
+        let name: Arc<str> = Arc::from(format!(
+            "style-{namespace}-{}",
+            parsed.utf16(call.span.start)
+        ));
+        let module = Module {
+            allocator,
+            bodies: &bodies,
+            calls: &calls,
+            contributions: &contributions,
+            native: options.target == Target::Native,
+            offsets: &parsed.offsets,
+            selectors: &selectors,
+            statics: &statics,
+            styles: &styles,
+            variables: &variables,
+        };
+        let slots = match (&expanded, &dynamic) {
+            (Some(expanded), _) => Some(Bindings::Payloads(&expanded.bindings)),
+            (None, Some(read)) => Some(Bindings::Read(read)),
+            (None, None) => None,
+        };
+        let mut converter = Converter {
+            call,
+            condition_keys: FxHashMap::default(),
+            dynamic: slots,
+            locations: Vec::new(),
+            module: &module,
+            name: Arc::clone(&name),
+            reporter: &mut reporter,
+            theme: theme.clone(),
+            themes: themes.as_mut(),
+            typography: FxHashMap::default(),
+            typography_queries: FxHashMap::default(),
+        };
+        let values = match (entries, body_argument) {
+            (None, Some(object)) => Some(converter.object(object, &[])),
+            _ => None,
+        };
+
+        if converter.reporter.len() != before {
+            continue;
+        }
+
+        let converted = (|| -> Result<Option<(style::Definition, &'a ObjectExpression<'a>)>> {
+            let composite = match entries {
+                Some(entries) => Some(converter.compose(entries, before)?),
+                None => None,
+            };
+
+            if converter.reporter.len() != before {
+                return Ok(None);
+            }
+
+            let (definition, body) = match (composite, values, body_argument) {
+                (Some(composite), _, _) => (composite.definition, composite.body),
+                (None, Some(values), Some(body)) => (converter.define(values, &name)?, body),
+                _ => return Ok(None),
+            };
+
+            for style in &definition.styles {
+                converter.validate(style, std::slice::from_ref(&style.name));
+            }
+
+            Ok(Some((definition, body)))
+        })();
+        let (definition, body) = match converted {
+            Ok(Some(converted)) => converted,
+            Ok(None) => continue,
+            Err(Error::Style(diagnostics)) => {
+                invalid_literals(converter.reporter, diagnostics, call.span);
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
+
+        if converter.reporter.len() != before {
+            continue;
+        }
+
+        let retained = expanded.as_ref().and_then(|expanded| {
+            expanded
+                .static_recipe
+                .as_ref()
+                .map(|recipe| (true, recipe))
+                .or_else(|| {
+                    expanded
+                        .dynamic_recipe
+                        .as_ref()
+                        .map(|recipe| (false, recipe))
+                })
+        });
+        let mut target_recipe = None;
+        let mut failed = false;
+
+        if let Some((kind, recipe)) = retained {
+            let mut rules = Vec::with_capacity(recipe.rules.len());
+
+            for (position, rule) in recipe.rules.iter().enumerate() {
+                let values = converter.object(rule.value, &[]);
+                let rule_name: Arc<str> = Arc::from(format!("{name}-{position}"));
+
+                match converter.define(values, &rule_name) {
+                    Ok(value) => rules.push(recipe::Rule {
+                        matches: rule.matches.clone(),
+                        value,
+                    }),
+                    Err(Error::Style(diagnostics)) => {
+                        invalid_literals(converter.reporter, diagnostics, call.span);
+                        failed = true;
+                        break;
+                    }
+                    Err(error) => return Err(error),
+                }
+            }
+
+            target_recipe = Some((
+                kind,
+                recipe::Definition {
+                    axes: recipe.axes.clone(),
+                    defaults: recipe.defaults.clone(),
+                    rules,
+                },
+            ));
+        }
+
+        let Converter {
+            typography,
+            typography_queries,
+            ..
+        } = converter;
+        let contract = theme.as_ref().map(|theme| &theme.metadata.contract);
+        let composition = contract.and_then(|contract| contract.composition);
+        let css_output = contract.and_then(|contract| contract.css_output);
+
+        bodies.insert(call.span.start, body);
+        styles.extend(
+            definition
+                .styles
+                .iter()
+                .map(|style| with_contract(style, composition, css_output)),
+        );
+
+        if failed {
+            continue;
+        }
+
+        let unchanged = match (&dynamic, original) {
+            (Some(read), _) => std::ptr::eq(read.body, body),
+            (None, Some(Expression::ObjectExpression(object))) => {
+                std::ptr::eq(object.as_ref(), body)
+            }
+            (None, _) => false,
+        };
+        let portable = (options.compiler == Some(false)).then(|| {
+            if explicit.is_some() {
+                return Some(Arc::from(format!("z-style-{definition_id}")));
+            }
+
+            let first = definition.styles.first()?;
+
+            if dynamic.is_some()
+                || expanded.is_some()
+                || entries.is_some_and(|entries| entries.is_empty())
+                || (first.declarations.is_empty()
+                    && first.rules.is_none()
+                    && first.targets.is_none())
+            {
+                return None;
+            }
+
+            Some(Arc::from(identity::style(first, css_namespace.as_deref())))
+        });
+        let (static_recipe, dynamic_recipe) = match target_recipe {
+            Some((true, recipe)) => (Some(recipe), None),
+            Some((false, recipe)) => (None, Some(recipe)),
+            None => (None, None),
+        };
+
+        calls.push(Call {
+            body: (!unchanged).then_some(body),
+            css_name: Some(css_name),
+            css_namespace,
+            dynamic_recipe,
+            end: call.span.end,
+            identity: selectors.identities.get(&call.span.start).cloned(),
+            name,
+            output: bound.and_then(|(_, output)| output),
+            portable: portable.flatten(),
+            recipe: expanded.as_ref().map(|expanded| expanded.recipe.clone()),
+            recipe_types: expanded.as_ref().map(|expanded| expanded.types.clone()),
+            shorthands: contract.and_then(|contract| contract.shorthands.clone()),
+            slots: dynamic.as_ref().map(|read| read.slots.clone()),
+            start: call.span.start,
+            static_recipe,
+            typography: (!typography.is_empty()).then_some(typography),
+            typography_queries: (!typography_queries.is_empty()).then_some(typography_queries),
+            values_type: dynamic.as_ref().map(|read| {
+                let span = read.type_annotation.span();
+
+                Arc::from(
+                    options
+                        .source
+                        .get(span.start as usize..span.end as usize)
+                        .unwrap_or_default(),
+                )
+            }),
+            ..Call::default()
+        });
+    }
+
+    if options.target != Target::Native {
+        let collected = compositions::collect(compositions::Options {
+            allocator,
+            calls: &calls,
+            identity: &namespace,
+            links: context.map(|context| &context.links),
+            offsets: &parsed.offsets,
+            program,
+            scopes: themes.as_ref().map(|themes| &themes.scope_applications),
+            semantic: &parsed.semantic,
+            source: options.source,
+            styles: &styles,
+        });
+
+        match collected {
+            Ok(entries) => {
+                for (position, entry) in entries.into_iter().enumerate() {
+                    let authored = authored_names
+                        .get(&entry.call.start)
+                        .map(String::as_str)
+                        .filter(|name| *name != "style")
+                        .unwrap_or("composition");
+                    let css_name = format!(
+                        "{authored}-{position}-{}",
+                        entry.call.css_name.as_deref().unwrap_or("style")
+                    );
+
+                    for (case, (mut value, _)) in entry.cases.iter().cloned().enumerate() {
+                        value.css_name = Some(Arc::from(format!("{css_name}-{case}")));
+                        calls.push(value);
+                    }
+
+                    let mut composed = entry.call;
+
+                    composed.css_name = Some(Arc::from(css_name));
+                    calls.push(composed);
+                    styles.extend(entry.cases.into_iter().map(|(_, style)| style));
+                    styles.push(entry.style);
+                }
+            }
+            Err(error) => reporter.unsupported(error)?,
+        }
+    }
+
+    if let Some(themes) = &themes
+        && reporter.len() == 0
+    {
+        for (start, token) in &themes.tokens {
+            let compiled = calls
+                .iter()
+                .map(|call| (call.start, call.end))
+                .chain(
+                    contributions
+                        .calls
+                        .iter()
+                        .map(|call| (call.start, call.end)),
+                )
+                .any(|(call_start, call_end)| *start >= call_start && token.end <= call_end);
+
+            if !statics.is_used(*start)
+                && !themes.static_tokens.iter().any(|node| node.start == *start)
+                && !compiled
+            {
+                reporter.report(
+                    Code::UnsupportedSyntax,
+                    "Theme references require a compiled style declaration.",
+                    Some(Span::new(*start, token.end)),
+                );
+            }
+        }
+    }
+
+    let mut contribution_starts = variables.registration_starts.clone();
+    let scopes: Vec<(Arc<str>, Scope)> = themes
+        .iter()
+        .flat_map(|themes| themes.themes.iter())
+        .map(|(name, theme)| (Arc::clone(name), Scope::Definition(theme.metadata.clone())))
+        .collect();
+    let contribution_data = (|| -> Result<Vec<web::Definition>> {
+        for (index, registration) in variables.registrations.iter().enumerate() {
+            let span = variables
+                .registration_locations
+                .get(index)
+                .copied()
+                .unwrap_or_default();
+            let css = css::compile(
+                &css::Options {
+                    contributions: std::slice::from_ref(registration),
+                    ..css::Options::default()
+                },
+                None,
+            )
+            .map_err(|error| invalid(&error.text(), span))?
+            .css;
+
+            lightning::transform(&css, lightning::Hooks::default())
+                .map_err(|message| invalid(&message, span))?;
+        }
+
+        let mut data = variables.registrations.clone();
+        let empty = IndexMap::default();
+        let resolve =
+            |node: &'a Expression<'a>| statics.resolve(node, &static_calls, &mut Vec::new());
+
+        data.extend(contributions::extract(
+            &mut contributions,
+            themes.as_ref().map_or(&empty, |themes| &themes.tokens),
+            &mut contribution_starts,
+            &resolve,
+            &parsed.offsets,
+        )?);
+
+        for call in themes.iter().flat_map(|themes| themes.calls.iter()) {
+            let layers = call
+                .options
+                .as_ref()
+                .and_then(|options| options.get("layers"))
+                .filter(|layers| truthy(layers));
+
+            if let Some(layers) = layers {
+                let names = match layers {
+                    Data::Array(names) => names
+                        .iter()
+                        .map(|name| Arc::from(name.to_js_string()))
+                        .collect(),
+                    other => vec![Arc::from(other.to_js_string())],
+                };
+
+                data.push(web::Definition {
+                    kind: web::Kind::Layers { names },
+                    within: Vec::new(),
+                });
+            }
+        }
+
+        if !data.is_empty() {
+            let rendered = css::compile(
+                &css::Options {
+                    contributions: &data,
+                    vars: themes.as_ref().map(|_| scopes.as_slice()),
+                    ..css::Options::default()
+                },
+                None,
+            )
+            .map_err(|error| Error::message(error.text()))?
+            .css;
+            let relative = || {
+                Err(
+                    "Relative contribution assets require Graph.compile and a relocation host."
+                        .to_owned(),
+                )
+            };
+            let mut rule = |rule: &lightningcss::rules::CssRule<'_>| match rule {
+                lightningcss::rules::CssRule::Import(import)
+                    if !import.url.is_empty() && !absolute(&import.url) =>
+                {
+                    relative()
+                }
+                _ => Ok(()),
+            };
+            let mut url = |url: &str| {
+                if !url.is_empty() && !absolute(url) {
+                    return relative();
+                }
+
+                Ok(())
+            };
+            let hooks = if context.is_none() {
+                lightning::Hooks {
+                    rule: Some(&mut rule),
+                    url: Some(&mut url),
+                }
+            } else {
+                lightning::Hooks::default()
+            };
+
+            lightning::transform(&rendered, hooks).map_err(Error::message)?;
+        }
+
+        Ok(data)
+    })();
+    let contribution_data = match contribution_data {
+        Ok(data) => data,
+        Err(Error::Themes { message, span }) => {
+            reporter.report(Code::UnsupportedSyntax, message, Some(span));
+            Vec::new()
+        }
+        Err(error) => {
+            let span = contributions
+                .calls
+                .first()
+                .map(|call| Span::new(call.start, call.end));
+
+            reporter.report(Code::UnsupportedSyntax, error.text(), span);
+            Vec::new()
+        }
+    };
+
+    if let Some(themes) = &themes {
+        for token in &themes.static_tokens {
+            if !statics.is_used(token.value_start) {
+                reporter.report(
+                    Code::UnsupportedSyntax,
+                    "Token references must be direct property values in bound theme style calls.",
+                    Some(Span::new(token.start, token.end)),
+                );
+            }
+        }
+    }
+
+    if reporter.len() > 0 {
+        return Err(reporter.fail());
+    }
+
+    let theme_exports = match context {
+        Some(_) => {
+            let mut exports = themes
+                .as_ref()
+                .map(|themes| themes.exports.clone())
+                .unwrap_or_default();
+
+            for (name, link) in selectors.exports.iter() {
+                let link = exported_style(link, &calls, &styles, &mut themes)?;
+
+                exports.insert(Arc::clone(name), link);
+            }
+
+            for (name, link) in contributions.exports().iter() {
+                exports.insert(Arc::clone(name), link.clone());
+            }
+
+            for (name, link) in variables.exports.iter() {
+                exports.insert(Arc::clone(name), link.clone());
+            }
+
+            Some(exports)
+        }
+        None => None,
+    };
+    let labels = labels(&calls, &styles);
+
+    calls.sort_by_key(|call| call.start);
+
+    if options.target == Target::Native
+        && let Some(themes) = themes.as_mut()
+    {
+        for call in &mut calls {
+            call.native_context = themes.native_context(call.start, call.end)?;
+        }
+    }
+
+    let namespaces = contribution_data
+        .iter()
+        .filter_map(|value| match &value.kind {
+            web::Kind::Namespace(definition) => Some(definition.clone()),
+            _ => None,
+        })
+        .collect();
+    let (contribution_starts, contribution_data) = if contribution_data.is_empty() {
+        (Vec::new(), contribution_data)
+    } else {
+        (contribution_starts, contribution_data)
+    };
+    let Some(themes) = themes else {
+        return Ok(Extracted {
+            calls,
+            contribution_calls: contributions.calls,
+            contribution_starts,
+            contributions: contribution_data,
+            namespaces,
+            native_vars: Vec::new(),
+            static_theme_references: Vec::new(),
+            styles: style::Definition {
+                labels: Some(Arc::new(labels)),
+                styles,
+            },
+            theme_aliases: Vec::new(),
+            theme_appearances: Vec::new(),
+            theme_calls: Vec::new(),
+            theme_exports,
+            theme_references: Vec::new(),
+            theme_scripts: Vec::new(),
+            theme_selections: Vec::new(),
+            variable_calls: variables.calls,
+            vars: Record::new(),
+        });
+    };
+    let static_theme_references = themes
+        .static_tokens
+        .iter()
+        .filter_map(|node| {
+            let token = themes.tokens.get(&node.start)?;
+
+            Some(StaticThemeReference {
+                end: node.end,
+                start: node.start,
+                value: web_themes::Themes::new().serialize(&token.reference),
+            })
+        })
+        .collect();
+    let selections = if options.target == Target::Native {
+        &themes.selection_uses
+    } else {
+        &themes.selections
+    };
+
+    Ok(Extracted {
+        calls,
+        contribution_calls: contributions.calls,
+        contribution_starts,
+        contributions: contribution_data,
+        namespaces,
+        native_vars: themes.vars_reads,
+        static_theme_references,
+        styles: style::Definition {
+            labels: Some(Arc::new(labels)),
+            styles,
+        },
+        theme_aliases: themes.aliases,
+        theme_appearances: themes.appearances.into_iter().collect(),
+        theme_calls: themes.calls,
+        theme_exports,
+        theme_references: themes.references,
+        theme_scripts: themes.scripts.into_iter().collect(),
+        theme_selections: selections.iter().cloned().collect(),
+        variable_calls: variables.calls,
+        vars: themes.themes,
+    })
+}
+
+/// Reports `Style.InvalidError` diagnostics as invalid literals at their locations.
+fn invalid_literals(reporter: &mut Reporter<'_>, diagnostics: Vec<style::Diagnostic>, call: Span) {
+    for diagnostic in diagnostics {
+        let (start, end) = diagnostic.location.as_ref().map_or_else(
+            || {
+                (
+                    reporter.offsets.utf16(call.start),
+                    reporter.offsets.utf16(call.end),
+                )
+            },
+            |location| (location.start, location.end),
+        );
+
+        reporter.diagnostics.push(Diagnostic {
+            code: Code::InvalidLiteral,
+            end,
+            message: diagnostic.message,
+            source: Arc::clone(&reporter.module_id),
+            start,
+        });
+    }
+}
+
+/// Applies the composition and CSS output a configuration contract assigns to its styles.
+fn with_contract(
+    style: &Arc<NamedStyle>,
+    composition: Option<token::Composition>,
+    css_output: Option<token::CssOutput>,
+) -> Arc<NamedStyle> {
+    if composition.is_none() && css_output.is_none() {
+        return Arc::clone(style);
+    }
+
+    let mut copy = (**style).clone();
+
+    if composition.is_some() {
+        copy.composition = composition;
+    }
+
+    if css_output.is_some() {
+        copy.css_output = css_output;
+    }
+
+    Arc::new(copy)
+}
+
+/// Whether a value is truthy in JavaScript.
+fn truthy(value: &Data) -> bool {
+    match value {
+        Data::Bool(value) => *value,
+        Data::Null | Data::Undefined => false,
+        Data::Number(number) => *number != 0.0 && !number.is_nan(),
+        Data::String(text) => !text.is_empty(),
+        _ => true,
+    }
+}
+
+/// Readable class labels: each style takes its call's CSS name and namespace, found by
+/// trimming `-` segments from the style name.
+fn labels(calls: &[Call<'_>], styles: &[Arc<NamedStyle>]) -> style::Labels {
+    let mut by_name: FxHashMap<&str, &Call<'_>> = FxHashMap::default();
+
+    for call in calls {
+        by_name.insert(&call.name, call);
+    }
+
+    let mut labels = style::Labels::default();
+
+    for style in styles {
+        let mut name: &str = &style.name;
+        let mut call = by_name.get(name).copied();
+
+        while call.is_none()
+            && let Some(index) = name.rfind('-')
+        {
+            name = name.get(..index).unwrap_or_default();
+            call = by_name.get(name).copied();
+        }
+
+        let label = match call {
+            Some(call) => style::Label {
+                name: match &call.css_name {
+                    Some(css_name) if !css_name.is_empty() => Arc::from(format!(
+                        "{css_name}{}",
+                        style.name.get(call.name.len()..).unwrap_or_default()
+                    )),
+                    _ => Arc::clone(&style.name),
+                },
+                namespace: call.css_namespace.clone(),
+            },
+            None => style::Label {
+                name: Arc::clone(&style.name),
+                namespace: None,
+            },
+        };
+
+        labels.insert(Arc::clone(&style.name), label);
+    }
+
+    labels
 }

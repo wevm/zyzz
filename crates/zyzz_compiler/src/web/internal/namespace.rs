@@ -4,7 +4,7 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 /// One authored namespace and its compiler-owned output prefix.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Definition {
     /// Unique emitted namespace prefix.
     pub name: Arc<str>,

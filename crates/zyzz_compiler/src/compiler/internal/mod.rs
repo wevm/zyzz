@@ -16,6 +16,7 @@ pub mod recipes;
 pub mod relative;
 pub mod scope;
 pub mod statics;
+pub mod stylesheets;
 pub mod syntax;
 pub mod themes;
 pub mod vars;

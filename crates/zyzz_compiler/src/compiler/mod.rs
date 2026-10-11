@@ -3,5 +3,6 @@
 pub mod graph;
 pub mod handles;
 pub mod internal;
+pub mod native;
 pub mod source;
 pub mod transform;

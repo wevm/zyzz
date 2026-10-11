@@ -6,6 +6,7 @@ import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Url from 'node:url'
 import * as Util from 'node:util'
 import { bench, describe } from 'vite-plus/test'
 import { Host } from 'zyzz/node'
@@ -65,6 +66,26 @@ for (const mode of [
               format: 'esm',
               packages: 'external',
               platform: 'node',
+              plugins: [
+                {
+                  name: 'addon',
+                  setup(build) {
+                    // The loader finds the local build beside its own file, so it stays unbundled.
+                    build.onResolve(
+                      { filter: /internal\/Addon\.js$/ },
+                      (args) => ({
+                        external: true,
+                        path: Url.pathToFileURL(
+                          Path.resolve(args.resolveDir, args.path).replace(
+                            /\.js$/,
+                            '.ts',
+                          ),
+                        ).href,
+                      }),
+                    )
+                  },
+                },
+              ],
               stdin: {
                 contents: `import { Host } from './src/node/index.ts'; const host = await Host.create(${JSON.stringify(options)}); try { await host.build() } finally { await host.close() }`,
                 resolveDir: process.cwd(),

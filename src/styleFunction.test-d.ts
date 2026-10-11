@@ -5,7 +5,7 @@
 /* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { style, Style } from 'zyzz'
+import { style, Style, variants } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 import { counterStyle, fontPaletteValues, positionTry } from 'zyzz/web'
@@ -157,6 +157,57 @@ describe('atRules', () => {
         },
       })
       style({ '@media\n(width > 1px)': { color: 'red' } })
+    })
+  })
+})
+
+describe('composition', () => {
+  describe('style', () => {
+    test('composes static definitions and checked literal objects', () => {
+      const base = style({ padding: '8px' })
+      const focusRing = style({ ':focus-visible': { outlineWidth: '2px' } })
+      const button = style([base, focusRing, { color: 'red' }])
+      const nested = style([button, { ':hover': { color: 'blue' } }], {
+        id: 'nested',
+      })
+
+      expectTypeOf(button()).toEqualTypeOf<style.Props>()
+      expectTypeOf(
+        nested({ className: 'external' }),
+      ).toEqualTypeOf<style.Props>()
+      // @ts-expect-error Composed definitions reject unrelated props.
+      button({ tone: 'red' })
+      // @ts-expect-error Literal entries remain exact.
+      style([base, { colour: 'red' }])
+      // @ts-expect-error Literal entries retain their CSS contracts.
+      style([{ display: 'unknown-display' }])
+    })
+
+    test('rejects dynamic definitions and variants as entries', () => {
+      const dynamic = style((values: { opacity: number }) => ({
+        opacity: values.opacity,
+      }))
+      const button = variants(
+        { variants: { tone: { red: { color: 'red' } } } },
+        { id: 'button' },
+      )
+
+      // @ts-expect-error Dynamic definitions are applied with cx.
+      style([dynamic])
+      // @ts-expect-error Variants are applied with cx.
+      style([button])
+    })
+
+    test('checks configured literal entries against bound tokens', () => {
+      const config = Config.create({ theme: { color: { brand: '#06c' } } })
+      const base = style({ padding: '8px' })
+      const themed = config.style([base, { color: 'brand' }])
+
+      expectTypeOf(themed()).toEqualTypeOf<style.Props>()
+      // @ts-expect-error Configured entries accept only bound tokens.
+      config.style([base, { color: 'unknown' }])
+      // @ts-expect-error Root entries do not have configured tokens.
+      style([base, { color: 'brand' }])
     })
   })
 })

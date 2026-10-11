@@ -9,7 +9,7 @@ import * as Ts from 'typescript-api'
 import { describe, expect, test } from 'vite-plus/test'
 import { Config, Style, style } from 'zyzz'
 
-import { Graph, Source } from 'zyzz/compiler'
+import { Graph, Native, Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('style', () => {
@@ -1807,6 +1807,230 @@ dynamic({ width: '12px' })
         "className": "z-content-_5b__5b__22_padding_22__2c_0_2c_false_5d__5d_",
       }
     `)
+  })
+})
+
+describe('composition', () => {
+  const source = `import {style} from 'zyzz';
+export namespace styles {
+  export const base = style({ color: 'black', padding: '4px' })
+
+  export const focusRing = style({ ':focus-visible': { outline: '2px solid blue' } })
+
+  export const button = style([base, focusRing, { color: 'white', '@media (width >= 600px)': { padding: '8px' } }])
+}`
+
+  describe('style', () => {
+    test('compiles definitions and literal objects into ordered declarations', () => {
+      const result = Graph.compile({ modules: { 'app.ts': source } })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+        ".z-Zf5JrJ-styles-base-text-0{color:black;}
+        .z-Zf5JrJ-styles-base-p-1{padding:4px;}
+        .z-Zf5JrJ-styles-focusRing-outline-0{&:focus-visible{outline:2px solid blue;}}
+        .z-Zf5JrJ-styles-button-text-0{color:black;}
+        .z-Zf5JrJ-styles-button-p-1{padding:4px;}
+        .z-Zf5JrJ-styles-button-text-2{color:white;}
+        @media (width >= 600px){.z-Zf5JrJ-styles-button-p-3{padding:8px;}}"
+      `)
+      expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+
+        export namespace styles {
+          export const base = __zyzzProps.create({className:"z-Zf5JrJ-styles-base-text-0 z-Zf5JrJ-styles-base-p-1 z-style-Zf5JrJ-styles-base"})
+
+          export const focusRing = __zyzzProps.create({className:"z-Zf5JrJ-styles-focusRing-outline-0 z-style-Zf5JrJ-styles-focusRing"})
+
+          export const button = __zyzzProps.create({className:"z-Zf5JrJ-styles-button-text-0 z-Zf5JrJ-styles-button-p-1 z-Zf5JrJ-styles-focusRing-outline-0 z-Zf5JrJ-styles-button-text-2 z-Zf5JrJ-styles-button-p-3 z-style-Zf5JrJ-styles-button"})
+        }"
+      `)
+    })
+
+    test('composes grouped definitions, nested compositions, and configured tokens', () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import { defineConfig } from 'zyzz'
+export const { style } = defineConfig({ cssOutput: 'grouped', vars: { color: { brand: '#06c' }, spacing: { sm: '4px' } } })
+const shared = { opacity: 0.5 }
+const base = style({ color: 'brand', padding: 'sm' })
+const wide = style([base, { '@media (width >= 600px)': { padding: '8px !custom' } }])
+export const card = style([wide, shared, { color: 'red !custom' }])`,
+        },
+      })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+        ".z-theme-theme{--z-color-brand:#06c;--z-spacing-sm:4px;}
+        .z-Zf5JrJ-base{color:var(--z-color-brand,#06c);padding:var(--z-spacing-sm,4px);}
+        .z-Zf5JrJ-wide{color:var(--z-color-brand,#06c);padding:var(--z-spacing-sm,4px);@media (width >= 600px){padding:8px;}}
+        .z-Zf5JrJ-card{color:var(--z-color-brand,#06c);padding:var(--z-spacing-sm,4px);@media (width >= 600px){padding:8px;}opacity:0.5;color:red;}"
+      `)
+    })
+
+    test('composes imported definitions across source and packed modules', () => {
+      const publisher = Graph.compile({
+        modules: {
+          'shared.ts': `import { style } from 'zyzz'
+export namespace shared { export const base = style({ padding: '4px', ':hover': { color: 'red' } }) }`,
+          'local.ts': `import { style } from 'zyzz'
+import { shared } from './shared.js'
+export const card = style([shared.base, { color: 'blue' }])`,
+        },
+      })
+      const app = Graph.compile({
+        modules: {
+          'app.ts': `import { style } from 'zyzz'
+import { shared } from './shared.js'
+export const card = style([shared.base, { color: 'blue' }])`,
+        },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { zyzz: null, './shared.js': 'shared.ts' } },
+      })
+
+      expect(publisher.modules['local.ts']!.css).toMatchInlineSnapshot(`
+        ".z-ewZ9zx-card-p-0{padding:4px;}
+        .z-ewZ9zx-card-text-1{&:hover{color:red;}}
+        .z-ewZ9zx-card-text-2{color:blue;}"
+      `)
+      expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(`
+        ".z-Zf5JrJ-card-p-0{padding:4px;}
+        .z-Zf5JrJ-card-text-1{&:hover{color:red;}}
+        .z-Zf5JrJ-card-text-2{color:blue;}"
+      `)
+    })
+
+    test('flattens composed entries and target branches into native styles', () => {
+      const output = Native.compile({
+        colorScheme: 'light',
+        moduleId: 'app.ts',
+        platform: 'ios',
+        source: `import { style } from 'zyzz'
+namespace styles {
+  export const base = style({ color: 'black', padding: '4px', targets: { ios: { shadowOpacity: 0.5 } } })
+
+  export const card = style([base, { color: 'white', paddingLeft: '8px' }])
+}
+export const card = styles.card`,
+      })
+
+      expect(output.code.slice(output.code.indexOf('export const card =')))
+        .toMatchInlineSnapshot(`
+        "export const card = (__zyzzNative.create({"axes":{},"defaults":{},"styles":{"0":{"color":"white","paddingTop":4,"paddingRight":4,"paddingBottom":4,"paddingLeft":8,"shadowOpacity":0.5}}}) as import('zyzz/runtime').Native.Callable<{}>)
+        }
+        export const card = styles.card"
+      `)
+    })
+
+    test('keeps CSS-only build identities aligned with runtime', () => {
+      const output = Graph.compile({
+        compiler: false,
+        modules: {
+          'card.ts': `import { style } from 'zyzz'
+const base = style({ padding: '4px', ':hover': { color: 'red' } })
+const flag = style({ opacity: 0.5 }, { id: 'flag' })
+export const card = style([base, flag, { color: 'blue' }])`,
+        },
+      })
+      const base = style({ padding: '4px', ':hover': { color: 'red' } })
+      const flag = style({ opacity: 0.5 }, { id: 'flag' })
+
+      expect(Object.values(output.modules['card.ts']!.classes)).toContain(
+        style([base, flag, { color: 'blue' }])().className,
+      )
+    })
+
+    test('rejects variants, dynamic definitions, spreads, and undeclared entries', () => {
+      expect(() =>
+        Source.extract({
+          moduleId: 'invalid.ts',
+          source: `import { style, variants } from 'zyzz'
+const tone = variants({ variants: { tone: { red: { color: 'red' } } } }, { id: 'tone' })
+const dynamic = style((input: { opacity: number }) => ({ opacity: input.opacity }), { id: 'dynamic' })
+const entries = [{ color: 'red' }]
+style([tone])
+style([dynamic])
+style([...entries])
+style([missing])
+style([style({ color: 'red' })])`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+        [Source.ExtractError: invalid.ts:273: Composition entries cannot be variants or dynamic styles; apply them with cx.
+        invalid.ts:287: Composition entries cannot be variants or dynamic styles; apply them with cx.
+        invalid.ts:304: Composition entries require literal objects or previously declared style definitions.
+        invalid.ts:324: Composition entries require literal objects or previously declared style definitions.
+        invalid.ts:341: Composition entries require literal objects or previously declared style definitions.]
+      `)
+      expect(() =>
+        style([
+          style((input: { opacity: number }) => ({ opacity: input.opacity }), {
+            id: 'dynamic',
+          }) as never,
+        ]),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Style.InvalidError: ["0"]: Composition entries require literal objects or static style definitions; apply variants and dynamic styles with cx.]`,
+      )
+    })
+
+    test('renders later entries over earlier ones', async () => {
+      const result = Graph.compile({ modules: { 'app.ts': source } })
+      const built = await Esbuild.transform(result.modules['app.ts']!.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage({
+          viewport: { height: 400, width: 400 },
+        })
+        // Bundle the actual public runtime alongside the transformed consumer module.
+        const bundled = await Esbuild.build({
+          stdin: {
+            contents: built.code,
+            resolveDir: process.cwd(),
+            sourcefile: 'app.js',
+          },
+          alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+          bundle: true,
+          format: 'iife',
+          globalName: 'App',
+          write: false,
+        })
+        await page.setContent(
+          `<style>${result.modules['app.ts']!.css}</style><div id="root"></div>`,
+        )
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.evaluate(`{
+        const {styles} = App;
+        document.querySelector('#root').innerHTML = '<button id="button" class="'+styles.button().className+'">Save</button>';
+      }`)
+        const computed = () =>
+          page.locator('#button').evaluate((node) => {
+            const style = getComputedStyle(node)
+            return `${style.color} ${style.paddingTop} ${style.outlineStyle}`
+          })
+
+        expect(await computed()).toMatchInlineSnapshot(
+          `"rgb(255, 255, 255) 4px none"`,
+        )
+
+        await page.keyboard.press('Tab')
+
+        expect(await computed()).toMatchInlineSnapshot(
+          `"rgb(255, 255, 255) 4px solid"`,
+        )
+
+        await page.setViewportSize({ height: 400, width: 800 })
+
+        expect(await computed()).toMatchInlineSnapshot(
+          `"rgb(255, 255, 255) 8px solid"`,
+        )
+      } finally {
+        await browser.close()
+      }
+    })
   })
 })
 

@@ -1189,7 +1189,10 @@ export function compile(options: compile.Options): compile.ReturnType {
             ) ?? -1
           if (start < 0) continue
 
-          const location = authored[propertyIndex]!
+          // Composed packed entries can expand differently from the composite's shorthands.
+          const location = authored[propertyIndex]
+          if (!location) continue
+
           used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {

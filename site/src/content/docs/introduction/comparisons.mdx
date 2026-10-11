@@ -547,6 +547,8 @@ namespace styles {
 
 `cx` merges applied styles in argument order, including variable bindings and recipe attributes. Later declarations win in matching contexts at equal specificity and importance. Multiple JSX spreads would replace overlapping props instead. See [Styling](/docs/guides/styling).
 
+A definition that always combines both can compose them at build time with `style([styles.button, styles.focusRing])`, which emits its own rules in the same order.
+
 ### Tailwind CSS
 
 ```tsx title="Button.tsx"

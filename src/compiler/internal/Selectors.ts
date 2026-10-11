@@ -11,7 +11,7 @@ import * as Expression from './Expression.js'
 import type * as Scope from './Scope.js'
 import * as Themes from './Themes.js'
 
-/** Collects scoped selectors, local identities, and exported style references. */
+/** Collects scoped selectors, local identities, exported style references, and composed definitions. */
 export function scan(
   program: Ast.Program,
   scope: Scope.Tracker,
@@ -21,6 +21,7 @@ export function scan(
   selectorKeys: ReadonlySet<number> = new Set(),
   cssNamespaces: ReadonlyMap<number, string> = new Map(),
   moduleId = namespace,
+  composed: readonly Ast.Node[] = [],
 ) {
   const authoredNames = Names.collect(program)
   const conditions = new Map<number, string>()
@@ -33,6 +34,7 @@ export function scan(
   const namespaces = new Map<number, Map<string, Ast.Expression>>()
   const importedNames = new Map<string, Themes.Link>()
   const imported = new Map<number, Themes.Link>()
+  const compositions = new Map<number, Ast.CallExpression | Themes.Link>()
 
   const names = new Map<string, Ast.Expression>()
   const publicNames = new Map<string, string>()
@@ -122,7 +124,7 @@ export function scan(
   }
 
   if (!calls.length && !imported.size)
-    return { conditions, exports, identities, localConditions }
+    return { compositions, conditions, exports, identities, localConditions }
 
   const exposed = new Map<Ast.Expression, readonly (readonly string[])[]>()
   for (const [name, local] of publicNames) {
@@ -138,8 +140,8 @@ export function scan(
     for (const [member, value] of values)
       exposed.set(value, [...(exposed.get(value) ?? []), [name, member]])
 
-  if (!selectorKeys.size && !exposed.size)
-    return { conditions, exports, identities, localConditions }
+  if (!selectorKeys.size && !exposed.size && !composed.length)
+    return { compositions, conditions, exports, identities, localConditions }
 
   type Entry = { node: Ast.Node; parent: Ast.Node | null | undefined }
   const nodes: Entry[] = []
@@ -179,10 +181,11 @@ export function scan(
     }
   }
 
-  function resolve(
+  // Composition reads the definition itself, so only selector references claim an identity.
+  function target(
     node: Ast.Node,
     seen = new Set<Ast.Node>(),
-  ): Themes.Link | undefined {
+  ): Ast.CallExpression | Themes.Link | undefined {
     node = Expression.unwrap(node)
     if (seen.has(node)) return undefined
     seen.add(node)
@@ -191,7 +194,7 @@ export function scan(
       node.type === 'CallExpression' &&
       definitions.get(node.start)?.end === node.end
     )
-      return link(node)
+      return node
 
     if (node.type === 'Identifier') {
       const declaration = declarations.get(node.start)
@@ -199,7 +202,7 @@ export function scan(
       const external = imported.get(declaration)
       if (external) return external
       const value = bindings.get(declaration)
-      return value ? resolve(value, seen) : undefined
+      return value ? target(value, seen) : undefined
     }
 
     if (node.type === 'MemberExpression' && !node.optional) {
@@ -221,12 +224,23 @@ export function scan(
           declaration === undefined
             ? undefined
             : namespaces.get(declaration)?.get(name)
-        if (value) return resolve(value, seen)
+        if (value) return target(value, seen)
       }
-      return resolve(node.object, seen)?.members?.[name]
+      const object = target(node.object, seen)
+      return object && !('type' in object) ? object.members?.[name] : undefined
     }
 
     return undefined
+  }
+
+  function resolve(node: Ast.Node): Themes.Link | undefined {
+    const value = target(node)
+    return value && 'type' in value ? link(value) : value
+  }
+
+  for (const node of composed) {
+    const value = target(node)
+    if (value) compositions.set(node.start, value)
   }
 
   for (const { node } of nodes) {
@@ -335,5 +349,5 @@ export function scan(
     return [...imported.values()].some(contains)
   }
 
-  return { conditions, exports, identities, localConditions }
+  return { compositions, conditions, exports, identities, localConditions }
 }

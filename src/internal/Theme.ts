@@ -38,6 +38,18 @@ export type StyleFactory<tokens extends Tokens> = {
       (values extends Binding.Inputs<values> ? unknown : never),
     options?: style.DefinitionOptions,
   ): style.Dynamic<values>
+  <const entries>(
+    styles: entries & {
+      readonly [index in keyof entries]: entries[index] extends (
+        ...args: never
+      ) => unknown
+        ? style.Composable<entries[index]>
+        : entries[index] & NoInfer<Style.Accepted<entries[index], tokens>>
+    },
+    ...options: entries extends readonly unknown[]
+      ? [options?: style.DefinitionOptions]
+      : [invalid: never, unavailable: never]
+  ): style.ReturnType
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Style.Accepted<styles, tokens>>,
     options?: style.DefinitionOptions,

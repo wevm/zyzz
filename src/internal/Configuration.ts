@@ -632,6 +632,28 @@ export type StyleFactory<
       Completion.Properties<tokens>,
     options?: style.DefinitionOptions,
   ): style.ReturnType<output>
+  <const entries>(
+    styles: entries & Entries<entries, tokens, layers, mappings>,
+    ...options: entries extends readonly unknown[]
+      ? [options?: style.DefinitionOptions]
+      : [invalid: never, unavailable: never]
+  ): style.ReturnType<output>
+}
+
+// Composition entries are static definitions or checked literal objects.
+type Entries<
+  entries,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> = {
+  readonly [index in keyof entries]: entries[index] extends (
+    ...args: never
+  ) => unknown
+    ? style.Composable<entries[index]>
+    : entries[index] &
+        NoInfer<Body<entries[index], tokens, layers, mappings>> &
+        Completion.Properties<tokens>
 }
 
 type Keys<styles> = styles extends unknown ? keyof styles : never

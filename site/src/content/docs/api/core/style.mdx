@@ -36,15 +36,18 @@ style(styles?, options?)
 
 // Declarations that read values passed on each call
 style((values) => styles, options?)
+
+// Earlier definitions and literal objects composed in order
+style([definition, styles], options?)
 ```
 
-Both forms return a definition, which is applied by calling it. The `style` returned by [`defineConfig`](/docs/api/core/defineConfig) has the same signature and also accepts the config's token names.
+Each form returns a definition, which is applied by calling it. The `style` returned by [`defineConfig`](/docs/api/core/defineConfig) has the same signature and also accepts the config's token names.
 
 ## Parameters
 
 ### styles
 
-- **Type:** `Style.LiteralProperties | ((values: values) => Style.LiteralProperties){:ts}`
+- **Type:** `Style.LiteralProperties | ((values: values) => Style.LiteralProperties) | readonly (style.ReturnType | Style.LiteralProperties)[]{:ts}`
 - **Default:** `{}{:ts}`
 
 CSS declarations keyed by camelCase property names, in authored order. [Values](/docs/api/core/values) lists the supported properties and literal values.
@@ -88,6 +91,18 @@ const meter = style((values: { amount: `${number}%` }) => ({
   backgroundColor: 'green',
   width: values.amount, // [!code hl]
 }))
+```
+
+An array composes static definitions and literal objects into one definition with its own rules. Entries apply in order, so later declarations override earlier ones within matching conditions. Each entry must be declared earlier in the module or imported.
+
+```ts
+import { style } from 'zyzz'
+
+const button = style({ color: 'black', padding: '8px 16px' })
+
+// [!code hl:2]
+// Copies the button declarations, then overrides the color
+const primary = style([button, { color: 'white' }])
 ```
 
 ### styles.selectors
@@ -249,6 +264,7 @@ const props = styles.meter({ amount: '50%' })
 
 ## Types
 
+- **`style.Composable<entry>{:ts}`:** Accepts a static definition as a composition entry.
 - **`style.DefinitionOptions{:ts}`:** The definition's second argument, `{ id? }`.
 - **`style.Dynamic<values>{:ts}`:** A callback definition, which requires `values` on each call.
 - **`style.Options{:ts}`:** The styling overrides accepted when applying a definition.
@@ -289,7 +305,7 @@ const button = style({ padding: '8px 16px' })
 button({ onClick: () => {} })
 ```
 
-The compiler reports unsupported source as `Source.ExtractError` with the source location, such as a selector without `&`. Without a compiler transform, an empty or callback definition without `options.id` throws an `Error`.
+The compiler reports unsupported source as `Source.ExtractError` with the source location, such as a selector without `&` or a composition entry that is a variants or callback definition. Without a compiler transform, an empty or callback definition without `options.id` throws an `Error`, and such a composition entry throws `Style.InvalidError`.
 
 ## React Native
 

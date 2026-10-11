@@ -504,11 +504,21 @@ export function extract(options: extract.Options): extract.ReturnType {
   const opaque = new Set(variables.references.keys())
   const normalized = new Map<number, Ast.Node | Error>()
   const selectorKeys = new Set<number>()
+  const composed: Ast.Node[] = []
   for (const call of pending) {
     if (!call.arguments[0]) continue
     try {
       const value = staticData.normalize(call.arguments[0], staticCalls, opaque)
       normalized.set(call.start, value)
+      if (value.type === 'ArrayExpression')
+        for (const element of value.elements) {
+          const entry = element && Expression.unwrap(element)
+          if (
+            entry?.type === 'Identifier' ||
+            entry?.type === 'MemberExpression'
+          )
+            composed.push(entry)
+        }
       const body =
         value.type === 'ArrowFunctionExpression'
           ? staticData.normalize(value.body, staticCalls, opaque)
@@ -564,6 +574,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           }),
         ),
         options.moduleId,
+        composed,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -573,6 +584,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
   })()
 
+  const bodies = new Map<number, Ast.ObjectExpression>()
   const cssNameCounts = new Map<string, number>()
   for (const call of pending) {
     const name = authoredNames.get(call.start)!
@@ -686,10 +698,20 @@ export function extract(options: extract.Options): extract.ReturnType {
       }
     }
 
-    if (call.arguments.length > 2 || argument?.type !== 'ObjectExpression') {
+    const entries =
+      argument?.type === 'ArrayExpression' &&
+      !dynamic &&
+      !recipes.has(call.start)
+        ? argument.elements
+        : undefined
+
+    if (
+      call.arguments.length > 2 ||
+      (argument?.type !== 'ObjectExpression' && !entries)
+    ) {
       report(
         'unsupported_syntax',
-        'Expected one literal object or typed callback; spreads and referenced definitions are not supported.',
+        'Expected one literal object, typed callback, or array of style definitions and literal objects; spreads are not supported.',
         call,
       )
       continue
@@ -700,7 +722,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     let recipeTypes: Call['recipeTypes']
     let staticRecipe: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
     let dynamicRecipe: StaticRecipe.Definition<Ast.ObjectExpression> | undefined
-    if (recipes.has(call.start)) {
+    if (recipes.has(call.start) && argument?.type === 'ObjectExpression') {
       try {
         if (dynamic)
           throw new Themes.InvalidError(
@@ -1231,14 +1253,144 @@ export function extract(options: extract.Options): extract.ReturnType {
       return values
     }
 
-    const values = object(argument)
+    // Each entry becomes an ordered declaration segment, so later entries win as authored declarations do.
+    function compose(elements: Ast.ArrayExpression['elements']) {
+      const parts: Style.NamedStyle[] = []
+      const properties: Ast.ObjectExpression['properties'] = []
+
+      for (const element of elements) {
+        const entry =
+          element && element.type !== 'SpreadElement'
+            ? Expression.unwrap(element)
+            : undefined
+
+        if (entry?.type === 'ObjectExpression') {
+          const values = object(entry)
+          if (diagnostics.length !== before) continue
+
+          parts.push(
+            define(
+              { [name]: values },
+              { locations, vars: themes?.styles.get(call.start)?.theme },
+            ).styles[0]!,
+          )
+          properties.push(...entry.properties)
+          continue
+        }
+
+        const target = entry && selectors.compositions.get(entry.start)
+        const local =
+          target && 'type' in target
+            ? calls.find((value) => value.start === target.start)
+            : undefined
+        const packed = target && !('type' in target) ? target.style : undefined
+        const style = local
+          ? styles.find((style) => style.name === local.name)
+          : packed?.style
+
+        if (!style) {
+          report(
+            'unsupported_syntax',
+            'Composition entries require literal objects or previously declared style definitions.',
+            element ?? call,
+          )
+          continue
+        }
+
+        if (
+          local?.recipe ||
+          local?.slots ||
+          packed?.attributes.length ||
+          packed?.slots.length
+        ) {
+          report(
+            'unsupported_syntax',
+            'Composition entries cannot be variants or dynamic styles; apply them with cx.',
+            entry!,
+          )
+          continue
+        }
+
+        parts.push(style)
+
+        if (local) {
+          properties.push(...(bodies.get(local.start)?.properties ?? []))
+          for (const [start, count] of local.typography ?? [])
+            typography.set(start, count)
+          for (const [start, count] of local.typographyQueries ?? [])
+            typographyQueries.set(start, count)
+          continue
+        }
+
+        // Packed declarations have no authored source here, so they map to the entry.
+        properties.push(
+          ...declarations(style).map(
+            (declaration): Ast.ObjectProperty => ({
+              type: 'Property',
+              computed: false,
+              kind: 'init',
+              method: false,
+              shorthand: false,
+              start: entry!.start,
+              end: entry!.end,
+              key: {
+                type: 'Literal',
+                value: declaration.property,
+                raw: JSON.stringify(declaration.property),
+                start: entry!.start,
+                end: entry!.end,
+              },
+              value: {
+                type: 'Literal',
+                value: '',
+                raw: '""',
+                start: entry!.start,
+                end: entry!.end,
+              },
+            }),
+          ),
+        )
+      }
+
+      return {
+        body: {
+          type: 'ObjectExpression',
+          start: call.start,
+          end: call.end,
+          properties,
+        } satisfies Ast.ObjectExpression,
+        definition: {
+          styles: [
+            Object.freeze<Style.NamedStyle>({
+              name,
+              declarations: Object.freeze([]),
+              rules: Object.freeze(
+                parts.map((style) => Object.freeze({ style })),
+              ),
+            }),
+          ],
+        } satisfies Style.Definition as Style.Definition,
+      }
+    }
+
+    const values = entries
+      ? undefined
+      : object(argument as Ast.ObjectExpression)
     if (diagnostics.length !== before) continue
 
     try {
-      const definition = define(
-        { [name]: values },
-        { locations, vars: themes?.styles.get(call.start)?.theme },
-      )
+      const composite = entries && compose(entries)
+      if (diagnostics.length !== before) continue
+
+      const definition =
+        composite?.definition ??
+        define(
+          { [name]: values! },
+          { locations, vars: themes?.styles.get(call.start)?.theme },
+        )
+
+      const body = composite?.body ?? (argument as Ast.ObjectExpression)
+      bodies.set(call.start, body)
 
       function validate(style: Style.NamedStyle, path: readonly string[]) {
         for (const declaration of style.declarations) {
@@ -1331,10 +1483,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         ...(selectors.identities.has(call.start)
           ? { identity: selectors.identities.get(call.start)! }
           : {}),
-        ...(argument !== (dynamic?.body ?? original) &&
-        argument.type === 'ObjectExpression'
-          ? { body: argument }
-          : {}),
+        ...(body !== (dynamic?.body ?? original) ? { body } : {}),
         ...(shorthands ? { shorthands } : {}),
         ...(typography.size ? { typography } : {}),
         ...(typographyQueries.size ? { typographyQueries } : {}),
@@ -1357,6 +1506,7 @@ export function extract(options: extract.Options): extract.ReturnType {
                 if (
                   dynamic ||
                   recipe ||
+                  entries?.length === 0 ||
                   (!definition.styles[0]!.declarations.length &&
                     !definition.styles[0]!.rules &&
                     !definition.styles[0]!.targets)
@@ -1746,6 +1896,13 @@ export class ExtractError extends Error {
   readonly diagnostics: readonly Diagnostic[]
   /** Stable namespaced error identifier. */
   override name = 'Source.ExtractError'
+}
+
+/** Lists declarations in emitted order, through conditions and segments. */
+function declarations(style: Style.NamedStyle): readonly Style.Declaration[] {
+  return style.rules
+    ? style.rules.flatMap((rule) => declarations(rule.style))
+    : style.declarations
 }
 
 function identity(value: string): string {

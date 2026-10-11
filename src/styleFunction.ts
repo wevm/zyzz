@@ -29,9 +29,22 @@ type VariableOptions<input> = input extends {
     }
   : unknown
 
+// Composition entries are static definitions or exact literal objects.
+type Entries<entries> = {
+  readonly [index in keyof entries]: entries[index] extends (
+    ...args: never
+  ) => unknown
+    ? style.Composable<entries[index]>
+    : entries[index] &
+        NoInfer<Style.Accepted<entries[index], {}, true>> &
+        Completion.Properties
+}
+
 /**
  * Declares literal styles for source extraction. Requires a compile-time transform.
- * @param styles - Token-free literal CSS properties. Omit for an empty definition.
+ * An array composes static definitions and literal objects in order, so later entries
+ * win as later declarations do.
+ * @param styles - Token-free literal CSS properties, or an array of static definitions and literal objects. Omit for an empty definition.
  * @returns A callable style definition after source rewriting.
  * @throws {Error} When a definition needs an explicit identity and none is supplied.
  */
@@ -60,9 +73,18 @@ export function style<const styles extends Record<string, unknown>>(
     Completion.Properties,
   options?: style.DefinitionOptions,
 ): style.ReturnType
+export function style<const entries>(
+  styles: entries & Entries<entries>,
+  // Exclude non-array inputs by arity so they cannot mask object-property diagnostics.
+  ...options: entries extends readonly unknown[]
+    ? [options?: style.DefinitionOptions]
+    : [invalid: never, unavailable: never]
+): style.ReturnType
 export function style(
   styles?: unknown,
   options: style.DefinitionOptions = {},
+  // Matches the arity-gated overloads, whose invalid branches add parameters.
+  ..._: readonly never[]
 ): style.ReturnType {
   return Authoring.create(styles, options)
 }
@@ -73,6 +95,10 @@ type Reference = { readonly [identity]: true }
 
 /** Contracts for the literal authoring boundary. */
 export declare namespace style {
+  /** Accepts a static definition as a composition entry. Dynamic definitions and variants require cx. */
+  type Composable<entry> = entry extends Reference & (() => unknown)
+    ? entry
+    : ReturnType<Output>
   /** Stable identity for selectors and definitions that cannot be content-addressed. */
   type DefinitionOptions = { readonly id?: string | undefined }
   /** Callable compiled bindings with required scalar inputs and styling overrides. */

@@ -225,6 +225,53 @@ namespace styles {
 
 Separate JSX spreads replace each other's `className`, so each element takes one `cx` call. Ternaries and mutated bindings fail compilation, and one call accepts up to eight conditional arguments. The [cx reference](/docs/api/core/cx) covers nesting and packed libraries.
 
+### Compose Definitions
+
+An array passed to `style` composes earlier definitions and literal objects into one definition. Entries keep their order, so a later entry overrides an earlier one, and the result applies without `cx`.
+
+```tsx title="Toolbar.tsx"
+import { style } from 'zyzz'
+
+export function Toolbar() {
+  return (
+    <div {...styles.toolbar()}>
+      <button {...styles.button()} type="button">
+        Cancel
+      </button>
+      <button {...styles.primary()} type="button">
+        Publish
+      </button>
+    </div>
+  )
+}
+
+namespace styles {
+  export const button = style({
+    borderRadius: '6px',
+    color: '#171717',
+    padding: '8px 16px',
+  })
+
+  export const focusRing = style({
+    ':focus-visible': { outline: '2px solid #0070f3', outlineOffset: '2px' },
+  })
+
+  // [!code hl:6]
+  // Copies both definitions in order, then overrides their color
+  export const primary = style([
+    button,
+    focusRing,
+    { backgroundColor: '#0070f3', color: 'white' },
+  ])
+
+  export const toolbar = style({ display: 'flex', gap: '8px' })
+}
+```
+
+`primary` compiles to its own rules, so its white text wins over the color from `button`. Entries can be local or imported static definitions, other compositions, and local immutable records. Variants and dynamic definitions are applied with `cx` instead.
+
+A composition copies declarations rather than class names. A selector that references `button`, such as `` `${button}:hover &` ``, does not match an element styled with `primary`. Apply both with `cx` when an element needs the identity of each definition.
+
 ### Accept Overrides
 
 An applied definition also accepts `className`, `style`, and `vars`. A reusable component can forward the first two, so a caller adjusts one instance without another definition.
@@ -527,7 +574,7 @@ namespace styles {
 }
 ```
 
-Records must stay immutable and local to the module. Reuse a complete style with `cx`, and a record when only part of a definition repeats.
+Records must stay immutable and local to the module. Compose complete definitions with an array, and spread a record when only part of a definition repeats.
 
 ### Add Fallback Values
 

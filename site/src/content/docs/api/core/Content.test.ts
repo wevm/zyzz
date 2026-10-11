@@ -129,8 +129,8 @@ describe('style API page', () => {
     `)
   })
 
-  test('compiles declarations, conditions, and callbacks', async () => {
-    const [declarations, conditions, callback] = await examples(
+  test('compiles declarations, conditions, callbacks, and compositions', async () => {
+    const [declarations, conditions, callback, composition] = await examples(
       'style',
       'styles',
     )
@@ -148,6 +148,12 @@ describe('style API page', () => {
     expect(css(callback!.source)).toMatchInlineSnapshot(`
       ".z-bg-green{background-color:green;}
       .z-w-\\5b var\\28 --z-3oDDjY-meter-amount\\29 \\5d {width:var(--z-3oDDjY-meter-amount);}"
+    `)
+    expect(css(exported(composition!.source))).toMatchInlineSnapshot(`
+      ".z-3oDDjY-button-text-0{color:black;}
+      .z-3oDDjY-button-p-1{padding:8px 16px;}
+      .z-3oDDjY-primary-text-0{color:black;}
+      .z-3oDDjY-primary-text-1{color:white;}"
     `)
   })
 

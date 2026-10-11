@@ -290,7 +290,7 @@ namespace styles {
 
 Swapping the arguments swaps the result. `cx(styles.compact(), styles.button())` applies `1rem` of padding, because `button` comes last.
 
-Multiple JSX spreads replace fields rather than compose them. External classes follow the CSS cascade, and their order in a class string does not establish precedence. [Styling](/docs/guides/styling) explains the override rules.
+Multiple JSX spreads replace fields rather than compose them. `style([styles.button, styles.compact])` composes the same definitions once, into a new definition. External classes follow the CSS cascade, and class-string order does not establish precedence. [Styling](/docs/guides/styling) explains the override rules.
 
 ## Variants
 

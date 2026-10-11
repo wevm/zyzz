@@ -6,6 +6,7 @@
     "bench:types": "node scripts/type-benches.ts",
     "build": "pnpm build:binding && zile && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts",
     "build:binding": "napi build --platform --release --package-json-path crates/zyzz_binding/package.json --manifest-path crates/zyzz_binding/Cargo.toml --output-dir binding --no-js && node scripts/build-wasm.ts",
+    "build:binding:test": "napi build --platform --profile binding-test --package-json-path crates/zyzz_binding/package.json --manifest-path crates/zyzz_binding/Cargo.toml --output-dir binding --no-js && node scripts/build-wasm.ts",
     "build:wasm": "node scripts/build-wasm.ts",
     "changeset:publish": "zile publish:prepare && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts && changeset publish && zile publish:post",
     "changeset:version": "changeset version",

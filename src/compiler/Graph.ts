@@ -26,11 +26,40 @@ import * as Source from './Source.js'
 import * as Scope from './internal/Scope.js'
 import * as Static from './internal/Static.js'
 import * as Transform from './Transform.js'
+import * as Engine from '../web/internal/Engine.js'
+import * as Results from './internal/Results.js'
 
 /** Compiles supplied modules with shared theme contracts and dependency metadata. */
 export function compile(options: compile.Options): compile.ReturnType {
-  return build(options).result
+  if (options.native) return build(options).result
+
+  return Results.graph(
+    Results.call<Results.Output>('graph.compile', encode(options)),
+  )
 }
+
+/** The engine's graph input. Host syntax caches stay host-side, since the engine parses. */
+function encode(options: compile.Options, handle?: number) {
+  return {
+    ...(handle === undefined ? {} : { handle }),
+    complete: options[ClassName.complete],
+    compiler: options.compiler,
+    composition: options.composition,
+    contracts: options.contracts,
+    cssOutput: options.cssOutput,
+    development: options.development,
+    entry: options[Stylesheets.entry],
+    imports: options.imports,
+    modules: options.modules,
+    reset: options.reset,
+    shared: options[ThemeRules.shared],
+  }
+}
+
+// Releases engine caches of compilers the host no longer references.
+const compilers = new FinalizationRegistry<number>((handle) =>
+  Engine.call('graph.release', JSON.stringify({ handle })),
+)
 
 /** Input and output of graph compilation. */
 export declare namespace compile {
@@ -105,16 +134,31 @@ export declare namespace compile {
 /** Creates an isolated compiler with bounded extraction reuse across source graphs. */
 export function create(): create.ReturnType {
   let previous: Cache | undefined
+  let handle: number | undefined
+  let result: compile.ReturnType | undefined
 
-  return Object.freeze({
+  const compiler = Object.freeze({
     compile(options: compile.Options): compile.ReturnType {
-      const next = build(options, previous)
+      if (options.native) {
+        const next = build(options, previous)
 
-      previous = next
+        previous = next
 
-      return next.result
+        return next.result
+      }
+
+      handle ??= JSON.parse(Engine.call('graph.create', '')).handle as number
+      compilers.register(compiler, handle)
+      result = Results.graph(
+        Results.call<Results.Output>('graph.compile', encode(options, handle)),
+        result,
+      )
+
+      return result
     },
   })
+
+  return compiler
 }
 
 /** Incremental graph compiler contracts. */

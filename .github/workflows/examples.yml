@@ -54,6 +54,8 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/actions/install-dependencies
+        with:
+          rust: 'true'
       - name: Build library
         run: pnpm build
       - name: Link workspace binaries
@@ -158,7 +160,7 @@ jobs:
           path: example-results/*.json
           if-no-files-found: error
           retention-days: 7
-    timeout-minutes: 20
+    timeout-minutes: 30
 
   cleanup:
     if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository && needs.discover.outputs.examples != '[]'

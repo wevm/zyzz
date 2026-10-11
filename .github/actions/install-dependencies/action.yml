@@ -1,6 +1,11 @@
 name: 'Install dependencies'
 description: 'Prepare repository and all dependencies'
 
+inputs:
+  rust:
+    default: 'false'
+    description: 'Restore the Cargo build cache for jobs that compile the Rust crates'
+
 runs:
   using: 'composite'
   steps:
@@ -16,3 +21,10 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
+
+    # rustup installs the toolchain and targets pinned in rust-toolchain.toml on first use.
+    - if: ${{ inputs.rust == 'true' }}
+      name: Cache Rust builds
+      uses: Swatinem/rust-cache@v2
+      with:
+        save-if: ${{ github.ref == 'refs/heads/main' }}

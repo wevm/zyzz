@@ -13,8 +13,12 @@ const root = Path.resolve(import.meta.dirname, '..')
 /**
  * Runs the package's `build:binding:test` script, which also writes the WebAssembly module. It
  * builds without link-time optimization, so test runs after a Rust edit rebuild quickly.
+ * `ZYZZ_BINDING=prebuilt` uses the binding already in `binding/`, as CI test shards download one
+ * build of the current sources.
  */
 export function setup(): void {
+  if (process.env.ZYZZ_BINDING === 'prebuilt') return
+
   const manifest = JSON.parse(
     Fs.readFileSync(Path.join(root, 'package.json'), 'utf8'),
   ) as { readonly scripts: Readonly<Record<string, string>> }

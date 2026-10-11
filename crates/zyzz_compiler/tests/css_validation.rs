@@ -10,10 +10,12 @@ use lightningcss::values::url::Url;
 use lightningcss::visitor::{Visit, VisitTypes, Visitor};
 use zyzz_compiler::compiler::internal::lightning::Options;
 use zyzz_compiler::compiler::internal::{
-    at_rules, color_profiles, descriptors, expression, functions, keyframes, properties,
-    view_transitions,
+    at_rules, color_profiles, descriptors, expression, functions, keyframes, namespaces,
+    properties, view_transitions,
 };
 use zyzz_compiler::error::{Error, Result};
+use zyzz_compiler::mapping::gen_mapping::{GenMapping, Mapping, Position};
+use zyzz_compiler::web::internal::namespace;
 
 /// Formats a result as its value or its error message.
 fn outcome<T: std::fmt::Display>(result: Result<T>) -> String {
@@ -29,11 +31,14 @@ fn checked(result: Result<()>) -> String {
 }
 
 fn transform(code: &str) -> String {
-    outcome(at_rules::transform(&Options {
-        code,
-        filename: "test.css",
-        ..Options::default()
-    }))
+    outcome(
+        at_rules::transform(&Options {
+            code,
+            filename: "test.css",
+            ..Options::default()
+        })
+        .map(|output| output.code),
+    )
 }
 
 /// Matches `/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i`, the relocation hosts' absolute URL test.
@@ -216,7 +221,7 @@ fn transform_minifies_for_targets() {
         ..Options::default()
     });
 
-    insta::assert_snapshot!(outcome(output), @".a{-webkit-user-select:none;user-select:none;top:0;bottom:0;left:0;right:0}@media (min-width:30em){.b{color:#00000080}}");
+    insta::assert_snapshot!(outcome(output.map(|output| output.code)), @".a{-webkit-user-select:none;user-select:none;top:0;bottom:0;left:0;right:0}@media (min-width:30em){.b{color:#00000080}}");
 }
 
 #[test]
@@ -228,7 +233,7 @@ fn transform_recovers_from_invalid_rules() {
         ..Options::default()
     });
 
-    insta::assert_snapshot!(outcome(output), @"
+    insta::assert_snapshot!(outcome(output.map(|output| output.code)), @"
     .a {
       color: red;
     }
@@ -253,7 +258,7 @@ fn transform_with_relocates_imports_and_urls() {
         &mut Relocate,
     );
 
-    insta::assert_snapshot!(outcome(output), @r#"
+    insta::assert_snapshot!(outcome(output.map(|output| output.code)), @r#"
     @import "zyzz-asset:a.css" layer;
     @import "zyzz-asset:b.css";
     @import "zyzz-asset:c.css" layer(base) supports(display: grid);
@@ -276,7 +281,7 @@ fn transform_with_returns_visitor_errors() {
         &mut Reject,
     );
 
-    insta::assert_snapshot!(outcome(output), @"Error: Relative contribution assets require Graph.compile and a relocation host.");
+    insta::assert_snapshot!(outcome(output.map(|output| output.code)), @"Error: Relative contribution assets require Graph.compile and a relocation host.");
 }
 
 #[test]
@@ -294,7 +299,7 @@ fn transform_with_visits_transported_markers() {
         &mut names,
     );
 
-    insta::assert_snapshot!(outcome(output), @r#"
+    insta::assert_snapshot!(outcome(output.map(|output| output.code)), @r#"
     @font-palette-values --p {
       font-family: A;
     }
@@ -511,4 +516,82 @@ fn expression_matcher() {
     insta::assert_snapshot!(matches("--x", "anything").to_string(), @"false");
 
     insta::assert_snapshot!(matches("colour", "red").to_string(), @"false");
+}
+
+fn definition(name: &str, prefix: Option<&str>, uri: &str) -> namespace::Definition {
+    namespace::Definition {
+        name: name.into(),
+        prefix: prefix.map(Into::into),
+        uri: uri.into(),
+    }
+}
+
+#[test]
+fn namespaces_rewrite_selectors() {
+    let namespaces = [
+        definition("z-svg", Some("s\\76 g"), "http://www.w3.org/2000/svg"),
+        definition("z-html", None, "urn:\"html\""),
+    ];
+    let css = "@namespace z-svg url(x);\nrect, svg|circle > .a { fill: red }\n:is(svg|a, b)::before { color: blue }\n[svg|href], ::slotted(svg|a) { color: green }";
+    let (output, map) = namespaces::rewrite(css, &namespaces, None, true).unwrap_or_default();
+
+    insta::assert_snapshot!(output, @r#"
+    @namespace z-html "urn:\"html\"";
+    @namespace z-svg "x";
+
+    z-html|rect, z-svg|circle > z-html|*.a {
+      fill: red;
+    }
+
+    z-html|*:is(z-svg|a, z-html|b):before {
+      color: #00f;
+    }
+
+    z-html|*[z-svg|href], z-html|*::slotted(svg|a) {
+      color: green;
+    }
+    "#);
+
+    assert!(map.is_none());
+}
+
+#[test]
+fn namespaces_rewrite_composes_maps() {
+    let mut previous = GenMapping::new(Some("module.ts.css"));
+
+    for (line, column) in [(1, 0), (1, 6), (2, 0)] {
+        previous.add_mapping(&Mapping {
+            generated: Position { column, line },
+            name: None,
+            original: Some(Position {
+                column: column + 10,
+                line: line + 4,
+            }),
+            source: Some("module.ts"),
+        });
+    }
+
+    previous.set_source_content("module.ts", Some("export {}"));
+
+    let previous = previous.to_encoded_map();
+    let (output, map) = namespaces::rewrite(
+        "rect { fill: red }\n.é😀 { fill: blue }",
+        &[definition("z-svg", None, "http://www.w3.org/2000/svg")],
+        Some(&previous),
+        true,
+    )
+    .unwrap_or_default();
+
+    insta::assert_snapshot!(output, @r#"
+    @namespace z-svg "http://www.w3.org/2000/svg";
+    z-svg|rect {
+      fill: red;
+    }
+
+    z-svg|*.é😀 {
+      fill: #00f;
+    }
+    "#);
+
+    insta::assert_snapshot!(map.map(|map| map.to_json()).unwrap_or_default(), @r#"{"version":3,"file":"module.ts.css","names":[],"sources":["module.ts"],"sourcesContent":["export {}"],"mappings":";AAIU;;;;AACA","ignoreList":[]}"#);
 }

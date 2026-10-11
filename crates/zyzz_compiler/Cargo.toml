@@ -11,7 +11,7 @@ version.workspace = true
 [dependencies]
 compact_str = { workspace = true }
 indexmap = { workspace = true }
-lightningcss = { workspace = true }
+lightningcss = { workspace = true, features = ["sourcemap"] }
 memchr = { workspace = true }
 oxc_allocator = { workspace = true }
 oxc_ast = { workspace = true }
@@ -23,6 +23,8 @@ oxc_parser = { workspace = true }
 oxc_semantic = { workspace = true }
 oxc_span = { workspace = true }
 oxc_syntax = { workspace = true }
+parcel_selectors = { workspace = true }
+parcel_sourcemap = { workspace = true }
 rustc-hash = { workspace = true }
 # Arc deserialization keeps wire strings shared; float_roundtrip parses numbers exactly.
 serde = { workspace = true, features = ["rc"] }

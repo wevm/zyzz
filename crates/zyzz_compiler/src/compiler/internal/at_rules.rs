@@ -44,7 +44,7 @@ use lightningcss::visitor::Visitor;
 use lightningcss::{rules::CssRule, values::url::Url};
 
 use crate::compiler::internal::identifiers::{self, Separator};
-use crate::compiler::internal::lightning::{self, Options};
+use crate::compiler::internal::lightning::{self, Options, Output};
 use crate::compiler::internal::{
     color_profiles, descriptors, functions, keyframes, properties, view_transitions,
 };
@@ -53,16 +53,23 @@ use crate::js;
 
 /// Validates and transforms a stylesheet, transporting newer at-rules through the output parser.
 ///
+/// When at-keywords are transported, a source map describes the renamed stylesheet, as the
+/// TypeScript adapter returns it.
+///
 /// # Errors
 ///
 /// Returns the first validation failure, or the output parser's message.
-pub fn transform(options: &Options<'_>) -> Result<String> {
+pub fn transform(options: &Options<'_>) -> Result<Output> {
     match Transport::prepare(options.code, false)? {
         None => lightning::transform(options),
-        Some(transport) => Ok(transport.restore(&lightning::transform(&Options {
-            code: &transport.code,
-            ..*options
-        })?)),
+        Some(transport) => {
+            let output = lightning::transform(&Options {
+                code: &transport.code,
+                ..*options
+            })?;
+
+            Ok(transport.restore(output))
+        }
     }
 }
 
@@ -72,20 +79,45 @@ pub fn transform(options: &Options<'_>) -> Result<String> {
 /// # Errors
 ///
 /// Returns the first validation failure, the output parser's message, or the visitor's error.
-pub fn transform_with<V>(options: &Options<'_>, visitor: &mut V) -> Result<String>
+pub fn transform_with<V>(options: &Options<'_>, visitor: &mut V) -> Result<Output>
 where
     V: for<'i> Visitor<'i, Error = Error>,
 {
     match Transport::prepare(options.code, true)? {
         None => lightning::transform_with(options, visitor),
-        Some(transport) => Ok(transport.restore(&lightning::transform_with(
-            &Options {
-                code: &transport.code,
-                ..*options
-            },
-            visitor,
-        )?)),
+        Some(transport) => {
+            let output = lightning::transform_with(
+                &Options {
+                    code: &transport.code,
+                    ..*options
+                },
+                visitor,
+            )?;
+
+            Ok(transport.restore(output))
+        }
     }
+}
+
+/// Validates a stylesheet as `AtRules.transform` with `errorRecovery: false` does.
+///
+/// The transported stylesheet is parsed without minifying or printing, which cannot fail for
+/// these options, so the result matches a discarded transform.
+///
+/// # Errors
+///
+/// Returns the first validation failure, or the output parser's message.
+pub fn validate(code: &str, filename: &str) -> Result<()> {
+    let transport = Transport::prepare(code, false)?;
+    let options = Options {
+        code: transport
+            .as_ref()
+            .map_or(code, |transport| transport.code.as_str()),
+        filename,
+        ..Options::default()
+    };
+
+    lightning::parse(&options).map(|_| ())
 }
 
 /// Renames actual at-keywords without touching strings, comments, or function arguments.
@@ -314,8 +346,16 @@ impl Transport {
         }))
     }
 
-    /// Restores transported at-keywords and anonymous import layers in transformed output.
-    fn restore(&self, output: &str) -> String {
+    /// Restores transported at-keywords and anonymous import layers in transformed output. The
+    /// source map still describes the renamed stylesheet.
+    fn restore(&self, output: Output) -> Output {
+        Output {
+            code: self.restore_code(&output.code),
+            map: output.map,
+        }
+    }
+
+    fn restore_code(&self, output: &str) -> String {
         // Decoding the output drops a leading byte order mark here too.
         let output = output.strip_prefix('\u{feff}').unwrap_or(output);
         let layer = format!("layer({})", self.import);

@@ -17,6 +17,7 @@ pub mod identifiers;
 pub mod keyframes;
 pub mod lightning;
 pub mod names;
+pub mod namespaces;
 pub mod packed_styles;
 pub mod properties;
 pub mod recipe_conditions;

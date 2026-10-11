@@ -79,6 +79,8 @@ pub struct Targets {
     pub ios: Option<Data>,
     /// Shared native declarations as static data.
     pub native: Option<Data>,
+    /// Branch names in authored order, when known, for serializations that keep it.
+    pub order: Vec<&'static str>,
     /// Web declarations with CSS semantics.
     pub web: Option<Arc<NamedStyle>>,
 }
@@ -300,6 +302,17 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
 
                     if input.is_undefined() {
                         continue;
+                    }
+
+                    let branch = match &*key {
+                        "android" => "android",
+                        "ios" => "ios",
+                        "native" => "native",
+                        _ => "web",
+                    };
+
+                    if !branches.order.contains(&branch) {
+                        branches.order.push(branch);
                     }
 
                     if &*key == "web" {

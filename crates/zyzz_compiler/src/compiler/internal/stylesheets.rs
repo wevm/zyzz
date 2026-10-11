@@ -31,6 +31,9 @@ pub struct Section {
     pub css: Arc<str>,
     /// Import chain to the declaring contract when repacked through dependencies.
     pub dependency: Option<Vec<Arc<str>>>,
+    /// Whether the dependency chain was read with the section, which lists it after the
+    /// namespaces rather than after the start offset.
+    pub leading_dependency: bool,
     /// Stable contribution identity within its source module.
     pub key: Option<Arc<str>>,
     /// Authored layer-order constraints retained across packages.
@@ -282,6 +285,7 @@ pub fn read(
             authored_namespaces: false,
             content,
             css,
+            leading_dependency: dependency.is_some(),
             dependency,
             key,
             layers,

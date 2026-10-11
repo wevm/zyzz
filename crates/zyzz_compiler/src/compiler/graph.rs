@@ -2226,6 +2226,7 @@ impl Build<'_, '_> {
 
                 list.push(Section {
                     authored_namespaces: true,
+                    leading_dependency: false,
                     content: options.modules.get(id).cloned(),
                     css,
                     dependency: None,

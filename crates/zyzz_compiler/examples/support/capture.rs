@@ -546,6 +546,7 @@ impl<'a> Decoder<'a> {
                     android: branch("android")?,
                     ios: branch("ios")?,
                     native: branch("native")?,
+                    order: Vec::new(),
                     web: None,
                 })
             }

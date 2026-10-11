@@ -452,6 +452,7 @@ impl Reader<'_> {
                     android: native("android")?,
                     ios: native("ios")?,
                     native: native("native")?,
+                    order: Vec::new(),
                     web: match get(targets, "web") {
                         Data::Undefined => None,
                         value => Some(self.style(value, depth + 1)?),
@@ -827,7 +828,7 @@ pub fn write(output: &mut String, definition: &Definition) {
 
     if let Some(dynamic) = &definition.dynamic {
         output.push_str("\"dynamic\":{\"recipe\":");
-        write_recipe(output, &dynamic.recipe);
+        write_recipe(output, &dynamic.recipe, definition.packed);
         output.push_str(",\"slots\":");
         js::write_object(
             output,
@@ -881,11 +882,16 @@ pub fn write(output: &mut String, definition: &Definition) {
 
     if let Some(recipe) = &definition.static_recipe {
         output.push_str(",\"staticRecipe\":");
-        write_recipe(output, recipe);
+        write_recipe(output, recipe, definition.packed);
     }
 
     output.push_str(",\"style\":");
-    write_style(output, &definition.style, Some(CssOutput::Atomic));
+    write_style(
+        output,
+        &definition.style,
+        Some(CssOutput::Atomic),
+        definition.packed,
+    );
 
     if !definition.packed {
         class_name(output);
@@ -934,7 +940,7 @@ fn write_payloads(output: &mut String, payloads: &[runtime::Payload]) {
     output.push(']');
 }
 
-fn write_recipe(output: &mut String, definition: &recipe::Definition) {
+fn write_recipe(output: &mut String, definition: &recipe::Definition, packed: bool) {
     output.push_str("{\"axes\":");
     recipe::write_axes(output, &definition.axes);
     output.push_str(",\"defaults\":");
@@ -955,7 +961,7 @@ fn write_recipe(output: &mut String, definition: &recipe::Definition) {
                 output.push(',');
             }
 
-            write_style(output, style, None);
+            write_style(output, style, None, packed);
         }
 
         output.push_str("]}}");
@@ -966,24 +972,163 @@ fn write_recipe(output: &mut String, definition: &recipe::Definition) {
 
 /// Appends a style with encoded values. `css_output` replaces a missing CSS output.
 ///
-/// `Style.define` names conditional styles before their declarations and plain styles after
-/// them. Target branches keep one canonical order, since their authored order is not retained.
-fn write_style(output: &mut String, style: &NamedStyle, css_output: Option<CssOutput>) {
-    let name = |output: &mut String| {
-        output.push_str("\"name\":");
-        js::write_string(output, &style.name);
-    };
+/// Key order follows the object that produced the style. `PackedStyles.read` lists modes first
+/// and target branches before rules, while `Style.define` names conditional styles before their
+/// declarations and plain styles after them, with target branches in authored order.
+fn write_style(
+    output: &mut String,
+    style: &NamedStyle,
+    css_output: Option<CssOutput>,
+    packed: bool,
+) {
+    let css_output = style.css_output.or(css_output);
 
     output.push('{');
 
-    if style.rules.is_some() {
-        name(output);
-        output.push(',');
+    let mut first = true;
+    let mut key = |output: &mut String, name: &str| {
+        if !first {
+            output.push(',');
+        }
+
+        first = false;
+        js::write_string(output, name);
+        output.push(':');
+    };
+    let modes = |output: &mut String, key: &mut dyn FnMut(&mut String, &str)| {
+        if let Some(composition) = style.composition {
+            key(output, "composition");
+            js::write_string(output, composition.as_str());
+        }
+
+        if let Some(css_output) = css_output {
+            key(output, "cssOutput");
+            js::write_string(output, css_output.as_str());
+        }
+    };
+
+    if packed {
+        modes(output, &mut key);
     }
 
-    output.push_str("\"declarations\":[");
+    if style.rules.is_some() && !packed {
+        key(output, "name");
+        js::write_string(output, &style.name);
+    }
 
-    for (index, declaration) in style.declarations.iter().enumerate() {
+    key(output, "declarations");
+    write_declarations(output, &style.declarations);
+
+    if style.rules.is_none() || packed {
+        key(output, "name");
+        js::write_string(output, &style.name);
+    }
+
+    let targets = |output: &mut String, key: &mut dyn FnMut(&mut String, &str)| {
+        let Some(targets) = &style.targets else {
+            return;
+        };
+
+        key(output, "targets");
+        output.push('{');
+
+        let mut first = true;
+        let mut branch = |output: &mut String, name: &str| {
+            if !first {
+                output.push(',');
+            }
+
+            first = false;
+            js::write_string(output, name);
+            output.push(':');
+        };
+        let natives = [
+            ("android", &targets.android),
+            ("ios", &targets.ios),
+            ("native", &targets.native),
+        ];
+        let natives = natives.iter().filter_map(|(name, value)| {
+            Some((*name, value.as_ref().filter(|value| !value.is_undefined())?))
+        });
+
+        if packed {
+            for (name, value) in natives {
+                branch(output, name);
+                write_data(output, value);
+            }
+
+            if let Some(web) = &targets.web {
+                branch(output, "web");
+                write_style(output, web, None, packed);
+            }
+        } else {
+            let canonical = ["web", "native", "android", "ios"];
+            let order: &[&str] = if targets.order.is_empty() {
+                &canonical
+            } else {
+                &targets.order
+            };
+            let natives: Vec<(&str, &Data)> = natives.collect();
+
+            for name in order {
+                if *name == "web" {
+                    if let Some(web) = &targets.web {
+                        branch(output, "web");
+                        write_style(output, web, None, packed);
+                    }
+                } else if let Some((name, value)) =
+                    natives.iter().find(|(native, _)| native == name)
+                {
+                    branch(output, name);
+                    write_data(output, value);
+                }
+            }
+        }
+
+        output.push('}');
+    };
+
+    if packed {
+        targets(output, &mut key);
+    }
+
+    if let Some(rules) = &style.rules {
+        key(output, "rules");
+        output.push('[');
+
+        for (index, rule) in rules.iter().enumerate() {
+            if index > 0 {
+                output.push(',');
+            }
+
+            output.push('{');
+
+            if let Some(condition) = &rule.condition {
+                output.push_str("\"condition\":");
+                js::write_string(output, condition);
+                output.push(',');
+            }
+
+            output.push_str("\"style\":");
+            write_style(output, &rule.style, None, packed);
+            output.push('}');
+        }
+
+        output.push(']');
+    }
+
+    if !packed {
+        targets(output, &mut key);
+        modes(output, &mut key);
+    }
+
+    output.push('}');
+}
+
+fn write_declarations(output: &mut String, declarations: &[Declaration]) {
+    output.push('[');
+
+    for (index, declaration) in declarations.iter().enumerate() {
         if index > 0 {
             output.push(',');
         }
@@ -1011,80 +1156,6 @@ fn write_style(output: &mut String, style: &NamedStyle, css_output: Option<CssOu
     }
 
     output.push(']');
-
-    if style.rules.is_none() {
-        output.push(',');
-        name(output);
-    }
-
-    if let Some(rules) = &style.rules {
-        output.push_str(",\"rules\":[");
-
-        for (index, rule) in rules.iter().enumerate() {
-            if index > 0 {
-                output.push(',');
-            }
-
-            output.push('{');
-
-            if let Some(condition) = &rule.condition {
-                output.push_str("\"condition\":");
-                js::write_string(output, condition);
-                output.push(',');
-            }
-
-            output.push_str("\"style\":");
-            write_style(output, &rule.style, None);
-            output.push('}');
-        }
-
-        output.push(']');
-    }
-
-    if let Some(targets) = &style.targets {
-        output.push_str(",\"targets\":{");
-
-        let mut first = true;
-        let mut key = |output: &mut String, name: &str| {
-            if !first {
-                output.push(',');
-            }
-
-            first = false;
-            js::write_string(output, name);
-            output.push(':');
-        };
-
-        if let Some(web) = &targets.web {
-            key(output, "web");
-            write_style(output, web, None);
-        }
-
-        for (name, branch) in [
-            ("native", &targets.native),
-            ("android", &targets.android),
-            ("ios", &targets.ios),
-        ] {
-            if let Some(branch) = branch.as_ref().filter(|branch| !branch.is_undefined()) {
-                key(output, name);
-                write_data(output, branch);
-            }
-        }
-
-        output.push('}');
-    }
-
-    if let Some(composition) = style.composition {
-        output.push_str(",\"composition\":");
-        js::write_string(output, composition.as_str());
-    }
-
-    if let Some(css_output) = style.css_output.or(css_output) {
-        output.push_str(",\"cssOutput\":");
-        js::write_string(output, css_output.as_str());
-    }
-
-    output.push('}');
 }
 
 /// Appends static data as `JSON.stringify` writes it with the packed-style replacer.

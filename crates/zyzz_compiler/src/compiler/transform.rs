@@ -20,6 +20,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use crate::compiler::internal::applications::{self, Application};
 use crate::compiler::internal::contributions::Factory;
 use crate::compiler::internal::expression::unwrap;
+use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
@@ -1123,6 +1124,7 @@ fn classes(
         .filter_map(|call| {
             call.identity
                 .as_deref()
+                .filter(|identity| !identity.is_empty())
                 .map(|identity| (&*call.name, identity))
         })
         .collect();
@@ -1270,16 +1272,17 @@ impl<'a> Generator<'_, 'a> {
         }
 
         for call in &extracted.variable_calls {
-            let slot = call
-                .slots
-                .get("value")
-                .map(|slot| slot.name.as_str())
-                .unwrap_or_default();
+            let mut slot = String::new();
+
+            match call.slots.get("value") {
+                Some(binding) => packed_styles::encode_binding(&mut slot, binding),
+                None => slot.push_str("undefined"),
+            }
 
             module.overwrite(
                 call.start,
                 call.end,
-                &format!("{}.create({})", state.variables, quote(slot)),
+                &format!("{}.create({slot})", state.variables),
             )?;
         }
 
@@ -1388,25 +1391,34 @@ impl<'a> Generator<'_, 'a> {
                     factory.push('_');
                 }
 
-                let mut config = String::from("{\"className\":");
+                let mut config = String::from("{");
 
-                config.push_str(&class_name);
+                // `JSON.stringify` omits a missing class list.
+                if self.classes.contains_key(&call.name) {
+                    config.push_str("\"className\":");
+                    config.push_str(&class_name);
+                    config.push(',');
+                }
 
                 if let Some(cases) = &call.composition_cases {
-                    config.push_str(",\"cases\":[");
+                    config.push_str("\"cases\":[");
 
                     for (index, name) in cases.iter().enumerate() {
                         if index > 0 {
                             config.push(',');
                         }
 
-                        config.push_str(&self.class(name));
+                        // An array prints a missing class list as `null`.
+                        match self.classes.get(name) {
+                            Some(class) => js::write_string(&mut config, class),
+                            None => config.push_str("null"),
+                        }
                     }
 
-                    config.push(']');
+                    config.push_str("],");
                 }
 
-                config.push_str(",\"inputs\":[");
+                config.push_str("\"inputs\":[");
 
                 for (index, input) in inputs.iter().enumerate() {
                     if index > 0 {

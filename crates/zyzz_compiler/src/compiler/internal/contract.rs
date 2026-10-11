@@ -1864,7 +1864,9 @@ fn write_section(output: &mut String, section: &Section) {
         js::write_string(output, owner);
     }
 
-    if let Some(dependency) = &section.dependency {
+    if section.leading_dependency
+        && let Some(dependency) = &section.dependency
+    {
         output.push_str(",\"dependency\":");
         write_strings(output, dependency);
     }
@@ -1891,6 +1893,14 @@ fn write_section(output: &mut String, section: &Section) {
     if let Some(start) = section.start {
         output.push_str(",\"start\":");
         output.push_str(&start.to_string());
+    }
+
+    // Graph emission adds a chain to sections that did not carry one.
+    if !section.leading_dependency
+        && let Some(dependency) = &section.dependency
+    {
+        output.push_str(",\"dependency\":");
+        write_strings(output, dependency);
     }
 
     // `Stylesheets.write` moves retained source text after the other properties.

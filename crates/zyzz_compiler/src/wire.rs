@@ -555,6 +555,7 @@ impl Decoder {
                 android: targets.android.map(|data| data.0),
                 ios: targets.ios.map(|data| data.0),
                 native: targets.native.map(|data| data.0),
+                order: Vec::new(),
                 web: match targets.web {
                     None => None,
                     Some(web) => Some(self.style(*web, validate)?),

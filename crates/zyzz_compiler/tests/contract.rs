@@ -58,6 +58,6 @@ mod write {
     fn packed_styles() {
         let text = r#"{"exports":{"button":{"binding":"z-style-illRZq-button","kind":"style-reference","style":{"attributes":[],"slots":[],"staticRecipe":{"axes":{},"defaults":{},"rules":[{"matches":[],"value":{"styles":[{"declarations":[],"name":"style-15sihh01ggr9so-66"}]}}]},"style":{"declarations":[],"name":"style-15sihh01ggr9so-66","cssOutput":"atomic"},"className":"z-style-illRZq-button"}}},"themes":{},"version":31}"#;
 
-        insta::assert_snapshot!(repack(text, "example/syntax.tsx"), @r#"{"exports":{"button":{"binding":"z-style-illRZq-button","kind":"style-reference","style":{"attributes":[],"className":"z-style-illRZq-button","slots":[],"staticRecipe":{"axes":{},"defaults":{},"rules":[{"matches":[],"value":{"styles":[{"declarations":[],"name":"style-15sihh01ggr9so-66"}]}}]},"style":{"declarations":[],"name":"style-15sihh01ggr9so-66","cssOutput":"atomic"}}}},"themes":{},"version":31}"#);
+        insta::assert_snapshot!(repack(text, "example/syntax.tsx"), @r#"{"exports":{"button":{"binding":"z-style-illRZq-button","kind":"style-reference","style":{"attributes":[],"className":"z-style-illRZq-button","slots":[],"staticRecipe":{"axes":{},"defaults":{},"rules":[{"matches":[],"value":{"styles":[{"declarations":[],"name":"style-15sihh01ggr9so-66"}]}}]},"style":{"cssOutput":"atomic","declarations":[],"name":"style-15sihh01ggr9so-66"}}}},"themes":{},"version":31}"#);
     }
 }

@@ -760,8 +760,14 @@ pub fn expand<'s, 'a>(
         &builder.ast,
     ));
     let alternatives = named.is_empty().then(|| recipe::Definition {
-        axes: axes.clone(),
-        defaults: defaults.clone(),
+        axes: axes
+            .iter()
+            .map(|(axis, choices)| (Arc::clone(axis), choices.clone()))
+            .collect(),
+        defaults: defaults
+            .iter()
+            .map(|(axis, choice)| (Arc::clone(axis), choice.clone()))
+            .collect(),
         rules: base
             .and_then(|base| object(&base.value).ok())
             .map(|value| recipe::Rule {

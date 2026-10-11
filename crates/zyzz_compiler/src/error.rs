@@ -11,6 +11,10 @@ pub enum Error {
     MissingTransform,
     /// `Style.InvalidError` with every validation diagnostic.
     Style(Vec<crate::style::Diagnostic>),
+    /// `StyleSheet.CompileError` with every native capability diagnostic.
+    StyleSheet(Vec<crate::react_native::style_sheet::Diagnostic>),
+    /// `StyleSheet.SelectionError`: a lookup of a missing precompiled table.
+    StyleSheetSelection(String),
     /// `Source.ThemeInvalidError`: unsupported source syntax with its UTF-8 source span.
     Themes {
         /// Explanation of the unsupported syntax.
@@ -25,6 +29,8 @@ pub enum Error {
         /// Token path components.
         path: Vec<String>,
     },
+    /// `Variants.CompileError`: invalid or unbounded native recipe data.
+    Variants(String),
     /// `Vars.InvalidError` with the failing variable path.
     Vars {
         /// Explanation of the failure.
@@ -44,9 +50,15 @@ impl Error {
     /// The caller-visible message, as `error.message` reads in TypeScript.
     pub fn text(&self) -> String {
         match self {
-            Self::Message(message) | Self::Themes { message, .. } => message.clone(),
+            Self::Message(message)
+            | Self::StyleSheetSelection(message)
+            | Self::Themes { message, .. }
+            | Self::Variants(message) => message.clone(),
             Self::MissingTransform => MISSING_TRANSFORM.to_owned(),
             Self::Style(diagnostics) => crate::style::error_message(diagnostics),
+            Self::StyleSheet(diagnostics) => {
+                crate::react_native::style_sheet::error_message(diagnostics)
+            }
             Self::Theme { message, path } | Self::Vars { message, path } => {
                 format!("{}: {message}", crate::internal::theme::path_json(path))
             }

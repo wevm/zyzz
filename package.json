@@ -18,13 +18,13 @@
     "check:css:full": "node scripts/css-conformance.ts --require-full",
     "check:native": "node scripts/native-conformance.ts --static",
     "check:native:full": "node scripts/native-conformance.ts --require-full",
-    "check:tables": "node scripts/build-rust-tables.ts --check && node scripts/build-css-syntax-tables.ts --check",
+    "check:tables": "node scripts/build-rust-tables.ts --check && node scripts/build-rust-native-tables.ts --check && node scripts/build-css-syntax-tables.ts --check",
     "check:types": "tsc",
     "dev": "pnpm build && pnpm --filter \"./examples/*\" rebuild",
     "test": "vp test",
     "update:at-rules": "node scripts/at-rule-conformance.ts --update",
     "update:css": "node scripts/css-conformance.ts --update",
-    "update:tables": "node scripts/build-rust-tables.ts && node scripts/build-css-syntax-tables.ts",
+    "update:tables": "node scripts/build-rust-tables.ts && node scripts/build-rust-native-tables.ts && node scripts/build-css-syntax-tables.ts",
     "update:types": "node scripts/type-benches.ts --update"
   },
   "devDependencies": {

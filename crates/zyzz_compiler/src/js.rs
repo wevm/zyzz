@@ -10,6 +10,10 @@ use indexmap::IndexMap;
 use oxc_syntax::number::ToJsString;
 use rustc_hash::FxBuildHasher;
 
+mod math;
+
+pub use math::{cos, sin, tan};
+
 /// Formats a number like ECMAScript `Number.prototype.toString()`.
 pub fn number(value: f64) -> String {
     if value == 0.0 {
@@ -318,6 +322,88 @@ pub fn write_string(output: &mut String, value: &str) {
 
     output.push_str(value.get(start..).unwrap_or_default());
     output.push('"');
+}
+
+/// Appends statically evaluated data serialized like `JSON.stringify(value)`.
+///
+/// Object properties holding `undefined` are omitted, and array entries holding `undefined` print
+/// as `null`, as does a non-finite number. Compiler-owned references never reach static data, so
+/// they print as `null`.
+pub fn write_data(output: &mut String, value: &crate::data::Data) {
+    use crate::data::Data;
+
+    match value {
+        Data::Array(items) => {
+            output.push('[');
+
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+
+                if item.is_undefined() {
+                    output.push_str("null");
+                } else {
+                    write_data(output, item);
+                }
+            }
+
+            output.push(']');
+        }
+        Data::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
+        Data::Number(value) if value.is_finite() => write_number(output, *value),
+        Data::Object(object) => write_object(
+            output,
+            object.iter().filter(|(_, value)| !value.is_undefined()),
+            write_data,
+        ),
+        Data::String(value) => write_string(output, value),
+        Data::Binding(_)
+        | Data::Expression(_)
+        | Data::Null
+        | Data::Number(_)
+        | Data::Theme(_)
+        | Data::Token(_)
+        | Data::Undefined => output.push_str("null"),
+    }
+}
+
+/// Appends an object serialized like `JSON.stringify`, listing array-index keys first in ascending
+/// order and other keys in the given order, as JavaScript enumerates own properties.
+pub fn write_object<K: AsRef<str>, V>(
+    output: &mut String,
+    entries: impl IntoIterator<Item = (K, V)>,
+    mut write: impl FnMut(&mut String, V),
+) {
+    let mut indexes: Vec<(u32, K, V)> = Vec::new();
+    let mut names: Vec<(K, V)> = Vec::new();
+
+    for (key, value) in entries {
+        match array_index(key.as_ref()) {
+            Some(index) => indexes.push((index, key, value)),
+            None => names.push((key, value)),
+        }
+    }
+
+    indexes.sort_by_key(|entry| entry.0);
+    output.push('{');
+
+    let entries = indexes
+        .into_iter()
+        .map(|(_, key, value)| (key, value))
+        .chain(names);
+
+    for (index, (key, value)) in entries.enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        write_string(output, key.as_ref());
+        output.push(':');
+        write(output, value);
+    }
+
+    output.push('}');
 }
 
 /// Whether a character matches the JavaScript regular expression class `\s`.

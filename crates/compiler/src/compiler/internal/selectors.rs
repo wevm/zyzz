@@ -209,7 +209,6 @@ fn reference(binding: Arc<str>, start: u32, end: u32) -> Result<Link> {
 }
 
 struct Resolver<'s, 'a> {
-    authored: &'s crate::compiler::internal::names::Names,
     bindings: FxHashMap<u32, &'a Expression<'a>>,
     definitions: FxHashMap<u32, u32>,
     identities: FxHashMap<u32, Arc<str>>,
@@ -322,7 +321,8 @@ impl<'s, 'a> Resolver<'s, 'a> {
 
             format!(
                 "z-style-{prefix}{suffix}-{}",
-                self.authored.get(call.span.start).unwrap_or("")
+                // Declaration paths are built on the first link.
+                self.parsed.names().get(call.span.start).unwrap_or("")
             )
         };
         let name: Arc<str> = Arc::from(name);
@@ -630,7 +630,6 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
         ..
     } = collector;
     let mut resolver = Resolver {
-        authored: parsed.names(),
         bindings,
         definitions: options
             .calls

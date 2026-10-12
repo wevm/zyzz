@@ -3,8 +3,10 @@
 use std::borrow::Cow;
 
 use oxc_ast::AstKind;
-use oxc_ast::ast::{BindingPattern, FunctionType, PropertyKey, TSNamespaceDeclarationBody};
-use oxc_semantic::Semantic;
+use oxc_ast::ast::{
+    BindingPattern, CallExpression, FunctionType, PropertyKey, TSNamespaceDeclarationBody,
+};
+use oxc_semantic::{NodeId, Semantic};
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 
@@ -47,39 +49,15 @@ impl Names {
 pub fn collect(semantic: &Semantic<'_>) -> Names {
     let nodes = semantic.nodes();
     let mut names = Names::default();
-    let mut ancestors: SmallVec<[AstKind<'_>; 16]> = SmallVec::new();
-    let mut parts: SmallVec<[Cow<'_, str>; 8]> = SmallVec::new();
+    let mut path = Path::default();
 
     for node in nodes.iter() {
         let AstKind::CallExpression(call) = node.kind() else {
             continue;
         };
-
-        ancestors.clear();
-        ancestors.extend(nodes.ancestor_kinds(node.id()));
-        parts.clear();
-
-        // Ancestors run innermost first; each one's parent follows it.
-        for (index, ancestor) in ancestors.iter().enumerate().rev() {
-            if let Some(part) = part(*ancestor, ancestors.get(index + 1).copied()) {
-                parts.push(part);
-            }
-        }
-
         let from = names.text.len();
 
-        if parts.is_empty() {
-            names.text.push_str("style");
-        }
-
-        for (index, part) in parts.iter().enumerate() {
-            if index > 0 {
-                names.text.push('-');
-            }
-
-            identity::write_name(&mut names.text, part);
-        }
-
+        path.write(semantic, node.id(), &mut names.text);
         names.ranges.insert(
             call.span.start,
             (
@@ -90,6 +68,47 @@ pub fn collect(semantic: &Semantic<'_>) -> Names {
     }
 
     names
+}
+
+/// Appends the readable declaration path of one call, as [`collect`] records it.
+pub fn write(semantic: &Semantic<'_>, call: &CallExpression<'_>, output: &mut String) {
+    Path::default().write(semantic, call.node_id(), output);
+}
+
+/// Buffers reused across the calls of one [`collect`].
+#[derive(Default)]
+struct Path<'a> {
+    ancestors: SmallVec<[AstKind<'a>; 16]>,
+    parts: SmallVec<[Cow<'a, str>; 8]>,
+}
+
+impl<'a> Path<'a> {
+    fn write(&mut self, semantic: &Semantic<'a>, id: NodeId, output: &mut String) {
+        let nodes = semantic.nodes();
+
+        self.ancestors.clear();
+        self.ancestors.extend(nodes.ancestor_kinds(id));
+        self.parts.clear();
+
+        // Ancestors run innermost first; each one's parent follows it.
+        for (index, ancestor) in self.ancestors.iter().enumerate().rev() {
+            if let Some(part) = part(*ancestor, self.ancestors.get(index + 1).copied()) {
+                self.parts.push(part);
+            }
+        }
+
+        if self.parts.is_empty() {
+            output.push_str("style");
+        }
+
+        for (index, part) in self.parts.iter().enumerate() {
+            if index > 0 {
+                output.push('-');
+            }
+
+            identity::write_name(output, part);
+        }
+    }
 }
 
 /// The name segment an ancestor contributes, as ESTree reports its declaration.

@@ -21,7 +21,7 @@ use crate::generated::literal::Kind;
 use crate::internal::token::{Composition, CssOutput, Part, Reference};
 use crate::internal::{identity, literal, targets};
 use crate::js;
-use crate::style::{Declaration, Labels, NamedStyle, Value};
+use crate::style::{Declaration, Label, Labels, NamedStyle, Value};
 use crate::web::internal::class_name::{self, CreateOptions, Registry, Units, Used, Visibility};
 use crate::web::internal::contributions;
 use crate::web::internal::themes::{Emitted, Resource, Scope, Shared, Themes};
@@ -307,15 +307,39 @@ impl Domains {
 
 /// Per-style naming state shared by the emission helpers.
 struct Application<'a> {
-    css_name: String,
+    /// The readable class base of contextual rules, encoded on first use.
+    css_name: Option<String>,
     css_namespace: Option<Arc<str>>,
     explicit: Option<&'a Arc<str>>,
     independent: bool,
     index: usize,
+    label: Option<&'a Label>,
     mode: CssOutput,
     name: &'a Arc<str>,
-    names: Vec<String>,
+    names: Vec<Rc<str>>,
     ordinal: usize,
+}
+
+impl Application<'_> {
+    /// Encodes the readable class base. Shared units name themselves, so only contextual rules
+    /// read it.
+    fn prepare_css_name(&mut self) {
+        if self.css_name.is_none() {
+            self.css_name = Some(self.label.map_or_else(
+                || class_name::encode(self.name),
+                |label| label.name.to_string(),
+            ));
+        }
+    }
+}
+
+/// A named shared unit.
+struct Unit {
+    name: Rc<str>,
+    /// Whether a repeat has refreshed the naming decision.
+    refreshed: bool,
+    /// The index of the unit's rule.
+    rule: usize,
 }
 
 /// Line shorthands whose longhands share one conflict domain once any of them is authored.
@@ -352,7 +376,7 @@ struct Compiler<'a> {
     unit_key: String,
     /// Shared units already named in this compilation, keyed by namespace and body, with whether
     /// a repeat has refreshed the unit's naming decision.
-    unit_names: FxHashMap<String, (String, bool)>,
+    unit_names: FxHashMap<String, Unit>,
 }
 
 fn composition(style: &NamedStyle, options: &Options<'_>) -> Composition {
@@ -708,6 +732,11 @@ impl<'a> Compiler<'a> {
     /// Appends `name:value[!important];`.
     fn write_declaration(&mut self, output: &mut String, declaration: &'a Declaration) {
         output.push_str(self.css_name(&declaration.property));
+        self.write_body(output, declaration);
+    }
+
+    /// Appends `:value[!important];` after a declaration's name.
+    fn write_body(&mut self, output: &mut String, declaration: &'a Declaration) {
         output.push(':');
         self.write_value(output, &declaration.value);
 
@@ -863,9 +892,9 @@ impl<'a> Compiler<'a> {
         };
 
         if let Some(previous) = &previous
-            && !state.names.contains(previous)
+            && !state.names.iter().any(|name| **name == **previous)
         {
-            state.names.push(previous.clone());
+            state.names.push(Rc::from(previous.as_str()));
             return Some(previous.clone());
         }
 
@@ -874,6 +903,9 @@ impl<'a> Compiler<'a> {
         let slot = state.ordinal;
 
         state.ordinal += 1;
+        state.prepare_css_name();
+
+        let css_name = state.css_name.as_deref().unwrap_or_default();
 
         let namespace = state.css_namespace.as_deref();
         let identity = if let Some(explicit) = state.explicit {
@@ -885,7 +917,7 @@ impl<'a> Compiler<'a> {
             let _ = write!(identity, "-{slot}");
             identity
         } else if output == CssOutput::Grouped && state.mode == CssOutput::Grouped {
-            let mut identity = String::with_capacity(state.css_name.len() + 16);
+            let mut identity = String::with_capacity(css_name.len() + 16);
 
             identity.push_str("z-");
 
@@ -894,7 +926,7 @@ impl<'a> Compiler<'a> {
                 identity.push('-');
             }
 
-            identity.push_str(&state.css_name);
+            identity.push_str(css_name);
 
             if slot > 0 {
                 let _ = write!(identity, "__{slot}");
@@ -904,7 +936,7 @@ impl<'a> Compiler<'a> {
         } else {
             class_name::create(&CreateOptions {
                 body: &body,
-                context: (!shared).then_some(state.css_name.as_str()),
+                context: (!shared).then_some(css_name),
                 namespace,
                 property: label,
                 slot: (!shared).then_some(slot),
@@ -953,7 +985,7 @@ impl<'a> Compiler<'a> {
             }
 
             self.rules.insert(identity.clone(), body);
-            state.names.push(identity.clone());
+            state.names.push(Rc::from(identity.as_str()));
         }
 
         Some(identity)
@@ -1032,8 +1064,8 @@ impl<'a> Compiler<'a> {
                 .and_then(|owned| owned.get(&domain))
             {
                 for identity in reused {
-                    if !state.names.contains(identity) {
-                        state.names.push(identity.clone());
+                    if !state.names.iter().any(|name| **name == **identity) {
+                        state.names.push(Rc::from(identity.as_str()));
                     }
                 }
 
@@ -1172,30 +1204,23 @@ impl<'a> Compiler<'a> {
 
         // A repeated unit whose rule still holds its body keeps its name. Only its first repeat
         // can change the naming decision, which then reports the registered name as borrowed.
-        if let Some((name, refreshed)) = self.unit_names.get_mut(self.unit_key.as_str())
+        // Rules are never removed, so a unit's rule keeps its index.
+        if let Some(unit) = self.unit_names.get_mut(self.unit_key.as_str())
             && self
                 .rules
-                .get(name.as_str())
-                .is_some_and(|existing| *existing == body)
+                .get_index(unit.rule)
+                .is_some_and(|(_, existing)| *existing == body)
         {
-            if !*refreshed {
+            if !unit.refreshed {
                 units.name(body, namespace);
-                *refreshed = true;
+                unit.refreshed = true;
             }
 
-            state.names.push(name.clone());
+            state.names.push(Rc::clone(&unit.name));
             return;
         }
 
         let identity = units.name(body, namespace);
-
-        match self.unit_names.get_mut(self.unit_key.as_str()) {
-            Some(entry) => *entry = (identity.clone(), true),
-            None => {
-                self.unit_names
-                    .insert(self.unit_key.clone(), (identity.clone(), false));
-            }
-        }
 
         if self
             .rules
@@ -1205,8 +1230,30 @@ impl<'a> Compiler<'a> {
             self.collision(state.name);
         }
 
-        self.rules.insert(identity.clone(), body.to_owned());
-        state.names.push(identity);
+        let name: Rc<str> = Rc::from(identity.as_str());
+        let (rule, _) = self.rules.insert_full(identity, body.to_owned());
+
+        match self.unit_names.get_mut(self.unit_key.as_str()) {
+            Some(unit) => {
+                *unit = Unit {
+                    name: Rc::clone(&name),
+                    refreshed: true,
+                    rule,
+                };
+            }
+            None => {
+                self.unit_names.insert(
+                    self.unit_key.clone(),
+                    Unit {
+                        name: Rc::clone(&name),
+                        refreshed: false,
+                        rule,
+                    },
+                );
+            }
+        }
+
+        state.names.push(name);
     }
 }
 
@@ -1272,11 +1319,20 @@ fn run<'a>(
     styles: &'a [Arc<NamedStyle>],
     units: &mut Units<'_>,
 ) -> Result<Output> {
-    // Conditional and composed declarations join the same conflict domains.
+    // Conditional and composed declarations join the same conflict domains. Top-level
+    // declarations keep their property's index, which later passes read instead of hashing.
     let mut properties: IndexMap<&str, (), FxBuildHasher> = IndexMap::default();
+    let mut property_ids: Vec<usize> =
+        Vec::with_capacity(styles.iter().map(|style| style.declarations.len()).sum());
 
     for style in styles {
-        collect(style, &mut properties);
+        for declaration in &style.declarations {
+            property_ids.push(properties.insert_full(&declaration.property, ()).0);
+        }
+
+        for rule in style.rules.iter().flatten() {
+            collect(&rule.style, &mut properties);
+        }
     }
 
     // Logical dimensions may alias either physical axis in inherited writing modes. Preserve
@@ -1331,6 +1387,10 @@ fn run<'a>(
         .any(|style| style.css_output.unwrap_or(default_mode) == CssOutput::Grouped);
     let sharing = grouped || styles.iter().any(|style| !isolated(style, options));
 
+    let mut conflicts: Vec<Option<u32>> = vec![None; properties.len()];
+    let mut css_names: Vec<Option<Box<str>>> = vec![None; properties.len()];
+    let mut ids = property_ids.iter();
+
     for style in styles {
         let count = style.declarations.len();
         let mut entry = Prepared {
@@ -1339,12 +1399,28 @@ fn run<'a>(
             text: String::with_capacity(count * 24),
         };
 
-        for item in &style.declarations {
+        for (item, id) in style.declarations.iter().zip(ids.by_ref()) {
             let property = &*item.property;
-            let key = compiler.conflict(property);
-            let start = entry.text.len();
+            let key = if let Some(key) = conflicts.get(*id).copied().flatten() {
+                key
+            } else {
+                let key = compiler.conflict(property);
 
-            compiler.write_declaration(&mut entry.text, item);
+                if let Some(slot) = conflicts.get_mut(*id) {
+                    *slot = Some(key);
+                }
+
+                key
+            };
+            let start = entry.text.len();
+            match css_names.get_mut(*id) {
+                Some(slot) => entry
+                    .text
+                    .push_str(slot.get_or_insert_with(|| literal::name(property).into())),
+                None => entry.text.push_str(&literal::name(property)),
+            }
+
+            compiler.write_body(&mut entry.text, item);
             entry
                 .ends
                 .push(u32::try_from(entry.text.len()).unwrap_or(u32::MAX));
@@ -1509,7 +1585,7 @@ fn run<'a>(
             }
 
             explicit_bodies.insert(Arc::clone(explicit), body);
-            plain &= !explicit.is_empty() && !explicit.contains(' ');
+            plain &= !explicit.is_empty() && !explicit.bytes().any(|byte| byte == b' ');
             classes.insert(Arc::clone(&style.name), explicit.to_string());
 
             if !explicit_modes.insert((Arc::clone(explicit), mode.as_str())) {
@@ -1548,20 +1624,18 @@ fn run<'a>(
 
         let label = labels.and_then(|labels| labels.get(&style.name));
         let mut state = Application {
-            css_name: label.map_or_else(
-                || class_name::encode(&style.name),
-                |label| label.name.to_string(),
-            ),
+            css_name: None,
             css_namespace: label
                 .and_then(|label| label.namespace.clone())
                 .or_else(|| scope_namespace.clone()),
             explicit,
             independent,
             index,
+            label,
             mode,
             name: &style.name,
             names: explicit
-                .map(|explicit| vec![explicit.to_string()])
+                .map(|explicit| vec![Rc::from(&**explicit)])
                 .unwrap_or_default(),
             ordinal: 0,
         };
@@ -1624,7 +1698,7 @@ fn run<'a>(
                 list.push(' ');
             }
 
-            plain &= !name.is_empty() && !name.contains(' ');
+            plain &= !name.is_empty() && !name.bytes().any(|byte| byte == b' ');
             list.push_str(name);
         }
 

@@ -23,8 +23,10 @@ use oxc_ast::ast::{
 };
 use oxc_ast::builder::AstBuilder;
 use oxc_ast_visit::Visit;
+use oxc_semantic::NodeId;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxHashMap, FxHashSet};
+use smallvec::SmallVec;
 
 use crate::compiler::internal::dynamic::{self, Slots};
 use crate::compiler::internal::expression::{self, Template, unwrap};
@@ -35,8 +37,8 @@ use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
 use crate::compiler::internal::vars::{self, Variables};
 use crate::compiler::internal::{
-    at_rules, compositions, contributions, identifiers, packed_styles, recipe_payloads, recipes,
-    selectors,
+    at_rules, compositions, contributions, identifiers, names, packed_styles, recipe_payloads,
+    recipes, selectors,
 };
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
@@ -391,6 +393,8 @@ struct Walker<'w, 'p, 'a> {
     recipes: FxHashSet<u32>,
     reporter: &'w mut Reporter<'p>,
     themes: Option<&'w mut Themes<'a>>,
+    /// The identifier being read.
+    node: NodeId,
     /// Type subtrees enclosing the identifier being read.
     typed: usize,
     variables: &'w Variables<'a>,
@@ -402,7 +406,6 @@ impl<'a> Walker<'_, '_, 'a> {
     /// are visited.
     fn scan(&mut self) {
         let nodes = self.parsed.semantic.nodes();
-        let mut chain: Vec<AstKind<'a>> = Vec::new();
 
         for node in nodes.iter() {
             let kind = node.kind();
@@ -419,38 +422,35 @@ impl<'a> Walker<'_, '_, 'a> {
                 break;
             }
 
-            chain.clear();
-            chain.extend(nodes.ancestor_kinds(node.id()));
-            chain.reverse();
-            chain.push(kind);
-            self.typed = chain
-                .iter()
-                .enumerate()
-                .filter(|(index, ancestor)| {
-                    type_node(
-                        **ancestor,
-                        index
-                            .checked_sub(1)
-                            .and_then(|parent| chain.get(parent))
-                            .copied(),
-                    )
-                })
-                .count();
+            // Ancestors run innermost first; each one's parent follows it.
+            let mut child = kind;
+            let mut parent = None;
+            let mut typed = 0;
 
-            std::mem::swap(&mut self.ancestors, &mut chain);
+            for ancestor in nodes.ancestor_kinds(node.id()) {
+                parent = parent.or(Some(ancestor));
+                typed += usize::from(type_node(child, Some(ancestor)));
+                child = ancestor;
+            }
 
-            let parent = self
-                .ancestors
-                .len()
-                .checked_sub(2)
-                .and_then(|index| self.ancestors.get(index))
-                .copied();
+            self.typed = typed + usize::from(type_node(child, None));
+            self.node = node.id();
+            self.ancestors.clear();
 
             if let Err(error) = self.read(kind, parent) {
                 self.fatal = Some(error);
             }
+        }
+    }
 
-            std::mem::swap(&mut self.ancestors, &mut chain);
+    /// Fills the current identifier's ancestors, outermost first and ending with it, for the
+    /// readers that inspect them.
+    fn chain(&mut self, kind: AstKind<'a>) {
+        if self.ancestors.is_empty() {
+            self.ancestors
+                .extend(self.parsed.semantic.nodes().ancestor_kinds(self.node));
+            self.ancestors.reverse();
+            self.ancestors.push(kind);
         }
     }
 
@@ -510,6 +510,15 @@ impl<'a> Walker<'_, '_, 'a> {
         }
 
         self.contributions.read(kind, parent, binding.as_ref());
+
+        let zyzz = binding
+            .as_ref()
+            .and_then(|binding| binding.import)
+            .is_some_and(|import| import.source.value == "zyzz");
+
+        if zyzz || self.themes.is_some() || self.variables.declares() {
+            self.chain(kind);
+        }
 
         match self
             .variables
@@ -795,11 +804,15 @@ impl<'a> Strings<'a> {
 }
 
 /// Converts one call's literal body into style data, reporting unsupported syntax.
+/// An authored property path. Most paths hold a definition name and one key.
+type Path = SmallVec<[Arc<str>; 4]>;
+
 struct Converter<'c, 'm, 'p, 'a> {
     call: &'a CallExpression<'a>,
     condition_keys: FxHashMap<String, Span>,
     dynamic: Option<Bindings<'c, 'a>>,
-    locations: Vec<SourceLocation>,
+    /// Authored spans and paths of values and conditions, which diagnostics alone read.
+    locations: Vec<(Span, Path)>,
     module: &'c Module<'m, 'a>,
     name: Arc<str>,
     reporter: &'c mut Reporter<'p>,
@@ -824,22 +837,26 @@ impl<'a> Converter<'_, '_, '_, 'a> {
             .report(Code::UnsupportedSyntax, message, Some(span));
     }
 
-    fn location(&self, span: Span, path: Vec<Arc<str>>) -> SourceLocation {
-        SourceLocation {
-            end: self.module.offsets.utf16(span.end),
-            path,
-            source: Arc::clone(&self.reporter.module_id),
-            start: self.module.offsets.utf16(span.start),
-        }
-    }
-
-    fn path(&self, prefix: &[Arc<str>], key: &Arc<str>) -> Vec<Arc<str>> {
-        let mut path = Vec::with_capacity(prefix.len() + 2);
+    fn path(&self, prefix: &[Arc<str>], key: &Arc<str>) -> Path {
+        let mut path = Path::with_capacity(prefix.len() + 2);
 
         path.push(Arc::clone(&self.name));
         path.extend(prefix.iter().cloned());
         path.push(Arc::clone(key));
         path
+    }
+
+    /// The recorded locations with UTF-16 offsets, as diagnostics report them.
+    fn locations(&self) -> Vec<SourceLocation> {
+        self.locations
+            .iter()
+            .map(|(span, path)| SourceLocation {
+                end: self.module.offsets.utf16(span.end),
+                path: path.to_vec(),
+                source: Arc::clone(&self.reporter.module_id),
+                start: self.module.offsets.utf16(span.start),
+            })
+            .collect()
     }
 
     fn token(&self, start: u32) -> Option<(u32, Read)> {
@@ -1075,9 +1092,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                     );
                     continue;
                 };
-                let location = self.location(property.span, path);
-
-                self.locations.push(location);
+                self.locations.push((property.span, path));
 
                 let nested = [prefix, &[Arc::clone(&key)]].concat();
                 let value = self.object(input, &nested);
@@ -1220,7 +1235,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
     fn value(
         &mut self,
         node: &'a Expression<'a>,
-        path: Vec<Arc<str>>,
+        path: Path,
         prefix: &[Arc<str>],
         depth: usize,
         targets: &[Arc<str>],
@@ -1406,9 +1421,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 }
             }
         };
-        let location = self.location(span, path);
-
-        self.locations.push(location);
+        self.locations.push((span, path));
 
         result
     }
@@ -1511,13 +1524,26 @@ impl<'a> Converter<'_, '_, '_, 'a> {
 
         styles.insert(Arc::clone(name), values);
 
+        let styles = Data::from(styles);
+        let vars = self.theme.as_deref().map(style::Vars::Theme);
+
+        // Locations only annotate diagnostics, so a valid definition never resolves them.
         style::define(
-            &Data::from(styles),
+            &styles,
             &style::Options {
-                locations: &self.locations,
-                vars: self.theme.as_deref().map(style::Vars::Theme),
+                locations: &[],
+                vars,
             },
         )
+        .or_else(|_| {
+            style::define(
+                &styles,
+                &style::Options {
+                    locations: &self.locations(),
+                    vars,
+                },
+            )
+        })
     }
 
     /// Composes ordered entries; later entries win as authored declarations do.
@@ -1981,7 +2007,6 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let context = options.context;
     let empty = Record::new();
     let links = context.map_or(&empty, |context| &context.links);
-    let authored_names = parsed.names();
     let constants: FxHashMap<String, &'a Expression<'a>> = context
         .and_then(|context| context.constants.as_ref())
         .map(|constants| {
@@ -2041,6 +2066,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         pending: Vec::new(),
         recipes: FxHashSet::default(),
         reporter: &mut reporter,
+        node: NodeId::DUMMY,
         themes: themes.as_mut(),
         typed: 0,
         variables: &variables,
@@ -2188,11 +2214,19 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let mut bodies: FxHashMap<u32, &'a ObjectExpression<'a>> = FxHashMap::default();
     let mut name_counts: FxHashMap<&str, usize> = FxHashMap::default();
     let mut name_indices: FxHashMap<&str, usize> = FxHashMap::default();
-    let style_name =
-        |call: &CallExpression<'_>| authored_names.get(call.span.start).unwrap_or("style");
+    // Only authoring calls read their declaration paths, so other calls never build one.
+    let call_names: Vec<String> = pending
+        .iter()
+        .map(|call| {
+            let mut name = String::new();
 
-    for call in &pending {
-        *name_counts.entry(style_name(call)).or_default() += 1;
+            names::write(&parsed.semantic, call, &mut name);
+            name
+        })
+        .collect();
+
+    for name in &call_names {
+        *name_counts.entry(name).or_default() += 1;
     }
 
     let strings = Strings::default();
@@ -2215,7 +2249,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             .and_then(|theme| theme.metadata.contract.identity.as_deref())
             .and_then(|identity| identity.strip_prefix("id-"))
             .map(Arc::from);
-        let authored = style_name(call);
+        let authored = call_names.get(index).map_or("style", String::as_str);
         let position = name_indices.entry(authored).or_default();
         let name_index = *position;
 
@@ -2614,7 +2648,8 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         match collected {
             Ok(entries) => {
                 for (position, entry) in entries.into_iter().enumerate() {
-                    let authored = authored_names
+                    let authored = parsed
+                        .names()
                         .get(entry.call.start)
                         .filter(|name| *name != "style")
                         .unwrap_or("composition");

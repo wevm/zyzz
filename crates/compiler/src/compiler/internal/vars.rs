@@ -1109,6 +1109,11 @@ impl<'a> Resolver<'a> {
 }
 
 impl<'a> Variables<'a> {
+    /// Whether the module declares variables, so references need their ancestors.
+    pub fn declares(&self) -> bool {
+        !self.resolver.declarations.is_empty()
+    }
+
     /// Resolves one identifier read during the extraction walk.
     ///
     /// `node` is an `IdentifierReference` or a JSX identifier, `ancestors` lists the walk's

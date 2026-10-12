@@ -2364,6 +2364,8 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     }
 
     let strings = Strings::default();
+    // Names build here before each moves into one shared allocation.
+    let mut scratch = String::with_capacity(64);
 
     for (index, call) in pending.iter().copied().enumerate() {
         let explicit = match identifiers::explicit(call, 1) {
@@ -2389,21 +2391,20 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
 
         *position += 1;
 
-        let css_name: Arc<str> = Arc::from(match &explicit {
-            Some(explicit) => identity::name(explicit),
-            None if authored == "style" => format!("{suffix}-style-{index}"),
+        let css_name: Arc<str> = match &explicit {
+            Some(explicit) => Arc::from(identity::name(explicit)),
+            None if authored == "style" => Arc::from(format!("{suffix}-style-{index}")),
             None if name_counts.get(authored).copied().unwrap_or_default() > 1 => {
-                format!("{suffix}-{authored}-{name_index}")
+                Arc::from(format!("{suffix}-{authored}-{name_index}"))
             }
             None => {
-                let mut name = String::with_capacity(suffix.len() + authored.len() + 1);
-
-                name.push_str(suffix);
-                name.push('-');
-                name.push_str(authored);
-                name
+                scratch.clear();
+                scratch.push_str(suffix);
+                scratch.push('-');
+                scratch.push_str(authored);
+                Arc::from(scratch.as_str())
             }
-        });
+        };
         let prefix = css_namespace.as_deref().unwrap_or_default();
         let definition_id = match &explicit {
             None => {
@@ -2555,13 +2556,12 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             },
         };
         let name: Arc<str> = {
-            let mut name = String::with_capacity(namespace.len() + 18);
-
-            name.push_str("style-");
-            name.push_str(&namespace);
-            name.push('-');
-            js::write_index(&mut name, parsed.utf16(call.span.start));
-            Arc::from(name)
+            scratch.clear();
+            scratch.push_str("style-");
+            scratch.push_str(&namespace);
+            scratch.push('-');
+            js::write_index(&mut scratch, parsed.utf16(call.span.start));
+            Arc::from(scratch.as_str())
         };
         let module = Module {
             allocator,

@@ -881,7 +881,7 @@ pub fn compile<'a>(
         styles: &styles,
         vars: (!vars.is_empty()).then_some(vars.as_slice()),
     };
-    let emitted = if let Some(units) = units {
+    let mut emitted = if let Some(units) = units {
         css::compile(&css_options, Some(units))?
     } else {
         let mut registry = Registry::new();
@@ -891,8 +891,9 @@ pub fn compile<'a>(
 
         css::compile(&css_options, Some(&mut units))?
     };
+    let classes = classes(extracted, &mut emitted, portable, &portable_names);
     let generator = Generator {
-        classes: classes(extracted, &emitted, portable, &portable_names),
+        classes,
         owners: options.owners,
         style_classes: options.style_classes,
         emitted: &emitted,
@@ -1262,9 +1263,11 @@ fn contribution_text(
     }
 }
 
+/// The module's class lists. Lists that need no identities move out of `emitted`, which keeps
+/// them otherwise.
 fn classes(
     extracted: &Extracted<'_>,
-    emitted: &css::Output,
+    emitted: &mut css::Output,
     portable: bool,
     portable_names: &FxHashMap<Arc<str>, Arc<str>>,
 ) -> IndexMap<Arc<str>, String, FxBuildHasher> {
@@ -1281,7 +1284,7 @@ fn classes(
 
     // Emitted lists already hold distinct names, so only identities can change them.
     if emitted.plain && identities.is_empty() {
-        return emitted.classes.clone();
+        return std::mem::take(&mut emitted.classes);
     }
 
     emitted
@@ -2500,12 +2503,18 @@ impl<'a> Generator<'_, 'a> {
         let mut owners: FxHashMap<&str, &Call<'a>> = FxHashMap::default();
 
         if !aligned {
+            // Lists that needed no identities moved into the generator.
+            let lists = if emitted.classes.is_empty() {
+                &self.classes
+            } else {
+                &emitted.classes
+            };
+
             owners.reserve(emitted.rules.len());
 
             for call in &extracted.calls {
                 for name in split_spaces(
-                    emitted
-                        .classes
+                    lists
                         .get(&call.name)
                         .map(String::as_str)
                         .unwrap_or_default(),

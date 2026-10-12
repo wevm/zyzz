@@ -65,6 +65,10 @@ pub struct Output {
     pub classes: IndexMap<Arc<str>, String, FxBuildHasher>,
     /// Contribution text separated for graph-wide hoisting.
     pub contribution_css: Option<String>,
+    /// The index of the style whose emission created each printed rule class. A style's class
+    /// list holds every class it creates, and earlier styles never hold a later style's new
+    /// class, so this is the first style whose list holds the class.
+    pub creators: FxHashMap<Box<str>, usize>,
     /// Factored CSS preserving cascade behavior, without reset or layers.
     pub css: String,
     /// Whether every class name in [`Output::classes`] is nonempty and free of spaces, so each
@@ -353,6 +357,8 @@ struct Lines {
 
 struct Compiler<'a> {
     conditional_rules: FxHashMap<String, Conditional>,
+    /// The style index that created each rule, by rule index.
+    creators: Vec<usize>,
     conflicts: FxHashMap<&'a str, u32>,
     css_names: FxHashMap<&'a str, Box<str>>,
     diagnostics: Vec<Diagnostic>,
@@ -973,7 +979,7 @@ impl<'a> Compiler<'a> {
         }
 
         if let Some(explicit) = state.explicit {
-            self.rules.insert(identity.clone(), body);
+            self.rule(state.index, identity.clone(), body);
             self.selectors
                 .insert(identity.clone(), Arc::clone(explicit));
         } else {
@@ -985,7 +991,7 @@ impl<'a> Compiler<'a> {
                     .insert(body.clone(), identity.clone());
             }
 
-            self.rules.insert(identity.clone(), body);
+            self.rule(state.index, identity.clone(), body);
             state.names.push(Rc::from(identity.as_str()));
         }
 
@@ -1194,6 +1200,17 @@ impl<'a> Compiler<'a> {
         }
     }
 
+    /// Records a rule body under its identity, keeping the creator of a replaced rule.
+    fn rule(&mut self, creator: usize, identity: String, body: String) -> usize {
+        let (index, previous) = self.rules.insert_full(identity, body);
+
+        if previous.is_none() {
+            self.creators.push(creator);
+        }
+
+        index
+    }
+
     /// Names one shared declaration unit and records its rule.
     fn unit(&mut self, state: &mut Application<'a>, body: &str, units: &mut Units<'_>) {
         let namespace = state.css_namespace.as_deref();
@@ -1232,7 +1249,7 @@ impl<'a> Compiler<'a> {
         }
 
         let name: Rc<str> = Rc::from(identity.as_str());
-        let (rule, _) = self.rules.insert_full(identity, body.to_owned());
+        let rule = self.rule(state.index, identity, body.to_owned());
 
         match self.unit_names.get_mut(self.unit_key.as_str()) {
             Some(unit) => {
@@ -1277,6 +1294,7 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
     let mut compiler = Compiler {
         conditional_rules: FxHashMap::default(),
         conflicts: FxHashMap::default(),
+        creators: Vec::new(),
         css_names: FxHashMap::default(),
         diagnostics: Vec::new(),
         domains: Domains::default(),
@@ -1794,20 +1812,30 @@ fn run<'a>(
 
     scoped_css.push_str(&scopes.css);
 
-    for (name, body) in &compiler.rules {
+    let mut creators: FxHashMap<Box<str>, usize> =
+        FxHashMap::with_capacity_and_hasher(compiler.rules.len(), FxBuildHasher);
+
+    for (index, (name, body)) in compiler.rules.iter().enumerate() {
         if !scoped_css.is_empty() {
             scoped_css.push('\n');
+        }
+
+        let printed = compiler
+            .selectors
+            .get(name)
+            .map_or(name.as_str(), |explicit| explicit);
+
+        // Rules follow creation order, so the first rule printing a class has its first creator.
+        if let Some(creator) = compiler.creators.get(index)
+            && !creators.contains_key(printed)
+        {
+            creators.insert(printed.into(), *creator);
         }
 
         let mut selector = String::with_capacity(name.len() + 1);
 
         selector.push('.');
-        selector.push_str(&class_name::selector(
-            compiler
-                .selectors
-                .get(name)
-                .map_or(name.as_str(), |explicit| explicit),
-        ));
+        selector.push_str(&class_name::selector(printed));
 
         let conditional = compiler.conditional_rules.get(name).filter(|conditional| {
             !conditional
@@ -1884,6 +1912,7 @@ fn run<'a>(
     Ok(Output {
         classes,
         contribution_css,
+        creators,
         css,
         plain,
         rules,

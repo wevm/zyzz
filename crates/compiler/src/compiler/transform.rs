@@ -2489,22 +2489,44 @@ impl<'a> Generator<'_, 'a> {
 
         map.set_source_content(module_id, Some(source));
 
-        let mut owners: FxHashMap<&str, &Call<'a>> =
-            FxHashMap::with_capacity_and_hasher(emitted.rules.len(), FxBuildHasher);
+        // A rule's owner is the first call whose class list holds its class. When calls and
+        // compiled styles align, that is the call of the style that created the rule.
+        let aligned = extracted.calls.len() == extracted.styles.styles.len()
+            && extracted
+                .calls
+                .iter()
+                .zip(&extracted.styles.styles)
+                .all(|(call, style)| call.name == style.name);
+        let mut owners: FxHashMap<&str, &Call<'a>> = FxHashMap::default();
 
-        for call in &extracted.calls {
-            for name in split_spaces(
-                emitted
-                    .classes
-                    .get(&call.name)
-                    .map(String::as_str)
-                    .unwrap_or_default(),
-            ) {
-                if !owners.contains_key(name) {
-                    owners.insert(name, call);
+        if !aligned {
+            owners.reserve(emitted.rules.len());
+
+            for call in &extracted.calls {
+                for name in split_spaces(
+                    emitted
+                        .classes
+                        .get(&call.name)
+                        .map(String::as_str)
+                        .unwrap_or_default(),
+                ) {
+                    if !owners.contains_key(name) {
+                        owners.insert(name, call);
+                    }
                 }
             }
         }
+
+        let owner = |name: &str| {
+            if aligned {
+                emitted
+                    .creators
+                    .get(name)
+                    .and_then(|index| extracted.calls.get(*index))
+            } else {
+                owners.get(name).copied()
+            }
+        };
 
         let styles: FxHashMap<&str, &NamedStyle> = extracted
             .styles
@@ -2719,7 +2741,7 @@ impl<'a> Generator<'_, 'a> {
                 continue;
             }
 
-            let Some(call) = owners.get(&*name).copied() else {
+            let Some(call) = owner(&name) else {
                 return Err(message("Emitted CSS rule has no owning style."));
             };
             let escaped = class_name::selector(&name);

@@ -27,6 +27,7 @@ export const libraries = [
   'panda',
   'stylex',
   'tailwind',
+  'tamagui',
   'vanilla-extract',
   'zyzz',
 ] as const

@@ -24,6 +24,7 @@ export const compilers = {
   panda,
   stylex,
   tailwind,
+  tamagui,
   'vanilla-extract': vanillaExtract,
   zyzz,
   'zyzz-tokens': zyzzTokens,
@@ -122,6 +123,25 @@ export const classes=[${indices.map((index) => `css({backgroundColor:'background
 export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-panda-theme':'base'}};`,
     )
 
+    // Tamagui themes are config values that elements read as `$` props.
+    await Fs.writeFile(
+      Path.join(directory, 'tamagui.config.ts'),
+      `import { createTamagui, createTokens } from '@tamagui/core'
+
+export default createTamagui({ media: {}, settings: {}, shorthands: {}, themes: ${JSON.stringify({ alternate, base })}, tokens: createTokens({ color: {}, radius: {}, size: {}, space: {}, zIndex: {} }) })
+`,
+    )
+
+    const tamagui = `import { View } from '@tamagui/core'
+
+export const classes = [
+${indices.map((index) => `  <View backgroundColor="$background" color="$foreground" padding="$space" width="${index}px" />,`).join('\n')}
+].map((element) => element.props.className)
+export const themes = { alternate: { className: 't_alternate' }, base: { className: 't_base' } }
+`
+
+    await Fs.writeFile(Path.join(directory, 'tamagui.tsx'), tamagui)
+
     const theme = Theme.define({
       backgroundColor: { surface: { dark: '#111', light: '#fff' } },
       color: { foreground: { dark: '#fff', light: '#111' } },
@@ -138,6 +158,7 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
 @tailwind utilities;
 .base{--color-background:${base.background};--color-foreground:${base.foreground};--spacing-card:${base.space};}
 .alternate{--color-background:${alternate.background};--color-foreground:${alternate.foreground};--spacing-card:${alternate.space};}`,
+      tamagui,
       targets: profile,
       themes: {
         alternate: Theme.extend(theme, {
@@ -194,6 +215,8 @@ export type Fixture = {
   readonly tailwind: readonly string[]
   /** Native Tailwind theme declarations and scope overrides. */
   readonly tailwindCss: string
+  /** Authored Tamagui module reading both config themes. */
+  readonly tamagui: string
   /** Immutable CSS targets shared by every adapter in this fixture. */
   readonly targets: Readonly<NonNullable<Compilation.minify.Options['targets']>>
   /** Compatible Zyzz theme definitions. */
@@ -304,6 +327,34 @@ export async function tailwind(fixture: Fixture): Promise<Compilation.Bundle> {
     javascript: await Compilation.javascript(
       `export const classes=${JSON.stringify(fixture.tailwind)};export const themes={alternate:{className:'alternate'},base:{className:'base'}};`,
     ),
+  }
+}
+
+/** Evaluates the theme config afresh, then lowers the module and keeps the theme rules. */
+export async function tamagui(fixture: Fixture): Promise<Compilation.Bundle> {
+  // Themes are config values, so generating their CSS includes evaluating the config.
+  const project = await Compilation.tamaguiProject(fixture.directory, {
+    rebuild: true,
+  })
+  const output = await Compilation.tamaguiModule({
+    count: fixture.count,
+    directory: fixture.directory,
+    project,
+    source: fixture.tamagui,
+  })
+  // Theme variables and scope rules start at `:root`. The design-system base is a
+  // reset, which every lane excludes.
+  const themes = project.projectInfo.tamaguiConfig
+    .getCSS()
+    .split('\n')
+    .filter((rule) => rule.startsWith(':root'))
+    .join('\n')
+
+  return {
+    css: Compilation.minify(`${themes}\n${output.css}`, {
+      targets: fixture.targets,
+    }),
+    javascript: await Compilation.javascript(output.code),
   }
 }
 

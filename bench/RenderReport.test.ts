@@ -34,6 +34,7 @@ describe('render report', () => {
                   'panda',
                   'stylex',
                   'tailwind',
+                  'tamagui',
                   'vanilla-extract',
                   'zyzz',
                 ] as const))

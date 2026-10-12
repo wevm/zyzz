@@ -1,6 +1,6 @@
 # Benchmarks
 
-Compiler, runtime, React render, theme, and type-instantiation benchmarks, with comparison adapters for Panda CSS, StyleX, Tailwind, Tamagui, and vanilla-extract. Tamagui joins the literal compiler workloads only. Comparison workloads are defined in `Corpus.ts`; pipeline benchmarks live beside their modules as `src/**/*.bench.ts`. Reports are written under the ignored `bench/results/` directory.
+Compiler, runtime, React render, theme, and type-instantiation benchmarks, with comparison adapters for Panda CSS, StyleX, Tailwind, Tamagui, and vanilla-extract. Comparison workloads are defined in `Corpus.ts`; pipeline benchmarks live beside their modules as `src/**/*.bench.ts`. Reports are written under the ignored `bench/results/` directory.
 
 Zyzz comparison lanes use `cssOutput: 'grouped'`, except the source lane, which compiles authored modules with atomic output and `composition: 'independent'`. Atomic output with ordered composition stays the application default and keeps its browser correctness coverage.
 
@@ -69,7 +69,7 @@ Timing boundaries:
 - Fixture preparation, browser checks, compression, and report writes are outside timing.
 - Panda applies its official esbuild source transformer, equivalent to `transform: true` in its bundler plugins. Source rewriting is timed, and required runtime helpers remain in measured client output.
 - Tailwind excludes content scanning; StyleX includes Babel parsing; vanilla-extract includes source loading and evaluation; Zyzz excludes definition validation, while the source lane includes parsing, extraction, and rewriting.
-- Tamagui excludes config bundling and evaluation. Each sample uses a fresh `CompilerFrontend` with the persisted plan cache disabled. Its design-system base CSS, such as the `:where(.is_View)` flex defaults, is a reset and stays out of measured CSS.
+- Tamagui excludes config bundling and evaluation from literal workloads. Each sample uses a fresh `CompilerFrontend` with the persisted plan cache disabled. Its design-system base CSS, such as the `:where(.is_View)` flex defaults, is a reset and stays out of measured CSS.
 
 All CSS passes through the same Lightning CSS minifier targeting Chrome 120, Firefox 128, and Safari 17, with source maps disabled. These are benchmark settings, not package support requirements. License comments count toward CSS size; no adapter strips them. Reports under `bench/results/{small,repeated,unique}/` record raw, gzip, and Brotli bytes for CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed assets without recounting class strings already in JavaScript.
 
@@ -77,7 +77,9 @@ All CSS passes through the same Lightning CSS minifier targeting Chrome 120, Fir
 
 ## Theme Comparisons
 
-`Themes.bench.ts` compares 10 and 100 component widths under two complete theme scopes with `light-dark()` colors. Adapters use [Panda semantic-token themes](https://panda-css.com/blog/building-a-multi-brand-design-system-with-panda-css), [StyleX variables and createTheme](https://stylexjs.com/docs/learn/theming/creating-themes), [Tailwind theme variables](https://tailwindcss.com/docs/theme), and [vanilla-extract theme contracts](https://vanilla-extract.style/documentation/api/create-theme-contract/). The `zyzz` lane starts from validated explicit references; `zyzz-tokens` starts from named-token style data and includes `Style.define` resolution in each sample. Both lanes must produce byte-identical CSS and JavaScript.
+`Themes.bench.ts` compares 10 and 100 component widths under two complete theme scopes with `light-dark()` colors. Adapters use [Panda semantic-token themes](https://panda-css.com/blog/building-a-multi-brand-design-system-with-panda-css), [StyleX variables and createTheme](https://stylexjs.com/docs/learn/theming/creating-themes), [Tailwind theme variables](https://tailwindcss.com/docs/theme), [Tamagui themes](https://tamagui.dev/docs/core/theme), and [vanilla-extract theme contracts](https://vanilla-extract.style/documentation/api/create-theme-contract/). The `zyzz` lane starts from validated explicit references; `zyzz-tokens` starts from named-token style data and includes `Style.define` resolution in each sample. Both lanes must produce byte-identical CSS and JavaScript.
+
+Tamagui generates theme CSS from its evaluated config, so each Tamagui theme sample rebuilds and evaluates `tamagui.config.ts` before extraction. Measured CSS keeps the `:root` theme variables and `t_base`/`t_alternate` scope rules from `getCSS()` and drops its design-system reset.
 
 Theme CSS targets Chrome 123, Firefox 128, and Safari 17.5, retaining native `light-dark()` and `color-scheme` selection. Browser checks cover both scopes, nested restoration of the base theme, forced and system schemes, and switching scopes without changing component classes.
 
@@ -93,7 +95,7 @@ const fixture = await Themes.create(100, {
 
 ## Runtime Comparisons
 
-`Runtime.bench.ts` measures production-compiled applications for all five libraries plus a plain class/style control, over 10 or 100 distinct styles. Compilation, bundling, module initialization, and browser equivalence checks run outside timing.
+`Runtime.bench.ts` measures production-compiled applications for all six libraries plus a plain class/style control, over 10 or 100 distinct styles. Compilation, bundling, module initialization, and browser equivalence checks run outside timing.
 
 | Case      | Measured application                                                              |
 | --------- | --------------------------------------------------------------------------------- |
@@ -105,7 +107,7 @@ const fixture = await Themes.create(100, {
 
 Inputs are preallocated; each iteration selects a style and retains the returned props. Chromium runs two passes with reversed framework order, each with 100 calibrated batches after warmup. Reports show nanoseconds per application, relative error, sample counts, and stylesheet plus client transfer. Browser identity and raw samples are saved in `browser-timings.json`; artifacts under `bench/results/runtime/`.
 
-A competitor faster beyond reported uncertainty in both passes is reported without failing CI. Overlapping intervals are inconclusive. These are JavaScript application costs, not rendering or layout timings. Tailwind, vanilla-extract, and the control read class strings directly without per-style closures.
+A competitor faster beyond reported uncertainty in both passes is reported without failing CI. Overlapping intervals are inconclusive. These are JavaScript application costs, not rendering or layout timings. Tailwind, Tamagui, vanilla-extract, and the control read class strings directly without per-style closures. Tamagui's lanes apply the classes its compiler flattens `View` elements into.
 
 ### Recorded Results
 
@@ -138,7 +140,7 @@ An earlier run ([34467564716](https://github.com/wevm/zyzz/actions/runs/34467564
 | Commit + layout | Commit plus a forced geometry read, including pending style and layout work        |
 | Frame           | Two animation frames after commit; includes refresh wait, not exact paint CPU time |
 
-These measure warm client operations with styles already loaded, not cold navigation, hydration, GPU presentation, or isolated React CPU time. Render timings are the primary runtime report; performance is advisory until repeated runs establish variance, while missing data and correctness failures fail CI. Callable and override cases compare all six adapters; dynamic slots compare Zyzz and native CSS only. In PR runs the base source is measured with the candidate harness; a base that predates grouped output marks that baseline unavailable.
+These measure warm client operations with styles already loaded, not cold navigation, hydration, GPU presentation, or isolated React CPU time. Render timings are the primary runtime report; performance is advisory until repeated runs establish variance, while missing data and correctness failures fail CI. Callable and override cases compare all seven adapters; dynamic slots compare Zyzz and native CSS only. In PR runs the base source is measured with the candidate harness; a base that predates grouped output marks that baseline unavailable.
 
 ## Source Pipeline
 
@@ -218,7 +220,7 @@ The corpus adapts ideas from these suites without copying implementation code:
 - [Emotion](https://github.com/emotion-js/emotion/tree/main/scripts/benchmarks), [styled-components](https://github.com/styled-components/styled-components/tree/main/packages/benchmarks), [Stitches](https://stitches.dev/docs/benchmarks), and [Tamagui](https://tamagui.dev/docs/intro/benchmarks): deep and wide mounting, prop updates, and dynamic cardinality.
 - [css-in-js-bench](https://github.com/jantimon/css-in-js-bench): shared inputs, production payloads, and independent browser parity checks.
 
-Tamagui joins only the literal compiler comparison. Theme comparisons exclude it, since its theme variables ship only in `getCSS()` with its design-system reset. Its extraction cost keeps it out of render and runtime matrices. Short CI samples are regression signals, not speed rankings; run longer quiet-machine measurements before making latency claims.
+Tamagui joins the compiler, theme, runtime, and render comparisons through flattened `View` output. Variant and dynamic lanes exclude it, since those selections need its runtime components. Short CI samples are regression signals, not speed rankings; run longer quiet-machine measurements before making latency claims.
 
 ## Native compiler and renders
 

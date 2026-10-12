@@ -34,8 +34,6 @@ describe('framework gate', () => {
         'tamagui',
         'vanilla-extract',
       ]
-      // Theme workloads have no Tamagui lane, so passing results omit it.
-      const themeCompetitors = competitors.filter((name) => name !== 'tamagui')
       const workloads = [
         ...[
           'small',
@@ -59,7 +57,7 @@ describe('framework gate', () => {
           lanes: ['zyzz-source'],
         },
         ...[10, 100].map((count) => ({
-          competitors: themeCompetitors,
+          competitors,
           directory: `theme-comparison/${count}`,
           group: `theme comparison / ${count} styles`,
           lanes: ['zyzz', 'zyzz-tokens'],
@@ -174,7 +172,7 @@ describe('framework gate', () => {
         ).toMatchInlineSnapshot('true')
       } else if (scenario === 'missing literal competitor') {
         expect(result.code).toMatchInlineSnapshot('1')
-        // Only the literal workload fails, since theme workloads never require Tamagui.
+        // Each workload checks its own competitors, so only the application workload fails.
         expect(
           result.stdout.split('\n').filter((line) => line.startsWith('🔴 ')),
         ).toMatchInlineSnapshot(`

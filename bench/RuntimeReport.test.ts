@@ -41,6 +41,7 @@ describe('runtime report', () => {
                 'panda',
                 'stylex',
                 'tailwind',
+                'tamagui',
                 'vanilla-extract',
                 'zyzz',
               ]) {
@@ -53,7 +54,9 @@ describe('runtime report', () => {
 
                 if (
                   kind === 'variants' &&
-                  (library === 'tailwind' || library === 'vanilla-extract')
+                  (library === 'tailwind' ||
+                    library === 'tamagui' ||
+                    library === 'vanilla-extract')
                 )
                   continue
 

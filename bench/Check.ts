@@ -53,8 +53,6 @@ const competitors = [
   'tamagui',
   'vanilla-extract',
 ]
-// Tamagui theme CSS ships only with its design-system reset, so it has no matched theme lane.
-const themeCompetitors = competitors.filter((name) => name !== 'tamagui')
 const workloads = [
   ...[
     'small',
@@ -78,7 +76,7 @@ const workloads = [
     lanes: ['zyzz-source'],
   },
   ...[10, 100].map((count) => ({
-    competitors: themeCompetitors,
+    competitors,
     directory: `theme-comparison/${count}`,
     group: `theme comparison / ${count} styles`,
     lanes: ['zyzz', 'zyzz-tokens'],
@@ -120,7 +118,7 @@ console.log(
   '🟢 Zyzz beats every other framework · 🔴 Zyzz fails, or another framework beats a Zyzz result on speed or size. Both build time and total gzip must pass; ties fail. The source transform gates total gzip only. Total gzip includes CSS + required JavaScript.\n',
 )
 console.log(
-  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. The application workload compiles one authored module through the source transform, including parsing. Tamagui runs the literal workloads only. See bench/README.md for each compiler’s measurement boundary.\n',
+  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. The application workload compiles one authored module through the source transform, including parsing. See bench/README.md for each compiler’s measurement boundary.\n',
 )
 
 for (const workload of workloads) {

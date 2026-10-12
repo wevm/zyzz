@@ -23,9 +23,14 @@ import { Css } from 'zyzz/web'
 import * as Corpus from './Corpus.js'
 
 /** Loaded Tamagui config and component state that compilation consumes unchanged. */
-type TamaguiProject = {
+export type TamaguiProject = {
   /** Persisted plan cache identity, or `null` to lower every module. */
   readonly cacheStamp: string | null
+  /** Evaluated project state. */
+  readonly projectInfo: {
+    /** Evaluated config, whose generated CSS includes theme scopes and the design-system base. */
+    readonly tamaguiConfig: { getCSS(): string }
+  }
 }
 
 /** The `@tamagui/static` compiler surface the Tamagui lane consumes. */
@@ -53,6 +58,7 @@ type TamaguiStatic = {
   loadCompilerProject(input: {
     generation: string
     options: { components: readonly string[]; config: string }
+    rebuild?: boolean | undefined
     resolveComponents: (
       names: readonly string[],
     ) => Promise<readonly { id: string; moduleName: string }[]>
@@ -143,20 +149,8 @@ export async function create(
 
   await Fs.writeFile(Path.join(directory, 'tamagui.tsx'), tamagui)
 
-  const require = Module.createRequire(Path.join(directory, 'package.json'))
   // Config bundling and evaluation run once per fixture, as in one plugin build.
-  const project = await TamaguiStatic.loadCompilerProject({
-    generation: 'benchmark',
-    options: { components: ['@tamagui/core'], config: 'tamagui.config.ts' },
-    async resolveComponents(modules) {
-      return modules.map((moduleName) => ({
-        id: require.resolve(moduleName),
-        moduleName,
-      }))
-    },
-    root: directory,
-    target: 'web',
-  })
+  const project = await tamaguiProject(directory)
 
   return {
     count: workload.count,
@@ -183,11 +177,7 @@ export async function create(
         })
         .join(' '),
     ),
-    tamagui: {
-      // A null stamp disables the persisted plan cache, so every sample lowers the module.
-      project: { ...project, cacheStamp: null },
-      source: tamagui,
-    },
+    tamagui: { project, source: tamagui },
     targets: Object.freeze({ ...(options.targets ?? minification.targets) }),
     workload,
     zyzz: Style.define(
@@ -368,28 +358,96 @@ export async function tailwind(fixture: Fixture): Promise<Bundle> {
 
 /** Lowers the authored module with a fresh Tamagui compiler frontend and bundles the flattened result. */
 export async function tamagui(fixture: Fixture): Promise<Bundle> {
-  const result = await new TamaguiStatic.CompilerFrontend().compile({
-    id: Path.join(fixture.directory, 'tamagui.tsx'),
-    // The module imports only the configured component package, which needs no host resolution.
-    load: async () => null,
+  const output = await tamaguiModule({
+    count: fixture.count,
+    directory: fixture.directory,
     project: fixture.tamagui.project,
-    resolve: async () => null,
-    root: fixture.directory,
     source: fixture.tamagui.source,
-    target: 'web',
   })
-
-  const stats = result.plan.stats
-  if (stats.bailed || stats.flattened !== fixture.count)
-    throw new Error(
-      `Tamagui left ${fixture.count - stats.flattened} of ${fixture.count} elements on the runtime path.`,
-    )
 
   return {
     // Per-module atomic rules only. The config's design-system base, such as
     // `:where(.is_View)` flex defaults, is a reset and stays excluded like every lane's.
-    css: minify(result.plan.css, { targets: fixture.targets }),
-    javascript: await javascript(result.output.code),
+    css: minify(output.css, { targets: fixture.targets }),
+    javascript: await javascript(output.code),
+  }
+}
+
+/** Lowers `tamagui.tsx` with a fresh compiler frontend and requires every element to flatten. */
+export async function tamaguiModule(
+  options: tamaguiModule.Options,
+): Promise<tamaguiModule.ReturnType> {
+  const result = await new TamaguiStatic.CompilerFrontend().compile({
+    id: Path.join(options.directory, 'tamagui.tsx'),
+    // The module imports only the configured component package, which needs no host resolution.
+    load: async () => null,
+    // A null stamp disables the persisted plan cache, so every call lowers the module.
+    project: { ...options.project, cacheStamp: null },
+    resolve: async () => null,
+    root: options.directory,
+    source: options.source,
+    target: 'web',
+  })
+
+  const stats = result.plan.stats
+  if (stats.bailed || stats.flattened !== options.count)
+    throw new Error(
+      `Tamagui left ${options.count - stats.flattened} of ${options.count} elements on the runtime path.`,
+    )
+
+  return { code: result.output.code, css: result.plan.css }
+}
+
+/** One authored Tamagui module and the project that lowers it. */
+export declare namespace tamaguiModule {
+  /** Fixture inputs; the project is loaded outside this call. */
+  type Options = {
+    /** Elements that must flatten to host elements. */
+    readonly count: number
+    /** Fixture root holding `tamagui.tsx` and its config. */
+    readonly directory: string
+    /** Loaded config and component state. */
+    readonly project: TamaguiProject
+    /** Authored module source. */
+    readonly source: string
+  }
+  /** Rewritten module and its atomic rules. */
+  type ReturnType = {
+    /** Module with flattened host elements. */
+    readonly code: string
+    /** Atomic rules for the module's elements. */
+    readonly css: string
+  }
+}
+
+/** Bundles and evaluates a fixture's `tamagui.config.ts` and resolves its component package. */
+export async function tamaguiProject(
+  directory: string,
+  options: tamaguiProject.Options = {},
+): Promise<TamaguiProject> {
+  const require = Module.createRequire(Path.join(directory, 'package.json'))
+
+  return TamaguiStatic.loadCompilerProject({
+    generation: 'benchmark',
+    options: { components: ['@tamagui/core'], config: 'tamagui.config.ts' },
+    rebuild: options.rebuild,
+    async resolveComponents(modules) {
+      return modules.map((moduleName) => ({
+        id: require.resolve(moduleName),
+        moduleName,
+      }))
+    },
+    root: directory,
+    target: 'web',
+  })
+}
+
+/** Project loading options. */
+export declare namespace tamaguiProject {
+  /** Defaults reuse a project this process already evaluated. */
+  type Options = {
+    /** Re-evaluates the config instead of reusing this process's loaded project. */
+    readonly rebuild?: boolean | undefined
   }
 }
 

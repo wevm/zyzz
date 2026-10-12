@@ -27,6 +27,7 @@ for (const components of [100, 1000])
             'panda',
             'stylex',
             'tailwind',
+            'tamagui',
             'vanilla-extract',
             'zyzz',
           ])

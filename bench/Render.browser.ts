@@ -36,6 +36,7 @@ test('production React mount, update, and remount', async () => {
                   'panda',
                   'stylex',
                   'tailwind',
+                  'tamagui',
                   'vanilla-extract',
                   'zyzz',
                 ] as const)
@@ -104,5 +105,5 @@ test('production React mount, update, and remount', async () => {
         }
       }
 
-  expect(groups.length).toMatchInlineSnapshot(`72`)
+  expect(groups.length).toMatchInlineSnapshot(`80`)
 })

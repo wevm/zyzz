@@ -29,6 +29,7 @@ const frameworks = [
   'panda',
   'stylex',
   'tailwind',
+  'tamagui',
   'vanilla-extract',
   'zyzz',
 ]
@@ -37,6 +38,7 @@ const names: Record<string, string> = {
   panda: 'Panda CSS',
   stylex: 'StyleX',
   tailwind: 'Tailwind',
+  tamagui: 'Tamagui',
   'vanilla-extract': 'vanilla-extract',
   zyzz: 'Zyzz',
 }

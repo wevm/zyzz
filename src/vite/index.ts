@@ -12,13 +12,19 @@ import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
-import { isBuiltin } from 'node:module'
+import { createRequire, isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Snapshot from '../node/internal/Snapshot.js'
 import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Scope from '../compiler/internal/Scope.js'
-import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
+import type {
+  Environment,
+  Plugin,
+  Rollup,
+  UserConfig,
+  ViteDevServer,
+} from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
 import * as ThemeRules from '../web/internal/Themes.js'
@@ -73,6 +79,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const identities = new Map<string, string>()
   const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   let directories: readonly string[]
+  let optimizeRuntime = false
   let root: string
 
   function snapshot(environment: Environment) {
@@ -1186,53 +1193,19 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       .map(([, configuration]) => configuration)
   }
 
-  /**
-   * Pre-bundles the runtime in each development environment that would
-   * otherwise discover it while serving a request.
-   */
-  async function includeRuntime(server: ViteDevServer) {
-    // Portable output keeps its authored imports and adds no runtime import.
-    if (options.compiler === false) return
-
-    // Portable build adapters share this module and do not require Vite.
-    const { createIdResolver } = await import('vite')
-    const resolve = createIdResolver(server.config, {
-      asSrc: false,
-      scan: true,
-    })
-
-    for (const environment of Object.values(server.environments)) {
-      const optimizeDeps = environment.config.optimizeDeps
-
-      // Without discovery, Vite optimizes only the listed dependencies and
-      // never re-runs for an import found while serving a request.
-      if (!environment.depsOptimizer || optimizeDeps.noDiscovery) continue
-      if (
-        optimizeDeps.include?.includes(runtime) ||
-        optimizeDeps.exclude?.some((id) => id === 'zyzz' || id === runtime)
-      )
-        continue
-
-      // Vite optimizes a discovered import only inside node_modules. Linked
-      // and aliased copies stay source modules beside the other entrypoints.
-      if (!(await resolve(environment, runtime))?.includes('node_modules'))
-        continue
-
-      // Vite scans authored source, so the runtime import that compilation
-      // adds first appears while a request transforms a module. Discovering
-      // it then re-runs the optimizer, and modules loaded before the re-run
-      // can keep a separate copy of a shared dependency such as React.
-      optimizeDeps.include = [...(optimizeDeps.include ?? []), runtime]
-    }
-  }
-
   return {
     buildStart() {
       reads.delete(this.environment)
     },
     config: {
       order: 'post',
-      handler(config) {
+      handler(config, env) {
+        // Ordered after other config hooks, so plugin-provided aliases are visible.
+        optimizeRuntime =
+          env.command === 'serve' &&
+          options.compiler !== false &&
+          installed(config)
+
         if (native) return
         // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
         return {
@@ -1261,33 +1234,48 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
       },
     },
-    configureServer: {
-      // Framework plugins can initialize dependency optimizers from their own
-      // server hooks, after which the include list is no longer read.
-      order: 'pre',
-      async handler(server) {
-        // Directory watches belong to the server, not module import dependencies.
-        server.watcher.add(directories.slice(1))
+    configEnvironment(name, config) {
+      if (!optimizeRuntime) return
 
-        server.middlewares.use((request, response, next) => {
-          const path = new URL(request.url ?? '/', 'http://localhost').pathname
-          const file = assets.get(path)
-          if (!file) return next()
+      const optimizeDeps = config.optimizeDeps ?? {}
+      const consumer =
+        config.consumer ?? (name === 'client' ? 'client' : 'server')
 
-          Fs.readFile(file).then((content) => {
-            response.setHeader(
-              'Content-Type',
-              file.endsWith('.svg')
-                ? 'image/svg+xml'
-                : 'application/octet-stream',
-            )
-            response.setHeader('Cache-Control', 'no-cache')
-            response.end(content)
-          }, next)
-        })
+      // Vite defaults server environments to noDiscovery. An include list there
+      // would create an explicit optimizer that otherwise never exists.
+      if (optimizeDeps.noDiscovery ?? consumer === 'server') return
+      if (
+        optimizeDeps.include?.includes(runtime) ||
+        optimizeDeps.exclude?.some((id) => id === 'zyzz' || id === runtime)
+      )
+        return
 
-        await includeRuntime(server)
-      },
+      // Vite scans authored source, so the runtime import that compilation
+      // adds first appears while a request transforms a module. Discovering
+      // it then re-runs the optimizer, and modules loaded before the re-run
+      // can keep a separate copy of a shared dependency such as React.
+      return { optimizeDeps: { include: [runtime] } }
+    },
+    configureServer(server) {
+      // Directory watches belong to the server, not module import dependencies.
+      server.watcher.add(directories.slice(1))
+
+      server.middlewares.use((request, response, next) => {
+        const path = new URL(request.url ?? '/', 'http://localhost').pathname
+        const file = assets.get(path)
+        if (!file) return next()
+
+        Fs.readFile(file).then((content) => {
+          response.setHeader(
+            'Content-Type',
+            file.endsWith('.svg')
+              ? 'image/svg+xml'
+              : 'application/octet-stream',
+          )
+          response.setHeader('Cache-Control', 'no-cache')
+          response.end(content)
+        }, next)
+      })
     },
     async configResolved(config) {
       root = await Fs.realpath(config.root)
@@ -1711,6 +1699,40 @@ type Host = {
     id: string
   } | null>
   watch: (file: string) => void
+}
+
+/**
+ * Whether `zyzz/runtime` resolves inside node_modules from the Vite root. Vite
+ * optimizes a discovered import only there, so linked and aliased copies stay
+ * source modules beside the other entrypoints.
+ */
+function installed(config: UserConfig) {
+  const aliases = config.resolve?.alias ?? {}
+  const entries = Array.isArray(aliases)
+    ? aliases
+    : Object.entries(aliases).map(([find, replacement]) => ({
+        find,
+        replacement,
+      }))
+
+  // Matches Vite's alias semantics: a string entry covers its subpaths.
+  if (
+    entries.some((entry) =>
+      typeof entry.find === 'string'
+        ? runtime === entry.find || runtime.startsWith(`${entry.find}/`)
+        : entry.find.test(runtime),
+    )
+  )
+    return false
+
+  try {
+    const require = createRequire(
+      Path.join(Path.resolve(config.root ?? ''), 'package.json'),
+    )
+    return require.resolve(runtime).split(Path.sep).includes('node_modules')
+  } catch {
+    return false
+  }
 }
 
 const prefix = '\0zyzz:'

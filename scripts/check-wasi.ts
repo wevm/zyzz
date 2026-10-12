@@ -1,12 +1,16 @@
 /**
  * Compares the WebAssembly fallback binding with the native addon over the repository's
- * authored modules. Every operation must return identical JSON, including failures.
- * Run `pnpm build:binding:test` and `pnpm build:binding:wasi` first.
+ * authored modules. Every operation must return identical JSON, including failures. A packed
+ * copy of the package without its native addon must then load the fallback through the public
+ * entrypoint and compile the same graph.
+ * Run `pnpm build:binding:test`, `pnpm build:binding:wasi`, and `pnpm build:package` first.
  * @module
  */
+import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
+import * as Url from 'node:url'
 
 type Binding = {
   readonly call: (operation: string, input: string) => string
@@ -80,11 +84,77 @@ for (let index = 0; index < 2; index++) {
   if (left !== right) failures.push(`Graph.compile ${index}`)
 }
 
+// Platforms without a native addon load the packed WebAssembly build.
+const fixture = Fs.mkdtempSync(Path.join(root, '.fixture-wasi-package-'))
+
+try {
+  const [archive] = JSON.parse(
+    ChildProcess.execFileSync(
+      'npm',
+      [
+        'pack',
+        '--ignore-scripts',
+        '--offline',
+        '--json',
+        '--pack-destination',
+        fixture,
+      ],
+      { cwd: root, encoding: 'utf8' },
+    ),
+  ) as { readonly filename: string }[]
+  // A directory inside the repository resolves the package's dependencies like an install.
+  const installed = Path.join(fixture, 'node_modules/zyzz')
+
+  Fs.mkdirSync(installed, { recursive: true })
+  ChildProcess.execFileSync('tar', [
+    '-xf',
+    Path.join(fixture, archive!.filename),
+    '-C',
+    installed,
+    '--strip-components=1',
+  ])
+
+  for (const file of Fs.readdirSync(Path.join(installed, 'binding')))
+    if (file.endsWith('.node')) Fs.rmSync(Path.join(installed, 'binding', file))
+
+  const manifest = JSON.parse(
+    Fs.readFileSync(Path.join(installed, 'package.json'), 'utf8'),
+  ) as { readonly dependencies?: Readonly<Record<string, string>> }
+
+  for (const name of [
+    '@emnapi/core',
+    '@emnapi/runtime',
+    '@napi-rs/wasm-runtime',
+  ])
+    if (!manifest.dependencies?.[name])
+      failures.push(`packed dependency ${name}`)
+
+  const compile = async (directory: string) => {
+    const compiler = await import(
+      Url.pathToFileURL(Path.join(directory, 'dist/compiler/index.js')).href
+    )
+
+    try {
+      return JSON.stringify(compiler.Graph.create().compile({ modules }))
+    } catch (error) {
+      return `throw ${String(error)}`
+    }
+  }
+
+  if ((await compile(installed)) !== (await compile(root)))
+    failures.push('packed Graph.compile')
+
+  if (!(Path.join(installed, 'binding/wasi/zyzz.wasi.cjs') in require.cache))
+    failures.push('packed fallback loaded no WebAssembly binding')
+} finally {
+  Fs.rmSync(fixture, { force: true, recursive: true })
+}
+
 if (failures.length)
   throw new Error(
     `The WebAssembly binding differs from the native addon:\n${failures.join('\n')}`,
   )
 
 console.log(
-  `The WebAssembly binding matches the native addon on ${inputs.length + 2} operations over ${Object.keys(modules).length} modules.`,
+  `The WebAssembly binding matches the native addon on ${inputs.length + 2} operations over ${Object.keys(modules).length} modules, and the packed package loads it without a native addon.`,
 )

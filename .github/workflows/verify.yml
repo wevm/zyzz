@@ -125,6 +125,8 @@ jobs:
           name: binding
       - name: Build WebAssembly binding
         run: pnpm build:binding:wasi
+      - name: Build package for the packed fallback
+        run: pnpm build:package
       - name: Compare with the native addon
         run: pnpm check:wasi
     timeout-minutes: 30

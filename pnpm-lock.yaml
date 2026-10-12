@@ -273,12 +273,21 @@ importers:
 
   .:
     dependencies:
+      '@emnapi/core':
+        specifier: 'catalog:'
+        version: 2.0.0-alpha.6
+      '@emnapi/runtime':
+        specifier: 'catalog:'
+        version: 2.0.0-alpha.6
       '@jridgewell/gen-mapping':
         specifier: 'catalog:'
         version: 0.3.13
       '@jridgewell/trace-mapping':
         specifier: 'catalog:'
         version: 0.3.31
+      '@napi-rs/wasm-runtime':
+        specifier: 'catalog:'
+        version: 1.2.5(@emnapi/core@2.0.0-alpha.6)(@emnapi/runtime@2.0.0-alpha.6)
       '@oxc-project/types':
         specifier: 'catalog:'
         version: 0.148.0
@@ -319,21 +328,12 @@ importers:
       '@changesets/cli':
         specifier: 'catalog:'
         version: 3.0.3
-      '@emnapi/core':
-        specifier: 'catalog:'
-        version: 2.0.0-alpha.6
-      '@emnapi/runtime':
-        specifier: 'catalog:'
-        version: 2.0.0-alpha.6
       '@mdn/browser-compat-data':
         specifier: 'catalog:'
         version: 8.1.2
       '@napi-rs/cli':
         specifier: 'catalog:'
         version: 3.10.8(@emnapi/core@2.0.0-alpha.6)(@emnapi/runtime@2.0.0-alpha.6)(@types/node@24.13.3)(emnapi@2.0.0-alpha.6(node-addon-api@7.1.1))(supports-color@10.2.2)
-      '@napi-rs/wasm-runtime':
-        specifier: 'catalog:'
-        version: 1.2.5(@emnapi/core@2.0.0-alpha.6)(@emnapi/runtime@2.0.0-alpha.6)
       '@pandacss/dev':
         specifier: 'catalog:'
         version: 2.0.0(@emnapi/core@2.0.0-alpha.6)(@emnapi/runtime@2.0.0-alpha.6)(postcss@8.5.28)

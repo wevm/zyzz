@@ -22,4 +22,4 @@ jobs:
         run: pnpm build
       - name: Prerelease
         run: pnpm exec pkg-pr-new publish --pnpm
-    timeout-minutes: 20
+    timeout-minutes: 35

@@ -416,7 +416,7 @@ jobs:
   report:
     name: Benchmark Report
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.action != 'closed' }}
-    needs: [compiler, renders]
+    needs: [compiler]
     permissions:
       actions: read
       contents: read
@@ -435,16 +435,10 @@ jobs:
         with:
           name: benchmarks
           path: reports/benchmarks
-      - name: Download render results
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: benchmarks-render
-          path: reports/benchmarks
       - name: Prepare comment
         run: |
           mkdir -p reports
-          node bench/Comment.ts reports/benchmarks/report.md reports/benchmarks/render.md > reports/comment.md
+          node bench/Comment.ts reports/benchmarks "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > reports/comment.md
           cat reports/comment.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}

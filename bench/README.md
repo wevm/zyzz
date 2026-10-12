@@ -39,7 +39,7 @@ node bench/RenderReport.ts bench/results
 
 ## CI
 
-The Benchmarks workflow runs four parallel jobs: fixture checks with Next.js comparisons, compiler benchmarks, React renders, and type benches. Compiler and render jobs measure a fresh main baseline, then the candidate, sequentially on the same runner. Both feed one updating PR comment with traffic-light deltas followed by the framework tables. Fork PRs receive Actions summaries and artifacts without comment writes; missing baselines show “No baseline available.”
+The Benchmarks workflow runs four parallel jobs: fixture checks with Next.js comparisons, compiler benchmarks, React renders, and type benches. Compiler and render jobs measure a fresh main baseline, then the candidate, sequentially on the same runner. The compiler job feeds one updating PR comment with compile time, CSS gzip, and JS gzip tables for every framework. Baseline deltas, render timings, and the remaining measurements stay in the workflow summary and artifacts. Fork PRs receive Actions summaries and artifacts without comment writes; missing baselines show “No baseline available.”
 
 PR runs benchmark the event's pinned main commit first, then the PR merge commit, using each checkout's locked dependencies. Manual runs compare main with the selected ref. Baseline failures fail the job. Results and environment metadata upload as 30-day artifacts.
 

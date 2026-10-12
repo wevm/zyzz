@@ -177,7 +177,7 @@ describe('framework gate', () => {
           result.stdout.split('\n').filter((line) => line.startsWith('🔴 ')),
         ).toMatchInlineSnapshot(`
           [
-            "🔴 300 Components — Application Scale: Missing or invalid measurements. See workflow logs.",
+            "🔴 300 Components: Application Scale: Missing or invalid measurements. See workflow logs.",
           ]
         `)
       } else {
@@ -185,7 +185,7 @@ describe('framework gate', () => {
 
         if (['speed loss', 'size loss', 'tie'].includes(scenario)) {
           expect(
-            result.stdout.includes('<summary>Themes — 100 Components:'),
+            result.stdout.includes('<summary>Themes: 100 Components:'),
           ).toMatchInlineSnapshot('true')
           expect(
             result.stdout.includes('| 🔴 Zyzz (token resolution included) |'),
@@ -196,7 +196,7 @@ describe('framework gate', () => {
               .split('\n')
               .find((line) => line.startsWith('🔴 Themes')),
           ).toMatchInlineSnapshot(
-            '"🔴 Themes — 100 Components: Missing or invalid measurements. See workflow logs."',
+            '"🔴 Themes: 100 Components: Missing or invalid measurements. See workflow logs."',
           )
         }
       }

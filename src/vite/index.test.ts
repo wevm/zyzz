@@ -7,6 +7,7 @@ import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Util from 'node:util'
 import * as Fs from 'node:fs/promises'
+import * as NodeFs from 'node:fs'
 import * as Path from 'node:path'
 import * as Os from 'node:os'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
@@ -1837,6 +1838,47 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
         .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}.z-acme-p-\\5b var\\28 --z-acme-spacing-16\\2c 16px\\29 \\5d {padding:var(--z-acme-spacing-16,16px);}"
       `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('derives an installed package contract once across module compiles', async () => {
+    const component = (name: string) =>
+      `import {style} from '@acme/tokens';export const ${name} = style({padding:'16'})().className;`
+    const { config, root } = await create({
+      'a.ts': component('a'),
+      'b.ts': component('b'),
+      'c.ts': component('c'),
+      'main.ts': `import {a} from './a.js';import {b} from './b.js';import {c} from './c.js';document.body.className=[a,b,c].join(' ');`,
+    })
+
+    try {
+      const directory = await PlainPackage.install(root)
+      await Fs.symlink(
+        process.cwd(),
+        Path.join(root, 'node_modules/zyzz'),
+        'dir',
+      )
+      const sidecar = Path.join(
+        await Fs.realpath(directory),
+        'dist/index.js.zyzz.json',
+      )
+      const server = await Vite.createServer(config)
+      const stat = vi.spyOn(NodeFs.promises, 'stat')
+
+      try {
+        await server.transformRequest('/main.ts')
+        await server.transformRequest('/a.ts')
+
+        // Each lookup of a sidecar-less package first probes its missing sidecar.
+        expect(
+          stat.mock.calls.filter(([file]) => file === sidecar).length,
+        ).toMatchInlineSnapshot(`1`)
+      } finally {
+        stat.mockRestore()
+        await server.close()
+      }
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

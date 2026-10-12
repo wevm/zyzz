@@ -25,7 +25,7 @@ use oxc_ast::builder::AstBuilder;
 use oxc_ast_visit::Visit;
 use oxc_semantic::NodeId;
 use oxc_span::{GetSpan, Span};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smallvec::SmallVec;
 
 use crate::compiler::internal::dynamic::{self, Slots};
@@ -2317,8 +2317,10 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let mut calls: Vec<Call<'a>> = Vec::with_capacity(pending.len());
     let mut styles: Vec<Arc<NamedStyle>> = Vec::with_capacity(pending.len());
     let mut bodies: FxHashMap<u32, &'a ObjectExpression<'a>> = FxHashMap::default();
-    let mut name_counts: FxHashMap<&str, usize> = FxHashMap::default();
-    let mut name_indices: FxHashMap<&str, usize> = FxHashMap::default();
+    let mut name_counts: FxHashMap<&str, usize> =
+        FxHashMap::with_capacity_and_hasher(pending.len(), FxBuildHasher);
+    let mut name_indices: FxHashMap<&str, usize> =
+        FxHashMap::with_capacity_and_hasher(pending.len(), FxBuildHasher);
     // Only authoring calls read their declaration paths, so other calls never build one.
     let call_names: Vec<String> = pending
         .iter()

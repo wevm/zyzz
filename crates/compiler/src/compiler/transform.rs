@@ -168,13 +168,13 @@ struct Walker<'w, 'a> {
     /// the only names the rewrite looks up.
     identifiers: FxHashMap<&'a str, Vec<Span>>,
     /// Local names of the module's imports.
-    imports: FxHashSet<&'a str>,
+    imports: SmallVec<[&'a str; 8]>,
     unused_selections: FxHashSet<u32>,
 }
 
 impl<'a> Walker<'_, 'a> {
     fn identifier(&mut self, name: &'a str, span: Span) {
-        if name.starts_with("__zyzz") || self.imports.contains(name) {
+        if name.starts_with("__zyzz") || self.imports.contains(&name) {
             self.identifiers.entry(name).or_default().push(span);
         }
     }
@@ -676,7 +676,8 @@ pub fn compile<'a>(
         .iter()
         .map(|call| (call.start, call))
         .collect();
-    let imports: FxHashSet<&str> = program
+    // Modules import few bindings, so a list beats hashing every identifier.
+    let imports: SmallVec<[&str; 8]> = program
         .body
         .iter()
         .filter_map(|statement| match statement {

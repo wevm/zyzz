@@ -379,26 +379,23 @@ pub fn write_string(output: &mut String, value: &str) {
     let mut start = 0;
     let mut index = 0;
 
-    while let Some(&first) = bytes.get(index) {
-        let mut byte = first;
-
+    loop {
         // Runs without escapes, such as embedded sources, advance a word at a time, and a word
         // with an escape jumps straight to its first one.
-        if let Some(word) = bytes
-            .get(index..index + 8)
-            .and_then(|chunk| <[u8; 8]>::try_from(chunk).ok())
-        {
-            let found = escapes(u64::from_le_bytes(word));
+        while let Some(word) = bytes.get(index..).and_then(<[u8]>::first_chunk::<8>) {
+            let found = escapes(u64::from_le_bytes(*word));
 
-            if found == 0 {
-                index += 8;
-                continue;
+            if found != 0 {
+                index += (found.trailing_zeros() / 8) as usize;
+                break;
             }
 
-            index += (found.trailing_zeros() / 8) as usize;
-            byte = bytes.get(index).copied().unwrap_or_default();
+            index += 8;
         }
 
+        let Some(&byte) = bytes.get(index) else {
+            break;
+        };
         let escape = ESCAPES[usize::from(byte)];
 
         index += 1;

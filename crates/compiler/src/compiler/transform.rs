@@ -2517,23 +2517,31 @@ impl<'a> Generator<'_, 'a> {
             }
         }
 
-        let owner = |name: &str| {
+        // Aligned owners index their styles directly.
+        let styles: FxHashMap<&str, &NamedStyle> = if aligned {
+            FxHashMap::default()
+        } else {
+            extracted
+                .styles
+                .styles
+                .iter()
+                .map(|style| (&*style.name, &**style))
+                .collect()
+        };
+        let owner = |name: &str| -> Option<(&Call<'a>, Option<&NamedStyle>)> {
             if aligned {
-                emitted
-                    .creators
-                    .get(name)
-                    .and_then(|index| extracted.calls.get(*index))
+                let index = *emitted.creators.get(name)?;
+
+                Some((
+                    extracted.calls.get(index)?,
+                    extracted.styles.styles.get(index).map(|style| &**style),
+                ))
             } else {
-                owners.get(name).copied()
+                let call = owners.get(name).copied()?;
+
+                Some((call, styles.get(&*call.name).copied()))
             }
         };
-
-        let styles: FxHashMap<&str, &NamedStyle> = extracted
-            .styles
-            .styles
-            .iter()
-            .map(|style| (&*style.name, &**style))
-            .collect();
         let mut theme_owners: FxHashMap<&str, (u32, &str)> = FxHashMap::default();
 
         for call in &extracted.theme_calls {
@@ -2741,7 +2749,7 @@ impl<'a> Generator<'_, 'a> {
                 continue;
             }
 
-            let Some(call) = owner(&name) else {
+            let Some((call, owner_style)) = owner(&name) else {
                 return Err(message("Emitted CSS rule has no owning style."));
             };
             let escaped = class_name::selector(&name);
@@ -2764,7 +2772,7 @@ impl<'a> Generator<'_, 'a> {
             let entry = match authored.entry(key) {
                 std::collections::hash_map::Entry::Occupied(entry) => entry.into_mut(),
                 std::collections::hash_map::Entry::Vacant(vacant) => {
-                    let Some(style) = styles.get(&*call.name) else {
+                    let Some(style) = owner_style else {
                         return Err(message("Emitted CSS rule has no owning style."));
                     };
                     let Some(definition) =

@@ -629,11 +629,9 @@ pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
         ..
     } = walker;
     let mut applied: FxHashMap<u32, Application> = applications
-        .as_ref()
-        .map(applications::Applications::find)
-        .unwrap_or_default()
-        .into_iter()
-        .map(|application| (application.start, application))
+        .iter()
+        .flat_map(applications::Applications::find)
+        .map(|application| (application.start, application.clone()))
         .collect();
     let mut by_name: FxHashMap<Arc<str>, Call<'a>> = options
         .calls

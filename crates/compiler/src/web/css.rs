@@ -1824,20 +1824,30 @@ fn run<'a>(
         rules.insert(key, rule.value.clone());
     }
 
-    let css = match (contribution_css.is_empty(), scoped_css.is_empty()) {
-        (true, _) => scoped_css.clone(),
-        (false, true) => contribution_css.clone(),
-        (false, false) => format!("{contribution_css}\n{scoped_css}"),
+    // Without contributions the stylesheet is the scoped CSS, which needs no separate copy.
+    let (css, contribution_css, scoped_css) = if contribution_css.is_empty() {
+        (scoped_css, None, None)
+    } else if scoped_css.is_empty() {
+        (
+            contribution_css.clone(),
+            Some(contribution_css),
+            Some(scoped_css),
+        )
+    } else {
+        (
+            format!("{contribution_css}\n{scoped_css}"),
+            Some(contribution_css),
+            Some(scoped_css),
+        )
     };
-    let has_contributions = !contribution_css.is_empty();
 
     Ok(Output {
         classes,
-        contribution_css: has_contributions.then_some(contribution_css),
+        contribution_css,
         css,
         plain,
         rules,
-        scoped_css: has_contributions.then_some(scoped_css),
+        scoped_css,
         shared: (!scopes.resources.is_empty()).then_some(scopes.resources),
         units: units.used().clone(),
         vars: scopes.classes,

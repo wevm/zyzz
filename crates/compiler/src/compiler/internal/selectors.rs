@@ -161,7 +161,8 @@ impl<'a> Collector<'_, 'a> {
     fn enter(&mut self, kind: AstKind<'a>, parent: Option<AstKind<'a>>) {
         match kind {
             AstKind::ObjectProperty(property)
-                if self.selector_keys.contains(&property.key.span().start) =>
+                if !self.selector_keys.is_empty()
+                    && self.selector_keys.contains(&property.key.span().start) =>
             {
                 self.nodes.push(Node::Property(property));
             }

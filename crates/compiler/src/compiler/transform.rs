@@ -514,6 +514,22 @@ fn declaration_starts(
     }
 }
 
+/// The brace of a rule whose selector is one unescaped class and whose body opens no other
+/// block, as [`declaration_starts`] would find it.
+fn simple_block(rule: &str) -> Option<usize> {
+    let bytes = rule.as_bytes();
+    let brace = memchr::memchr(b'{', bytes)?;
+    let selector = bytes.get(1..brace)?;
+
+    (bytes.first() == Some(&b'.')
+        && !selector.is_empty()
+        && selector
+            .iter()
+            .all(|byte| byte.is_ascii_alphanumeric() || *byte == b'_' || *byte == b'-')
+        && memchr::memchr(b'{', bytes.get(brace + 1..)?).is_none())
+    .then_some(brace)
+}
+
 /// Decodes `\hex ` escapes in a class selector, as `/\\([0-9a-f]+) ?/gi` replacements do.
 fn unescape(selector: &str) -> Cow<'_, str> {
     if !selector.contains('\\') {
@@ -598,6 +614,8 @@ struct Authored<'s> {
     conditions: Vec<Arc<str>>,
     declarations: Vec<&'s Declaration>,
     locations: Vec<u32>,
+    /// Declarations an earlier rule of the owner already mapped.
+    used: Vec<bool>,
 }
 
 /// One-based lines and UTF-16 columns of source offsets.
@@ -710,10 +728,10 @@ pub fn compile<'a>(
         &extracted.calls,
         applications::Options::default(),
     );
-    let found: Vec<Application> = local_applications
-        .as_ref()
-        .map(applications::Applications::find)
-        .unwrap_or_default();
+    let found: Vec<&Application> = local_applications
+        .iter()
+        .flat_map(applications::Applications::find)
+        .collect();
     // Compositions supersede their inputs' classes, so those reads stay unfolded.
     let compositions_intervals = Intervals::new(
         extracted
@@ -739,6 +757,7 @@ pub fn compile<'a>(
         .collect();
     let folded: Vec<&Application> = found
         .iter()
+        .copied()
         .filter(|application| !composing(application) && !html_starts.contains(&application.start))
         .collect();
     let folded_starts: FxHashSet<u32> =
@@ -858,8 +877,6 @@ pub fn compile<'a>(
         parsed,
         typed,
     };
-    let classes = generator.classes.clone();
-
     let mut state =
         generator.rewrite(&mut module, &walker, local.as_ref(), &found, &folded_starts)?;
 
@@ -873,7 +890,7 @@ pub fn compile<'a>(
     }
 
     for application in &folded {
-        let class_name = json_class(&classes, &application.name);
+        let class_name = json_class(&generator.classes, &application.name);
         let html = outputs.get(&*application.name).copied().unwrap_or_default();
         let key = if html { "class" } else { "className" };
         let callee = source
@@ -933,6 +950,14 @@ pub fn compile<'a>(
         module.finish(&map_options)
     };
     let (css, css_map) = rewrite_namespaces(&css, &extracted.namespaces, css_map)?;
+    let classes = generator.classes;
+    let css::Output {
+        rules,
+        shared,
+        units,
+        vars,
+        ..
+    } = emitted;
 
     Ok(Output {
         classes,
@@ -940,10 +965,10 @@ pub fn compile<'a>(
         css,
         css_map,
         map: write_module_map(&map, module_id, source, options.placeholder),
-        rules: emitted.rules.clone(),
-        shared: emitted.shared.clone(),
-        units: emitted.units.clone(),
-        vars: emitted.vars.clone(),
+        rules,
+        shared,
+        units,
+        vars,
     })
 }
 
@@ -1351,7 +1376,7 @@ impl<'a> Generator<'_, 'a> {
         module: &mut Edits<'a>,
         walker: &Walker<'_, 'a>,
         local: Option<&applications::Definitions>,
-        found: &[Application],
+        found: &[&Application],
         folded: &FxHashSet<u32>,
     ) -> Result<State> {
         let extracted = self.extracted;
@@ -2548,7 +2573,6 @@ impl<'a> Generator<'_, 'a> {
         } else {
             memchr::memchr_iter(b'\n', prefix.as_bytes()).count() + 1
         };
-        let mut declaration_owners: FxHashMap<&str, FxHashSet<usize>> = FxHashMap::default();
         // Calls can share a start, so owners are keyed by identity.
         let mut authored: FxHashMap<*const Call<'a>, Authored<'_>> = FxHashMap::default();
         let mut mapped_conditions: Vec<usize> = Vec::new();
@@ -2577,7 +2601,17 @@ impl<'a> Generator<'_, 'a> {
         {
             let line = index + 1 + prefix_lines;
             openers.clear();
-            declaration_starts(rule, true, Some(&mut openers), &mut condition_starts);
+
+            // A plain class rule opens one block, which its selector starts.
+            match simple_block(rule) {
+                Some(brace) => {
+                    condition_starts.clear();
+                    condition_starts.push(0);
+                    openers.insert(0, brace);
+                }
+                None => declaration_starts(rule, true, Some(&mut openers), &mut condition_starts),
+            }
+
             let selector_start = condition_starts
                 .iter()
                 .copied()
@@ -2680,6 +2714,7 @@ impl<'a> Generator<'_, 'a> {
                         &mut entry.locations,
                     );
                     entry.declarations = declarations(style);
+                    entry.used = vec![false; entry.declarations.len()];
                     collect_conditions(style, &mut entry.conditions);
                     vacant.insert(entry)
                 }
@@ -2724,11 +2759,10 @@ impl<'a> Generator<'_, 'a> {
 
             declaration_starts(body, false, None, &mut starts);
 
-            let used = declaration_owners.entry(&call.name).or_default();
             let mut cursor = 1;
 
             for (property_index, declaration) in entry.declarations.iter().enumerate() {
-                if used.contains(&property_index) {
+                if entry.used.get(property_index).copied().unwrap_or(true) {
                     continue;
                 }
 
@@ -2746,7 +2780,10 @@ impl<'a> Generator<'_, 'a> {
                     continue;
                 };
 
-                used.insert(property_index);
+                if let Some(used) = entry.used.get_mut(property_index) {
+                    *used = true;
+                }
+
                 map.add_mapping(&Mapping {
                     generated: generated(
                         selector_column + selector_width + utf16_column(body, start),

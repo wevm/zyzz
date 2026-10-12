@@ -766,16 +766,17 @@ impl<'c, 'a> Applications<'c, 'a> {
     }
 
     /// Every foldable application, in candidate order.
-    pub fn find(&self) -> Vec<Application> {
-        if self.evaluation {
-            return Vec::new();
-        }
+    pub fn find(&self) -> impl Iterator<Item = &Application> {
+        let collected = if self.evaluation {
+            &[]
+        } else {
+            self.collected()
+        };
 
-        self.collected()
+        collected
             .iter()
             .flatten()
-            .flat_map(|(applications, _)| applications.iter().cloned())
-            .collect()
+            .flat_map(|(applications, _)| applications)
     }
 }
 

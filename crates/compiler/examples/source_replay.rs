@@ -123,7 +123,6 @@ fn replay(case: &Value) -> Value {
                 .collect();
             let find: Vec<Value> = applications
                 .find()
-                .iter()
                 .map(|application| {
                     json!({
                         "calleeEnd": application.callee_end,

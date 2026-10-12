@@ -3195,6 +3195,7 @@ impl Build<'_, '_> {
                         invalid_css_output: options.invalid_css_output,
                         module_id,
                         owners: Some(&self.owners),
+                        placeholder: None,
                         schemes: Some(schemes),
                         shared: Some(if options.entry.is_none() {
                             options.shared.unwrap_or(Shared::Defaults)

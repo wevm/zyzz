@@ -245,8 +245,8 @@ fn write_resource(output: &mut String, resource: &Resource) {
     output.push('}');
 }
 
-/// Appends one module's transform output.
-pub fn write_module(output: &mut String, module: &transform::Output) {
+/// Appends one module's transform output. Map content equal to `placeholder` is written as `0`.
+pub fn write_module(output: &mut String, module: &transform::Output, placeholder: Option<&str>) {
     output.push_str("{\"classes\":");
     write_record(
         output,
@@ -260,7 +260,7 @@ pub fn write_module(output: &mut String, module: &transform::Output) {
     output.push_str(",\"css\":");
     js::write_string(output, &module.css);
     output.push_str(",\"cssMap\":");
-    output.push_str(&module.css_map.to_json());
+    module.css_map.write_json(output, placeholder);
     output.push_str(",\"map\":");
     output.push_str(&module.map);
     output.push_str(",\"rules\":");
@@ -433,7 +433,7 @@ pub fn write_output(result: &Output, written: Option<&FxHashMap<Arc<str>, Compil
             match module {
                 _ if same => output.push('0'),
                 Compiled::Native(module) => write_native_module(output, module),
-                Compiled::Web(module) => write_module(output, module),
+                Compiled::Web(module) => write_module(output, module, None),
             }
         },
     );
@@ -673,10 +673,13 @@ pub fn native_compile(input: &Value) -> Result<String> {
 
 /// Compiles one module outside a graph, as `Transform.compile` does.
 ///
+/// A `separate` source replaces the input's `source` field, and both maps then write `0` for its
+/// content, which the host restores.
+///
 /// # Errors
 ///
 /// Returns extraction and emission errors, and the TypeScript message for native targets.
-pub fn transform(input: &Value) -> Result<String> {
+pub fn transform(input: &Value, separate: Option<&str>) -> Result<String> {
     let field = |name: &str| input.get(name).filter(|value| !value.is_null());
 
     if field("target").and_then(Value::as_str) == Some("native") {
@@ -688,7 +691,9 @@ pub fn transform(input: &Value) -> Result<String> {
     let module_id = field("moduleId")
         .and_then(Value::as_str)
         .unwrap_or_default();
-    let source = field("source").and_then(Value::as_str).unwrap_or_default();
+    let source = separate
+        .or_else(|| field("source").and_then(Value::as_str))
+        .unwrap_or_default();
     let compiler = field("compiler").and_then(Value::as_bool);
     let options = options(input)?;
     let allocator = oxc_allocator::Allocator::default();
@@ -713,6 +718,7 @@ pub fn transform(input: &Value) -> Result<String> {
             invalid_css_output: options.invalid_css_output,
             module_id,
             owners: None,
+            placeholder: separate,
             schemes: field("schemes").and_then(Value::as_bool),
             shared: options.shared,
             source,
@@ -722,11 +728,19 @@ pub fn transform(input: &Value) -> Result<String> {
         &parsed,
         None,
     )?;
-    // Both maps embed the source, so the result is about twice its code, map, and source.
-    let mut written =
-        String::with_capacity(2 * (output.code.len() + output.map.len() + source.len()));
+    // Both maps embed the source unless the host restores it.
+    let mut written = String::with_capacity(
+        output.code.len()
+            + output.map.len()
+            + output.css.len() * 2
+            + if separate.is_some() {
+                0
+            } else {
+                source.len() * 2
+            },
+    );
 
-    write_module(&mut written, &output);
+    write_module(&mut written, &output, separate);
 
     Ok(written)
 }

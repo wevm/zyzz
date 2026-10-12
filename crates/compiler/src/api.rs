@@ -144,9 +144,18 @@ pub fn call(operation: &str, input: &str) -> String {
         #[cfg(feature = "compiler")]
         "source.extract" => crate::compiler::internal::wire::extract(input),
         #[cfg(feature = "compiler")]
-        "transform.compile" => json(input)
-            .and_then(|input| handles::transform(&input))
-            .unwrap_or_else(|error| error_json(&error)),
+        "transform.compile" => {
+            // JSON text never holds a raw NUL, so a host can append the source after one and
+            // pass it without escaping.
+            let (options, source) = match input.split_once('\0') {
+                Some((options, source)) => (options, Some(source)),
+                None => (input, None),
+            };
+
+            json(options)
+                .and_then(|options| handles::transform(&options, source))
+                .unwrap_or_else(|error| error_json(&error))
+        }
         "version" => crate::js::quote(env!("CARGO_PKG_VERSION")),
         _ => error_json(&Error::Message(format!("Unknown operation: {operation}"))),
     }

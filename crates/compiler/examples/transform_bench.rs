@@ -76,6 +76,7 @@ fn options(input: &Input) -> transform::Options<'_, '_> {
         invalid_css_output: false,
         module_id: &input.module_id,
         owners: None,
+        placeholder: None,
         schemes: None,
         shared: None,
         source: &input.source,
@@ -183,7 +184,7 @@ fn main() {
         let (writing, _) = time(|| {
             let mut written = String::new();
 
-            handles::write_module(&mut written, &output);
+            handles::write_module(&mut written, &output, None);
             std::hint::black_box(written);
         });
         let (total, _) = time(|| {

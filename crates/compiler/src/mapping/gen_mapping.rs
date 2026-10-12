@@ -53,34 +53,40 @@ pub struct EncodedSourceMap {
 impl EncodedSourceMap {
     /// Serializes like `JSON.stringify(toEncodedMap(map))`, in gen-mapping's key order.
     pub fn to_json(&self) -> String {
-        let mut output = String::from("{\"version\":3");
+        let mut output = String::new();
+
+        self.write_json(&mut output, None);
+        output
+    }
+
+    /// Appends [`EncodedSourceMap::to_json`]'s text. Source content equal to `placeholder` is
+    /// written as `0`, which a host holding that text restores.
+    pub fn write_json(&self, output: &mut String, placeholder: Option<&str>) {
+        output.push_str("{\"version\":3");
 
         if let Some(file) = &self.file {
             output.push_str(",\"file\":");
-            js::write_string(&mut output, file);
+            js::write_string(output, file);
         }
 
         output.push_str(",\"names\":");
-        write_strings(
-            &mut output,
-            self.names.iter().map(|name| Some(name.as_str())),
-        );
+        write_strings(output, self.names.iter().map(|name| Some(name.as_str())));
 
         if let Some(root) = &self.source_root {
             output.push_str(",\"sourceRoot\":");
-            js::write_string(&mut output, root);
+            js::write_string(output, root);
         }
 
         output.push_str(",\"sources\":");
-        write_strings(&mut output, self.sources.iter().map(Option::as_deref));
+        write_strings(output, self.sources.iter().map(Option::as_deref));
 
         if let Some(contents) = &self.sources_content {
             output.push_str(",\"sourcesContent\":");
-            write_strings(&mut output, contents.iter().map(Option::as_deref));
+            write_contents(output, contents.iter().map(Option::as_deref), placeholder);
         }
 
         output.push_str(",\"mappings\":");
-        js::write_string(&mut output, &self.mappings);
+        js::write_string(output, &self.mappings);
 
         if let Some(ignored) = &self.ignore_list {
             output.push_str(",\"ignoreList\":[");
@@ -98,8 +104,30 @@ impl EncodedSourceMap {
         }
 
         output.push('}');
-        output
     }
+}
+
+/// Writes source contents, with `0` for each equal to `placeholder`.
+pub(crate) fn write_contents<'a>(
+    output: &mut String,
+    values: impl Iterator<Item = Option<&'a str>>,
+    placeholder: Option<&str>,
+) {
+    output.push('[');
+
+    for (index, value) in values.enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        match value {
+            Some(value) if placeholder == Some(value) => output.push('0'),
+            Some(value) => js::write_string(output, value),
+            None => output.push_str("null"),
+        }
+    }
+
+    output.push(']');
 }
 
 fn write_strings<'a>(output: &mut String, values: impl Iterator<Item = Option<&'a str>>) {

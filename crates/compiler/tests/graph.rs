@@ -125,6 +125,19 @@ mod transform {
     }
 
     #[test]
+    fn separate_sources() {
+        let output: serde_json::Value = serde_json::from_str(&api::call(
+            "transform.compile",
+            "{\"moduleId\":\"card.ts\"}\0import {style} from 'zyzz';export const card=style({color:'red'});",
+        ))
+        .unwrap_or_default();
+
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
+        insta::assert_snapshot!(output["map"]["sourcesContent"], @"[0]");
+        insta::assert_snapshot!(output["cssMap"]["sourcesContent"], @"[0]");
+    }
+
+    #[test]
     fn variable_slots() {
         let output: serde_json::Value = serde_json::from_str(&api::call(
             "transform.compile",

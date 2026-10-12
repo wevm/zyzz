@@ -91,6 +91,24 @@ export function call<result>(operation: string, input: unknown): result {
 }
 
 /**
+ * Runs an operation on JSON input plus one module source. JSON text never holds a raw NUL, so
+ * the source follows one and crosses without escaping.
+ * @param operation - Operation name, such as `transform.compile`.
+ * @param input - Options, without the source.
+ * @param source - Module text.
+ * @returns The parsed result.
+ * @throws {Source.ExtractError} For source the compiler does not support.
+ * @throws {Css.CompileError} For CSS emission failures.
+ */
+export function source<result>(
+  operation: string,
+  input: unknown,
+  source: string,
+): result {
+  return decode(Engine.call(operation, `${JSON.stringify(input)}\0${source}`))
+}
+
+/**
  * Parses an engine result, throwing the failure it encodes.
  * @param json - The engine's JSON result.
  * @returns The parsed result.
@@ -248,7 +266,19 @@ export function graph(
  * @param value - The encoded module.
  * @returns The output `Transform.compile` returns.
  */
-export function module(value: Module): Transform.compile.ReturnType {
+export function module(
+  value: Module,
+  source?: string | undefined,
+): Transform.compile.ReturnType {
+  // The engine writes `0` for content the caller supplied separately, so it crosses once.
+  if (source !== undefined)
+    for (const map of [value.cssMap, value.map]) {
+      const contents = map.sourcesContent as (string | null | 0)[] | undefined
+
+      for (let index = 0; index < (contents?.length ?? 0); index++)
+        if (contents![index] === 0) contents![index] = source
+    }
+
   const result = {
     ...(value.shared
       ? {

@@ -60,6 +60,9 @@ pub struct Options<'s, 'a> {
     pub invalid_css_output: bool,
     /// Portable module identity.
     pub module_id: &'s str,
+    /// Content written as `0` in both source maps. A host that supplied the source separately
+    /// restores it, so the text crosses the boundary once.
+    pub placeholder: Option<&'a str>,
     /// Emits the color-scheme selection classes. Defaults to the module's own scheme helpers.
     pub schemes: Option<bool>,
     /// Separates generated token rules for independently loaded modules.
@@ -867,7 +870,7 @@ pub fn compile<'a>(
         },
         css,
         css_map,
-        map: write_module_map(&map, module_id),
+        map: write_module_map(&map, module_id, options.placeholder),
         rules: emitted.rules.clone(),
         shared: emitted.shared.clone(),
         units: emitted.units.clone(),
@@ -876,7 +879,12 @@ pub fn compile<'a>(
 }
 
 /// `{ file, mappings, names, sources, sourcesContent, version }`, the module map's key order.
-fn write_module_map(map: &crate::mapping::magic_string::SourceMap, module_id: &str) -> String {
+/// Content equal to `placeholder` is written as `0`.
+fn write_module_map(
+    map: &crate::mapping::magic_string::SourceMap,
+    module_id: &str,
+    placeholder: Option<&str>,
+) -> String {
     let mut output = String::from("{\"file\":");
 
     js::write_string(&mut output, module_id);
@@ -902,20 +910,13 @@ fn write_module_map(map: &crate::mapping::magic_string::SourceMap, module_id: &s
         js::write_string(&mut output, source);
     }
 
-    output.push_str("],\"sourcesContent\":[");
-
-    for (index, content) in map.sources_content.iter().flatten().enumerate() {
-        if index > 0 {
-            output.push(',');
-        }
-
-        match content {
-            Some(content) => js::write_string(&mut output, content),
-            None => output.push_str("null"),
-        }
-    }
-
-    output.push_str("],\"version\":3}");
+    output.push_str("],\"sourcesContent\":");
+    crate::mapping::gen_mapping::write_contents(
+        &mut output,
+        map.sources_content.iter().flatten().map(Option::as_deref),
+        placeholder,
+    );
+    output.push_str(",\"version\":3}");
     output
 }
 

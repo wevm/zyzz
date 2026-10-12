@@ -21,18 +21,29 @@ import * as ThemeRules from '../web/internal/Themes.js'
  * @throws {Css.CompileError} If literal CSS compilation fails.
  */
 export function compile(options: compile.Options): compile.ReturnType {
+  const input = {
+    compiler: options.compiler,
+    composition: options.composition,
+    cssOutput: options.cssOutput,
+    development: options.development,
+    moduleId: options.moduleId,
+    schemes: options.schemes,
+    shared: options[ThemeRules.shared],
+    target: options.target,
+  }
+
+  // Untyped callers can pass other values, which the engine reads from JSON as before.
+  if (typeof options.source !== 'string')
+    return Results.module(
+      Results.call<Results.Module>('transform.compile', {
+        ...input,
+        source: options.source,
+      }),
+    )
+
   return Results.module(
-    Results.call<Results.Module>('transform.compile', {
-      compiler: options.compiler,
-      composition: options.composition,
-      cssOutput: options.cssOutput,
-      development: options.development,
-      moduleId: options.moduleId,
-      schemes: options.schemes,
-      shared: options[ThemeRules.shared],
-      source: options.source,
-      target: options.target,
-    }),
+    Results.source<Results.Module>('transform.compile', input, options.source),
+    options.source,
   )
 }
 

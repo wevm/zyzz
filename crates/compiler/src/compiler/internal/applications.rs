@@ -296,6 +296,7 @@ pub fn create<'c, 'a>(
             .iter()
             .map(|candidate| (candidate.binding.start, Arc::clone(&candidate.name)))
             .collect(),
+        deferred: 0,
         evaluation: false,
         member_bindings: &member_bindings,
         referenced_definitions: FxHashSet::default(),
@@ -304,6 +305,7 @@ pub fn create<'c, 'a>(
             .map(|candidate| (Arc::clone(&candidate.name), Vec::new()))
             .collect(),
         semantic,
+        types: 0,
     };
 
     walker.visit_program(program);
@@ -321,11 +323,28 @@ pub fn create<'c, 'a>(
 struct Walker<'s, 'a> {
     ancestors: Vec<AstKind<'a>>,
     candidates: FxHashMap<u32, Arc<str>>,
+    /// Entered functions, classes, and namespaces, counted so a read checks them in constant time.
+    deferred: usize,
     evaluation: bool,
     member_bindings: &'s FxHashMap<u32, Arc<str>>,
     referenced_definitions: FxHashSet<Arc<str>>,
     references: FxHashMap<Arc<str>, Vec<Read<'a>>>,
     semantic: &'s Semantic<'a>,
+    /// Entered type contexts, counted so a read checks them in constant time.
+    types: usize,
+}
+
+/// Whether evaluation of a node's contents waits for a later call or declaration.
+fn defers(kind: &AstKind<'_>) -> bool {
+    matches!(
+        kind,
+        AstKind::ArrowFunctionExpression(_)
+            | AstKind::Class(_)
+            | AstKind::Function(_)
+            | AstKind::TSNamespaceDeclaration(_)
+            | AstKind::TSGlobalDeclaration(_)
+            | AstKind::TSExternalModuleDeclaration(_)
+    )
 }
 
 const TYPE_CONTEXTS: [fn(&AstKind<'_>) -> bool; 6] = [
@@ -340,6 +359,8 @@ const TYPE_CONTEXTS: [fn(&AstKind<'_>) -> bool; 6] = [
 impl<'a> Visit<'a> for Walker<'_, 'a> {
     fn enter_node(&mut self, kind: AstKind<'a>) {
         self.ancestors.push(kind);
+        self.deferred += usize::from(defers(&kind));
+        self.types += usize::from(TYPE_CONTEXTS.iter().any(|test| test(&kind)));
 
         let name = match kind {
             AstKind::IdentifierReference(identifier) => Some(identifier.name.as_str()),
@@ -362,12 +383,7 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
             .checked_sub(2)
             .and_then(|index| self.ancestors.get(index));
 
-        if parent.is_some_and(|parent| !scope::is_value_reference(*parent))
-            || self
-                .ancestors
-                .iter()
-                .any(|ancestor| TYPE_CONTEXTS.iter().any(|test| test(ancestor)))
-        {
+        if parent.is_some_and(|parent| !scope::is_value_reference(*parent)) || self.types > 0 {
             return;
         }
 
@@ -386,17 +402,7 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
         let Some(name) = self.candidates.get(&id.start) else {
             return;
         };
-        let deferred = self.ancestors.iter().any(|ancestor| {
-            matches!(
-                ancestor,
-                AstKind::ArrowFunctionExpression(_)
-                    | AstKind::Class(_)
-                    | AstKind::Function(_)
-                    | AstKind::TSNamespaceDeclaration(_)
-                    | AstKind::TSGlobalDeclaration(_)
-                    | AstKind::TSExternalModuleDeclaration(_)
-            )
-        });
+        let deferred = self.deferred > 0;
         let count = self.ancestors.len();
         let parent = count
             .checked_sub(2)
@@ -423,7 +429,10 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
     }
 
     fn leave_node(&mut self, _: AstKind<'a>) {
-        self.ancestors.pop();
+        if let Some(kind) = self.ancestors.pop() {
+            self.deferred -= usize::from(defers(&kind));
+            self.types -= usize::from(TYPE_CONTEXTS.iter().any(|test| test(&kind)));
+        }
     }
 }
 

@@ -1922,6 +1922,105 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
     }
   })
 
+  test('resolves imports that framework transforms remove as development scans', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'loader.ts': `import { secret } from './secret'; export const load = () => secret();`,
+      'main.ts': `import { load } from './loader'; ${Fixture.files['main.ts']} void load;`,
+      'secret.ts': `export const secret = () => 'server';`,
+    })
+    const scans = new Set<boolean | undefined>()
+    const server = await Vite.createServer({
+      ...config,
+      plugins: [
+        zyzz(),
+        {
+          enforce: 'pre',
+          name: 'server-only',
+          resolveId(source, _, options) {
+            if (source !== './secret') return
+
+            // Vite forwards `scan` without declaring it on the hook options.
+            const scan = (options as { scan?: boolean }).scan
+
+            scans.add(scan)
+
+            // Like import protection, only a scan may resolve the server-only module.
+            if (!scan) this.error('Denied a server-only import')
+          },
+        },
+        {
+          name: 'server-functions',
+          transform(code, id) {
+            if (!id.endsWith('/loader.ts')) return
+
+            // Framework compilers replace server-only calls before Vite reads imports.
+            return code
+              .replace(/import \{ secret \} from ["']\.\/secret["'];?/, '')
+              .replace('secret()', `fetch('/load')`)
+          },
+        },
+      ],
+    })
+
+    try {
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      const origin = `http://127.0.0.1:${address.port}`
+
+      expect((await fetch(`${origin}/main.ts`)).status).toMatchInlineSnapshot(
+        `200`,
+      )
+      expect((await fetch(`${origin}/loader.ts`)).status).toMatchInlineSnapshot(
+        `200`,
+      )
+      expect([...scans]).toMatchInlineSnapshot(`
+        [
+          true,
+        ]
+      `)
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('keeps unreachable analysis imports out of dependency optimization', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'server.ts': `import MagicString from 'magic-string'; export const edit = (code: string) => new MagicString(code).toString();`,
+    })
+    const server = await Vite.createServer({
+      ...config,
+      cacheDir: Path.join(root, '.vite'),
+      optimizeDeps: { noDiscovery: false },
+    })
+
+    try {
+      await server.listen()
+
+      const optimizer = server.environments.client.depsOptimizer
+      if (!optimizer) throw new Error('Missing dependency optimizer')
+
+      await optimizer.scanProcessing
+
+      // The document compiles every discovered source, including server.ts.
+      expect(
+        (await fetch(server.resolvedUrls!.local[0]!)).status,
+      ).toMatchInlineSnapshot(`200`)
+      expect(Object.keys(optimizer.metadata.discovered)).toMatchInlineSnapshot(
+        `[]`,
+      )
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('serves shared and module stylesheets with Vite CSS queries', async () => {
     const { config, root } = await create({
       ...Fixture.files,

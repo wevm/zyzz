@@ -390,6 +390,8 @@ struct Walker<'w, 'p, 'a> {
     recipes: FxHashSet<u32>,
     reporter: &'w mut Reporter<'p>,
     themes: Option<&'w mut Themes<'a>>,
+    /// Entered type subtrees, counted so a read checks them in constant time.
+    typed: usize,
     types: Vec<bool>,
     variables: &'w Variables<'a>,
 }
@@ -401,6 +403,7 @@ impl<'a> Visit<'a> for Walker<'_, '_, 'a> {
 
         self.ancestors.push(kind);
         self.types.push(typed);
+        self.typed += usize::from(typed);
 
         if self.fatal.is_none()
             && let Err(error) = self.read(kind, parent)
@@ -411,7 +414,7 @@ impl<'a> Visit<'a> for Walker<'_, '_, 'a> {
 
     fn leave_node(&mut self, _: AstKind<'a>) {
         self.ancestors.pop();
-        self.types.pop();
+        self.typed -= usize::from(self.types.pop().unwrap_or_default());
     }
 }
 
@@ -467,7 +470,7 @@ impl<'a> Walker<'_, '_, 'a> {
         };
 
         // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
-        if self.types.iter().any(|typed| *typed) {
+        if self.typed > 0 {
             return Ok(());
         }
 
@@ -1977,6 +1980,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         recipes: FxHashSet::default(),
         reporter: &mut reporter,
         themes: themes.as_mut(),
+        typed: 0,
         types: Vec::new(),
         variables: &variables,
     };
@@ -2117,16 +2121,14 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let builder = AstBuilder::new(allocator);
     let compact = identity::compact(options.module_id);
     let suffix = compact.get(compact.len().saturating_sub(6)..).unwrap_or("");
-    let mut calls: Vec<Call<'a>> = Vec::new();
-    let mut styles: Vec<Arc<NamedStyle>> = Vec::new();
+    // Calls are large, so the list never regrows for the common one call per definition.
+    let mut calls: Vec<Call<'a>> = Vec::with_capacity(pending.len());
+    let mut styles: Vec<Arc<NamedStyle>> = Vec::with_capacity(pending.len());
     let mut bodies: FxHashMap<u32, &'a ObjectExpression<'a>> = FxHashMap::default();
     let mut name_counts: FxHashMap<&str, usize> = FxHashMap::default();
     let mut name_indices: FxHashMap<&str, usize> = FxHashMap::default();
-    let style_name = |call: &CallExpression<'_>| {
-        authored_names
-            .get(&call.span.start)
-            .map_or("style", String::as_str)
-    };
+    let style_name =
+        |call: &CallExpression<'_>| authored_names.get(call.span.start).unwrap_or("style");
 
     for call in &pending {
         *name_counts.entry(style_name(call)).or_default() += 1;
@@ -2162,19 +2164,38 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             None if name_counts.get(authored).copied().unwrap_or_default() > 1 => {
                 format!("{suffix}-{authored}-{name_index}")
             }
-            None => format!("{suffix}-{authored}"),
+            None => {
+                let mut name = String::with_capacity(suffix.len() + authored.len() + 1);
+
+                name.push_str(suffix);
+                name.push('-');
+                name.push_str(authored);
+                name
+            }
         });
-        let prefix = css_namespace
-            .as_ref()
-            .map_or_else(String::new, |namespace| format!("{namespace}-"));
+        let prefix = css_namespace.as_deref().unwrap_or_default();
         let definition_id = match &explicit {
-            None => format!("{prefix}{css_name}"),
-            Some(explicit) => format!(
-                "id-{prefix}{}",
-                identity::require_id(Some(explicit), "style")?
-                    .get(3..)
-                    .unwrap_or_default()
-            ),
+            None => {
+                let mut id = String::with_capacity(prefix.len() + css_name.len() + 1);
+
+                if !prefix.is_empty() {
+                    id.push_str(prefix);
+                    id.push('-');
+                }
+
+                id.push_str(&css_name);
+                id
+            }
+            Some(explicit) => {
+                let required = identity::require_id(Some(explicit), "style")?;
+                let id = required.get(3..).unwrap_or_default();
+
+                if prefix.is_empty() {
+                    format!("id-{id}")
+                } else {
+                    format!("id-{prefix}-{id}")
+                }
+            }
         };
         let mut argument: Option<&'a Expression<'a>> =
             call.arguments.first().and_then(Argument::as_expression);
@@ -2530,8 +2551,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             Ok(entries) => {
                 for (position, entry) in entries.into_iter().enumerate() {
                     let authored = authored_names
-                        .get(&entry.call.start)
-                        .map(String::as_str)
+                        .get(entry.call.start)
                         .filter(|name| *name != "style")
                         .unwrap_or("composition");
                     let css_name = format!(

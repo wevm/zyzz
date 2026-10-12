@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use indexmap::IndexMap;
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
+use smallvec::SmallVec;
 
 use crate::error::{Error, Result};
 use crate::generated::cascade;
@@ -182,6 +183,33 @@ struct Item<'a> {
     value: Rc<str>,
 }
 
+/// A style's top-level declarations, serialized once per compilation in authored order.
+#[derive(Debug, Default)]
+struct Prepared {
+    /// Conflict domain of each declaration.
+    domains: Vec<u32>,
+    /// Exclusive end of each declaration's text.
+    ends: Vec<u32>,
+    /// Concatenated `name:value;` declarations.
+    text: String,
+}
+
+impl Prepared {
+    /// The serialized text of declarations `start..end`.
+    fn range(&self, start: usize, end: usize) -> &str {
+        let from = start
+            .checked_sub(1)
+            .and_then(|index| self.ends.get(index))
+            .map_or(0, |end| *end as usize);
+        let to = end
+            .checked_sub(1)
+            .and_then(|index| self.ends.get(index))
+            .map_or(0, |end| *end as usize);
+
+        self.text.get(from..to).unwrap_or_default()
+    }
+}
+
 /// Conditions and declarations retained for rules wrapped by media or supports queries.
 #[derive(Clone, Debug)]
 struct Conditional {
@@ -315,6 +343,11 @@ struct Compiler<'a> {
     selectors: FxHashMap<String, Arc<str>>,
     serialized: FxHashMap<usize, Rc<str>>,
     themes: Option<Themes>,
+    /// Shared units already named in this compilation, keyed by namespace and body, with whether
+    /// a repeat has refreshed the unit's naming decision.
+    unit_names: FxHashMap<String, (String, bool)>,
+    /// Reused key buffer for `unit_names` lookups.
+    unit_key: String,
 }
 
 fn composition(style: &NamedStyle, options: &Options<'_>) -> Composition {
@@ -711,7 +744,13 @@ impl<'a> Compiler<'a> {
 
     /// Lists declaration groups in authored order. `None` marks styles whose nested grouped
     /// output or anonymous layers emit one opaque rule.
-    fn flatten(&mut self, style: &'a NamedStyle, conditions: &[Arc<str>]) -> Option<Vec<Item<'a>>> {
+    /// `prepared` holds the serialized declarations of a top-level style.
+    fn flatten(
+        &mut self,
+        style: &'a NamedStyle,
+        conditions: &[Arc<str>],
+        prepared: Option<&Prepared>,
+    ) -> Option<Vec<Item<'a>>> {
         if style.css_output == Some(CssOutput::Grouped) {
             return None;
         }
@@ -726,7 +765,7 @@ impl<'a> Compiler<'a> {
 
                 let next = with(conditions, rule.condition.as_ref());
 
-                items.extend(self.flatten(&rule.style, &next)?);
+                items.extend(self.flatten(&rule.style, &next, None)?);
             }
 
             return Some(items);
@@ -734,26 +773,39 @@ impl<'a> Compiler<'a> {
 
         let shared: Rc<[Arc<str>]> = conditions.into();
         let declarations = &style.declarations;
-        let mut items = Vec::new();
+        let mut items = Vec::with_capacity(declarations.len());
         let mut index = 0;
 
         while let Some(first) = declarations.get(index) {
             let property = &*first.property;
-            let mut value = String::with_capacity(32);
+            let start = index;
+
+            index += 1;
 
             // Same-property fallbacks stay ordered; they form one semantic value.
-            while let Some(declaration) = declarations
+            while declarations
                 .get(index)
-                .filter(|declaration| &*declaration.property == property)
+                .is_some_and(|declaration| &*declaration.property == property)
             {
-                self.write_declaration(&mut value, declaration);
                 index += 1;
             }
+
+            let value: Rc<str> = if let Some(prepared) = prepared {
+                prepared.range(start, index).into()
+            } else {
+                let mut value = String::with_capacity(32);
+
+                for declaration in declarations.get(start..index).unwrap_or_default() {
+                    self.write_declaration(&mut value, declaration);
+                }
+
+                value.into()
+            };
 
             items.push(Item {
                 conditions: Rc::clone(&shared),
                 property,
-                value: value.into(),
+                value,
             });
         }
 
@@ -902,11 +954,13 @@ impl<'a> Compiler<'a> {
         Some(identity)
     }
 
+    /// `prepared` holds the serialized declarations of a top-level style.
     fn atoms(
         &mut self,
         state: &mut Application<'a>,
         style: &'a NamedStyle,
         conditions: &[Arc<str>],
+        prepared: Option<&Prepared>,
     ) {
         if style.css_output == Some(CssOutput::Grouped) {
             let inner = self.nested(style);
@@ -936,7 +990,7 @@ impl<'a> Compiler<'a> {
 
                 let next = with(conditions, rule.condition.as_ref());
 
-                self.atoms(state, &rule.style, &next);
+                self.atoms(state, &rule.style, &next, None);
             }
 
             return;
@@ -960,7 +1014,10 @@ impl<'a> Compiler<'a> {
                 index += 1;
             }
 
-            let domain = self.conflict(property);
+            let domain = match prepared.and_then(|prepared| prepared.domains.get(start)) {
+                Some(domain) => *domain,
+                None => self.conflict(property),
+            };
 
             if let Some(reused) = self
                 .runs
@@ -978,12 +1035,17 @@ impl<'a> Compiler<'a> {
                 continue;
             }
 
-            let mut value = String::with_capacity(32);
+            let value = if let Some(prepared) = prepared {
+                prepared.range(start, index).to_owned()
+            } else {
+                let mut value = String::with_capacity(32);
 
-            for declaration in declarations.get(start..index).unwrap_or_default() {
-                self.write_declaration(&mut value, declaration);
-            }
+                for declaration in declarations.get(start..index).unwrap_or_default() {
+                    self.write_declaration(&mut value, declaration);
+                }
 
+                value
+            };
             let body = wrap(conditions, &value);
             let shared = !self.nested_composition
                 && conditions.is_empty()
@@ -1014,9 +1076,43 @@ impl<'a> Compiler<'a> {
 
     /// Independent class lists never combine, so only declarations within one conflict domain
     /// need relative order. Equal domain bodies share one rule.
-    fn share(&mut self, state: &mut Application<'a>, style: &'a NamedStyle, units: &mut Units<'_>) {
-        let Some(items) = self.flatten(style, &[]) else {
-            self.atoms(state, style, &[]);
+    fn share(
+        &mut self,
+        state: &mut Application<'a>,
+        style: &'a NamedStyle,
+        prepared: Option<&Prepared>,
+        units: &mut Units<'_>,
+    ) {
+        // Without nested rules every declaration is unconditional, so each domain's body joins
+        // its declarations in authored order.
+        if let Some(prepared) = prepared
+            .filter(|_| style.rules.is_none() && style.css_output != Some(CssOutput::Grouped))
+        {
+            let mut order: SmallVec<[u32; 16]> = SmallVec::new();
+
+            for domain in &prepared.domains {
+                if !order.contains(domain) {
+                    order.push(*domain);
+                }
+            }
+
+            for domain in order {
+                let mut body = String::new();
+
+                for (index, current) in prepared.domains.iter().enumerate() {
+                    if *current == domain {
+                        body.push_str(prepared.range(index, index + 1));
+                    }
+                }
+
+                self.unit(state, body, units);
+            }
+
+            return;
+        }
+
+        let Some(items) = self.flatten(style, &[], prepared) else {
+            self.atoms(state, style, &[], prepared);
             return;
         };
 
@@ -1052,19 +1148,56 @@ impl<'a> Compiler<'a> {
                 body.push_str(&item.value);
             }
 
-            let identity = units.name(&body, state.css_namespace.as_deref());
+            self.unit(state, body, units);
+        }
+    }
 
-            if self
+    /// Names one shared declaration unit and records its rule.
+    fn unit(&mut self, state: &mut Application<'a>, body: String, units: &mut Units<'_>) {
+        let namespace = state.css_namespace.as_deref();
+
+        self.unit_key.clear();
+        self.unit_key.push_str(namespace.unwrap_or_default());
+        self.unit_key.push('\n');
+        self.unit_key.push_str(&body);
+
+        // A repeated unit whose rule still holds its body keeps its name. Only its first repeat
+        // can change the naming decision, which then reports the registered name as borrowed.
+        if let Some((name, refreshed)) = self.unit_names.get_mut(self.unit_key.as_str())
+            && self
                 .rules
-                .get(&identity)
-                .is_some_and(|existing| *existing != body)
-            {
-                self.collision(state.name);
+                .get(name.as_str())
+                .is_some_and(|existing| *existing == body)
+        {
+            if !*refreshed {
+                units.name(&body, namespace);
+                *refreshed = true;
             }
 
-            self.rules.insert(identity.clone(), body);
-            state.names.push(identity);
+            state.names.push(name.clone());
+            return;
         }
+
+        let identity = units.name(&body, namespace);
+
+        match self.unit_names.get_mut(self.unit_key.as_str()) {
+            Some(entry) => *entry = (identity.clone(), true),
+            None => {
+                self.unit_names
+                    .insert(self.unit_key.clone(), (identity.clone(), false));
+            }
+        }
+
+        if self
+            .rules
+            .get(&identity)
+            .is_some_and(|existing| *existing != body)
+        {
+            self.collision(state.name);
+        }
+
+        self.rules.insert(identity.clone(), body);
+        state.names.push(identity);
     }
 }
 
@@ -1106,6 +1239,8 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
         selectors: FxHashMap::default(),
         serialized: FxHashMap::default(),
         themes: None,
+        unit_key: String::new(),
+        unit_names: FxHashMap::default(),
     };
 
     run(&mut compiler, options, &styles, units)
@@ -1175,24 +1310,45 @@ fn run<'a>(
     // Styles have few domains, so one reused list beats a map per style.
     let mut domains: Vec<(u32, String, bool, &str)> = Vec::new();
     let mut spare: Vec<String> = Vec::new();
+    // Every later pass reads these, so each top-level declaration is serialized once, in the
+    // order that registers its tokens.
+    let mut prepared: Vec<Prepared> = Vec::with_capacity(styles.len());
 
     for style in styles {
+        let count = style.declarations.len();
+        let mut entry = Prepared {
+            domains: Vec::with_capacity(count),
+            ends: Vec::with_capacity(count),
+            text: String::with_capacity(count * 24),
+        };
+
         for item in &style.declarations {
             let property = &*item.property;
             let key = compiler.conflict(property);
+            let start = entry.text.len();
+
+            compiler.write_declaration(&mut entry.text, item);
+            entry
+                .ends
+                .push(u32::try_from(entry.text.len()).unwrap_or(u32::MAX));
+            entry.domains.push(key);
+
+            let text = entry.text.get(start..).unwrap_or_default();
             let index = domains
                 .iter()
-                .position(|entry| entry.0 == key)
+                .position(|domain| domain.0 == key)
                 .unwrap_or_else(|| {
                     domains.push((key, spare.pop().unwrap_or_default(), false, property));
                     domains.len() - 1
                 });
 
-            if let Some(entry) = domains.get_mut(index) {
-                compiler.write_declaration(&mut entry.1, item);
-                entry.2 |= entry.3 != property;
+            if let Some(domain) = domains.get_mut(index) {
+                domain.1.push_str(text);
+                domain.2 |= domain.3 != property;
             }
         }
+
+        prepared.push(entry);
 
         let combinable = !isolated(style, options);
 
@@ -1231,11 +1387,9 @@ fn run<'a>(
     let default_mode = options.css_output.unwrap_or(CssOutput::Atomic);
     let mut occurrences: FxHashMap<u32, usize> = FxHashMap::default();
 
-    for style in styles {
-        for declaration in &style.declarations {
-            let key = compiler.conflict(&declaration.property);
-
-            *occurrences.entry(key).or_default() += 1;
+    for entry in &prepared {
+        for key in &entry.domains {
+            *occurrences.entry(*key).or_default() += 1;
         }
     }
 
@@ -1257,7 +1411,7 @@ fn run<'a>(
             let items = if style.css_output.unwrap_or(default_mode) == CssOutput::Atomic
                 && explicit_name(style).is_none()
             {
-                compiler.flatten(style, &[])
+                compiler.flatten(style, &[], prepared.get(index))
             } else {
                 None
             };
@@ -1354,7 +1508,11 @@ fn run<'a>(
 
             let offset = key.len();
 
-            compiler.write_nested(&mut key, style);
+            match prepared.get(index).filter(|_| style.rules.is_none()) {
+                Some(entry) => key.push_str(&entry.text),
+                None => compiler.write_nested(&mut key, style),
+            }
+
             offset
         });
 
@@ -1387,39 +1545,31 @@ fn run<'a>(
 
         match mode {
             CssOutput::Grouped => {
-                let mut shared: Vec<&Declaration> = Vec::new();
-                let mut local: Vec<&Declaration> = Vec::new();
+                let entry = prepared.get(index);
+                let mut shared = String::new();
+                let mut local = String::new();
 
-                for declaration in &style.declarations {
-                    let key = compiler.conflict(&declaration.property);
+                for (position, key) in entry
+                    .into_iter()
+                    .flat_map(|entry| &entry.domains)
+                    .enumerate()
+                {
                     let reusable = style.rules.is_none()
                         && independent
-                        && compiler.groups.get(&key) != Some(&Shareable::Conflicting)
-                        && occurrences.get(&key).copied().unwrap_or_default() > 1;
+                        && compiler.groups.get(key) != Some(&Shareable::Conflicting)
+                        && occurrences.get(key).copied().unwrap_or_default() > 1;
+                    let text = entry.map_or("", |entry| entry.range(position, position + 1));
 
                     if reusable {
-                        shared.push(declaration);
+                        shared.push_str(text);
                     } else {
-                        local.push(declaration);
+                        local.push_str(text);
                     }
                 }
 
                 if !shared.is_empty() && !local.is_empty() {
-                    let mut body = String::with_capacity(shared.len() * 32);
-
-                    for declaration in shared {
-                        compiler.write_declaration(&mut body, declaration);
-                    }
-
-                    compiler.emit(&mut state, body, "shared", false, mode, None);
-
-                    let mut body = String::with_capacity(local.len() * 32);
-
-                    for declaration in local {
-                        compiler.write_declaration(&mut body, declaration);
-                    }
-
-                    compiler.emit(&mut state, body, "style", false, mode, None);
+                    compiler.emit(&mut state, shared, "shared", false, mode, None);
+                    compiler.emit(&mut state, local, "style", false, mode, None);
                 } else {
                     let body = match application {
                         Some(offset) => key.get(offset..).unwrap_or_default().to_owned(),
@@ -1430,9 +1580,9 @@ fn run<'a>(
                 }
             }
             CssOutput::Atomic if explicit.is_none() && independent => {
-                compiler.share(&mut state, style, units);
+                compiler.share(&mut state, style, prepared.get(index), units);
             }
-            CssOutput::Atomic => compiler.atoms(&mut state, style, &[]),
+            CssOutput::Atomic => compiler.atoms(&mut state, style, &[], prepared.get(index)),
         }
 
         let mut list = String::with_capacity(state.names.iter().map(|name| name.len() + 1).sum());

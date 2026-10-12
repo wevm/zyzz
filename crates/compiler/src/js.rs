@@ -312,20 +312,20 @@ const ESCAPES: [u8; 256] = {
     table
 };
 
-/// Whether eight bytes need no escape: none is a control character, a quote, or a backslash.
-const fn is_plain(word: u64) -> bool {
+/// Flags the high bit of each of eight bytes that may need an escape: a control character, a
+/// quote, or a backslash. The lowest flagged byte always needs one; higher flags can be false
+/// positives from borrows.
+const fn escapes(word: u64) -> u64 {
     const ONES: u64 = 0x0101_0101_0101_0101;
     const HIGH: u64 = 0x8080_8080_8080_8080;
 
     let quote = word ^ (ONES * b'"' as u64);
     let backslash = word ^ (ONES * b'\\' as u64);
-
-    // A term flags a high bit only when some byte matches, so an empty union proves the word plain.
     let found = (word.wrapping_sub(ONES * 0x20) & !word)
         | (quote.wrapping_sub(ONES) & !quote)
         | (backslash.wrapping_sub(ONES) & !backslash);
 
-    found & HIGH == 0
+    found & HIGH
 }
 
 /// Appends a string quoted like `JSON.stringify(value)`.
@@ -337,15 +337,24 @@ pub fn write_string(output: &mut String, value: &str) {
     let mut start = 0;
     let mut index = 0;
 
-    while let Some(&byte) = bytes.get(index) {
-        // Long runs without escapes, such as embedded sources, advance a word at a time.
+    while let Some(&first) = bytes.get(index) {
+        let mut byte = first;
+
+        // Runs without escapes, such as embedded sources, advance a word at a time, and a word
+        // with an escape jumps straight to its first one.
         if let Some(word) = bytes
             .get(index..index + 8)
             .and_then(|chunk| <[u8; 8]>::try_from(chunk).ok())
-            && is_plain(u64::from_le_bytes(word))
         {
-            index += 8;
-            continue;
+            let found = escapes(u64::from_le_bytes(word));
+
+            if found == 0 {
+                index += 8;
+                continue;
+            }
+
+            index += (found.trailing_zeros() / 8) as usize;
+            byte = bytes.get(index).copied().unwrap_or_default();
         }
 
         let escape = ESCAPES[usize::from(byte)];

@@ -56,8 +56,10 @@ fn replay(case: &Value) -> Value {
         Some("names") => {
             let allocator = Allocator::default();
             let parsed = syntax::parse(&allocator, source, module_id);
-            let mut names: Vec<(u32, String)> =
-                names::collect(parsed.program).into_iter().collect();
+            let mut names: Vec<(u32, String)> = names::collect(&parsed.semantic)
+                .iter()
+                .map(|(start, name)| (start, name.to_owned()))
+                .collect();
 
             names.sort_unstable();
 

@@ -8,7 +8,6 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_parser::{ParseOptions, Parser};
 use oxc_semantic::{Semantic, SemanticBuilder};
 use oxc_span::SourceType;
-use rustc_hash::FxHashMap;
 
 use crate::compiler::internal::names;
 use crate::js::Utf16Index;
@@ -29,7 +28,7 @@ pub struct Parsed<'a> {
     /// Syntax and semantic errors, in parser order.
     pub errors: Vec<SyntaxError>,
     /// Readable declaration paths of calls, collected once for every pass that names them.
-    names: OnceCell<FxHashMap<u32, String>>,
+    names: OnceCell<names::Names>,
     /// UTF-8 to UTF-16 offset conversion for the source.
     pub offsets: Utf16Index,
     /// The program.
@@ -42,8 +41,8 @@ pub struct Parsed<'a> {
 
 impl Parsed<'_> {
     /// Readable declaration paths keyed by call start, as [`names::collect`] reports them.
-    pub fn names(&self) -> &FxHashMap<u32, String> {
-        self.names.get_or_init(|| names::collect(self.program))
+    pub fn names(&self) -> &names::Names {
+        self.names.get_or_init(|| names::collect(&self.semantic))
     }
 
     /// Converts a UTF-8 offset into the UTF-16 offset the TypeScript compiler reports.

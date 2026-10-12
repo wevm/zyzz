@@ -17,6 +17,7 @@ use oxc_ast::ast::{
 use oxc_ast_visit::Visit;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
+use smallvec::SmallVec;
 
 use crate::compiler::internal::applications::{self, Application};
 use crate::compiler::internal::contributions::Factory;
@@ -1147,36 +1148,52 @@ fn classes(
         .classes
         .iter()
         .map(|(name, value)| {
-            let mut list: Vec<String> = Vec::new();
-
-            for class in value.split(' ').filter(|class| !class.is_empty()) {
-                if !list.iter().any(|seen| seen == class) {
-                    list.push(class.to_owned());
-                }
-            }
-
-            if let Some(identity) = identities.get(&**name)
-                && (!portable
+            let extra = identities.get(&**name).filter(|_| {
+                !portable
                     || portable_names
                         .get(name)
-                        .is_some_and(|portable| portable.starts_with("z-compose-")))
-            {
-                let extra = if portable {
-                    identity
-                        .split(' ')
-                        .filter(|name| name.starts_with("z-style-id-"))
-                        .collect::<Vec<_>>()
-                        .join(" ")
+                        .is_some_and(|portable| portable.starts_with("z-compose-"))
+            });
+            let extra: Option<Cow<'_, str>> = extra.map(|identity| {
+                if portable {
+                    Cow::Owned(
+                        identity
+                            .split(' ')
+                            .filter(|name| name.starts_with("z-style-id-"))
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    )
                 } else {
-                    (*identity).to_owned()
-                };
+                    Cow::Borrowed(*identity)
+                }
+            });
+            let mut list: SmallVec<[&str; 16]> = SmallVec::new();
 
-                if !list.contains(&extra) {
-                    list.push(extra);
+            for class in value.split(' ').filter(|class| !class.is_empty()) {
+                if !list.contains(&class) {
+                    list.push(class);
                 }
             }
 
-            (Arc::clone(name), list.join(" "))
+            if let Some(extra) = &extra
+                && !list.contains(&&**extra)
+            {
+                list.push(extra);
+            }
+
+            let mut joined = String::with_capacity(
+                value.len() + extra.as_ref().map_or(0, |extra| extra.len() + 1),
+            );
+
+            for (index, class) in list.iter().enumerate() {
+                if index > 0 {
+                    joined.push(' ');
+                }
+
+                joined.push_str(class);
+            }
+
+            (Arc::clone(name), joined)
         })
         .collect()
 }

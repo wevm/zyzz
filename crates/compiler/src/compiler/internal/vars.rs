@@ -415,9 +415,7 @@ pub fn collect<'a>(
         let name = match id {
             None => format!(
                 "--z-{}",
-                authored
-                    .get(&call.span.start)
-                    .map_or("undefined", String::as_str)
+                authored.get(call.span.start).unwrap_or("undefined")
             ),
             Some(id) => {
                 let identity = identity::require_id(id.as_str(), "variable")?;

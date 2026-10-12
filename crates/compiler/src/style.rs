@@ -3,6 +3,7 @@
 //! This mirrors `Style.define`: names, declarations, and nested conditions keep JavaScript
 //! own-property order, and token names resolve against the bound theme.
 
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use rustc_hash::FxHashMap;
@@ -206,7 +207,7 @@ pub struct Options<'a> {
 }
 
 struct Context<'a> {
-    locations: Vec<SourceLocation>,
+    locations: Cow<'a, [SourceLocation]>,
     nesting: usize,
     target_branch: bool,
     theme: Option<&'a Theme>,
@@ -228,7 +229,7 @@ pub fn define(styles: &Data, options: &Options<'_>) -> Result<Definition> {
         None => None,
     };
     let context = Context {
-        locations: options.locations.to_vec(),
+        locations: Cow::Borrowed(options.locations),
         nesting: 0,
         target_branch: false,
         theme,
@@ -317,7 +318,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
 
                     if &*key == "web" {
                         let nested = Context {
-                            locations: context.locations.clone(),
+                            locations: Cow::Borrowed(&context.locations),
                             nesting: context.nesting + 1,
                             target_branch: true,
                             theme,
@@ -367,7 +368,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                         .cloned(),
                 );
                 let nested = Context {
-                    locations: context.locations.clone(),
+                    locations: Cow::Borrowed(&context.locations),
                     nesting: context.nesting + 1,
                     target_branch: context.target_branch,
                     theme,
@@ -504,7 +505,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                         condition::normalize(resolved)?;
                     }
 
-                    let locations = context
+                    let locations: Vec<SourceLocation> = context
                         .locations
                         .iter()
                         .filter(|location| resolved.is_none() || location.path.get(1) == Some(&key))
@@ -532,7 +533,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                         Some(_) => input.clone(),
                     };
                     let nested = Context {
-                        locations,
+                        locations: Cow::Owned(locations),
                         nesting: context.nesting + 1,
                         target_branch: context.target_branch,
                         theme,

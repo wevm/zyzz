@@ -148,7 +148,10 @@ style()
 ";
         let allocator = Allocator::default();
         let parsed = syntax::parse(&allocator, source, "names.tsx");
-        let mut names: Vec<(u32, String)> = names::collect(parsed.program).into_iter().collect();
+        let mut names: Vec<(u32, String)> = names::collect(&parsed.semantic)
+            .iter()
+            .map(|(start, name)| (start, name.to_owned()))
+            .collect();
 
         names.sort_unstable();
 

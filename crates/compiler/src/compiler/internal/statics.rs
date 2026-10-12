@@ -20,6 +20,7 @@ use oxc_ast_visit::Visit;
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxHashMap, FxHashSet};
+use smallvec::SmallVec;
 
 use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::scope::{self, Mode};
@@ -1128,6 +1129,10 @@ impl<'a> Static<'a> {
         opaque: &FxHashSet<u32>,
         omit_undefined: bool,
     ) -> Result<&'a Expression<'a>> {
+        if self.plain_unchanged(object, allowed, opaque, omit_undefined)? {
+            return Ok(node);
+        }
+
         let expanded: Vec<Property<'a>> = self
             .properties(object, allowed)?
             .into_iter()
@@ -1175,6 +1180,74 @@ impl<'a> Static<'a> {
             properties,
             &self.builder,
         )))
+    }
+
+    /// Whether an object without spreads, computed, prototype, or repeated keys, methods,
+    /// accessors, or shorthands normalizes to itself: its expansion is its own properties, so it
+    /// is unchanged when every value is. Values normalize in the order the general path uses, so
+    /// a failure is the same failure.
+    fn plain_unchanged(
+        &self,
+        object: &'a ObjectExpression<'a>,
+        allowed: &FxHashSet<u32>,
+        opaque: &FxHashSet<u32>,
+        omit_undefined: bool,
+    ) -> Result<bool> {
+        const LIMIT: usize = 32;
+
+        let properties = &object.properties;
+
+        if properties.len() > LIMIT {
+            return Ok(false);
+        }
+
+        let mut keys: SmallVec<[&str; LIMIT]> = SmallVec::new();
+
+        for property in properties {
+            let ObjectPropertyKind::ObjectProperty(property) = property else {
+                return Ok(false);
+            };
+
+            if property.computed
+                || property.method
+                || property.shorthand
+                || property.kind != PropertyKind::Init
+            {
+                return Ok(false);
+            }
+
+            let key = match &property.key {
+                PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
+                PropertyKey::StringLiteral(literal) => literal.value.as_str(),
+                _ => return Ok(false),
+            };
+
+            if key == "__proto__" || keys.contains(&key) {
+                return Ok(false);
+            }
+
+            keys.push(key);
+
+            if omit_undefined
+                && matches!(unwrap(&property.value), Expression::Identifier(identifier)
+                    if identifier.name == "undefined" && self.absent.contains(&identifier.span.start))
+            {
+                return Ok(false);
+            }
+        }
+
+        for property in properties {
+            let ObjectPropertyKind::ObjectProperty(property) = property else {
+                return Ok(false);
+            };
+            let value = self.normalize(&property.value, allowed, opaque, omit_undefined)?;
+
+            if !std::ptr::eq(value, &raw const property.value) {
+                return Ok(false);
+            }
+        }
+
+        Ok(true)
     }
 
     fn normalize_array(

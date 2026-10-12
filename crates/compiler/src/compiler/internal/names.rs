@@ -3,75 +3,93 @@
 use std::borrow::Cow;
 
 use oxc_ast::AstKind;
-use oxc_ast::ast::{
-    BindingPattern, FunctionType, Program, PropertyKey, TSNamespaceDeclarationBody,
-};
-use oxc_ast_visit::Visit;
+use oxc_ast::ast::{BindingPattern, FunctionType, PropertyKey, TSNamespaceDeclarationBody};
+use oxc_semantic::Semantic;
 use rustc_hash::FxHashMap;
+use smallvec::SmallVec;
 
 use crate::compiler::internal::statics;
 use crate::internal::identity;
 
+/// Readable declaration paths of calls, keyed by call start offset.
+#[derive(Debug, Default)]
+pub struct Names {
+    /// Byte range of each call's path in `text`.
+    ranges: FxHashMap<u32, (u32, u32)>,
+    /// Every path, concatenated.
+    text: String,
+}
+
+impl Names {
+    /// The path of the call starting at an offset. A call outside any named declaration is
+    /// named `style`.
+    pub fn get(&self, start: u32) -> Option<&str> {
+        self.ranges
+            .get(&start)
+            .and_then(|(from, to)| self.text.get(*from as usize..*to as usize))
+    }
+
+    /// Every call start and its path, in no particular order.
+    pub fn iter(&self) -> impl Iterator<Item = (u32, &str)> {
+        self.ranges.iter().filter_map(|(start, (from, to))| {
+            self.text
+                .get(*from as usize..*to as usize)
+                .map(|name| (*start, name))
+        })
+    }
+}
+
 /// Collects readable declaration paths for calls in constants and namespaces.
 ///
-/// Keys are call start offsets. A call outside any named declaration is named `style`.
-pub fn collect(program: &Program<'_>) -> FxHashMap<u32, String> {
-    let mut collector = Collector {
-        ancestors: Vec::new(),
-        names: FxHashMap::default(),
-        path: String::new(),
-        segments: 0,
-    };
+/// Each call's path comes from its ancestors in the semantic node tree, so only calls are
+/// visited. Calls sharing a start offset share their ancestors' segments, and the last in source
+/// order keeps the entry, as a walk in source order would.
+pub fn collect(semantic: &Semantic<'_>) -> Names {
+    let nodes = semantic.nodes();
+    let mut names = Names::default();
+    let mut ancestors: SmallVec<[AstKind<'_>; 16]> = SmallVec::new();
+    let mut parts: SmallVec<[Cow<'_, str>; 8]> = SmallVec::new();
 
-    collector.visit_program(program);
+    for node in nodes.iter() {
+        let AstKind::CallExpression(call) = node.kind() else {
+            continue;
+        };
 
-    collector.names
-}
+        ancestors.clear();
+        ancestors.extend(nodes.ancestor_kinds(node.id()));
+        parts.clear();
 
-struct Collector<'a> {
-    /// Entered nodes, each with the path length before it and whether it added a segment.
-    ancestors: Vec<(AstKind<'a>, usize, bool)>,
-    names: FxHashMap<u32, String>,
-    /// Encoded segments of the entered declarations, joined with `-`.
-    path: String,
-    /// Segments in `path`, which can be empty.
-    segments: usize,
-}
-
-impl<'a> Visit<'a> for Collector<'a> {
-    fn enter_node(&mut self, kind: AstKind<'a>) {
-        if let AstKind::CallExpression(call) = kind {
-            self.names.insert(
-                call.span.start,
-                if self.segments == 0 {
-                    "style".to_owned()
-                } else {
-                    self.path.clone()
-                },
-            );
+        // Ancestors run innermost first; each one's parent follows it.
+        for (index, ancestor) in ancestors.iter().enumerate().rev() {
+            if let Some(part) = part(*ancestor, ancestors.get(index + 1).copied()) {
+                parts.push(part);
+            }
         }
 
-        let length = self.path.len();
-        let part = part(kind, self.ancestors.last().map(|(parent, ..)| *parent));
+        let from = names.text.len();
 
-        if let Some(part) = &part {
-            if self.segments > 0 {
-                self.path.push('-');
+        if parts.is_empty() {
+            names.text.push_str("style");
+        }
+
+        for (index, part) in parts.iter().enumerate() {
+            if index > 0 {
+                names.text.push('-');
             }
 
-            identity::write_name(&mut self.path, part);
-            self.segments += 1;
+            identity::write_name(&mut names.text, part);
         }
 
-        self.ancestors.push((kind, length, part.is_some()));
+        names.ranges.insert(
+            call.span.start,
+            (
+                u32::try_from(from).unwrap_or(u32::MAX),
+                u32::try_from(names.text.len()).unwrap_or(u32::MAX),
+            ),
+        );
     }
 
-    fn leave_node(&mut self, _: AstKind<'a>) {
-        if let Some((_, length, segment)) = self.ancestors.pop() {
-            self.path.truncate(length);
-            self.segments -= usize::from(segment);
-        }
-    }
+    names
 }
 
 /// The name segment an ancestor contributes, as ESTree reports its declaration.

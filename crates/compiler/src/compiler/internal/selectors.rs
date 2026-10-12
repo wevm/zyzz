@@ -206,7 +206,7 @@ fn reference(binding: Arc<str>, start: u32, end: u32) -> Result<Link> {
 }
 
 struct Resolver<'s, 'a> {
-    authored: &'s FxHashMap<u32, String>,
+    authored: &'s crate::compiler::internal::names::Names,
     bindings: FxHashMap<u32, &'a Expression<'a>>,
     definitions: FxHashMap<u32, u32>,
     identities: FxHashMap<u32, Arc<str>>,
@@ -319,9 +319,7 @@ impl<'s, 'a> Resolver<'s, 'a> {
 
             format!(
                 "z-style-{prefix}{suffix}-{}",
-                self.authored
-                    .get(&call.span.start)
-                    .map_or("", String::as_str)
+                self.authored.get(call.span.start).unwrap_or("")
             )
         };
         let name: Arc<str> = Arc::from(name);

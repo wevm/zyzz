@@ -257,17 +257,18 @@ impl<'a> MagicString<'a> {
         self.split(start)?;
         self.split(end)?;
 
-        if !self.chunks.contains_key(&start) {
-            return Ok(self);
+        let mut chunks = self.chunks.range_mut(start..end);
+
+        match chunks.next() {
+            Some((&first_start, first)) if first_start == start => {
+                first.edit(content.to_owned(), !overwrite);
+            }
+            _ => return Ok(self),
         }
 
         // Every later chunk of the range loses its content and insertions.
-        for (_, chunk) in self.chunks.range_mut(start..end).skip(1) {
+        for (_, chunk) in chunks {
             chunk.edit(String::new(), false);
-        }
-
-        if let Some(first) = self.chunks.get_mut(&start) {
-            first.edit(content.to_owned(), !overwrite);
         }
 
         Ok(self)
@@ -303,15 +304,21 @@ impl<'a> MagicString<'a> {
         self.split(start)?;
         self.split(end)?;
 
-        let mut cursor = Some(start);
+        // Chunks cover the text without gaps, so the range holds the contiguous run from start.
+        let mut expected = start;
 
-        while let Some(position) = cursor {
-            let Some(chunk) = self.chunks.get_mut(&position) else {
+        for (&position, chunk) in self.chunks.range_mut(start..) {
+            if position != expected {
                 break;
-            };
+            }
 
             chunk.edit(String::new(), false);
-            cursor = (end > chunk.end).then_some(chunk.end);
+
+            if end <= chunk.end {
+                break;
+            }
+
+            expected = chunk.end;
         }
 
         Ok(self)
@@ -493,15 +500,13 @@ impl<'a> MagicString<'a> {
 
     /// Splits the chunk containing an index so that the index becomes a chunk boundary.
     fn split(&mut self, index: u32) -> Result<()> {
-        if self.chunks.contains_key(&index) || self.by_end(index).is_some() {
-            return Ok(());
-        }
-
-        let Some((&start, chunk)) = self.chunks.range(..index).next_back() else {
+        // The chunk starting at or before the index decides: a start or an end at the index is
+        // already a boundary.
+        let Some((&start, chunk)) = self.chunks.range_mut(..=index).next_back() else {
             return Ok(());
         };
 
-        if chunk.end <= index {
+        if start == index || chunk.end <= index {
             return Ok(());
         }
 
@@ -521,9 +526,6 @@ impl<'a> MagicString<'a> {
             )));
         }
 
-        let Some(chunk) = self.chunks.get_mut(&start) else {
-            return Ok(());
-        };
         let edited = chunk.edited();
         let mut next = Chunk {
             content: None,

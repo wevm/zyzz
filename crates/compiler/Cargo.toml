@@ -53,6 +53,7 @@ smallvec = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }
+mimalloc = { workspace = true }
 
 [[example]]
 name = "extract_replay"

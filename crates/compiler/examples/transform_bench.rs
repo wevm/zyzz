@@ -18,6 +18,10 @@ use compiler::internal::token::Composition;
 use oxc_allocator::Allocator;
 use serde_json::Value;
 
+// Timings and profiles use the allocator the Node binding links.
+#[global_allocator]
+static ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Runs a closure repeatedly and reports the median duration and sample count.
 fn time(mut operation: impl FnMut()) -> (Duration, usize) {
     for _ in 0..5 {

@@ -12,7 +12,7 @@ use crate::compiler::internal::identifiers;
 use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::stylesheets::{self, Section};
 use crate::compiler::internal::themes::{
-    Call, FunctionParameter, FunctionSignature, Link, LinkKind, Output,
+    self, Call, FunctionParameter, FunctionSignature, Link, LinkKind, Output,
 };
 use crate::compiler::source::NativeContext;
 use crate::data::{Data, Object};
@@ -476,6 +476,7 @@ fn signature(input: &Data, version: u32) -> Result<FunctionSignature> {
                 Data::String(text) => Some(Scalar::String(Arc::clone(text))),
                 _ => None,
             },
+            keys: themes::parameter_keys(parameter),
             name,
             syntax: syntax.as_str().map(Arc::from),
         });
@@ -1716,32 +1717,7 @@ fn write_function(output: &mut String, function: &FunctionSignature) {
             output.push(',');
         }
 
-        output.push_str("{\"name\":");
-        js::write_string(output, &parameter.name);
-
-        if let Some(syntax) = &parameter.syntax {
-            output.push_str(",\"syntax\":");
-            js::write_string(output, syntax);
-        }
-
-        match &parameter.default {
-            Some(Scalar::Number(number)) => {
-                output.push_str(",\"default\":");
-
-                if number.is_finite() {
-                    js::write_number(output, *number);
-                } else {
-                    output.push_str("null");
-                }
-            }
-            Some(Scalar::String(text)) => {
-                output.push_str(",\"default\":");
-                js::write_string(output, text);
-            }
-            None => {}
-        }
-
-        output.push('}');
+        themes::write_parameter(output, parameter);
     }
 
     output.push_str("],\"returns\":");

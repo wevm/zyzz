@@ -50,10 +50,75 @@ pub struct FunctionSignature {
 pub struct FunctionParameter {
     /// Default value.
     pub default: Option<crate::runtime::recipe::Scalar>,
+    /// Defined keys in authored order, which contracts and type annotations reproduce.
+    pub keys: Vec<ParameterKey>,
     /// Custom property name, including `--`.
     pub name: Arc<str>,
     /// Accepted syntax.
     pub syntax: Option<Arc<str>>,
+}
+
+/// A key of a `@function` parameter object.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ParameterKey {
+    /// `default`.
+    Default,
+    /// `name`.
+    Name,
+    /// `syntax`.
+    Syntax,
+}
+
+/// The parameter keys an object defines, in its own-property order.
+pub fn parameter_keys(object: &crate::data::Object) -> Vec<ParameterKey> {
+    object
+        .iter()
+        .filter(|(_, value)| !value.is_undefined())
+        .filter_map(|(key, _)| match &**key {
+            "default" => Some(ParameterKey::Default),
+            "name" => Some(ParameterKey::Name),
+            "syntax" => Some(ParameterKey::Syntax),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Writes a parameter as `JSON.stringify` writes its authored object, so non-finite defaults
+/// become `null`.
+pub fn write_parameter(output: &mut String, parameter: &FunctionParameter) {
+    output.push('{');
+
+    for (index, key) in parameter.keys.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+
+        match key {
+            ParameterKey::Default => {
+                output.push_str("\"default\":");
+
+                match &parameter.default {
+                    Some(crate::runtime::recipe::Scalar::Number(number)) if number.is_finite() => {
+                        js::write_number(output, *number);
+                    }
+                    Some(crate::runtime::recipe::Scalar::String(text)) => {
+                        js::write_string(output, text);
+                    }
+                    _ => output.push_str("null"),
+                }
+            }
+            ParameterKey::Name => {
+                output.push_str("\"name\":");
+                js::write_string(output, &parameter.name);
+            }
+            ParameterKey::Syntax => {
+                output.push_str("\"syntax\":");
+                js::write_string(output, parameter.syntax.as_deref().unwrap_or_default());
+            }
+        }
+    }
+
+    output.push('}');
 }
 
 /// A configuration, theme, or variable-set authoring call.

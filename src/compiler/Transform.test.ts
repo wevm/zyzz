@@ -7845,6 +7845,22 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
       `)
     })
 
+    test('keeps authored parameter key order in types and contracts', () => {
+      const source = `import {cssFunction} from 'zyzz/web';export const fluid=cssFunction({parameters:[{name:'--min',syntax:'<length>',default:'1rem'},{default:'3rem',name:'--max',syntax:'<length>'}],returns:'<length>',body:{result:'clamp(var(--min), 4vw, var(--max))'}});`
+      const output = Transform.compile({ moduleId: 'functions.ts', source })
+      const library = Graph.compile({ modules: { 'functions.ts': source } })
+
+      // Raw text keeps key order, which object snapshots would sort.
+      expect(output.code.match(/Reference<\[.*?\]/)?.[0]).toMatchInlineSnapshot(
+        `"Reference<[{"name":"--min","syntax":"<length>","default":"1rem"},{"default":"3rem","name":"--max","syntax":"<length>"}]"`,
+      )
+      expect(
+        library.contracts['functions.ts']!.match(/"parameters":\[.*?\]/)?.[0],
+      ).toMatchInlineSnapshot(
+        `""parameters":[{"name":"--min","syntax":"<length>","default":"1rem"},{"default":"3rem","name":"--max","syntax":"<length>"}]"`,
+      )
+    })
+
     test.each(['1px', '1%', '1.5', '1e2', '-1turn', ' 1px '])(
       'rejects non-integer token %s in source and packed calls',
       (value) => {

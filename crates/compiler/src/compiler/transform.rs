@@ -1200,20 +1200,7 @@ fn contribution_text(
                             output.push(',');
                         }
 
-                        output.push_str("{\"name\":");
-                        js::write_string(&mut output, &parameter.name);
-
-                        if let Some(syntax) = &parameter.syntax {
-                            output.push_str(",\"syntax\":");
-                            js::write_string(&mut output, syntax);
-                        }
-
-                        if let Some(default) = &parameter.default {
-                            output.push_str(",\"default\":");
-                            write_scalar(&mut output, default);
-                        }
-
-                        output.push('}');
+                        themes::write_parameter(&mut output, parameter);
                     }
 
                     output.push(']');

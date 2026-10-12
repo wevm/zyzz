@@ -2154,6 +2154,7 @@ impl Extraction<'_, '_> {
                     Data::String(text) => Some(runtime::Scalar::String(Arc::clone(text))),
                     _ => None,
                 }),
+                keys: themes::parameter_keys(parameter),
                 name: Arc::from(name),
                 syntax: syntax.map(Arc::from),
             });

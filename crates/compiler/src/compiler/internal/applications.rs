@@ -4,6 +4,7 @@
 //! calls, or a non-exported namespace of exported `const` calls. Applications are no-argument
 //! calls of a candidate or one of its members. Reads that escape keep the runtime callable.
 
+use std::cell::OnceCell;
 use std::sync::Arc;
 
 use indexmap::IndexMap;
@@ -91,12 +92,18 @@ struct Read<'a> {
 /// The applications of one module's local definitions.
 pub struct Applications<'c, 'a> {
     candidates: Vec<Candidate<'c, 'a>>,
+    /// Each candidate's foldable applications and called definitions, read by several queries.
+    collected: OnceCell<Vec<Collected>>,
     evaluation: bool,
     namespace_counts: FxHashMap<Arc<str>, usize>,
     referenced_definitions: FxHashSet<Arc<str>>,
     references: FxHashMap<Arc<str>, Vec<Read<'a>>>,
     options: Options,
 }
+
+/// One candidate's foldable applications and the definitions its reads call with arguments, or
+/// `None` when a read cannot fold.
+type Collected = Option<(Vec<Application>, FxHashSet<Arc<str>>)>;
 
 fn is_call_of<'c, 'a>(
     definitions: &FxHashMap<u32, &'c Call<'a>>,
@@ -309,6 +316,7 @@ pub fn create<'c, 'a>(
 
     Some(Applications {
         candidates,
+        collected: OnceCell::new(),
         evaluation: walker.evaluation,
         namespace_counts,
         referenced_definitions: walker.referenced_definitions,
@@ -452,10 +460,17 @@ fn call_of(kind: Option<AstKind<'_>>, callee: Span) -> Option<(Span, usize)> {
 }
 
 impl<'c, 'a> Applications<'c, 'a> {
-    fn collect(
-        &self,
-        candidate: &Candidate<'c, 'a>,
-    ) -> Option<(Vec<Application>, FxHashSet<Arc<str>>)> {
+    /// Every candidate's collected applications, in candidate order.
+    fn collected(&self) -> &[Collected] {
+        self.collected.get_or_init(|| {
+            self.candidates
+                .iter()
+                .map(|candidate| self.collect(candidate))
+                .collect()
+        })
+    }
+
+    fn collect(&self, candidate: &Candidate<'c, 'a>) -> Collected {
         let mut applications = Vec::new();
         let mut called = FxHashSet::default();
 
@@ -594,7 +609,7 @@ impl<'c, 'a> Applications<'c, 'a> {
 
         let counts = self.unique();
 
-        for candidate in &self.candidates {
+        for (candidate, collected) in self.candidates.iter().zip(self.collected()) {
             if counts.get(&candidate.name).copied().unwrap_or_default() > 1
                 || self
                     .namespace_counts
@@ -606,7 +621,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                 continue;
             }
 
-            let Some((applications, called)) = self.collect(candidate) else {
+            let Some((applications, called)) = collected else {
                 continue;
             };
             let mut erased = candidate.namespace.is_some();
@@ -651,13 +666,10 @@ impl<'c, 'a> Applications<'c, 'a> {
             return Vec::new();
         }
 
-        self.candidates
+        self.collected()
             .iter()
-            .flat_map(|candidate| {
-                self.collect(candidate)
-                    .map(|(applications, _)| applications)
-                    .unwrap_or_default()
-            })
+            .flatten()
+            .flat_map(|(applications, _)| applications.iter().cloned())
             .collect()
     }
 }

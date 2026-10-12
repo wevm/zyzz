@@ -148,10 +148,13 @@ impl<'a> Collector<'_, 'a> {
         let nodes = semantic.nodes();
 
         for node in nodes.iter() {
-            let parent =
-                (node.id() != nodes.parent_id(node.id())).then(|| nodes.parent_kind(node.id()));
+            let kind = node.kind();
+            // Only namespaces read their parent.
+            let parent = (matches!(kind, AstKind::TSNamespaceDeclaration(_))
+                && node.id() != nodes.parent_id(node.id()))
+            .then(|| nodes.parent_kind(node.id()));
 
-            self.enter(node.kind(), parent);
+            self.enter(kind, parent);
         }
     }
 

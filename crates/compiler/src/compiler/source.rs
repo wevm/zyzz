@@ -3158,13 +3158,14 @@ fn truthy(value: &Data) -> bool {
 /// Readable class labels: each style takes its call's CSS name and namespace, found by
 /// trimming `-` segments from the style name.
 fn labels(calls: &[Call<'_>], styles: &[Arc<NamedStyle>]) -> style::Labels {
-    let mut by_name: FxHashMap<&str, &Call<'_>> = FxHashMap::default();
+    let mut by_name: FxHashMap<&str, &Call<'_>> =
+        FxHashMap::with_capacity_and_hasher(calls.len(), FxBuildHasher);
 
     for call in calls {
         by_name.insert(&call.name, call);
     }
 
-    let mut labels = style::Labels::default();
+    let mut labels = style::Labels::with_capacity_and_hasher(styles.len(), FxBuildHasher);
 
     for style in styles {
         let mut name: &str = &style.name;

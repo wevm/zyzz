@@ -188,9 +188,15 @@ impl<'a> Walker<'_, 'a> {
 
         for node in nodes.iter() {
             let id = node.id();
-            let parent = (nodes.parent_id(id) != id).then(|| nodes.parent_kind(id));
+            let kind = node.kind();
+            // Only identifier reads and calls inspect their parent.
+            let parent = (matches!(
+                kind,
+                AstKind::IdentifierReference(_) | AstKind::CallExpression(_)
+            ) && nodes.parent_id(id) != id)
+                .then(|| nodes.parent_kind(id));
 
-            self.enter(node.kind(), parent);
+            self.enter(kind, parent);
         }
     }
 

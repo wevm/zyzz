@@ -11157,7 +11157,7 @@ describe('performance', () => {
 
       expect(output.code).toMatchInlineSnapshot(`
         "
-              declare namespace styles {export const card: import('zyzz').style.ReturnType;export const label: import('zyzz').style.ReturnType}
+              
               export const classes=["z-iFQJXQ-styles-card-text-0","z-iFQJXQ-styles-label-text-0"]"
       `)
       expect(consumer.classes).toMatchInlineSnapshot(`
@@ -11165,6 +11165,19 @@ describe('performance', () => {
           "z-iFQJXQ-styles-card-text-0",
           "z-iFQJXQ-styles-label-text-0",
         ]
+      `)
+
+      // A type that names the namespace keeps its member types.
+      const typed = await execute(`import {style} from 'zyzz';
+      namespace styles {export const card=style({color:'red'})}
+      export type Card = typeof styles.card
+      export const classes=[styles.card().className]`)
+
+      expect(typed.output.code).toMatchInlineSnapshot(`
+        "
+              declare namespace styles {export const card: import('zyzz').style.ReturnType}
+              export type Card = typeof styles.card
+              export const classes=["z-text-red"]"
       `)
     })
 

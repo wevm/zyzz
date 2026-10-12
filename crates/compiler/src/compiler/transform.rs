@@ -1434,13 +1434,26 @@ impl<'a> Generator<'_, 'a> {
             })
             .collect();
 
-        // An ambient namespace keeps member types without runtime initialization.
+        // An ambient namespace keeps member types without runtime initialization. A namespace no
+        // type names has nothing left to declare, so it is removed with its members.
+        let removed: FxHashSet<&str> = namespaces
+            .iter()
+            .filter(|namespace| !namespace.typed)
+            .flat_map(|namespace| namespace.ends.keys().map(|name| &**name))
+            .collect();
+
         for namespace in &namespaces {
-            module.prepend_right(namespace.start, "declare ")?;
+            if namespace.typed {
+                module.prepend_right(namespace.start, "declare ")?;
+            } else {
+                module.remove(namespace.start, namespace.end)?;
+            }
         }
 
         for call in &extracted.calls {
-            if let Some(end) = erased.get(&call.name) {
+            if let Some(end) = erased.get(&call.name)
+                && !removed.contains(&*call.name)
+            {
                 let annotation = if call.output == Some(ThemeOutput::Html) {
                     ": import('zyzz').style.ReturnType<'html'>"
                 } else {
@@ -1822,7 +1835,9 @@ impl<'a> Generator<'_, 'a> {
                 format!("{}.create({props})", state.runtime)
             };
 
-            module.overwrite(call.start, application.end, &replacement)?;
+            if !removed.contains(&*call.name) {
+                module.overwrite(call.start, application.end, &replacement)?;
+            }
 
             if call.recipe.is_none()
                 && call.slots.is_none()

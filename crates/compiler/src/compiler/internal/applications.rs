@@ -52,10 +52,14 @@ pub struct ClassRead {
 /// A namespace whose members can be erased.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Namespace {
+    /// End of the namespace statement.
+    pub end: u32,
     /// End of each member's binding, by definition name.
     pub ends: crate::js::Record<u32>,
     /// Start of the namespace statement.
     pub start: u32,
+    /// Whether a type position names the namespace, so its member types must remain.
+    pub typed: bool,
 }
 
 /// Definitions the transform may fold, and namespaces it may erase.
@@ -226,8 +230,10 @@ pub fn create<'c, 'a>(
                     members,
                     name: Arc::from(namespace.id.name.as_str()),
                     namespace: Some(Namespace {
+                        end: namespace.span.end,
                         ends,
                         start: namespace.span.start,
+                        typed: false,
                     }),
                     ready: namespace.span.end,
                 });
@@ -323,9 +329,16 @@ pub fn create<'c, 'a>(
             .map(|candidate| (Arc::clone(&candidate.name), Vec::new()))
             .collect(),
         semantic,
+        typed: FxHashSet::default(),
     };
 
     walker.scan();
+
+    for candidate in &mut candidates {
+        if let Some(namespace) = &mut candidate.namespace {
+            namespace.typed = walker.typed.contains(&*candidate.name);
+        }
+    }
 
     Some(Applications {
         candidates,
@@ -346,6 +359,8 @@ struct Walker<'s, 'a> {
     referenced_definitions: FxHashSet<Arc<str>>,
     references: FxHashMap<Arc<str>, Vec<Read<'a>>>,
     semantic: &'s Semantic<'a>,
+    /// Names read outside value positions, such as in `typeof styles.card`.
+    typed: FxHashSet<&'a str>,
 }
 
 /// Whether evaluation of a node's contents waits for a later call or declaration.
@@ -402,6 +417,7 @@ impl Walker<'_, '_> {
                     .ancestor_kinds(id)
                     .any(|ancestor| TYPE_CONTEXTS.iter().any(|test| test(&ancestor)))
             {
+                self.typed.insert(identifier.name.as_str());
                 continue;
             }
 

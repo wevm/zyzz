@@ -1464,12 +1464,19 @@ impl<'a> Generator<'_, 'a> {
             .filter(|application| !folded.contains(&application.start))
             .map(|application| &*application.name)
             .collect();
-        let unread: FxHashMap<Arc<str>, bool> = local
-            .iter()
-            .flat_map(|local| local.values.iter())
-            .filter(|(name, _)| !read.contains(&***name))
-            .map(|(name, initialized)| (Arc::clone(name), *initialized))
-            .collect();
+        let mut unread: FxHashMap<&str, bool> = FxHashMap::with_capacity_and_hasher(
+            local.as_ref().map_or(0, |local| local.values.len()),
+            FxBuildHasher,
+        );
+
+        unread.extend(
+            local
+                .iter()
+                .flat_map(|local| local.values.iter())
+                .filter(|(name, _)| !read.contains(&***name))
+                .map(|(name, initialized)| (&**name, *initialized)),
+        );
+
         let namespaces: Vec<&applications::Namespace> = local
             .iter()
             .flat_map(|local| local.namespaces.iter())
@@ -1477,18 +1484,22 @@ impl<'a> Generator<'_, 'a> {
                 namespace
                     .ends
                     .keys()
-                    .all(|name| unread.get(name).copied().unwrap_or_default())
+                    .all(|name| unread.get(&**name).copied().unwrap_or_default())
             })
             .collect();
-        let erased: FxHashMap<Arc<str>, u32> = namespaces
-            .iter()
-            .flat_map(|namespace| {
-                namespace
-                    .ends
-                    .iter()
-                    .map(|(name, end)| (Arc::clone(name), *end))
-            })
-            .collect();
+        let mut erased: FxHashMap<&str, u32> = FxHashMap::with_capacity_and_hasher(
+            namespaces
+                .iter()
+                .map(|namespace| namespace.ends.len())
+                .sum(),
+            FxBuildHasher,
+        );
+
+        erased.extend(
+            namespaces
+                .iter()
+                .flat_map(|namespace| namespace.ends.iter().map(|(name, end)| (&**name, *end))),
+        );
 
         // An ambient namespace keeps member types without runtime initialization. A namespace no
         // type names has nothing left to declare, so it is removed with its members.
@@ -1507,7 +1518,7 @@ impl<'a> Generator<'_, 'a> {
         }
 
         for call in &extracted.calls {
-            if let Some(end) = erased.get(&call.name)
+            if let Some(end) = erased.get(&*call.name)
                 && !removed.contains(&*call.name)
             {
                 let annotation = if call.output == Some(ThemeOutput::Html) {
@@ -1546,7 +1557,7 @@ impl<'a> Generator<'_, 'a> {
             let key = if html { "class" } else { "className" };
             // Unread definitions hold no composition, recipe, or slots, and their replacement
             // reads no class list.
-            let (class_name, props) = if unread.contains_key(&call.name) {
+            let (class_name, props) = if unread.contains_key(&*call.name) {
                 (String::new(), String::new())
             } else {
                 let class_name = self.class(&call.name);
@@ -1846,8 +1857,8 @@ impl<'a> Generator<'_, 'a> {
                 } else {
                     result
                 }
-            } else if let Some(initialized) = unread.get(&call.name) {
-                if erased.contains_key(&call.name) {
+            } else if let Some(initialized) = unread.get(&*call.name) {
+                if erased.contains_key(&*call.name) {
                     String::new()
                 } else {
                     // Guards read only truthiness, and failures before initialization still call it.
@@ -1899,7 +1910,7 @@ impl<'a> Generator<'_, 'a> {
                 && call.slots.is_none()
                 && call.runtime_composition.is_none()
                 && !application.folded
-                && !unread.contains_key(&call.name)
+                && !unread.contains_key(&*call.name)
                 && !html
             {
                 state.callable = true;
